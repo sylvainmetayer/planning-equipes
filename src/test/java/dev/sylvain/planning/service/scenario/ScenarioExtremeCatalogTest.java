@@ -28,20 +28,13 @@ import org.junit.jupiter.params.provider.MethodSource;
  */
 class ScenarioExtremeCatalogTest {
 
-    private static final Path FOLDER = Path.of("src/test/resources", ScenarioLadder.EXTREMES);
     private static final Path TESTS = Path.of("src/test/java/dev/sylvain/planning/service/scenario");
     private static final Pattern SIZED =
             Pattern.compile("extreme-(\\d{2})-(\\d+)j-(\\d+)stands-(\\d+)animateurs(-[a-z0-9-]+)?");
     private static final Pattern NAMED = Pattern.compile("extreme-(\\d{2})-[a-z0-9-]+");
 
     static List<String> extremes() throws IOException {
-        try (Stream<Path> files = Files.list(FOLDER)) {
-            return files.map(file -> file.getFileName().toString())
-                    .filter(file -> file.endsWith(".yaml"))
-                    .map(file -> file.substring(0, file.length() - ".yaml".length()))
-                    .sorted()
-                    .toList();
-        }
+        return ScenariosLivres.noms(ScenarioLadder.EXTREME_PREFIX);
     }
 
     @Test

@@ -34,6 +34,7 @@ import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { APP_VERSION, REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
+import { ScenarioPreenregistre } from './scenario-preenregistre';
 import { YamlValidator } from './yaml-validator';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 
@@ -54,8 +55,10 @@ export const CLEAR_KEYWORD = 'VIDER';
  * server itself restarts).
  *
  * Also hosts the database maintenance card (emptying the database, the
- * pgAdmin and Mailpit links): low-level tooling that belongs with the other
- * diagnostics rather than on the day-to-day Data page.
+ * pgAdmin and Mailpit links) and the pre-recorded scenario picker: low-level
+ * tooling that belongs with the other diagnostics rather than on the
+ * day-to-day Paramètres page. What an organiser does with a scenario — upload
+ * one, write one out — stays on the Imports and Exports screens.
  */
 @Component({
   selector: 'app-debug-page',
@@ -68,11 +71,12 @@ export const CLEAR_KEYWORD = 'VIDER';
     MatInputModule,
     MatProgressBarModule,
     OutputPanel,
+    ScenarioPreenregistre,
     StatusMessage,
     YamlValidator,
   ],
   templateUrl: './debug-page.html',
-  styleUrls: ['./debug-date-du-jour.css', './yaml-validator.css'],
+  styleUrls: ['./debug-date-du-jour.css', './scenario-preenregistre.css', './yaml-validator.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

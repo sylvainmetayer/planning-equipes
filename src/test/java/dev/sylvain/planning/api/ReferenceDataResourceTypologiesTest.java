@@ -105,7 +105,7 @@ class ReferenceDataResourceTypologiesTest {
     void importScenarioFichierAppliqueLesLibellesDeTypologiesDeclares() throws Exception {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        String yamlContent = Files.readString(Path.of("src/test/resources/scenarios/scenario-typologies.yaml"));
+        String yamlContent = Files.readString(Path.of("src/main/resources/scenarios/scenario-typologies.yaml"));
 
         given().config(RestAssured.config()
                         .encoderConfig(encoderConfig()

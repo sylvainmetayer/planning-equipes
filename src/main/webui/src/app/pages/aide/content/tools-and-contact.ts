@@ -17,7 +17,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
         {
           kind: 'list',
           items: [
-            $localize`:@@aide.exchange.item.scenario:Import d'un scénario YAML depuis votre poste : la façon la plus rapide de remplir une édition vide. Un fichier invalide donne une notification détaillée plutôt qu'un import partiel.`,
+            $localize`:@@aide.exchange.item.scenario:Import d'un scénario YAML depuis votre poste (page Imports, onglet Scénario) : la façon la plus rapide de remplir une édition vide. Un fichier invalide donne une notification détaillée plutôt qu'un import partiel. L'écran Exports fait le chemin inverse, et la page Débogage charge un des scénarios livrés avec l'application.`,
             $localize`:@@aide.exchange.item.csvAnimateurs:Import CSV des animateurs : reprendre le tableur des bénévoles sans le ressaisir, avec un aperçu ligne à ligne avant que quoi que ce soit ne soit écrit. Le format attendu a sa propre section dans ce guide.`,
             $localize`:@@aide.exchange.item.sql:Export et import d'un dump SQL complet, pour dupliquer ou restaurer un jeu de données entier.`,
             $localize`:@@aide.exchange.item.pdfIcs:Export du planning individuel d'un animateur en PDF ou en ICS (importable dans Google Calendar, Apple Calendar ou Outlook), à l'unité ou en archive ZIP pour tout le monde. Un fichier ICS est une photo : il ne bougera plus. Pour un agenda qui suit les republications, c'est l'abonnement de l'espace animateur qu'il faut — voir « Foire au planning ».`,
@@ -34,6 +34,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           route: '/imports',
           label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
+        { route: '/exports', label: $localize`:@@nav.link.exports:Exports` },
         { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },
       ],

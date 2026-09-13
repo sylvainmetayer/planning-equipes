@@ -1,0 +1,40 @@
+<mat-card class="page-card" appearance="outlined">
+  <mat-card-header>
+    <mat-card-title i18n="@@imports.scenario.titre">Un fichier scénario</mat-card-title>
+    <mat-card-subtitle i18n="@@imports.scenario.colonnes">
+      Un fichier YAML au format des scénarios : il porte l'édition entière — typologies, emplacements,
+      stands, animateurs, créneaux, ajustements.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@imports.scenario.aide">
+      Les cinq autres onglets complètent l'édition ; un scénario la remplace. La confirmation rappelle
+      l'édition visée — celle que désigne le fichier — et un instantané du plan est pris avant d'écrire.
+    </p>
+    <div class="card-actions">
+      <button
+        matButton="filled"
+        class="danger-action"
+        [disabled]="editionLocked() || importing()"
+        (click)="pickScenarioFile()"
+      >
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@dataSetup.importScenarioFile">Importer un fichier</span>
+      </button>
+      <a matButton routerLink="/debug">
+        <mat-icon>science</mat-icon>
+        <span i18n="@@imports.scenario.versValidateur"
+          >Valider un fichier sans l'importer (Débogage)</span
+        >
+      </a>
+    </div>
+    <input
+      #scenarioFileInput
+      type="file"
+      accept=".yaml,.yml,application/x-yaml,text/yaml,text/plain"
+      hidden
+      (change)="onScenarioFileSelected($event)"
+    />
+    <app-output-panel [text]="output()" />
+  </mat-card-content>
+</mat-card>

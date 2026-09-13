@@ -28,6 +28,10 @@
         <mat-icon>grid_view</mat-icon>
         <ng-container i18n="@@imports.onglet.grille">Grille des stands</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="scenario">
+        <mat-icon>description</mat-icon>
+        <ng-container i18n="@@imports.onglet.scenario">Scénario</ng-container>
+      </mat-button-toggle>
     </mat-button-toggle-group>
   </mat-card-content>
 </mat-card>
@@ -44,6 +48,9 @@
   }
   @case ('grille-stands') {
     <app-import-grille-stands-page [entete]="false" />
+  }
+  @case ('scenario') {
+    <app-import-scenario-card />
   }
   @default {
     <app-import-referentiel cible="TYPOLOGIES" [colonnes]="colonnesTypologies" [aide]="aideTypologies" />

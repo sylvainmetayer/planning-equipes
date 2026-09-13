@@ -19,20 +19,15 @@ import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
-import { PlanningApi } from '../../core/api/planning-api';
 import { BRANDING, slugMarque } from '../../core/branding';
-import { EditionStore } from '../../core/edition.store';
-import { EtatSauvegarde, ImportScenarioResult } from '../../core/models';
+import { EtatSauvegarde } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
-import { PlanningResolutionStore } from '../../core/planning-resolution.store';
-import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ScenarioImportService } from '../../core/scenario-import.service';
-import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
@@ -40,7 +35,7 @@ import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
 import { ParametresLegauxCard } from './parametres-legaux';
 import { ParametresNotificationsPanel } from './parametres-notifications';
-import { errorMessage, errorPrefix } from '../../core/error-message';
+import { errorPrefix } from '../../core/error-message';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -53,18 +48,18 @@ export const REPLACE_KEYWORD = 'REMPLACER';
  * The single settings page, split in two sections mirroring the data model:
  *
  * - "Paramètres de l'édition" — everything scoped by the `X-Edition-Id`
- *   partition: the legal parameters, scenario imports (they write the current
- *   edition only, and the confirmation names it), the ninja typologie, plus
- *   pointers to the parameters that stay on their own screen (solver
- *   duration, foire aux échanges, constraint toggles, découpage settings next
- *   to the generation that reads them).
+ *   partition: the legal parameters, the ninja typologie, plus pointers to
+ *   what stays on its own screen (solver duration, foire aux échanges,
+ *   constraint toggles, découpage settings next to the generation that reads
+ *   them, and the three scenario operations — load a bundled one on Débogage,
+ *   import a file under Imports, write one out under Exports).
  * - "Paramètres globaux" — the SQL dump import/export and the automatic
  *   backup: both take the WHOLE database, every edition included, so neither
  *   belongs to any edition.
  *
- * Also runs the solver-free feasibility check on entry and after every import,
- * as the former Données page did: a structurally impossible planning is called
- * out here rather than after a fruitless solve.
+ * Also runs the solver-free feasibility check on entry, as the former Données
+ * page did: a structurally impossible planning is called out here rather than
+ * after a fruitless solve.
  */
 @Component({
   selector: 'app-parametres-page',
@@ -96,14 +91,7 @@ export class ParametresPage {
   private readonly nomFichierDump = `${slugMarque(inject(BRANDING).productName)}.sql`;
 
   protected readonly output = signal('');
-  protected readonly sampleLoading = signal(false);
-  protected readonly exporting = signal(false);
   protected readonly transferBusy = signal(false);
-  protected readonly scenarioFileImporting = signal(false);
-
-  /** Scenario files offered by the backend, and the one currently selected. */
-  protected readonly scenarios = signal<string[]>([]);
-  protected readonly selectedScenario = signal<string | null>(null);
 
   /** Admin address configured server-side, `null` when mail is disabled entirely. */
   protected readonly adminEmail = signal<string | null>(null);
@@ -113,34 +101,25 @@ export class ParametresPage {
   /** The server-side solver lock: also covers a solve/analysis from another browser. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
   /**
-   * Edition-scoped writes (scenario import, legal parameters, ninja
-   * typologie) follow the per-edition lock: a solve running on ANOTHER
-   * edition leaves them available.
+   * Edition-scoped writes (legal parameters, ninja typologie) follow the
+   * per-edition lock: a solve running on ANOTHER edition leaves them
+   * available.
    */
   protected readonly editionLocked = computed(() => this.jobs.editingLocked());
   /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
   private readonly sqlInput = viewChild.required<ElementRef<HTMLInputElement>>('sqlInput');
-  private readonly scenarioFileInput =
-    viewChild.required<ElementRef<HTMLInputElement>>('scenarioFileInput');
   /** Pre-solve diagnostic shown by the banner at the top of the page. */
   protected readonly problemes = inject(ProblemesStore);
-  protected readonly editions = inject(EditionStore);
   protected readonly store = inject(ReferenceDataStore);
 
   private readonly adminApi = inject(AdminApi);
-  private readonly planningApi = inject(PlanningApi);
+  // Replaying a dump replaces the same data a scenario import does: the stores
+  // to reload afterwards are the import's own set, not a second list.
   private readonly scenarioImport = inject(ScenarioImportService);
   private readonly crud = inject(ReferenceCrudService);
-  private readonly planningState = inject(PlanningStateService);
-  private readonly referenceData = inject(ReferenceDataStore);
-  // Seeding or replacing the database moves both the resolution stamp and the
-  // "data edited since the last solve" hint: refresh the store the toolbar
-  // warnings read, or they keep showing the previous dataset.
-  private readonly resolution = inject(PlanningResolutionStore);
   private readonly recopie = inject(ConfirmationRecopie);
-  private readonly snapshots = inject(PlanSnapshotStore);
   private readonly instantane = inject(InstantaneAvantAction);
 
   private readonly jobs = inject(SolverJobService);
@@ -148,7 +127,6 @@ export class ParametresPage {
   private readonly notifications = inject(NotificationService);
 
   constructor() {
-    void this.loadScenarioList();
     void this.problemes.reloadFeasibility();
     void this.crud.reload();
     void this.chargerReglagesNotification();
@@ -188,130 +166,6 @@ export class ParametresPage {
     } finally {
       this.mailFinResolutionBusy.set(false);
     }
-  }
-
-  /* ----------------------------- Scenario import ---------------------------- */
-
-  // Fills the dropdown with the scenario files exposed by the backend. Selects
-  // the first one so the "Load" button always has a target.
-  private async loadScenarioList(): Promise<void> {
-    try {
-      const names = await this.planningApi.scenarioNames();
-      this.scenarios.set(names);
-      if (names.length > 0 && !this.selectedScenario()) {
-        this.selectedScenario.set(names[0]);
-      }
-    } catch (error) {
-      this.output.set(
-        $localize`:@@dataSetup.scenarioListError:Erreur lors du chargement de la liste des scénarios : ${errorMessage(error)}:message:`,
-      );
-    }
-  }
-
-  protected onSelectScenario(name: string): void {
-    this.selectedScenario.set(name);
-  }
-
-  protected async onLoadSample(): Promise<void> {
-    if (this.solverActionBlocked()) {
-      return;
-    }
-    const name = this.selectedScenario();
-    this.sampleLoading.set(true);
-    this.output.set(
-      name
-        ? $localize`:@@dataSetup.loadingScenario:Chargement du scénario « ${name}:name: »...`
-        : $localize`:@@dataSetup.loadingSample:Chargement du planning d'exemple...`,
-    );
-    try {
-      const outcome = await this.scenarioImport.importer({ kind: 'name', name });
-      if (outcome.status === 'cancelled') {
-        this.output.set('');
-        return;
-      }
-      this.output.set(
-        this.recapImport(
-          outcome.result,
-          $localize`:@@dataSetup.sampleLoaded:Planning d'exemple chargé : les données de référence sont peuplées.`,
-        ),
-      );
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.sampleLoading.set(false);
-    }
-  }
-
-  // Read-only, so it is not gated by solverActionBlocked() like the imports:
-  // it never touches the dataset, only reads it.
-  protected async onExportScenario(): Promise<void> {
-    this.exporting.set(true);
-    this.output.set(
-      $localize`:@@dataSetup.exportingScenario:Export des données actuelles en fichier scénario...`,
-    );
-    try {
-      const result = await this.planningApi.exportScenario();
-      this.output.set(result);
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.exporting.set(false);
-    }
-  }
-
-  protected pickScenarioFile(): void {
-    this.scenarioFileInput().nativeElement.click();
-  }
-
-  protected async onScenarioFileSelected(event: Event): Promise<void> {
-    const file = takeFile(event);
-    if (!file) {
-      return;
-    }
-    const content = await file.text();
-    this.scenarioFileImporting.set(true);
-    this.output.set(
-      $localize`:@@dataSetup.importingScenarioFile:Import de ${file.name}:fileName: en cours...`,
-    );
-    try {
-      const outcome = await this.scenarioImport.importer({
-        kind: 'file',
-        fileName: file.name,
-        content,
-      });
-      if (outcome.status === 'cancelled') {
-        this.output.set('');
-        return;
-      }
-      this.output.set(
-        this.recapImport(
-          outcome.result,
-          $localize`:@@dataSetup.scenarioFileImported:Scénario ${file.name}:fileName: importé : les données de référence sont peuplées.`,
-        ),
-      );
-    } catch (error) {
-      this.output.set(errorPrefix(error));
-    } finally {
-      this.scenarioFileImporting.set(false);
-    }
-  }
-
-  /** Output-panel recap; the cross-edition case additionally raises the {@link proposerBascule} dialog. */
-  private recapImport(result: ImportScenarioResult | null, fallback: string): string {
-    if (!result?.editionId) {
-      return fallback;
-    }
-    const nom = result.editionNom ?? result.editionId;
-    const destination = result.editionCreee
-      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
-      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
-    const courante = this.editions.courant();
-    const ailleurs =
-      courante && courante.id !== result.editionId
-        ? ' ' +
-          $localize`:@@parametres.recap.basculer:Vous consultez « ${courante.nom}:courante: » : basculez d'édition (bandeau du haut) pour voir les données importées.`
-        : '';
-    return destination + ailleurs;
   }
 
   /* ------------------------------ Ninja typologie ---------------------------- */
@@ -458,28 +312,6 @@ export class ParametresPage {
       this.transferBusy.set(false);
     }
   }
-
-  // Guards against a race: the buttons are disabled while a solver job runs
-  // on this edition, but a job could have started between the last render and
-  // the click.
-  private solverActionBlocked(): boolean {
-    if (this.editionLocked()) {
-      const description = this.jobs.activeJobDescription();
-      this.output.set(
-        $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`,
-      );
-      return true;
-    }
-    return false;
-  }
-
-  // A seed or bulk import invalidates whatever planning was displayed, and
-  // moves both the resolution stamp and the "data edited since the last
-  // solve" stamp the toolbar warnings are computed from. A scenario may also
-  // have pinned its own solver duration (see import-scenario), so that is
-  // refreshed too — harmless when unchanged.
-  // The feasibility diagnostic is recomputed from the new dataset for the
-  // same reason: it is about to drive the decision to launch a solve.
 }
 
 // Reads the picked file and clears the input so the same file can be picked twice.

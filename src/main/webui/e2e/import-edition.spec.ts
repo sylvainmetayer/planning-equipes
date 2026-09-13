@@ -68,7 +68,7 @@ test("l'import d'un fichier à section edition annonce la cible, importe ailleur
   };
 
   const page = await pageAdmin(browser, admin);
-  await page.goto('/parametres');
+  await page.goto('/imports?onglet=scenario');
   await expect(page.getByRole('button', { name: 'Importer un fichier' })).toBeEnabled();
 
   const fileChooserPromise = page.waitForEvent('filechooser');

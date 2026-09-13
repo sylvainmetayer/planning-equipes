@@ -13,6 +13,7 @@ import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ImportAnimateursPage } from '../import-animateurs/import-animateurs-page';
 import { ImportGrilleStandsPage } from '../import-grille-stands/import-grille-stands-page';
 import { ImportReferentielCard } from './import-referentiel-card';
+import { ImportScenarioCard } from './import-scenario-card';
 import { OngletImports, readOngletImports } from './imports';
 
 /**
@@ -20,9 +21,10 @@ import { OngletImports, readOngletImports } from './imports';
  * instead of one entry per file.
  *
  * <p>The tabs follow the order the data is entered — typologies, emplacements,
- * stands, animateurs — and end with the stand matrix, which is not a
- * referential import at all: it writes opening hours onto stands that already
- * exist, and only makes sense once the three before it are done.</p>
+ * stands, animateurs — then the stand matrix, which is not a referential import
+ * at all: it writes opening hours onto stands that already exist, and only
+ * makes sense once the three before it are done. The scenario file closes the
+ * list, apart from the rest: it does not fill an edition, it replaces one.</p>
  */
 @Component({
   selector: 'app-imports-page',
@@ -33,6 +35,7 @@ import { OngletImports, readOngletImports } from './imports';
     ImportReferentielCard,
     ImportAnimateursPage,
     ImportGrilleStandsPage,
+    ImportScenarioCard,
   ],
   templateUrl: './imports-page.html',
   styleUrl: '../../../styles/import-animateurs.css',

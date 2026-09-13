@@ -16,6 +16,8 @@ import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { PlanningApi } from '../../core/api/planning-api';
+import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
@@ -62,7 +64,21 @@ describe('DebugPage — date du jour', () => {
         { provide: ProblemesStore, useValue: { reloadFeasibility: vi.fn(async () => undefined) } },
         {
           provide: SolverJobService,
-          useValue: { solverBusy: () => false, activeJobDescription: () => '' },
+          useValue: {
+            solverBusy: () => false,
+            editingLocked: () => false,
+            activeJobDescription: () => '',
+          },
+        },
+        // The page hosts the bundled-scenario picker, which lists on entry and
+        // imports on click; neither is what this file is about.
+        { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
+        {
+          provide: ScenarioImportService,
+          useValue: {
+            importer: vi.fn(async () => ({ status: 'cancelled', result: null })),
+            recapitulatif: vi.fn(() => ''),
+          },
         },
         {
           provide: ActivatedRoute,

@@ -212,10 +212,31 @@ Quand il échoue sur un nom légitime : le renommer, ou l'ajouter à
 `EXCEPTIONS_ASSUMEES` **avec sa raison**. Un troisième test vérifie que chaque
 exception correspond encore à du code réel.
 
+### Où vivent les scénarios
+
+Tous les scénarios — les fixtures écrites à la main, les trente barreaux de la
+gamme, les quinze cas extrêmes — sont **à plat** dans le seul dossier
+`src/main/resources/scenarios/`. Pas de sous-dossier, et pas de second dossier
+`scenarios/` ailleurs sur le classpath : `ScenarioYamlReader.scenarioPath`
+refuse un nom qui porte un composant de chemin, et `getResource("scenarios")`
+ne rend que la **première** occurrence du classpath, jamais leur union. Un
+fichier rangé autrement est un fichier que personne ne peut charger depuis le
+sélecteur de la page Débogage.
+
+Côté tests, `ScenariosLivres` est la seule lecture de ce dossier :
+
+- `all()` — tout, pour les contrôles qui valent pour chaque fichier (validateur,
+  binder) ;
+- `references()` — les fixtures écrites à la main seules, pour les tests
+  différentiels : ils figent une forme canonique par fichier, et une référence
+  engendrée pour un fichier engendré ne serait lue par personne (celle
+  d'`extreme-09` pèserait à elle seule plus que tout le corpus actuel) ;
+- `noms(prefixe)` — la gamme ou les extrêmes, pour leurs contrôles de catalogue.
+
 ### La gamme de scénarios
 
-`src/test/resources/scenarios/gamme/` porte trente scénarios de test, rangés par
-taille : un jour, deux stands et trois animateurs au barreau 1, un mois, 150
+Les trente fichiers `gamme-…` de `src/main/resources/scenarios/` sont des
+scénarios de test rangés par taille : un jour, deux stands et trois animateurs au barreau 1, un mois, 150
 stands et 320 animateurs au barreau 25. Chaque barreau exerce une partie de ce
 qu'un fichier sait dire — rotation du midi, stands premium, mineurs et jour
 férié, contraintes ad hoc, horaires récurrents sous toutes leurs portées,
@@ -257,8 +278,8 @@ fichier **ou** l'assertion, en disant pourquoi, jamais les deux en silence.
 
 ### Les scénarios extrêmes
 
-`src/test/resources/scenarios/extremes/` pousse chaque dimension au-delà de ce
-qu'une édition réelle demande, pour savoir où l'application cède avant qu'une
+Les quinze fichiers `extreme-…` du même dossier poussent chaque dimension
+au-delà de ce qu'une édition réelle demande, pour savoir où l'application cède avant qu'une
 édition ne le découvre. Même harnais que la gamme, mêmes invariants relus sur le
 plan, même contrôle de catalogue (`ScenarioExtremeCatalogTest`, suite par
 défaut : chaque fichier valide, joué par un test, et un nom qui dit sa taille).

@@ -1,0 +1,98 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau infaisable 3 : le mur des six jours.
+# Une semaine civile entière, du lundi au dimanche, trois places par jour et trois
+# animateurs. Chaque jour pris isolément est couvert, et l'analyse de faisabilité
+# — agrégée par vacation — répond « réalisable ». Mais personne ne travaille
+# sept jours dans la semaine : il manque trois personnes-jours.
+
+festival:
+  dateDebut: 2027-09-06
+
+creneaux:
+  - id: J1-APREM
+    jour: 1
+    date: 2027-09-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-09-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-09-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2027-09-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J5-APREM
+    jour: 5
+    date: 2027-09-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2027-09-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2027-09-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-1
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-2
+    nom: "Stand 2"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-3
+    nom: "Stand 3"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A121
+    prenom: "Chloé"
+    nom: Martinez
+    dateNaissance: 1989-03-01
+    manager: false
+    email: "animateur121@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A122
+    prenom: Louis
+    nom: Muller
+    dateNaissance: 1989-03-02
+    manager: false
+    email: "animateur122@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A123
+    prenom: Manon
+    nom: Clement
+    dateNaissance: 1989-03-03
+    manager: false
+    email: "animateur123@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []

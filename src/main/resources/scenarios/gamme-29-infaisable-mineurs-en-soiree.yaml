@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau infaisable 4 : une soirée que seuls des mineurs pourraient tenir.
+# Un seul majeur et trois mineurs pour une soirée de deux places (20 h 30-23 h) :
+# la nuit légale commence à 22 h pour les 16-17 ans et à 20 h avant 16 ans.
+# L'après-midi, en revanche, se tient : le majeur encadre un mineur.
+
+festival:
+  dateDebut: 2027-09-10
+
+creneaux:
+  - id: J1-APREM
+    jour: 1
+    date: 2027-09-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J1-SOIREE
+    jour: 1
+    date: 2027-09-10
+    heureDebut: "20:30"
+    heureFin: "23:00"
+
+stands:
+  - id: SOIREE-JEUX
+    nom: "Soirée jeux"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+
+animateurs:
+  - id: A131
+    prenom: Alice
+    nom: Dupont
+    dateNaissance: 1993-08-08
+    manager: false
+    email: "animateur131@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A132
+    prenom: Adam
+    nom: Louis
+    dateNaissance: 2010-02-01
+    manager: false
+    email: "animateur132@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A133
+    prenom: Lina
+    nom: Chauvin
+    dateNaissance: 2011-04-01
+    manager: false
+    email: "animateur133@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A134
+    prenom: Paul
+    nom: Tessier
+    dateNaissance: 2012-06-01
+    manager: false
+    email: "animateur134@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []

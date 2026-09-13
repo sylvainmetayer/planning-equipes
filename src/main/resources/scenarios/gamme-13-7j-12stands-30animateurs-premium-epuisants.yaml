@@ -1,0 +1,732 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau 13 : stands premium et stands épuisants, un dosage qui les arbitre.
+# Quatre stands premium (continuité d'équipe, pas de débutant), trois stands
+# épuisants (pas d'enchaînement de deux), cinq stands ordinaires. Seize
+# animateurs ne sont que débutants sur les typologies premium, quatorze y sont
+# autonomes ou référents. Le fichier porte le dosage sous lequel il a été vérifié.
+
+festival:
+  dateDebut: 2027-08-23
+
+contraintes:
+  poids:
+    experienceRequisePourStandsPremium: 3
+    eviterRoulementStandsPremium: 2
+    eviterEnchainementStandsEpuisants: 2
+    appreciationIncompatible: 3
+    maxJoursConsecutifsTravailles: 5
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-08-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-08-23
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-08-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-08-24
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-08-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-08-25
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J4-MATIN
+    jour: 4
+    date: 2027-08-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2027-08-26
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J5-MATIN
+    jour: 5
+    date: 2027-08-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J5-APREM
+    jour: 5
+    date: 2027-08-27
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J6-MATIN
+    jour: 6
+    date: 2027-08-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2027-08-28
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J7-MATIN
+    jour: 7
+    date: 2027-08-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2027-08-29
+    heureDebut: "14:00"
+    heureFin: "18:30"
+
+stands:
+  - id: ESCAPE
+    nom: Escape
+    typologiesProposees:
+      - ESCAPE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    premium: true
+  - id: JEU_DE_ROLE
+    nom: "Jeu De Role"
+    typologiesProposees:
+      - JEU_DE_ROLE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    premium: true
+  - id: SIMULATION
+    nom: Simulation
+    typologiesProposees:
+      - SIMULATION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    premium: true
+  - id: ENIGMES
+    nom: Enigmes
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    premium: true
+  - id: MOTRICITE
+    nom: Motricite
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    niveauEffort: EPUISANT
+  - id: GONFLABLE
+    nom: Gonflable
+    typologiesProposees:
+      - GONFLABLE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    niveauEffort: EPUISANT
+  - id: GRAND_JEU
+    nom: "Grand Jeu"
+    typologiesProposees:
+      - GRAND_JEU
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    niveauEffort: EPUISANT
+  - id: JEUX_DE_SOCIETE
+    nom: "Jeux De Societe"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: CONSTRUCTION
+    nom: Construction
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: CREATIF
+    nom: Creatif
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: CONTES
+    nom: Contes
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: ADRESSE
+    nom: Adresse
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A261
+    prenom: Julia
+    nom: Barbier
+    dateNaissance: 1972-01-07
+    manager: false
+    email: "animateur261@example.org"
+    competences:
+      ESCAPE: REFERENT
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ESCAPE
+  - id: A262
+    prenom: Liam
+    nom: Fernandez
+    dateNaissance: 1973-02-07
+    manager: false
+    email: "animateur262@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: REFERENT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEU_DE_ROLE
+  - id: A263
+    prenom: Iris
+    nom: Giraud
+    dateNaissance: 1974-03-07
+    manager: false
+    email: "animateur263@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: REFERENT
+      ENIGMES: AUTONOME
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - SIMULATION
+  - id: A264
+    prenom: Oscar
+    nom: Gaillard
+    dateNaissance: 1975-04-07
+    manager: false
+    email: "animateur264@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: REFERENT
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ENIGMES
+  - id: A265
+    prenom: Clara
+    nom: Riviere
+    dateNaissance: 1976-05-07
+    manager: false
+    email: "animateur265@example.org"
+    competences:
+      ESCAPE: REFERENT
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_DE_SOCIETE
+  - id: A266
+    prenom: Nino
+    nom: Huet
+    dateNaissance: 1977-06-07
+    manager: false
+    email: "animateur266@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: REFERENT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONSTRUCTION
+  - id: A267
+    prenom: Margaux
+    nom: Baron
+    dateNaissance: 1978-07-07
+    manager: false
+    email: "animateur267@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: REFERENT
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CREATIF
+  - id: A268
+    prenom: Robin
+    nom: Roussel
+    dateNaissance: 1979-08-07
+    manager: false
+    email: "animateur268@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: REFERENT
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONTES
+  - id: A269
+    prenom: Elsa
+    nom: Dupuis
+    dateNaissance: 1980-09-07
+    manager: false
+    email: "animateur269@example.org"
+    competences:
+      ESCAPE: REFERENT
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ADRESSE
+  - id: A270
+    prenom: Simon
+    nom: Faure
+    dateNaissance: 1981-10-07
+    manager: false
+    email: "animateur270@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: REFERENT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ESCAPE
+  - id: A271
+    prenom: Juliette
+    nom: Nicolas
+    dateNaissance: 1982-11-07
+    manager: false
+    email: "animateur271@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: REFERENT
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEU_DE_ROLE
+  - id: A272
+    prenom: Martin
+    nom: Lopez
+    dateNaissance: 1983-12-07
+    manager: false
+    email: "animateur272@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: REFERENT
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - SIMULATION
+  - id: A273
+    prenom: Capucine
+    nom: Nguyen
+    dateNaissance: 1984-01-07
+    manager: false
+    email: "animateur273@example.org"
+    competences:
+      ESCAPE: REFERENT
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ENIGMES
+  - id: A274
+    prenom: Axel
+    nom: Roger
+    dateNaissance: 1985-02-07
+    manager: false
+    email: "animateur274@example.org"
+    competences:
+      ESCAPE: AUTONOME
+      JEU_DE_ROLE: AUTONOME
+      SIMULATION: AUTONOME
+      ENIGMES: REFERENT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_DE_SOCIETE
+  - id: A275
+    prenom: "Salomé"
+    nom: Jean
+    dateNaissance: 1986-03-07
+    manager: false
+    email: "animateur275@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONSTRUCTION
+  - id: A276
+    prenom: Valentin
+    nom: Brun
+    dateNaissance: 1987-04-07
+    manager: false
+    email: "animateur276@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CREATIF
+  - id: A277
+    prenom: Romane
+    nom: Pierre
+    dateNaissance: 1988-05-07
+    manager: false
+    email: "animateur277@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONTES
+  - id: A278
+    prenom: Mathis
+    nom: Leclerc
+    dateNaissance: 1989-06-07
+    manager: false
+    email: "animateur278@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ADRESSE
+  - id: A279
+    prenom: "Éloïse"
+    nom: Philippe
+    dateNaissance: 1990-07-07
+    manager: false
+    email: "animateur279@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ESCAPE
+  - id: A280
+    prenom: Baptiste
+    nom: Moreau
+    dateNaissance: 1991-08-07
+    manager: false
+    email: "animateur280@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEU_DE_ROLE
+  - id: A281
+    prenom: "Célia"
+    nom: Vasseur
+    dateNaissance: 1992-09-07
+    manager: false
+    email: "animateur281@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - SIMULATION
+  - id: A282
+    prenom: "Noé"
+    nom: Charpentier
+    dateNaissance: 1993-10-07
+    manager: false
+    email: "animateur282@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ENIGMES
+  - id: A283
+    prenom: "Maëlle"
+    nom: Lemaire
+    dateNaissance: 1994-11-07
+    manager: false
+    email: "animateur283@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_DE_SOCIETE
+  - id: A284
+    prenom: Eliott
+    nom: Lambert
+    dateNaissance: 1995-12-07
+    manager: false
+    email: "animateur284@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONSTRUCTION
+  - id: A285
+    prenom: Apolline
+    nom: Rousseau
+    dateNaissance: 1996-01-07
+    manager: false
+    email: "animateur285@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CREATIF
+  - id: A286
+    prenom: "Timéo"
+    nom: Perrin
+    dateNaissance: 1997-02-07
+    manager: false
+    email: "animateur286@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONTES
+  - id: A287
+    prenom: Charlotte
+    nom: Fontaine
+    dateNaissance: 1998-03-07
+    manager: false
+    email: "animateur287@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ADRESSE
+  - id: A288
+    prenom: Antoine
+    nom: Boyer
+    dateNaissance: 1999-04-07
+    manager: false
+    email: "animateur288@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      MOTRICITE: AUTONOME
+      GONFLABLE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ESCAPE
+  - id: A289
+    prenom: Lise
+    nom: Roche
+    dateNaissance: 2000-05-07
+    manager: false
+    email: "animateur289@example.org"
+    competences:
+      ESCAPE: DEBUTANT
+      SIMULATION: DEBUTANT
+      MOTRICITE: AUTONOME
+      GRAND_JEU: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEU_DE_ROLE
+  - id: A290
+    prenom: "Aurélien"
+    nom: Perez
+    dateNaissance: 2001-06-07
+    manager: false
+    email: "animateur290@example.org"
+    competences:
+      JEU_DE_ROLE: DEBUTANT
+      ENIGMES: DEBUTANT
+      GONFLABLE: AUTONOME
+      GRAND_JEU: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - SIMULATION

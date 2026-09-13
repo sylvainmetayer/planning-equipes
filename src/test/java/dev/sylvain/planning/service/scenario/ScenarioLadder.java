@@ -45,7 +45,8 @@ import java.util.stream.Collectors;
 import org.eclipse.microprofile.config.ConfigProvider;
 
 /**
- * The scenario ladder under {@code src/test/resources/scenarios/gamme/}: files
+ * The scenario ladder, the {@code gamme-…} files of
+ * {@code src/main/resources/scenarios/}: files
  * that grow from one day, two stands and three animateurs to a month-long
  * event, each one exercising a part of what a scenario can say — day
  * templates, recurring openings, minors, ad hoc rules, the découpage, switched
@@ -69,15 +70,19 @@ import org.eclipse.microprofile.config.ConfigProvider;
  */
 final class ScenarioLadder {
 
-    static final String FOLDER = "scenarios/gamme/";
+    /**
+     * The one classpath folder every scenario lives in, ladder and extremes
+     * included since they became selectable from the interface: the selector
+     * reads that folder flat, and {@code ScenarioYamlReader.scenarioPath}
+     * refuses a name carrying a path component.
+     */
+    static final String FOLDER = "scenarios/";
 
-    /** The scenarios that probe the limits rather than the features — see {@code ScenarioExtreme*Test}. */
-    static final String EXTREMES = "scenarios/extremes/";
+    /** Prefix of the files that probe the limits rather than the features — see {@code ScenarioExtreme*Test}. */
+    static final String EXTREME_PREFIX = "extreme-";
 
-    /** Where a scenario of either set lives: the extreme ones are named {@code extreme-…}. */
-    static String folderOf(String name) {
-        return name.startsWith("extreme-") ? EXTREMES : FOLDER;
-    }
+    /** Prefix of the ladder's own files. */
+    static final String GAMME_PREFIX = "gamme-";
 
     private ScenarioLadder() {}
 
@@ -111,9 +116,9 @@ final class ScenarioLadder {
 
     static String yaml(String name) {
         try (InputStream in =
-                ScenarioLadder.class.getClassLoader().getResourceAsStream(folderOf(name) + name + ".yaml")) {
+                ScenarioLadder.class.getClassLoader().getResourceAsStream(FOLDER + name + ".yaml")) {
             if (in == null) {
-                throw new IllegalArgumentException("No scenario named " + name + " under " + folderOf(name));
+                throw new IllegalArgumentException("No scenario named " + name + " under " + FOLDER);
             }
             return new String(in.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {

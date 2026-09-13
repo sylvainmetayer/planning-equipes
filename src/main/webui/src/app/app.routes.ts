@@ -156,8 +156,9 @@ const adminRoutes: Routes = [
     title: () => $localize`:@@route.editions:Éditions`,
     loadComponent: () => import('./pages/editions/editions-page').then((m) => m.EditionsPage),
   },
-  // The solver was the home page until #485; both old addresses still land on it.
-  { path: 'exports', redirectTo: 'solveur' },
+  // The solver was the home page until #485, under `/exports` and `/solver`.
+  // `/exports` is now the export screen, which is what the word says; only
+  // `/solver` still lands on the solver.
   { path: 'solver', redirectTo: 'solveur' },
   // Pre-Paramètres URLs (bookmarks, aide links): the pages were merged there.
   { path: 'data-transfer', redirectTo: 'parametres' },
@@ -199,10 +200,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/imports/imports-page').then((m) => m.ImportsPage),
   },
   {
-    path: 'export-csv',
-    title: () => $localize`:@@route.exportCsv:Export CSV`,
-    loadComponent: () => import('./pages/export-csv/export-csv-page').then((m) => m.ExportCsvPage),
+    path: 'exports',
+    title: () => $localize`:@@route.exports:Exports`,
+    loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage),
   },
+  // The CSV archive was the whole screen until the scenario export joined it.
+  { path: 'export-csv', redirectTo: 'exports' },
   {
     path: 'typologies',
     title: () => $localize`:@@route.typologies:Typologies`,

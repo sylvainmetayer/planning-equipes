@@ -1,9 +1,12 @@
 // Two halves. The ninja picker logic (component created, never rendered), then
-// the rendered page — this screen holds the two most destructive buttons of the
-// application (replay a SQL dump, import a scenario over the current edition)
-// and the one switch whose whole point is that it must *not* be usable when the
-// server has no admin address: a toggle that silently does nothing is worse
-// than no toggle.
+// the rendered page — this screen holds the most destructive button of the
+// application (replay a SQL dump, every edition included) and the one switch
+// whose whole point is that it must *not* be usable when the server has no
+// admin address: a toggle that silently does nothing is worse than no toggle.
+//
+// The scenario operations left this screen: they are covered by
+// `scenario-preenregistre.spec.ts` (Débogage), `import-scenario-card.spec.ts`
+// (Imports) and `exports-page.spec.ts`.
 
 import { provideZonelessChangeDetection, signal, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -11,7 +14,6 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { AdminApi } from '../../core/api/admin-api';
-import { PlanningApi } from '../../core/api/planning-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
@@ -68,8 +70,8 @@ describe('ParametresPage ninja picker', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        // The constructor loads the scenario list, the legal card its
-        // parameters; both answers are irrelevant to the picker under test.
+        // The legal card loads its parameters on entry; the answer is
+        // irrelevant to the picker under test.
         { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
         {
           provide: AdminApi,
@@ -78,7 +80,6 @@ describe('ParametresPage ninja picker', () => {
             backups: vi.fn(async () => null),
           },
         },
-        { provide: PlanningApi, useValue: { scenarioNames: vi.fn(async () => []) } },
         { provide: ConstraintsApi, useValue: { legalParameters: vi.fn(async () => LEGAUX) } },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: EditionStore, useValue: { courant: () => null } },
@@ -193,10 +194,6 @@ describe('ParametresPage rendering', () => {
     exportDatabase: ReturnType<typeof vi.fn>;
     importDatabase: ReturnType<typeof vi.fn>;
   };
-  let planningApi: {
-    scenarioNames: ReturnType<typeof vi.fn>;
-    exportScenario: ReturnType<typeof vi.fn>;
-  };
   let constraintsApi: { legalParameters: ReturnType<typeof vi.fn> };
   let recopie: { demander: ReturnType<typeof vi.fn> };
   let instantane: { proposer: ReturnType<typeof vi.fn> };
@@ -244,10 +241,6 @@ describe('ParametresPage rendering', () => {
     constraintsApi = { legalParameters: vi.fn(async () => LEGAUX) };
     recopie = { demander: vi.fn(async () => true) };
     instantane = { proposer: vi.fn(async () => undefined) };
-    planningApi = {
-      scenarioNames: vi.fn(async () => ['festival.yaml', 'festival-canicule.yaml']),
-      exportScenario: vi.fn(async () => 'Téléchargement démarré.'),
-    };
     api = { get: vi.fn(async () => []) };
     adminApi = {
       mailConfig: vi.fn(async () => ({
@@ -268,7 +261,6 @@ describe('ParametresPage rendering', () => {
         provideRouter([]),
         { provide: ApiService, useValue: api },
         { provide: AdminApi, useValue: adminApi },
-        { provide: PlanningApi, useValue: planningApi },
         { provide: ConstraintsApi, useValue: constraintsApi },
         {
           provide: ReferenceCrudService,
@@ -360,23 +352,21 @@ describe('ParametresPage rendering', () => {
     return created;
   }
 
-  it('lists the scenarios and preselects one, so the load button always has a target', async () => {
-    await rendre();
-
-    expect(
-      racine().querySelector('.scenario-select .mat-mdc-select-value')!.textContent!.trim(),
-    ).toBe('festival.yaml');
-    expect(bouton('Charger le scénario sélectionné').disabled).toBe(false);
-  });
-
-  it('locks every destructive action of the edition while a solve runs on it', async () => {
+  it('locks the SQL dump replay while a solve runs', async () => {
     await rendre();
     editingLocked.set(true);
     await fixture.whenStable();
 
-    expect(bouton('Charger le scénario sélectionné').disabled).toBe(true);
-    expect(bouton('Importer un fichier').disabled).toBe(true);
     expect(bouton('Importer un dump SQL').disabled).toBe(true);
+  });
+
+  it('sends the reader to the screens the scenario operations moved to', async () => {
+    await rendre();
+
+    const renvois = text(carte('Sur leur propre écran'));
+    expect(renvois).toContain('page Imports, onglet Scénario');
+    expect(renvois).toContain('page Exports');
+    expect(renvois).toContain('page Débogage');
   });
 
   it('offers the end-of-solve mail when the server has an admin address', async () => {

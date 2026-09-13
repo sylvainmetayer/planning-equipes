@@ -263,6 +263,30 @@ export class ScenarioImportService {
     }
   }
 
+  /**
+   * The line the caller's own panel shows once the import went through. Here
+   * rather than on a page because the two imports now live on two screens —
+   * the pre-recorded scenarios under Débogage, the file upload under Imports —
+   * and a recap that differs between them would describe the same operation
+   * twice, differently.
+   */
+  recapitulatif(result: ImportScenarioResult | null, fallback: string): string {
+    if (!result?.editionId) {
+      return fallback;
+    }
+    const nom = result.editionNom ?? result.editionId;
+    const destination = result.editionCreee
+      ? $localize`:@@parametres.recap.editionCreee:Édition « ${nom}:edition: » créée : les données du scénario y ont été importées.`
+      : $localize`:@@parametres.recap.editionExistante:Données du scénario importées dans l'édition existante « ${nom}:edition: ».`;
+    const courante = this.editions.courant();
+    const ailleurs =
+      courante && courante.id !== result.editionId
+        ? ' ' +
+          $localize`:@@parametres.recap.basculer:Vous consultez « ${courante.nom}:courante: » : basculez d'édition (bandeau du haut) pour voir les données importées.`
+        : '';
+    return destination + ailleurs;
+  }
+
   // Surfaces the scenario's decoupageAuto section, when present: the import
   // replaced the file's amplitudes with the generated vacations in place, so
   // the operator is told without having to open the Créneaux page.

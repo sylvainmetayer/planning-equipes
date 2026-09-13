@@ -1,0 +1,82 @@
+<h1 class="page-title" i18n="@@exports.title">Exports</h1>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@exportCsv.title">Export CSV</h2>
+    <mat-card-subtitle i18n="@@exportCsv.subtitle">
+      Les référentiels de l'édition courante dans une archive ZIP, un fichier par référentiel, dans la forme exacte que les onglets d'import relisent.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@exportCsv.aide">
+      Chaque fichier se réimporte tel quel, ou après correction dans un tableur : un identifiant déjà connu est mis à jour, et une colonne retirée du fichier n'efface rien.
+    </p>
+    @if (chargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <ul class="export-csv-liste">
+      @for (ligne of lignes(); track ligne.cible) {
+        <li>
+          <mat-checkbox [checked]="estChoisi(ligne.cible)" (change)="basculer(ligne.cible, $event.checked)">
+            {{ ligne.libelle }}
+          </mat-checkbox>
+          <span class="export-csv-fichier">{{ ligne.fichier }}</span>
+          <span class="export-csv-total" i18n="@@exportCsv.lignes">{{ ligne.total }} ligne(s)</span>
+        </li>
+      }
+    </ul>
+    @if (choisisVides().length > 0) {
+      <p class="empty-hint" i18n="@@exportCsv.vides">
+        Coché mais vide : l'archive portera un fichier sans aucune ligne, en-tête seul.
+      </p>
+    }
+    <p class="empty-hint" i18n="@@exportCsv.animateurs">
+      Le fichier des animateurs ne se réimporte que dans une édition qui a déjà ses créneaux : sans dates, un jour d'indisponibilité ne serait ni affiché ni conservé, et l'import le refuse.
+    </p>
+    <div class="card-actions">
+      <button matButton="filled" (click)="telecharger()" [disabled]="!peutTelecharger()">
+        <mat-icon>file_download</mat-icon>
+        <span i18n="@@exportCsv.telecharger">Télécharger l'archive ({{ total() }} ligne(s))</span>
+      </button>
+      <a matButton routerLink="/imports">
+        <mat-icon>upload_file</mat-icon>
+        <span i18n="@@exportCsv.versImports">Aller aux imports</span>
+      </a>
+    </div>
+    @if (telechargement()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (message()) {
+      <p class="empty-hint" role="status">{{ message() }}</p>
+    }
+    @if (erreur()) {
+      <p class="field-error" role="alert">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@exports.scenario.title">Export du scénario</h2>
+    <mat-card-subtitle i18n="@@exports.scenario.subtitle">
+      L'édition courante entière dans un seul fichier YAML : référentiels, créneaux, ajustements et paramètres, au format que l'onglet « Scénario » des imports relit.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@exports.scenario.aide">
+      L'aller-retour n'est pas l'identité : les identifiants générés sont réécrits, et l'export ne porte pas de section « edition ». Pour recopier un référentiel fidèlement, prenez l'archive CSV.
+    </p>
+    <div class="card-actions">
+      <button matButton="filled" [disabled]="exportScenarioEnCours()" (click)="exporterScenario()">
+        <mat-icon>file_download</mat-icon>
+        <span i18n="@@dataSetup.exportScenario">Exporter les données actuelles en scénario</span>
+      </button>
+    </div>
+    @if (exportScenarioEnCours()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (messageScenario()) {
+      <p class="empty-hint" role="status">{{ messageScenario() }}</p>
+    }
+  </mat-card-content>
+</mat-card>

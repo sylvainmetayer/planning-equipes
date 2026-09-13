@@ -144,8 +144,8 @@ public class ReferenceDataResource {
      * Same import as {@link #importScenario}, but for a scenario YAML file
      * uploaded from the user's own machine rather than one bundled under
      * {@code src/main/resources/scenarios} — the "Importer un fichier" button
-     * on the Scénarios page, for a file produced by "Exporter les données
-     * actuelles en scénario" (or hand-authored in the same shape). Returns
+     * of the Imports screen's Scénario tab, for a file produced by the Exports
+     * screen (or hand-authored in the same shape). Returns
      * 400 with the parsing/validation error as-is when the file is invalid,
      * instead of importing nothing silently.
      */

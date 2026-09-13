@@ -379,7 +379,8 @@
             </properties>
         </profile>
         <!-- Opt-in: runs only the @Tag("scenario-extreme") tests, the limits of
-             src/test/resources/scenarios/extremes (docs/developpement.md). Heavy:
+             the extreme-… files of src/main/resources/scenarios
+             (docs/developpement.md). Heavy:
              run them one class at a time, in the foreground, with a heap to
              match — ./mvnw test -Pscenario-extreme -DargLine=-Xmx3g. -->
         <profile>

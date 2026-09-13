@@ -59,7 +59,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
     sheet: 'import-compteurs',
   },
   { path: '/imports?onglet=grille-stands', sheet: 'import-compteurs' },
-  { path: '/export-csv', marker: 'Export CSV', sheet: 'export-csv-liste' },
+  { path: '/exports', marker: 'Export CSV', sheet: 'export-csv-liste' },
   { path: '/calendar', marker: 'Calendrier des affectations', sheet: 'calendar-nav' },
   // Same for the day and its four renderings.
   { path: '/journee', marker: 'Journée', sheet: 'journee-toolbar' },
@@ -89,9 +89,10 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
-  { path: '/parametres', marker: 'Paramètres légaux', sheet: 'scenario-select' },
+  { path: '/parametres', marker: 'Paramètres légaux', sheet: 'parametres-renvois' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
-  { path: '/debug', marker: 'Validateur YAML', sheet: 'debug-date-du-jour' },
+  { path: '/imports?onglet=scenario', marker: 'Un fichier scénario' },
+  { path: '/debug', marker: 'Validateur YAML', sheet: 'scenario-select' },
 ];
 
 /** True when a loaded stylesheet has a rule naming `.${classe}` — the route's chunk brought its CSS. */

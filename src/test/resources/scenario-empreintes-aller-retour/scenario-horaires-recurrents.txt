@@ -1,0 +1,33 @@
+.planning.affectationsPubliees = (vide)
+.planning.animateurs[0]  bd8423971037c2ef
+.planning.constraintsDesactivees = (vide)
+.planning.contraintesAdHoc = (vide)
+.planning.dateDebutFestival = 2026-07-08
+.planning.fenetresRepas[0]  c42588e8fd4e1c44
+.planning.fenetresRepas[1]  ab651a6748181af8
+.planning.parametresLegaux[0]  9500fee9c1bb190b
+.planning.parametresQualite[0]  33dd46864ff3cece
+.planning.ponderationsContraintes.constraintWeightMap = (vide)
+.planning.ponderationsScenario = null
+.planning.postes[0]  df6a1b0d4fc44460
+.planning.postes[1]  b6e6b6042468971b
+.planning.postes[2]  21f9e7f33fd5bb05
+.planning.postes[3]  9ee4cd1eabbcdbef
+.planning.postes[4]  c2262e3afc4a1928
+.planning.postes[5]  e0447814aee7c3d4
+.planning.postes[6]  6db7eef56d878dc2
+.planning.postes[7]  6361990f4408e45b
+.planning.postes[8]  a3de08a568553969
+.planning.postes[9]  d5a57f9567d63ca8
+.planning.postes[10]  a80f63ab163e9370
+.planning.score = null
+.planning.verrouillages = (vide)
+.sections.contraintes = null
+.sections.decoupageAuto = false
+.sections.edition = null
+.sections.journeesTypes = null
+.sections.modeGrilleDeclare = null
+.sections.parametresDecoupage = null
+.sections.parametresLegaux = null
+.sections.parametresSolveur = null
+.sections.typologies = (vide)

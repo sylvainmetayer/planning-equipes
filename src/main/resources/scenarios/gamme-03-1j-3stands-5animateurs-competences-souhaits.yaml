@@ -1,0 +1,122 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau 3 : niveaux de compétence, stand premium et souhaits.
+# Trois typologies déclarées avec leur libellé, un stand premium (l'escape game)
+# que les débutants ne devraient pas tenir, et des souhaits qui laissent une
+# affectation parfaite possible : personne hors de ses souhaits, aucun débutant
+# sur le premium. Les deux règles sont pondérées à 3 pour qu'elles l'emportent
+# sur l'équilibrage de charge.
+
+festival:
+  dateDebut: 2027-07-05
+
+contraintes:
+  poids:
+    souhaitsIncompatibles: 3
+    experienceRequisePourStandsPremium: 3
+
+typologies:
+  - id: ENIGMES
+    label: "Énigmes et escape game"
+  - id: JEUX_EN_BOIS
+    label: "Jeux en bois"
+  - id: JEUX_VIDEO
+    label: "Jeux vidéo"
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: ESCAPE
+    nom: "Escape game"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    premium: true
+  - id: JEUX-EN-BOIS
+    nom: "Jeux en bois géants"
+    typologiesProposees:
+      - JEUX_EN_BOIS
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: ARCADE
+    nom: "Borne d'arcade"
+    typologiesProposees:
+      - JEUX_VIDEO
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A008
+    prenom: Louis
+    nom: Dufour
+    dateNaissance: 1991-05-05
+    manager: false
+    email: "animateur008@example.org"
+    competences:
+      ENIGMES: REFERENT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ENIGMES
+  - id: A009
+    prenom: Manon
+    nom: Schmitt
+    dateNaissance: 2004-02-14
+    manager: false
+    email: "animateur009@example.org"
+    competences:
+      ENIGMES: DEBUTANT
+      JEUX_EN_BOIS: REFERENT
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_EN_BOIS
+  - id: A010
+    prenom: Jules
+    nom: Rolland
+    dateNaissance: 1983-09-21
+    manager: false
+    email: "animateur010@example.org"
+    competences:
+      JEUX_VIDEO: REFERENT
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_VIDEO
+      - ENIGMES
+  - id: A011
+    prenom: Emma
+    nom: Renaud
+    dateNaissance: 1999-07-07
+    manager: false
+    email: "animateur011@example.org"
+    competences:
+      JEUX_EN_BOIS: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_EN_BOIS
+  - id: A012
+    prenom: Arthur
+    nom: Fabre
+    dateNaissance: 2002-10-30
+    manager: false
+    email: "animateur012@example.org"
+    competences:
+      ENIGMES: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - JEUX_VIDEO

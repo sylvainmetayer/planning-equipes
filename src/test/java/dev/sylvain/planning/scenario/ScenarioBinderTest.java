@@ -4,11 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
+import dev.sylvain.planning.service.scenario.ScenariosLivres;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -19,7 +19,7 @@ class ScenarioBinderTest {
 
     @Test
     void everyBundledScenarioBinds() throws IOException {
-        List<Path> scenarios = bundledScenarios();
+        List<Path> scenarios = ScenariosLivres.all();
         assertThat(scenarios).as("les scénarios livrés doivent être trouvés").isNotEmpty();
 
         for (Path scenario : scenarios) {
@@ -27,6 +27,18 @@ class ScenarioBinderTest {
             assertThat(dto.festival())
                     .as(scenario.getFileName() + " : section festival")
                     .isNotNull();
+        }
+    }
+
+    /**
+     * Stands and animateurs are asserted on the hand-written fixtures only: the
+     * extreme cases shipped alongside them are degenerate on purpose — one has
+     * no animateur at all, another no créneau — and that is what they test.
+     */
+    @Test
+    void everyHandWrittenScenarioCarriesStandsAndAnimateurs() throws IOException {
+        for (Path scenario : ScenariosLivres.references()) {
+            ScenarioDto dto = ScenarioBinder.bind(Files.readString(scenario));
             assertThat(dto.animateurs())
                     .as(scenario.getFileName() + " : animateurs")
                     .isNotEmpty();
@@ -242,13 +254,5 @@ class ScenarioBinderTest {
         assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\ndecoupageAuto:\n  grouppe: A\n"))
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("grouppe");
-    }
-
-    private static List<Path> bundledScenarios() throws IOException {
-        try (Stream<Path> files = Files.list(Path.of("src/main/resources/scenarios"))) {
-            return files.filter(path -> path.toString().matches(".*\\.ya?ml"))
-                    .sorted()
-                    .toList();
-        }
     }
 }

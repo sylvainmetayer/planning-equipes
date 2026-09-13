@@ -25,6 +25,16 @@ n'accepte que `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier.
 L'export cloisonné par édition existe sous une autre forme : l'export de
 scénario YAML.
 
+## Où se fait chaque opération de scénario
+
+Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personnes :
+
+| Geste | Écran | Pourquoi là |
+| --- | --- | --- |
+| Importer un fichier scénario | **Imports**, onglet Scénario (`/imports?onglet=scenario`) | C'est un fichier qu'un organisateur apporte, comme les cinq CSV d'à côté |
+| Exporter l'édition en scénario | **Exports** (`/exports`) | Le seul écran qui écrit des fichiers depuis l'édition courante |
+| Charger un scénario pré-enregistré | **Débogage** (`/debug`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
+
 ## Ce que l'import d'un scénario remplace
 
 - **rien ne sort de l'édition courante** ;
@@ -183,7 +193,9 @@ L'export écrit la section dès qu'une journée type existe.
 ## Import CSV des référentiels
 
 L'écran **Imports** (`/imports`) réunit les cinq imports CSV du produit, un
-onglet chacun, l'onglet ouvert étant porté par `?onglet=`. Trois référentiels s'y
+onglet chacun, l'onglet ouvert étant porté par `?onglet=` ; un sixième onglet,
+**Scénario**, porte l'import du fichier YAML décrit plus haut — il ne complète
+pas l'édition, il la remplace. Trois référentiels s'y
 remplissent d'un fichier de quelques colonnes : les **typologies** (`id` et `libelle`
 obligatoires, `ninja` facultative), les **emplacements** (`id` et `nom`
 obligatoires, `latitude` et `longitude` facultatives) et les **stands** (`id`,
@@ -212,7 +224,8 @@ citait.
 Les deux autres onglets sont les imports historiques, décrits plus bas : les
 **animateurs** et la **grille des stands**.
 
-L'écran **Export CSV** fait le chemin inverse : les référentiels de l'édition
+L'écran **Exports** (`/exports`) fait le chemin inverse. Sa première carte,
+l'**export CSV** : les référentiels de l'édition
 courante réécrits dans une archive ZIP, un fichier par référentiel et dans la
 forme exacte que ces onglets relisent, chacun à cocher. Le fichier des
 animateurs reprend l'en-tête de `scenarios/exemple-animateurs.csv`, celui que
@@ -220,6 +233,11 @@ la correspondance de colonnes propose d'elle-même ; il ne se réimporte que dan
 une édition qui a déjà ses créneaux, puisque sans dates un jour
 d'indisponibilité importé serait refusé. `ReferentielCsvExportServiceTest`
 repasse chaque export par son propre import et exige zéro ligne refusée.
+
+Sa seconde carte porte l'**export du scénario** : l'édition entière dans un seul
+fichier YAML, celui que l'onglet Scénario des imports relit. Ce que cet
+aller-retour garantit — et ce qu'il ne garantit pas — est plus haut, *Ce que
+l'export garantit*.
 
 ## Import CSV des animateurs
 

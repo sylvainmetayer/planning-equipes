@@ -44,8 +44,10 @@ public class PlanningResource {
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the
-     * UI can offer them in a dropdown. Adding a file to that folder makes it
-     * appear here with no code change.
+     * Débogage screen can offer them in a dropdown. Adding a file to that
+     * folder makes it appear here with no code change — which is why the folder
+     * is flat and unique: a name carrying a path component is refused by
+     * {@code ScenarioYamlReader.scenarioPath}.
      */
     @GET
     @Path("/planning/scenarios")

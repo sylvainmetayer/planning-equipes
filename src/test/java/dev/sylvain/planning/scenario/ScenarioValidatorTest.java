@@ -3,6 +3,7 @@ package dev.sylvain.planning.scenario;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.service.scenario.ScenariosLivres;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -150,19 +151,6 @@ class ScenarioValidatorTest {
     }
 
     private static Stream<Path> scenariosLivres() throws IOException {
-        Path dossier = Path.of("src", "main", "resources", "scenarios");
-        try (Stream<Path> files = Files.list(dossier)) {
-            return files
-                    .filter(Files::isRegularFile)
-                    .filter(f -> f.getFileName().toString().endsWith(".yaml")
-                            || f.getFileName().toString().endsWith(".yml"))
-                    // The reel-*.yaml scenarios are gitignored (real personal
-                    // data): present only on the machine of whoever produced
-                    // them, never in the repository nor in CI.
-                    .filter(f -> !f.getFileName().toString().startsWith("reel-"))
-                    .sorted()
-                    .toList()
-                    .stream();
-        }
+        return ScenariosLivres.all().stream();
     }
 }

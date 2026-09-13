@@ -184,8 +184,8 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           // `file_export` n'existe pas dans la police Material Icons embarquée
           // (c'est un nom Material Symbols) : un <mat-icon> sans glyphe affiche
           // son texte rogné. `file_download` est le miroir de l'import.
-          path: '/export-csv',
-          label: $localize`:@@nav.link.exportCsv:Export CSV`,
+          path: '/exports',
+          label: $localize`:@@nav.link.exports:Exports`,
           icon: 'file_download',
         },
       ],

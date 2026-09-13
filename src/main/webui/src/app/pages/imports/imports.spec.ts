@@ -14,7 +14,10 @@ describe('readOngletImports', () => {
     }
   });
 
-  /** The order is the order the data is entered; the matrix comes last, it needs the rest. */
+  /**
+   * The order is the order the data is entered; the matrix needs the rest, and
+   * the scenario comes last because it replaces rather than fills.
+   */
   it('lists the tabs in the order an edition fills up', () => {
     expect(ONGLETS_IMPORTS).toEqual([
       'typologies',
@@ -22,6 +25,7 @@ describe('readOngletImports', () => {
       'stands',
       'animateurs',
       'grille-stands',
+      'scenario',
     ]);
   });
 });

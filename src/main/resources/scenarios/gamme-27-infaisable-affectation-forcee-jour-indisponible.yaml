@@ -1,0 +1,85 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau infaisable 2 : une exception qui contredit une indisponibilité.
+# L'affectation forcée du matin tombe un jour où l'animatrice qu'elle nomme
+# s'est déclarée indisponible. Le contrôle des contradictions ne compare que les
+# exceptions entre elles : le fichier est accepté, mais l'analyse de faisabilité
+# le signale comme cause bloquante, et le solve garde le jour d'indisponibilité —
+# c'est l'exception qui n'est pas tenue.
+
+festival:
+  dateDebut: 2027-09-05
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-09-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-09-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: PLATEAU
+    nom: "Jeux de plateau"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: PUZZLE
+    nom: "Puzzles géants"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A111
+    prenom: "Émilie"
+    nom: Noel
+    dateNaissance: 1992-05-01
+    manager: false
+    email: "animateur111@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles:
+      - 2027-09-05
+  - id: A112
+    prenom: Fabien
+    nom: Dufour
+    dateNaissance: 1992-05-02
+    manager: false
+    email: "animateur112@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A113
+    prenom: "Gisèle"
+    nom: Schmitt
+    dateNaissance: 1992-05-03
+    manager: false
+    email: "animateur113@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A114
+    prenom: Henri
+    nom: Rolland
+    dateNaissance: 1992-05-04
+    manager: false
+    email: "animateur114@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+
+contraintesAdHoc:
+  - id: C01
+    type: AFFECTATION_FORCEE
+    animateurs:
+      - A111
+    creneauId: J1-MATIN
+    raison: "Promis à l'école du quartier"

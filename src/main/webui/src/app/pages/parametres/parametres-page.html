@@ -9,60 +9,6 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h3 mat-card-title i18n="@@dataSetup.scenarios.title">Scénarios</h3>
-    <mat-card-subtitle i18n="@@dataSetup.scenarios.description">
-      L'import remplace les données de l'édition actuelle, et d'elle seule ; l'édition visée est
-      rappelée au moment de confirmer.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <mat-form-field appearance="outline" class="scenario-select">
-      <mat-label i18n="@@dataSetup.scenario">Scénario</mat-label>
-      <mat-select
-        [value]="selectedScenario()"
-        (valueChange)="onSelectScenario($event)"
-        [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
-      >
-        @for (name of scenarios(); track name) {
-          <mat-option [value]="name">{{ name }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-    <button
-      matButton="outlined"
-      [disabled]="editionLocked() || sampleLoading() || scenarios().length === 0"
-      (click)="onLoadSample()"
-    >
-      <mat-icon>auto_awesome</mat-icon>
-      <ng-container i18n="@@dataSetup.loadSample">Charger le scénario sélectionné</ng-container>
-    </button>
-    <button matButton="outlined" [disabled]="exporting()" (click)="onExportScenario()">
-      <mat-icon>file_download</mat-icon>
-      <ng-container i18n="@@dataSetup.exportScenario"
-        >Exporter les données actuelles en scénario</ng-container
-      >
-    </button>
-    <button
-      matButton="outlined"
-      class="danger-action"
-      [disabled]="editionLocked() || transferBusy() || scenarioFileImporting()"
-      (click)="pickScenarioFile()"
-    >
-      <mat-icon>upload_file</mat-icon>
-      <ng-container i18n="@@dataSetup.importScenarioFile">Importer un fichier</ng-container>
-    </button>
-    <input
-      #scenarioFileInput
-      type="file"
-      accept=".yaml,.yml,application/x-yaml,text/yaml,text/plain"
-      hidden
-      (change)="onScenarioFileSelected($event)"
-    />
-  </mat-card-actions>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
     <h3 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h3>
     <mat-card-subtitle i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-card-subtitle>
   </mat-card-header>
@@ -118,9 +64,9 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h3 mat-card-title i18n="@@parametres.ailleurs.title">Réglés sur leur propre écran</h3>
+    <h3 mat-card-title i18n="@@parametres.ailleurs.title">Sur leur propre écran</h3>
     <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
-      Ces paramètres d'édition restent sur l'écran qu'ils pilotent directement :
+      Ces réglages et ces opérations de l'édition vivent sur l'écran qu'ils concernent directement :
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -139,6 +85,15 @@
       </li>
       <li>
         <a routerLink="/creneaux" i18n="@@parametres.renvoi.decoupage">Prévisualisation et génération du découpage — page Créneaux</a>
+      </li>
+      <li>
+        <a routerLink="/imports" i18n="@@parametres.renvoi.importScenario">Import d'un fichier scénario — page Imports, onglet Scénario</a>
+      </li>
+      <li>
+        <a routerLink="/exports" i18n="@@parametres.renvoi.exportScenario">Export de l'édition en scénario — page Exports</a>
+      </li>
+      <li>
+        <a routerLink="/debug" i18n="@@parametres.renvoi.scenarioLivre">Chargement d'un scénario pré-enregistré — page Débogage</a>
       </li>
     </ul>
   </mat-card-content>

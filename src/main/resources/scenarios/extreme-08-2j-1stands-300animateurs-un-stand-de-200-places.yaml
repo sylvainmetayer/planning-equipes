@@ -1,0 +1,2676 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Scénario extrême 8 : un seul stand de deux cents places.
+# Un week-end, deux cents sièges identiques par vacation sur le même stand et le
+# même créneau : les règles qui regroupent par stand et par créneau (encadrement
+# des mineurs, mixité des niveaux, référent) jugent des groupes de deux cents.
+
+festival:
+  dateDebut: 2028-06-24
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2028-06-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2028-06-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2028-06-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2028-06-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: GRAND-PLATEAU
+    nom: "Grand plateau de jeux"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 200
+    effectifMax: 200
+    reserveMajeurs: false
+
+animateurs:
+  - id: A80000
+    prenom: Fanny
+    nom: Caron
+    dateNaissance: 2011-05-30
+    manager: false
+    email: "animateur80001@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80001
+    prenom: "Gaël"
+    nom: Lemoine
+    dateNaissance: 2000-07-04
+    manager: false
+    email: "animateur80002@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80002
+    prenom: "Hélène"
+    nom: Dupont
+    dateNaissance: 2006-01-24
+    manager: false
+    email: "animateur80003@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80003
+    prenom: "Ismaël"
+    nom: Louis
+    dateNaissance: 2006-04-07
+    manager: false
+    email: "animateur80004@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80004
+    prenom: Jeanne
+    nom: Chauvin
+    dateNaissance: 2001-02-13
+    manager: false
+    email: "animateur80005@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80005
+    prenom: Kevin
+    nom: Tessier
+    dateNaissance: 1976-04-20
+    manager: false
+    email: "animateur80006@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80006
+    prenom: Laure
+    nom: Andre
+    dateNaissance: 2011-12-07
+    manager: false
+    email: "animateur80007@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80007
+    prenom: Mehdi
+    nom: Legrand
+    dateNaissance: 2006-06-05
+    manager: false
+    email: "animateur80008@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80008
+    prenom: Nadia
+    nom: Henry
+    dateNaissance: 2011-12-30
+    manager: false
+    email: "animateur80009@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80009
+    prenom: Olivier
+    nom: Gauthier
+    dateNaissance: 2012-02-05
+    manager: false
+    email: "animateur80010@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80010
+    prenom: Perrine
+    nom: Sanchez
+    dateNaissance: 2012-02-19
+    manager: false
+    email: "animateur80011@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80011
+    prenom: Rayan
+    nom: Joly
+    dateNaissance: 1971-02-27
+    manager: false
+    email: "animateur80012@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80012
+    prenom: Sarah
+    nom: Lucas
+    dateNaissance: 1985-02-26
+    manager: false
+    email: "animateur80013@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80013
+    prenom: Thibault
+    nom: Marie
+    dateNaissance: 2011-10-20
+    manager: false
+    email: "animateur80014@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80014
+    prenom: Ursule
+    nom: Colin
+    dateNaissance: 2012-01-14
+    manager: false
+    email: "animateur80015@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80015
+    prenom: Vincent
+    nom: Aubert
+    dateNaissance: 1976-09-15
+    manager: false
+    email: "animateur80016@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80016
+    prenom: Wendy
+    nom: Picard
+    dateNaissance: 1967-09-06
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80017
+    prenom: Xavier
+    nom: Olivier
+    dateNaissance: 1968-10-10
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80018
+    prenom: Yasmine
+    nom: Deschamps
+    dateNaissance: 1981-08-07
+    manager: false
+    email: "animateur80019@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80019
+    prenom: Zacharie
+    nom: Weber
+    dateNaissance: 2012-07-16
+    manager: false
+    email: "animateur80020@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80020
+    prenom: Aline
+    nom: Menard
+    dateNaissance: 1965-10-06
+    manager: false
+    email: "animateur80021@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80021
+    prenom: Bruno
+    nom: Mercier
+    dateNaissance: 1986-02-05
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80022
+    prenom: Carole
+    nom: Garnier
+    dateNaissance: 1981-10-24
+    manager: false
+    email: "animateur80023@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80023
+    prenom: Denis
+    nom: Roussel
+    dateNaissance: 1966-06-21
+    manager: false
+    email: "animateur80024@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80024
+    prenom: "Émilie"
+    nom: Dumont
+    dateNaissance: 1974-07-16
+    manager: false
+    email: "animateur80025@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80025
+    prenom: Fabien
+    nom: Gerard
+    dateNaissance: 1982-01-26
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80026
+    prenom: "Gisèle"
+    nom: Gautier
+    dateNaissance: 1969-10-01
+    manager: false
+    email: "animateur80027@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80027
+    prenom: Henri
+    nom: Meunier
+    dateNaissance: 1970-06-14
+    manager: false
+    email: "animateur80028@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80028
+    prenom: Camille
+    nom: Barbier
+    dateNaissance: 2011-10-05
+    manager: false
+    email: "animateur80029@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80029
+    prenom: Hugo
+    nom: Fernandez
+    dateNaissance: 1979-01-12
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80030
+    prenom: "Inès"
+    nom: Giraud
+    dateNaissance: 1968-07-10
+    manager: false
+    email: "animateur80031@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80031
+    prenom: Lucas
+    nom: Gaillard
+    dateNaissance: 2006-03-16
+    manager: false
+    email: "animateur80032@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80032
+    prenom: "Léa"
+    nom: Riviere
+    dateNaissance: 2012-01-14
+    manager: false
+    email: "animateur80033@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80033
+    prenom: Nathan
+    nom: Huet
+    dateNaissance: 1976-06-02
+    manager: false
+    email: "animateur80034@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80034
+    prenom: "Chloé"
+    nom: Baron
+    dateNaissance: 1993-02-20
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80035
+    prenom: Louis
+    nom: Roussel
+    dateNaissance: 1995-04-14
+    manager: false
+    email: "animateur80036@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80036
+    prenom: Manon
+    nom: Dupuis
+    dateNaissance: 1976-09-22
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80037
+    prenom: Jules
+    nom: Faure
+    dateNaissance: 1991-04-26
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80038
+    prenom: Emma
+    nom: Nicolas
+    dateNaissance: 1968-11-14
+    manager: false
+    email: "animateur80039@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80039
+    prenom: Arthur
+    nom: Lopez
+    dateNaissance: 1979-08-03
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80040
+    prenom: Jade
+    nom: Nguyen
+    dateNaissance: 1980-12-15
+    manager: false
+    email: "animateur80041@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80041
+    prenom: Gabriel
+    nom: Roger
+    dateNaissance: 1979-03-11
+    manager: false
+    email: "animateur80042@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80042
+    prenom: Louise
+    nom: Jean
+    dateNaissance: 1984-04-19
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80043
+    prenom: "Raphaël"
+    nom: Brun
+    dateNaissance: 1970-06-14
+    manager: false
+    email: "animateur80044@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80044
+    prenom: Alice
+    nom: Pierre
+    dateNaissance: 1984-07-15
+    manager: false
+    email: "animateur80045@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80045
+    prenom: Adam
+    nom: Leclerc
+    dateNaissance: 2001-12-08
+    manager: false
+    email: "animateur80046@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80046
+    prenom: Lina
+    nom: Philippe
+    dateNaissance: 1991-08-27
+    manager: false
+    email: "animateur80047@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80047
+    prenom: Paul
+    nom: Moreau
+    dateNaissance: 1969-08-21
+    manager: false
+    email: "animateur80048@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80048
+    prenom: Rose
+    nom: Vasseur
+    dateNaissance: 1998-12-06
+    manager: false
+    email: "animateur80049@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80049
+    prenom: Sacha
+    nom: Charpentier
+    dateNaissance: 1977-09-16
+    manager: false
+    email: "animateur80050@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80050
+    prenom: Anna
+    nom: Lemaire
+    dateNaissance: 2006-11-11
+    manager: false
+    email: "animateur80051@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80051
+    prenom: "Théo"
+    nom: Lambert
+    dateNaissance: 1982-05-25
+    manager: false
+    email: "animateur80052@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80052
+    prenom: "Zoé"
+    nom: Rousseau
+    dateNaissance: 2003-09-09
+    manager: false
+    email: "animateur80053@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80053
+    prenom: Noah
+    nom: Perrin
+    dateNaissance: 2000-04-20
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80054
+    prenom: Lou
+    nom: Fontaine
+    dateNaissance: 2004-04-11
+    manager: false
+    email: "animateur80055@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80055
+    prenom: Tom
+    nom: Boyer
+    dateNaissance: 1974-12-13
+    manager: false
+    email: "animateur80056@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80056
+    prenom: Mila
+    nom: Roche
+    dateNaissance: 1971-03-04
+    manager: false
+    email: "animateur80057@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80057
+    prenom: Victor
+    nom: Perez
+    dateNaissance: 2000-04-24
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80058
+    prenom: Agathe
+    nom: Dumas
+    dateNaissance: 1971-03-22
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80059
+    prenom: "Maël"
+    nom: Renard
+    dateNaissance: 1992-08-28
+    manager: false
+    email: "animateur80060@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80060
+    prenom: Julia
+    nom: Vidal
+    dateNaissance: 2011-07-04
+    manager: false
+    email: "animateur80061@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80061
+    prenom: Liam
+    nom: Leclercq
+    dateNaissance: 1976-02-10
+    manager: false
+    email: "animateur80062@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80062
+    prenom: Iris
+    nom: Hubert
+    dateNaissance: 1983-01-26
+    manager: false
+    email: "animateur80063@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80063
+    prenom: Oscar
+    nom: Perrot
+    dateNaissance: 1972-07-20
+    manager: false
+    email: "animateur80064@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80064
+    prenom: Clara
+    nom: Lebrun
+    dateNaissance: 1986-12-18
+    manager: false
+    email: "animateur80065@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80065
+    prenom: Nino
+    nom: Fabre
+    dateNaissance: 1969-04-02
+    manager: false
+    email: "animateur80066@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80066
+    prenom: Margaux
+    nom: Bonnet
+    dateNaissance: 1993-06-07
+    manager: false
+    email: "animateur80067@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80067
+    prenom: Robin
+    nom: Blanc
+    dateNaissance: 1988-07-06
+    manager: false
+    email: "animateur80068@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80068
+    prenom: Elsa
+    nom: Morin
+    dateNaissance: 1989-10-19
+    manager: false
+    email: "animateur80069@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80069
+    prenom: Simon
+    nom: Chevalier
+    dateNaissance: 1985-05-16
+    manager: false
+    email: "animateur80070@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80070
+    prenom: Juliette
+    nom: Denis
+    dateNaissance: 2011-11-30
+    manager: false
+    email: "animateur80071@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80071
+    prenom: Martin
+    nom: Roy
+    dateNaissance: 1978-03-28
+    manager: false
+    email: "animateur80072@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80072
+    prenom: Capucine
+    nom: Marchand
+    dateNaissance: 2011-10-21
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80073
+    prenom: Axel
+    nom: Brunet
+    dateNaissance: 1993-06-24
+    manager: false
+    email: "animateur80074@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80074
+    prenom: "Salomé"
+    nom: Arnaud
+    dateNaissance: 1990-02-17
+    manager: false
+    email: "animateur80075@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80075
+    prenom: Valentin
+    nom: Bourgeois
+    dateNaissance: 2011-09-25
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80076
+    prenom: Romane
+    nom: Lacroix
+    dateNaissance: 2011-11-02
+    manager: false
+    email: "animateur80077@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80077
+    prenom: Mathis
+    nom: Carpentier
+    dateNaissance: 2011-07-08
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80078
+    prenom: "Éloïse"
+    nom: Hoarau
+    dateNaissance: 1977-12-18
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80079
+    prenom: Baptiste
+    nom: Hamon
+    dateNaissance: 2012-07-11
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80080
+    prenom: "Célia"
+    nom: Morel
+    dateNaissance: 1995-03-02
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80081
+    prenom: "Noé"
+    nom: Francois
+    dateNaissance: 2003-09-10
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80082
+    prenom: "Maëlle"
+    nom: Guerin
+    dateNaissance: 1987-05-16
+    manager: false
+    email: "animateur80083@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80083
+    prenom: Eliott
+    nom: Mathieu
+    dateNaissance: 1993-08-28
+    manager: false
+    email: "animateur80084@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80084
+    prenom: Apolline
+    nom: Robin
+    dateNaissance: 2012-03-19
+    manager: false
+    email: "animateur80085@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80085
+    prenom: "Timéo"
+    nom: Lemoine
+    dateNaissance: 1970-01-12
+    manager: false
+    email: "animateur80086@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80086
+    prenom: Charlotte
+    nom: Noel
+    dateNaissance: 1995-03-06
+    manager: false
+    email: "animateur80087@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80087
+    prenom: Antoine
+    nom: Dufour
+    dateNaissance: 2005-02-22
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80088
+    prenom: Lise
+    nom: Schmitt
+    dateNaissance: 1967-04-20
+    manager: false
+    email: "animateur80089@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80089
+    prenom: "Aurélien"
+    nom: Rolland
+    dateNaissance: 1991-07-16
+    manager: false
+    email: "animateur80090@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80090
+    prenom: Pauline
+    nom: Renaud
+    dateNaissance: 2012-10-20
+    manager: false
+    email: "animateur80091@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80091
+    prenom: Quentin
+    nom: Fabre
+    dateNaissance: 1975-09-22
+    manager: false
+    email: "animateur80092@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80092
+    prenom: Justine
+    nom: Moulin
+    dateNaissance: 2012-06-14
+    manager: false
+    email: "animateur80093@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80093
+    prenom: Bastien
+    nom: Cordier
+    dateNaissance: 1975-04-26
+    manager: false
+    email: "animateur80094@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80094
+    prenom: "Océane"
+    nom: Poirier
+    dateNaissance: 1966-04-16
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80095
+    prenom: Florian
+    nom: Girard
+    dateNaissance: 1978-12-12
+    manager: false
+    email: "animateur80096@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80096
+    prenom: Mathilde
+    nom: Martinez
+    dateNaissance: 1989-06-17
+    manager: false
+    email: "animateur80097@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80097
+    prenom: Adrien
+    nom: Muller
+    dateNaissance: 2002-11-13
+    manager: false
+    email: "animateur80098@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80098
+    prenom: "Clémence"
+    nom: Clement
+    dateNaissance: 2012-02-08
+    manager: false
+    email: "animateur80099@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80099
+    prenom: Maxime
+    nom: Masson
+    dateNaissance: 1968-07-03
+    manager: false
+    email: "animateur80100@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80100
+    prenom: "Solène"
+    nom: Duval
+    dateNaissance: 1981-06-17
+    manager: false
+    email: "animateur80101@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80101
+    prenom: "Rémi"
+    nom: Meyer
+    dateNaissance: 2011-06-13
+    manager: false
+    email: "animateur80102@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80102
+    prenom: Morgane
+    nom: Blanchard
+    dateNaissance: 2012-06-21
+    manager: false
+    email: "animateur80103@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80103
+    prenom: "Loïc"
+    nom: Leroux
+    dateNaissance: 1993-07-16
+    manager: false
+    email: "animateur80104@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80104
+    prenom: Estelle
+    nom: Caron
+    dateNaissance: 1973-02-27
+    manager: false
+    email: "animateur80105@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80105
+    prenom: Damien
+    nom: Lemoine
+    dateNaissance: 2011-09-02
+    manager: false
+    email: "animateur80106@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80106
+    prenom: "Noémie"
+    nom: Dupont
+    dateNaissance: 1974-08-06
+    manager: false
+    email: "animateur80107@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80107
+    prenom: Yanis
+    nom: Louis
+    dateNaissance: 1998-02-18
+    manager: false
+    email: "animateur80108@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80108
+    prenom: "Anaïs"
+    nom: Chauvin
+    dateNaissance: 2011-09-07
+    manager: false
+    email: "animateur80109@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80109
+    prenom: Kylian
+    nom: Tessier
+    dateNaissance: 2011-11-05
+    manager: false
+    email: "animateur80110@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80110
+    prenom: Amandine
+    nom: Andre
+    dateNaissance: 1985-08-21
+    manager: false
+    email: "animateur80111@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80111
+    prenom: "Benoît"
+    nom: Legrand
+    dateNaissance: 2001-04-19
+    manager: false
+    email: "animateur80112@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80112
+    prenom: Coralie
+    nom: Henry
+    dateNaissance: 1987-11-21
+    manager: false
+    email: "animateur80113@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80113
+    prenom: Cyril
+    nom: Gauthier
+    dateNaissance: 1978-08-07
+    manager: false
+    email: "animateur80114@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80114
+    prenom: Fanny
+    nom: Sanchez
+    dateNaissance: 1971-08-12
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80115
+    prenom: "Gaël"
+    nom: Joly
+    dateNaissance: 1992-05-26
+    manager: false
+    email: "animateur80116@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80116
+    prenom: "Hélène"
+    nom: Lucas
+    dateNaissance: 1981-03-15
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80117
+    prenom: "Ismaël"
+    nom: Marie
+    dateNaissance: 2002-06-06
+    manager: false
+    email: "animateur80118@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80118
+    prenom: Jeanne
+    nom: Colin
+    dateNaissance: 1969-06-19
+    manager: false
+    email: "animateur80119@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80119
+    prenom: Kevin
+    nom: Aubert
+    dateNaissance: 1977-07-27
+    manager: false
+    email: "animateur80120@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80120
+    prenom: Laure
+    nom: Picard
+    dateNaissance: 1987-01-27
+    manager: false
+    email: "animateur80121@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80121
+    prenom: Mehdi
+    nom: Olivier
+    dateNaissance: 1999-11-01
+    manager: false
+    email: "animateur80122@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80122
+    prenom: Nadia
+    nom: Deschamps
+    dateNaissance: 2002-03-11
+    manager: false
+    email: "animateur80123@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80123
+    prenom: Olivier
+    nom: Weber
+    dateNaissance: 2012-04-24
+    manager: false
+    email: "animateur80124@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80124
+    prenom: Perrine
+    nom: Menard
+    dateNaissance: 1989-02-21
+    manager: false
+    email: "animateur80125@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80125
+    prenom: Rayan
+    nom: Mercier
+    dateNaissance: 1991-07-10
+    manager: false
+    email: "animateur80126@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80126
+    prenom: Sarah
+    nom: Garnier
+    dateNaissance: 1981-10-21
+    manager: false
+    email: "animateur80127@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80127
+    prenom: Thibault
+    nom: Roussel
+    dateNaissance: 1967-06-25
+    manager: false
+    email: "animateur80128@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80128
+    prenom: Ursule
+    nom: Dumont
+    dateNaissance: 1980-12-13
+    manager: false
+    email: "animateur80129@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80129
+    prenom: Vincent
+    nom: Gerard
+    dateNaissance: 2011-08-08
+    manager: false
+    email: "animateur80130@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80130
+    prenom: Wendy
+    nom: Gautier
+    dateNaissance: 1968-07-28
+    manager: false
+    email: "animateur80131@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80131
+    prenom: Xavier
+    nom: Meunier
+    dateNaissance: 1995-02-05
+    manager: false
+    email: "animateur80132@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80132
+    prenom: Yasmine
+    nom: Barbier
+    dateNaissance: 2011-05-23
+    manager: false
+    email: "animateur80133@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80133
+    prenom: Zacharie
+    nom: Fernandez
+    dateNaissance: 1990-04-27
+    manager: false
+    email: "animateur80134@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80134
+    prenom: Aline
+    nom: Giraud
+    dateNaissance: 1970-12-28
+    manager: false
+    email: "animateur80135@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80135
+    prenom: Bruno
+    nom: Gaillard
+    dateNaissance: 1969-08-14
+    manager: false
+    email: "animateur80136@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80136
+    prenom: Carole
+    nom: Riviere
+    dateNaissance: 1976-02-08
+    manager: false
+    email: "animateur80137@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80137
+    prenom: Denis
+    nom: Huet
+    dateNaissance: 1996-01-03
+    manager: false
+    email: "animateur80138@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80138
+    prenom: "Émilie"
+    nom: Baron
+    dateNaissance: 2011-10-19
+    manager: false
+    email: "animateur80139@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80139
+    prenom: Fabien
+    nom: Roussel
+    dateNaissance: 2011-10-06
+    manager: false
+    email: "animateur80140@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80140
+    prenom: "Gisèle"
+    nom: Dupuis
+    dateNaissance: 1993-06-02
+    manager: false
+    email: "animateur80141@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80141
+    prenom: Henri
+    nom: Faure
+    dateNaissance: 1965-08-12
+    manager: false
+    email: "animateur80142@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80142
+    prenom: Camille
+    nom: Nicolas
+    dateNaissance: 1983-04-03
+    manager: false
+    email: "animateur80143@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80143
+    prenom: Hugo
+    nom: Lopez
+    dateNaissance: 2012-01-21
+    manager: false
+    email: "animateur80144@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80144
+    prenom: "Inès"
+    nom: Nguyen
+    dateNaissance: 1978-04-04
+    manager: false
+    email: "animateur80145@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80145
+    prenom: Lucas
+    nom: Roger
+    dateNaissance: 1976-01-15
+    manager: false
+    email: "animateur80146@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80146
+    prenom: "Léa"
+    nom: Jean
+    dateNaissance: 1986-07-26
+    manager: false
+    email: "animateur80147@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80147
+    prenom: Nathan
+    nom: Brun
+    dateNaissance: 1973-06-25
+    manager: false
+    email: "animateur80148@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80148
+    prenom: "Chloé"
+    nom: Pierre
+    dateNaissance: 1983-09-20
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80149
+    prenom: Louis
+    nom: Leclerc
+    dateNaissance: 1967-03-04
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80150
+    prenom: Manon
+    nom: Philippe
+    dateNaissance: 1999-11-27
+    manager: false
+    email: "animateur80151@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80151
+    prenom: Jules
+    nom: Moreau
+    dateNaissance: 1968-01-19
+    manager: false
+    email: "animateur80152@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80152
+    prenom: Emma
+    nom: Vasseur
+    dateNaissance: 1965-07-23
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80153
+    prenom: Arthur
+    nom: Charpentier
+    dateNaissance: 1999-06-24
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80154
+    prenom: Jade
+    nom: Lemaire
+    dateNaissance: 2012-01-01
+    manager: false
+    email: "animateur80155@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80155
+    prenom: Gabriel
+    nom: Lambert
+    dateNaissance: 1968-03-11
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80156
+    prenom: Louise
+    nom: Rousseau
+    dateNaissance: 2012-01-14
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80157
+    prenom: "Raphaël"
+    nom: Perrin
+    dateNaissance: 1991-12-25
+    manager: false
+    email: "animateur80158@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80158
+    prenom: Alice
+    nom: Fontaine
+    dateNaissance: 1970-04-26
+    manager: false
+    email: "animateur80159@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80159
+    prenom: Adam
+    nom: Boyer
+    dateNaissance: 1998-03-23
+    manager: false
+    email: "animateur80160@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80160
+    prenom: Lina
+    nom: Roche
+    dateNaissance: 1994-11-13
+    manager: false
+    email: "animateur80161@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80161
+    prenom: Paul
+    nom: Perez
+    dateNaissance: 1974-04-07
+    manager: false
+    email: "animateur80162@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80162
+    prenom: Rose
+    nom: Dumas
+    dateNaissance: 2012-01-29
+    manager: false
+    email: "animateur80163@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80163
+    prenom: Sacha
+    nom: Renard
+    dateNaissance: 2004-09-17
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80164
+    prenom: Anna
+    nom: Vidal
+    dateNaissance: 1981-10-19
+    manager: false
+    email: "animateur80165@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80165
+    prenom: "Théo"
+    nom: Leclercq
+    dateNaissance: 1967-01-17
+    manager: false
+    email: "animateur80166@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80166
+    prenom: "Zoé"
+    nom: Hubert
+    dateNaissance: 2011-06-25
+    manager: false
+    email: "animateur80167@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80167
+    prenom: Noah
+    nom: Perrot
+    dateNaissance: 1998-04-10
+    manager: false
+    email: "animateur80168@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80168
+    prenom: Lou
+    nom: Lebrun
+    dateNaissance: 1971-12-01
+    manager: false
+    email: "animateur80169@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80169
+    prenom: Tom
+    nom: Fabre
+    dateNaissance: 1975-10-23
+    manager: false
+    email: "animateur80170@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80170
+    prenom: Mila
+    nom: Bonnet
+    dateNaissance: 1975-11-07
+    manager: false
+    email: "animateur80171@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80171
+    prenom: Victor
+    nom: Blanc
+    dateNaissance: 1995-10-22
+    manager: false
+    email: "animateur80172@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80172
+    prenom: Agathe
+    nom: Morin
+    dateNaissance: 2003-05-26
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80173
+    prenom: "Maël"
+    nom: Chevalier
+    dateNaissance: 2004-05-22
+    manager: false
+    email: "animateur80174@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80174
+    prenom: Julia
+    nom: Denis
+    dateNaissance: 2012-01-09
+    manager: false
+    email: "animateur80175@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80175
+    prenom: Liam
+    nom: Roy
+    dateNaissance: 1983-01-08
+    manager: false
+    email: "animateur80176@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80176
+    prenom: Iris
+    nom: Marchand
+    dateNaissance: 2006-11-22
+    manager: false
+    email: "animateur80177@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80177
+    prenom: Oscar
+    nom: Brunet
+    dateNaissance: 1982-01-20
+    manager: false
+    email: "animateur80178@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80178
+    prenom: Clara
+    nom: Arnaud
+    dateNaissance: 2004-06-23
+    manager: false
+    email: "animateur80179@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80179
+    prenom: Nino
+    nom: Bourgeois
+    dateNaissance: 1995-10-19
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80180
+    prenom: Margaux
+    nom: Lacroix
+    dateNaissance: 1978-11-12
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80181
+    prenom: Robin
+    nom: Carpentier
+    dateNaissance: 2002-03-02
+    manager: false
+    email: "animateur80182@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80182
+    prenom: Elsa
+    nom: Hoarau
+    dateNaissance: 1997-11-08
+    manager: false
+    email: "animateur80183@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80183
+    prenom: Simon
+    nom: Hamon
+    dateNaissance: 1969-01-28
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80184
+    prenom: Juliette
+    nom: Morel
+    dateNaissance: 1980-03-02
+    manager: false
+    email: "animateur80185@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80185
+    prenom: Martin
+    nom: Francois
+    dateNaissance: 2012-03-09
+    manager: false
+    email: "animateur80186@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80186
+    prenom: Capucine
+    nom: Guerin
+    dateNaissance: 1970-05-26
+    manager: false
+    email: "animateur80187@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80187
+    prenom: Axel
+    nom: Mathieu
+    dateNaissance: 2012-05-22
+    manager: false
+    email: "animateur80188@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80188
+    prenom: "Salomé"
+    nom: Robin
+    dateNaissance: 2005-10-05
+    manager: false
+    email: "animateur80189@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80189
+    prenom: Valentin
+    nom: Lemoine
+    dateNaissance: 1966-09-22
+    manager: false
+    email: "animateur80190@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80190
+    prenom: Romane
+    nom: Noel
+    dateNaissance: 2011-07-01
+    manager: false
+    email: "animateur80191@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80191
+    prenom: Mathis
+    nom: Dufour
+    dateNaissance: 1979-09-07
+    manager: false
+    email: "animateur80192@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80192
+    prenom: "Éloïse"
+    nom: Schmitt
+    dateNaissance: 1986-07-23
+    manager: false
+    email: "animateur80193@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80193
+    prenom: Baptiste
+    nom: Rolland
+    dateNaissance: 2012-02-01
+    manager: false
+    email: "animateur80194@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80194
+    prenom: "Célia"
+    nom: Renaud
+    dateNaissance: 2011-04-29
+    manager: false
+    email: "animateur80195@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80195
+    prenom: "Noé"
+    nom: Fabre
+    dateNaissance: 2012-02-15
+    manager: false
+    email: "animateur80196@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80196
+    prenom: "Maëlle"
+    nom: Moulin
+    dateNaissance: 1966-02-07
+    manager: false
+    email: "animateur80197@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80197
+    prenom: Eliott
+    nom: Cordier
+    dateNaissance: 1976-10-08
+    manager: false
+    email: "animateur80198@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80198
+    prenom: Apolline
+    nom: Poirier
+    dateNaissance: 1985-01-27
+    manager: false
+    email: "animateur80199@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80199
+    prenom: "Timéo"
+    nom: Girard
+    dateNaissance: 2000-04-17
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80200
+    prenom: Charlotte
+    nom: Martinez
+    dateNaissance: 1984-07-09
+    manager: false
+    email: "animateur80201@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80201
+    prenom: Antoine
+    nom: Muller
+    dateNaissance: 2011-10-17
+    manager: false
+    email: "animateur80202@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80202
+    prenom: Lise
+    nom: Clement
+    dateNaissance: 2012-04-22
+    manager: false
+    email: "animateur80203@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80203
+    prenom: "Aurélien"
+    nom: Masson
+    dateNaissance: 2001-06-08
+    manager: false
+    email: "animateur80204@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80204
+    prenom: Pauline
+    nom: Duval
+    dateNaissance: 1966-08-17
+    manager: false
+    email: "animateur80205@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80205
+    prenom: Quentin
+    nom: Meyer
+    dateNaissance: 1969-09-21
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80206
+    prenom: Justine
+    nom: Blanchard
+    dateNaissance: 2011-07-02
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80207
+    prenom: Bastien
+    nom: Leroux
+    dateNaissance: 2000-05-01
+    manager: false
+    email: "animateur80208@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80208
+    prenom: "Océane"
+    nom: Caron
+    dateNaissance: 2004-05-09
+    manager: false
+    email: "animateur80209@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80209
+    prenom: Florian
+    nom: Lemoine
+    dateNaissance: 2011-09-26
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80210
+    prenom: Mathilde
+    nom: Dupont
+    dateNaissance: 2011-04-16
+    manager: false
+    email: "animateur80211@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80211
+    prenom: Adrien
+    nom: Louis
+    dateNaissance: 2000-11-28
+    manager: false
+    email: "animateur80212@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80212
+    prenom: "Clémence"
+    nom: Chauvin
+    dateNaissance: 1985-01-16
+    manager: false
+    email: "animateur80213@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80213
+    prenom: Maxime
+    nom: Tessier
+    dateNaissance: 2011-09-02
+    manager: false
+    email: "animateur80214@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80214
+    prenom: "Solène"
+    nom: Andre
+    dateNaissance: 1982-11-21
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80215
+    prenom: "Rémi"
+    nom: Legrand
+    dateNaissance: 2012-07-31
+    manager: false
+    email: "animateur80216@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80216
+    prenom: Morgane
+    nom: Henry
+    dateNaissance: 2011-09-03
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80217
+    prenom: "Loïc"
+    nom: Gauthier
+    dateNaissance: 2005-11-14
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80218
+    prenom: Estelle
+    nom: Sanchez
+    dateNaissance: 1996-03-01
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80219
+    prenom: Damien
+    nom: Joly
+    dateNaissance: 1987-08-14
+    manager: false
+    email: "animateur80220@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80220
+    prenom: "Noémie"
+    nom: Lucas
+    dateNaissance: 2002-02-07
+    manager: false
+    email: "animateur80221@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80221
+    prenom: Yanis
+    nom: Marie
+    dateNaissance: 2000-06-20
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80222
+    prenom: "Anaïs"
+    nom: Colin
+    dateNaissance: 1998-12-23
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80223
+    prenom: Kylian
+    nom: Aubert
+    dateNaissance: 1969-06-13
+    manager: false
+    email: "animateur80224@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80224
+    prenom: Amandine
+    nom: Picard
+    dateNaissance: 1997-08-19
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80225
+    prenom: "Benoît"
+    nom: Olivier
+    dateNaissance: 2012-02-28
+    manager: false
+    email: "animateur80226@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80226
+    prenom: Coralie
+    nom: Deschamps
+    dateNaissance: 1980-02-13
+    manager: false
+    email: "animateur80227@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80227
+    prenom: Cyril
+    nom: Weber
+    dateNaissance: 2012-01-24
+    manager: false
+    email: "animateur80228@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80228
+    prenom: Fanny
+    nom: Menard
+    dateNaissance: 1976-05-23
+    manager: false
+    email: "animateur80229@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80229
+    prenom: "Gaël"
+    nom: Mercier
+    dateNaissance: 1992-06-21
+    manager: false
+    email: "animateur80230@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80230
+    prenom: "Hélène"
+    nom: Garnier
+    dateNaissance: 1970-09-03
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80231
+    prenom: "Ismaël"
+    nom: Roussel
+    dateNaissance: 2000-05-04
+    manager: false
+    email: "animateur80232@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80232
+    prenom: Jeanne
+    nom: Dumont
+    dateNaissance: 2011-08-25
+    manager: false
+    email: "animateur80233@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80233
+    prenom: Kevin
+    nom: Gerard
+    dateNaissance: 1971-09-23
+    manager: false
+    email: "animateur80234@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80234
+    prenom: Laure
+    nom: Gautier
+    dateNaissance: 2011-07-17
+    manager: false
+    email: "animateur80235@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80235
+    prenom: Mehdi
+    nom: Meunier
+    dateNaissance: 2011-08-13
+    manager: false
+    email: "animateur80236@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80236
+    prenom: Nadia
+    nom: Barbier
+    dateNaissance: 2011-07-28
+    manager: false
+    email: "animateur80237@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80237
+    prenom: Olivier
+    nom: Fernandez
+    dateNaissance: 1989-10-01
+    manager: false
+    email: "animateur80238@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80238
+    prenom: Perrine
+    nom: Giraud
+    dateNaissance: 2011-09-04
+    manager: false
+    email: "animateur80239@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80239
+    prenom: Rayan
+    nom: Gaillard
+    dateNaissance: 2002-05-20
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80240
+    prenom: Sarah
+    nom: Riviere
+    dateNaissance: 1992-10-25
+    manager: false
+    email: "animateur80241@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80241
+    prenom: Thibault
+    nom: Huet
+    dateNaissance: 1993-06-17
+    manager: false
+    email: "animateur80242@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80242
+    prenom: Ursule
+    nom: Baron
+    dateNaissance: 1991-09-21
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80243
+    prenom: Vincent
+    nom: Roussel
+    dateNaissance: 2012-02-14
+    manager: false
+    email: "animateur80244@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80244
+    prenom: Wendy
+    nom: Dupuis
+    dateNaissance: 1967-05-01
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80245
+    prenom: Xavier
+    nom: Faure
+    dateNaissance: 2005-02-14
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80246
+    prenom: Yasmine
+    nom: Nicolas
+    dateNaissance: 1971-02-04
+    manager: false
+    email: "animateur80247@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80247
+    prenom: Zacharie
+    nom: Lopez
+    dateNaissance: 2011-03-05
+    manager: false
+    email: "animateur80248@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80248
+    prenom: Aline
+    nom: Nguyen
+    dateNaissance: 1991-08-01
+    manager: false
+    email: "animateur80249@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80249
+    prenom: Bruno
+    nom: Roger
+    dateNaissance: 1974-10-05
+    manager: false
+    email: "animateur80250@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80250
+    prenom: Carole
+    nom: Jean
+    dateNaissance: 1966-04-03
+    manager: false
+    email: "animateur80251@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80251
+    prenom: Denis
+    nom: Brun
+    dateNaissance: 2002-09-03
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80252
+    prenom: "Émilie"
+    nom: Pierre
+    dateNaissance: 2011-12-25
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80253
+    prenom: Fabien
+    nom: Leclerc
+    dateNaissance: 1975-02-16
+    manager: false
+    email: "animateur80254@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80254
+    prenom: "Gisèle"
+    nom: Philippe
+    dateNaissance: 1989-06-23
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80255
+    prenom: Henri
+    nom: Moreau
+    dateNaissance: 1978-10-11
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80256
+    prenom: Camille
+    nom: Vasseur
+    dateNaissance: 2012-02-02
+    manager: false
+    email: "animateur80257@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80257
+    prenom: Hugo
+    nom: Charpentier
+    dateNaissance: 1996-05-27
+    manager: false
+    email: "animateur80258@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80258
+    prenom: "Inès"
+    nom: Lemaire
+    dateNaissance: 2006-12-16
+    manager: false
+    email: "animateur80259@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80259
+    prenom: Lucas
+    nom: Lambert
+    dateNaissance: 1976-04-20
+    manager: false
+    email: "animateur80260@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80260
+    prenom: "Léa"
+    nom: Rousseau
+    dateNaissance: 2003-05-21
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80261
+    prenom: Nathan
+    nom: Perrin
+    dateNaissance: 2012-03-03
+    manager: false
+    email: "animateur80262@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80262
+    prenom: "Chloé"
+    nom: Fontaine
+    dateNaissance: 2012-02-04
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80263
+    prenom: Louis
+    nom: Boyer
+    dateNaissance: 2012-04-29
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80264
+    prenom: Manon
+    nom: Roche
+    dateNaissance: 2011-05-07
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80265
+    prenom: Jules
+    nom: Perez
+    dateNaissance: 1966-09-10
+    manager: false
+    email: "animateur80266@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80266
+    prenom: Emma
+    nom: Dumas
+    dateNaissance: 2011-12-15
+    manager: false
+    email: "animateur80267@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80267
+    prenom: Arthur
+    nom: Renard
+    dateNaissance: 2012-05-02
+    manager: false
+    email: "animateur80268@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80268
+    prenom: Jade
+    nom: Vidal
+    dateNaissance: 2011-10-25
+    manager: false
+    email: "animateur80269@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80269
+    prenom: Gabriel
+    nom: Leclercq
+    dateNaissance: 1975-02-28
+    manager: false
+    email: "animateur80270@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80270
+    prenom: Louise
+    nom: Hubert
+    dateNaissance: 2011-08-24
+    manager: false
+    email: "animateur80271@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80271
+    prenom: "Raphaël"
+    nom: Perrot
+    dateNaissance: 1965-11-13
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80272
+    prenom: Alice
+    nom: Lebrun
+    dateNaissance: 1986-05-27
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80273
+    prenom: Adam
+    nom: Fabre
+    dateNaissance: 1972-12-28
+    manager: false
+    email: "animateur80274@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80274
+    prenom: Lina
+    nom: Bonnet
+    dateNaissance: 1968-09-09
+    manager: false
+    email: "animateur80275@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80275
+    prenom: Paul
+    nom: Blanc
+    dateNaissance: 1989-06-07
+    manager: false
+    email: "animateur80276@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80276
+    prenom: Rose
+    nom: Morin
+    dateNaissance: 1999-05-18
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80277
+    prenom: Sacha
+    nom: Chevalier
+    dateNaissance: 1970-07-26
+    manager: false
+    email: "animateur80278@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80278
+    prenom: Anna
+    nom: Denis
+    dateNaissance: 1989-06-03
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80279
+    prenom: "Théo"
+    nom: Roy
+    dateNaissance: 1974-01-16
+    manager: false
+    email: "animateur80280@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80280
+    prenom: "Zoé"
+    nom: Marchand
+    dateNaissance: 1997-06-13
+    manager: false
+    email: "animateur80281@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80281
+    prenom: Noah
+    nom: Brunet
+    dateNaissance: 2012-04-10
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80282
+    prenom: Lou
+    nom: Arnaud
+    dateNaissance: 1990-10-11
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80283
+    prenom: Tom
+    nom: Bourgeois
+    dateNaissance: 2003-07-27
+    manager: false
+    email: "animateur80284@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80284
+    prenom: Mila
+    nom: Lacroix
+    dateNaissance: 2011-09-15
+    manager: false
+    email: "animateur80285@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80285
+    prenom: Victor
+    nom: Carpentier
+    dateNaissance: 1974-02-21
+    manager: false
+    email: "animateur80286@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80286
+    prenom: Agathe
+    nom: Hoarau
+    dateNaissance: 1994-12-22
+    manager: false
+    email: "animateur80287@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80287
+    prenom: "Maël"
+    nom: Hamon
+    dateNaissance: 1996-06-26
+    manager: false
+    email: "animateur80288@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80288
+    prenom: Julia
+    nom: Morel
+    dateNaissance: 1966-03-23
+    manager: false
+    email: "animateur80289@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80289
+    prenom: Liam
+    nom: Francois
+    dateNaissance: 1997-09-02
+    manager: false
+    email: "animateur80290@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80290
+    prenom: Iris
+    nom: Guerin
+    dateNaissance: 1965-04-27
+    manager: false
+    email: "animateur80291@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80291
+    prenom: Oscar
+    nom: Mathieu
+    dateNaissance: 1994-05-11
+    manager: false
+    email: "animateur80292@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80292
+    prenom: Clara
+    nom: Robin
+    dateNaissance: 1966-08-04
+    manager: false
+    email: "animateur80293@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80293
+    prenom: Nino
+    nom: Lemoine
+    dateNaissance: 2012-04-13
+    manager: false
+    email: "animateur80294@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80294
+    prenom: Margaux
+    nom: Noel
+    dateNaissance: 1980-02-20
+    manager: false
+    email: "animateur80295@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A80295
+    prenom: Robin
+    nom: Dufour
+    dateNaissance: 1998-02-11
+    manager: false
+    email: "animateur80296@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80296
+    prenom: Elsa
+    nom: Schmitt
+    dateNaissance: 2011-11-24
+    manager: false
+    email: "animateur80297@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80297
+    prenom: Simon
+    nom: Rolland
+    dateNaissance: 1997-03-03
+    manager: false
+    email: "animateur80298@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A80298
+    prenom: Juliette
+    nom: Renaud
+    dateNaissance: 1991-12-24
+    manager: false
+    email: "animateur80299@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A80299
+    prenom: Martin
+    nom: Fabre
+    dateNaissance: 1989-01-20
+    manager: false
+    email: "animateur80300@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []

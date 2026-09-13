@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau 1 de la gamme : le plus petit problème qui ait un sens.
+# Un jour, deux vacations (matin, après-midi), deux stands d'une place, trois
+# animateurs. Aucune section optionnelle : tout ce que le fichier ne dit pas
+# prend le défaut de l'application (pause de 30 min, coupure repas 12 h-14 h,
+# repos de 11 h). La coupure du midi tient d'elle-même : 12 h 30-14 h est libre.
+
+festival:
+  dateDebut: 2027-07-03
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-07-03
+    heureDebut: "10:00"
+    heureFin: "12:30"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-07-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: LUDOTHEQUE
+    nom: "Ludothèque"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: CONSTRUCTION
+    nom: "Jeux de construction"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A001
+    prenom: Camille
+    nom: Morel
+    dateNaissance: 1994-04-12
+    manager: false
+    email: "animateur001@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A002
+    prenom: Hugo
+    nom: Francois
+    dateNaissance: 1988-11-03
+    manager: false
+    email: "animateur002@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A003
+    prenom: "Inès"
+    nom: Guerin
+    dateNaissance: 2001-06-25
+    manager: false
+    email: "animateur003@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+    joursIndisponibles: []

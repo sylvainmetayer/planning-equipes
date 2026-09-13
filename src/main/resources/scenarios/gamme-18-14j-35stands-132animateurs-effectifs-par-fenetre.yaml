@@ -1,0 +1,2502 @@
+# yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
+# Barreau 18 : l'effectif porté par la fenêtre, pas par le stand.
+# Trois vacations par jour. Cinq profils de stand, sept stands chacun :
+# - une place le matin, deux l'après-midi ;
+# - deux fenêtres qui se recouvrent de 14 h à 18 h, où le plus haut effectif
+#   l'emporte ;
+# - ouvert à partir de 14 h « jusqu'à la fermeture » ;
+# - toujours ouvert, mais fermé une heure (15 h-16 h) trois jours tirés au sort :
+#   l'après-midi de ces jours-là porte deux groupes de sièges ;
+# - trois places le matin, une l'après-midi, fermé le soir.
+
+festival:
+  dateDebut: 2027-06-14
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2027-06-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2027-06-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J1-SOIREE
+    jour: 1
+    date: 2027-06-14
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2027-06-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2027-06-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-SOIREE
+    jour: 2
+    date: 2027-06-15
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2027-06-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2027-06-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-SOIREE
+    jour: 3
+    date: 2027-06-16
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J4-MATIN
+    jour: 4
+    date: 2027-06-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2027-06-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-SOIREE
+    jour: 4
+    date: 2027-06-17
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J5-MATIN
+    jour: 5
+    date: 2027-06-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J5-APREM
+    jour: 5
+    date: 2027-06-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J5-SOIREE
+    jour: 5
+    date: 2027-06-18
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J6-MATIN
+    jour: 6
+    date: 2027-06-19
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2027-06-19
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J6-SOIREE
+    jour: 6
+    date: 2027-06-19
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J7-MATIN
+    jour: 7
+    date: 2027-06-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2027-06-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J7-SOIREE
+    jour: 7
+    date: 2027-06-20
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J8-MATIN
+    jour: 8
+    date: 2027-06-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J8-APREM
+    jour: 8
+    date: 2027-06-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J8-SOIREE
+    jour: 8
+    date: 2027-06-21
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J9-MATIN
+    jour: 9
+    date: 2027-06-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J9-APREM
+    jour: 9
+    date: 2027-06-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J9-SOIREE
+    jour: 9
+    date: 2027-06-22
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J10-MATIN
+    jour: 10
+    date: 2027-06-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J10-APREM
+    jour: 10
+    date: 2027-06-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J10-SOIREE
+    jour: 10
+    date: 2027-06-23
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J11-MATIN
+    jour: 11
+    date: 2027-06-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J11-APREM
+    jour: 11
+    date: 2027-06-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J11-SOIREE
+    jour: 11
+    date: 2027-06-24
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J12-MATIN
+    jour: 12
+    date: 2027-06-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J12-APREM
+    jour: 12
+    date: 2027-06-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J12-SOIREE
+    jour: 12
+    date: 2027-06-25
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J13-MATIN
+    jour: 13
+    date: 2027-06-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J13-APREM
+    jour: 13
+    date: 2027-06-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J13-SOIREE
+    jour: 13
+    date: 2027-06-26
+    heureDebut: "18:00"
+    heureFin: "21:00"
+  - id: J14-MATIN
+    jour: 14
+    date: 2027-06-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J14-APREM
+    jour: 14
+    date: 2027-06-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J14-SOIREE
+    jour: 14
+    date: 2027-06-27
+    heureDebut: "18:00"
+    heureFin: "21:00"
+
+stands:
+  - id: STAND-01
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-02
+    nom: "Stand 2"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-03
+    nom: "Stand 3"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-04
+    nom: "Stand 4"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-15
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-16
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-24
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-05
+    nom: "Stand 5"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-06
+    nom: "Stand 6"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-07
+    nom: "Stand 7"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-08
+    nom: "Stand 8"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-09
+    nom: "Stand 9"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-17
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-19
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-21
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-10
+    nom: "Stand 10"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-11
+    nom: "Stand 11"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-12
+    nom: "Stand 12"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-13
+    nom: "Stand 13"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-14
+    nom: "Stand 14"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-17
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-21
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-24
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-15
+    nom: "Stand 15"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-16
+    nom: "Stand 16"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-17
+    nom: "Stand 17"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-18
+    nom: "Stand 18"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-19
+    nom: "Stand 19"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-16
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-21
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-27
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-20
+    nom: "Stand 20"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-21
+    nom: "Stand 21"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-22
+    nom: "Stand 22"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-23
+    nom: "Stand 23"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-24
+    nom: "Stand 24"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-18
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-21
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-27
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-25
+    nom: "Stand 25"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-26
+    nom: "Stand 26"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-27
+    nom: "Stand 27"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-28
+    nom: "Stand 28"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-29
+    nom: "Stand 29"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-17
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-18
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-25
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-30
+    nom: "Stand 30"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+  - id: STAND-31
+    nom: "Stand 31"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 2
+  - id: STAND-32
+    nom: "Stand 32"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:00"
+            effectif: 1
+          - heureDebut: "14:00"
+            heureFin: "21:00"
+            effectif: 2
+  - id: STAND-33
+    nom: "Stand 33"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "14:00"
+  - id: STAND-34
+    nom: "Stand 34"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    indisponibilites:
+      - date: 2027-06-15
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-19
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+      - date: 2027-06-22
+        heureDebut: "15:00"
+        heureFin: "16:00"
+        motif: "Entretien du matériel"
+  - id: STAND-35
+    nom: "Stand 35"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 1
+    effectifMax: 3
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "13:00"
+            effectif: 3
+          - heureDebut: "14:00"
+            heureFin: "18:00"
+            effectif: 1
+
+animateurs:
+  - id: A1800
+    prenom: Jeanne
+    nom: Henry
+    dateNaissance: 1976-04-06
+    manager: false
+    email: "animateur1801@example.org"
+    competences:
+      CONTES: DEBUTANT
+      ADRESSE: AUTONOME
+      SCIENCES: REFERENT
+      ENIGMES: DEBUTANT
+      JEUX_DE_PISTE: REFERENT
+      MOTRICITE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1801
+    prenom: Kevin
+    nom: Gauthier
+    dateNaissance: 1998-05-27
+    manager: false
+    email: "animateur1802@example.org"
+    competences:
+      ENIGMES: DEBUTANT
+      ADRESSE: REFERENT
+      CREATIF: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A1802
+    prenom: Laure
+    nom: Sanchez
+    dateNaissance: 1992-03-14
+    manager: false
+    email: "animateur1803@example.org"
+    competences:
+      CREATIF: AUTONOME
+      ENIGMES: REFERENT
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A1803
+    prenom: Mehdi
+    nom: Joly
+    dateNaissance: 2006-02-18
+    manager: false
+    email: "animateur1804@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      CREATIF: REFERENT
+      CONTES: AUTONOME
+      MOTRICITE: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-17
+  - id: A1804
+    prenom: Nadia
+    nom: Lucas
+    dateNaissance: 1984-03-14
+    manager: false
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-23
+      - 2027-06-25
+  - id: A1805
+    prenom: Olivier
+    nom: Marie
+    dateNaissance: 1971-01-25
+    manager: false
+    email: "animateur1806@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      MOTRICITE: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles:
+      - 2027-06-21
+      - 2027-06-22
+      - 2027-06-27
+  - id: A1806
+    prenom: Perrine
+    nom: Colin
+    dateNaissance: 1976-09-05
+    manager: false
+    competences:
+      ENIGMES: AUTONOME
+      SCIENCES: REFERENT
+      JEUX_DE_PISTE: DEBUTANT
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2027-06-22
+      - 2027-06-26
+  - id: A1807
+    prenom: Rayan
+    nom: Aubert
+    dateNaissance: 1975-07-23
+    manager: false
+    email: "animateur1808@example.org"
+    competences:
+      CULTURE: REFERENT
+      ADRESSE: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-19
+      - 2027-06-25
+  - id: A1808
+    prenom: Sarah
+    nom: Picard
+    dateNaissance: 2006-08-03
+    manager: false
+    email: "animateur1809@example.org"
+    competences:
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1809
+    prenom: Thibault
+    nom: Olivier
+    dateNaissance: 1997-07-28
+    manager: false
+    email: "animateur1810@example.org"
+    competences:
+      SCIENCES: DEBUTANT
+      ENIGMES: AUTONOME
+      CONSTRUCTION: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: REFERENT
+    joursIndisponibles:
+      - 2027-06-21
+      - 2027-06-22
+      - 2027-06-24
+  - id: A1810
+    prenom: Ursule
+    nom: Deschamps
+    dateNaissance: 1982-04-08
+    manager: false
+    email: "animateur1811@example.org"
+    competences:
+      SCIENCES: DEBUTANT
+      ADRESSE: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+    joursIndisponibles: []
+  - id: A1811
+    prenom: Vincent
+    nom: Weber
+    dateNaissance: 2004-05-16
+    manager: false
+    email: "animateur1812@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: DEBUTANT
+      ADRESSE: AUTONOME
+      CONTES: REFERENT
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-23
+  - id: A1812
+    prenom: Wendy
+    nom: Menard
+    dateNaissance: 1980-04-14
+    manager: false
+    email: "animateur1813@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      ENIGMES: DEBUTANT
+      CULTURE: AUTONOME
+      CONTES: REFERENT
+    joursIndisponibles:
+      - 2027-06-18
+  - id: A1813
+    prenom: Xavier
+    nom: Mercier
+    dateNaissance: 1981-07-10
+    manager: false
+    email: "animateur1814@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      ENIGMES: AUTONOME
+      ADRESSE: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1814
+    prenom: Yasmine
+    nom: Garnier
+    dateNaissance: 1995-02-03
+    manager: false
+    competences:
+      SCIENCES: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: DEBUTANT
+      CULTURE: REFERENT
+      CONSTRUCTION: REFERENT
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-19
+  - id: A1815
+    prenom: Zacharie
+    nom: Roussel
+    dateNaissance: 1985-03-02
+    manager: false
+    email: "animateur1816@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      MOTRICITE: AUTONOME
+      CONTES: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-14
+      - 2027-06-16
+      - 2027-06-22
+  - id: A1816
+    prenom: Aline
+    nom: Dumont
+    dateNaissance: 1979-08-12
+    manager: false
+    email: "animateur1817@example.org"
+    competences:
+      CONTES: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: REFERENT
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A1817
+    prenom: Bruno
+    nom: Gerard
+    dateNaissance: 1974-05-10
+    manager: false
+    competences:
+      CREATIF: AUTONOME
+      ENIGMES: REFERENT
+      CULTURE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-21
+  - id: A1818
+    prenom: Carole
+    nom: Gautier
+    dateNaissance: 1998-10-04
+    manager: false
+    competences:
+      CREATIF: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CONSTRUCTION: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A1819
+    prenom: Denis
+    nom: Meunier
+    dateNaissance: 1980-12-26
+    manager: false
+    email: "animateur1820@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+      JEUX_DE_PISTE: DEBUTANT
+      CREATIF: REFERENT
+      CONTES: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A1820
+    prenom: "Émilie"
+    nom: Barbier
+    dateNaissance: 2001-06-23
+    manager: false
+    email: "animateur1821@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A1821
+    prenom: Fabien
+    nom: Fernandez
+    dateNaissance: 1984-06-27
+    manager: false
+    email: "animateur1822@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1822
+    prenom: "Gisèle"
+    nom: Giraud
+    dateNaissance: 1966-02-26
+    manager: false
+    email: "animateur1823@example.org"
+    competences:
+      CREATIF: AUTONOME
+      ADRESSE: DEBUTANT
+      MOTRICITE: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1823
+    prenom: Henri
+    nom: Gaillard
+    dateNaissance: 1991-07-08
+    manager: false
+    email: "animateur1824@example.org"
+    competences:
+      CULTURE: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+      SCIENCES: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A1824
+    prenom: Camille
+    nom: Riviere
+    dateNaissance: 1982-10-05
+    manager: false
+    email: "animateur1825@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      ENIGMES: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      ADRESSE: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-24
+  - id: A1825
+    prenom: Hugo
+    nom: Huet
+    dateNaissance: 1986-07-27
+    manager: false
+    email: "animateur1826@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: REFERENT
+    joursIndisponibles: []
+  - id: A1826
+    prenom: "Inès"
+    nom: Baron
+    dateNaissance: 2003-08-21
+    manager: false
+    email: "animateur1827@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A1827
+    prenom: Lucas
+    nom: Roussel
+    dateNaissance: 1976-04-26
+    manager: false
+    email: "animateur1828@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      MOTRICITE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-20
+  - id: A1828
+    prenom: "Léa"
+    nom: Dupuis
+    dateNaissance: 1986-10-16
+    manager: false
+    email: "animateur1829@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      SCIENCES: REFERENT
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2027-06-24
+  - id: A1829
+    prenom: Nathan
+    nom: Faure
+    dateNaissance: 1992-04-04
+    manager: false
+    email: "animateur1830@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      SCIENCES: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A1830
+    prenom: "Chloé"
+    nom: Nicolas
+    dateNaissance: 1986-03-12
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-14
+      - 2027-06-18
+      - 2027-06-26
+  - id: A1831
+    prenom: Louis
+    nom: Lopez
+    dateNaissance: 1978-11-12
+    manager: false
+    email: "animateur1832@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CULTURE: DEBUTANT
+      ADRESSE: AUTONOME
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A1832
+    prenom: Manon
+    nom: Nguyen
+    dateNaissance: 1994-07-15
+    manager: false
+    email: "animateur1833@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CULTURE: AUTONOME
+      CONTES: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+      SCIENCES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-20
+      - 2027-06-23
+  - id: A1833
+    prenom: Jules
+    nom: Roger
+    dateNaissance: 1979-12-03
+    manager: false
+    competences:
+      SCIENCES: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+      CREATIF: AUTONOME
+    joursIndisponibles:
+      - 2027-06-26
+  - id: A1834
+    prenom: Emma
+    nom: Jean
+    dateNaissance: 1965-03-27
+    manager: false
+    email: "animateur1835@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1835
+    prenom: Arthur
+    nom: Brun
+    dateNaissance: 1998-05-09
+    manager: false
+    competences:
+      JEUX_DE_PISTE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      SCIENCES: REFERENT
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-17
+  - id: A1836
+    prenom: Jade
+    nom: Pierre
+    dateNaissance: 1973-06-06
+    manager: false
+    email: "animateur1837@example.org"
+    competences:
+      CREATIF: DEBUTANT
+      CONTES: REFERENT
+      CONSTRUCTION: AUTONOME
+      SCIENCES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1837
+    prenom: Gabriel
+    nom: Leclerc
+    dateNaissance: 1978-09-05
+    manager: false
+    email: "animateur1838@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-19
+      - 2027-06-20
+      - 2027-06-27
+  - id: A1838
+    prenom: Louise
+    nom: Philippe
+    dateNaissance: 1995-11-21
+    manager: false
+    competences:
+      CONTES: DEBUTANT
+      ADRESSE: AUTONOME
+      SCIENCES: AUTONOME
+      CREATIF: DEBUTANT
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1839
+    prenom: "Raphaël"
+    nom: Moreau
+    dateNaissance: 1969-07-04
+    manager: false
+    email: "animateur1840@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CONTES: DEBUTANT
+      CREATIF: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-14
+      - 2027-06-18
+  - id: A1840
+    prenom: Alice
+    nom: Vasseur
+    dateNaissance: 1986-03-13
+    manager: false
+    email: "animateur1841@example.org"
+    competences:
+      ENIGMES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      SCIENCES: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: DEBUTANT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A1841
+    prenom: Adam
+    nom: Charpentier
+    dateNaissance: 1971-04-02
+    manager: false
+    email: "animateur1842@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ENIGMES: AUTONOME
+      ADRESSE: DEBUTANT
+      SCIENCES: AUTONOME
+      CULTURE: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-14
+      - 2027-06-19
+  - id: A1842
+    prenom: Lina
+    nom: Lemaire
+    dateNaissance: 1981-06-20
+    manager: false
+    email: "animateur1843@example.org"
+    competences:
+      CREATIF: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A1843
+    prenom: Paul
+    nom: Lambert
+    dateNaissance: 1980-02-16
+    manager: false
+    email: "animateur1844@example.org"
+    competences:
+      SCIENCES: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: AUTONOME
+      CREATIF: DEBUTANT
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A1844
+    prenom: Rose
+    nom: Rousseau
+    dateNaissance: 1995-12-10
+    manager: false
+    email: "animateur1845@example.org"
+    competences:
+      CULTURE: REFERENT
+      CREATIF: REFERENT
+      ADRESSE: REFERENT
+      JEUX_DE_PISTE: REFERENT
+      ENIGMES: DEBUTANT
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-14
+  - id: A1845
+    prenom: Sacha
+    nom: Perrin
+    dateNaissance: 1970-01-10
+    manager: false
+    email: "animateur1846@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      CREATIF: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      CULTURE: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+  - id: A1846
+    prenom: Anna
+    nom: Fontaine
+    dateNaissance: 1999-08-24
+    manager: false
+    email: "animateur1847@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      CULTURE: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CREATIF: REFERENT
+      SCIENCES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-19
+  - id: A1847
+    prenom: "Théo"
+    nom: Boyer
+    dateNaissance: 2003-12-17
+    manager: false
+    email: "animateur1848@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CREATIF: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A1848
+    prenom: "Zoé"
+    nom: Roche
+    dateNaissance: 1967-09-10
+    manager: false
+    email: "animateur1849@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      SCIENCES: REFERENT
+      CONTES: DEBUTANT
+      ADRESSE: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1849
+    prenom: Noah
+    nom: Perez
+    dateNaissance: 1992-04-23
+    manager: false
+    email: "animateur1850@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      CULTURE: REFERENT
+      CONSTRUCTION: REFERENT
+      CREATIF: DEBUTANT
+    joursIndisponibles: []
+  - id: A1850
+    prenom: Lou
+    nom: Dumas
+    dateNaissance: 1973-02-04
+    manager: false
+    email: "animateur1851@example.org"
+    competences:
+      JEUX_DE_PISTE: DEBUTANT
+      ENIGMES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: DEBUTANT
+    joursIndisponibles: []
+  - id: A1851
+    prenom: Tom
+    nom: Renard
+    dateNaissance: 1987-10-16
+    manager: false
+    email: "animateur1852@example.org"
+    competences:
+      CONTES: REFERENT
+      JEUX_DE_SOCIETE: REFERENT
+      SCIENCES: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles:
+      - 2027-06-18
+      - 2027-06-20
+      - 2027-06-27
+  - id: A1852
+    prenom: Mila
+    nom: Vidal
+    dateNaissance: 2002-08-22
+    manager: false
+    email: "animateur1853@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      CONTES: REFERENT
+      CREATIF: REFERENT
+      ADRESSE: REFERENT
+      CONSTRUCTION: DEBUTANT
+      CULTURE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1853
+    prenom: Victor
+    nom: Leclercq
+    dateNaissance: 2004-07-15
+    manager: false
+    email: "animateur1854@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A1854
+    prenom: Agathe
+    nom: Hubert
+    dateNaissance: 1988-09-09
+    manager: false
+    email: "animateur1855@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1855
+    prenom: "Maël"
+    nom: Perrot
+    dateNaissance: 1965-04-05
+    manager: false
+    email: "animateur1856@example.org"
+    competences:
+      ENIGMES: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: AUTONOME
+      CULTURE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-14
+      - 2027-06-15
+      - 2027-06-26
+  - id: A1856
+    prenom: Julia
+    nom: Lebrun
+    dateNaissance: 2001-03-21
+    manager: false
+    email: "animateur1857@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-25
+  - id: A1857
+    prenom: Liam
+    nom: Fabre
+    dateNaissance: 2004-10-12
+    manager: false
+    email: "animateur1858@example.org"
+    competences:
+      ENIGMES: DEBUTANT
+      CONTES: DEBUTANT
+      SCIENCES: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1858
+    prenom: Iris
+    nom: Bonnet
+    dateNaissance: 1997-02-18
+    manager: false
+    email: "animateur1859@example.org"
+    competences:
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1859
+    prenom: Oscar
+    nom: Blanc
+    dateNaissance: 1986-07-17
+    manager: false
+    competences:
+      ADRESSE: AUTONOME
+      SCIENCES: AUTONOME
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A1860
+    prenom: Clara
+    nom: Morin
+    dateNaissance: 1965-04-16
+    manager: false
+    email: "animateur1861@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CREATIF: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      ADRESSE: REFERENT
+      ENIGMES: AUTONOME
+      CONTES: REFERENT
+    joursIndisponibles: []
+  - id: A1861
+    prenom: Nino
+    nom: Chevalier
+    dateNaissance: 1967-04-05
+    manager: false
+    email: "animateur1862@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      SCIENCES: REFERENT
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-24
+      - 2027-06-25
+  - id: A1862
+    prenom: Margaux
+    nom: Denis
+    dateNaissance: 1993-12-23
+    manager: false
+    email: "animateur1863@example.org"
+    competences:
+      SCIENCES: DEBUTANT
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+      CREATIF: REFERENT
+    joursIndisponibles: []
+  - id: A1863
+    prenom: Robin
+    nom: Roy
+    dateNaissance: 1967-04-14
+    manager: false
+    competences:
+      SCIENCES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CREATIF: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A1864
+    prenom: Elsa
+    nom: Marchand
+    dateNaissance: 1996-09-28
+    manager: false
+    email: "animateur1865@example.org"
+    competences:
+      CONTES: REFERENT
+      CREATIF: REFERENT
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1865
+    prenom: Simon
+    nom: Brunet
+    dateNaissance: 1981-01-25
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      ENIGMES: REFERENT
+      CULTURE: AUTONOME
+      CONTES: DEBUTANT
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A1866
+    prenom: Juliette
+    nom: Arnaud
+    dateNaissance: 1970-08-20
+    manager: false
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      ENIGMES: REFERENT
+      SCIENCES: DEBUTANT
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A1867
+    prenom: Martin
+    nom: Bourgeois
+    dateNaissance: 1977-05-26
+    manager: false
+    email: "animateur1868@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      ADRESSE: REFERENT
+      MOTRICITE: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1868
+    prenom: Capucine
+    nom: Lacroix
+    dateNaissance: 1969-06-15
+    manager: false
+    email: "animateur1869@example.org"
+    competences:
+      ADRESSE: REFERENT
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+    joursIndisponibles: []
+  - id: A1869
+    prenom: Axel
+    nom: Carpentier
+    dateNaissance: 2006-09-07
+    manager: false
+    email: "animateur1870@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: REFERENT
+      CONSTRUCTION: REFERENT
+      CREATIF: DEBUTANT
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1870
+    prenom: "Salomé"
+    nom: Hoarau
+    dateNaissance: 1994-09-22
+    manager: false
+    competences:
+      SCIENCES: AUTONOME
+      CONSTRUCTION: REFERENT
+      MOTRICITE: REFERENT
+      CREATIF: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: DEBUTANT
+    joursIndisponibles: []
+  - id: A1871
+    prenom: Valentin
+    nom: Hamon
+    dateNaissance: 1995-06-05
+    manager: false
+    email: "animateur1872@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: REFERENT
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A1872
+    prenom: Romane
+    nom: Morel
+    dateNaissance: 2002-12-13
+    manager: false
+    email: "animateur1873@example.org"
+    competences:
+      CULTURE: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: REFERENT
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-15
+      - 2027-06-19
+  - id: A1873
+    prenom: Mathis
+    nom: Francois
+    dateNaissance: 1971-12-23
+    manager: false
+    email: "animateur1874@example.org"
+    competences:
+      ENIGMES: REFERENT
+      SCIENCES: AUTONOME
+      MOTRICITE: REFERENT
+    joursIndisponibles:
+      - 2027-06-23
+  - id: A1874
+    prenom: "Éloïse"
+    nom: Guerin
+    dateNaissance: 1996-10-15
+    manager: false
+    email: "animateur1875@example.org"
+    competences:
+      CONTES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1875
+    prenom: Baptiste
+    nom: Mathieu
+    dateNaissance: 1982-06-24
+    manager: false
+    email: "animateur1876@example.org"
+    competences:
+      ENIGMES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: AUTONOME
+      CONTES: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1876
+    prenom: "Célia"
+    nom: Robin
+    dateNaissance: 1969-10-10
+    manager: false
+    email: "animateur1877@example.org"
+    competences:
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: AUTONOME
+      SCIENCES: DEBUTANT
+    joursIndisponibles: []
+  - id: A1877
+    prenom: "Noé"
+    nom: Lemoine
+    dateNaissance: 1997-01-09
+    manager: false
+    competences:
+      CONTES: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      MOTRICITE: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1878
+    prenom: "Maëlle"
+    nom: Noel
+    dateNaissance: 1979-06-07
+    manager: false
+    email: "animateur1879@example.org"
+    competences:
+      CONTES: REFERENT
+      ADRESSE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: REFERENT
+    joursIndisponibles:
+      - 2027-06-27
+  - id: A1879
+    prenom: Eliott
+    nom: Dufour
+    dateNaissance: 1991-09-16
+    manager: false
+    email: "animateur1880@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      ENIGMES: AUTONOME
+      CREATIF: DEBUTANT
+      CULTURE: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles: []
+  - id: A1880
+    prenom: Apolline
+    nom: Schmitt
+    dateNaissance: 1971-03-27
+    manager: false
+    email: "animateur1881@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      SCIENCES: AUTONOME
+      CULTURE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CREATIF: REFERENT
+      CONTES: REFERENT
+    joursIndisponibles: []
+  - id: A1881
+    prenom: "Timéo"
+    nom: Rolland
+    dateNaissance: 1994-12-19
+    manager: false
+    email: "animateur1882@example.org"
+    competences:
+      CULTURE: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1882
+    prenom: Charlotte
+    nom: Renaud
+    dateNaissance: 2000-10-25
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CULTURE: REFERENT
+      SCIENCES: AUTONOME
+      ADRESSE: DEBUTANT
+      CONSTRUCTION: REFERENT
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-27
+  - id: A1883
+    prenom: Antoine
+    nom: Fabre
+    dateNaissance: 1987-02-28
+    manager: false
+    email: "animateur1884@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      ENIGMES: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-16
+      - 2027-06-23
+  - id: A1884
+    prenom: Lise
+    nom: Moulin
+    dateNaissance: 1996-03-08
+    manager: false
+    email: "animateur1885@example.org"
+    competences:
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      CONTES: REFERENT
+      CULTURE: REFERENT
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1885
+    prenom: "Aurélien"
+    nom: Cordier
+    dateNaissance: 1981-06-07
+    manager: false
+    competences:
+      ENIGMES: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: REFERENT
+    joursIndisponibles:
+      - 2027-06-16
+      - 2027-06-17
+  - id: A1886
+    prenom: Pauline
+    nom: Poirier
+    dateNaissance: 1977-03-18
+    manager: false
+    email: "animateur1887@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      SCIENCES: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-18
+      - 2027-06-23
+      - 2027-06-27
+  - id: A1887
+    prenom: Quentin
+    nom: Girard
+    dateNaissance: 1987-09-26
+    manager: false
+    email: "animateur1888@example.org"
+    competences:
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: DEBUTANT
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1888
+    prenom: Justine
+    nom: Martinez
+    dateNaissance: 1988-06-24
+    manager: false
+    email: "animateur1889@example.org"
+    competences:
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+      CONTES: AUTONOME
+      SCIENCES: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1889
+    prenom: Bastien
+    nom: Muller
+    dateNaissance: 1991-06-14
+    manager: false
+    email: "animateur1890@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      JEUX_DE_PISTE: REFERENT
+      CREATIF: AUTONOME
+      SCIENCES: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A1890
+    prenom: "Océane"
+    nom: Clement
+    dateNaissance: 1965-02-04
+    manager: false
+    email: "animateur1891@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      CREATIF: AUTONOME
+      CULTURE: AUTONOME
+      CONTES: AUTONOME
+      MOTRICITE: REFERENT
+    joursIndisponibles: []
+  - id: A1891
+    prenom: Florian
+    nom: Masson
+    dateNaissance: 1973-09-16
+    manager: false
+    email: "animateur1892@example.org"
+    competences:
+      SCIENCES: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A1892
+    prenom: Mathilde
+    nom: Duval
+    dateNaissance: 1986-05-25
+    manager: false
+    email: "animateur1893@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      SCIENCES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CULTURE: AUTONOME
+      CONTES: DEBUTANT
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1893
+    prenom: Adrien
+    nom: Meyer
+    dateNaissance: 1984-05-04
+    manager: false
+    email: "animateur1894@example.org"
+    competences:
+      CULTURE: REFERENT
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: AUTONOME
+      SCIENCES: REFERENT
+      ADRESSE: REFERENT
+      ENIGMES: DEBUTANT
+    joursIndisponibles: []
+  - id: A1894
+    prenom: "Clémence"
+    nom: Blanchard
+    dateNaissance: 2002-09-13
+    manager: false
+    email: "animateur1895@example.org"
+    competences:
+      ADRESSE: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      CREATIF: AUTONOME
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A1895
+    prenom: Maxime
+    nom: Leroux
+    dateNaissance: 1971-11-10
+    manager: false
+    competences:
+      CULTURE: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1896
+    prenom: "Solène"
+    nom: Caron
+    dateNaissance: 2006-08-18
+    manager: false
+    email: "animateur1897@example.org"
+    competences:
+      SCIENCES: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      ENIGMES: REFERENT
+      CULTURE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A1897
+    prenom: "Rémi"
+    nom: Lemoine
+    dateNaissance: 1988-10-03
+    manager: false
+    email: "animateur1898@example.org"
+    competences:
+      CREATIF: AUTONOME
+      SCIENCES: AUTONOME
+      ENIGMES: AUTONOME
+      ADRESSE: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A1898
+    prenom: Morgane
+    nom: Dupont
+    dateNaissance: 1976-09-21
+    manager: false
+    email: "animateur1899@example.org"
+    competences:
+      CULTURE: REFERENT
+      CONTES: DEBUTANT
+      CREATIF: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1899
+    prenom: "Loïc"
+    nom: Louis
+    dateNaissance: 1998-12-14
+    manager: false
+    email: "animateur1900@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      ENIGMES: AUTONOME
+      MOTRICITE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1900
+    prenom: Estelle
+    nom: Chauvin
+    dateNaissance: 1986-07-20
+    manager: false
+    email: "animateur1901@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      MOTRICITE: REFERENT
+      ADRESSE: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: DEBUTANT
+    joursIndisponibles: []
+  - id: A1901
+    prenom: Damien
+    nom: Tessier
+    dateNaissance: 1969-05-10
+    manager: false
+    email: "animateur1902@example.org"
+    competences:
+      CULTURE: AUTONOME
+      CONTES: REFERENT
+      ADRESSE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1902
+    prenom: "Noémie"
+    nom: Andre
+    dateNaissance: 1984-11-06
+    manager: false
+    email: "animateur1903@example.org"
+    competences:
+      ENIGMES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1903
+    prenom: Yanis
+    nom: Legrand
+    dateNaissance: 1998-07-17
+    manager: false
+    email: "animateur1904@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      ADRESSE: AUTONOME
+      SCIENCES: AUTONOME
+      CONTES: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles:
+      - 2027-06-15
+      - 2027-06-18
+      - 2027-06-20
+  - id: A1904
+    prenom: "Anaïs"
+    nom: Henry
+    dateNaissance: 1972-04-18
+    manager: false
+    email: "animateur1905@example.org"
+    competences:
+      CONTES: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1905
+    prenom: Kylian
+    nom: Gauthier
+    dateNaissance: 1997-04-25
+    manager: false
+    email: "animateur1906@example.org"
+    competences:
+      SCIENCES: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1906
+    prenom: Amandine
+    nom: Sanchez
+    dateNaissance: 2005-09-16
+    manager: false
+    competences:
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      SCIENCES: REFERENT
+      CREATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A1907
+    prenom: "Benoît"
+    nom: Joly
+    dateNaissance: 1978-01-16
+    manager: false
+    email: "animateur1908@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      CONSTRUCTION: REFERENT
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A1908
+    prenom: Coralie
+    nom: Lucas
+    dateNaissance: 1997-08-08
+    manager: false
+    email: "animateur1909@example.org"
+    competences:
+      CULTURE: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CONTES: AUTONOME
+      SCIENCES: REFERENT
+      MOTRICITE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1909
+    prenom: Cyril
+    nom: Marie
+    dateNaissance: 1987-06-14
+    manager: false
+    email: "animateur1910@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+      CREATIF: AUTONOME
+      CONSTRUCTION: DEBUTANT
+    joursIndisponibles: []
+  - id: A1910
+    prenom: Fanny
+    nom: Colin
+    dateNaissance: 2003-09-01
+    manager: false
+    email: "animateur1911@example.org"
+    competences:
+      SCIENCES: REFERENT
+      MOTRICITE: AUTONOME
+      ENIGMES: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-15
+      - 2027-06-19
+  - id: A1911
+    prenom: "Gaël"
+    nom: Aubert
+    dateNaissance: 1999-04-16
+    manager: false
+    email: "animateur1912@example.org"
+    competences:
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      MOTRICITE: REFERENT
+      SCIENCES: AUTONOME
+      ADRESSE: DEBUTANT
+      CULTURE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-15
+      - 2027-06-27
+  - id: A1912
+    prenom: "Hélène"
+    nom: Picard
+    dateNaissance: 2000-06-01
+    manager: false
+    email: "animateur1913@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CULTURE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1913
+    prenom: "Ismaël"
+    nom: Olivier
+    dateNaissance: 2004-01-14
+    manager: false
+    email: "animateur1914@example.org"
+    competences:
+      ENIGMES: REFERENT
+      SCIENCES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      MOTRICITE: REFERENT
+      CREATIF: AUTONOME
+    joursIndisponibles: []
+  - id: A1914
+    prenom: Jeanne
+    nom: Deschamps
+    dateNaissance: 1995-06-10
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      JEUX_DE_PISTE: REFERENT
+      SCIENCES: AUTONOME
+      ENIGMES: AUTONOME
+      CONTES: REFERENT
+    joursIndisponibles: []
+  - id: A1915
+    prenom: Kevin
+    nom: Weber
+    dateNaissance: 1986-02-12
+    manager: false
+    email: "animateur1916@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      SCIENCES: DEBUTANT
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles: []
+  - id: A1916
+    prenom: Laure
+    nom: Menard
+    dateNaissance: 1982-02-24
+    manager: false
+    email: "animateur1917@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      CONSTRUCTION: REFERENT
+      MOTRICITE: REFERENT
+      ADRESSE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2027-06-19
+      - 2027-06-21
+  - id: A1917
+    prenom: Mehdi
+    nom: Mercier
+    dateNaissance: 2001-03-06
+    manager: false
+    email: "animateur1918@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A1918
+    prenom: Nadia
+    nom: Garnier
+    dateNaissance: 1979-01-10
+    manager: false
+    email: "animateur1919@example.org"
+    competences:
+      CREATIF: REFERENT
+      CULTURE: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      CONTES: AUTONOME
+      ADRESSE: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1919
+    prenom: Olivier
+    nom: Roussel
+    dateNaissance: 2005-06-21
+    manager: false
+    email: "animateur1920@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2027-06-15
+      - 2027-06-19
+  - id: A1920
+    prenom: Perrine
+    nom: Dumont
+    dateNaissance: 2001-06-18
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+      ENIGMES: DEBUTANT
+      MOTRICITE: DEBUTANT
+      CREATIF: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1921
+    prenom: Rayan
+    nom: Gerard
+    dateNaissance: 1990-02-26
+    manager: false
+    email: "animateur1922@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CULTURE: AUTONOME
+      CREATIF: REFERENT
+      CONSTRUCTION: REFERENT
+      ENIGMES: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-17
+      - 2027-06-18
+      - 2027-06-19
+  - id: A1922
+    prenom: Sarah
+    nom: Gautier
+    dateNaissance: 1972-10-20
+    manager: false
+    email: "animateur1923@example.org"
+    competences:
+      ADRESSE: DEBUTANT
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      SCIENCES: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A1923
+    prenom: Thibault
+    nom: Meunier
+    dateNaissance: 1983-07-07
+    manager: false
+    email: "animateur1924@example.org"
+    competences:
+      CREATIF: DEBUTANT
+      ENIGMES: AUTONOME
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles:
+      - 2027-06-17
+  - id: A1924
+    prenom: Ursule
+    nom: Barbier
+    dateNaissance: 2006-04-07
+    manager: false
+    email: "animateur1925@example.org"
+    competences:
+      CREATIF: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+      MOTRICITE: AUTONOME
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A1925
+    prenom: Vincent
+    nom: Fernandez
+    dateNaissance: 2005-08-23
+    manager: false
+    email: "animateur1926@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      JEUX_DE_SOCIETE: REFERENT
+      CONTES: DEBUTANT
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A1926
+    prenom: Wendy
+    nom: Giraud
+    dateNaissance: 1971-05-17
+    manager: false
+    email: "animateur1927@example.org"
+    competences:
+      CONTES: REFERENT
+      ENIGMES: AUTONOME
+      MOTRICITE: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A1927
+    prenom: Xavier
+    nom: Gaillard
+    dateNaissance: 1981-10-01
+    manager: false
+    email: "animateur1928@example.org"
+    competences:
+      ENIGMES: DEBUTANT
+      ADRESSE: REFERENT
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A1928
+    prenom: Yasmine
+    nom: Riviere
+    dateNaissance: 1971-08-18
+    manager: false
+    email: "animateur1929@example.org"
+    competences:
+      CREATIF: REFERENT
+      ADRESSE: AUTONOME
+      CONTES: DEBUTANT
+      ENIGMES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A1929
+    prenom: Zacharie
+    nom: Huet
+    dateNaissance: 1973-04-08
+    manager: false
+    email: "animateur1930@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      CREATIF: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A1930
+    prenom: Aline
+    nom: Baron
+    dateNaissance: 1986-03-06
+    manager: false
+    email: "animateur1931@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: REFERENT
+    joursIndisponibles: []
+  - id: A1931
+    prenom: Bruno
+    nom: Roussel
+    dateNaissance: 1984-10-19
+    manager: false
+    competences:
+      SCIENCES: REFERENT
+      MOTRICITE: REFERENT
+      CONTES: REFERENT
+      ENIGMES: AUTONOME
+    joursIndisponibles: []

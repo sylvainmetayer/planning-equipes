@@ -19,7 +19,7 @@ test.afterAll(async () => {
 
 test("l'archive ne tient que les référentiels cochés, et part au clic", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await page.goto('/export-csv');
+  await page.goto('/exports');
 
   // Quatre référentiels, tous cochés d'entrée : recopier une édition entière
   // est le cas courant.

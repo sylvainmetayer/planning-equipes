@@ -20,8 +20,8 @@ import { errorPrefix } from '../../core/error-message';
  * ScenarioValidator finds (types, required fields, value ranges — see
  * docs/schema/scenario-schema.json), without importing anything. A
  * diagnostic tool embedded in the Debug page: unlike the "Importer un
- * fichier" button on the Paramètres page, nothing here is ever persisted, so
- * it's safe to try on any file, valid or not.
+ * fichier" button of the Imports screen's Scénario tab, nothing here is ever
+ * persisted, so it's safe to try on any file, valid or not.
  */
 @Component({
   selector: 'app-yaml-validator',

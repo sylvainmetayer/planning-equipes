@@ -29,13 +29,18 @@ import org.junit.jupiter.api.Test;
  * failed on exactly that. A reference that depends on the state of a database
  * is not a reference. What is pinned here is what the <em>file</em> says, plus
  * the domain's own defaults.</p>
+ *
+ * <p>Scope: the hand-written fixtures, {@link ScenariosLivres#references()} —
+ * the ladder and the extreme cases are shipped in the same folder since they
+ * became selectable, and are guarded by their own tests rather than by a
+ * generated reference nobody would read.</p>
  */
 class ScenarioLectureDifferentielleTest {
 
     @Test
     void chaqueScenarioLivreSeLitCommeSaReference() throws IOException {
-        List<java.nio.file.Path> scenarios = ScenariosLivres.all();
-        assertThat(scenarios).as("les scénarios livrés doivent être trouvés").hasSizeGreaterThan(5);
+        List<java.nio.file.Path> scenarios = ScenariosLivres.references();
+        assertThat(scenarios).as("les scénarios de référence doivent être trouvés").hasSizeGreaterThan(5);
 
         ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes");
         List<String> ecarts = new ArrayList<>();

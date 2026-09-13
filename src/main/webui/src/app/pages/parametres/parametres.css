@@ -1,10 +1,5 @@
 /* Paramètres page: the two sections, the ninja warning, the backup facts and the dumps on disk. */
 
-/* Scenario picker sits inline with the action buttons on the Data setup page. */
-.scenario-select {
-  min-width: 16rem;
-}
-
 /* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
 .ninja-select {
   min-width: 18rem;

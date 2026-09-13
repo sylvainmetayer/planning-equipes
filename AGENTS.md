@@ -86,7 +86,8 @@ close.
 Add the same tag to any future test in this weight class instead of letting
 it slow down the default loop.
 
-The **scenario ladder** — thirty files under `src/test/resources/scenarios/gamme/`,
+The **scenario ladder** — the thirty `gamme-…` files of
+`src/main/resources/scenarios/`,
 from one day and two stands to a month and 150 stands, the last five never
 solvable — is played by `ScenarioLadder*Test` in `service/scenario`. Rungs 1 to
 15 and the infeasible ones stay in the default run (each reaches zero hard in
@@ -94,13 +95,22 @@ its construction heuristic); `ScenarioLadderLargeTest` is `scenario-lent`.
 When a change moves a rung, fix the file or the assertion knowingly — the
 table and the rules are in `docs/developpement.md` (*La gamme de scénarios*).
 
-The **extreme scenarios** (`src/test/resources/scenarios/extremes/`) probe the
+The **extreme scenarios** (the `extreme-…` files of the same folder) probe the
 limits — a thousand animateurs, 120 days, 500 stands a day, two thousand ad hoc
 rules, empty editions. `ScenarioExtremeDegenerateTest` and
 `ScenarioExtremeCatalogTest` run by default; `ScenarioExtremeAxisTest` and
 `ScenarioExtremeCumulTest` carry `@Tag("scenario-extreme")`, excluded from both
 the default run and `-Pscenario-tests`, and run only with `-Pscenario-extreme`,
 one class at a time, with `-DargLine=-Xmx3g` and nothing else testing.
+
+Both sets, and the hand-written fixtures beside them, live in the **single**
+classpath folder `src/main/resources/scenarios/`, flat: the Débogage screen
+lists that folder and `ScenarioYamlReader.scenarioPath` refuses a name carrying
+a path component, so a scenario in a subfolder — or in a second `scenarios/`
+directory, which `getResource` would hide entirely — is one nobody can pick.
+`ScenariosLivres` in the tests is what reads it: `all()` for the checks that
+apply to every file, `references()` for the differential tests, which pin a
+canonical form per file and have no business pinning a generated one.
 
 When an agent session needs to run this profile (or any other job on this
 order of a minute or more — a `docker build`, a long solve), launch it as a

@@ -153,12 +153,11 @@ class ScenarioYamlReaderTest {
      * where the extraction swapped {@code getClass()} for a class literal, and
      * which nothing covered.
      *
-     * <p>What this cannot assert, and it is worth knowing: the contents.
+     * <p>One thing to know before adding a second {@code scenarios/} directory:
      * {@code getResource("scenarios")} returns the <b>first</b> match on the
-     * classpath, not the union — under test, the scenarios of {@code test-classes}
-     * therefore hide those of {@code main} entirely. Production has only one, but
-     * whoever adds a second {@code scenarios/} directory should know the second
-     * will be invisible.</p>
+     * classpath, not the union, so the second one would be invisible. That is
+     * why every scenario — the hand-written fixtures, the ladder and the
+     * extreme cases alike — lives in the single folder of {@code main}.</p>
      */
     @Test
     void everyListedScenarioIsAYamlFileAndTheListIsSorted() {

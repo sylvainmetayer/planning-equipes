@@ -64,7 +64,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
    mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
    menu avancé qui liste aussi la quinzaine d'écrans spécialisés — diagnostic
    approfondi, vues d'analyse et outils techniques).
-2. Sur **Paramètres**, choisir un scénario puis **Charger le scénario
+2. Sur **Débogage**, choisir un scénario livré puis **Charger le scénario
    sélectionné** pour remplir l'édition courante (les référentiels sont ensuite
    modifiables depuis **Stands**, **Emplacements**, **Animateurs**,
    **Créneaux** et **Typologies**).
@@ -296,9 +296,9 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Imports | Tous les fichiers qui remplissent une édition sur un seul écran, un onglet par référentiel et dans l'ordre où les données se tiennent : typologies, emplacements, stands, animateurs, puis la grille des stands. Les trois premiers demandent le minimum — un identifiant et un libellé, un identifiant et un nom, un identifiant, un nom et des typologies — l'effectif d'un stand et les coordonnées d'un emplacement restant facultatifs. Une colonne absente n'efface rien, un identifiant connu est mis à jour, et une typologie citée sans exister est créée après l'avoir annoncée |
-| Export CSV | Les référentiels de l'édition courante réécrits en archive ZIP, un CSV par référentiel — typologies, emplacements, stands, animateurs — chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit : de quoi recopier une édition sur l'autre, ou corriger en masse dans un tableur puis réimporter |
-| Import / export de scénario | Un fichier YAML décrit une configuration complète d'événement ; l'import valide le fichier et explique ce qui cloche |
+| Imports | Tous les fichiers qui remplissent une édition sur un seul écran, un onglet par référentiel et dans l'ordre où les données se tiennent : typologies, emplacements, stands, animateurs, puis la grille des stands, et enfin le fichier scénario — le seul qui remplace l'édition au lieu de la compléter. Les trois premiers demandent le minimum — un identifiant et un libellé, un identifiant et un nom, un identifiant, un nom et des typologies — l'effectif d'un stand et les coordonnées d'un emplacement restant facultatifs. Une colonne absente n'efface rien, un identifiant connu est mis à jour, et une typologie citée sans exister est créée après l'avoir annoncée |
+| Exports | Deux formes sur un écran. L'archive ZIP : un CSV par référentiel — typologies, emplacements, stands, animateurs — chacun à cocher, et chacun dans la forme exacte que l'onglet d'import correspondant relit, de quoi recopier une édition sur l'autre ou corriger en masse dans un tableur puis réimporter. Le fichier scénario : l'édition entière dans un seul YAML, celui que l'onglet Scénario des imports relit |
+| Import / export de scénario | Un fichier YAML décrit une configuration complète d'événement ; l'import valide le fichier et explique ce qui cloche. Les cinquante et quelques scénarios livrés avec l'application — fixtures de démonstration, gamme de tests et cas extrêmes — se chargent depuis le sélecteur de la page **Débogage** |
 | Import de la grille des stands | La matrice du classeur — stands en lignes, jours et créneaux en colonnes, un effectif par case — arrive telle quelle : chaque colonne se pose sur son créneau, une colonne inconnue est ignorée et listée, chaque stand voit son horaire réécrit depuis ses cases après un aperçu ligne par ligne. La grille actuelle se télécharge comme modèle |
 | Import CSV des animateurs | Le tableur de bénévoles arrive tel quel : on désigne quelle colonne est quel champ, on lit ligne par ligne ce que l'import ferait — acceptée, rejetée et pourquoi, avec le numéro de ligne du fichier — et rien n'est écrit tant qu'on n'a pas validé. Par défaut il ajoute et met à jour sans supprimer personne, et complète les jours d'indisponibilité déjà déclarés au lieu de les effacer. Un CSV d'exemple est téléchargeable depuis l'écran |
 | Export / import d'un dump SQL | Dupliquer ou restaurer un jeu de données complet |

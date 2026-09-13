@@ -113,8 +113,9 @@ jobs:
       # couvert par le workflow Tests.
       #
       # ScenarioLadderLargeTest joue les barreaux 16 à 25 de la gamme de
-      # scénarios (src/test/resources/scenarios/gamme) : dimensionnés avec de
-      # la marge, ils convergent chacun en moins d'une minute.
+      # scénarios (les fichiers gamme-… de src/main/resources/scenarios) :
+      # dimensionnés avec de la marge, ils convergent chacun en moins d'une
+      # minute.
       #
       # Les deux Festival* portent sur des données réelles anonymisées, donc
       # sur des stands à horaires récurrents : la canicule découpée converge

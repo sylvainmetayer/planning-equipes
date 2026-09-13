@@ -35,13 +35,18 @@ import org.junit.jupiter.api.Test;
  * section {@code ScenarioExport} does not carry. Rather than characterise that
  * loss and risk describing it wrongly, the reference records exactly what the
  * round trip does today. A rewrite that loses one element more says so.</p>
+ *
+ * <p>Scope: the hand-written fixtures, {@link ScenariosLivres#references()} —
+ * the ladder and the extreme cases are shipped in the same folder since they
+ * became selectable, and are guarded by their own tests rather than by a
+ * generated reference nobody would read.</p>
  */
 class ScenarioEcritureDifferentielleTest {
 
     @Test
     void chaqueScenarioEcritPuisReluCorrespondASaReference() throws IOException {
-        List<Path> scenarios = ScenariosLivres.all();
-        assertThat(scenarios).as("les scénarios livrés doivent être trouvés").hasSizeGreaterThan(5);
+        List<Path> scenarios = ScenariosLivres.references();
+        assertThat(scenarios).as("les scénarios de référence doivent être trouvés").hasSizeGreaterThan(5);
 
         ReferenceComparison comparaison = new ReferenceComparison("scenario-empreintes-aller-retour");
         List<String> ecarts = new ArrayList<>();

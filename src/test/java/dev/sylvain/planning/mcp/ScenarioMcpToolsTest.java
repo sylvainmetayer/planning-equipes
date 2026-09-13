@@ -56,10 +56,9 @@ class ScenarioMcpToolsTest {
 
     /**
      * Names, not paths: the tool's whole contract is that what it returns can
-     * be handed straight back to {@code importer_scenario}. Which files are
-     * listed depends on the classpath — under test the scenarios of
-     * {@code src/test/resources} shadow the bundled ones — so the assertion is
-     * on the shape, not on a file that happens to win.
+     * be handed straight back to {@code importer_scenario}. The assertion is on
+     * the shape rather than on a list of files, which grows every time a
+     * scenario is added to the folder.
      */
     @Test
     void listerLesScenariosRendDesNomsReimportables() {

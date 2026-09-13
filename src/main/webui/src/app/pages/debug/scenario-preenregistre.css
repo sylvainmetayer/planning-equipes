@@ -1,0 +1,4 @@
+/* Scenario picker sits inline with the "Charger" button of the Débogage page. */
+.scenario-select {
+  min-width: 16rem;
+}
