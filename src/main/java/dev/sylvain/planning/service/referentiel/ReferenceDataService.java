@@ -599,6 +599,12 @@ public class ReferenceDataService implements ReferenceData {
         return contraintesAdHoc.create(contrainte);
     }
 
+    /** {@link #createContrainteAdHoc} with the warnings the exception raised — the write the screen and MCP call. */
+    public WrittenContrainteAdHoc writeContrainteAdHoc(ContrainteAdHoc contrainte) {
+        ContrainteAdHoc ecrite = contraintesAdHoc.create(contrainte);
+        return new WrittenContrainteAdHoc(ecrite, coherence.onContrainteAdHoc(ecrite));
+    }
+
     /** See {@link ContrainteAdHocService#createAll} — all or none. */
     public List<ContrainteAdHoc> createContraintesAdHoc(List<ContrainteAdHoc> contraintes) {
         return contraintesAdHoc.createAll(contraintes);

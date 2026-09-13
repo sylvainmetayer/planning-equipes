@@ -5440,11 +5440,11 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES" ]
+        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE" ]
       },
       "TypeContrainteAdHoc" : {
         "type" : "string",
@@ -5616,6 +5616,20 @@
         "properties" : {
           "animateur" : {
             "$ref" : "#/components/schemas/Animateur"
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Avertissement"
+            }
+          }
+        }
+      },
+      "WrittenContrainteAdHoc" : {
+        "type" : "object",
+        "properties" : {
+          "contrainte" : {
+            "$ref" : "#/components/schemas/ContrainteAdHoc"
           },
           "avertissements" : {
             "type" : "array",
@@ -6454,7 +6468,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenContrainteAdHoc"
+                }
               }
             }
           },

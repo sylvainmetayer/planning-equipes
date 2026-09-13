@@ -118,9 +118,14 @@ export function niveauProblemeLabel(niveau: NiveauProbleme): string {
 }
 
 export function typeCauseLabel(type: TypeCauseInfaisabilite): string {
-  return type === 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
-    ? $localize`:@@problemes.cause.contraintesAdHocContradictoires:Ajustements manuels contradictoires`
-    : $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
+  switch (type) {
+    case 'CONTRAINTES_AD_HOC_CONTRADICTOIRES':
+      return $localize`:@@problemes.cause.contraintesAdHocContradictoires:Ajustements manuels contradictoires`;
+    case 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE':
+      return $localize`:@@problemes.cause.affectationForceeJourIndisponible:Affectation forcée un jour d'indisponibilité`;
+    default:
+      return $localize`:@@problemes.cause.creneauSousEffectif:Créneau en sous-effectif`;
+  }
 }
 
 /** A cause naming a dozen stands gets a dozen links nobody clicks: three, then the list. */

@@ -203,6 +203,7 @@ service.referentiel.StandGrilleImportReport$ImportedGrilleRow = action, cellules
 service.referentiel.StandGrilleImportRequest = content, fileName
 service.referentiel.TypologieItem = id, label, modifieLe, ninja
 service.referentiel.WrittenAnimateur = animateur, avertissements
+service.referentiel.WrittenContrainteAdHoc = avertissements, contrainte
 service.referentiel.WrittenCreneau = avertissements, creneau
 service.referentiel.WrittenStand = avertissements, stand
 service.solve.PlanSnapshotService$AffectationSnapshot = animateurId, creneauId, heureDebutEffective, heureFinEffective, posteId, standId

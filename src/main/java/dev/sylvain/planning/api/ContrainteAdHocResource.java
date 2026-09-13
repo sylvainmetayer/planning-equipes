@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -30,10 +31,14 @@ public class ContrainteAdHocResource {
         return referenceDataService.listContraintesAdHoc();
     }
 
+    /**
+     * Create-or-overwrite by id. Answers {@code { contrainte, avertissements }}
+     * like the other referentials that warn: a forced assignment on its
+     * animateurs' days off is written, and said.
+     */
     @POST
-    public Response createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
-        return Response.ok(referenceDataService.createContrainteAdHoc(contrainteAdHoc))
-                .build();
+    public WrittenContrainteAdHoc createContrainteAdHoc(ContrainteAdHoc contrainteAdHoc) {
+        return referenceDataService.writeContrainteAdHoc(contrainteAdHoc);
     }
 
     @DELETE

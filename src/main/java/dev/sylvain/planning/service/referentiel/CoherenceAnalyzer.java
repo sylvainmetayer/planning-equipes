@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
@@ -466,5 +467,24 @@ public final class CoherenceAnalyzer {
                         .reduce((a, b) -> a + ", " + b)
                         .orElse("")
                 + " et " + (dates.size() - DATES_CITEES) + " autre(s)";
+    }
+
+    /* ------------------------------ Ad hoc -------------------------------- */
+
+    /**
+     * A forced assignment that falls only on days every animateur it names
+     * declared off. Written all the same: the day off may be withdrawn, and
+     * the pre-solve analysis keeps reporting it for as long as it stands —
+     * see {@link ForcedAssignmentOnDayOff}. The sentence names the
+     * exception by its id and the dates, never an animateur.
+     */
+    public static List<Avertissement> onContrainteAdHoc(
+            ContrainteAdHoc contrainte, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+        return ForcedAssignmentOnDayOff.detectAll(
+                        contrainte == null ? List.of() : List.of(contrainte), animateurs, stands, creneaux)
+                .stream()
+                .map(conflit ->
+                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE, conflit.message()))
+                .toList();
     }
 }

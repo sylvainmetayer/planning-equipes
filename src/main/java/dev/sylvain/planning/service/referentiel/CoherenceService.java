@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -33,6 +34,9 @@ public class CoherenceService {
 
     @Inject
     StandService stands;
+
+    @Inject
+    AnimateurService animateurs;
 
     /** The event's span, derived from the créneaux — an {@code Edition} stores none. */
     public JoursEvenement joursEvenement() {
@@ -71,6 +75,19 @@ public class CoherenceService {
             HoraireStandResolver.apply(resolus, List.of(creneau));
         }
         return CoherenceAnalyzer.onCreneau(creneau, resolus);
+    }
+
+    /**
+     * Warnings about a hand-entered exception just written: a forced assignment
+     * that falls only on days its animateurs declared off. The stands' recurring
+     * rules are resolved on the edition's grid first, so a stand-scoped exception
+     * reads the days that stand really opens.
+     */
+    public List<Avertissement> onContrainteAdHoc(ContrainteAdHoc contrainte) {
+        List<Creneau> edition = creneaux.list();
+        List<Stand> resolus = stands.list();
+        HoraireStandResolver.apply(resolus, edition);
+        return CoherenceAnalyzer.onContrainteAdHoc(contrainte, animateurs.list(), resolus, edition);
     }
 
     /**

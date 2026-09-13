@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WrittenContrainteAdHoc;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -314,7 +315,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    ContrainteAdHocView creer_contrainte_ad_hoc(
+    WrittenContrainteAdHocView creer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
             @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
                     String type,
@@ -341,8 +342,12 @@ public class ParametresMcpTools {
         }
         contrainte.setRaison(raison);
         contrainte.setCreeParUtilisateurId("mcp");
-        return toView(referenceDataService.createContrainteAdHoc(contrainte));
+        WrittenContrainteAdHoc ecrite = referenceDataService.writeContrainteAdHoc(contrainte);
+        return new WrittenContrainteAdHocView(toView(ecrite.contrainte()), WarningCodes.of(ecrite.avertissements()));
     }
+
+    /** The exception written, and the codes of what it raised — the sentence stays on the screen. */
+    public record WrittenContrainteAdHocView(ContrainteAdHocView contrainte, List<String> avertissements) {}
 
     @Tool(
             description = "Supprime une contrainte ad hoc.",

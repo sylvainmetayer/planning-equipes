@@ -453,7 +453,8 @@ export type TypeAvertissement =
   | 'STAND_EXCEPTION_HORS_EVENEMENT'
   | 'STAND_FENETRE_SANS_EFFET'
   | 'STAND_JAMAIS_OUVERT'
-  | 'CRENEAU_DEBORDE_OUVERTURE_STANDS';
+  | 'CRENEAU_DEBORDE_OUVERTURE_STANDS'
+  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE';
 
 export interface Avertissement {
   type: TypeAvertissement;
@@ -694,7 +695,10 @@ export interface ConstraintDiagnostic {
  *   only ever reports what was recorded before that check existed or imported
  *   in one go — `contrainteIds` names the exceptions to arbitrate.
  */
-export type TypeCauseInfaisabilite = 'CRENEAU_SOUS_EFFECTIF' | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES';
+export type TypeCauseInfaisabilite =
+  | 'CRENEAU_SOUS_EFFECTIF'
+  | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
+  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';

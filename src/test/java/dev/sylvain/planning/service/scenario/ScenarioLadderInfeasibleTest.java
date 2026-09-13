@@ -10,6 +10,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioValidator;
+import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
 import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -20,7 +21,9 @@ import org.junit.jupiter.api.Test;
  * intent: the file is accepted, and the only rules a solve breaks are the ones
  * its reason implies. Where the pre-solve analysis can see the reason, the test
  * says so; where it cannot — a weekly wall, a meal break — the test says that
- * too, because an optimistic estimate is part of what the operator reads.
+ * too, because an optimistic estimate is part of what the operator reads. And
+ * where two rules could give way, the test pins which one does: an empty seat
+ * or an unkept exception, never a seat that breaks an eligibility exclusion.
  */
 class ScenarioLadderInfeasibleTest {
 
@@ -39,21 +42,24 @@ class ScenarioLadderInfeasibleTest {
     }
 
     /**
-     * The contradiction check compares exceptions with each other, not with the
-     * days an animateur declared: the file is accepted, the analysis sees
-     * nothing, and the solve has to give up either the exception or the day off.
+     * The forced assignment falls on the day its animateur declared off. The
+     * pre-solve analysis names it as a blocking cause, and the solve keeps the
+     * day off: a seat on a day off costs more than any other breach, so the
+     * exception is the rule left unkept — never the other way round.
      */
     @Test
     void rung27AForcedAssignmentOnADayOff() {
         Loaded loaded = load("gamme-27-infaisable-affectation-forcee-jour-indisponible");
-        assertThat(loaded.feasibility().feasible()).isTrue();
+        assertThat(loaded.feasibility().feasible()).isFalse();
+        assertThat(loaded.feasibility().causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.type()).isEqualTo(TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE);
+            assertThat(cause.contrainteIds()).containsExactly("C01");
+        });
 
         PlanningEvenement solved = solveFor(loaded, 5L);
 
-        assertThat(solved.getScore().hardScore()).isNegative();
-        // Either the exception is kept and the day off is not, or the other way
-        // round: exactly one of the two rules gives way.
-        assertThat(brokenHardConstraints(solved)).hasSize(1).isSubsetOf("affectationForcee", "animateurDisponible");
+        assertThat(brokenHardConstraints(solved)).containsExactly("affectationForcee");
+        assertThat(ScenarioLadder.seatsOf(solved, "A111")).isEmpty();
     }
 
     @Test
@@ -70,17 +76,20 @@ class ScenarioLadderInfeasibleTest {
                 .isSubsetOf("posteDoitEtrePourvu", "maxJoursTravaillesParSemaine", "reposHebdomadaireMinimal");
     }
 
+    /**
+     * Only one adult for an evening of two seats: the second seat stays empty.
+     * It used to go to the fifteen-year-old — a seat at night cost one hard
+     * point, exactly what the empty seat costs.
+     */
     @Test
     void rung29AnEveningOnlyMinorsCouldHold() {
         Loaded loaded = load("gamme-29-infaisable-mineurs-en-soiree");
 
         PlanningEvenement solved = solveFor(loaded, 5L);
 
-        assertThat(solved.getScore().hardScore()).isNegative();
-        assertThat(brokenHardConstraints(solved))
-                .isNotEmpty()
-                .isSubsetOf(
-                        "posteDoitEtrePourvu", "travailDeNuitInterditPourMineur", "mineurNecessiteEncadrementMajeur");
+        assertThat(brokenHardConstraints(solved)).containsExactly("posteDoitEtrePourvu");
+        assertThat(matchCounts(solved)).containsEntry("posteDoitEtrePourvu", 1);
+        ScenarioLadder.assertCoreRules(solved);
     }
 
     /**

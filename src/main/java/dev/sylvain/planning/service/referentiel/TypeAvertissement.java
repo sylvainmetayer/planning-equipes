@@ -58,5 +58,8 @@ public enum TypeAvertissement {
      * After this write the stand is open on no créneau at all: it will
      * generate no seat and nobody will ever be scheduled on it.
      */
-    STAND_JAMAIS_OUVERT
+    STAND_JAMAIS_OUVERT,
+
+    /** A forced assignment falling only on days its animateurs declared off — see {@code ForcedAssignmentOnDayOff}. */
+    AFFECTATION_FORCEE_JOUR_INDISPONIBLE
 }

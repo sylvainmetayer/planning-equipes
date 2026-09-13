@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
+import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -87,7 +88,7 @@ public class FeasibilityAnalyzer {
      * enum's own order — that one is on the wire and is only ever appended to.
      */
     private static int rank(CauseInfaisabilite cause) {
-        return cause.type() == TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES ? 0 : 1;
+        return cause.type() == TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF ? 1 : 0;
     }
 
     /**
@@ -112,6 +113,7 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> causes =
                 new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
         causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
+        causes.addAll(affectationsForceesIntenables(contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs));
         causes.sort(ORDRE_CAUSES);
 
         int manqueAnimateurs = causes.stream()
@@ -208,6 +210,37 @@ public class FeasibilityAnalyzer {
     }
 
     /**
+     * One cause per forced assignment its animateurs' days off make impossible.
+     * CRITIQUE for the same reason as a contradiction: whatever the budget, the
+     * solve gives up either the exception or the day off. Read against the
+     * days declared now, since they usually arrive after the exception.
+     */
+    private List<CauseInfaisabilite> affectationsForceesIntenables(
+            List<ContrainteAdHoc> contraintes, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+        List<CauseInfaisabilite> causes = new ArrayList<>();
+        for (ForcedAssignmentOnDayOff.Conflit conflit :
+                ForcedAssignmentOnDayOff.detectAll(contraintes, animateurs, stands, creneaux)) {
+            Creneau creneau = conflit.contrainte().getCreneau();
+            causes.add(new CauseInfaisabilite(
+                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
+                    SeveriteInfaisabilite.CRITIQUE,
+                    conflit.message(),
+                    creneau == null ? null : creneau.getId(),
+                    conflit.dates().size() == 1 ? conflit.dates().getFirst() : null,
+                    null,
+                    null,
+                    // No stand named: a stand on a cause sends the reader to the
+                    // openings, and nothing about the openings is wrong here.
+                    List.of(),
+                    List.of(conflit.contrainte().getId()),
+                    0,
+                    0,
+                    0));
+        }
+        return causes;
+    }
+
+    /**
      * Said first and by name, rather than left to be inferred from one
      * CRITIQUE cause per timeslot: the per-timeslot causes describe the seats,
      * where the thing to fix is the empty animateur list.
@@ -275,7 +308,9 @@ public class FeasibilityAnalyzer {
     /** Kind of blocking cause detected before any solve. */
     public enum TypeCauseInfaisabilite {
         CRENEAU_SOUS_EFFECTIF,
-        CONTRAINTES_AD_HOC_CONTRADICTOIRES
+        CONTRAINTES_AD_HOC_CONTRADICTOIRES,
+        /** A forced assignment falling only on days its animateurs declared off — see {@link ForcedAssignmentOnDayOff}. */
+        AFFECTATION_FORCEE_JOUR_INDISPONIBLE
     }
 
     /**
