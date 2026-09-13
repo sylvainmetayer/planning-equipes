@@ -36,9 +36,17 @@ public class EditionRepository {
      * separately below. Solver <i>results</i> ({@code poste_affectation},
      * {@code planning_resolution}) are absent too — duplicating an edition
      * means "2026 = 2025 minus the assignments".
+     *
+     * <p><b>Every column of a table listed here is copied, or excused by name
+     * in {@code EditionDuplicationStructurelleTest}.</b> The list is written by
+     * hand and a migration adding a column does not touch it: {@code
+     * heure_debut_soiree} (V74) and {@code mail_fin_resolution} were silently
+     * reset to their default on every duplication, and {@code typologie.ninja}
+     * with them — a duplicated edition lost which typologie was the polyvalent
+     * one. That test is what makes the next added column loud.</p>
      */
-    private static final List<TableToCopy> TABLES_A_COPIER = List.of(
-            new TableToCopy("typologie", "id, label"),
+    static final List<TableToCopy> TABLES_A_COPIER = List.of(
+            new TableToCopy("typologie", "id, label, ninja"),
             new TableToCopy("emplacement", "id, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
             // #172 ends with « Envoyer à all », mute without it); neither token
@@ -79,10 +87,10 @@ public class EditionRepository {
                             + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes, "
                             + "pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut, "
                             + "coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin, "
-                            + "duree_vacation_max_minutes"),
-            new TableToCopy("parametres_solveur", "duree_resolution_secondes"));
+                            + "duree_vacation_max_minutes, heure_debut_soiree"),
+            new TableToCopy("parametres_solveur", "duree_resolution_secondes, mail_fin_resolution"));
 
-    private record TableToCopy(String nom, String colonnes) {}
+    record TableToCopy(String nom, String colonnes) {}
 
     @Inject
     DataSource dataSource;

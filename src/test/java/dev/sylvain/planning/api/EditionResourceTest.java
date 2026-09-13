@@ -251,6 +251,84 @@ class EditionResourceTest {
                         org.hamcrest.Matchers.equalTo("09:00:00"));
     }
 
+    /**
+     * The settings a duplication carries, read back on the copy: a column left
+     * out of {@code TABLES_A_COPIER} silently comes back at its {@code DEFAULT}
+     * instead, and nothing at duplication time complains. Three had drifted
+     * that way — the evening hour (V74), the end-of-solve mail, and the
+     * polyvalent typologie. Values are chosen to differ from every default, or
+     * the assertion would pass on the bug.
+     *
+     * <p>Source and copy are both editions this test creates, so
+     * {@link #supprimerLesEditionsCreees} takes them away: writing the settings
+     * into {@code DEFAUT} would leave it reconfigured for every test that runs
+     * after this one, and its {@code ninja} typologie would 409 the next run.</p>
+     */
+    @Test
+    void dupliquerRecopieLesReglagesEtPasSeulementLeursDefauts() {
+        given().contentType("application/json")
+                .body("{\"id\":\"SOURCE-REGLAGES\",\"nom\":\"Source réglages\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, "SOURCE-REGLAGES")
+                .contentType("application/json")
+                .body("{\"dureeHebdomadaireMaxMinutes\":2400,\"dureeHebdomadaireMaxMineurMinutes\":1800,"
+                        + "\"pauseMinimaleEntreVacationsMinutes\":45,\"reposQuotidienMinimalMinutes\":720,"
+                        + "\"pauseSurPoste\":true,\"coupureRepasMinutes\":50,"
+                        + "\"coupureRepasMidiDebut\":\"11:30:00\",\"coupureRepasMidiFin\":\"13:30:00\","
+                        + "\"coupureRepasSoirDebut\":\"18:30:00\",\"coupureRepasSoirFin\":\"20:30:00\","
+                        + "\"heureDebutSoiree\":\"22:00:00\",\"dureeVacationMaxMinutes\":300}")
+                .when()
+                .put("/api/parametres-legaux")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, "SOURCE-REGLAGES")
+                .contentType("application/json")
+                .body("{\"dureeResolutionSecondes\":123,\"mailFinResolution\":true}")
+                .when()
+                .put("/api/parametres-solveur")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, "SOURCE-REGLAGES")
+                .contentType("application/json")
+                .body("{\"id\":\"POLYVALENT\",\"label\":\"Polyvalent\",\"ninja\":true}")
+                .when()
+                .post("/api/typologies")
+                .then()
+                .statusCode(200);
+
+        given().contentType("application/json")
+                .body("{\"id\":\"COPIE-REGLAGES\",\"nom\":\"Copie réglages\"}")
+                .when()
+                .post("/api/editions/SOURCE-REGLAGES/dupliquer")
+                .then()
+                .statusCode(200);
+
+        given().header(HEADER, "COPIE-REGLAGES")
+                .when()
+                .get("/api/parametres-legaux")
+                .then()
+                .statusCode(200)
+                .body("heureDebutSoiree", org.hamcrest.Matchers.equalTo("22:00:00"))
+                .body("dureeVacationMaxMinutes", org.hamcrest.Matchers.equalTo(300))
+                .body("coupureRepasMinutes", org.hamcrest.Matchers.equalTo(50));
+        given().header(HEADER, "COPIE-REGLAGES")
+                .when()
+                .get("/api/parametres-solveur")
+                .then()
+                .statusCode(200)
+                .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true))
+                .body("dureeResolutionSecondes", org.hamcrest.Matchers.equalTo(123));
+        given().header(HEADER, "COPIE-REGLAGES")
+                .when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == 'POLYVALENT' }.ninja", org.hamcrest.Matchers.equalTo(true));
+    }
+
     @Test
     void uneEditionDupliqueeEstIndependanteDeSaSource() {
         createStand(DEFAUT, "STAND-PARTAGE");
