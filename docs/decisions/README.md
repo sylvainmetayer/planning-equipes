@@ -57,6 +57,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0031](0031-signaler-le-plancher-sans-le-decider.md) | Une règle qui pénalise tout faute de donnée est signalée comme plancher, jamais désactivée | Accepté |
 | [0032](0032-journees-types-nommees-vacations-fixes.md) | Des journées types nommées génèrent les créneaux par différence ; les créneaux restent la vérité | Accepté |
 | [0033](0033-un-stand-qui-declare-ses-ouvertures-est-ferme-ailleurs.md) | Un stand qui déclare ses ouvertures est fermé les jours qu'il ne déclare pas ; l'élagage retire les fermetures devenues muettes | Accepté |
+| [0034](0034-exclusions-eligibilite-plus-lourdes-que-tout.md) | Un siège qui enfreint une exclusion d'éligibilité (jour d'indisponibilité, règles des mineurs) coûte plus que tout autre écart ; l'affectation forcée un jour d'indisponibilité est signalée, pas refusée | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

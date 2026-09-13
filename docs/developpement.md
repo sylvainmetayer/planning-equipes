@@ -231,7 +231,7 @@ numérotation a un trou.
 
 Le problème est construit comme en production, sans base : `ScenarioLadder`
 résout les horaires, découpe les amplitudes, numérote les vacations découpées
-(l'égalité d'un `Creneau` est son id) et applique `contraintes.desactivees`.
+comme le ferait la base, et applique `contraintes.desactivees`.
 `ScenarioLadderImportTest` rejoue quatre barreaux par l'import réel et vérifie
 que les deux chemins produisent les mêmes sièges. Après le score dur,
 `assertCoreRules` relit le plan lui-même — jours d'indisponibilité,
@@ -483,7 +483,9 @@ décidables sur le seul couple (poste, animateur) — mineur la nuit, mineur sur
 stand réservé aux majeurs, créneau plus long que le plafond quotidien ou continu
 d'un mineur. Elles ne peuvent, par construction, écarter aucune solution
 faisable, et évitent au solveur de payer un calcul de score pour découvrir un
-écart certain.
+écart certain. Le filtre n'est pas un mur — la reconstruction du *ruin and
+recreate* ne le lit pas —, c'est pourquoi ces mêmes règles pèsent un forfait de
+10 000 points durs par écart ([0034](decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md)).
 
 Règle à suivre pour toute nouvelle contrainte : exprimer d'abord ce qui peut
 l'être en `Joiners.equal` / `lessThan` / `overlapping`, restreindre le flux

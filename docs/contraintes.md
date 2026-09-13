@@ -441,6 +441,42 @@ nomment elles aussi l'exception par son id.
 **Le budget d'exceptions a été explicitement écarté** : voir
 [0010](decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
 
+### L'affectation forcée un jour d'indisponibilité
+
+Une `AFFECTATION_FORCEE` dont **tous** les animateurs sont indisponibles à
+**chaque** date de son périmètre ne peut pas être tenue. Ce n'est pas une
+contradiction entre exceptions — elle oppose une exception à un jour déclaré —
+et elle n'est pas refusée : l'indisponibilité arrive le plus souvent *après*,
+par la déclaration de l'animateur, qu'on ne refuse pas. Elle est donc dite deux
+fois, sans bloquer : un avertissement `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` à
+l'écriture de l'ajustement, et une cause bloquante du même nom dans l'analyse de
+faisabilité tant qu'elle tient (`ForcedAssignmentOnDayOff`). Et le solve garde
+le jour d'indisponibilité : c'est l'exception qui n'est pas tenue (voir
+ci-dessous).
+
+## Les exclusions d'éligibilité pèsent plus lourd que tout
+
+Six règles disent qui ne peut **jamais** tenir un siège : `animateurDisponible`,
+`standReserveAuxMajeurs`, `travailDeNuitInterditPourMineur`,
+`travailInterditJourFerieMineur`, `dureeQuotidienneMaxMineur`,
+`travailContinuMaxMineur` — les motifs de `EligibleAnimateurMoveFilter`.
+
+Le filtre les écarte de la recherche, mais la reconstruction du *ruin and
+recreate* ne le lit pas, et elles ne pesaient qu'un point dur : autant qu'un
+siège vide, moins que quelques minutes de repos. Un plan qui ne pouvait pas
+tout tenir plaçait alors un mineur de 15 ans la nuit plutôt que de laisser un
+siège vide (`gamme-29`), ou une animatrice le jour de son indisponibilité plutôt
+que de laisser une affectation forcée non tenue (`gamme-27`).
+
+Chaque écart coûte désormais un forfait de **10 000 points durs**
+(`ExclusionEligibilite.FORFAIT`), plus les minutes de dépassement pour les deux
+plafonds comptés à la minute. Un siège vide ou une exception non tenue se lisent
+sur la page Problèmes et se traitent ; un siège illégal, lui, ne doit pas sortir
+d'un solve quand une alternative existe. Le forfait est dans la pondération des
+correspondances, si bien qu'un poids d'édition le multiplie au lieu de le
+remplacer. Décision et options écartées :
+[0034](decisions/0034-exclusions-eligibilite-plus-lourdes-que-tout.md).
+
 ## La frontière de semaine
 
 Les deux repos hebdomadaires se lisent sur la **semaine civile**, du lundi

@@ -1708,9 +1708,10 @@ POST /api/animateurs  →  200
 `POST /api/animateurs` et `PUT /api/animateurs/{id}` répondent `{ animateur, avertissements }`,
 `POST /api/creneaux` et `PUT /api/creneaux/{id}` répondent `{ creneau, avertissements }` — le
 créneau y porte son `id` généré, comme avant — et `POST /api/stands` et `PUT /api/stands/{id}`
-répondent `{ stand, avertissements }`. Les autres référentiels répondent
+répondent `{ stand, avertissements }`, et `POST /api/contraintes-ad-hoc` répond
+`{ contrainte, avertissements }`. Les autres référentiels répondent
 toujours l'entité nue : une clé `avertissements` absente veut dire « rien à
-signaler ». `avertissements` est toujours présent sur ces trois ressources, vide
+signaler ». `avertissements` est toujours présent sur ces quatre ressources, vide
 quand tout va bien.
 
 | `type` | Ce qui l'a déclenché |
@@ -1723,6 +1724,7 @@ quand tout va bien.
 | `STAND_FENETRE_SANS_EFFET` | Une fenêtre du stand — d'une règle étendue comme d'une exception datée — ne recoupe aucun créneau de son jour : elle est enregistrée et ne change rien. Le message cite jusqu'à cinq jours. |
 | `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]` — le lendemain d'un créneau qui franchit minuit est exclu de ce compte : le domaine lit vraiment cette date. |
 | `STAND_JAMAIS_OUVERT` | Après l'écriture, le stand n'est ouvert sur aucun créneau : il n'ouvrira aucun poste. |
+| `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` | L'affectation forcée écrite ne tombe que sur des jours où tous les animateurs qu'elle nomme se sont déclarés indisponibles : elle ne pourra pas être tenue. Écrite quand même — le jour d'indisponibilité peut être retiré — et reprise comme cause bloquante par l'analyse de faisabilité tant qu'elle tient. Le message nomme l'ajustement et les dates, jamais l'animateur. |
 
 Les trois avertissements de stand ne sont émis **que si l'écriture touche à
 l'horaire** (règles, fermetures, ouvertures) : renommer un stand qui n'a jamais
