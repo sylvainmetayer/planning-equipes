@@ -1,0 +1,4966 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Scénario extrême 3 : une saison de cent vingt jours.
+# Du lundi 3 avril au lundi 31 juillet 2028 : dix-huit semaines civiles, six jours
+# fériés (lundi de Pâques, 1er et 8 mai, Ascension, lundi de Pentecôte,
+# 14 juillet) que les mineurs ne travaillent pas. Un après-midi en semaine, matin
+# et après-midi le week-end ; des saisonniers absents quatre semaines d'affilée.
+
+festival:
+  dateDebut: 2028-04-03
+
+creneaux:
+  - id: J1-APREM
+    jour: 1
+    date: 2028-04-03
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J2-APREM
+    jour: 2
+    date: 2028-04-04
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J3-APREM
+    jour: 3
+    date: 2028-04-05
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J4-APREM
+    jour: 4
+    date: 2028-04-06
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J5-APREM
+    jour: 5
+    date: 2028-04-07
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J6-MATIN
+    jour: 6
+    date: 2028-04-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2028-04-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J7-MATIN
+    jour: 7
+    date: 2028-04-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2028-04-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J8-APREM
+    jour: 8
+    date: 2028-04-10
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J9-APREM
+    jour: 9
+    date: 2028-04-11
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J10-APREM
+    jour: 10
+    date: 2028-04-12
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J11-APREM
+    jour: 11
+    date: 2028-04-13
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J12-APREM
+    jour: 12
+    date: 2028-04-14
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J13-MATIN
+    jour: 13
+    date: 2028-04-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J13-APREM
+    jour: 13
+    date: 2028-04-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J14-MATIN
+    jour: 14
+    date: 2028-04-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J14-APREM
+    jour: 14
+    date: 2028-04-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J15-APREM
+    jour: 15
+    date: 2028-04-17
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J16-APREM
+    jour: 16
+    date: 2028-04-18
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J17-APREM
+    jour: 17
+    date: 2028-04-19
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J18-APREM
+    jour: 18
+    date: 2028-04-20
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J19-APREM
+    jour: 19
+    date: 2028-04-21
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J20-MATIN
+    jour: 20
+    date: 2028-04-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J20-APREM
+    jour: 20
+    date: 2028-04-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J21-MATIN
+    jour: 21
+    date: 2028-04-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J21-APREM
+    jour: 21
+    date: 2028-04-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J22-APREM
+    jour: 22
+    date: 2028-04-24
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J23-APREM
+    jour: 23
+    date: 2028-04-25
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J24-APREM
+    jour: 24
+    date: 2028-04-26
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J25-APREM
+    jour: 25
+    date: 2028-04-27
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J26-APREM
+    jour: 26
+    date: 2028-04-28
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J27-MATIN
+    jour: 27
+    date: 2028-04-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J27-APREM
+    jour: 27
+    date: 2028-04-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J28-MATIN
+    jour: 28
+    date: 2028-04-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J28-APREM
+    jour: 28
+    date: 2028-04-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J29-APREM
+    jour: 29
+    date: 2028-05-01
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J30-APREM
+    jour: 30
+    date: 2028-05-02
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J31-APREM
+    jour: 31
+    date: 2028-05-03
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J32-APREM
+    jour: 32
+    date: 2028-05-04
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J33-APREM
+    jour: 33
+    date: 2028-05-05
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J34-MATIN
+    jour: 34
+    date: 2028-05-06
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J34-APREM
+    jour: 34
+    date: 2028-05-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J35-MATIN
+    jour: 35
+    date: 2028-05-07
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J35-APREM
+    jour: 35
+    date: 2028-05-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J36-APREM
+    jour: 36
+    date: 2028-05-08
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J37-APREM
+    jour: 37
+    date: 2028-05-09
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J38-APREM
+    jour: 38
+    date: 2028-05-10
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J39-APREM
+    jour: 39
+    date: 2028-05-11
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J40-APREM
+    jour: 40
+    date: 2028-05-12
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J41-MATIN
+    jour: 41
+    date: 2028-05-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J41-APREM
+    jour: 41
+    date: 2028-05-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J42-MATIN
+    jour: 42
+    date: 2028-05-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J42-APREM
+    jour: 42
+    date: 2028-05-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J43-APREM
+    jour: 43
+    date: 2028-05-15
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J44-APREM
+    jour: 44
+    date: 2028-05-16
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J45-APREM
+    jour: 45
+    date: 2028-05-17
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J46-APREM
+    jour: 46
+    date: 2028-05-18
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J47-APREM
+    jour: 47
+    date: 2028-05-19
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J48-MATIN
+    jour: 48
+    date: 2028-05-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J48-APREM
+    jour: 48
+    date: 2028-05-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J49-MATIN
+    jour: 49
+    date: 2028-05-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J49-APREM
+    jour: 49
+    date: 2028-05-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J50-APREM
+    jour: 50
+    date: 2028-05-22
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J51-APREM
+    jour: 51
+    date: 2028-05-23
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J52-APREM
+    jour: 52
+    date: 2028-05-24
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J53-APREM
+    jour: 53
+    date: 2028-05-25
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J54-APREM
+    jour: 54
+    date: 2028-05-26
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J55-MATIN
+    jour: 55
+    date: 2028-05-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J55-APREM
+    jour: 55
+    date: 2028-05-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J56-MATIN
+    jour: 56
+    date: 2028-05-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J56-APREM
+    jour: 56
+    date: 2028-05-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J57-APREM
+    jour: 57
+    date: 2028-05-29
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J58-APREM
+    jour: 58
+    date: 2028-05-30
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J59-APREM
+    jour: 59
+    date: 2028-05-31
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J60-APREM
+    jour: 60
+    date: 2028-06-01
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J61-APREM
+    jour: 61
+    date: 2028-06-02
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J62-MATIN
+    jour: 62
+    date: 2028-06-03
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J62-APREM
+    jour: 62
+    date: 2028-06-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J63-MATIN
+    jour: 63
+    date: 2028-06-04
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J63-APREM
+    jour: 63
+    date: 2028-06-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J64-APREM
+    jour: 64
+    date: 2028-06-05
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J65-APREM
+    jour: 65
+    date: 2028-06-06
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J66-APREM
+    jour: 66
+    date: 2028-06-07
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J67-APREM
+    jour: 67
+    date: 2028-06-08
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J68-APREM
+    jour: 68
+    date: 2028-06-09
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J69-MATIN
+    jour: 69
+    date: 2028-06-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J69-APREM
+    jour: 69
+    date: 2028-06-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J70-MATIN
+    jour: 70
+    date: 2028-06-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J70-APREM
+    jour: 70
+    date: 2028-06-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J71-APREM
+    jour: 71
+    date: 2028-06-12
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J72-APREM
+    jour: 72
+    date: 2028-06-13
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J73-APREM
+    jour: 73
+    date: 2028-06-14
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J74-APREM
+    jour: 74
+    date: 2028-06-15
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J75-APREM
+    jour: 75
+    date: 2028-06-16
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J76-MATIN
+    jour: 76
+    date: 2028-06-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J76-APREM
+    jour: 76
+    date: 2028-06-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J77-MATIN
+    jour: 77
+    date: 2028-06-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J77-APREM
+    jour: 77
+    date: 2028-06-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J78-APREM
+    jour: 78
+    date: 2028-06-19
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J79-APREM
+    jour: 79
+    date: 2028-06-20
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J80-APREM
+    jour: 80
+    date: 2028-06-21
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J81-APREM
+    jour: 81
+    date: 2028-06-22
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J82-APREM
+    jour: 82
+    date: 2028-06-23
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J83-MATIN
+    jour: 83
+    date: 2028-06-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J83-APREM
+    jour: 83
+    date: 2028-06-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J84-MATIN
+    jour: 84
+    date: 2028-06-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J84-APREM
+    jour: 84
+    date: 2028-06-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J85-APREM
+    jour: 85
+    date: 2028-06-26
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J86-APREM
+    jour: 86
+    date: 2028-06-27
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J87-APREM
+    jour: 87
+    date: 2028-06-28
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J88-APREM
+    jour: 88
+    date: 2028-06-29
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J89-APREM
+    jour: 89
+    date: 2028-06-30
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J90-MATIN
+    jour: 90
+    date: 2028-07-01
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J90-APREM
+    jour: 90
+    date: 2028-07-01
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J91-MATIN
+    jour: 91
+    date: 2028-07-02
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J91-APREM
+    jour: 91
+    date: 2028-07-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J92-APREM
+    jour: 92
+    date: 2028-07-03
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J93-APREM
+    jour: 93
+    date: 2028-07-04
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J94-APREM
+    jour: 94
+    date: 2028-07-05
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J95-APREM
+    jour: 95
+    date: 2028-07-06
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J96-APREM
+    jour: 96
+    date: 2028-07-07
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J97-MATIN
+    jour: 97
+    date: 2028-07-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J97-APREM
+    jour: 97
+    date: 2028-07-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J98-MATIN
+    jour: 98
+    date: 2028-07-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J98-APREM
+    jour: 98
+    date: 2028-07-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J99-APREM
+    jour: 99
+    date: 2028-07-10
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J100-APREM
+    jour: 100
+    date: 2028-07-11
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J101-APREM
+    jour: 101
+    date: 2028-07-12
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J102-APREM
+    jour: 102
+    date: 2028-07-13
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J103-APREM
+    jour: 103
+    date: 2028-07-14
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J104-MATIN
+    jour: 104
+    date: 2028-07-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J104-APREM
+    jour: 104
+    date: 2028-07-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J105-MATIN
+    jour: 105
+    date: 2028-07-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J105-APREM
+    jour: 105
+    date: 2028-07-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J106-APREM
+    jour: 106
+    date: 2028-07-17
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J107-APREM
+    jour: 107
+    date: 2028-07-18
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J108-APREM
+    jour: 108
+    date: 2028-07-19
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J109-APREM
+    jour: 109
+    date: 2028-07-20
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J110-APREM
+    jour: 110
+    date: 2028-07-21
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J111-MATIN
+    jour: 111
+    date: 2028-07-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J111-APREM
+    jour: 111
+    date: 2028-07-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J112-MATIN
+    jour: 112
+    date: 2028-07-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J112-APREM
+    jour: 112
+    date: 2028-07-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J113-APREM
+    jour: 113
+    date: 2028-07-24
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J114-APREM
+    jour: 114
+    date: 2028-07-25
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J115-APREM
+    jour: 115
+    date: 2028-07-26
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J116-APREM
+    jour: 116
+    date: 2028-07-27
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J117-APREM
+    jour: 117
+    date: 2028-07-28
+    heureDebut: "14:00"
+    heureFin: "18:30"
+  - id: J118-MATIN
+    jour: 118
+    date: 2028-07-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J118-APREM
+    jour: 118
+    date: 2028-07-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J119-MATIN
+    jour: 119
+    date: 2028-07-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J119-APREM
+    jour: 119
+    date: 2028-07-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J120-APREM
+    jour: 120
+    date: 2028-07-31
+    heureDebut: "14:00"
+    heureFin: "18:30"
+
+stands:
+  - id: STAND-01
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-02
+    nom: "Stand 2"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-03
+    nom: "Stand 3"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-04
+    nom: "Stand 4"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-05
+    nom: "Stand 5"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-06
+    nom: "Stand 6"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-07
+    nom: "Stand 7"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-08
+    nom: "Stand 8"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-09
+    nom: "Stand 9"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-10
+    nom: "Stand 10"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-11
+    nom: "Stand 11"
+    typologiesProposees:
+      - JEUX_VIDEO
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-12
+    nom: "Stand 12"
+    typologiesProposees:
+      - CIRQUE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-13
+    nom: "Stand 13"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-14
+    nom: "Stand 14"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-15
+    nom: "Stand 15"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        fenetres:
+          - heureDebut: "10:00"
+            heureFin: "18:30"
+  - id: STAND-16
+    nom: "Stand 16"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-17
+    nom: "Stand 17"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-18
+    nom: "Stand 18"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-19
+    nom: "Stand 19"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-20
+    nom: "Stand 20"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-21
+    nom: "Stand 21"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-22
+    nom: "Stand 22"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-23
+    nom: "Stand 23"
+    typologiesProposees:
+      - JEUX_VIDEO
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-24
+    nom: "Stand 24"
+    typologiesProposees:
+      - CIRQUE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-25
+    nom: "Stand 25"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-26
+    nom: "Stand 26"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-27
+    nom: "Stand 27"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-28
+    nom: "Stand 28"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-29
+    nom: "Stand 29"
+    typologiesProposees:
+      - CREATIF
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-30
+    nom: "Stand 30"
+    typologiesProposees:
+      - CONTES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-31
+    nom: "Stand 31"
+    typologiesProposees:
+      - MOTRICITE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-32
+    nom: "Stand 32"
+    typologiesProposees:
+      - ENIGMES
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-33
+    nom: "Stand 33"
+    typologiesProposees:
+      - SCIENCES
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-34
+    nom: "Stand 34"
+    typologiesProposees:
+      - JEUX_DE_PISTE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-35
+    nom: "Stand 35"
+    typologiesProposees:
+      - JEUX_VIDEO
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-36
+    nom: "Stand 36"
+    typologiesProposees:
+      - CIRQUE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-37
+    nom: "Stand 37"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 2
+    effectifMax: 2
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-38
+    nom: "Stand 38"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-39
+    nom: "Stand 39"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+  - id: STAND-40
+    nom: "Stand 40"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+    horaires:
+      - mode: OUVERTURE
+        jours: JOURS_SEMAINE
+        joursSemaine:
+          - SATURDAY
+          - SUNDAY
+        fenetres:
+          - heureDebut: "10:00"
+
+animateurs:
+  - id: A30000
+    prenom: Lina
+    nom: Dumont
+    dateNaissance: 2002-12-22
+    manager: false
+    email: "animateur30001@example.org"
+    competences:
+      CIRQUE: REFERENT
+      ADRESSE: REFERENT
+      CONSTRUCTION: DEBUTANT
+      JEUX_DE_PISTE: DEBUTANT
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles:
+      - 2028-04-26
+      - 2028-05-10
+      - 2028-05-25
+      - 2028-06-08
+      - 2028-07-07
+    souhaits:
+      - CIRQUE
+      - ADRESSE
+  - id: A30001
+    prenom: Paul
+    nom: Gerard
+    dateNaissance: 1994-09-07
+    manager: false
+    email: "animateur30002@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      CONTES: AUTONOME
+      ADRESSE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONSTRUCTION
+      - CONTES
+  - id: A30002
+    prenom: Rose
+    nom: Gautier
+    dateNaissance: 2001-02-23
+    manager: false
+    email: "animateur30003@example.org"
+    competences:
+      CULTURE: AUTONOME
+      CIRQUE: AUTONOME
+      MOTRICITE: REFERENT
+      SCIENCES: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30003
+    prenom: Sacha
+    nom: Meunier
+    dateNaissance: 2012-04-14
+    manager: false
+    email: "animateur30004@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      CIRQUE: DEBUTANT
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+      ENIGMES: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles:
+      - 2028-04-22
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-22
+      - 2028-07-31
+  - id: A30004
+    prenom: Anna
+    nom: Barbier
+    dateNaissance: 1984-07-06
+    manager: false
+    email: "animateur30005@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles: []
+  - id: A30005
+    prenom: "Théo"
+    nom: Fernandez
+    dateNaissance: 1983-05-20
+    manager: false
+    email: "animateur30006@example.org"
+    competences:
+      CIRQUE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles:
+      - 2028-05-25
+      - 2028-05-27
+    souhaits:
+      - CIRQUE
+      - ENIGMES
+  - id: A30006
+    prenom: "Zoé"
+    nom: Giraud
+    dateNaissance: 1966-06-05
+    manager: false
+    email: "animateur30007@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_VIDEO: AUTONOME
+      SCIENCES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+    souhaits:
+      - MOTRICITE
+      - CREATIF
+  - id: A30007
+    prenom: Noah
+    nom: Gaillard
+    dateNaissance: 1980-05-14
+    manager: false
+    competences:
+      CONSTRUCTION: DEBUTANT
+      CREATIF: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      SCIENCES: REFERENT
+      CIRQUE: REFERENT
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30008
+    prenom: Lou
+    nom: Riviere
+    dateNaissance: 2012-07-12
+    manager: false
+    email: "animateur30009@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      ENIGMES: AUTONOME
+      CREATIF: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles:
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-15
+      - 2028-07-16
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-22
+      - 2028-07-23
+      - 2028-07-24
+    souhaits:
+      - ENIGMES
+      - ADRESSE
+  - id: A30009
+    prenom: Tom
+    nom: Huet
+    dateNaissance: 1971-02-21
+    manager: false
+    competences:
+      MOTRICITE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      CREATIF: REFERENT
+      ENIGMES: AUTONOME
+      JEUX_VIDEO: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30010
+    prenom: Mila
+    nom: Baron
+    dateNaissance: 1998-06-27
+    manager: false
+    email: "animateur30011@example.org"
+    competences:
+      CULTURE: DEBUTANT
+      ENIGMES: AUTONOME
+      CONTES: DEBUTANT
+      JEUX_DE_PISTE: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles:
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-15
+      - 2028-07-16
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-22
+      - 2028-07-23
+  - id: A30011
+    prenom: Victor
+    nom: Roussel
+    dateNaissance: 1971-05-12
+    manager: false
+    email: "animateur30012@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      CULTURE: AUTONOME
+      ENIGMES: REFERENT
+      JEUX_VIDEO: REFERENT
+      MOTRICITE: REFERENT
+    joursIndisponibles:
+      - 2028-05-27
+      - 2028-05-28
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-03
+      - 2028-06-04
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-10
+      - 2028-06-11
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-17
+      - 2028-06-18
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+  - id: A30012
+    prenom: Agathe
+    nom: Dupuis
+    dateNaissance: 1988-12-01
+    manager: false
+    competences:
+      JEUX_VIDEO: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      ENIGMES: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30013
+    prenom: "Maël"
+    nom: Faure
+    dateNaissance: 1970-03-10
+    manager: false
+    email: "animateur30014@example.org"
+    competences:
+      ADRESSE: REFERENT
+      ENIGMES: AUTONOME
+      CREATIF: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-14
+      - 2028-06-01
+      - 2028-07-15
+      - 2028-07-20
+      - 2028-07-29
+  - id: A30014
+    prenom: Julia
+    nom: Nicolas
+    dateNaissance: 1995-10-18
+    manager: false
+    email: "animateur30015@example.org"
+    competences:
+      ENIGMES: REFERENT
+      JEUX_VIDEO: AUTONOME
+      CREATIF: REFERENT
+      JEUX_DE_PISTE: DEBUTANT
+    joursIndisponibles:
+      - 2028-06-17
+      - 2028-06-18
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-24
+      - 2028-06-25
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+    souhaits:
+      - CREATIF
+      - JEUX_DE_PISTE
+  - id: A30015
+    prenom: Liam
+    nom: Lopez
+    dateNaissance: 1993-01-05
+    manager: false
+    email: "animateur30016@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONTES: DEBUTANT
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+  - id: A30016
+    prenom: Iris
+    nom: Nguyen
+    dateNaissance: 2005-08-13
+    manager: false
+    email: "animateur30017@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      CIRQUE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      MOTRICITE: DEBUTANT
+      CULTURE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-19
+      - 2028-05-20
+      - 2028-05-28
+      - 2028-06-25
+  - id: A30017
+    prenom: Oscar
+    nom: Roger
+    dateNaissance: 2001-08-10
+    manager: false
+    email: "animateur30018@example.org"
+    competences:
+      CIRQUE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+      CREATIF: AUTONOME
+      CULTURE: REFERENT
+    joursIndisponibles:
+      - 2028-04-14
+  - id: A30018
+    prenom: Clara
+    nom: Jean
+    dateNaissance: 1989-12-16
+    manager: false
+    email: "animateur30019@example.org"
+    competences:
+      JEUX_DE_PISTE: AUTONOME
+      MOTRICITE: AUTONOME
+      CIRQUE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-22
+      - 2028-07-20
+      - 2028-07-22
+  - id: A30019
+    prenom: Nino
+    nom: Brun
+    dateNaissance: 1972-12-22
+    manager: false
+    competences:
+      CONSTRUCTION: AUTONOME
+      ADRESSE: REFERENT
+      MOTRICITE: DEBUTANT
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A30020
+    prenom: Margaux
+    nom: Pierre
+    dateNaissance: 1994-10-21
+    manager: false
+    competences:
+      CIRQUE: REFERENT
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      CREATIF: REFERENT
+    joursIndisponibles:
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-24
+      - 2028-06-25
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-15
+      - 2028-07-16
+  - id: A30021
+    prenom: Robin
+    nom: Leclerc
+    dateNaissance: 2004-02-13
+    manager: false
+    email: "animateur30022@example.org"
+    competences:
+      CIRQUE: AUTONOME
+      CONSTRUCTION: REFERENT
+      JEUX_VIDEO: AUTONOME
+      MOTRICITE: REFERENT
+    joursIndisponibles: []
+  - id: A30022
+    prenom: Elsa
+    nom: Philippe
+    dateNaissance: 1971-05-06
+    manager: false
+    email: "animateur30023@example.org"
+    competences:
+      JEUX_VIDEO: AUTONOME
+      SCIENCES: AUTONOME
+      CONTES: REFERENT
+      CULTURE: AUTONOME
+      CIRQUE: REFERENT
+    joursIndisponibles: []
+  - id: A30023
+    prenom: Simon
+    nom: Moreau
+    dateNaissance: 1998-09-01
+    manager: false
+    email: "animateur30024@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      SCIENCES: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-09
+      - 2028-04-19
+      - 2028-05-13
+      - 2028-06-10
+      - 2028-06-19
+    souhaits:
+      - MOTRICITE
+      - JEUX_DE_SOCIETE
+  - id: A30024
+    prenom: Juliette
+    nom: Vasseur
+    dateNaissance: 1994-02-26
+    manager: false
+    competences:
+      ENIGMES: REFERENT
+      CULTURE: AUTONOME
+      CIRQUE: DEBUTANT
+      SCIENCES: REFERENT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A30025
+    prenom: Martin
+    nom: Charpentier
+    dateNaissance: 1993-07-04
+    manager: false
+    competences:
+      CREATIF: REFERENT
+      ENIGMES: AUTONOME
+      SCIENCES: AUTONOME
+      MOTRICITE: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      ADRESSE: REFERENT
+    joursIndisponibles:
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-22
+      - 2028-04-23
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-04-29
+      - 2028-04-30
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-06
+      - 2028-05-07
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-13
+      - 2028-05-14
+  - id: A30026
+    prenom: Capucine
+    nom: Lemaire
+    dateNaissance: 1996-09-21
+    manager: false
+    competences:
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: REFERENT
+      CONTES: AUTONOME
+      CIRQUE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - MOTRICITE
+      - CONSTRUCTION
+  - id: A30027
+    prenom: Axel
+    nom: Lambert
+    dateNaissance: 1997-01-06
+    manager: false
+    email: "animateur30028@example.org"
+    competences:
+      CIRQUE: AUTONOME
+      CONTES: AUTONOME
+      CREATIF: DEBUTANT
+      MOTRICITE: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-19
+      - 2028-04-23
+      - 2028-06-03
+      - 2028-06-13
+      - 2028-07-02
+  - id: A30028
+    prenom: "Salomé"
+    nom: Rousseau
+    dateNaissance: 1969-07-20
+    manager: false
+    email: "animateur30029@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: REFERENT
+      CREATIF: AUTONOME
+      SCIENCES: AUTONOME
+      ENIGMES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - ENIGMES
+      - CREATIF
+  - id: A30029
+    prenom: Valentin
+    nom: Perrin
+    dateNaissance: 1971-07-17
+    manager: false
+    email: "animateur30030@example.org"
+    competences:
+      CULTURE: AUTONOME
+      CIRQUE: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-04
+      - 2028-05-07
+      - 2028-06-06
+      - 2028-07-01
+      - 2028-07-11
+      - 2028-07-26
+  - id: A30030
+    prenom: Romane
+    nom: Fontaine
+    dateNaissance: 1986-04-14
+    manager: false
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2028-04-15
+      - 2028-04-16
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-22
+      - 2028-04-23
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-04-29
+      - 2028-04-30
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-06
+      - 2028-05-07
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+  - id: A30031
+    prenom: Mathis
+    nom: Boyer
+    dateNaissance: 1988-10-15
+    manager: false
+    email: "animateur30032@example.org"
+    competences:
+      JEUX_DE_PISTE: DEBUTANT
+      ADRESSE: AUTONOME
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      CULTURE: AUTONOME
+      MOTRICITE: REFERENT
+    joursIndisponibles: []
+  - id: A30032
+    prenom: "Éloïse"
+    nom: Roche
+    dateNaissance: 1972-11-07
+    manager: false
+    email: "animateur30033@example.org"
+    competences:
+      JEUX_DE_PISTE: DEBUTANT
+      ADRESSE: AUTONOME
+      MOTRICITE: AUTONOME
+      CONTES: REFERENT
+      CREATIF: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30033
+    prenom: Baptiste
+    nom: Perez
+    dateNaissance: 2001-04-22
+    manager: false
+    competences:
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+      SCIENCES: REFERENT
+      CONTES: REFERENT
+      ENIGMES: DEBUTANT
+    joursIndisponibles:
+      - 2028-04-30
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-06
+      - 2028-05-07
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-13
+      - 2028-05-14
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-20
+      - 2028-05-21
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-27
+  - id: A30034
+    prenom: "Célia"
+    nom: Dumas
+    dateNaissance: 2011-09-14
+    manager: false
+    email: "animateur30035@example.org"
+    competences:
+      ENIGMES: AUTONOME
+      JEUX_DE_PISTE: DEBUTANT
+      CREATIF: REFERENT
+    joursIndisponibles:
+      - 2028-04-05
+      - 2028-04-12
+      - 2028-07-05
+      - 2028-07-13
+  - id: A30035
+    prenom: "Noé"
+    nom: Renard
+    dateNaissance: 1983-03-10
+    manager: false
+    email: "animateur30036@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      ADRESSE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      CIRQUE: AUTONOME
+      CREATIF: AUTONOME
+    joursIndisponibles:
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-15
+      - 2028-04-16
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-22
+      - 2028-04-23
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-04-29
+      - 2028-04-30
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-06
+      - 2028-05-07
+      - 2028-05-08
+  - id: A30036
+    prenom: "Maëlle"
+    nom: Vidal
+    dateNaissance: 2011-02-04
+    manager: false
+    email: "animateur30037@example.org"
+    competences:
+      CULTURE: REFERENT
+      CONSTRUCTION: AUTONOME
+      SCIENCES: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30037
+    prenom: Eliott
+    nom: Leclercq
+    dateNaissance: 1999-12-09
+    manager: false
+    email: "animateur30038@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CIRQUE: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-20
+      - 2028-05-06
+      - 2028-05-30
+      - 2028-06-08
+      - 2028-06-23
+  - id: A30038
+    prenom: Apolline
+    nom: Hubert
+    dateNaissance: 1996-09-03
+    manager: false
+    email: "animateur30039@example.org"
+    competences:
+      MOTRICITE: AUTONOME
+      ADRESSE: AUTONOME
+      CREATIF: AUTONOME
+      CIRQUE: AUTONOME
+      CONTES: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A30039
+    prenom: "Timéo"
+    nom: Perrot
+    dateNaissance: 1969-06-14
+    manager: false
+    competences:
+      CONSTRUCTION: AUTONOME
+      SCIENCES: DEBUTANT
+      CIRQUE: REFERENT
+      ENIGMES: REFERENT
+      CULTURE: REFERENT
+      JEUX_DE_PISTE: DEBUTANT
+    joursIndisponibles: []
+  - id: A30040
+    prenom: Charlotte
+    nom: Lebrun
+    dateNaissance: 1980-11-06
+    manager: false
+    email: "animateur30041@example.org"
+    competences:
+      JEUX_DE_PISTE: REFERENT
+      CULTURE: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - SCIENCES
+      - CULTURE
+  - id: A30041
+    prenom: Antoine
+    nom: Fabre
+    dateNaissance: 1988-02-28
+    manager: false
+    email: "animateur30042@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CIRQUE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30042
+    prenom: Lise
+    nom: Bonnet
+    dateNaissance: 1983-09-05
+    manager: false
+    competences:
+      ENIGMES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      ADRESSE: REFERENT
+      MOTRICITE: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CULTURE
+      - CONSTRUCTION
+  - id: A30043
+    prenom: "Aurélien"
+    nom: Blanc
+    dateNaissance: 1969-01-26
+    manager: false
+    competences:
+      ENIGMES: AUTONOME
+      CIRQUE: DEBUTANT
+      MOTRICITE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30044
+    prenom: Pauline
+    nom: Morin
+    dateNaissance: 2006-01-19
+    manager: false
+    email: "animateur30045@example.org"
+    competences:
+      CULTURE: REFERENT
+      CONTES: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-25
+  - id: A30045
+    prenom: Quentin
+    nom: Chevalier
+    dateNaissance: 1993-03-19
+    manager: false
+    email: "animateur30046@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      SCIENCES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-19
+      - 2028-05-20
+      - 2028-05-21
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-27
+      - 2028-05-28
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-03
+      - 2028-06-04
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-10
+      - 2028-06-11
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+  - id: A30046
+    prenom: Justine
+    nom: Denis
+    dateNaissance: 2011-11-24
+    manager: false
+    competences:
+      CIRQUE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+      CREATIF: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30047
+    prenom: Bastien
+    nom: Roy
+    dateNaissance: 1971-10-09
+    manager: false
+    email: "animateur30048@example.org"
+    competences:
+      ADRESSE: REFERENT
+      CIRQUE: AUTONOME
+      CONTES: REFERENT
+      CULTURE: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+    souhaits:
+      - CONTES
+      - CIRQUE
+  - id: A30048
+    prenom: "Océane"
+    nom: Marchand
+    dateNaissance: 1976-11-21
+    manager: false
+    competences:
+      SCIENCES: DEBUTANT
+      CIRQUE: AUTONOME
+      CONTES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A30049
+    prenom: Florian
+    nom: Brunet
+    dateNaissance: 1975-03-19
+    manager: false
+    competences:
+      CONSTRUCTION: AUTONOME
+      CIRQUE: REFERENT
+      MOTRICITE: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2028-04-10
+      - 2028-04-14
+      - 2028-05-07
+      - 2028-05-09
+      - 2028-06-04
+      - 2028-07-12
+  - id: A30050
+    prenom: Mathilde
+    nom: Arnaud
+    dateNaissance: 2005-07-26
+    manager: false
+    email: "animateur30051@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+      CULTURE: AUTONOME
+      ADRESSE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles:
+      - 2028-05-28
+      - 2028-06-16
+      - 2028-07-05
+      - 2028-07-17
+  - id: A30051
+    prenom: Adrien
+    nom: Bourgeois
+    dateNaissance: 1993-09-19
+    manager: false
+    email: "animateur30052@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      MOTRICITE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_VIDEO: REFERENT
+      CREATIF: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2028-06-24
+      - 2028-06-25
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-15
+      - 2028-07-16
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+  - id: A30052
+    prenom: "Clémence"
+    nom: Lacroix
+    dateNaissance: 1994-08-25
+    manager: false
+    email: "animateur30053@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      MOTRICITE: DEBUTANT
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30053
+    prenom: Maxime
+    nom: Carpentier
+    dateNaissance: 2005-02-06
+    manager: false
+    email: "animateur30054@example.org"
+    competences:
+      CONTES: AUTONOME
+      ENIGMES: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30054
+    prenom: "Solène"
+    nom: Hoarau
+    dateNaissance: 2001-09-26
+    manager: false
+    email: "animateur30055@example.org"
+    competences:
+      CONTES: AUTONOME
+      ADRESSE: REFERENT
+      CULTURE: DEBUTANT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+    souhaits:
+      - CONTES
+      - CULTURE
+  - id: A30055
+    prenom: "Rémi"
+    nom: Hamon
+    dateNaissance: 1987-05-07
+    manager: false
+    email: "animateur30056@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      MOTRICITE: AUTONOME
+      CIRQUE: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30056
+    prenom: Morgane
+    nom: Morel
+    dateNaissance: 1966-05-28
+    manager: false
+    email: "animateur30057@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      MOTRICITE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-20
+      - 2028-06-06
+  - id: A30057
+    prenom: "Loïc"
+    nom: Francois
+    dateNaissance: 1969-01-10
+    manager: false
+    email: "animateur30058@example.org"
+    competences:
+      MOTRICITE: DEBUTANT
+      CULTURE: AUTONOME
+      CIRQUE: AUTONOME
+      ENIGMES: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2028-06-12
+      - 2028-06-18
+      - 2028-06-22
+      - 2028-07-09
+      - 2028-07-29
+    souhaits:
+      - CONTES
+      - CULTURE
+  - id: A30058
+    prenom: Estelle
+    nom: Guerin
+    dateNaissance: 2006-05-21
+    manager: false
+    email: "animateur30059@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: REFERENT
+      CONSTRUCTION: REFERENT
+    joursIndisponibles:
+      - 2028-06-23
+      - 2028-06-24
+      - 2028-06-25
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-01
+      - 2028-07-02
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-08
+      - 2028-07-09
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-15
+      - 2028-07-16
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+  - id: A30059
+    prenom: Damien
+    nom: Mathieu
+    dateNaissance: 1990-07-10
+    manager: false
+    email: "animateur30060@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      CREATIF: DEBUTANT
+      ENIGMES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-06-11
+      - 2028-06-13
+      - 2028-06-26
+    souhaits:
+      - JEUX_DE_SOCIETE
+      - CONSTRUCTION
+  - id: A30060
+    prenom: "Noémie"
+    nom: Robin
+    dateNaissance: 2011-12-22
+    manager: false
+    competences:
+      SCIENCES: AUTONOME
+      CIRQUE: DEBUTANT
+      CONTES: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30061
+    prenom: Yanis
+    nom: Lemoine
+    dateNaissance: 1975-08-18
+    manager: false
+    email: "animateur30062@example.org"
+    competences:
+      CIRQUE: REFERENT
+      ENIGMES: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-04
+      - 2028-05-12
+      - 2028-06-17
+  - id: A30062
+    prenom: "Anaïs"
+    nom: Noel
+    dateNaissance: 1981-11-27
+    manager: false
+    competences:
+      CONTES: AUTONOME
+      SCIENCES: AUTONOME
+      ENIGMES: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles:
+      - 2028-04-13
+      - 2028-05-06
+      - 2028-05-17
+      - 2028-05-23
+      - 2028-06-20
+      - 2028-07-17
+  - id: A30063
+    prenom: Kylian
+    nom: Dufour
+    dateNaissance: 1973-10-13
+    manager: false
+    competences:
+      CONSTRUCTION: REFERENT
+      CULTURE: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      ENIGMES: AUTONOME
+    joursIndisponibles:
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-13
+      - 2028-05-14
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-20
+      - 2028-05-21
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-27
+      - 2028-05-28
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-03
+      - 2028-06-04
+      - 2028-06-05
+      - 2028-06-06
+    souhaits:
+      - CULTURE
+      - JEUX_DE_SOCIETE
+  - id: A30064
+    prenom: Amandine
+    nom: Schmitt
+    dateNaissance: 1968-04-01
+    manager: false
+    email: "animateur30065@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      SCIENCES: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30065
+    prenom: "Benoît"
+    nom: Rolland
+    dateNaissance: 1971-04-23
+    manager: false
+    email: "animateur30066@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: AUTONOME
+    joursIndisponibles:
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-22
+      - 2028-04-23
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-04-29
+      - 2028-04-30
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-06
+      - 2028-05-07
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-13
+      - 2028-05-14
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+  - id: A30066
+    prenom: Coralie
+    nom: Renaud
+    dateNaissance: 1966-06-03
+    manager: false
+    email: "animateur30067@example.org"
+    competences:
+      JEUX_VIDEO: REFERENT
+      CONTES: REFERENT
+      CONSTRUCTION: AUTONOME
+      ENIGMES: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+    souhaits:
+      - CONSTRUCTION
+      - ENIGMES
+  - id: A30067
+    prenom: Cyril
+    nom: Fabre
+    dateNaissance: 1970-10-23
+    manager: false
+    competences:
+      CIRQUE: AUTONOME
+      CULTURE: DEBUTANT
+      ADRESSE: AUTONOME
+      SCIENCES: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30068
+    prenom: Fanny
+    nom: Moulin
+    dateNaissance: 1981-11-21
+    manager: false
+    email: "animateur30069@example.org"
+    competences:
+      ENIGMES: REFERENT
+      SCIENCES: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+    souhaits:
+      - JEUX_DE_PISTE
+      - SCIENCES
+  - id: A30069
+    prenom: "Gaël"
+    nom: Cordier
+    dateNaissance: 1969-08-28
+    manager: false
+    competences:
+      ADRESSE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+      SCIENCES: REFERENT
+      CIRQUE: REFERENT
+    joursIndisponibles: []
+  - id: A30070
+    prenom: "Hélène"
+    nom: Poirier
+    dateNaissance: 1985-03-17
+    manager: false
+    email: "animateur30071@example.org"
+    competences:
+      CONTES: AUTONOME
+      CONSTRUCTION: DEBUTANT
+      SCIENCES: REFERENT
+      ADRESSE: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles:
+      - 2028-05-09
+      - 2028-07-11
+      - 2028-07-16
+    souhaits:
+      - SCIENCES
+      - CONTES
+  - id: A30071
+    prenom: "Ismaël"
+    nom: Girard
+    dateNaissance: 1975-07-26
+    manager: false
+    email: "animateur30072@example.org"
+    competences:
+      CULTURE: DEBUTANT
+      JEUX_VIDEO: AUTONOME
+      ENIGMES: REFERENT
+      CREATIF: DEBUTANT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30072
+    prenom: Jeanne
+    nom: Martinez
+    dateNaissance: 1968-08-11
+    manager: false
+    email: "animateur30073@example.org"
+    competences:
+      CREATIF: REFERENT
+      JEUX_VIDEO: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CIRQUE: AUTONOME
+      ENIGMES: AUTONOME
+      ADRESSE: DEBUTANT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-05-24
+      - 2028-06-11
+      - 2028-06-15
+      - 2028-07-02
+  - id: A30073
+    prenom: Kevin
+    nom: Muller
+    dateNaissance: 2011-10-07
+    manager: false
+    email: "animateur30074@example.org"
+    competences:
+      CONTES: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+    joursIndisponibles: []
+  - id: A30074
+    prenom: Laure
+    nom: Clement
+    dateNaissance: 1980-05-26
+    manager: false
+    email: "animateur30075@example.org"
+    competences:
+      ENIGMES: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+      CONSTRUCTION: DEBUTANT
+      CREATIF: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+      CIRQUE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-26
+      - 2028-05-12
+      - 2028-06-08
+      - 2028-06-25
+      - 2028-07-21
+      - 2028-07-30
+    souhaits:
+      - ENIGMES
+      - CREATIF
+  - id: A30075
+    prenom: Mehdi
+    nom: Masson
+    dateNaissance: 1996-07-27
+    manager: false
+    email: "animateur30076@example.org"
+    competences:
+      CULTURE: REFERENT
+      CONSTRUCTION: REFERENT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-06-14
+      - 2028-07-06
+  - id: A30076
+    prenom: Nadia
+    nom: Duval
+    dateNaissance: 1986-05-12
+    manager: false
+    email: "animateur30077@example.org"
+    competences:
+      MOTRICITE: REFERENT
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+    joursIndisponibles:
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-13
+      - 2028-05-14
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-20
+      - 2028-05-21
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-27
+      - 2028-05-28
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-03
+      - 2028-06-04
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+  - id: A30077
+    prenom: Olivier
+    nom: Meyer
+    dateNaissance: 1988-04-01
+    manager: false
+    email: "animateur30078@example.org"
+    competences:
+      JEUX_DE_PISTE: DEBUTANT
+      CREATIF: AUTONOME
+      CIRQUE: REFERENT
+      MOTRICITE: REFERENT
+    joursIndisponibles:
+      - 2028-07-14
+    souhaits:
+      - CIRQUE
+      - CREATIF
+  - id: A30078
+    prenom: Perrine
+    nom: Blanchard
+    dateNaissance: 1967-04-05
+    manager: false
+    email: "animateur30079@example.org"
+    competences:
+      CREATIF: AUTONOME
+      ENIGMES: AUTONOME
+      JEUX_VIDEO: AUTONOME
+      CULTURE: REFERENT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30079
+    prenom: Rayan
+    nom: Leroux
+    dateNaissance: 1995-06-05
+    manager: false
+    email: "animateur30080@example.org"
+    competences:
+      CONTES: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      ADRESSE: REFERENT
+      MOTRICITE: AUTONOME
+      JEUX_VIDEO: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-25
+      - 2028-05-01
+      - 2028-05-25
+      - 2028-06-11
+      - 2028-07-01
+      - 2028-07-19
+    souhaits:
+      - JEUX_DE_PISTE
+      - CONTES
+  - id: A30080
+    prenom: Sarah
+    nom: Caron
+    dateNaissance: 1994-08-12
+    manager: false
+    email: "animateur30081@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CREATIF: AUTONOME
+      JEUX_DE_PISTE: REFERENT
+    joursIndisponibles:
+      - 2028-04-30
+      - 2028-05-25
+  - id: A30081
+    prenom: Thibault
+    nom: Lemoine
+    dateNaissance: 2004-08-05
+    manager: false
+    competences:
+      ADRESSE: DEBUTANT
+      SCIENCES: AUTONOME
+      CIRQUE: AUTONOME
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31
+  - id: A30082
+    prenom: Ursule
+    nom: Dupont
+    dateNaissance: 1982-05-07
+    manager: false
+    email: "animateur30083@example.org"
+    competences:
+      SCIENCES: AUTONOME
+      JEUX_VIDEO: DEBUTANT
+      CREATIF: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CONTES: REFERENT
+      ENIGMES: DEBUTANT
+    joursIndisponibles:
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-27
+      - 2028-05-28
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-03
+      - 2028-06-04
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-10
+      - 2028-06-11
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-17
+      - 2028-06-18
+    souhaits:
+      - CREATIF
+      - ENIGMES
+  - id: A30083
+    prenom: Vincent
+    nom: Louis
+    dateNaissance: 1996-05-11
+    manager: false
+    email: "animateur30084@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CULTURE: REFERENT
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      JEUX_DE_PISTE: AUTONOME
+      JEUX_VIDEO: REFERENT
+    joursIndisponibles:
+      - 2028-04-03
+      - 2028-04-04
+      - 2028-04-05
+      - 2028-04-06
+      - 2028-04-07
+      - 2028-04-10
+      - 2028-04-11
+      - 2028-04-12
+      - 2028-04-13
+      - 2028-04-14
+      - 2028-04-17
+      - 2028-04-18
+      - 2028-04-19
+      - 2028-04-20
+      - 2028-04-21
+      - 2028-04-24
+      - 2028-04-25
+      - 2028-04-26
+      - 2028-04-27
+      - 2028-04-28
+      - 2028-05-01
+      - 2028-05-02
+      - 2028-05-03
+      - 2028-05-04
+      - 2028-05-05
+      - 2028-05-08
+      - 2028-05-09
+      - 2028-05-10
+      - 2028-05-11
+      - 2028-05-12
+      - 2028-05-15
+      - 2028-05-16
+      - 2028-05-17
+      - 2028-05-18
+      - 2028-05-19
+      - 2028-05-22
+      - 2028-05-23
+      - 2028-05-24
+      - 2028-05-25
+      - 2028-05-26
+      - 2028-05-29
+      - 2028-05-30
+      - 2028-05-31
+      - 2028-06-01
+      - 2028-06-02
+      - 2028-06-05
+      - 2028-06-06
+      - 2028-06-07
+      - 2028-06-08
+      - 2028-06-09
+      - 2028-06-12
+      - 2028-06-13
+      - 2028-06-14
+      - 2028-06-15
+      - 2028-06-16
+      - 2028-06-19
+      - 2028-06-20
+      - 2028-06-21
+      - 2028-06-22
+      - 2028-06-23
+      - 2028-06-26
+      - 2028-06-27
+      - 2028-06-28
+      - 2028-06-29
+      - 2028-06-30
+      - 2028-07-03
+      - 2028-07-04
+      - 2028-07-05
+      - 2028-07-06
+      - 2028-07-07
+      - 2028-07-10
+      - 2028-07-11
+      - 2028-07-12
+      - 2028-07-13
+      - 2028-07-14
+      - 2028-07-17
+      - 2028-07-18
+      - 2028-07-19
+      - 2028-07-20
+      - 2028-07-21
+      - 2028-07-24
+      - 2028-07-25
+      - 2028-07-26
+      - 2028-07-27
+      - 2028-07-28
+      - 2028-07-31

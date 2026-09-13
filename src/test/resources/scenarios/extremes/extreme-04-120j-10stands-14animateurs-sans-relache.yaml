@@ -1,0 +1,1454 @@
+# yaml-language-server: $schema=../../../../../docs/schema/scenario-schema.json
+# Scénario extrême 4 : cent vingt jours sans un jour de relâche, avec un
+# effectif juste.
+# Dix stands ouverts matin et après-midi tous les jours pendant dix-huit
+# semaines. Personne ne travaille plus de six jours par semaine ni sans ses
+# trente-cinq heures de repos hebdomadaire : l'effectif tourne en permanence,
+# avec environ quinze pour cent de marge.
+
+festival:
+  dateDebut: 2028-04-03
+
+creneaux:
+  - id: J1-MATIN
+    jour: 1
+    date: 2028-04-03
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J1-APREM
+    jour: 1
+    date: 2028-04-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J2-MATIN
+    jour: 2
+    date: 2028-04-04
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J2-APREM
+    jour: 2
+    date: 2028-04-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J3-MATIN
+    jour: 3
+    date: 2028-04-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J3-APREM
+    jour: 3
+    date: 2028-04-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J4-MATIN
+    jour: 4
+    date: 2028-04-06
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J4-APREM
+    jour: 4
+    date: 2028-04-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J5-MATIN
+    jour: 5
+    date: 2028-04-07
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J5-APREM
+    jour: 5
+    date: 2028-04-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J6-MATIN
+    jour: 6
+    date: 2028-04-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J6-APREM
+    jour: 6
+    date: 2028-04-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J7-MATIN
+    jour: 7
+    date: 2028-04-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J7-APREM
+    jour: 7
+    date: 2028-04-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J8-MATIN
+    jour: 8
+    date: 2028-04-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J8-APREM
+    jour: 8
+    date: 2028-04-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J9-MATIN
+    jour: 9
+    date: 2028-04-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J9-APREM
+    jour: 9
+    date: 2028-04-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J10-MATIN
+    jour: 10
+    date: 2028-04-12
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J10-APREM
+    jour: 10
+    date: 2028-04-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J11-MATIN
+    jour: 11
+    date: 2028-04-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J11-APREM
+    jour: 11
+    date: 2028-04-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J12-MATIN
+    jour: 12
+    date: 2028-04-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J12-APREM
+    jour: 12
+    date: 2028-04-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J13-MATIN
+    jour: 13
+    date: 2028-04-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J13-APREM
+    jour: 13
+    date: 2028-04-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J14-MATIN
+    jour: 14
+    date: 2028-04-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J14-APREM
+    jour: 14
+    date: 2028-04-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J15-MATIN
+    jour: 15
+    date: 2028-04-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J15-APREM
+    jour: 15
+    date: 2028-04-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J16-MATIN
+    jour: 16
+    date: 2028-04-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J16-APREM
+    jour: 16
+    date: 2028-04-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J17-MATIN
+    jour: 17
+    date: 2028-04-19
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J17-APREM
+    jour: 17
+    date: 2028-04-19
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J18-MATIN
+    jour: 18
+    date: 2028-04-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J18-APREM
+    jour: 18
+    date: 2028-04-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J19-MATIN
+    jour: 19
+    date: 2028-04-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J19-APREM
+    jour: 19
+    date: 2028-04-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J20-MATIN
+    jour: 20
+    date: 2028-04-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J20-APREM
+    jour: 20
+    date: 2028-04-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J21-MATIN
+    jour: 21
+    date: 2028-04-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J21-APREM
+    jour: 21
+    date: 2028-04-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J22-MATIN
+    jour: 22
+    date: 2028-04-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J22-APREM
+    jour: 22
+    date: 2028-04-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J23-MATIN
+    jour: 23
+    date: 2028-04-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J23-APREM
+    jour: 23
+    date: 2028-04-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J24-MATIN
+    jour: 24
+    date: 2028-04-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J24-APREM
+    jour: 24
+    date: 2028-04-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J25-MATIN
+    jour: 25
+    date: 2028-04-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J25-APREM
+    jour: 25
+    date: 2028-04-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J26-MATIN
+    jour: 26
+    date: 2028-04-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J26-APREM
+    jour: 26
+    date: 2028-04-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J27-MATIN
+    jour: 27
+    date: 2028-04-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J27-APREM
+    jour: 27
+    date: 2028-04-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J28-MATIN
+    jour: 28
+    date: 2028-04-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J28-APREM
+    jour: 28
+    date: 2028-04-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J29-MATIN
+    jour: 29
+    date: 2028-05-01
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J29-APREM
+    jour: 29
+    date: 2028-05-01
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J30-MATIN
+    jour: 30
+    date: 2028-05-02
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J30-APREM
+    jour: 30
+    date: 2028-05-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J31-MATIN
+    jour: 31
+    date: 2028-05-03
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J31-APREM
+    jour: 31
+    date: 2028-05-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J32-MATIN
+    jour: 32
+    date: 2028-05-04
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J32-APREM
+    jour: 32
+    date: 2028-05-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J33-MATIN
+    jour: 33
+    date: 2028-05-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J33-APREM
+    jour: 33
+    date: 2028-05-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J34-MATIN
+    jour: 34
+    date: 2028-05-06
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J34-APREM
+    jour: 34
+    date: 2028-05-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J35-MATIN
+    jour: 35
+    date: 2028-05-07
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J35-APREM
+    jour: 35
+    date: 2028-05-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J36-MATIN
+    jour: 36
+    date: 2028-05-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J36-APREM
+    jour: 36
+    date: 2028-05-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J37-MATIN
+    jour: 37
+    date: 2028-05-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J37-APREM
+    jour: 37
+    date: 2028-05-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J38-MATIN
+    jour: 38
+    date: 2028-05-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J38-APREM
+    jour: 38
+    date: 2028-05-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J39-MATIN
+    jour: 39
+    date: 2028-05-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J39-APREM
+    jour: 39
+    date: 2028-05-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J40-MATIN
+    jour: 40
+    date: 2028-05-12
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J40-APREM
+    jour: 40
+    date: 2028-05-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J41-MATIN
+    jour: 41
+    date: 2028-05-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J41-APREM
+    jour: 41
+    date: 2028-05-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J42-MATIN
+    jour: 42
+    date: 2028-05-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J42-APREM
+    jour: 42
+    date: 2028-05-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J43-MATIN
+    jour: 43
+    date: 2028-05-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J43-APREM
+    jour: 43
+    date: 2028-05-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J44-MATIN
+    jour: 44
+    date: 2028-05-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J44-APREM
+    jour: 44
+    date: 2028-05-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J45-MATIN
+    jour: 45
+    date: 2028-05-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J45-APREM
+    jour: 45
+    date: 2028-05-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J46-MATIN
+    jour: 46
+    date: 2028-05-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J46-APREM
+    jour: 46
+    date: 2028-05-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J47-MATIN
+    jour: 47
+    date: 2028-05-19
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J47-APREM
+    jour: 47
+    date: 2028-05-19
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J48-MATIN
+    jour: 48
+    date: 2028-05-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J48-APREM
+    jour: 48
+    date: 2028-05-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J49-MATIN
+    jour: 49
+    date: 2028-05-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J49-APREM
+    jour: 49
+    date: 2028-05-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J50-MATIN
+    jour: 50
+    date: 2028-05-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J50-APREM
+    jour: 50
+    date: 2028-05-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J51-MATIN
+    jour: 51
+    date: 2028-05-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J51-APREM
+    jour: 51
+    date: 2028-05-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J52-MATIN
+    jour: 52
+    date: 2028-05-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J52-APREM
+    jour: 52
+    date: 2028-05-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J53-MATIN
+    jour: 53
+    date: 2028-05-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J53-APREM
+    jour: 53
+    date: 2028-05-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J54-MATIN
+    jour: 54
+    date: 2028-05-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J54-APREM
+    jour: 54
+    date: 2028-05-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J55-MATIN
+    jour: 55
+    date: 2028-05-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J55-APREM
+    jour: 55
+    date: 2028-05-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J56-MATIN
+    jour: 56
+    date: 2028-05-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J56-APREM
+    jour: 56
+    date: 2028-05-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J57-MATIN
+    jour: 57
+    date: 2028-05-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J57-APREM
+    jour: 57
+    date: 2028-05-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J58-MATIN
+    jour: 58
+    date: 2028-05-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J58-APREM
+    jour: 58
+    date: 2028-05-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J59-MATIN
+    jour: 59
+    date: 2028-05-31
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J59-APREM
+    jour: 59
+    date: 2028-05-31
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J60-MATIN
+    jour: 60
+    date: 2028-06-01
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J60-APREM
+    jour: 60
+    date: 2028-06-01
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J61-MATIN
+    jour: 61
+    date: 2028-06-02
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J61-APREM
+    jour: 61
+    date: 2028-06-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J62-MATIN
+    jour: 62
+    date: 2028-06-03
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J62-APREM
+    jour: 62
+    date: 2028-06-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J63-MATIN
+    jour: 63
+    date: 2028-06-04
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J63-APREM
+    jour: 63
+    date: 2028-06-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J64-MATIN
+    jour: 64
+    date: 2028-06-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J64-APREM
+    jour: 64
+    date: 2028-06-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J65-MATIN
+    jour: 65
+    date: 2028-06-06
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J65-APREM
+    jour: 65
+    date: 2028-06-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J66-MATIN
+    jour: 66
+    date: 2028-06-07
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J66-APREM
+    jour: 66
+    date: 2028-06-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J67-MATIN
+    jour: 67
+    date: 2028-06-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J67-APREM
+    jour: 67
+    date: 2028-06-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J68-MATIN
+    jour: 68
+    date: 2028-06-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J68-APREM
+    jour: 68
+    date: 2028-06-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J69-MATIN
+    jour: 69
+    date: 2028-06-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J69-APREM
+    jour: 69
+    date: 2028-06-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J70-MATIN
+    jour: 70
+    date: 2028-06-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J70-APREM
+    jour: 70
+    date: 2028-06-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J71-MATIN
+    jour: 71
+    date: 2028-06-12
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J71-APREM
+    jour: 71
+    date: 2028-06-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J72-MATIN
+    jour: 72
+    date: 2028-06-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J72-APREM
+    jour: 72
+    date: 2028-06-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J73-MATIN
+    jour: 73
+    date: 2028-06-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J73-APREM
+    jour: 73
+    date: 2028-06-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J74-MATIN
+    jour: 74
+    date: 2028-06-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J74-APREM
+    jour: 74
+    date: 2028-06-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J75-MATIN
+    jour: 75
+    date: 2028-06-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J75-APREM
+    jour: 75
+    date: 2028-06-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J76-MATIN
+    jour: 76
+    date: 2028-06-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J76-APREM
+    jour: 76
+    date: 2028-06-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J77-MATIN
+    jour: 77
+    date: 2028-06-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J77-APREM
+    jour: 77
+    date: 2028-06-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J78-MATIN
+    jour: 78
+    date: 2028-06-19
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J78-APREM
+    jour: 78
+    date: 2028-06-19
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J79-MATIN
+    jour: 79
+    date: 2028-06-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J79-APREM
+    jour: 79
+    date: 2028-06-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J80-MATIN
+    jour: 80
+    date: 2028-06-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J80-APREM
+    jour: 80
+    date: 2028-06-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J81-MATIN
+    jour: 81
+    date: 2028-06-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J81-APREM
+    jour: 81
+    date: 2028-06-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J82-MATIN
+    jour: 82
+    date: 2028-06-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J82-APREM
+    jour: 82
+    date: 2028-06-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J83-MATIN
+    jour: 83
+    date: 2028-06-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J83-APREM
+    jour: 83
+    date: 2028-06-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J84-MATIN
+    jour: 84
+    date: 2028-06-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J84-APREM
+    jour: 84
+    date: 2028-06-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J85-MATIN
+    jour: 85
+    date: 2028-06-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J85-APREM
+    jour: 85
+    date: 2028-06-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J86-MATIN
+    jour: 86
+    date: 2028-06-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J86-APREM
+    jour: 86
+    date: 2028-06-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J87-MATIN
+    jour: 87
+    date: 2028-06-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J87-APREM
+    jour: 87
+    date: 2028-06-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J88-MATIN
+    jour: 88
+    date: 2028-06-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J88-APREM
+    jour: 88
+    date: 2028-06-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J89-MATIN
+    jour: 89
+    date: 2028-06-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J89-APREM
+    jour: 89
+    date: 2028-06-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J90-MATIN
+    jour: 90
+    date: 2028-07-01
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J90-APREM
+    jour: 90
+    date: 2028-07-01
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J91-MATIN
+    jour: 91
+    date: 2028-07-02
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J91-APREM
+    jour: 91
+    date: 2028-07-02
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J92-MATIN
+    jour: 92
+    date: 2028-07-03
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J92-APREM
+    jour: 92
+    date: 2028-07-03
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J93-MATIN
+    jour: 93
+    date: 2028-07-04
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J93-APREM
+    jour: 93
+    date: 2028-07-04
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J94-MATIN
+    jour: 94
+    date: 2028-07-05
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J94-APREM
+    jour: 94
+    date: 2028-07-05
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J95-MATIN
+    jour: 95
+    date: 2028-07-06
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J95-APREM
+    jour: 95
+    date: 2028-07-06
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J96-MATIN
+    jour: 96
+    date: 2028-07-07
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J96-APREM
+    jour: 96
+    date: 2028-07-07
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J97-MATIN
+    jour: 97
+    date: 2028-07-08
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J97-APREM
+    jour: 97
+    date: 2028-07-08
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J98-MATIN
+    jour: 98
+    date: 2028-07-09
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J98-APREM
+    jour: 98
+    date: 2028-07-09
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J99-MATIN
+    jour: 99
+    date: 2028-07-10
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J99-APREM
+    jour: 99
+    date: 2028-07-10
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J100-MATIN
+    jour: 100
+    date: 2028-07-11
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J100-APREM
+    jour: 100
+    date: 2028-07-11
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J101-MATIN
+    jour: 101
+    date: 2028-07-12
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J101-APREM
+    jour: 101
+    date: 2028-07-12
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J102-MATIN
+    jour: 102
+    date: 2028-07-13
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J102-APREM
+    jour: 102
+    date: 2028-07-13
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J103-MATIN
+    jour: 103
+    date: 2028-07-14
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J103-APREM
+    jour: 103
+    date: 2028-07-14
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J104-MATIN
+    jour: 104
+    date: 2028-07-15
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J104-APREM
+    jour: 104
+    date: 2028-07-15
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J105-MATIN
+    jour: 105
+    date: 2028-07-16
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J105-APREM
+    jour: 105
+    date: 2028-07-16
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J106-MATIN
+    jour: 106
+    date: 2028-07-17
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J106-APREM
+    jour: 106
+    date: 2028-07-17
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J107-MATIN
+    jour: 107
+    date: 2028-07-18
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J107-APREM
+    jour: 107
+    date: 2028-07-18
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J108-MATIN
+    jour: 108
+    date: 2028-07-19
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J108-APREM
+    jour: 108
+    date: 2028-07-19
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J109-MATIN
+    jour: 109
+    date: 2028-07-20
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J109-APREM
+    jour: 109
+    date: 2028-07-20
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J110-MATIN
+    jour: 110
+    date: 2028-07-21
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J110-APREM
+    jour: 110
+    date: 2028-07-21
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J111-MATIN
+    jour: 111
+    date: 2028-07-22
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J111-APREM
+    jour: 111
+    date: 2028-07-22
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J112-MATIN
+    jour: 112
+    date: 2028-07-23
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J112-APREM
+    jour: 112
+    date: 2028-07-23
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J113-MATIN
+    jour: 113
+    date: 2028-07-24
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J113-APREM
+    jour: 113
+    date: 2028-07-24
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J114-MATIN
+    jour: 114
+    date: 2028-07-25
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J114-APREM
+    jour: 114
+    date: 2028-07-25
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J115-MATIN
+    jour: 115
+    date: 2028-07-26
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J115-APREM
+    jour: 115
+    date: 2028-07-26
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J116-MATIN
+    jour: 116
+    date: 2028-07-27
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J116-APREM
+    jour: 116
+    date: 2028-07-27
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J117-MATIN
+    jour: 117
+    date: 2028-07-28
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J117-APREM
+    jour: 117
+    date: 2028-07-28
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J118-MATIN
+    jour: 118
+    date: 2028-07-29
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J118-APREM
+    jour: 118
+    date: 2028-07-29
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J119-MATIN
+    jour: 119
+    date: 2028-07-30
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J119-APREM
+    jour: 119
+    date: 2028-07-30
+    heureDebut: "14:00"
+    heureFin: "18:00"
+  - id: J120-MATIN
+    jour: 120
+    date: 2028-07-31
+    heureDebut: "10:00"
+    heureFin: "13:00"
+  - id: J120-APREM
+    jour: 120
+    date: 2028-07-31
+    heureDebut: "14:00"
+    heureFin: "18:00"
+
+stands:
+  - id: STAND-01
+    nom: "Stand 1"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-02
+    nom: "Stand 2"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-03
+    nom: "Stand 3"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-04
+    nom: "Stand 4"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-05
+    nom: "Stand 5"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-06
+    nom: "Stand 6"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-07
+    nom: "Stand 7"
+    typologiesProposees:
+      - CULTURE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-08
+    nom: "Stand 8"
+    typologiesProposees:
+      - ADRESSE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-09
+    nom: "Stand 9"
+    typologiesProposees:
+      - JEUX_DE_SOCIETE
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+  - id: STAND-10
+    nom: "Stand 10"
+    typologiesProposees:
+      - CONSTRUCTION
+    effectifMin: 1
+    effectifMax: 1
+    reserveMajeurs: false
+
+animateurs:
+  - id: A40000
+    prenom: Ursule
+    nom: Nguyen
+    dateNaissance: 1972-02-21
+    manager: false
+    email: "animateur40001@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      ADRESSE: REFERENT
+      CULTURE: DEBUTANT
+      JEUX_DE_SOCIETE: DEBUTANT
+    joursIndisponibles: []
+  - id: A40001
+    prenom: Vincent
+    nom: Roger
+    dateNaissance: 1993-09-08
+    manager: false
+    email: "animateur40002@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      CULTURE: REFERENT
+      ADRESSE: DEBUTANT
+      JEUX_DE_SOCIETE: AUTONOME
+    joursIndisponibles: []
+  - id: A40002
+    prenom: Wendy
+    nom: Jean
+    dateNaissance: 1977-02-02
+    manager: false
+    email: "animateur40003@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+      CULTURE: REFERENT
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A40003
+    prenom: Xavier
+    nom: Brun
+    dateNaissance: 1978-10-15
+    manager: false
+    email: "animateur40004@example.org"
+    competences:
+      CONSTRUCTION: REFERENT
+      JEUX_DE_SOCIETE: DEBUTANT
+      CULTURE: AUTONOME
+      ADRESSE: DEBUTANT
+    joursIndisponibles: []
+  - id: A40004
+    prenom: Yasmine
+    nom: Pierre
+    dateNaissance: 1999-04-24
+    manager: false
+    email: "animateur40005@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A40005
+    prenom: Zacharie
+    nom: Leclerc
+    dateNaissance: 1977-10-08
+    manager: false
+    email: "animateur40006@example.org"
+    competences:
+      ADRESSE: AUTONOME
+      CULTURE: DEBUTANT
+      JEUX_DE_SOCIETE: REFERENT
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A40006
+    prenom: Aline
+    nom: Philippe
+    dateNaissance: 1986-09-06
+    manager: false
+    email: "animateur40007@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CULTURE: DEBUTANT
+      ADRESSE: AUTONOME
+      CONSTRUCTION: AUTONOME
+    joursIndisponibles: []
+  - id: A40007
+    prenom: Bruno
+    nom: Moreau
+    dateNaissance: 1995-04-23
+    manager: false
+    email: "animateur40008@example.org"
+    competences:
+      CONSTRUCTION: AUTONOME
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: AUTONOME
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A40008
+    prenom: Carole
+    nom: Vasseur
+    dateNaissance: 2004-08-09
+    manager: false
+    email: "animateur40009@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CONSTRUCTION: AUTONOME
+      ADRESSE: AUTONOME
+      CULTURE: AUTONOME
+    joursIndisponibles: []
+  - id: A40009
+    prenom: Denis
+    nom: Charpentier
+    dateNaissance: 1998-08-02
+    manager: false
+    email: "animateur40010@example.org"
+    competences:
+      JEUX_DE_SOCIETE: REFERENT
+      CULTURE: DEBUTANT
+      ADRESSE: AUTONOME
+      CONSTRUCTION: REFERENT
+    joursIndisponibles: []
+  - id: A40010
+    prenom: "Émilie"
+    nom: Lemaire
+    dateNaissance: 1988-04-26
+    manager: false
+    email: "animateur40011@example.org"
+    competences:
+      JEUX_DE_SOCIETE: DEBUTANT
+      CONSTRUCTION: AUTONOME
+      ADRESSE: DEBUTANT
+      CULTURE: REFERENT
+    joursIndisponibles: []
+  - id: A40011
+    prenom: Fabien
+    nom: Lambert
+    dateNaissance: 2004-12-08
+    manager: false
+    email: "animateur40012@example.org"
+    competences:
+      JEUX_DE_SOCIETE: AUTONOME
+      CONSTRUCTION: AUTONOME
+      CULTURE: REFERENT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
+  - id: A40012
+    prenom: "Gisèle"
+    nom: Rousseau
+    dateNaissance: 1971-09-24
+    manager: false
+    email: "animateur40013@example.org"
+    competences:
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: REFERENT
+      CONSTRUCTION: REFERENT
+      ADRESSE: REFERENT
+    joursIndisponibles: []
+  - id: A40013
+    prenom: Henri
+    nom: Perrin
+    dateNaissance: 1976-04-03
+    manager: false
+    email: "animateur40014@example.org"
+    competences:
+      CONSTRUCTION: DEBUTANT
+      CULTURE: AUTONOME
+      JEUX_DE_SOCIETE: DEBUTANT
+      ADRESSE: AUTONOME
+    joursIndisponibles: []
