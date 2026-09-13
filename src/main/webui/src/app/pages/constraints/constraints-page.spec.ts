@@ -12,6 +12,7 @@ import { TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { provideRouter } from '@angular/router';
+import { RouterTestingHarness } from '@angular/router/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { ConstraintView, ConstraintsView } from '../../core/models';
@@ -89,7 +90,9 @@ type PageInternals = {
   sortByFloor: () => boolean;
   basculerTri: () => void;
   basculerTriPlancher: () => void;
-  groups: () => { categorie: string; items: ConstraintView[] }[];
+  groups: () => { categorie: string; items: ConstraintView[]; ancre: string }[];
+  scrollToAnchor: (id: string) => void;
+  ancreLabel: (constraint: ConstraintView) => string;
 };
 
 /** A rule that penalised every seat for lack of data (issue #495). */
@@ -131,7 +134,9 @@ describe('ConstraintsPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        provideRouter([]),
+        // A real route, not `provideRouter([])`: the deep-link test below
+        // renders the page at `/constraints#uneRegle` through the router.
+        provideRouter([{ path: 'constraints', component: ConstraintsPage }]),
         { provide: ConstraintsApi, useValue: constraintsApi },
         { provide: MatDialog, useValue: { open: vi.fn() } },
         { provide: LegalDisableConfirmService, useValue: legalDisable },
@@ -370,6 +375,79 @@ describe('ConstraintsPage', () => {
       poids.value = '3';
       await page.onPoidsChange(AT_FLOOR, poids);
       expect(constraintsApi.setWeight).toHaveBeenCalledWith(AT_FLOOR.name, 3);
+    });
+  });
+
+  // A catalogue of fifty rules read as one column per category is navigable
+  // only if one can jump into it and link to a single rule — the reason the
+  // cards carry an id at all.
+  describe('the anchors of the catalogue', () => {
+    it("gives every category an anchor that cannot collide with a rule's name", async () => {
+      const page = await createPage([contrainte(), REGLE_LEGALE]);
+
+      expect(page.groups().map((group) => group.ancre)).toEqual([
+        'categorie-qualite-d-organisation',
+        'categorie-legal-mineurs',
+      ]);
+    });
+
+    it('names the rule in the label of its own anchor link', async () => {
+      const page = await createPage([contrainte()]);
+
+      expect(page.ancreLabel(contrainte())).toBe('Lien direct vers la règle equilibrerCharge');
+    });
+
+    // The card of a rule really is the element the anchor names, and going to
+    // it moves the caret as well as the eye. jsdom implements neither
+    // `scrollIntoView` nor smooth scrolling, so the call is what is pinned.
+    it('goes to a rule and leaves the caret on it', async () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      const page = await createPage([contrainte()]);
+      await vi.waitFor(() => expect(document.getElementById('equilibrerCharge')).not.toBeNull());
+      const carte = document.getElementById('equilibrerCharge');
+
+      page.scrollToAnchor('equilibrerCharge');
+
+      expect(scrollIntoView).toHaveBeenCalled();
+      expect(scrollIntoView.mock.instances[0]).toBe(carte);
+      expect(document.activeElement).toBe(carte);
+    });
+
+    /** A stale link to a renamed rule must not throw, just do nothing. */
+    it('ignores a fragment naming no rule', async () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      const page = await createPage([contrainte()]);
+
+      page.scrollToAnchor('regleQuiNexistePlus');
+
+      expect(scrollIntoView).not.toHaveBeenCalled();
+    });
+
+    /**
+     * The deep link, end to end: nothing exists on this page before the answer
+     * to `GET /api/constraints` lands, so reading the fragment at construction
+     * time and scrolling there and then would look for an id the DOM does not
+     * hold yet — which is exactly what this asserts against.
+     */
+    it('scrolls to the rule named by the URL fragment on a direct load', async () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      constraintsApi.catalogue.mockResolvedValue(view([contrainte(), REGLE_LEGALE]));
+
+      const harness = await RouterTestingHarness.create(
+        '/constraints#travailDeNuitInterditPourMineur',
+      );
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(document.getElementById('travailDeNuitInterditPourMineur')).not.toBeNull();
+      });
+
+      await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+      expect(scrollIntoView.mock.instances[0]).toBe(
+        document.getElementById('travailDeNuitInterditPourMineur'),
+      );
     });
   });
 

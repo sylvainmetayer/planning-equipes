@@ -30,6 +30,16 @@
         <span class="calendar-meta constraint-hors-plancher">{{ horsPlancherLabel() }}</span>
       }
     </div>
+    @if (groups().length > 1) {
+      <nav class="constraint-toc" i18n-aria-label="@@constraints.toc.label" aria-label="Sommaire des catégories de contraintes">
+        @for (group of groups(); track group.categorie) {
+          <a matButton="tonal" [routerLink]="[]" [fragment]="group.ancre" (click)="scrollToAnchor(group.ancre)">
+            {{ group.categorie }}
+            <span class="constraint-toc-count">{{ group.items.length }}</span>
+          </a>
+        }
+      </nav>
+    }
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
@@ -48,7 +58,7 @@
 }
 
 @for (group of groups(); track group.categorie) {
-  <mat-card appearance="outlined" class="page-card">
+  <mat-card appearance="outlined" class="page-card constraint-groupe" [id]="group.ancre" tabindex="-1">
     <mat-card-header>
       <h2 mat-card-title>{{ group.categorie }}</h2>
       @if (group.dosable) {
@@ -61,12 +71,21 @@
     <mat-card-content>
       <fieldset class="constraint-fieldset">
         <legend class="visually-hidden">{{ group.categorie }}</legend>
-      <div class="constraint-grid">
+      <div class="constraint-list">
         @for (constraint of group.items; track constraint.name) {
-          <mat-card appearance="outlined" class="constraint-card" [class.constraint-card-inactive]="!constraint.actif">
+          <mat-card appearance="outlined" class="constraint-card" [id]="constraint.name" tabindex="-1"
+                    [class.constraint-card-inactive]="!constraint.actif">
             <mat-card-content>
               <div class="constraint-card-header">
-                <strong>{{ constraint.name }}</strong>
+                <div class="constraint-card-titre">
+                  <code class="constraint-name">{{ constraint.name }}</code>
+                  <a matIconButton class="constraint-ancre" [routerLink]="[]" [fragment]="constraint.name"
+                     [attr.aria-label]="ancreLabel(constraint)"
+                     matTooltip="Lien direct vers cette règle" i18n-matTooltip="@@constraints.ancre.tooltip"
+                     (click)="scrollToAnchor(constraint.name)">
+                    <mat-icon>link</mat-icon>
+                  </a>
+                </div>
                 <mat-chip-set>
                   <mat-chip [class]="badgeClass(constraint.niveau)" [highlighted]="constraint.niveau === 'HARD'">
                     {{ niveauLabel(constraint.niveau) }}

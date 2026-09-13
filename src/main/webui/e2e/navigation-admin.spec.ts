@@ -36,7 +36,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // page's chunk, and only a browser can tell that it arrived.
   { path: '/diagnostic', marker: 'Diagnostic', sheet: 'diagnostic-onglets' },
   { path: '/diagnostic?onglet=problemes', sheet: 'probleme-counts' },
-  { path: '/constraints', sheet: 'constraint-grid' },
+  { path: '/constraints', sheet: 'constraint-list' },
   { path: '/echanges', marker: 'Échanges de créneaux', sheet: 'espace-demande-horsgroupe' },
   { path: '/instantanes', sheet: 'snapshot-auto-chip' },
   { path: '/aide', marker: "Aide à l'utilisation", sheet: 'aide-search' },

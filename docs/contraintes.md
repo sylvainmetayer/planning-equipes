@@ -12,6 +12,13 @@ métier et l'article de loi qui les fonde vivent dans `ConstraintCatalog`** — 
 sont servies par `GET /api/constraints`, affichées sur la page Contraintes. Ce
 document ne les recopie pas : il porte les mécanismes et les arbitrages.
 
+L'écran les range une par ligne, par catégorie, et **le nom d'une règle est son
+ancre** : `/constraints#coupureRepasObligatoire` ouvre la page sur cette
+règle-là, `/constraints#categorie-legal-mineurs` sur sa catégorie. C'est le nom
+servi par l'API, donc l'adresse d'une règle ne bouge que si la règle est
+renommée — auquel cas le lien partagé cesse de désigner quoi que ce soit, et
+c'est la même rupture que pour tout client de l'API.
+
 Les descriptions restent du **texte brut** côté serveur : la même chaîne part
 vers les outils MCP et se range dans une demande d'échange. C'est le frontend
 qui, au moment d'afficher, reconnaît les numéros d'article qu'elles citent et

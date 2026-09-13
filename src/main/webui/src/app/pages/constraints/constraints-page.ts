@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   signal,
@@ -17,7 +19,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { intlLocale } from '../../core/locale';
 import { ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
@@ -44,9 +46,27 @@ function niveauLabel(niveau: NiveauContrainte): string {
   }
 }
 
+/**
+ * Anchor of a category card: « Légal (mineurs) » becomes
+ * `categorie-legal-mineurs`. Prefixed, so a slug can never collide with the
+ * anchor of a rule — which is the rule's own name, the identifier the API
+ * serves.
+ */
+function categoryAnchor(categorie: string): string {
+  const slug = categorie
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `categorie-${slug}`;
+}
+
 interface ConstraintGroup {
   categorie: string;
   items: ConstraintView[];
+  /** Id of the group's card, target of the summary link (see `categoryAnchor`). */
+  ancre: string;
   /**
    * The group holds rules meant to be dosed rather than switched off — today
    * the MEDIUM ones of « Qualité d'organisation ». Its header then says what
@@ -118,6 +138,16 @@ export class ConstraintsPage {
   private readonly constraintsApi = inject(ConstraintsApi);
   private readonly dialog = inject(MatDialog);
   private readonly legalDisable = inject(LegalDisableConfirmService);
+  private readonly route = inject(ActivatedRoute);
+  private readonly injector = inject(Injector);
+
+  /**
+   * Anchor the URL asked for, honoured once — and only once the catalogue has
+   * rendered, since nothing on this page exists before the answer to
+   * `GET /api/constraints` lands. Cleared as soon as it is used, so a later
+   * reload (a solve finishing) does not scroll the reader away again.
+   */
+  private ancreDemandee = this.route.snapshot.fragment;
 
   protected readonly summary = computed(() => {
     const view = this.view();
@@ -181,6 +211,7 @@ export class ConstraintsPage {
     const byFloor = this.sortByFloor();
     return Array.from(groups.entries()).map(([categorie, items]) => ({
       categorie,
+      ancre: categoryAnchor(categorie),
       items: byFloor
         ? [...items].sort(
             (a, b) =>
@@ -213,6 +244,7 @@ export class ConstraintsPage {
     this.error.set('');
     try {
       this.apply(await this.constraintsApi.catalogue());
+      this.honorerAncre();
     } catch (error) {
       this.view.set(null);
       this.error.set(errorPrefix(error));
@@ -397,6 +429,41 @@ export class ConstraintsPage {
     const pourcent = Math.round(plancher.ratio * 100);
     const count = constraint.postesEvalues ?? 0;
     return $localize`:@@constraints.plancher.ratio:${pourcent}:pct: % des ${count}:count: éléments évalués sont en écart.`;
+  }
+
+  /**
+   * Goes to a rule or a category and leaves the caret there.
+   *
+   * Deliberately programmatic, for the two reasons the guide's summary already
+   * documents: `index.html` declares `<base href="/">`, so the browser's own
+   * jump to a bare fragment would resolve against the base URL, and what
+   * scrolls in this shell is `mat-sidenav-content`, not the document, which is
+   * what Angular's anchor scrolling would move. The `routerLink` next to it is
+   * there for the URL alone — a rule's card is then a link one can paste.
+   */
+  protected scrollToAnchor(id: string): void {
+    const carte = document.getElementById(id);
+    // jsdom has no scrollIntoView, and neither does an old browser.
+    carte?.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
+    // `tabindex="-1"` makes the card focusable by script only: the focus
+    // follows the eye without adding a tab stop to a page of fifty rules.
+    carte?.focus?.({ preventScroll: true });
+  }
+
+  /** Honours `/constraints#uneRegle` on a direct load, once the cards exist. */
+  private honorerAncre(): void {
+    const ancre = this.ancreDemandee;
+    if (!ancre) {
+      return;
+    }
+    this.ancreDemandee = null;
+    afterNextRender(() => this.scrollToAnchor(ancre), { injector: this.injector });
+  }
+
+  /** Label of the per-rule anchor link, read on its own by a screen reader. */
+  protected ancreLabel(constraint: ConstraintView): string {
+    const name = constraint.name;
+    return $localize`:@@constraints.ancre.aria:Lien direct vers la règle ${name}:name:`;
   }
 
   protected resultLabel(constraint: ConstraintView): string {
