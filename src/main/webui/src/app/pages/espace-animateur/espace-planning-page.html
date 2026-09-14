@@ -1,3 +1,81 @@
+<!--
+  Repère « maintenant » (#535) : le seul écran du produit lu PENDANT
+  l'événement, debout, sur un téléphone. En tête, ce qui se passe là ; les
+  journées écoulées sont repliées plus bas, si bien que la carte d'aujourd'hui
+  est la première qu'on rencontre — sans défilement et sans qu'aucune journée
+  ne disparaisse.
+-->
+@if (repere(); as maintenant) {
+  <section class="espace-maintenant" aria-labelledby="espace-maintenant-titre">
+    <h2 id="espace-maintenant-titre" class="espace-maintenant-titre" i18n="@@espace.planning.maintenantTitre">
+      Aujourd'hui
+    </h2>
+    @if (maintenant.enCours; as poste) {
+      <p class="espace-maintenant-poste">
+        <mat-icon inline>play_circle</mat-icon>
+        <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
+      </p>
+    } @else if (maintenant.prochain; as poste) {
+      <p class="espace-maintenant-poste">
+        <mat-icon inline>schedule</mat-icon>
+        <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
+      </p>
+    } @else if (maintenant.reposAujourdhui) {
+      <p class="espace-maintenant-poste">
+        <mat-icon inline>self_improvement</mat-icon>
+        <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
+      </p>
+    } @else {
+      <p class="espace-maintenant-poste">
+        <mat-icon inline>done_all</mat-icon>
+        <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
+      </p>
+    }
+    @if (posteRepere(); as poste) {
+      @if (poste.emplacementNom; as lieu) {
+        <p class="espace-maintenant-lieu">
+          <mat-icon inline>place</mat-icon>
+          @if (lienEmplacement(poste); as carte) {
+            <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
+          } @else {
+            <span>{{ lieu }}</span>
+          }
+        </p>
+      }
+    }
+    @for (pause of maintenant.pausesDuJour; track pause.standId + '-' + pause.heureLimite) {
+      <p class="espace-maintenant-pause">
+        <mat-icon inline>free_breakfast</mat-icon>
+        <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+      </p>
+    }
+  </section>
+}
+
+<!--
+  Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
+  publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
+  que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne
+  peut pas demander de confirmer ce qu'on n'a pas montré.
+-->
+@if (changements().length > 0) {
+  <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
+           aria-labelledby="espace-changements-titre">
+    <h2 id="espace-changements-titre" class="espace-changements-titre">
+      <mat-icon inline>campaign</mat-icon>
+      <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous</span>
+    </h2>
+    @if (espace.view()?.changementsLe; as annonceLe) {
+      <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
+    }
+    <ul class="espace-changements-lignes">
+      @for (ligne of changements(); track $index) {
+        <li>{{ ligne }}</li>
+      }
+    </ul>
+  </section>
+}
+
 @if (jours().length === 0) {
   <p class="espace-vide" i18n="@@espace.planning.vide">
     Aucune affectation pour le moment : le planning n'a pas encore été publié.
@@ -128,10 +206,34 @@
   </section>
 }
 
-@for (jour of jours(); track jour.date) {
-  <mat-card class="espace-jour" appearance="outlined">
+<!--
+  Les journées écoulées ne sont pas supprimées, elles sont repliées derrière un
+  seul bouton (#535) : un planning tronqué se lit comme une erreur, et sur un
+  événement d'un mois trente en-têtes à franchir avant aujourd'hui ne valent
+  guère mieux. Le bouton est au-dessus de la liste, là où ces journées
+  reprennent leur place chronologique une fois dépliées.
+-->
+@if (joursPasses().length > 0) {
+  <button class="espace-jours-passes" matButton type="button"
+          [attr.aria-expanded]="passesDeplies()" (click)="basculerJoursPasses()">
+    <mat-icon>{{ passesDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
+    @if (passesDeplies()) {
+      <span i18n="@@espace.planning.joursPassesMasquer">Masquer les journées passées</span>
+    } @else {
+      <span i18n="@@espace.planning.joursPassesVoir">Voir les journées passées ({{ joursPasses().length }})</span>
+    }
+  </button>
+}
+
+@for (jour of joursAffiches(); track jour.date) {
+  <mat-card class="espace-jour" appearance="outlined"
+            [class.espace-jour-passe]="isJourPasse(jour)"
+            [class.espace-jour-aujourdhui]="isAujourdhui(jour)">
     <mat-card-header>
       <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
+      @if (isAujourdhui(jour)) {
+        <mat-card-subtitle i18n="@@espace.planning.jourAujourdhui">Aujourd'hui</mat-card-subtitle>
+      }
     </mat-card-header>
     <mat-card-content>
       @if (jour.repos) {
@@ -144,6 +246,16 @@
         <p class="espace-pause">
           <mat-icon inline>free_breakfast</mat-icon>
           <span i18n="@@espace.planning.pause">Pause de {{ pause.debut.slice(0, 5) }} à {{ pause.fin.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+          @if (pause.emplacementNom; as lieu) {
+            <span class="espace-poste-lieu">
+              <mat-icon inline>place</mat-icon>
+              @if (lienEmplacement(pause); as carte) {
+                <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
+              } @else {
+                <span>{{ lieu }}</span>
+              }
+            </span>
+          }
           @if (!pause.relaisDisponible) {
             <span class="espace-pause-seul" i18n="@@espace.planning.pauseSansRelais">— personne d'autre sur le stand : demandez le relais à l'organisation</span>
           }
@@ -152,8 +264,22 @@
       <ul class="espace-postes">
         @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
           <li class="espace-poste">
-            <span class="espace-poste-horaire">{{ poste.heureDebut }}–{{ poste.heureFin }}</span>
+            <span class="espace-poste-horaire">{{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
             <span class="espace-poste-stand">{{ poste.standNom }}</span>
+            @if (poste.emplacementNom; as lieu) {
+              <span class="espace-poste-lieu">
+                <mat-icon inline>place</mat-icon>
+                @if (lienEmplacement(poste); as carte) {
+                  <!-- `noopener noreferrer` : le jeton d'espace vit dans l'URL de
+                       cette page, il ne doit pas partir dans le `Referer` du
+                       fournisseur de cartes (même précaution que les liens
+                       légaux du bandeau). -->
+                  <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
+                } @else {
+                  <span>{{ lieu }}</span>
+                }
+              </span>
+            }
             @if (poste.coequipiers.length > 0) {
               <span class="espace-poste-equipe">
                 <mat-icon inline>group</mat-icon>

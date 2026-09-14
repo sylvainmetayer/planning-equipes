@@ -1878,7 +1878,7 @@
         }
       },
       "Destinataire" : {
-        "required" : [ "snapshotId" ],
+        "required" : [ "snapshotId", "premiereDiffusion" ],
         "type" : "object",
         "properties" : {
           "snapshotId" : {
@@ -1905,6 +1905,15 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "demandes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "premiereDiffusion" : {
+            "type" : "boolean"
           }
         }
       },
@@ -2155,6 +2164,15 @@
             "items" : {
               "$ref" : "#/components/schemas/PauseAnimateurView"
             }
+          },
+          "changements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "changementsLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -3741,6 +3759,17 @@
           },
           "relaisDisponible" : {
             "type" : "boolean"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "emplacementLatitude" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "emplacementLongitude" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
@@ -4060,6 +4089,17 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "emplacementLatitude" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "emplacementLongitude" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },

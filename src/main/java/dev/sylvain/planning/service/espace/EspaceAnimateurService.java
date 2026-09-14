@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -15,6 +16,7 @@ import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
+import dev.sylvain.planning.service.publication.PublicationTraceRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
@@ -83,6 +85,9 @@ public class EspaceAnimateurService {
     @Inject
     ColleagueLookupLimiter colleagueLookups;
 
+    @Inject
+    PublicationTraceRepository traceRepository;
+
     /**
      * Too many distinct colleagues looked up in the window (see
      * {@link ColleagueLookupLimiter}). Not a {@link BusinessError}, like the two
@@ -105,7 +110,19 @@ public class EspaceAnimateurService {
         }
     }
 
-    /** One of the animateur's seats in the persisted planning. */
+    /**
+     * One of the animateur's seats in the persisted planning.
+     *
+     * @param emplacementNom where the stand is set up, {@code null} when it is
+     *                       attached to no emplacement — « Ninja 14h-18h »
+     *                       alone leaves a volunteer asking somebody which hall
+     *                       to look in, which occupies two people instead of
+     *                       zero (issue #534)
+     * @param emplacementLatitude  read at display time from the referential,
+     *                       like the name: a map link is only offered when
+     *                       <b>both</b> coordinates are set
+     * @param emplacementLongitude see {@code emplacementLatitude}
+     */
     public record PosteAnimateurView(
             Long creneauId,
             LocalDate date,
@@ -113,7 +130,10 @@ public class EspaceAnimateurService {
             LocalTime heureFin,
             String standId,
             String standNom,
-            List<String> coequipiers) {}
+            List<String> coequipiers,
+            String emplacementNom,
+            Double emplacementLatitude,
+            Double emplacementLongitude) {}
 
     /** A colleague an échange can target. First name + name: what a PDF already prints. */
     public record ColleagueView(String id, String nomComplet) {}
@@ -157,6 +177,21 @@ public class EspaceAnimateurService {
      *                 at 19:00, on stand X » — read from the same published
      *                 plan as {@code postes}, so the note never contradicts
      *                 the shifts it sits under (see {@link PauseAnalyzer})
+     * @param changements what the last publication <b>that concerns this
+     *                 person</b> told them about <b>their own schedule</b>, in
+     *                 the order it was sent — the stored sentences of their own
+     *                 mail, never re-derived (issue #532). Empty when they were
+     *                 never written to, and empty on a first delivery: a
+     *                 planning announced whole is not a list of corrections.
+     *                 The échange sentences of the same mail are deliberately
+     *                 left out: « votre demande est en attente de décision »
+     *                 stops being true the moment the organisation decides, and
+     *                 replayed here it would contradict the live status the
+     *                 demandes tab shows one tab away
+     * @param changementsLe when that publication left, {@code null} when there
+     *                 is nothing to show. Not the same instant as
+     *                 {@code publieLe}: the edition may have published twice
+     *                 since without this person's schedule moving
      */
     @Schema(requiredProperties = {"foireOuverte"})
     public record EspaceAnimateurView(
@@ -173,7 +208,9 @@ public class EspaceAnimateurService {
             LocalDate foireOuvreLe,
             LocalDate foireFermeLe,
             String abonnementToken,
-            List<PauseAnalyzer.PauseAnimateurView> pauses) {}
+            List<PauseAnalyzer.PauseAnimateurView> pauses,
+            List<String> changements,
+            Instant changementsLe) {}
 
     /**
      * One demande with every label resolved, shared by the espace and the
@@ -243,6 +280,10 @@ public class EspaceAnimateurService {
         ConfirmationPlanningRepository.Confirmation confirmation =
                 confirmationService.stored(animateurId).orElse(null);
         DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
+        PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastSentTo(animateurId);
+        boolean diffToShow = lastTrace != null
+                && !lastTrace.premiereDiffusion()
+                && !lastTrace.changements().isEmpty();
         return new EspaceAnimateurView(
                 animateur.getId(),
                 animateur.getPrenom(),
@@ -257,7 +298,9 @@ public class EspaceAnimateurService {
                 foire.ouvertureAVenir(LocalDate.now()),
                 foire.fin(),
                 referenceDataService.abonnementToken(animateurId),
-                pauseAnalyzer.pausesAnimateur(planning, animateurId));
+                pauseAnalyzer.pausesAnimateur(planning, animateurId),
+                diffToShow ? lastTrace.changements() : List.of(),
+                diffToShow ? lastTrace.envoyeLe() : null);
     }
 
     private static List<PosteAnimateurView> postesOf(
@@ -272,14 +315,23 @@ public class EspaceAnimateurService {
                                 Comparator.nullsLast(Comparator.naturalOrder()))
                         .thenComparing(
                                 poste -> poste.heureDebutEffectif(), Comparator.nullsLast(Comparator.naturalOrder())))
-                .map(poste -> new PosteAnimateurView(
-                        poste.getCreneau().getId(),
-                        poste.getCreneau().getDate(),
-                        poste.heureDebutEffectif(),
-                        poste.heureFinEffectif(),
-                        poste.getStand().getId(),
-                        poste.getStand().getNom(),
-                        coequipiers.getOrDefault(poste.getId(), List.of())))
+                .map(poste -> {
+                    Emplacement emplacement = poste.getStand().getEmplacement();
+                    return new PosteAnimateurView(
+                            poste.getCreneau().getId(),
+                            poste.getCreneau().getDate(),
+                            poste.heureDebutEffectif(),
+                            poste.heureFinEffectif(),
+                            poste.getStand().getId(),
+                            poste.getStand().getNom(),
+                            coequipiers.getOrDefault(poste.getId(), List.of()),
+                            emplacement == null ? null : emplacement.getNom(),
+                            // Both coordinates or neither: a lone latitude is
+                            // not a position, and the espace would have to
+                            // guess what to do with it.
+                            emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLatitude(),
+                            emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLongitude());
+                })
                 .toList();
     }
 

@@ -246,6 +246,95 @@ app-espace-animateur-shell {
 }
 
 /*
+ * The « now » marker (#535): the head block, above everything else. This is
+ * the only page of the product read DURING the event, and the question asked
+ * standing, on a phone, is « where am I going, now », not « what is my
+ * schedule for the week ».
+ *
+ * It borrows the primary colour through a Material surface token, never an
+ * invented one: it is the one block that has to be seen before the cards.
+ */
+.espace-maintenant {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.espace-maintenant-titre {
+  margin: 0;
+  font: var(--mat-sys-title-medium);
+}
+
+.espace-maintenant-poste {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.espace-maintenant-lieu,
+.espace-maintenant-pause {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0;
+}
+
+.espace-maintenant-lieu a,
+.espace-maintenant-pause a {
+  color: inherit;
+}
+
+/*
+ * « Ce qui a changé pour vous » (#532): the exact sentences of the last
+ * publication mail. Boxed while attendance is not confirmed — it is what the
+ * button below asks to read — then turned into a quiet state line, like the
+ * acknowledgement just above it: an alert that stays after being answered
+ * stops alerting about anything.
+ */
+.espace-changements {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.espace-changements-titre {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  font: var(--mat-sys-title-small);
+}
+
+.espace-changements-date {
+  margin: 0.15rem 0 0;
+  font-size: 0.9em;
+}
+
+.espace-changements-lignes {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.espace-changements-actes {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/*
  * Bande « Emporter mon planning » (#324) : abonnement, PDF et ICS ponctuel
  * ensemble, AU-DESSUS des cartes de journée. Sous elles, il fallait faire
  * défiler tout le planning pour découvrir l'abonnement — sur un téléphone,
@@ -308,6 +397,27 @@ app-espace-animateur-shell {
   text-transform: capitalize;
 }
 
+/*
+ * Elapsed days (#535): folded behind a single button, and set back once
+ * unfolded — reachable, but visibly behind. Today's card is the only marked
+ * one.
+ */
+.espace-jours-passes {
+  margin: 0 0 0.5rem;
+}
+
+.espace-jour-passe {
+  opacity: 0.75;
+}
+
+.espace-jour-aujourdhui {
+  border-color: var(--mat-sys-primary);
+}
+
+.espace-jour-aujourdhui mat-card-subtitle {
+  color: var(--mat-sys-primary);
+}
+
 .espace-postes {
   list-style: none;
   margin: 0;
@@ -359,6 +469,19 @@ app-espace-animateur-shell {
 
 .espace-poste-horaire {
   font-variant-numeric: tabular-nums;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/*
+ * The place (#534): « Ninja 14h-18h » does not say which hall to look in, and
+ * a volunteer discovering the site asks somebody — two people busy instead of
+ * none. A map link only when the emplacement is geocoded.
+ */
+.espace-poste-lieu {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.25rem;
   color: var(--mat-sys-on-surface-variant);
 }
 

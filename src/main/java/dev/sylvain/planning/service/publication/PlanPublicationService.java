@@ -113,15 +113,7 @@ public class PlanPublicationService {
             String email,
             boolean premiereDiffusion,
             List<String> changements,
-            List<String> demandes) {
-
-        /** Everything the mail body will carry, changes first. */
-        public List<String> lignes() {
-            List<String> lignes = new ArrayList<>(changements);
-            lignes.addAll(demandes);
-            return lignes;
-        }
-    }
+            List<String> demandes) {}
 
     /**
      * What the screen shows before anything is sent.
@@ -287,7 +279,9 @@ public class PlanPublicationService {
                     destinataire.email(),
                     statut,
                     envoyeLe,
-                    destinataire.lignes()));
+                    destinataire.changements(),
+                    destinataire.demandes(),
+                    destinataire.premiereDiffusion()));
         }
         traceRepository.record(meta.id(), trace);
         demandeEchangeService.markAsCommunicated(decisionsAnnoncees(), envoyeLe);

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.Instant;
 import java.util.Objects;
 
@@ -73,6 +74,22 @@ public class Emplacement {
 
     public void setLongitude(Double longitude) {
         this.longitude = longitude;
+    }
+
+    /**
+     * Both coordinates, or neither: a position is a pair, and half of one
+     * points at the Gulf of Guinea. Every reader that hands a location out —
+     * the ICS {@code GEO} line, the map link of the individual PDF, the espace
+     * animateur — asks this before sending anything.
+     *
+     * <p>{@code @JsonIgnore}, and not by taste: an {@code Emplacement} is
+     * serialised as it stands by the referential API, where a derived
+     * {@code geocoded} key would be one more thing on the wire that no client
+     * asked for and every client would then be entitled to read.</p>
+     */
+    @JsonIgnore
+    public boolean isGeocoded() {
+        return latitude != null && longitude != null;
     }
 
     /**

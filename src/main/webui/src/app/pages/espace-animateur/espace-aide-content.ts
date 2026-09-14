@@ -102,6 +102,10 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
               text: $localize`:@@espace.aide.planning.def.stand:Le jeu ou le poste que vous tenez pendant ce créneau. Il peut changer d'un créneau à l'autre dans la même journée.`,
             },
             {
+              term: $localize`:@@espace.aide.planning.term.lieu:Le lieu`,
+              text: $localize`:@@espace.aide.planning.def.lieu:L'emplacement où le stand est installé, quand il en a un — « Hall B », « Château ». S'il est situé sur une carte, le nom est un lien qui l'ouvre. Un stand sans emplacement n'affiche rien de plus qu'avant.`,
+            },
+            {
               term: $localize`:@@espace.aide.planning.term.coequipiers:Les coéquipiers`,
               text: $localize`:@@espace.aide.planning.def.coequipiers:Les animateurs affectés au même stand, sur le même créneau que vous.`,
             },
@@ -118,6 +122,14 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@espace.aide.planning.maj:La mention « Planning communiqué le… » indique de quand date la version que vous lisez. C'est celle que l'organisation vous a envoyée : elle ne change que lorsqu'elle publie à nouveau, et vous êtes alors prévenu par e-mail de ce qui bouge pour vous. Repassez tout de même sur cette page avant de partir, c'est elle qui fait foi.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.planning.changements:Quand l'organisation republie et que vos journées bougent, le bandeau « Ce qui a changé pour vous » reprend, au-dessus de vos journées, les phrases exactes du message qui vous a été envoyé — vous pouvez donc lire ce qui a changé ici même si ce message vous a échappé. Il s'efface en arrière-plan une fois votre présence confirmée. Vos demandes d'échange, elles, restent sur leur onglet : c'est là qu'elles portent leur réponse du moment.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.planning.maintenant:Pendant l'événement, la page s'ouvre sur la journée du jour : en tête, le poste en cours ou le prochain, et la pause qu'il vous reste à prendre. Les journées déjà passées sont repliées derrière « Voir les journées passées » — elles ne sont pas supprimées, un clic les rouvre. Un poste qui passe minuit reste affiché comme en cours, et sa journée reste ouverte, jusqu'à son heure de fin.`,
         },
         {
           kind: 'paragraph',

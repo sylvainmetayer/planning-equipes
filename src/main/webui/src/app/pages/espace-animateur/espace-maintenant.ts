@@ -1,0 +1,172 @@
+// « Où j'en suis, là, maintenant » (issue #535).
+//
+// The espace planning page is the only screen of the product read DURING the
+// event, standing, on a phone. Rendering every day alike is the right form to
+// prepare an event, not to live it: on Saturday at 1pm the animateur scrolls
+// past Friday — which they have nothing left to do with — to find their
+// afternoon.
+//
+// Pure functions, and the clock comes in as an argument: the browser's is the
+// only one available on this page, and a helper that read it itself could not
+// be tested on the one case that matters — a machine whose timezone puts the
+// current day on another UTC date.
+
+import { toDateKey } from '../../core/date-utils';
+import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
+
+/** One day of the animateur's planning, as the page groups it. */
+export interface JourPlanning {
+  /** ISO date, `''` for postes without one. */
+  date: string;
+  postes: PosteAnimateurView[];
+  /** True for an event day without any seat: the card says « Repos » instead of listing shifts. */
+  repos: boolean;
+  /** The legal breaks this day owes — « 20 min at the latest at 19:00 » — in deadline order. */
+  pauses: PauseAnimateurView[];
+}
+
+/** What the head block says. `null` outside the event: see {@link repereMaintenant}. */
+export interface RepereMaintenant {
+  /** The seat being held right now, `null` between two of them. */
+  enCours: PosteAnimateurView | null;
+  /** The first seat still to come, `null` once the last one has started. */
+  prochain: PosteAnimateurView | null;
+  /** True when today is one of their « Repos » days — an answer, not a hole. */
+  reposAujourdhui: boolean;
+  /**
+   * Today's breaks still to come: « pause à prendre au plus tard à 19:00 »
+   * only serves on the day itself, and only while its window is open — the day
+   * card below goes on listing every break of the day.
+   */
+  pausesDuJour: PauseAnimateurView[];
+  /** Today, as an ISO date — what the page anchors the reading on. */
+  aujourdhui: string;
+  /**
+   * The earliest day the page must leave unfolded: today, except while a shift
+   * started yesterday is still running past midnight — folding away the day of
+   * the shift somebody is working is the defect this exists to avoid.
+   */
+  jourPlancher: string;
+}
+
+/**
+ * Today, from the browser's own clock and its own timezone.
+ *
+ * <p>Never `toISOString()`: that one answers in UTC, and a phone set to UTC+14
+ * would call the current day « yesterday » for its first fourteen hours —
+ * folding away, as an elapsed day, the very day being lived.</p>
+ */
+export function aujourdhuiLocal(maintenant: Date): string {
+  return toDateKey(maintenant);
+}
+
+/** `HH:mm`, the shape both sides of every comparison below are reduced to. */
+function heureCourte(heure: string | null): string | null {
+  return heure ? heure.slice(0, 5) : null;
+}
+
+function heureMaintenant(maintenant: Date): string {
+  return `${String(maintenant.getHours()).padStart(2, '0')}:${String(
+    maintenant.getMinutes(),
+  ).padStart(2, '0')}`;
+}
+
+/** The day before, through the calendar rather than through string arithmetic. */
+function veille(maintenant: Date): string {
+  const hier = new Date(maintenant.getFullYear(), maintenant.getMonth(), maintenant.getDate() - 1);
+  return toDateKey(hier);
+}
+
+/**
+ * True for « 22:00–02:00 »: a seat whose end does not follow its start runs
+ * past midnight. The plan dates it on the evening that opens it — the product
+ * rule the whole application reads it by — so its last hours fall on a day the
+ * espace would otherwise call yesterday.
+ */
+function traverseMinuit(debut: string, fin: string | null): boolean {
+  return fin !== null && fin <= debut;
+}
+
+/**
+ * True while today falls between the first and the last day of this planning,
+ * rest days included.
+ *
+ * Outside it the page goes back to its plain form: before the event, « votre
+ * prochain poste » would announce in July what is read in March; after it,
+ * there is no next seat and nothing to fold — a head block would only be a way
+ * of saying « it's over » to somebody who knows.
+ */
+export function duringTheEvent(jours: JourPlanning[], aujourdhui: string): boolean {
+  const dates = jours.map((jour) => jour.date).filter((date) => !!date);
+  if (dates.length === 0) {
+    return false;
+  }
+  return aujourdhui >= dates[0] && aujourdhui <= dates[dates.length - 1];
+}
+
+/** True for a day already over — strictly before today, never « ends in an hour ». */
+export function isPasse(jour: JourPlanning, aujourdhui: string): boolean {
+  return !!jour.date && jour.date < aujourdhui;
+}
+
+/**
+ * The seat in progress, the next one, and what today owes — `null` outside the
+ * event, where the page has nothing truthful to put in a head block.
+ *
+ * <p>The days are expected sorted, which is how the page builds them.</p>
+ *
+ * <p>A night shift is read on the day that opens it, and that day is not
+ * always the day it is being worked: at 00:30, « 22h–02h » is dated yesterday
+ * and still held. Both halves of the answer follow from that — it is the seat
+ * in progress, and its day must stay unfolded while it lasts ({@code
+ * jourPlancher}). Reading it as a shift that ended twenty hours ago is how a
+ * night shift disappears from the screen of the person doing it.</p>
+ */
+export function repereMaintenant(jours: JourPlanning[], maintenant: Date): RepereMaintenant | null {
+  const aujourdhui = aujourdhuiLocal(maintenant);
+  if (!duringTheEvent(jours, aujourdhui)) {
+    return null;
+  }
+  const heure = heureMaintenant(maintenant);
+  const hier = veille(maintenant);
+  let held: PosteAnimateurView | null = null;
+  let prochain: PosteAnimateurView | null = null;
+  for (const jour of jours) {
+    for (const poste of jour.postes) {
+      const date = poste.date ?? jour.date;
+      const debut = heureCourte(poste.heureDebut);
+      const fin = heureCourte(poste.heureFin);
+      if (!date || !debut) {
+        continue;
+      }
+      if (date < aujourdhui) {
+        // Only one thing from before today can still be running: a shift that
+        // crossed midnight into it, and only until its own end.
+        if (date === hier && traverseMinuit(debut, fin) && heure < fin!) {
+          held ??= poste;
+        }
+        continue;
+      }
+      if (date > aujourdhui) {
+        prochain ??= poste;
+        continue;
+      }
+      const finie = !traverseMinuit(debut, fin) && fin !== null && fin <= heure;
+      if (debut <= heure && !finie) {
+        held ??= poste;
+      } else if (debut > heure) {
+        prochain ??= poste;
+      }
+    }
+  }
+  const jourAujourdhui = jours.find((jour) => jour.date === aujourdhui);
+  const dateTenue = held ? (held.date ?? aujourdhui) : aujourdhui;
+  return {
+    enCours: held,
+    prochain,
+    reposAujourdhui: !!jourAujourdhui?.repos,
+    pausesDuJour: (jourAujourdhui?.pauses ?? []).filter((pause) => heureCourte(pause.fin)! > heure),
+    aujourdhui,
+    jourPlancher: dateTenue < aujourdhui ? dateTenue : aujourdhui,
+  };
+}

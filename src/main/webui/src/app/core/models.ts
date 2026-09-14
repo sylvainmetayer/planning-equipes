@@ -1909,6 +1909,15 @@ export interface PosteAnimateurView {
   standId: string;
   standNom: string;
   coequipiers: string[];
+  /**
+   * Where the stand is set up (issue #534), `null` when it is attached to no
+   * emplacement. Read from the referential at display time, never a frozen
+   * copy: a renamed hall reads renamed.
+   */
+  emplacementNom: string | null;
+  /** `null` unless the emplacement is geocoded — both coordinates, or no map link. */
+  emplacementLatitude: number | null;
+  emplacementLongitude: number | null;
 }
 
 /** A colleague an échange can target. */
@@ -2024,6 +2033,10 @@ export interface PauseAnimateurView {
   standId: string;
   standNom: string;
   relaisDisponible: boolean;
+  /** Where the stand held during the break is set up (issue #534), `null` when it has no emplacement. */
+  emplacementNom: string | null;
+  emplacementLatitude: number | null;
+  emplacementLongitude: number | null;
 }
 
 /** `/api/espace-animateur/{jeton}`: the espace's home payload. */
@@ -2064,6 +2077,20 @@ export interface EspaceAnimateurView {
    * nothing else, and the espace rotates it on its own.
    */
   abonnementToken: string;
+  /**
+   * What the last publication that concerned this animateur told them (issue
+   * #532) — the very sentences their mail carried, stored at send time and
+   * replayed here, in the order they were sent. Empty when they were never
+   * written to, and empty on a first delivery: a planning announced whole is
+   * not a list of corrections.
+   */
+  changements: string[];
+  /**
+   * When that publication left, `null` when there is nothing to show. Not
+   * `publieLe`: the edition may have published again since without this
+   * person's own schedule moving.
+   */
+  changementsLe: string | null;
 }
 
 /**

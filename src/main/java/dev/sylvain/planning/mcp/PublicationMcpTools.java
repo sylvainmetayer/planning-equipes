@@ -222,7 +222,11 @@ public class PublicationMcpTools {
                         destinataire.animateurId(),
                         destinataire.statut().name(),
                         destinataire.envoyeLe(),
-                        destinataire.changements()))
+                        // Both halves, in the order the mail read them: this
+                        // view answers « de quoi a-t-il été informé », where
+                        // the trace keeps them apart because they age
+                        // differently (see Destinataire).
+                        destinataire.lignes()))
                 .toList();
     }
 

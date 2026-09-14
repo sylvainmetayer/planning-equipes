@@ -64,13 +64,29 @@ class PublicationMcpToolsTest {
                         "camille@example.org",
                         StatutEnvoi.ENVOYE,
                         ENVOYE_LE,
-                        List.of("samedi 10:00-12:00 — Stand A")),
-                new Destinataire(7L, "a2", "Dominique Roy", null, StatutEnvoi.SANS_EMAIL, ENVOYE_LE, List.of())));
+                        List.of("samedi 10:00-12:00 — Stand A"),
+                        List.of("Votre demande d'échange a été acceptée."),
+                        false),
+                new Destinataire(
+                        7L,
+                        "a2",
+                        "Dominique Roy",
+                        null,
+                        StatutEnvoi.SANS_EMAIL,
+                        ENVOYE_LE,
+                        List.of(),
+                        List.of(),
+                        false)));
 
         assertThat(vues).extracting(DestinataireView::animateurId).containsExactly("a1", "a2");
         assertThat(vues).extracting(DestinataireView::statut).containsExactly("ENVOYE", "SANS_EMAIL");
         assertThat(vues.get(0).snapshotId()).isEqualTo(7L);
         assertThat(vues.get(0).envoyeLe()).isEqualTo(ENVOYE_LE);
+        // « De quoi il a été informé » is the whole message: the trace keeps
+        // the two halves apart because they age differently, this view answers
+        // what was sent.
+        assertThat(vues.get(0).changements())
+                .containsExactly("samedi 10:00-12:00 — Stand A", "Votre demande d'échange a été acceptée.");
     }
 
     /**

@@ -439,6 +439,32 @@ de quoi, et quand, y compris ceux qu'on n'a pas pu joindre (`SANS_EMAIL`,
 `ECHEC`). Sans paramètre, celle de la dernière publication ; liste vide quand
 il n'y en a jamais eu.
 
+La trace **range les deux moitiés du message séparément** — `changements` pour
+l'emploi du temps, `demandes` pour les échanges — comme l'aperçu les a toujours
+distinguées. Ce n'est pas un détail de forme : elles ne vieillissent pas
+pareil. Une phrase d'emploi du temps dit ce qui a été annoncé et le dira
+toujours ; « votre demande est en attente de décision » cesse d'être vraie
+**dès que l'organisation tranche**, sans qu'aucune publication n'ait à partir.
+Les lignes écrites avant cette colonne gardent tout dans `changements`, comme
+elles sont parties : rien ne permet de les découper après coup.
+
+Cette trace a **un second lecteur depuis #532 : l'espace animateur lui-même**.
+`GET /api/espace-animateur/{jeton}` renvoie, dans `changements`, les phrases de
+la dernière ligne qui concerne le porteur du jeton — **celles de son emploi du
+temps**, et rien d'autre — avec `changementsLe`, l'instant de cet envoi. Elles
+ne sont **jamais recalculées** : c'est ce qui a été lu, pas un diff refait sur
+le référentiel d'aujourd'hui, et un stand renommé depuis ne réécrit donc pas ce
+qui a été annoncé. La ligne est servie quel que soit le sort de l'envoi — sans
+adresse, ou après un échec, l'espace est le seul endroit où ces phrases existent
+encore. Les phrases d'échange, elles, n'y sont **pas rejouées** : l'onglet
+Échanges porte le statut vivant de chaque demande, et une phrase d'attente
+recopiée à côté le contredirait — la contradiction même que #531 retire. Une
+publication qui n'annonce qu'une décision ne fait donc aucun bandeau.
+Une **première diffusion** (`premiere_diffusion` sur la trace) renvoie une liste
+vide : un planning annoncé en entier n'est pas une liste de corrections. Les
+lignes écrites avant cette colonne valent `false` et s'affichent donc comme un
+diff jusqu'à la publication suivante.
+
 **Une décision d'échange n'est plus annoncée au moment où elle est prise**,
 mais par la publication qui la porte : accepter un échange change le plan de
 travail, pas le plan publié, et prévenir tout de suite promettrait un planning
@@ -1284,6 +1310,16 @@ contredit ce que la personne voit, quand l'écran d'administration le dit de
 toute décision, qui est son reste à publier. Sans cet état, « Acceptée »
 surmonte un planning inchangé : l'animateur croit à une panne, redemande un
 échange déjà accordé, ou se présente au mauvais stand.
+
+**Le lieu voyage avec le poste** (#534) : `emplacementNom`, `emplacementLatitude`
+et `emplacementLongitude` accompagnent chaque poste et chaque pause, lus sur le
+référentiel **au moment de la lecture** — le plan publié est résolu contre le
+référentiel d'aujourd'hui, donc un hall renommé se lit renommé. Les trois champs
+sont nuls quand le stand n'est rattaché à aucun emplacement, et les coordonnées
+ne sortent que **complètes** — `Emplacement.isGeocoded()`, la même question que
+se posent déjà la ligne `GEO` de l'ICS et l'épingle du PDF : une latitude seule
+n'est pas une position, c'est une ligne autour du globe. L'interface n'ouvre un
+lien cartographique que dans ce cas.
 
 **Foire fermée** : soumissions et annulations sont refusées **côté serveur**
 (`400`) ; la vue `foireOuverte` ne sert qu'à l'afficher. Une borne datée est

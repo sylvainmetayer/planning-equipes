@@ -157,13 +157,18 @@ test.describe('espace animateur', () => {
     await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByText('Acceptée').first()).toBeVisible();
     await page.getByRole('link', { name: 'Mon planning' }).click();
-    await expect(page.getByText('Stand E2E un')).toBeVisible();
-    await expect(page.getByText('Stand E2E deux')).toHaveCount(0);
+    // Sur les cartes de journée, et pas n'importe où sur la page : depuis
+    // #532, le bandeau « Ce qui a changé pour vous » rejoue les phrases de la
+    // publication, qui nomment le stand elles aussi. Ce qui se vérifie ici est
+    // le planning, pas ce qu'on en a dit.
+    const journees = page.locator('.espace-jour');
+    await expect(journees.getByText('Stand E2E un')).toBeVisible();
+    await expect(journees.getByText('Stand E2E deux')).toHaveCount(0);
 
     // --- Publier : c'est là, et seulement là, que l'espace bouge. ---
     await publierPlanning(admin);
     await page.reload({ waitUntil: 'domcontentloaded' });
-    await expect(page.getByText('Stand E2E deux')).toBeVisible();
+    await expect(journees.getByText('Stand E2E deux')).toBeVisible();
   });
 
   test("refuser une demande transmet le motif à l'animateur", async ({ page, browser }) => {

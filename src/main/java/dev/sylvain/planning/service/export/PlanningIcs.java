@@ -137,7 +137,7 @@ public class PlanningIcs {
                         .append(escapeIcs(emplacement.getNom()))
                         .append("\r\n");
             }
-            if (emplacement != null && emplacement.getLatitude() != null && emplacement.getLongitude() != null) {
+            if (emplacement != null && emplacement.isGeocoded()) {
                 builder.append("GEO:")
                         .append(emplacement.getLatitude())
                         .append(";")

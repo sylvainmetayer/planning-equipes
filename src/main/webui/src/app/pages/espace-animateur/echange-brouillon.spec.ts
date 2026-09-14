@@ -17,6 +17,9 @@ function poste(creneauId: number, standId: string): PosteAnimateurView {
     standId,
     standNom: standId,
     coequipiers: [],
+    emplacementNom: null,
+    emplacementLatitude: null,
+    emplacementLongitude: null,
   };
 }
 

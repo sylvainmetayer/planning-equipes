@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.CoupureRepas;
+import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PauseSurPoste;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.Stand;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -299,21 +301,14 @@ public class PauseAnalyzer {
      * mailing) build this once instead of re-analysing the plan per person.
      */
     public Map<String, List<PauseAnimateurView>> pausesByAnimateur(PlanningEvenement planning) {
+        Map<String, Emplacement> emplacements = emplacementsByStand(planning);
         Map<String, List<PauseAnimateurView>> parAnimateur = new LinkedHashMap<>();
         for (JourneeAnimateurView journee : analyze(planning).journees()) {
             List<PauseAnimateurView> pauses =
                     parAnimateur.computeIfAbsent(journee.animateurId(), ignored -> new ArrayList<>());
             for (SequenceView sequence : journee.sequences()) {
                 for (PauseDueView pause : sequence.pausesDues()) {
-                    pauses.add(new PauseAnimateurView(
-                            journee.date(),
-                            pause.debut(),
-                            pause.fin(),
-                            pause.heureLimite(),
-                            pause.dureeMinutes(),
-                            pause.standId(),
-                            pause.standNom(),
-                            pause.relaisDisponible()));
+                    pauses.add(toAnimateurView(journee.date(), pause, emplacements));
                 }
             }
         }
@@ -322,6 +317,7 @@ public class PauseAnalyzer {
 
     /** The breaks one animateur owes, day by day, under the plan's own parameters — one line per break. */
     public List<PauseAnimateurView> pausesAnimateur(PlanningEvenement planning, String animateurId) {
+        Map<String, Emplacement> emplacements = emplacementsByStand(planning);
         List<PauseAnimateurView> pauses = new ArrayList<>();
         for (JourneeAnimateurView journee : analyze(planning).journees()) {
             if (!journee.animateurId().equals(animateurId)) {
@@ -329,15 +325,7 @@ public class PauseAnalyzer {
             }
             for (SequenceView sequence : journee.sequences()) {
                 for (PauseDueView pause : sequence.pausesDues()) {
-                    pauses.add(new PauseAnimateurView(
-                            journee.date(),
-                            pause.debut(),
-                            pause.fin(),
-                            pause.heureLimite(),
-                            pause.dureeMinutes(),
-                            pause.standId(),
-                            pause.standNom(),
-                            pause.relaisDisponible()));
+                    pauses.add(toAnimateurView(journee.date(), pause, emplacements));
                 }
             }
         }
@@ -345,9 +333,55 @@ public class PauseAnalyzer {
     }
 
     /**
+     * Where each stand of the plan is set up, by stand id. Read from the seats
+     * themselves — they carry the {@code Stand} of today's referential, so a
+     * renamed emplacement reads renamed, exactly like the stand's own name
+     * (issue #534).
+     */
+    private static Map<String, Emplacement> emplacementsByStand(PlanningEvenement planning) {
+        Map<String, Emplacement> parStand = new LinkedHashMap<>();
+        if (planning == null || planning.getPostes() == null) {
+            return parStand;
+        }
+        for (PosteAffectation poste : planning.getPostes()) {
+            Stand stand = poste.getStand();
+            if (stand != null && stand.getId() != null && stand.getEmplacement() != null) {
+                parStand.putIfAbsent(stand.getId(), stand.getEmplacement());
+            }
+        }
+        return parStand;
+    }
+
+    private static PauseAnimateurView toAnimateurView(
+            LocalDate date, PauseDueView pause, Map<String, Emplacement> emplacements) {
+        Emplacement emplacement = emplacements.get(pause.standId());
+        return new PauseAnimateurView(
+                date,
+                pause.debut(),
+                pause.fin(),
+                pause.heureLimite(),
+                pause.dureeMinutes(),
+                pause.standId(),
+                pause.standNom(),
+                pause.relaisDisponible(),
+                emplacement == null ? null : emplacement.getNom(),
+                // Both coordinates or neither — see Emplacement.isGeocoded().
+                emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLatitude(),
+                emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLongitude());
+    }
+
+    /**
      * One break of one animateur, as their own planning prints it: « pause de
      * 18:20 à 18:40 ». {@code date} is the day of the seat it falls in, which a
      * break past midnight shares with the evening it belongs to.
+     *
+     * @param emplacementNom where the stand held during the break is set up,
+     *                       {@code null} when it is attached to no emplacement:
+     *                       stepping out supposes knowing where to come back to
+     *                       (issue #534)
+     * @param emplacementLatitude  {@code null} unless the emplacement is
+     *                       geocoded — both coordinates, or no map link at all
+     * @param emplacementLongitude see {@code emplacementLatitude}
      */
     @Schema(requiredProperties = {"dureeMinutes", "relaisDisponible"})
     public record PauseAnimateurView(
@@ -358,7 +392,10 @@ public class PauseAnalyzer {
             int dureeMinutes,
             String standId,
             String standNom,
-            boolean relaisDisponible) {
+            boolean relaisDisponible,
+            String emplacementNom,
+            Double emplacementLatitude,
+            Double emplacementLongitude) {
 
         /**
          * Whether this break falls inside that seat — what the PDF and the

@@ -39,6 +39,9 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
     standId: 'tir',
     standNom: 'Tir à la corde',
     coequipiers: [],
+    emplacementNom: null,
+    emplacementLatitude: null,
+    emplacementLongitude: null,
     ...overrides,
   };
 }
@@ -58,6 +61,8 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
+    changements: [],
+    changementsLe: null,
     pauses: [],
     ...overrides,
   };

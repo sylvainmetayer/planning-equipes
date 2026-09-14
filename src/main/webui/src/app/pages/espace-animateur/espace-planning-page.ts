@@ -11,16 +11,8 @@ import {
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
-
-interface JourPlanning {
-  /** ISO date, `''` for postes without one. */
-  date: string;
-  postes: PosteAnimateurView[];
-  /** True for an event day without any seat: the card says « Repos » instead of listing shifts. */
-  repos: boolean;
-  /** The legal breaks this day owes — « 20 min at the latest at 19:00 » — in deadline order. */
-  pauses: PauseAnimateurView[];
-}
+import { JourPlanning, isPasse, repereMaintenant } from './espace-maintenant';
+import { lienCarte } from './lien-carte';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last
@@ -182,6 +174,109 @@ export class EspacePlanningPage {
   protected readonly telechargementsOfferts = computed(
     () => this.jours().length > 0 && !!this.lienPdf(),
   );
+
+  /* ---------- What changed for me (issue #532) ---------- */
+
+  /**
+   * The sentences of the last publication that concerned this animateur, as
+   * the server stored them at send time.
+   *
+   * Not recomputed here, and not re-worded: they are the exact lines their
+   * mail carried — the only copy of which used to be that mail, lost, filed as
+   * spam, or never received by whoever opens the link printed on their PDF.
+   */
+  protected readonly changements = computed(() => this.espace.view()?.changements ?? []);
+
+  /**
+   * Once « j'ai lu et je serai là » is answered, the same list steps back: it
+   * is no longer something to act on, and leaving it in an alert box above a
+   * planning already acknowledged would make the box mean nothing the next
+   * time it appears.
+   */
+  protected readonly changementsActes = computed(
+    () => this.espace.view()?.statutConfirmation === 'CONFIRME',
+  );
+
+  /* ---------- The « now » marker (issue #535) ---------- */
+
+  /**
+   * The browser's clock, read once.
+   *
+   * The page has no polling and takes none (the espace shell's own choice), so
+   * this is a photograph taken when the page opened — which is what a planning
+   * read while walking to a stand needs. A reload moves it.
+   */
+  private readonly maintenant = signal(new Date());
+
+  /** `null` outside the event: no head block rather than a misleading one. */
+  protected readonly repere = computed(() => repereMaintenant(this.jours(), this.maintenant()));
+
+  /** The seat the head block is about: the one being held, else the one to come. */
+  protected readonly posteRepere = computed(() => {
+    const repere = this.repere();
+    return repere?.enCours ?? repere?.prochain ?? null;
+  });
+
+  /**
+   * The day cards to show unfolded: today and everything after it — plus
+   * yesterday while a shift of its own is still running past midnight, which
+   * is what `jourPlancher` carries.
+   */
+  protected readonly joursCourants = computed(() => {
+    const repere = this.repere();
+    return repere
+      ? this.jours().filter((jour) => !isPasse(jour, repere.jourPlancher))
+      : this.jours();
+  });
+
+  /**
+   * The days already lived. Folded away, never dropped: a planning that stops
+   * short reads as a bug, and somebody checking what they did on Friday must
+   * still be able to.
+   */
+  protected readonly joursPasses = computed(() => {
+    const repere = this.repere();
+    return repere ? this.jours().filter((jour) => isPasse(jour, repere.jourPlancher)) : [];
+  });
+
+  protected readonly passesDeplies = signal(false);
+
+  /** Everything on screen: today and after, plus the elapsed days once unfolded. */
+  protected readonly joursAffiches = computed(() =>
+    this.passesDeplies() ? this.jours() : this.joursCourants(),
+  );
+
+  protected basculerJoursPasses(): void {
+    this.passesDeplies.update((deplie) => !deplie);
+  }
+
+  protected isJourPasse(jour: JourPlanning): boolean {
+    const repere = this.repere();
+    return !!repere && isPasse(jour, repere.jourPlancher);
+  }
+
+  protected isAujourdhui(jour: JourPlanning): boolean {
+    return jour.date === this.repere()?.aujourdhui;
+  }
+
+  /**
+   * `10:00`, from the `10:00:00` the API sends.
+   *
+   * The server answers a `LocalTime`, seconds included; a planning read at a
+   * glance has no use for them — the break line already trimmed them, the
+   * shift line did not.
+   */
+  protected heure(valeur: string | null): string {
+    return valeur ? valeur.slice(0, 5) : '';
+  }
+
+  /** `https://www.openstreetmap.org/…` when the stand's emplacement is geocoded (issue #534). */
+  protected lienEmplacement(lieu: {
+    emplacementLatitude: number | null;
+    emplacementLongitude: number | null;
+  }): string | null {
+    return lienCarte(lieu.emplacementLatitude, lieu.emplacementLongitude);
+  }
 
   protected readonly jours = computed<JourPlanning[]>(() => {
     const parJour = new Map<string, PosteAnimateurView[]>();

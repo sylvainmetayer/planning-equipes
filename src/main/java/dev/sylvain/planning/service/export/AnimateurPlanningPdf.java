@@ -376,9 +376,7 @@ public class AnimateurPlanningPdf {
         if (emplacement != null
                 && emplacement.getNom() != null
                 && !emplacement.getNom().isBlank()) {
-            String url = emplacement.getLatitude() != null && emplacement.getLongitude() != null
-                    ? osmUrl(emplacement)
-                    : null;
+            String url = emplacement.isGeocoded() ? osmUrl(emplacement) : null;
             cell.setCellEvent(new PdfTheme.LocationPinEvent(
                     emplacement.getNom(), theme.locationFont(), theme.muted(), 7f, 4f, url));
         }

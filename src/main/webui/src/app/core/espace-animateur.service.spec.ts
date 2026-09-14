@@ -23,6 +23,8 @@ function view(): EspaceAnimateurView {
     foireFermeLe: null,
     abonnementToken: 'abo-1',
     pauses: [],
+    changements: [],
+    changementsLe: null,
   };
 }
 

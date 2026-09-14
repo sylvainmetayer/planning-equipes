@@ -42,11 +42,24 @@ public class PublicationTraceRepository {
     }
 
     /**
-     * One line of the trace.
+     * One line of the trace: the exact sentences that were sent, in order.
      *
-     * @param changements the exact sentences that were sent, in order
+     * <p>The two halves of the message are kept apart, as the publication
+     * preview has always kept them (issue #532). They do not age the same way:
+     * a schedule sentence says what was announced and stays true, where
+     * « votre demande est en attente de décision » stops being true the moment
+     * the organisation decides, with no publication in between. What the mail
+     * carried is their concatenation, in that order.</p>
+     *
+     * @param changements what moved in this person's own schedule
+     * @param demandes    where their échange requests stood
+     * @param premiereDiffusion true when that publication was this person's
+     *                          first: the sentences then describe a planning,
+     *                          not a list of corrections. Stored rather than
+     *                          derived — nothing in the sentences themselves
+     *                          tells the two apart afterwards
      */
-    @Schema(requiredProperties = {"snapshotId"})
+    @Schema(requiredProperties = {"snapshotId", "premiereDiffusion"})
     public record Destinataire(
             long snapshotId,
             String animateurId,
@@ -54,7 +67,17 @@ public class PublicationTraceRepository {
             String email,
             StatutEnvoi statut,
             Instant envoyeLe,
-            List<String> changements) {}
+            List<String> changements,
+            List<String> demandes,
+            boolean premiereDiffusion) {
+
+        /** Everything the mail carried, in the order it read — what the trace used to store flattened. */
+        public List<String> lignes() {
+            List<String> lignes = new ArrayList<>(changements);
+            lignes.addAll(demandes);
+            return List.copyOf(lignes);
+        }
+    }
 
     @Inject
     DataSource dataSource;
@@ -72,8 +95,8 @@ public class PublicationTraceRepository {
         }
         String sql = """
  INSERT INTO publication_destinataire (edition_id, snapshot_id, animateur_id, nom_affiche, email,
- statut, envoye_le, changements)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb)""";
+ statut, envoye_le, changements, demandes, premiere_diffusion)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)""";
         scope.write("Failed to record the publication recipients", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 for (Destinataire destinataire : destinataires) {
@@ -84,6 +107,8 @@ public class PublicationTraceRepository {
                     ps.setString(6, destinataire.statut().name());
                     ps.setTimestamp(7, Timestamp.from(destinataire.envoyeLe()));
                     ps.setString(8, serialize(destinataire.changements()));
+                    ps.setString(9, serialize(destinataire.demandes()));
+                    ps.setBoolean(10, destinataire.premiereDiffusion());
                     ps.addBatch();
                 }
                 ps.executeBatch();
@@ -94,7 +119,8 @@ public class PublicationTraceRepository {
     /** The trace of one publication, in the order the admin reviewed it. */
     public List<Destinataire> bySnapshot(long snapshotId) {
         String sql = """
- SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements
+ SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
+ premiere_diffusion
  FROM publication_destinataire
  WHERE edition_id = ? AND snapshot_id = ?
  ORDER BY nom_affiche""";
@@ -110,7 +136,8 @@ public class PublicationTraceRepository {
     /** Everything one animateur was ever told, newest first — their own history. */
     public List<Destinataire> byAnimateur(String animateurId) {
         String sql = """
- SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements
+ SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
+ premiere_diffusion
  FROM publication_destinataire
  WHERE edition_id = ? AND animateur_id = ?
  ORDER BY envoye_le DESC, id DESC""";
@@ -120,6 +147,34 @@ public class PublicationTraceRepository {
             return read(ps);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the publications sent to " + animateurId, e);
+        }
+    }
+
+    /**
+     * The last thing this animateur was told, {@code null} when they were
+     * never written to (issue #532). One row, not a filter over
+     * {@link #byAnimateur(String)}: the espace reads it on every open, and
+     * what it shows is the newest line, never the history.
+     *
+     * <p>Read whatever the send's outcome was: a line the mail never carried —
+     * no address on the fiche, a send that failed — is exactly the one the
+     * espace has to show, since nothing else ever will.</p>
+     */
+    public Destinataire lastSentTo(String animateurId) {
+        String sql = """
+ SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
+ premiere_diffusion
+ FROM publication_destinataire
+ WHERE edition_id = ? AND animateur_id = ?
+ ORDER BY envoye_le DESC, id DESC
+ LIMIT 1""";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            ps.setString(2, animateurId);
+            List<Destinataire> lignes = read(ps);
+            return lignes.isEmpty() ? null : lignes.get(0);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the last publication sent to " + animateurId, e);
         }
     }
 
@@ -135,7 +190,9 @@ public class PublicationTraceRepository {
                         rs.getString("email"),
                         StatutEnvoi.valueOf(rs.getString("statut")),
                         envoyeLe == null ? null : envoyeLe.toInstant(),
-                        deserialize(rs.getString("changements"))));
+                        deserialize(rs.getString("changements")),
+                        deserialize(rs.getString("demandes")),
+                        rs.getBoolean("premiere_diffusion")));
             }
         }
         return destinataires;
