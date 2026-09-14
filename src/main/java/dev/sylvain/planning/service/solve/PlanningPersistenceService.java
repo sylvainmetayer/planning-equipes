@@ -106,6 +106,7 @@ public class PlanningPersistenceService {
             "contrainte_animateur",
             "contrainte_ad_hoc",
             "verrouillage_planning",
+            "validation_journee",
             "stand_typologie",
             "animateur_competence",
             "animateur_jour_indispo",

@@ -18,6 +18,7 @@ import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.validation.ValidationPrerequisService;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -90,6 +91,9 @@ public class PlanPublicationService {
     SolverJobService solverJobService;
 
     @Inject
+    ValidationPrerequisService prerequisService;
+
+    @Inject
     EditionContext editionContext;
 
     @Inject
@@ -125,14 +129,19 @@ public class PlanPublicationService {
      *                          plan about to be overwritten, so it is refused
      * @param dernierePublicationLe when the last publication left, {@code null}
      *                          if there has never been one
+     * @param journeesNonValidees days of the edition nobody has marked « relu et
+     *                          accepté ». Said, never enforced: publishing an
+     *                          unreviewed day is an ordinary thing to do — what
+     *                          is not ordinary is doing it without knowing
      */
-    @Schema(requiredProperties = {"jamaisPublie", "nombreConcernes", "planVide", "solveEnCours"})
+    @Schema(requiredProperties = {"jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours"})
     public record ApercuPublication(
             boolean jamaisPublie,
             boolean planVide,
             boolean solveEnCours,
             Instant dernierePublicationLe,
             int nombreConcernes,
+            int journeesNonValidees,
             List<DestinatairePublication> destinataires) {}
 
     /**
@@ -162,12 +171,14 @@ public class PlanPublicationService {
                 jamaisPublie);
 
         List<DestinatairePublication> destinataires = assembler(changements, identites);
+        ValidationPrerequisService.ProgressionValidations relecture = prerequisService.progression();
         return new ApercuPublication(
                 jamaisPublie,
                 courant.getPostes().stream().noneMatch(poste -> poste.getAnimateur() != null),
                 solveRunning(),
                 derniere == null ? null : derniere.publieLe(),
                 destinataires.size(),
+                relecture.journees() - relecture.journeesValidees(),
                 destinataires);
     }
 

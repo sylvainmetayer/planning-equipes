@@ -11,6 +11,38 @@ import { HelpSection } from '../help-section';
 export function buildOperationsSections(): HelpSection[] {
   return [
     {
+      id: 'relecture',
+      icon: 'fact_check',
+      title: $localize`:@@aide.relecture.title:Relire le planning avant de publier`,
+      summary: $localize`:@@aide.relecture.summary:Marquer où vous en êtes de votre relecture, journée par journée — sans rien figer.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.intro:Entre le premier planning qui tient et l'envoi aux animateurs, il y a une relecture : on ouvre les journées une par une, on regarde, on corrige. Sur douze journées, la question n'est pas « est-ce bon ? » mais « où en étais-je ? ». C'est à cela que sert la validation : sur la page Journée, « Marquer relu et accepté » enregistre votre passage, avec la date et un commentaire si vous en laissez un. Un bandeau dit ensuite « 3 journées sur 12 » sur la Journée, le Calendrier et le Solveur.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.verrou:Accepter une journée ne la fige pas. Un verrouillage est un mécanisme destiné au solveur — il l'empêche de toucher à des sièges ; une validation dit qu'un humain a relu, et laisse le calcul continuer d'améliorer le reste. La case « Verrouiller aussi cette journée » est proposée à côté parce que les deux gestes vont souvent ensemble, jamais parce que l'un impliquerait l'autre. Retirer la validation laisse le verrou en place.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.prerequis:Avant d'accepter, l'écran affiche ce qu'il sait de cette journée-là : écarts durs, sièges sans animateur, pauses sans personne pour prendre le relais, postes reposant sur quelqu'un d'irremplaçable. Ce sont les mêmes chiffres que les écrans Problèmes, Pauses et Fragilité, filtrés sur la date — pas un second calcul qui pourrait les contredire. Aucun ne bloque : si vous savez pourquoi un siège reste vide, acceptez la journée et écrivez-le dans le commentaire. Un prérequis que le serveur ne peut pas mesurer se dit « non vérifié » et jamais « satisfait ».`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.resolution:Une résolution qui déplace un siège d'une journée que vous aviez acceptée retire cette validation, et le récapitulatif du solveur le dit : personne n'a relu ce que le calcul vient d'écrire. Une journée qui portait aussi un verrouillage de journée garde sa validation, puisque rien n'a pu y bouger. Au moment de publier, le panneau de diffusion rappelle combien de journées non relues partiraient.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.stands:La relecture peut se déléguer : ouvrez la journée en filtrant sur un stand, et la validation ne porte que sur ce stand ce jour-là. Le compteur, lui, continue de compter les journées entières — une journée relue stand par stand est un avancement, dit à part, pas une journée acceptée.`,
+        },
+      ],
+      links: [
+        { route: '/journee', label: $localize`:@@nav.link.journee:Journée` },
+        { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
+      ],
+    },
+    {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.jourJ.title:Mode jour J`,

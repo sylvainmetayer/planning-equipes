@@ -93,6 +93,7 @@ public class ReferenceDataImportRepository {
                     "contrainte_animateur",
                     "contrainte_ad_hoc",
                     "verrouillage_planning",
+                    "validation_journee",
                     "poste_affectation",
                     "planning_resolution")) {
                 // Table names come from the literal list above, never from user input.

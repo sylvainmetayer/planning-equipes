@@ -55,6 +55,9 @@
         tout le monde.
       </p>
     }
+    @if (relectureLabel(); as relecture) {
+      <p class="publication-note">{{ relecture }}</p>
+    }
     @if (unavailableReason(); as raison) {
       <p class="publication-note">{{ raison }}</p>
     }

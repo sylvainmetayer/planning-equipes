@@ -175,3 +175,39 @@
     align-items: flex-start;
   }
 }
+
+/* Relecture progress, shown wherever a day of the plan is looked at: the
+   Journée page, the Calendrier and the Solveur. One line and one bar — the
+   figures belong to the panel that acts, this only says where the reading is. */
+.relecture-banniere {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container);
+  color: var(--mat-sys-on-surface);
+}
+
+.relecture-banniere mat-icon {
+  flex: none;
+  color: var(--mat-sys-primary);
+}
+
+.relecture-banniere p {
+  margin: 0;
+  flex: 1 1 14rem;
+}
+
+.relecture-banniere-stands {
+  flex: 1 1 100%;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.relecture-jauge {
+  flex: 0 1 12rem;
+  min-width: 8rem;
+}

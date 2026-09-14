@@ -132,6 +132,7 @@ describe('rappelPublication', () => {
     solveEnCours: false,
     dernierePublicationLe: null,
     nombreConcernes,
+    journeesNonValidees: 0,
     destinataires: [],
   });
 

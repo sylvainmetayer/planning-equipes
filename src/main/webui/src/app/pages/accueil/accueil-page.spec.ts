@@ -36,6 +36,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'A_FAIRE',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
+    relecture: { journees: 0, journeesValidees: 0, validationsStand: 0, statut: 'A_FAIRE' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,
@@ -103,7 +104,7 @@ describe('AccueilPage', () => {
     return element().textContent!.replace(/\s+/g, ' ');
   }
 
-  it('says it is reading while the first state is in flight, then lists the nine lines', async () => {
+  it('says it is reading while the first state is in flight, then lists the ten lines', async () => {
     const pending = deferred<EtatEdition>();
     editionsApi.etat.mockReturnValue(pending.promise);
     const page = createPage();
@@ -113,7 +114,7 @@ describe('AccueilPage', () => {
 
     pending.resolve(etat());
     await vi.waitFor(() => expect(page.chargement()).toBe(false));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(9);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(10);
     expect(text()).toContain('Année 2026');
     expect(editionsApi.etat).toHaveBeenCalledOnce();
   });
@@ -132,7 +133,7 @@ describe('AccueilPage', () => {
     expect(ligne('collecte').textContent).toContain('3 déclaration(s) à appliquer ou refuser');
     expect(ligne('resolution').classList.contains('accueil-ligne-a_faire')).toBe(true);
     expect(ligne('resolution').textContent).toContain('À faire');
-    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 4 à faire');
+    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 5 à faire');
     expect(text()).not.toContain('pour information');
   });
 
@@ -152,7 +153,7 @@ describe('AccueilPage', () => {
     expect(ligne.classList.contains('accueil-ligne-attention')).toBe(false);
     expect(ligne.textContent).toContain('Pour information');
     expect(ligne.textContent).toContain('8 avertissement(s), rien de bloquant');
-    expect(text()).toContain('3 étape(s) faite(s) · 1 à vérifier · 1 pour information · 4 à faire');
+    expect(text()).toContain('3 étape(s) faite(s) · 1 à vérifier · 1 pour information · 5 à faire');
   });
 
   it('links every line to its screen, tab and filter included', async () => {
@@ -173,6 +174,7 @@ describe('AccueilPage', () => {
       '/diagnostic?onglet=besoin',
       '/solveur',
       '/diagnostic?onglet=problemes',
+      '/journee',
       '/solveur',
       '/animateurs?confirmation=jamais',
       '/echanges',
@@ -197,7 +199,7 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockRejectedValueOnce(new Error('Serveur injoignable.'));
     page.recharger();
     await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(9);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(10);
   });
 
   // Both kinds of solve: « Corriger après un changement » rewrites the plan and

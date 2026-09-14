@@ -1,3 +1,5 @@
+<app-validation-banner />
+
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
     <h1 mat-card-title i18n="@@journee.title">Journée</h1>
@@ -88,8 +90,15 @@
     @if (error()) {
       <p class="empty-hint">{{ error() }}</p>
     }
+    @if (message()) {
+      <p class="calendar-meta" aria-live="polite">{{ message() }}</p>
+    }
   </mat-card-content>
 </mat-card>
+
+@if (!error() && dateCourante(); as jour) {
+  <app-validation-panel [jour]="jour" [stand]="stand() || null" (reported)="message.set($event)" />
+}
 
 @if (!error() && !loading()) {
   @switch (view()) {

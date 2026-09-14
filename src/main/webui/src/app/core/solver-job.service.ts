@@ -30,6 +30,7 @@ import {
   PlanningDiagnostic,
   PlanningEvenement,
   ImpactPublication,
+  ImpactValidations,
   PreviousPlan,
   Reamorcage,
   ReamorcageEffectue,
@@ -823,6 +824,18 @@ export function extraireImpactPublication(result: unknown): ImpactPublication | 
     return null;
   }
   return (result as Partial<ResultatSolve>).impactPublication ?? null;
+}
+
+/**
+ * The readings a finished solve withdrew — days somebody had accepted and on
+ * which a seat has just moved. `null` when it withdrew none, or on a payload
+ * from before the review state shipped.
+ */
+export function extraireImpactValidations(result: unknown): ImpactValidations | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).impactValidations ?? null;
 }
 
 /**

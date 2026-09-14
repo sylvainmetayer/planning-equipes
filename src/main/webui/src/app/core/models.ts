@@ -1836,6 +1836,15 @@ export interface ImpactPublication {
   publieLe: string;
 }
 
+/**
+ * Days somebody had marked « relu et accepté » and on which this solve moved a
+ * seat: their reading was withdrawn, because nobody has read what the solver
+ * just wrote. A day also frozen keeps its reading and is not counted.
+ */
+export interface ImpactValidations {
+  journees: number;
+}
+
 /** Payload of a finished full SOLVE job: a diagnostic plus the plan it replaced. */
 export interface ResultatSolve {
   diagnostic: PlanningDiagnostic;
@@ -1844,6 +1853,8 @@ export interface ResultatSolve {
   reamorcage?: ReamorcageEffectue | null;
   /** Absent on payloads from before the stability rule. */
   impactPublication?: ImpactPublication | null;
+  /** Readings this solve invalidated; absent when the edition carries none. */
+  impactValidations?: ImpactValidations | null;
   /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
   interruption?: Interruption | null;
 }
@@ -1855,6 +1866,8 @@ export interface ResultatSolveIncremental {
   changements: ChangementAffectation[];
   previousPlan: PreviousPlan | null;
   impactPublication?: ImpactPublication | null;
+  /** Readings this solve invalidated; absent when the edition carries none. */
+  impactValidations?: ImpactValidations | null;
   /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
   interruption?: Interruption | null;
 }
@@ -2500,6 +2513,12 @@ export interface ApercuPublication {
   solveEnCours: boolean;
   dernierePublicationLe: string | null;
   nombreConcernes: number;
+  /**
+   * Days of the edition nobody marked « relu et accepté ». Said, never
+   * enforced: publishing an unreviewed day is ordinary, doing it without
+   * knowing is not.
+   */
+  journeesNonValidees: number;
   destinataires: DestinatairePublication[];
 }
 
@@ -3067,6 +3086,16 @@ export interface EtatFoire {
   statut: StatutEtat;
 }
 
+/** How far the « relu et accepté » of the edition has got. */
+export interface EtatRelecture {
+  /** Days the timeslots span; zero before the grid exists. */
+  journees: number;
+  journeesValidees: number;
+  /** Readings done stand by stand on days not yet accepted whole. */
+  validationsStand: number;
+  statut: StatutEtat;
+}
+
 /**
  * Where the current edition stands in its cycle — the checklist of the home
  * screen, one block per step, computed server-side in one call. Counts and
@@ -3081,7 +3110,76 @@ export interface EtatEdition {
   besoin: EtatBesoin;
   resolution: EtatResolution;
   problemes: EtatProblemes;
+  relecture: EtatRelecture;
   publication: EtatPublication;
   confirmations: EtatConfirmations;
   foire: EtatFoire;
+}
+
+/**
+ * One day — or one stand of one day — marked « relu et accepté ». A review
+ * mark, not a lock: it freezes nothing, and the panel offers the lock beside it
+ * without ever implying it.
+ */
+export interface ValidationJournee {
+  id: string;
+  /** `AAAA-MM-JJ`. */
+  jour: string;
+  /** `null` for the day as a whole, which is the axis the progression counts. */
+  standId: string | null;
+  valideLe: string;
+  /** The admin account the reading was written under; `null` when there was none. */
+  validePar: string | null;
+  commentaire: string | null;
+}
+
+/** What the panel posts to accept a day. */
+export interface DemandeValidationJournee {
+  jour: string;
+  standId?: string | null;
+  commentaire?: string | null;
+  /** Lay a day lock down at the same time. Never implied by the acceptance. */
+  poserVerrou?: boolean;
+}
+
+/** A reading, and whether the lock it asked for was actually laid down. */
+export interface ResultatValidationJournee {
+  validation: ValidationJournee;
+  verrouPose: boolean;
+}
+
+/** The codes of the four prerequisites, as the server names them. */
+export type CodePrerequis =
+  'ECARTS_DURS' | 'SIEGES_VIDES' | 'PAUSES_NON_RELAYEES' | 'POSTES_IRREMPLACABLES';
+
+/** One prerequisite of a day, as a figure — the wording is the screen's. */
+export interface PrerequisValidation {
+  code: CodePrerequis;
+  /** False when no analysis is available: « non vérifié », never « satisfait ». */
+  connu: boolean;
+  satisfait: boolean;
+  nombre: number;
+}
+
+/** What to check before accepting one day (optionally narrowed to one stand). */
+export interface PrerequisJournee {
+  jour: string;
+  standId: string | null;
+  validee: boolean;
+  /** The reading that stands, so the panel withdraws exactly the one it shows. */
+  validationId: string | null;
+  valideeLe: string | null;
+  validePar: string | null;
+  commentaire: string | null;
+  prerequis: PrerequisValidation[];
+  tousSatisfaits: boolean;
+}
+
+/** How far the reading has got — « 3 journées sur 12 validées ». */
+export interface ProgressionValidations {
+  journees: number;
+  journeesValidees: number;
+  /** The accepted days themselves, `AAAA-MM-JJ`, ascending. */
+  joursValides: string[];
+  validationsStand: number;
 }

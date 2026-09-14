@@ -228,6 +228,44 @@ class PlanningServiceIncrementalTest {
         });
     }
 
+    /* ---- The days a solve moved: what withdraws a « relu et accepté » ---- */
+
+    @Test
+    void aDayWhoseCrewChangedIsReportedAsMoved() {
+        PlanningEvenement solved =
+                planningWith(affecte(poste("p0", standA, matinJ1), bob), affecte(poste("p1", standA, matinJ2), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(
+                        Map.of(key("STAND-A", 1L), List.of("A1"), key("STAND-A", 2L), List.of("A1")), solved))
+                .containsExactly(J1);
+    }
+
+    /** Two interchangeable seats swapping holders is not a change anybody read differently. */
+    @Test
+    void swappingTwoInterchangeableSeatsMovesNoDay() {
+        PlanningEvenement solved =
+                planningWith(affecte(poste("p0", standA, matinJ1), bob), affecte(poste("p1", standA, matinJ1), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(Map.of(key("STAND-A", 1L), List.of("A1", "A2")), solved))
+                .isEmpty();
+    }
+
+    /** A cell that had nobody and now has somebody moved just as much as a swap. */
+    @Test
+    void aCellFilledForTheFirstTimeMovesItsDay() {
+        PlanningEvenement solved = planningWith(affecte(poste("p0", standB, matinJ2), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(Map.of(), solved)).containsExactly(J2);
+    }
+
+    @Test
+    void aDayReportedOnceHoweverManyOfItsCellsMoved() {
+        PlanningEvenement solved =
+                planningWith(affecte(poste("p0", standA, matinJ1), bob), affecte(poste("p1", standB, matinJ1), alice));
+
+        assertThat(ReplanificationDiff.joursModifies(Map.of(), solved)).containsExactly(J1);
+    }
+
     private static PosteAffectation affecte(PosteAffectation poste, Animateur animateur) {
         poste.setAnimateur(animateur);
         return poste;

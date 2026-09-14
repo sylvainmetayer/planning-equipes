@@ -40,6 +40,7 @@ describe('PublicationPanel', () => {
     solveEnCours: false,
     dernierePublicationLe: null,
     nombreConcernes: 3,
+    journeesNonValidees: 0,
     destinataires: [],
   };
 

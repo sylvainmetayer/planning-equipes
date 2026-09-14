@@ -62,7 +62,8 @@
     "RapportApplicationJourneesTypes": "RapportApplication",
     "ReconnaissanceJourneesTypes": "Reconnaissance",
     "RapportImportReferentiel": "ReferentielCsvImportReport",
-    "LigneImportReferentiel": "LigneImportee"
+    "LigneImportReferentiel": "LigneImportee",
+    "PrerequisValidation": "Prerequis"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",
@@ -85,6 +86,7 @@
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",
     "ViolationDure": "Ligne de violation reconstruite depuis le diagnostic.",
     "DeplacementSimulation": "Simulation de déplacement, réemballée par la resource.",
-    "EchangeSimulation": "Idem DeplacementSimulation."
+    "EchangeSimulation": "Idem DeplacementSimulation.",
+    "ImpactValidations": "Charge utile d'un job de résolution, jamais exposée comme schéma REST — comme ImpactPublication juste au-dessus."
   }
 }

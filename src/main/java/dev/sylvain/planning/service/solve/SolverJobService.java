@@ -200,6 +200,7 @@ public class SolverJobService {
             PreviousPlan previousPlan,
             ReamorcageEffectue reamorcage,
             SolvePipeline.ImpactPublication impactPublication,
+            SolvePipeline.ImpactValidations impactValidations,
             SolvePipeline.Interruption interruption) {}
 
     /**
@@ -250,6 +251,7 @@ public class SolverJobService {
             List<ReplanificationDiff.ChangementAffectation> changements,
             PreviousPlan previousPlan,
             SolvePipeline.ImpactPublication impactPublication,
+            SolvePipeline.ImpactValidations impactValidations,
             SolvePipeline.Interruption interruption) {}
 
     /**

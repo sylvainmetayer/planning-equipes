@@ -13,6 +13,7 @@ import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
 import {
   ImpactPublication,
+  ImpactValidations,
   PreviousPlan,
   ReamorcageEffectue,
   RestaurationSnapshot,
@@ -51,6 +52,8 @@ export class SolveRecap {
   readonly reamorcage = input<ReamorcageEffectue | null>(null);
   /** Whom the last finished solve would disturb, against the published plan. */
   readonly impact = input<ImpactPublication | null>(null);
+  /** The readings that solve withdrew; null when it withdrew none. */
+  readonly impactValidations = input<ImpactValidations | null>(null);
   /** What the last solve replaced; null when there is nothing to compare against. */
   readonly previousPlan = input<PreviousPlan | null>(null);
   /** Full score of the last solve, the other half of the comparison. */
@@ -97,6 +100,22 @@ export class SolveRecap {
       return $localize`:@@solver.impact.aucun:Personne ne change d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
     }
     return $localize`:@@solver.impact.personnes:${impact.personnes}:count: personne(s) changeraient d'emploi du temps par rapport au plan publié le ${quand}:date:.`;
+  });
+
+  /**
+   * « 2 journées validées ont bougé » — the readings this solve withdrew.
+   *
+   * Shown next to the publication impact because it answers the neighbouring
+   * question: not who has to be told, but what nobody has read since. Silent
+   * when the solve withdrew none, which is every solve on an edition nobody
+   * reviews.
+   */
+  protected readonly validationsLabel = computed(() => {
+    const impact = this.impactValidations();
+    if (!impact || impact.journees === 0) {
+      return '';
+    }
+    return $localize`:@@solver.impact.validations:${impact.journees}:count: journée(s) validée(s) ont bougé : leur relecture a été retirée.`;
   });
 
   /**

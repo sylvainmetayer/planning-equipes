@@ -108,6 +108,11 @@ public final class CatalogueActions {
         changesData("AJUSTEMENT_SUPPRIME", "Ajustement manuel supprimé", Entite.AJUSTEMENT);
         changesData("VERROU_POSE", "Verrouillage posé", Entite.VERROUILLAGE);
         changesData("VERROU_RETIRE", "Verrouillage retiré", Entite.VERROUILLAGE);
+        // A reading changes nothing a solve is given — it says a human went
+        // over that day — so neither of these is `changesData`, even when the
+        // validation lays a lock down: that lock writes its own VERROU_POSE.
+        action("JOURNEE_VALIDEE", "Journée relue et acceptée", Entite.PLANNING);
+        action("JOURNEE_VALIDATION_RETIREE", "Validation de journée retirée", Entite.PLANNING);
 
         /* ------------------------- Editions ------------------------- */
         action("EDITION_CREEE", "Édition créée", Entite.EDITION);
@@ -248,6 +253,8 @@ public final class CatalogueActions {
         route("ContrainteAdHocResource#deleteContrainteAdHoc", "AJUSTEMENT_SUPPRIME");
         route("VerrouillageResource#create", "VERROU_POSE");
         route("VerrouillageResource#delete", "VERROU_RETIRE");
+        route("ValidationJourneeResource#accept", "JOURNEE_VALIDEE");
+        route("ValidationJourneeResource#withdraw", "JOURNEE_VALIDATION_RETIREE");
 
         route("EditionResource#create", "EDITION_CREEE");
         route("EditionResource#rename", "EDITION_RENOMMEE");
@@ -367,6 +374,8 @@ public final class CatalogueActions {
         outil("supprimer_contrainte_ad_hoc", "AJUSTEMENT_SUPPRIME");
         outil("verrouiller", "VERROU_POSE");
         outil("deverrouiller", "VERROU_RETIRE");
+        outil("ajouter_validation_journee", "JOURNEE_VALIDEE");
+        outil("retirer_validation_journee", "JOURNEE_VALIDATION_RETIREE");
 
         outil("creer_edition", "EDITION_CREEE");
         outil("renommer_edition", "EDITION_RENOMMEE");

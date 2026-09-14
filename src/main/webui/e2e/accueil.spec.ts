@@ -1,4 +1,4 @@
-// The home page (issue #485): « État de l'édition » lists the nine steps of
+// The home page (issue #485): « État de l'édition » lists the ten steps of
 // the cycle, each with a state and a link to the screen that moves it. The
 // states are the server's; what a browser adds is that the lines render,
 // that a seeded edition reads as filled and published, and that a link
@@ -26,12 +26,13 @@ const LIGNES = [
   'besoin',
   'resolution',
   'problemes',
+  'relecture',
   'publication',
   'confirmations',
   'foire',
 ];
 
-test("la page d'accueil liste les neuf étapes du cycle", async ({ browser }) => {
+test("la page d'accueil liste les dix étapes du cycle", async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
   await page.goto('/');
 

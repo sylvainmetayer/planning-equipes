@@ -20,11 +20,14 @@ import { errorPrefix } from '../../core/error-message';
 import { Emplacement, PlanningEvenement, RapportPauses, TypologieItem } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { ValidationsStore } from '../../core/validations.store';
 import { TableFilter } from '../../shared/table-filter';
+import { ValidationBanner } from '../../shared/validation-banner';
 import { CalendarDayView } from '../calendar-day/calendar-day-vue';
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
 import { PausesView } from '../pauses/pauses-vue';
+import { ValidationPanel } from './validation-panel';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
 import {
   JourEvenement,
@@ -64,6 +67,8 @@ interface Option {
     MatProgressBarModule,
     MatSelectModule,
     TableFilter,
+    ValidationBanner,
+    ValidationPanel,
     CalendarDayView,
     RailJourView,
     PausesView,
@@ -81,6 +86,7 @@ export class JourneePage {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly validations = inject(ValidationsStore);
 
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -165,6 +171,11 @@ export class JourneePage {
       this.seulementProblemes(),
   );
 
+  /** The ISO date of the day on screen, which is what a reading names; null on an undated day. */
+  protected readonly dateCourante = computed(() => this.jourCourant()?.date ?? null);
+  /** What the page says after a reading was recorded or withdrawn. */
+  protected readonly message = signal('');
+
   protected readonly jourPrecedentLabel = $localize`:@@journee.previousDay:Jour précédent`;
   protected readonly jourSuivantLabel = $localize`:@@journee.nextDay:Jour suivant`;
 
@@ -222,6 +233,9 @@ export class JourneePage {
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       this.emplacements.set(emplacements);
+      // The banner is refreshed with the plan it comments on: a solve that
+      // withdrew readings must not leave the old count on screen.
+      void this.validations.reload();
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));

@@ -34,3 +34,57 @@
     min-width: 100%;
   }
 }
+
+/* The relecture panel: the four prerequisites of the day, and the one action
+   that records the reading. A read-out, never a gate — the list says what is
+   wrong and the button stays enabled. */
+.journee-validation-prerequis {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.journee-validation-prerequis li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.journee-validation-prerequis mat-icon {
+  flex: none;
+  color: var(--mat-sys-primary);
+}
+
+.journee-validation-prerequis li.journee-validation-ko mat-icon {
+  color: var(--mat-sys-error);
+}
+
+.journee-validation-etat {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.journee-validation-etat mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.journee-validation-commentaire {
+  margin: 0.25rem 0 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-validation-note {
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.875rem;
+}
+
+.journee-validation-commentaire-champ {
+  display: block;
+  max-width: 32rem;
+}

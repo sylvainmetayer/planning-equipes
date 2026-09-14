@@ -280,6 +280,14 @@ Single Quarkus service, no separate solver microservice. Package root:
     and writing without a database; `PlanningServiceScenarioAllerRetourTest`
     keeps them in step), `ScenarioDomainMapper`, `ScenarioDtoAssembler`,
     `ScenarioImportService`. The DTO itself is `scenario/` at the package root.
+  - `service/validation/` — « relu et accepté » on a day: the review state that
+    the lock mechanism never carried (ADR 0039). `ValidationJourneeService`
+    owns the two rules that keep the two apart — validating never lays a lock
+    down unasked, and a solve that moves a seat of a validated day withdraws
+    the reading unless that day also carries a `JOUR` lock;
+    `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
+    reports to one date rather than recomputing them, so the panel and those
+    three screens cannot tell two stories about the same day.
   - `service/edition/`; `service/publication/` (publishing, delivery,
     confirmations, `MailService`); `service/export/` (`PlanningExportService`
     over `AnimateurPlanningPdf`, `GlobalPlanningPdf` and `PlanningIcs`, sharing
@@ -359,7 +367,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   next break.
 - `api/` — JAX-RS resources: `PlanningResource`, `SolverJobResource`,
   `EditionResource`, `ConstraintResource`, `DatabaseResource`,
-  `PlanningExportResource`, `EspaceAnimateurResource` and
+  `PlanningExportResource`, `ValidationJourneeResource`,
+  `EspaceAnimateurResource` and
   `AbonnementIcsResource` (token-authenticated, the only public parts of the
   API), `DemandeEchangeResource`, `AuthResource`, plus
   one resource per referential family (`StandResource`, `AnimateurResource`, …)

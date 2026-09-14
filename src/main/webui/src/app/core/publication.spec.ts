@@ -14,6 +14,7 @@ function apercu(patch: Partial<ApercuPublication> = {}): ApercuPublication {
     solveEnCours: false,
     dernierePublicationLe: '2026-08-25T12:30:00Z',
     nombreConcernes: 0,
+    journeesNonValidees: 0,
     destinataires: [],
     ...patch,
   };

@@ -24,6 +24,8 @@ import { intlLocale } from '../../core/locale';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
+import { ValidationsStore } from '../../core/validations.store';
+import { ValidationBanner } from '../../shared/validation-banner';
 import { PlanningEvenement, PosteAffectation } from '../../core/models';
 import {
   aUneAppreciationPour,
@@ -129,6 +131,7 @@ const ALL = 'ALL';
     MatListModule,
     MatDividerModule,
     MatTooltipModule,
+    ValidationBanner,
   ],
   templateUrl: './calendar-month-page.html',
   styleUrls: ['../../../styles/calendar-month.css', '../../../styles/calendar-day.css'],
@@ -151,6 +154,7 @@ export class CalendarMonthPage {
   protected readonly standFilter = signal(ALL);
 
   protected readonly verrous = inject(VerrouillageStore);
+  private readonly validations = inject(ValidationsStore);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly dialog = inject(MatDialog);
@@ -342,6 +346,8 @@ export class CalendarMonthPage {
     try {
       this.planning.set(await this.planningState.loadForDisplay());
       this.loaded.set(true);
+      // Refreshed with the plan it comments on, like the Journée page does.
+      void this.validations.reload();
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));

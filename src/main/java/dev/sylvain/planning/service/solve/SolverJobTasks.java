@@ -78,6 +78,7 @@ public class SolverJobTasks {
                     resolution.previousPlan(),
                     new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(), probleme.postesLiberes()),
                     resolution.impactPublication(),
+                    resolution.impactValidations(),
                     resolution.interruption());
         };
     }
@@ -98,6 +99,7 @@ public class SolverJobTasks {
                     ReplanificationDiff.compute(probleme.affectationsPrecedentes(), resolution.planning()),
                     resolution.previousPlan(),
                     resolution.impactPublication(),
+                    resolution.impactValidations(),
                     resolution.interruption());
         };
     }
@@ -108,6 +110,7 @@ public class SolverJobTasks {
                 resolution.previousPlan(),
                 null,
                 resolution.impactPublication(),
+                resolution.impactValidations(),
                 resolution.interruption());
     }
 

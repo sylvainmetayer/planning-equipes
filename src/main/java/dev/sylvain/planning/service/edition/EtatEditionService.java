@@ -21,6 +21,7 @@ import dev.sylvain.planning.service.edition.EtatEditionView.EtatOuvertures;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatProblemes;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatPublication;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatReferentiels;
+import dev.sylvain.planning.service.edition.EtatEditionView.EtatRelecture;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatResolution;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
@@ -35,6 +36,8 @@ import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService.PlanningResolution;
 import dev.sylvain.planning.service.solve.SolverJobService;
+import dev.sylvain.planning.service.validation.ValidationPrerequisService;
+import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -101,6 +104,9 @@ public class EtatEditionService {
     @Inject
     DemandeEchangeService demandeEchangeService;
 
+    @Inject
+    ValidationPrerequisService prerequisService;
+
     /**
      * Everything {@link #assemble} decides on, read once per call.
      *
@@ -132,7 +138,8 @@ public class EtatEditionService {
             ApercuPublication publication,
             SyntheseConfirmations confirmations,
             boolean foireOuverte,
-            int demandesEnAttente) {}
+            int demandesEnAttente,
+            ProgressionValidations relecture) {}
 
     /** The state of the current edition. */
     public EtatEditionView etat() {
@@ -173,7 +180,8 @@ public class EtatEditionService {
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
-                demandeEchangeService.pendingDemandes().size());
+                demandeEchangeService.pendingDemandes().size(),
+                prerequisService.progression());
     }
 
     /**
@@ -199,6 +207,7 @@ public class EtatEditionService {
                 besoin(facts),
                 resolution(facts),
                 problemes(facts, referentielsSaisis),
+                relecture(facts),
                 publication(facts),
                 confirmations(facts),
                 foire(facts));
@@ -351,6 +360,31 @@ public class EtatEditionService {
     private static boolean isMedium(String constraintName) {
         ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(constraintName);
         return definition != null && definition.niveau() == ConstraintCatalog.Niveau.MEDIUM;
+    }
+
+    /**
+     * The relecture is a step of its own between a plan and its publication: it
+     * only begins once there is a plan to read, and it is behind only when
+     * every day of the edition has been accepted.
+     *
+     * <p>A day read stand by stand is « en cours », never « fait »: the
+     * organiser decides what a complete reading is, and the line reports the
+     * only figure that has one meaning — days accepted as a whole.</p>
+     */
+    private static EtatRelecture relecture(Facts facts) {
+        ProgressionValidations progression = facts.relecture();
+        Statut statut;
+        if (facts.resolution() == null || progression.journees() == 0) {
+            statut = Statut.A_FAIRE;
+        } else if (progression.journeesValidees() >= progression.journees()) {
+            statut = Statut.FAIT;
+        } else if (progression.journeesValidees() > 0 || progression.validationsStand() > 0) {
+            statut = Statut.INFO;
+        } else {
+            statut = Statut.A_FAIRE;
+        }
+        return new EtatRelecture(
+                progression.journees(), progression.journeesValidees(), progression.validationsStand(), statut);
     }
 
     /**

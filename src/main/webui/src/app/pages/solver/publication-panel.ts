@@ -83,6 +83,20 @@ export class PublicationPanel {
   protected readonly lastPublication = computed(() =>
     libelleDernierePublication(this.preview(), intlLocale()),
   );
+  /**
+   * How many days would go out unread. Said, never enforced: publishing a day
+   * nobody reviewed is an ordinary thing to do, doing it without knowing is
+   * not. Silent when everything has been read — and before the first solve,
+   * when there is nothing to read.
+   */
+  protected readonly relectureLabel = computed(() => {
+    const nonValidees = this.preview()?.journeesNonValidees ?? 0;
+    if (nonValidees === 0) {
+      return '';
+    }
+    return $localize`:@@publication.journeesNonValidees:${nonValidees}:count: journée(s) que personne n'a marquée « relue et acceptée » partiraient avec cette publication.`;
+  });
+
   protected readonly publishable = computed(() => {
     const preview = this.preview();
     return !!preview && preview.nombreConcernes > 0 && !preview.solveEnCours && !preview.planVide;

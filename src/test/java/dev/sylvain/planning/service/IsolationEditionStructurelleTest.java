@@ -81,6 +81,7 @@ class IsolationEditionStructurelleTest {
             "constraint_toggle",
             "ponderation_contrainte",
             "verrouillage_planning",
+            "validation_journee",
             "parametres_legaux",
             "parametres_solveur",
             "poste_affectation",

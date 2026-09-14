@@ -80,6 +80,10 @@ public class DatabaseDumpService {
             "contrainte_ad_hoc",
             "contrainte_animateur",
             "verrouillage_planning",
+            // The review marks. They describe the dataset as surely as the locks
+            // do — a restore that dropped them would hand the organiser back a
+            // plan nobody had read.
+            "validation_journee",
             "demande_echange",
             "planning_resolution",
             "parametres_legaux",

@@ -120,6 +120,7 @@ qui vient d'afficher la donnée.
 | --- | --- | --- |
 | `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
 | `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
+| `retirer_validation_journee` | échoue sur un id inconnu, là où `DELETE /api/validations/{id}` répond 404 de la même façon | même raison que `deverrouiller` : « retirée » sur une relecture qui n'existait pas laisserait croire la journée revenue à relire |
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
 | `simuler_deplacement`, `deplacer_affectation` | un seul outil pour les trois gestes du glisser-déposer (#308), la cible étant un poste ou une personne | l'écran a un pointeur et sait où il dépose ; l'assistant nomme ce qu'il vise, et le serveur choisit entre déplacer, échanger et attribuer — puis refuse ce qui casserait une règle dure, comme pour l'écran |
 | `lancer_solveur` | repart du plan enregistré par défaut (`reamorcage=AUTO`), comme l'écran | un assistant qui relance « pour voir » détruirait sinon en silence la qualité déjà atteinte (#174) ; le départ à froid se demande, `reamorcage=AUCUN` |

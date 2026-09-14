@@ -23,6 +23,7 @@ import {
   ChangementAffectation,
   FeasibilityReport,
   ImpactPublication,
+  ImpactValidations,
   PerimetreReplanification,
   PlanningDiagnostic,
   PreviousPlan,
@@ -41,11 +42,14 @@ import {
   SolverJobService,
   extraireDiagnostic,
   extraireImpactPublication,
+  extraireImpactValidations,
   extrairePlanPrecedent,
   extraireReamorcage,
   formatDuration,
 } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
+import { ValidationsStore } from '../../core/validations.store';
+import { ValidationBanner } from '../../shared/validation-banner';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { OutputPanel } from '../../shared/output-panel';
@@ -106,6 +110,7 @@ function hardPart(score: string): number {
     IncrementalResult,
     SolveRecap,
     ChangementsDonneesPanel,
+    ValidationBanner,
   ],
   templateUrl: './solver-page.html',
   styleUrls: ['./solver.css', './publication.css', './replanification.css', './score-curve.css'],
@@ -206,6 +211,9 @@ export class SolverPage {
   /** Whom the last finished solve would disturb, against the published plan. */
   protected readonly impactPublication = signal<ImpactPublication | null>(null);
 
+  /** The readings the last finished solve withdrew, when it withdrew any. */
+  protected readonly impactValidations = signal<ImpactValidations | null>(null);
+
   /**
    * "Fin estimée" of the run in progress: its start time plus the duration it
    * was submitted with. An upper bound — the solver stops earlier when its
@@ -244,12 +252,14 @@ export class SolverPage {
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
+  private readonly validations = inject(ValidationsStore);
 
   constructor() {
     void this.loadLastRun();
     void this.chargerPointDeDepart();
     void this.problemes.reload();
     void this.crud.reload();
+    void this.validations.reload();
     // Results are pushed by the job service, whoever started the job: a solve
     // launched from another browser also lands here when it completes, already
     // analyzed. Both kinds of solve land here: a full one carries a bare
@@ -266,6 +276,10 @@ export class SolverPage {
       this.planPrecedent.set(extrairePlanPrecedent(result));
       this.reamorcageEffectue.set(extraireReamorcage(result));
       this.impactPublication.set(extraireImpactPublication(result));
+      this.impactValidations.set(extraireImpactValidations(result));
+      // The banner comments on the plan the solve just rewrote, and that solve
+      // may have withdrawn readings: re-read rather than leave a stale count.
+      void this.validations.reload();
       void this.loadLastRun();
       void this.chargerPointDeDepart();
       // The solve just rewrote the plan: the count of people to inform is no

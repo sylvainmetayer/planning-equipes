@@ -29,6 +29,7 @@ public record EtatEditionView(
         EtatBesoin besoin,
         EtatResolution resolution,
         EtatProblemes problemes,
+        EtatRelecture relecture,
         EtatPublication publication,
         EtatConfirmations confirmations,
         EtatFoire foire) {
@@ -110,6 +111,18 @@ public record EtatEditionView(
      */
     @Schema(requiredProperties = {"avertissements", "bloquants", "reglesAnalysees", "statut"})
     public record EtatProblemes(int bloquants, int avertissements, boolean reglesAnalysees, Statut statut) {}
+
+    /**
+     * Where the « relu et accepté » of the edition has got to — the step between
+     * a plan that holds and a plan somebody has actually read.
+     *
+     * @param journees         days the timeslots span; zero before the grid exists
+     * @param journeesValidees how many of them are accepted as a whole
+     * @param validationsStand readings done stand by stand on days not yet
+     *                         accepted whole — progress, on a finer grain
+     */
+    @Schema(requiredProperties = {"journees", "journeesValidees", "statut", "validationsStand"})
+    public record EtatRelecture(int journees, int journeesValidees, int validationsStand, Statut statut) {}
 
     /**
      * @param personnesAPrevenir people whose schedule the next publication would announce

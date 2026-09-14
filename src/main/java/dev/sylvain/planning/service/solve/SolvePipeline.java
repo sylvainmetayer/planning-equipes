@@ -10,12 +10,14 @@ import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
@@ -77,6 +79,9 @@ public class SolvePipeline {
     @Inject
     PublicationDiffService diffService;
 
+    @Inject
+    ValidationJourneeService validationService;
+
     /**
      * What a solve produced.
      *
@@ -97,6 +102,7 @@ public class SolvePipeline {
             PlanningDiagnosticService.PlanningDiagnostic diagnostic,
             PreviousPlan previousPlan,
             ImpactPublication impactPublication,
+            ImpactValidations impactValidations,
             Interruption interruption) {}
 
     /**
@@ -134,6 +140,18 @@ public class SolvePipeline {
      * @param publieLe when the plan compared against was published
      */
     public record ImpactPublication(int personnes, Instant publieLe) {}
+
+    /**
+     * Readings this solve invalidated: days somebody had marked « relu et
+     * accepté » and on which a seat has just moved. {@code null} when it
+     * withdrew none — an edition nobody reviews, or a solve that moved nothing
+     * anybody had read — so the recap says nothing rather than « 0 ».
+     *
+     * <p>A day also carrying a {@code JOUR} lock keeps its validation and is
+     * not counted: the solver could not move anything there, so the reading
+     * still describes what is in place.</p>
+     */
+    public record ImpactValidations(int journees) {}
 
     /**
      * The common case: the problem is already there, and the edition is the one
@@ -197,6 +215,9 @@ public class SolvePipeline {
         if (shutdownRequested.getAsBoolean() || Thread.currentThread().isInterrupted()) {
             return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes);
         }
+        // Read before the persist overwrites it: what the plan in place held is
+        // the only thing the days that moved can be compared against.
+        Map<String, List<String>> avant = assignmentsBeforePersist();
         persistenceService.persist(resolu);
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         analysisStore.record(diagnostic);
@@ -211,6 +232,7 @@ public class SolvePipeline {
                 diagnostic,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 impactPublication(resolu),
+                impactValidations(avant, resolu),
                 null);
     }
 
@@ -231,6 +253,7 @@ public class SolvePipeline {
         Thread.interrupted();
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
+        Map<String, List<String>> avant = kept ? assignmentsBeforePersist() : null;
         if (kept) {
             persistenceService.persist(resolu);
             analysisStore.record(diagnostic);
@@ -249,6 +272,10 @@ public class SolvePipeline {
                 diagnostic,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 null,
+                // A kept partial plan replaced the persisted one just the same:
+                // the readings of the days it moved are as stale as after a
+                // solve that finished, and nothing else would ever withdraw them.
+                impactValidations(avant, resolu),
                 new Interruption(kept, diagnostic.score(), scoreBefore));
     }
 
@@ -282,6 +309,51 @@ public class SolvePipeline {
             return diagnostic == null ? null : diagnostic.score();
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan's score could not be established", e);
+            return null;
+        }
+    }
+
+    /**
+     * The plan in place, seat by cell — the before-image the days that moved
+     * are read from, or {@code null} when there is nothing to compare.
+     *
+     * <p>{@code null} on an edition carrying no reading at all: the image is
+     * the whole persisted plan seat by seat, and an edition nobody reviews must
+     * not pay for it on every solve. Distinct from an <b>empty</b> image, which
+     * says the plan held nothing — every day then genuinely moved, and the
+     * readings taken before the first solve are genuinely stale.</p>
+     *
+     * <p>Best-effort: a failure here costs the recap a figure and leaves the
+     * readings alone, it never fails a solve.</p>
+     */
+    private Map<String, List<String>> assignmentsBeforePersist() {
+        try {
+            if (!validationService.hasValidations()) {
+                return null;
+            }
+            return persistenceService.loadAnimateursByStandCreneau();
+        } catch (RuntimeException e) {
+            LOG.warn("The persisted plan could not be read back; no reading is withdrawn", e);
+            return null;
+        }
+    }
+
+    /**
+     * Withdraws the « relu et accepté » of every day this solve moved a seat
+     * on, and says how many were withdrawn — « 2 journées validées ont bougé ».
+     *
+     * <p>Best-effort like the publication impact: an edition nobody reviews
+     * must not see a solve fail on a figure it does not read.</p>
+     */
+    private ImpactValidations impactValidations(Map<String, List<String>> avant, PlanningEvenement resolu) {
+        if (avant == null) {
+            return null;
+        }
+        try {
+            int journees = validationService.withdrawMovedDays(ReplanificationDiff.joursModifies(avant, resolu));
+            return journees == 0 ? null : new ImpactValidations(journees);
+        } catch (RuntimeException e) {
+            LOG.warn("The readings of the days this solve moved could not be withdrawn", e);
             return null;
         }
     }

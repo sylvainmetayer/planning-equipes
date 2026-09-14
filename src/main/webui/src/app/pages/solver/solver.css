@@ -41,3 +41,10 @@ app-solver-queue > .mat-mdc-card-content:last-child,
 app-solve-recap > .mat-mdc-card-content:last-child {
   padding-bottom: 0;
 }
+
+/* « N journées validées ont bougé » — said beside the publication impact,
+   because it answers the neighbouring question: not who has to be told, but
+   what nobody has read since. */
+.solver-impact-validations {
+  color: var(--mat-sys-error);
+}

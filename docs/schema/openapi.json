@@ -461,7 +461,7 @@
         "enum" : [ "STAND_JAMAIS_OUVERT", "FENETRE_SANS_EFFET", "SEGMENT_TROP_COURT" ]
       },
       "ApercuPublication" : {
-        "required" : [ "jamaisPublie", "nombreConcernes", "planVide", "solveEnCours" ],
+        "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours" ],
         "type" : "object",
         "properties" : {
           "jamaisPublie" : {
@@ -477,6 +477,10 @@
             "$ref" : "#/components/schemas/Instant"
           },
           "nombreConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "journeesNonValidees" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -1858,6 +1862,24 @@
           }
         }
       },
+      "DemandeValidationJournee" : {
+        "required" : [ "jour" ],
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "commentaire" : {
+            "type" : "string"
+          },
+          "poserVerrou" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "DerivationRequest" : {
         "required" : [ "remplacer" ],
         "type" : "object",
@@ -2274,6 +2296,9 @@
           "problemes" : {
             "$ref" : "#/components/schemas/EtatProblemes"
           },
+          "relecture" : {
+            "$ref" : "#/components/schemas/EtatRelecture"
+          },
           "publication" : {
             "$ref" : "#/components/schemas/EtatPublication"
           },
@@ -2450,6 +2475,27 @@
             "format" : "int32"
           },
           "creneaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatRelecture" : {
+        "required" : [ "journees", "journeesValidees", "statut", "validationsStand" ],
+        "type" : "object",
+        "properties" : {
+          "journees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "journeesValidees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "validationsStand" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -4177,6 +4223,61 @@
           }
         }
       },
+      "Prerequis" : {
+        "required" : [ "code", "connu", "nombre", "satisfait" ],
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "connu" : {
+            "type" : "boolean"
+          },
+          "satisfait" : {
+            "type" : "boolean"
+          },
+          "nombre" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "PrerequisJournee" : {
+        "required" : [ "jour", "prerequis", "tousSatisfaits", "validee" ],
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "validee" : {
+            "type" : "boolean"
+          },
+          "validationId" : {
+            "type" : "string"
+          },
+          "valideeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "validePar" : {
+            "type" : "string"
+          },
+          "commentaire" : {
+            "type" : "string"
+          },
+          "prerequis" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Prerequis"
+            }
+          },
+          "tousSatisfaits" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "ProblemScale" : {
         "required" : [ "animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount" ],
         "type" : "object",
@@ -4200,6 +4301,32 @@
           "hoursAvailable" : {
             "type" : "number",
             "format" : "double"
+          }
+        }
+      },
+      "ProgressionValidations" : {
+        "required" : [ "journees", "journeesValidees", "joursValides", "validationsStand" ],
+        "type" : "object",
+        "properties" : {
+          "journees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "journeesValidees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "joursValides" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "validationsStand" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -4887,6 +5014,18 @@
       "ResultatLigne" : {
         "type" : "string",
         "enum" : [ "WRITTEN", "STALE", "REJECTED" ]
+      },
+      "ResultatValidationJournee" : {
+        "required" : [ "validation", "verrouPose" ],
+        "type" : "object",
+        "properties" : {
+          "validation" : {
+            "$ref" : "#/components/schemas/ValidationJournee"
+          },
+          "verrouPose" : {
+            "type" : "boolean"
+          }
+        }
       },
       "SaisieCellule" : {
         "required" : [ "creneauId" ],
@@ -5700,6 +5839,30 @@
           },
           "couverturePause" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "ValidationJournee" : {
+        "type" : "object",
+        "required" : [ "id", "jour", "valideLe" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "valideLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "validePar" : {
+            "type" : "string"
+          },
+          "commentaire" : {
+            "type" : "string"
           }
         }
       },
@@ -11127,6 +11290,129 @@
         },
         "summary" : "Delete Typologie",
         "tags" : [ "Typologie Resource" ]
+      }
+    },
+    "/api/validations" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ValidationJournee"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Validation Journee Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandeValidationJournee"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResultatValidationJournee"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Accept",
+        "tags" : [ "Validation Journee Resource" ]
+      }
+    },
+    "/api/validations/prerequis" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "stand",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PrerequisJournee"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Prerequis",
+        "tags" : [ "Validation Journee Resource" ]
+      }
+    },
+    "/api/validations/progression" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ProgressionValidations"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Progression",
+        "tags" : [ "Validation Journee Resource" ]
+      }
+    },
+    "/api/validations/{id}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Validation Journee Resource" ]
       }
     },
     "/api/verrouillages" : {

@@ -31,6 +31,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'A_FAIRE',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'A_FAIRE' },
+    relecture: { journees: 0, journeesValidees: 0, validationsStand: 0, statut: 'A_FAIRE' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,
@@ -61,6 +62,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'FAIT',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
+    relecture: { journees: 12, journeesValidees: 12, validationsStand: 0, statut: 'FAIT' },
     publication: {
       jamaisPublie: false,
       dernierePublicationLe: '2026-05-01T11:00:00Z',
@@ -74,7 +76,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
 }
 
 describe('buildLignes', () => {
-  it('lists the nine steps of the cycle in the order of the guide', () => {
+  it('lists the ten steps of the cycle in the order of the guide', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.id)).toEqual([
       'referentiels',
       'collecte',
@@ -82,6 +84,7 @@ describe('buildLignes', () => {
       'besoin',
       'resolution',
       'problemes',
+      'relecture',
       'publication',
       'confirmations',
       'foire',
@@ -90,10 +93,10 @@ describe('buildLignes', () => {
 
   it('carries the state the server decided, line by line', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual(
-      Array<string>(9).fill('A_FAIRE'),
+      Array<string>(10).fill('A_FAIRE'),
     );
     expect(buildLignes(etatComplet()).map((ligne) => ligne.statut)).toEqual(
-      Array<string>(9).fill('FAIT'),
+      Array<string>(10).fill('FAIT'),
     );
   });
 
@@ -242,6 +245,7 @@ describe('buildLignes', () => {
       },
       besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
       problemes: { bloquants: 1, avertissements: 4, reglesAnalysees: true, statut: 'ATTENTION' },
+      relecture: { journees: 12, journeesValidees: 3, validationsStand: 0, statut: 'INFO' },
       publication: {
         jamaisPublie: false,
         dernierePublicationLe: '2026-05-01T11:00:00Z',
@@ -266,6 +270,7 @@ describe('buildLignes', () => {
     );
     expect(details.get('besoin')).toBe('20 animateurs pour un minimum de 32 : il en manque 12');
     expect(details.get('problemes')).toBe('1 bloquant(s) · 4 avertissement(s)');
+    expect(details.get('relecture')).toBe('3 journée(s) relue(s) sur 12');
     expect(details.get('publication')).toBe('7 personne(s) à prévenir');
     expect(details.get('foire')).toBe('2 demande(s) en attente');
   });
@@ -279,7 +284,7 @@ describe('summarizeLignes', () => {
         foire: { ouverte: false, demandesEnAttente: 0, statut: 'A_FAIRE' },
       }),
     );
-    expect(summarizeLignes(lignes)).toEqual({ faits: 7, attention: 1, info: 0, aFaire: 1 });
+    expect(summarizeLignes(lignes)).toEqual({ faits: 8, attention: 1, info: 0, aFaire: 1 });
   });
 });
 
