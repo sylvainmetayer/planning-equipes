@@ -159,8 +159,12 @@ class SolverJobRepriseTest {
                 .extract()
                 .path("id");
         assertThat(pollUntilFinished(id).getString("status")).isEqualTo("COMPLETED");
-        // Written by the real code path, not by this test's helper.
-        assertThat(statut(id)).isEqualTo(JobStatus.COMPLETED);
+        // Written by the real code path, not by this test's helper — and awaited
+        // rather than read straight: the REST status comes from the in-memory
+        // job, which `finishAndChain` marks terminal *before* it stores the row,
+        // and `find` reads it without the lock. Seeing COMPLETED over HTTP
+        // therefore promises nothing about the row yet.
+        assertThat(pollUntilStatut(id, JobStatus.COMPLETED)).isEqualTo(JobStatus.COMPLETED);
 
         given().when().delete("/api/jobs/" + id).then().statusCode(204);
 
@@ -269,6 +273,19 @@ class SolverJobRepriseTest {
             Thread.sleep(POLL_INTERVAL_MS);
         }
         throw new AssertionError("Solver still busy");
+    }
+
+    /** The persisted status, awaited on the same budget as {@link #pollUntilFinished}. */
+    private JobStatus pollUntilStatut(String jobId, JobStatus attendu) throws InterruptedException {
+        JobStatus vu = null;
+        for (int i = 0; i < MAX_POLLS; i++) {
+            vu = statut(jobId);
+            if (vu == attendu) {
+                return vu;
+            }
+            Thread.sleep(POLL_INTERVAL_MS);
+        }
+        return vu;
     }
 
     private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
