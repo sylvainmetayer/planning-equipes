@@ -714,8 +714,8 @@ pas la base — voir `docs/domaine.md`) :
 
 | Seuil | Défaut | Réglage |
 | --- | --- | --- |
-| Service tardif — la vacation finit à cette heure ou après | 22 h | `planning.contraintes.heure-service-tardif` |
-| Service matinal — la vacation du lendemain commence à cette heure ou avant | 10 h | `planning.contraintes.heure-service-matinal` |
+| Service tardif — la journée **finit** à cette heure ou après | 22 h | `planning.contraintes.heure-service-tardif` |
+| Service matinal — la journée du lendemain **commence** à cette heure ou avant | 10 h | `planning.contraintes.heure-service-matinal` |
 | Repos souhaité dans ce cas | 12 h | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` |
 
 La pénalité est le nombre de minutes manquant au repos souhaité, **comptées à
@@ -736,6 +736,24 @@ vacation 20 h → 00 h finit le lendemain à 0 h : lue comme une heure, elle
 passerait pour matinale alors qu'elle est précisément la fermeture que la règle
 cherche. Le cas est couvert par un test dédié.
 
+### Une nuit, une pénalité
+
+La règle raisonne sur des **journées**, pas sur des paires de vacations, et ce
+n'est pas un détail d'implémentation. Le repos d'une nuit est une quantité
+unique — dernière fin de J, premier début de J+1 — alors qu'une jointure par
+paires la facture une fois par couple (vacation tardive, vacation matinale) :
+un animateur qui reprend à 8 h puis de nouveau à 10 h payait deux fois la même
+nuit, et **supprimer le siège de 10 h divisait la pénalité par deux sans lui
+rendre une minute de sommeil**. Le gradient que descend le solveur doit être le
+déficit lui-même : la journée est donc agrégée d'abord (`max(fin)` d'un côté,
+`min(début)` de l'autre), puis les deux journées jointes sur la clé
+d'adjacence. Un soir coupé en deux est couvert par le même geste — seule la
+dernière vacation de la soirée décide si la journée a fermé tard.
+
+`reposQuotidienMinimal` peut se permettre la forme par paires, elle : c'est un
+plancher binaire, pas une magnitude, et toute paire non contraignante a un
+écart plus grand qui la fait sortir du filtre.
+
 ### Pourquoi 22 h et 10 h
 
 10 h et non 9 h, et c'est l'arbitrage le moins évident de la règle. Avec un seuil
@@ -745,6 +763,40 @@ légal d'un majeur, que la règle refuse par construction de facturer. Le seul
 couple qu'elle aurait attrapé sur un planning licite est le point exact
 22 h → 9 h : une règle inerte, livrée pour rien. À 10 h, la bande utile est
 `[11 h, 12 h[` : exactement le motif de l'issue #78, et rien d'autre.
+
+### Ce qu'elle coûte, mesuré
+
+Deux résolutions par scénario, même graine (0) et même budget (480 s), la règle
+active puis désactivée par `ConstraintToggle` — le plan obtenu sans elle étant
+ensuite **re-noté avec**, pour savoir ce qu'il aurait coûté.
+
+Sur **`festival-realiste-canicule`** (la fixture réelle anonymisée : 153
+animateurs, 65 stands, 16 jours, grille 9 h-0 h), la règle a de quoi mordre :
+
+| Règle (medium) | Avec | Sans (re-noté avec) | Écart |
+| --- | ---: | ---: | ---: |
+| `eviterFermeturePuisOuverture` | −600 | −8 700 | **−8 100** |
+| `eviterRoulementStandsPremium` | −264 | −238 | +26 |
+| `standComplexeAvecReferent` | −626 | −585 | +41 |
+| `appreciationIncompatible` | −115 | −74 | +41 |
+| `limiterTypologiesDistinctesParAnimateur` | −11 | −9 | +2 |
+| *Tout le reste* (charge, souhaits, mineurs, premium) | | | *inchangé* |
+
+**8 100 points de clopening supprimés — 93 % — pour 110 points payés aux neuf
+autres règles.** Les 8 700 points du plan libre sont 8 700 minutes de repos
+manquant, soit 145 heures étalées sur seize jours ; il en reste 10 heures. La
+tension redoutée avec la continuité sur stand premium est réelle et **chiffrée
+à 26 points**, l'essentiel du prix allant en fait au référent et à
+l'appréciation. Le débit du solveur baisse de 1,4 % (5 844 contre 5 925
+évaluations/s).
+
+Sur **`scenario-complet`**, la règle vaut **0 des deux côtés** : aucun créneau
+du fichier ne commence avant 11 h, donc aucune journée n'y ouvre tôt et la règle
+ne peut structurellement pas se déclencher, quelle que soit l'affectation. Les
+31 points d'écart en medium entre les deux résolutions (−4 402 contre −4 371,
+0,7 %) ne sont pas son arbitrage mais le bruit de 3,4 % de débit en moins. À
+retenir pour lire une prochaine mesure : ce scénario ne peut pas répondre à la
+question, et un chiffre nul y est un artefact de grille, pas un verdict.
 
 ### La tension avec la continuité sur stand premium
 

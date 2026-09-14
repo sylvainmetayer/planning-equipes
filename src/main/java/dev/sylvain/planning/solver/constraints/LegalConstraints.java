@@ -625,8 +625,15 @@ public final class LegalConstraints {
 
     /** Minimum consecutive daily rest applicable to this animateur (art. L3131-1 / L3164-1). */
     static int reposQuotidienMinimal(PosteAffectation poste) {
-        Animateur animateur = poste.getAnimateur();
-        LocalDate date = poste.getCreneau().getDate();
+        return reposQuotidienMinimal(poste.getAnimateur(), poste.getCreneau().getDate());
+    }
+
+    /**
+     * Same floor, from the animateur and the day alone: {@code QualiteConstraints}
+     * measures {@code eviterFermeturePuisOuverture} against it from a tuple that
+     * aggregates a whole day rather than from one poste.
+     */
+    static int reposQuotidienMinimal(Animateur animateur, LocalDate date) {
         if (animateur.isUnder16On(date)) {
             return PlafondsLegauxMineurs.REPOS_QUOTIDIEN_MIN_MOINS_DE_16_ANS_MINUTES;
         }

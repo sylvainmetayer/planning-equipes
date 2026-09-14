@@ -17,6 +17,8 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
@@ -345,13 +347,12 @@ public final class QualiteConstraints {
     }
 
     /**
-     * Closing one night and opening the next morning (issue #78). An animateur
-     * whose vacation ends late — at or after
-     * {@link ParametresQualite#heureServiceTardif()} — and who starts again
-     * early the next day — at or before
-     * {@link ParametresQualite#heureServiceMatinal()} — is penalised by every
-     * minute of rest missing from
-     * {@link ParametresQualite#reposSouhaiteApresServiceTardifMinutes()}.
+     * Closing one night and opening the next morning (issue #78). When the day's
+     * work ends late — at or after {@link ParametresQualite#heureServiceTardif()}
+     * — and the next day's work starts early — at or before
+     * {@link ParametresQualite#heureServiceMatinal()} — every minute of rest
+     * missing from {@link ParametresQualite#reposSouhaiteApresServiceTardifMinutes()}
+     * is penalised.
      *
      * <p><b>Not a second legal floor.</b> The minutes below the daily rest the
      * Code du travail owes this animateur are
@@ -361,27 +362,35 @@ public final class QualiteConstraints {
      * prices the stretch between what the law demands and what the organiser
      * would prefer. Two consequences worth stating. A plan already illegal is
      * not penalised twice for the same minutes; and where the legal floor is
-     * already at or above the wished rest — a minor owed 12 h, a
-     * under-16 owed 14 h — this rule is silent, because there is nothing left
-     * for it to ask. That is the whole reason it is MEDIUM and lives under
-     * « Qualité d'organisation »: it expresses a preference, and the law is
-     * elsewhere, held hard.</p>
+     * already at or above the wished rest — a minor owed 12 h, an under-16 owed
+     * 14 h — this rule is silent, because there is nothing left for it to ask.
+     * That is the whole reason it is MEDIUM and lives under « Qualité
+     * d'organisation »: it expresses a preference, and the law is elsewhere,
+     * held hard.</p>
      *
-     * <p>Both ends are compared as <b>instants anchored on the vacation's own
+     * <p><b>One night, one penalty</b>, which is why this joins {@link Journee}
+     * tuples rather than postes. A night's rest is a single quantity — the last
+     * end of day J to the first start of day J+1 — and a pairwise join bills it
+     * once per (late poste, early poste) couple: an animateur restarting at
+     * 08:00 and again at 10:00 paid twice for one night, and dropping the 10:00
+     * seat halved the penalty without giving them a minute more sleep. The
+     * gradient the solver descends has to be the deficit itself, so the day is
+     * aggregated first: {@code max(fin)} on one side, {@code min(début)} on the
+     * other, and the pair of days joined on the adjacency key. A split closing
+     * is covered by the same move — only the last vacation of the evening
+     * decides whether the day closed late.</p>
+     *
+     * <p>Both ends are compared as <b>instants anchored on the day's own
      * date</b>, not as clock times: a closing shift running 20:00 → 00:30 ends
      * at 00:30 on the <i>next</i> calendar day, and reading its
      * {@code LocalTime} alone would score it earlier than the morning it
      * actually pushed into. The rule exists for exactly those shifts, so
      * reading them wrong would have made it inert on its own subject.</p>
      *
-     * <p>Directional {@code .join()} on the day-adjacency key, the shape and
-     * the reasons of {@link LegalConstraints#reposQuotidienMinimal}: the key is
-     * asymmetric, {@code forEachUniquePair} would test one arbitrary ordering
-     * per pair and miss half the violations, and the join enumerates both
-     * orderings of which only one can match — so there is no double count of a
-     * pair. A day genuinely holding <i>two</i> late vacations (a split closing)
-     * does pay for each of them; that is a magnitude, like every gradient rule
-     * here, and the ordinary case — one closing, one opening — pays once.</p>
+     * <p>Adjacency is {@code jour + 1}, the key of
+     * {@link LegalConstraints#reposQuotidienMinimal}: {@code Creneau.assignerJours}
+     * numbers days from the earliest date, so consecutive numbers are
+     * consecutive dates even across a day nobody opened.</p>
      *
      * <p>Tension worth knowing, and left to the weights rather than resolved in
      * code: on a stand that opens and closes every day,
@@ -392,37 +401,60 @@ public final class QualiteConstraints {
      */
     private Constraint eviterFermeturePuisOuverture(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
-                        constraintFactory
-                                .forEach(PosteAffectation.class)
-                                .filter(poste -> poste.getAnimateur() != null && LegalConstraints.horaireConnu(poste))
+                        journees(constraintFactory)
                                 .join(
-                                        PosteAffectation.class,
-                                        Joiners.equal(PosteAffectation::getAnimateur),
-                                        Joiners.equal(
-                                                veille -> veille.getCreneau().getJour() + 1,
-                                                lendemain ->
-                                                        lendemain.getCreneau().getJour())),
+                                        journees(constraintFactory),
+                                        Joiners.equal(Journee::animateur),
+                                        Joiners.equal(veille -> veille.jour() + 1, Journee::jour)),
                         "eviterFermeturePuisOuverture")
-                .filter((veille, lendemain) -> LegalConstraints.horaireConnu(lendemain))
                 .join(ParametresQualite.class)
                 .filter((veille, lendemain, parametres) -> parametres.penaliseFermeturePuisOuverture()
-                        && serviceTardif(veille, parametres)
-                        && serviceMatinal(lendemain, parametres)
+                        && fermetureTardive(veille, parametres)
+                        && ouvertureMatinale(lendemain, parametres)
                         && reposManquant(veille, lendemain, parametres) > 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, QualiteConstraints::reposManquant)
                 .asConstraint("eviterFermeturePuisOuverture");
     }
 
-    /** True when this vacation ends at or after the late hour of its own day — midnight crossings included. */
-    private static boolean serviceTardif(PosteAffectation poste, ParametresQualite parametres) {
-        return !LegalConstraints.fin(poste)
-                .isBefore(LocalDateTime.of(poste.getCreneau().getDate(), parametres.heureServiceTardif()));
+    /**
+     * One tuple per (animateur, day worked): when that day's work starts, and
+     * when it ends. Both are instants, so a vacation running past midnight ends
+     * on the following date — see {@link LegalConstraints#fin}.
+     */
+    private static UniConstraintStream<Journee> journees(ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(PosteAffectation.class)
+                .filter(poste -> poste.getAnimateur() != null && LegalConstraints.horaireConnu(poste))
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getJour(),
+                        ConstraintCollectors.min(LegalConstraints::debut),
+                        ConstraintCollectors.max(LegalConstraints::fin))
+                .map(Journee::new);
     }
 
-    /** True when this vacation starts at or before the early hour of its own day. */
-    private static boolean serviceMatinal(PosteAffectation poste, ParametresQualite parametres) {
-        return !LegalConstraints.debut(poste)
-                .isAfter(LocalDateTime.of(poste.getCreneau().getDate(), parametres.heureServiceMatinal()));
+    /**
+     * An animateur's working day, folded to its two ends.
+     *
+     * @param debut first instant worked. Its date is the day's own: every
+     *              créneau sharing a {@code jour} shares a date, and a vacation
+     *              always starts on that date even when it ends after midnight
+     */
+    private record Journee(Animateur animateur, int jour, LocalDateTime debut, LocalDateTime fin) {
+
+        LocalDate date() {
+            return debut.toLocalDate();
+        }
+    }
+
+    /** True when the day's work ends at or after the late hour of that day. */
+    private static boolean fermetureTardive(Journee journee, ParametresQualite parametres) {
+        return !journee.fin().isBefore(LocalDateTime.of(journee.date(), parametres.heureServiceTardif()));
+    }
+
+    /** True when the day's work starts at or before the early hour of that day. */
+    private static boolean ouvertureMatinale(Journee journee, ParametresQualite parametres) {
+        return !journee.debut().isAfter(LocalDateTime.of(journee.date(), parametres.heureServiceMatinal()));
     }
 
     /**
@@ -431,11 +463,11 @@ public final class QualiteConstraints {
      * constraint's javadoc for why the minutes under the floor belong to
      * {@code reposQuotidienMinimal} alone.
      */
-    private static int reposManquant(
-            PosteAffectation veille, PosteAffectation lendemain, ParametresQualite parametres) {
-        int reposCompte = Math.max(
-                LegalConstraints.gapMinutes(veille, lendemain), LegalConstraints.reposQuotidienMinimal(veille));
-        return Math.max(0, parametres.reposSouhaiteApresServiceTardifMinutes() - reposCompte);
+    private static int reposManquant(Journee veille, Journee lendemain, ParametresQualite parametres) {
+        long gap = Duration.between(veille.fin(), lendemain.debut()).toMinutes();
+        int plancherLegal = LegalConstraints.reposQuotidienMinimal(veille.animateur(), veille.date());
+        long reposCompte = Math.max(gap, plancherLegal);
+        return (int) Math.max(0, parametres.reposSouhaiteApresServiceTardifMinutes() - reposCompte);
     }
 
     /**

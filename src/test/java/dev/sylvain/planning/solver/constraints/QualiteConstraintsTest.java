@@ -754,6 +754,51 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
+    void plusieursReprisesMatinalesNeFacturentQuUneNuit() {
+        // The bug a pairwise join shipped: the rest of one night is a single
+        // quantity, and billing it once per (late, early) couple charged 120
+        // for the 60 minutes actually missing. Dropping the 10:00 seat must not
+        // halve the penalty either — the animateur still restarts at 08:00.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-SOIR", 1, D1, 18, 23, a1),
+                        vacation("J2-TOT", 2, D2, 8, 10, a1),
+                        vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void unSoirCoupeEnDeuxNeFactureQuUneNuit() {
+        // The same on the other side: only the last vacation of the evening
+        // decides when the day closed, so a split closing pays once.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-DEBUT-SOIR", 1, D1, 18, 22, a1),
+                        vacation("J1-FIN-SOIR", 1, D1, 22, 23, a1),
+                        vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void uneJourneeQuiSeTermineTotNeFermePasTard() {
+        // The day's LAST vacation is what closes it: an early one ending after
+        // 22:00 would be a contradiction, but a late-afternoon shift following
+        // a long morning must not be read through the morning's own end.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-MATIN", 1, D1, 8, 12, a1),
+                        vacation("J1-APREM", 1, D1, 14, 19, a1),
+                        vacation("J2-MATIN", 2, D2, 8, 12, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
     void deuxJourneesNonConsecutivesNeSontJamaisAppariees() {
         Animateur a1 = majeurAutonome("A1");
         verify("eviterFermeturePuisOuverture")
