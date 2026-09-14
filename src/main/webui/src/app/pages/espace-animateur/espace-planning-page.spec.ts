@@ -364,6 +364,12 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     return fixture.nativeElement as HTMLElement;
   }
 
+  /** Clicks the folded title: the list of changes opens (or closes) on it. */
+  async function deplierChangements(): Promise<void> {
+    racine().querySelector<HTMLButtonElement>('.espace-changements-bascule')!.click();
+    await fixture.whenStable();
+  }
+
   afterEach(() => {
     vi.useRealTimers();
   });
@@ -384,6 +390,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     );
 
     const bandeau = racine().querySelector('.espace-changements')!;
+    await deplierChangements();
     expect(
       Array.from(bandeau.querySelectorAll('li')).map((each) => each.textContent!.trim()),
     ).toEqual([
@@ -427,7 +434,29 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     // stays after being answered stops alerting about anything.
     const bandeau = racine().querySelector('.espace-changements')!;
     expect(bandeau.classList).toContain('espace-changements-actes');
+    await deplierChangements();
     expect(bandeau.querySelectorAll('li')).toHaveLength(1);
+  });
+
+  it('replie les changements par défaut, en disant combien il y en a', async () => {
+    const changements = [
+      'samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h',
+      'dimanche 12/07 : Kubb 10h-12h (nouveau)',
+      'lundi 13/07 : Molkky 10h-12h (retiré)',
+    ];
+    await rendre(new Date(2026, 6, 11, 9, 0), view({ postes: [poste()], changements }));
+
+    const bascule = racine().querySelector<HTMLButtonElement>('.espace-changements-bascule')!;
+    expect(bascule.textContent).toContain('(3)');
+    expect(bascule.getAttribute('aria-expanded')).toBe('false');
+    expect(racine().querySelectorAll('.espace-changements li')).toHaveLength(0);
+
+    await deplierChangements();
+    expect(bascule.getAttribute('aria-expanded')).toBe('true');
+    expect(racine().querySelectorAll('.espace-changements li')).toHaveLength(3);
+
+    await deplierChangements();
+    expect(racine().querySelectorAll('.espace-changements li')).toHaveLength(0);
   });
 
   /* ---------------------- The place (#534) ---------------------- */

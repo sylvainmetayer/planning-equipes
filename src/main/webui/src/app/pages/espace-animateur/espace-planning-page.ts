@@ -197,6 +197,17 @@ export class EspacePlanningPage {
     () => this.espace.view()?.statutConfirmation === 'CONFIRME',
   );
 
+  /**
+   * Folded by default: a republication touching ten seats put ten lines above
+   * the first day card on a phone. The title carries the count, so folded
+   * still says that something changed and how much.
+   */
+  protected readonly changementsDeplies = signal(false);
+
+  protected basculerChangements(): void {
+    this.changementsDeplies.update((deplie) => !deplie);
+  }
+
   /* ---------- The « now » marker (issue #535) ---------- */
 
   /**

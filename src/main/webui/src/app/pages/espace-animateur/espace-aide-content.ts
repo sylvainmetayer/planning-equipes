@@ -125,7 +125,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.planning.changements:Quand l'organisation republie et que vos journées bougent, le bandeau « Ce qui a changé pour vous » reprend, au-dessus de vos journées, les phrases exactes du message qui vous a été envoyé — vous pouvez donc lire ce qui a changé ici même si ce message vous a échappé. Il s'efface en arrière-plan une fois votre présence confirmée. Vos demandes d'échange, elles, restent sur leur onglet : c'est là qu'elles portent leur réponse du moment.`,
+          text: $localize`:@@espace.aide.planning.changements:Quand l'organisation republie et que vos journées bougent, le bandeau « Ce qui a changé pour vous » reprend, au-dessus de vos journées, les phrases exactes du message qui vous a été envoyé — vous pouvez donc lire ce qui a changé ici même si ce message vous a échappé. Il est replié par défaut, avec le nombre de changements dans son titre : touchez-le pour les lire. Il s'efface en arrière-plan une fois votre présence confirmée. Vos demandes d'échange, elles, restent sur leur onglet : c'est là qu'elles portent leur réponse du moment.`,
         },
         {
           kind: 'paragraph',

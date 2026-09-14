@@ -57,22 +57,36 @@
   publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
   que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne
   peut pas demander de confirmer ce qu'on n'a pas montré.
+  Replié par défaut : une republication qui touche dix postes faisait dix
+  lignes avant la première journée, sur un téléphone. Le titre dit combien il
+  y en a, un geste les ouvre.
 -->
 @if (changements().length > 0) {
   <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
            aria-labelledby="espace-changements-titre">
     <h2 id="espace-changements-titre" class="espace-changements-titre">
-      <mat-icon inline>campaign</mat-icon>
-      <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous</span>
+      <button type="button" class="espace-changements-bascule"
+              [attr.aria-expanded]="changementsDeplies()" aria-controls="espace-changements-detail"
+              (click)="basculerChangements()">
+        <mat-icon inline>campaign</mat-icon>
+        <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous ({{ changements().length }})</span>
+        <mat-icon inline>{{ changementsDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
+      </button>
     </h2>
     @if (espace.view()?.changementsLe; as annonceLe) {
       <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
     }
-    <ul class="espace-changements-lignes">
-      @for (ligne of changements(); track $index) {
-        <li>{{ ligne }}</li>
+    <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que désigne
+         l'`aria-controls` du bouton ci-dessus. -->
+    <div id="espace-changements-detail">
+      @if (changementsDeplies()) {
+        <ul class="espace-changements-lignes">
+          @for (ligne of changements(); track $index) {
+            <li>{{ ligne }}</li>
+          }
+        </ul>
       }
-    </ul>
+    </div>
   </section>
 }
 
