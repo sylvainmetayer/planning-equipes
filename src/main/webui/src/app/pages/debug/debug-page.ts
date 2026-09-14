@@ -157,15 +157,15 @@ export class DebugPage {
    */
   protected async onDateDuJour(valeur: string): Promise<void> {
     // Clearing the date clears the time: a time alone is refused server-side.
-    await this.enregistrerHorloge(valeur, valeur ? this.dates.heureDuJour() : '');
+    await this.saveHorloge(valeur, valeur ? this.dates.heureMock() : '');
   }
 
   /** Same save on change; an empty time gives the wall clock back its hours. */
-  protected async onHeureDuJour(valeur: string): Promise<void> {
-    await this.enregistrerHorloge(this.dates.dateDuJour(), valeur ?? '');
+  protected async onHeureMock(valeur: string): Promise<void> {
+    await this.saveHorloge(this.dates.dateDuJour(), valeur ?? '');
   }
 
-  private async enregistrerHorloge(date: string, heure: string): Promise<void> {
+  private async saveHorloge(date: string, heure: string): Promise<void> {
     this.dateDuJourErreur.set('');
     try {
       await this.dates.set(date, heure);

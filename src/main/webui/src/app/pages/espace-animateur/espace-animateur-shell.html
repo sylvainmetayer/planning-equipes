@@ -8,8 +8,8 @@
   @if (espace.view()?.dateDuJourFigee; as dateFigee) {
     @let heureFigee = espace.view()?.heureDuJourFigee?.slice(0, 5) ?? '';
     <span class="espace-date-figee" role="status"
-          [matTooltip]="infobulleDateFigee(dateFigee, heureFigee)"
-          [attr.aria-label]="infobulleDateFigee(dateFigee, heureFigee)">
+          [matTooltip]="infobulleHorloge(dateFigee, heureFigee)"
+          [attr.aria-label]="infobulleHorloge(dateFigee, heureFigee)">
       <mat-icon inline>hourglass_disabled</mat-icon>
       <span>{{ dateFigee | date: 'dd/MM' }} {{ heureFigee }}</span>
     </span>

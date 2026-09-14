@@ -81,13 +81,13 @@ describe('DateMockService', () => {
     await service.set('2026-07-08', '14:30');
 
     expect(api.put.mock.calls[0][1]).toEqual({ dateDuJour: '2026-07-08', heureDuJour: '14:30' });
-    expect(service.heureDuJour()).toBe('14:30');
+    expect(service.heureMock()).toBe('14:30');
     expect(service.libelle()).toBe('2026-07-08 14:30');
 
     await service.set('', '14:30');
 
     expect(api.put.mock.calls[1][1]).toEqual({ dateDuJour: null, heureDuJour: null });
-    expect(service.heureDuJour()).toBe('');
+    expect(service.heureMock()).toBe('');
   });
 
   /**

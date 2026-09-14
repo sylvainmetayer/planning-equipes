@@ -27,12 +27,17 @@ export class DateMockService {
   /** The frozen date (`AAAA-MM-JJ`), or `''` when the real clock is in use. */
   private readonly _dateDuJour = signal('');
   readonly dateDuJour = this._dateDuJour.asReadonly();
-  /** The frozen time of day (`HH:mm`), or `''` while the wall clock gives it. */
-  private readonly _heureDuJour = signal('');
-  readonly heureDuJour = this._heureDuJour.asReadonly();
+  /**
+   * The frozen time of day (`HH:mm`), or `''` while the wall clock gives it.
+   *
+   * Named for what it is rather than after its wire key: « du » is a French
+   * function word, which a declared name of this repository does not carry.
+   */
+  private readonly _heureMock = signal('');
+  readonly heureMock = this._heureMock.asReadonly();
   /** `2026-07-08` or `2026-07-08 14:30` — what the warnings print. */
   readonly libelle = computed(() =>
-    [this.dateDuJour(), this.heureDuJour()].filter(Boolean).join(' '),
+    [this.dateDuJour(), this.heureMock()].filter(Boolean).join(' '),
   );
   /** Whether this server would accept a frozen date at all. */
   private readonly _modifiable = signal(false);
@@ -69,7 +74,7 @@ export class DateMockService {
 
   private apply(view: DateJourJView): void {
     this._dateDuJour.set(view.dateDuJour ?? '');
-    this._heureDuJour.set(view.heureDuJour ?? '');
+    this._heureMock.set(view.heureDuJour ?? '');
     this._modifiable.set(view.modifiable);
   }
 }

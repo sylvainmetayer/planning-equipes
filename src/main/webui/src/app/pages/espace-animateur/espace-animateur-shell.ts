@@ -77,7 +77,7 @@ export class EspaceAnimateurShell {
     }
   }
 
-  protected infobulleDateFigee(date: string, heure: string): string {
+  protected infobulleHorloge(date: string, heure: string): string {
     const moment = heure ? `${date} ${heure}` : date;
     return $localize`:@@espace.dateFigee:MOCK — la date du jour est figée au ${moment}:date: sur ce serveur : « Aujourd'hui » et les journées passées se lisent sur ce moment-là, pas sur celui du téléphone.`;
   }

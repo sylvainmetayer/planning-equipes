@@ -28,7 +28,7 @@ describe('DebugPage — date du jour', () => {
   let fixture: ComponentFixture<DebugPage>;
   let dates: {
     dateDuJour: ReturnType<typeof signal<string>>;
-    heureDuJour: ReturnType<typeof signal<string>>;
+    heureMock: ReturnType<typeof signal<string>>;
     modifiable: ReturnType<typeof signal<boolean>>;
     actif: () => boolean;
     set: ReturnType<typeof vi.fn>;
@@ -43,16 +43,16 @@ describe('DebugPage — date du jour', () => {
     } = {},
   ): Promise<void> {
     const dateDuJour = signal(options.dateDuJour ?? '');
-    const heureDuJour = signal(options.heureDuJour ?? '');
+    const heureMock = signal(options.heureDuJour ?? '');
     const modifiable = signal(options.modifiable ?? true);
     dates = {
       dateDuJour,
-      heureDuJour,
+      heureMock,
       modifiable,
       actif: () => dateDuJour() !== '',
       set: vi.fn(async (date: string, heure = '') => {
         dateDuJour.set(date);
-        heureDuJour.set(date ? heure : '');
+        heureMock.set(date ? heure : '');
       }),
     };
     TestBed.resetTestingModule();

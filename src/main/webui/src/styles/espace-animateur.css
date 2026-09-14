@@ -28,7 +28,7 @@
   }
 }
 
-/* Développement seulement : date du jour figée sur le serveur. */
+/* Development only: the server's notion of today, frozen. */
 .espace-date-figee {
   display: inline-flex;
   align-items: center;
@@ -326,7 +326,7 @@ app-espace-animateur-shell {
   font: var(--mat-sys-title-small);
 }
 
-/* Le titre entier est la cible : un bouton nu qui garde la typographie du titre. */
+/* The whole heading is the target: a bare button that keeps the heading's type. */
 .espace-changements-bascule {
   display: inline-flex;
   align-items: center;

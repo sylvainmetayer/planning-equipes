@@ -119,8 +119,8 @@
           type="time"
           name="heureDuJour"
           [disabled]="!dates.actif()"
-          [ngModel]="dates.heureDuJour()"
-          (ngModelChange)="onHeureDuJour($event)"
+          [ngModel]="dates.heureMock()"
+          (ngModelChange)="onHeureMock($event)"
         />
       </mat-form-field>
       @if (dateDuJourErreur()) {
