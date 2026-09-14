@@ -639,4 +639,184 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         }
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
     }
+
+    /* ------------------ eviterFermeturePuisOuverture (#78) ------------------ */
+    //
+    // Thresholds travel as a ParametresQualite problem fact, so each test states
+    // the ones it exercises instead of depending on the configured defaults.
+    // ANTI_CLOPENING repeats those defaults on purpose: 22:00, 10:00, 12 h — the
+    // very case the issue was opened on (closing at 23:00, restarting at 10:00).
+    //
+    // Reference arithmetic for an adult, whose legal floor is 11 h (660 min):
+    // the rule prices only what the wished 12 h (720 min) asks BEYOND that
+    // floor, so its largest possible penalty here is 60.
+
+    private static final ParametresQualite ANTI_CLOPENING =
+            new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 12 * 60);
+
+    private PosteAffectation vacation(String id, int jour, java.time.LocalDate date, int debut, int fin, Animateur a) {
+        return poste(standStrat, creneau(id, jour, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0)), a);
+    }
+
+    @Test
+    void fermerTardPuisOuvrirTotEstPenaliseParLesMinutesManquantAuReposSouhaite() {
+        // 23:00 -> 10:00 = 11 h: lawful to the minute, and exactly the pattern
+        // the rule exists to flag. 720 wished - 660 legal floor = 60.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void leMemeEnchainementNeViolePasLeReposQuotidienLegal() {
+        // The counterpart of the test above: the hard rule sees nothing, which
+        // is precisely what makes the soft one worth having.
+        Animateur a1 = majeurAutonome("A1");
+        verify("reposQuotidienMinimal")
+                .given(vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void fermerTardDeuxSoirsDeSuiteNEstPasPenalise() {
+        // late -> late: the restart is not an early one, so nothing is owed.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-SOIR", 2, D2, 18, 23, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void ouvrirDeuxMatinsDeSuiteNEstPasPenalise() {
+        // early -> early: the day before does not close, so nothing is owed either.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-MATIN", 1, D1, 8, 12, a1), vacation("J2-MATIN", 2, D2, 8, 12, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void fermerTardPuisOuvrirAvecLeReposSouhaiteNEstPasPenalise() {
+        // 22:00 -> 10:00 = 12 h: the wished rest is reached, to the minute.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-SOIR", 1, D1, 18, 22, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void uneVacationQuiFranchitMinuitCompteCommeUnServiceTardif() {
+        // 20:00 -> 00:00: read as a clock time (00:00) this vacation would pass
+        // for an early one. Read as an instant, it does close day 1. The gap
+        // 00:00 -> 10:00 is 10 h, under the legal floor, and the rule still
+        // prices only the 60 minutes standing above that floor.
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        poste(standStrat, nuit("J1-NUIT", 1, D1), a1),
+                        vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void leReposSousLePlancherLegalResteCompteParLaRegleDure() {
+        // 23:00 -> 08:00 = 9 h. The soft rule bills 720 - 660 = 60, never
+        // 720 - 540: the minutes under the floor belong to the hard rule, which
+        // bills them in full (660 - 540 = 120).
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-TOT", 2, D2, 8, 12, a1))
+                .penalizesBy(60);
+
+        verify("reposQuotidienMinimal")
+                .given(vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-TOT", 2, D2, 8, 12, a1))
+                .penalizesBy(120);
+    }
+
+    @Test
+    void laRegleEstMuettePourUnMineurDontLaLoiExigeDejaAutant() {
+        // A 16-to-18 minor is owed 12 h of daily rest: the wish adds nothing to
+        // that, and the soft rule goes entirely silent. What is missing here —
+        // 60 minutes — is caught by reposQuotidienMinimal, hard.
+        Animateur mineur = mineurDebutant("M1");
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-SOIR", 1, D1, 18, 22, mineur),
+                        vacation("J2-MATIN", 2, D2, 9, 13, mineur))
+                .penalizesBy(0);
+
+        verify("reposQuotidienMinimal")
+                .given(vacation("J1-SOIR", 1, D1, 18, 22, mineur), vacation("J2-MATIN", 2, D2, 9, 13, mineur))
+                .penalizesBy(60);
+    }
+
+    @Test
+    void deuxJourneesNonConsecutivesNeSontJamaisAppariees() {
+        Animateur a1 = majeurAutonome("A1");
+        verify("eviterFermeturePuisOuverture")
+                .given(ANTI_CLOPENING, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J3-MATIN", 3, D3, 10, 14, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxAnimateursDifferentsNeSontJamaisApparies() {
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-SOIR", 1, D1, 18, 23, majeurAutonome("A1")),
+                        vacation("J2-MATIN", 2, D2, 10, 14, majeurAutonome("A2")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void desSiegesNonPourvusNeSontJamaisApparies() {
+        // Two empty seats share a null animateur: without the guard the join
+        // would pair them and the rule would grade an unsolved plan.
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        ANTI_CLOPENING,
+                        vacation("J1-SOIR", 1, D1, 18, 23, null),
+                        vacation("J2-MATIN", 2, D2, 10, 14, null))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void uneHeureDeSeuilAbsenteRendLaRegleInerte() {
+        Animateur a1 = majeurAutonome("A1");
+        ParametresQualite sansSeuilTardif = new ParametresQualite(3, null, LocalTime.of(10, 0), 12 * 60);
+        ParametresQualite sansSeuilMatinal = new ParametresQualite(3, LocalTime.of(22, 0), null, 12 * 60);
+
+        verify("eviterFermeturePuisOuverture")
+                .given(sansSeuilTardif, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+        verify("eviterFermeturePuisOuverture")
+                .given(
+                        sansSeuilMatinal,
+                        vacation("J1-SOIR", 1, D1, 18, 23, a1),
+                        vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unReposSouhaiteSousLePlancherLegalRendLaRegleInerte() {
+        // 10 h wished where the law demands 11: there is nothing left to ask
+        // for, and the rule must above all not become a second floor.
+        Animateur a1 = majeurAutonome("A1");
+        ParametresQualite souhaitTropBas = new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 10 * 60);
+        verify("eviterFermeturePuisOuverture")
+                .given(souhaitTropBas, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unReposSouhaiteNulRendLaRegleInerte() {
+        Animateur a1 = majeurAutonome("A1");
+        ParametresQualite desactivee = new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 0);
+        verify("eviterFermeturePuisOuverture")
+                .given(desactivee, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
+                .penalizesBy(0);
+    }
 }

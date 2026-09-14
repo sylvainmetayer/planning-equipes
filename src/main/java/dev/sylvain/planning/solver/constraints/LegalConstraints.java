@@ -593,8 +593,15 @@ public final class LegalConstraints {
     }
 
     /* ------------------------------ helpers ------------------------------- */
+    //
+    // The five below are package-private rather than private: QualiteConstraints
+    // reads them for `eviterFermeturePuisOuverture`, whose whole point is to be
+    // measured against the legal daily rest this class holds. Duplicating them
+    // there would let the comfort rule and the hard rule drift apart on what a
+    // vacation's window, and what an animateur's floor, actually are — which is
+    // precisely the overlap issue #78 asks not to create.
 
-    private static boolean horaireConnu(PosteAffectation poste) {
+    static boolean horaireConnu(PosteAffectation poste) {
         return poste.getCreneau() != null
                 && poste.getCreneau().getDate() != null
                 && poste.getCreneau().getHeureDebut() != null;
@@ -607,17 +614,17 @@ public final class LegalConstraints {
      * {@code Creneau#segmentsOuvertsMinutes}). The date always comes from the
      * créneau: a partial closure narrows the clock time, never the day.
      */
-    private static LocalDateTime debut(PosteAffectation poste) {
+    static LocalDateTime debut(PosteAffectation poste) {
         return LocalDateTime.of(poste.getCreneau().getDate(), poste.heureDebutEffectif());
     }
 
     /** End instant, derived from the effective duration so a window crossing midnight ends the next day. */
-    private static LocalDateTime fin(PosteAffectation poste) {
+    static LocalDateTime fin(PosteAffectation poste) {
         return debut(poste).plusMinutes(poste.getDureeEffectiveMinutes());
     }
 
     /** Minimum consecutive daily rest applicable to this animateur (art. L3131-1 / L3164-1). */
-    private static int reposQuotidienMinimal(PosteAffectation poste) {
+    static int reposQuotidienMinimal(PosteAffectation poste) {
         Animateur animateur = poste.getAnimateur();
         LocalDate date = poste.getCreneau().getDate();
         if (animateur.isUnder16On(date)) {
@@ -629,7 +636,7 @@ public final class LegalConstraints {
     }
 
     /** Rest, in minutes, between the end of {@code veille} and the start of {@code lendemain}. */
-    private static int gapMinutes(PosteAffectation veille, PosteAffectation lendemain) {
+    static int gapMinutes(PosteAffectation veille, PosteAffectation lendemain) {
         return (int) Duration.between(fin(veille), debut(lendemain)).toMinutes();
     }
 

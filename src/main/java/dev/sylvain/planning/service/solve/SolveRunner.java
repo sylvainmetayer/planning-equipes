@@ -8,7 +8,6 @@ import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.FenetreRepas;
-import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
@@ -128,7 +127,7 @@ final class SolveRunner {
         problem.setAffectationsPubliees(affectationsPubliees());
         // Server-side configuration, like the weights below: always overwritten
         // so a caller cannot loosen a quality threshold by sending its own.
-        problem.setParametresQualite(List.of(new ParametresQualite(configuration.maxEmplacementsParJour())));
+        problem.setParametresQualite(List.of(configuration.parametresQualite()));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
         problem.setPonderationsContraintes(configuration.constraintWeightOverrides(problem.getPonderationsScenario()));

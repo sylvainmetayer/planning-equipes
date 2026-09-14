@@ -3718,10 +3718,20 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes" ],
         "type" : "object",
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "heureServiceTardif" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureServiceMatinal" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "reposSouhaiteApresServiceTardifMinutes" : {
             "type" : "integer",
             "format" : "int32"
           }

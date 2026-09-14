@@ -210,6 +210,7 @@ public final class ConstraintFloorRules {
             rule("eviterChangementEmplacementEloigne", Denominator.CONSECUTIVE_PAIRS, null),
             rule("limiterEmplacementsParJour", Denominator.NONE, null),
             rule("eviterEnchainementStandsEpuisants", Denominator.CONSECUTIVE_PAIRS, null),
+            rule("eviterFermeturePuisOuverture", Denominator.NONE, null),
             rule("appreciationIncompatible", Denominator.FILLED_SEATS, MissingData.APPRECIATIONS),
             rule("souhaitsIncompatibles", Denominator.FILLED_SEATS, MissingData.SOUHAITS),
             rule("limiterTypologiesDistinctesParAnimateur", Denominator.NONE, null),

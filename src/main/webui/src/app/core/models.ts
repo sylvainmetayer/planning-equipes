@@ -687,6 +687,11 @@ export interface ConstraintToggle {
 /** Quality ceilings, imposed by the server's configuration on every solve. */
 export interface ParametresQualite {
   maxEmplacementsDistinctsParJour?: number;
+  /** Heure à partir de laquelle une vacation compte comme tardive (`HH:mm:ss`), vide si la règle est neutralisée. */
+  heureServiceTardif?: string | null;
+  /** Heure jusqu'à laquelle une reprise compte comme matinale (`HH:mm:ss`), vide si la règle est neutralisée. */
+  heureServiceMatinal?: string | null;
+  reposSouhaiteApresServiceTardifMinutes?: number;
 }
 
 export interface HardMediumSoftScore {

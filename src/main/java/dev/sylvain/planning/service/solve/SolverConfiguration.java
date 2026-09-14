@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -59,8 +60,16 @@ final class SolverConfiguration {
      */
     private final Map<String, Integer> configuredWeights;
 
-    /** Cap fed to {@code limiterEmplacementsParJour} through {@link ParametresQualite}. */
-    private final int maxEmplacementsParJour;
+    /**
+     * The quality thresholds every solve carries as a problem fact: the cap of
+     * {@code limiterEmplacementsParJour}, passed in because
+     * {@code PlanningService} has always injected it, and the three anti-clopening
+     * thresholds of {@code eviterFermeturePuisOuverture}, read from
+     * {@code config} here rather than injected — the plain (non-CDI) tests build
+     * the service with {@code new}, and adding three parameters to that
+     * constructor would have rewritten twenty call sites to say nothing.
+     */
+    private final ParametresQualite parametresQualite;
 
     SolverConfiguration(
             Long secondsLimit,
@@ -79,7 +88,7 @@ final class SolverConfiguration {
         this.referenceDataService = referenceDataService;
         this.defaultSecondsLimit = secondsLimit;
         this.defaultUnimprovedSecondsLimit = unimprovedSecondsLimit;
-        this.maxEmplacementsParJour = maxEmplacementsParJour;
+        this.parametresQualite = readParametresQualite(maxEmplacementsParJour, config);
         this.configuredWeights = readConfiguredWeights(config);
     }
 
@@ -91,8 +100,41 @@ final class SolverConfiguration {
         return constraintDiagnosticService;
     }
 
-    int maxEmplacementsParJour() {
-        return maxEmplacementsParJour;
+    ParametresQualite parametresQualite() {
+        return parametresQualite;
+    }
+
+    /**
+     * The {@code planning.contraintes.*} block, read once at startup like the
+     * weights: {@code application.properties} does not change at runtime, and
+     * unlike the legal parameters these are not stored per edition — an edition
+     * that wants {@code eviterFermeturePuisOuverture} quieter doses it through
+     * {@code ponderation_contrainte} instead.
+     *
+     * <p>An hour left blank in the configuration reads as absent, not as
+     * midnight: that is how a deployment neutralises the rule without editing
+     * the catalogue, and {@code LocalTime.parse("")} would otherwise fail the
+     * boot.</p>
+     */
+    private static ParametresQualite readParametresQualite(Integer maxEmplacementsParJour, Config config) {
+        return new ParametresQualite(
+                maxEmplacementsParJour != null
+                        ? maxEmplacementsParJour
+                        : ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                readHeure(config, "planning.contraintes.heure-service-tardif"),
+                readHeure(config, "planning.contraintes.heure-service-matinal"),
+                config.getOptionalValue(
+                                "planning.contraintes.repos-souhaite-apres-service-tardif-minutes", Integer.class)
+                        .orElse(ParametresQualite.REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT));
+    }
+
+    /** A {@code HH:mm} property, {@code null} when unset or left blank. */
+    private static LocalTime readHeure(Config config, String propriete) {
+        return config.getOptionalValue(propriete, String.class)
+                .map(String::strip)
+                .filter(valeur -> !valeur.isEmpty())
+                .map(LocalTime::parse)
+                .orElse(null);
     }
 
     /**

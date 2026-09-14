@@ -217,14 +217,14 @@ sièges pourvus pour `souhaitsIncompatibles`, groupes stand × créneau pour
 `stabiliteDuPlanPublie`… La table est `ConstraintFloorRules`, à côté du
 catalogue, et elle est **exhaustive par test** : une règle medium ou soft
 ajoutée au catalogue sans ligne dans cette table fait échouer
-`ConstraintFloorRulesTest`. Dix règles n'ont pas de lecture par élément et ne
+`ConstraintFloorRulesTest`. Onze règles n'ont pas de lecture par élément et ne
 sont donc jamais un plancher : une seule correspondance agrégée
 (`equilibrerCharge`, `equilibrerCreneauxPenibles`), une récompense
-(`affiniteAdHoc`), et les sept règles qui pénalisent par une **fonction de
+(`affiniteAdHoc`), et les huit règles qui pénalisent par une **fonction de
 poids** — `repartitionMineursParCreneau`, `eviterRoulementStandsPremium`,
 `limiterEmplacementsParJour`, `limiterTypologiesDistinctesParAnimateur`,
-`maxJoursConsecutifsTravailles`, `coupureRepasAuPlusTot`,
-`preserverBufferPolyvalents`. Pour celles-là le nombre de correspondances est
+`maxJoursConsecutifsTravailles`, `eviterFermeturePuisOuverture`,
+`coupureRepasAuPlusTot`, `preserverBufferPolyvalents`. Pour celles-là le nombre de correspondances est
 un *écart*, pas un booléen par élément : un ratio de 1,0 veut dire « tout le
 monde est en écart d'une quantité que le solveur peut réduire », soit
 l'inverse d'un plancher.
@@ -695,6 +695,68 @@ infaisable ci-dessus, qu'aucun effectif ne sauve.
 L'écran **Problèmes** n'a rien de spécifique à faire : la règle étant dure, ses
 écarts remontent déjà par `ConstraintCatalog.NOMS_DURS`.
 
+## Fermer tard puis ouvrir tôt
+
+`reposQuotidienMinimal` tient le repos quotidien **en dur** : 11 h pour un
+majeur ([L3131-1]), 12 h pour un mineur et 14 h avant 16 ans ([L3164-1]). Un
+animateur qui ferme à 23 h et reprend à 10 h le lendemain respecte les 11 h à la
+minute près. Légalement irréprochable ; sur un festival de quinze jours,
+discutable.
+
+`eviterFermeturePuisOuverture` (MEDIUM, « Qualité d'organisation ») exprime
+cette préférence, et **rien d'autre** : ce n'est pas une obligation du Code du
+travail, et c'est pour cela qu'elle n'est ni dure ni rangée sous « Légal ».
+
+### Ce qu'elle compte, et ce qu'elle refuse de compter
+
+Trois seuils, portés par `ParametresQualite` (configuration de l'application,
+pas la base — voir `docs/domaine.md`) :
+
+| Seuil | Défaut | Réglage |
+| --- | --- | --- |
+| Service tardif — la vacation finit à cette heure ou après | 22 h | `planning.contraintes.heure-service-tardif` |
+| Service matinal — la vacation du lendemain commence à cette heure ou avant | 10 h | `planning.contraintes.heure-service-matinal` |
+| Repos souhaité dans ce cas | 12 h | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` |
+
+La pénalité est le nombre de minutes manquant au repos souhaité, **comptées à
+partir du plancher légal** : `souhaité − max(repos réel, plancher légal)`. La
+formule n'est pas une précaution de style, c'est ce qui empêche la règle de
+devenir un second plancher déguisé :
+
+- un planning déjà illégal n'est **pas facturé deux fois** pour les mêmes
+  minutes — celles sous le plancher restent l'affaire de `reposQuotidienMinimal`,
+  qui les tient en dur ;
+- là où la loi exige déjà autant que le souhait — un mineur, 12 h ; avant 16 ans,
+  14 h —, la règle est **entièrement muette** : il ne lui reste rien à demander ;
+- un repos souhaité réglé au niveau du plancher, ou en dessous, rend la règle
+  inerte. C'est voulu : une préférence qui ne dépasse pas la loi ne dit rien.
+
+Les deux bornes sont comparées **en instant**, pas en heure d'horloge. Une
+vacation 20 h → 00 h finit le lendemain à 0 h : lue comme une heure, elle
+passerait pour matinale alors qu'elle est précisément la fermeture que la règle
+cherche. Le cas est couvert par un test dédié.
+
+### Pourquoi 22 h et 10 h
+
+10 h et non 9 h, et c'est l'arbitrage le moins évident de la règle. Avec un seuil
+matinal à 9 h, une vacation finissant à 22 h ou après et une reprise à 9 h ou
+avant sont **au plus 11 h** l'une de l'autre — soit jamais au-delà du plancher
+légal d'un majeur, que la règle refuse par construction de facturer. Le seul
+couple qu'elle aurait attrapé sur un planning licite est le point exact
+22 h → 9 h : une règle inerte, livrée pour rien. À 10 h, la bande utile est
+`[11 h, 12 h[` : exactement le motif de l'issue #78, et rien d'autre.
+
+### La tension avec la continuité sur stand premium
+
+`eviterRoulementStandsPremium` (MEDIUM) pousse à garder les mêmes têtes sur un
+stand premium ; sur un stand qui ouvre et ferme chaque jour, éviter le
+fermeture → ouverture revient à les faire tourner. Les deux règles sont MEDIUM,
+les deux sont `dosable()` : l'arbitrage se règle **par édition** dans
+`ponderation_contrainte`, pas dans le code. Une édition qui tient à la
+continuité descend le poids de celle-ci ; une édition tendue peut la mettre à
+zéro sans toucher au catalogue, ou vider un des deux seuils dans la
+configuration.
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
@@ -767,6 +829,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `eviterChangementEmplacementEloigne` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent. |
 | `limiterEmplacementsParJour` | MEDIUM | Qualité d'organisation | Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur (plafond réglable, 3 par défaut) : au-delà, la journée est dispersée quelles que soient les distances. |
 | `eviterEnchainementStandsEpuisants` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants sans repos ni stand plus facile entre les deux. |
+| `eviterFermeturePuisOuverture` | MEDIUM | Qualité d'organisation | Après une vacation qui finit tard (22 h par défaut), éviter une reprise matinale le lendemain (10 h par défaut) : on souhaite alors 12 h de repos plutôt que le minimum légal. Préférence d'organisation, pas une obligation du Code du travail : seules les minutes au-dessus du repos quotidien légal sont comptées ici, celles en dessous restent l'affaire de reposQuotidienMinimal, qui les tient en dur. La règle est donc muette quand la loi exige déjà autant (un mineur, 12 h ; avant 16 ans, 14 h). |
 | `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
 | `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble du planning. |
@@ -824,3 +887,5 @@ Chiffres mesurés et protocole dans
 [L3164-3]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-3
 [L3164-5]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-5
 [R3164-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=R3164-1
+[L3131-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3131-1
+[L3164-1]: https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=L3164-1

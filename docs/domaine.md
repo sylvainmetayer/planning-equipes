@@ -654,11 +654,20 @@ sanctionnerait une saisie plutôt qu'un planning.
 pour les seuils qui règlent le **confort** d'un planning et non la loi. C'est un
 `record`, contrairement à `ParametresLegaux` : un fait de problème est immuable
 par nature — le solveur le lit des milliers de fois par seconde et ne l'écrit
-jamais. Il ne porte aujourd'hui qu'un champ :
+jamais.
 
 | Champ | Défaut | Réglage | Contrainte qui le consomme |
 | --- | --- | --- | --- |
 | `maxEmplacementsDistinctsParJour` | 3 | `planning.contraintes.max-emplacements-par-jour` | `limiterEmplacementsParJour` |
+| `heureServiceTardif` | 22 h | `planning.contraintes.heure-service-tardif` | `eviterFermeturePuisOuverture` |
+| `heureServiceMatinal` | 10 h | `planning.contraintes.heure-service-matinal` | `eviterFermeturePuisOuverture` |
+| `reposSouhaiteApresServiceTardifMinutes` | 720 (12 h) | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` | `eviterFermeturePuisOuverture` |
+
+Une heure laissée **vide** dans la configuration se lit comme absente, pas comme
+minuit : c'est ainsi qu'un déploiement neutralise `eviterFermeturePuisOuverture`
+sans toucher au catalogue. Un repos souhaité nul, ou inférieur au plancher légal,
+rend la règle inerte de la même façon — voir `docs/contraintes.md`, section
+*Fermer tard puis ouvrir tôt*.
 
 Différence assumée avec `ParametresLegaux` : ces seuils ne sont **pas stockés
 par édition** en base, ils viennent de la configuration de l'application. Ils

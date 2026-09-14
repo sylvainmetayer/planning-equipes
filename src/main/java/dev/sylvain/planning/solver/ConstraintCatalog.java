@@ -325,6 +325,16 @@ public final class ConstraintCatalog {
                     "Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement "
                             + "épuisants sans repos ni stand plus facile entre les deux."),
             new ConstraintDefinition(
+                    "eviterFermeturePuisOuverture",
+                    Niveau.MEDIUM,
+                    CATEGORIE_QUALITE,
+                    "Après une vacation qui finit tard (22 h par défaut), éviter une reprise matinale le lendemain "
+                            + "(10 h par défaut) : on souhaite alors 12 h de repos plutôt que le minimum légal. "
+                            + "Préférence d'organisation, pas une obligation du Code du travail : seules les minutes "
+                            + "au-dessus du repos quotidien légal sont comptées ici, celles en dessous restent "
+                            + "l'affaire de reposQuotidienMinimal, qui les tient en dur. La règle est donc muette "
+                            + "quand la loi exige déjà autant (un mineur, 12 h ; avant 16 ans, 14 h)."),
+            new ConstraintDefinition(
                     "appreciationIncompatible",
                     Niveau.MEDIUM,
                     "Qualité d'organisation",

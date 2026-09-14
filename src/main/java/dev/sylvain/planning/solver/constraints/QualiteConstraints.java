@@ -17,6 +17,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -46,6 +47,7 @@ public final class QualiteConstraints {
             eviterChangementEmplacementEloigne(constraintFactory),
             limiterEmplacementsParJour(constraintFactory),
             eviterEnchainementStandsEpuisants(constraintFactory),
+            eviterFermeturePuisOuverture(constraintFactory),
             appreciationIncompatible(constraintFactory),
             souhaitsIncompatibles(constraintFactory),
             limiterTypologiesDistinctesParAnimateur(constraintFactory),
@@ -340,6 +342,100 @@ public final class QualiteConstraints {
                         suivant.getStand() != null && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterEnchainementStandsEpuisants");
+    }
+
+    /**
+     * Closing one night and opening the next morning (issue #78). An animateur
+     * whose vacation ends late — at or after
+     * {@link ParametresQualite#heureServiceTardif()} — and who starts again
+     * early the next day — at or before
+     * {@link ParametresQualite#heureServiceMatinal()} — is penalised by every
+     * minute of rest missing from
+     * {@link ParametresQualite#reposSouhaiteApresServiceTardifMinutes()}.
+     *
+     * <p><b>Not a second legal floor.</b> The minutes below the daily rest the
+     * Code du travail owes this animateur are
+     * {@link LegalConstraints#reposQuotidienMinimal}'s, hard, and are
+     * deliberately <b>not</b> counted again here: the rest entering the
+     * subtraction is {@code max(gap, legal floor)}, so this rule only ever
+     * prices the stretch between what the law demands and what the organiser
+     * would prefer. Two consequences worth stating. A plan already illegal is
+     * not penalised twice for the same minutes; and where the legal floor is
+     * already at or above the wished rest — a minor owed 12 h, a
+     * under-16 owed 14 h — this rule is silent, because there is nothing left
+     * for it to ask. That is the whole reason it is MEDIUM and lives under
+     * « Qualité d'organisation »: it expresses a preference, and the law is
+     * elsewhere, held hard.</p>
+     *
+     * <p>Both ends are compared as <b>instants anchored on the vacation's own
+     * date</b>, not as clock times: a closing shift running 20:00 → 00:30 ends
+     * at 00:30 on the <i>next</i> calendar day, and reading its
+     * {@code LocalTime} alone would score it earlier than the morning it
+     * actually pushed into. The rule exists for exactly those shifts, so
+     * reading them wrong would have made it inert on its own subject.</p>
+     *
+     * <p>Directional {@code .join()} on the day-adjacency key, the shape and
+     * the reasons of {@link LegalConstraints#reposQuotidienMinimal}: the key is
+     * asymmetric, {@code forEachUniquePair} would test one arbitrary ordering
+     * per pair and miss half the violations, and the join enumerates both
+     * orderings of which only one can match — so there is no double count of a
+     * pair. A day genuinely holding <i>two</i> late vacations (a split closing)
+     * does pay for each of them; that is a magnitude, like every gradient rule
+     * here, and the ordinary case — one closing, one opening — pays once.</p>
+     *
+     * <p>Tension worth knowing, and left to the weights rather than resolved in
+     * code: on a stand that opens and closes every day,
+     * {@link #eviterRoulementStandsPremium} pushes towards keeping the same
+     * heads and this rule pushes towards rotating them. Both are MEDIUM and
+     * both are {@code dosable()}, so an edition arbitrates between them through
+     * {@code ponderation_contrainte} — see {@code docs/contraintes.md}.</p>
+     */
+    private Constraint eviterFermeturePuisOuverture(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory
+                                .forEach(PosteAffectation.class)
+                                .filter(poste -> poste.getAnimateur() != null && LegalConstraints.horaireConnu(poste))
+                                .join(
+                                        PosteAffectation.class,
+                                        Joiners.equal(PosteAffectation::getAnimateur),
+                                        Joiners.equal(
+                                                veille -> veille.getCreneau().getJour() + 1,
+                                                lendemain ->
+                                                        lendemain.getCreneau().getJour())),
+                        "eviterFermeturePuisOuverture")
+                .filter((veille, lendemain) -> LegalConstraints.horaireConnu(lendemain))
+                .join(ParametresQualite.class)
+                .filter((veille, lendemain, parametres) -> parametres.penaliseFermeturePuisOuverture()
+                        && serviceTardif(veille, parametres)
+                        && serviceMatinal(lendemain, parametres)
+                        && reposManquant(veille, lendemain, parametres) > 0)
+                .penalize(HardMediumSoftScore.ONE_MEDIUM, QualiteConstraints::reposManquant)
+                .asConstraint("eviterFermeturePuisOuverture");
+    }
+
+    /** True when this vacation ends at or after the late hour of its own day — midnight crossings included. */
+    private static boolean serviceTardif(PosteAffectation poste, ParametresQualite parametres) {
+        return !LegalConstraints.fin(poste)
+                .isBefore(LocalDateTime.of(poste.getCreneau().getDate(), parametres.heureServiceTardif()));
+    }
+
+    /** True when this vacation starts at or before the early hour of its own day. */
+    private static boolean serviceMatinal(PosteAffectation poste, ParametresQualite parametres) {
+        return !LegalConstraints.debut(poste)
+                .isAfter(LocalDateTime.of(poste.getCreneau().getDate(), parametres.heureServiceMatinal()));
+    }
+
+    /**
+     * Minutes missing to the wished rest, counted from the legal floor upwards:
+     * {@code souhaite - max(gap, plancher legal)}, never negative. See the
+     * constraint's javadoc for why the minutes under the floor belong to
+     * {@code reposQuotidienMinimal} alone.
+     */
+    private static int reposManquant(
+            PosteAffectation veille, PosteAffectation lendemain, ParametresQualite parametres) {
+        int reposCompte = Math.max(
+                LegalConstraints.gapMinutes(veille, lendemain), LegalConstraints.reposQuotidienMinimal(veille));
+        return Math.max(0, parametres.reposSouhaiteApresServiceTardifMinutes() - reposCompte);
     }
 
     /**
