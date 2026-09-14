@@ -35,11 +35,15 @@ export interface RepereMaintenant {
   /** True when today is one of their « Repos » days — an answer, not a hole. */
   reposAujourdhui: boolean;
   /**
-   * Today's breaks still to come: « pause à prendre au plus tard à 19:00 »
-   * only serves on the day itself, and only while its window is open — the day
-   * card below goes on listing every break of the day.
+   * The breaks still ahead: « pause à prendre au plus tard à 19:00 » only
+   * serves while its window is open — the day card below goes on listing every
+   * break of the day.
+   *
+   * <p>Not only today's. A break dated yesterday evening can end after
+   * midnight, and is then still to be taken this morning — which is why this
+   * is named for what is left rather than for the day it is read on.</p>
    */
-  pausesDuJour: PauseAnimateurView[];
+  remainingPauses: PauseAnimateurView[];
   /** Today, as an ISO date — what the page anchors the reading on. */
   aujourdhui: string;
   /**
@@ -226,7 +230,7 @@ export function repereMaintenant(jours: JourPlanning[], maintenant: Date): Reper
   // Yesterday's breaks too: one that crosses midnight, or falls after it in a
   // night seat, is still ahead this morning while its own end is.
   const instant = `${aujourdhui}T${heure}`;
-  const pausesDuJour = jours
+  const remainingPauses = jours
     .filter((jour) => jour.date === hier || jour.date === aujourdhui)
     .flatMap((jour) => jour.pauses.filter((pause) => breakRealEnd(pause, jour) > instant));
   const dateTenue = held ? (held.date ?? aujourdhui) : aujourdhui;
@@ -234,7 +238,7 @@ export function repereMaintenant(jours: JourPlanning[], maintenant: Date): Reper
     enCours: held,
     prochain,
     reposAujourdhui: !!jourAujourdhui?.repos,
-    pausesDuJour,
+    remainingPauses,
     aujourdhui,
     jourPlancher: dateTenue < aujourdhui ? dateTenue : aujourdhui,
   };

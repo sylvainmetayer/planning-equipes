@@ -43,7 +43,7 @@
         </p>
       }
     }
-    @for (pause of maintenant.pausesDuJour; track pause.standId + '-' + pause.heureLimite) {
+    @for (pause of maintenant.remainingPauses; track pause.standId + '-' + pause.heureLimite) {
       <p class="espace-maintenant-pause">
         <mat-icon inline>free_breakfast</mat-icon>
         <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>

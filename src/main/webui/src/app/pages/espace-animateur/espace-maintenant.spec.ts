@@ -102,15 +102,15 @@ describe('repereMaintenant', () => {
   it("carries today's breaks and no others", () => {
     const repere = repereMaintenant(jours, at(2026, 7, 11, 15, 0))!;
 
-    expect(repere.pausesDuJour).toHaveLength(1);
-    expect(repereMaintenant(jours, at(2026, 7, 12, 15, 0))!.pausesDuJour).toHaveLength(0);
+    expect(repere.remainingPauses).toHaveLength(1);
+    expect(repereMaintenant(jours, at(2026, 7, 12, 15, 0))!.remainingPauses).toHaveLength(0);
   });
 
   it('drops a break whose window has closed — the day card still lists it', () => {
     // « Pause à prendre au plus tard à 19:00 » says nothing at 19:30; this
     // block answers « what now », and the break of 18:40–19:00 is behind.
-    expect(repereMaintenant(jours, at(2026, 7, 11, 18, 45))!.pausesDuJour).toHaveLength(1);
-    expect(repereMaintenant(jours, at(2026, 7, 11, 19, 30))!.pausesDuJour).toHaveLength(0);
+    expect(repereMaintenant(jours, at(2026, 7, 11, 18, 45))!.remainingPauses).toHaveLength(1);
+    expect(repereMaintenant(jours, at(2026, 7, 11, 19, 30))!.remainingPauses).toHaveLength(0);
   });
 
   it('stays silent outside the event, before it and after it', () => {
@@ -166,16 +166,18 @@ describe('repereMaintenant', () => {
         dimanche,
       ];
 
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.pausesDuJour).toHaveLength(
+      expect(
+        repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.remainingPauses,
+      ).toHaveLength(1);
+      expect(
+        repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 55))!.remainingPauses,
+      ).toHaveLength(1);
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 5))!.remainingPauses).toHaveLength(
         1,
       );
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 55))!.pausesDuJour).toHaveLength(
-        1,
-      );
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 5))!.pausesDuJour).toHaveLength(1);
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 15))!.pausesDuJour).toHaveLength(
-        0,
-      );
+      expect(
+        repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 15))!.remainingPauses,
+      ).toHaveLength(0);
     });
 
     it('keeps a break taken after midnight in a night seat until its end', () => {
@@ -188,13 +190,15 @@ describe('repereMaintenant', () => {
         dimanche,
       ];
 
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.pausesDuJour).toHaveLength(
-        1,
+      expect(
+        repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.remainingPauses,
+      ).toHaveLength(1);
+      expect(
+        repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 40))!.remainingPauses,
+      ).toHaveLength(1);
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 1, 0))!.remainingPauses).toHaveLength(
+        0,
       );
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 40))!.pausesDuJour).toHaveLength(
-        1,
-      );
-      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 1, 0))!.pausesDuJour).toHaveLength(0);
     });
 
     it('does not carry an evening break of the day before into the morning', () => {
@@ -207,7 +211,7 @@ describe('repereMaintenant', () => {
         dimanche,
       ];
 
-      expect(repereMaintenant(soir, at(2026, 7, 12, 0, 30))!.pausesDuJour).toHaveLength(0);
+      expect(repereMaintenant(soir, at(2026, 7, 12, 0, 30))!.remainingPauses).toHaveLength(0);
     });
 
     it('does not reach back two days: only the night just passed can still run', () => {
