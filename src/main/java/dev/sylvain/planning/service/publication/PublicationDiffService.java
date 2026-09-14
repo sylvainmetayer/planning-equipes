@@ -151,11 +151,15 @@ public class PublicationDiffService {
      * animateur id. Unassigned seats are ignored — an empty chair concerns
      * nobody.
      *
-     * <p>Seats naming a stand or a créneau the referential no longer holds
-     * have already been dropped upstream, on both sides alike: deleting a
-     * créneau removes it from the working plan and from the published one at
-     * once, so it produces no diff and warns nobody. Telling people about a
-     * day that no longer exists is a different feature.</p>
+     * <p>Seats naming a stand the referential no longer holds have been
+     * dropped upstream, on both sides alike. A deleted <b>créneau</b> used to
+     * go the same way, and that was issue #576: it took the seat out of the
+     * working plan and out of the published one at the same instant, so it
+     * produced no écart and warned nobody — the very person who lost their
+     * Tuesday afternoon was the one the publication skipped. The published side
+     * now carries its own day and hours, so a deleted créneau leaves a seat on
+     * the published side only, which is exactly what a {@link
+     * TypeChangement#RETRAIT} is.</p>
      */
     public static Map<String, List<Vacation>> vacationsByAnimateur(PlanningEvenement planning) {
         Map<String, List<Vacation>> byAnimateur = new LinkedHashMap<>();

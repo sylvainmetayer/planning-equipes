@@ -111,6 +111,15 @@
           "creneauId" : {
             "type" : "string"
           },
+          "date" : {
+            "type" : "string"
+          },
+          "heureDebut" : {
+            "type" : "string"
+          },
+          "heureFin" : {
+            "type" : "string"
+          },
           "animateurId" : {
             "type" : "string"
           },

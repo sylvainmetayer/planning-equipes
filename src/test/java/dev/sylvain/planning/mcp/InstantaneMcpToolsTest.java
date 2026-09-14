@@ -47,7 +47,8 @@ class InstantaneMcpToolsTest {
     }
 
     private static AffectationSnapshot affectation(String posteId, String standId, String animateurId) {
-        return new AffectationSnapshot(posteId, standId, "C1", animateurId, "10:00", "14:00");
+        return new AffectationSnapshot(
+                posteId, standId, "C1", "2026-07-11", "10:00", "14:00", animateurId, "10:00", "14:00");
     }
 
     private static SnapshotDetail detail(List<AffectationSnapshot> affectations) {

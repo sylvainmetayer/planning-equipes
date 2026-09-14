@@ -407,6 +407,16 @@ ajout, retrait, ou **déplacement** quand un ajout et un retrait se répondent l
 même jour — « Ninja 14h-18h remplace Cirque 14h-18h » est un changement, pas
 deux.
 
+**Une vacation supprimée se dit.** Le côté publié porte le jour et la fenêtre
+de chaque affectation, copiés au moment de la capture : supprimer un créneau
+d'une journée déjà publiée ne retire donc le siège que du planning de travail,
+et l'écart qui reste est un retrait, avec un nom dessus. La vacation reste
+visible dans l'espace — et dans le PDF, l'abonnement ICS, le rappel de la
+veille — jusqu'à la publication qui annonce son retrait : l'espace suit le
+planning publié, et ce qui l'a promis est aussi ce qui le reprend. Un instantané
+capturé avant que la date soit stockée ne porte pas cette information et se
+résout comme avant, contre le référentiel du jour.
+
 Le calcul est volontairement **hors de la comparaison d'instantanés**, qui est
 non nominative par choix (l'équité est une dispersion d'heures, jamais un
 classement de personnes nommées). Celui-ci ne classe personne : il répond

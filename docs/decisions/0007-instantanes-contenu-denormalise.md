@@ -42,6 +42,14 @@ restaurer un plan à moitié valide.
 - La dénormalisation duplique de l'information. C'est le prix de la survie de
   l'instantané, et il est assumé : un instantané est une photographie, pas une
   vue.
+- Ce que la photographie ne porte pas, elle ne saura pas le dire. Le contenu
+  n'avait que des identifiants et les heures effectives, donc pas la **date** :
+  il ne pouvait plus décrire une vacation dont le créneau avait disparu, et le
+  planning publié s'amputait en silence (voir
+  [0011](0011-publier-plutot-qu-envoyer-a-tous.md)). Chaque affectation porte
+  désormais son jour et la fenêtre de son créneau. La règle vaut pour la suite :
+  un champ que l'instantané ne copie pas est un champ dont il devient incapable
+  de parler.
 - Une politique de purge devient nécessaire — sans elle, les captures
   automatiques s'accumulent indéfiniment.
 - L'existence de plusieurs plans comparables est le prérequis naturel d'un

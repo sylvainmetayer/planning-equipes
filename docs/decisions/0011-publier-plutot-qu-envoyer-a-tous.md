@@ -92,9 +92,42 @@ le harcèlement.
 - Les jeux d'essai qui lisent l'espace doivent publier : une base qui n'écrit
   que `poste_affectation` laisse, à juste titre, tous les espaces vides.
 
-## Ce qui reste ouvert
+## Ce qui restait ouvert : la vacation supprimée
 
-La suppression d'un créneau retire le siège des deux côtés à la fois : elle ne
-produit donc aucun écart et ne prévient personne. Dire « la journée que vous
-aviez n'existe plus » est une autre fonctionnalité, avec sa propre source de
-vérité — elle n'est pas traitée ici.
+Cette section a longtemps dit ceci : *la suppression d'un créneau retire le
+siège des deux côtés à la fois, elle ne produit donc aucun écart et ne prévient
+personne.* C'était vrai, et resté théorique tant que la grille ne bougeait plus
+après publication. Modifier un jour déjà publié — plan dégradé, fermeture
+imposée, réapplication d'une journée type — l'a rendu concret, et la personne
+que la publication sautait était exactement celle qui venait de perdre son
+mardi après-midi.
+
+La cause n'était pas le calcul de l'écart, elle était dans ce que le côté
+publié savait dire. Le contenu de l'instantané portait `posteId`, `standId`,
+`creneauId` et les heures effectives : que des identifiants, donc rien qui
+décrive une vacation dont le créneau n'existe plus. Le plan publié se
+ré-assemblait contre le référentiel du jour, et un siège nommant un créneau
+disparu était écarté — au même instant que dans le plan de travail.
+
+**L'instantané date désormais chaque affectation**, et porte la fenêtre du
+créneau avec elle. Le côté publié cesse de dépendre du référentiel du jour : un
+créneau supprimé laisse un siège du seul côté publié, ce qui est précisément la
+définition d'un retrait. La personne entre dans le décompte, reçoit « mardi
+14/07 : Cirque 14h-18h (retiré) », et son espace rejoue la phrase.
+
+Deux conséquences, assumées :
+
+- **La vacation reste visible dans l'espace tant que la publication n'a pas
+  annoncé son retrait** — y compris dans le PDF, l'abonnement ICS et le rappel
+  de la veille. C'est la règle de cette décision, pas une exception : l'espace
+  suit le planning publié, et une promesse ne cesse pas d'avoir été faite parce
+  que la grille a bougé. Ce qui la retire, c'est la publication qui le dit.
+- **Un instantané capturé avant ce changement ne porte pas de date** et retombe
+  sur la résolution d'avant : ses sièges sont résolus contre le référentiel du
+  jour, et écartés quand leur créneau a disparu. Rétrocompatible sans
+  migration — au prix d'une publication dont les retraits restent muets, le
+  temps d'une capture.
+
+Ce que cette décision ne prétend toujours pas faire : un siège dont le **stand**
+a disparu reste écarté. Le trou est de même nature, sa source de vérité est
+autre — l'instantané ne porte pas le nom du stand — et il n'est pas traité ici.

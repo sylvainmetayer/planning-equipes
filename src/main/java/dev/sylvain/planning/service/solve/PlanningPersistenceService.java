@@ -568,7 +568,14 @@ public class PlanningPersistenceService {
 
     /**
      * One seat, referential ids only — what both the {@code poste_affectation}
-     * table and a snapshot's denormalised content carry.
+     * table and a snapshot's denormalised content carry — plus, optionally, the
+     * vacation it stood for.
+     *
+     * @param vacation the créneau's own day and window, copied when the seat was
+     *                 written down. {@code null} for a seat read from
+     *                 {@code poste_affectation}, whose créneau is guaranteed by
+     *                 a foreign key; set for a seat read from a snapshot, which
+     *                 outlives the créneaux it names (issue #576)
      */
     public record Siege(
             String posteId,
@@ -576,15 +583,45 @@ public class PlanningPersistenceService {
             long creneauId,
             String animateurId,
             LocalTime heureDebutEffective,
-            LocalTime heureFinEffective) {}
+            LocalTime heureFinEffective,
+            VacationSnapshot vacation) {
+
+        /** A seat that has nothing but ids to say, and a référentiel to say it against. */
+        public Siege(
+                String posteId,
+                String standId,
+                long creneauId,
+                String animateurId,
+                LocalTime heureDebutEffective,
+                LocalTime heureFinEffective) {
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null);
+        }
+    }
+
+    /**
+     * The day and window of a créneau, frozen at the moment a seat was written
+     * down. What lets a published seat still be named after its créneau was
+     * deleted, instead of vanishing without a word (issue #576).
+     */
+    public record VacationSnapshot(LocalDate date, LocalTime heureDebut, LocalTime heureFin) {}
 
     /**
      * Resolves seats against today's referential and returns a planning ready
      * to read. Shared by the persisted plan and by the published one
      * (issue #245), which lives in a snapshot rather than in
-     * {@code poste_affectation} but resolves exactly the same way — a seat
-     * naming a stand or a créneau that no longer exists is dropped, since
-     * there is nothing left to display it against.
+     * {@code poste_affectation} but resolves exactly the same way.
+     *
+     * <p>A seat naming a stand that no longer exists is dropped: there is
+     * nothing left to display it against. A seat naming a <b>deleted
+     * créneau</b> used to be dropped for the same reason, and that is the hole
+     * issue #576 closes: it took the seat out of the published plan at the very
+     * moment it left the working one, so the comparison saw no écart and
+     * nobody was told their vacation had been cancelled. A seat carrying its
+     * own {@link VacationSnapshot} is therefore kept, standing on a créneau
+     * rebuilt from what the snapshot itself says — the published plan stops
+     * depending on a grid that has moved on. A seat without one (every seat of
+     * the working plan, every seat of a snapshot taken before #576) resolves as
+     * before, and is dropped when its créneau is gone.</p>
      */
     public PlanningEvenement assemblerPlanning(List<Siege> sieges) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -602,6 +639,9 @@ public class PlanningPersistenceService {
         for (Siege siege : sieges) {
             Stand stand = standsById.get(siege.standId());
             Creneau creneau = creneauxById.get(siege.creneauId());
+            if (creneau == null) {
+                creneau = creneauDisparu(siege);
+            }
             if (stand == null || creneau == null) {
                 continue;
             }
@@ -626,6 +666,25 @@ public class PlanningPersistenceService {
         // the organiser's declarations from the plan itself.
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         return evenement;
+    }
+
+    /**
+     * The créneau a seat stood on, rebuilt from the seat itself when the
+     * référentiel no longer holds it. {@code null} when the seat carries no
+     * frozen vacation — there is then nothing to rebuild it from, and dropping
+     * it stays the only honest answer.
+     *
+     * <p>{@code jour} is left at 0, as everywhere a créneau is read rather than
+     * solved: the number is computed over a whole grid
+     * ({@link Creneau#assignerJours}), and a créneau that grid no longer holds
+     * has no place in it.</p>
+     */
+    private static Creneau creneauDisparu(Siege siege) {
+        VacationSnapshot vacation = siege.vacation();
+        if (vacation == null) {
+            return null;
+        }
+        return new Creneau(siege.creneauId(), 0, vacation.date(), vacation.heureDebut(), vacation.heureFin());
     }
 
     private List<Siege> readSieges() {

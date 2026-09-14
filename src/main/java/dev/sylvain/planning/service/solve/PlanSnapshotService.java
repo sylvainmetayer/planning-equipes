@@ -13,6 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
@@ -80,11 +81,30 @@ public class PlanSnapshotService {
     @Inject
     ObjectMapper objectMapper;
 
-    /** One seat of a snapshotted plan, carrying everything needed to put it back. */
+    /**
+     * One seat of a snapshotted plan, carrying everything needed to put it back
+     * — and, since issue #576, everything needed to <b>describe</b> it once the
+     * référentiel no longer can.
+     *
+     * <p>{@code date}, {@code heureDebut} and {@code heureFin} denormalise the
+     * créneau's own day and window at capture time. They are what lets the
+     * published plan keep saying « mardi 14h-18h, Cirque » after the créneau
+     * has been deleted, so the next publication can announce a retrait instead
+     * of dropping the seat on both sides of the comparison and warning nobody.
+     * They are {@code null} on a snapshot captured before they were stored: the
+     * seat then resolves exactly as it used to, against today's référentiel.</p>
+     *
+     * <p>{@code heureDebutEffective}/{@code heureFinEffective} keep their own
+     * meaning — the <b>override</b> narrowing that window for this seat alone
+     * (issue #60), {@code null} when the seat runs the whole créneau.</p>
+     */
     public record AffectationSnapshot(
             String posteId,
             String standId,
             String creneauId,
+            String date,
+            String heureDebut,
+            String heureFin,
             String animateurId,
             String heureDebutEffective,
             String heureFinEffective) {}
@@ -558,12 +578,21 @@ public class PlanSnapshotService {
 
     /* -------------------------------- Helpers ------------------------------ */
 
+    /**
+     * The seats to snapshot, joined to their créneau: a snapshot that only
+     * named a créneau id could not describe a vacation once that créneau was
+     * deleted (issue #576), and the whole point of a denormalised content is to
+     * survive the disappearance of what it names.
+     */
     private List<AffectationSnapshot> readPersistedAffectations() {
         String sql = """
- SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
- FROM poste_affectation
- WHERE edition_id = ?
- ORDER BY id""";
+ SELECT pa.id, pa.stand_id, pa.creneau_id, pa.animateur_id,
+ pa.heure_debut_effective, pa.heure_fin_effective,
+ c.date_creneau, c.heure_debut, c.heure_fin
+ FROM poste_affectation pa
+ JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
+ WHERE pa.edition_id = ?
+ ORDER BY pa.id""";
         List<AffectationSnapshot> affectations = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
@@ -573,6 +602,9 @@ public class PlanSnapshotService {
                         rs.getString("id"),
                         rs.getString("stand_id"),
                         String.valueOf(rs.getLong("creneau_id")),
+                        text(rs.getObject("date_creneau", LocalDate.class)),
+                        text(rs.getObject("heure_debut", LocalTime.class)),
+                        text(rs.getObject("heure_fin", LocalTime.class)),
                         rs.getString("animateur_id"),
                         text(rs.getObject("heure_debut_effective", LocalTime.class)),
                         text(rs.getObject("heure_fin_effective", LocalTime.class))));
@@ -745,6 +777,10 @@ public class PlanSnapshotService {
 
     private static String text(LocalTime heure) {
         return heure == null ? null : heure.toString();
+    }
+
+    private static String text(LocalDate date) {
+        return date == null ? null : date.toString();
     }
 
     private static LocalTime heure(String text) {

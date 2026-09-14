@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 
@@ -17,6 +18,12 @@ import java.util.List;
  * plan is. The espace animateur reads from here, so what somebody sees is what
  * somebody sent them — a swap validated this morning does not appear in their
  * espace before the admin publishes.</p>
+ *
+ * <p>Resolved against today's referential, but no longer <b>dependent</b> on it
+ * (issue #576): a seat whose créneau has since been deleted keeps the day and
+ * the hours the snapshot recorded for it. A promise that was made does not stop
+ * having been made because the grid moved — it stays in the espace, and in the
+ * comparison, until a publication announces its retrait.</p>
  *
  * <p>Before the first publication the plan is <b>empty</b>, and deliberately
  * so: falling back on the working plan would recreate exactly the incoherence
@@ -65,7 +72,22 @@ public class PlanPublieService {
                 Long.parseLong(affectation.creneauId()),
                 affectation.animateurId(),
                 heure(affectation.heureDebutEffective()),
-                heure(affectation.heureFinEffective()));
+                heure(affectation.heureFinEffective()),
+                vacation(affectation));
+    }
+
+    /**
+     * The vacation the snapshot itself describes (issue #576), {@code null} on
+     * a snapshot captured before the date was stored — that one still resolves
+     * against today's référentiel, exactly as it always did.
+     */
+    private static PlanningPersistenceService.VacationSnapshot vacation(
+            PlanSnapshotService.AffectationSnapshot affectation) {
+        if (affectation.date() == null) {
+            return null;
+        }
+        return new PlanningPersistenceService.VacationSnapshot(
+                LocalDate.parse(affectation.date()), heure(affectation.heureDebut()), heure(affectation.heureFin()));
     }
 
     private static LocalTime heure(String texte) {

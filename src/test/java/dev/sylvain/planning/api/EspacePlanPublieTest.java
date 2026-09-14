@@ -50,6 +50,7 @@ class EspacePlanPublieTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 11);
     private static final long CRENEAU_ID = 9401L;
+    private static final long CRENEAU_ID_LENDEMAIN = 9402L;
     private static final String EMAIL_ALICE = "espace-alice@example.org";
     private static final String EMAIL_BRUNO = "espace-bruno@example.org";
 
@@ -505,6 +506,96 @@ class EspacePlanPublieTest {
                 .body("message", containsString("pas encore été publié"));
     }
 
+    /* ---------------------- A vacation that was deleted --------------------- */
+
+    /**
+     * Issue #576: deleting a créneau used to take the seat out of the published
+     * plan at the very instant it left the working one. The comparison then saw
+     * the same nothing on both sides — no écart, no recipient, and the person
+     * who had just lost their Tuesday afternoon was precisely the one the
+     * publication skipped.
+     *
+     * <p>The published side now carries its own day and hours, so a deletion
+     * reads as what it is: a retrait, with a name on it and a sentence to
+     * send.</p>
+     */
+    @Test
+    void unCreneauSupprimeApresPublicationFaitUnRetraitEtUnDestinataire() {
+        persistPlanSurDeuxJours();
+        publication.publier();
+
+        referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
+
+        given().when()
+                .get("/api/planning/publication")
+                .then()
+                .statusCode(200)
+                .body("nombreConcernes", equalTo(1))
+                .body("destinataires[0].animateurId", equalTo("PUBESP-A"))
+                .body("destinataires[0].changements.size()", equalTo(1))
+                .body("destinataires[0].changements[0]", containsString("Stand espace un"))
+                .body("destinataires[0].changements[0]", containsString("retir"));
+    }
+
+    /**
+     * And what the espace shows meanwhile: the vacation, still. The published
+     * plan is a promise, and a promise does not stop having been made because
+     * the grid moved — it is the publication that withdraws it, and the banner
+     * then says so in the words that were mailed.
+     */
+    @Test
+    void laVacationSupprimeeResteAfficheeJusquAuRetraitAnnonce() {
+        persistPlanSurDeuxJours();
+        publication.publier();
+
+        referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(2));
+
+        publication.publier();
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(1))
+                .body("changements.size()", equalTo(1))
+                .body("changements[0]", containsString("retir"));
+    }
+
+    /**
+     * Rétrocompatibilité: a snapshot captured before issue #576 carries no day
+     * of its own. It must keep resolving exactly as it used to — against
+     * today's référentiel — and a seat it cannot resolve there is dropped, as
+     * before. Pinned rather than assumed: the fallback is the whole reason the
+     * new fields could be added without a migration.
+     */
+    @Test
+    void unInstantanePublieSansDateRetombeSurLaResolutionDuJour() {
+        persistPlanSurDeuxJours();
+        publication.publier();
+        stripVacationSnapshots();
+
+        // Nothing moved in the référentiel: the plan reads exactly as it did.
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(2));
+
+        referenceData.deleteCreneau(CRENEAU_ID_LENDEMAIN);
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("postes.size()", equalTo(1));
+    }
+
     /* ------------------- The frozen date of development ------------------ */
 
     /**
@@ -576,6 +667,45 @@ class EspacePlanPublieTest {
                 .body("pauses[0].dureeMinutes", equalTo(20))
                 .body("pauses[0].standNom", equalTo("Stand espace un"))
                 .body("pauses[0].relaisDisponible", equalTo(true));
+    }
+
+    /**
+     * Alice on two days rather than one: deleting the second créneau then
+     * leaves something to publish, which a one-seat plan would not — an empty
+     * persisted plan is refused, and rightly so.
+     */
+    private void persistPlanSurDeuxJours() {
+        Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
+        Stand stand = new Stand("PUBESP-S1", "Stand espace un", Set.of(), 1, 1, false);
+        Creneau premier = new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(12, 0));
+        Creneau lendemain =
+                new Creneau(CRENEAU_ID_LENDEMAIN, 2, JOUR.plusDays(1), LocalTime.of(14, 0), LocalTime.of(18, 0));
+        PosteAffectation matin = new PosteAffectation("PUBESP-P1", stand, premier);
+        matin.setAnimateur(alice);
+        PosteAffectation apresMidi = new PosteAffectation("PUBESP-P2", stand, lendemain);
+        apresMidi.setAnimateur(alice);
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(matin, apresMidi)));
+    }
+
+    /**
+     * Rewrites the last published snapshot into the shape it had before issue
+     * #576: seats with ids and nothing else. Done in SQL because no code path
+     * writes that shape any more — which is exactly why the fallback needs a
+     * test that does.
+     */
+    private void stripVacationSnapshots() {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("""
+                        UPDATE plan_snapshot
+                        SET contenu = (
+                            SELECT jsonb_agg(affectation - 'date' - 'heureDebut' - 'heureFin')
+                            FROM jsonb_array_elements(contenu) AS affectation)
+                        WHERE publie_le IS NOT NULL""")) {
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to strip the snapshot dates", e);
+        }
     }
 
     private void persistPlan(String titulaireId) {
