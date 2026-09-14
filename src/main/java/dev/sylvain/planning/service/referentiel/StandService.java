@@ -236,14 +236,21 @@ public class StandService {
                 .map(HoraireCompaction.LigneCompactage::standId)
                 .collect(Collectors.toSet());
         boolean modifie = false;
-        for (Stand stand : stands) {
-            if (compactes.contains(stand.getId())) {
-                repository.saveStand(stand, false);
-                modifie = true;
+        try {
+            for (Stand stand : stands) {
+                if (compactes.contains(stand.getId())) {
+                    repository.saveStand(stand, false);
+                    modifie = true;
+                }
             }
-        }
-        if (modifie) {
-            changeTracker.markModified();
+        } finally {
+            // One transaction per stand, so a failure midway leaves the earlier
+            // ones committed: mark what was written rather than nothing. See
+            // CreneauService#createInBulk for why over-marking is the safe
+            // direction.
+            if (modifie) {
+                changeTracker.markModified();
+            }
         }
         return rapport;
     }

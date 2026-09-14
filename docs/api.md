@@ -402,10 +402,15 @@ elle est périmé. La date est **persistée**, pas tenue en mémoire comme le
 bandeau `dataStale` du shell : après un redémarrage une carte vide se lirait
 « jamais modifié », donc « à jour », et c'est précisément devant un bouton
 *Restaurer* qu'un « à jour » faux coûte le plus cher (ADR
-[0038](decisions/0038-fraicheur-du-referentiel-persistee.md)). La reprise de l'existant
-se fait à la migration depuis le `max(modifie_le)` des six référentiels ; une
-suppression de fiche n'ayant laissé aucune ligne, la date reprise est celle de
-la dernière écriture *survivante*.
+[0038](decisions/0038-fraicheur-du-referentiel-persistee.md)). La reprise de
+l'existant se fait à la migration, depuis le `max(modifie_le)` des six
+référentiels et le `cree_le` des verrouillages ; une bascule de contrainte ou un
+poids ne portant aucune date, une édition qui en a un prend l'instant de la
+migration — ses instantanés antérieurs passent « périmés », sens prudent. Restent
+hors d'atteinte, et seulement pour les éditions existant au déploiement : une
+fiche supprimée (aucune ligne, donc la date reprise est celle de la dernière
+écriture *survivante*) et les paramètres légaux ou solveur, dont la ligne est
+créée d'office pour chaque édition.
 
 Restaurer un instantané périmé répond donc `409` avec `perime: true` et la date
 en cause, **sans rien écrire**, et le geste se rejoue avec `?forcer=true` :

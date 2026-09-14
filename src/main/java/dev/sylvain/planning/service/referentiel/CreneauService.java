@@ -97,12 +97,20 @@ public class CreneauService {
         solverJobs.refuseIfSolving();
         List<Creneau> crees = new ArrayList<>();
         creneaux.forEach(CreneauValidator::check);
-        for (Creneau creneau : creneaux) {
-            creneau.setId(null); // ignore any client-supplied id — the database always generates it
-            crees.add(repository.insertCreneau(creneau));
-        }
-        if (!crees.isEmpty()) {
-            changeTracker.markModified();
+        try {
+            for (Creneau creneau : creneaux) {
+                creneau.setId(null); // ignore any client-supplied id — the database always generates it
+                crees.add(repository.insertCreneau(creneau));
+            }
+        } finally {
+            // Each insert is a transaction of its own, so a failure on the
+            // tenth row leaves nine committed. Marking from a finally may
+            // over-mark, never under-mark: an unmarked write would leave a
+            // snapshot older than it reading « à jour », the one direction the
+            // freshness badge must never get wrong (issue #170).
+            if (!crees.isEmpty()) {
+                changeTracker.markModified();
+            }
         }
         return crees;
     }
@@ -113,12 +121,16 @@ public class CreneauService {
         // or none of it is, and the solver state cannot change under us anyway.
         solverJobs.refuseIfSolving();
         int supprimes = 0;
-        for (Long id : ids) {
-            repository.deleteCreneau(id);
-            supprimes++;
-        }
-        if (supprimes > 0) {
-            changeTracker.markModified();
+        try {
+            for (Long id : ids) {
+                repository.deleteCreneau(id);
+                supprimes++;
+            }
+        } finally {
+            // One transaction per row here too — see createInBulk.
+            if (supprimes > 0) {
+                changeTracker.markModified();
+            }
         }
         return supprimes;
     }

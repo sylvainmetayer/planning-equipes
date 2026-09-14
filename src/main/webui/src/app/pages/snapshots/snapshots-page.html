@@ -101,7 +101,7 @@
               i18n-aria-label="@@common.delete"
               aria-label="Supprimer"
               [disabled]="enCours() !== null"
-              (click)="supprimer(snapshot)"
+              (click)="remove(snapshot)"
             >
               <mat-icon>delete</mat-icon>
             </button>
@@ -173,7 +173,7 @@
               </button>
               <button matIconButton class="danger-action" i18n-matTooltip="@@common.delete" matTooltip="Supprimer"
                       i18n-aria-label="@@common.delete" aria-label="Supprimer"
-                      [disabled]="enCours() !== null" (click)="supprimer(snapshot)">
+                      [disabled]="enCours() !== null" (click)="remove(snapshot)">
                 <mat-icon>delete</mat-icon>
               </button>
             </td>

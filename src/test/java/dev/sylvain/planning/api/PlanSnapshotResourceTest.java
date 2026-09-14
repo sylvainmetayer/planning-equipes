@@ -233,8 +233,8 @@ class PlanSnapshotResourceTest {
         solve();
         assertThat(affectationCount()).isPositive();
 
-        String contrainte = contrainteSouple();
-        basculerContrainte(contrainte, false);
+        ContrainteBasculee contrainte = contrainteSouple();
+        basculerContrainte(contrainte.nom(), false);
         try {
             given().when()
                     .post("/api/planning/snapshots/" + id + "/restore")
@@ -253,7 +253,7 @@ class PlanSnapshotResourceTest {
                     .body("affectations", equalTo(attendu));
             assertThat(affectationCount()).isEqualTo(attendu);
         } finally {
-            basculerContrainte(contrainte, true);
+            basculerContrainte(contrainte.nom(), contrainte.actifAvant());
             // A hand-made snapshot is never purged, so leaving one behind moves
             // the population the retention test of this class counts.
             oublier(id);
@@ -273,12 +273,12 @@ class PlanSnapshotResourceTest {
         try {
             assertThat(staleInListing(id)).isFalse();
 
-            String contrainte = contrainteSouple();
-            basculerContrainte(contrainte, false);
+            ContrainteBasculee contrainte = contrainteSouple();
+            basculerContrainte(contrainte.nom(), false);
             try {
                 assertThat(staleInListing(id)).isTrue();
             } finally {
-                basculerContrainte(contrainte, true);
+                basculerContrainte(contrainte.nom(), contrainte.actifAvant());
             }
         } finally {
             oublier(id);
@@ -301,22 +301,29 @@ class PlanSnapshotResourceTest {
     }
 
     /**
-     * Name of a constraint the toggle may flip freely — never a protected or a
-     * legal one: this test wants a referential write, not an argument about
-     * the Code du travail.
+     * A constraint the toggle may flip freely — never a protected or a legal
+     * one: this test wants a referential write, not an argument about the Code
+     * du travail. Its state travels with it, so the restore puts back what was
+     * there instead of assuming « actif » — this edition is shared with every
+     * other test of the run.
      */
-    private String contrainteSouple() {
-        List<String> souples = given().when()
+    private ContrainteBasculee contrainteSouple() {
+        JsonPath contraintes = given().when()
                 .get("/api/constraints")
                 .then()
                 .statusCode(200)
                 .extract()
-                .jsonPath()
-                .getList(
-                        "contraintes.findAll { it.niveau == 'SOFT' && !it.protegee && !it.legale }.name", String.class);
+                .jsonPath();
+        List<String> souples = contraintes.getList(
+                "contraintes.findAll { it.niveau == 'SOFT' && !it.protegee && !it.legale }.name", String.class);
         assertThat(souples).isNotEmpty();
-        return souples.get(0);
+        String nom = souples.get(0);
+        return new ContrainteBasculee(
+                nom, contraintes.getBoolean("contraintes.find { it.name == '" + nom + "' }.actif"));
     }
+
+    /** @param actifAvant the state to put back, whatever this test did to it */
+    private record ContrainteBasculee(String nom, boolean actifAvant) {}
 
     private void basculerContrainte(String nom, boolean actif) {
         given().contentType(ContentType.JSON)

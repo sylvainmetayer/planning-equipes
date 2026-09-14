@@ -6,7 +6,7 @@
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
+import { InstantanePerimeError, PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -245,6 +245,44 @@ describe('SolveRecap', () => {
 
       expect(failed.at(-1)).toContain('Instantané introuvable.');
       expect(restored).toEqual([]);
+      expect(recap.restoring()).toBe(false);
+    });
+
+    // Issue #170: the capture this button offers is the one taken just before
+    // the solve, so any referential write since makes the server refuse it.
+    // Without the second question, the one button that undoes a bad solve would
+    // stop at a 409 with no way to say « quand même ».
+    it('asks the staleness question before forcing a stale plan back', async () => {
+      confirm.ask.mockResolvedValue(true);
+      snapshots.restaurer
+        .mockRejectedValueOnce(
+          new InstantanePerimeError('Référentiel modifié', '2026-08-19T08:30:00Z'),
+        )
+        .mockResolvedValueOnce({ affectations: 148 });
+      const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
+
+      await recap.restore();
+
+      expect(confirm.ask).toHaveBeenCalledTimes(2);
+      expect(String(confirm.ask.mock.calls[1][0].message)).toContain('référentiel');
+      expect(snapshots.restaurer).toHaveBeenNthCalledWith(1, 12);
+      expect(snapshots.restaurer).toHaveBeenNthCalledWith(2, 12, true);
+      expect(restored).toEqual([
+        "148 affectation(s) restaurée(s) : le plan d'avant la résolution est de nouveau enregistré.",
+      ]);
+    });
+
+    it('writes nothing and reports nothing when the staleness question is declined', async () => {
+      confirm.ask.mockResolvedValueOnce(true).mockResolvedValueOnce(false);
+      snapshots.restaurer.mockRejectedValue(new InstantanePerimeError('Référentiel modifié', null));
+      const recap = createRecap({ previousPlan: degraded, score: '0hard/-7434medium/-564soft' });
+
+      await recap.restore();
+
+      expect(snapshots.restaurer).toHaveBeenCalledExactlyOnceWith(12);
+      expect(resolution.reload).not.toHaveBeenCalled();
+      expect(restored).toEqual([]);
+      expect(failed).toEqual([]);
       expect(recap.restoring()).toBe(false);
     });
 

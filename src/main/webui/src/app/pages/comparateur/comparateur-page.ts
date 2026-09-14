@@ -162,9 +162,9 @@ export class ComparateurPage {
     if (!resultat) {
       return [];
     }
-    const parId = new Map(this.instantanes().map((snapshot) => [snapshot.id, snapshot]));
+    const byId = new Map(this.instantanes().map((snapshot) => [snapshot.id, snapshot]));
     return [resultat.base, resultat.variante]
-      .map((cote) => (cote.snapshotId === null ? null : parId.get(cote.snapshotId)))
+      .map((cote) => (cote.snapshotId === null ? null : byId.get(cote.snapshotId)))
       .filter((snapshot): snapshot is PlanSnapshot => snapshot !== undefined && snapshot !== null)
       .filter((snapshot) => snapshot.perime)
       .map((snapshot) => snapshot.libelle);

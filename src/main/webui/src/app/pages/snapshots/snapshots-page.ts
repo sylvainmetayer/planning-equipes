@@ -25,6 +25,7 @@ import {
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
 import { StatusMessage } from '../../shared/status-message';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorPrefix } from '../../core/error-message';
@@ -230,27 +231,13 @@ export class SnapshotsPage {
       if (!(error instanceof InstantanePerimeError)) {
         throw error;
       }
-      return (await this.confirmerPeremption(error))
+      return (await confirmStaleRestore(this.confirm, error))
         ? this.store.restaurer(snapshot.id, true)
         : null;
     }
   }
 
-  private confirmerPeremption(erreur: InstantanePerimeError): Promise<boolean> {
-    const moment = erreur.referenceModifieLe
-      ? new Date(erreur.referenceModifieLe).toLocaleString(intlLocale())
-      : '';
-    return this.confirm.ask({
-      title: $localize`:@@snapshots.stale.title:Cet instantané est périmé`,
-      message: moment
-        ? $localize`:@@snapshots.stale.message:Le référentiel a été modifié le ${moment}:moment:, après cette capture. Remettre ce plan en place annulerait la prise en compte de ces changements. Restaurer quand même ?`
-        : $localize`:@@snapshots.stale.messageSansDate:Le référentiel a été modifié après cette capture. Remettre ce plan en place annulerait la prise en compte de ces changements. Restaurer quand même ?`,
-      confirmLabel: $localize`:@@snapshots.stale.confirm:Restaurer quand même`,
-      danger: true,
-    });
-  }
-
-  protected async supprimer(snapshot: PlanSnapshot): Promise<void> {
+  protected async remove(snapshot: PlanSnapshot): Promise<void> {
     const confirme = await this.confirm.ask({
       title: $localize`:@@snapshots.delete.title:Supprimer cet instantané ?`,
       message: $localize`:@@snapshots.delete.message:« ${snapshot.libelle}:libelle: » sera définitivement perdu.`,

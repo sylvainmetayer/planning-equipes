@@ -11,13 +11,19 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
-import { ImpactPublication, PreviousPlan, ReamorcageEffectue } from '../../core/models';
-import { PlanSnapshotStore } from '../../core/plan-snapshot.store';
+import {
+  ImpactPublication,
+  PreviousPlan,
+  ReamorcageEffectue,
+  RestaurationSnapshot,
+} from '../../core/models';
+import { InstantanePerimeError, PlanSnapshotStore } from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
 
 /**
  * What the last finished solve did, under the launch buttons: when it ran,
@@ -136,7 +142,10 @@ export class SolveRecap {
     }
     this.restoring.set(true);
     try {
-      const result = await this.snapshots.restaurer(previous.snapshotId);
+      const result = await this.restaurer(previous.snapshotId);
+      if (!result) {
+        return;
+      }
       await this.resolution.reload();
       this.planningState.set(null);
       void this.problemes.reload();
@@ -147,6 +156,27 @@ export class SolveRecap {
       this.failed.emit(errorPrefix(error));
     } finally {
       this.restoring.set(false);
+    }
+  }
+
+  /**
+   * The same staleness question the Instantanés screen asks (issue #170). The
+   * capture this button offers is the one taken just before the solve, so any
+   * referential write since — a stand added while the run was going, a fiche
+   * deleted right after — makes the server refuse it. Without this, the one
+   * button that exists to undo a bad solve would answer 409 and stop there,
+   * with no way to say « quand même ».
+   */
+  private async restaurer(snapshotId: number): Promise<RestaurationSnapshot | null> {
+    try {
+      return await this.snapshots.restaurer(snapshotId);
+    } catch (error) {
+      if (!(error instanceof InstantanePerimeError)) {
+        throw error;
+      }
+      return (await confirmStaleRestore(this.confirm, error))
+        ? this.snapshots.restaurer(snapshotId, true)
+        : null;
     }
   }
 }

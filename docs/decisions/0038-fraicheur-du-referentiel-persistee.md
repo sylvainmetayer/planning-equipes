@@ -62,13 +62,27 @@ mutation la plus dangereuse pour une restauration serait la seule invisible.
    toutes les éditions (#70), ce qu'une carte indexée sur l'édition *courante*
    ne sait pas répondre. La fraîcheur se lit donc par instantané, dans la même
    jointure `edition` que le nom de l'édition.
-3. **L'existant est repris à la migration**, depuis le `max(modifie_le)` des
-   six référentiels ([0023](0023-modification-concurrente-par-horodatage.md)) :
-   sans quoi toute édition antérieure au déploiement afficherait « à jour »
-   jusqu'à sa prochaine écriture, c'est-à-dire le faux positif qu'on vient
-   d'écarter. Limite assumée, celle de (B) : une fiche supprimée n'a laissé
-   aucune ligne, donc la date reprise est celle de la dernière écriture
-   *survivante*. Elle ne vaut que pour les éditions existant au déploiement.
+3. **L'existant est repris à la migration**, sans quoi toute édition antérieure
+   au déploiement afficherait « à jour » jusqu'à sa prochaine écriture,
+   c'est-à-dire le faux positif qu'on vient d'écarter. Toutes les écritures que
+   `markModified()` couvre ne sont pas datables, donc la reprise a deux
+   sources : le `max(modifie_le)` des six référentiels
+   ([0023](0023-modification-concurrente-par-horodatage.md)) et le `cree_le`
+   des verrouillages d'un côté ; de l'autre, `constraint_toggle` et
+   `ponderation_contrainte`, qui ne portent aucune date et dont la seule
+   présence d'une ligne prouve une écriture délibérée — ces éditions-là
+   prennent l'instant de la migration, donc leurs instantanés antérieurs
+   passent « périmés ». Le sens prudent, appliqué à la minorité concernée
+   plutôt qu'à tout le monde : une édition qui n'a jamais touché une bascule ni
+   un poids garde sa date exacte.
+
+   Deux limites restent, du même genre — une écriture sans trace datable — et
+   ne valent que pour les éditions existant au déploiement, jusqu'à leur
+   écriture suivante : une fiche supprimée n'a laissé aucune ligne, donc la
+   date reprise est celle de la dernière écriture *survivante* ; et
+   `parametres_legaux` / `parametres_solveur` portent une ligne créée d'office
+   par édition, dont la présence ne prouve rien — les comparer aux valeurs par
+   défaut casserait au premier changement de défaut.
 4. **Le refus est une question, pas un mur.** Restaurer un instantané périmé
    répond `409` sans rien écrire, et se rejoue avec `forcer` : le plan est
    restaurable, il ne décrit simplement plus le référentiel d'aujourd'hui.
