@@ -7,9 +7,10 @@
 // afternoon.
 //
 // Pure functions, and the clock comes in as an argument: the browser's is the
-// only one available on this page, and a helper that read it itself could not
-// be tested on the one case that matters — a machine whose timezone puts the
-// current day on another UTC date.
+// one this page reads, and a helper that read it itself could not be tested on
+// the one case that matters — a machine whose timezone puts the current day on
+// another UTC date. The server only ever overrides its date, and only in
+// development: see `maintenantEffectif`.
 
 import { toDateKey } from '../../core/date-utils';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
@@ -58,6 +59,30 @@ export interface RepereMaintenant {
  */
 export function aujourdhuiLocal(maintenant: Date): string {
   return toDateKey(maintenant);
+}
+
+/**
+ * The moment the marker reasons on: the browser's own, unless a developer froze
+ * the server's date (`/api/debug/date-du-jour`).
+ *
+ * <p>Only the date is replaced, never the time of day — the same rule as the
+ * mode jour J screen: a frozen day must still see its seats fall behind as the
+ * afternoon goes on. A malformed value is ignored rather than trusted: a marker
+ * on « Invalid Date » folds every day away.</p>
+ */
+export function maintenantEffectif(horloge: Date, dateFigee: string | null): Date {
+  const morceaux = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateFigee ?? '');
+  if (!morceaux) {
+    return horloge;
+  }
+  return new Date(
+    Number(morceaux[1]),
+    Number(morceaux[2]) - 1,
+    Number(morceaux[3]),
+    horloge.getHours(),
+    horloge.getMinutes(),
+    horloge.getSeconds(),
+  );
 }
 
 /** `HH:mm`, the shape both sides of every comparison below are reduced to. */

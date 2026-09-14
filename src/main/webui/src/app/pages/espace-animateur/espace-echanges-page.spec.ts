@@ -63,6 +63,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     abonnementToken: 'abo-1',
     changements: [],
     changementsLe: null,
+    dateDuJourFigee: null,
     pauses: [],
     ...overrides,
   };

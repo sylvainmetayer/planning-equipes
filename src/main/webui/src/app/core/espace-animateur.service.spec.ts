@@ -25,6 +25,7 @@ function view(): EspaceAnimateurView {
     pauses: [],
     changements: [],
     changementsLe: null,
+    dateDuJourFigee: null,
   };
 }
 

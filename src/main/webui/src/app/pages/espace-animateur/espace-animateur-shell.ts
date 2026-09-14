@@ -1,3 +1,4 @@
+import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -34,6 +35,7 @@ import { VersionFooter } from '../../shared/version-footer';
 @Component({
   selector: 'app-espace-animateur-shell',
   imports: [
+    DatePipe,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
@@ -73,6 +75,10 @@ export class EspaceAnimateurShell {
     if (jeton) {
       void this.espace.charger(jeton);
     }
+  }
+
+  protected infobulleDateFigee(date: string): string {
+    return $localize`:@@espace.dateFigee:MOCK — la date du jour est figée au ${date}:date: sur ce serveur : « Aujourd'hui » et les journées passées se lisent sur ce jour-là, pas sur celui du téléphone.`;
   }
 
   /** Language messages resolve once at bootstrap, so switching reloads the page. */

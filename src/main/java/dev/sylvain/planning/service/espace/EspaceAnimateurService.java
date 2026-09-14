@@ -88,6 +88,9 @@ public class EspaceAnimateurService {
     @Inject
     PublicationTraceRepository traceRepository;
 
+    @Inject
+    JourJClock clock;
+
     /**
      * Too many distinct colleagues looked up in the window (see
      * {@link ColleagueLookupLimiter}). Not a {@link BusinessError}, like the two
@@ -192,6 +195,13 @@ public class EspaceAnimateurService {
      *                 is nothing to show. Not the same instant as
      *                 {@code publieLe}: the edition may have published twice
      *                 since without this person's schedule moving
+     * @param dateDuJourFigee the date a developer froze on this server (see
+     *                 {@link JourJClock}), {@code null} when the real clock is
+     *                 in use — and always {@code null} outside {@code
+     *                 quarkus:dev}. The day marker reads « today » from the
+     *                 phone; without this, a frozen date moved the jour J
+     *                 screen and left the espace on another day, with nothing
+     *                 on screen saying so
      */
     @Schema(requiredProperties = {"foireOuverte"})
     public record EspaceAnimateurView(
@@ -210,7 +220,8 @@ public class EspaceAnimateurService {
             String abonnementToken,
             List<PauseAnalyzer.PauseAnimateurView> pauses,
             List<String> changements,
-            Instant changementsLe) {}
+            Instant changementsLe,
+            LocalDate dateDuJourFigee) {}
 
     /**
      * One demande with every label resolved, shared by the espace and the
@@ -300,7 +311,8 @@ public class EspaceAnimateurService {
                 referenceDataService.abonnementToken(animateurId),
                 pauseAnalyzer.pausesAnimateur(planning, animateurId),
                 diffToShow ? lastTrace.changements() : List.of(),
-                diffToShow ? lastTrace.envoyeLe() : null);
+                diffToShow ? lastTrace.envoyeLe() : null,
+                clock.mockedDate());
     }
 
     private static List<PosteAnimateurView> postesOf(

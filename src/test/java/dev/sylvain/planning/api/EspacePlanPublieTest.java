@@ -7,6 +7,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
+import dev.sylvain.planning.config.DevMode;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -15,10 +16,12 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
+import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
+import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
@@ -68,6 +71,17 @@ class EspacePlanPublieTest {
     @Inject
     DataSource dataSource;
 
+    @Inject
+    JourJClock clock;
+
+    /** A server launched with {@code quarkus:dev}, as far as the guard can tell. */
+    private static final class DevModeActif extends DevMode {
+        @Override
+        public boolean isActive() {
+            return true;
+        }
+    }
+
     @BeforeEach
     void seed() {
         mailbox.clear();
@@ -89,6 +103,8 @@ class EspacePlanPublieTest {
     void nettoyer() {
         RestAssured.requestSpecification = null;
         forgetPublications();
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        clock.setMockedDate(null);
     }
 
     @Test
@@ -445,6 +461,39 @@ class EspacePlanPublieTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("pas encore été publié"));
+    }
+
+    /* ------------------- The frozen date of development ------------------ */
+
+    /**
+     * The espace computes its day marker in the browser: without the server's
+     * frozen date in the view, jour J moves to that day and the espace of the
+     * very people it reassigns stays on the phone's.
+     */
+    @Test
+    void lEspaceRelaieLaDateFigeeEnDeveloppement() {
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        clock.setMockedDate(JOUR);
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("dateDuJourFigee", equalTo(JOUR.toString()));
+    }
+
+    /** The same rule as jour J: a row that reached a deployed instance is inert. */
+    @Test
+    void horsDeveloppementLEspaceNeRelaieAucuneDateFigee() {
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        clock.setMockedDate(JOUR);
+        QuarkusMock.installMockForType(new DevMode(), DevMode.class);
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("dateDuJourFigee", nullValue());
     }
 
     /* -------------------------------- Helpers ------------------------------ */

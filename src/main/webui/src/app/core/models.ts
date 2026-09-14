@@ -2091,6 +2091,12 @@ export interface EspaceAnimateurView {
    * person's own schedule moving.
    */
   changementsLe: string | null;
+  /**
+   * The date a developer froze on this server (`/api/debug/date-du-jour`),
+   * `null` on the real clock — always `null` outside `quarkus:dev`. The day
+   * marker then reads it in place of the phone's date, and the toolbar says so.
+   */
+  dateDuJourFigee: string | null;
 }
 
 /**

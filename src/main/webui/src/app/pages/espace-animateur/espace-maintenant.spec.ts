@@ -1,14 +1,15 @@
 // The espace's « now » marker (issue #535), tested without rendering: what has
-// to be frozen here is how the clock is read — the browser's is the only one
-// this page has, timezone included.
+// to be frozen here is how the clock is read — the browser's, timezone
+// included, with only its date replaced when the server has one frozen.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 import {
-  JourPlanning,
   aujourdhuiLocal,
   duringTheEvent,
   isPasse,
+  JourPlanning,
+  maintenantEffectif,
   repereMaintenant,
 } from './espace-maintenant';
 
@@ -228,5 +229,22 @@ describe('duringTheEvent / isPasse', () => {
     expect(isPasse(jours[1], '2026-07-12')).toBe(false);
     // A day with no date (a seat on no dated timeslot) is never folded away.
     expect(isPasse(jour('', [poste({ date: null })]), '2026-07-12')).toBe(false);
+  });
+});
+
+describe('maintenantEffectif', () => {
+  it("keeps the browser's clock when nothing is frozen", () => {
+    const horloge = new Date(2026, 8, 14, 15, 42, 7);
+    expect(maintenantEffectif(horloge, null)).toBe(horloge);
+  });
+
+  it('takes the frozen date and keeps the time of day', () => {
+    const effectif = maintenantEffectif(new Date(2026, 8, 14, 15, 42, 7), '2026-07-11');
+    expect(effectif).toEqual(new Date(2026, 6, 11, 15, 42, 7));
+  });
+
+  it('ignores a value that is not a date rather than folding every day away', () => {
+    const horloge = new Date(2026, 8, 14, 15, 42);
+    expect(maintenantEffectif(horloge, 'le 11 juillet')).toBe(horloge);
   });
 });

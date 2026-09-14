@@ -28,6 +28,16 @@
   }
 }
 
+/* Développement seulement : date du jour figée sur le serveur. */
+.espace-date-figee {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--mat-sys-error);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .espace-toolbar .app-logo {
   height: 2.5rem;
   width: auto;

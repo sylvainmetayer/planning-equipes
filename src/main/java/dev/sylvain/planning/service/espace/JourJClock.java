@@ -11,7 +11,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
- * The source of "today" for the mode jour J screen — and for nothing else.
+ * The source of "today" for the mode jour J screen and the espace animateur's
+ * day marker — and for nothing else.
  *
  * <h2>Why it exists</h2>
  *
@@ -28,6 +29,12 @@ import java.time.LocalTime;
  * <p><b>The date, and only for the mode jour J screen.</b> Concretely, the
  * three questions that screen asks: which day is being looked at, which of its
  * timeslots are still ahead, and which ones an absence covers.</p>
+ *
+ * <p><b>And the espace animateur's day marker</b> — the seat in progress, the
+ * next one, the elapsed days folded away. That one is computed in the browser,
+ * so the espace view carries {@link #mockedDate()} and the page puts it in
+ * place of the phone's date. Left out, a frozen date showed jour J on one day
+ * and the espace of the very people it moves on another.</p>
  *
  * <p>The <b>time of day is never mocked</b> — {@link #now()} always returns the
  * real wall clock. Freezing an hour as well would make the screen static, when

@@ -1015,7 +1015,12 @@ Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
 
 **Ce que le mock remplace, exactement : la date, et seulement pour l'écran
 jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,
-et lesquels une absence couvre. **L'heure de la journée n'est jamais figée** :
+et lesquels une absence couvre — **et pour le repère du jour de l'espace
+animateur**. Celui-là se calcule dans le navigateur : `GET
+/api/espace-animateur/{jeton}` porte donc `dateDuJourFigee` (toujours `null`
+hors `quarkus:dev`), que la page substitue à la date du téléphone. Sans cela,
+jour J se plaçait sur la date figée et l'espace des personnes qu'il réaffecte
+restait sur la vraie, sans rien à l'écran pour le dire. **L'heure de la journée n'est jamais figée** :
 la figer rendrait l'écran statique, alors que ce qu'on veut vérifier est
 justement que les créneaux passent derrière au fil de l'après-midi.
 
@@ -1035,7 +1040,8 @@ Le réglage est persisté en base (table `horloge_jour_j`, non cloisonnée par
 que gardé en mémoire, pour la même raison que le budget de résolution manuel —
 un réglage qui vit dans un processus disparaît au premier rechargement à chaud.
 Quand il est actif, la barre d'outils porte une icône d'avertissement sur tous
-les écrans, dont le lien mène directement au champ.
+les écrans, dont le lien mène directement au champ ; celle de l'espace animateur
+affiche la date figée, sans lien.
 
 ## Faisabilité et besoin en animateurs
 

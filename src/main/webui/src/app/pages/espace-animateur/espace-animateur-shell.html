@@ -2,6 +2,16 @@
   <app-brand-logo />
   <span class="app-title" i18n="@@espace.title">Espace animateur</span>
   <span class="app-toolbar-spacer"></span>
+  <!-- Développement seulement : le repère du jour lit alors la date figée du
+       serveur, pas celle du téléphone. Sans lien, contrairement à la barre
+       d'administration : Débogage n'est pas une page de cet espace. -->
+  @if (espace.view()?.dateDuJourFigee; as dateFigee) {
+    <span class="espace-date-figee" role="status" [matTooltip]="infobulleDateFigee(dateFigee)"
+          [attr.aria-label]="infobulleDateFigee(dateFigee)">
+      <mat-icon inline>hourglass_disabled</mat-icon>
+      <span>{{ dateFigee | date: 'dd/MM' }}</span>
+    </span>
+  }
   @if (espace.view(); as vue) {
     <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
   }

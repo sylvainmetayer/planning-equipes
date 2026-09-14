@@ -11,7 +11,7 @@ import {
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
-import { JourPlanning, isPasse, repereMaintenant } from './espace-maintenant';
+import { JourPlanning, isPasse, maintenantEffectif, repereMaintenant } from './espace-maintenant';
 import { lienCarte } from './lien-carte';
 
 /**
@@ -208,8 +208,16 @@ export class EspacePlanningPage {
    */
   private readonly maintenant = signal(new Date());
 
-  /** `null` outside the event: no head block rather than a misleading one. */
-  protected readonly repere = computed(() => repereMaintenant(this.jours(), this.maintenant()));
+  /**
+   * `null` outside the event: no head block rather than a misleading one. On
+   * the server's frozen date when a developer set one — the day jour J is on.
+   */
+  protected readonly repere = computed(() =>
+    repereMaintenant(
+      this.jours(),
+      maintenantEffectif(this.maintenant(), this.espace.view()?.dateDuJourFigee ?? null),
+    ),
+  );
 
   /** The seat the head block is about: the one being held, else the one to come. */
   protected readonly posteRepere = computed(() => {

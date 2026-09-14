@@ -37,6 +37,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     foireFermeLe: null,
     abonnementToken: 'abo-1',
     pauses: [],
+    dateDuJourFigee: null,
     ...overrides,
   } as EspaceAnimateurView;
 }
@@ -587,6 +588,33 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     expect(cartes[0].classList).not.toContain('espace-jour-passe');
     // « Aujourd'hui » marks the day's card, not yesterday's.
     expect(cartes[1].classList).toContain('espace-jour-aujourdhui');
+  });
+
+  it('se place sur la date figée du serveur plutôt que sur celle du téléphone', async () => {
+    // The phone says September, long after the event: without the frozen
+    // date, the page would go back to its plain form.
+    await rendre(
+      new Date(2026, 8, 14, 11, 0),
+      view({
+        dateDuJourFigee: '2026-07-12',
+        postes: [
+          poste({ date: '2026-07-10', standNom: 'Molkky' }),
+          poste({
+            creneauId: 2,
+            date: '2026-07-12',
+            standNom: 'Kubb',
+            heureDebut: '14:00',
+            heureFin: '16:00',
+          }),
+        ],
+      }),
+    );
+
+    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+      'Prochain poste : Kubb',
+    );
+    expect(racine().querySelector('.espace-jours-passes')).not.toBeNull();
+    expect(racine().querySelector('.espace-jour')!.classList).toContain('espace-jour-aujourdhui');
   });
 
   it('ne replie rien et ne dit rien hors événement', async () => {
