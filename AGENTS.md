@@ -202,6 +202,17 @@ The `%test.` prefix on the first override is what matters: `application.properti
 pins `%test.quarkus.datasource.devservices.enabled=true`, and a profile-specific
 value outranks a plain system property.
 
+**`-DskipITs=false` needs a password that is not the shipped one.** The `*IT`
+classes launch the packaged application, so it boots in `%prod` — where
+`DefaultSecrets` refuses `DB_PASSWORD=festival`, the very value the recipe
+above gives PostgreSQL, and the run dies on "Unable to determine the status of
+the running process". CI never meets this: its dev services hand out a random
+password. Give the role one of its own for that run
+(`ALTER USER festival WITH PASSWORD 'autre-que-l-exemple'`, passed as
+`-Dquarkus.datasource.password=…`), and leave `ADMIN_PASSWORD` alone — the pom
+already hands the launched process a real one (`it.admin.password`), and
+overriding it fails every `*IT` on `j_security_check` instead.
+
 ## Architecture (essentials)
 
 Single Quarkus service, no separate solver microservice. Package root:
