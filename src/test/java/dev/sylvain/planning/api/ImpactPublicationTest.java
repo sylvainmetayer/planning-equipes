@@ -20,7 +20,11 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Runs in its own edition: other test classes publish in the default one
  * and a reset does not forget a publication, so "nothing published yet" is
- * only true where nobody else has been.</p>
+ * only true where nobody else has been. Its own publications have to be
+ * forgotten too, and explicitly: {@code /api/planning/reset} empties the
+ * planning tables but not {@code plan_snapshot}, so the plan one test
+ * publishes is still the published plan of the next — which then has nothing
+ * to announce and is refused (409).</p>
  */
 @QuarkusTest
 class ImpactPublicationTest {
@@ -35,11 +39,29 @@ class ImpactPublicationTest {
                 .when()
                 .post("/api/editions");
         edition().when().post("/api/planning/reset").then().statusCode(200);
+        forgetPublications();
     }
 
     @AfterEach
     void resetDatabase() {
         edition().when().post("/api/planning/reset").then().statusCode(200);
+        forgetPublications();
+    }
+
+    /**
+     * Back to « rien n'a jamais été publié sur cette édition », which the reset
+     * alone does not give: a published snapshot survives it on purpose — it is
+     * what the espace animateur reads — and describes its seats well enough to
+     * outlive the créneaux they named (issue #576).
+     */
+    private void forgetPublications() {
+        edition()
+                .contentType("text/plain")
+                .body("DELETE FROM plan_snapshot WHERE edition_id = '" + EDITION + "';")
+                .when()
+                .post("/api/database/import")
+                .then()
+                .statusCode(200);
     }
 
     private static RequestSpecification edition() {

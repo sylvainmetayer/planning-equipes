@@ -84,6 +84,59 @@ class PlanningPersistenceServiceTest {
     }
 
     /**
+     * Issue #576: a seat whose créneau was deleted stands on one rebuilt from
+     * the snapshot, and that rebuilt créneau must take its place in the grid's
+     * day numbering — which is computed over the whole grid, from its earliest
+     * date ({@code Creneau.assignerJours}), and never stored.
+     *
+     * <p>Left at its default the number would be 0: the night-rest rule reads
+     * {@code veille.getJour() + 1 == lendemain.getJour()}, so a 0 would pass
+     * for the eve of day 1 and invent a violation, and two deleted créneaux on
+     * different dates would count as one day wherever a read-out groups by
+     * jour.</p>
+     */
+    @Test
+    void unCreneauReconstruitPrendSaPlaceDansLaNumerotationDesJours() {
+        editionService.create(new Edition("EDITION-JOURS", "Édition jours", false, null));
+        try {
+            editionContext.executeIn("EDITION-JOURS", () -> {
+                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                referenceDataService.createStand(
+                        new Stand("STAND-JOURS", "Stand jours", Set.of("STRATEGIE"), 1, 1, false));
+                Creneau premier = referenceDataService.createCreneau(
+                        new Creneau(null, 1, LocalDate.of(2026, 7, 11), LocalTime.of(10, 0), LocalTime.of(12, 0)));
+                Creneau troisieme = referenceDataService.createCreneau(
+                        new Creneau(null, 1, LocalDate.of(2026, 7, 13), LocalTime.of(10, 0), LocalTime.of(12, 0)));
+                referenceDataService.createAnimateur(
+                        new Animateur("A-JOURS", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+
+                // The middle day is gone from the grid, and only the seat still
+                // describes it — exactly what a published snapshot carries.
+                long disparu = Math.max(premier.getId(), troisieme.getId()) + 1;
+                PlanningEvenement assemble = persistenceService.assemblerPlanning(List.of(
+                        siege("poste-1", premier.getId(), null),
+                        siege(
+                                "poste-2",
+                                disparu,
+                                new PlanningPersistenceService.VacationSnapshot(
+                                        LocalDate.of(2026, 7, 12), LocalTime.of(14, 0), LocalTime.of(18, 0))),
+                        siege("poste-3", troisieme.getId(), null)));
+
+                assertThat(assemble.getPostes())
+                        .extracting(poste -> poste.getCreneau().getJour())
+                        .containsExactly(1, 2, 3);
+            });
+        } finally {
+            editionService.delete("EDITION-JOURS");
+        }
+    }
+
+    private static PlanningPersistenceService.Siege siege(
+            String posteId, long creneauId, PlanningPersistenceService.VacationSnapshot vacation) {
+        return new PlanningPersistenceService.Siege(posteId, "STAND-JOURS", creneauId, "A-JOURS", null, null, vacation);
+    }
+
+    /**
      * Regression test: {@code loadAnimateursByStandCreneau()} queried
      * {@code poste_affectation} without an {@code edition_id} filter
      * ({@code prepareStatement} instead of {@code prepareScoped}), so the

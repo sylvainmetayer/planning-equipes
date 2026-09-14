@@ -115,7 +115,7 @@ créneau supprimé laisse un siège du seul côté publié, ce qui est précisé
 définition d'un retrait. La personne entre dans le décompte, reçoit « mardi
 14/07 : Cirque 14h-18h (retiré) », et son espace rejoue la phrase.
 
-Deux conséquences, assumées :
+Quatre conséquences, assumées :
 
 - **La vacation reste visible dans l'espace tant que la publication n'a pas
   annoncé son retrait** — y compris dans le PDF, l'abonnement ICS et le rappel
@@ -127,6 +127,18 @@ Deux conséquences, assumées :
   jour, et écartés quand leur créneau a disparu. Rétrocompatible sans
   migration — au prix d'une publication dont les retraits restent muets, le
   temps d'une capture.
+- **Vider entièrement la grille laisse le retrait indicible.** Publier exige un
+  plan de travail non vide, et une capture publiée refuse d'être vide : tant
+  que plus aucun siège n'est persisté, l'espace continue de servir le dernier
+  planning publié sans qu'on puisse le reprendre. La fenêtre se referme dès la
+  résolution suivante, qui redonne de quoi publier ; c'est la matérialisation
+  d'un découpage, pas une fin d'édition, qui passe par là.
+- **La foire peut proposer un échange sur une vacation dont le créneau n'existe
+  plus** : les suggestions se lisent sur le planning publié, la soumission se
+  valide sur le planning de travail, et elle est refusée. Un refus explicite,
+  pas une incohérence — on n'échange pas une vacation que la grille ne porte
+  plus — mais l'aller-retour est inutile, et c'est le prix de l'espace qui
+  montre la promesse plutôt que la grille.
 
 Ce que cette décision ne prétend toujours pas faire : un siège dont le **stand**
 a disparu reste écarté. Le trou est de même nature, sa source de vérité est

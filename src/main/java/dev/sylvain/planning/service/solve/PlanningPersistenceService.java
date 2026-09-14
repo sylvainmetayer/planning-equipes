@@ -635,12 +635,17 @@ public class PlanningPersistenceService {
         Map<String, Stand> standsById = indexById(stands, Stand::getId);
         Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 
+        // Créneaux the référentiel no longer holds, rebuilt from the seats that
+        // name them — one instance per id, so two seats of the same deleted
+        // vacation stand on the same créneau, as they did when it existed.
+        Map<Long, Creneau> disparus = new LinkedHashMap<>();
+
         List<PosteAffectation> postes = new ArrayList<>();
         for (Siege siege : sieges) {
             Stand stand = standsById.get(siege.standId());
             Creneau creneau = creneauxById.get(siege.creneauId());
-            if (creneau == null) {
-                creneau = creneauDisparu(siege);
+            if (creneau == null && siege.vacation() != null) {
+                creneau = disparus.computeIfAbsent(siege.creneauId(), unused -> creneauDisparu(siege));
             }
             if (stand == null || creneau == null) {
                 continue;
@@ -652,6 +657,18 @@ public class PlanningPersistenceService {
             poste.setHeureDebutEffective(siege.heureDebutEffective());
             poste.setHeureFinEffective(siege.heureFinEffective());
             postes.add(poste);
+        }
+
+        // The day numbers of a grid are computed over the whole grid, from its
+        // earliest date (Creneau.assignerJours, run by the référentiel read
+        // above). A rebuilt créneau joins that grid, so the numbering is run
+        // again over both: left at its default, it would read as the eve of
+        // day 1 for the night-rest rule, and two rebuilt créneaux on different
+        // dates would count as one day wherever a read-out groups by jour.
+        if (!disparus.isEmpty()) {
+            List<Creneau> grille = new ArrayList<>(creneaux);
+            grille.addAll(disparus.values());
+            Creneau.assignerJours(grille);
         }
 
         LocalDate dateDebut = postes.stream()
@@ -670,20 +687,13 @@ public class PlanningPersistenceService {
 
     /**
      * The créneau a seat stood on, rebuilt from the seat itself when the
-     * référentiel no longer holds it. {@code null} when the seat carries no
-     * frozen vacation — there is then nothing to rebuild it from, and dropping
-     * it stays the only honest answer.
+     * référentiel no longer holds it.
      *
-     * <p>{@code jour} is left at 0, as everywhere a créneau is read rather than
-     * solved: the number is computed over a whole grid
-     * ({@link Creneau#assignerJours}), and a créneau that grid no longer holds
-     * has no place in it.</p>
+     * <p>{@code jour} is left at 0 here and assigned by the caller, over the
+     * whole grid at once: the number means nothing on its own.</p>
      */
     private static Creneau creneauDisparu(Siege siege) {
         VacationSnapshot vacation = siege.vacation();
-        if (vacation == null) {
-            return null;
-        }
         return new Creneau(siege.creneauId(), 0, vacation.date(), vacation.heureDebut(), vacation.heureFin());
     }
 
