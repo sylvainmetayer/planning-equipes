@@ -1869,9 +1869,6 @@
           "jour" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
-          "standId" : {
-            "type" : "string"
-          },
           "commentaire" : {
             "type" : "string"
           },
@@ -2484,7 +2481,7 @@
         }
       },
       "EtatRelecture" : {
-        "required" : [ "journees", "journeesValidees", "statut", "validationsStand" ],
+        "required" : [ "journees", "journeesValidees", "statut" ],
         "type" : "object",
         "properties" : {
           "journees" : {
@@ -2492,10 +2489,6 @@
             "format" : "int32"
           },
           "journeesValidees" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "validationsStand" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -4249,9 +4242,6 @@
           "jour" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
-          "standId" : {
-            "type" : "string"
-          },
           "validee" : {
             "type" : "boolean"
           },
@@ -4305,7 +4295,7 @@
         }
       },
       "ProgressionValidations" : {
-        "required" : [ "journees", "journeesValidees", "joursValides", "validationsStand" ],
+        "required" : [ "journees", "journeesValidees", "joursValides" ],
         "type" : "object",
         "properties" : {
           "journees" : {
@@ -4323,10 +4313,6 @@
               "format" : "date",
               "examples" : [ "2022-03-10" ]
             }
-          },
-          "validationsStand" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -5851,9 +5837,6 @@
           },
           "jour" : {
             "$ref" : "#/components/schemas/LocalDate"
-          },
-          "standId" : {
-            "type" : "string"
           },
           "valideLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -11346,12 +11329,6 @@
       "get" : {
         "parameters" : [ {
           "name" : "jour",
-          "in" : "query",
-          "schema" : {
-            "type" : "string"
-          }
-        }, {
-          "name" : "stand",
           "in" : "query",
           "schema" : {
             "type" : "string"

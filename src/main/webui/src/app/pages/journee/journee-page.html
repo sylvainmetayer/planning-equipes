@@ -97,7 +97,7 @@
 </mat-card>
 
 @if (!error() && dateCourante(); as jour) {
-  <app-validation-panel [jour]="jour" [stand]="stand() || null" (reported)="message.set($event)" />
+  <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
 }
 
 @if (!error() && !loading()) {

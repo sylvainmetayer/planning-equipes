@@ -5,7 +5,7 @@ import java.time.LocalDate;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * One day — or one stand of one day — marked « relu et accepté ». Persistent
+ * One day marked « relu et accepté ». Persistent
  * state (one row per validation in {@code validation_journee}), not a journal:
  * deleting the row un-validates.
  *
@@ -20,9 +20,6 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * just wrote — unless that day also carries a {@link TypeVerrouillage#JOUR}
  * lock, in which case the reading still describes what is there.</p>
  *
- * @param standId     {@code null} for the day as a whole, which is the axis the
- *                    progression counts; set when the review was delegated
- *                    stand by stand
  * @param validePar   the admin account's principal name, {@code null} when the
  *                    caller carried no identity (an assistant over MCP). Named
  *                    users will fill it without migrating what is already
@@ -30,5 +27,4 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param commentaire free text the reviewer left, kept as-is
  */
 @Schema(requiredProperties = {"id", "jour", "valideLe"})
-public record ValidationJournee(
-        String id, LocalDate jour, String standId, Instant valideLe, String validePar, String commentaire) {}
+public record ValidationJournee(String id, LocalDate jour, Instant valideLe, String validePar, String commentaire) {}

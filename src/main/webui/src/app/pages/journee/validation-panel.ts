@@ -56,8 +56,12 @@ export class ValidationPanel {
 
   /** The day on screen, `AAAA-MM-JJ`; null while the plan is still loading. */
   readonly jour = input<string | null>(null);
-  /** The stand the day is filtered to, if any: the reading follows the filter. */
-  readonly stand = input<string | null>(null);
+  /**
+   * Whether the page narrows what it shows (a stand, an animateur). The reading
+   * never follows the filter — it is always the whole day — so the panel says
+   * so rather than let a filtered screen pass for what is being accepted.
+   */
+  readonly filtre = input(false);
 
   /** A sentence for the page's feedback: the reading was recorded, or withdrawn. */
   readonly reported = output<string>();
@@ -70,14 +74,13 @@ export class ValidationPanel {
   protected readonly poserVerrou = signal(false);
 
   constructor() {
-    // The day (or the stand filter) changed: the whole panel describes another
-    // target, so its read-out and its unsent comment both start again.
+    // The day changed: the whole panel describes another day, so its read-out
+    // and its unsent comment both start again.
     effect(() => {
       const jour = this.jour();
-      const stand = this.stand();
       this.commentaire.set('');
       this.poserVerrou.set(false);
-      void this.reload(jour, stand);
+      void this.reload(jour);
     });
   }
 
@@ -116,13 +119,12 @@ export class ValidationPanel {
     try {
       const resultat = await this.store.accept({
         jour,
-        standId: this.stand() || null,
         commentaire: this.commentaire() || null,
         poserVerrou: this.poserVerrou(),
       });
       this.commentaire.set('');
       this.poserVerrou.set(false);
-      await this.reload(jour, this.stand());
+      await this.reload(jour);
       this.reported.emit(
         resultat.verrouPose
           ? $localize`:@@journee.validation.enregistreeAvecVerrou:Journée relue et acceptée, et verrouillée pour les prochaines résolutions.`
@@ -146,7 +148,7 @@ export class ValidationPanel {
     this.busy.set(true);
     try {
       await this.store.withdraw(validationId);
-      await this.reload(jour, this.stand());
+      await this.reload(jour);
       this.reported.emit(
         $localize`:@@journee.validation.retiree:Validation retirée : la journée est de nouveau à relire.`,
       );
@@ -162,14 +164,14 @@ export class ValidationPanel {
    * breaking the page: the four renderings of the day are what the screen is
    * for, and none of them needs this to draw.
    */
-  private async reload(jour: string | null, stand: string | null): Promise<void> {
+  private async reload(jour: string | null): Promise<void> {
     if (!jour) {
       this.prerequis.set(null);
       return;
     }
     this.chargement.set(true);
     try {
-      this.prerequis.set(await this.api.prerequis(jour, stand || null));
+      this.prerequis.set(await this.api.prerequis(jour));
       this.erreur.set('');
       if (!this.store.progression()) {
         await this.store.reload();

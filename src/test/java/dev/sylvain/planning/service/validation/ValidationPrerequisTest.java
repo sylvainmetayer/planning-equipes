@@ -52,31 +52,11 @@ class ValidationPrerequisTest {
     @Test
     void progressionCountsWholeDaysAgainstTheDaysTheGridHolds() {
         ProgressionValidations progression = ValidationPrerequisService.progression(
-                jours(JOUR, LENDEMAIN, JOUR.plusDays(2)), List.of(validation(JOUR, null), validation(LENDEMAIN, null)));
+                jours(JOUR, LENDEMAIN, JOUR.plusDays(2)), List.of(validation(JOUR), validation(LENDEMAIN)));
 
         assertThat(progression.journees()).isEqualTo(3);
         assertThat(progression.journeesValidees()).isEqualTo(2);
         assertThat(progression.joursValides()).containsExactly(JOUR, LENDEMAIN);
-        assertThat(progression.validationsStand()).isZero();
-    }
-
-    @Test
-    void aStandReadingIsProgressButNeverAValidatedDay() {
-        ProgressionValidations progression = ValidationPrerequisService.progression(
-                jours(JOUR, LENDEMAIN), List.of(validation(JOUR, "STAND-STRAT"), validation(JOUR, "STAND-AUTRE")));
-
-        assertThat(progression.journeesValidees()).isZero();
-        assertThat(progression.validationsStand()).isEqualTo(2);
-    }
-
-    /** A day accepted whole already covers its stands; counting them again would double-read it. */
-    @Test
-    void standReadingsOfADayAcceptedWholeAreNotCountedTwice() {
-        ProgressionValidations progression = ValidationPrerequisService.progression(
-                jours(JOUR, LENDEMAIN), List.of(validation(JOUR, null), validation(JOUR, "STAND-STRAT")));
-
-        assertThat(progression.journeesValidees()).isEqualTo(1);
-        assertThat(progression.validationsStand()).isZero();
     }
 
     /**
@@ -85,8 +65,8 @@ class ValidationPrerequisTest {
      */
     @Test
     void aValidationOnADayTheGridNoLongerHoldsIsNotCounted() {
-        ProgressionValidations progression = ValidationPrerequisService.progression(
-                jours(JOUR), List.of(validation(JOUR, null), validation(LENDEMAIN, null)));
+        ProgressionValidations progression =
+                ValidationPrerequisService.progression(jours(JOUR), List.of(validation(JOUR), validation(LENDEMAIN)));
 
         assertThat(progression.journees()).isEqualTo(1);
         assertThat(progression.journeesValidees()).isEqualTo(1);
@@ -106,7 +86,7 @@ class ValidationPrerequisTest {
     @Test
     void aCleanDaySatisfiesAllFourPrerequisites() {
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, null, planWithSeats(true), diagnostic(), pauses(true), fragilite(false));
+                JOUR, null, planWithSeats(true), diagnostic(), pauses(true), fragilite(false));
 
         assertThat(lu.tousSatisfaits()).isTrue();
         assertThat(lu.validee()).isFalse();
@@ -116,14 +96,14 @@ class ValidationPrerequisTest {
     @Test
     void anEmptySeatOfTheDayIsReportedAndOnlyForThatDay() {
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, null, planWithSeats(false), diagnostic(), pauses(true), fragilite(false));
+                JOUR, null, planWithSeats(false), diagnostic(), pauses(true), fragilite(false));
 
         assertThat(prerequis(lu, ValidationPrerequisService.SIEGES_VIDES).nombre())
                 .isEqualTo(1);
         assertThat(lu.tousSatisfaits()).isFalse();
 
         PrerequisJournee lendemain = ValidationPrerequisService.assemble(
-                LENDEMAIN, null, null, planWithSeats(false), diagnostic(), pauses(true), fragilite(false));
+                LENDEMAIN, null, planWithSeats(false), diagnostic(), pauses(true), fragilite(false));
         assertThat(prerequis(lendemain, ValidationPrerequisService.SIEGES_VIDES).nombre())
                 .isZero();
     }
@@ -135,13 +115,13 @@ class ValidationPrerequisTest {
 
         assertThat(prerequis(
                                 ValidationPrerequisService.assemble(
-                                        JOUR, null, null, plan, diagnostic, pauses(true), fragilite(false)),
+                                        JOUR, null, plan, diagnostic, pauses(true), fragilite(false)),
                                 ValidationPrerequisService.ECARTS_DURS)
                         .nombre())
                 .isEqualTo(1);
         assertThat(prerequis(
                                 ValidationPrerequisService.assemble(
-                                        LENDEMAIN, null, null, plan, diagnostic, pauses(true), fragilite(false)),
+                                        LENDEMAIN, null, plan, diagnostic, pauses(true), fragilite(false)),
                                 ValidationPrerequisService.ECARTS_DURS)
                         .nombre())
                 .isZero();
@@ -155,7 +135,7 @@ class ValidationPrerequisTest {
     @Test
     void withoutAnAnalysisTheHardViolationLineSaysItDoesNotKnow() {
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, null, planWithSeats(true), null, pauses(true), fragilite(false));
+                JOUR, null, planWithSeats(true), null, pauses(true), fragilite(false));
 
         Prerequis ecarts = prerequis(lu, ValidationPrerequisService.ECARTS_DURS);
         assertThat(ecarts.connu()).isFalse();
@@ -166,7 +146,7 @@ class ValidationPrerequisTest {
     @Test
     void aBreakWithNobodyToTakeTheRelayIsReported() {
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, null, planWithSeats(true), diagnostic(), pauses(false), fragilite(false));
+                JOUR, null, planWithSeats(true), diagnostic(), pauses(false), fragilite(false));
 
         assertThat(prerequis(lu, ValidationPrerequisService.PAUSES_NON_RELAYEES).nombre())
                 .isEqualTo(1);
@@ -175,30 +155,20 @@ class ValidationPrerequisTest {
     @Test
     void anIrreplaceableSeatOfTheDayIsReported() {
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, null, planWithSeats(true), diagnostic(), pauses(true), fragilite(true));
+                JOUR, null, planWithSeats(true), diagnostic(), pauses(true), fragilite(true));
 
         assertThat(prerequis(lu, ValidationPrerequisService.POSTES_IRREMPLACABLES)
                         .nombre())
                 .isEqualTo(1);
     }
 
-    /** A reading narrowed to one stand reads only what happens on that stand. */
-    @Test
-    void narrowingToAStandLeavesTheOtherStandsProblemsOut() {
-        PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, "STAND-AUTRE", null, planWithSeats(false), diagnostic(), pauses(false), fragilite(true));
-
-        assertThat(lu.standId()).isEqualTo("STAND-AUTRE");
-        assertThat(lu.tousSatisfaits()).isTrue();
-    }
-
     @Test
     void anAlreadyAcceptedDayCarriesItsReadingBack() {
         ValidationJournee validation = new ValidationJournee(
-                "V1", JOUR, null, Instant.parse("2026-07-01T10:00:00Z"), "admin", "Vu avec le responsable");
+                "V1", JOUR, Instant.parse("2026-07-01T10:00:00Z"), "admin", "Vu avec le responsable");
 
         PrerequisJournee lu = ValidationPrerequisService.assemble(
-                JOUR, null, validation, planWithSeats(true), diagnostic(), pauses(true), fragilite(false));
+                JOUR, validation, planWithSeats(true), diagnostic(), pauses(true), fragilite(false));
 
         assertThat(lu.validee()).isTrue();
         assertThat(lu.valideeLe()).isEqualTo(validation.valideLe());
@@ -218,8 +188,8 @@ class ValidationPrerequisTest {
         return new LinkedHashSet<>(List.of(dates));
     }
 
-    private static ValidationJournee validation(LocalDate jour, String standId) {
-        return new ValidationJournee("V-" + jour + "-" + standId, jour, standId, Instant.EPOCH, "admin", null);
+    private static ValidationJournee validation(LocalDate jour) {
+        return new ValidationJournee("V-" + jour, jour, Instant.EPOCH, "admin", null);
     }
 
     /** One stand on one timeslot of {@link #JOUR}, its single seat held or not. */

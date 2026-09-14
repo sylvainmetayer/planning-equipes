@@ -13,7 +13,6 @@ describe('ValidationsStore', () => {
     journees: 0,
     journeesValidees: 0,
     joursValides: [],
-    validationsStand: 0,
     ...partial,
   });
 
@@ -68,31 +67,10 @@ describe('ValidationsStore', () => {
     expect(instance.acceptedDays().has('2026-07-08')).toBe(true);
   });
 
-  it('dit à part les relectures faites stand par stand', async () => {
-    api.progression.mockResolvedValue(
-      progression({ journees: 12, journeesValidees: 1, validationsStand: 4 }),
-    );
-    const instance = store();
-
-    await instance.reload();
-
-    expect(instance.libelleStands()).toContain('4');
-  });
-
-  it('ne parle pas des relectures par stand quand il n’y en a aucune', async () => {
-    api.progression.mockResolvedValue(progression({ journees: 12, journeesValidees: 1 }));
-    const instance = store();
-
-    await instance.reload();
-
-    expect(instance.libelleStands()).toBe('');
-  });
-
   it('relit après avoir accepté une journée : la bannière ne doit pas retarder', async () => {
     const validation: ValidationJournee = {
       id: 'V1',
       jour: '2026-07-08',
-      standId: null,
       valideLe: '2026-07-01T10:00:00Z',
       validePar: 'admin',
       commentaire: null,

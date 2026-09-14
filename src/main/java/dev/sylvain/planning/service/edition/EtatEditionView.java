@@ -117,12 +117,10 @@ public record EtatEditionView(
      * a plan that holds and a plan somebody has actually read.
      *
      * @param journees         days the timeslots span; zero before the grid exists
-     * @param journeesValidees how many of them are accepted as a whole
-     * @param validationsStand readings done stand by stand on days not yet
-     *                         accepted whole — progress, on a finer grain
+     * @param journeesValidees how many of them are accepted
      */
-    @Schema(requiredProperties = {"journees", "journeesValidees", "statut", "validationsStand"})
-    public record EtatRelecture(int journees, int journeesValidees, int validationsStand, Statut statut) {}
+    @Schema(requiredProperties = {"journees", "journeesValidees", "statut"})
+    public record EtatRelecture(int journees, int journeesValidees, Statut statut) {}
 
     /**
      * @param personnesAPrevenir people whose schedule the next publication would announce

@@ -4,7 +4,6 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -73,15 +72,13 @@ class ValidationJourneeResourceTest {
                 .statusCode(200)
                 .body("size()", is(1))
                 .body("[0].jour", equalTo(JOUR))
-                .body("[0].standId", org.hamcrest.Matchers.nullValue())
                 .body("[0].commentaire", equalTo("Relu avec le responsable"));
         given().when()
                 .get("/api/validations/progression")
                 .then()
                 .statusCode(200)
                 .body("journees", is(1))
-                .body("journeesValidees", is(1))
-                .body("validationsStand", is(0));
+                .body("journeesValidees", is(1));
     }
 
     /** Accepting says somebody read the day; it must not freeze it behind their back. */
@@ -137,17 +134,6 @@ class ValidationJourneeResourceTest {
                 .body("[0].commentaire", equalTo("Deuxième lecture"));
     }
 
-    /** A day and one of its stands are two readings, and they coexist. */
-    @Test
-    void aStandReadingLivesBesideTheWholeDayOne() {
-        aPersistedPlan();
-
-        accept(Map.of("jour", JOUR));
-        accept(Map.of("jour", JOUR, "standId", "STAND-STRAT"));
-
-        given().when().get("/api/validations").then().statusCode(200).body("$", hasSize(2));
-    }
-
     @Test
     void withdrawingAValidationLeavesTheDayToReadAgain() {
         aPersistedPlan();
@@ -170,19 +156,6 @@ class ValidationJourneeResourceTest {
                 .then()
                 .statusCode(400)
                 .body(containsString("Aucun créneau"));
-    }
-
-    @Test
-    void anUnknownStandIsRefused() {
-        aPersistedPlan();
-
-        given().contentType("application/json")
-                .body(Map.of("jour", JOUR, "standId", "STAND-QUI-NEXISTE-PAS"))
-                .when()
-                .post("/api/validations")
-                .then()
-                .statusCode(400)
-                .body(containsString("Stand inconnu"));
     }
 
     @Test

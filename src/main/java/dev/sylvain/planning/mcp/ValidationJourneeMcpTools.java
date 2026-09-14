@@ -54,7 +54,6 @@ public class ValidationJourneeMcpTools {
         return new AvancementValidations(
                 progression.journees(),
                 progression.journeesValidees(),
-                progression.validationsStand(),
                 validationService.list().stream()
                         .map(ValidationJourneeMcpTools::toView)
                         .toList());
@@ -72,13 +71,10 @@ public class ValidationJourneeMcpTools {
                             openWorldHint = false))
     PrerequisJourneeView consulter_prerequis_validation(
             @ToolArg(description = "Journée à relire (AAAA-MM-JJ)") String jour,
-            @ToolArg(description = "Id du stand, pour une relecture stand par stand", required = false) String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        PrerequisJournee lu = prerequisService.prerequis(
-                McpArgs.date(jour, "jour"), standId == null || standId.isBlank() ? null : standId);
+        PrerequisJournee lu = prerequisService.prerequis(McpArgs.date(jour, "jour"));
         return new PrerequisJourneeView(
                 lu.jour(),
-                lu.standId(),
                 lu.validee(),
                 lu.validationId(),
                 lu.valideeLe(),
@@ -88,10 +84,9 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
-            description = "Marque une journée « relue et acceptée ». Sans standId la journée entière est acceptée ; "
-                    + "avec, seulement ce stand ce jour-là. poserVerrou fige en plus la journée pour les prochaines "
-                    + "résolutions — facultatif, et faux par défaut. Relire une journée déjà acceptée remplace la "
-                    + "validation précédente.",
+            description = "Marque une journée entière « relue et acceptée ». poserVerrou fige en plus la journée "
+                    + "pour les prochaines résolutions — facultatif, et faux par défaut. Relire une journée déjà "
+                    + "acceptée remplace la validation précédente.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -100,15 +95,11 @@ public class ValidationJourneeMcpTools {
                             openWorldHint = false))
     ResultatValidationView ajouter_validation_journee(
             @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
-            @ToolArg(description = "Id du stand, pour une relecture stand par stand", required = false) String standId,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
             @ToolArg(description = "Poser aussi un verrouillage de journée", required = false) Boolean poserVerrou,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        ValidationJourneeService.ResultatValidation resultat = validationService.accept(new DemandeValidation(
-                McpArgs.date(jour, "jour"),
-                standId == null || standId.isBlank() ? null : standId,
-                commentaire,
-                Boolean.TRUE.equals(poserVerrou)));
+        ValidationJourneeService.ResultatValidation resultat = validationService.accept(
+                new DemandeValidation(McpArgs.date(jour, "jour"), commentaire, Boolean.TRUE.equals(poserVerrou)));
         return new ResultatValidationView(toView(resultat.validation()), resultat.verrouPose());
     }
 
@@ -132,7 +123,6 @@ public class ValidationJourneeMcpTools {
         return new ValidationView(
                 validation.id(),
                 validation.jour(),
-                validation.standId(),
                 validation.valideLe(),
                 TextesLibres.renseigne(validation.commentaire()));
     }
@@ -141,8 +131,7 @@ public class ValidationJourneeMcpTools {
      * One reading. Whether a comment was left, never what it says, and never
      * who left it: see {@link TextesLibres}.
      */
-    public record ValidationView(
-            String id, LocalDate jour, String standId, Instant valideLe, boolean commentaireRenseigne) {}
+    public record ValidationView(String id, LocalDate jour, Instant valideLe, boolean commentaireRenseigne) {}
 
     /**
      * What to check before accepting a day. Same figures as the screen's, with
@@ -151,7 +140,6 @@ public class ValidationJourneeMcpTools {
      */
     public record PrerequisJourneeView(
             LocalDate jour,
-            String standId,
             boolean validee,
             String validationId,
             Instant valideeLe,
@@ -160,8 +148,7 @@ public class ValidationJourneeMcpTools {
             boolean tousSatisfaits) {}
 
     /** Where the relecture stands, and every reading behind it. */
-    public record AvancementValidations(
-            int journees, int journeesValidees, int validationsStand, List<ValidationView> validations) {}
+    public record AvancementValidations(int journees, int journeesValidees, List<ValidationView> validations) {}
 
     /** A reading, and whether the lock it was asked for was actually laid down. */
     public record ResultatValidationView(ValidationView validation, boolean verrouPose) {}

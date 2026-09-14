@@ -36,7 +36,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'A_FAIRE',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
-    relecture: { journees: 0, journeesValidees: 0, validationsStand: 0, statut: 'A_FAIRE' },
+    relecture: { journees: 0, journeesValidees: 0, statut: 'A_FAIRE' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,

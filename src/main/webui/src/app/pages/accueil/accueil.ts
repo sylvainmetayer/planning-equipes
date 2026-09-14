@@ -226,19 +226,16 @@ function problemes(etat: EtatEdition): LigneEtat {
 }
 
 /**
- * The step between a plan that holds and a plan somebody has actually read.
- * The figure is days accepted as a whole; readings done stand by stand are
- * progress on a finer grain and are said beside it, never counted as days.
+ * The step between a plan that holds and a plan somebody has actually read,
+ * counted in days accepted.
  */
 function relecture(etat: EtatEdition): LigneEtat {
-  const { journees, journeesValidees, validationsStand, statut } = etat.relecture;
+  const { journees, journeesValidees, statut } = etat.relecture;
   let detail: string;
   if (journees === 0) {
     detail = $localize`:@@accueil.detail.relecture.sansJournee:La relecture attend une grille de créneaux`;
   } else if (statut === 'A_FAIRE') {
     detail = $localize`:@@accueil.detail.relecture.aFaire:Aucune journée relue sur ${journees}:total:`;
-  } else if (validationsStand > 0) {
-    detail = $localize`:@@accueil.detail.relecture.avecStands:${journeesValidees}:validees: journée(s) sur ${journees}:total: · ${validationsStand}:stands: relecture(s) stand par stand`;
   } else {
     detail = $localize`:@@accueil.detail.relecture.comptage:${journeesValidees}:validees: journée(s) relue(s) sur ${journees}:total:`;
   }

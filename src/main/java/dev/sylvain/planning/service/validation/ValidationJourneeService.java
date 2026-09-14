@@ -21,7 +21,7 @@ import java.util.UUID;
  * never carried (see {@code docs/decisions/0033-validation-de-relecture.md}).
  *
  * <p>Three things live here and nowhere else: what a validation may name (a
- * day of the edition, optionally one of its stands), that validating may
+ * day of the edition, and only a whole one), that validating may
  * <em>offer</em> to lay a lock down without ever doing it unasked, and that a
  * solve which moves a seat of a validated day withdraws that validation unless
  * the day was also frozen.</p>
@@ -44,13 +44,12 @@ public class ValidationJourneeService {
     /**
      * What a validation request carries.
      *
-     * @param standId     {@code null} to validate the whole day
      * @param poserVerrou also freeze the day for the next solves. Offered, never
      *                    implied: the two answer different questions, and a
      *                    reviewer who wants to keep re-solving must be able to
      *                    say « relu » without saying « figé »
      */
-    public record DemandeValidation(LocalDate jour, String standId, String commentaire, boolean poserVerrou) {}
+    public record DemandeValidation(LocalDate jour, String commentaire, boolean poserVerrou) {}
 
     /** A validation, and the lock it laid down when it was asked to. */
     public record ResultatValidation(ValidationJournee validation, boolean verrouPose) {}
@@ -86,10 +85,9 @@ public class ValidationJourneeService {
         if (!joursEvenement().contains(jour)) {
             throw new BusinessError.Invalid("Aucun créneau ce jour-là : " + jour);
         }
-        String standId = checkedStand(demande.standId());
         String commentaire = checkedComment(demande.commentaire());
         ValidationJournee validation = new ValidationJournee(
-                UUID.randomUUID().toString(), jour, standId, Instant.now(), journal.nomAdmin(), commentaire);
+                UUID.randomUUID().toString(), jour, Instant.now(), journal.nomAdmin(), commentaire);
         repository.save(validation);
         boolean verrouPose = demande.poserVerrou() && lockDay(jour);
         return new ResultatValidation(validation, verrouPose);
@@ -126,10 +124,7 @@ public class ValidationJourneeService {
                 valides.add(validation.jour());
             }
         }
-        int retirees = repository.deleteJours(valides);
-        // The recap counts DAYS, not rows: a day read stand by stand would
-        // otherwise announce « 7 journées validées ont bougé » for one date.
-        return retirees == 0 ? 0 : valides.size();
+        return repository.deleteJours(valides);
     }
 
     /** The days the edition's timeslots span — the only ones a reading can name. */
@@ -164,17 +159,6 @@ public class ValidationJourneeService {
         verrouillage.setRaison("Journée relue et acceptée");
         referenceDataService.createVerrouillage(verrouillage);
         return true;
-    }
-
-    private String checkedStand(String standId) {
-        if (standId == null || standId.isBlank()) {
-            return null;
-        }
-        boolean connu = referenceDataService.listStands().stream().anyMatch(stand -> standId.equals(stand.getId()));
-        if (!connu) {
-            throw new BusinessError.Invalid("Stand inconnu : " + standId);
-        }
-        return standId;
     }
 
     private static String checkedComment(String commentaire) {

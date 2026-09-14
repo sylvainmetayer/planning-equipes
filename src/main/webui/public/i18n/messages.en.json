@@ -2979,13 +2979,12 @@
   "accueil.detail.relecture.sansJournee": "The review is waiting for a timeslot grid",
   "accueil.detail.relecture.aFaire": "No day reviewed out of {$total}",
   "accueil.detail.relecture.comptage": "{$validees} day(s) reviewed out of {$total}",
-  "accueil.detail.relecture.avecStands": "{$validees} day(s) out of {$total} · {$stands} stand-by-stand review(s)",
   "validations.banniere": "{$validees} day(s) out of {$total} reviewed and accepted.",
-  "validations.banniere.stands": "And {$count} stand-by-stand review(s) on days not yet accepted as a whole.",
   "validations.jauge.label": "Review progress",
   "journee.validation.title": "Review of the day",
   "journee.validation.hint": " Mark this day reviewed and accepted. A lock, by contrast, stops the solver from touching it. ",
   "journee.validation.malgreTout": " An unmet prerequisite does not stop you from accepting the day: say why in the comment. ",
+  "journee.validation.journeeEntiere": " The review covers the whole day, not only what the filter shows. ",
   "journee.validation.commentaire.label": "Review comment",
   "journee.validation.commentaire.hint": "Optional",
   "journee.validation.verrou": "Also lock this day",
@@ -3013,8 +3012,8 @@
   "aide.relecture.title": "Reviewing the planning before publishing",
   "aide.relecture.summary": "Mark where you are in your review, day by day — without freezing anything.",
   "aide.relecture.intro": "Between the first planning that holds and the send-out to the staff there is a review: you open the days one by one, look, correct. Over twelve days the question is not « is this good? » but « where had I got to? ». That is what the validation is for: on the Day page, « Mark reviewed and accepted » records your pass, with its date and a comment if you leave one. A banner then says « 3 days out of 12 » on the Day, Calendar and Solver pages.",
+  "aide.relecture.journeeEntiere": "A validation always covers the whole day. The filters of the Day page — a stand, a staff member — change what you look at, not what you accept: a day filtered on one stand is validated whole, and the screen says so. To review stand by stand, filter, go through each stand, then validate the day once you are done.",
   "aide.relecture.verrou": "Accepting a day does not freeze it. A lock is a mechanism meant for the solver — it stops it from touching seats; a validation says a human has read the day, and lets the computation keep improving the rest. The « Also lock this day » box sits beside it because the two gestures often go together, never because one would imply the other. Withdrawing the validation leaves the lock in place.",
   "aide.relecture.prerequis": "Before you accept, the screen shows what it knows about that day: hard breaches, seats with nobody on them, breaks with nobody to take over, seats resting on somebody irreplaceable. These are the very figures of the Problems, Breaks and Fragility screens, filtered on the date — not a second computation that could contradict them. None of them blocks: if you know why a seat stays empty, accept the day and write it in the comment. A prerequisite the server cannot measure reads « not checked », never « satisfied ».",
-  "aide.relecture.resolution": "A solve that moves a seat of a day you had accepted withdraws that validation, and the solver's recap says so: nobody has read what the computation just wrote. A day that also carried a day lock keeps its validation, since nothing could move there. When it is time to publish, the delivery panel recalls how many unreviewed days would go out.",
-  "aide.relecture.stands": "The review can be delegated: open the day filtered on one stand, and the validation covers that stand on that day only. The counter itself keeps counting whole days — a day reviewed stand by stand is progress, said apart, not an accepted day."
+  "aide.relecture.resolution": "A solve that moves a seat of a day you had accepted withdraws that validation, and the solver's recap says so: nobody has read what the computation just wrote. A day that also carried a day lock keeps its validation, since nothing could move there. When it is time to publish, the delivery panel recalls how many unreviewed days would go out."
 }

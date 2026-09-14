@@ -201,12 +201,6 @@
   flex: 1 1 14rem;
 }
 
-.relecture-banniere-stands {
-  flex: 1 1 100%;
-  color: var(--mat-sys-on-surface-variant);
-  font-size: 0.875rem;
-}
-
 .relecture-jauge {
   flex: 0 1 12rem;
   min-width: 8rem;

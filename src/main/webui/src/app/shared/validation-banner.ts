@@ -30,9 +30,6 @@ import { ValidationsStore } from '../core/validations.store';
             aria-label="Avancement de la relecture"
           />
         }
-        @if (store.libelleStands(); as stands) {
-          <p class="relecture-banniere-stands">{{ stands }}</p>
-        }
       </div>
     }
   `,

@@ -22,6 +22,10 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.relecture.journeeEntiere:La validation porte toujours sur la journée entière. Les filtres de la page Journée — un stand, un animateur — changent ce que vous regardez, pas ce que vous acceptez : une journée filtrée sur un stand se valide en entier, et l'écran le rappelle. Pour relire stand par stand, filtrez, parcourez chaque stand, puis validez la journée une fois le tour fait.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.relecture.verrou:Accepter une journée ne la fige pas. Un verrouillage est un mécanisme destiné au solveur — il l'empêche de toucher à des sièges ; une validation dit qu'un humain a relu, et laisse le calcul continuer d'améliorer le reste. La case « Verrouiller aussi cette journée » est proposée à côté parce que les deux gestes vont souvent ensemble, jamais parce que l'un impliquerait l'autre. Retirer la validation laisse le verrou en place.`,
         },
         {
@@ -31,10 +35,6 @@ export function buildOperationsSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.relecture.resolution:Une résolution qui déplace un siège d'une journée que vous aviez acceptée retire cette validation, et le récapitulatif du solveur le dit : personne n'a relu ce que le calcul vient d'écrire. Une journée qui portait aussi un verrouillage de journée garde sa validation, puisque rien n'a pu y bouger. Au moment de publier, le panneau de diffusion rappelle combien de journées non relues partiraient.`,
-        },
-        {
-          kind: 'paragraph',
-          text: $localize`:@@aide.relecture.stands:La relecture peut se déléguer : ouvrez la journée en filtrant sur un stand, et la validation ne porte que sur ce stand ce jour-là. Le compteur, lui, continue de compter les journées entières — une journée relue stand par stand est un avancement, dit à part, pas une journée acceptée.`,
         },
       ],
       links: [

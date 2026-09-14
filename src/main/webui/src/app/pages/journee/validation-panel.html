@@ -11,6 +11,11 @@
   }
 
   <mat-card-content>
+    @if (filtre()) {
+      <p class="journee-validation-note" i18n="@@journee.validation.journeeEntiere">
+        La relecture porte sur la journée entière, pas seulement sur ce que le filtre affiche.
+      </p>
+    }
     @if (erreur()) {
       <p class="empty-hint">{{ erreur() }}</p>
     }

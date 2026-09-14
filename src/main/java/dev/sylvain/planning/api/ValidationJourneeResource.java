@@ -50,7 +50,7 @@ public class ValidationJourneeResource {
      *                    touch it
      */
     @Schema(requiredProperties = {"jour"})
-    public record DemandeValidationJournee(LocalDate jour, String standId, String commentaire, boolean poserVerrou) {}
+    public record DemandeValidationJournee(LocalDate jour, String commentaire, boolean poserVerrou) {}
 
     /** A validation, and whether the request's lock was actually laid down. */
     @Schema(requiredProperties = {"validation", "verrouPose"})
@@ -75,8 +75,8 @@ public class ValidationJourneeResource {
      */
     @GET
     @Path("/prerequis")
-    public PrerequisJournee prerequis(@QueryParam("jour") String jour, @QueryParam("stand") String standId) {
-        return prerequisService.prerequis(jourDemande(jour), standId == null || standId.isBlank() ? null : standId);
+    public PrerequisJournee prerequis(@QueryParam("jour") String jour) {
+        return prerequisService.prerequis(jourDemande(jour));
     }
 
     /** Records a reading of one day, and lays its lock down when asked to. */
@@ -86,7 +86,7 @@ public class ValidationJourneeResource {
             throw new BusinessError.Invalid("Journée à valider manquante");
         }
         var resultat = validationService.accept(
-                new DemandeValidation(demande.jour(), demande.standId(), demande.commentaire(), demande.poserVerrou()));
+                new DemandeValidation(demande.jour(), demande.commentaire(), demande.poserVerrou()));
         return new ResultatValidationJournee(resultat.validation(), resultat.verrouPose());
     }
 

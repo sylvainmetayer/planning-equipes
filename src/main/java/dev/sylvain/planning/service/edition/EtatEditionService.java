@@ -366,10 +366,6 @@ public class EtatEditionService {
      * The relecture is a step of its own between a plan and its publication: it
      * only begins once there is a plan to read, and it is behind only when
      * every day of the edition has been accepted.
-     *
-     * <p>A day read stand by stand is « en cours », never « fait »: the
-     * organiser decides what a complete reading is, and the line reports the
-     * only figure that has one meaning — days accepted as a whole.</p>
      */
     private static EtatRelecture relecture(Facts facts) {
         ProgressionValidations progression = facts.relecture();
@@ -378,13 +374,12 @@ public class EtatEditionService {
             statut = Statut.A_FAIRE;
         } else if (progression.journeesValidees() >= progression.journees()) {
             statut = Statut.FAIT;
-        } else if (progression.journeesValidees() > 0 || progression.validationsStand() > 0) {
+        } else if (progression.journeesValidees() > 0) {
             statut = Statut.INFO;
         } else {
             statut = Statut.A_FAIRE;
         }
-        return new EtatRelecture(
-                progression.journees(), progression.journeesValidees(), progression.validationsStand(), statut);
+        return new EtatRelecture(progression.journees(), progression.journeesValidees(), statut);
     }
 
     /**

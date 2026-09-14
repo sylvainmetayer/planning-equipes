@@ -26,10 +26,9 @@ export class ValidationsApi {
   }
 
   /** What to check before accepting a day; never a refusal, only a read-out. */
-  prerequis(jour: string, standId: string | null = null): Promise<PrerequisJournee> {
-    const stand = standId ? `&stand=${encodeURIComponent(standId)}` : '';
+  prerequis(jour: string): Promise<PrerequisJournee> {
     return this.api.get<PrerequisJournee>(
-      `/api/validations/prerequis?jour=${encodeURIComponent(jour)}${stand}`,
+      `/api/validations/prerequis?jour=${encodeURIComponent(jour)}`,
     );
   }
 

@@ -35,11 +35,21 @@ relecture*.
 
 **(C) Un état de revue autonome, avec le verrou offert à côté.** Retenu.
 
+**(D) Le même état, avec un stand facultatif en second axe**, pour déléguer la
+relecture aux responsables de stand. Livré un temps (V80), puis retiré (V81)
+avant la fusion : les deux grains ne s'entendaient avec rien de ce qui entoure
+la validation. La case « Verrouiller aussi » figeait la journée entière alors
+que l'écran était filtré sur un stand — il n'existe pas de verrou « ce stand ce
+jour-là ». Le compteur, qui compte des journées, devait dire les stands à part
+dans une seconde phrase. Et une résolution retirait la validation d'un stand
+sur lequel rien n'avait bougé, puisque le retrait se décide par journée. Relire
+stand par stand reste possible avec les filtres ; seule l'acceptation est
+d'une journée entière.
+
 ## Décision
 
-Une **validation** porte sur une **journée** de l'édition, et facultativement
-sur **un stand** de cette journée — l'axe secondaire qui permet de déléguer la
-relecture aux responsables de stand sans changer de modèle. Elle porte la date
+Une **validation** porte sur une **journée entière** de l'édition, quels que
+soient les filtres affichés quand on la pose. Elle porte la date
 de lecture, son auteur et un commentaire libre. Relire une journée déjà acceptée
 **remplace** la lecture précédente : ce qui vaut est la lecture qui tient.
 
@@ -72,8 +82,9 @@ partie, et le reste de la journée est précisément ce que personne n'a relu.
 - La bannière de progression apparaît là où l'on regarde une journée du plan :
   Journée, Calendrier, Solveur ; l'« État de l'édition » gagne une ligne entre
   Problèmes et Publication.
-- La progression compte les **journées entières**. Une relecture stand par stand
-  est un avancement, dit à part, jamais une treizième journée.
+- Un seul grain partout : la validation, le verrou proposé à côté, le retrait
+  après résolution et la progression comptent tous des journées. Le panneau le
+  rappelle quand la page Journée est filtrée.
 - L'auteur est le compte d'administration unique tant qu'il n'y a pas de table
   d'utilisateurs ; la colonne existe pour que des comptes nommés n'aient pas à
   migrer les lignes déjà écrites.

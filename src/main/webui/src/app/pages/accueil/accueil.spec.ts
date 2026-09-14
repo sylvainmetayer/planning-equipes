@@ -31,7 +31,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'A_FAIRE',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'A_FAIRE' },
-    relecture: { journees: 0, journeesValidees: 0, validationsStand: 0, statut: 'A_FAIRE' },
+    relecture: { journees: 0, journeesValidees: 0, statut: 'A_FAIRE' },
     publication: {
       jamaisPublie: true,
       dernierePublicationLe: null,
@@ -62,7 +62,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       statut: 'FAIT',
     },
     problemes: { bloquants: 0, avertissements: 0, reglesAnalysees: true, statut: 'FAIT' },
-    relecture: { journees: 12, journeesValidees: 12, validationsStand: 0, statut: 'FAIT' },
+    relecture: { journees: 12, journeesValidees: 12, statut: 'FAIT' },
     publication: {
       jamaisPublie: false,
       dernierePublicationLe: '2026-05-01T11:00:00Z',
@@ -245,7 +245,7 @@ describe('buildLignes', () => {
       },
       besoin: { animateurs: 20, minimum: 32, manque: 12, statut: 'ATTENTION' },
       problemes: { bloquants: 1, avertissements: 4, reglesAnalysees: true, statut: 'ATTENTION' },
-      relecture: { journees: 12, journeesValidees: 3, validationsStand: 0, statut: 'INFO' },
+      relecture: { journees: 12, journeesValidees: 3, statut: 'INFO' },
       publication: {
         jamaisPublie: false,
         dernierePublicationLe: '2026-05-01T11:00:00Z',

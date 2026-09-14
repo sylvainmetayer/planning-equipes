@@ -7,7 +7,7 @@
 // three screens and the publication note all describe the same reading.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { contexteAdmin, pageAdmin, planningPersiste, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -54,6 +54,26 @@ test('accepter une journée la marque relue, sans rien figer', async ({ browser 
 
   await panneau.getByRole('button', { name: 'Retirer la validation' }).click();
   await expect(panneau.locator('.journee-validation-prerequis li').first()).toBeVisible();
+
+  await page.context().close();
+});
+
+test('filtrée sur un stand, la journée se valide en entier', async ({ browser }) => {
+  const standId =
+    (await planningPersiste(admin)).postes.find((poste) => poste.stand)?.stand?.id ?? '';
+  expect(standId).not.toBe('');
+  const page = await pageAdmin(browser, admin);
+  await page.goto(`/journee?stand=${encodeURIComponent(standId)}`);
+
+  const panneau = page.locator('.journee-validation');
+  await expect(panneau).toContainText('La relecture porte sur la journée entière');
+  await panneau.getByRole('button', { name: 'Marquer relu et accepté' }).click();
+  await expect(panneau).toContainText('Relue et acceptée le');
+
+  // The filter narrowed what was on screen, never what was accepted: the day
+  // counts as read, and the banner's figure moved with it.
+  const progression = await (await admin.get('/api/validations/progression')).json();
+  expect(progression.journeesValidees).toBe(1);
 
   await page.context().close();
 });

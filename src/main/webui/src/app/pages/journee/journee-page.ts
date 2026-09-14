@@ -171,6 +171,11 @@ export class JourneePage {
       this.seulementProblemes(),
   );
 
+  /** Whether a filter hides part of the day — which the relecture panel, accepting it whole, has to say. */
+  protected readonly filtreActif = computed(
+    () => this.filtre().trim() !== '' || this.stand() !== '' || this.animateur() !== '',
+  );
+
   /** The ISO date of the day on screen, which is what a reading names; null on an undated day. */
   protected readonly dateCourante = computed(() => this.jourCourant()?.date ?? null);
   /** What the page says after a reading was recorded or withdrawn. */

@@ -20,10 +20,8 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -85,18 +83,15 @@ public class ValidationPrerequisService {
     /**
      * The state of one day for the validation panel.
      *
-     * @param standId   the stand the reading is narrowed to, {@code null} for
-     *                  the whole day
-     * @param validee       whether that exact target is already accepted
+     * @param validee       whether the day is already accepted
      * @param validationId  the reading that stands, so the panel withdraws
      *                      exactly the one it is showing; {@code null} when
-     *                      the target is not accepted
+     *                      the day is not accepted
      * @param valideeLe     when it was, {@code null} when it is not
      */
     @Schema(requiredProperties = {"jour", "prerequis", "tousSatisfaits", "validee"})
     public record PrerequisJournee(
             LocalDate jour,
-            String standId,
             boolean validee,
             String validationId,
             Instant valideeLe,
@@ -108,15 +103,11 @@ public class ValidationPrerequisService {
     /**
      * How far the reading has got — « 3 journées sur 12 validées ».
      *
-     * @param journees        days the edition's timeslots span; zero before the
-     *                        grid exists, and the banner then says nothing
-     * @param validationsStand readings done stand by stand, on days not accepted
-     *                        as a whole. Counted apart: they are progress on the
-     *                        same reading, not a thirteenth day
+     * @param journees days the edition's timeslots span; zero before the grid
+     *                 exists, and the banner then says nothing
      */
-    @Schema(requiredProperties = {"journees", "journeesValidees", "joursValides", "validationsStand"})
-    public record ProgressionValidations(
-            int journees, int journeesValidees, List<LocalDate> joursValides, int validationsStand) {}
+    @Schema(requiredProperties = {"journees", "journeesValidees", "joursValides"})
+    public record ProgressionValidations(int journees, int journeesValidees, List<LocalDate> joursValides) {}
 
     /** How far the reading of the current edition has got. */
     public ProgressionValidations progression() {
@@ -125,41 +116,27 @@ public class ValidationPrerequisService {
 
     /** The rule, on facts alone, so it is tested without a container. */
     static ProgressionValidations progression(Set<LocalDate> joursEvenement, List<ValidationJournee> validations) {
-        Set<LocalDate> joursValides = new LinkedHashSet<>();
-        int parStand = 0;
-        for (ValidationJournee validation : validations) {
-            if (validation.standId() == null) {
-                joursValides.add(validation.jour());
-            }
-        }
-        for (ValidationJournee validation : validations) {
-            // A stand reading on a day already accepted as a whole is covered
-            // by it; counting it again would inflate the only figure the banner
-            // shows next to « sur 12 ».
-            if (validation.standId() != null && !joursValides.contains(validation.jour())) {
-                parStand++;
-            }
-        }
         // Only the days the grid actually holds: a validation left behind by a
         // créneau since deleted must not make the banner read « 13 sur 12 ».
-        List<LocalDate> retenus = joursValides.stream()
+        List<LocalDate> retenus = validations.stream()
+                .map(ValidationJournee::jour)
                 .filter(joursEvenement::contains)
+                .distinct()
                 .sorted(Comparator.naturalOrder())
                 .toList();
-        return new ProgressionValidations(joursEvenement.size(), retenus.size(), retenus, parStand);
+        return new ProgressionValidations(joursEvenement.size(), retenus.size(), retenus);
     }
 
-    /** What the panel shows before accepting {@code jour} (optionally narrowed to one stand). */
-    public PrerequisJournee prerequis(LocalDate jour, String standId) {
+    /** What the panel shows before accepting {@code jour}. */
+    public PrerequisJournee prerequis(LocalDate jour) {
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         ConstraintAnalysisStore.StoredAnalysis analyse = analysisStore.latest();
         ValidationJournee validation = validationService.list().stream()
-                .filter(candidate -> jour.equals(candidate.jour()) && Objects.equals(standId, candidate.standId()))
+                .filter(candidate -> jour.equals(candidate.jour()))
                 .findFirst()
                 .orElse(null);
         return assemble(
                 jour,
-                standId,
                 validation,
                 plan,
                 analyse == null ? null : analyse.diagnostic(),
@@ -176,21 +153,19 @@ public class ValidationPrerequisService {
      */
     static PrerequisJournee assemble(
             LocalDate jour,
-            String standId,
             ValidationJournee validation,
             PlanningEvenement plan,
             PlanningDiagnostic diagnostic,
             RapportPauses pauses,
             RapportFragilite fragilite) {
         List<Prerequis> prerequis = List.of(
-                ecartsDurs(jour, standId, plan, diagnostic),
-                siegesVides(jour, standId, plan),
-                pausesNonRelayees(jour, standId, pauses),
-                postesIrremplacables(jour, standId, fragilite));
+                ecartsDurs(jour, plan, diagnostic),
+                siegesVides(jour, plan),
+                pausesNonRelayees(jour, pauses),
+                postesIrremplacables(jour, fragilite));
         boolean tous = prerequis.stream().allMatch(p -> p.connu() && p.satisfait());
         return new PrerequisJournee(
                 jour,
-                standId,
                 validation != null,
                 validation == null ? null : validation.id(),
                 validation == null ? null : validation.valideLe(),
@@ -206,8 +181,7 @@ public class ValidationPrerequisService {
      * dated (a whole-edition rule) counts for no day in particular, which is
      * what the Problèmes screen already shows it as.
      */
-    private static Prerequis ecartsDurs(
-            LocalDate jour, String standId, PlanningEvenement plan, PlanningDiagnostic diagnostic) {
+    private static Prerequis ecartsDurs(LocalDate jour, PlanningEvenement plan, PlanningDiagnostic diagnostic) {
         if (diagnostic == null || diagnostic.contraintes() == null) {
             return new Prerequis(ECARTS_DURS, false, false, 0);
         }
@@ -218,10 +192,7 @@ public class ValidationPrerequisService {
                 continue;
             }
             for (var reference : contrainte.references()) {
-                if (reference.creneauId() == null || !jour.equals(datesByCreneau.get(reference.creneauId()))) {
-                    continue;
-                }
-                if (standId == null || standId.equals(reference.standId())) {
+                if (reference.creneauId() != null && jour.equals(datesByCreneau.get(reference.creneauId()))) {
                     ecarts++;
                 }
             }
@@ -230,9 +201,9 @@ public class ValidationPrerequisService {
     }
 
     /** Seats of the day nobody holds — the « sièges vides » of the issue. */
-    private static Prerequis siegesVides(LocalDate jour, String standId, PlanningEvenement plan) {
+    private static Prerequis siegesVides(LocalDate jour, PlanningEvenement plan) {
         int vides = 0;
-        for (PosteAffectation poste : seatsOfDay(plan, jour, standId)) {
+        for (PosteAffectation poste : seatsOfDay(plan, jour)) {
             if (poste.getAnimateur() == null) {
                 vides++;
             }
@@ -245,7 +216,7 @@ public class ValidationPrerequisService {
      * count the Pauses screen puts under « relais manquants », narrowed to one
      * date.
      */
-    private static Prerequis pausesNonRelayees(LocalDate jour, String standId, RapportPauses pauses) {
+    private static Prerequis pausesNonRelayees(LocalDate jour, RapportPauses pauses) {
         if (pauses == null || pauses.journees() == null) {
             return new Prerequis(PAUSES_NON_RELAYEES, false, false, 0);
         }
@@ -256,7 +227,7 @@ public class ValidationPrerequisService {
             }
             for (var sequence : journee.sequences()) {
                 for (var pause : sequence.pausesDues()) {
-                    if (!pause.relaisDisponible() && (standId == null || standId.equals(pause.standId()))) {
+                    if (!pause.relaisDisponible()) {
                         manquants++;
                     }
                 }
@@ -271,7 +242,7 @@ public class ValidationPrerequisService {
      * summarised rather than listed ({@code postesNonDetailles}) contributes
      * nothing here, which under-reports rather than invents.
      */
-    private static Prerequis postesIrremplacables(LocalDate jour, String standId, RapportFragilite fragilite) {
+    private static Prerequis postesIrremplacables(LocalDate jour, RapportFragilite fragilite) {
         if (fragilite == null || fragilite.animateurs() == null) {
             return new Prerequis(POSTES_IRREMPLACABLES, false, false, 0);
         }
@@ -281,9 +252,7 @@ public class ValidationPrerequisService {
                 continue;
             }
             for (FragiliteAnalyzer.PosteFragile poste : animateur.postes()) {
-                if (poste.irremplacable()
-                        && jour.equals(poste.date())
-                        && (standId == null || standId.equals(poste.standId()))) {
+                if (poste.irremplacable() && jour.equals(poste.date())) {
                     irremplacables++;
                 }
             }
@@ -291,22 +260,16 @@ public class ValidationPrerequisService {
         return new Prerequis(POSTES_IRREMPLACABLES, true, irremplacables == 0, irremplacables);
     }
 
-    private static List<PosteAffectation> seatsOfDay(PlanningEvenement plan, LocalDate jour, String standId) {
+    private static List<PosteAffectation> seatsOfDay(PlanningEvenement plan, LocalDate jour) {
         List<PosteAffectation> postes = new ArrayList<>();
         if (plan == null || plan.getPostes() == null) {
             return postes;
         }
         for (PosteAffectation poste : plan.getPostes()) {
             Creneau creneau = poste.getCreneau();
-            if (creneau == null || !jour.equals(creneau.getDate())) {
-                continue;
+            if (creneau != null && jour.equals(creneau.getDate())) {
+                postes.add(poste);
             }
-            if (standId != null
-                    && (poste.getStand() == null
-                            || !standId.equals(poste.getStand().getId()))) {
-                continue;
-            }
-            postes.add(poste);
         }
         return postes;
     }

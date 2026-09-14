@@ -117,7 +117,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 f.demandesEnAttente(),
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -157,7 +157,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 f.demandesEnAttente(),
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -190,7 +190,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 f.demandesEnAttente(),
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -220,7 +220,7 @@ class EtatEditionServiceTest {
                 new SyntheseConfirmations(1, 1, 0, RESOLU_LE.minusSeconds(3600), false),
                 f.foireOuverte(),
                 2,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -274,7 +274,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 f.demandesEnAttente(),
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -314,7 +314,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 f.demandesEnAttente(),
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -347,7 +347,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
         Facts enAttente = new Facts(
                 f.edition(),
                 0,
@@ -367,7 +367,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
         Facts fermee = new Facts(
                 f.edition(),
                 0,
@@ -387,7 +387,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         assertThat(EtatEditionService.assemble(ouverte).collecte().statut()).isEqualTo(Statut.ATTENTION);
         assertThat(EtatEditionService.assemble(enAttente).collecte().statut()).isEqualTo(Statut.ATTENTION);
@@ -429,7 +429,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -469,7 +469,7 @@ class EtatEditionServiceTest {
                 f.confirmations(),
                 f.foireOuverte(),
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
 
         EtatEditionView.EtatOuvertures ouvertures =
                 EtatEditionService.assemble(facts).ouvertures();
@@ -491,7 +491,7 @@ class EtatEditionServiceTest {
     @Test
     void theReviewLineIsUnderWayWhileSomeDaysAreLeftToRead() {
         EtatEditionView.EtatRelecture relecture = EtatEditionService.assemble(
-                        withRelecture(new ProgressionValidations(3, 1, List.of(), 0)))
+                        withRelecture(new ProgressionValidations(3, 1, List.of())))
                 .relecture();
 
         assertThat(relecture.statut()).isEqualTo(Statut.INFO);
@@ -499,18 +499,9 @@ class EtatEditionServiceTest {
         assertThat(relecture.journeesValidees()).isEqualTo(1);
     }
 
-    /** A day read stand by stand is progress, and progress is not « fait ». */
-    @Test
-    void standReadingsAloneLeaveTheLineUnderWay() {
-        assertThat(EtatEditionService.assemble(withRelecture(new ProgressionValidations(3, 0, List.of(), 2)))
-                        .relecture()
-                        .statut())
-                .isEqualTo(Statut.INFO);
-    }
-
     @Test
     void theReviewLineIsBehindOnceEveryDayIsAccepted() {
-        assertThat(EtatEditionService.assemble(withRelecture(new ProgressionValidations(3, 3, List.of(), 0)))
+        assertThat(EtatEditionService.assemble(withRelecture(new ProgressionValidations(3, 3, List.of())))
                         .relecture()
                         .statut())
                 .isEqualTo(Statut.FAIT);
@@ -519,7 +510,7 @@ class EtatEditionServiceTest {
     /** A solved edition nobody has started reading is a step still ahead, not a warning. */
     @Test
     void aSolvedEditionNobodyReadIsAStepStillAhead() {
-        assertThat(EtatEditionService.assemble(withRelecture(new ProgressionValidations(3, 0, List.of(), 0)))
+        assertThat(EtatEditionService.assemble(withRelecture(new ProgressionValidations(3, 0, List.of())))
                         .relecture()
                         .statut())
                 .isEqualTo(Statut.A_FAIRE);
@@ -576,7 +567,7 @@ class EtatEditionServiceTest {
                 new SyntheseConfirmations(0, 0, 0, null, true),
                 true,
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
     }
 
     /** One stand of one seat, one timeslot, two animateurs: solved, published, everybody answered. */
@@ -604,7 +595,7 @@ class EtatEditionServiceTest {
                 new SyntheseConfirmations(2, 0, 0, publieLe, false),
                 true,
                 0,
-                new ProgressionValidations(0, 0, List.of(), 0));
+                new ProgressionValidations(0, 0, List.of()));
     }
 
     private static PlanningDiagnostic diagnostic(String score, int hardScore, List<ConstraintDiagnostic> contraintes) {

@@ -13,7 +13,6 @@ import dev.sylvain.planning.service.validation.ValidationJourneeService.DemandeV
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -64,7 +63,7 @@ class ValidationJourneeServiceTest {
 
     @Test
     void aMovedDayLosesItsReading() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
+        validationService.accept(new DemandeValidation(JOUR, null, false));
 
         assertThat(validationService.withdrawMovedDays(Set.of(JOUR))).isEqualTo(1);
         assertThat(validationService.list()).isEmpty();
@@ -72,7 +71,7 @@ class ValidationJourneeServiceTest {
 
     @Test
     void aDayThatDidNotMoveKeepsItsReading() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
+        validationService.accept(new DemandeValidation(JOUR, null, false));
 
         assertThat(validationService.withdrawMovedDays(Set.of(JOUR.plusDays(1))))
                 .isZero();
@@ -81,7 +80,7 @@ class ValidationJourneeServiceTest {
 
     @Test
     void aFrozenDayKeepsItsReadingEvenWhenSomethingMoved() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, true));
+        validationService.accept(new DemandeValidation(JOUR, null, true));
 
         assertThat(validationService.withdrawMovedDays(Set.of(JOUR))).isZero();
         assertThat(validationService.list()).hasSize(1);
@@ -97,17 +96,7 @@ class ValidationJourneeServiceTest {
         surLeStand.setType(TypeVerrouillage.STAND);
         surLeStand.setStandId("STAND-STRAT");
         referenceDataService.createVerrouillage(surLeStand);
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
-
-        assertThat(validationService.withdrawMovedDays(Set.of(JOUR))).isEqualTo(1);
-        assertThat(validationService.list()).isEmpty();
-    }
-
-    /** The recap counts days, so a day read stand by stand still announces one. */
-    @Test
-    void aDayReadStandByStandCountsAsOneDayInTheRecap() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
-        validationService.accept(new DemandeValidation(JOUR, "STAND-STRAT", null, false));
+        validationService.accept(new DemandeValidation(JOUR, null, false));
 
         assertThat(validationService.withdrawMovedDays(Set.of(JOUR))).isEqualTo(1);
         assertThat(validationService.list()).isEmpty();
@@ -115,7 +104,7 @@ class ValidationJourneeServiceTest {
 
     @Test
     void nothingIsWithdrawnWhenNoDayMoved() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
+        validationService.accept(new DemandeValidation(JOUR, null, false));
 
         assertThat(validationService.withdrawMovedDays(Set.of())).isZero();
         assertThat(validationService.withdrawMovedDays(null)).isZero();
@@ -131,7 +120,7 @@ class ValidationJourneeServiceTest {
         referenceDataService.createVerrouillage(verrouillage);
 
         assertThat(validationService
-                        .accept(new DemandeValidation(JOUR, null, null, true))
+                        .accept(new DemandeValidation(JOUR, null, true))
                         .verrouPose())
                 .isFalse();
         assertThat(referenceDataService.listVerrouillages()).hasSize(1);
@@ -141,7 +130,7 @@ class ValidationJourneeServiceTest {
     void aCommentLongerThanTheFieldAllowsIsRefused() {
         String trop = "x".repeat(ValidationJourneeService.COMMENTAIRE_MAX + 1);
 
-        assertThatThrownBy(() -> validationService.accept(new DemandeValidation(JOUR, null, trop, false)))
+        assertThatThrownBy(() -> validationService.accept(new DemandeValidation(JOUR, trop, false)))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("trop long");
     }
@@ -150,7 +139,7 @@ class ValidationJourneeServiceTest {
     @Test
     void aBlankCommentIsStoredAsNone() {
         ValidationJournee validation = validationService
-                .accept(new DemandeValidation(JOUR, null, "   ", false))
+                .accept(new DemandeValidation(JOUR, "   ", false))
                 .validation();
 
         assertThat(validation.commentaire()).isNull();
@@ -158,7 +147,7 @@ class ValidationJourneeServiceTest {
 
     @Test
     void aMissingDayIsRefused() {
-        assertThatThrownBy(() -> validationService.accept(new DemandeValidation(null, null, null, false)))
+        assertThatThrownBy(() -> validationService.accept(new DemandeValidation(null, null, false)))
                 .isInstanceOf(BusinessError.Invalid.class);
         assertThatThrownBy(() -> validationService.accept(null)).isInstanceOf(BusinessError.Invalid.class);
     }
@@ -167,17 +156,5 @@ class ValidationJourneeServiceTest {
     void withdrawingAnUnknownReadingIsReportedRatherThanAccepted() {
         assertThatThrownBy(() -> validationService.withdraw("inconnu")).isInstanceOf(BusinessError.NotFound.class);
         assertThatThrownBy(() -> validationService.withdraw(" ")).isInstanceOf(BusinessError.Invalid.class);
-    }
-
-    /** The whole-day reading and one of its stands are two rows, and both are kept. */
-    @Test
-    void theDayAndOneOfItsStandsAreTwoSeparateReadings() {
-        validationService.accept(new DemandeValidation(JOUR, null, null, false));
-        validationService.accept(new DemandeValidation(JOUR, "STAND-STRAT", null, false));
-
-        List<ValidationJournee> validations = validationService.list();
-        assertThat(validations).hasSize(2);
-        assertThat(validations).anyMatch(validation -> validation.standId() == null);
-        assertThat(validations).anyMatch(validation -> "STAND-STRAT".equals(validation.standId()));
     }
 }

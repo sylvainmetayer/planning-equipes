@@ -16,7 +16,7 @@ import java.util.Collection;
 import java.util.List;
 import javax.sql.DataSource;
 
-/** The review marks of an edition: which days (and which stands of a day) somebody accepted. */
+/** The review marks of an edition: which days somebody accepted. */
 @ApplicationScoped
 public class ValidationJourneeRepository {
 
@@ -27,7 +27,7 @@ public class ValidationJourneeRepository {
     JdbcEditionScope scope;
 
     private static final String SELECT_VALIDATION_SQL = """
-            SELECT id, jour, stand_id, valide_le, valide_par, commentaire
+            SELECT id, jour, valide_le, valide_par, commentaire
             FROM validation_journee
             WHERE edition_id = ?""";
 
@@ -53,23 +53,22 @@ public class ValidationJourneeRepository {
         return new ValidationJournee(
                 rs.getString("id"),
                 rs.getObject("jour", LocalDate.class),
-                rs.getString("stand_id"),
                 valideLe == null ? null : valideLe.toInstant(),
                 rs.getString("valide_par"),
                 rs.getString("commentaire"));
     }
 
     /**
-     * Writes the validation, replacing the one that target already carried
-     * (see {@code uq_validation_journee_cible}). Re-reading a day is a new
+     * Writes the validation, replacing the one that day already carried
+     * (see {@code uq_validation_journee_jour}). Re-reading a day is a new
      * reading, not a second row: the date, the author and the comment are the
      * ones of the reading that stands.
      */
     public void save(ValidationJournee validation) {
         String sql = """
-                INSERT INTO validation_journee (edition_id, id, jour, stand_id, valide_le, valide_par, commentaire)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-                ON CONFLICT (edition_id, jour, COALESCE(stand_id, '')) DO UPDATE SET
+                INSERT INTO validation_journee (edition_id, id, jour, valide_le, valide_par, commentaire)
+                VALUES (?, ?, ?, ?, ?, ?)
+                ON CONFLICT (edition_id, jour) DO UPDATE SET
                     id = EXCLUDED.id,
                     valide_le = EXCLUDED.valide_le,
                     valide_par = EXCLUDED.valide_par,
@@ -78,10 +77,9 @@ public class ValidationJourneeRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, validation.id());
             ps.setObject(3, validation.jour());
-            ps.setString(4, validation.standId());
-            ps.setTimestamp(5, Timestamp.from(validation.valideLe() != null ? validation.valideLe() : Instant.now()));
-            ps.setString(6, validation.validePar());
-            ps.setString(7, validation.commentaire());
+            ps.setTimestamp(4, Timestamp.from(validation.valideLe() != null ? validation.valideLe() : Instant.now()));
+            ps.setString(5, validation.validePar());
+            ps.setString(6, validation.commentaire());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save day validation " + validation.id(), e);
@@ -100,9 +98,8 @@ public class ValidationJourneeRepository {
     }
 
     /**
-     * Removes every validation covering one of {@code jours}, the stand rows of
-     * that day included: a seat that moved was read by nobody, whichever grain
-     * the reading had been done at.
+     * Removes the validations of {@code jours}: a seat that moved was read by
+     * nobody.
      *
      * @return how many rows were withdrawn
      */

@@ -44,15 +44,6 @@ export class ValidationsStore {
     return $localize`:@@validations.banniere:${progression.journeesValidees}:validees: journée(s) sur ${progression.journees}:total: relues et acceptées.`;
   });
 
-  /** The part of the banner about readings done stand by stand; empty when there is none. */
-  readonly libelleStands = computed(() => {
-    const standReadings = this.progression()?.validationsStand ?? 0;
-    if (standReadings === 0) {
-      return '';
-    }
-    return $localize`:@@validations.banniere.stands:Et ${standReadings}:count: relecture(s) stand par stand sur des journées pas encore acceptées en entier.`;
-  });
-
   /** How far along the reading is, 0 to 100; `null` when there is nothing to show. */
   readonly pourcentage = computed(() => {
     const progression = this.progression();
