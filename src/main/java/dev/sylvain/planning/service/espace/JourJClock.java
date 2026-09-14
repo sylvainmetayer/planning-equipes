@@ -1,6 +1,6 @@
 package dev.sylvain.planning.service.espace;
 
-import dev.sylvain.planning.config.DevMode;
+import dev.sylvain.planning.config.SimulatedClockPermission;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -63,8 +63,9 @@ import java.time.LocalTime;
  * instance. A mock offered there would make the jour J screen lie about a real
  * event — and, once the day-before reminders ship, send them to real people on
  * the wrong day. Hiding the field client-side would not be a guard: it is this
- * write path that refuses, on any server not launched with
- * {@code quarkus:dev}.</p>
+ * write path that refuses, on any server where {@link SimulatedClockPermission}
+ * is not granted — neither {@code quarkus:dev} nor a staging server launched
+ * with {@code HORLOGE_SIMULEE_AUTORISEE=true}.</p>
  */
 @ApplicationScoped
 public class JourJClock {
@@ -76,20 +77,20 @@ public class JourJClock {
     JdbcEditionScope scope;
 
     @Inject
-    DevMode devMode;
+    SimulatedClockPermission permission;
 
     /**
      * The date the mode jour J screen treats as today: the mocked one when a
-     * developer has set one on a development server, the machine's otherwise.
+     * developer has set one on a server allowed to, the machine's otherwise.
      *
      * <p><b>The guard is on the read too, not only on the write.</b> Refusing to
-     * <em>set</em> the value outside dev mode is not enough, because the row is
+     * <em>set</em> the value where it is not allowed is not enough, because the row is
      * an ordinary one and arrives by paths the application does not police: a
      * {@code pg_dump} restore (ADR 0015), a copied volume, a {@code psql}
      * session. A date frozen on a laptop would stick on the instance that
      * received it — and the way back is deliberately shut, since clearing it is
      * refused there as well. Ignoring the value where it may not be set closes
-     * that door: on a deployed instance this always answers the machine's date,
+     * that door: on a production instance this always answers the machine's date,
      * whatever the table holds.</p>
      *
      * <p>The application's own dump is <em>not</em> one of those paths, and
@@ -127,7 +128,7 @@ public class JourJClock {
     /**
      * The mocked date, or {@code null} when the real one is in use.
      *
-     * <p>Always {@code null} outside dev mode, whatever the table holds: see
+     * <p>Always {@code null} where the permission is not granted, whatever the table holds: see
      * {@link #today()} for the dump-replay path that makes this necessary. The
      * row is left alone rather than deleted — this is a read, and a read that
      * quietly repairs data is a read nobody can reason about.</p>
@@ -138,11 +139,11 @@ public class JourJClock {
 
     /**
      * The mocked date and time of day, both {@code null} when the real clock is
-     * in use — and always both {@code null} outside dev mode, see
+     * in use — and always both {@code null} where the permission is not granted, see
      * {@link #today()}.
      */
     public Horloge mocked() {
-        if (!devMode.isActive()) {
+        if (!permission.isGranted()) {
             return Horloge.REELLE;
         }
         // Not prepareScoped: this table carries no edition_id — it describes the
@@ -171,15 +172,15 @@ public class JourJClock {
      * Freezes the date — and, when {@code heure} is given, the time of day — or
      * hands both back to the machine when {@code date} is {@code null}.
      *
-     * @throws BusinessError.Invalid on any server not launched with
-     *                               {@code quarkus:dev} — including the one that
-     *                               matters, a deployed instance — and for a
-     *                               time without a date
+     * @throws BusinessError.Invalid on any server without the permission —
+     *                               including the one that matters, production —
+     *                               and for a time without a date
      */
     public Horloge setMocked(LocalDate date, LocalTime heure) {
-        if (!devMode.isActive()) {
+        if (!permission.isGranted()) {
             throw new BusinessError.Invalid("Figer la date du jour n'est possible qu'en mode développement"
-                    + " (quarkus:dev). Sur une instance déployée, l'écran jour J lit l'horloge réelle et"
+                    + " (quarkus:dev) ou sur une instance lancée avec HORLOGE_SIMULEE_AUTORISEE=true."
+                    + " Ailleurs, l'écran jour J lit l'horloge réelle et"
                     + " ne peut pas en lire une autre.");
         }
         if (heure != null && date == null) {
@@ -200,8 +201,8 @@ public class JourJClock {
         return new Horloge(date, heure);
     }
 
-    /** Whether this server would accept a mocked date at all. */
+    /** Whether this server would accept a mocked date at all: dev mode, or a staging server that asked. */
     public boolean isModifiable() {
-        return devMode.isActive();
+        return permission.isGranted();
     }
 }

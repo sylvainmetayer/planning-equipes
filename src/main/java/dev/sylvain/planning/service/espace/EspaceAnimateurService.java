@@ -197,8 +197,8 @@ public class EspaceAnimateurService {
      *                 since without this person's schedule moving
      * @param dateDuJourFigee the date a developer froze on this server (see
      *                 {@link JourJClock}), {@code null} when the real clock is
-     *                 in use — and always {@code null} outside {@code
-     *                 quarkus:dev}. The day marker reads « today » from the
+     *                 in use — and always {@code null} where
+     *                 {@code SimulatedClockPermission} is not granted. The day marker reads « today » from the
      *                 phone; without this, a frozen date moved the jour J
      *                 screen and left the espace on another day, with nothing
      *                 on screen saying so

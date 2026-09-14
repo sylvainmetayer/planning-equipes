@@ -50,7 +50,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.mock:Cet écran ne parle que d'aujourd'hui, ce qui le rend difficile à découvrir hors de la période de l'événement. En développement seulement, la page Débogage permet donc de figer la date que le serveur considère comme aujourd'hui, et si besoin l'heure — sans elle, l'horloge de la machine continue de tourner ; une icône d'avertissement apparaît alors dans la barre du haut, sur tous les écrans, et son lien ramène directement au champ pour la modifier ou l'effacer. L'espace animateur la suit aussi : son repère du jour se lit sur la date et l'heure figées, et sa barre du haut les affiche. Sur une instance déployée, le réglage n'existe pas et le serveur refuse de le poser : l'écran y lit toujours l'horloge réelle.`,
+          text: $localize`:@@aide.jourJ.mock:Cet écran ne parle que d'aujourd'hui, ce qui le rend difficile à découvrir hors de la période de l'événement. En développement, ou sur un serveur de recette qui l'autorise, la page Débogage permet donc de figer la date que le serveur considère comme aujourd'hui, et si besoin l'heure — sans elle, l'horloge de la machine continue de tourner ; une icône d'avertissement apparaît alors dans la barre du haut, sur tous les écrans, et son lien ramène directement au champ pour la modifier ou l'effacer. L'espace animateur la suit aussi : son repère du jour se lit sur la date et l'heure figées, et sa barre du haut les affiche. Sur une instance de production, le réglage n'existe pas et le serveur refuse de le poser : l'écran y lit toujours l'horloge réelle.`,
         },
       ],
       links: [

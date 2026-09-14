@@ -1,4 +1,4 @@
-// Development-only override of the server's notion of today
+// Development- and staging-only override of the server's notion of today
 // (`/api/debug/date-du-jour`, issue #297).
 //
 // The mode jour J screen is entirely about what is still ahead *today*, so
@@ -13,7 +13,8 @@
 //
 // `modifiable` comes from the server too. It is what the interface hides the
 // field on — a courtesy, never the guard: the guard is the write endpoint,
-// which refuses on any instance not launched with `quarkus:dev`.
+// which refuses on any instance neither under `quarkus:dev` nor launched with
+// `HORLOGE_SIMULEE_AUTORISEE=true`.
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
@@ -61,7 +62,7 @@ export class DateMockService {
 
   /**
    * An empty date hands the whole clock back, time included; an empty time
-   * keeps the wall clock's. The server answers 400 outside dev mode.
+   * keeps the wall clock's. The server answers 400 where the simulated clock is not allowed.
    */
   async set(date: string, heure = ''): Promise<void> {
     this.apply(

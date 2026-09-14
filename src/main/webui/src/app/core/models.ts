@@ -2093,7 +2093,7 @@ export interface EspaceAnimateurView {
   changementsLe: string | null;
   /**
    * The date a developer froze on this server (`/api/debug/date-du-jour`),
-   * `null` on the real clock — always `null` outside `quarkus:dev`. The day
+   * `null` on the real clock — always `null` where the simulated clock is not allowed. The day
    * marker then reads it in place of the phone's date, and the toolbar says so.
    */
   dateDuJourFigee: string | null;
@@ -2626,7 +2626,7 @@ export interface EtatSauvegarde {
 /* --------------------------- Mode « jour J » ------------------------------ */
 
 /**
- * `/api/debug/date-du-jour`: the development-only override of the server's
+ * `/api/debug/date-du-jour`: the development- and staging-only override of the server's
  * notion of today, and whether this server would accept one.
  */
 export interface DateJourJView {
@@ -2635,7 +2635,7 @@ export interface DateJourJView {
   /** `HH:mm`, `null` while the wall clock gives the time — always `null` without a date. */
   heureDuJour: string | null;
   /**
-   * Server launched with `quarkus:dev`. Hides the field when false — the guard
+   * Server under `quarkus:dev` or launched with `HORLOGE_SIMULEE_AUTORISEE=true`. Hides the field when false — the guard
    * itself is server-side, on the write endpoint.
    */
   modifiable: boolean;

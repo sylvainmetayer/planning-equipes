@@ -9,7 +9,7 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
  * (issue #297): every screen that reasons about "now" — the mode jour J one
  * above all — is then showing another day as if it were this one.
  *
- * <p>It exists although the setting is development-only, because the danger it
+ * <p>It exists although the setting is development- and staging-only, because the danger it
  * covers is not deployment but forgetting: a date frozen at the start of a
  * session is invisible an hour later, and the screen looks simply wrong rather
  * than mocked.

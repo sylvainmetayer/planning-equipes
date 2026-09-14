@@ -980,7 +980,7 @@ compétent partout, et cette vue lit ce verdict au lieu d'en produire un second.
 Elle ne mesure aucune rareté de compétence — c'est le sujet du goulot par
 compétence, où un renfort ne compte jamais comme **spécialiste**.
 
-### Figer la date du jour — développement uniquement
+### Figer la date du jour — développement et recette uniquement
 
 Cet écran ne se teste, sinon, que le jour de l'événement. `/api/debug/date-du-jour`
 remplace donc la date que le serveur considère comme « aujourd'hui ».
@@ -990,7 +990,10 @@ remplace donc la date que le serveur considère comme « aujourd'hui ».
 | `GET /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08"\|null, "heureDuJour": "14:30"\|null, "modifiable": true\|false }`. |
 | `PUT /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08", "heureDuJour": "14:30" }` fige la date, et l'heure si elle est donnée ; une date vide ou `null` rend la main à l'horloge de la machine, heure comprise. Une heure sans date répond `400`. |
 
-**Refusé (400) sur toute instance qui n'a pas été lancée avec `quarkus:dev`.**
+**Refusé (400) sur toute instance qui n'a été lancée ni avec `quarkus:dev`, ni
+avec `HORLOGE_SIMULEE_AUTORISEE=true`.** La variable existe pour un serveur de
+recette, où jour J et l'espace animateur se répètent sur un vrai déploiement
+hors saison ; elle vaut `false` par défaut et doit le rester en production.
 `/debug` est une route d'administration ordinaire, disponible en production : un
 mock activable là-bas ferait mentir l'écran jour J sur un vrai événement. Le
 garde-fou est donc **sur l'écriture, côté serveur**, pas sur l'affichage du
@@ -1003,8 +1006,8 @@ ne contrôle pas — une restauration `pg_dump` ([ADR
 0015](decisions/0015-sauvegarde-par-pg-dump-restauration-hors-application.md)),
 un volume recopié, une session `psql`. Une date figée sur un poste de
 développement puis arrivée sur une instance déployée y resterait, et le chemin
-de retour est fermé puisque l'effacement y est refusé aussi. Hors `quarkus:dev`,
-la valeur est donc **ignorée** — la ligne est laissée telle quelle, mais
+de retour est fermé puisque l'effacement y est refusé aussi. Là où l'horloge simulée
+n'est pas autorisée, la valeur est donc **ignorée** — la ligne est laissée telle quelle, mais
 l'horloge lue est celle de la machine.
 
 Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
@@ -1018,7 +1021,7 @@ jour J** — quel jour est regardé, quels créneaux de ce jour sont encore deva
 et lesquels une absence couvre — **et pour le repère du jour de l'espace
 animateur**. Celui-là se calcule dans le navigateur : `GET
 /api/espace-animateur/{jeton}` porte donc `dateDuJourFigee` et
-`heureDuJourFigee` (toujours `null` hors `quarkus:dev`), que la page substitue à
+`heureDuJourFigee` (toujours `null` là où l'horloge simulée n'est pas autorisée), que la page substitue à
 la date et à l'heure du téléphone. Sans cela,
 jour J se plaçait sur la date figée et l'espace des personnes qu'il réaffecte
 restait sur la vraie, sans rien à l'écran pour le dire. **L'heure de la journée est facultative** :

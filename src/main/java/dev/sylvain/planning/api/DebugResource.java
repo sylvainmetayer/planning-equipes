@@ -33,7 +33,7 @@ import java.time.format.DateTimeParseException;
  * FAILS loudly when SMTP is broken — unlike the business sends, which are
  * best-effort by design.</li>
  * <li>{@code GET|PUT /debug/date-du-jour} freezes the date — and optionally
- * the time of day — that the mode jour J screen and the espace day marker read, so it can be exercised out of season. <b>Development only</b>,
+ * the time of day — that the mode jour J screen and the espace day marker read, so it can be exercised out of season. <b>Development and staging only</b>,
  * and refused here rather than hidden in the interface — see
  * {@link JourJClock}.</li>
  * </ul>
@@ -102,7 +102,7 @@ public class DebugResource {
     /**
      * Freezes the date and, with {@code heureDuJour}, the time of day; a
      * blank/absent {@code dateDuJour} hands both back to the machine. Answers 400
-     * on any server not launched with {@code quarkus:dev}, and for a time
+     * on any server without {@code SimulatedClockPermission}, and for a time
      * without a date.
      */
     @PUT
