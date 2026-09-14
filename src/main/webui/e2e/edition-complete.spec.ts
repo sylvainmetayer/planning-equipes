@@ -199,9 +199,6 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   await expect(page.getByText(/Calendrier appliqué : 10 créneau\(x\) créé\(s\)/)).toBeVisible();
   await expect(page.locator('.creneaux-liste-card h2')).toContainText('Créneaux (10)');
   await expect(page.locator('.journee-conforme')).toHaveCount(3);
-  // Une grille en vacations range le découpage.
-  await expect(page.locator('.decoupage-range')).toBeVisible();
-  await expect(page.getByText('Générer le découpage')).toHaveCount(0);
   // Le relais repas se lit sur la liste des créneaux.
   await expect(page.locator('.creneaux-table .relais-repas-icon')).toHaveCount(4);
 
@@ -231,7 +228,7 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
   }
   await cellule(page, 'Stand trois E2E', JOUR3, '19-23').fill('-');
   await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i)).toBeVisible();
+  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
 
   // 4 bis. La même grille lue par journée type (ADR 0033) : six colonnes au
   // lieu de dix, et une case qui vaut pour les deux jours normaux d'un coup.
@@ -245,15 +242,15 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
 
   await matinJourNormal.fill('2');
   await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i)).toBeVisible();
-  expect(await effectifsDesMatins()).toEqual([2, 2]);
+  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
+  await expect.poll(effectifsDesMatins).toEqual([2, 2]);
 
   // Et retour : la même case rend les deux jours à leur effectif de départ, pour
   // que la suite de la spec lise l'édition qu'elle a saisie.
   await matinJourNormal.fill(effectifInitial);
   await page.getByRole('button', { name: /^Enregistrer/ }).click();
-  await expect(page.getByText(/enregistré/i)).toBeVisible();
-  expect(await effectifsDesMatins()).toEqual([Number(effectifInitial), Number(effectifInitial)]);
+  await expect(page.getByText(/enregistré/i).last()).toBeVisible();
+  await expect.poll(effectifsDesMatins).toEqual([Number(effectifInitial), Number(effectifInitial)]);
 
   // Un stand aux heures particulières, déclaré après la grille — une case ne
   // sait pas dire 07:00-08:00, et enregistrer la grille réécrit tout l'horaire

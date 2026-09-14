@@ -201,7 +201,7 @@ test("la bascule de langue passe l'interface en anglais", async ({ browser }) =>
   await page.goto('/');
   await page.getByRole('button', { name: 'Changer de langue' }).click();
   // The switch reloads the app with the English catalog.
-  await expect(page.getByRole('link', { name: 'Swaps' })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'Swaps', exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'Staff', exact: true })).toBeVisible();
   await page.context().close();
 });
