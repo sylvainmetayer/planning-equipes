@@ -68,6 +68,37 @@ form.form-grid {
   overflow-x: auto;
 }
 
+/*
+ * An entry grid too big for the screen — a hundred and fifty animateurs, sixty
+ * stands, thirty days — gets its own scrolling box, and that is what makes a
+ * sticky header row possible at all: `position: sticky` resolves against the
+ * nearest scrolling ancestor, so a wrapper that only ever scrolls sideways has
+ * nothing to hold a header against. Bounded rather than fixed: a grid of three
+ * rows keeps the height of its three rows and does not scroll at all. Same
+ * bound as `/repos`, which carried this pattern first.
+ *
+ * The grid itself declares which of its cells stay put. What belongs here is
+ * the room kept above them: these grids are walked with the arrow keys, and a
+ * browser asked to show a focused cell measures it against the scrollport,
+ * which a sticky header sits inside — so a cell two rows up is « already
+ * visible », nothing scrolls, and the focus disappears under the header. The
+ * scroll padding is what moves that edge down to under the header band; it is
+ * the container's job and not the cell's, since `scroll-margin` on the cell
+ * only applies once a scroll has been decided, which is exactly the decision
+ * being got wrong. 4.25 rem holds the tallest band these grids produce — 4.11
+ * for the two rows of headers on `/ouvertures`, 4.22 for a three-line typologie
+ * label under its ninja icon on `/competences` — and a band that outgrew it
+ * would put a focused cell back under the header, which is what the keyboard
+ * walk of `e2e/grilles-collantes.spec.ts` measures. Erring long costs nothing:
+ * it only leaves a little more of the grid visible above the cell being typed
+ * into.
+ */
+.table-wrapper.grille-defilement {
+  overflow: auto;
+  max-height: min(70vh, 42rem);
+  scroll-padding-top: 4.25rem;
+}
+
 .table-wrapper table {
   width: 100%;
 }

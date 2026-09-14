@@ -84,10 +84,27 @@
   text-overflow: ellipsis;
 }
 
+/* And the typologie stays in view while scrolling down, by the same reasoning:
+   over a hundred and fifty animateurs, a cell without its column is a letter
+   nobody can read. It takes the grid having a scrolling box of its own —
+   `.grille-defilement`, in pages.css — for this to hold at all. */
 .competences-grille thead th {
   background: var(--mat-sys-surface-container);
   font-weight: 600;
   vertical-align: bottom;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* The corner cell belongs to both frozen bands — the row of typologies and the
+   column of names — so it must cover them, not be covered, and it is painted
+   like the band rather than like the column: Chrome drops the collapsed
+   borders of a sticky cell it has actually moved, and the corner left white
+   would then hang over the first row with nothing between them. */
+.competences-grille thead .colonne-animateur {
+  z-index: 3;
+  background: var(--mat-sys-surface-container);
 }
 
 .competences-grille .colonne-typologie {

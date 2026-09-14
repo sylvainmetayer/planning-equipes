@@ -97,9 +97,26 @@
   text-overflow: ellipsis;
 }
 
+/* The header stays in view while scrolling down, by the same reasoning: over
+   sixty stands, a cell without its column says nothing about which day it
+   speaks of. It takes the grid having a scrolling box of its own —
+   `.grille-defilement`, in pages.css — for this to hold at all. */
 .ouvertures-grille thead th {
   background: var(--mat-sys-surface-container);
   font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+/* The corner cell belongs to both frozen bands — the row of headers and the
+   column of stand names — so it must cover them, not be covered, and it is
+   painted like the band rather than like the column: Chrome drops the
+   collapsed borders of a sticky cell it has actually moved, and the corner
+   left white would then hang over the first row with nothing between them. */
+.ouvertures-grille thead .colonne-stand {
+  z-index: 3;
+  background: var(--mat-sys-surface-container);
 }
 
 .ouvertures-grille .entete-jour,
@@ -272,8 +289,35 @@
 
 .grille-saisie .entete-jour-saisie {
   border-left: 2px solid var(--mat-sys-outline);
-  position: relative;
   padding-right: 1.6rem;
+}
+
+/*
+ * This grid's header is two rows deep — the day, then its columns — and only
+ * the first one can hold at `top: 0`. The second is pinned under it, which
+ * turns the first one's height from decoration into arithmetic: declared here
+ * and read back as the `top` of the second row. Its content is two short lines
+ * that never wrap, every cell of the grid being `white-space: nowrap`; and
+ * `height` on a table cell is a minimum, so content that did grow would push
+ * the rows apart rather than be clipped — what would drift is the offset,
+ * which is why `e2e/grilles-collantes.spec.ts` measures the two rows against
+ * each other.
+ *
+ * `.entete-jour-saisie` no longer needs `position: relative` for the copy
+ * button it positions: the header rule above makes it `sticky`, which is a
+ * containing block all the same.
+ */
+.grille-saisie {
+  --entete-jour-hauteur: 2.5rem;
+}
+
+.grille-saisie .entete-jour-saisie {
+  box-sizing: border-box;
+  height: var(--entete-jour-hauteur);
+}
+
+.grille-saisie .entete-creneau {
+  top: var(--entete-jour-hauteur);
 }
 
 .grille-saisie .recopier-jour,

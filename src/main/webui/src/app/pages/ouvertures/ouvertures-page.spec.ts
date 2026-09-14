@@ -235,6 +235,32 @@ describe('OuverturesPage — saisie', () => {
     expect(root(saisie.fixture).querySelector('.grille-saisie')).not.toBeNull();
   });
 
+  /*
+   * Each grid scrolls in a box of its own, which is the whole reason its
+   * header and its stand column can stay put: `position: sticky` resolves
+   * against the nearest scrolling ancestor, and `.table-wrapper` alone only
+   * ever scrolls sideways. Rendered without CSS, this suite cannot judge what
+   * that produces — `e2e/grilles-collantes.spec.ts` measures it in a browser —
+   * but it can hold the class that turns it on, which a template edit drops
+   * without anything else noticing.
+   */
+  it('wraps each grid in the scrolling box its sticky header needs', async () => {
+    for (const [vue, grille] of [
+      ['lecture', '.ouvertures-grille'],
+      ['saisie', '.grille-saisie'],
+      ['journees-types', '.grille-journees-types'],
+    ] as const) {
+      const { fixture } = mount(vue === 'lecture' ? {} : { vue });
+      await fixture.whenStable();
+      const table = root(fixture).querySelector(grille);
+      expect(table, `grille de la vue ${vue}`).not.toBeNull();
+      expect(
+        table!.closest('.table-wrapper.grille-defilement'),
+        `boîte de défilement de la vue ${vue}`,
+      ).not.toBeNull();
+    }
+  });
+
   // The third view (ADR 0032): the same report, laid on time for one day.
   it('lays one day on the time axis from ?vue=journee, and jumps there from a day header', async () => {
     const journee = mount({ vue: 'journee' });

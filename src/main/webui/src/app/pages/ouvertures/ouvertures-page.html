@@ -110,7 +110,7 @@
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
-        <div class="table-wrapper">
+        <div class="table-wrapper grille-defilement">
           <table class="ouvertures-grille grille-saisie">
             <caption class="visually-hidden" i18n="@@ouvertures.saisie.caption">Saisie des ouvertures : une ligne par stand, une colonne par créneau ou tranche de créneau de chaque journée, l'effectif dans chaque case</caption>
             <thead>
@@ -218,7 +218,7 @@
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.journeesTypes.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
-        <div class="table-wrapper">
+        <div class="table-wrapper grille-defilement">
           <table class="ouvertures-grille grille-saisie grille-journees-types">
             <caption class="visually-hidden" i18n="@@ouvertures.journeesTypes.caption">Saisie des ouvertures par journée type : une ligne par stand, une colonne par vacation de chaque journée type, l'effectif dans chaque case</caption>
             <thead>
@@ -367,7 +367,7 @@
           }
         }
       } @else {
-      <div class="table-wrapper">
+      <div class="table-wrapper grille-defilement">
           <table class="ouvertures-grille">
             <caption class="visually-hidden" i18n="@@ouvertures.table.caption">Ouvertures effectives des stands : une ligne par stand, une colonne par journée de l'événement</caption>
             <thead>

@@ -165,6 +165,24 @@ describe('CompetencesPage', () => {
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
+  /*
+   * The grid scrolls in a box of its own, which is the whole reason its header
+   * can stay put: `position: sticky` resolves against the nearest scrolling
+   * ancestor, and `.table-wrapper` alone only ever scrolls sideways. Rendered
+   * without CSS, this suite cannot judge what that produces —
+   * `e2e/grilles-collantes.spec.ts` measures it in a browser — but it can hold
+   * the class that turns it on, which a template edit drops without anything
+   * else noticing.
+   */
+  it('wraps the grid in the scrolling box its sticky header needs', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+
+    const grille = root(fixture).querySelector('.competences-grille');
+    expect(grille).not.toBeNull();
+    expect(grille!.closest('.table-wrapper.grille-defilement')).not.toBeNull();
+  });
+
   it('sets the level from the keys 0-3, cycles on a click, and marks the cell and its row', async () => {
     const { fixture } = mount();
     await fixture.whenStable();
