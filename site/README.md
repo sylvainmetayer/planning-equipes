@@ -1,28 +1,42 @@
 # Page vitrine
 
-Une page statique, sans dépendance ni build : `index.html` et `style.css`.
-Pour la relire, ouvrez `index.html` dans un navigateur — il n'y a rien à
-installer.
+Une page statique, sans dépendance ni build : `index.html`, `style.css` et
+`favicon.svg`. Pour la relire, ouvrez `index.html` dans un navigateur — il n'y
+a rien à installer.
 
 Le choix du zéro-outillage est délibéré. Un générateur de site (Astro, Hugo…)
 se justifie à partir de plusieurs pages ou d'un contenu structuré ; pour une
 page, il ajoute un `node_modules`, une configuration et une dépendance à tenir
 à jour, sans rien apporter. Le contenu reste portable si le besoin change.
 
+Aucune requête externe non plus : pas de police distante, pas de script, pas de
+traqueur. Les illustrations sont des SVG inline qui prennent leurs couleurs
+dans les mêmes variables CSS que le reste, et suivent donc le thème clair ou
+sombre du visiteur. Ce sont des schémas dessinés, jamais des captures : une
+capture d'écran de l'application exposerait des données d'exploitation, et
+aucune ne doit figurer ici — ni volumétrie, ni nom de partenaire, ni chiffre
+identifiable.
+
 ## Contenus provisoires
 
-Les blocs marqués `data-todo` attendent une décision de positionnement ou un
-contenu réel — lien de la démonstration, captures d'écran, grille tarifaire.
-Ils portent un liseré ocre pour être repérables en relecture. Retirer
-l'attribut une fois le bloc validé.
+Les blocs marqués `data-todo` attendent un contenu réel. Ils portent un liseré
+ocre pour être repérables en relecture ; retirer l'attribut une fois le bloc
+validé.
 
-La page n'a ni marque ni favicon, et c'est délibéré : le produit n'a pas
-d'identité visuelle propre, et le logo d'un client n'en tient pas lieu sur la
-page commerciale du produit. Le balisage indique où les rétablir.
+Il n'en reste qu'un : **l'URL de la démonstration publique**, dans la section
+« Voir avant de décider ». Tant qu'elle pointe sur `#contact`, le bouton ment
+poliment. Le reste de la page est factuel et vérifiable dans le code de
+l'application — les règles légales citées correspondent aux contraintes dures
+listées dans [`docs/contraintes.md`](../docs/contraintes.md).
 
-Le reste de la page est factuel et vérifiable dans le code de l'application.
-Aucune donnée d'exploitation d'un client ne doit y figurer : ni volumétrie, ni
-nom de partenaire, ni chiffre identifiable.
+## Marque
+
+La page porte un logotype typographique et un favicon géométrique faits ici :
+trois barres empilées, qui valent pour un planning. C'est volontairement
+minimal, et c'est surtout à nous. Le logo d'un client n'a rien à faire sur la
+page commerciale du produit, et un onglet de navigateur sans favicon n'inspire
+rien à personne. Si une identité visuelle propre voit le jour, elle remplace
+`favicon.svg` et le `<svg class="mark__glyph">` de l'en-tête.
 
 ## Publication
 
