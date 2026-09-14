@@ -151,21 +151,28 @@ public class PublicationTraceRepository {
     }
 
     /**
-     * The last thing this animateur was told, {@code null} when they were
-     * never written to (issue #532). One row, not a filter over
-     * {@link #byAnimateur(String)}: the espace reads it on every open, and
+     * The last thing this animateur was told <b>about their own schedule</b>,
+     * {@code null} when they never were (issue #532). One row, not a filter
+     * over {@link #byAnimateur(String)}: the espace reads it on every open, and
      * what it shows is the newest line, never the history.
+     *
+     * <p>A row that only announces an échange decision is skipped: it moves
+     * nobody's days, so it neither resets the confirmation nor may it hide the
+     * changes that did — taking it as « the last line » emptied the banner of
+     * somebody still asked to confirm those changes. A first delivery is kept:
+     * it is the boundary before which there is nothing to replay.</p>
      *
      * <p>Read whatever the send's outcome was: a line the mail never carried —
      * no address on the fiche, a send that failed — is exactly the one the
      * espace has to show, since nothing else ever will.</p>
      */
-    public Destinataire lastSentTo(String animateurId) {
+    public Destinataire lastScheduleSentTo(String animateurId) {
         String sql = """
  SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
  premiere_diffusion
  FROM publication_destinataire
  WHERE edition_id = ? AND animateur_id = ?
+ AND (premiere_diffusion OR COALESCE(changements, '[]'::jsonb) <> '[]'::jsonb)
  ORDER BY envoye_le DESC, id DESC
  LIMIT 1""";
         try (Connection connection = dataSource.getConnection();

@@ -108,6 +108,38 @@ function veille(maintenant: Date): string {
   return toDateKey(hier);
 }
 
+/** `2026-07-12` from `2026-07-11`, through the calendar. */
+function lendemain(date: string): string {
+  const [annee, mois, jourDuMois] = date.split('-').map(Number);
+  return toDateKey(new Date(annee, mois - 1, jourDuMois + 1));
+}
+
+/**
+ * When a break really ends, as `AAAA-MM-JJTHH:mm` — comparable as text.
+ *
+ * <p>A break is dated on the day of the seat it falls in, and a seat past
+ * midnight is dated on the evening that opens it. So « 23:50–00:10 » and
+ * « 00:30–00:50 » inside a 22:00–02:00 seat both end on the next calendar day:
+ * compared as bare hours, both read as over at 23:00 — while still ahead.</p>
+ */
+function breakRealEnd(pause: PauseAnimateurView, jour: JourPlanning): string {
+  const debut = heureCourte(pause.debut)!;
+  const fin = heureCourte(pause.fin)!;
+  const pastMidnight =
+    traverseMinuit(debut, fin) ||
+    jour.postes.some((poste) => {
+      const debutPoste = heureCourte(poste.heureDebut);
+      const finPoste = heureCourte(poste.heureFin);
+      return (
+        !!debutPoste &&
+        traverseMinuit(debutPoste, finPoste) &&
+        debut < debutPoste &&
+        fin <= finPoste!
+      );
+    });
+  return `${pastMidnight ? lendemain(pause.date) : pause.date}T${fin}`;
+}
+
 /**
  * True for « 22:00–02:00 »: a seat whose end does not follow its start runs
  * past midnight. The plan dates it on the evening that opens it — the product
@@ -191,12 +223,18 @@ export function repereMaintenant(jours: JourPlanning[], maintenant: Date): Reper
     }
   }
   const jourAujourdhui = jours.find((jour) => jour.date === aujourdhui);
+  // Yesterday's breaks too: one that crosses midnight, or falls after it in a
+  // night seat, is still ahead this morning while its own end is.
+  const instant = `${aujourdhui}T${heure}`;
+  const pausesDuJour = jours
+    .filter((jour) => jour.date === hier || jour.date === aujourdhui)
+    .flatMap((jour) => jour.pauses.filter((pause) => breakRealEnd(pause, jour) > instant));
   const dateTenue = held ? (held.date ?? aujourdhui) : aujourdhui;
   return {
     enCours: held,
     prochain,
     reposAujourdhui: !!jourAujourdhui?.repos,
-    pausesDuJour: (jourAujourdhui?.pauses ?? []).filter((pause) => heureCourte(pause.fin)! > heure),
+    pausesDuJour,
     aujourdhui,
     jourPlancher: dateTenue < aujourdhui ? dateTenue : aujourdhui,
   };

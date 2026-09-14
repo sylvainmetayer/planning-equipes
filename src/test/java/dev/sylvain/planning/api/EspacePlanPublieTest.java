@@ -327,6 +327,48 @@ class EspacePlanPublieTest {
                 .body("find { it.animateurId == 'PUBESP-A' }.demandes[0]", containsString("refus"));
     }
 
+    /**
+     * A later publication that only announces a decision must not hide the
+     * changes still waiting for a confirmation: it does not reset that
+     * confirmation, so emptying the banner asked somebody to confirm changes
+     * the page no longer showed.
+     */
+    @Test
+    void uneDecisionPublieeEnsuiteNEffacePasLesChangementsAConfirmer() {
+        publication.publier();
+        // Submitted while Alice still holds the seat, decided only later.
+        String demandeId = demandes.submit(
+                        "PUBESP-A",
+                        List.of(new NouvelleDemande(CRENEAU_ID, "PUBESP-S1", "PUBESP-B", "empêchement", null, null)))
+                .get(0)
+                .getId();
+        demandes.acceptByTarget("PUBESP-B", demandeId);
+
+        // Her seat moves: this publication tells her, and asks her to confirm.
+        persistPlan("PUBESP-B");
+        publication.publier();
+
+        // Then the organisation decides, and the next publication carries the
+        // decision alone — nothing moved in her days.
+        demandes.refuse(demandeId, "Déjà réglé par le nouveau planning");
+        publication.publier();
+        given().when()
+                .get("/api/planning/publication/destinataires")
+                .then()
+                .statusCode(200)
+                .body("find { it.animateurId == 'PUBESP-A' }.changements.size()", equalTo(0))
+                .body("find { it.animateurId == 'PUBESP-A' }.demandes[0]", containsString("refus"));
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("statutConfirmation", equalTo("NON_VU"))
+                .body("changements.size()", equalTo(1))
+                .body("changements[0]", containsString("retir"))
+                .body("changementsLe", notNullValue());
+    }
+
     /** Never written to: nothing to replay, and no date to show it under. */
     @Test
     void sansPublicationLEspaceNAnnonceAucunChangement() {

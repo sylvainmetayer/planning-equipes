@@ -294,7 +294,7 @@ public class EspaceAnimateurService {
         ConfirmationPlanningRepository.Confirmation confirmation =
                 confirmationService.stored(animateurId).orElse(null);
         DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
-        PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastSentTo(animateurId);
+        PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastScheduleSentTo(animateurId);
         JourJClock.Horloge horloge = clock.mocked();
         boolean diffToShow = lastTrace != null
                 && !lastTrace.premiereDiffusion()

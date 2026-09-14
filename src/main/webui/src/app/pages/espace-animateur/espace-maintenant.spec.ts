@@ -154,6 +154,62 @@ describe('repereMaintenant', () => {
       expect(isPasse(nuit[0], repere.jourPlancher)).toBe(true);
     });
 
+    it('keeps a break that crosses midnight until its own end', () => {
+      // Dated the 11th like its seat: compared as bare hours, « 00:10 » reads
+      // as over at 23:00 — while still ahead, then while being taken.
+      const nightWithBreak = [
+        jour(
+          '2026-07-11',
+          [poste({ heureDebut: '22:00:00', heureFin: '02:00:00' })],
+          [pause({ debut: '23:50:00', fin: '00:10:00', heureLimite: '23:50:00' })],
+        ),
+        dimanche,
+      ];
+
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.pausesDuJour).toHaveLength(
+        1,
+      );
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 55))!.pausesDuJour).toHaveLength(
+        1,
+      );
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 5))!.pausesDuJour).toHaveLength(1);
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 15))!.pausesDuJour).toHaveLength(
+        0,
+      );
+    });
+
+    it('keeps a break taken after midnight in a night seat until its end', () => {
+      const nightWithBreak = [
+        jour(
+          '2026-07-11',
+          [poste({ heureDebut: '22:00:00', heureFin: '02:00:00' })],
+          [pause({ debut: '00:30:00', fin: '00:50:00', heureLimite: '00:30:00' })],
+        ),
+        dimanche,
+      ];
+
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 11, 23, 0))!.pausesDuJour).toHaveLength(
+        1,
+      );
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 0, 40))!.pausesDuJour).toHaveLength(
+        1,
+      );
+      expect(repereMaintenant(nightWithBreak, at(2026, 7, 12, 1, 0))!.pausesDuJour).toHaveLength(0);
+    });
+
+    it('does not carry an evening break of the day before into the morning', () => {
+      const soir = [
+        jour(
+          '2026-07-11',
+          [poste({ heureDebut: '22:00:00', heureFin: '02:00:00' })],
+          [pause({ debut: '18:40:00', fin: '19:00:00' })],
+        ),
+        dimanche,
+      ];
+
+      expect(repereMaintenant(soir, at(2026, 7, 12, 0, 30))!.pausesDuJour).toHaveLength(0);
+    });
+
     it('does not reach back two days: only the night just passed can still run', () => {
       const nuitOubliee = [
         jour('2026-07-10', [
