@@ -15,9 +15,9 @@
       <mat-progress-bar mode="indeterminate" />
     }
     <ul class="export-csv-liste">
-      @for (ligne of lignes(); track ligne.cible) {
+      @for (ligne of lignes(); track ligne.target) {
         <li>
-          <mat-checkbox [checked]="estChoisi(ligne.cible)" (change)="basculer(ligne.cible, $event.checked)">
+          <mat-checkbox [checked]="isSelected(ligne.target)" (change)="basculer(ligne.target, $event.checked)">
             {{ ligne.libelle }}
           </mat-checkbox>
           <span class="export-csv-fichier">{{ ligne.fichier }}</span>
@@ -30,6 +30,9 @@
         Coché mais vide : l'archive portera un fichier sans aucune ligne, en-tête seul.
       </p>
     }
+    <p class="empty-hint" i18n="@@exportCsv.journeesTypes">
+      Le fichier des journées types emporte le calendrier avec lui ; réimporté, il n'écrit que les modèles et leurs dates : la grille ne bouge qu'à l'application.
+    </p>
     <p class="empty-hint" i18n="@@exportCsv.animateurs">
       Le fichier des animateurs ne se réimporte que dans une édition qui a déjà ses créneaux : sans dates, un jour d'indisponibilité ne serait ni affiché ni conservé, et l'import le refuse.
     </p>

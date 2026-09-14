@@ -7,6 +7,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
+import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ExportsPage } from './exports-page';
 
@@ -23,6 +24,8 @@ describe('ExportsPage', () => {
       TYPOLOGIES: 7,
       EMPLACEMENTS: 3,
       STANDS: 12,
+      CRENEAUX: 18,
+      JOURNEES_TYPES: 2,
       ANIMATEURS: 0,
     });
     api.telecharger.mockResolvedValue('referentiels-csv.zip téléchargé (application/zip).');
@@ -38,7 +41,7 @@ describe('ExportsPage', () => {
   });
 
   type Internals = {
-    basculer: (cible: string, coche: boolean) => void;
+    basculer: (target: string, coche: boolean) => void;
     telecharger: () => Promise<void>;
     peutTelecharger: () => boolean;
     total: () => number;
@@ -63,12 +66,16 @@ describe('ExportsPage', () => {
     const { racine, page } = await monter();
 
     const lignes = [...racine.querySelectorAll('.export-csv-liste li')];
-    expect(lignes).toHaveLength(4);
+    expect(lignes).toHaveLength(6);
     expect(lignes[0].textContent).toContain('Typologies');
     expect(lignes[0].textContent).toContain('typologies.csv');
     expect(lignes[0].textContent).toContain('7 ligne(s)');
-    expect(racine.querySelectorAll('mat-checkbox input:checked')).toHaveLength(4);
-    expect(page.total()).toBe(22);
+    // The dates sit between the stands and the animateurs, as on the import
+    // screen: an off day only survives where the timeslot already exists.
+    expect(lignes[3].textContent).toContain('creneaux.csv');
+    expect(lignes[4].textContent).toContain('journees-types.csv');
+    expect(racine.querySelectorAll('mat-checkbox input:checked')).toHaveLength(6);
+    expect(page.total()).toBe(42);
   });
 
   /** Ticked but empty is worth saying: the archive carries a header and nothing else. */
@@ -83,20 +90,21 @@ describe('ExportsPage', () => {
 
     page.basculer('ANIMATEURS', false);
     page.basculer('EMPLACEMENTS', false);
+    page.basculer('JOURNEES_TYPES', false);
     await fixture.whenStable();
-    expect(page.total()).toBe(19);
+    expect(page.total()).toBe(37);
 
     await page.telecharger();
 
     expect(api.telecharger).toHaveBeenCalledOnce();
-    expect(api.telecharger.mock.calls[0][0]).toEqual(['TYPOLOGIES', 'STANDS']);
+    expect(api.telecharger.mock.calls[0][0]).toEqual(['TYPOLOGIES', 'STANDS', 'CRENEAUX']);
   });
 
   it('offers nothing to download once every box is cleared', async () => {
     const { fixture, page } = await monter();
 
-    for (const cible of ['TYPOLOGIES', 'EMPLACEMENTS', 'STANDS', 'ANIMATEURS']) {
-      page.basculer(cible, false);
+    for (const target of CIBLES_EXPORT_CSV) {
+      page.basculer(target, false);
     }
     await fixture.whenStable();
 

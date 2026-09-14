@@ -33,6 +33,10 @@ class ReferentielCsvExportServiceTest {
     private static final String SOURCE = "EXPORT-CSV-SRC";
     private static final String CIBLE = "EXPORT-CSV-DST";
 
+    /** Every referential, as the screen sends them when nothing is unticked. */
+    private static final String TOUT =
+            "typologies=true&emplacements=true&stands=true" + "&creneaux=true&journeesTypes=true&animateurs=true";
+
     @BeforeEach
     void creerLesEditions() {
         for (String edition : new String[] {SOURCE, CIBLE}) {
@@ -59,6 +63,23 @@ class ReferentielCsvExportServiceTest {
                 "id;nom;typologies;effectifMin;effectifMax\n"
                         + "EXP-S1;\"Stand un; et demi\";EXP-A|EXP-B;2;3\n"
                         + "EXP-S2;Stand deux;EXP-B;1;1\n");
+        // The grid and the day templates the two new files carry: a meal
+        // relay, a night vacation ending past midnight, and a template whose
+        // shift line is full of the commas that break a naive reader.
+        importer(
+                SOURCE,
+                "/api/creneaux/import-csv",
+                "date;heureDebut;heureFin;couverturePause\n"
+                        + "2026-09-01;09:00;12:00;\n"
+                        + "2026-09-01;12:00;13:00;oui\n"
+                        + "2026-09-01;13:00;20:00;\n"
+                        + "2026-09-02;20:00;00:00;\n");
+        importer(
+                SOURCE,
+                "/api/journees-types/import-csv",
+                "nom;vacations;dates\n"
+                        + "Jour normal;\"09:00-12:00, 12:00-13:00 R, 13:00-20:00\";2026-09-01\n"
+                        + "Nocturne;\"20:00-00:00\";2026-09-02\n");
         given().header(HEADER, SOURCE)
                 .contentType("application/json")
                 .body("""
@@ -116,8 +137,14 @@ class ReferentielCsvExportServiceTest {
     @Test
     void lArchiveNeTientQueCeQuiEstDemande() {
         assertThat(archive(SOURCE, "typologies=true&stands=true")).containsOnlyKeys("typologies.csv", "stands.csv");
-        assertThat(archive(SOURCE, "typologies=true&emplacements=true&stands=true&animateurs=true"))
-                .containsOnlyKeys("typologies.csv", "emplacements.csv", "stands.csv", "animateurs.csv");
+        assertThat(archive(SOURCE, TOUT))
+                .containsOnlyKeys(
+                        "typologies.csv",
+                        "emplacements.csv",
+                        "stands.csv",
+                        "creneaux.csv",
+                        "journees-types.csv",
+                        "animateurs.csv");
 
         given().header(HEADER, SOURCE)
                 .when()
@@ -133,7 +160,7 @@ class ReferentielCsvExportServiceTest {
      */
     @Test
     void ceQuiSortSeReimporteSansUneSeuleCorrection() {
-        Map<String, String> entrees = archive(SOURCE, "typologies=true&emplacements=true&stands=true&animateurs=true");
+        Map<String, String> entrees = archive(SOURCE, TOUT);
 
         // The BOM opens each entry for a spreadsheet; the import strips it itself.
         assertThat(entrees.get("typologies.csv")).startsWith("﻿");
@@ -145,21 +172,10 @@ class ReferentielCsvExportServiceTest {
         // The animateur import demands an edition that has dates: without a
         // créneau, an imported off day would be neither shown nor kept, and the
         // import refuses it. That is why the créneaux are entered first, and why
-        // the export screen says so.
-        given().header(HEADER, CIBLE)
-                .contentType("application/json")
-                .body("{\"date\":\"2026-09-01\",\"heureDebut\":\"09:00\",\"heureFin\":\"12:00\"}")
-                .when()
-                .post("/api/creneaux")
-                .then()
-                .statusCode(200);
-        given().header(HEADER, CIBLE)
-                .contentType("application/json")
-                .body("{\"date\":\"2026-09-02\",\"heureDebut\":\"09:00\",\"heureFin\":\"12:00\"}")
-                .when()
-                .post("/api/creneaux")
-                .then()
-                .statusCode(200);
+        // the export screen says so — and the grid file is now what puts them
+        // there, instead of two hand-written calls.
+        reimporter(entrees.get("creneaux.csv"), "/api/creneaux/import-csv", 4);
+        reimporter(entrees.get("journees-types.csv"), "/api/journees-types/import-csv", 2);
 
         given().header(HEADER, CIBLE)
                 .contentType("application/json")
@@ -205,6 +221,35 @@ class ReferentielCsvExportServiceTest {
                 .get("/api/emplacements")
                 .then()
                 .body("find { it.id == 'EXP-P' }.latitude", equalTo(46.65f));
+
+        // The grid crossed over whole, meal relay and night vacation included.
+        given().header(HEADER, CIBLE)
+                .when()
+                .get("/api/creneaux")
+                .then()
+                .body("$", org.hamcrest.Matchers.hasSize(4))
+                .body("find { it.heureDebut == '12:00:00' }.couverturePause", equalTo(true))
+                .body("find { it.date == '2026-09-02' }.heureFin", equalTo("00:00:00"));
+
+        // And so did the day templates, their shift line and their dates.
+        given().header(HEADER, CIBLE)
+                .when()
+                .get("/api/journees-types")
+                .then()
+                .body("journeesTypes", org.hamcrest.Matchers.hasSize(2))
+                .body("journeesTypes.find { it.nom == 'Jour normal' }.vacations", org.hamcrest.Matchers.hasSize(3))
+                .body("journeesTypes.find { it.nom == 'Jour normal' }.vacations[1].couverturePause", equalTo(true))
+                .body("calendrier", org.hamcrest.Matchers.hasSize(2));
+
+        // Applying right after the round trip finds nothing to change: the
+        // templates and the grid that came out of the same edition still agree.
+        given().header(HEADER, CIBLE)
+                .contentType("application/json")
+                .when()
+                .post("/api/journees-types/application/apercu")
+                .then()
+                .statusCode(200)
+                .body("aucunChangement", equalTo(true));
     }
 
     private static void reimporter(String contenu, String chemin, int attendus) {
@@ -229,6 +274,8 @@ class ReferentielCsvExportServiceTest {
                 .body("TYPOLOGIES", equalTo(2))
                 .body("EMPLACEMENTS", equalTo(2))
                 .body("STANDS", equalTo(2))
+                .body("CRENEAUX", equalTo(4))
+                .body("JOURNEES_TYPES", equalTo(2))
                 .body("ANIMATEURS", equalTo(1));
     }
 }

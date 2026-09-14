@@ -2743,7 +2743,7 @@
       },
       "ImportTarget" : {
         "type" : "string",
-        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS" ]
+        "enum" : [ "TYPOLOGIES", "EMPLACEMENTS", "STANDS", "CRENEAUX", "JOURNEES_TYPES" ]
       },
       "ImportTargetView" : {
         "required" : [ "existe" ],
@@ -6788,6 +6788,82 @@
         "tags" : [ "Creneau Resource" ]
       }
     },
+    "/api/creneaux/import-csv" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Csv",
+        "tags" : [ "Creneau Resource" ]
+      }
+    },
+    "/api/creneaux/import-csv/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Csv",
+        "tags" : [ "Creneau Resource" ]
+      }
+    },
+    "/api/creneaux/import-csv/exemple" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Exemple Csv",
+        "tags" : [ "Creneau Resource" ]
+      }
+    },
     "/api/creneaux/recurrence" : {
       "post" : {
         "requestBody" : {
@@ -8680,6 +8756,82 @@
         "tags" : [ "Journee Type Resource" ]
       }
     },
+    "/api/journees-types/import-csv" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Import Csv",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/import-csv/analyse" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ReferentielCsvImportRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ReferentielCsvImportReport"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Analyse Csv",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees-types/import-csv/exemple" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Exemple Csv",
+        "tags" : [ "Journee Type Resource" ]
+      }
+    },
     "/api/journees-types/reconnaissance" : {
       "post" : {
         "responses" : {
@@ -10098,7 +10250,19 @@
             "type" : "boolean"
           }
         }, {
+          "name" : "creneaux",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
           "name" : "emplacements",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "journeesTypes",
           "in" : "query",
           "schema" : {
             "type" : "boolean"

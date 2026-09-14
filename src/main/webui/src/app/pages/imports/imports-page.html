@@ -20,6 +20,14 @@
         <mat-icon>storefront</mat-icon>
         <ng-container i18n="@@nav.link.stands">Stands</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="creneaux">
+        <mat-icon>schedule</mat-icon>
+        <ng-container i18n="@@nav.link.creneaux">Créneaux</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="journees-types">
+        <mat-icon>event_repeat</mat-icon>
+        <ng-container i18n="@@journeesTypes.title">Journées types</ng-container>
+      </mat-button-toggle>
       <mat-button-toggle value="animateurs">
         <mat-icon>groups</mat-icon>
         <ng-container i18n="@@nav.link.animateurs">Animateurs</ng-container>
@@ -38,10 +46,16 @@
 
 @switch (onglet()) {
   @case ('emplacements') {
-    <app-import-referentiel cible="EMPLACEMENTS" [colonnes]="colonnesEmplacements" [aide]="aideEmplacements" />
+    <app-import-referentiel target="EMPLACEMENTS" [colonnes]="colonnesEmplacements" [aide]="aideEmplacements" />
   }
   @case ('stands') {
-    <app-import-referentiel cible="STANDS" [colonnes]="colonnesStands" [aide]="aideStands" />
+    <app-import-referentiel target="STANDS" [colonnes]="colonnesStands" [aide]="aideStands" />
+  }
+  @case ('creneaux') {
+    <app-import-referentiel target="CRENEAUX" [colonnes]="colonnesCreneaux" [aide]="aideCreneaux" />
+  }
+  @case ('journees-types') {
+    <app-import-referentiel target="JOURNEES_TYPES" [colonnes]="colonnesJourneesTypes" [aide]="aideJourneesTypes" />
   }
   @case ('animateurs') {
     <app-import-animateurs-page [entete]="false" />
@@ -53,6 +67,6 @@
     <app-import-scenario-card />
   }
   @default {
-    <app-import-referentiel cible="TYPOLOGIES" [colonnes]="colonnesTypologies" [aide]="aideTypologies" />
+    <app-import-referentiel target="TYPOLOGIES" [colonnes]="colonnesTypologies" [aide]="aideTypologies" />
   }
 }

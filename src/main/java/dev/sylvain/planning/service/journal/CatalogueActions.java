@@ -83,6 +83,7 @@ public final class CatalogueActions {
         changesData("CRENEAUX_SUPPRIMES", "Créneaux supprimés en lot", Entite.CRENEAU);
         changesData("CRENEAUX_RECURRENTS_CREES", "Créneaux récurrents générés", Entite.CRENEAU);
         changesData("CRENEAUX_DERIVES", "Créneaux dérivés des horaires des stands", Entite.CRENEAU);
+        changesData("CRENEAUX_IMPORTES", "Créneaux importés depuis un fichier", Entite.CRENEAU);
         // Day templates (ADR 0032): a template or its calendar changes nothing
         // the solver reads until applied; applying does, recognising does not.
         action("JOURNEE_TYPE_CREEE", "Journée type ajoutée", Entite.CRENEAU);
@@ -92,6 +93,7 @@ public final class CatalogueActions {
         action("CALENDRIER_JOURNEES_TYPES_MODIFIE", "Calendrier des journées types modifié", Entite.CRENEAU);
         changesData("JOURNEES_TYPES_APPLIQUEES", "Calendrier des journées types appliqué aux créneaux", Entite.CRENEAU);
         action("JOURNEES_TYPES_RECONNUES", "Journées types reconnues depuis les créneaux", Entite.CRENEAU);
+        action("JOURNEES_TYPES_IMPORTEES", "Journées types importées depuis un fichier", Entite.CRENEAU);
 
         /* -------------- Locations and game categories --------------- */
         changesData("EMPLACEMENT_CREE", "Emplacement ajouté", Entite.EMPLACEMENT);
@@ -222,12 +224,14 @@ public final class CatalogueActions {
         route("CreneauResource#deleteCreneau", "CRENEAU_SUPPRIME");
         route("CreneauResource#createRecurrence", "CRENEAUX_RECURRENTS_CREES");
         route("CreneauResource#applyDerivation", "CRENEAUX_DERIVES");
+        route("CreneauResource#importCsv", "CRENEAUX_IMPORTES");
         route("JourneeTypeResource#create", "JOURNEE_TYPE_CREEE");
         route("JourneeTypeResource#update", "JOURNEE_TYPE_MODIFIEE");
         route("JourneeTypeResource#delete", "JOURNEE_TYPE_SUPPRIMEE");
         route("JourneeTypeResource#setCalendrier", "CALENDRIER_JOURNEES_TYPES_MODIFIE");
         route("JourneeTypeResource#apply", "JOURNEES_TYPES_APPLIQUEES");
         route("JourneeTypeResource#reconnaitre", "JOURNEES_TYPES_RECONNUES");
+        route("JourneeTypeResource#importCsv", "JOURNEES_TYPES_IMPORTEES");
 
         route("TypologieResource#importCsv", "TYPOLOGIES_IMPORTEES");
         route("EmplacementResource#importCsv", "EMPLACEMENTS_IMPORTES");
@@ -428,6 +432,8 @@ public final class CatalogueActions {
         untracked("TypologieResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("EmplacementResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("StandResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("CreneauResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
+        untracked("JourneeTypeResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("ReferenceDataResource#exportCsv", "exporte une copie, n'écrit rien");
         untracked("ReferenceDataResource#volumesExportCsv", "compte les lignes, n'écrit rien");
         untracked("TypologieResource#exempleCsv", "télécharge un fichier d'exemple");

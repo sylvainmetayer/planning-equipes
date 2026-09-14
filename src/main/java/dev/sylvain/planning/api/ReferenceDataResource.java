@@ -232,6 +232,8 @@ public class ReferenceDataResource {
             @QueryParam("typologies") boolean typologies,
             @QueryParam("emplacements") boolean emplacements,
             @QueryParam("stands") boolean stands,
+            @QueryParam("creneaux") boolean creneaux,
+            @QueryParam("journeesTypes") boolean journeesTypes,
             @QueryParam("animateurs") boolean animateurs) {
         Set<ReferentielCsvExportService.ExportTarget> cibles = new LinkedHashSet<>();
         if (typologies) {
@@ -242,6 +244,12 @@ public class ReferenceDataResource {
         }
         if (stands) {
             cibles.add(ReferentielCsvExportService.ExportTarget.STANDS);
+        }
+        if (creneaux) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.CRENEAUX);
+        }
+        if (journeesTypes) {
+            cibles.add(ReferentielCsvExportService.ExportTarget.JOURNEES_TYPES);
         }
         if (animateurs) {
             cibles.add(ReferentielCsvExportService.ExportTarget.ANIMATEURS);

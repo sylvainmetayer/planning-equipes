@@ -16,7 +16,7 @@ import { ImportsApi } from '../../core/api/imports-api';
 import { errorMessage } from '../../core/error-message';
 import {
   ActionImportReferentiel,
-  CibleImportReferentiel,
+  ReferentielImportTarget,
   RapportImportReferentiel,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -39,7 +39,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ImportReferentielCard {
-  readonly cible = input.required<CibleImportReferentiel>();
+  readonly target = input.required<ReferentielImportTarget>();
   /** What the tab says the file must hold, in the words of that referential. */
   readonly colonnes = input.required<string>();
   readonly aide = input.required<string>();
@@ -87,7 +87,7 @@ export class ImportReferentielCard {
   protected async telechargerExemple(): Promise<void> {
     this.telechargementEnCours.set(true);
     try {
-      await this.api.telechargerExemple(this.cible());
+      await this.api.telechargerExemple(this.target());
     } catch (error) {
       this.erreur.set(errorMessage(error));
     } finally {
@@ -122,7 +122,7 @@ export class ImportReferentielCard {
     this.analyseEnCours.set(true);
     this.erreur.set('');
     try {
-      const rapport = await this.api.analyse(this.cible(), this.demande());
+      const rapport = await this.api.analyse(this.target(), this.demande());
       if (numero === this.derniereAnalyse) {
         this.rapport.set(rapport);
       }
@@ -153,7 +153,7 @@ export class ImportReferentielCard {
     this.importEnCours.set(true);
     this.erreur.set('');
     try {
-      const applique = await this.api.importer(this.cible(), this.demande());
+      const applique = await this.api.importer(this.target(), this.demande());
       this.rapport.set(applique);
       await this.store.reload();
       this.notifications.notify({

@@ -13,27 +13,29 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { RouterLink } from '@angular/router';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
+import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage, errorPrefix } from '../../core/error-message';
-import { CibleExportCsv, VolumesExportCsv } from '../../core/models';
+import { ExportCsvTarget, VolumesExportCsv } from '../../core/models';
 
 /** One referential of the archive: what it is called, and how many rows it holds. */
 interface LigneExport {
-  cible: CibleExportCsv;
+  target: ExportCsvTarget;
   libelle: string;
   fichier: string;
   total: number;
 }
 
 /**
- * « Exports » : ce que l'édition courante sait écrire d'elle-même, en regard
- * de l'écran d'imports qui le relit.
+ * « Exports »: what the current edition can write of itself, facing the import
+ * screen that reads it back.
  *
- * <p>Deux formes, et deux usages. L'archive CSV réécrit les référentiels dans
- * la forme exacte que les onglets d'import relisent, chacun à cocher : une
- * équipe qui recopie ses stands d'une année sur l'autre n'emporte pas
- * forcément ses bénévoles avec. Le fichier scénario, lui, emporte l'édition
- * entière d'un coup — c'est ce que l'onglet « Scénario » des imports relit.</p>
+ * <p>Two shapes, two uses. The CSV archive writes the referentials out in the
+ * very form the import tabs read, each one to tick: a team copying its stands
+ * from one year to the next does not necessarily take its volunteers along,
+ * and a team replaying its calendar takes only the timeslots and the day
+ * templates. The scenario file carries the whole edition at once — which is
+ * what the imports' « Scénario » tab reads back.</p>
  */
 @Component({
   selector: 'app-exports-page',
@@ -62,33 +64,45 @@ export class ExportsPage {
   protected readonly message = signal('');
 
   /** Everything is checked to begin with: copying a whole edition is the ordinary case. */
-  private readonly choisis = signal<ReadonlySet<CibleExportCsv>>(
-    new Set<CibleExportCsv>(['TYPOLOGIES', 'EMPLACEMENTS', 'STANDS', 'ANIMATEURS']),
+  private readonly choisis = signal<ReadonlySet<ExportCsvTarget>>(
+    new Set<ExportCsvTarget>(CIBLES_EXPORT_CSV),
   );
 
   protected readonly lignes = computed<LigneExport[]>(() => {
     const volumes = this.volumes() ?? {};
     return [
       {
-        cible: 'TYPOLOGIES' as const,
+        target: 'TYPOLOGIES' as const,
         libelle: $localize`:@@nav.link.typologies:Typologies`,
         fichier: 'typologies.csv',
         total: volumes.TYPOLOGIES ?? 0,
       },
       {
-        cible: 'EMPLACEMENTS' as const,
+        target: 'EMPLACEMENTS' as const,
         libelle: $localize`:@@nav.link.emplacements:Emplacements`,
         fichier: 'emplacements.csv',
         total: volumes.EMPLACEMENTS ?? 0,
       },
       {
-        cible: 'STANDS' as const,
+        target: 'STANDS' as const,
         libelle: $localize`:@@nav.link.stands:Stands`,
         fichier: 'stands.csv',
         total: volumes.STANDS ?? 0,
       },
       {
-        cible: 'ANIMATEURS' as const,
+        target: 'CRENEAUX' as const,
+        libelle: $localize`:@@nav.link.creneaux:Créneaux`,
+        fichier: 'creneaux.csv',
+        total: volumes.CRENEAUX ?? 0,
+      },
+      {
+        target: 'JOURNEES_TYPES' as const,
+        libelle: $localize`:@@journeesTypes.title:Journées types`,
+        fichier: 'journees-types.csv',
+        total: volumes.JOURNEES_TYPES ?? 0,
+      },
+      {
+        target: 'ANIMATEURS' as const,
         libelle: $localize`:@@nav.link.animateurs:Animateurs`,
         fichier: 'animateurs.csv',
         total: volumes.ANIMATEURS ?? 0,
@@ -98,7 +112,7 @@ export class ExportsPage {
 
   protected readonly total = computed(() =>
     this.lignes()
-      .filter((ligne) => this.estChoisi(ligne.cible))
+      .filter((ligne) => this.isSelected(ligne.target))
       .reduce((somme, ligne) => somme + ligne.total, 0),
   );
   protected readonly peutTelecharger = computed(
@@ -106,23 +120,23 @@ export class ExportsPage {
   );
   /** Chosen, but holding nothing: the archive would carry an empty file rather than lie about it. */
   protected readonly choisisVides = computed(() =>
-    this.lignes().filter((ligne) => this.estChoisi(ligne.cible) && ligne.total === 0),
+    this.lignes().filter((ligne) => this.isSelected(ligne.target) && ligne.total === 0),
   );
 
   constructor() {
     void this.charger();
   }
 
-  protected estChoisi(cible: CibleExportCsv): boolean {
-    return this.choisis().has(cible);
+  protected isSelected(target: ExportCsvTarget): boolean {
+    return this.choisis().has(target);
   }
 
-  protected basculer(cible: CibleExportCsv, coche: boolean): void {
+  protected basculer(target: ExportCsvTarget, coche: boolean): void {
     const choisis = new Set(this.choisis());
     if (coche) {
-      choisis.add(cible);
+      choisis.add(target);
     } else {
-      choisis.delete(cible);
+      choisis.delete(target);
     }
     this.choisis.set(choisis);
     this.message.set('');

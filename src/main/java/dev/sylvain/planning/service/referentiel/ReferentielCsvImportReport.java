@@ -43,7 +43,11 @@ public record ReferentielCsvImportReport(
     public enum ImportTarget {
         TYPOLOGIES,
         EMPLACEMENTS,
-        STANDS
+        STANDS,
+        /** The timeslot grid itself, keyed on (date, start, end) — a timeslot has no id of its own. */
+        CRENEAUX,
+        /** Day templates and the dates they govern; the grid is left to the explicit « Appliquer ». */
+        JOURNEES_TYPES
     }
 
     /** What one row of the file does. */

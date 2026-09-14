@@ -1,16 +1,23 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -60,11 +67,21 @@ public class ReferentielCsvExportService {
     @Inject
     AnimateurService animateurs;
 
+    @Inject
+    CreneauService creneaux;
+
+    @Inject
+    JourneeTypeService journeesTypes;
+
     /** One referential of the edition, as the matching import tab would read it. */
     public enum ExportTarget {
         TYPOLOGIES("typologies.csv"),
         EMPLACEMENTS("emplacements.csv"),
         STANDS("stands.csv"),
+        // Before the animateurs, as on the import screen: an off day only
+        // survives in an edition that already has the matching dates.
+        CRENEAUX("creneaux.csv"),
+        JOURNEES_TYPES("journees-types.csv"),
         ANIMATEURS("animateurs.csv");
 
         private final String fileName;
@@ -84,6 +101,8 @@ public class ReferentielCsvExportService {
                 ExportTarget.TYPOLOGIES, typologies.list().size(),
                 ExportTarget.EMPLACEMENTS, emplacements.list().size(),
                 ExportTarget.STANDS, stands.list().size(),
+                ExportTarget.CRENEAUX, creneaux.list().size(),
+                ExportTarget.JOURNEES_TYPES, journeesTypes.list().size(),
                 ExportTarget.ANIMATEURS, animateurs.list().size());
     }
 
@@ -92,6 +111,8 @@ public class ReferentielCsvExportService {
             case TYPOLOGIES -> csvTypologies();
             case EMPLACEMENTS -> csvEmplacements();
             case STANDS -> csvStands();
+            case CRENEAUX -> csvCreneaux();
+            case JOURNEES_TYPES -> csvJourneesTypes();
             case ANIMATEURS -> csvAnimateurs();
         };
     }
@@ -162,6 +183,65 @@ public class ReferentielCsvExportService {
                     String.valueOf(stand.getEffectifMax()));
         }
         return csv.toString();
+    }
+
+    /**
+     * The grid, one row per timeslot, ordered by date then by hour: a timeslot
+     * has no identifier the file could carry — the database generates it and a
+     * scenario import reassigns it — so what the import matches on is exactly
+     * these three columns.
+     */
+    private String csvCreneaux() {
+        StringBuilder csv = new StringBuilder();
+        ligne(csv, "date", "heureDebut", "heureFin", "couverturePause");
+        List<Creneau> tries = new ArrayList<>(creneaux.list());
+        tries.sort(Comparator.comparing(Creneau::getDate, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(Creneau::getHeureDebut, Comparator.nullsLast(Comparator.naturalOrder()))
+                .thenComparing(Creneau::getHeureFin, Comparator.nullsLast(Comparator.naturalOrder())));
+        for (Creneau creneau : tries) {
+            ligne(
+                    csv,
+                    creneau.getDate() == null ? "" : creneau.getDate().toString(),
+                    heure(creneau.getHeureDebut()),
+                    heure(creneau.getHeureFin()),
+                    creneau.isCouverturePause() ? "oui" : "");
+        }
+        return csv.toString();
+    }
+
+    /**
+     * One row per day template: its shifts on the compact line the import
+     * reads back, and the dates it governs in a multi-value cell.
+     *
+     * <p>The calendar travels <b>with</b> the template rather than in a file of
+     * its own: two files that must agree on a name are two files an operator
+     * can desynchronise in a spreadsheet, and this one is already the shape
+     * the recognition produces.</p>
+     */
+    private String csvJourneesTypes() {
+        Map<Long, Set<LocalDate>> datesParJourneeType = new LinkedHashMap<>();
+        for (Affectation affectation : journeesTypes.calendrier()) {
+            datesParJourneeType
+                    .computeIfAbsent(affectation.journeeTypeId(), id -> new TreeSet<>())
+                    .add(affectation.date());
+        }
+        StringBuilder csv = new StringBuilder();
+        ligne(csv, "nom", "vacations", "dates");
+        for (JourneeType journeeType : journeesTypes.list()) {
+            ligne(
+                    csv,
+                    journeeType.getNom(),
+                    VacationsLigne.format(journeeType.getVacations()),
+                    joint(datesParJourneeType.getOrDefault(journeeType.getId(), Set.of()).stream()
+                            .map(LocalDate::toString)
+                            .toList()));
+        }
+        return csv.toString();
+    }
+
+    /** {@code HH:MM}, never {@code HH:MM:SS}: the grid has no seconds and a spreadsheet shows them. */
+    private static String heure(LocalTime heure) {
+        return heure == null ? "" : String.format("%02d:%02d", heure.getHour(), heure.getMinute());
     }
 
     /**
@@ -248,10 +328,23 @@ public class ReferentielCsvExportService {
         csv.append('\n');
     }
 
-    /** RFC 4180: a cell holding the separator, a quote or a newline travels quoted. */
+    /**
+     * RFC 4180: a cell holding a separator, a quote or a newline travels quoted.
+     *
+     * <p><b>Every</b> separator, not only the one this file writes. {@code
+     * CsvParser} recognises the dialect by counting {@code ;}, {@code ,} and
+     * tabs outside quotes over the whole file, and picks the most frequent: a
+     * column of shift lines — « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 » —
+     * puts three commas on every row against the header's two semicolons, and
+     * the file we just wrote comes back read as comma-separated. Quoting takes
+     * those characters out of the count entirely, which is the only reliable
+     * way to keep the dialect ours.</p>
+     */
     private static String echappe(String valeur) {
         String cellule = valeur == null ? "" : valeur;
         if (cellule.indexOf(SEPARATEUR) >= 0
+                || cellule.indexOf(',') >= 0
+                || cellule.indexOf('\t') >= 0
                 || cellule.indexOf('"') >= 0
                 || cellule.indexOf('\n') >= 0
                 || cellule.indexOf('\r') >= 0) {

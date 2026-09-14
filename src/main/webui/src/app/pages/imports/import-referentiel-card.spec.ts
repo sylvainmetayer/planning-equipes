@@ -71,7 +71,7 @@ describe('ImportReferentielCard', () => {
 
   async function monter(): Promise<ComponentFixture<ImportReferentielCard>> {
     const fixture = TestBed.createComponent(ImportReferentielCard);
-    fixture.componentRef.setInput('cible', 'STANDS');
+    fixture.componentRef.setInput('target', 'STANDS');
     fixture.componentRef.setInput('colonnes', 'Colonnes id, nom, typologies');
     fixture.componentRef.setInput('aide', 'Plusieurs typologies se séparent par « | ».');
     await fixture.whenStable();

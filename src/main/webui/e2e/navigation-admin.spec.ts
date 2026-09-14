@@ -51,6 +51,10 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   // partagent une carte, les deux plus anciens sont rendus tels quels).
   { path: '/imports', marker: 'Imports', sheet: 'imports-onglets' },
   { path: '/imports?onglet=stands' },
+  // Les deux onglets du calendrier partagent la carte des référentiels, et
+  // leur marqueur vise ce que seul l'onglet visé dit.
+  { path: '/imports?onglet=creneaux', marker: 'heureDebut' },
+  { path: '/imports?onglet=journees-types', marker: 'relais repas' },
   {
     // Le titre de l'écran est celui des onglets : le marqueur vise ce que
     // seul cet onglet-ci dit.

@@ -15,14 +15,18 @@ describe('readOngletImports', () => {
   });
 
   /**
-   * The order is the order the data is entered; the matrix needs the rest, and
-   * the scenario comes last because it replaces rather than fills.
+   * The order is the order the data is entered — the dates before the
+   * animateurs, whose off days would otherwise have nothing to land on; the
+   * matrix needs the rest, and the scenario comes last because it replaces
+   * rather than fills.
    */
   it('lists the tabs in the order an edition fills up', () => {
     expect(ONGLETS_IMPORTS).toEqual([
       'typologies',
       'emplacements',
       'stands',
+      'creneaux',
+      'journees-types',
       'animateurs',
       'grille-stands',
       'scenario',

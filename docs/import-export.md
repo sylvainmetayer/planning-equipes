@@ -189,18 +189,25 @@ L'export écrit la section dès qu'une journée type existe.
 
 ## Import CSV des référentiels
 
-L'écran **Imports** (`/imports`) réunit les cinq imports CSV du produit, un
-onglet chacun, l'onglet ouvert étant porté par `?onglet=` ; un sixième onglet,
+L'écran **Imports** (`/imports`) réunit les sept imports CSV du produit, un
+onglet chacun, l'onglet ouvert étant porté par `?onglet=` ; un huitième onglet,
 **Scénario**, porte l'import du fichier YAML décrit plus haut — il ne complète
-pas l'édition, il la remplace. Trois référentiels s'y
+pas l'édition, il la remplace. Cinq référentiels s'y
 remplissent d'un fichier de quelques colonnes : les **typologies** (`id` et `libelle`
 obligatoires, `ninja` facultative), les **emplacements** (`id` et `nom`
-obligatoires, `latitude` et `longitude` facultatives) et les **stands** (`id`,
+obligatoires, `latitude` et `longitude` facultatives), les **stands** (`id`,
 `nom` et `typologies` obligatoires, `effectifMin` et `effectifMax`
-facultatives). Les en-têtes se reconnaissent à la casse et aux accents près, et
-plusieurs typologies se séparent par `|`, `;` ou une virgule.
+facultatives), les **créneaux** (`date`, `heureDebut` et `heureFin`
+obligatoires, `couverturePause` facultative) et les **journées types** (`nom`
+et `vacations` obligatoires, `dates` facultative). Les en-têtes se
+reconnaissent à la casse et aux accents près, et plusieurs valeurs dans une
+case se séparent par `|`, `;` ou une virgule.
 
-Trois règles valent pour les trois :
+L'ordre des onglets est celui dans lequel les données se tiennent, et les
+dates passent **avant** les animateurs : un jour d'indisponibilité importé
+n'est conservé que si l'édition porte déjà le créneau correspondant.
+
+Trois règles valent pour les cinq :
 
 - **Une colonne absente, ou une case vide, n'efface rien.** C'est la doctrine de
   la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
@@ -212,6 +219,39 @@ Trois règles valent pour les trois :
   à l'identifiant, et l'aperçu la nomme avant l'écriture. Un stand sans effectif
   tient à une personne, ce que l'aperçu dit aussi.
 
+### Les créneaux et les journées types ne se reconnaissent pas à un identifiant
+
+Les trois premiers référentiels portent un `id` que le fichier nomme. Les deux
+derniers n'en ont pas, et c'est ce qui décide de leur clé :
+
+- un **créneau** est reconnu à son triplet `(date, heureDebut, heureFin)` — son
+  identifiant est engendré par la base, et un import de scénario le réattribue,
+  si bien qu'il ne voyage pas. Une ligne déjà présente n'écrit donc que son
+  `couverturePause` : le reste *est* la clé. Une fin antérieure ou égale au
+  début passe minuit, comme dans le formulaire ; un début égal à la fin est
+  refusé, c'est une vacation sans durée ;
+- une **journée type** est reconnue à son `nom`, à la casse près. Ses
+  `vacations` tiennent sur une ligne — `09:00-12:00, 12:00-13:00 R,
+  14:00-20:00`, `R` marquant un relais repas, la même écriture compacte que
+  celle des outils MCP — et ses `dates` sont **fusionnées** dans le calendrier :
+  une date que le fichier nomme change de journée type, une date qu'il ne nomme
+  pas garde la sienne.
+
+**L'import des journées types ne déplace aucun créneau.** Un modèle est un
+générateur, jamais la vérité ([ADR
+0032](decisions/0032-journees-types-nommees-vacations-fixes.md)) :
+matérialiser le calendrier reste le geste explicite « Appliquer » de l'écran
+Journées types, qui montre d'abord ce qu'il changerait. C'est aussi pourquoi
+cet import ne marque pas l'édition comme modifiée depuis la dernière
+résolution — rien de ce que le solveur lit n'a bougé.
+
+Les dates et les heures se lisent dans les dialectes qu'un tableur écrit :
+`2026-07-10`, `10/07/2026`, `10-07-2026`, `10.07.2026` pour une date,
+`09:00`, `9:00`, `9h`, `9h30`, `9` ou `09:00:00` pour une heure. Une année sur
+deux chiffres est résolue **vers l'avenir** (les dix dernières années et les
+quatre-vingt-neuf prochaines) : sur une date d'édition, `27` est la saison
+prochaine, pas 1927 — l'inverse de ce que fait une date de naissance.
+
 L'aperçu (`POST …/import-csv/analyse`) n'écrit rien ; l'écriture
 (`POST …/import-csv`) relit le fichier et refait tous les contrôles. Chaque
 ligne fautive est refusée seule, avec sa raison, sans bloquer les autres — et
@@ -222,14 +262,25 @@ Les deux autres onglets sont les imports historiques, décrits plus bas : les
 **animateurs** et la **grille des stands**.
 
 L'écran **Exports** (`/exports`) fait le chemin inverse. Sa première carte,
-l'**export CSV** : les référentiels de l'édition
+l'**export CSV** : les six référentiels de l'édition
 courante réécrits dans une archive ZIP, un fichier par référentiel et dans la
 forme exacte que ces onglets relisent, chacun à cocher. Le fichier des
 animateurs reprend l'en-tête de `scenarios/exemple-animateurs.csv`, celui que
 la correspondance de colonnes propose d'elle-même ; il ne se réimporte que dans
 une édition qui a déjà ses créneaux, puisque sans dates un jour
-d'indisponibilité importé serait refusé. `ReferentielCsvExportServiceTest`
-repasse chaque export par son propre import et exige zéro ligne refusée.
+d'indisponibilité importé serait refusé — et c'est `creneaux.csv`, coché juste
+au-dessus, qui les y met. `ReferentielCsvExportServiceTest`
+repasse chaque export par son propre import et exige zéro ligne refusée ; sur
+les journées types il va plus loin et exige qu'appliquer le calendrier juste
+après l'aller-retour ne change **rien**, faute de quoi les deux fichiers ne
+décriraient pas la même édition.
+
+Une case qui contient un séparateur possible — `;`, une virgule, une
+tabulation — sort **entre guillemets**, et pas seulement quand elle contient
+celui du fichier. Le lecteur reconnaît le dialecte en comptant les trois
+candidats hors guillemets sur tout le fichier : une colonne de vacations pose
+trois virgules par ligne contre deux points-virgules d'en-tête, et le fichier
+qu'on vient d'écrire se relisait comme un fichier à virgules.
 
 Sa seconde carte porte l'**export du scénario** : l'édition entière dans un seul
 fichier YAML, celui que l'onglet Scénario des imports relit. Ce que cet

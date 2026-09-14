@@ -9,6 +9,9 @@ import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille
 import dev.sylvain.planning.service.referentiel.GrilleDepuisFenetres;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportReport;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportRequest;
+import dev.sylvain.planning.service.referentiel.ReferentielCsvImportService;
 import dev.sylvain.planning.service.referentiel.WrittenCreneau;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -217,5 +220,39 @@ public class CreneauResource {
     @Path("/usages")
     public ReferenceUsage countCreneauUsages(@QueryParam("id") List<String> ids) {
         return referenceDataService.countCreneauUsages(ids);
+    }
+
+    /* ------------------------------ Import CSV ------------------------------ */
+
+    private static final ReferentielCsvImportReport.ImportTarget CIBLE =
+            ReferentielCsvImportReport.ImportTarget.CRENEAUX;
+
+    /** The shape the import expects, shown rather than described. */
+    @GET
+    @Path("/import-csv/exemple")
+    @Produces("text/csv")
+    public Response exempleCsv() {
+        return CsvDownload.attachment(
+                referenceDataService.exempleCsvReferentiel(CIBLE), ReferentielCsvImportService.exampleFileName(CIBLE));
+    }
+
+    /** What the file would do, line by line, without writing any of it. */
+    @POST
+    @Path("/import-csv/analyse")
+    public ReferentielCsvImportReport analyseCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.previewCsvReferentiel(CIBLE, request);
+    }
+
+    /**
+     * Applies the same file the preview was computed from; the server reads it
+     * again before writing. Timeslots the file leaves out are untouched, and a
+     * row matching one already there writes only its meal-relay flag over it —
+     * the date and the two hours are the key. {@code 409} while a solve runs,
+     * like every other write of the grid.
+     */
+    @POST
+    @Path("/import-csv")
+    public ReferentielCsvImportReport importCsv(ReferentielCsvImportRequest request) {
+        return referenceDataService.importCsvReferentiel(CIBLE, request);
     }
 }

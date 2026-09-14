@@ -3,7 +3,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CibleExportCsv, VolumesExportCsv } from '../models';
+import { ExportCsvTarget, VolumesExportCsv } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class ExportCsvApi {
@@ -17,16 +17,16 @@ export class ExportCsvApi {
   /**
    * Downloads the chosen referentials as a zip of CSV files.
    *
-   * <p>The four flags travel in the query string rather than a body: a
+   * <p>The six flags travel in the query string rather than a body: a
    * download is a navigation, and a `GET` is what a browser can save.</p>
    */
-  telecharger(cibles: readonly CibleExportCsv[]): Promise<string> {
-    const demande = (cible: CibleExportCsv) => cibles.includes(cible);
-    // Les quatre drapeaux sont écrits en clair, toujours les quatre : c'est
-    // ainsi que `check-api-contract` peut les confronter au contrat, là où une
-    // requête assemblée par `URLSearchParams` ne lui dit plus rien.
+  telecharger(targets: readonly ExportCsvTarget[]): Promise<string> {
+    const demande = (target: ExportCsvTarget) => targets.includes(target);
+    // All six flags spelled out, always all six: that is what lets
+    // `check-api-contract` confront them with the contract, where a query
+    // assembled by `URLSearchParams` tells it nothing at all.
     return this.api.downloadGet(
-      `/api/reference-data/export-csv?typologies=${demande('TYPOLOGIES')}&emplacements=${demande('EMPLACEMENTS')}&stands=${demande('STANDS')}&animateurs=${demande('ANIMATEURS')}`,
+      `/api/reference-data/export-csv?typologies=${demande('TYPOLOGIES')}&emplacements=${demande('EMPLACEMENTS')}&stands=${demande('STANDS')}&creneaux=${demande('CRENEAUX')}&journeesTypes=${demande('JOURNEES_TYPES')}&animateurs=${demande('ANIMATEURS')}`,
       'referentiels-csv.zip',
       'application/zip',
     );

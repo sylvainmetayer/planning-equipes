@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalTime;
-import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -69,20 +68,11 @@ public final class VacationsLigne {
         return String.format("%02d:%02d", heure.getHour(), heure.getMinute());
     }
 
+    /** The lenient forms are {@link CompactTime}'s; only the sentence is this class's. */
     private static LocalTime heure(String texte, String morceau) {
-        String valeur = texte.strip().toLowerCase().replace('h', ':');
-        if (valeur.endsWith(":")) {
-            valeur = valeur + "00";
-        }
-        if (valeur.matches("\\d{1,2}")) {
-            valeur = valeur + ":00";
-        }
-        if (valeur.matches("\\d:\\d{2}")) {
-            valeur = "0" + valeur;
-        }
         try {
-            return LocalTime.parse(valeur);
-        } catch (DateTimeParseException e) {
+            return CompactTime.parse(texte);
+        } catch (BusinessError.Invalid e) {
             throw new BusinessError.Invalid("Vacation invalide « " + morceau.strip() + " » : heure « " + texte.strip()
                     + "» illisible, attendu HH:MM");
         }

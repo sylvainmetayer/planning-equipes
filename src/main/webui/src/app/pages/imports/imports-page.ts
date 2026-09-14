@@ -21,10 +21,13 @@ import { OngletImports, readOngletImports } from './imports';
  * instead of one entry per file.
  *
  * <p>The tabs follow the order the data is entered — typologies, emplacements,
- * stands, animateurs — then the stand matrix, which is not a referential import
- * at all: it writes opening hours onto stands that already exist, and only
- * makes sense once the three before it are done. The scenario file closes the
- * list, apart from the rest: it does not fill an edition, it replaces one.</p>
+ * stands, the timeslot grid, the day templates, animateurs — then the stand
+ * matrix, which is not a referential import at all: it writes opening hours
+ * onto stands that already exist, and only makes sense once the ones before it
+ * are done. The dates come before the animateurs on purpose: an imported off
+ * day only survives in an edition that already carries the matching timeslot.
+ * The scenario file closes the list, apart from the rest: it does not fill an
+ * edition, it replaces one.</p>
  */
 @Component({
   selector: 'app-imports-page',
@@ -55,6 +58,10 @@ export class ImportsPage {
   protected readonly aideEmplacements = $localize`:@@imports.emplacements.aide:Sans coordonnées, l'emplacement existe mais ne pèse pas sur les distances entre stands d'une même journée.`;
   protected readonly colonnesStands = $localize`:@@imports.stands.colonnes:Colonnes « id », « nom » et « typologies », obligatoires ; « effectifMin » et « effectifMax » facultatives.`;
   protected readonly aideStands = $localize`:@@imports.stands.aide:Plusieurs typologies se séparent par « | ». Sans effectif, le stand tient à une personne. Une typologie inconnue est créée, et annoncée avant l'écriture.`;
+  protected readonly colonnesCreneaux = $localize`:@@imports.creneaux.colonnes:Colonnes « date », « heureDebut » et « heureFin », obligatoires ; « couverturePause » facultative.`;
+  protected readonly aideCreneaux = $localize`:@@imports.creneaux.aide:Un créneau se reconnaît à sa date et à ses deux heures : rejoué, le même fichier met à jour au lieu de doubler la grille. Une fin avant le début passe minuit.`;
+  protected readonly colonnesJourneesTypes = $localize`:@@imports.journeesTypes.colonnes:Colonnes « nom » et « vacations », obligatoires ; « dates » facultative.`;
+  protected readonly aideJourneesTypes = $localize`:@@imports.journeesTypes.aide:Les vacations tiennent sur une ligne, « 09:00-12:00, 12:00-13:00 R, 14:00-20:00 », R pour un relais repas. Les créneaux ne bougent qu'à l'application du calendrier.`;
 
   constructor() {
     this.onglet.set(readOngletImports(this.route.snapshot.queryParamMap.get('onglet')));

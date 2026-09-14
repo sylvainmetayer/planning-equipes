@@ -21,10 +21,10 @@ test("l'archive ne tient que les référentiels cochés, et part au clic", async
   const page = await pageAdmin(browser, admin);
   await page.goto('/exports');
 
-  // Quatre référentiels, tous cochés d'entrée : recopier une édition entière
+  // Six référentiels, tous cochés d'entrée : recopier une édition entière
   // est le cas courant.
-  await expect(page.locator('.export-csv-liste li')).toHaveCount(4);
-  await expect(page.locator('.export-csv-liste input:checked')).toHaveCount(4);
+  await expect(page.locator('.export-csv-liste li')).toHaveCount(6);
+  await expect(page.locator('.export-csv-liste input:checked')).toHaveCount(6);
 
   // Décoché, le référentiel quitte le compte du bouton — exactement de ses
   // lignes à lui, que sa propre ligne affiche (le jeu de référence peut n'en
@@ -42,7 +42,7 @@ test("l'archive ne tient que les référentiels cochés, et part au clic", async
     .toBe(totalAvant - lignesAnimateurs);
 
   // Tout décocher n'offre rien à télécharger.
-  for (const libelle of ['Typologies', 'Emplacements', 'Stands']) {
+  for (const libelle of ['Typologies', 'Emplacements', 'Stands', 'Créneaux', 'Journées types']) {
     await page
       .locator('.export-csv-liste li')
       .filter({ hasText: libelle })
@@ -68,6 +68,9 @@ test("l'archive ne tient que les référentiels cochés, et part au clic", async
   // Le nom de l'entrée voyage en clair dans l'en-tête local du zip.
   expect(octets.toString('latin1')).toContain('stands.csv');
   expect(octets.toString('latin1')).not.toContain('animateurs.csv');
+  // Décochés comme les autres, les deux fichiers du calendrier restent dehors.
+  expect(octets.toString('latin1')).not.toContain('creneaux.csv');
+  expect(octets.toString('latin1')).not.toContain('journees-types.csv');
 
   await page.context().close();
 });

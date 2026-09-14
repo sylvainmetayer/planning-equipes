@@ -2834,15 +2834,24 @@ export interface ImportGrilleDemande {
 }
 
 /** How many rows each referential would write, keyed by its export target. */
-export type VolumesExportCsv = Partial<Record<CibleExportCsv, number>>;
+export type VolumesExportCsv = Partial<Record<ExportCsvTarget, number>>;
 
-/** The four referentials the CSV export offers, each optional. */
-export type CibleExportCsv = 'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'ANIMATEURS';
+/** The six referentials the CSV export offers, each optional. */
+export type ExportCsvTarget =
+  'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'CRENEAUX' | 'JOURNEES_TYPES' | 'ANIMATEURS';
 
-/* ------------ Referential CSV imports (typologies, emplacements, stands) ------------ */
+/* ---- Referential CSV imports (typologies, emplacements, stands, grid, day templates) ---- */
 
-/** Which referential a file is read against. */
-export type CibleImportReferentiel = 'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS';
+/**
+ * Which referential a file is read against.
+ *
+ * <p>`CRENEAUX` is matched on `(date, heureDebut, heureFin)` rather than on an
+ * id — a timeslot has none of its own — and `JOURNEES_TYPES` on the template's
+ * name, its dates merged into the calendar. Neither of the two moves the grid:
+ * materialising day templates stays the « Appliquer » of their own screen.</p>
+ */
+export type ReferentielImportTarget =
+  'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'CRENEAUX' | 'JOURNEES_TYPES';
 
 export type ActionImportReferentiel = 'CREE' | 'MIS_A_JOUR' | 'REFUSE';
 
@@ -2858,7 +2867,7 @@ export interface LigneImportReferentiel {
 /** What a referential CSV does, or would do — the same shape for the preview and the write. */
 export interface RapportImportReferentiel {
   applied: boolean;
-  cible: CibleImportReferentiel;
+  cible: ReferentielImportTarget;
   columns: string[];
   separator: string;
   total: number;

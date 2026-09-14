@@ -124,6 +124,34 @@ public class CreneauService {
     }
 
     /**
+     * A CSV import's whole effect on the grid, as one edit: the rows the file
+     * adds, and the ones it writes over — the latter already carrying the id
+     * of the timeslot they match.
+     *
+     * <p>Not a loop over {@link #create} and {@link #update} at the caller's
+     * level, for the reason {@link #createInBulk} spells out: one file is one
+     * edit, not one edit per row. Nothing is removed — a timeslot the file
+     * leaves out stays, which is the doctrine of every CSV import here.</p>
+     */
+    public void importer(List<Creneau> aCreer, List<Creneau> aMettreAJour) {
+        // Both halves add or move rows a running solve would not know about,
+        // the same reason the bulk create and the replace refuse.
+        solverJobs.refuseIfSolving();
+        aCreer.forEach(CreneauValidator::check);
+        aMettreAJour.forEach(CreneauValidator::check);
+        for (Creneau creneau : aCreer) {
+            creneau.setId(null); // ignore any client-supplied id — the database always generates it
+            repository.insertCreneau(creneau);
+        }
+        for (Creneau creneau : aMettreAJour) {
+            repository.updateCreneau(creneau);
+        }
+        if (!aCreer.isEmpty() || !aMettreAJour.isEmpty()) {
+            changeTracker.markModified();
+        }
+    }
+
+    /**
      * Replaces the whole grid by {@code creneaux}, the persisted plan going
      * with it — what the derivation from the stands' hours does when it is
      * asked to start over. Refused while a solve runs, like every rewrite of
