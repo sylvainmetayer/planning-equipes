@@ -22,58 +22,54 @@
 name: Tests de scénario
 
 on:
-  # Déclencheurs automatiques désactivés le 2026-09-12 : le quota Actions
-  # est presque atteint et plus aucun runner n'est disponible. Seul le
-  # build Docker reste déclenché automatiquement ; tout le reste se lance
-  # à la main. Décommenter les lignes ci-dessous pour rétablir.
-  # pull_request:
-  #   # Liste dupliquee ci-dessous pour le push : GitHub Actions n'interprete pas
-  #   # les ancres YAML.
-  #   paths:
-  #     - 'src/main/java/dev/sylvain/planning/solver/**'
-  #     - 'src/main/java/dev/sylvain/planning/domain/**'
-  #     - 'src/main/resources/solver/solverConfig.xml'
-  #     - 'src/main/resources/application.properties'
-  #     - 'src/main/resources/scenarios/**'
-  #     - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
-  #     - 'src/test/java/dev/sylvain/planning/service/EmptyReferenceData.java'
-  #     # Le test phare appelle en direct les classes de service/solve — de
-  #     # PlanningService à VacationGeneratorService, qui fabrique les vacations
-  #     # soumises au solveur —, qui décident de la taille du problème ou de sa
-  #     # construction. Le paquet entier plutôt que six fichiers nommés à la main :
-  #     # VacationGeneratorService manquait à la liste, et une régression de
-  #     # convergence y partait sans qu'aucun job ne la voie.
-  #     - 'src/main/java/dev/sylvain/planning/service/solve/**'
-  #     - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
-  #     - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
-  #     - 'src/main/java/dev/sylvain/planning/scenario/**'
-  #     # Une montée de version Timefold est précisément le moment où l'on veut
-  #     # savoir si les scénarios connus convergent toujours.
-  #     - 'pom.xml'
-  #     - '.github/workflows/scenario-tests.yml'
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'src/main/java/dev/sylvain/planning/solver/**'
-  #     - 'src/main/java/dev/sylvain/planning/domain/**'
-  #     - 'src/main/resources/solver/solverConfig.xml'
-  #     - 'src/main/resources/application.properties'
-  #     - 'src/main/resources/scenarios/**'
-  #     - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
-  #     - 'src/test/java/dev/sylvain/planning/service/EmptyReferenceData.java'
-  #     # Le test phare appelle en direct les classes de service/solve — de
-  #     # PlanningService à VacationGeneratorService, qui fabrique les vacations
-  #     # soumises au solveur —, qui décident de la taille du problème ou de sa
-  #     # construction. Le paquet entier plutôt que six fichiers nommés à la main :
-  #     # VacationGeneratorService manquait à la liste, et une régression de
-  #     # convergence y partait sans qu'aucun job ne la voie.
-  #     - 'src/main/java/dev/sylvain/planning/service/solve/**'
-  #     - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
-  #     - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
-  #     - 'src/main/java/dev/sylvain/planning/scenario/**'
-  #     - 'pom.xml'
-  #     - '.github/workflows/scenario-tests.yml'
+  pull_request:
+    # Liste dupliquee ci-dessous pour le push : GitHub Actions n'interprete pas
+    # les ancres YAML.
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/resources/solver/solverConfig.xml'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/**'
+      - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
+      - 'src/test/java/dev/sylvain/planning/service/EmptyReferenceData.java'
+      # Le test phare appelle en direct les classes de service/solve — de
+      # PlanningService à VacationGeneratorService, qui fabrique les vacations
+      # soumises au solveur —, qui décident de la taille du problème ou de sa
+      # construction. Le paquet entier plutôt que six fichiers nommés à la main :
+      # VacationGeneratorService manquait à la liste, et une régression de
+      # convergence y partait sans qu'aucun job ne la voie.
+      - 'src/main/java/dev/sylvain/planning/service/solve/**'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
+      - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
+      - 'src/main/java/dev/sylvain/planning/scenario/**'
+      # Une montée de version Timefold est précisément le moment où l'on veut
+      # savoir si les scénarios connus convergent toujours.
+      - 'pom.xml'
+      - '.github/workflows/scenario-tests.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/resources/solver/solverConfig.xml'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/**'
+      - 'src/test/java/dev/sylvain/planning/service/solve/PlanningServiceScenario*Test.java'
+      - 'src/test/java/dev/sylvain/planning/service/EmptyReferenceData.java'
+      # Le test phare appelle en direct les classes de service/solve — de
+      # PlanningService à VacationGeneratorService, qui fabrique les vacations
+      # soumises au solveur —, qui décident de la taille du problème ou de sa
+      # construction. Le paquet entier plutôt que six fichiers nommés à la main :
+      # VacationGeneratorService manquait à la liste, et une régression de
+      # convergence y partait sans qu'aucun job ne la voie.
+      - 'src/main/java/dev/sylvain/planning/service/solve/**'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
+      - 'src/main/java/dev/sylvain/planning/service/scenario/ScenarioYamlReader.java'
+      - 'src/main/java/dev/sylvain/planning/scenario/**'
+      - 'pom.xml'
+      - '.github/workflows/scenario-tests.yml'
   workflow_dispatch:
 
 permissions:

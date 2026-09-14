@@ -15,17 +15,13 @@ name: Sécurité
 # CVE publiée demain touche un `pom.xml` qui n'a pas bougé.
 
 on:
-  # Déclencheurs automatiques désactivés le 2026-09-12 : le quota Actions
-  # est presque atteint et plus aucun runner n'est disponible. Seul le
-  # build Docker reste déclenché automatiquement ; tout le reste se lance
-  # à la main. Décommenter les lignes ci-dessous pour rétablir.
-  # push:
-  #   branches:
-  #     - main
-  # pull_request:
-  # schedule:
-  #   # Lundi 5 h UTC, hors des heures d'usage.
-  #   - cron: '0 5 * * 1'
+  push:
+    branches:
+      - main
+  pull_request:
+  schedule:
+    # Lundi 5 h UTC, hors des heures d'usage.
+    - cron: '0 5 * * 1'
   workflow_dispatch:
 
 # Le job ne publie rien côté GitHub : il lit les sources et échoue s'il trouve.
