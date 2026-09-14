@@ -70,7 +70,7 @@ class PlanSnapshotServiceSolveGuardTest {
             jobId = solverJobs.submitSolve(probleme, 60L).getId();
             assertThat(solverJobs.findActive()).isPresent();
 
-            assertThatThrownBy(() -> snapshots.restaurer(snapshotId))
+            assertThatThrownBy(() -> snapshots.restaurer(snapshotId, false))
                     .isInstanceOf(SolverJobService.SolverBusyException.class);
 
             // Refused means nothing was written: the persisted seat is the one the
@@ -108,7 +108,7 @@ class PlanSnapshotServiceSolveGuardTest {
                     .isEqualTo(editionContext.editionIdCourant());
 
             editionContext.executeIn(EDITION_VOISINE, () -> {
-                assertThat(snapshots.restaurer(Long.MAX_VALUE)).isNull();
+                assertThat(snapshots.restaurer(Long.MAX_VALUE, false)).isNull();
             });
         } finally {
             if (jobId != null) {
@@ -133,7 +133,7 @@ class PlanSnapshotServiceSolveGuardTest {
             persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of()));
             assertThat(persistence.countPersistedAssignments()).isZero();
 
-            PlanSnapshotService.RestaurationResult result = snapshots.restaurer(snapshotId);
+            PlanSnapshotService.RestaurationResult result = snapshots.restaurer(snapshotId, false);
 
             assertThat(result.restaure()).isTrue();
             assertThat(persistence.countPersistedAssignments()).isEqualTo(1);

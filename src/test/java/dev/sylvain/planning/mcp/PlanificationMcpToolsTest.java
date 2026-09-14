@@ -84,7 +84,7 @@ class PlanificationMcpToolsTest {
         assertThat(comparaison.variante().snapshotId()).isNull();
         assertThat(comparaison.editionsDifferentes()).isFalse();
 
-        var restauration = instantaneTools.restaurer_instantane(capture.id(), null);
+        var restauration = instantaneTools.restaurer_instantane(capture.id(), null, null);
         assertThat(restauration.affectationsRestaurees()).isEqualTo(capture.nombreAffectations());
 
         assertThat(instantaneTools.supprimer_instantane(capture.id(), null).supprime())
@@ -161,7 +161,7 @@ class PlanificationMcpToolsTest {
 
     @Test
     void restaurerUnInstantaneInconnuEstRefuse() {
-        assertThatThrownBy(() -> instantaneTools.restaurer_instantane(999_999L, null))
+        assertThatThrownBy(() -> instantaneTools.restaurer_instantane(999_999L, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }

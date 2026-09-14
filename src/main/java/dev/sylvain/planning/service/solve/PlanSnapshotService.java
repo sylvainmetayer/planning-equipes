@@ -104,8 +104,18 @@ public class PlanSnapshotService {
      * @param publieLe   moment this snapshot was communicated to the animateurs
      *                   (issue #245), {@code null} on a working snapshot —
      *                   which every snapshot is until someone publishes one
+     * @param referenceModifieLe last mutation of <b>that snapshot's</b> edition
+     *                   referential ({@code edition.reference_modifie_le},
+     *                   issue #170), {@code null} when none is known. Read per
+     *                   snapshot rather than for the current edition: the
+     *                   comparator lists snapshots across editions
+     * @param perime     true when the referential moved after the capture, so
+     *                   the plan no longer describes today's data. Derived
+     *                   here rather than in each caller — the screen, the MCP
+     *                   view and the restore guard must not disagree on what
+     *                   "périmé" means
      */
-    @Schema(requiredProperties = {"automatique", "id", "nombreAffectations"})
+    @Schema(requiredProperties = {"automatique", "id", "nombreAffectations", "perime"})
     public record SnapshotMeta(
             long id,
             String libelle,
@@ -116,7 +126,19 @@ public class PlanSnapshotService {
             String editionId,
             String editionNom,
             PlanningKpiService.PlanningKpi kpi,
-            Instant publieLe) {}
+            Instant publieLe,
+            Instant referenceModifieLe,
+            boolean perime) {
+
+        /**
+         * A snapshot is stale as soon as the referential was written after it
+         * was taken. Both dates missing means nothing can be said, and nothing
+         * is: an unknown freshness is announced as fresh nowhere.
+         */
+        static boolean perime(Instant creeLe, Instant referenceModifieLe) {
+            return creeLe != null && referenceModifieLe != null && referenceModifieLe.isAfter(creeLe);
+        }
+    }
 
     /** A snapshot with its content. */
     public record SnapshotDetail(SnapshotMeta meta, List<AffectationSnapshot> affectations) {}
@@ -129,15 +151,37 @@ public class PlanSnapshotService {
      *                             longer holds, prefixed by their kind
      *                             ({@code stand:…}, {@code creneau:…},
      *                             {@code animateur:…})
+     * @param perime               true when the refusal is the staleness guard
+     *                             of issue #170 — unlike the missing
+     *                             references, this one is overridable: the plan
+     *                             is restorable, it just no longer describes
+     *                             today's referential
+     * @param creeLe               capture time of the refused snapshot,
+     *                             {@code null} outside a staleness refusal
+     * @param referenceModifieLe   mutation that made it stale, {@code null}
+     *                             outside a staleness refusal — the two dates
+     *                             together are what lets the caller word
+     *                             "modifié après la capture" rather than a
+     *                             bare refusal
      */
-    public record RestaurationResult(boolean restaure, int affectations, List<String> referencesManquantes) {
+    public record RestaurationResult(
+            boolean restaure,
+            int affectations,
+            List<String> referencesManquantes,
+            boolean perime,
+            Instant creeLe,
+            Instant referenceModifieLe) {
 
         static RestaurationResult ok(int affectations) {
-            return new RestaurationResult(true, affectations, List.of());
+            return new RestaurationResult(true, affectations, List.of(), false, null, null);
         }
 
         static RestaurationResult referencesPerdues(List<String> manquantes) {
-            return new RestaurationResult(false, 0, manquantes);
+            return new RestaurationResult(false, 0, manquantes, false, null, null);
+        }
+
+        static RestaurationResult perime(Instant creeLe, Instant referenceModifieLe) {
+            return new RestaurationResult(false, 0, List.of(), true, creeLe, referenceModifieLe);
         }
     }
 
@@ -201,17 +245,21 @@ public class PlanSnapshotService {
             ps.setTimestamp(9, publieLe == null ? null : Timestamp.from(publieLe));
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
+                Instant creeLe = rs.getTimestamp("cree_le").toInstant();
+                EditionMeta edition = editionMeta(connection, editionId());
                 SnapshotMeta meta = new SnapshotMeta(
                         rs.getLong("id"),
                         libelle,
                         automatique,
                         score,
                         affectations.size(),
-                        rs.getTimestamp("cree_le").toInstant(),
+                        creeLe,
                         editionId(),
-                        nomEdition(connection, editionId()),
+                        edition.nom(),
                         kpi,
-                        publieLe);
+                        publieLe,
+                        edition.referenceModifieLe(),
+                        SnapshotMeta.perime(creeLe, edition.referenceModifieLe()));
                 if (automatique) {
                     purgeAutomatic(connection);
                 }
@@ -269,7 +317,8 @@ public class PlanSnapshotService {
 
     /** Columns every read below projects, so {@link #readMeta} always finds them. */
     private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
-            + "s.nombre_affectations, s.cree_le, s.edition_id, s.publie_le, e.nom AS edition_nom";
+            + "s.nombre_affectations, s.cree_le, s.edition_id, s.publie_le, e.nom AS edition_nom, "
+            + "e.reference_modifie_le";
 
     private static final String DEPUIS_SNAPSHOT =
             " FROM plan_snapshot s " + "LEFT JOIN edition e ON e.id = s.edition_id";
@@ -436,8 +485,18 @@ public class PlanSnapshotService {
      * but that guard covers only the operator in front of it; the REST call and
      * the MCP tool both come through here, so this is the guard that covers
      * everyone. See {@link SolverJobService#refuseIfSolving}.</p>
+     *
+     * <p>Refused too — and this one {@code forcer} overrides — when the
+     * referential moved after the capture (issue #170). Nothing is broken
+     * there: every id the snapshot names still exists, the plan simply predates
+     * a change and putting it back would quietly undo it. So the refusal is a
+     * question, not a wall; it lives here rather than in the screen for the
+     * same reason as the one above.</p>
+     *
+     * @param forcer restore a stale snapshot anyway. Never widens anything
+     *               else: a missing reference stays refused whatever this says
      */
-    public RestaurationResult restaurer(long id) {
+    public RestaurationResult restaurer(long id, boolean forcer) {
         solverJobs.refuseIfSolving();
         SnapshotDetail detail = load(id);
         if (detail == null) {
@@ -445,7 +504,14 @@ public class PlanSnapshotService {
         }
         List<String> manquantes = referencesManquantes(detail.affectations());
         if (!manquantes.isEmpty()) {
+            // Checked before staleness on purpose: a snapshot is often stale
+            // *because* ids disappeared, and naming them is the actionable
+            // message. Forcing past staleness still lands here.
             return RestaurationResult.referencesPerdues(manquantes);
+        }
+        if (!forcer && detail.meta().perime()) {
+            return RestaurationResult.perime(
+                    detail.meta().creeLe(), detail.meta().referenceModifieLe());
         }
         scope.write("Failed to restore plan snapshot " + id, connection -> {
             try (PreparedStatement ps =
@@ -585,26 +651,40 @@ public class PlanSnapshotService {
     }
 
     private SnapshotMeta readMeta(ResultSet rs) throws SQLException {
-        Timestamp creeLe = rs.getTimestamp("cree_le");
+        Instant creeLe = instant(rs.getTimestamp("cree_le"));
+        Instant referenceModifieLe = instant(rs.getTimestamp("reference_modifie_le"));
         return new SnapshotMeta(
                 rs.getLong("id"),
                 rs.getString("libelle"),
                 rs.getBoolean("automatique"),
                 rs.getString("score"),
                 rs.getInt("nombre_affectations"),
-                creeLe == null ? null : creeLe.toInstant(),
+                creeLe,
                 rs.getString("edition_id"),
                 rs.getString("edition_nom"),
                 readKpi(rs.getString("kpi")),
-                instant(rs.getTimestamp("publie_le")));
+                instant(rs.getTimestamp("publie_le")),
+                referenceModifieLe,
+                SnapshotMeta.perime(creeLe, referenceModifieLe));
     }
 
-    /** Display name of an edition, read on the connection already open. */
-    private String nomEdition(Connection connection, String editionId) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement("SELECT nom FROM edition WHERE id = ?")) {
+    /**
+     * What a freshly inserted snapshot needs from its edition: the display name
+     * and the last referential mutation the capture is judged against. Read on
+     * the connection already open, and in one statement — the listings get both
+     * from their {@code LEFT JOIN edition}, so the insert path must not answer
+     * differently.
+     */
+    private record EditionMeta(String nom, Instant referenceModifieLe) {}
+
+    private EditionMeta editionMeta(Connection connection, String editionId) throws SQLException {
+        try (PreparedStatement ps =
+                connection.prepareStatement("SELECT nom, reference_modifie_le FROM edition WHERE id = ?")) {
             ps.setString(1, editionId);
             try (ResultSet rs = ps.executeQuery()) {
-                return rs.next() ? rs.getString("nom") : null;
+                return rs.next()
+                        ? new EditionMeta(rs.getString("nom"), instant(rs.getTimestamp("reference_modifie_le")))
+                        : new EditionMeta(null, null);
             }
         }
     }

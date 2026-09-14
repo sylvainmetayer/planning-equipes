@@ -1717,6 +1717,18 @@ export interface PlanSnapshot {
   editionNom: string | null;
   /** KPI at capture time, null on snapshots taken before they were stored. */
   kpi: PlanningKpi | null;
+  /**
+   * Last referential change of *that snapshot's* edition (issue #170), null
+   * when none is known. Per snapshot, not per current edition: the comparator
+   * lists snapshots across editions.
+   */
+  referenceModifieLe: string | null;
+  /**
+   * True when the referential moved after the capture: the plan no longer
+   * describes today's data. Computed server-side so the badge, the restore
+   * guard and the MCP tool cannot disagree.
+   */
+  perime: boolean;
 }
 
 /**

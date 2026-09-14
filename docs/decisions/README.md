@@ -61,6 +61,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0035](0035-mineur-seul-au-forfait.md) | Un mineur sans majeur à ses côtés coûte le même forfait que les exclusions d'éligibilité | Accepté |
 | [0036](0036-construction-echantillonnee-des-tres-gros-problemes.md) | Au-delà de 15 millions de couples sièges × animateurs, la construction n'évalue que 50 candidats éligibles tirés au hasard par siège | Accepté |
 | [0037](0037-une-grille-est-toujours-des-vacations.md) | Une grille de créneaux est toujours faite de vacations : le découpage des amplitudes est retiré | Accepté |
+| [0038](0038-fraicheur-du-referentiel-persistee.md) | La date de dernière mutation du référentiel est persistée sur `edition` ; restaurer un instantané périmé est refusé sauf `forcer` | Accepté |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
@@ -70,7 +71,9 @@ calcul de score, elle se dérive du plan persisté au lieu d'une résolution don
 on jette le résultat.
 
 Deux décisions se lisent ensemble : **0001** pose le cloisonnement par édition,
-**0009** le révise en supprimant le second niveau qu'il avait retenu. **0008**
+**0009** le révise en supprimant le second niveau qu'il avait retenu. **0038**
+le révise sur un autre point : la fraîcheur du référentiel, que 0001 rangeait
+en mémoire vive, descend en base le jour où un badge en dépend. **0008**
 documente une orchestration livrée puis retirée par 0009 — son raisonnement est
 conservé parce que ses mesures gardent leur valeur pour toute réflexion future
 sur le parallélisme.

@@ -17,7 +17,11 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import { PlanSnapshot, RestaurationSnapshot } from '../../core/models';
-import { PlanSnapshotStore, ReferencesManquantesError } from '../../core/plan-snapshot.store';
+import {
+  InstantanePerimeError,
+  PlanSnapshotStore,
+  ReferencesManquantesError,
+} from '../../core/plan-snapshot.store';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -52,12 +56,20 @@ import { errorPrefix } from '../../core/error-message';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SnapshotsPage {
-  protected readonly columns = ['libelle', 'score', 'affectations', 'creeLe', 'actions'];
+  protected readonly columns = [
+    'libelle',
+    'score',
+    'affectations',
+    'creeLe',
+    'fraicheur',
+    'actions',
+  ];
   protected readonly columnsAuto = [
     'libelleAuto',
     'scoreAuto',
     'affectationsAuto',
     'creeLeAuto',
+    'fraicheurAuto',
     'actionsAuto',
   ];
 
@@ -93,6 +105,23 @@ export class SnapshotsPage {
       ? $localize`:@@snapshots.delta.more:${delta}:delta: affectation(s) de plus qu'actuellement`
       : $localize`:@@snapshots.delta.less:${-delta}:delta: affectation(s) de moins qu'actuellement`;
   }
+
+  /**
+   * Why a snapshot is stale, in the tooltip of its badge (issue #170). The
+   * badge itself only says "périmé"; the date is what tells the user whether
+   * the change was theirs a minute ago or somebody else's last week.
+   */
+  protected fraicheurTooltip(snapshot: PlanSnapshot): string {
+    if (!snapshot.perime) {
+      return $localize`:@@snapshots.fresh.tooltip:Aucune modification du référentiel depuis cette capture : le plan décrit toujours les données actuelles.`;
+    }
+    if (!snapshot.referenceModifieLe) {
+      return $localize`:@@snapshots.stale.tooltipSansDate:Le référentiel a été modifié depuis cette capture.`;
+    }
+    const moment = new Date(snapshot.referenceModifieLe).toLocaleString(intlLocale());
+    return $localize`:@@snapshots.stale.tooltip:Référentiel modifié le ${moment}:moment:, après cette capture : le plan ne décrit plus les données actuelles.`;
+  }
+
   protected readonly store = inject(PlanSnapshotStore);
   protected readonly jobs = inject(SolverJobService);
 
@@ -186,8 +215,39 @@ export class SnapshotsPage {
     }
   }
 
+  /**
+   * The server, not the row on screen, decides whether a snapshot is stale: the
+   * list may have been loaded before the referential moved. So the first call
+   * never forces, and the staleness refusal — which writes nothing — is turned
+   * into the question the issue asks for, naming the change that caused it. The
+   * badge warns before the click; this is what makes forcing a deliberate act
+   * rather than a second blind « oui ».
+   */
   private async restaurerSnapshot(snapshot: PlanSnapshot): Promise<RestaurationSnapshot | null> {
-    return this.store.restaurer(snapshot.id);
+    try {
+      return await this.store.restaurer(snapshot.id);
+    } catch (error) {
+      if (!(error instanceof InstantanePerimeError)) {
+        throw error;
+      }
+      return (await this.confirmerPeremption(error))
+        ? this.store.restaurer(snapshot.id, true)
+        : null;
+    }
+  }
+
+  private confirmerPeremption(erreur: InstantanePerimeError): Promise<boolean> {
+    const moment = erreur.referenceModifieLe
+      ? new Date(erreur.referenceModifieLe).toLocaleString(intlLocale())
+      : '';
+    return this.confirm.ask({
+      title: $localize`:@@snapshots.stale.title:Cet instantané est périmé`,
+      message: moment
+        ? $localize`:@@snapshots.stale.message:Le référentiel a été modifié le ${moment}:moment:, après cette capture. Remettre ce plan en place annulerait la prise en compte de ces changements. Restaurer quand même ?`
+        : $localize`:@@snapshots.stale.messageSansDate:Le référentiel a été modifié après cette capture. Remettre ce plan en place annulerait la prise en compte de ces changements. Restaurer quand même ?`,
+      confirmLabel: $localize`:@@snapshots.stale.confirm:Restaurer quand même`,
+      danger: true,
+    });
   }
 
   protected async supprimer(snapshot: PlanSnapshot): Promise<void> {

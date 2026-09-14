@@ -5092,7 +5092,7 @@
         }
       },
       "SnapshotMeta" : {
-        "required" : [ "automatique", "id", "nombreAffectations" ],
+        "required" : [ "automatique", "id", "nombreAffectations", "perime" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -5126,6 +5126,12 @@
           },
           "publieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "referenceModifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "perime" : {
+            "type" : "boolean"
           }
         }
       },
@@ -9924,6 +9930,12 @@
           "schema" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }, {
+          "name" : "forcer",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
           }
         } ],
         "responses" : {

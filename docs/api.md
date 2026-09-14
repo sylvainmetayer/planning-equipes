@@ -394,6 +394,29 @@ qu'on vient de remettre en place. La garde est dans le service, pas dans
 l'écran : l'API et l'outil MCP `restaurer_instantane` la partagent. Une
 résolution sur une autre édition ne refuse rien.
 
+**Un instantané dit s'il est encore à jour** (`perime`, `referenceModifieLe`).
+Le référentiel d'une édition porte la date de sa dernière mutation
+(`edition.reference_modifie_le`, écrite par `ReferenceDataChangeTracker` que
+tous les services de référentiel appellent déjà) ; un instantané capturé avant
+elle est périmé. La date est **persistée**, pas tenue en mémoire comme le
+bandeau `dataStale` du shell : après un redémarrage une carte vide se lirait
+« jamais modifié », donc « à jour », et c'est précisément devant un bouton
+*Restaurer* qu'un « à jour » faux coûte le plus cher (ADR
+[0038](decisions/0038-fraicheur-du-referentiel-persistee.md)). La reprise de l'existant
+se fait à la migration depuis le `max(modifie_le)` des six référentiels ; une
+suppression de fiche n'ayant laissé aucune ligne, la date reprise est celle de
+la dernière écriture *survivante*.
+
+Restaurer un instantané périmé répond donc `409` avec `perime: true` et la date
+en cause, **sans rien écrire**, et le geste se rejoue avec `?forcer=true` :
+c'est une question, pas un mur — le plan est restaurable, il ne décrit
+simplement plus le référentiel d'aujourd'hui. `forcer` ne lève que ce
+refus-là : une référence disparue reste refusée, et elle est vérifiée en
+premier, un instantané étant le plus souvent périmé *parce que* des ids ont
+disparu — nommer lesquels est la seule information actionnable. La fraîcheur se
+lit par instantané et non pour l'édition courante, puisque `/comparables`
+traverse les éditions.
+
 **Un instantané peut porter l'état « publié »** (`publieLe`). C'est le plan que
 les animateurs ont reçu, et celui que leur espace affiche — voir *Publication*
 ci-dessous. Un instantané publié sort de la purge de rétention et refuse d'être

@@ -235,6 +235,10 @@ export function buildSolverSections(): HelpSection[] {
           text: $localize`:@@aide.results.instantanes:Un seul planning est enregistré à la fois, et chaque résolution écrase le précédent : c'est la page Instantanés qui garde les autres. Une capture y est prise automatiquement avant chaque résolution — c'est ce filet que « Revenir au plan d'avant » utilise. Un plan que vous voulez garder au-delà des cinq dernières se met de côté explicitement, avec un libellé : celui-là n'est jamais purgé, et sert de terme de comparaison au Comparateur A/B. Restaurer pendant une résolution est refusé, par le serveur et non seulement par l'écran : la résolution écraserait en se terminant le plan qu'on vient de remettre en place. Attendez sa fin, ou arrêtez-la depuis la page Solveur.`,
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.results.fraicheur:Chaque instantané indique s'il est encore à jour. « Périmé » veut dire que le référentiel — stands, animateurs, créneaux, paramètres, règles — a été modifié après la capture : le plan ne décrit plus les données d'aujourd'hui, et l'infobulle du badge donne la date de cette modification. Restaurer un instantané périmé n'est pas interdit, mais demande une confirmation à part qui nomme la cause, parce que remettre ce plan en place annulerait la prise en compte de ce qui a changé depuis — le plus souvent, mieux vaut relancer une résolution. Le refus vient du serveur, comme celui de la résolution en cours : il vaut aussi pour un assistant branché sur l'API. Une modification sur une autre édition ne périme rien ici, et un instantané périmé reste parfaitement lisible et comparable.`,
+        },
+        {
           kind: 'definitions',
           items: [
             {

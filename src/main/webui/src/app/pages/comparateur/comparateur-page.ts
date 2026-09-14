@@ -135,12 +135,40 @@ export class ComparateurPage {
     }
   }
 
-  /** Label of a snapshot in the picker: what it is, in which edition, and when. */
+  /**
+   * Label of a snapshot in the picker: what it is, in which edition, when, and
+   * whether it is still current (issue #170). A comparison is a decision aid,
+   * so a side computed before its referential moved has to say so — here it
+   * changes nothing about what may be compared, only about what the numbers
+   * mean.
+   */
   protected libelle(snapshot: PlanSnapshot): string {
     const date = snapshot.creeLe ? new Date(snapshot.creeLe).toLocaleString(intlLocale()) : '';
     const edition = snapshot.editionNom ?? snapshot.editionId;
-    return [snapshot.libelle, edition, date].filter((part) => part.length > 0).join(' — ');
+    const fraicheur = snapshot.perime ? $localize`:@@comparateur.option.perime:périmé` : '';
+    return [snapshot.libelle, edition, date, fraicheur]
+      .filter((part) => part.length > 0)
+      .join(' — ');
   }
+
+  /**
+   * Labels of the compared sides whose referential has moved since the capture.
+   * Read from the comparison actually displayed, not from the pickers: the
+   * warning must describe the table on screen, which an untouched selection
+   * change would otherwise contradict.
+   */
+  protected readonly cotesPerimes = computed(() => {
+    const resultat = this.comparaison();
+    if (!resultat) {
+      return [];
+    }
+    const parId = new Map(this.instantanes().map((snapshot) => [snapshot.id, snapshot]));
+    return [resultat.base, resultat.variante]
+      .map((cote) => (cote.snapshotId === null ? null : parId.get(cote.snapshotId)))
+      .filter((snapshot): snapshot is PlanSnapshot => snapshot !== undefined && snapshot !== null)
+      .filter((snapshot) => snapshot.perime)
+      .map((snapshot) => snapshot.libelle);
+  });
 
   /** Column header of one side: its label, or the "current plan" wording it has none. */
   protected libelleCote(cote: CoteComparaison): string {

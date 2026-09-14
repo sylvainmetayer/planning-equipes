@@ -182,11 +182,11 @@ class IsolationEditionStructurelleTest {
             "SELECT edition_id, id FROM animateur WHERE abonnement_token = ?",
             "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
-                    + " s.publie_le, e.nom AS edition_nom , s.kpi FROM plan_snapshot s"
+                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le , s.kpi FROM plan_snapshot s"
                     + " LEFT JOIN edition e ON e.id = s.edition_id ORDER BY s.cree_le DESC, s.id DESC",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
-                    + " s.publie_le, e.nom AS edition_nom , s.contenu, s.kpi FROM plan_snapshot s"
-                    + " LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
+                    + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le , s.contenu, s.kpi"
+                    + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
             "DELETE FROM journal_action WHERE survenu_le < ?");
 
     /**

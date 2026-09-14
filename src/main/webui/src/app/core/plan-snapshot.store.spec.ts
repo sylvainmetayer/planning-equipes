@@ -4,7 +4,11 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { PlanSnapshot } from './models';
-import { PlanSnapshotStore, ReferencesManquantesError } from './plan-snapshot.store';
+import {
+  InstantanePerimeError,
+  PlanSnapshotStore,
+  ReferencesManquantesError,
+} from './plan-snapshot.store';
 
 function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
   return {
@@ -17,6 +21,8 @@ function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
     editionId: 'DEFAUT',
     editionNom: 'Édition par défaut',
     kpi: null,
+    referenceModifieLe: null,
+    perime: false,
   };
 }
 
@@ -64,6 +70,41 @@ describe('PlanSnapshotStore', () => {
     api.postPreservingHttpError.mockRejectedValue(new HttpErrorResponse({ status: 500 }));
 
     await expect(store.restaurer(7)).rejects.not.toBeInstanceOf(ReferencesManquantesError);
+  });
+
+  it('turns the staleness refusal into a question the caller can answer', async () => {
+    api.postPreservingHttpError.mockRejectedValue(
+      new HttpErrorResponse({
+        status: 409,
+        error: {
+          message: 'Le référentiel a été modifié depuis cette capture',
+          referencesManquantes: [],
+          perime: true,
+          referenceModifieLe: '2026-08-19T08:30:00Z',
+        },
+      }),
+    );
+
+    await expect(store.restaurer(7)).rejects.toBeInstanceOf(InstantanePerimeError);
+    await store.restaurer(7).catch((error: unknown) => {
+      expect((error as InstantanePerimeError).referenceModifieLe).toBe('2026-08-19T08:30:00Z');
+    });
+    // The plain restore never carries the override: forcing has to be asked for.
+    expect(api.postPreservingHttpError).toHaveBeenCalledWith(
+      '/api/planning/snapshots/7/restore',
+      {},
+    );
+  });
+
+  it('asks again with forcer only when told to', async () => {
+    api.postPreservingHttpError.mockResolvedValue({ restaure: true, affectations: 12 });
+
+    await store.restaurer(7, true);
+
+    expect(api.postPreservingHttpError).toHaveBeenCalledWith(
+      '/api/planning/snapshots/7/restore?forcer=true',
+      {},
+    );
   });
 
   it('reloads the list after a capture and after a delete', async () => {

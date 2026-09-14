@@ -16,6 +16,22 @@ export class ReferencesManquantesError extends Error {
   }
 }
 
+/**
+ * Raised when a restore is refused because the referential was written after
+ * the capture (issue #170). Unlike {@link ReferencesManquantesError} this one
+ * is a question: the caller may ask again with `forcer`.
+ */
+export class InstantanePerimeError extends Error {
+  constructor(
+    message: string,
+    /** When the referential was last written, null when the server did not say. */
+    readonly referenceModifieLe: string | null,
+  ) {
+    super(message);
+    this.name = 'InstantanePerimeError';
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class PlanSnapshotStore {
   private readonly _snapshots = signal<PlanSnapshot[]>([]);
@@ -46,18 +62,28 @@ export class PlanSnapshotStore {
 
   /**
    * Puts a snapshot back. Throws {@link ReferencesManquantesError} when ids
-   * named by the snapshot no longer exist — nothing was written.
+   * named by the snapshot no longer exist, and {@link InstantanePerimeError}
+   * when the referential was written after the capture — nothing was written
+   * in either case. Only the second is liftable, by asking again with
+   * `forcer`.
    */
-  async restaurer(id: number): Promise<RestaurationSnapshot> {
+  async restaurer(id: number, forcer = false): Promise<RestaurationSnapshot> {
+    const url = forcer
+      ? `/api/planning/snapshots/${id}/restore?forcer=true`
+      : `/api/planning/snapshots/${id}/restore`;
     try {
       // The raw HttpErrorResponse, not the flattened Error: the 409 body
       // carries the ids the snapshot names and the referential has lost, and
       // that list is the whole point of the message shown to the user.
-      return await this.api.postPreservingHttpError<RestaurationSnapshot>(
-        `/api/planning/snapshots/${id}/restore`,
-        {},
-      );
+      return await this.api.postPreservingHttpError<RestaurationSnapshot>(url, {});
     } catch (error) {
+      const corps = corpsErreur(error);
+      if (corps?.perime === true) {
+        throw new InstantanePerimeError(
+          messageErreur(error),
+          typeof corps.referenceModifieLe === 'string' ? corps.referenceModifieLe : null,
+        );
+      }
       const references = referencesManquantes(error);
       if (references && references.length > 0) {
         throw new ReferencesManquantesError(messageErreur(error), references);
@@ -80,14 +106,22 @@ function messageErreur(error: unknown): string {
   return corpsErreur(error)?.message ?? toError(error).message;
 }
 
-function corpsErreur(
-  error: unknown,
-): { message?: string; referencesManquantes?: unknown[] } | null {
+function corpsErreur(error: unknown): {
+  message?: string;
+  referencesManquantes?: unknown[];
+  perime?: boolean;
+  referenceModifieLe?: unknown;
+} | null {
   if (!(error instanceof HttpErrorResponse)) {
     return null;
   }
   const body: unknown = error.error;
   return body && typeof body === 'object'
-    ? (body as { message?: string; referencesManquantes?: unknown[] })
+    ? (body as {
+        message?: string;
+        referencesManquantes?: unknown[];
+        perime?: boolean;
+        referenceModifieLe?: unknown;
+      })
     : null;
 }

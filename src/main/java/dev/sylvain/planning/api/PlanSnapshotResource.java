@@ -18,6 +18,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.time.Instant;
 import java.util.List;
 
 /**
@@ -93,7 +94,7 @@ public class PlanSnapshotResource {
         SnapshotMeta meta = snapshotService.capture(libelle, false);
         if (meta == null) {
             return Response.status(Response.Status.CONFLICT)
-                    .entity(new ErreurRestauration("Aucun plan persisté à enregistrer.", List.of()))
+                    .entity(new ErreurRestauration("Aucun plan persisté à enregistrer.", List.of(), false, null))
                     .build();
         }
         return Response.status(Response.Status.CREATED).entity(meta).build();
@@ -103,20 +104,37 @@ public class PlanSnapshotResource {
      * Puts a snapshot back in place of the current plan. Answers 409 with the
      * missing ids when the referential has moved on: restoring half a plan
      * would produce a planning nobody ever computed.
+     *
+     * <p>Also answers 409 — {@code perime} true, and nothing written — when the
+     * referential was merely <b>modified</b> after the capture (issue #170).
+     * That refusal is a question the caller answers with {@code ?forcer=true};
+     * the missing-references one is not, and no parameter lifts it.</p>
      */
     @POST
     @Path("/{id}/restore")
     @Consumes(MediaType.WILDCARD)
-    public Response restore(@PathParam("id") long id) {
-        RestaurationResult result = snapshotService.restaurer(id);
+    public Response restore(@PathParam("id") long id, @QueryParam("forcer") boolean forcer) {
+        RestaurationResult result = snapshotService.restaurer(id, forcer);
         if (result == null) {
             throw new NotFoundException("Unknown snapshot: " + id);
+        }
+        if (result.perime()) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(new ErreurRestauration(
+                            "Le référentiel a été modifié depuis cette capture : l'instantané ne décrit plus les "
+                                    + "données actuelles. Rien n'a été restauré.",
+                            List.of(),
+                            true,
+                            result.referenceModifieLe()))
+                    .build();
         }
         if (!result.restaure()) {
             return Response.status(Response.Status.CONFLICT)
                     .entity(new ErreurRestauration(
                             "L'instantané référence des données qui n'existent plus : rien n'a été restauré.",
-                            result.referencesManquantes()))
+                            result.referencesManquantes(),
+                            false,
+                            null))
                     .build();
         }
         return Response.ok(result).build();
@@ -134,6 +152,19 @@ public class PlanSnapshotResource {
     /** @param libelle free-text name; a blank one falls back to a generic label */
     public record CaptureRequest(String libelle) {}
 
-    /** @param groupeDifferent true when the refusal is a groupe mismatch, overridable with {@code ?forcer=true} */
-    public record ErreurRestauration(String message, List<String> referencesManquantes) {}
+    /**
+     * Body of a refused restore or capture.
+     *
+     * @param referencesManquantes ids the snapshot names and the referential
+     *                             lost — empty on every other refusal
+     * @param perime               true when the refusal is the staleness guard
+     *                             (issue #170), the one a caller may retry with
+     *                             {@code ?forcer=true}
+     * @param referenceModifieLe   when the referential was last written,
+     *                             {@code null} outside that refusal: it is what
+     *                             lets the screen say <i>since when</i> rather
+     *                             than just <i>no</i>
+     */
+    public record ErreurRestauration(
+            String message, List<String> referencesManquantes, boolean perime, Instant referenceModifieLe) {}
 }

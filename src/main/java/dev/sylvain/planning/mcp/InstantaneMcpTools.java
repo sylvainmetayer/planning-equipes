@@ -130,7 +130,10 @@ public class InstantaneMcpTools {
     @Tool(
             description = "Restaure un instantané à la place du planning courant. Refusé si l'instantané référence "
                     + "des stands, créneaux ou animateurs qui n'existent plus, ou si une résolution est en cours sur "
-                    + "l'édition (elle écraserait le plan restauré) : rien n'est alors écrit.",
+                    + "l'édition (elle écraserait le plan restauré) : rien n'est alors écrit. Refusé aussi si le "
+                    + "référentiel a été modifié depuis la capture (champ perime) : demandez à l'utilisateur avant de "
+                    + "réessayer avec forcer=true, car remettre ce plan en place annulerait silencieusement ce qui a "
+                    + "changé depuis.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -139,10 +142,15 @@ public class InstantaneMcpTools {
                             openWorldHint = false))
     RestaurationView restaurer_instantane(
             @ToolArg(description = "Id de l'instantané") long id,
+            @ToolArg(
+                            description = "Restaurer même si l'instantané est périmé (référentiel modifié depuis la "
+                                    + "capture). Ne lève aucun autre refus.",
+                            required = false)
+                    Boolean forcer,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         RestaurationResult result;
         try {
-            result = snapshotService.restaurer(id);
+            result = snapshotService.restaurer(id, Boolean.TRUE.equals(forcer));
         } catch (SolverBusyException occupe) {
             // Same refusal as the REST 409 (SolverOccupeMapper), said in the
             // assistant's terms: the run to wait for, or to stop, is named.
@@ -152,6 +160,13 @@ public class InstantaneMcpTools {
         }
         if (result == null) {
             throw new BusinessError.NotFound("Instantané introuvable dans cette édition : " + id);
+        }
+        if (result.perime()) {
+            throw new BusinessError.Conflict("Le référentiel de cette édition a été modifié le "
+                    + result.referenceModifieLe() + ", après la capture du " + result.creeLe()
+                    + " : l'instantané ne décrit plus les données actuelles et rien n'a été restauré. "
+                    + "Demandez à l'utilisateur s'il veut quand même le remettre en place (forcer=true) ou "
+                    + "relancer une résolution.");
         }
         if (!result.restaure()) {
             throw new BusinessError.Conflict("L'instantané référence des données qui n'existent plus, rien n'a été "
@@ -215,7 +230,9 @@ public class InstantaneMcpTools {
                 meta.editionId(),
                 meta.editionNom(),
                 meta.kpi(),
-                meta.publieLe());
+                meta.publieLe(),
+                meta.referenceModifieLe(),
+                meta.perime());
     }
 
     private static AffectationInstantaneView toView(AffectationSnapshot affectation) {
@@ -228,7 +245,18 @@ public class InstantaneMcpTools {
                 affectation.heureFinEffective());
     }
 
-    /** A snapshot without its content — {@code SnapshotMeta} carries no personal field. */
+    /**
+     * A snapshot without its content — {@code SnapshotMeta} carries no personal
+     * field.
+     *
+     * @param referenceModifieLe last mutation of that snapshot's edition
+     *                           referential, {@code null} when none is known
+     * @param perime             true when the referential moved after the
+     *                           capture (issue #170). Carried here so an
+     *                           assistant knows what it is about to propose
+     *                           restoring instead of discovering it through a
+     *                           refusal
+     */
     public record InstantaneView(
             long id,
             String libelle,
@@ -239,7 +267,9 @@ public class InstantaneMcpTools {
             String editionId,
             String editionNom,
             PlanningKpi kpi,
-            Instant publieLe) {}
+            Instant publieLe,
+            Instant referenceModifieLe,
+            boolean perime) {}
 
     /**
      * @param affectationsTotal seats matching the filters, which may exceed the

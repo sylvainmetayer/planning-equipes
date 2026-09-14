@@ -31,7 +31,9 @@ class InstantaneMcpToolsTest {
             "DEFAUT",
             "Édition 2026",
             null,
-            null);
+            null,
+            Instant.parse("2026-08-16T09:00:00Z"),
+            true);
 
     private static InstantaneMcpTools tools(SnapshotDetail detail) {
         InstantaneMcpTools tools = new InstantaneMcpTools();

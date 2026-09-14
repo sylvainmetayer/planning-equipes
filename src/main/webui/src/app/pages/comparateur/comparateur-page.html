@@ -60,6 +60,12 @@
             qualité de la résolution.
           </p>
         }
+        @if (cotesPerimes().length > 0) {
+          <p class="locked-hint" i18n="@@comparateur.warning.perimes">
+            Instantané(s) périmé(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :
+            ces chiffres décrivent un problème qui n'est plus celui d'aujourd'hui.
+          </p>
+        }
         @if (kpiRecalcule()) {
           <p class="locked-hint" i18n="@@comparateur.warning.recalcule">
             Au moins un instantané est antérieur à l'enregistrement des KPI : ses métriques sont recalculées depuis son

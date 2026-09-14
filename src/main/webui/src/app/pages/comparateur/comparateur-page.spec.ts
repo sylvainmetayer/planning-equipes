@@ -68,6 +68,8 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
     editionId: 'festival-2026',
     editionNom: 'Festival 2026',
     kpi: kpi(),
+    referenceModifieLe: null,
+    perime: false,
     ...overrides,
   };
 }
@@ -108,6 +110,7 @@ type PageInternals = {
   lignes: Signal<LigneMetrique[]>;
   pretAComparer: Signal<boolean>;
   kpiRecalcule: Signal<boolean>;
+  cotesPerimes: Signal<string[]>;
   rafraichir: () => Promise<void>;
   comparer: () => Promise<void>;
   valeurSelection: (snapshot: PlanSnapshot) => string;
@@ -346,6 +349,42 @@ describe('ComparateurPage', () => {
     });
   });
 
+  describe('stale sides', () => {
+    // Read from the comparison displayed, not from the pickers: the warning
+    // must describe the table on screen, which an untouched selection change
+    // would otherwise contradict.
+    it('names the compared sides whose referential has moved since the capture', async () => {
+      planningApi.comparableSnapshots.mockResolvedValue([
+        snapshot({ id: 7, libelle: 'Avant canicule', perime: true }),
+        snapshot({ id: 8, libelle: 'Après canicule', perime: false }),
+      ]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.instantanes()).toHaveLength(2));
+      planningApi.compareSnapshots.mockResolvedValue(comparaison());
+      page.baseId.set('7');
+      page.varianteId.set('8');
+
+      await page.comparer();
+
+      expect(page.cotesPerimes()).toEqual(['Avant canicule']);
+    });
+
+    it('says nothing when both sides are current, nor before a comparison', async () => {
+      planningApi.comparableSnapshots.mockResolvedValue([snapshot({ id: 7, perime: false })]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.instantanes()).toHaveLength(1));
+
+      expect(page.cotesPerimes()).toEqual([]);
+
+      planningApi.compareSnapshots.mockResolvedValue(comparaison());
+      page.baseId.set('7');
+      page.varianteId.set(page.courant);
+      await page.comparer();
+
+      expect(page.cotesPerimes()).toEqual([]);
+    });
+  });
+
   describe('labels', () => {
     it('names a snapshot by its label, its edition and its date', () => {
       const page = createPage();
@@ -367,6 +406,16 @@ describe('ComparateurPage', () => {
       );
 
       expect(label).toBe('Avant canicule — edition-1708');
+    });
+
+    // Issue #170: a comparison is a decision aid, so a side computed before its
+    // referential moved has to say so — it changes nothing about what may be
+    // compared, only about what the numbers mean.
+    it('marks a stale snapshot in the picker and leaves a fresh one alone', () => {
+      const page = createPage();
+
+      expect(page.libelle(snapshot({ perime: true }))).toContain('périmé');
+      expect(page.libelle(snapshot({ perime: false }))).not.toContain('périmé');
     });
 
     it('names the unlabelled side the currently persisted plan', () => {
