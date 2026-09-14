@@ -64,6 +64,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     changements: [],
     changementsLe: null,
     dateDuJourFigee: null,
+    heureDuJourFigee: null,
     pauses: [],
     ...overrides,
   };

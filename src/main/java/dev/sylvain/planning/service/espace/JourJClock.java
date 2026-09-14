@@ -36,10 +36,12 @@ import java.time.LocalTime;
  * place of the phone's date. Left out, a frozen date showed jour J on one day
  * and the espace of the very people it moves on another.</p>
  *
- * <p>The <b>time of day is never mocked</b> — {@link #now()} always returns the
- * real wall clock. Freezing an hour as well would make the screen static, when
- * what it is being tested for is precisely that timeslots fall behind as the
- * afternoon goes on.</p>
+ * <p>The <b>time of day is optional</b>. Left empty, {@link #now()} returns the
+ * real wall clock, so a frozen day still sees its timeslots fall behind as the
+ * afternoon goes on. Set, the moment is fixed — the same 14:00 on every reload,
+ * which is how a seat « en cours » is checked on purpose rather than by waiting
+ * for it. A time needs a date: « 14:00 » against the machine's date would be a
+ * moment sliding by one day at midnight.</p>
  *
  * <p>Deliberately left alone, and none of them route through here:</p>
  *
@@ -102,11 +104,24 @@ public class JourJClock {
     }
 
     /**
-     * The time of day, always real. See the class javadoc: only the date is
-     * ever substituted, so a frozen day still moves forward hour by hour.
+     * The time of day: the mocked one when a developer froze it too, the wall
+     * clock otherwise — including under a frozen date alone, which still moves
+     * forward hour by hour. Same guard as {@link #today()}.
      */
     public LocalTime now() {
-        return LocalTime.now().withNano(0);
+        LocalTime fige = mocked().heure();
+        return fige != null ? fige : LocalTime.now().withNano(0);
+    }
+
+    /**
+     * The frozen date and time of day, each {@code null} when not frozen.
+     *
+     * @param heure never set without {@code date}: the write refuses it, and so
+     *              does the table
+     */
+    public record Horloge(LocalDate date, LocalTime heure) {
+
+        static final Horloge REELLE = new Horloge(null, null);
     }
 
     /**
@@ -118,17 +133,30 @@ public class JourJClock {
      * quietly repairs data is a read nobody can reason about.</p>
      */
     public LocalDate mockedDate() {
+        return mocked().date();
+    }
+
+    /**
+     * The mocked date and time of day, both {@code null} when the real clock is
+     * in use — and always both {@code null} outside dev mode, see
+     * {@link #today()}.
+     */
+    public Horloge mocked() {
         if (!devMode.isActive()) {
-            return null;
+            return Horloge.REELLE;
         }
         // Not prepareScoped: this table carries no edition_id — it describes the
         // server's clock, not an event.
         return scope.read("Failed to read the mocked date", connection -> {
-            try (PreparedStatement ps =
-                    connection.prepareStatement("SELECT date_du_jour FROM horloge_jour_j WHERE id = ?")) {
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "SELECT date_du_jour, heure_du_jour FROM horloge_jour_j WHERE id = ?")) {
                 ps.setInt(1, LIGNE_UNIQUE);
                 try (ResultSet rs = ps.executeQuery()) {
-                    return rs.next() ? rs.getObject("date_du_jour", LocalDate.class) : null;
+                    return rs.next()
+                            ? new Horloge(
+                                    rs.getObject("date_du_jour", LocalDate.class),
+                                    rs.getObject("heure_du_jour", LocalTime.class))
+                            : Horloge.REELLE;
                 }
             }
         });
@@ -140,29 +168,36 @@ public class JourJClock {
     }
 
     /**
-     * Freezes the date the mode jour J screen reads, or hands it back to the
-     * machine when {@code date} is {@code null}.
+     * Freezes the date — and, when {@code heure} is given, the time of day — or
+     * hands both back to the machine when {@code date} is {@code null}.
      *
      * @throws BusinessError.Invalid on any server not launched with
      *                               {@code quarkus:dev} — including the one that
-     *                               matters, a deployed instance
+     *                               matters, a deployed instance — and for a
+     *                               time without a date
      */
-    public LocalDate setMockedDate(LocalDate date) {
+    public Horloge setMocked(LocalDate date, LocalTime heure) {
         if (!devMode.isActive()) {
             throw new BusinessError.Invalid("Figer la date du jour n'est possible qu'en mode développement"
                     + " (quarkus:dev). Sur une instance déployée, l'écran jour J lit l'horloge réelle et"
                     + " ne peut pas en lire une autre.");
         }
+        if (heure != null && date == null) {
+            throw new BusinessError.Invalid("Une heure figée demande une date : sans elle, « " + heure
+                    + " » se lirait sur la date de la machine, qui change à minuit.");
+        }
         scope.write("Failed to save the mocked date", connection -> {
             try (PreparedStatement ps = connection.prepareStatement("""
-                    INSERT INTO horloge_jour_j (id, date_du_jour) VALUES (?, ?)
-                    ON CONFLICT (id) DO UPDATE SET date_du_jour = EXCLUDED.date_du_jour""")) {
+                    INSERT INTO horloge_jour_j (id, date_du_jour, heure_du_jour) VALUES (?, ?, ?)
+                    ON CONFLICT (id) DO UPDATE
+                    SET date_du_jour = EXCLUDED.date_du_jour, heure_du_jour = EXCLUDED.heure_du_jour""")) {
                 ps.setInt(1, LIGNE_UNIQUE);
                 ps.setObject(2, date);
+                ps.setObject(3, heure);
                 ps.executeUpdate();
             }
         });
-        return date;
+        return new Horloge(date, heure);
     }
 
     /** Whether this server would accept a mocked date at all. */

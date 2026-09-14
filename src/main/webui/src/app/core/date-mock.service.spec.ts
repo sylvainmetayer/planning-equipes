@@ -6,16 +6,19 @@ import { DateMockService } from './date-mock.service';
 
 interface View {
   dateDuJour: string | null;
+  heureDuJour?: string | null;
   modifiable: boolean;
 }
 
 class FakeApi {
   view: View = { dateDuJour: null, modifiable: true };
   get = vi.fn(async (_url: string) => this.view);
-  put = vi.fn(async (_url: string, body: { dateDuJour: string | null }) => {
-    this.view = { ...this.view, dateDuJour: body.dateDuJour };
-    return this.view;
-  });
+  put = vi.fn(
+    async (_url: string, body: { dateDuJour: string | null; heureDuJour: string | null }) => {
+      this.view = { ...this.view, dateDuJour: body.dateDuJour, heureDuJour: body.heureDuJour };
+      return this.view;
+    },
+  );
 }
 
 describe('DateMockService', () => {
@@ -57,7 +60,10 @@ describe('DateMockService', () => {
   it('saves on change and adopts what the server answers', async () => {
     await service.set('2026-07-08');
 
-    expect(api.put).toHaveBeenCalledWith('/api/debug/date-du-jour', { dateDuJour: '2026-07-08' });
+    expect(api.put).toHaveBeenCalledWith('/api/debug/date-du-jour', {
+      dateDuJour: '2026-07-08',
+      heureDuJour: null,
+    });
     expect(service.actif()).toBe(true);
   });
 
@@ -66,9 +72,22 @@ describe('DateMockService', () => {
     await service.set('2026-07-08');
     await service.set('');
 
-    expect(api.put.mock.calls[1][1]).toEqual({ dateDuJour: null });
+    expect(api.put.mock.calls[1][1]).toEqual({ dateDuJour: null, heureDuJour: null });
     expect(service.dateDuJour()).toBe('');
     expect(service.actif()).toBe(false);
+  });
+
+  it('sends the time with its date, and never a time alone', async () => {
+    await service.set('2026-07-08', '14:30');
+
+    expect(api.put.mock.calls[0][1]).toEqual({ dateDuJour: '2026-07-08', heureDuJour: '14:30' });
+    expect(service.heureDuJour()).toBe('14:30');
+    expect(service.libelle()).toBe('2026-07-08 14:30');
+
+    await service.set('', '14:30');
+
+    expect(api.put.mock.calls[1][1]).toEqual({ dateDuJour: null, heureDuJour: null });
+    expect(service.heureDuJour()).toBe('');
   });
 
   /**

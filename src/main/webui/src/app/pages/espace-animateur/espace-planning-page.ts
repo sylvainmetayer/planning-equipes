@@ -210,12 +210,17 @@ export class EspacePlanningPage {
 
   /**
    * `null` outside the event: no head block rather than a misleading one. On
-   * the server's frozen date when a developer set one — the day jour J is on.
+   * the server's frozen date and time when a developer set them — the moment
+   * jour J is on.
    */
   protected readonly repere = computed(() =>
     repereMaintenant(
       this.jours(),
-      maintenantEffectif(this.maintenant(), this.espace.view()?.dateDuJourFigee ?? null),
+      maintenantEffectif(
+        this.maintenant(),
+        this.espace.view()?.dateDuJourFigee ?? null,
+        this.espace.view()?.heureDuJourFigee ?? null,
+      ),
     ),
   );
 

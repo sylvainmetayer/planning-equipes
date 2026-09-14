@@ -38,6 +38,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     abonnementToken: 'abo-1',
     pauses: [],
     dateDuJourFigee: null,
+    heureDuJourFigee: null,
     ...overrides,
   } as EspaceAnimateurView;
 }
@@ -615,6 +616,29 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     );
     expect(racine().querySelector('.espace-jours-passes')).not.toBeNull();
     expect(racine().querySelector('.espace-jour')!.classList).toContain('espace-jour-aujourdhui');
+  });
+
+  it("prend aussi l'heure figée : le poste en cours se vérifie sans l'attendre", async () => {
+    await rendre(
+      new Date(2026, 8, 14, 22, 0),
+      view({
+        dateDuJourFigee: '2026-07-12',
+        heureDuJourFigee: '14:30:00',
+        postes: [
+          poste({
+            creneauId: 2,
+            date: '2026-07-12',
+            standNom: 'Kubb',
+            heureDebut: '14:00',
+            heureFin: '16:00',
+          }),
+        ],
+      }),
+    );
+
+    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+      'En ce moment : Kubb',
+    );
   });
 
   it('ne replie rien et ne dit rien hors événement', async () => {

@@ -53,6 +53,6 @@ export class DateMockIndicator {
 
   protected readonly tooltip = computed(
     () =>
-      $localize`:@@dateMock.tooltip:MOCK — la date du jour est figée au ${this.dates.dateDuJour()}:date: sur ce serveur : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité. Cliquez pour modifier ou effacer cette date.`,
+      $localize`:@@dateMock.tooltip:MOCK — la date du jour est figée au ${this.dates.libelle()}:date: sur ce serveur : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité. Cliquez pour modifier ou effacer cette date.`,
   );
 }

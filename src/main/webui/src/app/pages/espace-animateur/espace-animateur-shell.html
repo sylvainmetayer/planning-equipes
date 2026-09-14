@@ -6,10 +6,12 @@
        serveur, pas celle du téléphone. Sans lien, contrairement à la barre
        d'administration : Débogage n'est pas une page de cet espace. -->
   @if (espace.view()?.dateDuJourFigee; as dateFigee) {
-    <span class="espace-date-figee" role="status" [matTooltip]="infobulleDateFigee(dateFigee)"
-          [attr.aria-label]="infobulleDateFigee(dateFigee)">
+    @let heureFigee = espace.view()?.heureDuJourFigee?.slice(0, 5) ?? '';
+    <span class="espace-date-figee" role="status"
+          [matTooltip]="infobulleDateFigee(dateFigee, heureFigee)"
+          [attr.aria-label]="infobulleDateFigee(dateFigee, heureFigee)">
       <mat-icon inline>hourglass_disabled</mat-icon>
-      <span>{{ dateFigee | date: 'dd/MM' }}</span>
+      <span>{{ dateFigee | date: 'dd/MM' }} {{ heureFigee }}</span>
     </span>
   }
   @if (espace.view(); as vue) {

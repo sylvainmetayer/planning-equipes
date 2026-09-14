@@ -104,7 +104,7 @@ class EspacePlanPublieTest {
         RestAssured.requestSpecification = null;
         forgetPublications();
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        clock.setMockedDate(null);
+        clock.setMocked(null, null);
     }
 
     @Test
@@ -473,27 +473,37 @@ class EspacePlanPublieTest {
     @Test
     void lEspaceRelaieLaDateFigeeEnDeveloppement() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        clock.setMockedDate(JOUR);
+        clock.setMocked(JOUR, null);
 
         given().when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
-                .body("dateDuJourFigee", equalTo(JOUR.toString()));
+                .body("dateDuJourFigee", equalTo(JOUR.toString()))
+                .body("heureDuJourFigee", nullValue());
+
+        clock.setMocked(JOUR, LocalTime.of(14, 30));
+
+        given().when()
+                .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
+                .then()
+                .statusCode(200)
+                .body("heureDuJourFigee", equalTo("14:30:00"));
     }
 
     /** The same rule as jour J: a row that reached a deployed instance is inert. */
     @Test
     void horsDeveloppementLEspaceNeRelaieAucuneDateFigee() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
-        clock.setMockedDate(JOUR);
+        clock.setMocked(JOUR, LocalTime.of(14, 30));
         QuarkusMock.installMockForType(new DevMode(), DevMode.class);
 
         given().when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
                 .statusCode(200)
-                .body("dateDuJourFigee", nullValue());
+                .body("dateDuJourFigee", nullValue())
+                .body("heureDuJourFigee", nullValue());
     }
 
     /* -------------------------------- Helpers ------------------------------ */

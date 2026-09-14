@@ -202,6 +202,8 @@ public class EspaceAnimateurService {
      *                 phone; without this, a frozen date moved the jour J
      *                 screen and left the espace on another day, with nothing
      *                 on screen saying so
+     * @param heureDuJourFigee the time of day frozen with it, {@code null} while
+     *                 the phone's own time is the one to read
      */
     @Schema(requiredProperties = {"foireOuverte"})
     public record EspaceAnimateurView(
@@ -221,7 +223,8 @@ public class EspaceAnimateurService {
             List<PauseAnalyzer.PauseAnimateurView> pauses,
             List<String> changements,
             Instant changementsLe,
-            LocalDate dateDuJourFigee) {}
+            LocalDate dateDuJourFigee,
+            LocalTime heureDuJourFigee) {}
 
     /**
      * One demande with every label resolved, shared by the espace and the
@@ -292,6 +295,7 @@ public class EspaceAnimateurService {
                 confirmationService.stored(animateurId).orElse(null);
         DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
         PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastSentTo(animateurId);
+        JourJClock.Horloge horloge = clock.mocked();
         boolean diffToShow = lastTrace != null
                 && !lastTrace.premiereDiffusion()
                 && !lastTrace.changements().isEmpty();
@@ -312,7 +316,8 @@ public class EspaceAnimateurService {
                 pauseAnalyzer.pausesAnimateur(planning, animateurId),
                 diffToShow ? lastTrace.changements() : List.of(),
                 diffToShow ? lastTrace.envoyeLe() : null,
-                clock.mockedDate());
+                horloge.date(),
+                horloge.heure());
     }
 
     private static List<PosteAnimateurView> postesOf(

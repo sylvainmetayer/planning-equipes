@@ -2097,6 +2097,8 @@ export interface EspaceAnimateurView {
    * marker then reads it in place of the phone's date, and the toolbar says so.
    */
   dateDuJourFigee: string | null;
+  /** `HH:mm:ss` frozen with it, `null` while the phone's own time is the one to read. */
+  heureDuJourFigee: string | null;
 }
 
 /**
@@ -2630,6 +2632,8 @@ export interface EtatSauvegarde {
 export interface DateJourJView {
   /** `AAAA-MM-JJ`, or `null` when the real clock is in use. */
   dateDuJour: string | null;
+  /** `HH:mm`, `null` while the wall clock gives the time — always `null` without a date. */
+  heureDuJour: string | null;
   /**
    * Server launched with `quarkus:dev`. Hides the field when false — the guard
    * itself is server-side, on the write endpoint.

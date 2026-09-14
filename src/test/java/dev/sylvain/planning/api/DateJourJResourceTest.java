@@ -146,6 +146,59 @@ class DateJourJResourceTest {
     }
 
     @Test
+    void theFrozenTimeIsStoredAndReadBackWithItsDate() {
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"14:30\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
+                .body("dateDuJour", equalTo(JOUR))
+                .body("heureDuJour", equalTo("14:30"));
+
+        given().when().get("/api/debug/date-du-jour").then().statusCode(200).body("heureDuJour", equalTo("14:30"));
+
+        // Handing the date back hands the time back with it.
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":null}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200)
+                .body("dateDuJour", nullValue())
+                .body("heureDuJour", nullValue());
+    }
+
+    /** « 14:00 » against the machine's date would be a moment that slides at midnight. */
+    @Test
+    void aTimeWithoutADateIsA400() {
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":null,\"heureDuJour\":\"14:30\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("demande une date"));
+    }
+
+    @Test
+    void anUnreadableTimeIsA400() {
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"midi\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("Heure illisible"));
+    }
+
+    @Test
     void anUnreadableDateIsA400() {
         QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
 
@@ -274,6 +327,36 @@ class DateJourJResourceTest {
         // One unavailability, on the afternoon timeslot of the frozen day.
         assertThat(marquee.getList("entrees.creneauId", Integer.class)).hasSize(1);
         assertThat(marquee.getList("entrees.heureDebut", String.class))
+                .singleElement()
+                .asString()
+                .startsWith("14:00");
+    }
+
+    /**
+     * With a time frozen as well, the moment is fixed: the screen reads 13:30
+     * with no parameter, whatever the wall clock says — so the afternoon
+     * timeslot is the only one ahead, every time the test runs.
+     */
+    @Test
+    void theFrozenTimeIsTheMomentTheEventDayScreenReads() {
+        solveScenario();
+        QuarkusMock.installMockForType(new DevModeActif(), DevMode.class);
+        given().contentType("application/json")
+                .body("{\"dateDuJour\":\"" + JOUR + "\",\"heureDuJour\":\"13:30\"}")
+                .when()
+                .put("/api/debug/date-du-jour")
+                .then()
+                .statusCode(200);
+
+        JsonPath etat = given().when()
+                .get("/api/jour-j")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(etat.getString("maintenant")).startsWith(JOUR + "T13:30");
+        assertThat(etat.getList("creneauxRestants.heureDebut", String.class))
                 .singleElement()
                 .asString()
                 .startsWith("14:00");

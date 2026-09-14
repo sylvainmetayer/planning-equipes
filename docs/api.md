@@ -987,8 +987,8 @@ remplace donc la date que le serveur considère comme « aujourd'hui ».
 
 | Endpoint | Effet |
 | --- | --- |
-| `GET /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08"\|null, "modifiable": true\|false }`. |
-| `PUT /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08" }` fige la date ; une valeur vide ou `null` rend la main à l'horloge de la machine. |
+| `GET /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08"\|null, "heureDuJour": "14:30"\|null, "modifiable": true\|false }`. |
+| `PUT /api/debug/date-du-jour` | `{ "dateDuJour": "2026-07-08", "heureDuJour": "14:30" }` fige la date, et l'heure si elle est donnée ; une date vide ou `null` rend la main à l'horloge de la machine, heure comprise. Une heure sans date répond `400`. |
 
 **Refusé (400) sur toute instance qui n'a pas été lancée avec `quarkus:dev`.**
 `/debug` est une route d'administration ordinaire, disponible en production : un
@@ -1017,12 +1017,16 @@ Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
 jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,
 et lesquels une absence couvre — **et pour le repère du jour de l'espace
 animateur**. Celui-là se calcule dans le navigateur : `GET
-/api/espace-animateur/{jeton}` porte donc `dateDuJourFigee` (toujours `null`
-hors `quarkus:dev`), que la page substitue à la date du téléphone. Sans cela,
+/api/espace-animateur/{jeton}` porte donc `dateDuJourFigee` et
+`heureDuJourFigee` (toujours `null` hors `quarkus:dev`), que la page substitue à
+la date et à l'heure du téléphone. Sans cela,
 jour J se plaçait sur la date figée et l'espace des personnes qu'il réaffecte
-restait sur la vraie, sans rien à l'écran pour le dire. **L'heure de la journée n'est jamais figée** :
-la figer rendrait l'écran statique, alors que ce qu'on veut vérifier est
-justement que les créneaux passent derrière au fil de l'après-midi.
+restait sur la vraie, sans rien à l'écran pour le dire. **L'heure de la journée est facultative** :
+laissée vide, c'est celle de la machine, et les créneaux passent derrière au fil
+de l'après-midi ; renseignée, l'instant est fixe — le même 14 h 30 à chaque
+rechargement, pour vérifier un poste « en cours » sans l'attendre. Une heure
+demande une date : sur la date de la machine, elle glisserait d'un jour à minuit
+(refusé par l'API et par une contrainte de la table).
 
 Délibérément hors de portée, et rien de tout cela ne passe par ce mock :
 

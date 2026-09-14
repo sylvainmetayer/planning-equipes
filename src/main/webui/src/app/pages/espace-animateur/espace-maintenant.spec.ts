@@ -243,6 +243,16 @@ describe('maintenantEffectif', () => {
     expect(effectif).toEqual(new Date(2026, 6, 11, 15, 42, 7));
   });
 
+  it('takes the frozen time of day as well when there is one', () => {
+    const effectif = maintenantEffectif(new Date(2026, 8, 14, 15, 42, 7), '2026-07-11', '09:30:00');
+    expect(effectif).toEqual(new Date(2026, 6, 11, 9, 30, 0));
+  });
+
+  it('never reads a frozen time without its date', () => {
+    const horloge = new Date(2026, 8, 14, 15, 42);
+    expect(maintenantEffectif(horloge, null, '09:30:00')).toBe(horloge);
+  });
+
   it('ignores a value that is not a date rather than folding every day away', () => {
     const horloge = new Date(2026, 8, 14, 15, 42);
     expect(maintenantEffectif(horloge, 'le 11 juillet')).toBe(horloge);

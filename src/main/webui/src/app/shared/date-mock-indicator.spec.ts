@@ -12,7 +12,7 @@ import { DateMockIndicator } from './date-mock-indicator';
 describe('DateMockIndicator', () => {
   let fixture: ComponentFixture<DateMockIndicator>;
 
-  async function rendre(dateDuJour: string): Promise<void> {
+  async function rendre(dateDuJour: string, heureDuJour = ''): Promise<void> {
     const date = signal(dateDuJour);
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -23,6 +23,7 @@ describe('DateMockIndicator', () => {
           provide: DateMockService,
           useValue: {
             dateDuJour: date,
+            libelle: () => [date(), heureDuJour].filter(Boolean).join(' '),
             modifiable: signal(true),
             actif: () => date() !== '',
           },
@@ -51,6 +52,12 @@ describe('DateMockIndicator', () => {
     expect(lien).not.toBeNull();
     expect(lien!.getAttribute('aria-label')).toContain('MOCK');
     expect(lien!.getAttribute('aria-label')).toContain('2026-07-08');
+  });
+
+  it('names the frozen time too when there is one', async () => {
+    await rendre('2026-07-08', '14:30');
+
+    expect(racine().querySelector('a')!.getAttribute('aria-label')).toContain('2026-07-08 14:30');
   });
 
   /**

@@ -94,8 +94,8 @@
     <mat-card-header>
       <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
       <mat-card-subtitle i18n="@@debug.dateDuJour.description">
-        Fige la date que le serveur considère comme « aujourd'hui », pour essayer le mode jour J hors
-        de l'événement ; laissez le champ vide pour revenir à l'horloge de la machine.
+        Fige la date du serveur, et si besoin l'heure, pour essayer le mode jour J et l'espace
+        animateur hors de l'événement. Sans heure, l'horloge tourne ; date vide : horloge réelle.
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
@@ -109,6 +109,18 @@
           name="dateDuJour"
           [ngModel]="dates.dateDuJour()"
           (ngModelChange)="onDateDuJour($event)"
+        />
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="debug-date-du-jour">
+        <mat-label i18n="@@debug.heureDuJour.label">Heure (facultative)</mat-label>
+        <input
+          matInput
+          id="heure-du-jour"
+          type="time"
+          name="heureDuJour"
+          [disabled]="!dates.actif()"
+          [ngModel]="dates.heureDuJour()"
+          (ngModelChange)="onHeureDuJour($event)"
         />
       </mat-form-field>
       @if (dateDuJourErreur()) {

@@ -1565,6 +1565,9 @@
           "dateDuJour" : {
             "type" : "string"
           },
+          "heureDuJour" : {
+            "type" : "string"
+          },
           "modifiable" : {
             "type" : "boolean"
           }
@@ -2176,6 +2179,9 @@
           },
           "dateDuJourFigee" : {
             "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDuJourFigee" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },

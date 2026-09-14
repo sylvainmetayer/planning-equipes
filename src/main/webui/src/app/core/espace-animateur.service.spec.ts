@@ -26,6 +26,7 @@ function view(): EspaceAnimateurView {
     changements: [],
     changementsLe: null,
     dateDuJourFigee: null,
+    heureDuJourFigee: null,
   };
 }
 

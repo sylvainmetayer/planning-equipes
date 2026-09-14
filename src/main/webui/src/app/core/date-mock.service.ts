@@ -27,6 +27,13 @@ export class DateMockService {
   /** The frozen date (`AAAA-MM-JJ`), or `''` when the real clock is in use. */
   private readonly _dateDuJour = signal('');
   readonly dateDuJour = this._dateDuJour.asReadonly();
+  /** The frozen time of day (`HH:mm`), or `''` while the wall clock gives it. */
+  private readonly _heureDuJour = signal('');
+  readonly heureDuJour = this._heureDuJour.asReadonly();
+  /** `2026-07-08` or `2026-07-08 14:30` — what the warnings print. */
+  readonly libelle = computed(() =>
+    [this.dateDuJour(), this.heureDuJour()].filter(Boolean).join(' '),
+  );
   /** Whether this server would accept a frozen date at all. */
   private readonly _modifiable = signal(false);
   readonly modifiable = this._modifiable.asReadonly();
@@ -47,15 +54,22 @@ export class DateMockService {
     this.apply(await this.api.get<DateJourJView>('/api/debug/date-du-jour'));
   }
 
-  /** An empty string hands the clock back; the server answers 400 outside dev mode. */
-  async set(date: string): Promise<void> {
+  /**
+   * An empty date hands the whole clock back, time included; an empty time
+   * keeps the wall clock's. The server answers 400 outside dev mode.
+   */
+  async set(date: string, heure = ''): Promise<void> {
     this.apply(
-      await this.api.put<DateJourJView>('/api/debug/date-du-jour', { dateDuJour: date || null }),
+      await this.api.put<DateJourJView>('/api/debug/date-du-jour', {
+        dateDuJour: date || null,
+        heureDuJour: date && heure ? heure : null,
+      }),
     );
   }
 
   private apply(view: DateJourJView): void {
     this._dateDuJour.set(view.dateDuJour ?? '');
+    this._heureDuJour.set(view.heureDuJour ?? '');
     this._modifiable.set(view.modifiable);
   }
 }

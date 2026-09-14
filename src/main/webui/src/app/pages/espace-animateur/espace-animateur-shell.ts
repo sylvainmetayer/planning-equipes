@@ -77,8 +77,9 @@ export class EspaceAnimateurShell {
     }
   }
 
-  protected infobulleDateFigee(date: string): string {
-    return $localize`:@@espace.dateFigee:MOCK — la date du jour est figée au ${date}:date: sur ce serveur : « Aujourd'hui » et les journées passées se lisent sur ce jour-là, pas sur celui du téléphone.`;
+  protected infobulleDateFigee(date: string, heure: string): string {
+    const moment = heure ? `${date} ${heure}` : date;
+    return $localize`:@@espace.dateFigee:MOCK — la date du jour est figée au ${moment}:date: sur ce serveur : « Aujourd'hui » et les journées passées se lisent sur ce moment-là, pas sur celui du téléphone.`;
   }
 
   /** Language messages resolve once at bootstrap, so switching reloads the page. */

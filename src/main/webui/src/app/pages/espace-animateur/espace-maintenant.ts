@@ -63,25 +63,31 @@ export function aujourdhuiLocal(maintenant: Date): string {
 
 /**
  * The moment the marker reasons on: the browser's own, unless a developer froze
- * the server's date (`/api/debug/date-du-jour`).
+ * the server's clock (`/api/debug/date-du-jour`).
  *
- * <p>Only the date is replaced, never the time of day — the same rule as the
- * mode jour J screen: a frozen day must still see its seats fall behind as the
- * afternoon goes on. A malformed value is ignored rather than trusted: a marker
- * on « Invalid Date » folds every day away.</p>
+ * <p>The same rule as the mode jour J screen: the frozen date replaces the
+ * phone's, and the time of day follows the phone's unless it was frozen too —
+ * a frozen day alone must still see its seats fall behind as the afternoon goes
+ * on. A time is never read without its date, and a malformed value is ignored
+ * rather than trusted: a marker on « Invalid Date » folds every day away.</p>
  */
-export function maintenantEffectif(horloge: Date, dateFigee: string | null): Date {
-  const morceaux = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateFigee ?? '');
-  if (!morceaux) {
+export function maintenantEffectif(
+  horloge: Date,
+  dateFigee: string | null,
+  heureFigee: string | null = null,
+): Date {
+  const jour = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateFigee ?? '');
+  if (!jour) {
     return horloge;
   }
+  const heure = /^(\d{2}):(\d{2})(?::(\d{2}))?$/.exec(heureFigee ?? '');
   return new Date(
-    Number(morceaux[1]),
-    Number(morceaux[2]) - 1,
-    Number(morceaux[3]),
-    horloge.getHours(),
-    horloge.getMinutes(),
-    horloge.getSeconds(),
+    Number(jour[1]),
+    Number(jour[2]) - 1,
+    Number(jour[3]),
+    heure ? Number(heure[1]) : horloge.getHours(),
+    heure ? Number(heure[2]) : horloge.getMinutes(),
+    heure ? Number(heure[3] ?? 0) : horloge.getSeconds(),
   );
 }
 
