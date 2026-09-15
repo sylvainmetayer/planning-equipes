@@ -121,6 +121,11 @@ jobs:
           # Pas la valeur d'exemple : DefaultSecrets refuse le boot dessus, et
           # ce job lance le jar packagé, donc en LaunchMode production.
           ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
+          # Même raison, autre garde : RequiredMentionsLegales refuse une page
+          # de mentions légales vide en production. Un harnais de test est
+          # exactement l'instance « pas en service » que ce drapeau déclare —
+          # remplir cinq variables légales fictives dirait le contraire.
+          LEGAL_DEMO_INSTANCE: 'true'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025

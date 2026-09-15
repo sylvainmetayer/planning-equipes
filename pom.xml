@@ -356,11 +356,15 @@
                     </systemPropertyVariables>
                     <!-- Les *IT lancent l'application packagée, donc en profil
                          %prod : DefaultSecrets y refuse les mots de passe
-                         d'exemple. Ces valeurs leur en donnent de vrais, comme
-                         la garde le demande à un exploitant. Elles passent au
+                         d'exemple, et RequiredMentionsLegales une page de
+                         mentions légales vide. Ces valeurs leur donnent un vrai
+                         mot de passe, comme la garde le demande à un
+                         exploitant, et déclarent ce que ces tests sont — une
+                         instance qui n'est pas en service. Elles passent au
                          processus lancé, pas à celui de Maven. -->
                     <environmentVariables>
                         <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
+                        <LEGAL_DEMO_INSTANCE>true</LEGAL_DEMO_INSTANCE>
                     </environmentVariables>
                 </configuration>
             </plugin>

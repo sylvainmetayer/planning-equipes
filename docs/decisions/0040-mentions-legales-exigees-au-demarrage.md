@@ -68,6 +68,13 @@ un message qui ne dit pas comment sortir se lit comme une impasse.
 - Le contrôle ne tourne **qu'en production** : dev et tests gardent les défauts
   vides, comme ils gardent les deux mots de passe d'exemple, et pour la même
   raison — c'est ce qui fait marcher un premier `quarkus:dev` sans réglage.
+- **« En production » inclut les harnais qui lancent l'application packagée** :
+  la suite E2E et les `*IT` tournent en `LaunchMode` production, et sont donc
+  les premiers usagers de `LEGAL_DEMO_INSTANCE` — c'est exactement ce qu'ils
+  sont, des instances qui ne sont pas en service. Le drapeau leur va mieux que
+  cinq variables légales fictives, qui diraient le contraire de la vérité. Ils
+  posaient déjà un vrai `ADMIN_PASSWORD` pour la garde voisine ; le drapeau se
+  range au même endroit (`e2e.yml`, `maven-failsafe-plugin`).
 - Il vérifie qu'un texte **existe**, jamais qu'il est exact. Un éditeur
   fantaisiste passe. C'est la limite de tout contrôle automatique ici, et la
   raison pour laquelle `exploitation.md` garde sa vérification par `curl` après
