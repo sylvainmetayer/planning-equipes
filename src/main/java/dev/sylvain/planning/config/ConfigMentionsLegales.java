@@ -1,6 +1,7 @@
 package dev.sylvain.planning.config;
 
 import io.smallrye.config.ConfigMapping;
+import io.smallrye.config.WithDefault;
 import java.util.Optional;
 
 /**
@@ -10,6 +11,15 @@ import java.util.Optional;
  */
 @ConfigMapping(prefix = "planning.legal")
 public interface ConfigMentionsLegales {
+
+    /**
+     * Declares this instance a demo or a test bench, which is the one case
+     * where an empty legal notice is the honest answer rather than a defect.
+     * Never rendered: it says what the instance is for, not what the page
+     * states. {@link RequiredMentionsLegales} is the only reader.
+     */
+    @WithDefault("false")
+    boolean demoInstance();
 
     Optional<String> editeur();
 

@@ -70,7 +70,11 @@ services:
       BRANDING_MASCOT_ICON_URL: ${BRANDING_MASCOT_ICON_URL:-}
       # Mentions légales, servies publiquement sur /mentions-legales : vides,
       # la page existe mais n'annonce rien — ce qui est précisément ce qu'un
-      # site accessible au public ne peut pas se permettre.
+      # site accessible au public ne peut pas se permettre. Cinq d'entre elles
+      # sont donc EXIGÉES AU DÉMARRAGE (éditeur, hébergeur, contact, base
+      # légale, conservation) ; une instance qui n'est pas en service le
+      # déclare par LEGAL_DEMO_INSTANCE plutôt que de les laisser vides.
+      LEGAL_DEMO_INSTANCE: ${LEGAL_DEMO_INSTANCE:-false}
       LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
       LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
       LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
