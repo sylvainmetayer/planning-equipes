@@ -188,6 +188,26 @@ id inexistant compte comme un vrai : sonder les ids coûte autant que les lire.
 Le refus **ne bloque jamais la demande d'échange** : la liste reste vide avec le
 délai affiché, et la demande part sans créneau souhaité en retour.
 
+Deux gardes de plus, qui ne comptent rien mais ferment la route :
+
+- **la foire doit être ouverte.** La règle est déclarée **sur la route**
+  (`@FoireOpenRequired`), dans la forme des deux gardes voisines : on lit les
+  trois exigences d'un coup d'œil au lieu de chercher un contrôle au fond d'une
+  méthode. Le filtre tourne **après** l'authentification, donc un appelant
+  anonyme reçoit son `401` sans apprendre si la foire est ouverte. Les
+  écritures de la foire gardent leur contrôle dans le service — c'est là qu'est
+  l'application réelle de la règle, et elle ne doit pas dépendre d'une route
+  annotée ; elles portent en outre leur autorisation dans le `WHERE` de leur
+  requête, le motif le plus sûr ;
+- **le collègue doit exister dans l'édition**, sinon `404` nu. Un `200 []`
+  laisserait sonder les identifiants existants, et un corps d'erreur ne
+  donnerait à lire qu'à celui qui sonde.
+
+**Reste ouvert** : remplacer le trombinoscope entier par une recherche à la
+frappe. C'est le seul resserrement qui s'attaquerait à l'**agrégat** lui-même —
+une session pouvant, dans les limites du plafond, reconstituer une part du
+planning nominatif de l'événement, mineurs compris.
+
 ### Verrouillage du form login admin
 
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire
@@ -262,34 +282,6 @@ propres services, et la mauvaise pour une plage publique.
 
 Ce verrou ne remplace pas la limitation de débit par IP du proxy, qui vaut pour
 tout le reste — exports, résolution, API entière.
-
-### Lecture des créneaux d'un collègue
-
-La route qui sert le sélecteur « son créneau que je veux en échange » est
-**large par conception** : l'espace distribue déjà le trombinoscope complet, et
-les créneaux d'un collègue sont ce que le planning imprimé fait circuler. Les
-écritures de la foire, elles, portent leur autorisation dans le `WHERE` de leur
-requête — le motif le plus sûr.
-
-Ce qui reste inconfortable est l'**agrégat** : une seule session pourrait
-reconstituer tout le planning nominatif de l'événement, mineurs compris. Deux
-resserrements :
-
-- **la foire doit être ouverte.** La règle est déclarée **sur la route**
-  (`@FoireOpenRequired`), dans la forme des deux gardes voisines : on lit les
-  trois exigences d'un coup d'œil au lieu de chercher un contrôle au fond d'une
-  méthode. Le filtre tourne **après** l'authentification, donc un appelant
-  anonyme reçoit son `401` sans apprendre si la foire est ouverte. Les
-  écritures gardent leur contrôle dans le service — c'est là qu'est
-  l'application réelle de la règle, et elle ne doit pas dépendre d'une route
-  annotée ;
-- **le collègue doit exister dans l'édition**, sinon `404` nu. Un `200 []`
-  laisserait sonder les identifiants existants, et un corps d'erreur ne
-  donnerait à lire qu'à celui qui sonde.
-
-**Reste ouvert** : plafonner le nombre de collègues distincts consultés par
-fenêtre — le seul contrôle visant réellement le balayage — et, plus en
-profondeur, remplacer le trombinoscope entier par une recherche à la frappe.
 
 ## Abonnement ICS : le second jeton, et ce qu'il permet exactement
 
@@ -477,6 +469,9 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 - [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
       proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
       démarrage échoue sans lui) ;
-- [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public,
-      et une page de mentions légales vide vaut absence de mentions légales ;
+- [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public, et une
+      page de mentions légales vide vaut absence de mentions légales. Cinq
+      d'entre elles — éditeur, hébergeur, contact, base légale, conservation —
+      **font échouer le démarrage**, donc cette case se coche toute seule ;
+      les deux autres restent à votre main (`exploitation.md` §3) ;
 - [ ] jeu de données de production chargé — jamais les fixtures de test.
