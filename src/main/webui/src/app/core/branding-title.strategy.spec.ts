@@ -43,20 +43,20 @@ describe('BrandingTitleStrategy', () => {
   });
 
   it('accole le nom du produit au titre de la page', () => {
-    const strategy = buildStrategy('Planning Bénévoles');
+    const strategy = buildStrategy('Planning des animateurs');
 
     titreDePage(strategy, 'Stands');
 
-    expect(TestBed.inject(Title).getTitle()).toBe('Stands — Planning Bénévoles');
+    expect(TestBed.inject(Title).getTitle()).toBe('Stands — Planning des animateurs');
   });
 
   // Une route sans titre (les redirections héritées) ne doit pas produire un
   // onglet ouvrant sur un tiret orphelin.
   it("affiche le seul nom du produit quand la route n'a pas de titre", () => {
-    const strategy = buildStrategy('Planning Bénévoles');
+    const strategy = buildStrategy('Planning des animateurs');
 
     titreDePage(strategy, undefined);
 
-    expect(TestBed.inject(Title).getTitle()).toBe('Planning Bénévoles');
+    expect(TestBed.inject(Title).getTitle()).toBe('Planning des animateurs');
   });
 });

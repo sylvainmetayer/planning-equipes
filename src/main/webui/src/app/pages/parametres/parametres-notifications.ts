@@ -31,7 +31,7 @@ const HEURE_RAPPEL_MAX = '23:00';
  * The toggle is the guard rail of the whole feature, so the wording says what
  * it protects rather than what it does: an `Edition` has no dates and no
  * "ongoing" flag, so nothing but this switch tells a nightly job that last
- * year's volunteers are not the ones to remind about tomorrow.
+ * year's animateurs are not the ones to remind about tomorrow.
  */
 @Component({
   selector: 'app-parametres-notifications',

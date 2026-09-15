@@ -32,7 +32,7 @@ interface LigneExport {
  *
  * <p>Two shapes, two uses. The CSV archive writes the referentials out in the
  * very form the import tabs read, each one to tick: a team copying its stands
- * from one year to the next does not necessarily take its volunteers along,
+ * from one year to the next does not necessarily take its animateurs along,
  * and a team replaying its calendar takes only the timeslots and the day
  * templates. The scenario file carries the whole edition at once — which is
  * what the imports' « Scénario » tab reads back.</p>

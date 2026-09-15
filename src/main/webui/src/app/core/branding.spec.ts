@@ -45,14 +45,14 @@ describe('branding', () => {
 
     it('lit la marque servie par /api/branding', async () => {
       repond({
-        productName: 'Planning Bénévoles',
+        productName: 'Planning des animateurs',
         organisation: 'Ville hôte',
         logoUrl: 'logo.png',
         accentColor: '#8b1e3f',
       });
 
       await expect(loadBranding()).resolves.toEqual({
-        productName: 'Planning Bénévoles',
+        productName: 'Planning des animateurs',
         organisation: 'Ville hôte',
         logoUrl: 'logo.png',
         accentColor: '#8b1e3f',
@@ -83,9 +83,9 @@ describe('branding', () => {
 
   describe('appliquerBranding', () => {
     it("nomme l'onglet avec le nom du produit", () => {
-      appliquerBranding({ ...BRANDING_NEUTRE, productName: 'Planning Bénévoles' });
+      appliquerBranding({ ...BRANDING_NEUTRE, productName: 'Planning des animateurs' });
 
-      expect(document.title).toBe('Planning Bénévoles');
+      expect(document.title).toBe('Planning des animateurs');
     });
 
     // Le fond sombre est arrivé avec l'issue #317 : une encre de marque choisie

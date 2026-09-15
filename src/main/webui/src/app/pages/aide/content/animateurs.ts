@@ -129,7 +129,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.rappels.term.activation:Activer l'édition`,
-              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres. C'est le seul garde-fou : une édition passée porte les mêmes animateurs, et rien d'autre ne distingue les bénévoles de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
+              text: $localize`:@@aide.rappels.def.activation:Les envois de nuit sont désactivés tant que vous ne les activez pas, édition par édition, sur la page Paramètres. C'est le seul garde-fou : une édition passée porte les mêmes fiches, et rien ne distingue les animateurs de cette année de ceux de l'an dernier. Dupliquer une édition ne recopie pas ce réglage.`,
             },
             {
               term: $localize`:@@aide.rappels.term.delais:Les trois délais`,

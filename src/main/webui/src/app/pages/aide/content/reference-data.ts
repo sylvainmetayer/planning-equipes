@@ -224,7 +224,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       id: 'import-csv-animateurs',
       icon: 'upload_file',
       title: $localize`:@@aide.importCsv.title:Import CSV des animateurs`,
-      summary: $localize`:@@aide.importCsv.summary:Reprendre le tableur des bénévoles sans le ressaisir : les onglets disponibles, le format attendu, et les deux refus qui surprennent la première fois.`,
+      summary: $localize`:@@aide.importCsv.summary:Reprendre votre tableur d'animateurs sans le ressaisir : les onglets disponibles, le format attendu, et les deux refus qui surprennent la première fois.`,
       blocks: [
         {
           kind: 'paragraph',
