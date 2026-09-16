@@ -58,3 +58,15 @@
   font-size: 0.85rem;
   color: var(--mat-sys-on-surface-variant);
 }
+
+/* MCP: the free-offering list — plain prose items, not a bullet inventory, so
+   each line reads as a sentence about one client rather than a checklist. */
+.mcp-gratuit-liste {
+  margin: 0 0 1rem;
+  padding-left: 1.25rem;
+  line-height: 1.6;
+}
+
+.mcp-gratuit-liste li + li {
+  margin-top: 0.5rem;
+}

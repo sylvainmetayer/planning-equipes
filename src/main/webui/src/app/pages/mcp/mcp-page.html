@@ -97,6 +97,63 @@
   </mat-card-content>
 </mat-card>
 
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@mcp.gratuit.title">Se connecter sans abonnement payant</h2>
+    <mat-card-subtitle i18n="@@mcp.gratuit.subtitle">
+      Le connecteur MCP est souvent réservé aux offres payantes. Ce qui départage les chemins gratuits,
+      c'est l'authentification que le client sait présenter.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <ul class="mcp-gratuit-liste">
+      <li>
+        <strong i18n="@@mcp.gratuit.lechat.nom">Le Chat (Mistral), gratuit</strong>&nbsp;—
+        <ng-container i18n="@@mcp.gratuit.lechat.texte">
+          connecteur MCP personnalisé, clé en <code>Authorization: Bearer</code>. L'instance doit être
+          joignable depuis Internet.
+        </ng-container>
+      </li>
+      <li>
+        <strong i18n="@@mcp.gratuit.desktop.nom">Claude Desktop, gratuit</strong>&nbsp;—
+        <ng-container i18n="@@mcp.gratuit.desktop.texte">
+          par le pont <code>mcp-remote</code>, qui envoie la configuration ci-dessus telle quelle.
+          L'instance peut rester privée.
+        </ng-container>
+      </li>
+      <li>
+        <strong i18n="@@mcp.gratuit.copilot.nom">VS Code avec Copilot Free</strong>&nbsp;—
+        <ng-container i18n="@@mcp.gratuit.copilot.texte">
+          mode agent et MCP inclus, n'importe quel en-tête, sous plafonds mensuels.
+        </ng-container>
+      </li>
+      <li>
+        <strong i18n="@@mcp.gratuit.claudeWeb.nom">Claude sur le web</strong>&nbsp;—
+        <ng-container i18n="@@mcp.gratuit.claudeWeb.texte">
+          connecteur personnalisé possible en gratuit, mais son formulaire ne sait faire qu'OAuth : la clé
+          n'a pas de case où se mettre.
+        </ng-container>
+      </li>
+      <li>
+        <strong i18n="@@mcp.gratuit.chatgpt.nom">ChatGPT</strong>&nbsp;—
+        <ng-container i18n="@@mcp.gratuit.chatgpt.texte">
+          les connecteurs personnalisés sont hors du plan gratuit.
+        </ng-container>
+      </li>
+    </ul>
+    @if (pangolin()) {
+      <app-status-message
+        i18n-text="@@mcp.gratuit.pangolin"
+        text="Le Chat ne présente la clé qu'en Authorization, que le proxy consomme souvent pour lui-même : vérifiez par un appel réel qu'il la retransmet."
+        tone="warning"
+      />
+    }
+    <p class="mcp-cle-note" i18n="@@mcp.gratuit.date">
+      État en septembre 2026 : ces offres changent vite, à revérifier avant de s'y fier.
+    </p>
+  </mat-card-content>
+</mat-card>
+
 @if (pangolin()) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>

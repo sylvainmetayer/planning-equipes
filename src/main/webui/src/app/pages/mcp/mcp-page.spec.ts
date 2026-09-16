@@ -4,6 +4,11 @@
 // application has never exposed — so what these tests pin down is that the
 // page displays the server's answer, and shows nothing at all rather than an
 // empty section when it cannot get one.
+//
+// The free-offering card is prose except for one line: the warning that Le
+// Chat can only present the key in `Authorization`, which an access proxy
+// often consumes. It is worth a test because it is the one piece that must
+// appear on some deployments and not on others.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -26,11 +31,11 @@ const PROMPTS: PromptMcp[] = [
   },
 ];
 
-describe('McpPage prompts', () => {
+describe('McpPage', () => {
   let fixture: ComponentFixture<McpPage>;
   let write: ReturnType<typeof vi.fn>;
 
-  async function rendre(prompts: PromptMcp[] | Error): Promise<void> {
+  async function rendre(prompts: PromptMcp[] | Error, pangolin = false): Promise<void> {
     const mcpApi = {
       prompts: vi.fn(async () => {
         if (prompts instanceof Error) {
@@ -39,7 +44,13 @@ describe('McpPage prompts', () => {
         return prompts;
       }),
       status: vi.fn(async () => ({ configuree: true, header: 'X-MCP-Api-Key' })),
-      configResponse: vi.fn(async () => new Response(null, { status: 200 })),
+      configResponse: vi.fn(
+        async () =>
+          new Response(null, {
+            status: 200,
+            headers: pangolin ? { 'X-Pangolin': 'true' } : {},
+          }),
+      ),
       regenerateKey: vi.fn(),
     };
     TestBed.resetTestingModule();
@@ -96,6 +107,18 @@ describe('McpPage prompts', () => {
     await rendre(new Error('503'));
 
     expect(racine().querySelectorAll('.mcp-prompt-bloc')).toHaveLength(0);
+  });
+
+  it('warns that the Bearer header may not survive the proxy, behind one', async () => {
+    await rendre(PROMPTS, true);
+
+    expect(racine().textContent).toContain('Le Chat ne présente la clé');
+  });
+
+  it('says nothing about the Bearer header when no proxy answers', async () => {
+    await rendre(PROMPTS);
+
+    expect(racine().textContent).not.toContain('Le Chat ne présente la clé');
   });
 
   it('copies the text of the prompt whose button was pressed', async () => {

@@ -57,6 +57,53 @@ personnalisés » ne modifie que la requête vers le backend, pas la réponse au
 navigateur. `PangolinHeaderFilter` renvoie donc sur la réponse tout `X-Pangolin`
 reçu sur la requête : il suffit de le déclarer côté proxy.
 
+## Se connecter depuis une offre gratuite
+
+Le connecteur MCP est une fonction payante chez la plupart des assistants grand
+public, et c'est le premier obstacle pour une organisation dont les bénévoles
+n'ont pas d'abonnement professionnel. Des chemins gratuits existent, et ce qui
+les départage n'est pas le tarif : **c'est ce que le client sait présenter comme
+authentification**. Ce serveur n'accepte qu'une clé partagée — en-tête dédié ou
+`Authorization: Bearer` — donc un client qui ne sait faire ni l'un ni l'autre est
+hors jeu quel que soit son prix.
+
+État en septembre 2026. Ces offres bougent vite : c'est un tableau à relire
+avant de s'y fier, pas une promesse.
+
+| Client | Connecteur MCP en gratuit | Ce qu'il sait présenter | Utilisable ici |
+| --- | --- | --- | --- |
+| **Le Chat** (Mistral) | oui | Bearer, Basic, OAuth 2.1, sans auth | **oui**, la clé en `Authorization: Bearer` |
+| Claude sur le web | oui, un seul connecteur | OAuth ou sans auth, aucun en-tête libre | non : la clé n'a pas de case où se mettre |
+| Claude Desktop | oui | n'importe quel en-tête, via le pont `mcp-remote` | oui, avec la configuration que la page MCP affiche |
+| VS Code + Copilot Free | oui | n'importe quel en-tête | oui |
+| ChatGPT | non — le Developer Mode est hors du plan gratuit | — | non |
+
+Deux familles, et la différence porte plus loin que l'authentification :
+
+- **un client hébergé** (Le Chat, Claude sur le web) ouvre la connexion depuis
+  ses propres serveurs : l'instance doit être **joignable depuis l'Internet
+  public**, ce qui est exactement la situation que `PLANNING_MCP_REQUIRED_HEADERS`
+  est là pour durcir ;
+- **un client local** (Claude Desktop et son pont `mcp-remote`, VS Code, les
+  clients libres) appelle depuis le poste : il envoie l'en-tête qu'on veut, et
+  une instance ouverte sur le seul réseau de l'organisation reste joignable.
+  C'est le chemin le plus sûr, au prix d'une installation par personne — et d'un
+  Node sur ce poste pour le pont.
+
+**Le piège du `Bearer` revient ici, et il se lève avant de promettre quoi que ce
+soit.** La section précédente conseille l'en-tête dédié parce qu'un proxy d'accès
+consomme fréquemment `Authorization` — mais un client hébergé qui ne propose que
+le Bearer ne laisse pas ce choix. Il faut alors configurer le proxy pour
+**retransmettre** `Authorization` au lieu de le consommer, et le vérifier par un
+appel réel : le symptôme d'un en-tête mangé en route est un 401 constant côté
+client alors que le même appel passe en `curl`.
+
+Reste une option qu'on écarte souvent parce qu'on la confond avec un abonnement :
+**une clé d'API facturée à l'usage**, posée dans un client libre. Le logiciel est
+gratuit, la consommation d'une préparation d'événement est modeste, et une seule
+clé d'organisation sert tout le monde — là où les abonnements se comptent par
+personne.
+
 ## Confidentialité des données animateur
 
 **Nom, prénom et date de naissance ne sortent jamais par MCP.** Sortent l'id, le
