@@ -71,6 +71,29 @@ jansi/guava, silencés par `.mvn/jvm.config` ; la console interactive de
 `jvm.args`. Netty ne les déclenche plus depuis Quarkus 3.28, donc l'image de
 production ne porte aucun flag JVM.
 
+### Fichiers générés avant chaque build
+
+Deux fichiers du frontend ne sont pas dans le dépôt : ils sont écrits par
+`npm run generate`, que `prestart`, `prebuild`, `prewatch`, `pretest` et
+`i18n-check` déclenchent déjà — il n'y a donc rien à lancer à la main.
+
+| Fichier | Script | Contenu |
+| --- | --- | --- |
+| `src/app/version.ts` | `scripts/generate-version.js` | `APP_VERSION` : le tag exact s'il y en a un, sinon le SHA court ([`versioning.md`](versioning.md)) |
+| `src/app/pages/nouveautes/news-data.ts` | `scripts/generate-news.js` | L'historique git — un sujet de commit, sa date, son tag de version — que l'écran **Nouveautés** affiche |
+
+Les deux sont dans `.gitignore`, et `news-data.ts` dans `.prettierignore` : il
+est écrit par `JSON.stringify`, le reformater ne survivrait pas à la
+régénération suivante. Ce que chaque commit *veut dire* — sous quel intertitre
+il tombe, comment sa phrase se lit sans son préfixe — n'est pas dans le script
+mais dans `pages/nouveautes/news.ts`, testé par `news.spec.ts` : ces règles
+recopient celles de `cliff.toml`, et une règle que personne ne peut tester
+dérive de son modèle.
+
+Conséquence à connaître : **un clone superficiel raccourcit l'écran
+Nouveautés**, et une arborescence sans `.git` le laisse vide en le disant. Le
+`Dockerfile` copie `.git` pour cette raison et pour `git describe`.
+
 ## i18n : traduction à l'exécution
 
 Un seul build, pas de bundle par langue. Le français est écrit dans les

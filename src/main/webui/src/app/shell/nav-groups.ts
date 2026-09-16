@@ -246,6 +246,11 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
         },
         { path: '/aide', label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline' },
         {
+          path: '/nouveautes',
+          label: $localize`:@@nav.link.nouveautes:Nouveautés`,
+          icon: 'new_releases',
+        },
+        {
           path: '/historique',
           label: $localize`:@@nav.link.historique:Historique`,
           icon: 'manage_search',

@@ -3,3 +3,7 @@
 # passed them, but nothing stopped an editor's format-on-save or a bare
 # `prettier --write .` from rewriting all 71 of them (see AGENTS.md).
 *.html
+
+# Generated, and shaped by `JSON.stringify` rather than by hand: reformatting it
+# would only make `format-check` fail on the next build that regenerates it.
+src/app/pages/nouveautes/news-data.ts

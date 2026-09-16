@@ -43,7 +43,7 @@
 // on what the branch rewrites, not a barrier on the whole catalogue.
 
 const { execFileSync } = require('node:child_process');
-const { mkdtempSync, readFileSync, rmSync, symlinkSync } = require('node:fs');
+const { existsSync, mkdtempSync, readFileSync, rmSync, symlinkSync } = require('node:fs');
 const { tmpdir } = require('node:os');
 const { join, relative } = require('node:path');
 
@@ -120,7 +120,13 @@ function etatDeLaBase(base) {
   try {
     const webui = join(arbre, relative(depot, WEBUI));
     symlinkSync(join(WEBUI, 'node_modules'), join(webui, 'node_modules'), 'dir');
-    execFileSync('node', ['scripts/generate-version.js'], { cwd: webui, stdio: 'ignore' });
+    for (const generateur of ['scripts/generate-version.js', 'scripts/generate-news.js']) {
+      // Un générateur que la base n'a pas encore n'est pas son affaire :
+      // extraire `base`, c'est compiler les sources que `base` avait.
+      if (existsSync(join(webui, generateur))) {
+        execFileSync('node', [generateur], { cwd: webui, stdio: 'ignore' });
+      }
+    }
     return {
       source: extraire(webui),
       anglais: JSON.parse(readFileSync(join(webui, 'public/i18n/messages.en.json'), 'utf8')),

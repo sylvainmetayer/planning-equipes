@@ -632,7 +632,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
   `/disponibilites` (what the animateurs
-  declared), `/editions`, `/historique` (« Historique des actions »), the
+  declared), `/editions`, `/historique` (« Historique des actions »),
+  `/nouveautes` (« Nouveautés » — what the running version brought, read from
+  the repository's commit subjects collected at build time by
+  `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted
+  under the headings of `cliff.toml`: no endpoint, no stored page, and
+  nothing to keep up to date by hand), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
   `/politique-confidentialite`, and `/aide` (`/solver` and `/exports` redirect
   to `/solveur`; `/data-transfer`, `/data-setup` and `/validateur-yaml` are

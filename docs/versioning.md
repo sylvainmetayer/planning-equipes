@@ -23,6 +23,7 @@ Tout le reste **dérive** du tag, sans intervention :
 | Où | Comment |
 | --- | --- |
 | Frontend (`APP_VERSION`, pied de page des deux coquilles — admin et espace animateur — et page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court |
+| Écran *Nouveautés* (`/nouveautes`) | `generate-news.js` : l'historique git lu au build, découpé par tag `vX.Y.Z` — ce qui suit le dernier tag s'affiche sous « À venir » |
 | Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` — une valeur qui ne ressemble volontairement à aucune version publiée |
 | Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` — `SentryInitializer` ne pose que le DSN et l'environnement |
 | Image Docker | `docker-ghcr.yml` publie `ghcr.io/…:1.2.0` et `ghcr.io/…:1.2` sur le push du tag |
@@ -118,6 +119,13 @@ libellée se corrige en reformulant le commit *avant* fusion, pas après.
 > La première génération attend la **réécriture d'historique prévue pour
 > l'ouverture publique**, qui normalise les anciens messages : générer avant,
 > c'est figer les messages fautifs dans le fichier.
+
+Les mêmes sujets alimentent l'écran **Nouveautés** de l'application
+(`/nouveautes`), construit à partir de l'historique git au moment du build et
+non d'un fichier tenu à la main : mêmes filtres et mêmes intertitres que
+`cliff.toml`, jusqu'au « ⚠️ Attention ». Un sujet mal libellé se lit donc deux
+fois — dans les notes de version et dans l'application — ce qui est une raison
+de plus de le corriger avant fusion.
 
 ## 4. Déployer : un `vX.Y.Z`, jamais `:main` ni `:latest`
 

@@ -1,0 +1,87 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nouveautes.title">Nouveautés</h1>
+    <mat-card-subtitle i18n="@@nouveautes.subtitle">
+      Ce qui a changé dans l'application, version par version, tel que l'historique du dépôt le raconte.
+    </mat-card-subtitle>
+  </mat-card-header>
+
+  <mat-card-content>
+    @if (historyMissing) {
+      <p class="empty-hint" i18n="@@nouveautes.noHistory">
+        L'historique n'était pas lisible au moment de la construction : cette version ne peut pas dire ce qu'elle
+        apporte.
+      </p>
+    } @else {
+      <p class="news-current" i18n="@@nouveautes.current">Version installée : {{ version }}</p>
+
+      <div class="news-controls">
+        <mat-form-field appearance="outline" class="news-search">
+          <mat-label i18n="@@nouveautes.filter.search">Rechercher</mat-label>
+          <input
+            matInput
+            data-page-filter
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+            i18n-placeholder="@@nouveautes.filter.searchPlaceholder"
+            placeholder="un écran, un sujet"
+          />
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@nouveautes.filter.heading">Nature</mat-label>
+          <mat-select [ngModel]="heading()" (ngModelChange)="heading.set($event)">
+            <mat-option value="all" i18n="@@nouveautes.filter.headingAll">Tout</mat-option>
+            @for (value of headings; track value) {
+              <mat-option [value]="value">{{ label(value) }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+
+        @if (viewChanged()) {
+          <button matButton type="button" (click)="reset()">
+            <mat-icon>filter_alt_off</mat-icon>
+            <ng-container i18n="@@nouveautes.filter.reset">Tout afficher</ng-container>
+          </button>
+        }
+
+        <span class="news-count" i18n="@@nouveautes.count">Évolutions affichées : {{ shownCount() }}</span>
+      </div>
+
+      @if (shown().length === 0) {
+        <p class="empty-hint" i18n="@@nouveautes.empty">Aucune évolution ne correspond à cette recherche.</p>
+      }
+
+      @for (release of shown(); track release.version) {
+        <section class="news-release">
+          <h2 class="news-release-title">
+            @if (release.version) {
+              <span class="news-version">{{ release.version }}</span>
+            } @else {
+              <span class="news-version news-version-pending" i18n="@@nouveautes.pending">À venir</span>
+            }
+            <span class="news-release-date">{{ readableDay(release.date) }}</span>
+          </h2>
+
+          @for (group of release.groups; track group.heading) {
+            <h3 class="news-group" [class.news-group-attention]="group.heading === 'attention'">
+              <mat-icon>{{ icon(group.heading) }}</mat-icon>
+              {{ label(group.heading) }}
+            </h3>
+            <ul class="news-list">
+              @for (entry of group.entries; track $index) {
+                <li class="news-entry">
+                  <span class="news-entry-date">{{ shortDay(entry.date) }}</span>
+                  @if (entry.scope) {
+                    <span class="news-scope">{{ entry.scope }}</span>
+                  }
+                  <span class="news-summary">{{ entry.summary }}</span>
+                </li>
+              }
+            </ul>
+          }
+        </section>
+      }
+    }
+  </mat-card-content>
+</mat-card>

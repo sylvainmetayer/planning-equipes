@@ -123,6 +123,7 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       { label: $localize`:@@nav.link.snapshots:Instantanés`, icon: 'history', touche: 'i' },
     ],
     ['/aide', { label: $localize`:@@nav.link.aide:Aide`, icon: 'help_outline', touche: 'u' }],
+    ['/nouveautes', { label: $localize`:@@nav.link.nouveautes:Nouveautés`, icon: 'new_releases' }],
     ['/editions', { label: $localize`:@@nav.link.editions:Éditions`, icon: 'layers' }],
     [
       '/ouvertures',

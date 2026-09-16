@@ -126,6 +126,13 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/historique/historique-page').then((m) => m.HistoriquePage),
   },
   {
+    // What the running version brought, read from the repository's history at
+    // build time (`scripts/generate-news.js`): no endpoint, no stored page.
+    path: 'nouveautes',
+    title: () => $localize`:@@route.nouveautes:Nouveautés`,
+    loadComponent: () => import('./pages/nouveautes/news-page').then((m) => m.NewsPage),
+  },
+  {
     path: 'aide',
     title: () => $localize`:@@route.aide:Aide`,
     loadComponent: () => import('./pages/aide/aide-page').then((m) => m.AidePage),
