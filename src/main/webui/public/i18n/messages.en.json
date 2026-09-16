@@ -1749,7 +1749,6 @@
   "mcp.gratuit.champ.enTete": "Header name",
   "mcp.gratuit.champ.valeur": "Header value",
   "mcp.gratuit.champ.valeurMasquee": "the API key, to reveal above",
-  "mcp.gratuit.pangolin": "Le Chat only presents the key in Authorization, which the proxy often consumes for itself: check with a real call that it forwards it.",
   "mcp.gratuit.date": " State as of September 2026: these offers change fast, check again before relying on them. ",
   "aide.rappels.title": "Acknowledgements and reminders",
   "aide.rappels.summary": "Know who has read their schedule, and let the application chase the others — once.",

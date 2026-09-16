@@ -72,7 +72,7 @@ avant de s'y fier, pas une promesse.
 
 | Client | Connecteur MCP en gratuit | Ce qu'il sait présenter | Utilisable ici |
 | --- | --- | --- | --- |
-| **Le Chat** (Mistral) | oui | Bearer, Basic, OAuth 2.1, sans auth | **oui**, la clé en `Authorization: Bearer` |
+| **Le Chat** (Mistral) | oui | n'importe quel en-tête, Bearer, Basic, OAuth 2.1, sans auth | **oui**, la clé dans l'en-tête dédié |
 | Claude sur le web | oui, un seul connecteur | OAuth ou sans auth, aucun en-tête libre | non : la clé n'a pas de case où se mettre |
 | Claude Desktop | oui | n'importe quel en-tête, via le pont `mcp-remote` | oui, avec la configuration que la page MCP affiche |
 | VS Code + Copilot Free | oui | n'importe quel en-tête | oui |
@@ -90,13 +90,11 @@ Deux familles, et la différence porte plus loin que l'authentification :
   C'est le chemin le plus sûr, au prix d'une installation par personne — et d'un
   Node sur ce poste pour le pont.
 
-**Le piège du `Bearer` revient ici, et il se lève avant de promettre quoi que ce
-soit.** La section précédente conseille l'en-tête dédié parce qu'un proxy d'accès
-consomme fréquemment `Authorization` — mais un client hébergé qui ne propose que
-le Bearer ne laisse pas ce choix. Il faut alors configurer le proxy pour
-**retransmettre** `Authorization` au lieu de le consommer, et le vérifier par un
-appel réel : le symptôme d'un en-tête mangé en route est un 401 constant côté
-client alors que le même appel passe en `curl`.
+**Un client hébergé n'a pas d'adresse IP stable** : un proxy d'accès qui filtre
+par pays, par plage d'adresses ou par SSO le bloque. Le chemin qui tient est
+d'ouvrir `/mcp` sur le proxy — par une règle sur le chemin, pas sur l'appelant —
+et de laisser la clé faire la garde. L'interface et le reste de l'instance
+gardent leur protection.
 
 Reste une option qu'on écarte souvent parce qu'on la confond avec un abonnement :
 **une clé d'API facturée à l'usage**, posée dans un client libre. Le logiciel est
