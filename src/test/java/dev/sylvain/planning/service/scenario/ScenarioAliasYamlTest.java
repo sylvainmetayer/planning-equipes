@@ -2,9 +2,7 @@ package dev.sylvain.planning.service.scenario;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import dev.sylvain.planning.service.solve.PlanningService;
-import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -29,14 +27,14 @@ import org.yaml.snakeyaml.Yaml;
  * by every animateur, dumped by SnakeYAML, which anchors it once and aliases
  * it thereafter. Reproducing the cause rather than pasting a symptom is what
  * makes this test keep meaning something.</p>
+ *
+ * <p>Reading a scenario is pure and static — the only thing it asks of an
+ * edition is its legal parameters — so this test boots nothing and runs in
+ * {@code -Punit} (issue #475).</p>
  */
-@QuarkusTest
 class ScenarioAliasYamlTest {
 
     private static final int ANIMATEURS = 60;
-
-    @Inject
-    PlanningService planningService;
 
     @Test
     void unScenarioAvecPlusDeCinquanteAliasEstLu() throws Exception {
@@ -50,7 +48,8 @@ class ScenarioAliasYamlTest {
                 .as("le dump doit bien porter des alias, sinon le test ne prouve rien")
                 .isGreaterThan(50);
 
-        ScenarioYamlReader.ScenarioImporte importe = planningService.buildFromScenarioText(yamlAvecAlias);
+        ScenarioYamlReader.ScenarioImporte importe =
+                ScenarioYamlReader.buildFromScenarioText(yamlAvecAlias, ParametresLegaux::new);
 
         assertThat(importe.planning().getAnimateurs()).hasSize(ANIMATEURS);
     }
