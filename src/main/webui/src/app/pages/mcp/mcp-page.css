@@ -59,14 +59,49 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
-/* MCP: the free-offering list — plain prose items, not a bullet inventory, so
-   each line reads as a sentence about one client rather than a checklist. */
-.mcp-gratuit-liste {
-  margin: 0 0 1rem;
-  padding-left: 1.25rem;
-  line-height: 1.6;
+/* MCP: a free client — its name, one sentence, then the three values its
+   connector form asks for, laid out as label / value so they can be copied
+   field by field. */
+.mcp-gratuit-client {
+  margin-bottom: 1rem;
 }
 
-.mcp-gratuit-liste li + li {
-  margin-top: 0.5rem;
+.mcp-gratuit-nom {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.mcp-gratuit-client p {
+  margin: 0.25rem 0 0.75rem;
+}
+
+.mcp-gratuit-champs {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 0.5rem 1rem;
+  align-items: baseline;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  background: var(--mat-sys-surface-container);
+  border-radius: 0.5rem;
+}
+
+.mcp-gratuit-champs dt {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.mcp-gratuit-champs dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 480px) {
+  .mcp-gratuit-champs {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.125rem;
+  }
+
+  .mcp-gratuit-champs dd + dt {
+    margin-top: 0.5rem;
+  }
 }

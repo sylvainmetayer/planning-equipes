@@ -99,48 +99,33 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@mcp.gratuit.title">Se connecter sans abonnement payant</h2>
-    <mat-card-subtitle i18n="@@mcp.gratuit.subtitle">
-      Le connecteur MCP est souvent réservé aux offres payantes. Ce qui départage les chemins gratuits,
-      c'est l'authentification que le client sait présenter.
-    </mat-card-subtitle>
+    <h2 mat-card-title i18n="@@mcp.gratuit.title">Se connecter gratuitement</h2>
   </mat-card-header>
   <mat-card-content>
-    <ul class="mcp-gratuit-liste">
-      <li>
-        <strong i18n="@@mcp.gratuit.lechat.nom">Le Chat (Mistral), gratuit</strong>&nbsp;—
-        <ng-container i18n="@@mcp.gratuit.lechat.texte">
-          connecteur MCP personnalisé, clé en <code>Authorization: Bearer</code>. L'instance doit être
-          joignable depuis Internet.
-        </ng-container>
-      </li>
-      <li>
-        <strong i18n="@@mcp.gratuit.desktop.nom">Claude Desktop, gratuit</strong>&nbsp;—
-        <ng-container i18n="@@mcp.gratuit.desktop.texte">
-          par le pont <code>mcp-remote</code>, qui envoie la configuration ci-dessus telle quelle.
-          L'instance peut rester privée.
-        </ng-container>
-      </li>
-      <li>
-        <strong i18n="@@mcp.gratuit.copilot.nom">VS Code avec Copilot Free</strong>&nbsp;—
-        <ng-container i18n="@@mcp.gratuit.copilot.texte">
-          mode agent et MCP inclus, n'importe quel en-tête, sous plafonds mensuels.
-        </ng-container>
-      </li>
-      <li>
-        <strong i18n="@@mcp.gratuit.claudeWeb.nom">Claude sur le web</strong>&nbsp;—
-        <ng-container i18n="@@mcp.gratuit.claudeWeb.texte">
-          connecteur personnalisé possible en gratuit, mais son formulaire ne sait faire qu'OAuth : la clé
-          n'a pas de case où se mettre.
-        </ng-container>
-      </li>
-      <li>
-        <strong i18n="@@mcp.gratuit.chatgpt.nom">ChatGPT</strong>&nbsp;—
-        <ng-container i18n="@@mcp.gratuit.chatgpt.texte">
-          les connecteurs personnalisés sont hors du plan gratuit.
-        </ng-container>
-      </li>
-    </ul>
+    <section class="mcp-gratuit-client">
+      <h3 class="mcp-gratuit-nom">
+        <a href="https://chat.mistral.ai/chat" target="_blank" rel="noopener" i18n="@@mcp.gratuit.lechat.nom">Le Chat (Mistral)</a>
+      </h3>
+      <p i18n="@@mcp.gratuit.lechat.texte">
+        Créez un connecteur MCP personnalisé en suivant
+        <a href="https://docs.mistral.ai/vibe/work/connectors/mcp-connectors#custom-connectors" target="_blank" rel="noopener">la documentation de Mistral</a>,
+        avec ces informations de connexion :
+      </p>
+      <dl class="mcp-gratuit-champs">
+        <dt i18n="@@mcp.gratuit.champ.url">URL</dt>
+        <dd><code>{{ origin }}/mcp</code></dd>
+        <dt i18n="@@mcp.gratuit.champ.enTete">Nom de l'en-tête</dt>
+        <dd><code>{{ enTeteCle() }}</code></dd>
+        <dt i18n="@@mcp.gratuit.champ.valeur">Valeur de l'en-tête</dt>
+        <dd>
+          @if (cle()) {
+            <code>{{ cle() }}</code>
+          } @else {
+            <span class="mcp-cle-note" i18n="@@mcp.gratuit.champ.valeurMasquee">la clé d'API, à révéler ci-dessus</span>
+          }
+        </dd>
+      </dl>
+    </section>
     @if (pangolin()) {
       <app-status-message
         i18n-text="@@mcp.gratuit.pangolin"
