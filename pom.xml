@@ -445,6 +445,30 @@
                 <test.groups>scenario-extreme</test.groups>
             </properties>
         </profile>
+        <!-- Opt-in: the inner loop, without a container (issue #475, D4 of
+             #392). The classes listed in src/test/container-tests.txt boot the
+             application, so they want a database; left out, what remains needs
+             nothing but a JVM and answers in about eighty seconds where the
+             whole suite takes twelve minutes — no Docker, no PostgreSQL, no
+             dev services. The exclusion is by selection and not by tag on
+             purpose: JUnit applies a tag filter after discovery, and
+             discovery is already what boots Quarkus. That list is an
+             inventory, kept exact by ContainerTestsInventoryTest.
+             ./mvnw test -Punit while writing; the whole suite before pushing,
+             since that is the one CI plays. -->
+        <profile>
+            <id>unit</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <excludesFile>src/test/container-tests.txt</excludesFile>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <!-- Opt-in: regenerates docs/schema/scenario-schema.json from the
              dev.sylvain.planning.scenario.dto classes (see
              ScenarioSchemaGenerator and docs/import-export.md). Not run by

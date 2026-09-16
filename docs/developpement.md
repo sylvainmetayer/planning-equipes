@@ -174,7 +174,8 @@ Six familles :
   base, quelques millisecondes. **Toute nouvelle contrainte ajoute au moins un
   cas pénalisé et un cas valide** ;
 - **intégration** (`@QuarkusTest`) — PostgreSQL jetable par dev services, donc
-  les migrations Flyway s'exécutent comme en production ;
+  les migrations Flyway s'exécutent comme en production. Ce sont elles que
+  `-Punit` écarte, voir [plus bas](#la-boucle-sans-conteneur) ;
 - **frontend** (Vitest, jsdom) — pas branchés sur la phase Maven, job CI dédié ;
 - **structurels** — ils ne jouent aucun scénario, ils **relisent le code** et
   échouent sur une règle que rien d'autre ne vérifie ;
@@ -186,6 +187,43 @@ Six familles :
   six secondes, et ce coût est assumé : c'est la seule couche qui voit ce
   qu'un navigateur fait vraiment. Voir [plus bas](#tests-de-bout-en-bout-playwright)
   pour les lancer en local.
+
+### La boucle sans conteneur
+
+`./mvnw test -Punit` ne joue que ce qui ne demande qu'une JVM : **1 405 tests
+en une minute et demie**, sans Docker, sans PostgreSQL et sans dev services.
+La suite entière en demande douze — et un runner GitHub, vingt.
+
+Le chiffre qui explique le profil, mesuré sur un run vert (issue #475, point D4
+de l'audit #392) : **112 classes sur 259 démarrent l'application**, et elles
+coûtent **479 des 561 secondes** que la suite passe à jouer des tests. Les 145
+autres en coûtent 82. La pyramide est à l'envers, et tant qu'elle l'est, la
+boucle locale l'est aussi.
+
+Ce que le profil écarte est écrit dans `src/test/container-tests.txt`, un
+chemin par ligne, que le profil passe à surefire comme `excludesFile`. C'est
+une **exclusion à la sélection**, et non une étiquette JUnit : un `@Tag` est
+filtré après la découverte, or la découverte est déjà ce qui démarre Quarkus —
+charger une classe `@QuarkusTest` construit l'application, dev services
+compris, avant que le moindre filtre ne soit consulté.
+
+Le fichier ne décide de rien, il rend visible : une ligne s'ajoute quand un
+test neuf démarre l'application, elle disparaît quand un test est converti, et
+`ContainerTestsInventoryTest` refuse tout écart entre le fichier et les
+annotations — en disant quelle ligne écrire. Il se lit donc comme la mesure de
+D4 : sa longueur est la dette, et elle ne peut que se voir.
+
+**Un test de service neuf naît unitaire.** A1, A4 et A11 ont rendu les services
+constructibles sans conteneur — `new PlanningService(…)` avec
+`EmptyReferenceData`, comme le font `PlanningServicePlainTest`,
+`PlanningHardConstraintsTest` ou le harnais `ScenarioLadder` — et le lecteur de
+scénarios est pur et statique. Un `@QuarkusTest` reste la bonne réponse quand
+le test porte sur le transport (une route, un code HTTP, un en-tête), sur une
+migration ou sur le câblage lui-même ; il n'en est pas une pour une règle
+métier que l'on peut appeler directement.
+
+`-Punit` est la boucle, jamais la preuve : la CI joue la suite entière, et
+c'est elle qu'il faut avoir vue verte avant de pousser.
 
 ### Les tests structurels
 

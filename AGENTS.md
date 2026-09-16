@@ -49,6 +49,12 @@ Read before working on constraints or the domain model:
 - Dev server: `./mvnw quarkus:dev` (needs Postgres; `docker compose up postgres`
   or Quarkus dev services)
 - Full test suite (fast — excludes `scenario-lent`, see below): `./mvnw test`
+- Inner loop, without a container: `./mvnw test -Punit` — the 1405 tests that
+  need nothing but a JVM, in about a minute and a half, with neither Docker nor
+  PostgreSQL. The classes it leaves out are the ones that boot the application,
+  listed in `src/test/container-tests.txt`; see *La boucle sans conteneur* in
+  `docs/developpement.md`. It is the loop while writing, never the proof: CI
+  plays the whole suite, and so should you before pushing.
 - Single class: `./mvnw test -Dtest=PlanningHardConstraintsTest`
 - Single method:
   `./mvnw test -Dtest=PlanningHardConstraintsTest#generatedPlanningDoesNotViolateAnyHardConstraintOnNominalCase`
