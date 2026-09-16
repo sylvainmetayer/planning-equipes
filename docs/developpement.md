@@ -703,6 +703,42 @@ Toute image doit porter une balise explicite, y compris dans
 `docker-compose.yml` : sans balise ou sous `latest`, Renovate n'a rien à
 proposer et la version installée dépend du jour du `pull`.
 
+## Licences des dépendances
+
+L'image est distribuée sous AGPL-3.0-only, mais elle redistribue aussi ses
+dépendances, qui restent sous les leurs — et les licences MIT, BSD ou Apache
+demandent que leur notice voyage avec le binaire.
+[`licences-tierces.md`](licences-tierces.md) est cet inventaire. Il est
+**généré**, jamais écrit à la main :
+
+```bash
+./mvnw license:add-third-party          # depuis la racine : le côté Java
+cd src/main/webui && npm run licences   # fusionne les deux côtés dans le document
+```
+
+Deux sources, un seul rédacteur. Côté Java, `license-maven-plugin` résout la
+fermeture des scopes `compile` et `runtime` — ce que l'image embarque dans
+`target/quarkus-app/` — et ramène les noms de licence à leur identifiant SPDX
+(six orthographes d'Apache-2.0 sinon, parce que chaque POM écrit la sienne). Le
+plugin n'est lié à aucune phase : résoudre tout l'arbre à chaque build coûterait
+une minute que personne n'a demandée. Côté npm, le script lit `package-lock.json`
+et rien d'autre : un verrou v3 porte le champ `license` de chaque paquet, donc
+l'inventaire n'a besoin ni de `node_modules` ni d'un outil de plus.
+
+Le job `test` du workflow *Tests* refait les deux et compare au fichier commité
+(`npm run licences-check`) : une dépendance ajoutée, retirée ou relicenciée par
+une montée de version fait échouer la branche tant que l'inventaire n'a pas
+suivi. C'est le même cliquet que pour le contrat OpenAPI, et pour la même
+raison — un fichier commité que le dépôt ne produit plus est un fichier qu'on
+cesse de croire.
+
+Deux limites à connaître : le côté npm liste la fermeture des dépendances de
+production, donc un **surensemble** de ce que le bundle embarque réellement
+(sous-estimer coûterait une notice manquante, surestimer coûte une ligne) ; et
+les paquets du système de base de l'image — JRE, client PostgreSQL,
+distribution — n'y sont pas, ils relèvent du SBOM attaché à chaque image
+publiée.
+
 ## Feuilles de style
 
 Deux sortes, et pas de troisième : `src/styles.css` importe les partials que

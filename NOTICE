@@ -16,6 +16,16 @@ voir <https://www.gnu.org/licenses/>.
 
 ---
 
+Bibliothèques tierces : ce programme en redistribue, et chacune reste sous sa
+propre licence. L'inventaire complet — dépendances Java embarquées dans
+l'application, paquets npm de l'interface, avec leur licence respective — est
+dans le fichier docs/licences-tierces.md, régénéré à chaque changement de
+dépendance. Les paquets du système de base de l'image Docker (JRE, client
+PostgreSQL, distribution) sont, eux, inventoriés par le SBOM CycloneDX attaché
+à chaque image publiée.
+
+---
+
 Historique de licence : ce projet a été distribué sous Apache License 2.0
 jusqu'au 22 août 2026. Il n'avait alors jamais été publié — le dépôt était
 privé et le code n'avait été distribué à personne, aucun droit n'ayant donc

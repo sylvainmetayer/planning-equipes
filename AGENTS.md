@@ -137,6 +137,14 @@ burn tokens on repeated status checks for no benefit over one notification.
   `:8080` 404s in dev mode (upstream Quinoa bug, doesn't affect production);
   test deep links against `:4200` directly instead — see
   `docs/developpement.md`.
+- `docs/licences-tierces.md` (the third-party licence inventory the AGPL image
+  owes whoever deploys it) is **generated, never hand-edited**:
+  `./mvnw license:add-third-party` from the root, then `npm run licences` from
+  `src/main/webui`. The `test` job of the Tests workflow re-runs both and fails
+  on a stale file, the same ratchet as the committed OpenAPI contract. Java
+  side: the compile + runtime closure. npm side: read straight from
+  `package-lock.json`, so it needs no `node_modules`. The *why* and the two
+  known limits are in `docs/developpement.md`.
 - Toolchain pinned in `mise.toml` (`temurin-25`, `maven 3.9.9`, `node 24`); the
   Maven build downloads its own Node through Quinoa, so CI/Docker need none.
 - **An agent session without `mise` and without Docker still runs the whole

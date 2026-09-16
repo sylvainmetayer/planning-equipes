@@ -26,6 +26,8 @@
     "css-scope-check": "node scripts/check-css-scope.js",
     "stores-check": "node scripts/check-readonly-stores.js",
     "api-schema": "node scripts/refresh-api-schema.js",
+    "licences": "node scripts/licences-tierces.js",
+    "licences-check": "node scripts/licences-tierces.js --check",
     "e2e": "playwright test",
     "language-policy": "node scripts/check-language-policy.js",
     "language-policy-modifies": "node scripts/check-language-policy.js --modifies",

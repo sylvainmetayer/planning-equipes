@@ -47,6 +47,7 @@
         <surefire-plugin.version>3.5.6</surefire-plugin.version>
         <spotless-plugin.version>3.10.2</spotless-plugin.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
+        <license-plugin.version>2.7.1</license-plugin.version>
         <!-- Full-scale scenario regression tests (@Tag("scenario-lent"):
              PlanningServiceScenarioCompletTest, PlanningServiceScenarioContinuTest)
              solve a ~2000-poste problem to hard-feasibility and take ~25-75s
@@ -366,6 +367,56 @@
                         <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
                         <LEGAL_DEMO_INSTANCE>true</LEGAL_DEMO_INSTANCE>
                     </environmentVariables>
+                </configuration>
+            </plugin>
+            <plugin>
+                <!-- Third-party licence inventory, Java side. The image is
+                     distributed under the AGPL, but it also redistributes the
+                     jars it bundles, and the MIT/BSD/Apache notices of those
+                     have to travel with it: `docs/licences-tierces.md` is
+                     where they do (audit #392, D9).
+
+                     Not bound to any phase — resolving the whole dependency
+                     tree costs a build nobody asked for. It is invoked
+                     explicitly by `npm run licences`, which merges this
+                     output with the npm side, and by the Tests workflow,
+                     which checks the committed inventory still matches.
+
+                     `test` and `provided` are excluded because nothing in
+                     those scopes ships: the image carries
+                     `target/quarkus-app/`, which is compile + runtime. -->
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>${license-plugin.version}</version>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/licenses</outputDirectory>
+                    <thirdPartyFilename>THIRD-PARTY.txt</thirdPartyFilename>
+                    <excludedScopes>test,provided,system</excludedScopes>
+                    <includeTransitiveDependencies>true</includeTransitiveDependencies>
+                    <sortArtifactByName>true</sortArtifactByName>
+                    <!-- A dependency whose POM declares no licence would
+                         otherwise be listed as "Unknown license" and nobody
+                         would look again. The inventory exists to be
+                         complete; an unknown entry is a question to settle,
+                         not a line to publish. -->
+                    <failOnMissing>true</failOnMissing>
+                    <!-- Six spellings of Apache-2.0, four of EPL-2.0: the
+                         licence name in the inventory is whatever each POM
+                         happened to type. Merged to the SPDX identifier, so
+                         the same licence is one line in the summary instead
+                         of six, and so a reader can compare two entries.
+                         Only the label is merged — no judgement is made
+                         about which text applies. -->
+                    <licenseMerges>
+                        <licenseMerge>Apache-2.0|Apache 2.0|Apache License 2.0|Apache License, Version 2.0|The Apache License, Version 2.0|The Apache Software License, Version 2.0</licenseMerge>
+                        <licenseMerge>EPL-2.0|EPL 2.0|Eclipse Public License - v 2.0|Eclipse Public License 2.0|Eclipse Public License v. 2.0</licenseMerge>
+                        <licenseMerge>EPL-1.0|Eclipse Public License - v 1.0</licenseMerge>
+                        <licenseMerge>EDL-1.0|EDL 1.0|Eclipse Distribution License - v 1.0</licenseMerge>
+                        <licenseMerge>GPL-2.0-with-classpath-exception|GPL2 w/ CPE|GNU General Public License, version 2 with the GNU Classpath Exception|GNU General Public License, version 2, with the Classpath Exception</licenseMerge>
+                        <licenseMerge>LGPL-2.1|GNU Lesser General Public License (LGPL), Version 2.1</licenseMerge>
+                        <licenseMerge>MPL-2.0|Mozilla Public License Version 2.0</licenseMerge>
+                        <licenseMerge>CC0-1.0|Public Domain, per Creative Commons CC0</licenseMerge>
+                    </licenseMerges>
                 </configuration>
             </plugin>
         </plugins>

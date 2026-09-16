@@ -96,6 +96,19 @@ jobs:
             exit 1
           fi
 
+      # Même famille que le contrôle ci-dessus : un fichier commité que le
+      # dépôt ne produit plus est un fichier qu'on cesse de croire. L'inventaire
+      # des licences tierces (docs/licences-tierces.md) est la réponse donnée à
+      # qui déploie l'image — il ne vaut que s'il décrit les dépendances
+      # d'aujourd'hui, et Renovate en change chaque semaine. Ce job est le seul
+      # qui puisse le vérifier : il faut Maven pour résoudre le côté Java, et
+      # `node` est préinstallé sur les runners GitHub, donc le côté npm suit
+      # sans installation (le script lit le verrou, pas node_modules).
+      - name: Check the committed third-party licence inventory
+        run: |
+          ./mvnw -B --no-transfer-progress license:add-third-party
+          node src/main/webui/scripts/licences-tierces.js --check
+
       - name: Upload test reports
         if: always()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
