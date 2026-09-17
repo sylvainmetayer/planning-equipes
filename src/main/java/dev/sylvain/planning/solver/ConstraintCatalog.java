@@ -134,6 +134,13 @@ public final class ConstraintCatalog {
                             + "(y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes "
                             + "sur le même créneau)."),
             new ConstraintDefinition(
+                    "plafondCreneauxParTypologie",
+                    Niveau.HARD,
+                    "Affectation",
+                    "Sur une typologie qui porte un plafond, un animateur ne tient pas plus que ce nombre de "
+                            + "créneaux sur l'ensemble de l'édition. Un poste compte pour chaque typologie que son "
+                            + "stand propose. Une typologie sans plafond n'impose rien."),
+            new ConstraintDefinition(
                     "standReserveAuxMajeurs",
                     Niveau.HARD,
                     "Légal (mineurs)",

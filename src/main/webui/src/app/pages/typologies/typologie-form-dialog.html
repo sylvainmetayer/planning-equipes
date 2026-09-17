@@ -14,6 +14,13 @@
   <mat-label i18n="@@typologies.field.label">Libellé</mat-label>
   <input matInput name="label" [ngModel]="draft().label" (ngModelChange)="patch({ label: $event })" />
 </mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@typologies.field.maxCreneaux">Créneaux maximum par animateur</mat-label>
+  <input matInput type="number" min="1" step="1" name="maxCreneauxParAnimateur"
+         [ngModel]="draft().maxCreneauxParAnimateur ?? null"
+         (ngModelChange)="patch({ maxCreneauxParAnimateur: $event === '' || $event === null ? null : $event })" />
+  <mat-hint i18n="@@typologies.hint.maxCreneaux">Sur l'édition entière, pas par jour. Vide : pas de plafond. Contrainte forte : le solveur ne dépassera pas ce nombre.</mat-hint>
+</mat-form-field>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

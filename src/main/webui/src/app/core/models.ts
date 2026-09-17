@@ -19,6 +19,12 @@ export interface TypologieItem {
    */
   ninja?: boolean;
   /**
+   * How many créneaux one animateur may hold on this typologie over the WHOLE
+   * edition (issue #594). Absent or `null` means no cap. A poste counts for
+   * every typologie its stand proposes.
+   */
+  maxCreneauxParAnimateur?: number | null;
+  /**
    * When the row was last written server-side (issue #362). Sent back as is on
    * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
    * the row moved since, and the CRUD service then offers to reload or to
@@ -735,10 +741,18 @@ export interface FenetreRepas {
   dureeMinutes: number;
 }
 
+/** How many créneaux one animateur may hold on one typologie, over the whole edition (issue #594). */
+export interface QuotaTypologie {
+  typologie?: string;
+  maxCreneaux?: number;
+}
+
 export interface PlanningEvenement {
   constraintsDesactivees?: ConstraintToggle[];
   parametresLegaux?: ParametresLegaux[];
   parametresQualite?: ParametresQualite[];
+  /** Only the typologies that carry a cap; empty when the edition caps nothing. */
+  quotasTypologies?: QuotaTypologie[];
   /** The edition's meal windows, as `coupureRepasObligatoire` reads them; empty when none applies. */
   fenetresRepas?: FenetreRepas[];
   verrouillages?: VerrouillagePlanning[];

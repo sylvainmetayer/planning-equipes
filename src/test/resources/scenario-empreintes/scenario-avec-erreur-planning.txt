@@ -53,6 +53,7 @@
 .planning.postes[36]  5878d857162cfe59
 .planning.postes[37]  33ccf7a228e018ef
 .planning.postes[38]  dddeed17a8197e45
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes.activees = (vide)
@@ -65,6 +66,6 @@
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.parametresSolveur = null
-.sections.typologies[0]  45baeafd2ff3fd7d
-.sections.typologies[1]  3e81c3c0ae198646
-.sections.typologies[2]  a6533bdf2e89e765
+.sections.typologies[0]  1ee3db242fc00391
+.sections.typologies[1]  7436ad1938f139e4
+.sections.typologies[2]  6384bb9a48c754ed

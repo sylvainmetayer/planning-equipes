@@ -1,15 +1,13 @@
-# The JSON keys this API puts on the wire, one line per exposed type.
 #
 # Frozen on purpose, and read by JsonContractTest. A key here is read by
-# `models.ts`, by the Angular pages and by anything else talking to this API:
-# renaming a record component or an accessor renames the key with it, and the
-# compiler says nothing at all.
-#
-# If the test fails, DO NOT regenerate this file. Each moved line is a break
-# for every client already reading the old key. Move it once, deliberately,
-# together with the clients that read it.
-#
 # Generated shape: <package>.<Type> = key, key, key (keys sorted).
+# If the test fails, DO NOT regenerate this file. Each moved line is a break
+# The JSON keys this API puts on the wire, one line per exposed type.
+# `models.ts`, by the Angular pages and by anything else talking to this API:
+# compiler says nothing at all.
+# for every client already reading the old key. Move it once, deliberately,
+# renaming a record component or an accessor renames the key with it, and the
+# together with the clients that read it.
 api.AdminLoginLimiter$Echecs = dernier, nombre
 api.AnimateurResource$AnimateurToken = token
 api.AnimateurResource$RapportSaisieGrilleCompetences = animateurs
@@ -80,8 +78,9 @@ domain.ParametresLegaux = coupureRepasMidiDebut, coupureRepasMidiFin, coupureRep
 domain.ParametresNotifications = actives, ancienneteEchangeJours, delaiRelanceHeures, heureRappelVeille
 domain.ParametresQualite = heureServiceMatinal, heureServiceTardif, maxEmplacementsDistinctsParJour, reposSouhaiteApresServiceTardifMinutes, typologiesDistinctesMax
 domain.ParametresSolveur = dureeResolutionSecondes, mailFinResolution
-domain.PlanningEvenement = animateurs, constraintsDesactivees, contraintesAdHoc, dateDebutFestival, fenetresRepas, parametresLegaux, parametresQualite, postes, score, verrouillages
+domain.PlanningEvenement = animateurs, constraintsDesactivees, contraintesAdHoc, dateDebutFestival, fenetresRepas, parametresLegaux, parametresQualite, postes, quotasTypologies, score, verrouillages
 domain.PosteAffectation = animateur, creneau, dureeEffectiveMinutes, heureDebutEffective, heureFinEffective, id, stand, verrouille
+domain.QuotaTypologie = maxCreneaux, typologie
 domain.Stand = effectifMax, effectifMin, emplacement, horaires, id, indisponibilites, modifieLe, niveauEffort, nom, ouvertures, premium, reserveMajeurs, typologiesProposees
 domain.VacationType = couverturePause, heureDebut, heureFin
 domain.ValidationJournee = commentaire, id, jour, valideLe, validePar
@@ -207,7 +206,7 @@ service.referentiel.StandGrilleImportReport = accepted, applied, columns, crenea
 service.referentiel.StandGrilleImportReport$ImportedColumn = creneauId, creneaux, date, heureDebut, heureFin, index, label, reason
 service.referentiel.StandGrilleImportReport$ImportedGrilleRow = action, cellulesOuvertes, effectifMax, effectifMin, exceptions, label, line, reasons, regles, standId
 service.referentiel.StandGrilleImportRequest = content, fileName
-service.referentiel.TypologieItem = id, label, modifieLe, ninja
+service.referentiel.TypologieItem = id, label, maxCreneauxParAnimateur, modifieLe, ninja
 service.referentiel.WrittenAnimateur = animateur, avertissements
 service.referentiel.WrittenContrainteAdHoc = avertissements, contrainte
 service.referentiel.WrittenCreneau = avertissements, creneau

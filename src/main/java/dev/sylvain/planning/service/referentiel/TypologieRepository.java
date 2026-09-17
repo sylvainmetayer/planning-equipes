@@ -42,15 +42,16 @@ public class TypologieRepository {
     public List<TypologieItem> listTypologies() {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(
-                        connection,
-                        "SELECT id, label, ninja, modifie_le FROM typologie WHERE edition_id = ? ORDER BY id");
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        SELECT id, label, ninja, max_creneaux_par_animateur, modifie_le
+                        FROM typologie WHERE edition_id = ? ORDER BY id""");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 typologies.add(new TypologieItem(
                         rs.getString("id"),
                         rs.getString("label"),
                         rs.getBoolean("ninja"),
+                        (Integer) rs.getObject("max_creneaux_par_animateur"),
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant()));
             }
         } catch (SQLException e) {
@@ -151,10 +152,11 @@ public class TypologieRepository {
     private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO typologie (edition_id, id, label, ninja)
-                VALUES (?, ?, ?, ?)
+                INSERT INTO typologie (edition_id, id, label, ninja, max_creneaux_par_animateur)
+                VALUES (?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja, modifie_le = now()
+                DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja,
+                max_creneaux_par_animateur = EXCLUDED.max_creneaux_par_animateur, modifie_le = now()
                 WHERE CAST(? AS boolean)
                 AND (CAST(? AS timestamptz) IS NULL
                      OR date_trunc('milliseconds', typologie.modifie_le)
@@ -163,7 +165,8 @@ public class TypologieRepository {
             ps.setString(2, typologie.id());
             ps.setString(3, typologie.label());
             ps.setBoolean(4, typologie.ninja());
-            WriteStamp.bindPrecondition(ps, 5, !failIfPresent, typologie.modifieLe());
+            ps.setObject(5, typologie.maxCreneauxParAnimateur(), java.sql.Types.INTEGER);
+            WriteStamp.bindPrecondition(ps, 6, !failIfPresent, typologie.modifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, "typologie", typologie.id());

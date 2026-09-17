@@ -15,6 +15,7 @@
 .planning.postes[3]  6742bfb26c1e84ee
 .planning.postes[4]  ff13d349ec57fee7
 .planning.postes[5]  5e26a3c533f9a9e1
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes = null

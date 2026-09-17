@@ -467,7 +467,8 @@ final class ScenarioDomainMapper {
         }
         List<TypologieItem> typologies = new ArrayList<>();
         for (TypologieDto dto : dtos) {
-            typologies.add(new TypologieItem(dto.id(), dto.label(), Boolean.TRUE.equals(dto.ninja())));
+            typologies.add(new TypologieItem(
+                    dto.id(), dto.label(), Boolean.TRUE.equals(dto.ninja()), dto.maxCreneauxParAnimateur(), null));
         }
         return typologies;
     }

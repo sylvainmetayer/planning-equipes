@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.domain.Stand;
 import java.util.Collection;
 import java.util.LinkedHashSet;
@@ -116,6 +117,10 @@ public final class ViolationFormatter {
         }
         if (fact instanceof Stand stand) {
             return stand.getNom();
+        }
+        if (fact instanceof QuotaTypologie plafond) {
+            return "typologie " + plafond.getTypologie() + ", " + plafond.getMaxCreneaux()
+                    + (plafond.getMaxCreneaux() > 1 ? " créneaux au maximum" : " créneau au maximum");
         }
         if (fact instanceof ContrainteAdHoc contrainte) {
             return contrainteLabel(contrainte);

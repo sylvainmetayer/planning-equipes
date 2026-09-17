@@ -521,6 +521,11 @@
           "type" : "string",
           "minLength" : 1
         },
+        "maxCreneauxParAnimateur" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
         "ninja" : {
           "type" : "boolean"
         }

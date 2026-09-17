@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalTime;
 import java.util.Set;
@@ -127,5 +128,99 @@ class AffectationConstraintsTest extends ConstraintTestBase {
                         posteWithEffectiveFenetre(standStrat, creneau, a1, LocalTime.of(9, 0), LocalTime.of(11, 0)),
                         posteWithEffectiveFenetre(standStrat, creneau, a1, LocalTime.of(13, 0), LocalTime.of(14, 0)))
                 .penalizesBy(0);
+    }
+
+    // --- Quota per typologie (issue #594) ----------------------------------
+
+    /** « Les hommes jeu, 4 créneaux au maximum » — the case that asked for the rule. */
+    private static final QuotaTypologie QUATRE_STRATEGIE = new QuotaTypologie("STRATEGIE", 4);
+
+    @Test
+    void auPlafondDeCreneauxSurUneTypologieRienNEstPenalise() {
+        Animateur a1 = referentMajeur("A1");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, matin("Q-J1", 1, D1), a1),
+                        poste(standStrat, afternoon("Q-J1-AM", 1, D1), a1),
+                        poste(standStrat, matin("Q-J2", 2, D2), a1),
+                        poste(standStrat, afternoon("Q-J2-AM", 2, D2), a1),
+                        QUATRE_STRATEGIE)
+                .penalizesBy(0);
+    }
+
+    @Test
+    void auDelaDuPlafondChaqueCreneauEnTropEstPenalise() {
+        Animateur a1 = referentMajeur("A1");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, matin("Q2-J1", 1, D1), a1),
+                        poste(standStrat, afternoon("Q2-J1-AM", 1, D1), a1),
+                        poste(standStrat, matin("Q2-J2", 2, D2), a1),
+                        poste(standStrat, afternoon("Q2-J2-AM", 2, D2), a1),
+                        poste(standStrat, matin("Q2-J3", 3, D3), a1),
+                        poste(standStrat, afternoon("Q2-J3-AM", 3, D3), a1),
+                        QUATRE_STRATEGIE)
+                .penalizesBy(2);
+    }
+
+    /** The cap is per animateur: two people holding four each are both inside it. */
+    @Test
+    void lePlafondEstParAnimateur() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, matin("Q3-J1", 1, D1), a1),
+                        poste(standStrat, afternoon("Q3-J1-AM", 1, D1), a1),
+                        poste(standStrat, matin("Q3-J2", 2, D2), a2),
+                        poste(standStrat, afternoon("Q3-J2-AM", 2, D2), a2),
+                        new QuotaTypologie("STRATEGIE", 2))
+                .penalizesBy(0);
+    }
+
+    /** A typologie with no QuotaTypologie fact caps nothing, whatever the load. */
+    @Test
+    void uneTypologieSansPlafondNImposeRien() {
+        Animateur a1 = referentMajeur("A1");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, matin("Q4-J1", 1, D1), a1),
+                        poste(standStrat, afternoon("Q4-J1-AM", 1, D1), a1),
+                        poste(standStrat, matin("Q4-J2", 2, D2), a1),
+                        poste(standStrat, afternoon("Q4-J2-AM", 2, D2), a1),
+                        poste(standStrat, matin("Q4-J3", 3, D3), a1),
+                        new QuotaTypologie("AMBIANCE", 1))
+                .penalizesBy(0);
+    }
+
+    /**
+     * The scope is the edition, not the day: five créneaux held in one single
+     * day and five spread over five days both break a cap of four by one. A
+     * refactor slipping a date into the grouping would make the second case
+     * free, and nothing else would notice.
+     */
+    @Test
+    void lePlafondPorteSurLEditionEtPasSurLaJournee() {
+        Animateur memeJour = referentMajeur("A-JOUR");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, creneau("Q5-1", 1, D1, LocalTime.of(8, 0), LocalTime.of(9, 0)), memeJour),
+                        poste(standStrat, creneau("Q5-2", 1, D1, LocalTime.of(9, 0), LocalTime.of(10, 0)), memeJour),
+                        poste(standStrat, creneau("Q5-3", 1, D1, LocalTime.of(10, 0), LocalTime.of(11, 0)), memeJour),
+                        poste(standStrat, creneau("Q5-4", 1, D1, LocalTime.of(11, 0), LocalTime.of(12, 0)), memeJour),
+                        poste(standStrat, creneau("Q5-5", 1, D1, LocalTime.of(12, 0), LocalTime.of(13, 0)), memeJour),
+                        QUATRE_STRATEGIE)
+                .penalizesBy(1);
+
+        Animateur cinqJours = referentMajeur("A-SEMAINE");
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        poste(standStrat, matin("Q6-J1", 1, D1), cinqJours),
+                        poste(standStrat, matin("Q6-J2", 2, D2), cinqJours),
+                        poste(standStrat, matin("Q6-J3", 3, D3), cinqJours),
+                        poste(standStrat, matin("Q6-J4", 4, D4), cinqJours),
+                        poste(standStrat, matin("Q6-J5", 5, D5), cinqJours),
+                        QUATRE_STRATEGIE)
+                .penalizesBy(1);
     }
 }

@@ -4159,6 +4159,7 @@
 .planning.postes[3969]  55ed96cc62518dbb
 .planning.postes[3970]  fdeb700d42297869
 .planning.postes[3971]  f9138e218e861471
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes.activees = (vide)

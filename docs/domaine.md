@@ -22,6 +22,15 @@ Les typologies elles-mêmes ne sont pas un enum : ce sont des lignes CRUD
 référencées par clé étrangère, donc on en ajoute ou en renomme sans toucher au
 code.
 
+Une typologie peut porter un **quota** : `maxCreneauxParAnimateur`, le nombre de
+créneaux qu'un animateur y tient au maximum sur l'édition entière. Nullable —
+vide signifie « pas de plafond » — et lu par la contrainte dure
+`plafondCreneauxParTypologie`. Un poste compte pour chaque typologie que son
+stand propose, pas pour celles que son animateur maîtrise :
+[0042](decisions/0042-quota-par-typologie-sur-la-typologie.md) dit pourquoi le
+quota est porté par la typologie plutôt que par un cinquième type de contrainte
+ad hoc.
+
 ## Les bornes de l'édition se dérivent
 
 Une `Edition` ne porte **ni dates ni drapeau « en cours »** : c'est un

@@ -38,6 +38,15 @@ public class PlanningEvenement {
     private List<ConstraintToggle> constraintsDesactivees = new ArrayList<>();
 
     /**
+     * The per-typologie quotas of the edition, read by
+     * {@code plafondCreneauxParTypologie}. Only the typologies that carry one
+     * are here: an empty list is an edition that caps nothing, which is what a
+     * plain-Java harness gets.
+     */
+    @ProblemFactCollectionProperty
+    private List<QuotaTypologie> quotasTypologies = new ArrayList<>();
+
+    /**
      * The edition's meal windows, read by {@code coupureRepasObligatoire}.
      * Empty means no meal rule applies to this solve — which is what a plain
      * Java harness building a problem by hand gets, and what an edition whose
@@ -175,6 +184,14 @@ public class PlanningEvenement {
 
     public void setConstraintsDesactivees(List<ConstraintToggle> constraintsDesactivees) {
         this.constraintsDesactivees = constraintsDesactivees;
+    }
+
+    public List<QuotaTypologie> getQuotasTypologies() {
+        return quotasTypologies;
+    }
+
+    public void setQuotasTypologies(List<QuotaTypologie> quotasTypologies) {
+        this.quotasTypologies = quotasTypologies;
     }
 
     public List<FenetreRepas> getFenetresRepas() {

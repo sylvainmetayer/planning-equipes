@@ -2156,6 +2156,7 @@
 .planning.postes[1991]  4f27982568ddd7e2
 .planning.postes[1992]  b1675ff7e8f832e3
 .planning.postes[1993]  391e2e6a464eb6fe
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes.activees = (vide)
@@ -2181,18 +2182,18 @@
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 1800
 .sections.parametresSolveur.mailFinResolution = false
-.sections.typologies[0]  03b2cb133d7188b6
-.sections.typologies[1]  7f5154bfca6c666c
-.sections.typologies[2]  52735d74ddd2f551
-.sections.typologies[3]  46022ed7c7eb0e64
-.sections.typologies[4]  f85761565c6282b7
-.sections.typologies[5]  ea48ce418ed527b9
-.sections.typologies[6]  2306ec9e5a0565be
-.sections.typologies[7]  a06382d5d12a517c
-.sections.typologies[8]  377f14422fe1f402
-.sections.typologies[9]  83095c021659cfa0
-.sections.typologies[10]  6845fc6fa3b6bd3e
-.sections.typologies[11]  dffadcc8fe875189
-.sections.typologies[12]  0eca6eb8eeca17ef
-.sections.typologies[13]  716a12345100336c
-.sections.typologies[14]  a6fbca4873ce6279
+.sections.typologies[0]  d51abeffd4fd5303
+.sections.typologies[1]  dc8928c0661e2205
+.sections.typologies[2]  6d000ff6951bf44e
+.sections.typologies[3]  d67c4c8cee5f173f
+.sections.typologies[4]  8420e98ec5d85439
+.sections.typologies[5]  9b421fdb214e4908
+.sections.typologies[6]  13c350a4410af6db
+.sections.typologies[7]  3af39af6cfd3edc0
+.sections.typologies[8]  38df208f96978e72
+.sections.typologies[9]  ad9db3d411f6e6e1
+.sections.typologies[10]  ec0a8657b1986347
+.sections.typologies[11]  691b40be0d812614
+.sections.typologies[12]  1e5216385d27a877
+.sections.typologies[13]  4c4fe5f0f1aca418
+.sections.typologies[14]  f34f49e3480c13fa

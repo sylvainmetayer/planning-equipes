@@ -81,7 +81,7 @@ describe('TypologieFormDialog', () => {
     const { fixture } = monter(null);
     await fixture.whenStable();
 
-    expect(nomsEnregistres(fixture).sort()).toEqual(['id', 'label']);
+    expect(nomsEnregistres(fixture).sort()).toEqual(['id', 'label', 'maxCreneauxParAnimateur']);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
   });
 
@@ -138,10 +138,42 @@ describe('TypologieFormDialog', () => {
       id: 'ambiance',
       label: 'Ambiance festive',
       ninja: false,
+      maxCreneauxParAnimateur: null,
       modifieLe: null,
     });
     expect(editingId).toBe('ambiance');
     expect(close).toHaveBeenCalledWith(true);
+  });
+
+  /** Issue #594: the cap is optional, and an empty field means « no cap », never zero. */
+  it('saves the créneau cap it was given, and null when the field is left empty', async () => {
+    const { fixture, save } = monter({
+      id: 'hommes-jeu',
+      label: 'Hommes jeu',
+      ninja: false,
+      maxCreneauxParAnimateur: 4,
+    });
+    await fixture.whenStable();
+    expect(champ(fixture, 'maxCreneauxParAnimateur').value).toBe('4');
+
+    saisir(fixture, 'maxCreneauxParAnimateur', '6');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+
+    expect(
+      (save.mock.calls[0] as unknown as [string, TypologieItem])[1].maxCreneauxParAnimateur,
+    ).toBe(6);
+
+    save.mockClear();
+    saisir(fixture, 'maxCreneauxParAnimateur', '');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+
+    expect(
+      (save.mock.calls[0] as unknown as [string, TypologieItem])[1].maxCreneauxParAnimateur,
+    ).toBe(null);
   });
 
   it('carries the ninja flag over untouched, since a PUT replaces the whole row', async () => {

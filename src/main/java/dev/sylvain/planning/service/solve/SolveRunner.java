@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
 import java.util.List;
@@ -120,6 +121,15 @@ final class SolveRunner {
                 || problem.getConstraintsDesactivees().isEmpty()) {
             problem.setConstraintsDesactivees(referenceDataService.getEtatsContraintes().entrySet().stream()
                     .map(etat -> new ConstraintToggle(etat.getKey(), etat.getValue()))
+                    .toList());
+        }
+        if (problem.getQuotasTypologies() == null
+                || problem.getQuotasTypologies().isEmpty()) {
+            // Only the typologies that carry a cap: the rule joins on them, so
+            // an edition capping nothing hands the solver an empty list.
+            problem.setQuotasTypologies(referenceDataService.listTypologies().stream()
+                    .filter(typologie -> typologie.maxCreneauxParAnimateur() != null)
+                    .map(typologie -> new QuotaTypologie(typologie.id(), typologie.maxCreneauxParAnimateur()))
                     .toList());
         }
         // The published plan is the server's knowledge, never the caller's: a

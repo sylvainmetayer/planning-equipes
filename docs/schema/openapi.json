@@ -3963,6 +3963,12 @@
               "$ref" : "#/components/schemas/ConstraintToggle"
             }
           },
+          "quotasTypologies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/QuotaTypologie"
+            }
+          },
           "fenetresRepas" : {
             "type" : "array",
             "items" : {
@@ -4351,6 +4357,18 @@
           },
           "texte" : {
             "type" : "string"
+          }
+        }
+      },
+      "QuotaTypologie" : {
+        "type" : "object",
+        "properties" : {
+          "typologie" : {
+            "type" : "string"
+          },
+          "maxCreneaux" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -5770,6 +5788,10 @@
           },
           "ninja" : {
             "type" : "boolean"
+          },
+          "maxCreneauxParAnimateur" : {
+            "type" : "integer",
+            "format" : "int32"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"

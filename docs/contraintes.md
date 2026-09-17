@@ -93,6 +93,30 @@ et la contrainte ne coûte rien.
 > aujourd'hui de préférence pour la variété des stands** : rétablir ce besoin
 > suppose d'abord d'arbitrer contre ces deux règles.
 
+## Un quota par typologie
+
+Une typologie peut porter un plafond : `maxCreneauxParAnimateur`, saisi sur sa
+fiche, nullable — vide signifie « pas de plafond », et une édition qui n'y
+touche pas ne change pas de comportement. La contrainte dure
+`plafondCreneauxParTypologie` le fait respecter (issue #594,
+[0042](decisions/0042-quota-par-typologie-sur-la-typologie.md)).
+
+Deux choix à connaître avant de s'en servir :
+
+- **L'unité est le créneau**, pas l'heure. Quatre créneaux d'une heure et
+  quatre créneaux de six heures pèsent pareil.
+- **Un poste compte pour chaque typologie que son stand propose**, pas pour
+  celles que son animateur maîtrise. On tient le jeu auquel on est assis, que
+  sa fiche le mentionne ou non. C'est le choix inverse de
+  `limiterTypologiesDistinctesParAnimateur`, qui lit l'intersection : cette
+  règle-là parle de ce qu'une personne doit apprendre, celle-ci de ce qu'un jeu
+  consomme.
+
+La portée est l'**édition entière**, jamais la journée ni la semaine. Comme la
+règle est dure, un plafond saisi trop bas rend l'édition infaisable plutôt que
+de le dépasser : le diagnostic nomme alors qui, quelle typologie, combien de
+créneaux tenus pour quel plafond.
+
 ## Deux semaines pleines d'affilée
 
 `dureeHebdomadaireMax` plafonne **chaque semaine ISO indépendamment** : rien
@@ -942,6 +966,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `posteDoitEtrePourvu` | HARD | Affectation | Chaque place ouverte sur un stand doit être pourvue par un animateur. |
 | `animateurDisponible` | HARD | Affectation | Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible. |
 | `pasDeChevauchementHoraire` | HARD | Affectation | Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps (y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes sur le même créneau). |
+| `plafondCreneauxParTypologie` | HARD | Affectation | Sur une typologie qui porte un plafond, un animateur ne tient pas plus que ce nombre de créneaux sur l'ensemble de l'édition. Un poste compte pour chaque typologie que son stand propose. Une typologie sans plafond n'impose rien. |
 | `standReserveAuxMajeurs` | HARD | Légal (mineurs) | Les stands réservés aux majeurs ne peuvent accueillir aucun mineur. |
 | `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail : le FESTIVAL la remplit par ses managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors planning l'allume depuis l'écran Contraintes. |
 | `travailDeNuitInterditPourMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : 20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans (Code du travail art. L3163-1). |

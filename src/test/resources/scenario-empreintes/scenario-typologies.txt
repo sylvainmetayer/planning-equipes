@@ -10,6 +10,7 @@
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario = null
 .planning.postes[0]  b1f483cecaad21b9
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes = null
@@ -18,4 +19,4 @@
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.parametresSolveur = null
-.sections.typologies[0]  aa0bc4bc5e0e52f4
+.sections.typologies[0]  b1904c343855a52d

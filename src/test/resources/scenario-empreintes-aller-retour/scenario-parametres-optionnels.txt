@@ -10,6 +10,7 @@
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario = null
 .planning.postes[0]  37c3b0da4d76d3ca
+.planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
 .sections.contraintes = null

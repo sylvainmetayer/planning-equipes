@@ -2,10 +2,12 @@ package dev.sylvain.planning.solver.constraints;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
+import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.QuotaTypologie;
 import java.time.LocalDateTime;
 
 /**
@@ -25,8 +27,58 @@ public final class AffectationConstraints {
         return new Constraint[] {
             posteDoitEtrePourvu(constraintFactory),
             animateurDisponible(constraintFactory),
-            pasDeChevauchementHoraire(constraintFactory)
+            pasDeChevauchementHoraire(constraintFactory),
+            plafondCreneauxParTypologie(constraintFactory)
         };
+    }
+
+    /**
+     * A quota: over the <b>whole edition</b>, one animateur holds no more than
+     * {@code n} créneaux on a given typologie of jeu.
+     *
+     * <p>The case that asked for it is « les hommes jeu, 4 créneaux au
+     * maximum » (issue #594). Nothing could express it:
+     * {@code limiterTypologiesDistinctesParAnimateur} bounds how many
+     * <i>different</i> typologies somebody covers and is a medium;
+     * {@code equilibrerCharge} spreads the global load without ever looking at
+     * the typologie; and {@code TypeContrainteAdHoc} knows no quota. The
+     * work-around was to place forced unavailabilities by hand, one by one, on
+     * a combination nobody can enumerate in advance — the cap bears on the
+     * whole edition, so it depends on what the solver does everywhere else.</p>
+     *
+     * <p><b>A poste counts for every typologie its stand proposes</b>, not for
+     * the ones its animateur happens to master: somebody holds the game they
+     * are sat at whether or not their sheet mentions it. That is the opposite
+     * choice from {@code limiterTypologiesDistinctesParAnimateur}, which reads
+     * the intersection — it is about what a person has to learn, this is about
+     * how much of a game gets served.</p>
+     *
+     * <p>Scope: the edition, never the day or the week — the same scope as the
+     * distinct-typologies rule, and a test pins it. Only the typologies
+     * carrying a {@link QuotaTypologie} are joined, so an edition that caps
+     * nothing pays nothing.</p>
+     */
+    private Constraint plafondCreneauxParTypologie(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "plafondCreneauxParTypologie")
+                .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
+                .flatten(poste -> poste.getStand().getTypologiesProposees())
+                .groupBy(
+                        (poste, typologie) -> poste.getAnimateur(),
+                        (poste, typologie) -> typologie,
+                        ConstraintCollectors.countBi())
+                .join(
+                        QuotaTypologie.class,
+                        Joiners.equal((animateur, typologie, tenus) -> typologie, QuotaTypologie::getTypologie))
+                .filter((animateur, typologie, tenus, plafond) -> tenus > plafond.getMaxCreneaux())
+                // Reshaped before penalising so the écart reads as a sentence:
+                // who, which typologie and its cap, how many they hold.
+                .map(
+                        (animateur, typologie, tenus, plafond) -> animateur,
+                        (animateur, typologie, tenus, plafond) -> plafond,
+                        (animateur, typologie, tenus, plafond) -> tenus)
+                .penalize(HardMediumSoftScore.ONE_HARD, (animateur, plafond, tenus) -> tenus - plafond.getMaxCreneaux())
+                .asConstraint("plafondCreneauxParTypologie");
     }
 
     private Constraint posteDoitEtrePourvu(ConstraintFactory constraintFactory) {

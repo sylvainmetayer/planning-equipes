@@ -62,6 +62,9 @@ export class TypologieFormDialog {
       id: draft.id.trim(),
       label: draft.label.trim(),
       ninja: draft.ninja ?? false,
+      // Empty field means « no cap », never zero: a cap of zero would put every
+      // animateur of the typologie in breach (issue #594).
+      maxCreneauxParAnimateur: capOrNull(draft.maxCreneauxParAnimateur),
       modifieLe: draft.modifieLe ?? null,
     };
     if (
@@ -83,7 +86,16 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
         id: typologie.id,
         label: typologie.label ?? '',
         ninja: typologie.ninja ?? false,
+        maxCreneauxParAnimateur: typologie.maxCreneauxParAnimateur ?? null,
         modifieLe: typologie.modifieLe ?? null,
       }
-    : { id: '', label: '', ninja: false, modifieLe: null };
+    : { id: '', label: '', ninja: false, maxCreneauxParAnimateur: null, modifieLe: null };
+}
+
+/** A cap the form leaves empty, or a number under 1, is no cap at all. */
+function capOrNull(valeur: number | null | undefined): number | null {
+  const nombre = Number(valeur);
+  return valeur === null || valeur === undefined || !Number.isFinite(nombre) || nombre < 1
+    ? null
+    : Math.round(nombre);
 }
