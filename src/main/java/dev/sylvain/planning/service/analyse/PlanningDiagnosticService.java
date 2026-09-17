@@ -112,12 +112,20 @@ public final class PlanningDiagnosticService {
         PlanningAnalysis analysis = constraintDiagnosticService.analyze(solved);
         List<ConstraintDiagnostic> constraintDiagnostics = new ArrayList<>();
         Map<String, ContributionAdHoc> contributionsAdHoc = new LinkedHashMap<>();
+        // Every rule, not only the hard ones: « où se concentrent les écarts »
+        // is asked of the medium rules too — six over-long days, referents
+        // missing on one pavilion (issue #496). Counting is cheap where listing
+        // is not, so this walk has no per-constraint cap.
+        Map<String, List<MatchFacts>> matchesParContrainte = new LinkedHashMap<>();
         Map<Denominator, Integer> evaluatedByDenominator = new EnumMap<>(Denominator.class);
         long plancherMedium = 0;
         long plancherSoft = 0;
         for (ConstraintContribution ca : analysis.contributions()) {
             String name = ca.constraintName();
             boolean hard = ConstraintCatalog.NOMS_DURS.contains(name);
+            if (!ca.matches().isEmpty()) {
+                matchesParContrainte.put(name, ca.matches());
+            }
             List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
             List<ViolationFormatter.ViolationReference> references =
                     hard ? referenceViolations(ca.matches()) : List.of();
@@ -174,7 +182,8 @@ public final class PlanningDiagnosticService {
                 contraintesAdHocEnCause,
                 scoreHorsPlancher,
                 borne(plancherMedium),
-                borne(plancherSoft));
+                borne(plancherSoft),
+                PivotEcarts.of(matchesParContrainte));
     }
 
     /**
@@ -408,6 +417,12 @@ public final class PlanningDiagnosticService {
      * between two runs. {@code plancherMedium} and {@code plancherSoft} are
      * the constant parts themselves, signed like the score they were taken
      * from ({@code -5000} for a floor costing five thousand medium points).</p>
+     *
+     * <p>{@code pivotEcarts} says <b>where</b> the breaches concentrate — one
+     * count per constraint and per day, stand or animateur (issue #496). It
+     * covers every rule, hard and not: {@code violations} stops at the hard
+     * ones because listing thousands of lines is what costs, and counting them
+     * is not.</p>
      */
     public record PlanningDiagnostic(
             String score,
@@ -418,7 +433,8 @@ public final class PlanningDiagnosticService {
             List<ContributionAdHoc> contraintesAdHocEnCause,
             String scoreHorsPlancher,
             int plancherMedium,
-            int plancherSoft) {}
+            int plancherSoft,
+            List<PivotEcarts.Cellule> pivotEcarts) {}
 
     /**
      * One hand-entered exception the last analysis found still violated, most

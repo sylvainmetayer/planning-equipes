@@ -32,7 +32,89 @@
     </div>
     @if (groups().length > 1) {
       <nav class="constraint-toc" i18n-aria-label="@@constraints.toc.label" aria-label="Sommaire des catégories de contraintes">
-        @for (group of groups(); track group.categorie) {
+        <!-- Où se concentrent les écarts (issue #496) : contraintes en lignes, jours,
+     stands ou animateurs en colonnes. La liste ci-dessus dit combien de fois
+     une règle est en défaut ; celle-ci dit où. -->
+@if (pivot().lignes.length > 0) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title i18n="@@constraints.pivot.title">Où se concentrent les écarts</h2>
+      <mat-card-subtitle i18n="@@constraints.pivot.subtitle">
+        Les écarts de la dernière analyse, croisés avec l'axe choisi. Une case sombre est un point de
+        concentration : c'est là qu'une correction rapporte le plus. Cliquez une case pour voir les lignes.
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content>
+      <mat-chip-listbox [value]="axe()" (change)="axe.set($any($event).value); celluleOuverte.set(null)"
+                        i18n-aria-label="@@constraints.pivot.axeLabel" aria-label="Axe du tableau croisé">
+        @for (option of axes; track option.value) {
+          <mat-chip-option [value]="option.value" [selected]="option.value === axe()">{{ option.label }}</mat-chip-option>
+        }
+      </mat-chip-listbox>
+      <div class="table-wrapper">
+        <table class="heatmap-table" role="grid">
+          <caption class="visually-hidden" i18n="@@constraints.pivot.caption">
+            Écarts par contrainte et par journée, stand ou animateur
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" class="heatmap-row-header" i18n="@@constraints.pivot.column.contrainte">Contrainte</th>
+              @for (colonne of pivot().colonnes; track colonne.cle) {
+                <th scope="col" class="heatmap-day-header">{{ colonne.libelle }}</th>
+              }
+              <th scope="col" class="heatmap-day-header" i18n="@@constraints.pivot.column.total">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of pivot().lignes; track ligne.contrainte) {
+              <tr>
+                <th scope="row" class="heatmap-row-header">{{ ligne.contrainte }}</th>
+                @for (ecarts of ligne.ecarts; track $index) {
+                  <td [class]="classeCellule(ecarts, pivot().maximum)"
+                      (click)="ouvrirCellule(ligne.contrainte, pivot().colonnes[$index], ecarts)">
+                    {{ ecarts > 0 ? ecarts : '—' }}
+                  </td>
+                }
+                <td class="heatmap-cell">{{ ligne.total }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+      @if (pivot().colonnesMasquees > 0) {
+        <p class="hint" i18n="@@constraints.pivot.masquees">
+          {{ pivot().colonnesMasquees }} colonne(s) de plus, avec moins d'écarts, ne sont pas affichées.
+        </p>
+      }
+      @if (detailCellule(); as detail) {
+        <div class="constraint-pivot-detail">
+          <h3>{{ detail.contrainte }} — {{ detail.colonne }}</h3>
+          <p i18n="@@constraints.pivot.detail.count">{{ detail.ecarts }} écart(s) ici.</p>
+          @if (detail.listable) {
+            <ul>
+              @for (ligne of detail.lignes; track ligne) {
+                <li>{{ ligne }}</li>
+              }
+            </ul>
+            @if (detail.lignes.length === 0) {
+              <p class="empty-hint" i18n="@@constraints.pivot.detail.aucuneLigne">
+                Aucune ligne détaillée pour cette case : l'écart nomme plusieurs cibles à la fois, ou la liste
+                du serveur s'arrête aux cent premières occurrences.
+              </p>
+            }
+          } @else {
+            <p class="empty-hint" i18n="@@constraints.pivot.detail.nonListable">
+              Les lignes ne sont détaillées que pour les règles dures : une règle moyenne ou souple se compte
+              par milliers, et le serveur ne les envoie pas. Le compte, lui, vaut pour toutes.
+            </p>
+          }
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+}
+
+@for (group of groups(); track group.categorie) {
           <a matButton="tonal" [routerLink]="[]" [fragment]="group.ancre" (click)="scrollToAnchor(group.ancre)">
             {{ group.categorie }}
             <span class="constraint-toc-count">{{ group.items.length }}</span>

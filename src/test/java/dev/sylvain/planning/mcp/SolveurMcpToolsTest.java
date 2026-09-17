@@ -68,7 +68,8 @@ class SolveurMcpToolsTest {
                 List.of(),
                 "-2hard/-5medium/0soft",
                 0,
-                0));
+                0,
+                List.of()));
 
         List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
 

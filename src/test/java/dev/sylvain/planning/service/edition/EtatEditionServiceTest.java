@@ -608,7 +608,8 @@ class EtatEditionServiceTest {
                 List.of(),
                 "0hard/0medium/-2soft",
                 0,
-                -10);
+                -10,
+                List.of());
     }
 
     private static ConstraintDiagnostic contrainte(String name, int matchCount) {

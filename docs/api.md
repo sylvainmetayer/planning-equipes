@@ -674,6 +674,34 @@ jamais zéro. Un plancher ne change **rien** à `actif` ni à `poids` : il est
 signalé, pas décidé — voir
 [`contraintes.md`](contraintes.md#le-plancher--une-règle-qui-pénalise-tout-faute-de-donnée).
 
+### Où se concentrent les écarts
+
+`GET /api/constraints` porte `pivotEcarts` (issue #496) : **où** les écarts
+tombent, là où le reste de la vue dit combien il y en a. Une cellule par
+contrainte et par clé d'axe — `JOUR` (date ISO), `STAND`, `ANIMATEUR` —, avec
+le nombre d'écarts que cette règle y compte. Seules les cellules qui portent au
+moins un écart existent : le tableau de zéros est ce que l'écran dessine, pas ce
+que le serveur envoie.
+
+C'est la question qu'on se pose *avant* de décider quoi corriger : les six
+journées d'amplitude excessive sont-elles le week-end, les référents manquants
+sont-ils tous sur le même pavillon. L'écran Contraintes la croise sous sa liste,
+avec un sélecteur d'axe ; cliquer une case ouvre les lignes correspondantes.
+
+Deux points à connaître :
+
+- **toutes les règles, pas seulement les dures.** `violations` s'arrête aux
+  règles dures parce que *lister* des milliers de lignes coûte ; les *compter*
+  ne coûte pas. Une case d'une règle moyenne s'ouvre donc sur un compte et une
+  phrase qui dit pourquoi, pas sur une liste ;
+- **un écart qui nomme trois stands compte sur les trois.** La cellule répond
+  « combien d'écarts touchent ce stand », et écarter les cas ambigus ne
+  répondrait à rien. C'est délibérément l'inverse de `references`, qui ouvre une
+  fiche et ne doit pas ouvrir la mauvaise.
+
+Les clés sont des **identifiants**, jamais des noms : l'écran résout les
+libellés depuis son propre référentiel.
+
 ### Rafraîchir l'analyse ne relance pas de solveur
 
 `POST /api/constraints/diagnostic` recalcule le score, règle par règle, du

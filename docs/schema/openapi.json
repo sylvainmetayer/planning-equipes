@@ -512,6 +512,10 @@
           }
         }
       },
+      "Axe" : {
+        "type" : "string",
+        "enum" : [ "JOUR", "STAND", "ANIMATEUR" ]
+      },
       "BackupFile" : {
         "required" : [ "sizeBytes" ],
         "type" : "object",
@@ -671,6 +675,25 @@
             "format" : "int32"
           },
           "manque" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "Cellule" : {
+        "required" : [ "ecarts" ],
+        "type" : "object",
+        "properties" : {
+          "contrainte" : {
+            "type" : "string"
+          },
+          "axe" : {
+            "$ref" : "#/components/schemas/Axe"
+          },
+          "cle" : {
+            "type" : "string"
+          },
+          "ecarts" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -1283,6 +1306,12 @@
           "plancherSoft" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "pivotEcarts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Cellule"
+            }
           }
         }
       },

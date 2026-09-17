@@ -228,3 +228,29 @@
   padding: 0;
   min-width: 0;
 }
+
+/* « Où se concentrent les écarts » (issue #496). The table itself wears the
+   heatmap's classes — same shape, same reading — and only the lines it opens
+   need a rule of their own. */
+.constraint-pivot-detail {
+  margin-top: 1rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--app-accent);
+  background: var(--mat-sys-surface-container-low);
+  border-radius: 0 8px 8px 0;
+}
+
+.constraint-pivot-detail h3 {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.constraint-pivot-detail ul {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+/* The cells open a detail, so they have to look like they can be clicked. */
+.heatmap-cell:not(.heatmap-cell-none) {
+  cursor: pointer;
+}

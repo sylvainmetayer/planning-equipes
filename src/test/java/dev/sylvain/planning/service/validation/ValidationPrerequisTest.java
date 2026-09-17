@@ -208,7 +208,8 @@ class ValidationPrerequisTest {
     private static PlanningDiagnostic diagnostic(ViolationReference... references) {
         ConstraintDiagnostic contrainte = new ConstraintDiagnostic(
                 REGLE_DURE, "-1hard/0medium/0soft", references.length, List.of(), null, null, List.of(references));
-        return new PlanningDiagnostic("0hard/0medium/0soft", 0, List.of(contrainte), null, 0, List.of(), null, 0, 0);
+        return new PlanningDiagnostic(
+                "0hard/0medium/0soft", 0, List.of(contrainte), null, 0, List.of(), null, 0, 0, List.of());
     }
 
     /** One animateur-day owing one break, relayed or not. */

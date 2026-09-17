@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
+import dev.sylvain.planning.service.analyse.PivotEcarts;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintFloor;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
@@ -98,7 +99,8 @@ public class ConstraintResource {
                 analysis == null ? List.of() : analysis.diagnostic().contraintesAdHocEnCause(),
                 analysis == null ? null : analysis.diagnostic().scoreHorsPlancher(),
                 analysis == null ? null : analysis.diagnostic().plancherMedium(),
-                analysis == null ? null : analysis.diagnostic().plancherSoft());
+                analysis == null ? null : analysis.diagnostic().plancherSoft(),
+                analysis == null ? List.of() : analysis.diagnostic().pivotEcarts());
     }
 
     /**
@@ -269,6 +271,12 @@ public class ConstraintResource {
      * @param plancherMedium the constant part of the medium score, signed like
      *                  the score ({@code -5000} for five thousand points no
      *                  solve will recover); {@code plancherSoft} likewise
+     * @param pivotEcarts where the breaches concentrate: one count per
+     *                  constraint and per day, stand or animateur (issue
+     *                  #496). Every rule, hard or not — « combien de fois »
+     *                  is on each constraint, « où » is here. Keys are ids,
+     *                  the screen resolves the labels from its referential.
+     *                  Empty until something has been analysed
      */
     public record ConstraintsView(
             Instant analysedAt,
@@ -280,5 +288,6 @@ public class ConstraintResource {
             List<ContributionAdHoc> contraintesAdHocEnCause,
             String scoreHorsPlancher,
             Integer plancherMedium,
-            Integer plancherSoft) {}
+            Integer plancherSoft,
+            List<PivotEcarts.Cellule> pivotEcarts) {}
 }

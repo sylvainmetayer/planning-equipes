@@ -22,7 +22,8 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { intlLocale } from '../../core/locale';
-import { ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
+import { AxePivot, ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { FeasibilityBanner } from '../../shared/feasibility-banner';
@@ -31,6 +32,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
+import { classeCellule, ColonnePivot, construirePivot } from './ecarts-pivot';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -75,6 +77,21 @@ interface ConstraintGroup {
   dosable: boolean;
 }
 
+/** The three readings of « où se concentrent les écarts » (issue #496). */
+const AXES: AxePivot[] = ['JOUR', 'STAND', 'ANIMATEUR'];
+
+/** Called lazily, like `niveauLabel`: never at module scope. */
+function axeLabel(axe: AxePivot): string {
+  switch (axe) {
+    case 'JOUR':
+      return $localize`:@@constraints.pivot.axe.jour:Par journée`;
+    case 'STAND':
+      return $localize`:@@constraints.pivot.axe.stand:Par stand`;
+    case 'ANIMATEUR':
+      return $localize`:@@constraints.pivot.axe.animateur:Par animateur`;
+  }
+}
+
 /** Lowest weight the server accepts: zero is refused, switching off goes through the toggle. */
 const POIDS_MIN = 1;
 
@@ -103,7 +120,7 @@ const POIDS_MAX = 100;
     StatusMessage,
   ],
   templateUrl: './constraints-page.html',
-  styleUrl: './constraints-page.css',
+  styleUrls: ['../../../styles/heatmap.css', './constraints-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -131,6 +148,113 @@ export class ConstraintsPage {
 
   protected readonly jobs = inject(SolverJobService);
   private readonly problemes = inject(ProblemesStore);
+  private readonly referentiel = inject(ReferenceDataStore);
+
+  /* --------- Où se concentrent les écarts (issue #496) --------- */
+
+  protected readonly axes = AXES.map((axe) => ({ value: axe, label: axeLabel(axe) }));
+  protected readonly axe = signal<AxePivot>('JOUR');
+  /** The cell the reader opened, or null — its lines are listed under the table. */
+  protected readonly celluleOuverte = signal<{ contrainte: string; cle: string } | null>(null);
+
+  /**
+   * The cross-table of the selected axis. Days read chronologically, which is
+   * the only order that answers « est-ce le week-end » ; stands and animateurs
+   * read most-breaches-first, left to right.
+   */
+  protected readonly pivot = computed(() => {
+    const axe = this.axe();
+    return construirePivot(
+      this.view()?.pivotEcarts ?? [],
+      axe,
+      (cle) => this.libellePivot(axe, cle),
+      axe === 'JOUR' ? (a: ColonnePivot, b: ColonnePivot) => a.cle.localeCompare(b.cle) : undefined,
+    );
+  });
+
+  protected classeCellule(ecarts: number, maximum: number): string {
+    return classeCellule(ecarts, maximum);
+  }
+
+  /** What the reader sees in a column header: a date, a stand's name, a full name. */
+  private libellePivot(axe: AxePivot, cle: string): string {
+    if (axe === 'STAND') {
+      const stand = this.referentiel.stands().find((candidate) => candidate.id === cle);
+      return stand?.nom || cle;
+    }
+    if (axe === 'ANIMATEUR') {
+      const animateur = this.referentiel.animateurs().find((candidate) => candidate.id === cle);
+      return animateur ? `${animateur.prenom} ${animateur.nom}`.trim() : cle;
+    }
+    return cle;
+  }
+
+  protected ouvrirCellule(contrainte: string, colonne: ColonnePivot, ecarts: number): void {
+    if (ecarts === 0) {
+      return;
+    }
+    const ouverte = this.celluleOuverte();
+    this.celluleOuverte.set(
+      ouverte && ouverte.contrainte === contrainte && ouverte.cle === colonne.cle
+        ? null
+        : { contrainte, cle: colonne.cle },
+    );
+  }
+
+  /**
+   * The lines behind the opened cell.
+   *
+   * Only the hard rules carry their lines: the server lists them for those
+   * alone, medium and soft ones running into the thousands of matches. The
+   * pivot itself covers every rule — counting is what is cheap — so a cell of a
+   * medium rule opens on a count and a sentence saying why, rather than on
+   * nothing.
+   */
+  protected readonly detailCellule = computed(() => {
+    const ouverte = this.celluleOuverte();
+    if (ouverte === null) {
+      return null;
+    }
+    const axe = this.axe();
+    const contrainte = this.view()?.contraintes.find(
+      (candidate) => candidate.name === ouverte.contrainte,
+    );
+    const ecarts =
+      this.view()?.pivotEcarts.find(
+        (cellule) =>
+          cellule.axe === axe &&
+          cellule.contrainte === ouverte.contrainte &&
+          cellule.cle === ouverte.cle,
+      )?.ecarts ?? 0;
+    const lignes = (contrainte?.references ?? [])
+      .filter((reference) => this.referenceTouche(axe, reference, ouverte.cle))
+      .map((reference) => reference.texte);
+    return {
+      contrainte: ouverte.contrainte,
+      colonne: this.libellePivot(axe, ouverte.cle),
+      ecarts,
+      lignes,
+      listable: contrainte?.niveau === 'HARD',
+    };
+  });
+
+  /** Whether a violation line names that key on that axis — the ids the server sends with it. */
+  private referenceTouche(
+    axe: AxePivot,
+    reference: { animateurId: string | null; standId: string | null; creneauId: number | null },
+    cle: string,
+  ): boolean {
+    if (axe === 'ANIMATEUR') {
+      return reference.animateurId === cle;
+    }
+    if (axe === 'STAND') {
+      return reference.standId === cle;
+    }
+    const creneau = this.referentiel
+      .creneaux()
+      .find((candidate) => candidate.id === reference.creneauId);
+    return creneau?.date === cle;
+  }
 
   /** Shared with the Solveur screen: see `ProblemesStore.alerteReglesLegales`. */
   protected readonly alerteReglesLegales = computed(() => this.problemes.alerteReglesLegales());

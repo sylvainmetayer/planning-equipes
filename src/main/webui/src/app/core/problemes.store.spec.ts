@@ -45,6 +45,7 @@ function constraintsView(): ConstraintsView {
     scoreHorsPlancher: '-2hard/0medium/0soft',
     plancherMedium: 0,
     plancherSoft: 0,
+    pivotEcarts: [],
     contraintes: [
       {
         name: 'dureeHebdomadaireMax',

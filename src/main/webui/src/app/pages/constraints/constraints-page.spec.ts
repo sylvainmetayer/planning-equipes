@@ -73,6 +73,7 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
     scoreHorsPlancher: null,
     plancherMedium: null,
     plancherSoft: null,
+    pivotEcarts: [],
     contraintes,
   };
 }

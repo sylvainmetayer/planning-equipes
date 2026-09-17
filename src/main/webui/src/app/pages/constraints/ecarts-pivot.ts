@@ -1,0 +1,121 @@
+// Builders of the « où se concentrent les écarts » cross-table (issue #496):
+// pure functions over the cells the server counts, kept out of the component
+// so the grouping, the ordering and the cap are tested without rendering.
+
+import { AxePivot, CellulePivot } from '../../core/models';
+
+/** One column of the pivot: a day, a stand or an animateur. */
+export interface ColonnePivot {
+  cle: string;
+  /** What the reader sees: a date, a stand name, a full name — resolved by the caller. */
+  libelle: string;
+  /** Breaches on this key, every constraint together — what the columns are ordered on. */
+  total: number;
+}
+
+/** One row: a constraint in default, and its count on each column. */
+export interface LignePivot {
+  contrainte: string;
+  /** One count per column of `colonnes`, in the same order; 0 where nothing matched. */
+  ecarts: number[];
+  total: number;
+}
+
+/**
+ * The table to draw, or an empty one.
+ *
+ * `colonnesMasquees` is how many keys the cap left out: a 153-animateur
+ * edition would otherwise draw a table nobody can read sideways, and a
+ * truncation nobody is told about is worse than a narrower table.
+ */
+export interface TableauPivot {
+  colonnes: ColonnePivot[];
+  lignes: LignePivot[];
+  colonnesMasquees: number;
+  /** Largest cell of the table, the reference the colour scale is read against. */
+  maximum: number;
+}
+
+/** Columns kept, most breaches first. Beyond this the table stops being readable. */
+export const MAX_COLONNES = 25;
+
+/**
+ * The cross-table of one axis: constraints down, keys across.
+ *
+ * Rows are ordered by total, most breaches first — the rule to look at is the
+ * one at the top. Columns are ordered by the caller's `ordre` when it gives
+ * one (the days, chronologically), by total otherwise: on stands and
+ * animateurs, « where does it concentrate » is read left to right.
+ */
+export function construirePivot(
+  cellules: CellulePivot[],
+  axe: AxePivot,
+  libelle: (cle: string) => string,
+  ordre?: (a: ColonnePivot, b: ColonnePivot) => number,
+): TableauPivot {
+  const retenues = cellules.filter((cellule) => cellule.axe === axe && cellule.ecarts > 0);
+  if (retenues.length === 0) {
+    return { colonnes: [], lignes: [], colonnesMasquees: 0, maximum: 0 };
+  }
+
+  const totauxParCle = new Map<string, number>();
+  const totauxParContrainte = new Map<string, number>();
+  for (const cellule of retenues) {
+    totauxParCle.set(cellule.cle, (totauxParCle.get(cellule.cle) ?? 0) + cellule.ecarts);
+    totauxParContrainte.set(
+      cellule.contrainte,
+      (totauxParContrainte.get(cellule.contrainte) ?? 0) + cellule.ecarts,
+    );
+  }
+
+  const toutes: ColonnePivot[] = [...totauxParCle.entries()].map(([cle, total]) => ({
+    cle,
+    libelle: libelle(cle),
+    total,
+  }));
+  toutes.sort((a, b) => b.total - a.total || a.libelle.localeCompare(b.libelle));
+  const colonnes = toutes.slice(0, MAX_COLONNES);
+  if (ordre) {
+    colonnes.sort(ordre);
+  }
+  const index = new Map(colonnes.map((colonne, position) => [colonne.cle, position]));
+
+  const lignes: LignePivot[] = [...totauxParContrainte.entries()]
+    .map(([contrainte, total]) => ({
+      contrainte,
+      ecarts: colonnes.map(() => 0),
+      total,
+    }))
+    .sort((a, b) => b.total - a.total || a.contrainte.localeCompare(b.contrainte));
+  const lignesParContrainte = new Map(lignes.map((ligne) => [ligne.contrainte, ligne]));
+
+  let maximum = 0;
+  for (const cellule of retenues) {
+    const position = index.get(cellule.cle);
+    const ligne = lignesParContrainte.get(cellule.contrainte);
+    if (position === undefined || ligne === undefined) {
+      continue;
+    }
+    ligne.ecarts[position] += cellule.ecarts;
+    maximum = Math.max(maximum, ligne.ecarts[position]);
+  }
+
+  return { colonnes, lignes, colonnesMasquees: toutes.length - colonnes.length, maximum };
+}
+
+/**
+ * The heat class of a cell, on the four steps the heatmap already defines.
+ * Relative to the largest cell of the table, because « six breaches » means
+ * one thing on a rule in default twice and another on a rule in default four
+ * hundred times.
+ */
+export function classeCellule(ecarts: number, maximum: number): string {
+  if (ecarts === 0 || maximum === 0) {
+    return 'heatmap-cell heatmap-cell-none';
+  }
+  const part = ecarts / maximum;
+  if (part > 0.66) {
+    return 'heatmap-cell heatmap-cell-critical';
+  }
+  return part > 0.33 ? 'heatmap-cell heatmap-cell-warning' : 'heatmap-cell heatmap-cell-ok';
+}

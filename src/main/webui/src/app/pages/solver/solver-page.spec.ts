@@ -63,6 +63,7 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
     scoreHorsPlancher: '-3hard/0medium/-120soft',
     plancherMedium: 0,
     plancherSoft: 0,
+    pivotEcarts: [],
     ...overrides,
   };
 }

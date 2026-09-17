@@ -940,6 +940,8 @@ export interface PlanningDiagnostic {
   /** Constant part of the medium score, signed like it (−5000 for a floor of five thousand points). */
   plancherMedium: number;
   plancherSoft: number;
+  /** Where the breaches concentrate (issue #496) — see {@link ConstraintsView.pivotEcarts}. */
+  pivotEcarts: CellulePivot[];
 }
 
 /**
@@ -1107,6 +1109,27 @@ export interface ConstraintsView {
   scoreHorsPlancher: string | null;
   plancherMedium: number | null;
   plancherSoft: number | null;
+  /**
+   * Where the breaches concentrate (issue #496): one cell per constraint and
+   * per key of an axis. Only the cells carrying at least one breach are sent —
+   * the table of zeroes is drawn here. Empty until something is analysed.
+   */
+  pivotEcarts: CellulePivot[];
+}
+
+/** The axes a pivot of the breaches can be read against. */
+export type AxePivot = 'JOUR' | 'STAND' | 'ANIMATEUR';
+
+/**
+ * One cell of the pivot: how many matches of `contrainte` name `cle` on `axe`.
+ * `cle` is an ISO date on `JOUR`, a stand id or an animateur id otherwise —
+ * ids, never names, so the screen resolves the labels from its referential.
+ */
+export interface CellulePivot {
+  contrainte: string;
+  axe: AxePivot;
+  cle: string;
+  ecarts: number;
 }
 
 /**
