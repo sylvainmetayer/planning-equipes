@@ -2,7 +2,7 @@
 // content is unit-tested without rendering.
 
 import { DetailSection } from '../../shared/detail-dialog';
-import { Animateur, LigneTypologie, Stand, TypologieItem } from '../../core/models';
+import { Animateur, Stand, TypologieItem } from '../../core/models';
 
 /**
  * A typologie is only ever meaningful through what references it: the stands
@@ -14,7 +14,6 @@ export function buildTypologieDetail(
   typologie: TypologieItem,
   stands: readonly Stand[] = [],
   animateurs: readonly Animateur[] = [],
-  affectation: LigneTypologie | null = null,
 ): DetailSection[] {
   const standsProposant = stands
     .filter((stand) => (stand.typologiesProposees ?? []).includes(typologie.id))
@@ -46,6 +45,13 @@ export function buildTypologieDetail(
               : String(typologie.maxCreneauxParAnimateur),
           muted: typologie.maxCreneauxParAnimateur == null,
         },
+        {
+          label: $localize`:@@typologies.field.description:Description`,
+          value:
+            typologie.description ??
+            $localize`:@@typologies.detail.sansDescription:Aucune description`,
+          muted: !typologie.description,
+        },
       ],
     },
     {
@@ -73,51 +79,5 @@ export function buildTypologieDetail(
             },
       ],
     },
-    // Only once the plan has been read on this page: « who is actually on it »
-    // is a different question from « who may be », and an empty section would
-    // read as « nobody », which is not the same as « nobody asked ».
-    ...(affectation
-      ? [
-          {
-            title: $localize`:@@typologies.affectation.title:Qui tient quoi, et pour quel volume`,
-            rows: [
-              {
-                label: $localize`:@@typologies.affectation.column.postes:Postes`,
-                value: String(affectation.postes),
-              },
-              {
-                label: $localize`:@@typologies.affectation.column.heures:Heures`,
-                value: `${affectation.heures.toFixed(1)} h`,
-              },
-              affectation.animateursAffectes.length > 0
-                ? {
-                    label: $localize`:@@typologies.affectation.column.affectes:Animateurs affectés`,
-                    chips: affectation.animateursAffectes,
-                  }
-                : {
-                    label: $localize`:@@typologies.affectation.column.affectes:Animateurs affectés`,
-                    value: $localize`:@@detail.none:Aucun`,
-                    muted: true,
-                  },
-              ...(affectation.competentsJamaisAffectes.length > 0
-                ? [
-                    {
-                      label: $localize`:@@typologies.detail.jamaisAffectes:Appréciés mais jamais affectés`,
-                      chips: affectation.competentsJamaisAffectes,
-                    },
-                  ]
-                : []),
-              ...(affectation.affectesSansCompetence.length > 0
-                ? [
-                    {
-                      label: $localize`:@@typologies.detail.sansCompetence:Affectés sans l'appréciation`,
-                      chips: affectation.affectesSansCompetence,
-                    },
-                  ]
-                : []),
-            ],
-          },
-        ]
-      : []),
   ];
 }

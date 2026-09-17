@@ -69,7 +69,7 @@ describe('app.routes', () => {
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
-    expect(titrees).toHaveLength(48);
+    expect(titrees).toHaveLength(49);
     for (const route of titrees) {
       // Une fonction, et non une chaîne : c'est ce qui permet au titre de
       // passer par $localize sans être évalué au chargement du module, avant

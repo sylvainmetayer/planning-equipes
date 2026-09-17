@@ -19,4 +19,4 @@
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.parametresSolveur = null
-.sections.typologies[0]  b1904c343855a52d
+.sections.typologies[0]  24b884d6eb6993f1

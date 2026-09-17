@@ -21,6 +21,13 @@
          (ngModelChange)="patch({ maxCreneauxParAnimateur: $event === '' || $event === null ? null : $event })" />
   <mat-hint i18n="@@typologies.hint.maxCreneaux">Sur l'édition entière, pas par jour. Vide : pas de plafond. Contrainte forte : le solveur ne dépassera pas ce nombre.</mat-hint>
 </mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@typologies.field.description">Description</mat-label>
+  <textarea matInput rows="3" name="description"
+            [ngModel]="draft().description ?? ''"
+            (ngModelChange)="patch({ description: $event })"></textarea>
+  <mat-hint i18n="@@typologies.hint.description">Une note d'organisation, par exemple « nécessite d'apprendre 45 jeux ». Lue sur cet écran et dans la vue du planning par typologie, nulle part ailleurs.</mat-hint>
+</mat-form-field>
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">

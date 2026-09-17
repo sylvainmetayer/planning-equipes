@@ -625,7 +625,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `pages/staffing`, `pages/fragilite` and `pages/banc-de-touche` keep their own
   view state in the URL next to the page's key), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
   breaks counted rather than named: how many people are out, per half-hour and
-  per emplacement, « combien de sandwichs et où les porter »), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median),
+  per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
+  by typologie of jeu, under four renderings chosen on the page: the table, the
+  compared bars, the typologie × jour heatmap and the cards; four filters narrow
+  the rows and every animateur is a link to their timeline), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median),
   `/repos` (« Jours de repos » — who works, who
   rests, who was unavailable, under two renderings chosen by `?vue=grille|frise`:
   the animateur × day grid, whose cells print their hours only under

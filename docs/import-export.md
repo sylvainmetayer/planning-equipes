@@ -194,7 +194,11 @@ Un id référencé sans être déclaré est créé avec un libellé identique à
 La section `typologies` permet de fixer un vrai libellé — elle est appliquée
 **après** l'import, pour ne pas être écrasée par cette création automatique. Au
 plus une typologie porte `ninja: true` ; la déclarer retire le drapeau de la
-précédente. L'export réécrit la section entière, drapeau compris.
+précédente. Chaque entrée peut aussi porter `maxCreneauxParAnimateur` (le
+plafond de créneaux de l'édition entière) et `description` (la note
+d'organisation lue sur l'écran Typologies et dans la vue du planning par
+typologie). L'export réécrit la section entière, drapeau, plafond et note
+compris.
 
 Les sections `parametresDecoupage` et `decoupageAuto` **n'existent plus** : le
 découpage automatique a été retiré (ADR

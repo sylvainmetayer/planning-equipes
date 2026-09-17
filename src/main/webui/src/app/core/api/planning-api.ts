@@ -122,14 +122,6 @@ export class PlanningApi {
     return this.api.get<RapportTypologies>('/api/planning/typologies');
   }
 
-  exportTypologies(): Promise<string> {
-    return this.api.downloadGet(
-      '/api/planning/typologies/export',
-      'typologies-planning.csv',
-      'text/csv',
-    );
-  }
-
   /** Empties the current edition: stands, créneaux, animateurs, seats, ad hoc constraints. */
   reset(): Promise<ResetSummary> {
     return this.api.post<ResetSummary>('/api/planning/reset', {});

@@ -21,9 +21,15 @@ import jakarta.validation.constraints.Positive;
  * many créneaux one animateur may hold on this typologie over the whole
  * edition. Absent means no cap, which is what the referential carries until
  * somebody sets one.</p>
+ *
+ * <p>{@code description} (optional) is the organiser's own note — « cette
+ * typologie nécessite d'apprendre 45 jeux ». It is read on the Typologies
+ * screen and in the plan-by-typologie view, nowhere else: a scenario carries
+ * it so that a seeded edition arrives with the notes its author wrote.</p>
  */
 public record TypologieDto(
         @NotBlank String id,
         @NotBlank String label,
         Boolean ninja,
-        @Positive Integer maxCreneauxParAnimateur) {}
+        @Positive Integer maxCreneauxParAnimateur,
+        String description) {}

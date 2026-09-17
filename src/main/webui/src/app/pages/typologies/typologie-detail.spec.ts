@@ -63,11 +63,11 @@ describe('buildTypologieDetail', () => {
   });
 
   /**
-   * Issue #590: what the plan actually did with a typologie is a different
-   * question from who may hold it, and it only shows once the page has read the
-   * plan — an empty section would read as « nobody », not as « nobody asked ».
+   * Issue #590: what the plan did with a typologie is a different question from
+   * who may hold it, and it has its own screen — « Planning par typologie ».
+   * This dialog stays the referential's, so the two never tell two stories.
    */
-  it('leaves out the assignment section until the plan has been read', () => {
+  it('leaves the plan to the screen that reads it', () => {
     const sections = buildTypologieDetail(enfance, [], []);
 
     expect(sections.map((section) => section.title)).not.toContain(
@@ -75,30 +75,21 @@ describe('buildTypologieDetail', () => {
     );
   });
 
-  it('adds what the plan did with the typologie, gaps included, once it has', () => {
-    const sections = buildTypologieDetail(enfance, [], [], {
-      typologie: 'ENFANCE',
-      label: 'Enfance',
-      ninja: false,
-      maxCreneauxParAnimateur: null,
-      animateursAffectes: ['Ada Martin'],
-      animateursCompetents: ['Bob Martin'],
-      competentsJamaisAffectes: ['Bob Martin'],
-      affectesSansCompetence: ['Ada Martin'],
-      heures: 7.5,
-      postes: 3,
-    });
-
-    const affectation = sections.find(
-      (section) => section.title === 'Qui tient quoi, et pour quel volume',
+  // The organiser's own note on the typologie, read here and in the plan view,
+  // nowhere else. Absent is said in words rather than left blank.
+  it('shows the description, and says so when there is none', () => {
+    const withNote = buildTypologieDetail(
+      { ...enfance, description: "Nécessite d'apprendre 45 jeux" },
+      [],
+      [],
     );
-    expect(affectation).toBeDefined();
-    expect(affectation!.rows.map((row) => row.value ?? row.chips)).toEqual([
-      '3',
-      '7.5 h',
-      ['Ada Martin'],
-      ['Bob Martin'],
-      ['Ada Martin'],
-    ]);
+    const identite = withNote[0].rows.find((row) => row.label === 'Description');
+    expect(identite?.value).toBe("Nécessite d'apprendre 45 jeux");
+    expect(identite?.muted).toBe(false);
+
+    const withoutNote = buildTypologieDetail(enfance, [], []);
+    const vide = withoutNote[0].rows.find((row) => row.label === 'Description');
+    expect(vide?.value).toBe('Aucune description');
+    expect(vide?.muted).toBe(true);
   });
 });

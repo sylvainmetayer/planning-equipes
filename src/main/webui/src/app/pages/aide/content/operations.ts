@@ -191,6 +191,10 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.carteJour:Carte de la journée`,
         },
         { route: '/hours', label: $localize`:@@nav.link.hours:Heures` },
+        {
+          route: '/typologies-planning',
+          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
+        },
         { route: '/equite', label: $localize`:@@nav.link.equite:Équité` },
         { route: '/repos', label: $localize`:@@nav.link.repos:Jours de repos` },
         {

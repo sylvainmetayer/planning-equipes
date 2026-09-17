@@ -265,7 +265,11 @@ final class ScenarioDtoAssembler {
     private static List<TypologieDto> typologies(List<TypologieItem> typologies) {
         return typologies.stream()
                 .map(typologie -> new TypologieDto(
-                        typologie.id(), typologie.label(), typologie.ninja(), typologie.maxCreneauxParAnimateur()))
+                        typologie.id(),
+                        typologie.label(),
+                        typologie.ninja(),
+                        typologie.maxCreneauxParAnimateur(),
+                        typologie.description()))
                 .toList();
     }
 

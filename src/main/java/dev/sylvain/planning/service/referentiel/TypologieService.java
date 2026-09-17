@@ -57,6 +57,7 @@ public class TypologieService implements TypologieLibelles {
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
+                        typologie.description(),
                         null),
                 true);
         changeTracker.markModified();
@@ -77,6 +78,7 @@ public class TypologieService implements TypologieLibelles {
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
+                        typologie.description(),
                         null),
                 true);
     }
@@ -94,6 +96,7 @@ public class TypologieService implements TypologieLibelles {
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
+                        typologie.description(),
                         null),
                 false);
         changeTracker.markModified();
@@ -110,6 +113,7 @@ public class TypologieService implements TypologieLibelles {
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
+                        typologie.description(),
                         typologie.modifieLe()),
                 false);
         changeTracker.markModified();

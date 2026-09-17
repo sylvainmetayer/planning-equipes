@@ -9,8 +9,8 @@ import { EtatEdition } from '../../core/models';
 import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
 
 /** The routes of the application, children included. */
-function toutesLesRoutes(liste: Route[]): Route[] {
-  return liste.flatMap((route) => [route, ...toutesLesRoutes(route.children ?? [])]);
+function allRoutes(liste: Route[]): Route[] {
+  return liste.flatMap((route) => [route, ...allRoutes(route.children ?? [])]);
 }
 
 /** An edition with nothing entered: every line to do, as the server answers it. */
@@ -152,7 +152,7 @@ describe('buildLignes', () => {
   // (issue #320), and nothing said so.
   it('links every step to a route the application actually declares', () => {
     const declarees = new Set(
-      toutesLesRoutes(routes)
+      allRoutes(routes)
         .map((route) => route.path)
         .filter((path): path is string => path !== undefined && !path.includes('*')),
     );

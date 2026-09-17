@@ -59,7 +59,7 @@ class TypologieAnalyzerTest {
                 List.of(ada, bob));
 
         LigneTypologie ligne = ligne(rapport, "STRATEGIE");
-        assertThat(ligne.animateursAffectes()).containsExactly("Ada Martin", "Bob Martin");
+        assertThat(noms(ligne.animateursAffectes())).containsExactly("Ada Martin", "Bob Martin");
         assertThat(ligne.postes()).isEqualTo(2);
         assertThat(ligne.heures()).isCloseTo(8.0, within(0.01));
     }
@@ -97,10 +97,13 @@ class TypologieAnalyzerTest {
                 List.of(ada, bob));
 
         LigneTypologie ambiance = ligne(rapport, "AMBIANCE");
-        assertThat(ambiance.animateursCompetents()).containsExactly("Bob Martin");
-        assertThat(ambiance.animateursAffectes()).containsExactly("Ada Martin");
-        assertThat(ambiance.competentsJamaisAffectes()).containsExactly("Bob Martin");
-        assertThat(ambiance.affectesSansCompetence()).containsExactly("Ada Martin");
+        assertThat(noms(ambiance.animateursCompetents())).containsExactly("Bob Martin");
+        assertThat(noms(ambiance.animateursAffectes())).containsExactly("Ada Martin");
+        assertThat(noms(ambiance.competentsJamaisAffectes())).containsExactly("Bob Martin");
+        assertThat(noms(ambiance.affectesSansCompetence())).containsExactly("Ada Martin");
+        // The id travels with the name: the screen links each one to that
+        // person's timeline, which it cannot do from a name alone.
+        assertThat(ambiance.animateursAffectes().getFirst().animateurId()).isEqualTo("A1");
     }
 
     /** Every typologie gets a line, held or not: « nobody holds it » is the answer wanted. */
@@ -133,22 +136,44 @@ class TypologieAnalyzerTest {
     @Test
     void lePlafondDeLaTypologieEstReporte() {
         RapportTypologies rapport = TypologieAnalyzer.compute(
-                null, List.of(new TypologieItem("HOMMES-JEU", "Hommes jeu", false, 4, null)), List.of());
+                null,
+                List.of(new TypologieItem("HOMMES-JEU", "Hommes jeu", false, 4, "45 jeux à apprendre", null)),
+                List.of());
 
         assertThat(ligne(rapport, "HOMMES-JEU").maxCreneauxParAnimateur()).isEqualTo(4);
+        assertThat(ligne(rapport, "HOMMES-JEU").description()).isEqualTo("45 jeux à apprendre");
     }
 
+    /**
+     * The heatmap of the screen: « quand mes jeux de stratégie tournent-ils »
+     * is a question the edition totals cannot answer. A day the typologie was
+     * not held has no entry, rather than a zero nobody asked for.
+     */
     @Test
-    void leCsvPorteUneLigneParTypologie() {
-        Stand strategie = new Stand("S1", "Stand stratégie", Set.of("STRATEGIE"), 1, 1, false);
+    void lesHeuresSontAussiVentileesJourParJour() {
+        Stand strategie = new Stand("S1", "Stand stratégie", Set.of("STRATEGIE"), 1, 2, false);
         Animateur ada = animateur("A1", "Ada", Map.of("STRATEGIE", NiveauCompetence.AUTONOME));
+        PosteAffectation premier = poste("P1", strategie, ada, 9, 13);
+        PosteAffectation second = poste("P2", strategie, ada, 14, 18);
+        second.getCreneau().setDate(JOUR.plusDays(1));
 
-        String csv = TypologieAnalyzer.generateCsv(TypologieAnalyzer.compute(
-                new PlanningEvenement(JOUR, List.of(ada), List.of(poste("P1", strategie, ada, 9, 12))),
+        RapportTypologies rapport = TypologieAnalyzer.compute(
+                new PlanningEvenement(JOUR, List.of(ada), List.of(premier, second)),
                 List.of(new TypologieItem("STRATEGIE", "Stratégie")),
-                List.of(ada)));
+                List.of(ada));
 
-        assertThat(csv.lines().findFirst().orElseThrow()).startsWith("typologie;libelle;ninja;plafond par animateur;");
-        assertThat(csv).contains("STRATEGIE;Stratégie;non;;1;1;3,00;1;;");
+        assertThat(rapport.jours())
+                .containsExactly(JOUR.toString(), JOUR.plusDays(1).toString());
+        assertThat(ligne(rapport, "STRATEGIE").heuresParJour())
+                .containsOnlyKeys(JOUR.toString(), JOUR.plusDays(1).toString());
+        assertThat(ligne(rapport, "STRATEGIE").heuresParJour().get(JOUR.toString()))
+                .isCloseTo(4.0, within(0.01));
+    }
+
+    /** Names to read, ids to link on: the assertions above only care about the names. */
+    private static List<String> noms(List<TypologieAnalyzer.AnimateurTypologie> animateurs) {
+        return animateurs.stream()
+                .map(TypologieAnalyzer.AnimateurTypologie::nom)
+                .toList();
     }
 }

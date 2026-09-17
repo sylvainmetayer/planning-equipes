@@ -513,6 +513,9 @@
     "TypologieDto" : {
       "type" : "object",
       "properties" : {
+        "description" : {
+          "type" : "string"
+        },
         "id" : {
           "type" : "string",
           "minLength" : 1

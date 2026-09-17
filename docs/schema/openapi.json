@@ -429,6 +429,17 @@
           }
         }
       },
+      "AnimateurTypologie" : {
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "AnnulationAbsence" : {
         "required" : [ "supprimees" ],
         "type" : "object",
@@ -3657,28 +3668,31 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "description" : {
+            "type" : "string"
+          },
           "animateursAffectes" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "$ref" : "#/components/schemas/AnimateurTypologie"
             }
           },
           "animateursCompetents" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "$ref" : "#/components/schemas/AnimateurTypologie"
             }
           },
           "competentsJamaisAffectes" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "$ref" : "#/components/schemas/AnimateurTypologie"
             }
           },
           "affectesSansCompetence" : {
             "type" : "array",
             "items" : {
-              "type" : "string"
+              "$ref" : "#/components/schemas/AnimateurTypologie"
             }
           },
           "heures" : {
@@ -3688,6 +3702,13 @@
           "postes" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "heuresParJour" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "number",
+              "format" : "double"
+            }
           }
         }
       },
@@ -5055,6 +5076,12 @@
             "items" : {
               "$ref" : "#/components/schemas/LigneTypologie"
             }
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -6035,6 +6062,9 @@
           "maxCreneauxParAnimateur" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "description" : {
+            "type" : "string"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -10498,20 +10528,6 @@
           }
         },
         "summary" : "Rapport",
-        "tags" : [ "Typologie Analyse Resource" ]
-      }
-    },
-    "/api/planning/typologies/export" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Export Csv",
         "tags" : [ "Typologie Analyse Resource" ]
       }
     },

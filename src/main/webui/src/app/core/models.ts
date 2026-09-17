@@ -25,6 +25,13 @@ export interface TypologieItem {
    */
   maxCreneauxParAnimateur?: number | null;
   /**
+   * A free note the organiser writes for themselves — « cette typologie
+   * nécessite d'apprendre 45 jeux ». Read on the Typologies screen and in the
+   * planning-by-typologie view, nowhere else: not on a PDF, not in an
+   * animateur's espace. Absent or `null` until somebody writes one.
+   */
+  description?: string | null;
+  /**
    * When the row was last written server-side (issue #362). Sent back as is on
    * an edit: the server refuses the write (409, `MODIFICATION_CONCURRENTE`) if
    * the row moved since, and the CRUD service then offers to reload or to
@@ -1754,26 +1761,38 @@ export interface HeuresRapport {
  * of jeu (issue #590). Coarse grain on purpose — the whole edition, never a
  * grid slot by slot.
  */
+/** One animateur of a typologie's lists: the name to read, the id to link on. */
+export interface AnimateurTypologie {
+  animateurId: string;
+  nom: string;
+}
+
 export interface LigneTypologie {
   typologie: string;
   label: string;
   ninja: boolean;
   /** The quota of issue #594; `null` when the typologie caps nothing. */
   maxCreneauxParAnimateur: number | null;
-  /** Distinct animateurs the plan sat at this game, by display name. */
-  animateursAffectes: string[];
+  /** The organiser's own note on the typologie; `null` when none was written. */
+  description: string | null;
+  /** Distinct animateurs the plan sat at this game. */
+  animateursAffectes: AnimateurTypologie[];
   /** Those the referential vets on it. */
-  animateursCompetents: string[];
+  animateursCompetents: AnimateurTypologie[];
   /** Vetted, never used — a reserve nobody drew on. */
-  competentsJamaisAffectes: string[];
+  competentsJamaisAffectes: AnimateurTypologie[];
   /** Used without being vetted, which a stand proposing several typologies makes ordinary. */
-  affectesSansCompetence: string[];
+  affectesSansCompetence: AnimateurTypologie[];
   heures: number;
   postes: number;
+  /** The same hours, ISO day by ISO day; a day the typologie was not held has no entry. */
+  heuresParJour: Record<string, number>;
 }
 
 export interface RapportTypologies {
   typologies: LigneTypologie[];
+  /** Every day the plan holds a seat on, sorted — the heatmap's columns. */
+  jours: string[];
 }
 
 /**

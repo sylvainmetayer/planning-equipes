@@ -9,12 +9,12 @@ import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -33,10 +33,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * hard one quotas ({@code plafondCreneauxParTypologie}): a ceiling nobody can
  * see is a ceiling nobody can set.</p>
  *
- * <p><b>Coarse grain on purpose</b>: the whole edition, not a grid slot by
- * slot. « Who holds the ambiance games this year, and how much does that
- * weigh » is the question; the day-by-day reading is what the other screens
- * are for.</p>
+ * <p><b>The edition as a whole first</b>: « who holds the ambiance games this
+ * year, and how much does that weigh ». Hours are also broken down by day, for
+ * the heatmap of the screen — « quand mes jeux de stratégie tournent-ils » is
+ * a question the totals cannot answer — but never slot by slot: that grain
+ * belongs to the calendar and the rail.</p>
  *
  * <p>The gap between the two lists is the point: an animateur <b>competent</b>
  * on a typologie is one whose fiche carries it, an animateur <b>affecté</b> is
@@ -82,10 +83,18 @@ public class TypologieAnalyzer {
         Map<String, String> nomParAnimateur = new LinkedHashMap<>();
         Map<String, Double> heuresParTypologie = new LinkedHashMap<>();
         Map<String, Integer> postesParTypologie = new LinkedHashMap<>();
+        Map<String, Map<String, Double>> heuresParTypologieEtJour = new LinkedHashMap<>();
+        TreeSet<String> jours = new TreeSet<>();
         for (PosteAffectation poste : postes) {
             Animateur animateur = poste.getAnimateur();
             nomParAnimateur.putIfAbsent(animateur.getId(), animateur.nomAffiche());
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
+            LocalDate date =
+                    poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+            String jour = date == null ? null : date.toString();
+            if (jour != null) {
+                jours.add(jour);
+            }
             // One poste counts for every typologie its stand proposes — the same
             // reading as the quota rule (ADR 0042): somebody holds the game they
             // are sat at, whether or not their fiche mentions it.
@@ -95,6 +104,11 @@ public class TypologieAnalyzer {
                         .add(animateur.getId());
                 heuresParTypologie.merge(typologie, heures, Double::sum);
                 postesParTypologie.merge(typologie, 1, Integer::sum);
+                if (jour != null) {
+                    heuresParTypologieEtJour
+                            .computeIfAbsent(typologie, id -> new LinkedHashMap<>())
+                            .merge(jour, heures, Double::sum);
+                }
             }
         }
 
@@ -129,14 +143,16 @@ public class TypologieAnalyzer {
                     item == null ? id : item.label(),
                     item != null && item.ninja(),
                     item == null ? null : item.maxCreneauxParAnimateur(),
+                    item == null ? null : item.description(),
                     noms(affectes, nomParAnimateur),
                     noms(competents, nomParAnimateur),
                     noms(without(competents, affectes), nomParAnimateur),
                     noms(without(affectes, competents), nomParAnimateur),
                     heuresParTypologie.getOrDefault(id, 0.0),
-                    postesParTypologie.getOrDefault(id, 0)));
+                    postesParTypologie.getOrDefault(id, 0),
+                    new LinkedHashMap<>(heuresParTypologieEtJour.getOrDefault(id, Map.of()))));
         }
-        return new RapportTypologies(lignes);
+        return new RapportTypologies(lignes, List.copyOf(jours));
     }
 
     private static Set<String> standTypologies(Stand stand) {
@@ -149,57 +165,20 @@ public class TypologieAnalyzer {
         return restant;
     }
 
-    /** Ids turned into display names, sorted — a nominative list is read, not scanned. */
-    private static List<String> noms(Set<String> ids, Map<String, String> nomParAnimateur) {
+    /**
+     * Ids turned into names <b>with</b> their id, sorted by name: a nominative
+     * list is read, not scanned, and the screen links each name to that
+     * person's timeline — which it cannot do from a name alone.
+     */
+    private static List<AnimateurTypologie> noms(Set<String> ids, Map<String, String> nomParAnimateur) {
         return ids.stream()
-                .map(id -> nomParAnimateur.getOrDefault(id, id))
-                .sorted(Comparator.naturalOrder())
+                .map(id -> new AnimateurTypologie(id, nomParAnimateur.getOrDefault(id, id)))
+                .sorted(Comparator.comparing(AnimateurTypologie::nom, String.CASE_INSENSITIVE_ORDER))
                 .toList();
     }
 
-    public static String generateCsv(RapportTypologies rapport) {
-        StringBuilder csv = new StringBuilder();
-        csv.append("typologie;libelle;ninja;plafond par animateur;animateurs affectes;postes;heures;"
-                + "animateurs competents;competents jamais affectes;affectes sans competence\n");
-        for (LigneTypologie ligne : rapport.typologies()) {
-            csv.append(echapper(ligne.typologie()))
-                    .append(';')
-                    .append(echapper(ligne.label()))
-                    .append(';')
-                    .append(ligne.ninja() ? "oui" : "non")
-                    .append(';')
-                    .append(ligne.maxCreneauxParAnimateur() == null ? "" : ligne.maxCreneauxParAnimateur())
-                    .append(';')
-                    .append(ligne.animateursAffectes().size())
-                    .append(';')
-                    .append(ligne.postes())
-                    .append(';')
-                    .append(formater(ligne.heures()))
-                    .append(';')
-                    .append(ligne.animateursCompetents().size())
-                    .append(';')
-                    .append(echapper(String.join(", ", ligne.competentsJamaisAffectes())))
-                    .append(';')
-                    .append(echapper(String.join(", ", ligne.affectesSansCompetence())))
-                    .append('\n');
-        }
-        return csv.toString();
-    }
-
-    /** Hours with a comma, like every other export of the application. */
-    private static String formater(double heures) {
-        return String.format(Locale.ROOT, "%.2f", heures).replace('.', ',');
-    }
-
-    private static String echapper(String valeur) {
-        if (valeur == null) {
-            return "";
-        }
-        if (valeur.contains(";") || valeur.contains("\"") || valeur.contains("\n")) {
-            return "\"" + valeur.replace("\"", "\"\"") + "\"";
-        }
-        return valeur;
-    }
+    /** One animateur of a typologie's lists: the name to read, the id to link on. */
+    public record AnimateurTypologie(String animateurId, String nom) {}
 
     /**
      * @param animateursAffectes       distinct animateurs the plan sat at this
@@ -210,8 +189,12 @@ public class TypologieAnalyzer {
      * @param affectesSansCompetence   used without being vetted, which a stand
      *                                 proposing several typologies makes
      *                                 ordinary rather than suspicious
+     * @param description              the organiser's own note on the typologie,
+     *                                 {@code null} when none was written
      * @param heures                   hours held on it over the whole edition
      * @param postes                   seats held on it over the whole edition
+     * @param heuresParJour            the same hours, ISO day by ISO day; a day
+     *                                 the typologie was not held has no entry
      */
     @Schema(requiredProperties = {"ninja", "heures", "postes"})
     public record LigneTypologie(
@@ -219,12 +202,15 @@ public class TypologieAnalyzer {
             String label,
             boolean ninja,
             Integer maxCreneauxParAnimateur,
-            List<String> animateursAffectes,
-            List<String> animateursCompetents,
-            List<String> competentsJamaisAffectes,
-            List<String> affectesSansCompetence,
+            String description,
+            List<AnimateurTypologie> animateursAffectes,
+            List<AnimateurTypologie> animateursCompetents,
+            List<AnimateurTypologie> competentsJamaisAffectes,
+            List<AnimateurTypologie> affectesSansCompetence,
             double heures,
-            int postes) {}
+            int postes,
+            Map<String, Double> heuresParJour) {}
 
-    public record RapportTypologies(List<LigneTypologie> typologies) {}
+    /** @param jours every day the plan holds a seat on, sorted — the heatmap's columns */
+    public record RapportTypologies(List<LigneTypologie> typologies, List<String> jours) {}
 }

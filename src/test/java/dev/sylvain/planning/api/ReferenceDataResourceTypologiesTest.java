@@ -182,4 +182,50 @@ class ReferenceDataResourceTypologiesTest {
 
         given().when().delete("/api/typologies/TYPO-PLAFOND").then().statusCode(204);
     }
+
+    /**
+     * The organiser's own note, over the same API, and the same trap: a write
+     * that carries every other field must not drop it, and a blank one has to
+     * mean « no note » rather than an empty string the screens would each have
+     * to test for.
+     */
+    @Test
+    void laDescriptionSurvitALaCreationEtALaModification() {
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"TYPO-NOTE\",\"label\":\"Typologie annotée\","
+                        + "\"description\":\"Nécessite d'apprendre 45 jeux\"}")
+                .when()
+                .post("/api/typologies")
+                .then()
+                .statusCode(200)
+                .body("description", org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
+
+        given().when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .body(
+                        "find { it.id == 'TYPO-NOTE' }.description",
+                        org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
+
+        // The plan read by typologie carries it too: it is the screen the note
+        // was written for.
+        given().when()
+                .get("/api/planning/typologies")
+                .then()
+                .statusCode(200)
+                .body(
+                        "typologies.find { it.typologie == 'TYPO-NOTE' }.description",
+                        org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
+
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"TYPO-NOTE\",\"label\":\"Typologie annotée\",\"description\":\"   \"}")
+                .when()
+                .put("/api/typologies/TYPO-NOTE")
+                .then()
+                .statusCode(200)
+                .body("description", org.hamcrest.Matchers.nullValue());
+
+        given().when().delete("/api/typologies/TYPO-NOTE").then().statusCode(204);
+    }
 }

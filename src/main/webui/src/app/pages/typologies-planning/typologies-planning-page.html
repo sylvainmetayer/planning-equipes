@@ -1,0 +1,294 @@
+<h1 class="page-title" i18n="@@nav.link.typologiesPlanning">Planning par typologie</h1>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@typologies.affectation.title">Qui tient quoi, et pour quel volume</h2>
+    <mat-card-subtitle i18n="@@typologies.affectation.subtitle">
+      Le planning enregistré lu par typologie, sur l'édition entière. Un poste compte pour chaque typologie que
+      son stand propose.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="busy()" (click)="load()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+  </mat-card-actions>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  <mat-card-content>
+    <app-output-panel [text]="output()" />
+
+    <div class="typologies-filtres">
+      <mat-form-field appearance="outline" class="typologies-recherche">
+        <mat-label i18n="@@typologies.planning.filtre.recherche">Rechercher</mat-label>
+        <input matInput name="recherche" [ngModel]="search()" (ngModelChange)="search.set($event)" />
+        <mat-hint i18n="@@typologies.planning.filtre.rechercheHint">Identifiant, libellé ou description</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="typologies-cap">
+        <mat-label i18n="@@typologies.planning.filtre.cap">Plafond de créneaux</mat-label>
+        <mat-select name="cap" [ngModel]="cap()" (ngModelChange)="cap.set($event)">
+          <mat-option value="all" i18n="@@typologies.planning.filtre.capToutes">Toutes</mat-option>
+          <mat-option value="capped" i18n="@@typologies.planning.filtre.capAvec">Avec un plafond</mat-option>
+          <mat-option value="uncapped" i18n="@@typologies.planning.filtre.capSans">Sans plafond</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <mat-form-field appearance="outline" class="typologies-cap">
+        <mat-label i18n="@@typologies.planning.filtre.capMinimum">Plafond d'au moins</mat-label>
+        <input matInput type="number" min="1" step="1" name="capMinimum"
+               [ngModel]="capMinimum()" (ngModelChange)="setCapMinimum($event)" />
+        <mat-hint i18n="@@typologies.planning.filtre.capMinimumHint">Ne retient que les typologies plafonnées</mat-hint>
+      </mat-form-field>
+      <mat-checkbox name="tension" [ngModel]="tensionOnly()" (ngModelChange)="tensionOnly.set($event)"
+                    i18n="@@typologies.planning.filtre.tension">Typologies en tension seulement</mat-checkbox>
+      <button matButton [disabled]="!filtresActifs()" (click)="resetFilters()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@typologies.planning.filtre.reset">Tout afficher</ng-container>
+      </button>
+    </div>
+    <p class="hint" i18n="@@typologies.planning.filtre.tensionHint">
+      En tension : une typologie que personne n'a tenue, ou dont un animateur apprécié n'a jamais été affecté, ou
+      tenue par quelqu'un qui ne l'a pas dans sa fiche.
+    </p>
+    @if (masquees() > 0) {
+      <p class="hint" i18n="@@typologies.planning.filtre.masquees">{{ masquees() }} typologie(s) masquée(s) par les filtres.</p>
+    }
+
+    <mat-button-toggle-group class="typologies-onglets" [value]="onglet()" (change)="onglet.set($event.value)"
+                             aria-label="Rendu du planning par typologie"
+                             i18n-aria-label="@@typologies.planning.onglet.label">
+      <mat-button-toggle value="table">
+        <mat-icon>table_rows</mat-icon>
+        <ng-container i18n="@@typologies.planning.onglet.table">Tableau</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="barres">
+        <mat-icon>bar_chart</mat-icon>
+        <ng-container i18n="@@typologies.planning.onglet.barres">Barres comparées</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="heatmap">
+        <mat-icon>grid_view</mat-icon>
+        <ng-container i18n="@@typologies.planning.onglet.heatmap">Typologie × jour</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="cartes">
+        <mat-icon>view_agenda</mat-icon>
+        <ng-container i18n="@@typologies.planning.onglet.cartes">Cartes</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+  </mat-card-content>
+</mat-card>
+
+@if (rapport() !== null) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content class="table-wrapper">
+      @if (aucuneAffectation()) {
+        <p class="empty-hint" i18n="@@typologies.affectation.empty">
+          Aucune affectation sur le planning enregistré : rien n'a encore été résolu, ou la résolution n'a rien
+          placé. Les compétences du référentiel restent affichées.
+        </p>
+      }
+      @if (lignes().length === 0) {
+        <p class="empty-hint" i18n="@@filter.noMatch">Aucune ligne ne correspond au filtre.</p>
+      }
+
+      @switch (onglet()) {
+        @case ('barres') {
+          <ul class="typologies-barres">
+            @for (barre of barres(); track barre.ligne.typologie) {
+              <li>
+                <div class="typologies-barre-titre">
+                  <strong>{{ barre.ligne.label || barre.ligne.typologie }}</strong>
+                  @if (barre.ligne.maxCreneauxParAnimateur !== null) {
+                    <span class="typologies-plafond" i18n="@@typologies.affectation.plafond">plafond {{ barre.ligne.maxCreneauxParAnimateur }}</span>
+                  }
+                </div>
+                <div class="typologies-barre-ligne">
+                  <span class="typologies-barre-label" i18n="@@typologies.affectation.column.heures">Heures</span>
+                  <span class="typologies-barre-piste">
+                    <span class="typologies-barre-remplie" [style.width.%]="barre.partHeures"></span>
+                  </span>
+                  <span class="typologies-barre-valeur">{{ barre.ligne.heures | number: '1.1-1' }} h</span>
+                </div>
+                <div class="typologies-barre-ligne">
+                  <span class="typologies-barre-label" i18n="@@typologies.affectation.column.postes">Postes</span>
+                  <span class="typologies-barre-piste">
+                    <span class="typologies-barre-remplie typologies-barre-postes" [style.width.%]="barre.partPostes"></span>
+                  </span>
+                  <span class="typologies-barre-valeur">{{ barre.ligne.postes }}</span>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+
+        @case ('heatmap') {
+          @if (jours().length === 0) {
+            <p class="empty-hint" i18n="@@typologies.planning.heatmap.vide">
+              Aucun jour tenu sur le planning enregistré : la heatmap n'a rien à dessiner.
+            </p>
+          } @else {
+            <table class="heatmap-table typologies-heatmap" role="grid">
+              <caption class="visually-hidden" i18n="@@typologies.planning.heatmap.caption">
+                Heures tenues par typologie et par jour
+              </caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="heatmap-row-header typologies-sticky" i18n="@@typologies.affectation.column.typologie">Typologie</th>
+                  @for (jour of jours(); track jour) {
+                    <th scope="col" class="heatmap-day-header typologies-sticky">{{ jour }}</th>
+                  }
+                  <th scope="col" class="heatmap-day-header typologies-sticky" i18n="@@typologies.affectation.column.heures">Heures</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (ligne of lignes(); track ligne.typologie) {
+                  <tr>
+                    <th scope="row" class="heatmap-row-header">{{ ligne.label || ligne.typologie }}</th>
+                    @for (jour of jours(); track jour) {
+                      <td [class]="classeHeures(heuresJour(ligne.heuresParJour, jour), maximumJour())">
+                        @if (heuresJour(ligne.heuresParJour, jour) > 0) {
+                          {{ heuresJour(ligne.heuresParJour, jour) | number: '1.0-1' }}
+                        } @else {
+                          —
+                        }
+                      </td>
+                    }
+                    <td class="heatmap-cell">{{ ligne.heures | number: '1.1-1' }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+            <p class="hint" i18n="@@typologies.planning.heatmap.legende">
+              Heures tenues, jour par jour. La couleur se lit face à la case la plus chargée du tableau, pas face
+              à un absolu.
+            </p>
+          }
+        }
+
+        @case ('cartes') {
+          <div class="typologies-cartes">
+            @for (ligne of lignes(); track ligne.typologie) {
+              <mat-card appearance="outlined" class="typologies-carte">
+                <mat-card-header>
+                  <h3 mat-card-title>
+                    {{ ligne.label || ligne.typologie }}
+                    @if (ligne.ninja) {
+                      <mat-icon class="typologies-ninja" matTooltip="Typologie ninja" i18n-matTooltip="@@typologies.field.ninja">bolt</mat-icon>
+                    }
+                  </h3>
+                  <mat-card-subtitle>{{ ligne.typologie }}</mat-card-subtitle>
+                </mat-card-header>
+                <mat-card-content>
+                  @if (ligne.description) {
+                    <p class="typologies-description">{{ ligne.description }}</p>
+                  }
+                  <p class="typologies-chiffres">
+                    <span><ng-container i18n="@@typologies.affectation.column.postes">Postes</ng-container> : <strong>{{ ligne.postes }}</strong></span>
+                    <span><ng-container i18n="@@typologies.affectation.column.heures">Heures</ng-container> : <strong>{{ ligne.heures | number: '1.1-1' }}</strong></span>
+                    @if (ligne.maxCreneauxParAnimateur !== null) {
+                      <span class="typologies-plafond" i18n="@@typologies.affectation.plafond">plafond {{ ligne.maxCreneauxParAnimateur }}</span>
+                    }
+                    @if (underTension(ligne)) {
+                      <span class="typologies-tension" i18n="@@typologies.planning.tension">En tension</span>
+                    }
+                  </p>
+                  <p class="typologies-noms">
+                    <ng-container i18n="@@typologies.affectation.column.affectes">Animateurs affectés</ng-container> ({{ ligne.animateursAffectes.length }}) :
+                    @for (animateur of ligne.animateursAffectes; track animateur.animateurId) {
+                      <a class="typologies-lien" [routerLink]="['/timeline']"
+                         [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                    } @empty {
+                      <span class="typologies-vide" i18n="@@detail.none">Aucun</span>
+                    }
+                  </p>
+                  @if (ligne.competentsJamaisAffectes.length > 0) {
+                    <p class="typologies-noms">
+                      <ng-container i18n="@@typologies.detail.jamaisAffectes">Appréciés mais jamais affectés</ng-container> :
+                      @for (animateur of ligne.competentsJamaisAffectes; track animateur.animateurId) {
+                        <a class="typologies-lien" [routerLink]="['/timeline']"
+                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                      }
+                    </p>
+                  }
+                  @if (ligne.affectesSansCompetence.length > 0) {
+                    <p class="typologies-noms">
+                      <ng-container i18n="@@typologies.detail.sansCompetence">Affectés sans l'appréciation</ng-container> :
+                      @for (animateur of ligne.affectesSansCompetence; track animateur.animateurId) {
+                        <a class="typologies-lien" [routerLink]="['/timeline']"
+                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                      }
+                    </p>
+                  }
+                </mat-card-content>
+              </mat-card>
+            }
+          </div>
+        }
+
+        @default {
+          <table class="typologies-table">
+            <caption class="visually-hidden" i18n="@@typologies.affectation.caption">
+              Par typologie : animateurs affectés, postes, heures, et animateurs compétents au référentiel
+            </caption>
+            <thead>
+              <tr>
+                <th scope="col" class="typologies-sticky" i18n="@@typologies.affectation.column.typologie">Typologie</th>
+                <th scope="col" class="typologies-sticky" i18n="@@typologies.affectation.column.affectes">Animateurs affectés</th>
+                <th scope="col" class="typologies-sticky" i18n="@@typologies.affectation.column.postes">Postes</th>
+                <th scope="col" class="typologies-sticky" i18n="@@typologies.affectation.column.heures">Heures</th>
+                <th scope="col" class="typologies-sticky" i18n="@@typologies.affectation.column.competents">Compétents</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ligne of lignes(); track ligne.typologie) {
+                <tr>
+                  <th scope="row">
+                    {{ ligne.label || ligne.typologie }}
+                    @if (ligne.maxCreneauxParAnimateur !== null) {
+                      <span class="typologies-plafond" i18n="@@typologies.affectation.plafond">plafond {{ ligne.maxCreneauxParAnimateur }}</span>
+                    }
+                    @if (ligne.description) {
+                      <span class="typologies-description">{{ ligne.description }}</span>
+                    }
+                  </th>
+                  <td>
+                    <strong>{{ ligne.animateursAffectes.length }}</strong>
+                    <span class="typologies-noms">
+                      @for (animateur of ligne.animateursAffectes; track animateur.animateurId) {
+                        <a class="typologies-lien" [routerLink]="['/timeline']"
+                           [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                      }
+                    </span>
+                  </td>
+                  <td>{{ ligne.postes }}</td>
+                  <td>{{ ligne.heures | number: '1.1-1' }} h</td>
+                  <td>
+                    <strong>{{ ligne.animateursCompetents.length }}</strong>
+                    @if (ligne.competentsJamaisAffectes.length > 0) {
+                      <span class="typologies-ecart" i18n="@@typologies.affectation.jamaisAffectes">dont {{ ligne.competentsJamaisAffectes.length }} jamais affectés</span>
+                      <span class="typologies-noms">
+                        @for (animateur of ligne.competentsJamaisAffectes; track animateur.animateurId) {
+                          <a class="typologies-lien" [routerLink]="['/timeline']"
+                             [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                        }
+                      </span>
+                    }
+                    @if (ligne.affectesSansCompetence.length > 0) {
+                      <span class="typologies-ecart" i18n="@@typologies.affectation.sansCompetence">{{ ligne.affectesSansCompetence.length }} affectés sans la compétence</span>
+                      <span class="typologies-noms">
+                        @for (animateur of ligne.affectesSansCompetence; track animateur.animateurId) {
+                          <a class="typologies-lien" [routerLink]="['/timeline']"
+                             [queryParams]="{ animateur: animateur.animateurId }">{{ animateur.nom }}</a>
+                        }
+                      </span>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        }
+      }
+    </mat-card-content>
+  </mat-card>
+}

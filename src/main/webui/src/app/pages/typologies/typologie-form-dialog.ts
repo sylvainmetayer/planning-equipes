@@ -13,7 +13,7 @@ export interface TypologieFormData {
   typologie: TypologieItem | null;
 }
 
-/** Add/edit dialog for a typologie: id plus display label. */
+/** Add/edit dialog for a typologie: id, display label, cap and free note. */
 @Component({
   selector: 'app-typologie-form-dialog',
   imports: [
@@ -65,6 +65,8 @@ export class TypologieFormDialog {
       // Empty field means « no cap », never zero: a cap of zero would put every
       // animateur of the typologie in breach (issue #594).
       maxCreneauxParAnimateur: capOrNull(draft.maxCreneauxParAnimateur),
+      // A blank note and no note are the same thing, server-side too.
+      description: draft.description?.trim() || null,
       modifieLe: draft.modifieLe ?? null,
     };
     if (
@@ -87,9 +89,17 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
         label: typologie.label ?? '',
         ninja: typologie.ninja ?? false,
         maxCreneauxParAnimateur: typologie.maxCreneauxParAnimateur ?? null,
+        description: typologie.description ?? '',
         modifieLe: typologie.modifieLe ?? null,
       }
-    : { id: '', label: '', ninja: false, maxCreneauxParAnimateur: null, modifieLe: null };
+    : {
+        id: '',
+        label: '',
+        ninja: false,
+        maxCreneauxParAnimateur: null,
+        description: '',
+        modifieLe: null,
+      };
 }
 
 /** A cap the form leaves empty, or a number under 1, is no cap at all. */

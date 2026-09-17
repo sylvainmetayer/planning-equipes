@@ -25,6 +25,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   await admin.delete('/api/animateurs/E2E-UI').catch(() => undefined);
   await admin.delete('/api/typologies/E2E-TYPO').catch(() => undefined);
   await admin.delete('/api/typologies/E2E-TYPO-CAP').catch(() => undefined);
+  await admin.delete('/api/typologies/E2E-TYPO-NOTE').catch(() => undefined);
   await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
 });
 
@@ -182,6 +183,72 @@ test.describe('typologies', () => {
     const apres = await admin.get('/api/typologies');
     const relues = (await apres.json()) as { id: string; maxCreneauxParAnimateur: number | null }[];
     expect(relues.find((each) => each.id === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(2);
+    await page.context().close();
+  });
+
+  // The organiser's own note, the same round trip as the cap above: written in
+  // the form, read back from the server, and shown again where the plan is read
+  // by typologie — « cette typologie nécessite d'apprendre 45 jeux ».
+  test('la description saisie dans le formulaire se relit, et se retrouve dans la vue', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/typologies');
+
+    await page.getByRole('button', { name: 'Ajouter' }).click();
+    const dialog = await dialogueOuvert(page);
+    await dialog.getByLabel('Identifiant').fill('E2E-TYPO-NOTE');
+    await dialog.getByLabel('Libellé').fill('Typologie annotée');
+    await dialog.getByLabel('Description').fill("Nécessite d'apprendre 45 jeux");
+    await dialog.getByRole('button', { name: /Créer/ }).click();
+    await expect(dialog).toBeHidden();
+
+    const reponse = await admin.get('/api/typologies');
+    const typologies = (await reponse.json()) as { id: string; description: string | null }[];
+    expect(typologies.find((each) => each.id === 'E2E-TYPO-NOTE')?.description).toBe(
+      "Nécessite d'apprendre 45 jeux",
+    );
+
+    // Reopening the form shows it, and a save that touches nothing else keeps it.
+    await page.reload();
+    const ligne = page.getByRole('row', { name: /E2E-TYPO-NOTE/ });
+    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    const edition = await dialogueOuvert(page);
+    await expect(edition.getByLabel('Description')).toHaveValue("Nécessite d'apprendre 45 jeux");
+    await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
+    await expect(edition).toBeHidden();
+
+    await page.goto('/typologies-planning');
+    await expect(page.getByText("Nécessite d'apprendre 45 jeux").first()).toBeVisible();
+    await page.context().close();
+  });
+
+  // The four renderings, the filters and the links out: the screen is the whole
+  // point of the rework, and a tab that throws on an empty axis would only show
+  // up here.
+  test('la vue par typologie propose ses quatre rendus, ses filtres et ses liens', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/typologies-planning');
+
+    await expect(page.getByRole('heading', { name: 'Planning par typologie' })).toBeVisible();
+    for (const onglet of ['Barres comparées', 'Typologie × jour', 'Cartes', 'Tableau']) {
+      await page.getByRole('button', { name: onglet }).click();
+      await expect(page.locator('.typologies-onglets')).toBeVisible();
+    }
+
+    // A search nothing matches empties the table and says so, rather than
+    // looking like an edition with no typologies at all.
+    await page.getByLabel('Rechercher').fill('zzz-aucune-typologie');
+    await expect(page.getByText('Aucune ligne ne correspond au filtre.')).toBeVisible();
+    await page.getByRole('button', { name: 'Tout afficher' }).click();
+
+    // Every animateur name is a link to that person's timeline.
+    const lien = page.locator('a.typologies-lien').first();
+    if (await lien.count()) {
+      await expect(lien).toHaveAttribute('href', /\/timeline\?animateur=/);
+    }
     await page.context().close();
   });
 });

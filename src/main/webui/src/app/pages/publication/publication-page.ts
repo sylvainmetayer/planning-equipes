@@ -3,18 +3,18 @@ import { OutputPanel } from '../../shared/output-panel';
 import { PublicationPanel } from './publication-panel';
 
 /**
- * « Publication » : ce qui sort de l'outil vers de vraies personnes — les
- * documents à imprimer ou à archiver, et l'envoi du planning enregistré aux
- * seules personnes dont l'emploi du temps a changé.
+ * « Publication »: what leaves the tool for real people — the documents to
+ * print or to archive, and the sending of the persisted plan to the only
+ * people whose schedule changed.
  *
- * <p>Un écran à soi, sous « Solveur » dans le menu Planning : c'est l'étape
- * d'après, pas une carte de la page qui calcule. Elle vivait en bas de l'écran
- * Solveur, qu'on ouvre pendant qu'une résolution tourne — le pire endroit pour
- * l'action qui s'adresse à des gens.</p>
+ * <p>A screen of its own, under « Solveur » in the Planning menu: this is the
+ * next step, not a card on the page that computes. It used to sit at the
+ * bottom of the Solveur screen, which one opens while a solve is running — the
+ * worst place for the action that addresses people.</p>
  *
- * <p>La page ne fait qu'accueillir le panneau : il possède l'aperçu de
- * publication, le relit après chaque envoi, et dit à la page ce qu'elle doit
- * écrire dans son panneau de sortie.</p>
+ * <p>The page only hosts the panel: the panel owns the publication preview,
+ * reads it back after every send, and tells the page what to write in its
+ * output panel.</p>
  */
 @Component({
   selector: 'app-publication-page',

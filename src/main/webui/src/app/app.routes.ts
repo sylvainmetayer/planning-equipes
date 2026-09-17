@@ -228,6 +228,16 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/typologies/typologies-page').then((m) => m.TypologiesPage),
   },
   {
+    // The referential screen manages the typologies; this one reads the plan
+    // through them (issue #590). Two questions, two addresses.
+    path: 'typologies-planning',
+    title: () => $localize`:@@route.typologiesPlanning:Planning par typologie`,
+    loadComponent: () =>
+      import('./pages/typologies-planning/typologies-planning-page').then(
+        (m) => m.TypologiesPlanningPage,
+      ),
+  },
+  {
     path: 'ad-hoc-constraints',
     title: () => $localize`:@@route.adHocConstraints:Ajustements manuels`,
     loadComponent: () =>

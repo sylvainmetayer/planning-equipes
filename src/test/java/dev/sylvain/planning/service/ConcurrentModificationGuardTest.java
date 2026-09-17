@@ -141,10 +141,10 @@ class ConcurrentModificationGuardTest {
         try {
             assertThat(typologie.modifieLe()).isNotNull();
             assertThatThrownBy(() -> referenceData.updateTypologie(
-                            "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, PERIME)))
+                            "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, null, PERIME)))
                     .isInstanceOf(BusinessError.Stale.class);
             TypologieItem ecrite = referenceData.updateTypologie(
-                    "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, typologie.modifieLe()));
+                    "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, null, typologie.modifieLe()));
             assertThat(ecrite.label()).isEqualTo("Autre");
             assertThat(ecrite.modifieLe()).isAfterOrEqualTo(typologie.modifieLe());
         } finally {

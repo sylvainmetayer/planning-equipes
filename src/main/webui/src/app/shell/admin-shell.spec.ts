@@ -471,6 +471,7 @@ describe('AdminShell', () => {
         '/mcp-client',
         '/repos',
         '/timeline',
+        '/typologies-planning',
       ]);
       const visible = paths(shell.visibleGroups());
       for (const path of hidden) {

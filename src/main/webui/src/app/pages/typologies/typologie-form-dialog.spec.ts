@@ -44,8 +44,13 @@ function racine(fixture: ComponentFixture<TypologieFormDialog>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-function champ(fixture: ComponentFixture<TypologieFormDialog>, name: string): HTMLInputElement {
-  return racine(fixture).querySelector(`input[name="${name}"]`) as HTMLInputElement;
+/** The control by its name, whichever tag it is: the description is a textarea. */
+function champ(
+  fixture: ComponentFixture<TypologieFormDialog>,
+  name: string,
+): HTMLInputElement | HTMLTextAreaElement {
+  return racine(fixture).querySelector(`input[name="${name}"], textarea[name="${name}"]`) as
+    HTMLInputElement | HTMLTextAreaElement;
 }
 
 function saisir(
@@ -81,7 +86,12 @@ describe('TypologieFormDialog', () => {
     const { fixture } = monter(null);
     await fixture.whenStable();
 
-    expect(nomsEnregistres(fixture).sort()).toEqual(['id', 'label', 'maxCreneauxParAnimateur']);
+    expect(nomsEnregistres(fixture).sort()).toEqual([
+      'description',
+      'id',
+      'label',
+      'maxCreneauxParAnimateur',
+    ]);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
   });
 
@@ -110,11 +120,11 @@ describe('TypologieFormDialog', () => {
   it('locks the identifier of an existing typologie but not of a new one', async () => {
     const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false });
     await fixture.whenStable();
-    expect(champ(fixture, 'id').readOnly).toBe(true);
+    expect((champ(fixture, 'id') as HTMLInputElement).readOnly).toBe(true);
 
     const { fixture: nouveau } = monter(null);
     await nouveau.whenStable();
-    expect(champ(nouveau, 'id').readOnly).toBe(false);
+    expect((champ(nouveau, 'id') as HTMLInputElement).readOnly).toBe(false);
   });
 
   it('fills the form from the typologie and saves the edited values, trimmed', async () => {
@@ -139,6 +149,7 @@ describe('TypologieFormDialog', () => {
       label: 'Ambiance festive',
       ninja: false,
       maxCreneauxParAnimateur: null,
+      description: null,
       modifieLe: null,
     });
     expect(editingId).toBe('ambiance');
@@ -174,6 +185,37 @@ describe('TypologieFormDialog', () => {
     expect(
       (save.mock.calls[0] as unknown as [string, TypologieItem])[1].maxCreneauxParAnimateur,
     ).toBe(null);
+  });
+
+  /**
+   * The organiser's own note on the typologie — « nécessite d'apprendre 45
+   * jeux ». A blank box is no note at all, not an empty string: the screens
+   * would otherwise have to test for both.
+   */
+  it('saves the description it was given, and null when the box is blank', async () => {
+    const { fixture, save } = monter({
+      id: 'strategie',
+      label: 'Stratégie',
+      ninja: false,
+      description: "Nécessite d'apprendre 45 jeux",
+    });
+    await fixture.whenStable();
+    expect(champ(fixture, 'description').value).toBe("Nécessite d'apprendre 45 jeux");
+
+    saisir(fixture, 'description', '  Trois soirées de formation  ');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].description).toBe(
+      'Trois soirées de formation',
+    );
+
+    save.mockClear();
+    saisir(fixture, 'description', '   ');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].description).toBe(null);
   });
 
   it('carries the ninja flag over untouched, since a PUT replaces the whole row', async () => {

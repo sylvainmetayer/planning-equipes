@@ -31,6 +31,12 @@ stand propose, pas pour celles que son animateur maîtrise :
 quota est porté par la typologie plutôt que par un cinquième type de contrainte
 ad hoc.
 
+Une typologie porte aussi une **description** libre : la note que l'organisateur
+écrit pour lui-même — « cette typologie nécessite d'apprendre 45 jeux ». Elle se
+saisit dans le formulaire de l'écran Typologies, se lit dans la fiche et dans la
+vue « Planning par typologie », et nulle part ailleurs : ni sur un PDF, ni dans
+l'espace animateur.
+
 ## Les bornes de l'édition se dérivent
 
 Une `Edition` ne porte **ni dates ni drapeau « en cours »** : c'est un

@@ -1,0 +1,11 @@
+-- Une description libre sur la typologie (retour de relecture de la PR du
+-- milestone V1) : « cette typologie nécessite d'apprendre 45 jeux ».
+--
+-- Elle ne remplace pas le libellé, qui est le nom lu partout — sur les stands,
+-- dans les compétences, dans les exports. Celle-ci est une note d'organisation,
+-- lue sur l'écran des typologies et dans la vue du planning par typologie, et
+-- nulle part ailleurs : ni sur un PDF, ni dans l'espace animateur.
+--
+-- TEXT et non VARCHAR(n) : personne ne sait où couper une phrase que
+-- l'organisateur écrit pour lui-même, et la colonne n'indexe rien.
+ALTER TABLE typologie ADD COLUMN description TEXT;

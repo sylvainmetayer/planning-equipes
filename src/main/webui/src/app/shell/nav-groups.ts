@@ -215,6 +215,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           avance: true,
         },
         {
+          path: '/typologies-planning',
+          label: $localize`:@@nav.link.typologiesPlanning:Planning par typologie`,
+          icon: 'category',
+          avance: true,
+        },
+        {
           path: '/equite',
           label: $localize`:@@nav.link.equite:Équité`,
           icon: 'balance',

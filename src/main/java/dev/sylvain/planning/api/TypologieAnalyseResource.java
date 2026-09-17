@@ -7,7 +7,6 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 
 /**
  * {@code GET /api/planning/typologies}: the persisted plan read by typologie of
@@ -17,9 +16,6 @@ import jakarta.ws.rs.core.Response;
  * <p>A read-out, never a solve. An edition with nothing persisted answers every
  * typologie at zero rather than an error: « nobody holds the ambiance games »
  * is an answer, and one this view exists to give.</p>
- *
- * <p>{@code GET /api/planning/typologies/export} is the same reading as the CSV
- * the other analyses export: {@code ;}, decimal comma, byte order mark.</p>
  */
 @Path("/planning/typologies")
 public class TypologieAnalyseResource {
@@ -31,13 +27,5 @@ public class TypologieAnalyseResource {
     @Produces(MediaType.APPLICATION_JSON)
     public RapportTypologies rapport() {
         return typologieAnalyzer.rapport();
-    }
-
-    @GET
-    @Path("/export")
-    @Produces("text/csv")
-    public Response exportCsv() {
-        return CsvDownload.attachment(
-                TypologieAnalyzer.generateCsv(typologieAnalyzer.rapport()), "typologies-planning.csv");
     }
 }
