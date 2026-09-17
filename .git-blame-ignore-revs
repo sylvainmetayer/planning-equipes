@@ -4,7 +4,11 @@
 # The repository merges in rebase: these are the SHA `main` received, not the
 # ones of the branch that introduced them. Full SHA: git blame refuses a short one.
 #
+# They were renumbered when this repository was opened: the filter-repo pass
+# rewrote every commit, so the SHA these two carried in the private repository
+# name nothing here.
+#
 # style: appliquer palantir-java-format à tout le code Java
-222584fde606c2d2c5a810424c5030230644d4a4
+ed2658e79198120d4e43519ca6c9c95fcfaf9705
 # style(front): appliquer prettier au TypeScript, au CSS et aux scripts
-28e0af902e08089e048176ae4aad521c2a49660a
+a107384264b326cea326708293e55c5f27e5298f
