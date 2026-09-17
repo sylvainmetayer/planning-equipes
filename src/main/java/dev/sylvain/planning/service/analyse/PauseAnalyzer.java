@@ -211,6 +211,12 @@ public class PauseAnalyzer {
      */
     public RapportPauses analyze(PlanningEvenement planning, ParametresLegaux parametres, List<FenetreRepas> fenetres) {
         boolean pauseSurPoste = parametres != null && parametres.isPauseSurPoste();
+        // The declarations the day builder reads durations from. A caller with
+        // none — a harness, a plan carrying no ParametresLegaux — gets the
+        // domain's own defaults rather than an NPE deep inside `journee`;
+        // `pauseSurPoste` above deliberately stays false in that case, since
+        // nobody asked for breaks held on the stand.
+        ParametresLegaux declarations = parametres == null ? new ParametresLegaux() : parametres;
         List<FenetreRepas> fenetresRepas = fenetres == null ? List.of() : fenetres;
         List<PosteAffectation> postes =
                 planning == null || planning.getPostes() == null ? List.of() : planning.getPostes();
@@ -232,7 +238,7 @@ public class PauseAnalyzer {
         //    the window each break may fall in.
         List<Journee> journees = new ArrayList<>();
         for (List<PosteAffectation> postesDuJour : parJournee.values()) {
-            journees.add(journee(postesDuJour, fenetresRepas, parametres));
+            journees.add(journee(postesDuJour, fenetresRepas, declarations));
         }
         // 2. Each stand-day: the rotation, one break after the other.
         Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
@@ -331,6 +337,47 @@ public class PauseAnalyzer {
         }
         return List.copyOf(pauses);
     }
+
+    /**
+     * One animateur's breaks <b>and</b> meal breaks, from a single reading of
+     * the plan.
+     *
+     * <p>The animateur's PDF needs both, and asking for them separately walked
+     * every seat of the plan twice per document — on a publication, once per
+     * recipient. One pass, two lists.</p>
+     */
+    public ExportBreaks breaksForExport(PlanningEvenement planning, String animateurId) {
+        Map<String, Emplacement> emplacements = emplacementsByStand(planning);
+        List<PauseAnimateurView> pauses = new ArrayList<>();
+        List<CoupureAnimateurView> coupures = new ArrayList<>();
+        for (JourneeAnimateurView journee : analyze(planning).journees()) {
+            if (!journee.animateurId().equals(animateurId)) {
+                continue;
+            }
+            for (SequenceView sequence : journee.sequences()) {
+                for (PauseDueView pause : sequence.pausesDues()) {
+                    pauses.add(toAnimateurView(journee.date(), pause, emplacements));
+                }
+            }
+            for (CoupureRepasView coupure : journee.coupuresRepas()) {
+                if (coupure.debut() == null) {
+                    // The day leaves no room: PauseAnalyzer already reports it
+                    // as a breach, and a card at no hour would say nothing.
+                    continue;
+                }
+                coupures.add(new CoupureAnimateurView(
+                        coupure.libelle(),
+                        journee.date(),
+                        coupure.debut(),
+                        coupure.fin(),
+                        coupure.dureeRequiseMinutes()));
+            }
+        }
+        return new ExportBreaks(List.copyOf(pauses), List.copyOf(coupures));
+    }
+
+    /** What one animateur's PDF draws over their days: the breaks, and the meals. */
+    public record ExportBreaks(List<PauseAnimateurView> pauses, List<CoupureAnimateurView> coupures) {}
 
     /**
      * Where each stand of the plan is set up, by stand id. Read from the seats

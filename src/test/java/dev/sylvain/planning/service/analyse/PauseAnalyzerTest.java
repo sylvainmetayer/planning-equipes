@@ -1,9 +1,11 @@
 package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -657,6 +659,53 @@ class PauseAnalyzerTest {
         ParametresLegaux parametres = new ParametresLegaux();
         parametres.setPauseSurPoste(declare);
         return parametres;
+    }
+
+    /**
+     * A plan carrying no {@code ParametresLegaux} at all — a harness, an
+     * in-memory problem — reads with the domain's own defaults rather than
+     * throwing. `analyze` already guarded the null for `pauseSurPoste`; the day
+     * builder dereferenced it two statements later to read the break duration.
+     */
+    @Test
+    void unPlanSansParametresSeLitAvecLesValeursParDefaut() {
+        Animateur alice = adulte("alice");
+        PlanningEvenement plan =
+                planning(List.of(alice), List.of(poste("p1", stand("JEUX", 1), creneau(1, 9, 0, 20, 0), alice)));
+        plan.setParametresLegaux(List.of());
+
+        assertThatCode(() -> analyzer.analyze(plan)).doesNotThrowAnyException();
+        assertThat(analyzer.analyze(plan).journees()).isNotEmpty();
+    }
+
+    /**
+     * The animateur's PDF asks for the breaks and the meal breaks together.
+     * Asked separately, each call walked every seat of the plan — twice per
+     * document, and on a publication once per recipient.
+     */
+    @Test
+    void laLecturePourLExportRendLesPausesEtLesCoupuresEnUnePasse() {
+        Animateur alice = adulte("alice");
+        Animateur bob = adulte("bob");
+        Stand stand = stand("JEUX", 2);
+        PlanningEvenement plan = planning(
+                List.of(alice, bob),
+                List.of(
+                        poste("p1", stand, creneau(1, 9, 0, 12, 0), alice),
+                        poste("p2", stand, creneau(2, 14, 0, 20, 0), alice),
+                        poste("p3", stand, creneau(1, 9, 0, 12, 0), bob),
+                        poste("p4", stand, creneau(2, 14, 0, 20, 0), bob)));
+        plan.setParametresLegaux(List.of(new ParametresLegaux()));
+        plan.setFenetresRepas(FenetreRepas.from(new ParametresLegaux()));
+
+        PauseAnalyzer.ExportBreaks lecture = analyzer.breaksForExport(plan, "alice");
+
+        // The same two lists the two dedicated readings give, for that person
+        // and nobody else.
+        assertThat(lecture.pauses()).isEqualTo(analyzer.pausesAnimateur(plan, "alice"));
+        assertThat(lecture.coupures())
+                .isEqualTo(analyzer.coupuresByAnimateur(plan).getOrDefault("alice", List.of()));
+        assertThat(lecture.coupures()).isNotEmpty();
     }
 
     private static PlanningEvenement planning(List<Animateur> animateurs, List<PosteAffectation> postes) {

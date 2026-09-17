@@ -70,12 +70,10 @@ public class PlanningExportService {
      * administration's own export, dated by the last solve.
      */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(
-                planning,
-                animateurId,
-                provenance.courante(),
-                pauses.pausesAnimateur(planning, animateurId),
-                pauses.coupuresByAnimateur(planning).getOrDefault(animateurId, List.of()));
+        // One reading for both lists: asking the analyzer twice walked every
+        // seat of the plan twice per document.
+        PauseAnalyzer.ExportBreaks lecture = pauses.breaksForExport(planning, animateurId);
+        return exportAnimateurPdf(planning, animateurId, provenance.courante(), lecture.pauses(), lecture.coupures());
     }
 
     /**
@@ -85,12 +83,10 @@ public class PlanningExportService {
      * (issue #245) — the document has not moved, so its date must not either.
      */
     public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
-        return exportAnimateurPdf(
-                planning,
-                animateurId,
-                provenance.publiee(),
-                pauses.pausesAnimateur(planning, animateurId),
-                pauses.coupuresByAnimateur(planning).getOrDefault(animateurId, List.of()));
+        // Called once per recipient on a publication: the whole-plan map built
+        // here and thrown away but for one entry doubled that walk.
+        PauseAnalyzer.ExportBreaks lecture = pauses.breaksForExport(planning, animateurId);
+        return exportAnimateurPdf(planning, animateurId, provenance.publiee(), lecture.pauses(), lecture.coupures());
     }
 
     private byte[] exportAnimateurPdf(

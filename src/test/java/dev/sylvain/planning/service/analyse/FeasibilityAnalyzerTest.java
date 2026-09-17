@@ -380,6 +380,47 @@ class FeasibilityAnalyzerTest {
         assertThat(report.causes()).isEmpty();
     }
 
+    /**
+     * The pairing rule is off, and `standReserveAuxMajeurs` is not: it is a
+     * hard rule of its own, still active. A créneau whose only open stand is
+     * adults-only, staffed solely by minors, is impossible — and the estimate
+     * said « fully staffed », because the short-circuit that skips the pairing
+     * skipped the adults-only filter with it.
+     */
+    @Test
+    void minorsHoldNoSeatOnAnAdultsOnlyStandEvenWithoutSupervision() {
+        Stand bar = new Stand("bar", "bar", Set.of("STRATEGIE"), 2, 2, true);
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)), List.of(bar), List.of(creneau));
+
+        assertThat(report.feasible()).isFalse();
+        assertThat(report.causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.demande()).isEqualTo(2);
+            assertThat(cause.capacite()).isZero();
+        });
+    }
+
+    /** The same minors do hold the seats of the stand next door, which is open to them. */
+    @Test
+    void minorsHoldTheSeatsOfTheStandThatIsNotReservedToAdults() {
+        Stand bar = new Stand("bar", "bar", Set.of("STRATEGIE"), 2, 2, true);
+        Stand ouvert = stand("ouvert", 2, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010), mineur("m4", 2010)),
+                List.of(bar, ouvert),
+                List.of(creneau));
+
+        // Four seats asked for, and only the two of the open stand can be held.
+        assertThat(report.causes()).singleElement().satisfies(cause -> {
+            assertThat(cause.demande()).isEqualTo(4);
+            assertThat(cause.capacite()).isEqualTo(2);
+        });
+    }
+
     /** One adult on the largest stand opens its other seats to minors; an adults-only stand opens none. */
     @Test
     void anAdultOpensTheOtherSeatsOfTheLargestStandToMinors() {

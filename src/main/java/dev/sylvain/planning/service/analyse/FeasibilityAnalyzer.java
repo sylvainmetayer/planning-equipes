@@ -336,15 +336,25 @@ public class FeasibilityAnalyzer {
                 mineurs++;
             }
         }
-        if (!encadrementMineursActif) {
-            return Math.min(demande, majeurs + mineurs);
-        }
+        // Seats a minor may sit on at all. `standReserveAuxMajeurs` is a hard
+        // rule of its own: switching the pairing rule off does not open an
+        // adults-only stand to them, so this filter applies to both readings
+        // below. Counting every available minor as capacity would report a
+        // créneau whose only open stand is adults-only as fully staffed while
+        // the solver cannot place anybody on it.
         List<Integer> places = standsOuverts.stream()
                 .filter(stand -> !stand.isReserveMajeurs())
                 .map(creneau::siegesSimultanes)
                 .filter(sieges -> sieges > 0)
                 .sorted(Comparator.reverseOrder())
                 .toList();
+        if (!encadrementMineursActif) {
+            // No pairing to honour: a minor takes any seat of an open stand
+            // that is not reserved to adults, host or no host.
+            long ouvertesAuxMineurs =
+                    places.stream().mapToLong(Integer::longValue).sum();
+            return Math.min(demande, majeurs + Math.min(mineurs, ouvertesAuxMineurs));
+        }
         long hotes = Math.min(majeurs, places.size());
         long placesPourMineurs =
                 places.stream().limit(hotes).mapToLong(sieges -> sieges - 1L).sum();
