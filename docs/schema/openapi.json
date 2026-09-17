@@ -3497,6 +3497,57 @@
           }
         }
       },
+      "LigneTypologie" : {
+        "required" : [ "ninja", "heures", "postes" ],
+        "type" : "object",
+        "properties" : {
+          "typologie" : {
+            "type" : "string"
+          },
+          "label" : {
+            "type" : "string"
+          },
+          "ninja" : {
+            "type" : "boolean"
+          },
+          "maxCreneauxParAnimateur" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursAffectes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "animateursCompetents" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "competentsJamaisAffectes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "affectesSansCompetence" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "heures" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "postes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "LocalDate" : {
         "type" : "string",
         "format" : "date",
@@ -4830,6 +4881,17 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/LigneCompetences"
+            }
+          }
+        }
+      },
+      "RapportTypologies" : {
+        "type" : "object",
+        "properties" : {
+          "typologies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneTypologie"
             }
           }
         }
@@ -10206,6 +10268,38 @@
         },
         "summary" : "Restore",
         "tags" : [ "Plan Snapshot Resource" ]
+      }
+    },
+    "/api/planning/typologies" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportTypologies"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Rapport",
+        "tags" : [ "Typologie Analyse Resource" ]
+      }
+    },
+    "/api/planning/typologies/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
+        "tags" : [ "Typologie Analyse Resource" ]
       }
     },
     "/api/planning/volumetrie" : {

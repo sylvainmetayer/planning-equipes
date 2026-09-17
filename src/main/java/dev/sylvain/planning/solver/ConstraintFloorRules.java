@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver;
 
+import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PauseSurPoste;
@@ -289,13 +290,16 @@ public final class ConstraintFloorRules {
                 || planning.getAffectationsPubliees().isEmpty()) {
             return 0;
         }
+        // Named the way the rule names a line: day, hours, stand (issue #578).
         Set<String> publishedLines = new HashSet<>();
-        planning.getAffectationsPubliees()
-                .forEach(publiee -> publishedLines.add(publiee.standId() + "|" + publiee.creneauId()));
+        planning.getAffectationsPubliees().forEach(publiee -> publishedLines.add(publiee.key()));
         return (int) planning.getPostes().stream()
                 .filter(poste -> poste.getStand() != null && poste.getCreneau() != null)
-                .filter(poste -> publishedLines.contains(
-                        poste.getStand().getId() + "|" + poste.getCreneau().getId()))
+                .filter(poste -> publishedLines.contains(AffectationPubliee.key(
+                        poste.getStand().getId(),
+                        poste.getCreneau().getDate(),
+                        poste.getCreneau().getHeureDebut(),
+                        poste.getCreneau().getHeureFin())))
                 .count();
     }
 

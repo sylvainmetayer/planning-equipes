@@ -135,8 +135,9 @@ class ConstraintFloorRulesTest {
         PlanningEvenement plan = plan();
         assertThat(Denominator.PUBLISHED_SEATS.count(plan)).isZero();
 
-        plan.setAffectationsPubliees(
-                List.of(new AffectationPubliee("S2", 2L, "A9"), new AffectationPubliee("S1", 1L, "A1")));
+        plan.setAffectationsPubliees(List.of(
+                new AffectationPubliee("S2", D1, LocalTime.of(13, 0), LocalTime.of(17, 0), "A9"),
+                new AffectationPubliee("S1", D1, LocalTime.of(9, 0), LocalTime.of(13, 0), "A1")));
 
         // S2×C2 is the empty seat P4; S1×C1 is P1.
         assertThat(Denominator.PUBLISHED_SEATS.count(plan)).isEqualTo(2);

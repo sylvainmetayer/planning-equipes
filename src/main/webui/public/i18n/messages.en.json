@@ -3143,5 +3143,21 @@
   "debug.diagnostic.title": "Constraint diagnostic (raw)",
   "debug.diagnostic.subtitle": "The whole diagnostic of the persisted plan, serialised — what the Solveur page used to dump into its output panel. Here for technical diagnosis, off the normal path.",
   "debug.diagnostic.load": "Load the diagnostic",
-  "debug.diagnostic.empty": "No plan has been analysed on this edition yet."
+  "debug.diagnostic.empty": "No plan has been analysed on this edition yet.",
+  "typologies.affectation.title": "Who holds what, and for how much",
+  "typologies.affectation.subtitle": "The persisted plan read by typologie, over the whole edition. A seat counts for every typologie its stand proposes.",
+  "typologies.affectation.load": "Read the plan",
+  "typologies.affectation.empty": "Nothing is assigned on the persisted plan: nothing has been solved yet, or the solve placed nothing. The referential skills are still shown.",
+  "typologies.affectation.caption": "Per typologie: assigned animateurs, seats, hours, and the animateurs the referential vets",
+  "typologies.affectation.column.typologie": "Typologie",
+  "typologies.affectation.column.affectes": "Assigned animateurs",
+  "typologies.affectation.column.postes": "Seats",
+  "typologies.affectation.column.heures": "Hours",
+  "typologies.affectation.column.competents": "Vetted",
+  "typologies.affectation.plafond": "cap {$INTERPOLATION}",
+  "typologies.affectation.jamaisAffectes": "of which {$INTERPOLATION} never assigned",
+  "typologies.affectation.sansCompetence": "{$INTERPOLATION} assigned without the skill",
+  "typologies.detail.sansPlafond": "No cap",
+  "typologies.detail.jamaisAffectes": "Vetted but never assigned",
+  "typologies.detail.sansCompetence": "Assigned without the skill"
 }

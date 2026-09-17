@@ -54,8 +54,51 @@ describe('buildTypologieDetail', () => {
       [animateur('A1', { DIV: 'AUTONOME' })],
     );
 
-    const rows = sections.flatMap((section) => section.rows).filter((row) => row.muted);
+    // The cap row is muted too when there is none (issue #594), so the two
+    // « Aucun » ones are singled out rather than counted among every muted row.
+    const rows = sections
+      .flatMap((section) => section.rows)
+      .filter((row) => row.muted && row.value === 'Aucun');
     expect(rows).toHaveLength(2);
-    expect(rows.every((row) => row.value === 'Aucun')).toBe(true);
+  });
+
+  /**
+   * Issue #590: what the plan actually did with a typologie is a different
+   * question from who may hold it, and it only shows once the page has read the
+   * plan — an empty section would read as « nobody », not as « nobody asked ».
+   */
+  it('leaves out the assignment section until the plan has been read', () => {
+    const sections = buildTypologieDetail(enfance, [], []);
+
+    expect(sections.map((section) => section.title)).not.toContain(
+      'Qui tient quoi, et pour quel volume',
+    );
+  });
+
+  it('adds what the plan did with the typologie, gaps included, once it has', () => {
+    const sections = buildTypologieDetail(enfance, [], [], {
+      typologie: 'ENFANCE',
+      label: 'Enfance',
+      ninja: false,
+      maxCreneauxParAnimateur: null,
+      animateursAffectes: ['Ada Martin'],
+      animateursCompetents: ['Bob Martin'],
+      competentsJamaisAffectes: ['Bob Martin'],
+      affectesSansCompetence: ['Ada Martin'],
+      heures: 7.5,
+      postes: 3,
+    });
+
+    const affectation = sections.find(
+      (section) => section.title === 'Qui tient quoi, et pour quel volume',
+    );
+    expect(affectation).toBeDefined();
+    expect(affectation!.rows.map((row) => row.value ?? row.chips)).toEqual([
+      '3',
+      '7.5 h',
+      ['Ada Martin'],
+      ['Bob Martin'],
+      ['Ada Martin'],
+    ]);
   });
 });

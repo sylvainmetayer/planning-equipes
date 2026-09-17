@@ -117,6 +117,11 @@ règle est dure, un plafond saisi trop bas rend l'édition infaisable plutôt qu
 de le dépasser : le diagnostic nomme alors qui, quelle typologie, combien de
 créneaux tenus pour quel plafond.
 
+La page Typologies porte la lecture correspondante (issue #590) : par
+typologie, les animateurs réellement affectés, les postes, les heures, et
+l'écart avec ceux que le référentiel apprécie. Un plafond qu'on ne voit nulle
+part est un plafond que personne ne peut régler.
+
 ## Deux semaines pleines d'affilée
 
 `dureeHebdomadaireMax` plafonne **chaque semaine ISO indépendamment** : rien
@@ -1004,7 +1009,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning. |
 | `standComplexeAvecReferent` | MEDIUM | Qualité d'organisation | Chaque stand devrait compter au moins un référent sur chaque créneau. |
 | `equilibrerCharge` | MEDIUM | Qualité d'organisation | La charge de travail doit être répartie équitablement entre les animateurs. |
-| `stabiliteDuPlanPublie` | MEDIUM | Qualité d'organisation | Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. Muette tant que rien n'a été publié ; un stand ou un créneau créé depuis reste libre. |
+| `stabiliteDuPlanPublie` | MEDIUM | Qualité d'organisation | Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. Muette tant que rien n'a été publié ; une vacation que le plan publié n'avait pas — autre jour, autres heures ou autre stand — reste libre. |
 | `repartitionMineursParCreneau` | MEDIUM | Qualité d'organisation | Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs. |
 | `experienceRequisePourStandsPremium` | MEDIUM | Qualité d'organisation | Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie. |
 | `eviterRoulementStandsPremium` | MEDIUM | Qualité d'organisation | Sur un stand premium, limiter le nombre d'animateurs différents qui s'y relaient au-delà d'un équipage : on privilégie la continuité. |

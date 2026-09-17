@@ -336,8 +336,8 @@ public final class ConstraintCatalog {
                     "Qualité d'organisation",
                     "Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan "
                             + "publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut "
-                            + "le dérangement. Muette tant que rien n'a été publié ; un stand ou un créneau créé "
-                            + "depuis reste libre."),
+                            + "le dérangement. Muette tant que rien n'a été publié ; une vacation que le plan "
+                            + "publié n'avait pas — autre jour, autres heures ou autre stand — reste libre."),
             new ConstraintDefinition(
                     "repartitionMineursParCreneau",
                     Niveau.MEDIUM,

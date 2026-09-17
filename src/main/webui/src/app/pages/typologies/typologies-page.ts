@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, viewChild } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -13,6 +13,7 @@ import { ReferenceTablePage } from '../../core/reference-table-page';
 import { TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { TableFilter } from '../../shared/table-filter';
+import { TypologiesAffectation } from './typologies-affectation';
 import { buildTypologieDetail } from './typologie-detail';
 import { TypologieFormData, TypologieFormDialog } from './typologie-form-dialog';
 
@@ -55,6 +56,7 @@ function usagesTypologie(typologieId: string, store: ReferenceDataStore): string
     RouterLink,
     BulkActionsBar,
     TableFilter,
+    TypologiesAffectation,
   ],
   templateUrl: './typologies-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -65,6 +67,13 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly typologiesFiltrees = this.lignesFiltrees;
 
+  /**
+   * The card below the table (issue #590). The detail view reads its loaded
+   * reading rather than fetching its own: one press of « Lire le planning »,
+   * one truth.
+   */
+  private readonly affectation = viewChild(TypologiesAffectation);
+
   constructor() {
     super({
       rows: (store) => store.typologies(),
@@ -73,7 +82,12 @@ export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
       detail: (typologie, store) => ({
         title: typologie.label || typologie.id,
         subtitle: typologie.id,
-        sections: buildTypologieDetail(typologie, store.stands(), store.animateurs()),
+        sections: buildTypologieDetail(
+          typologie,
+          store.stands(),
+          store.animateurs(),
+          this.affectation()?.ligne(typologie.id) ?? null,
+        ),
       }),
       formulaire: (typologie, dialog: MatDialog) => {
         dialog.open<TypologieFormDialog, TypologieFormData, boolean>(TypologieFormDialog, {

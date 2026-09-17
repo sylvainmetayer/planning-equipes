@@ -59,6 +59,18 @@ poids près.
    la confirmation de « Recommencer de zéro » cite le plan publié.
 7. **Ce n'est pas un gel.** Pour figer, il y a les verrouillages et
    « Corriger après un changement » ; cette règle arbitre.
+8. **La ligne se nomme par sa clé naturelle** — jour, heures, stand — et non
+   par l'id du créneau (issue #578). Un id de créneau est une identité
+   `BIGINT` : supprimer les créneaux d'une journée puis les recréer à
+   l'identique leur en donne de nouveaux. Appariée sur l'id, la règle ne
+   trouvait alors plus rien, cessait de coûter quoi que ce soit et laissait
+   le solveur rebrasser une journée déjà communiquée — précisément le moment
+   où elle servait, et sans que rien ne le signale. C'est l'identité que
+   `PublicationDiffService.Vacation.cle()`, le contrôle de doublon et
+   l'application différentielle des journées types utilisent déjà. Un
+   instantané publié avant #576 ne porte ni jour ni heures : il retombe sur
+   le créneau que son id désigne, ce qui va exactement aussi loin que
+   l'appariement par id allait.
 
 ## Conséquences
 

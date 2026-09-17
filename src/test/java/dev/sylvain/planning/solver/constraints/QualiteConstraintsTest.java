@@ -31,7 +31,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     /* ------------------------- stabiliteDuPlanPublie ------------------------- */
 
     private AffectationPubliee publie(Stand stand, Creneau creneau, String animateurId) {
-        return new AffectationPubliee(stand.getId(), creneau.getId(), animateurId);
+        return new AffectationPubliee(
+                stand.getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin(), animateurId);
     }
 
     @Test
@@ -94,6 +95,27 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         verify("stabiliteDuPlanPublie")
                 .given(poste(standStrat, creneauMatin, null), publie(standStrat, creneauMatin, "A1"))
                 .penalizesBy(1);
+    }
+
+    @Test
+    void aRecreatedCreneauStillCarriesThePublishedLine() {
+        // Issue #578: the day's créneaux were deleted and recreated unchanged —
+        // a grid regeneration — so the line holds a brand new id. Matched on
+        // the id, the rule went silent on exactly the day a regeneration had
+        // just reshuffled; matched on the day and the hours, it still bites.
+        Creneau recree = matin("J1-MATIN-BIS", 1, D1);
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, recree, majeurAutonome("A2")), publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void aCreneauRecreatedOnOtherHoursIsANewLine() {
+        // Same day, same stand, other hours: not the vacation that was
+        // published, and nobody was told about this one.
+        verify("stabiliteDuPlanPublie")
+                .given(poste(standStrat, creneauAprem, majeurAutonome("A2")), publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(0);
     }
 
     @Test

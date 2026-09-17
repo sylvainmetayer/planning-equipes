@@ -7,12 +7,19 @@ import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 /**
@@ -134,7 +141,7 @@ final class SolveRunner {
         }
         // The published plan is the server's knowledge, never the caller's: a
         // planning posted by a client cannot decide what people were told.
-        problem.setAffectationsPubliees(affectationsPubliees());
+        problem.setAffectationsPubliees(affectationsPubliees(problem.getPostes()));
         // Server-side, like the weights below: always overwritten so a caller
         // cannot loosen a quality threshold by sending its own. Read from the
         // edition since issue #591 — the deployment's configuration is what an
@@ -152,7 +159,7 @@ final class SolveRunner {
      * wired (a plain-Java harness). A seat the publication left empty carries
      * nobody to keep and is skipped.
      */
-    List<AffectationPubliee> affectationsPubliees() {
+    List<AffectationPubliee> affectationsPubliees(List<PosteAffectation> postes) {
         PlanSnapshotService snapshotService = snapshots;
         if (snapshotService == null) {
             return List.of();
@@ -161,13 +168,13 @@ final class SolveRunner {
         if (publication == null) {
             return List.of();
         }
-        return factsPublies(publication.affectations());
+        return factsPublies(publication.affectations(), postes);
     }
 
     /**
      * The published seats as facts, <b>without duplicates</b>.
      *
-     * <p>A fact says « this line had this person », a stand × créneau × person
+     * <p>A fact says « this line had this person », a stand × vacation × person
      * triple, which several seats can share: a créneau cut into segments gives
      * one seat per segment, and the same person legitimately holds two of them
      * (a stand open 10 h-18 h with a meal-cover shift, say) — and a plan may
@@ -178,14 +185,58 @@ final class SolveRunner {
      * ever asks whether such a line exists, so collapsing the copies changes
      * no score.</p>
      */
-    static List<AffectationPubliee> factsPublies(List<PlanSnapshotService.AffectationSnapshot> affectations) {
+    static List<AffectationPubliee> factsPublies(
+            List<PlanSnapshotService.AffectationSnapshot> affectations, List<PosteAffectation> postes) {
+        // Only for the legacy fallback below; the grid is reachable from the
+        // seats being solved, which is the only place the problem carries it.
+        Map<String, Creneau> parId = new HashMap<>();
+        for (PosteAffectation poste : postes == null ? List.<PosteAffectation>of() : postes) {
+            Creneau creneau = poste.getCreneau();
+            if (creneau != null && creneau.getId() != null) {
+                parId.put(String.valueOf(creneau.getId()), creneau);
+            }
+        }
         return affectations.stream()
-                .filter(affectation -> affectation.animateurId() != null
-                        && affectation.standId() != null
-                        && affectation.creneauId() != null)
-                .map(affectation -> new AffectationPubliee(
-                        affectation.standId(), Long.parseLong(affectation.creneauId()), affectation.animateurId()))
+                .filter(affectation -> affectation.animateurId() != null && affectation.standId() != null)
+                .map(affectation -> fact(affectation, parId))
+                .filter(Objects::nonNull)
                 .distinct()
                 .toList();
+    }
+
+    /**
+     * One published seat as a fact, or {@code null} when the vacation it named
+     * cannot be described.
+     *
+     * <p>The day and the hours come from the snapshot itself (issue #576), so
+     * a vacation whose créneau has since been deleted and recreated still
+     * matches the line that carries it today (issue #578). A snapshot captured
+     * before those fields were stored falls back on the créneau its id names in
+     * the referential being solved — which is exactly as far as the previous,
+     * id-based matching ever reached: the fact is dropped when that créneau is
+     * gone, as the join found nothing then either.</p>
+     */
+    private static AffectationPubliee fact(
+            PlanSnapshotService.AffectationSnapshot affectation, Map<String, Creneau> parId) {
+        LocalDate date = affectation.date() == null ? null : LocalDate.parse(affectation.date());
+        LocalTime debut = heure(affectation.heureDebut());
+        LocalTime fin = heure(affectation.heureFin());
+        if (date == null || debut == null || fin == null) {
+            Creneau creneau = affectation.creneauId() == null ? null : parId.get(affectation.creneauId());
+            if (creneau == null) {
+                return null;
+            }
+            date = creneau.getDate();
+            debut = creneau.getHeureDebut();
+            fin = creneau.getHeureFin();
+        }
+        if (date == null) {
+            return null;
+        }
+        return new AffectationPubliee(affectation.standId(), date, debut, fin, affectation.animateurId());
+    }
+
+    private static LocalTime heure(String texte) {
+        return texte == null ? null : LocalTime.parse(texte);
     }
 }

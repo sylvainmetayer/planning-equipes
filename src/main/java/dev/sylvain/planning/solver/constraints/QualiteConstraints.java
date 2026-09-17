@@ -8,6 +8,7 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -85,18 +86,26 @@ public final class QualiteConstraints {
                         constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "stabiliteDuPlanPublie")
                 .filter(poste -> poste.getStand() != null
                         && poste.getCreneau() != null
-                        && poste.getCreneau().getId() != null)
+                        && poste.getCreneau().getDate() != null)
                 .ifExists(
                         AffectationPubliee.class,
-                        Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
-                        Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId))
+                        Joiners.equal(QualiteConstraints::vacationKey, AffectationPubliee::key))
                 .ifNotExists(
                         AffectationPubliee.class,
-                        Joiners.equal(poste -> poste.getStand().getId(), AffectationPubliee::standId),
-                        Joiners.equal(poste -> poste.getCreneau().getId(), AffectationPubliee::creneauId),
+                        Joiners.equal(QualiteConstraints::vacationKey, AffectationPubliee::key),
                         Joiners.equal(QualiteConstraints::holderIdOrNobody, AffectationPubliee::animateurId))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("stabiliteDuPlanPublie");
+    }
+
+    /**
+     * The line this seat is on, named the way the publication named it: day,
+     * hours and stand, never the créneau id (issue #578).
+     */
+    private static String vacationKey(PosteAffectation poste) {
+        Creneau creneau = poste.getCreneau();
+        return AffectationPubliee.key(
+                poste.getStand().getId(), creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin());
     }
 
     /** The holder's id, or a value no published fact carries: an empty seat matches no holder. */

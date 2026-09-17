@@ -1658,6 +1658,33 @@ export interface HeuresRapport {
 }
 
 /**
+ * One row of `/api/planning/typologies`: the persisted plan read by typologie
+ * of jeu (issue #590). Coarse grain on purpose — the whole edition, never a
+ * grid slot by slot.
+ */
+export interface LigneTypologie {
+  typologie: string;
+  label: string;
+  ninja: boolean;
+  /** The quota of issue #594; `null` when the typologie caps nothing. */
+  maxCreneauxParAnimateur: number | null;
+  /** Distinct animateurs the plan sat at this game, by display name. */
+  animateursAffectes: string[];
+  /** Those the referential vets on it. */
+  animateursCompetents: string[];
+  /** Vetted, never used — a reserve nobody drew on. */
+  competentsJamaisAffectes: string[];
+  /** Used without being vetted, which a stand proposing several typologies makes ordinary. */
+  affectesSansCompetence: string[];
+  heures: number;
+  postes: number;
+}
+
+export interface RapportTypologies {
+  typologies: LigneTypologie[];
+}
+
+/**
  * One row of `/api/planning/equite`: what one assigned animateur was given,
  * read from the persisted plan. Hours are decimal hours, rates are ratios in
  * `[0, 1]` (seats on a wished / appreciated game category over all seats).

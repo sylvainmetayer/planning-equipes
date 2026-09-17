@@ -14,6 +14,7 @@ import {
   HeuresRapport,
   PersistenceStatus,
   RapportEquite,
+  RapportTypologies,
   PlanSnapshot,
   PlanningEvenement,
   RapportPublication,
@@ -114,6 +115,19 @@ export class PlanningApi {
 
   exportEquity(): Promise<string> {
     return this.api.downloadGet('/api/planning/equite/export', 'equite-planning.csv', 'text/csv');
+  }
+
+  /** The persisted plan read by typologie of jeu — a read-out, never a solve (issue #590). */
+  typologiesReport(): Promise<RapportTypologies> {
+    return this.api.get<RapportTypologies>('/api/planning/typologies');
+  }
+
+  exportTypologies(): Promise<string> {
+    return this.api.downloadGet(
+      '/api/planning/typologies/export',
+      'typologies-planning.csv',
+      'text/csv',
+    );
   }
 
   /** Empties the current edition: stands, créneaux, animateurs, seats, ad hoc constraints. */

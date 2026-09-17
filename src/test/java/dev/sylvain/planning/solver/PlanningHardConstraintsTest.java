@@ -108,9 +108,10 @@ class PlanningHardConstraintsTest {
 
     /**
      * The publication a solve reads, without a database: every animateur on
-     * the same seat. Only the ids of a snapshotted seat are read
-     * ({@code SolveRunner.factsPublies}), so the rest of the record is left
-     * empty rather than fabricated.
+     * the same seat. The snapshot carries no day or hours, as one captured
+     * before issue #576 does, so {@code SolveRunner.factsPublies} names the
+     * vacation from the créneau the id points at — the fields are left empty
+     * rather than fabricated, and that fallback path gets exercised here.
      */
     private static PlanSnapshotService publishedPlan(PlanningEvenement problem, PosteAffectation seat) {
         List<PlanSnapshotService.AffectationSnapshot> affectations = problem.getAnimateurs().stream()

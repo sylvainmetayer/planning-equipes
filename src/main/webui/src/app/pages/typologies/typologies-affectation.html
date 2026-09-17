@@ -1,0 +1,89 @@
+<!-- The plan read by typologie of jeu: see `TypologiesAffectation`. -->
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@typologies.affectation.title">Qui tient quoi, et pour quel volume</h2>
+    <mat-card-subtitle i18n="@@typologies.affectation.subtitle">
+      Le planning enregistré lu par typologie, sur l'édition entière. Un poste compte pour chaque typologie que
+      son stand propose.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="busy()" (click)="charger()">
+      <mat-icon>analytics</mat-icon>
+      <ng-container i18n="@@typologies.affectation.load">Lire le planning</ng-container>
+    </button>
+    <button matButton="filled" [disabled]="busy() || rapport() === null" (click)="exporter()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
+    </button>
+  </mat-card-actions>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  @if (rapport() !== null) {
+    <mat-card-content class="table-wrapper">
+      @if (aucuneAffectation()) {
+        <p class="empty-hint" i18n="@@typologies.affectation.empty">
+          Aucune affectation sur le planning enregistré : rien n'a encore été résolu, ou la résolution n'a rien
+          placé. Les compétences du référentiel restent affichées.
+        </p>
+      }
+      <table mat-table [dataSource]="lignes()">
+        <caption class="visually-hidden" i18n="@@typologies.affectation.caption">
+          Par typologie : animateurs affectés, postes, heures, et animateurs compétents au référentiel
+        </caption>
+        <ng-container matColumnDef="typologie">
+          <th mat-header-cell *matHeaderCellDef i18n="@@typologies.affectation.column.typologie">Typologie</th>
+          <td mat-cell *matCellDef="let ligne">
+            {{ ligne.label || ligne.typologie }}
+            @if (ligne.maxCreneauxParAnimateur !== null) {
+              <span class="typologies-plafond" i18n="@@typologies.affectation.plafond"
+                >plafond {{ ligne.maxCreneauxParAnimateur }}</span
+              >
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="affectes">
+          <th mat-header-cell *matHeaderCellDef i18n="@@typologies.affectation.column.affectes">Animateurs affectés</th>
+          <td mat-cell *matCellDef="let ligne">
+            <strong>{{ ligne.animateursAffectes.length }}</strong>
+            @if (ligne.animateursAffectes.length > 0) {
+              <span class="typologies-noms">{{ ligne.animateursAffectes.join(', ') }}</span>
+            }
+          </td>
+        </ng-container>
+        <ng-container matColumnDef="postes">
+          <th mat-header-cell *matHeaderCellDef i18n="@@typologies.affectation.column.postes">Postes</th>
+          <td mat-cell *matCellDef="let ligne">{{ ligne.postes }}</td>
+        </ng-container>
+        <ng-container matColumnDef="heures">
+          <th mat-header-cell *matHeaderCellDef i18n="@@typologies.affectation.column.heures">Heures</th>
+          <td mat-cell *matCellDef="let ligne">{{ ligne.heures | number: '1.1-1' }} h</td>
+        </ng-container>
+        <ng-container matColumnDef="competents">
+          <th mat-header-cell *matHeaderCellDef i18n="@@typologies.affectation.column.competents">Compétents</th>
+          <td mat-cell *matCellDef="let ligne">
+            <strong>{{ ligne.animateursCompetents.length }}</strong>
+            @if (ligne.competentsJamaisAffectes.length > 0) {
+              <span class="typologies-ecart"
+                    [matTooltip]="ligne.competentsJamaisAffectes.join(', ')"
+                    i18n="@@typologies.affectation.jamaisAffectes"
+                >dont {{ ligne.competentsJamaisAffectes.length }} jamais affectés</span
+              >
+            }
+            @if (ligne.affectesSansCompetence.length > 0) {
+              <span class="typologies-ecart"
+                    [matTooltip]="ligne.affectesSansCompetence.join(', ')"
+                    i18n="@@typologies.affectation.sansCompetence"
+                >{{ ligne.affectesSansCompetence.length }} affectés sans la compétence</span
+              >
+            }
+          </td>
+        </ng-container>
+        <tr mat-header-row *matHeaderRowDef="colonnes"></tr>
+        <tr mat-row *matRowDef="let row; columns: colonnes"></tr>
+      </table>
+    </mat-card-content>
+  }
+  <app-output-panel [text]="output()" />
+</mat-card>
