@@ -672,10 +672,18 @@ public class StandMcpTools {
                             required = false)
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        // The ninja flag is carried over: a rename must not demote the ninja typologie.
+        // The ninja flag is carried over: a rename must not demote the ninja
+        // typologie. Same for the per-typologie cap (issue #594): an update
+        // replaces the whole row, and this tool renames — it does not lift a
+        // ceiling somebody set on the Typologies screen.
         boolean ninja = referenceDataService.typologieNinja().filter(id::equals).isPresent();
+        Integer plafond = referenceDataService.listTypologies().stream()
+                .filter(typologie -> typologie.id().equals(id))
+                .findFirst()
+                .map(TypologieItem::maxCreneauxParAnimateur)
+                .orElse(null);
         Instant precondition = modifieLe == null ? null : McpArgs.instant(modifieLe, "modifieLe");
-        return referenceDataService.updateTypologie(id, new TypologieItem(id, label, ninja, precondition));
+        return referenceDataService.updateTypologie(id, new TypologieItem(id, label, ninja, plafond, precondition));
     }
 
     @Tool(

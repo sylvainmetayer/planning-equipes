@@ -53,7 +53,11 @@ public class TypologieService implements TypologieLibelles {
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = repository.saveTypologie(
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                        Ids.required(typologie.id(), "typology id"),
+                        typologie.label(),
+                        typologie.ninja(),
+                        typologie.maxCreneauxParAnimateur(),
+                        null),
                 true);
         changeTracker.markModified();
         return cree;
@@ -69,7 +73,11 @@ public class TypologieService implements TypologieLibelles {
         return repository.saveTypologie(
                 connection,
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                        Ids.required(typologie.id(), "typology id"),
+                        typologie.label(),
+                        typologie.ninja(),
+                        typologie.maxCreneauxParAnimateur(),
+                        null),
                 true);
     }
 
@@ -82,7 +90,11 @@ public class TypologieService implements TypologieLibelles {
     public TypologieItem importer(TypologieItem typologie) {
         TypologieItem ecrite = repository.saveTypologie(
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"), typologie.label(), typologie.ninja(), null),
+                        Ids.required(typologie.id(), "typology id"),
+                        typologie.label(),
+                        typologie.ninja(),
+                        typologie.maxCreneauxParAnimateur(),
+                        null),
                 false);
         changeTracker.markModified();
         return ecrite;
@@ -93,7 +105,13 @@ public class TypologieService implements TypologieLibelles {
             throw new BusinessError.NotFound("Typologie inconnue : " + id);
         }
         TypologieItem misAJour = repository.saveTypologie(
-                new TypologieItem(id, typologie.label(), typologie.ninja(), typologie.modifieLe()), false);
+                new TypologieItem(
+                        id,
+                        typologie.label(),
+                        typologie.ninja(),
+                        typologie.maxCreneauxParAnimateur(),
+                        typologie.modifieLe()),
+                false);
         changeTracker.markModified();
         return misAJour;
     }

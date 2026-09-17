@@ -135,4 +135,51 @@ class ReferenceDataResourceTypologiesTest {
                 .extracting(t -> t.get("label"))
                 .containsExactly("JEUX_VIDEO");
     }
+
+    /**
+     * The per-typologie cap of issue #594, over the API the screen calls.
+     *
+     * <p>It was droppable in the middle: the form sent it, {@code
+     * TypologieService} rebuilt the item through an overload that had no cap
+     * parameter, and the response came back without it. Both ends were tested
+     * and green — the repository wrote the column, the form filled the field —
+     * so this checks the one thing neither did: that a POST then a PUT give it
+     * back.</p>
+     */
+    @Test
+    void lePlafondDeCreneauxSurvitALaCreationEtALaModification() {
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":4}")
+                .when()
+                .post("/api/typologies")
+                .then()
+                .statusCode(200)
+                .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
+
+        given().when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .body("find { it.id == 'TYPO-PLAFOND' }.maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
+
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":2}")
+                .when()
+                .put("/api/typologies/TYPO-PLAFOND")
+                .then()
+                .statusCode(200)
+                .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(2));
+
+        // No cap at all is a legitimate value, and must erase the one before:
+        // « vide » on the form means « plus de plafond », not « inchangé ».
+        given().contentType(ContentType.JSON)
+                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\"}")
+                .when()
+                .put("/api/typologies/TYPO-PLAFOND")
+                .then()
+                .statusCode(200)
+                .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.nullValue());
+
+        given().when().delete("/api/typologies/TYPO-PLAFOND").then().statusCode(204);
+    }
 }

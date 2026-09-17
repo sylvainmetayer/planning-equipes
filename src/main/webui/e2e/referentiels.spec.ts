@@ -24,6 +24,7 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   // Idempotence across runs: drop what this spec creates through the UI.
   await admin.delete('/api/animateurs/E2E-UI').catch(() => undefined);
   await admin.delete('/api/typologies/E2E-TYPO').catch(() => undefined);
+  await admin.delete('/api/typologies/E2E-TYPO-CAP').catch(() => undefined);
   await admin.delete(`/api/stands/${STAND_MODELE}`).catch(() => undefined);
 });
 
@@ -136,6 +137,51 @@ test.describe('typologies', () => {
     await ligne.getByRole('button', { name: 'Supprimer' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();
     await expect(page.getByRole('row', { name: /E2E-TYPO/ })).toHaveCount(0);
+    await page.context().close();
+  });
+
+  // The cap of issue #594 was droppable on its way to the database: the form
+  // sent it, the service rebuilt the item without it, and the response came
+  // back empty. A round trip through the real screen is what catches that —
+  // the unit tests on both ends were green while the middle lost the value.
+  test('le plafond de créneaux saisi dans le formulaire est bien enregistré', async ({
+    browser,
+  }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/typologies');
+
+    await page.getByRole('button', { name: 'Ajouter' }).click();
+    const dialog = await dialogueOuvert(page);
+    await dialog.getByLabel('Identifiant').fill('E2E-TYPO-CAP');
+    await dialog.getByLabel('Libellé').fill('Typologie plafonnée');
+    await dialog.getByLabel('Créneaux maximum par animateur').fill('4');
+    await dialog.getByRole('button', { name: /Créer/ }).click();
+    await expect(dialog).toBeHidden();
+
+    // Read back from the server, not from the screen: the bug was that the
+    // value never reached it.
+    const reponse = await admin.get('/api/typologies');
+    expect(reponse.ok()).toBe(true);
+    const typologies = (await reponse.json()) as {
+      id: string;
+      maxCreneauxParAnimateur: number | null;
+    }[];
+    expect(typologies.find((each) => each.id === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(4);
+
+    // And the edit round trip: reopening the form shows it, and saving again
+    // does not silently clear it.
+    await page.reload();
+    const ligne = page.getByRole('row', { name: /E2E-TYPO-CAP/ });
+    await ligne.getByRole('button', { name: 'Modifier' }).click();
+    const edition = await dialogueOuvert(page);
+    await expect(edition.getByLabel('Créneaux maximum par animateur')).toHaveValue('4');
+    await edition.getByLabel('Créneaux maximum par animateur').fill('2');
+    await edition.getByRole('button', { name: /Modifier la typologie/ }).click();
+    await expect(edition).toBeHidden();
+
+    const apres = await admin.get('/api/typologies');
+    const relues = (await apres.json()) as { id: string; maxCreneauxParAnimateur: number | null }[];
+    expect(relues.find((each) => each.id === 'E2E-TYPO-CAP')?.maxCreneauxParAnimateur).toBe(2);
     await page.context().close();
   });
 });

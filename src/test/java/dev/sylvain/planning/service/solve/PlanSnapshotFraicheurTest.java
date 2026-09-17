@@ -280,7 +280,7 @@ class PlanSnapshotFraicheurTest {
      */
     private void fixture(String standId, String animateurId, long creneauId, String posteId) {
         if (referenceData.listTypologies().stream().noneMatch(item -> item.id().equals(TYPOLOGIE))) {
-            referenceData.createTypologie(new TypologieItem(TYPOLOGIE, "Typologie fraîcheur", false, null));
+            referenceData.createTypologie(new TypologieItem(TYPOLOGIE, "Typologie fraîcheur", false));
         }
         referenceData.writeStand(new Stand(standId, "Stand " + standId, Set.of(TYPOLOGIE), 1, 1, false));
         referenceData.writeAnimateur(animateur(animateurId));

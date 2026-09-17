@@ -25,10 +25,13 @@ public record TypologieItem(
         }
     }
 
-    public TypologieItem(String id, String label, boolean ninja, Instant modifieLe) {
-        this(id, label, ninja, null, modifieLe);
-    }
-
+    /**
+     * No convenience overload carries the {@code modifieLe} without the cap.
+     * There used to be one, and {@code TypologieService} used it on every write:
+     * the cap a form sent was silently dropped on its way to the database, and
+     * the response came back without it. A caller that has a cap to write now
+     * has to say so, and a caller that has none has to say that too.
+     */
     public TypologieItem(String id, String label, boolean ninja) {
         this(id, label, ninja, null, null);
     }

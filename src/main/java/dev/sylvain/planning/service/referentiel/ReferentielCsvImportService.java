@@ -95,7 +95,7 @@ public class ReferentielCsvImportService {
     public ReferentielCsvImportReport apply(ImportTarget cible, ReferentielCsvImportRequest request) {
         Analyse analyse = analyse(cible, request);
         for (String typologieId : analyse.typologiesACreer()) {
-            typologies.importer(new TypologieItem(typologieId, typologieId, false, null));
+            typologies.importer(new TypologieItem(typologieId, typologieId, false));
         }
         for (Ecriture ecriture : analyse.ecritures()) {
             ecriture.ecrire(this);
@@ -211,7 +211,12 @@ public class ReferentielCsvImportService {
             if (ninja) {
                 details.add("Marquée polyvalente : elle retire le drapeau à la typologie qui le portait.");
             }
-            TypologieItem ecrite = new TypologieItem(id, libelle, ninja, null);
+            // The file carries id, libelle and ninja — no cap column — so the
+            // cap already recorded is kept rather than erased: « une colonne
+            // retirée du fichier n'efface rien » (docs/import-export.md).
+            TypologieItem existante = existantes.get(id);
+            TypologieItem ecrite = new TypologieItem(
+                    id, libelle, ninja, existante == null ? null : existante.maxCreneauxParAnimateur(), null);
             ecritures.add(service -> service.typologies.importer(ecrite));
             lignes.add(new LigneImportee(
                     row.line(), id, libelle, existe ? ActionImport.MIS_A_JOUR : ActionImport.CREE, List.of(), details));
