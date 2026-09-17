@@ -45,7 +45,7 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      <mat-chip-listbox [value]="axe()" (change)="axe.set($any($event).value); celluleOuverte.set(null)"
+      <mat-chip-listbox [value]="axe()" (change)="axe.set($any($event).value); openedCell.set(null)"
                         i18n-aria-label="@@constraints.pivot.axeLabel" aria-label="Axe du tableau croisé">
         @for (option of axes; track option.value) {
           <mat-chip-option [value]="option.value" [selected]="option.value === axe()">{{ option.label }}</mat-chip-option>
@@ -71,7 +71,7 @@
                 <th scope="row" class="heatmap-row-header">{{ ligne.contrainte }}</th>
                 @for (ecarts of ligne.ecarts; track $index) {
                   <td [class]="classeCellule(ecarts, pivot().maximum)"
-                      (click)="ouvrirCellule(ligne.contrainte, pivot().colonnes[$index], ecarts)">
+                      (click)="openCell(ligne.contrainte, pivot().colonnes[$index], ecarts)">
                     {{ ecarts > 0 ? ecarts : '—' }}
                   </td>
                 }
@@ -105,7 +105,7 @@
           } @else {
             <p class="empty-hint" i18n="@@constraints.pivot.detail.nonListable">
               Les lignes ne sont détaillées que pour les règles dures : une règle moyenne ou souple se compte
-              par milliers, et le serveur ne les envoie pas. Le compte, lui, vaut pour toutes.
+              par milliers, et le serveur ne les envoie pas. Le compte, lui, vaut pour allColumns.
             </p>
           }
         </div>

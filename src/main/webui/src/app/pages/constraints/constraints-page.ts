@@ -32,7 +32,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
-import { classeCellule, ColonnePivot, construirePivot } from './ecarts-pivot';
+import { classeCellule, ColonnePivot, buildPivot } from './ecarts-pivot';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -150,12 +150,12 @@ export class ConstraintsPage {
   private readonly problemes = inject(ProblemesStore);
   private readonly referentiel = inject(ReferenceDataStore);
 
-  /* --------- Où se concentrent les écarts (issue #496) --------- */
+  /* --------- Where the breaches concentrate (issue #496) --------- */
 
   protected readonly axes = AXES.map((axe) => ({ value: axe, label: axeLabel(axe) }));
   protected readonly axe = signal<AxePivot>('JOUR');
   /** The cell the reader opened, or null — its lines are listed under the table. */
-  protected readonly celluleOuverte = signal<{ contrainte: string; cle: string } | null>(null);
+  protected readonly openedCell = signal<{ contrainte: string; cle: string } | null>(null);
 
   /**
    * The cross-table of the selected axis. Days read chronologically, which is
@@ -164,7 +164,7 @@ export class ConstraintsPage {
    */
   protected readonly pivot = computed(() => {
     const axe = this.axe();
-    return construirePivot(
+    return buildPivot(
       this.view()?.pivotEcarts ?? [],
       axe,
       (cle) => this.libellePivot(axe, cle),
@@ -189,13 +189,13 @@ export class ConstraintsPage {
     return cle;
   }
 
-  protected ouvrirCellule(contrainte: string, colonne: ColonnePivot, ecarts: number): void {
+  protected openCell(contrainte: string, colonne: ColonnePivot, ecarts: number): void {
     if (ecarts === 0) {
       return;
     }
-    const ouverte = this.celluleOuverte();
-    this.celluleOuverte.set(
-      ouverte && ouverte.contrainte === contrainte && ouverte.cle === colonne.cle
+    const opened = this.openedCell();
+    this.openedCell.set(
+      opened && opened.contrainte === contrainte && opened.cle === colonne.cle
         ? null
         : { contrainte, cle: colonne.cle },
     );
@@ -211,27 +211,27 @@ export class ConstraintsPage {
    * nothing.
    */
   protected readonly detailCellule = computed(() => {
-    const ouverte = this.celluleOuverte();
-    if (ouverte === null) {
+    const opened = this.openedCell();
+    if (opened === null) {
       return null;
     }
     const axe = this.axe();
     const contrainte = this.view()?.contraintes.find(
-      (candidate) => candidate.name === ouverte.contrainte,
+      (candidate) => candidate.name === opened.contrainte,
     );
     const ecarts =
       this.view()?.pivotEcarts.find(
         (cellule) =>
           cellule.axe === axe &&
-          cellule.contrainte === ouverte.contrainte &&
-          cellule.cle === ouverte.cle,
+          cellule.contrainte === opened.contrainte &&
+          cellule.cle === opened.cle,
       )?.ecarts ?? 0;
     const lignes = (contrainte?.references ?? [])
-      .filter((reference) => this.referenceTouche(axe, reference, ouverte.cle))
+      .filter((reference) => this.referenceTouche(axe, reference, opened.cle))
       .map((reference) => reference.texte);
     return {
-      contrainte: ouverte.contrainte,
-      colonne: this.libellePivot(axe, ouverte.cle),
+      contrainte: opened.contrainte,
+      colonne: this.libellePivot(axe, opened.cle),
       ecarts,
       lignes,
       listable: contrainte?.niveau === 'HARD',

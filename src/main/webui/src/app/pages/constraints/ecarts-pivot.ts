@@ -47,7 +47,7 @@ export const MAX_COLONNES = 25;
  * one (the days, chronologically), by total otherwise: on stands and
  * animateurs, « where does it concentrate » is read left to right.
  */
-export function construirePivot(
+export function buildPivot(
   cellules: CellulePivot[],
   axe: AxePivot,
   libelle: (cle: string) => string,
@@ -58,41 +58,41 @@ export function construirePivot(
     return { colonnes: [], lignes: [], colonnesMasquees: 0, maximum: 0 };
   }
 
-  const totauxParCle = new Map<string, number>();
-  const totauxParContrainte = new Map<string, number>();
+  const keyTotals = new Map<string, number>();
+  const constraintTotals = new Map<string, number>();
   for (const cellule of retenues) {
-    totauxParCle.set(cellule.cle, (totauxParCle.get(cellule.cle) ?? 0) + cellule.ecarts);
-    totauxParContrainte.set(
+    keyTotals.set(cellule.cle, (keyTotals.get(cellule.cle) ?? 0) + cellule.ecarts);
+    constraintTotals.set(
       cellule.contrainte,
-      (totauxParContrainte.get(cellule.contrainte) ?? 0) + cellule.ecarts,
+      (constraintTotals.get(cellule.contrainte) ?? 0) + cellule.ecarts,
     );
   }
 
-  const toutes: ColonnePivot[] = [...totauxParCle.entries()].map(([cle, total]) => ({
+  const allColumns: ColonnePivot[] = [...keyTotals.entries()].map(([cle, total]) => ({
     cle,
     libelle: libelle(cle),
     total,
   }));
-  toutes.sort((a, b) => b.total - a.total || a.libelle.localeCompare(b.libelle));
-  const colonnes = toutes.slice(0, MAX_COLONNES);
+  allColumns.sort((a, b) => b.total - a.total || a.libelle.localeCompare(b.libelle));
+  const colonnes = allColumns.slice(0, MAX_COLONNES);
   if (ordre) {
     colonnes.sort(ordre);
   }
   const index = new Map(colonnes.map((colonne, position) => [colonne.cle, position]));
 
-  const lignes: LignePivot[] = [...totauxParContrainte.entries()]
+  const lignes: LignePivot[] = [...constraintTotals.entries()]
     .map(([contrainte, total]) => ({
       contrainte,
       ecarts: colonnes.map(() => 0),
       total,
     }))
     .sort((a, b) => b.total - a.total || a.contrainte.localeCompare(b.contrainte));
-  const lignesParContrainte = new Map(lignes.map((ligne) => [ligne.contrainte, ligne]));
+  const rowsByConstraint = new Map(lignes.map((ligne) => [ligne.contrainte, ligne]));
 
   let maximum = 0;
   for (const cellule of retenues) {
     const position = index.get(cellule.cle);
-    const ligne = lignesParContrainte.get(cellule.contrainte);
+    const ligne = rowsByConstraint.get(cellule.contrainte);
     if (position === undefined || ligne === undefined) {
       continue;
     }
@@ -100,7 +100,7 @@ export function construirePivot(
     maximum = Math.max(maximum, ligne.ecarts[position]);
   }
 
-  return { colonnes, lignes, colonnesMasquees: toutes.length - colonnes.length, maximum };
+  return { colonnes, lignes, colonnesMasquees: allColumns.length - colonnes.length, maximum };
 }
 
 /**
