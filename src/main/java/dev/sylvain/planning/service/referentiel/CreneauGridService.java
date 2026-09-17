@@ -72,6 +72,14 @@ public class CreneauGridService {
     @Inject
     FeasibilityAnalyzer feasibilityAnalyzer;
 
+    /**
+     * Only for the constraint states: the grid report estimates how many seats
+     * the team could hold, and that estimate changes with the supervision of
+     * minors (issue #595).
+     */
+    @Inject
+    ParametresService parametres;
+
     /* ------------------------------ Generation ------------------------------ */
 
     /**
@@ -216,7 +224,12 @@ public class CreneauGridService {
                 : OuvertureStandsAnalyzer.analyze(stands, creneaux).anomalies();
         FeasibilityReport faisabilite = stands.isEmpty() || creneaux.isEmpty()
                 ? null
-                : feasibilityAnalyzer.analyze(animateurs, stands, creneaux);
+                : feasibilityAnalyzer.analyze(
+                        animateurs,
+                        stands,
+                        creneaux,
+                        List.of(),
+                        FeasibilityAnalyzer.encadrementMineursActif(parametres.disabledContraintes()));
 
         return new RapportGrille(creneaux.size(), anomalies, ouvertures, faisabilite);
     }

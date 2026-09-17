@@ -1,6 +1,7 @@
 package dev.sylvain.planning.solver.constraints;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
@@ -31,10 +32,21 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /**
+     * The catalogue ships {@code mineurNecessiteEncadrementMajeur} switched
+     * off (issue #595): the FESTIVAL's managers, who are never planned, provide
+     * that supervision, and no article of the Code du travail asks the solver
+     * for it. An organiser without such a manager turns it on, which is what
+     * the {@code actif = true} toggle below says — and what these two tests
+     * cover, the rule itself rather than whether it applies by default.
+     */
+    private static final ConstraintToggle ENCADREMENT_DEMANDE =
+            new ConstraintToggle("mineurNecessiteEncadrementMajeur", true);
+
     @Test
-    void mineurSansMajeurSurLeStandEstPenalise() {
+    void mineurSansMajeurSurLeStandEstPenaliseQuandLEncadrementEstDemande() {
         verify("mineurNecessiteEncadrementMajeur")
-                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
+                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")), ENCADREMENT_DEMANDE)
                 .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
@@ -43,8 +55,31 @@ class LegalConstraintsTest extends ConstraintTestBase {
         verify("mineurNecessiteEncadrementMajeur")
                 .given(
                         poste(standStrat, creneauMatin, mineurDebutant("M1")),
-                        poste(standStrat, creneauMatin, referentMajeur("A1")))
+                        poste(standStrat, creneauMatin, referentMajeur("A1")),
+                        ENCADREMENT_DEMANDE)
                 .penalizesBy(0);
+    }
+
+    /**
+     * The non-regression the decision of issue #595 is worth: with nothing
+     * switched on, a minor holds a day stand on their own — and still cannot
+     * take a night slot. Both halves in one test, because it is the pair that
+     * was decided, and reading one without the other is how « the supervision
+     * rule went » turns into « the minors' framework went ».
+     */
+    @Test
+    void unMineurSeulTientUnStandDeJourMaisJamaisUnCreneauDeNuit() {
+        verify("mineurNecessiteEncadrementMajeur")
+                .given(poste(standStrat, creneauMatin, mineurDebutant("M1")))
+                .penalizesBy(0);
+
+        verify("travailDeNuitInterditPourMineur")
+                .given(poste(standStrat, creneauNuit, mineurDebutant("M1")))
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
+
+        verify("standReserveAuxMajeurs")
+                .given(poste(standMajeurs, creneauMatin, mineurDebutant("M1")))
+                .penalizesBy(ExclusionEligibilite.FORFAIT);
     }
 
     @Test

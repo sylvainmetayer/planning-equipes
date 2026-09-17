@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -16,6 +17,7 @@ import dev.sylvain.planning.solver.ConstraintFloorRules;
 import dev.sylvain.planning.solver.ConstraintFloorRules.Denominator;
 import dev.sylvain.planning.solver.ConstraintFloorRules.FloorRule;
 import dev.sylvain.planning.solver.ConstraintFloorRules.MissingData;
+import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -147,7 +149,14 @@ public final class PlanningDiagnosticService {
                 .filter(p -> p.getAnimateur() == null)
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
-                solved.getAnimateurs(), distinctStands(solved), distinctCreneaux(solved), solved.getContraintesAdHoc());
+                solved.getAnimateurs(),
+                distinctStands(solved),
+                distinctCreneaux(solved),
+                solved.getContraintesAdHoc(),
+                // The plan's own toggles, not the edition's: a diagnostic
+                // describes the problem that was solved, and a solve launched
+                // with the rule on stays described with it on.
+                encadrementMineursActif(solved));
         int hardScore = solved.getScore() == null
                 ? 0
                 : Math.toIntExact(solved.getScore().hardScore());
@@ -296,6 +305,23 @@ public final class PlanningDiagnosticService {
                 .limit(MAX_VIOLATIONS_PAR_CONTRAINTE)
                 .map(match -> ViolationFormatter.references(match.facts()))
                 .toList();
+    }
+
+    /**
+     * Whether the plan handed here was solved with the supervision of minors
+     * on, read off its own {@code ConstraintToggle} facts: absent means the
+     * catalogue's default, exactly as the solver read them.
+     */
+    private static boolean encadrementMineursActif(PlanningEvenement solved) {
+        List<ConstraintToggle> toggles = solved.getConstraintsDesactivees();
+        if (toggles != null) {
+            for (ConstraintToggle toggle : toggles) {
+                if (ExclusionEligibilite.ENCADREMENT_DES_MINEURS.equals(toggle.getNom())) {
+                    return toggle.isActif();
+                }
+            }
+        }
+        return ConstraintCatalog.activeByDefault(ExclusionEligibilite.ENCADREMENT_DES_MINEURS);
     }
 
     private static List<Stand> distinctStands(PlanningEvenement solved) {

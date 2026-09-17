@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -691,8 +692,22 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     @Override
+    public ParametresQualite getParametresQualite() {
+        return parametres.qualite();
+    }
+
+    public ParametresQualite updateParametresQualite(ParametresQualite valeurs) {
+        return parametres.updateQualite(valeurs);
+    }
+
+    @Override
     public Set<String> getContraintesDesactivees() {
         return parametres.disabledContraintes();
+    }
+
+    @Override
+    public Map<String, Boolean> getEtatsContraintes() {
+        return parametres.etatsContraintes();
     }
 
     public void setContrainteActive(String nom, boolean actif) {

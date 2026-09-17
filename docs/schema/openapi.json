@@ -1166,6 +1166,9 @@
         "properties" : {
           "nom" : {
             "type" : "string"
+          },
+          "actif" : {
+            "type" : "boolean"
           }
         }
       },
@@ -3766,7 +3769,7 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax" ],
         "type" : "object",
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
@@ -3780,6 +3783,10 @@
             "$ref" : "#/components/schemas/LocalTime"
           },
           "reposSouhaiteApresServiceTardifMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "typologiesDistinctesMax" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -9386,6 +9393,51 @@
           }
         },
         "summary" : "Get Parametres Notifications",
+        "tags" : [ "Parametres Resource" ]
+      }
+    },
+    "/api/parametres-qualite" : {
+      "put" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/ParametresQualite"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Parametres Qualite",
+        "tags" : [ "Parametres Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ParametresQualite"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Get Parametres Qualite",
         "tags" : [ "Parametres Resource" ]
       }
     },

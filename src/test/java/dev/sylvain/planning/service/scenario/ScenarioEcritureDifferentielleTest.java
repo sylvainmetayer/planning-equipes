@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -95,11 +94,12 @@ class ScenarioEcritureDifferentielleTest {
                 lu.sections().typologies(),
                 emplacements(stands),
                 lu.sections().parametresLegaux().orElse(null),
+                lu.sections().parametresQualite().orElse(null),
                 lu.sections().parametresSolveur().orElse(null),
                 lu.sections()
                         .contraintes()
-                        .map(ScenarioYamlReader.ContraintesScenario::desactivees)
-                        .orElse(Set.of()),
+                        .map(ScenarioEcritureDifferentielleTest::etats)
+                        .orElse(Map.of()),
                 lu.sections()
                         .contraintes()
                         .map(ScenarioYamlReader.ContraintesScenario::poids)
@@ -107,6 +107,19 @@ class ScenarioEcritureDifferentielleTest {
                 lu.planning().getContraintesAdHoc()));
 
         return ScenarioYamlReader.buildFromScenarioText(ecrit, ParametresLegaux::new);
+    }
+
+    /**
+     * The states the file pins, as the edition would hold them: what it
+     * switches off, and what it switches on although the catalogue ships it
+     * off. A rule it names in neither list is one nobody chose, so it belongs
+     * in no map — and comes back out of the writer just as absent.
+     */
+    private static Map<String, Boolean> etats(ScenarioYamlReader.ContraintesScenario contraintes) {
+        Map<String, Boolean> etats = new java.util.LinkedHashMap<>();
+        contraintes.desactivees().forEach(nom -> etats.put(nom, false));
+        contraintes.activees().forEach(nom -> etats.put(nom, true));
+        return etats;
     }
 
     private static List<Emplacement> emplacements(List<Stand> stands) {

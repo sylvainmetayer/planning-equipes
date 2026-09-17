@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
+import dev.sylvain.planning.service.referentiel.ParametresQualiteDefaults;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
@@ -106,26 +107,38 @@ final class SolverConfiguration {
 
     /**
      * The {@code planning.contraintes.*} block, read once at startup like the
-     * weights: {@code application.properties} does not change at runtime, and
-     * unlike the legal parameters these are not stored per edition — an edition
-     * that wants {@code eviterFermeturePuisOuverture} quieter doses it through
-     * {@code ponderation_contrainte} instead.
+     * weights: {@code application.properties} does not change at runtime. Since
+     * issue #591 these are stored per edition too, and what this reads is the
+     * <b>default</b> an edition starts from — what it solves with until someone
+     * opens the Paramètres screen.
      *
      * <p>An hour left blank in the configuration reads as absent, not as
      * midnight: that is how a deployment neutralises the rule without editing
      * the catalogue, and {@code LocalTime.parse("")} would otherwise fail the
      * boot.</p>
      */
+    /**
+     * The {@code planning.contraintes.*} block, read once at startup like the
+     * weights: {@code application.properties} does not change at runtime. Since
+     * issue #591 these are stored per edition too, and what this reads is the
+     * <b>default</b> an edition starts from — what it solves with until someone
+     * opens the Paramètres screen.
+     *
+     * <p>{@code maxEmplacementsParJour} arrives already resolved, from the
+     * constructor's own {@code @ConfigProperty}; everything else comes straight
+     * from {@link ParametresQualiteDefaults}, which the repository's fallback
+     * reads too.</p>
+     */
     private static ParametresQualite readParametresQualite(Integer maxEmplacementsParJour, Config config) {
-        return new ParametresQualite(
-                maxEmplacementsParJour != null
-                        ? maxEmplacementsParJour
-                        : ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
-                readHeure(config, "planning.contraintes.heure-service-tardif"),
-                readHeure(config, "planning.contraintes.heure-service-matinal"),
-                config.getOptionalValue(
-                                "planning.contraintes.repos-souhaite-apres-service-tardif-minutes", Integer.class)
-                        .orElse(ParametresQualite.REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT));
+        ParametresQualite defauts = ParametresQualiteDefaults.of(config);
+        return maxEmplacementsParJour == null
+                ? defauts
+                : new ParametresQualite(
+                        maxEmplacementsParJour,
+                        defauts.heureServiceTardif(),
+                        defauts.heureServiceMatinal(),
+                        defauts.reposSouhaiteApresServiceTardifMinutes(),
+                        defauts.typologiesDistinctesMax());
     }
 
     /** A {@code HH:mm} property, {@code null} when unset or left blank. */

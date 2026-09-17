@@ -34,6 +34,7 @@ import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
 import { ParametresLegauxCard } from './parametres-legaux';
+import { ParametresQualiteCard } from './parametres-qualite';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorPrefix } from '../../core/error-message';
 
@@ -77,6 +78,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     FeasibilityBanner,
     OutputPanel,
     ParametresLegauxCard,
+    ParametresQualiteCard,
     ParametresNotificationsPanel,
     StatusMessage,
   ],

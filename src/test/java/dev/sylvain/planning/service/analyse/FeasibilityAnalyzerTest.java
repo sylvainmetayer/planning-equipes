@@ -338,14 +338,22 @@ class FeasibilityAnalyzerTest {
         assertThat(report.message()).isEqualTo(FeasibilityAnalyzer.MESSAGE_SANS_POSTE);
     }
 
-    /** A minor holds a seat only beside an adult: a team of minors holds nothing. */
+    /**
+     * With the supervision of minors asked for, a minor holds a seat only
+     * beside an adult: a team of minors holds nothing. The catalogue ships the
+     * rule off (issue #595), so the estimate is told to apply it.
+     */
     @Test
-    void minorsWithoutAnAdultHoldNoSeat() {
+    void minorsWithoutAnAdultHoldNoSeatWhenSupervisionIsAskedFor() {
         Stand stand = stand("stand-1", 2, "STRATEGIE");
         Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
 
         FeasibilityReport report = analyzer.analyze(
-                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)), List.of(stand), List.of(creneau));
+                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)),
+                List.of(stand),
+                List.of(creneau),
+                List.of(),
+                true);
 
         assertThat(report.feasible()).isFalse();
         assertThat(report.causes()).singleElement().satisfies(cause -> {
@@ -353,6 +361,23 @@ class FeasibilityAnalyzerTest {
             assertThat(cause.capacite()).isZero();
             assertThat(cause.severite()).isEqualTo(SeveriteInfaisabilite.CRITIQUE);
         });
+    }
+
+    /**
+     * Without that rule — the catalogue's own state — the same three minors
+     * hold the two seats: the estimate must not keep pairing them off with an
+     * adult nobody requires, or it calls a perfectly staffed day impossible.
+     */
+    @Test
+    void minorsWithoutAnAdultHoldTheSeatsWhenSupervisionIsNotAskedFor() {
+        Stand stand = stand("stand-1", 2, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        FeasibilityReport report = analyzer.analyze(
+                List.of(mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)), List.of(stand), List.of(creneau));
+
+        assertThat(report.feasible()).isTrue();
+        assertThat(report.causes()).isEmpty();
     }
 
     /** One adult on the largest stand opens its other seats to minors; an adults-only stand opens none. */
@@ -366,7 +391,9 @@ class FeasibilityAnalyzerTest {
         FeasibilityReport report = analyzer.analyze(
                 List.of(animateur("a1", "STRATEGIE"), mineur("m1", 2010), mineur("m2", 2010), mineur("m3", 2010)),
                 List.of(grand, petit, bar),
-                List.of(creneau));
+                List.of(creneau),
+                List.of(),
+                true);
 
         // Six seats: the adult on the big stand opens two seats to minors, the third minor has nowhere to go.
         assertThat(report.causes()).singleElement().satisfies(cause -> {

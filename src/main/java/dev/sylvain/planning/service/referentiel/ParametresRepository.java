@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -11,15 +12,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalTime;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Set;
 import javax.sql.DataSource;
 
 /**
- * The two single-row parameter tables (legal, solver), the constraint toggles
- * and the per-edition constraint weights.
+ * The single-row parameter tables (legal, quality, solver, notifications), the
+ * constraint toggles and the per-edition constraint weights.
  *
  * <p>Each single-row parameter table holds one row per edition, so every read
  * has to cope with the row not being there yet: an edition that has never been
@@ -107,6 +106,66 @@ public class ParametresRepository {
         }
     }
 
+    /* ---------------------------- Quality parameters -------------------------- */
+
+    /**
+     * What this edition chose, or {@code defauts} when it never chose anything
+     * — the deployment's {@code planning.contraintes.*} block, which the caller
+     * passes because this layer reads rows and knows no configuration.
+     *
+     * <p>The two hours are nullable on purpose: a blank hour is how
+     * {@code eviterFermeturePuisOuverture} is neutralised, and midnight is not
+     * the same thing as absent.</p>
+     */
+    public ParametresQualite getParametresQualite(ParametresQualite defauts) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        SELECT max_emplacements_distincts_par_jour, heure_service_tardif,
+                        heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
+                        typologies_distinctes_max
+                        FROM parametres_qualite
+                        WHERE edition_id = ?""");
+                ResultSet rs = ps.executeQuery()) {
+            if (rs.next()) {
+                return new ParametresQualite(
+                        rs.getInt("max_emplacements_distincts_par_jour"),
+                        rs.getObject("heure_service_tardif", LocalTime.class),
+                        rs.getObject("heure_service_matinal", LocalTime.class),
+                        rs.getInt("repos_souhaite_apres_service_tardif_minutes"),
+                        rs.getInt("typologies_distinctes_max"));
+            }
+            return defauts;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load quality parameters", e);
+        }
+    }
+
+    public void saveParametresQualite(ParametresQualite parametres) {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, """
+                        INSERT INTO parametres_qualite (edition_id, max_emplacements_distincts_par_jour,
+                        heure_service_tardif, heure_service_matinal,
+                        repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max)
+                        VALUES (?, ?, ?, ?, ?, ?)
+                        ON CONFLICT (edition_id)
+                        DO UPDATE SET
+                        max_emplacements_distincts_par_jour = EXCLUDED.max_emplacements_distincts_par_jour,
+                        heure_service_tardif = EXCLUDED.heure_service_tardif,
+                        heure_service_matinal = EXCLUDED.heure_service_matinal,
+                        repos_souhaite_apres_service_tardif_minutes =
+                                EXCLUDED.repos_souhaite_apres_service_tardif_minutes,
+                        typologies_distinctes_max = EXCLUDED.typologies_distinctes_max""")) {
+            ps.setInt(2, parametres.maxEmplacementsDistinctsParJour());
+            ps.setObject(3, parametres.heureServiceTardif());
+            ps.setObject(4, parametres.heureServiceMatinal());
+            ps.setInt(5, parametres.reposSouhaiteApresServiceTardifMinutes());
+            ps.setInt(6, parametres.typologiesDistinctesMax());
+            ps.executeUpdate();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to save quality parameters", e);
+        }
+    }
+
     /* ---------------------------- Solver parameters --------------------------- */
 
     public ParametresSolveur getParametresSolveur() {
@@ -187,16 +246,22 @@ public class ParametresRepository {
 
     /* ---------------------------- Constraint toggles ------------------------- */
 
-    public Set<String> getContraintesDesactivees() {
+    /**
+     * The state this edition has <b>explicitly</b> chosen, per constraint name.
+     * A name absent from the map is one nobody touched: it follows the
+     * catalogue's default, which {@code ParametresService} is what applies —
+     * this layer stores rows, it does not know the catalogue.
+     */
+    public Map<String, Boolean> getEtatsContraintes() {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps =
-                        scope.prepareScoped(connection, "SELECT nom FROM constraint_toggle WHERE edition_id = ?");
+                PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT nom, actif FROM constraint_toggle WHERE edition_id = ?");
                 ResultSet rs = ps.executeQuery()) {
-            Set<String> desactivees = new HashSet<>();
+            Map<String, Boolean> etats = new LinkedHashMap<>();
             while (rs.next()) {
-                desactivees.add(rs.getString("nom"));
+                etats.put(rs.getString("nom"), rs.getBoolean("actif"));
             }
-            return desactivees;
+            return etats;
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load constraint toggles", e);
         }
@@ -255,13 +320,15 @@ public class ParametresRepository {
     }
 
     /**
-     * A row's presence means the constraint is disabled for the next solve;
-     * re-enabling simply drops it. Nothing else is recorded: this is a toggle
+     * Records the state this edition chose for one constraint, or drops the
+     * row when {@code actif} is {@code null} — the constraint then falls back
+     * to the catalogue's default, same convention as
+     * {@link #setConstraintWeight}. Nothing else is recorded: this is a state
      * table, not an audit log (see migration V39).
      */
-    public void setContrainteActive(String nom, boolean actif) {
+    public void setEtatContrainte(String nom, Boolean actif) {
         try (Connection connection = dataSource.getConnection()) {
-            if (actif) {
+            if (actif == null) {
                 try (PreparedStatement ps = scope.prepareScoped(
                         connection, "DELETE FROM constraint_toggle WHERE edition_id = ? AND nom = ?")) {
                     ps.setString(2, nom);
@@ -269,10 +336,12 @@ public class ParametresRepository {
                 }
             } else {
                 try (PreparedStatement ps = scope.prepareScoped(connection, """
-                        INSERT INTO constraint_toggle (edition_id, nom)
-                        VALUES (?, ?)
-                        ON CONFLICT (edition_id, nom) DO NOTHING""")) {
+                        INSERT INTO constraint_toggle (edition_id, nom, actif)
+                        VALUES (?, ?, ?)
+                        ON CONFLICT (edition_id, nom)
+                        DO UPDATE SET actif = EXCLUDED.actif""")) {
                     ps.setString(2, nom);
+                    ps.setBoolean(3, actif);
                     ps.executeUpdate();
                 }
             }

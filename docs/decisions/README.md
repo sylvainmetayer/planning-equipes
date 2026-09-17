@@ -58,12 +58,13 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0032](0032-journees-types-nommees-vacations-fixes.md) | Des journées types nommées génèrent les créneaux par différence ; les créneaux restent la vérité | Accepté |
 | [0033](0033-un-stand-qui-declare-ses-ouvertures-est-ferme-ailleurs.md) | Un stand qui déclare ses ouvertures est fermé les jours qu'il ne déclare pas ; l'élagage retire les fermetures devenues muettes | Accepté |
 | [0034](0034-exclusions-eligibilite-plus-lourdes-que-tout.md) | Un siège qui enfreint une exclusion d'éligibilité (jour d'indisponibilité, règles des mineurs) coûte plus que tout autre écart ; l'affectation forcée un jour d'indisponibilité est signalée, pas refusée | Accepté |
-| [0035](0035-mineur-seul-au-forfait.md) | Un mineur sans majeur à ses côtés coûte le même forfait que les exclusions d'éligibilité | Accepté |
+| [0035](0035-mineur-seul-au-forfait.md) | Un mineur sans majeur à ses côtés coûte le même forfait que les exclusions d'éligibilité | Accepté · conditionné par 0041 |
 | [0036](0036-construction-echantillonnee-des-tres-gros-problemes.md) | Au-delà de 15 millions de couples sièges × animateurs, la construction n'évalue que 50 candidats éligibles tirés au hasard par siège | Accepté |
 | [0037](0037-une-grille-est-toujours-des-vacations.md) | Une grille de créneaux est toujours faite de vacations : le découpage des amplitudes est retiré | Accepté |
 | [0038](0038-fraicheur-du-referentiel-persistee.md) | La date de dernière mutation du référentiel est persistée sur `edition` ; restaurer un instantané périmé est refusé sauf `forcer` | Accepté |
 | [0039](0039-validation-de-relecture-distincte-du-verrou.md) | Une journée se marque « relue et acceptée » sans être figée ; une résolution qui la déplace retire la relecture | Accepté |
 | [0040](0040-mentions-legales-exigees-au-demarrage.md) | Les mentions légales d'une instance en service sont exigées au démarrage, pas listées dans une case à cocher | Accepté |
+| [0041](0041-encadrement-des-mineurs-eteint-par-defaut.md) | L'encadrement des mineurs est une règle éteinte par défaut | Accepté · révise 0035 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

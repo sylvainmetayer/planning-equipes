@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -44,7 +45,27 @@ public interface ReferenceData {
 
     List<ContrainteAdHoc> snapshotContraintes();
 
+    /**
+     * The organisational-quality thresholds this edition solves with: its own
+     * row, or the deployment's {@code planning.contraintes.*} defaults while it
+     * has none.
+     */
+    ParametresQualite getParametresQualite();
+
+    /**
+     * Every constraint the next solve will not enforce — the ones switched off
+     * here, and the ones the catalogue ships off. Callers that only need to
+     * know what applies read this one.
+     */
     Set<String> getContraintesDesactivees();
+
+    /**
+     * The state this edition explicitly chose, per constraint name; a name
+     * absent from the map follows the catalogue default. This is what the
+     * solver is handed as {@code ConstraintToggle} facts, so a problem built
+     * without any of them still behaves like an untouched edition.
+     */
+    Map<String, Boolean> getEtatsContraintes();
 
     /**
      * Per-constraint weights this edition overrides, by constraint name. What

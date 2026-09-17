@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -25,6 +26,7 @@ import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
+import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
@@ -75,6 +77,7 @@ final class ScenarioDtoAssembler {
                 new FestivalDto(dateDebut),
                 parametresSolveur(export.parametresSolveur()),
                 parametresLegaux(export.parametresLegaux()),
+                parametresQualite(export.parametresQualite()),
                 contraintes(export),
                 nullWhenEmpty(typologies(export.typologies())),
                 creneaux(creneaux),
@@ -266,19 +269,34 @@ final class ScenarioDtoAssembler {
     }
 
     /**
-     * {@code null} when the edition tunes nothing — every rule active at its
-     * default weight is what a file without the section already means, and
-     * writing it out would be noise. Sorted, so two exports of the same edition
-     * are the same file.
+     * {@code null} when the edition tunes nothing — a rule left at the
+     * catalogue's own state and its default weight is what a file without the
+     * section already means, and writing it out would be noise. Sorted, so two
+     * exports of the same edition are the same file.
+     *
+     * <p>The file lists the states the edition <b>chose</b>, in both
+     * directions: the rules it switched off, and the rules it switched on
+     * although the catalogue ships them off. A rule nobody touched appears in
+     * neither list, so an edition that tuned nothing still writes no section —
+     * and an import reads back the catalogue's own state for it.</p>
      */
     private static ContraintesDto contraintes(ScenarioYamlWriter.ScenarioExport export) {
-        Set<String> desactivees = export.contraintesDesactivees() == null ? Set.of() : export.contraintesDesactivees();
+        Map<String, Boolean> etats = export.etatsContraintes() == null ? Map.of() : export.etatsContraintes();
         Map<String, Integer> poids = export.poidsContraintes() == null ? Map.of() : export.poidsContraintes();
-        if (desactivees.isEmpty() && poids.isEmpty()) {
+        Set<String> desactivees = etats.entrySet().stream()
+                .filter(etat -> !etat.getValue())
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(TreeSet::new));
+        Set<String> activees = etats.entrySet().stream()
+                .filter(Map.Entry::getValue)
+                .map(Map.Entry::getKey)
+                .collect(Collectors.toCollection(TreeSet::new));
+        if (desactivees.isEmpty() && activees.isEmpty() && poids.isEmpty()) {
             return null;
         }
         return new ContraintesDto(
-                desactivees.isEmpty() ? null : List.copyOf(new TreeSet<>(desactivees)),
+                desactivees.isEmpty() ? null : List.copyOf(desactivees),
+                activees.isEmpty() ? null : List.copyOf(activees),
                 poids.isEmpty() ? null : new TreeMap<>(poids));
     }
 
@@ -316,6 +334,22 @@ final class ScenarioDtoAssembler {
                                 : contrainte.getStand().getId(),
                         contrainte.getRaison()))
                 .toList();
+    }
+
+    /**
+     * The five thresholds, written whole or not at all: read wholesale on the
+     * way back in, a half-written section would say « no late hour » where the
+     * edition simply had one.
+     */
+    private static ParametresQualiteDto parametresQualite(ParametresQualite parametres) {
+        return parametres == null
+                ? null
+                : new ParametresQualiteDto(
+                        parametres.maxEmplacementsDistinctsParJour(),
+                        parametres.heureServiceTardif(),
+                        parametres.heureServiceMatinal(),
+                        parametres.reposSouhaiteApresServiceTardifMinutes(),
+                        parametres.typologiesDistinctesMax());
     }
 
     private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {

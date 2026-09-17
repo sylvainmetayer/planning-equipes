@@ -93,17 +93,64 @@ et la contrainte ne coûte rien.
 > aujourd'hui de préférence pour la variété des stands** : rétablir ce besoin
 > suppose d'abord d'arbitrer contre ces deux règles.
 
+## Les seuils de qualité
+
+Les règles de « Qualité d'organisation » lisent leurs seuils dans
+`ParametresQualite`, fait de problème comme `ParametresLegaux` :
+
+| Seuil | Défaut | Règle qui le lit |
+|---|---|---|
+| Emplacements distincts par jour et par animateur | 3 | `limiterEmplacementsParJour` |
+| Typologies distinctes par animateur, **sur l'édition entière** | 2 | `limiterTypologiesDistinctesParAnimateur` |
+| Heure d'un service tardif | 22:00 | `eviterFermeturePuisOuverture` |
+| Heure d'un service matinal | 10:00 | `eviterFermeturePuisOuverture` |
+| Repos souhaité après un service tardif | 12 h | `eviterFermeturePuisOuverture` |
+
+Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
+page Paramètres, carte « Qualité d'organisation » ; le bloc
+`planning.contraintes.*` de la configuration donne les valeurs d'une édition
+qui n'a jamais ouvert cette carte. Un scénario les emporte dans sa section
+`parametresQualite:`, comme il emporte déjà `parametresLegaux:`.
+
+Aucun n'a de plancher d'ordre public : ce sont des conforts que l'organisateur
+arbitre. Laisser les deux heures de service vides est d'ailleurs une réponse
+légitime — c'est ainsi qu'`eviterFermeturePuisOuverture` se tait
+([0031](decisions/0031-signaler-le-plancher-sans-le-decider.md)).
+
+La portée du plafond de typologies est l'**édition**, jamais la journée : le
+`groupBy` de la contrainte ne porte que l'animateur, sans clé de date, et un
+test le verrouille pour qu'un futur refactor ne le fasse pas glisser en
+silence.
+
 ## Activer / désactiver
 
 Pour le prochain solve uniquement : la désactivation empêche le stream de
-produire des matches, elle ne touche ni au poids ni à la logique. Toutes les
-règles sont actives par défaut ; `constraint_toggle` ne porte que les
-désactivations (présence d'une ligne = désactivée).
+produire des matches, elle ne touche ni au poids ni à la logique.
+
+Une ligne de `constraint_toggle` porte l'**état explicite** d'une contrainte
+(`nom`, `actif`) ; son absence vaut *ce que dit le catalogue*. Presque toutes
+les règles y sont actives, et la table ne porte alors que les désactivations.
+Celles que le catalogue livre **éteintes** sont listées dans
+`ConstraintCatalog.DESACTIVEES_PAR_DEFAUT` : pour elles, c'est l'allumage qui
+écrit une ligne. Une seule y figure aujourd'hui,
+`mineurNecessiteEncadrementMajeur`
+([0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md)).
+
+Demander l'état que le catalogue donne déjà **efface la ligne** au lieu de
+l'épingler : la table ne porte que les décisions que quelqu'un a prises, comme
+une pondération remise à son défaut.
 
 L'état est injecté comme fait de planification et consulté par
 `ConstraintToggleSupport.actif(...)` **juste après le `forEach` initial, sur le
 flux le plus étroit possible** : une contrainte pilotée par `ContrainteAdHoc`
 branche le toggle sur les quelques faits ad hoc, pas sur les milliers de postes.
+C'est là, et pas seulement dans le service, que le défaut du catalogue est lu —
+un harnais Java qui construit son propre problème obtient donc exactement ce
+qu'obtient une édition à laquelle personne n'a touché.
+
+Un scénario dit les deux directions : `contraintes.desactivees` pour ce qu'il
+éteint, `contraintes.activees` pour ce qu'il allume alors que le catalogue le
+livre éteint. Une règle qu'il ne cite nulle part revient au défaut du catalogue.
 
 > **Une contrainte oubliée par `ConstraintToggleSupport.actif` affiche un
 > interrupteur sans effet**, sans que rien ne le signale. `ConstraintToggleTest`
@@ -471,7 +518,10 @@ septième porte le même forfait sans être un motif du filtre, parce qu'elle
 dépend de qui d'autre tient le stand : `mineurNecessiteEncadrementMajeur`. Un
 mineur seul coûtait sinon exactement un siège vide, et sur une équipe de mineurs
 seul l'ordre de la recherche départageait
-([0035](decisions/0035-mineur-seul-au-forfait.md)).
+([0035](decisions/0035-mineur-seul-au-forfait.md)). Cette septième règle est
+**éteinte par défaut** depuis
+[0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md) : le forfait
+n'est dû que si l'organisation l'a allumée.
 
 Le filtre les écarte de la recherche, mais la reconstruction du *ruin and
 recreate* ne le lit pas, et elles ne pesaient qu'un point dur : autant qu'un
@@ -850,7 +900,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `animateurDisponible` | HARD | Affectation | Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible. |
 | `pasDeChevauchementHoraire` | HARD | Affectation | Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps (y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes sur le même créneau). |
 | `standReserveAuxMajeurs` | HARD | Légal (mineurs) | Les stands réservés aux majeurs ne peuvent accueillir aucun mineur. |
-| `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail — maintenue en contrainte dure par choix. |
+| `mineurNecessiteEncadrementMajeur` | HARD | Sécurité (mineurs) | Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du travail : le FESTIVAL la remplit par ses managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors planning l'allume depuis l'écran Contraintes. |
 | `travailDeNuitInterditPourMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : 20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans (Code du travail art. L3163-1). |
 | `dureeQuotidienneMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée (Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans (art. D4153-3). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
 | `travailInterditJourFerieMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas travailler un jour férié légal (Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire. |
@@ -884,7 +934,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `eviterFermeturePuisOuverture` | MEDIUM | Qualité d'organisation | Après une vacation qui finit tard (22 h par défaut), éviter une reprise matinale le lendemain (10 h par défaut) : on souhaite alors 12 h de repos plutôt que le minimum légal. Préférence d'organisation, pas une obligation du Code du travail : seules les minutes au-dessus du repos quotidien légal sont comptées ici, celles en dessous restent l'affaire de reposQuotidienMinimal, qui les tient en dur. La règle est donc muette quand la loi exige déjà autant (un mineur, 12 h ; avant 16 ans, 14 h). |
 | `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
-| `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble du planning. |
+| `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, 2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux typologies le même après-midi et deux à une semaine d'écart comptent pareil. |
 | `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. |
 | `pauseSurPosteSansRelais` | MEDIUM | Qualité d'organisation | Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent coûte : la personne est seule et personne ne peut la relayer. Le solveur préfère alors ne pas enchaîner sept heures seul, ou mettre un collègue là. Muette quand la pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et travailContinuMaxMineur exigent alors un vrai trou. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |

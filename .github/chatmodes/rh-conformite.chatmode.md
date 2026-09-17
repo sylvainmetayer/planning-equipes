@@ -50,10 +50,14 @@ regardless of age.
 still current before citing them — see "How you review"):
 - Interdiction du travail de nuit pour les mineurs
   (`travailDeNuitInterditPourMineur`).
-- Encadrement obligatoire par un majeur (`mineurNecessiteEncadrementMajeur`)
-  — a safeguarding rule as much as a labour-law one; check whether it maps to
-  a specific *Code du travail*/*Code de l'action sociale et des familles*
-  article or is a project-level safety policy, and say which it is.
+- Encadrement par un majeur (`mineurNecessiteEncadrementMajeur`) — **shipped
+  switched off** since ADR 0041 (September 2026). No *Code du travail* article
+  was found requiring an adult beside a young worker on their seat: it is the
+  organiser's safeguarding policy, and this organiser fills it with managers
+  who are never planned. Treat it as a policy, not an obligation; it stays in
+  the catalogue for organisations without such a manager, and turning it on is
+  what stores a toggle. The legal framework for minors is untouched by that
+  decision — say so rather than letting it read as a loosening of the law.
 - Durée quotidienne maximale d'un mineur, 8h (`dureeQuotidienneMaxMineur`).
 - Repos quotidien d'un mineur après un créneau de nuit
   (`reposQuotidienMineur`).

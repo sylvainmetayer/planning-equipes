@@ -157,6 +157,7 @@ public final class CatalogueActions {
 
         /* ------------------------- Settings ------------------------- */
         changesData("PARAMETRES_LEGAUX_MODIFIES", "Paramètres légaux modifiés", Entite.PARAMETRES);
+        changesData("PARAMETRES_QUALITE_MODIFIES", "Paramètres de qualité modifiés", Entite.PARAMETRES);
         changesData("PARAMETRES_SOLVEUR_MODIFIES", "Paramètres du solveur modifiés", Entite.PARAMETRES);
         action("PARAMETRES_NOTIFICATIONS_MODIFIES", "Paramètres de notifications modifiés", Entite.PARAMETRES);
         changesData("CONTRAINTE_ACTIVEE", "Contrainte activée", Entite.PARAMETRES);
@@ -297,6 +298,7 @@ public final class CatalogueActions {
         route("ReferenceDataResource#importScenarioFile", "SCENARIO_IMPORTE");
 
         route("ParametresResource#updateParametresLegaux", "PARAMETRES_LEGAUX_MODIFIES");
+        route("ParametresResource#updateParametresQualite", "PARAMETRES_QUALITE_MODIFIES");
         route("ParametresResource#updateParametresSolveur", "PARAMETRES_SOLVEUR_MODIFIES");
         route("ParametresResource#updateParametresNotifications", "PARAMETRES_NOTIFICATIONS_MODIFIES");
         route("ConstraintResource#setActif", "CONTRAINTE_ACTIVEE");

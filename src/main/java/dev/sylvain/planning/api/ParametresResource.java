@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.inject.Inject;
@@ -43,6 +44,27 @@ public class ParametresResource {
     @Path("/parametres-legaux")
     public Response updateParametresLegaux(ParametresLegaux parametres) {
         return Response.ok(referenceDataService.updateParametresLegaux(parametres))
+                .build();
+    }
+
+    /**
+     * The organisational-quality thresholds of this edition (issue #591): how
+     * many emplacements and how many typologies one animateur may spread over,
+     * and what a late closing followed by an early opening is. An edition that
+     * has never been configured answers the deployment's own
+     * {@code planning.contraintes.*} values.
+     */
+    @GET
+    @Path("/parametres-qualite")
+    public ParametresQualite getParametresQualite() {
+        return referenceDataService.getParametresQualite();
+    }
+
+    /** Saves them. Returns 400 with an explanation when a threshold could not mean anything. */
+    @PUT
+    @Path("/parametres-qualite")
+    public Response updateParametresQualite(ParametresQualite parametres) {
+        return Response.ok(referenceDataService.updateParametresQualite(parametres))
                 .build();
     }
 

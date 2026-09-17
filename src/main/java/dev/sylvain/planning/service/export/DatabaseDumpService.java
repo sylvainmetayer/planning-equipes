@@ -87,6 +87,7 @@ public class DatabaseDumpService {
             "demande_echange",
             "planning_resolution",
             "parametres_legaux",
+            "parametres_qualite",
             "parametres_solveur",
             "constraint_toggle",
             "ponderation_contrainte",

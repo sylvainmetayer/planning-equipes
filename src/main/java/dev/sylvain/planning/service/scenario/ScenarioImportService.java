@@ -72,6 +72,7 @@ public class ScenarioImportService {
         ScenarioYamlReader.ScenarioSections sections = importe.sections();
         return importIntoTarget(sections.edition(), () -> {
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
+            sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
             sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
@@ -135,17 +136,29 @@ public class ScenarioImportService {
      *
      * <p>The section is applied <b>wholesale</b> over the whole catalogue, not
      * merged: a scenario that pins its tuning describes the problem it was
-     * verified against, so a rule it does not name goes back to active, at its
-     * configured weight. Merging would leave the importing edition's own
-     * leftovers in place, and the "same" scenario would keep solving a
-     * different problem depending on where it landed — the very hole this
-     * section closes.</p>
+     * verified against, so a rule it names in neither list goes back to the
+     * catalogue's own state, at its configured weight. Merging would leave the
+     * importing edition's own leftovers in place, and the "same" scenario would
+     * keep solving a different problem depending on where it landed — the very
+     * hole this section closes.</p>
+     *
+     * <p>"Back to the catalogue's own state" rather than "back to active":
+     * since a rule can ship switched off (issue #595), re-enabling everything a
+     * file does not mention would turn on, on every import, precisely the rule
+     * the deployment decided not to enforce.</p>
      */
     private void applyContraintes(ScenarioYamlReader.ScenarioSections sections) {
         sections.contraintes().ifPresent(contraintes -> {
             for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-                referenceDataService.setContrainteActive(
-                        definition.name(), !contraintes.desactivees().contains(definition.name()));
+                boolean actif;
+                if (contraintes.desactivees().contains(definition.name())) {
+                    actif = false;
+                } else if (contraintes.activees().contains(definition.name())) {
+                    actif = true;
+                } else {
+                    actif = definition.activeByDefault();
+                }
+                referenceDataService.setContrainteActive(definition.name(), actif);
                 referenceDataService.setConstraintWeight(
                         definition.name(), contraintes.poids().get(definition.name()));
             }

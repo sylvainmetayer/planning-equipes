@@ -47,6 +47,7 @@ public class FeasibilityResource {
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux(),
-                referenceDataService.listContraintesAdHoc());
+                referenceDataService.listContraintesAdHoc(),
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()));
     }
 }

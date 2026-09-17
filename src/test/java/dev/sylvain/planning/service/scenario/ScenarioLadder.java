@@ -23,6 +23,7 @@ import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenari
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -35,7 +36,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -99,8 +99,16 @@ final class ScenarioLadder {
             List<Creneau> creneaux) {
 
         FeasibilityAnalyzer.FeasibilityReport feasibility() {
+            // With the file's own constraint states: the estimate of how many
+            // seats a team can hold depends on the supervision of minors, so a
+            // file that asks for that rule must be analysed under it.
             return new FeasibilityAnalyzer()
-                    .analyze(problem.getAnimateurs(), stands, creneaux, problem.getContraintesAdHoc());
+                    .analyze(
+                            problem.getAnimateurs(),
+                            stands,
+                            creneaux,
+                            problem.getContraintesAdHoc(),
+                            encadrementMineursActif(problem));
         }
 
         /** What applying the file's day templates to its own grid would change: nothing, for a consistent file. */
@@ -130,11 +138,29 @@ final class ScenarioLadder {
         List<Stand> stands = new ArrayList<>(reference.standsById().values());
         List<Creneau> creneaux = new ArrayList<>(reference.creneauxParId().values());
         HoraireStandResolver.apply(stands, creneaux);
-        sections.contraintes()
-                .ifPresent(contraintes -> problem.setConstraintsDesactivees(contraintes.desactivees().stream()
-                        .map(ConstraintToggle::new)
-                        .toList()));
+        // Both directions, as the import does: what the file switches off, and
+        // what it switches on although the catalogue ships it off. A rule it
+        // names in neither list keeps the catalogue's own state.
+        sections.contraintes().ifPresent(contraintes -> {
+            List<ConstraintToggle> toggles = new ArrayList<>();
+            contraintes.desactivees().forEach(nom -> toggles.add(new ConstraintToggle(nom, false)));
+            contraintes.activees().forEach(nom -> toggles.add(new ConstraintToggle(nom, true)));
+            problem.setConstraintsDesactivees(toggles);
+        });
         return new Loaded(name, dto, sections, problem, stands, creneaux);
+    }
+
+    /** The state of {@code mineurNecessiteEncadrementMajeur} on a problem, catalogue default included. */
+    static boolean encadrementMineursActif(PlanningEvenement problem) {
+        List<ConstraintToggle> toggles = problem.getConstraintsDesactivees();
+        if (toggles != null) {
+            for (ConstraintToggle toggle : toggles) {
+                if (ExclusionEligibilite.ENCADREMENT_DES_MINEURS.equals(toggle.getNom())) {
+                    return toggle.isActif();
+                }
+            }
+        }
+        return ConstraintCatalog.activeByDefault(ExclusionEligibilite.ENCADREMENT_DES_MINEURS);
     }
 
     /* ------------------------------- solving ------------------------------- */
@@ -242,8 +268,8 @@ final class ScenarioLadder {
     /**
      * The rules every ladder file must keep, checked on the plan itself: nobody
      * on a day off or on two overlapping seats, nobody on a stand outside their
-     * skills, no minor on a stand reserved to adults, at night or without an
-     * adult beside them, nobody past six days in a week.
+     * skills, no minor on a stand reserved to adults, on a public holiday or at
+     * night, nobody past six days in a week.
      */
     static void assertCoreRules(PlanningEvenement solved) {
         Map<Animateur, List<PosteAffectation>> parAnimateur = seatsByAnimateur(solved);
@@ -330,12 +356,9 @@ final class ScenarioLadder {
         assertThat(startMinute(poste) >= finNuitPrecedente && endMinute(poste) <= debutNuit)
                 .as("minor %s works at night on %s", mineur.getId(), date)
                 .isTrue();
-        assertThat(solved.getPostes())
-                .as("minor %s alone on %s %s", mineur.getId(), poste.getStand().getId(), date)
-                .anyMatch(autre -> autre != poste
-                        && autre.getAnimateur() != null
-                        && autre.getStand().equals(poste.getStand())
-                        && Objects.equals(autre.getCreneau(), poste.getCreneau())
-                        && autre.getAnimateur().isMajeurOn(date));
+        // Nothing here about an adult beside them: the catalogue ships
+        // mineurNecessiteEncadrementMajeur switched off (issue #595), so a
+        // minor holding a day stand alone is a correct plan, not a breach. The
+        // files that do want the rule ask for it, and their own test checks it.
     }
 }

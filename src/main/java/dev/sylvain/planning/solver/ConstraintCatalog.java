@@ -54,6 +54,25 @@ public final class ConstraintCatalog {
      */
     public static final Set<String> CATEGORIES_LEGALES = Set.of("Légal (mineurs)", "Légal (temps de travail)");
 
+    /**
+     * The rules the catalogue ships <b>switched off</b>: they exist, they are
+     * described, an organiser can turn them on, but no edition enforces them
+     * unless someone asks. Every other rule is active until an edition says
+     * otherwise — the convention the {@code constraint_toggle} table was born
+     * with.
+     *
+     * <p>A rule lands here when it is a policy rather than an obligation, and
+     * when the organisation this deployment serves fills it outside the plan.
+     * {@code mineurNecessiteEncadrementMajeur} is the case that created the
+     * mechanism: no article of the Code du travail requires an adult beside a
+     * young worker, and the FESTIVAL's managers — who are never planned — provide
+     * that supervision themselves (issue #595, ADR 0041). The legal framework
+     * for minors does not move an inch: {@code travailDeNuitInterditPourMineur},
+     * {@code standReserveAuxMajeurs}, the duration caps and the rest stay
+     * active.</p>
+     */
+    public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of("mineurNecessiteEncadrementMajeur");
+
     public record ConstraintDefinition(String name, Niveau niveau, String categorie, String description) {
 
         /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */
@@ -83,6 +102,16 @@ public final class ConstraintCatalog {
          */
         public boolean dosable() {
             return niveau == Niveau.MEDIUM && CATEGORIE_QUALITE.equals(categorie);
+        }
+
+        /**
+         * False for the rules of {@link #DESACTIVEES_PAR_DEFAUT}: an edition
+         * that never touched this rule does not enforce it. The Contraintes
+         * screen shows it as off, and turning it on is what stores a toggle —
+         * the mirror image of what a toggle does for every other rule.
+         */
+        public boolean activeByDefault() {
+            return !DESACTIVEES_PAR_DEFAUT.contains(name);
         }
     }
 
@@ -116,9 +145,11 @@ public final class ConstraintCatalog {
                     "mineurNecessiteEncadrementMajeur",
                     Niveau.HARD,
                     "Sécurité (mineurs)",
-                    "Un mineur doit toujours être accompagné d'au moins un majeur sur le même stand et le même "
-                            + "créneau. Règle de sécurité posée par l'organisateur, pas une obligation du Code du "
-                            + "travail — maintenue en contrainte dure par choix."),
+                    "Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le "
+                            + "même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une "
+                            + "obligation du Code du travail : le FESTIVAL la remplit par ses managers, qui ne sont pas "
+                            + "planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors "
+                            + "planning l'allume depuis l'écran Contraintes."),
             new ConstraintDefinition(
                     "travailDeNuitInterditPourMineur",
                     Niveau.HARD,
@@ -349,8 +380,9 @@ public final class ConstraintCatalog {
                     "limiterTypologiesDistinctesParAnimateur",
                     Niveau.MEDIUM,
                     "Qualité d'organisation",
-                    "Un animateur devrait idéalement intervenir sur une ou deux typologies de jeu sur l'ensemble "
-                            + "du planning."),
+                    "Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, "
+                            + "2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux "
+                            + "typologies le même après-midi et deux à une semaine d'écart comptent pareil."),
             new ConstraintDefinition(
                     "maxJoursConsecutifsTravailles",
                     Niveau.MEDIUM,
@@ -408,6 +440,17 @@ public final class ConstraintCatalog {
             .filter(definition -> definition.niveau() == Niveau.HARD)
             .map(ConstraintDefinition::name)
             .collect(Collectors.toUnmodifiableSet());
+
+    /**
+     * Whether {@code nom} is enforced when nothing says otherwise. Read by
+     * {@code ConstraintToggleSupport}, so a harness that hands the solver no
+     * toggle at all still gets the catalogue's answer rather than « active,
+     * always » — the hole a default-off rule would otherwise leave open in
+     * every plain-Java test and every caller that builds its own problem.
+     */
+    public static boolean activeByDefault(String nom) {
+        return !DESACTIVEES_PAR_DEFAUT.contains(nom);
+    }
 
     public static List<ConstraintDefinition> definitions() {
         return DEFINITIONS;

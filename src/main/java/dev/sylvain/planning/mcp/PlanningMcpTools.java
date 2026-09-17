@@ -128,7 +128,8 @@ public class PlanningMcpTools {
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux(),
-                referenceDataService.listContraintesAdHoc());
+                referenceDataService.listContraintesAdHoc(),
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()));
     }
 
     @Tool(

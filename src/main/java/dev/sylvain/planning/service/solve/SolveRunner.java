@@ -118,16 +118,19 @@ final class SolveRunner {
         }
         if (problem.getConstraintsDesactivees() == null
                 || problem.getConstraintsDesactivees().isEmpty()) {
-            problem.setConstraintsDesactivees(referenceDataService.getContraintesDesactivees().stream()
-                    .map(ConstraintToggle::new)
+            problem.setConstraintsDesactivees(referenceDataService.getEtatsContraintes().entrySet().stream()
+                    .map(etat -> new ConstraintToggle(etat.getKey(), etat.getValue()))
                     .toList());
         }
         // The published plan is the server's knowledge, never the caller's: a
         // planning posted by a client cannot decide what people were told.
         problem.setAffectationsPubliees(affectationsPubliees());
-        // Server-side configuration, like the weights below: always overwritten
-        // so a caller cannot loosen a quality threshold by sending its own.
-        problem.setParametresQualite(List.of(configuration.parametresQualite()));
+        // Server-side, like the weights below: always overwritten so a caller
+        // cannot loosen a quality threshold by sending its own. Read from the
+        // edition since issue #591 — the deployment's configuration is what an
+        // edition that never opened the screen falls back to, and the service
+        // is where the two meet.
+        problem.setParametresQualite(List.of(referenceDataService.getParametresQualite()));
         // Never sent by a caller (the field is @JsonIgnore-d on PlanningEvenement),
         // so this always overwrites the ConstraintWeightOverrides.none() default.
         problem.setPonderationsContraintes(configuration.constraintWeightOverrides(problem.getPonderationsScenario()));

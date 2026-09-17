@@ -157,7 +157,7 @@
 .planning.fenetresRepas[0]  c42588e8fd4e1c44
 .planning.fenetresRepas[1]  ab651a6748181af8
 .planning.parametresLegaux[0]  d30eaf6faa7d7f68
-.planning.parametresQualite[0]  1b7a448ef2898db9
+.planning.parametresQualite[0]  ae58e0fa7b85be4c
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
@@ -3067,6 +3067,7 @@
 .planning.postes[2903]  9d224d3989842b5b
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 3
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
@@ -3084,6 +3085,7 @@
 .sections.parametresLegaux.pauseMinimaleEntreVacationsMinutes = 0
 .sections.parametresLegaux.pauseSurPoste = false
 .sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
+.sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 480
 .sections.parametresSolveur.mailFinResolution = false
 .sections.typologies = (vide)

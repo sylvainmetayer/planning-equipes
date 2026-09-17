@@ -234,8 +234,9 @@ class ScenarioYamlWriterTest {
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
                 List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
+                null,
                 new ParametresSolveur(1800),
-                Set.of("equilibrerCharge"),
+                Map.of("equilibrerCharge", false),
                 Map.of("maxJoursConsecutifsTravailles", 5),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);
@@ -336,7 +337,8 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                Set.of(),
+                null,
+                Map.of(),
                 Map.of(),
                 List.of(incompatibilite)));
         Map<String, Object> parsed = new Yaml().load(yaml);
@@ -378,7 +380,8 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                Set.of(),
+                null,
+                Map.of(),
                 Map.of(),
                 List.of(indisponibilite)));
         Map<String, Object> parsed = new Yaml().load(yaml);
@@ -420,7 +423,8 @@ class ScenarioYamlWriterTest {
                 List.of(),
                 null,
                 null,
-                Set.of(),
+                null,
+                Map.of(),
                 Map.of(),
                 List.of()));
         Map<String, Object> parsed = new Yaml().load(yaml);

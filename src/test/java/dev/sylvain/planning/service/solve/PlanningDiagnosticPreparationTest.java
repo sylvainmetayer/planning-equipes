@@ -77,6 +77,13 @@ class PlanningDiagnosticPreparationTest {
             public Set<String> getContraintesDesactivees() {
                 return Set.of(CONTRAINTE);
             }
+
+            // What the solver actually reads: the explicit states, not the
+            // derived « what will not apply » set.
+            @Override
+            public Map<String, Boolean> getEtatsContraintes() {
+                return Map.of(CONTRAINTE, false);
+            }
         });
 
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = service.diagnosePersistedPlan();

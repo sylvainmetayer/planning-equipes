@@ -83,6 +83,7 @@ class IsolationEditionStructurelleTest {
             "verrouillage_planning",
             "validation_journee",
             "parametres_legaux",
+            "parametres_qualite",
             "parametres_solveur",
             "poste_affectation",
             "planning_resolution",

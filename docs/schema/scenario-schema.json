@@ -75,6 +75,12 @@
     "ContraintesDto" : {
       "type" : "object",
       "properties" : {
+        "activees" : {
+          "type" : "array",
+          "items" : {
+            "type" : "string"
+          }
+        },
         "desactivees" : {
           "type" : "array",
           "items" : {
@@ -368,6 +374,32 @@
         }
       }
     },
+    "ParametresQualiteDto" : {
+      "type" : "object",
+      "properties" : {
+        "heureServiceMatinal" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureServiceTardif" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "maxEmplacementsDistinctsParJour" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "reposSouhaiteApresServiceTardifMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0
+        },
+        "typologiesDistinctesMax" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        }
+      }
+    },
     "ParametresSolveurDto" : {
       "type" : "object",
       "properties" : {
@@ -544,6 +576,9 @@
     },
     "parametresLegaux" : {
       "$ref" : "#/$defs/ParametresLegauxDto"
+    },
+    "parametresQualite" : {
+      "$ref" : "#/$defs/ParametresQualiteDto"
     },
     "parametresSolveur" : {
       "$ref" : "#/$defs/ParametresSolveurDto"

@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
@@ -260,6 +261,7 @@ public final class ScenarioYamlReader {
      */
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
+            Optional<ParametresQualite> parametresQualite,
             Optional<ParametresSolveur> parametresSolveur,
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
@@ -277,10 +279,13 @@ public final class ScenarioYamlReader {
      * The {@code contraintes:} section of a scenario, parsed.
      *
      * @param desactivees names of the constraints to switch off
+     * @param activees    names of the constraints to switch on although the
+     *                    catalogue ships them off; what neither list names
+     *                    goes back to the catalogue default
      * @param poids       weight per constraint name; what is absent keeps the
      *                    deployment default
      */
-    public record ContraintesScenario(Set<String> desactivees, Map<String, Integer> poids) {}
+    public record ContraintesScenario(Set<String> desactivees, Set<String> activees, Map<String, Integer> poids) {}
 
     /**
      * The optional sections of a bundled scenario, <b>without</b> building its

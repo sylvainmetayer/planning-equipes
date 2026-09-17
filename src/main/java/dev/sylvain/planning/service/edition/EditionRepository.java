@@ -79,7 +79,9 @@ public class EditionRepository {
             new TableToCopy(
                     "journee_type_vacation", "id, journee_type_id, position, heure_debut, heure_fin, couverture_pause"),
             new TableToCopy("journee_type_date", "date_jour, journee_type_id"),
-            new TableToCopy("constraint_toggle", "nom"),
+            // "nom, actif": since V82 a row carries the explicit state, and the
+            // column is NOT NULL with no default — a copy leaving it out would fail.
+            new TableToCopy("constraint_toggle", "nom, actif"),
             new TableToCopy("ponderation_contrainte", "nom, poids"),
             new TableToCopy(
                     "parametres_legaux",
@@ -88,6 +90,10 @@ public class EditionRepository {
                             + "pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut, "
                             + "coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin, "
                             + "duree_vacation_max_minutes, heure_debut_soiree"),
+            new TableToCopy(
+                    "parametres_qualite",
+                    "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "
+                            + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max"),
             new TableToCopy("parametres_solveur", "duree_resolution_secondes, mail_fin_resolution"));
 
     record TableToCopy(String nom, String colonnes) {}

@@ -544,7 +544,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(
                         poste(standWithStrategy("STAND-STRAT-3"), creneauMatin, a1),
                         poste(stand("STAND-AMBIANCE-3", false, "AMBIANCE"), creneauAprem, a1),
-                        poste(stand("STAND-ENIGME-3", false, "ENIGME"), matin("J2-MATIN3", 2, D2), a1))
+                        poste(stand("STAND-ENIGME-3", false, "ENIGME"), matin("J2-MATIN3", 2, D2), a1),
+                        new ParametresQualite())
                 .penalizesBy(1);
     }
 
@@ -567,8 +568,81 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                         poste(stand("STAND-AMBIANCE-5", false, "AMBIANCE"), creneauAprem, a1),
                         poste(stand("STAND-ENIGME-5", false, "ENIGME"), matin("J2-MATIN5", 2, D2), a1),
                         poste(stand("STAND-ADRESSE-5", false, "ADRESSE"), afternoon("J2-AM5", 2, D2), a1),
-                        poste(stand("STAND-ROLE-5", false, "ROLE"), matin("J3-MATIN5", 3, D3), a1))
+                        poste(stand("STAND-ROLE-5", false, "ROLE"), matin("J3-MATIN5", 3, D3), a1),
+                        new ParametresQualite())
                 .penalizesBy(3);
+    }
+
+    /**
+     * The threshold is a setting, not a constant (issue #591): the same three
+     * typologies that cost a point at the default of 2 cost nothing to an
+     * organiser for whom three is normal.
+     */
+    @Test
+    void leSeuilDeTypologiesDistinctesEstUnParametre() {
+        Animateur a1 = animateur(
+                "A1",
+                D1.minusYears(30),
+                Map.of(
+                        "STRATEGIE", NiveauCompetence.AUTONOME,
+                        "AMBIANCE", NiveauCompetence.AUTONOME,
+                        "ENIGME", NiveauCompetence.AUTONOME));
+        ParametresQualite troisTypologiesNormales = new ParametresQualite(
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                ParametresQualite.HEURE_SERVICE_TARDIF_PAR_DEFAUT,
+                ParametresQualite.HEURE_SERVICE_MATINAL_PAR_DEFAUT,
+                ParametresQualite.REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT,
+                3);
+
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(
+                        poste(standWithStrategy("STAND-STRAT-P"), creneauMatin, a1),
+                        poste(stand("STAND-AMBIANCE-P", false, "AMBIANCE"), creneauAprem, a1),
+                        poste(stand("STAND-ENIGME-P", false, "ENIGME"), matin("J2-MATINP", 2, D2), a1),
+                        troisTypologiesNormales)
+                .penalizesBy(0);
+    }
+
+    /**
+     * The cap is the <b>edition's</b>, not the day's — issue #591 asked for
+     * this to be nailed down rather than corrected, the {@code groupBy} having
+     * always carried the animateur alone. Three typologies held in one single
+     * day and three held across three days must cost the same point: a future
+     * refactor that slipped a date key into that grouping would make the second
+     * case free, and nothing else would notice.
+     */
+    @Test
+    void leSeuilDeTypologiesDistinctesPorteSurLEditionEtPasSurLaJournee() {
+        Animateur memeJour = animateur(
+                "A-JOUR",
+                D1.minusYears(30),
+                Map.of(
+                        "STRATEGIE", NiveauCompetence.AUTONOME,
+                        "AMBIANCE", NiveauCompetence.AUTONOME,
+                        "ENIGME", NiveauCompetence.AUTONOME));
+        Animateur troisJours = animateur(
+                "A-SEMAINE",
+                D1.minusYears(30),
+                Map.of(
+                        "STRATEGIE", NiveauCompetence.AUTONOME,
+                        "AMBIANCE", NiveauCompetence.AUTONOME,
+                        "ENIGME", NiveauCompetence.AUTONOME));
+
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(
+                        poste(standWithStrategy("STAND-STRAT-J"), matin("J1-M-J", 1, D1), memeJour),
+                        poste(stand("STAND-AMBIANCE-J", false, "AMBIANCE"), afternoon("J1-AM-J", 1, D1), memeJour),
+                        poste(stand("STAND-ENIGME-J", false, "ENIGME"), nuit("J1-SOIR-J", 1, D1), memeJour),
+                        new ParametresQualite())
+                .penalizesBy(1);
+
+        verify("limiterTypologiesDistinctesParAnimateur")
+                .given(
+                        poste(standWithStrategy("STAND-STRAT-S"), matin("J1-M-S", 1, D1), troisJours),
+                        poste(stand("STAND-AMBIANCE-S", false, "AMBIANCE"), matin("J2-M-S", 2, D2), troisJours),
+                        poste(stand("STAND-ENIGME-S", false, "ENIGME"), matin("J3-M-S", 3, D3), troisJours),
+                        new ParametresQualite())
+                .penalizesBy(1);
     }
 
     @Test
@@ -651,8 +725,12 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     // the rule prices only what the wished 12 h (720 min) asks BEYOND that
     // floor, so its largest possible penalty here is 60.
 
-    private static final ParametresQualite ANTI_CLOPENING =
-            new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 12 * 60);
+    private static final ParametresQualite ANTI_CLOPENING = new ParametresQualite(
+            3,
+            LocalTime.of(22, 0),
+            LocalTime.of(10, 0),
+            12 * 60,
+            ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
 
     private PosteAffectation vacation(String id, int jour, java.time.LocalDate date, int debut, int fin, Animateur a) {
         return poste(standStrat, creneau(id, jour, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0)), a);
@@ -831,8 +909,10 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void uneHeureDeSeuilAbsenteRendLaRegleInerte() {
         Animateur a1 = majeurAutonome("A1");
-        ParametresQualite sansSeuilTardif = new ParametresQualite(3, null, LocalTime.of(10, 0), 12 * 60);
-        ParametresQualite sansSeuilMatinal = new ParametresQualite(3, LocalTime.of(22, 0), null, 12 * 60);
+        ParametresQualite sansSeuilTardif = new ParametresQualite(
+                3, null, LocalTime.of(10, 0), 12 * 60, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+        ParametresQualite sansSeuilMatinal = new ParametresQualite(
+                3, LocalTime.of(22, 0), null, 12 * 60, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
 
         verify("eviterFermeturePuisOuverture")
                 .given(sansSeuilTardif, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
@@ -850,7 +930,12 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // 10 h wished where the law demands 11: there is nothing left to ask
         // for, and the rule must above all not become a second floor.
         Animateur a1 = majeurAutonome("A1");
-        ParametresQualite souhaitTropBas = new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 10 * 60);
+        ParametresQualite souhaitTropBas = new ParametresQualite(
+                3,
+                LocalTime.of(22, 0),
+                LocalTime.of(10, 0),
+                10 * 60,
+                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
         verify("eviterFermeturePuisOuverture")
                 .given(souhaitTropBas, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
                 .penalizesBy(0);
@@ -859,7 +944,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void unReposSouhaiteNulRendLaRegleInerte() {
         Animateur a1 = majeurAutonome("A1");
-        ParametresQualite desactivee = new ParametresQualite(3, LocalTime.of(22, 0), LocalTime.of(10, 0), 0);
+        ParametresQualite desactivee = new ParametresQualite(
+                3, LocalTime.of(22, 0), LocalTime.of(10, 0), 0, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
         verify("eviterFermeturePuisOuverture")
                 .given(desactivee, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
                 .penalizesBy(0);

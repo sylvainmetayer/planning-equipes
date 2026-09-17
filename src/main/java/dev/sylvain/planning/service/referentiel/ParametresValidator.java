@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.BusinessError;
 
@@ -81,6 +82,29 @@ final class ParametresValidator {
         if ((debut == null) != (fin == null)) {
             throw new BusinessError.Invalid(champ + " needs both its bounds, or neither");
         }
+    }
+
+    /**
+     * Refuses a threshold that could not mean anything, and nothing more. No
+     * floor of ordre public here, unlike the legal parameters: these are
+     * comforts the organiser arbitrates, and a value that makes a rule inert is
+     * a legitimate way of saying « not here » — {@code heureServiceTardif} left
+     * blank is exactly that.
+     */
+    static void checkParametresQualite(ParametresQualite parametres) {
+        if (parametres.maxEmplacementsDistinctsParJour() < 1) {
+            throw new BusinessError.Invalid("Le plafond d'emplacements distincts par jour doit valoir au moins 1 : "
+                    + "à zéro, toute journée serait en écart.");
+        }
+        if (parametres.typologiesDistinctesMax() < 1) {
+            throw new BusinessError.Invalid(
+                    "Le plafond de typologies distinctes par animateur doit valoir au moins 1 : "
+                            + "à zéro, tout animateur affecté serait en écart.");
+        }
+        if (parametres.reposSouhaiteApresServiceTardifMinutes() < 0) {
+            throw new BusinessError.Invalid("Le repos souhaité après un service tardif ne peut pas être négatif.");
+        }
+        checkFenetre(parametres.heureServiceTardif(), parametres.heureServiceMatinal(), "Les heures de service");
     }
 
     static void checkParametresSolveur(ParametresSolveur parametres) {

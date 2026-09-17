@@ -2,6 +2,15 @@
 # Cas dégénéré 12 : une équipe faite uniquement de mineurs de 17 ans.
 # Trois stands de deux places, douze mineurs, aucun majeur : un mineur n'est
 # jamais seul sur un stand sans un majeur à ses côtés, et il n'y en a aucun.
+#
+# Ce fichier décrit donc un problème où l'encadrement des mineurs est EXIGÉ.
+# Le catalogue livre `mineurNecessiteEncadrementMajeur` éteinte (issue #595) :
+# sans la ligne ci-dessous, les douze mineurs tiendraient les stands de jour
+# sans difficulté et le cas dégénéré ne dégénérerait plus.
+
+contraintes:
+  activees:
+    - mineurNecessiteEncadrementMajeur
 
 festival:
   dateDebut: 2028-09-09

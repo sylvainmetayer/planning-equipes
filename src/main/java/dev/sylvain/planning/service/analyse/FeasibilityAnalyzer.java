@@ -8,7 +8,9 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
+import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -104,17 +106,51 @@ public class FeasibilityAnalyzer {
         return analyze(animateurs, stands, creneaux, List.of());
     }
 
+    /**
+     * Reads {@code encadrementMineursActif} off the edition's disabled set,
+     * so the five callers that have one say it the same way rather than each
+     * spelling the constraint name out.
+     */
+    public static boolean encadrementMineursActif(Set<String> contraintesDesactivees) {
+        return contraintesDesactivees == null
+                || !contraintesDesactivees.contains(ExclusionEligibilite.ENCADREMENT_DES_MINEURS);
+    }
+
+    /** With the supervision of minors left at whatever the catalogue says — see the five-argument variant. */
     public FeasibilityReport analyze(
             List<Animateur> animateurs,
             List<Stand> stands,
             List<Creneau> creneaux,
             List<ContrainteAdHoc> contraintesAdHoc) {
+        return analyze(
+                animateurs,
+                stands,
+                creneaux,
+                contraintesAdHoc,
+                ConstraintCatalog.activeByDefault(ExclusionEligibilite.ENCADREMENT_DES_MINEURS));
+    }
+
+    /**
+     * @param encadrementMineursActif whether {@code mineurNecessiteEncadrementMajeur}
+     *        applies to this edition. It changes how many seats a team can
+     *        hold — beside an adult only, or on their own — so an estimate that
+     *        assumed it while the edition switched it off called feasible
+     *        plannings impossible, and the screens said so before any solve.
+     *        The catalogue ships the rule off (issue #595); a caller that knows
+     *        the edition passes its real state rather than that default.
+     */
+    public FeasibilityReport analyze(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            List<ContrainteAdHoc> contraintesAdHoc,
+            boolean encadrementMineursActif) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
-        List<CauseInfaisabilite> causes =
-                new ArrayList<>(creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs));
+        List<CauseInfaisabilite> causes = new ArrayList<>(
+                creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs, encadrementMineursActif));
         causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
         causes.addAll(affectationsForceesIntenables(contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs));
         causes.sort(ORDRE_CAUSES);
@@ -161,14 +197,14 @@ public class FeasibilityAnalyzer {
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
-            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, boolean encadrementMineursActif) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts =
                     stands.stream().filter(stand -> creneau.isStandOpen(stand)).toList();
             int demande =
                     standsOuverts.stream().mapToInt(creneau::siegesSimultanes).sum();
-            long capacite = capacite(animateurs, standsOuverts, creneau, demande);
+            long capacite = capacite(animateurs, standsOuverts, creneau, demande, encadrementMineursActif);
             int manque = (int) Math.max(0, demande - capacite);
             if (manque <= 0) {
                 continue;
@@ -270,13 +306,21 @@ public class FeasibilityAnalyzer {
      * <p>A minor counts only where nothing on the seat itself excludes them —
      * night, a public holiday, a timeslot past their daily cap, an adults-only
      * stand, the checks of {@link EligibleAnimateurMoveFilter}, read with the
-     * break declared on the post so as never to exclude more than a solve would
-     * — and only beside an adult: each adult placed on a stand of {@code s}
-     * seats opens {@code s − 1} seats to minors. Adults go first to the largest
-     * stands. A team of minors only therefore holds nothing, where counting
-     * heads called it feasible.</p>
+     * break declared on the post so as never to exclude more than a solve
+     * would. When {@code encadrementMineursActif}, a minor also counts only
+     * beside an adult: each adult placed on a stand of {@code s} seats opens
+     * {@code s − 1} seats to minors, adults going first to the largest stands,
+     * and a team of minors only therefore holds nothing — where counting heads
+     * called it feasible. With the rule switched off, the seats are simply
+     * open to them, and an estimate still pairing them off would call a
+     * perfectly staffed evening impossible.</p>
      */
-    private static long capacite(List<Animateur> animateurs, List<Stand> standsOuverts, Creneau creneau, int demande) {
+    private static long capacite(
+            List<Animateur> animateurs,
+            List<Stand> standsOuverts,
+            Creneau creneau,
+            int demande,
+            boolean encadrementMineursActif) {
         Stand standOrdinaire = new Stand("capacite", "capacite", Set.of(), 1, 1, false);
         PosteAffectation siegeOrdinaire = new PosteAffectation("capacite", standOrdinaire, creneau);
         long majeurs = 0;
@@ -291,6 +335,9 @@ public class FeasibilityAnalyzer {
                     .isEmpty()) {
                 mineurs++;
             }
+        }
+        if (!encadrementMineursActif) {
+            return Math.min(demande, majeurs + mineurs);
         }
         List<Integer> places = standsOuverts.stream()
                 .filter(stand -> !stand.isReserveMajeurs())

@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -14,7 +15,6 @@ import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -43,6 +43,13 @@ public final class ScenarioYamlWriter {
      * positional parameters, since {@link #buildScenarioYaml} is called both
      * from {@link PlanningService#exportScenarioYaml()} and from its unit tests.
      *
+     * @param etatsContraintes the state this edition explicitly chose per
+     *               constraint name — what the {@code constraint_toggle} table
+     *               holds, without the catalogue's defaults filled in. An empty
+     *               map is an edition that tuned nothing, which is not the same
+     *               thing as one that switched everything on: a rule the
+     *               catalogue ships off stays off, and the file says nothing
+     *               about it
      * @param postes an explicit seat list to pin in the file, or {@code null}
      *               to leave the section out. Production exports always pass
      *               {@code null}: the import regenerates the seats from the
@@ -57,8 +64,9 @@ public final class ScenarioYamlWriter {
             List<TypologieItem> typologies,
             List<Emplacement> emplacements,
             ParametresLegaux parametresLegaux,
+            ParametresQualite parametresQualite,
             ParametresSolveur parametresSolveur,
-            Set<String> contraintesDesactivees,
+            Map<String, Boolean> etatsContraintes,
             Map<String, Integer> poidsContraintes,
             List<ContrainteAdHoc> contraintesAdHoc,
             List<JourneeType> journeesTypes,
@@ -73,8 +81,9 @@ public final class ScenarioYamlWriter {
                 List<TypologieItem> typologies,
                 List<Emplacement> emplacements,
                 ParametresLegaux parametresLegaux,
+                ParametresQualite parametresQualite,
                 ParametresSolveur parametresSolveur,
-                Set<String> contraintesDesactivees,
+                Map<String, Boolean> etatsContraintes,
                 Map<String, Integer> poidsContraintes,
                 List<ContrainteAdHoc> contraintesAdHoc) {
             this(
@@ -85,8 +94,9 @@ public final class ScenarioYamlWriter {
                     typologies,
                     emplacements,
                     parametresLegaux,
+                    parametresQualite,
                     parametresSolveur,
-                    contraintesDesactivees,
+                    etatsContraintes,
                     poidsContraintes,
                     contraintesAdHoc,
                     List.of(),
@@ -110,7 +120,18 @@ public final class ScenarioYamlWriter {
     public static String buildScenarioYaml(
             List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, List<PosteAffectation> postes) {
         return buildScenarioYaml(new ScenarioExport(
-                animateurs, stands, creneaux, postes, List.of(), List.of(), null, null, Set.of(), Map.of(), List.of()));
+                animateurs,
+                stands,
+                creneaux,
+                postes,
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null,
+                Map.of(),
+                Map.of(),
+                List.of()));
     }
 
     /** Full-fidelity variant: writes every optional section {@link ScenarioExport} carries. */

@@ -3110,5 +3110,19 @@
   "aide.views.intro": "All these views read the saved schedule; none of them starts a computation. As long as no solve has run, they say so instead of staying empty.",
   "aide.foire.echange": "There they see their up-to-date schedule and can propose swapping a timeslot with a colleague, either simply giving it up or also naming the timeslot they want in return. The colleague agrees first, from their own espace: a request only reaches your Swaps screen once both agree, and a refusal closes it with no arbitration. Every request is pre-checked against the hard rules; an unworkable one is flagged, but passed on anyway — you are the one who decides.",
   "aide.foire.notifications": "If mail is configured, you are notified by e-mail on every submission. The staff member, for their part, learns the fate of their requests at the next publication: approving a swap changes the working plan, not yet the one they received.",
-  "aide.exchange.item.exports": "Exports: the edition's reference data as a ZIP archive, or the whole edition as a scenario — in the exact shape the imports read back."
+  "aide.exchange.item.exports": "Exports: the edition's reference data as a ZIP archive, or the whole edition as a scenario — in the exact shape the imports read back.",
+  "parametres.qualite.title": "Organisational quality",
+  "parametres.qualite.description": "The plan's comfort thresholds, read by the medium constraints of organisational quality. None of this is a legal obligation: every organisation puts them where it wants.",
+  "parametres.qualite.field.emplacements": "Distinct emplacements per day and per animateur",
+  "parametres.qualite.hint.emplacements": "Beyond it, the day is penalised. Three by default: morning, afternoon, evening.",
+  "parametres.qualite.field.typologies": "Distinct typologies per animateur",
+  "parametres.qualite.hint.typologies": "Over the whole edition, not per day: two typologies on the same afternoon and two a week apart count the same. Ninjas are exempt.",
+  "parametres.qualite.field.serviceTardif": "Hour of a late service",
+  "parametres.qualite.hint.serviceTardif": "A vacation ending at or after this hour closes late.",
+  "parametres.qualite.field.serviceMatinal": "Hour of an early service",
+  "parametres.qualite.hint.serviceMatinal": "Both hours, or neither: left empty, the « closes late then opens early » rule stays silent.",
+  "parametres.qualite.field.reposSouhaite": "Rest wished for after a late service (hours)",
+  "parametres.qualite.hint.reposSouhaite": "Only what goes beyond the legal daily rest is penalised: a value at the floor leaves the rule silent.",
+  "parametres.qualite.saved": "Saved.",
+  "parametres.qualite.error.heuresIncompletes": "Give both service hours, or neither: one alone describes no closing/opening pair."
 }

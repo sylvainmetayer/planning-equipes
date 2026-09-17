@@ -679,12 +679,21 @@ export interface Scale {
   hoursAvailable: number;
 }
 
-/** A constraint this edition switched off, as the server attaches it to the problem. */
+/**
+ * The explicit state of one constraint for this edition, as the server attaches
+ * it to the problem. Absent from the list means « whatever the catalogue says »,
+ * which is active for all but the rules shipped switched off (issue #595).
+ */
 export interface ConstraintToggle {
   nom?: string;
+  actif?: boolean;
 }
 
-/** Quality ceilings, imposed by the server's configuration on every solve. */
+/**
+ * `/api/parametres-qualite`: the quality ceilings of the edition. Stored per
+ * edition since issue #591; what the server's own configuration carries is the
+ * default an edition starts from.
+ */
 export interface ParametresQualite {
   maxEmplacementsDistinctsParJour?: number;
   /** Hour from which a day's work counts as a late closing (`HH:mm:ss`); empty when the rule is neutralised. */
@@ -692,6 +701,8 @@ export interface ParametresQualite {
   /** Hour up to which a day's work counts as an early opening (`HH:mm:ss`); empty when the rule is neutralised. */
   heureServiceMatinal?: string | null;
   reposSouhaiteApresServiceTardifMinutes?: number;
+  /** Distinct typologies one animateur may cover over the WHOLE edition before being penalised. */
+  typologiesDistinctesMax?: number;
 }
 
 export interface HardMediumSoftScore {

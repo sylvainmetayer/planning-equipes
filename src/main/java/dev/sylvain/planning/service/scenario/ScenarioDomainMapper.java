@@ -13,6 +13,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -32,6 +33,7 @@ import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
+import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
@@ -407,6 +409,7 @@ final class ScenarioDomainMapper {
     static ScenarioSections sections(ScenarioDto scenario) {
         return new ScenarioSections(
                 parametresLegaux(scenario.parametresLegaux()),
+                parametresQualite(scenario.parametresQualite()),
                 parametresSolveur(scenario.parametresSolveur()),
                 typologies(scenario.typologies()),
                 edition(scenario),
@@ -491,6 +494,32 @@ final class ScenarioDomainMapper {
         return Optional.of(parametres);
     }
 
+    /**
+     * {@code parametresQualite:} — the thresholds the file was verified with.
+     * The two hours are read wholesale: a section that names neither describes
+     * an edition where {@code eviterFermeturePuisOuverture} says nothing, which
+     * is a legitimate tuning and not an omission. The numbers a file leaves out
+     * keep the importing edition's value.
+     */
+    private static Optional<ParametresQualite> parametresQualite(ParametresQualiteDto dto) {
+        if (dto == null) {
+            return Optional.empty();
+        }
+        ParametresQualite defauts = new ParametresQualite();
+        return Optional.of(new ParametresQualite(
+                dto.maxEmplacementsDistinctsParJour() != null
+                        ? dto.maxEmplacementsDistinctsParJour()
+                        : defauts.maxEmplacementsDistinctsParJour(),
+                dto.heureServiceTardif(),
+                dto.heureServiceMatinal(),
+                dto.reposSouhaiteApresServiceTardifMinutes() != null
+                        ? dto.reposSouhaiteApresServiceTardifMinutes()
+                        : defauts.reposSouhaiteApresServiceTardifMinutes(),
+                dto.typologiesDistinctesMax() != null
+                        ? dto.typologiesDistinctesMax()
+                        : defauts.typologiesDistinctesMax()));
+    }
+
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {
         if (dto == null || dto.dureeResolutionSecondes() == null) {
             return Optional.empty();
@@ -515,6 +544,20 @@ final class ScenarioDomainMapper {
                 desactivees.add(requireKnownConstraint(String.valueOf(nom)));
             }
         }
+        Set<String> activees = new LinkedHashSet<>();
+        if (dto.activees() != null) {
+            for (String nom : dto.activees()) {
+                activees.add(requireKnownConstraint(String.valueOf(nom)));
+            }
+        }
+        Set<String> contradictoires = new LinkedHashSet<>(desactivees);
+        contradictoires.retainAll(activees);
+        if (!contradictoires.isEmpty()) {
+            throw new BusinessError.Invalid("La section contraintes cite « "
+                    + String.join(" », « ", contradictoires)
+                    + " » à la fois dans desactivees et dans activees : "
+                    + "le fichier ne dit pas quel problème il décrit.");
+        }
         Map<String, Integer> poids = new LinkedHashMap<>();
         if (dto.poids() != null) {
             for (Map.Entry<String, Integer> entry : dto.poids().entrySet()) {
@@ -523,7 +566,7 @@ final class ScenarioDomainMapper {
                 }
             }
         }
-        return Optional.of(new ContraintesScenario(desactivees, poids));
+        return Optional.of(new ContraintesScenario(desactivees, activees, poids));
     }
 
     private static String requireKnownConstraint(String nom) {

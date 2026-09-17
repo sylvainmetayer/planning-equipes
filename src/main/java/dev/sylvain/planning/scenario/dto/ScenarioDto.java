@@ -23,6 +23,7 @@ public record ScenarioDto(
         @NotNull @Valid FestivalDto festival,
         @Valid ParametresSolveurDto parametresSolveur,
         @Valid ParametresLegauxDto parametresLegaux,
+        @Valid ParametresQualiteDto parametresQualite,
         @Valid ContraintesDto contraintes,
         List<@Valid TypologieDto> typologies,
         @NotNull List<@Valid CreneauDto> creneaux,

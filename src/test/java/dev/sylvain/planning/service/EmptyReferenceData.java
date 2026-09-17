@@ -77,6 +77,16 @@ public class EmptyReferenceData implements ReferenceData {
     }
 
     @Override
+    public dev.sylvain.planning.domain.ParametresQualite getParametresQualite() {
+        return new dev.sylvain.planning.domain.ParametresQualite();
+    }
+
+    @Override
+    public java.util.Map<String, Boolean> getEtatsContraintes() {
+        return java.util.Map.of();
+    }
+
+    @Override
     public Map<String, Integer> getConstraintWeights() {
         return Map.of();
     }

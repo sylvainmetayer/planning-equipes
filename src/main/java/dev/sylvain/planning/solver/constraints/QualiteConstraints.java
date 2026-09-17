@@ -511,16 +511,18 @@ public final class QualiteConstraints {
     }
 
     /**
-     * Below this count of distinct typologies mastered across an animateur's
-     * whole planning, no penalty applies — the business considers 1-2
-     * typologies the ideal case (5 is the cited bad example).
-     */
-    private static final int TYPOLOGIES_DISTINCTES_SANS_PENALITE = 2;
-
-    /**
      * An animateur spread across too many distinct typologies of jeu over the
-     * whole planning is penalised, proportionally to how far past the
-     * threshold they are — the same gradient logic as {@link #equilibrerCharge}.
+     * whole planning is penalised, proportionally to how far past
+     * {@link ParametresQualite#typologiesDistinctesMax()} they are — the same
+     * gradient logic as {@link #equilibrerCharge}.
+     *
+     * <p><b>The scope is the edition, not the day.</b> The {@code groupBy} below
+     * carries the animateur and nothing else — no date key, unlike
+     * {@code maxJoursConsecutifsTravailles} or {@code pauseSurPosteSansRelais}
+     * — so two typologies held on one afternoon and two held a week apart cost
+     * exactly the same. That is the rule the organisers asked for: what is
+     * being limited is how many different games one person has to learn, and
+     * learning them on separate days makes it no easier.</p>
      */
     private Constraint limiterTypologiesDistinctesParAnimateur(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
@@ -534,10 +536,11 @@ public final class QualiteConstraints {
                 .groupBy(
                         (poste, typologie) -> poste.getAnimateur(),
                         ConstraintCollectors.toSet((poste, typologie) -> typologie))
-                .filter((animateur, typologies) -> typologies.size() > TYPOLOGIES_DISTINCTES_SANS_PENALITE)
+                .join(ParametresQualite.class)
+                .filter((animateur, typologies, parametres) -> typologies.size() > parametres.typologiesDistinctesMax())
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, typologies) -> typologies.size() - TYPOLOGIES_DISTINCTES_SANS_PENALITE)
+                        (animateur, typologies, parametres) -> typologies.size() - parametres.typologiesDistinctesMax())
                 .asConstraint("limiterTypologiesDistinctesParAnimateur");
     }
 

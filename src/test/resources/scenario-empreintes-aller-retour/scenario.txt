@@ -8,7 +8,7 @@
 .planning.fenetresRepas[0]  c42588e8fd4e1c44
 .planning.fenetresRepas[1]  ab651a6748181af8
 .planning.parametresLegaux[0]  a00c1782570d3bbc
-.planning.parametresQualite[0]  1b7a448ef2898db9
+.planning.parametresQualite[0]  ae58e0fa7b85be4c
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5
@@ -17,11 +17,13 @@
 .planning.postes[2]  79dc3f035813303a
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 3
 .sections.contraintes.poids{maxJoursConsecutifsTravailles} = 5
 .sections.edition = null
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
+.sections.parametresQualite = null
 .sections.parametresSolveur = null
 .sections.typologies = (vide)

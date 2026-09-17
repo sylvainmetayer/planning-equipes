@@ -17,10 +17,16 @@ import java.util.Map;
  * {@code parametresLegaux}/{@code parametresSolveur} were added to close.</p>
  *
  * @param desactivees names of the constraints (see {@code ConstraintCatalog})
- *                    the import must switch off; every other one is active,
- *                    same convention as the {@code constraint_toggle} table
+ *                    the import must switch off
+ * @param activees    names of the constraints the import must switch <b>on</b>
+ *                    although the catalogue ships them off (see
+ *                    {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}). What
+ *                    neither list names goes back to the catalogue's default,
+ *                    which is what "this is the tuning this scenario was
+ *                    verified with" means once a rule can ship switched off
  * @param poids       weight per constraint name, applied to the target
  *                    edition. What the file does not name keeps the
  *                    deployment default from {@code application.properties}
  */
-public record ContraintesDto(List<String> desactivees, Map<String, @Min(1) @Max(100) Integer> poids) {}
+public record ContraintesDto(
+        List<String> desactivees, List<String> activees, Map<String, @Min(1) @Max(100) Integer> poids) {}

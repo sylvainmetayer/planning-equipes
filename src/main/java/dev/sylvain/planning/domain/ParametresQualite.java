@@ -6,10 +6,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * Organisational-quality thresholds a constraint needs at solve time, carried
  * as a problem fact so a rule can join them exactly like
- * {@link ParametresLegaux}. Unlike the legal ones, these are not stored per
- * edition in the database: they are read from application configuration
- * ({@code planning.contraintes.*}) by {@code PlanningService}, because they
- * tune the plan's comfort rather than the law it must obey.
+ * {@link ParametresLegaux} — and, since issue #591, stored per edition just
+ * like them. What {@code planning.contraintes.*} configures is now the
+ * <b>default</b>: the values an edition that never opened the screen solves
+ * with. They tune the plan's comfort rather than the law it must obey, so
+ * unlike the legal ones nothing here has a floor to refuse.
  *
  * <p>A record, unlike {@link ParametresLegaux}: a problem fact is immutable by
  * nature — the solver reads it thousands of times per second and never writes
@@ -33,13 +34,26 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        <b>beyond</b> the legal daily rest is ever penalised, so a value at or
  *        under that floor leaves the rule inert — it is a comfort, never a
  *        second legal floor in disguise.
+ * @param typologiesDistinctesMax how many distinct typologies of jeu an
+ *        animateur may cover over the <b>whole edition</b> before
+ *        {@code limiterTypologiesDistinctesParAnimateur} starts penalising,
+ *        proportionally to the excess. The scope is the edition and not the
+ *        day: two typologies on one afternoon and two typologies a week apart
+ *        count the same. Ninjas are exempt, versatility being what they are
+ *        there for.
  */
-@Schema(requiredProperties = {"maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes"})
+@Schema(
+        requiredProperties = {
+            "maxEmplacementsDistinctsParJour",
+            "reposSouhaiteApresServiceTardifMinutes",
+            "typologiesDistinctesMax"
+        })
 public record ParametresQualite(
         int maxEmplacementsDistinctsParJour,
         LocalTime heureServiceTardif,
         LocalTime heureServiceMatinal,
-        int reposSouhaiteApresServiceTardifMinutes) {
+        int reposSouhaiteApresServiceTardifMinutes,
+        int typologiesDistinctesMax) {
 
     /** @see #maxEmplacementsDistinctsParJour() */
     public static final int EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT = 3;
@@ -69,6 +83,15 @@ public record ParametresQualite(
      */
     public static final int REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT = 12 * 60;
 
+    /**
+     * 2 — one or two typologies is the ideal the organisers describe, five the
+     * cited bad case. Lived in {@code QualiteConstraints} as a private constant
+     * until issue #591: an organiser for whom three typologies is normal had no
+     * way to say so, and could only dose the rule's weight until it stopped
+     * mattering.
+     */
+    public static final int TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT = 2;
+
     public ParametresQualite() {
         this(EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT);
     }
@@ -78,7 +101,8 @@ public record ParametresQualite(
                 maxEmplacementsDistinctsParJour,
                 HEURE_SERVICE_TARDIF_PAR_DEFAUT,
                 HEURE_SERVICE_MATINAL_PAR_DEFAUT,
-                REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT);
+                REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT,
+                TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
     }
 
     /**

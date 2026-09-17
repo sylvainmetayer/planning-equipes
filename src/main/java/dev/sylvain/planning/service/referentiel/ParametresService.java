@@ -2,12 +2,17 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.solver.ConstraintCatalog;
+import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import org.eclipse.microprofile.config.Config;
 
 /**
  * The three admin-configurable parameter sets, the constraint toggles and the
@@ -23,6 +28,10 @@ public class ParametresService {
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
+
+    /** Only for the {@code planning.contraintes.*} block: the defaults an unconfigured edition solves with. */
+    @Inject
+    Config config;
 
     public ParametresLegaux getLegaux() {
         return repository.getParametresLegaux();
@@ -67,8 +76,61 @@ public class ParametresService {
         return parametres;
     }
 
+    /**
+     * Every constraint the next solve will <b>not</b> enforce: the ones this
+     * edition switched off, plus the ones the catalogue ships off that nobody
+     * asked for (see {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}). One
+     * set, whatever the reason — callers that only want to know what applies
+     * have no business re-deriving the default.
+     */
+    /**
+     * The quality thresholds of this edition — its row, or the deployment's
+     * configuration while it has none (issue #591).
+     */
+    public ParametresQualite qualite() {
+        return repository.getParametresQualite(ParametresQualiteDefaults.of(config));
+    }
+
+    /**
+     * Saves the quality thresholds of this edition. Tracked as a reference
+     * change: unlike the notification settings, these <b>are</b> read by a
+     * solve, so a plan computed before the change no longer describes the
+     * problem the edition now poses.
+     */
+    public ParametresQualite updateQualite(ParametresQualite parametres) {
+        ParametresValidator.checkParametresQualite(parametres);
+        repository.saveParametresQualite(parametres);
+        changeTracker.markModified();
+        return parametres;
+    }
+
     public Set<String> disabledContraintes() {
-        return repository.getContraintesDesactivees();
+        Map<String, Boolean> etats = repository.getEtatsContraintes();
+        Set<String> desactivees = new LinkedHashSet<>();
+        for (ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            if (!etats.getOrDefault(definition.name(), definition.activeByDefault())) {
+                desactivees.add(definition.name());
+            }
+        }
+        // A row whose name left the catalogue (renamed rule, older database)
+        // is kept: it says something was switched off, and dropping it here
+        // would quietly claim the opposite.
+        etats.forEach((nom, actif) -> {
+            if (!actif && !ConstraintCatalog.PAR_NOM.containsKey(nom)) {
+                desactivees.add(nom);
+            }
+        });
+        return desactivees;
+    }
+
+    /**
+     * What this edition explicitly chose, per constraint name — without the
+     * catalogue's defaults filled in. This is what the solver is handed, so a
+     * default the catalogue changes tomorrow reaches every edition that never
+     * took a position, and only those.
+     */
+    public Map<String, Boolean> etatsContraintes() {
+        return repository.getEtatsContraintes();
     }
 
     /**
@@ -86,7 +148,13 @@ public class ParametresService {
      * the Contraintes screen and on the Solveur one.</p>
      */
     public void setContrainteActive(String nom, boolean actif) {
-        repository.setContrainteActive(nom, actif);
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        // Asking for exactly what the catalogue already says drops the row
+        // rather than pinning it: the table then holds the decisions somebody
+        // took, and nothing else — the same convention as a constraint weight
+        // reset to its default.
+        boolean parDefaut = definition != null && definition.activeByDefault() == actif;
+        repository.setEtatContrainte(nom, parDefaut ? null : actif);
         changeTracker.markModified();
     }
 
