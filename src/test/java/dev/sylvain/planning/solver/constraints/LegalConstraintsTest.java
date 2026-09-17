@@ -312,6 +312,27 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(10);
     }
 
+    /**
+     * The break that cuts a stretch is the one the edition grants, not the
+     * legal floor (issue #592). The same twenty-minute gap that cut the stretch
+     * above no longer does once the organiser gives thirty minutes: the two
+     * créneaux are read as one stretch again, measured edge to edge from 14:00
+     * to midnight — ten hours, four above the cap, exactly what the uncut
+     * version costs.
+     */
+    @Test
+    void laDureeDePauseDuMajeurEstUnParametre() {
+        Animateur majeur = referentMajeur("A1");
+        Creneau aprem = creneau("J1-14-1940-P", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 40));
+        Creneau soiree = creneau("J1-20-00-P", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        ParametresLegaux pauseDeTrente = new ParametresLegaux();
+        pauseDeTrente.setDureePauseMajeurMinutes(30);
+
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), pauseDeTrente)
+                .penalizesBy(4 * 60);
+    }
+
     // --- Break declared as taken on the post (L3121-16 read as the Code does: real, not scheduled)
 
     private static ParametresLegaux pauseSurPoste() {

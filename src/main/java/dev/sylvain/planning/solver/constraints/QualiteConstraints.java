@@ -602,7 +602,7 @@ public final class QualiteConstraints {
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
                 .filter((animateur, date, postes, parametres) -> parametres.isPauseSurPoste())
-                .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes))
+                .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes, parametres))
                 .flattenLast(dues -> dues)
                 .ifNotExists(
                         PosteAffectation.class,

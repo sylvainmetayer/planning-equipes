@@ -92,6 +92,22 @@ public class ParametresLegaux {
      * two-hour window splits into two whole slots — 12-13 or 13-14 — that the
      * organiser can plan rather than endure (issue #438).
      */
+    /**
+     * How long the break that ends an adult's working stretch lasts. Default:
+     * the twenty minutes art. <b>L3121-16</b> owes at the sixth hour, which is
+     * a floor of ordre public — a lower value is refused. Above it, the
+     * organiser is free: a thirty-minute relay is easier to organise than a
+     * twenty-minute one, and nothing in the Code forbids giving more
+     * (issue #592).
+     */
+    public static final int DUREE_PAUSE_MAJEUR_MINUTES_PAR_DEFAUT = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
+
+    /**
+     * The same, for a young worker: thirty minutes at four hours and a half
+     * (art. <b>L3162-3</b>), floor of ordre public, free above.
+     */
+    public static final int DUREE_PAUSE_MINEUR_MINUTES_PAR_DEFAUT = PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES;
+
     public static final int COUPURE_REPAS_MINUTES_PAR_DEFAUT = 60;
 
     public static final LocalTime COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
@@ -117,6 +133,8 @@ public class ParametresLegaux {
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
     private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
 
+    private int dureePauseMajeurMinutes = DUREE_PAUSE_MAJEUR_MINUTES_PAR_DEFAUT;
+    private int dureePauseMineurMinutes = DUREE_PAUSE_MINEUR_MINUTES_PAR_DEFAUT;
     private int coupureRepasMinutes = COUPURE_REPAS_MINUTES_PAR_DEFAUT;
     private LocalTime coupureRepasMidiDebut = COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT;
     private LocalTime coupureRepasMidiFin = COUPURE_REPAS_MIDI_FIN_PAR_DEFAUT;
@@ -188,6 +206,27 @@ public class ParametresLegaux {
 
     public void setPauseSurPoste(boolean pauseSurPoste) {
         this.pauseSurPoste = pauseSurPoste;
+    }
+
+    public int getDureePauseMajeurMinutes() {
+        return dureePauseMajeurMinutes;
+    }
+
+    public void setDureePauseMajeurMinutes(int dureePauseMajeurMinutes) {
+        this.dureePauseMajeurMinutes = dureePauseMajeurMinutes;
+    }
+
+    public int getDureePauseMineurMinutes() {
+        return dureePauseMineurMinutes;
+    }
+
+    public void setDureePauseMineurMinutes(int dureePauseMineurMinutes) {
+        this.dureePauseMineurMinutes = dureePauseMineurMinutes;
+    }
+
+    /** The break owed to this animateur on that date, adult or young worker. */
+    public int dureePauseMinutes(boolean mineur) {
+        return mineur ? dureePauseMineurMinutes : dureePauseMajeurMinutes;
     }
 
     public int getCoupureRepasMinutes() {

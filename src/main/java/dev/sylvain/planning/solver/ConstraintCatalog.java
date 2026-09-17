@@ -187,7 +187,7 @@ public final class ConstraintCatalog {
                     Niveau.HARD,
                     "Légal (mineurs)",
                     "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
-                            + "d'au moins 30 minutes consécutives est obligatoire "
+                            + "consécutive de la durée paramétrée est obligatoire, au minimum 30 minutes "
                             + "(Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause "
                             + "prise sur le poste, par relais."),
             new ConstraintDefinition(
@@ -237,7 +237,7 @@ public final class ConstraintCatalog {
                     Niveau.HARD,
                     "Légal (temps de travail)",
                     "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
-                            + "d'au moins 20 minutes consécutives est obligatoire "
+                            + "consécutive de la durée paramétrée est obligatoire, au minimum 20 minutes "
                             + "(Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause "
                             + "prise sur le poste, par relais."),
             new ConstraintDefinition(

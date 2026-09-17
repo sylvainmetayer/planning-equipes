@@ -232,7 +232,7 @@ public class PauseAnalyzer {
         //    the window each break may fall in.
         List<Journee> journees = new ArrayList<>();
         for (List<PosteAffectation> postesDuJour : parJournee.values()) {
-            journees.add(journee(postesDuJour, fenetresRepas));
+            journees.add(journee(postesDuJour, fenetresRepas, parametres));
         }
         // 2. Each stand-day: the rotation, one break after the other.
         Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
@@ -424,15 +424,18 @@ public class PauseAnalyzer {
     }
 
     /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
-    private static Journee journee(List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
+    private static Journee journee(
+            List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres, ParametresLegaux parametres) {
         Animateur animateur = postesDuJour.get(0).getAnimateur();
         LocalDate date = postesDuJour.get(0).getCreneau().getDate();
         boolean mineur = animateur.isMineurOn(date);
         int travailContinuMax = mineur
                 ? PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES
                 : PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES;
-        int pauseMinimale =
-                mineur ? PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES : PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
+        // The break the edition grants, not the legal floor: the card of the
+        // animateur's PDF says « Pause de 18:20 à 18:40 », and a relay of
+        // thirty minutes must not be announced as twenty (issue #592).
+        int pauseMinimale = parametres.dureePauseMinutes(mineur);
 
         // The stretches and the breaks they owe come from the domain: the
         // solver's pauseSurPosteSansRelais reads the very same ones, so the

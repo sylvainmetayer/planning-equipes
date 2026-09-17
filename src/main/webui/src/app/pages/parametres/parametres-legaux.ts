@@ -13,6 +13,8 @@ import { urlLegifrance } from '../../core/legifrance';
 import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
+  DUREE_PAUSE_MAJEUR_MIN_MINUTES,
+  DUREE_PAUSE_MINEUR_MIN_MINUTES,
   ParametresLegaux,
 } from '../../core/models';
 
@@ -53,6 +55,12 @@ export class ParametresLegauxCard {
   protected readonly articleReposQuotidien = urlLegifrance('L3131-1');
   protected readonly articlePause = urlLegifrance('L3121-16');
   protected readonly dureeHebdomadaireMaxMineurHeures = signal<number | null>(null);
+  /** How long the legal break lasts, in minutes: a floor, never a ceiling (issue #592). */
+  protected readonly dureePauseMajeurMinutes = signal<number | null>(null);
+  protected readonly dureePauseMineurMinutes = signal<number | null>(null);
+  protected readonly floorPauseMajeurMinutes = DUREE_PAUSE_MAJEUR_MIN_MINUTES;
+  protected readonly floorPauseMineurMinutes = DUREE_PAUSE_MINEUR_MIN_MINUTES;
+  protected readonly articlePauseMineur = urlLegifrance('L3162-3');
   /** The meal break the organisation sets itself (issue #438): its length, and the two windows as HH:MM. */
   protected readonly coupureRepasMinutes = signal<number | null>(null);
   protected readonly coupureRepasMidiDebut = signal('');
@@ -101,6 +109,8 @@ export class ParametresLegauxCard {
     this.gapBetweenVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
     this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
     this.pauseSurPoste.set(parametres.pauseSurPoste);
+    this.dureePauseMajeurMinutes.set(parametres.dureePauseMajeurMinutes);
+    this.dureePauseMineurMinutes.set(parametres.dureePauseMineurMinutes);
     this.coupureRepasMinutes.set(parametres.coupureRepasMinutes);
     this.coupureRepasMidiDebut.set(parametres.coupureRepasMidiDebut ?? '');
     this.coupureRepasMidiFin.set(parametres.coupureRepasMidiFin ?? '');
@@ -127,6 +137,8 @@ export class ParametresLegauxCard {
     const reposHeures = this.reposQuotidienHeures();
     const coupureMinutes = this.coupureRepasMinutes();
     const vacationMaxHeures = this.dureeVacationMaxHeures();
+    const pauseMajeur = this.dureePauseMajeurMinutes();
+    const pauseMineur = this.dureePauseMineurMinutes();
     if (
       heures === null ||
       heures <= 0 ||
@@ -140,8 +152,24 @@ export class ParametresLegauxCard {
       coupureMinutes < 0 ||
       vacationMaxHeures === null ||
       vacationMaxHeures <= 0 ||
+      pauseMajeur === null ||
+      pauseMineur === null ||
       this.heureDebutSoiree() === ''
     ) {
+      return;
+    }
+    // Floors, mirrored from the server so the administrator reads an
+    // explanation rather than an HTTP 400.
+    if (pauseMajeur < this.floorPauseMajeurMinutes) {
+      this.parametresError.set(
+        $localize`:@@constraints.legal.error.pauseMajeur:La durée de pause des majeurs ne peut pas être inférieure à ${this.floorPauseMajeurMinutes}:minutes: minutes (Code du travail art. L3121-16, disposition d'ordre public).`,
+      );
+      return;
+    }
+    if (pauseMineur < this.floorPauseMineurMinutes) {
+      this.parametresError.set(
+        $localize`:@@constraints.legal.error.pauseMineur:La durée de pause des mineurs ne peut pas être inférieure à ${this.floorPauseMineurMinutes}:minutes: minutes (Code du travail art. L3162-3).`,
+      );
       return;
     }
     if (heures > this.ceilingAdultHours) {
@@ -167,6 +195,8 @@ export class ParametresLegauxCard {
           pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
           reposQuotidienMinimalMinutes: Math.round(reposHeures * 60),
           pauseSurPoste: this.pauseSurPoste(),
+          dureePauseMajeurMinutes: Math.round(pauseMajeur),
+          dureePauseMineurMinutes: Math.round(pauseMineur),
           coupureRepasMinutes: Math.round(coupureMinutes),
           coupureRepasMidiDebut: this.coupureRepasMidiDebut(),
           coupureRepasMidiFin: this.coupureRepasMidiFin(),

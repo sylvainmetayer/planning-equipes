@@ -20,6 +20,11 @@ import java.time.LocalTime;
  * <p>{@code dureeVacationMaxMinutes} arrived here when the découpage was
  * removed: it used to bound what the slicing produced, and now says from when
  * the grid check warns that a vacation needs an internal break.</p>
+ *
+ * <p>The two break lengths (issue #592) travel for the same reason as the rest:
+ * a file verified with a thirty-minute relay for adults must not be re-imported
+ * as a twenty-minute one. A value under the legal floor is refused on import
+ * exactly as it is on the screen.</p>
  */
 public record ParametresLegauxDto(
         @Positive Integer dureeHebdomadaireMaxMinutes,
@@ -27,6 +32,8 @@ public record ParametresLegauxDto(
         @Positive Integer dureeVacationMaxMinutes,
         @PositiveOrZero Integer reposQuotidienMinimalMinutes,
         Boolean pauseSurPoste,
+        @Positive Integer dureePauseMajeurMinutes,
+        @Positive Integer dureePauseMineurMinutes,
         @PositiveOrZero Integer coupureRepasMinutes,
         LocalTime coupureRepasMidiDebut,
         LocalTime coupureRepasMidiFin,

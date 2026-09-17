@@ -710,7 +710,7 @@
   "constraints.legal.coupure.soirFin": "Evening window — end",
   "constraints.legal.coupure.soirHint": "Empty, or shorter than the break: no rule in the evening.",
   "constraints.legal.field.pauseSurPoste": "Legal break taken on the post, by relay between colleagues",
-  "constraints.legal.hint.pauseSurPoste": "When enabled, the 20-minute break owed at the sixth hour (art. L3121-16) is organised inside the vacation, and the daily caps deduct it. Otherwise a break is a gap between two vacations.",
+  "constraints.legal.hint.pauseSurPoste": "When on, the break owed at the sixth hour (art. L3121-16) is organised inside the vacation, and the daily caps deduct it. Otherwise a break is a gap between two vacations.",
   "constraints.legal.guide": "How to set these parameters for a complete plan: see the help.",
   "constraints.legal.hint.dureeMax": "Legal maximum: 48h (art. {$START_LINK}L3121-20{$CLOSE_LINK})",
   "constraints.legal.hint.dureeMaxMineur": "Legal maximum: 35h (art. {$START_LINK}L3162-1{$CLOSE_LINK})",
@@ -3124,5 +3124,11 @@
   "parametres.qualite.field.reposSouhaite": "Rest wished for after a late service (hours)",
   "parametres.qualite.hint.reposSouhaite": "Only what goes beyond the legal daily rest is penalised: a value at the floor leaves the rule silent.",
   "parametres.qualite.saved": "Saved.",
-  "parametres.qualite.error.heuresIncompletes": "Give both service hours, or neither: one alone describes no closing/opening pair."
+  "parametres.qualite.error.heuresIncompletes": "Give both service hours, or neither: one alone describes no closing/opening pair.",
+  "constraints.legal.field.dureePauseMajeur": "Break length, adults (minutes)",
+  "constraints.legal.hint.dureePauseMajeur": "Legal minimum: 20 min (art. {$START_LINK}L3121-16{$CLOSE_LINK}). Above it, free: a thirty-minute relay is simpler to organise.",
+  "constraints.legal.field.dureePauseMineur": "Break length, minors (minutes)",
+  "constraints.legal.hint.dureePauseMineur": "Legal minimum: 30 min (art. {$START_LINK}L3162-3{$CLOSE_LINK}). Above it, free.",
+  "constraints.legal.error.pauseMajeur": "The break length for adults cannot be under {$minutes} minutes (Code du travail art. L3121-16, ordre public).",
+  "constraints.legal.error.pauseMineur": "The break length for minors cannot be under {$minutes} minutes (Code du travail art. L3162-3)."
 }

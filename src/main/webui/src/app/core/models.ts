@@ -1054,6 +1054,14 @@ export interface ParametresLegaux {
    */
   pauseSurPoste: boolean;
   /**
+   * How long that break lasts. Floors of ordre public — 20 min for an adult
+   * (art. L3121-16), 30 for a minor (art. L3162-3) — refused below by the
+   * server; above them the organiser is free, a thirty-minute relay being
+   * easier to organise than a twenty-minute one (issue #592).
+   */
+  dureePauseMajeurMinutes: number;
+  dureePauseMineurMinutes: number;
+  /**
    * The meal break: how long it lasts, and the midday and evening windows it
    * must fall in — the rule `coupureRepasObligatoire` judges (issue #438).
    * Not a legal obligation, but the rule the organisation sets itself, so it
@@ -1276,6 +1284,12 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 
 /** Ordre public ceiling for minors, in hours (Code du travail art. L3162-1). */
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
+
+/** Ordre public floor for an adult's break, in minutes (Code du travail art. L3121-16). */
+export const DUREE_PAUSE_MAJEUR_MIN_MINUTES = 20;
+
+/** Ordre public floor for a minor's break, in minutes (Code du travail art. L3162-3). */
+export const DUREE_PAUSE_MINEUR_MIN_MINUTES = 30;
 
 export type JobType = 'SOLVE' | 'SOLVE_INCREMENTAL';
 /**

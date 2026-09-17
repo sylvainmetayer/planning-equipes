@@ -39,13 +39,22 @@ public final class PlafondsLegauxMajeurs {
      * {@code 6 h × (p + 1) + 20 min × p}. Zero for a stretch within the cap.
      */
     public static int onPostBreakMinutes(int stretchMinutes) {
+        return onPostBreakMinutes(stretchMinutes, PAUSE_MINIMALE_MINUTES);
+    }
+
+    /**
+     * The same, with the break the edition actually grants
+     * ({@code ParametresLegaux.dureePauseMinutes}). It may be longer than
+     * {@link #PAUSE_MINIMALE_MINUTES}, never shorter — the service refuses that
+     * — so this deducts more rest from the amplitude, never less (issue #592).
+     */
+    public static int onPostBreakMinutes(int stretchMinutes, int pauseMinutes) {
         if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
             return 0;
         }
-        return PAUSE_MINIMALE_MINUTES
+        return pauseMinutes
                 * Math.ceilDiv(
-                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
-                        TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES, TRAVAIL_CONTINU_MAX_MINUTES + pauseMinutes);
     }
 
     /** Art. L3131-1: 11 consecutive hours of daily rest for an adult. */

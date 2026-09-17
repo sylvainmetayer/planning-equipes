@@ -105,6 +105,15 @@ public record PauseSurPoste(
      * the same animateur and date and carry a start time.
      */
     public static List<PauseSurPoste> dues(List<PosteAffectation> postesDuJour) {
+        return dues(postesDuJour, new ParametresLegaux());
+    }
+
+    /**
+     * The same, with the break lengths this edition grants — at or above the
+     * legal floor, never under it (issue #592). The no-argument variant above
+     * reads the defaults, which are exactly those floors.
+     */
+    public static List<PauseSurPoste> dues(List<PosteAffectation> postesDuJour, ParametresLegaux parametres) {
         if (postesDuJour == null || postesDuJour.isEmpty()) {
             return List.of();
         }
@@ -114,8 +123,7 @@ public record PauseSurPoste(
         int cap = mineur
                 ? PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES
                 : PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES;
-        int pause =
-                mineur ? PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES : PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
+        int pause = parametres.dureePauseMinutes(mineur);
         List<PauseSurPoste> dues = new ArrayList<>();
         for (Sequence sequence : sequences(postesDuJour, pause)) {
             dues.addAll(dues(sequence, cap, pause));

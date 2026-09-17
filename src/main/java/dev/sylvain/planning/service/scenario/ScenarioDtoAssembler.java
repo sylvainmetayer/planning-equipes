@@ -366,6 +366,8 @@ final class ScenarioDtoAssembler {
                         parametres.getDureeVacationMaxMinutes(),
                         parametres.getReposQuotidienMinimalMinutes(),
                         parametres.isPauseSurPoste(),
+                        parametres.getDureePauseMajeurMinutes(),
+                        parametres.getDureePauseMineurMinutes(),
                         parametres.getCoupureRepasMinutes(),
                         parametres.getCoupureRepasMidiDebut(),
                         parametres.getCoupureRepasMidiFin(),

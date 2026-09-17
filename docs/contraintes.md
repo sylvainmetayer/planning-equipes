@@ -93,6 +93,26 @@ et la contrainte ne coûte rien.
 > aujourd'hui de préférence pour la variété des stands** : rétablir ce besoin
 > suppose d'abord d'arbitrer contre ces deux règles.
 
+## La durée des pauses
+
+La pause qui coupe une période de travail continu se règle sur la page
+Paramètres, carte « Paramètres légaux » : `dureePauseMajeurMinutes` et
+`dureePauseMineurMinutes` (issue #592). Elles sont lues par
+`travailContinuMaxMajeur`, `travailContinuMaxMineur`, `PauseSurPoste` et
+l'analyse des pauses — donc par l'écran Pauses et par la carte
+« Pause de 18:20 à 18:40 » du PDF animateur.
+
+C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des
+plafonds : 20 minutes pour un majeur (art. L3121-16), 30 pour un mineur
+(art. L3162-3), refusées en dessous par le service, libres au-dessus. Donner
+plus que ce que le Code doit est un choix d'organisation — une relève de 30
+minutes s'organise plus simplement qu'une de 20 — et la seule direction
+qu'une application ne doit pas laisser prendre est l'autre.
+
+Les constantes `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` et
+`PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` restent : elles sont la valeur
+par défaut et la référence de l'article.
+
 ## Les seuils de qualité
 
 Les règles de « Qualité d'organisation » lisent leurs seuils dans
@@ -905,14 +925,14 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `dureeQuotidienneMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée (Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans (art. D4153-3). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
 | `travailInterditJourFerieMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas travailler un jour férié légal (Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire. |
 | `reposHebdomadaireMineur` | HARD | Légal (mineurs) | Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais ne forment la paire d'aucune des deux. Les dérogations conventionnelles supposent un accord étendu ou une autorisation de l'inspection du travail : elles ne sont pas présumées. |
-| `travailContinuMaxMineur` | HARD | Légal (mineurs) | Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause d'au moins 30 minutes consécutives est obligatoire (Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
+| `travailContinuMaxMineur` | HARD | Légal (mineurs) | Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause consécutive de la durée paramétrée est obligatoire, au minimum 30 minutes (Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
 | `dureeHebdomadaireMax` | HARD | Légal (temps de travail) | Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, d'ordre public / Convention collective de l'Animation art. 5.2). |
 | `dureeHebdomadaireMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine (Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les vacances scolaires). |
 | `dureeQuotidienneMaxMajeur` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée (Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
 | `reposQuotidienMinimal` | HARD | Légal (temps de travail) | Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : 11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans (art. L3164-1). |
 | `maxJoursTravaillesParSemaine` | HARD | Légal (temps de travail) | Aucun animateur ne peut travailler plus de six jours dans la même semaine (Code du travail art. L3132-1). |
 | `reposHebdomadaireMinimal` | HARD | Légal (temps de travail) | Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier pour la semaine où il tombe. |
-| `travailContinuMaxMajeur` | HARD | Légal (temps de travail) | Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause d'au moins 20 minutes consécutives est obligatoire (Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
+| `travailContinuMaxMajeur` | HARD | Légal (temps de travail) | Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause consécutive de la durée paramétrée est obligatoire, au minimum 20 minutes (Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
 | `pauseMinimaleEntreVacations` | HARD | Légal (temps de travail) | Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause minimale paramétrée (30 min par défaut). |
 | `coupureRepasObligatoire` | HARD | Organisation (repas) | Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette fenêtre, d'une coupure libre de la durée paramétrée (60 min par défaut, midi 12 h-14 h et soir 19 h-21 h). Commencer sa journée à l'ouverture de la fenêtre, ou la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la règle d'organisation de l'événement, tenue en dur par choix. Elle reste active quand l'organisateur déclare la pause prise sur le poste : la pause légale par relais et la coupure repas sont deux choses distinctes. |
 | `coupureRepasAuPlusTot` | SOFT | Préférences | Entre deux coupures repas possibles dans la même fenêtre, préférer la plus tôt : sur une fenêtre 12 h-14 h taillée en deux, 12 h-13 h plutôt que 13 h-14 h. La couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la rotation du midi. |

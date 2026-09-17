@@ -4,6 +4,8 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.service.BusinessError;
 
 /**
@@ -63,6 +65,19 @@ final class ParametresValidator {
         if (parametres.getCoupureRepasMinutes() < 0) {
             throw new BusinessError.Invalid("coupureRepasMinutes must not be negative");
         }
+        // A floor, not a ceiling — the mirror image of the two weekly caps
+        // above. Giving more rest than the Code owes is the organiser's to
+        // decide; giving less is not (issue #592).
+        checkPlancher(
+                parametres.getDureePauseMajeurMinutes(),
+                PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
+                "la durée de pause des majeurs ne peut pas être inférieure à 20 minutes "
+                        + "(Code du travail art. L3121-16, disposition d'ordre public)");
+        checkPlancher(
+                parametres.getDureePauseMineurMinutes(),
+                PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
+                "la durée de pause des mineurs ne peut pas être inférieure à 30 minutes "
+                        + "(Code du travail art. L3162-3)");
         checkFenetre(parametres.getCoupureRepasMidiDebut(), parametres.getCoupureRepasMidiFin(), "coupureRepasMidi");
         checkFenetre(parametres.getCoupureRepasSoirDebut(), parametres.getCoupureRepasSoirFin(), "coupureRepasSoir");
         // Required, not defaulted: an evening that starts « never » would empty
@@ -70,6 +85,13 @@ final class ParametresValidator {
         // take the zeros for a fair plan.
         if (parametres.getHeureDebutSoiree() == null) {
             throw new BusinessError.Invalid("heureDebutSoiree is required (HH:MM)");
+        }
+    }
+
+    /** Refuses a value below a floor of ordre public, with the article that sets it. */
+    private static void checkPlancher(int valeur, int plancher, String message) {
+        if (valeur < plancher) {
+            throw new BusinessError.Invalid(message);
         }
     }
 

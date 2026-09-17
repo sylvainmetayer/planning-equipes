@@ -56,13 +56,22 @@ public final class PlafondsLegauxMineurs {
      * the move filter, so both read a long créneau the same way.
      */
     public static int onPostBreakMinutes(int stretchMinutes) {
+        return onPostBreakMinutes(stretchMinutes, PAUSE_MINIMALE_MINUTES);
+    }
+
+    /**
+     * The same, with the break the edition actually grants
+     * ({@code ParametresLegaux.dureePauseMinutes}). It may be longer than
+     * {@link #PAUSE_MINIMALE_MINUTES}, never shorter — the service refuses that
+     * — so this deducts more rest from the amplitude, never less (issue #592).
+     */
+    public static int onPostBreakMinutes(int stretchMinutes, int pauseMinutes) {
         if (stretchMinutes <= TRAVAIL_CONTINU_MAX_MINUTES) {
             return 0;
         }
-        return PAUSE_MINIMALE_MINUTES
+        return pauseMinutes
                 * Math.ceilDiv(
-                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES,
-                        TRAVAIL_CONTINU_MAX_MINUTES + PAUSE_MINIMALE_MINUTES);
+                        stretchMinutes - TRAVAIL_CONTINU_MAX_MINUTES, TRAVAIL_CONTINU_MAX_MINUTES + pauseMinutes);
     }
 
     /**

@@ -48,13 +48,25 @@
                [ngModel]="heureDebutSoiree()" (ngModelChange)="heureDebutSoiree.set($event)" />
         <mat-hint i18n="@@constraints.legal.hint.heureDebutSoiree">Les heures d'un poste après cette heure comptent en soirée.</mat-hint>
       </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@constraints.legal.field.dureePauseMajeur">Durée de la pause, majeurs (minutes)</mat-label>
+        <input matInput type="number" [min]="floorPauseMajeurMinutes" step="5" name="dureePauseMajeurMinutes"
+               [ngModel]="dureePauseMajeurMinutes()" (ngModelChange)="dureePauseMajeurMinutes.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.dureePauseMajeur">Minimum légal : 20 min (art. <a class="legal-article-link" [href]="articlePause" target="_blank" rel="noopener">L3121-16</a>). Au-delà, libre : une relève de 30 min s'organise plus simplement.</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@constraints.legal.field.dureePauseMineur">Durée de la pause, mineurs (minutes)</mat-label>
+        <input matInput type="number" [min]="floorPauseMineurMinutes" step="5" name="dureePauseMineurMinutes"
+               [ngModel]="dureePauseMineurMinutes()" (ngModelChange)="dureePauseMineurMinutes.set($event)" />
+        <mat-hint i18n="@@constraints.legal.hint.dureePauseMineur">Minimum légal : 30 min (art. <a class="legal-article-link" [href]="articlePauseMineur" target="_blank" rel="noopener">L3162-3</a>). Au-delà, libre.</mat-hint>
+      </mat-form-field>
       <p class="legal-guide">
         <a routerLink="/aide" fragment="parametrer-pour-un-planning-complet" i18n="@@constraints.legal.guide">Comment régler ces paramètres pour un planning complet : voir l'aide.</a>
       </p>
       <div class="legal-toggle">
         <mat-slide-toggle name="pauseSurPoste" [checked]="pauseSurPoste()" (change)="pauseSurPoste.set($event.checked)"
                           i18n="@@constraints.legal.field.pauseSurPoste">Pause légale prise sur le poste, par relais entre collègues</mat-slide-toggle>
-        <p class="legal-toggle-hint" i18n="@@constraints.legal.hint.pauseSurPoste">Quand elle est active, la pause de 20 minutes due à la sixième heure (art. L3121-16) est organisée à l'intérieur de la vacation, et les plafonds quotidiens la déduisent. Sinon, une pause est un trou entre deux vacations.</p>
+        <p class="legal-toggle-hint" i18n="@@constraints.legal.hint.pauseSurPoste">Quand elle est active, la pause due à la sixième heure (art. L3121-16) est organisée à l'intérieur de la vacation, et les plafonds quotidiens la déduisent. Sinon, une pause est un trou entre deux vacations.</p>
       </div>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">

@@ -351,6 +351,16 @@
           "format" : "int32",
           "exclusiveMinimum" : 0
         },
+        "dureePauseMajeurMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "dureePauseMineurMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
         "dureeVacationMaxMinutes" : {
           "type" : "integer",
           "format" : "int32",

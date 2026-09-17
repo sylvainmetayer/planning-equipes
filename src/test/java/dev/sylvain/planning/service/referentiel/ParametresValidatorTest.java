@@ -125,6 +125,35 @@ class ParametresValidatorTest {
                         new ParametresNotifications(true, LocalTime.of(18, 0), 72, 0)));
     }
 
+    /**
+     * The break lengths are floors of ordre public, the mirror image of the two
+     * weekly ceilings: more is the organiser's to give, less is not
+     * (issue #592).
+     */
+    @Test
+    void aBreakShorterThanTheLegalFloorIsRefused() {
+        ParametresLegaux tropCourtMajeur = new ParametresLegaux();
+        tropCourtMajeur.setDureePauseMajeurMinutes(15);
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresLegaux(tropCourtMajeur))
+                .withMessageContaining("L3121-16");
+
+        ParametresLegaux tropCourtMineur = new ParametresLegaux();
+        tropCourtMineur.setDureePauseMineurMinutes(20);
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresLegaux(tropCourtMineur))
+                .withMessageContaining("L3162-3");
+    }
+
+    @Test
+    void aBreakLongerThanTheLegalFloorIsFree() {
+        ParametresLegaux genereux = new ParametresLegaux();
+        genereux.setDureePauseMajeurMinutes(45);
+        genereux.setDureePauseMineurMinutes(60);
+        assertThatCode(() -> ParametresValidator.checkParametresLegaux(genereux))
+                .doesNotThrowAnyException();
+    }
+
     @Test
     void aConstraintWeightInsideTheRangeIsAccepted() {
         assertThatCode(() -> ParametresValidator.checkConstraintWeight(1)).doesNotThrowAnyException();

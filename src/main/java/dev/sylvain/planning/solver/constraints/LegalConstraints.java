@@ -373,7 +373,7 @@ public final class LegalConstraints {
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMajeur"),
                         Animateur::isMajeurOn,
-                        PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
+                        ParametresLegaux::getDureePauseMajeurMinutes,
                         PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES,
                         0)
                 .asConstraint("travailContinuMaxMajeur");
@@ -405,7 +405,7 @@ public final class LegalConstraints {
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMineur"),
                         Animateur::isMineurOn,
-                        PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
+                        ParametresLegaux::getDureePauseMineurMinutes,
                         PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES,
                         ExclusionEligibilite.FORFAIT)
                 .asConstraint("travailContinuMaxMineur");
@@ -424,7 +424,7 @@ public final class LegalConstraints {
             continuousWorkCap(
                     UniConstraintStream<PosteAffectation> postes,
                     BiPredicate<Animateur, LocalDate> bracket,
-                    int breakMinutes,
+                    ToIntFunction<ParametresLegaux> breakMinutes,
                     int capMinutes,
                     int forfait) {
         return postes.filter(poste -> poste.getAnimateur() != null
@@ -435,12 +435,13 @@ public final class LegalConstraints {
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                .filter((animateur, date, jour, parametres) ->
-                        !parametres.isPauseSurPoste() && longestSequenceMinutes(jour, breakMinutes) > capMinutes)
+                .filter((animateur, date, jour, parametres) -> !parametres.isPauseSurPoste()
+                        && longestSequenceMinutes(jour, breakMinutes.applyAsInt(parametres)) > capMinutes)
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, jour, parametres) ->
-                                forfait + longestSequenceMinutes(jour, breakMinutes) - capMinutes);
+                        (animateur, date, jour, parametres) -> forfait
+                                + longestSequenceMinutes(jour, breakMinutes.applyAsInt(parametres))
+                                - capMinutes);
     }
 
     /**
@@ -769,8 +770,8 @@ public final class LegalConstraints {
         return effectiveWorkMinutes(
                 postes,
                 parametres,
-                PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
-                PlafondsLegauxMajeurs::onPostBreakMinutes);
+                parametres.getDureePauseMajeurMinutes(),
+                stretch -> PlafondsLegauxMajeurs.onPostBreakMinutes(stretch, parametres.getDureePauseMajeurMinutes()));
     }
 
     /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
@@ -778,8 +779,8 @@ public final class LegalConstraints {
         return effectiveWorkMinutes(
                 postes,
                 parametres,
-                PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
-                PlafondsLegauxMineurs::onPostBreakMinutes);
+                parametres.getDureePauseMineurMinutes(),
+                stretch -> PlafondsLegauxMineurs.onPostBreakMinutes(stretch, parametres.getDureePauseMineurMinutes()));
     }
 
     /**

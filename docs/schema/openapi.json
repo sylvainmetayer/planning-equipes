@@ -3727,6 +3727,14 @@
           "pauseSurPoste" : {
             "type" : "boolean"
           },
+          "dureePauseMajeurMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "dureePauseMineurMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "coupureRepasMinutes" : {
             "type" : "integer",
             "format" : "int32"
