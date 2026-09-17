@@ -1205,7 +1205,7 @@
         }
       },
       "ConstraintView" : {
-        "required" : [ "actif", "dosable", "legale", "poids", "protegee" ],
+        "required" : [ "actif", "activeByDefault", "dosable", "legale", "poids", "protegee" ],
         "type" : "object",
         "properties" : {
           "name" : {
@@ -1227,6 +1227,9 @@
             "type" : "boolean"
           },
           "legale" : {
+            "type" : "boolean"
+          },
+          "activeByDefault" : {
             "type" : "boolean"
           },
           "dosable" : {

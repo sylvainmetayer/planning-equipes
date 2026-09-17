@@ -1052,6 +1052,13 @@ export interface ConstraintView {
    */
   legale: boolean;
   /**
+   * Whether the catalogue ships this rule **on**. A rule shipped off (issue
+   * #595) is not a rule somebody switched off: the « règle légale ou de
+   * sécurité désactivée » banner skips it, the Contraintes screen still says
+   * it is off, and turning it back on is a click like any other.
+   */
+  activeByDefault?: boolean;
+  /**
    * The rule is one of those meant to be **dosed** rather than switched off:
    * the MEDIUM rules of « Qualité d'organisation », the only ones whose
    * relative importance genuinely varies from one organiser to the next.

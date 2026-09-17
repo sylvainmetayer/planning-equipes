@@ -65,7 +65,13 @@ export class ProblemesStore {
    */
   readonly reglesLegalesDesactivees = computed(() =>
     (this.constraints()?.contraintes ?? []).filter(
-      (contrainte) => contrainte.protegee && !contrainte.actif,
+      // `activeByDefault` and not just `!actif`: a rule the catalogue ships
+      // switched off (issue #595) is not a rule somebody switched off. Warning
+      // about it would put a permanent banner on every fresh edition, about a
+      // deviation nobody made — and a banner that is always there is a banner
+      // nobody reads when it finally means something.
+      (contrainte) =>
+        contrainte.protegee && !contrainte.actif && contrainte.activeByDefault !== false,
     ),
   );
 

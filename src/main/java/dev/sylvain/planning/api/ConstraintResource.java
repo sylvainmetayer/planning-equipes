@@ -162,6 +162,7 @@ public class ConstraintResource {
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
                 definition.legale(),
+                definition.activeByDefault(),
                 definition.dosable(),
                 poids.getOrDefault(definition.name(), 1),
                 diagnostic == null ? null : diagnostic.score(),
@@ -211,11 +212,17 @@ public class ConstraintResource {
      *                    missing referential data when one explains it, with
      *                    the screen to enter it. Reported, never acted on:
      *                    the rule stays active
+     * @param activeByDefault whether the catalogue ships this rule on. A rule
+     *                    shipped <b>off</b> ({@code mineurNecessiteEncadrementMajeur},
+     *                    issue #595) is not a rule somebody switched off, and
+     *                    the « règle légale ou de sécurité désactivée » banner
+     *                    must not say it is: that warning is about a deliberate
+     *                    deviation, and a default is not one
      * @param references      the same lines with the ids they name (animateur,
      *                    stand, créneau), so the screen can open the fiche in
      *                    question instead of making the reader retype a name
      */
-    @Schema(requiredProperties = {"actif", "dosable", "legale", "poids", "protegee"})
+    @Schema(requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
             String name,
             String niveau,
@@ -224,6 +231,7 @@ public class ConstraintResource {
             boolean actif,
             boolean protegee,
             boolean legale,
+            boolean activeByDefault,
             boolean dosable,
             int poids,
             String score,

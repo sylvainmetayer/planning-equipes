@@ -279,6 +279,35 @@ describe('ProblemesStore', () => {
       store.shareConstraints(view);
       expect(store.alerteReglesLegales()).toBe('');
     });
+
+    // Issue #595 ships `mineurNecessiteEncadrementMajeur` off. It is protected
+    // and it is off, but nobody switched it off: warning about it would put a
+    // permanent banner on every fresh edition, and a banner that is always
+    // there is one nobody reads when it finally means something.
+    it('says nothing about a rule the catalogue itself ships switched off', () => {
+      const view = constraintsView();
+
+      store.shareConstraints({
+        ...view,
+        contraintes: [{ ...view.contraintes[0], actif: false, activeByDefault: false }],
+      });
+
+      expect(store.alerteReglesLegales()).toBe('');
+      expect(store.reglesLegalesDesactivees()).toEqual([]);
+    });
+
+    // An older payload carries no `activeByDefault` at all; the banner must
+    // keep working on it rather than fall silent.
+    it('still warns when the payload does not say what the default is', () => {
+      const view = constraintsView();
+
+      store.shareConstraints({
+        ...view,
+        contraintes: [{ ...view.contraintes[0], actif: false, activeByDefault: undefined }],
+      });
+
+      expect(store.alerteReglesLegales()).toContain('dureeHebdomadaireMax');
+    });
   });
 
   describe('badge indexes', () => {
