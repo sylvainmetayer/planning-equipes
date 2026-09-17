@@ -3132,5 +3132,16 @@
   "constraints.legal.error.pauseMajeur": "The break length for adults cannot be under {$minutes} minutes (Code du travail art. L3121-16, ordre public).",
   "constraints.legal.error.pauseMineur": "The break length for minors cannot be under {$minutes} minutes (Code du travail art. L3162-3).",
   "typologies.field.maxCreneaux": "Maximum créneaux per animateur",
-  "typologies.hint.maxCreneaux": "Over the whole edition, not per day. Empty: no cap. A hard constraint: the solver will not go past it."
+  "typologies.hint.maxCreneaux": "Over the whole edition, not per day. Empty: no cap. A hard constraint: the solver will not go past it.",
+  "hours.column.dimanche": "Sunday",
+  "hours.column.jourFerie": "Public holidays",
+  "hours.column.nuit": "After 10 pm",
+  "hours.legend.paie": "The last three columns serve the premiums: Sunday alone, public holidays whatever the day, and the hours past 10 pm, prorated. The total already contains them.",
+  "hours.dimancheFerie": "Including {$INTERPOLATION} h of Sundays that are also public holidays, counted in both the « Sunday » and the « Public holidays » columns: adding the two would count them twice.",
+  "solver.solved.infeasible": "Solve finished: the plan is not feasible yet, the breaches are detailed above.",
+  "solver.solved.feasible": "Solve finished: the plan is feasible.",
+  "debug.diagnostic.title": "Constraint diagnostic (raw)",
+  "debug.diagnostic.subtitle": "The whole diagnostic of the persisted plan, serialised — what the Solveur page used to dump into its output panel. Here for technical diagnosis, off the normal path.",
+  "debug.diagnostic.load": "Load the diagnostic",
+  "debug.diagnostic.empty": "No plan has been analysed on this edition yet."
 }

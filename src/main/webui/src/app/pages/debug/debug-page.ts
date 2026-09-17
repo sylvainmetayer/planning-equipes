@@ -76,7 +76,12 @@ export const CLEAR_KEYWORD = 'VIDER';
     YamlValidator,
   ],
   templateUrl: './debug-page.html',
-  styleUrls: ['./debug-date-du-jour.css', './scenario-preenregistre.css', './yaml-validator.css'],
+  styleUrls: [
+    './debug-date-du-jour.css',
+    './debug-diagnostic.css',
+    './scenario-preenregistre.css',
+    './yaml-validator.css',
+  ],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -85,6 +90,16 @@ export class DebugPage {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly output = signal('');
+
+  /**
+   * The serialised constraint diagnostic, loaded on demand (issue #589). The
+   * Solveur page used to dump it into its own output panel, where it chased
+   * away the state and error messages that share that panel and told an
+   * organiser nothing the cards above it did not already say. It is a technical
+   * artefact, so it lives here, behind a button.
+   */
+  protected readonly diagnosticJson = signal<string | null>(null);
+  protected readonly diagnosticBusy = signal(false);
   protected readonly resetting = signal(false);
   protected readonly appVersion = APP_VERSION;
   protected readonly repoUrl = REPO_URL;
@@ -323,6 +338,28 @@ export class DebugPage {
       await this.adminApi.triggerTestException();
     } catch {
       // Expected: see the docstring above.
+    }
+  }
+
+  /**
+   * Re-derives the diagnostic from the plan currently persisted — one score
+   * calculation, no solve — and shows it whole. An edition that has never been
+   * analysed answers an empty view, which is said in words rather than left as
+   * a lone pair of braces.
+   */
+  protected async onChargerDiagnostic(): Promise<void> {
+    this.diagnosticBusy.set(true);
+    try {
+      const vue = await this.constraintsApi.diagnose();
+      this.diagnosticJson.set(
+        vue.analysedAt === null
+          ? $localize`:@@debug.diagnostic.empty:Aucun planning n'a encore été analysé sur cette édition.`
+          : JSON.stringify(vue, null, 2),
+      );
+    } catch (error) {
+      this.output.set(errorPrefix(error));
+    } finally {
+      this.diagnosticBusy.set(false);
     }
   }
 }

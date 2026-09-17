@@ -167,6 +167,30 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
+    <h2 mat-card-title i18n="@@debug.diagnostic.title">Diagnostic de contraintes (brut)</h2>
+    <mat-card-subtitle i18n="@@debug.diagnostic.subtitle">
+      Le diagnostic complet du planning enregistré, sérialisé — ce que la page Solveur déversait dans son panneau
+      de sortie. Ici pour le diagnostic technique, hors du chemin normal.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="outlined" [disabled]="diagnosticBusy()" (click)="onChargerDiagnostic()">
+      <mat-icon>data_object</mat-icon>
+      <ng-container i18n="@@debug.diagnostic.load">Charger le diagnostic</ng-container>
+    </button>
+  </mat-card-actions>
+  @if (diagnosticBusy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  @if (diagnosticJson(); as json) {
+    <mat-card-content>
+      <pre class="debug-diagnostic-json">{{ json }}</pre>
+    </mat-card-content>
+  }
+</mat-card>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
     <h2 mat-card-title i18n="@@debug.api.title">Documentation de l'API</h2>
     <mat-card-subtitle i18n="@@debug.api.subtitle">
       Description OpenAPI de l'API REST et explorateur pour l'essayer ; les deux exigent une session

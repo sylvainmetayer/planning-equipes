@@ -523,7 +523,16 @@ export class SolverPage {
       .filter((constraint) => hardPart(constraint.score) < 0)
       .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }));
     this.hardIssues.set(hardIssues);
-    this.output.set(JSON.stringify(diagnostic, null, 2));
+    // A sentence, never the serialised diagnostic (issue #589). Everything an
+    // organiser looks for in it is already read just above and shown by
+    // `solve-recap`, `score-curve-card` and `feasibility-banner`; dumping the
+    // JSON here also chased away the last state or error message, which shares
+    // this one panel. The full object stays available on the Débogage page.
+    this.output.set(
+      diagnostic.faisabilite?.feasible === false
+        ? $localize`:@@solver.solved.infeasible:Résolution terminée : le planning n'est pas encore faisable, les écarts sont détaillés ci-dessus.`
+        : $localize`:@@solver.solved.feasible:Résolution terminée : le planning est faisable.`,
+    );
     // SolverJobService.reportFinishedJob already raised the feasibility
     // notification (it must run whether or not this page is mounted); this
     // only updates the on-page state.

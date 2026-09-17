@@ -2665,7 +2665,7 @@
         }
       },
       "HeuresAnimateur" : {
-        "required" : [ "total" ],
+        "required" : [ "total", "heuresDimanche", "heuresJourFerie", "heuresDimancheFerie", "heuresNuit" ],
         "type" : "object",
         "properties" : {
           "animateurId" : {
@@ -2682,6 +2682,22 @@
             }
           },
           "total" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresDimanche" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresJourFerie" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresDimancheFerie" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresNuit" : {
             "type" : "number",
             "format" : "double"
           }

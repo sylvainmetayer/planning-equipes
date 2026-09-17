@@ -1,0 +1,20 @@
+/*
+ * The raw constraint diagnostic (issue #589): what the Solveur page used to
+ * dump into its output panel, moved here behind a button. Read by an
+ * administrator looking for a number, so it scrolls rather than stretching the
+ * page, and wraps rather than pushing a horizontal scrollbar onto the whole
+ * layout.
+ */
+.debug-diagnostic-json {
+  max-height: 24rem;
+  overflow: auto;
+  margin: 0;
+  padding: 0.75rem;
+  border-radius: 4px;
+  background: var(--mat-sys-surface-container-low);
+  font-family: var(--app-font-mono, monospace);
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}

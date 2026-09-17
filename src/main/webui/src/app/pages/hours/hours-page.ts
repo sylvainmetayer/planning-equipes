@@ -60,10 +60,19 @@ export class HoursPage {
   protected readonly busy = signal(false);
   protected readonly exportBusy = signal(false);
   protected readonly rapport = signal<HeuresRapport | null>(null);
+  /**
+   * The weeks, then the total, then the three counters the payroll reads
+   * (issue #597). They sit after the total on purpose: the weekly reading is
+   * what this screen was built for, and the premiums are what it is asked for
+   * once the event is over.
+   */
   protected readonly columns = computed(() => [
     'animateur',
     ...(this.rapport()?.semaines ?? []),
     'total',
+    'dimanche',
+    'jourFerie',
+    'nuit',
   ]);
   protected readonly sort = signal<Sort>(NO_SORT);
   /** True as soon as the table is sorted on something other than its source order. */
@@ -130,11 +139,17 @@ export class HoursPage {
       );
     }
     const total = animateurs.reduce((sum, row) => sum + row.total, 0);
+    const somme = (lire: (row: HeuresAnimateur) => number) =>
+      animateurs.reduce((sum, row) => sum + lire(row), 0);
     return {
       animateurCount: animateurs.length,
       parSemaine,
       total,
       moyenneParAnimateur: animateurs.length > 0 ? total / animateurs.length : 0,
+      dimanche: somme((row) => row.heuresDimanche),
+      jourFerie: somme((row) => row.heuresJourFerie),
+      dimancheFerie: somme((row) => row.heuresDimancheFerie),
+      nuit: somme((row) => row.heuresNuit),
     };
   });
 
@@ -186,11 +201,20 @@ export class HoursPage {
   }
 }
 
+/** The payroll columns are read off their own field; every other one is a week. */
+const COLONNES_PAIE: Record<string, (row: HeuresAnimateur) => number> = {
+  total: (row) => row.total,
+  dimanche: (row) => row.heuresDimanche,
+  jourFerie: (row) => row.heuresJourFerie,
+  nuit: (row) => row.heuresNuit,
+};
+
 function compareByColumn(a: HeuresAnimateur, b: HeuresAnimateur, column: string): number {
   if (column === 'animateur') {
     return a.nom.localeCompare(b.nom);
   }
-  const valueA = column === 'total' ? a.total : (a.heuresParSemaine[column] ?? 0);
-  const valueB = column === 'total' ? b.total : (b.heuresParSemaine[column] ?? 0);
+  const lire = COLONNES_PAIE[column];
+  const valueA = lire ? lire(a) : (a.heuresParSemaine[column] ?? 0);
+  const valueB = lire ? lire(b) : (b.heuresParSemaine[column] ?? 0);
   return valueA - valueB;
 }

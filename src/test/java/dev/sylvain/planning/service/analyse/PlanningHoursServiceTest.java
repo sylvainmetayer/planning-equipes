@@ -89,6 +89,144 @@ class PlanningHoursServiceTest {
 
         // Comma, not dot: a French spreadsheet reads « 4.00 » as text, and the
         // column an organiser wants to sum then sums to zero.
-        assertThat(csv).isEqualTo("animateur;2026-W33;total\nAda Lovelace;4,00;4,00\n");
+        assertThat(csv)
+                .isEqualTo("animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;apres 22h\n"
+                        + "Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00\n");
+    }
+
+    // --- Payroll counters (issue #597) -------------------------------------
+
+    private static final Stand STAND = new Stand("STAND-RH", "Stand", java.util.Set.of(), 1, 2, false);
+
+    private static PosteAffectation poste(String id, Animateur qui, LocalDate date, int debut, int fin) {
+        Creneau creneau = new Creneau((long) id.hashCode(), 1, date, LocalTime.of(debut, 0), LocalTime.of(fin % 24, 0));
+        PosteAffectation poste = new PosteAffectation(id, STAND, creneau);
+        poste.setAnimateur(qui);
+        return poste;
+    }
+
+    /**
+     * Sunday alone, never « week-end »: the Équité screen adds Saturday in, and
+     * only Sunday carries a premium. 2026-08-15 is a Saturday, 2026-08-16 a
+     * Sunday.
+     */
+    @Test
+    void leSamediNeComptePasDansLesHeuresDuDimanche() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation samedi = poste("SAM", ada, LocalDate.of(2026, 8, 15), 9, 13);
+        PosteAffectation dimanche = poste("DIM", ada, LocalDate.of(2026, 8, 16), 9, 12);
+
+        HeuresAnimateur ligne = service.compute(
+                        new PlanningEvenement(LocalDate.of(2026, 8, 15), List.of(ada), List.of(samedi, dimanche)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresDimanche()).isCloseTo(3.0, within(0.01));
+        assertThat(ligne.total()).isCloseTo(7.0, within(0.01));
+    }
+
+    /**
+     * 2026-08-15 is the Assumption, a public holiday, and a Saturday: the
+     * holiday column counts it, the Sunday one does not.
+     */
+    @Test
+    void unJourFerieEstCompteQuelQueSoitLeJourDeLaSemaine() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation ferie = poste("FER", ada, LocalDate.of(2026, 8, 15), 9, 13);
+
+        HeuresAnimateur ligne = service.compute(
+                        new PlanningEvenement(LocalDate.of(2026, 8, 15), List.of(ada), List.of(ferie)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresJourFerie()).isCloseTo(4.0, within(0.01));
+        assertThat(ligne.heuresDimanche()).isZero();
+        assertThat(ligne.heuresDimancheFerie()).isZero();
+    }
+
+    /**
+     * 2026-11-01 is a Sunday <b>and</b> All Saints' Day: the hours land in both
+     * columns, and their overlap is reported on its own so the screen can say
+     * so rather than let a reader add the two up.
+     */
+    @Test
+    void unDimancheFerieEstCompteDansLesDeuxColonnesEtLeDitBien() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        LocalDate dimancheFerie = LocalDate.of(2026, 11, 1);
+        assertThat(dimancheFerie.getDayOfWeek()).isEqualTo(java.time.DayOfWeek.SUNDAY);
+        assertThat(dev.sylvain.planning.domain.JoursFeries.isFerieInFrance(dimancheFerie))
+                .isTrue();
+        PosteAffectation poste = poste("DF", ada, dimancheFerie, 9, 13);
+
+        HeuresAnimateur ligne = service.compute(new PlanningEvenement(dimancheFerie, List.of(ada), List.of(poste)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresDimanche()).isCloseTo(4.0, within(0.01));
+        assertThat(ligne.heuresJourFerie()).isCloseTo(4.0, within(0.01));
+        assertThat(ligne.heuresDimancheFerie()).isCloseTo(4.0, within(0.01));
+        assertThat(ligne.total()).isCloseTo(4.0, within(0.01));
+    }
+
+    /** Prorated, never the whole seat: a 20:00-23:00 vacation owes one hour. */
+    @Test
+    void lesHeuresDeNuitSontComptéesAuProrataDepuis22h() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation soiree = poste("SOIR", ada, LocalDate.of(2026, 8, 14), 20, 23);
+
+        HeuresAnimateur ligne = service.compute(
+                        new PlanningEvenement(LocalDate.of(2026, 8, 14), List.of(ada), List.of(soiree)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresNuit()).isCloseTo(1.0, within(0.01));
+        assertThat(ligne.total()).isCloseTo(3.0, within(0.01));
+    }
+
+    /** A seat crossing midnight is measured past 24:00: 22:00-02:00 is four night hours. */
+    @Test
+    void uneVacationQuiPasseMinuitCompteToutesSesHeuresDeNuit() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation nuit = poste("NUIT", ada, LocalDate.of(2026, 8, 14), 22, 26);
+
+        HeuresAnimateur ligne = service.compute(
+                        new PlanningEvenement(LocalDate.of(2026, 8, 14), List.of(ada), List.of(nuit)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresNuit()).isCloseTo(4.0, within(0.01));
+    }
+
+    /**
+     * The night threshold is the law's, not the Équité screen's comfort one:
+     * a 20:00-22:00 vacation owes nothing here, where {@code heureDebutSoiree}
+     * (20:00 by default) would have counted two hours.
+     */
+    @Test
+    void leSeuilDeNuitEstIndependantDeLHeureDeDebutDeSoiree() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation soiree = poste("TOT", ada, LocalDate.of(2026, 8, 14), 20, 22);
+
+        HeuresAnimateur ligne = service.compute(
+                        new PlanningEvenement(LocalDate.of(2026, 8, 14), List.of(ada), List.of(soiree)))
+                .animateurs()
+                .get(0);
+
+        assertThat(ligne.heuresNuit()).isZero();
+    }
+
+    /** The CSV carries the four payroll columns, in the order the screen shows them. */
+    @Test
+    void leCsvPorteLesColonnesDeLaPaie() {
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        PosteAffectation dimancheSoir = poste("DS", ada, LocalDate.of(2026, 8, 16), 20, 23);
+
+        HeuresRapport rapport =
+                service.compute(new PlanningEvenement(LocalDate.of(2026, 8, 16), List.of(ada), List.of(dimancheSoir)));
+        String csv = service.generateCsv(rapport);
+
+        assertThat(csv.lines().findFirst().orElseThrow())
+                .endsWith(";total;dimanche;jours feries;dont dimanches feries;apres 22h");
+        assertThat(csv).contains("Ada Lovelace;3,00;3,00;3,00;0,00;0,00;1,00");
     }
 }

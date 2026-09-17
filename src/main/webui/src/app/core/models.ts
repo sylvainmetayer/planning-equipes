@@ -1642,6 +1642,14 @@ export interface HeuresAnimateur {
   nom: string;
   heuresParSemaine: Record<string, number>;
   total: number;
+  /** Hours held on a Sunday — Saturday excluded, only Sunday carries a premium (issue #597). */
+  heuresDimanche: number;
+  /** Hours held on a French public holiday, whatever the day of the week. */
+  heuresJourFerie: number;
+  /** The overlap of the two above: a Sunday that is also a holiday counts in both columns. */
+  heuresDimancheFerie: number;
+  /** Hours past 22:00, prorated — not the whole vacation. */
+  heuresNuit: number;
 }
 
 export interface HeuresRapport {

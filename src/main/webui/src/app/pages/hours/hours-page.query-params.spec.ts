@@ -18,8 +18,26 @@ const PLANNING = { postes: [] } as unknown as PlanningEvenement;
 const RAPPORT: HeuresRapport = {
   semaines: ['2026-W33'],
   animateurs: [
-    { animateurId: 'bob', nom: 'Bob', heuresParSemaine: { '2026-W33': 30 }, total: 30 },
-    { animateurId: 'alice', nom: 'Alice', heuresParSemaine: { '2026-W33': 12 }, total: 12 },
+    {
+      animateurId: 'bob',
+      nom: 'Bob',
+      heuresParSemaine: { '2026-W33': 30 },
+      total: 30,
+      heuresDimanche: 0,
+      heuresJourFerie: 0,
+      heuresDimancheFerie: 0,
+      heuresNuit: 0,
+    },
+    {
+      animateurId: 'alice',
+      nom: 'Alice',
+      heuresParSemaine: { '2026-W33': 12 },
+      total: 12,
+      heuresDimanche: 0,
+      heuresJourFerie: 0,
+      heuresDimancheFerie: 0,
+      heuresNuit: 0,
+    },
   ],
 } as HeuresRapport;
 

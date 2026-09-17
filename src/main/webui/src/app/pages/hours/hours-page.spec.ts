@@ -24,12 +24,26 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve };
 }
 
-function row(nom: string, heuresParSemaine: Record<string, number>): HeuresAnimateur {
+function row(
+  nom: string,
+  heuresParSemaine: Record<string, number>,
+  paie: Partial<
+    Pick<
+      HeuresAnimateur,
+      'heuresDimanche' | 'heuresJourFerie' | 'heuresDimancheFerie' | 'heuresNuit'
+    >
+  > = {},
+): HeuresAnimateur {
   return {
     animateurId: nom.toLowerCase(),
     nom,
     heuresParSemaine,
     total: Object.values(heuresParSemaine).reduce((sum, heures) => sum + heures, 0),
+    heuresDimanche: 0,
+    heuresJourFerie: 0,
+    heuresDimancheFerie: 0,
+    heuresNuit: 0,
+    ...paie,
   };
 }
 
@@ -149,7 +163,7 @@ describe('HoursPage', () => {
     it('keeps only the fixed columns when no report is loaded yet', () => {
       const page = createPage();
 
-      expect(page.columns()).toEqual(['animateur', 'total']);
+      expect(page.columns()).toEqual(['animateur', 'total', 'dimanche', 'jourFerie', 'nuit']);
       expect(page.sortedAnimateurs()).toEqual([]);
     });
 
@@ -162,6 +176,10 @@ describe('HoursPage', () => {
         parSemaine: {},
         total: 0,
         moyenneParAnimateur: 0,
+        dimanche: 0,
+        jourFerie: 0,
+        dimancheFerie: 0,
+        nuit: 0,
       });
     });
   });
@@ -181,7 +199,15 @@ describe('HoursPage', () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
 
-      expect(page.columns()).toEqual(['animateur', '2026-W31', '2026-W32', 'total']);
+      expect(page.columns()).toEqual([
+        'animateur',
+        '2026-W31',
+        '2026-W32',
+        'total',
+        'dimanche',
+        'jourFerie',
+        'nuit',
+      ]);
     });
 
     it('keeps the server order while no sort is applied', async () => {
@@ -244,7 +270,41 @@ describe('HoursPage', () => {
         parSemaine: { '2026-W31': 50, '2026-W32': 20 },
         total: 70,
         moyenneParAnimateur: 35,
+        dimanche: 0,
+        jourFerie: 0,
+        dimancheFerie: 0,
+        nuit: 0,
       });
+    });
+
+    /**
+     * Issue #597: the payroll columns sum like the weeks do, and sort on their
+     * own field rather than on a week that does not exist.
+     */
+    it('sums and sorts the payroll columns of the roster', async () => {
+      planningApi.hoursReport.mockResolvedValue({
+        semaines: ['2026-W31'],
+        animateurs: [
+          row(
+            'Zoé',
+            { '2026-W31': 10 },
+            { heuresDimanche: 4, heuresJourFerie: 4, heuresDimancheFerie: 4 },
+          ),
+          row('Alice', { '2026-W31': 20 }, { heuresNuit: 3 }),
+        ],
+      });
+      const page = createPage();
+      await vi.waitFor(() => expect(page.rapport()).not.toBeNull());
+
+      expect(page.totaux()).toMatchObject({
+        dimanche: 4,
+        jourFerie: 4,
+        dimancheFerie: 4,
+        nuit: 3,
+      });
+
+      page.sort.set({ active: 'nuit', direction: 'desc' });
+      expect(page.sortedAnimateurs().map((animateur) => animateur.nom)).toEqual(['Alice', 'Zoé']);
     });
   });
 

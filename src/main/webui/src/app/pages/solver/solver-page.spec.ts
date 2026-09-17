@@ -328,13 +328,32 @@ describe('SolverPage', () => {
       expect(page.hardIssues()).toEqual([]);
     });
 
-    it('dumps the whole diagnostic in the output panel', () => {
+    /**
+     * Issue #589: the output panel is a state line, never the serialised
+     * diagnostic. Everything an organiser looks for in it is read by the cards
+     * above, and the dump chased away the last state or error message, which
+     * shares that one panel.
+     */
+    it('says the solve is over instead of dumping the diagnostic in the output panel', () => {
       const page = createPage();
 
       pushResult('SOLVE', diagnostic({ score: '-3hard/0medium/-120soft' }));
 
-      expect(page.output()).toContain('-3hard/0medium/-120soft');
-      expect(page.output()).toContain('postesNonPourvus');
+      expect(page.output()).not.toContain('postesNonPourvus');
+      expect(page.output()).not.toContain('-3hard/0medium/-120soft');
+      expect(page.output()).not.toContain('{');
+      expect(page.output()).toContain('Résolution terminée');
+    });
+
+    /** The sentence says which of the two it was, since the panel no longer shows the numbers. */
+    it('distinguishes a feasible plan from one that is not yet', () => {
+      const page = createPage();
+
+      pushResult('SOLVE', diagnostic({ faisabilite: { ...report(), feasible: false } }));
+      expect(page.output()).toContain("n'est pas encore faisable");
+
+      pushResult('SOLVE', diagnostic({ faisabilite: { ...report(), feasible: true } }));
+      expect(page.output()).toContain('est faisable');
     });
 
     it('re-reads the problem sources the solve rewrote server-side', () => {
