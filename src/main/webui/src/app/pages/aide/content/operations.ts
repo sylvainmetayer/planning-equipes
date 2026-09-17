@@ -75,7 +75,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Solveur.`,
+          text: $localize`:@@aide.jourJ.publication:Rien n'est envoyé aux animateurs depuis cet écran : leur espace continue d'afficher le planning publié tant que vous n'avez pas republié. Le bandeau rappelle combien de personnes attendent un changement et renvoie vers le bouton Publier, sur la page Publication.`,
         },
         {
           kind: 'paragraph',
@@ -204,6 +204,7 @@ export function buildOperationsSections(): HelpSection[] {
           label: $localize`:@@aide.link.pauses:Pauses`,
         },
         { route: '/intendance', label: $localize`:@@nav.link.intendance:Intendance des repas` },
+        { route: '/publication', label: $localize`:@@nav.link.publication:Publication` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'banc' },

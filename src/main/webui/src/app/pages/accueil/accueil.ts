@@ -272,7 +272,8 @@ function publication(etat: EtatEdition): LigneEtat {
     statut,
     detail,
     lien: {
-      route: '/solveur',
+      // Its own screen since issue #320, no longer a card of the solver's.
+      route: '/publication',
       libelle: $localize`:@@accueil.lien.publication:Publier`,
     },
   };

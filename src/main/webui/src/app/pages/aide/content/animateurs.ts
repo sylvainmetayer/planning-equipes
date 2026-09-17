@@ -49,7 +49,7 @@ export function buildAnimateurSideSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
-              text: $localize`:@@aide.foire.def.envoi:Le bouton « Publier » de la page Solveur porte son décompte : « Publier — 3 personnes concernées ». Il n'écrit qu'aux animateurs dont l'emploi du temps a changé depuis la dernière publication, et le message dit ce qui change pour chacun. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
+              text: $localize`:@@aide.foire.def.envoi:Le bouton « Publier » de la page Publication porte son décompte : « Publier — 3 personnes concernées ». Il n'écrit qu'aux animateurs dont l'emploi du temps a changé depuis la dernière publication, et le message dit ce qui change pour chacun. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
             },
           ],
         },

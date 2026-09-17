@@ -15,7 +15,6 @@ import { RouterLink } from '@angular/router';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
 import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { PublicationPanel } from './publication-panel';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { ExportCsvTarget, VolumesExportCsv } from '../../core/models';
 
@@ -28,23 +27,18 @@ interface LigneExport {
 }
 
 /**
- * « Export & publication »: everything that <b>leaves</b> the tool, on one
- * screen (issue #320) — the planning itself, and the data the edition can
- * write of itself facing the import screen that reads it back.
+ * « Export »: the <b>data</b> the current edition can write of itself, facing
+ * the import screen that reads it back. The planning itself leaves through
+ * « Publication » (issue #320), which is a different act on a different
+ * audience: this screen writes files for the team, that one mails schedules to
+ * people.
  *
- * <p>The diffusion panel comes first because it is what one comes here for
- * once the plan is good: the documents to print or archive, and the
- * publication that mails every animateur whose schedule changed. It used to
- * live on the Solveur page, which then did two jobs — solving, and shipping —
- * and the second was easy to miss at the bottom of a page one reads while a
- * solve runs.</p>
- *
- * <p>Then the data, in two shapes for two uses. The CSV archive writes the
- * referentials out in the very form the import tabs read, each one to tick: a
- * team copying its stands from one year to the next does not necessarily take
- * its animateurs along, and a team replaying its calendar takes only the
- * timeslots and the day templates. The scenario file carries the whole edition
- * at once — which is what the imports' « Scénario » tab reads back.</p>
+ * <p>Two shapes, two uses. The CSV archive writes the referentials out in the
+ * very form the import tabs read, each one to tick: a team copying its stands
+ * from one year to the next does not necessarily take its animateurs along,
+ * and a team replaying its calendar takes only the timeslots and the day
+ * templates. The scenario file carries the whole edition at once — which is
+ * what the imports' « Scénario » tab reads back.</p>
  */
 @Component({
   selector: 'app-exports-page',
@@ -55,10 +49,9 @@ interface LigneExport {
     MatIconModule,
     MatProgressBarModule,
     RouterLink,
-    PublicationPanel,
   ],
   templateUrl: './exports-page.html',
-  styleUrls: ['../../../styles/import-animateurs.css', './publication.css'],
+  styleUrl: '../../../styles/import-animateurs.css',
   // Global by design (AGENTS.md): loaded with the route, unscoped like the import screens it mirrors.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -125,19 +118,8 @@ export class ExportsPage {
       .filter((ligne) => this.isSelected(ligne.target))
       .reduce((somme, ligne) => somme + ligne.total, 0),
   );
-  /**
-   * True while the diffusion panel is building a planning document. Both hold
-   * the same per-edition lock, so the data exports wait rather than fail on a
-   * 409 the reader would have to decipher.
-   */
-  protected readonly planExportBusy = signal(false);
-
   protected readonly peutTelecharger = computed(
-    () =>
-      this.choisis().size > 0 &&
-      !this.telechargement() &&
-      !this.chargement() &&
-      !this.planExportBusy(),
+    () => this.choisis().size > 0 && !this.telechargement() && !this.chargement(),
   );
   /** Chosen, but holding nothing: the archive would carry an empty file rather than lie about it. */
   protected readonly choisisVides = computed(() =>

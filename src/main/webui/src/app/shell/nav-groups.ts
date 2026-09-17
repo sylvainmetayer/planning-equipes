@@ -74,6 +74,13 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'checklist',
         },
         { path: '/solveur', label: $localize`:@@nav.link.solver:Solveur`, icon: 'play_circle' },
+        // Right under the solver: it is the step after, and the one that
+        // reaches real people (issue #320).
+        {
+          path: '/publication',
+          label: $localize`:@@nav.link.publication:Publication`,
+          icon: 'outgoing_mail',
+        },
         {
           path: '/disponibilites',
           label: $localize`:@@nav.link.disponibilites:Disponibilités`,
@@ -185,7 +192,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           // (c'est un nom Material Symbols) : un <mat-icon> sans glyphe affiche
           // son texte rogné. `file_download` est le miroir de l'import.
           path: '/exports',
-          label: $localize`:@@nav.link.exports:Export & publication`,
+          label: $localize`:@@nav.link.exports:Export`,
           icon: 'file_download',
         },
       ],

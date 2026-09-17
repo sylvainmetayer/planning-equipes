@@ -603,12 +603,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
-  `/imports`, `/exports` (« Export & publication » — everything that leaves the
-  tool: the planning documents to print or archive and the publication that
-  mails every animateur whose schedule changed, then the CSV archive and the
-  scenario file the import screen reads back; the diffusion moved off the
-  solver page with issue #320, so that page only solves), `/export-csv`,
-  `/creneaux`, `/typologies`,
+  `/imports`, `/exports` (« Export » — the data the edition writes of itself:
+  the CSV archive and the scenario file the import screen reads back),
+  `/publication` (« Publication » — what reaches real people: the planning
+  documents to print or archive, and the mailing to every animateur whose
+  schedule changed; a screen of its own under Solveur since issue #320, so the
+  solver page only solves), `/export-csv`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/journee` (« Journée » — one day under four

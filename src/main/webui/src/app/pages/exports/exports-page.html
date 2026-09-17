@@ -1,8 +1,4 @@
-<h1 class="page-title" i18n="@@nav.link.exports">Export &amp; publication</h1>
-
-<!-- First card of the screen (issue #320): what one comes here for once the
-     plan is good. The data exports below are the other reason to be here. -->
-<app-publication-panel (reported)="message.set($event)" (exportBusyChange)="planExportBusy.set($event)" />
+<h1 class="page-title" i18n="@@nav.link.exports">Export</h1>
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -74,7 +70,7 @@
       L'aller-retour n'est pas l'identité : les identifiants générés sont réécrits, et l'export ne porte pas de section « edition ». Pour recopier un référentiel fidèlement, prenez l'archive CSV.
     </p>
     <div class="card-actions">
-      <button matButton="filled" [disabled]="exportScenarioEnCours() || planExportBusy()" (click)="exporterScenario()">
+      <button matButton="filled" [disabled]="exportScenarioEnCours()" (click)="exporterScenario()">
         <mat-icon>file_download</mat-icon>
         <span i18n="@@dataSetup.exportScenario">Exporter les données actuelles en scénario</span>
       </button>

@@ -2,9 +2,16 @@
 // each line says, where it leads, and the summary above the list. The states
 // themselves are decided server-side (`EtatEditionService`), not here.
 
+import { Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
+import { routes } from '../../app.routes';
 import { EtatEdition } from '../../core/models';
 import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
+
+/** The routes of the application, children included. */
+function toutesLesRoutes(liste: Route[]): Route[] {
+  return liste.flatMap((route) => [route, ...toutesLesRoutes(route.children ?? [])]);
+}
 
 /** An edition with nothing entered: every line to do, as the server answers it. */
 function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
@@ -128,13 +135,37 @@ describe('buildLignes', () => {
       route: '/diagnostic',
       queryParams: { onglet: 'problemes' },
     });
-    expect(liens.get('publication')?.route).toBe('/solveur');
+    expect(liens.get('publication')?.route).toBe('/publication');
     expect(liens.get('confirmations')).toEqual({
       route: '/animateurs',
       queryParams: undefined,
       libelle: 'Voir les animateurs',
     });
     expect(liens.get('foire')?.route).toBe('/echanges');
+  });
+
+  // Every step of the checklist links somewhere, and the checklist is the
+  // first screen an organiser opens: a route that stopped existing sends them
+  // to the not-found page on the one page that is supposed to orient them.
+  // Checked against the router's own table rather than a hand-written list —
+  // the publication line pointed at /solveur long after the publication moved
+  // (issue #320), and nothing said so.
+  it('links every step to a route the application actually declares', () => {
+    const declarees = new Set(
+      toutesLesRoutes(routes)
+        .map((route) => route.path)
+        .filter((path): path is string => path !== undefined && !path.includes('*')),
+    );
+
+    const cibles = [etatVide(), etatComplet()]
+      .flatMap((etat) => buildLignes(etat))
+      .map((ligne) => ligne.lien);
+
+    expect(cibles.length).toBeGreaterThan(0);
+    for (const lien of cibles) {
+      expect(lien.route, `lien « ${lien.libelle} »`).toMatch(/^\//);
+      expect(declarees, `route ${lien.route}`).toContain(lien.route.slice(1));
+    }
   });
 
   it('filters the animateurs on the silent ones as soon as somebody has not answered', () => {

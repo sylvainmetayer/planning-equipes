@@ -209,8 +209,15 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/imports/imports-page').then((m) => m.ImportsPage),
   },
   {
+    // The planning leaves through here, the data through /exports (issue #320).
+    path: 'publication',
+    title: () => $localize`:@@route.publication:Publication`,
+    loadComponent: () =>
+      import('./pages/publication/publication-page').then((m) => m.PublicationPage),
+  },
+  {
     path: 'exports',
-    title: () => $localize`:@@route.exports:Export & publication`,
+    title: () => $localize`:@@route.exports:Export`,
     loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage),
   },
   // The CSV archive was the whole screen until the scenario export joined it.

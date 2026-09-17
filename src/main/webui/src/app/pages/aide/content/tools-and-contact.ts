@@ -37,7 +37,7 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
           route: '/imports',
           label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
-        { route: '/exports', label: $localize`:@@nav.link.exports:Export & publication` },
+        { route: '/exports', label: $localize`:@@nav.link.exports:Export` },
         { route: '/debug', label: $localize`:@@nav.link.debug:Débogage` },
         { route: '/nouveautes', label: $localize`:@@nav.link.nouveautes:Nouveautés` },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },

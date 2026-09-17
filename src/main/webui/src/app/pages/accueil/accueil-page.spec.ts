@@ -175,7 +175,7 @@ describe('AccueilPage', () => {
       '/solveur',
       '/diagnostic?onglet=problemes',
       '/journee',
-      '/solveur',
+      '/publication',
       '/animateurs?confirmation=jamais',
       '/echanges',
     ]);

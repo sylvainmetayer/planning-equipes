@@ -153,9 +153,10 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       { label: $localize`:@@nav.link.typologies:Typologies`, icon: 'category', touche: 't' },
     ],
     ['/imports', { label: $localize`:@@nav.link.imports:Imports`, icon: 'upload_file' }],
+    ['/exports', { label: $localize`:@@nav.link.exports:Export`, icon: 'file_download' }],
     [
-      '/exports',
-      { label: $localize`:@@nav.link.exports:Export & publication`, icon: 'outgoing_mail' },
+      '/publication',
+      { label: $localize`:@@nav.link.publication:Publication`, icon: 'outgoing_mail' },
     ],
     [
       '/calendar',
