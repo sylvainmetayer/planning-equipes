@@ -635,7 +635,7 @@ vérifie pas que le stand peut relayer, c'est l'organisateur qui l'affirme.
 `FenetreRepas` est un fait de problème (`@ProblemFactCollectionProperty` sur
 `PlanningEvenement`), **un par fenêtre déclarée** : le début, la fin et la durée
 de la coupure qu'elle exige. Consommé par `coupureRepasObligatoire` et
-`coupureRepasAuPlusTot` — voir [`contraintes.md`](contraintes.md#la-coupure-repas)
+`coupureRepasPlacementPrefere` — voir [`contraintes.md`](contraintes.md#la-coupure-repas)
 pour la règle elle-même.
 
 Un fait par fenêtre plutôt qu'un objet portant les deux : la contrainte joint la

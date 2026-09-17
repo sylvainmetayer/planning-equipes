@@ -58,6 +58,9 @@ class DemandeEchangeFlowTest {
     @Inject
     MockMailbox mailbox;
 
+    @Inject
+    dev.sylvain.planning.service.espace.DemandeEchangeService demandeEchangeService;
+
     /** Espace sessions of the two seeded animateurs (e-mail code flow). */
     private String sessionAlice;
 
@@ -475,6 +478,47 @@ class DemandeEchangeFlowTest {
                 .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
+    }
+
+    /**
+     * Issue #540: an annulation is the demandeur's own withdrawal, not a
+     * decision of the organisation. Nothing is written to them about it, and it
+     * does not make them a recipient of a publication that had nothing else to
+     * say — « votre demande a été refusée » is what they used to read after
+     * withdrawing it themselves.
+     */
+    @Test
+    void uneDemandeAnnuleeParSonAuteurNeLuiVautAucunMessageDePublication() {
+        persistTwoSeatPlanning();
+        String token = tokenOf("ECH-A");
+
+        String demandeId = given().contentType(ContentType.JSON)
+                .body("[{\"creneauId\":" + CRENEAU_ID + ",\"standId\":\"ECH-S1\",\"cibleId\":\"ECH-B\"}]")
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("[0].id");
+
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + token + "/demandes/" + demandeId + "/annulation")
+                .then()
+                .statusCode(204);
+
+        // Nothing but the annulation has happened since the fixture published,
+        // so the publication has nothing to announce at all.
+        mailbox.clear();
+        PlansPublies.publier(publication);
+
+        assertThat(mailbox.getMailsSentTo("ech-alice@example.org")).isEmpty();
+
+        // And it does not stay in the queue for ever: the withdrawal stamps
+        // annule_le, never decide_le, so it never enters it.
+        assertThat(demandeEchangeService.decisionsNonCommuniquees())
+                .extracting(dev.sylvain.planning.domain.DemandeEchange::getId)
+                .doesNotContain(demandeId);
     }
 
     /** An empty batch is a no-op, not an error: nothing stored, no mail. */

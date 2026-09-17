@@ -16,7 +16,7 @@ class CoupureRepasTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 13);
     private static final FenetreRepas MIDI =
-            new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60);
+            new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true);
 
     private static final Stand STAND = new Stand("S1", "S1", java.util.Set.of("STRATEGIE"), 1, 3, false);
 

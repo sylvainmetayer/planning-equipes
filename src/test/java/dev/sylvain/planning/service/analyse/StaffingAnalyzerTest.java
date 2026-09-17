@@ -510,7 +510,7 @@ class StaffingAnalyzerTest {
     // --- Coupure repas (issue #438) ---------------------------------------
 
     private static final List<FenetreRepas> MIDI =
-            List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60));
+            List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true));
 
     /**
      * A grid that never stops between morning and afternoon cannot be staffed
@@ -566,7 +566,7 @@ class StaffingAnalyzerTest {
     // --- Coupure repas: the seats that deny the break (issue #482) --------
 
     private static final List<FenetreRepas> SOIR =
-            List.of(new FenetreRepas(FenetreRepas.SOIR, LocalTime.of(20, 0), LocalTime.of(21, 0), 60));
+            List.of(new FenetreRepas(FenetreRepas.SOIR, LocalTime.of(20, 0), LocalTime.of(21, 0), 60, false));
 
     /**
      * The grid of {@code demo-festival-2026} on 10/07, the case the grid bound

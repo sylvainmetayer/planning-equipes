@@ -216,7 +216,7 @@ public final class ConstraintFloorRules {
             rule("limiterTypologiesDistinctesParAnimateur", Denominator.NONE, null),
             rule("maxJoursConsecutifsTravailles", Denominator.NONE, null),
             rule("pauseSurPosteSansRelais", Denominator.BREAKS_DUE, null),
-            rule("coupureRepasAuPlusTot", Denominator.NONE, null),
+            rule("coupureRepasPlacementPrefere", Denominator.NONE, null),
             rule("affiniteAdHoc", Denominator.NONE, null),
             rule("favoriserMixiteDesNiveaux", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
             rule("equilibrerCreneauxPenibles", Denominator.NONE, null),

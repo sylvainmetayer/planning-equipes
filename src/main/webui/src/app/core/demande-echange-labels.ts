@@ -49,8 +49,10 @@ export function statutDemandeClasse(statut: StatutDemandeEchange): string {
  * of what is left to publish.
  *
  * Accepted and refused, and no other statut: a demande the animateur withdrew
- * is stamped `decideLe` too (it shares the column), but nobody decided
- * anything about it and there is nothing to announce back to its author.
+ * has nobody's decision to announce back to its author. Since issue #540 the
+ * withdrawal stamps `annuleLe` rather than sharing `decideLe`, so the server no
+ * longer offers one here at all — the two statuts named below are a second lock
+ * on the same door, not the only one.
  */
 export function decisionNonCommuniquee(demande: DemandeEchangeView): boolean {
   return (

@@ -73,7 +73,9 @@ class ScenarioLadderLargeTest {
         assertThat(loaded.problem().getConstraintsDesactivees())
                 .extracting(toggle -> toggle.getNom())
                 .containsExactlyInAnyOrder(
-                        "coupureRepasObligatoire", "coupureRepasAuPlusTot", "limiterTypologiesDistinctesParAnimateur");
+                        "coupureRepasObligatoire",
+                        "coupureRepasPlacementPrefere",
+                        "limiterTypologiesDistinctesParAnimateur");
         assertThat(loaded.problem().getPostes()).hasSize(640);
 
         PlanningEvenement solved = solveUntilFeasible(loaded, CEILING_SECONDS);

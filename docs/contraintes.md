@@ -338,7 +338,7 @@ sont donc jamais un plancher : une seule correspondance agrégée
 poids** — `repartitionMineursParCreneau`, `eviterRoulementStandsPremium`,
 `limiterEmplacementsParJour`, `limiterTypologiesDistinctesParAnimateur`,
 `maxJoursConsecutifsTravailles`, `eviterFermeturePuisOuverture`,
-`coupureRepasAuPlusTot`, `preserverBufferPolyvalents`. Pour celles-là le nombre de correspondances est
+`coupureRepasPlacementPrefere`, `preserverBufferPolyvalents`. Pour celles-là le nombre de correspondances est
 un *écart*, pas un booléen par élément : un ratio de 1,0 veut dire « tout le
 monde est en écart d'une quantité que le solveur peut réduire », soit
 l'inverse d'un plancher.
@@ -642,7 +642,7 @@ tous.
 
 ## La coupure repas
 
-`coupureRepasObligatoire` (dure) et `coupureRepasAuPlusTot` (souple) portent la
+`coupureRepasObligatoire` (dure) et `coupureRepasPlacementPrefere` (souple) portent la
 coupure repas. Avant elles, **aucune contrainte ne la modélisait** : une journée
 de dix heures d'affilée sortait à zéro dur, sans que rien ne le signale
 (issue #438).
@@ -756,9 +756,20 @@ efface tout relais manquant — mais depuis un plan déjà faisable, à chaud. L
 règle d'usage : atteindre zéro dur au dosage par défaut, puis doser et relancer
 à chaud ; jamais un poids fort dans un départ à froid.
 
-`coupureRepasAuPlusTot` départage ensuite 12-13 de 13-14 en pénalisant le
-retard sur l'ouverture. La couverture des stands étant dure, c'est son
-arbitrage avec cette préférence qui répartit la rotation du midi.
+`coupureRepasPlacementPrefere` départage ensuite 12-13 de 13-14 en pénalisant
+la distance au bout de la fenêtre vers lequel elle penche. **Le midi, c'est le
+plus tard** : les stands viennent d'ouvrir, on ne mange pas à midi pile — donc
+13-14 plutôt que 12-13. **Le soir, c'est le plus tôt** : on mange tôt pour
+rouvrir ensuite. La règle préférait le plus tôt dans les deux fenêtres, ce qui
+était juste pour le soir et inversé pour le midi (issue #596) ; son ancien nom,
+`coupureRepasAuPlusTot`, ne la décrivait plus, et la migration V86 reporte les
+désactivations et les poids déjà enregistrés sous ce nom.
+
+La règle lit ce que la personne **pourrait** choisir, pas la première coupure
+venue : une journée qui laisse tout le midi libre n'est pas « mange à midi
+pile », c'est une journée où elle a le choix, et elle ne coûte rien. La
+couverture des stands étant dure, c'est son arbitrage avec cette préférence qui
+répartit la rotation.
 
 ### Deux indépendances, qui sont le fond du sujet
 
@@ -984,7 +995,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `travailContinuMaxMajeur` | HARD | Légal (temps de travail) | Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause consécutive de la durée paramétrée est obligatoire, au minimum 20 minutes (Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
 | `pauseMinimaleEntreVacations` | HARD | Légal (temps de travail) | Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause minimale paramétrée (30 min par défaut). |
 | `coupureRepasObligatoire` | HARD | Organisation (repas) | Qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette fenêtre, d'une coupure libre de la durée paramétrée (60 min par défaut, midi 12 h-14 h et soir 19 h-21 h). Commencer sa journée à l'ouverture de la fenêtre, ou la terminer à sa fermeture, ne doit rien : on a mangé avant, ou on mangera après. Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la règle d'organisation de l'événement, tenue en dur par choix. Elle reste active quand l'organisateur déclare la pause prise sur le poste : la pause légale par relais et la coupure repas sont deux choses distinctes. |
-| `coupureRepasAuPlusTot` | SOFT | Préférences | Entre deux coupures repas possibles dans la même fenêtre, préférer la plus tôt : sur une fenêtre 12 h-14 h taillée en deux, 12 h-13 h plutôt que 13 h-14 h. La couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la rotation du midi. |
+| `coupureRepasPlacementPrefere` | SOFT | Préférences | Entre deux coupures repas possibles dans la même fenêtre, préférer celle vers laquelle la fenêtre penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands viennent d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite. La couverture des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la rotation. |
 | `indisponibiliteForcee` | HARD | Contraintes ad hoc | Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé. |
 | `incompatibiliteAdHoc` | HARD | Contraintes ad hoc | Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau. |
 | `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |

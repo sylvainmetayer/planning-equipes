@@ -127,7 +127,7 @@ class ConstraintToggleTest extends ConstraintTestBase {
     @Test
     void coupureRepasObligatoirePeutEtreDesactivee() {
         dev.sylvain.planning.domain.FenetreRepas midi = new dev.sylvain.planning.domain.FenetreRepas(
-                dev.sylvain.planning.domain.FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60);
+                dev.sylvain.planning.domain.FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true);
         Creneau journee = creneau("J1-10-20-T", 1, D1, LocalTime.of(10, 0), LocalTime.of(20, 0));
         Animateur a1 = referentMajeur("A1");
 

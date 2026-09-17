@@ -51,8 +51,10 @@ describe('demande-echange-labels', () => {
       expect(decisionNonCommuniquee(demande('ACCEPTEE', DECIDE_LE, PUBLIE_LE))).toBe(false);
     });
 
-    // A withdrawal stamps `decideLe` too — it shares the column — but nobody
-    // decided anything, and there is nothing to announce back to its author.
+    // A withdrawal has no decision to announce. Since issue #540 the server
+    // stamps `annuleLe` rather than `decideLe`, so one never reaches this
+    // function any more; the statut test stays as a second lock, and the
+    // fixture below still hands it the old shape on purpose.
     it('ignore une demande retirée par son auteur, et celles qui attendent encore', () => {
       expect(decisionNonCommuniquee(demande('ANNULEE', DECIDE_LE, null))).toBe(false);
       expect(decisionNonCommuniquee(demande('REFUSEE_CIBLE', null, null))).toBe(false);

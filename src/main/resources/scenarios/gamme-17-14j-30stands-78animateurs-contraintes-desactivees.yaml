@@ -13,7 +13,7 @@ festival:
 contraintes:
   desactivees:
     - coupureRepasObligatoire
-    - coupureRepasAuPlusTot
+    - coupureRepasPlacementPrefere
     - limiterTypologiesDistinctesParAnimateur
   poids:
     equilibrerCharge: 4

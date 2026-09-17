@@ -32,8 +32,16 @@ import java.util.List;
  * @param debut         first instant a meal break may start
  * @param fin           instant it must have ended by
  * @param dureeMinutes  how long the break must last, uninterrupted
+ * @param auPlusTard    which end of the window the break is preferred at:
+ *                      {@code true} for midday, where the FESTIVAL wants 13-14
+ *                      rather than 12-13 — the stands have just opened —
+ *                      {@code false} for the evening, eaten early so the stands
+ *                      reopen. The direction lives on the window rather than in
+ *                      a setting of its own: the fact already knows which
+ *                      service it is, and nobody has shown a use for an
+ *                      organiser who wants the other way round (issue #596).
  */
-public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int dureeMinutes) {
+public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int dureeMinutes, boolean auPlusTard) {
 
     public static final String MIDI = "midi";
     public static final String SOIR = "soir";
@@ -58,25 +66,32 @@ public record FenetreRepas(String libelle, LocalTime debut, LocalTime fin, int d
                 MIDI,
                 parametres.getCoupureRepasMidiDebut(),
                 parametres.getCoupureRepasMidiFin(),
-                parametres.getCoupureRepasMinutes());
+                parametres.getCoupureRepasMinutes(),
+                true);
         add(
                 fenetres,
                 SOIR,
                 parametres.getCoupureRepasSoirDebut(),
                 parametres.getCoupureRepasSoirFin(),
-                parametres.getCoupureRepasMinutes());
+                parametres.getCoupureRepasMinutes(),
+                false);
         return List.copyOf(fenetres);
     }
 
     private static void add(
-            List<FenetreRepas> fenetres, String libelle, LocalTime debut, LocalTime fin, int dureeMinutes) {
+            List<FenetreRepas> fenetres,
+            String libelle,
+            LocalTime debut,
+            LocalTime fin,
+            int dureeMinutes,
+            boolean auPlusTard) {
         if (debut == null || fin == null || !fin.isAfter(debut) || dureeMinutes <= 0) {
             return;
         }
         if (fin.toSecondOfDay() - debut.toSecondOfDay() < dureeMinutes * 60) {
             return;
         }
-        fenetres.add(new FenetreRepas(libelle, debut, fin, dureeMinutes));
+        fenetres.add(new FenetreRepas(libelle, debut, fin, dureeMinutes, auPlusTard));
     }
 
     /** Minutes from midnight of {@link #debut()} — the unit every window computation works in. */

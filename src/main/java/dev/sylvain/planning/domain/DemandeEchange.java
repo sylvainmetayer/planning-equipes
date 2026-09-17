@@ -41,7 +41,17 @@ public class DemandeEchange {
 
     private String commentaireAdmin;
     private Instant creeLe;
+    /**
+     * When the <b>organisation</b> decided — accepted or refused. Never set by
+     * the demandeur withdrawing their own request: that moment is
+     * {@link #annuleLe}, and sharing one column is what made an annulation
+     * indistinguishable from a refusal all the way to the publication mail
+     * (issue #540).
+     */
     private Instant decideLe;
+
+    /** When the demandeur withdrew their own request; null on every other statut. */
+    private Instant annuleLe;
     /**
      * When the publication that announced the decision left; null while it has
      * been taken but not yet communicated. Written only by the publication
@@ -170,6 +180,14 @@ public class DemandeEchange {
 
     public void setDecideLe(Instant decideLe) {
         this.decideLe = decideLe;
+    }
+
+    public Instant getAnnuleLe() {
+        return annuleLe;
+    }
+
+    public void setAnnuleLe(Instant annuleLe) {
+        this.annuleLe = annuleLe;
     }
 
     public Instant getCommuniqueeLe() {

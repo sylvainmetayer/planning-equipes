@@ -47,7 +47,9 @@ import dev.sylvain.planning.domain.PosteAffectation;
 public final class RepasConstraints {
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
-        return new Constraint[] {coupureRepasObligatoire(constraintFactory), coupureRepasAuPlusTot(constraintFactory)};
+        return new Constraint[] {
+            coupureRepasObligatoire(constraintFactory), coupureRepasPlacementPrefere(constraintFactory)
+        };
     }
 
     /**
@@ -89,22 +91,34 @@ public final class RepasConstraints {
     }
 
     /**
-     * Of the slots a meal window offers, the earlier one is preferred.
+     * Of the slots a meal window offers, the one the window points to is
+     * preferred — <b>late at midday, early in the evening</b>.
      *
-     * <p>« soit 12-13, soit 13-14, avec une préférence pour 12-13 » — the
-     * organiser's words. Penalised by how many minutes after the window opens
-     * the break starts, so the earlier slot costs nothing and the later one
-     * costs its own offset. Everyone taking the first slot would empty the
+     * <p>The rule used to prefer the earliest slot in both windows, and cited
+     * the organiser for it: « soit 12-13, soit 13-14, avec une préférence pour
+     * 12-13 ». The point of 14/09 reversed the midday half (issue #596): the
+     * stands have just opened at noon, so lunch is taken at the end of its
+     * window; dinner is taken at the start of its own, so the stands reopen.
+     * The evening half was already right, which is why the rule was half
+     * correct rather than wrong.</p>
+     *
+     * <p>Penalised by how many minutes the break sits away from the end the
+     * window points to, so the preferred slot costs nothing and the other one
+     * costs its own offset. Everyone taking the same slot would empty the
      * stands, but that is not this rule's problem to solve: seat coverage is
      * hard, this is soft, and the arbitration between them is what spreads the
      * rotation.</p>
      *
      * <p>Silent when no break fits: {@link #coupureRepasObligatoire} is
      * already carrying that day, and a preference has nothing to say about a
-     * break that does not exist.</p>
+     * break that does not exist. Silent too when the window leaves enough room
+     * to satisfy it — a day leaving the whole midday free is not « eats at
+     * noon », it is a day where the person picks, and
+     * {@link CoupureRepas#avanceMinutes()} reads what they could pick.</p>
      */
-    private Constraint coupureRepasAuPlusTot(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "coupureRepasAuPlusTot")
+    private Constraint coupureRepasPlacementPrefere(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "coupureRepasPlacementPrefere")
                 .filter(RepasConstraints::exploitable)
                 .groupBy(
                         PosteAffectation::getAnimateur,
@@ -112,12 +126,12 @@ public final class RepasConstraints {
                         ConstraintCollectors.toList())
                 .join(FenetreRepas.class)
                 .filter((animateur, date, postes, fenetre) ->
-                        CoupureRepas.of(postes, fenetre).retardMinutes() > 0)
+                        CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
                         (animateur, date, postes, fenetre) ->
-                                CoupureRepas.of(postes, fenetre).retardMinutes())
-                .asConstraint("coupureRepasAuPlusTot");
+                                CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes())
+                .asConstraint("coupureRepasPlacementPrefere");
     }
 
     /** A seat someone holds, on a dated créneau whose hours are known. */

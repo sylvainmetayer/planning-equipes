@@ -107,7 +107,7 @@ class ConstraintFloorRulesTest {
                 "limiterEmplacementsParJour",
                 "limiterTypologiesDistinctesParAnimateur",
                 "maxJoursConsecutifsTravailles",
-                "coupureRepasAuPlusTot",
+                "coupureRepasPlacementPrefere",
                 "preserverBufferPolyvalents",
                 "equilibrerCharge",
                 "equilibrerCreneauxPenibles");

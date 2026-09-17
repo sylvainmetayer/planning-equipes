@@ -739,6 +739,12 @@ export interface FenetreRepas {
   debut: string;
   fin: string;
   dureeMinutes: number;
+  /**
+   * Which end of the window the break is preferred at: `true` at midday, where
+   * the stands have just opened, `false` in the evening, eaten early so they
+   * reopen (issue #596).
+   */
+  auPlusTard?: boolean;
 }
 
 /** How many créneaux one animateur may hold on one typologie, over the whole edition (issue #594). */

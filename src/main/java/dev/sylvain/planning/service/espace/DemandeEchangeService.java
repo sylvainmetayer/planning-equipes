@@ -193,7 +193,7 @@ public class DemandeEchangeService {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement("""
                         UPDATE demande_echange
-                        SET statut = 'ANNULEE', decide_le = ?
+                        SET statut = 'ANNULEE', annule_le = ?
                         WHERE edition_id = ?
                         AND id = ?
                         AND demandeur_id = ?
@@ -578,7 +578,13 @@ public class DemandeEchangeService {
      * publication has to speak about.
      */
     public List<DemandeEchange> decisionsNonCommuniquees() {
-        return list(" AND decide_le IS NOT NULL AND communiquee_le IS NULL", null);
+        // The statuts are named rather than inferred from « decide_le is set »:
+        // that is what let an annulation through as a refusal (issue #540). The
+        // column no longer carries one either, so this is a second lock on the
+        // same door — and the day a fifth statut appears, it will have to say
+        // here whether it is announced.
+        return list(
+                " AND decide_le IS NOT NULL AND communiquee_le IS NULL AND statut IN ('ACCEPTEE', 'REFUSEE')", null);
     }
 
     /**
@@ -625,12 +631,13 @@ public class DemandeEchangeService {
             + "cible_decide_le, decide_le";
 
     /**
-     * Read, never inserted: {@code communiquee_le} is written by the
-     * publication alone ({@link #markAsCommunicated}), so keeping it out of
-     * {@link #COLONNES} keeps the INSERT and its hand-counted parameter
-     * indexes untouched.
+     * Read, never inserted. {@code communiquee_le} is written by the
+     * publication alone ({@link #markAsCommunicated}) and {@code annule_le} by
+     * the demandeur's own withdrawal ({@link #cancel}); neither can be set at
+     * insertion, and keeping them out of {@link #COLONNES} keeps the INSERT and
+     * its hand-counted parameter indexes untouched.
      */
-    private static final String COLONNES_LECTURE = COLONNES + ", communiquee_le";
+    private static final String COLONNES_LECTURE = COLONNES + ", communiquee_le, annule_le";
 
     private void inserer(DemandeEchange demande) {
         try (Connection connection = dataSource.getConnection();
@@ -718,6 +725,8 @@ public class DemandeEchangeService {
         demande.setCibleDecideLe(cibleDecideLe == null ? null : cibleDecideLe.toInstant());
         Timestamp decideLe = rs.getTimestamp("decide_le");
         demande.setDecideLe(decideLe == null ? null : decideLe.toInstant());
+        Timestamp annuleLe = rs.getTimestamp("annule_le");
+        demande.setAnnuleLe(annuleLe == null ? null : annuleLe.toInstant());
         Timestamp communiqueeLe = rs.getTimestamp("communiquee_le");
         demande.setCommuniqueeLe(communiqueeLe == null ? null : communiqueeLe.toInstant());
         return demande;

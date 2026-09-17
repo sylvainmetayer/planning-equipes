@@ -355,11 +355,18 @@ public class PlanPublicationService {
                 .orElse(null);
     }
 
-    /** Ids of the decisions this publication is about to announce. */
+    /**
+     * Ids of the decisions this publication is about to announce — only those
+     * it has a line for. An id marked communicated without a line ever having
+     * been written would be a decision nobody was told about, and nothing would
+     * ever bring it back.
+     */
     private Set<String> decisionsAnnoncees() {
         Set<String> ids = new LinkedHashSet<>();
         for (DemandeEchange demande : demandeEchangeService.decisionsNonCommuniquees()) {
-            ids.add(demande.getId());
+            if (libelleDecision(demande) != null) {
+                ids.add(demande.getId());
+            }
         }
         return ids;
     }
@@ -368,8 +375,11 @@ public class PlanPublicationService {
     private Map<String, List<String>> decisionsByAnimateur() {
         Map<String, List<String>> lignes = new LinkedHashMap<>();
         for (DemandeEchange demande : demandeEchangeService.decisionsNonCommuniquees()) {
-            lignes.computeIfAbsent(demande.getDemandeurId(), unused -> new ArrayList<>())
-                    .add(libelleDecision(demande));
+            String ligne = libelleDecision(demande);
+            if (ligne != null) {
+                lignes.computeIfAbsent(demande.getDemandeurId(), unused -> new ArrayList<>())
+                        .add(ligne);
+            }
         }
         return lignes;
     }
@@ -384,15 +394,30 @@ public class PlanPublicationService {
         return lignes;
     }
 
+    /**
+     * The wording of one decision, {@code null} for a statut this publication
+     * has nothing to say about.
+     *
+     * <p>« Everything that is not accepted is a refusal » is what announced an
+     * annulation — the demandeur's own withdrawal — as a refusal by the
+     * organisation (issue #540). The statuts are named one by one now, so a
+     * fifth one added tomorrow says nothing rather than saying the wrong
+     * thing.</p>
+     */
     private String libelleDecision(DemandeEchange demande) {
+        String verdict =
+                switch (demande.getStatut()) {
+                    case ACCEPTEE -> " a été acceptée : elle est prise en compte dans ce planning.";
+                    case REFUSEE -> " a été refusée : votre planning reste inchangé sur ce point.";
+                    case ANNULEE, REFUSEE_CIBLE, EN_ATTENTE_CIBLE, PROPOSEE -> null;
+                };
+        if (verdict == null) {
+            return null;
+        }
         String creneau = libelleCreneau(demande);
         StringBuilder ligne =
                 new StringBuilder("Votre demande d'échange").append(creneau == null ? "" : " (" + creneau + ")");
-        if (demande.getStatut() == StatutDemandeEchange.ACCEPTEE) {
-            ligne.append(" a été acceptée : elle est prise en compte dans ce planning.");
-        } else {
-            ligne.append(" a été refusée : votre planning reste inchangé sur ce point.");
-        }
+        ligne.append(verdict);
         if (demande.getCommentaireAdmin() != null
                 && !demande.getCommentaireAdmin().isBlank()) {
             ligne.append(" Commentaire de l'organisation : ").append(demande.getCommentaireAdmin());

@@ -278,13 +278,14 @@ public final class ConstraintCatalog {
                             + "quand l'organisateur déclare la pause prise sur le poste : la pause légale par "
                             + "relais et la coupure repas sont deux choses distinctes."),
             new ConstraintDefinition(
-                    "coupureRepasAuPlusTot",
+                    "coupureRepasPlacementPrefere",
                     Niveau.SOFT,
                     "Préférences",
-                    "Entre deux coupures repas possibles dans la même fenêtre, préférer la plus tôt : sur une "
-                            + "fenêtre 12 h-14 h taillée en deux, 12 h-13 h plutôt que 13 h-14 h. La couverture "
-                            + "des stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit "
-                            + "la rotation du midi."),
+                    "Entre deux coupures repas possibles dans la même fenêtre, préférer celle vers laquelle la "
+                            + "fenêtre penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands "
+                            + "viennent d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite. La couverture des "
+                            + "stands, elle, est dure : c'est son arbitrage avec cette préférence qui répartit la "
+                            + "rotation."),
             new ConstraintDefinition(
                     "indisponibiliteForcee",
                     Niveau.HARD,

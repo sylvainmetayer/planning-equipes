@@ -19,9 +19,9 @@ import org.junit.jupiter.api.Test;
 class RepasConstraintsTest extends ConstraintTestBase {
 
     private static final FenetreRepas MIDI =
-            new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60);
+            new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true);
     private static final FenetreRepas SOIR =
-            new FenetreRepas(FenetreRepas.SOIR, LocalTime.of(19, 0), LocalTime.of(21, 0), 60);
+            new FenetreRepas(FenetreRepas.SOIR, LocalTime.of(19, 0), LocalTime.of(21, 0), 60, false);
 
     private final Stand standA = standWithStrategy("STAND-A");
     private final Stand standB = standWithStrategy("STAND-B");
@@ -174,7 +174,8 @@ class RepasConstraintsTest extends ConstraintTestBase {
     /** And that same day owes nothing on the meal rule: the hour is there, inside the window. */
     @Test
     void laMemeJourneeCoupeeSatisfaitLaRegleRepas() {
-        FenetreRepas midiUneHeure = new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60);
+        FenetreRepas midiUneHeure =
+                new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true);
 
         verify("coupureRepasObligatoire")
                 .given(
@@ -184,33 +185,78 @@ class RepasConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- coupureRepasAuPlusTot ---------------------------------------------
+    // --- coupureRepasPlacementPrefere --------------------------------------
+    //
+    // Issue #596: the midday break is preferred LATE — the stands have just
+    // opened — and the evening one EARLY, so the stands reopen. The rule used
+    // to prefer the earliest in both windows, which was right for the evening
+    // and inverted for midday.
 
+    /** Midday, 12:00-14:00: eating at 13:00 costs nothing, it is the preferred slot. */
     @Test
-    void laCoupureDeMidiNeCoutePasDeSoft() {
-        verify("coupureRepasAuPlusTot")
-                .given(
-                        MIDI,
-                        poste(standA, vacation("10-12", 10, 12), a84),
-                        poste(standB, vacation("13-14", 13, 14), a84),
-                        poste(standC, vacation("14-20", 14, 20), a84))
-                .penalizesBy(0);
-    }
-
-    @Test
-    void laCoupureDeTreizeHeuresCouteSonHeureDeRetard() {
-        verify("coupureRepasAuPlusTot")
+    void laCoupureDeTreizeHeuresNeCoutePasDeSoftLeMidi() {
+        verify("coupureRepasPlacementPrefere")
                 .given(
                         MIDI,
                         poste(standA, vacation("10-12", 10, 12), a84),
                         poste(standA, vacation("12-13", 12, 13), a84),
                         poste(standC, vacation("14-20", 14, 20), a84))
+                .penalizesBy(0);
+    }
+
+    /** The same window: eating at 12:00 costs the hour it is early by. */
+    @Test
+    void laCoupureDeMidiCouteSonHeureDAvanceLeMidi() {
+        verify("coupureRepasPlacementPrefere")
+                .given(
+                        MIDI,
+                        poste(standA, vacation("10-12", 10, 12), a84),
+                        poste(standB, vacation("13-14", 13, 14), a84),
+                        poste(standC, vacation("14-20", 14, 20), a84))
                 .penalizesBy(60);
+    }
+
+    /** Evening, 19:00-21:00: the preference points the other way — 19:00 costs nothing. */
+    @Test
+    void laCoupureDeDixNeufHeuresNeCoutePasDeSoftLeSoir() {
+        verify("coupureRepasPlacementPrefere")
+                .given(
+                        SOIR,
+                        poste(standA, vacation("14-19", 14, 19), a84),
+                        poste(standB, vacation("20-21", 20, 21), a84),
+                        poste(standC, vacation("21-23", 21, 23), a84))
+                .penalizesBy(0);
+    }
+
+    /** And the evening break pushed to 20:00 costs the hour it is late by. */
+    @Test
+    void laCoupureDeVingtHeuresCouteSonHeureDeRetardLeSoir() {
+        verify("coupureRepasPlacementPrefere")
+                .given(
+                        SOIR,
+                        poste(standA, vacation("14-19", 14, 19), a84),
+                        poste(standA, vacation("19-20", 19, 20), a84),
+                        poste(standC, vacation("21-23", 21, 23), a84))
+                .penalizesBy(60);
+    }
+
+    /**
+     * A day leaving the whole window free is not « eats at noon »: the person
+     * picks, and the preference reads what they could pick. Nothing is due.
+     */
+    @Test
+    void uneFenetreEntierementLibreNeCoutePasDeSoft() {
+        verify("coupureRepasPlacementPrefere")
+                .given(
+                        MIDI,
+                        poste(standA, vacation("10-12", 10, 12), a84),
+                        poste(standC, vacation("14-20", 14, 20), a84))
+                .penalizesBy(0);
     }
 
     @Test
     void aucunePreferenceQuandAucuneCoupureNeTient() {
-        verify("coupureRepasAuPlusTot")
+        verify("coupureRepasPlacementPrefere")
                 .given(MIDI, poste(standA, vacation("10-20", 10, 20), a84))
                 .penalizesBy(0);
     }
