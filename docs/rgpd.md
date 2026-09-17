@@ -359,7 +359,20 @@ complètes. Quatre points sont connus et se consignent :
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas
   terminé, et automatiser la purge par édition échue ne le réglera pas — c'est
-  une opération distincte.
+  une opération distincte ;
+- **dupliquer une édition recopie ses personnes**, et c'est voulu pour l'usage
+  qui a fait naître la duplication : l'édition « plan canicule » créée en cours
+  de festival doit garder son équipe et son « Envoyer à all » (issue #172).
+  L'usage *modèle d'une année sur l'autre* est l'inverse — préparer 2027 depuis
+  2026 recopierait noms, dates de naissance et courriels de personnes qui ne se
+  sont pas réinscrites, c'est-à-dire ferait démarrer une nouvelle durée de
+  conservation sur des données que plus rien ne justifie de détenir. La
+  duplication accepte donc `avecAnimateurs=false` (issue #90) : la structure
+  passe, les personnes restent, et avec elles compétences, indisponibilités,
+  souhaits et ajustements manuels. Ce qui ne le borne pas : rien n'oblige à
+  choisir ce mode, et une duplication faite avec les gens par habitude produit
+  exactement la copie qu'on voulait éviter — c'est une case à cocher, pas un
+  garde-fou.
 
 ## 8. Rythme de tenue
 

@@ -158,7 +158,7 @@ class EditionMcpToolsTest {
         editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
         creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
-        EditionView copie = editionTools.dupliquer_edition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP");
+        EditionView copie = editionTools.dupliquer_edition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP", null);
 
         assertThat(copie.nombreCreneaux()).isEqualTo(1);
         creneauTools.creer_creneau("2027-01-05", "09:00", "12:00", null, EDITION_COPIE);

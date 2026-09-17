@@ -7,12 +7,14 @@ import dev.sylvain.planning.service.edition.EtatEditionView;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.util.List;
@@ -82,11 +84,23 @@ public class EditionResource {
      * belong to the edition they were computed for. This is the action that
      * makes multi-edition usable at all; without it, preparing next year's
      * edition means re-importing everything by hand.
+     *
+     * <p>{@code avecAnimateurs} (default {@code true}, so the gesture of issue
+     * #172 is untouched) decides whether the <b>people</b> come along. Set to
+     * {@code false} the copy is a <i>year template</i>: stands, emplacements,
+     * typologies, opening hours, timeslots and every parameter, and nobody —
+     * neither the roster nor their availability, competences, wishes or the ad
+     * hoc constraints naming them. Preparing 2027 from 2026 has no business
+     * duplicating a file of persons who have not signed up again (issue #90,
+     * {@code docs/rgpd.md}).</p>
      */
     @POST
     @Path("/{id}/dupliquer")
-    public Response duplicate(@PathParam("id") String id, Edition target) {
-        return Response.ok(editionService.duplicate(id, target)).build();
+    public Response duplicate(
+            @PathParam("id") String id,
+            @QueryParam("avecAnimateurs") @DefaultValue("true") boolean avecAnimateurs,
+            Edition target) {
+        return Response.ok(editionService.duplicate(id, target, avecAnimateurs)).build();
     }
 
     /** Designates the fallback edition for any caller sending no {@code X-Edition-Id}. */

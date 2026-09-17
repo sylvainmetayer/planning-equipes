@@ -7911,6 +7911,13 @@
           "schema" : {
             "type" : "string"
           }
+        }, {
+          "name" : "avecAnimateurs",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean",
+            "default" : true
+          }
         } ],
         "requestBody" : {
           "content" : {

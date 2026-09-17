@@ -252,6 +252,90 @@ class EditionResourceTest {
     }
 
     /**
+     * The year-template duplication (issue #90): the structure comes over, the
+     * people do not.
+     *
+     * <p>Preparing 2027 from 2026 otherwise copies names, birth dates and
+     * e-mail addresses of people who have not signed up again — a minimisation
+     * and retention problem ({@code docs/rgpd.md}), not a convenience. Every ad
+     * hoc constraint names at least one animateur, so none of them survives
+     * either: a copy pointing at absent persons would be worse than no copy.</p>
+     */
+    @Test
+    void dupliquerSansLesAnimateursGardeLaStructureEtPersonne() {
+        createStand(DEFAUT, "STAND-MODELE");
+        given().header(HEADER, DEFAUT)
+                .contentType("application/json")
+                .body("{\"id\":\"ANIM-MODELE\",\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
+                        + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ada@example.org\"}")
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200);
+        given().header(HEADER, DEFAUT)
+                .contentType("application/json")
+                .body("{\"id\":\"AJUST-MODELE\",\"type\":\"INDISPONIBILITE_FORCEE\","
+                        + "\"animateursConcernes\":[{\"id\":\"ANIM-MODELE\"}],\"raison\":\"Absent\"}")
+                .when()
+                .post("/api/contraintes")
+                .then()
+                .statusCode(200);
+
+        given().contentType("application/json")
+                .body("{\"id\":\"MODELE-2027\",\"nom\":\"Modèle 2027\"}")
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer?avecAnimateurs=false")
+                .then()
+                .statusCode(200);
+
+        assertThat(listStandIds("MODELE-2027")).contains("STAND-MODELE");
+        given().header(HEADER, "MODELE-2027")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .body("size()", org.hamcrest.Matchers.equalTo(0));
+        given().header(HEADER, "MODELE-2027")
+                .when()
+                .get("/api/contraintes")
+                .then()
+                .statusCode(200)
+                .body("size()", org.hamcrest.Matchers.equalTo(0));
+
+        // The ad hoc constraint was written into DEFAUT, which no @AfterEach
+        // clears: left there it would forbid ANIM-MODELE every seat, in every
+        // test that solves after this one.
+        given().header(HEADER, DEFAUT).when().delete("/api/contraintes/AJUST-MODELE");
+    }
+
+    /** The default is unchanged: the people follow, as the « plan canicule » ritual of #172 needs. */
+    @Test
+    void dupliquerSansPreciserRameneLesAnimateurs() {
+        given().header(HEADER, DEFAUT)
+                .contentType("application/json")
+                .body("{\"id\":\"ANIM-DEFAUT\",\"prenom\":\"Grace\",\"nom\":\"Hopper\","
+                        + "\"dateNaissance\":\"1990-01-01\"}")
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200);
+
+        given().contentType("application/json")
+                .body("{\"id\":\"COPIE-AVEC\",\"nom\":\"Copie avec\"}")
+                .when()
+                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .then()
+                .statusCode(200);
+
+        given().header(HEADER, "COPIE-AVEC")
+                .when()
+                .get("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .body("id", org.hamcrest.Matchers.hasItem("ANIM-DEFAUT"));
+    }
+
+    /**
      * The settings a duplication carries, read back on the copy: a column left
      * out of {@code TABLES_A_COPIER} silently comes back at its {@code DEFAULT}
      * instead, and nothing at duplication time complains. Three had drifted

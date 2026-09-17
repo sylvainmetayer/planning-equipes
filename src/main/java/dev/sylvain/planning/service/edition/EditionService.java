@@ -54,13 +54,22 @@ public class EditionService {
      * reference model — "2026 = 2025 minus the assignments". The solver results
      * are deliberately left out: they belong to the edition they were computed
      * for, and a fresh edition has nothing solved yet.
+     *
+     * <p>{@code avecAnimateurs} says whether the <b>people</b> come along
+     * (issue #90). They do by default, which is the gesture issue #172 was
+     * built for: a « canicule » edition duplicated mid-festival must keep its
+     * roster and its « Envoyer à all ». They must not when the copy is a
+     * <i>year template</i> — preparing 2027 from 2026 otherwise copies the
+     * names, birth dates and e-mail addresses of people who have not signed up
+     * again, which is a minimisation and retention problem
+     * ({@code docs/rgpd.md}), not a convenience.</p>
      */
-    public Edition duplicate(String sourceId, Edition target) {
+    public Edition duplicate(String sourceId, Edition target, boolean avecAnimateurs) {
         requireExisting(sourceId);
         // createEmpty, not create: the copy brings the source's own timeslot
         // groups over, and seeding a 'DEFAUT' one first would collide with it.
         Edition cree = createEmpty(target);
-        repository.duplicate(sourceId, cree.getId());
+        repository.duplicate(sourceId, cree.getId(), avecAnimateurs);
         return cree;
     }
 

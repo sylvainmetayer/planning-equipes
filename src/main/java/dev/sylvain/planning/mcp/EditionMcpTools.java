@@ -133,10 +133,12 @@ public class EditionMcpTools {
     }
 
     @Tool(
-            description = "Duplique une édition dans une nouvelle : stands, animateurs, typologies, emplacements, "
-                    + "créneaux, contraintes et paramètres sont recopiés, jamais le planning résolu. C'est la façon de "
-                    + "préparer une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
-                    + "variante EST une édition dupliquée.",
+            description = "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
+                    + "horaires et paramètres sont recopiés, jamais le planning résolu. C'est la façon de préparer "
+                    + "une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
+                    + "variante EST une édition dupliquée. avec_animateurs=false laisse les personnes derrière — "
+                    + "c'est le modèle d'année, à utiliser pour préparer l'édition suivante sans recopier un "
+                    + "fichier de personnes qui ne se sont pas réinscrites.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -146,10 +148,16 @@ public class EditionMcpTools {
     EditionView dupliquer_edition(
             @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
             @ToolArg(description = "Id de l'édition à créer") String id,
-            @ToolArg(description = "Nom affiché de l'édition à créer") String nom) {
+            @ToolArg(description = "Nom affiché de l'édition à créer") String nom,
+            @ToolArg(
+                            description = "Reprendre les animateurs et ce qui les concerne (compétences, "
+                                    + "indisponibilités, souhaits, ajustements manuels). Par défaut true.",
+                            required = false)
+                    Boolean avec_animateurs) {
         String sourceId = requireEdition(source, "source");
         return view(
-                editionService.duplicate(sourceId, new Edition(id, nom, false, null)),
+                editionService.duplicate(
+                        sourceId, new Edition(id, nom, false, null), avec_animateurs == null || avec_animateurs),
                 editionContext.editionIdCourant());
     }
 

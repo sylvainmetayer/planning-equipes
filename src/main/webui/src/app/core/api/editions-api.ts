@@ -23,9 +23,20 @@ export class EditionsApi {
     return this.api.get<EtatEdition>('/api/editions/courant/etat');
   }
 
-  /** A new edition, empty or duplicated from `source` — the variant of an edition is another edition. */
-  create(target: unknown, source: string | null): Promise<Edition> {
-    const url = source ? `/api/editions/${encodeURIComponent(source)}/dupliquer` : '/api/editions';
+  /**
+   * A new edition, empty or duplicated from `source` — the variant of an
+   * edition is another edition.
+   *
+   * `avecAnimateurs` is only read on a duplication: `false` leaves the people
+   * behind (issue #90), which is what the year-template case wants — preparing
+   * 2027 from 2026 has no business copying the names, birth dates and e-mail
+   * addresses of people who have not signed up again.
+   */
+  create(target: unknown, source: string | null, avecAnimateurs = true): Promise<Edition> {
+    if (!source) {
+      return this.api.post<Edition>('/api/editions', target);
+    }
+    const url = `/api/editions/${encodeURIComponent(source)}/dupliquer?avecAnimateurs=${avecAnimateurs}`;
     return this.api.post<Edition>(url, target);
   }
 

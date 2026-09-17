@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.sql.DataSource;
 
 /**
@@ -214,15 +215,36 @@ public class EditionRepository {
      * temporary mapping table and the rows referencing them are rewritten
      * through it.</p>
      */
-    public void duplicate(String sourceId, String cibleId) {
+    public void duplicate(String sourceId, String cibleId, boolean avecAnimateurs) {
         scope.write("Failed to duplicate edition " + sourceId + " into " + cibleId, connection -> {
             for (TableToCopy table : TABLES_A_COPIER) {
-                copyTable(connection, table, sourceId, cibleId);
+                if (avecAnimateurs || !TABLES_DE_PERSONNES.contains(table.nom())) {
+                    copyTable(connection, table, sourceId, cibleId);
+                }
             }
             copyCreneaux(connection, sourceId, cibleId);
-            copyContraintesAdHoc(connection, sourceId, cibleId);
+            // Every ad hoc constraint names at least one animateur
+            // (TypeContrainteAdHoc has no scope-only variant), so leaving the
+            // people behind leaves none of them standing: copying them would
+            // produce rows pointing at absent persons, and contrainte_animateur
+            // would not even insert.
+            if (avecAnimateurs) {
+                copyContraintesAdHoc(connection, sourceId, cibleId);
+            }
         });
     }
+
+    /**
+     * The tables a duplication « sans les personnes » leaves behind (issue #90):
+     * the roster and everything hanging off a person.
+     *
+     * <p>{@code stand_typologie} is deliberately absent — it carries a stand and
+     * a typologie, never somebody — and so is every parameter table: what the
+     * year-template case wants is the structure without the roster, not an
+     * empty edition.</p>
+     */
+    private static final Set<String> TABLES_DE_PERSONNES =
+            Set.of("animateur", "animateur_competence", "animateur_jour_indispo", "animateur_souhait");
 
     private void copyTable(Connection connection, TableToCopy table, String sourceId, String cibleId)
             throws SQLException {

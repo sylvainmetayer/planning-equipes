@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDialog } from '@angular/material/dialog';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -39,6 +40,7 @@ import { errorMessage } from '../../core/error-message';
     FormsModule,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -59,6 +61,13 @@ export class EditionsPage {
   protected readonly nouveauNom = signal('');
   /** Id of the edition the new one should be a copy of, or `null` for an empty edition. */
   protected readonly sourceDuplication = signal<string | null>(null);
+  /**
+   * Whether a duplication brings the people along (issue #90). On by default,
+   * which is the gesture of issue #172 — a « plan canicule » duplicated
+   * mid-festival keeps its roster. Turned off, the copy is a year template:
+   * the structure, nobody.
+   */
+  protected readonly avecAnimateurs = signal(true);
   protected readonly enCours = signal(false);
 
   protected readonly courantId = computed(() => this.store.courant()?.id ?? null);
@@ -86,12 +95,16 @@ export class EditionsPage {
     };
     const source = this.sourceDuplication();
     await this.executer(async () => {
-      await this.editionsApi.create(target, source);
+      const avecAnimateurs = this.avecAnimateurs();
+      await this.editionsApi.create(target, source, avecAnimateurs);
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
+      this.avecAnimateurs.set(true);
       this.notifications.notify({
         title: source
-          ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
+          ? avecAnimateurs
+            ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
+            : $localize`:@@editions.duplicatedSansAnimateurs:Édition ${nom}:nom: créée à partir de ${source}:source:, sans les animateurs.`
           : $localize`:@@editions.created:Édition ${nom}:nom: créée.`,
         variant: 'success',
         timeout: 4000,

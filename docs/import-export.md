@@ -16,6 +16,34 @@ animateurs** ne touche qu'un seul référentiel, ligne par ligne, sans rien
 effacer par défaut. C'est le dernier qu'on utilise quand un organisateur
 arrive avec son tableur de bénévoles.
 
+## Trois façons de repartir d'une édition, et ce qu'elles emportent
+
+| Geste | Ce que ça fait | Les personnes |
+| --- | --- | --- |
+| **Scénario YAML** | décrit un événement entier et **remplace** le référentiel de l'édition visée ; un fichier qu'on s'échange, qu'on versionne, qu'on rejoue en test | oui, la section `animateurs` |
+| **Duplication d'édition** (`POST /api/editions/{id}/dupliquer`) | crée une **nouvelle édition** et y recopie tout le référentiel de la source — stands, emplacements, typologies, horaires récurrents, créneaux, dosages de contraintes et paramètres — jamais le planning résolu : « 2026 = 2025 moins les affectations » | oui **par défaut** |
+| **Modèle d'année** (`…/dupliquer?avecAnimateurs=false`) | la même duplication, **sans les personnes** | non |
+
+La bibliothèque de modèles que l'issue #90 demandait n'existe pas sous ce
+nom : c'est la **liste des éditions**, et appliquer un modèle, c'est dupliquer.
+Une table de gabarits en parallèle serait un second référentiel redondant pour
+le même service.
+
+Ce que le mode « modèle d'année » laisse derrière lui : `animateur` et tout ce
+qui pend à une personne — `animateur_competence`, `animateur_jour_indispo`,
+`animateur_souhait` — ainsi que **les ajustements manuels**, puisque chaque
+type de `contrainte_ad_hoc` nomme au moins un animateur ; une copie pointant
+sur des personnes absentes serait pire que pas de copie. `stand_typologie`
+reste : elle porte un stand et une typologie, jamais quelqu'un.
+
+**Pourquoi le défaut ne change pas.** Dupliquer avec les gens est le geste de
+l'issue #172 : une édition « plan canicule » créée en cours de festival doit
+garder son équipe et son « Envoyer à all ». Décocher la case est le cas
+inverse — préparer 2027 depuis 2026 — et là, recopier noms, dates de naissance
+et courriels de personnes qui ne se sont pas réinscrites est un problème de
+minimisation et de durée de conservation (voir [`rgpd.md`](rgpd.md)), pas un
+confort.
+
 ## Dump SQL
 
 C'est la seule opération **globale à l'instance** : une sauvegarde de la base,
