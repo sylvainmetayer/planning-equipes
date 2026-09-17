@@ -423,6 +423,58 @@ public class PauseAnalyzer {
         }
     }
 
+    /**
+     * One meal break of one animateur's day, as their own planning prints it
+     * (issue #598): « repas de 13:00 à 14:00 ».
+     *
+     * <p>Not the legal break of art. L3121-16, which is twenty minutes owed at
+     * the sixth hour and is carried by {@link PauseAnimateurView}: this one is
+     * the rule the organisation gives itself, lasts an hour by default and
+     * falls inside a declared window. An animateur reading their PDF had no way
+     * of knowing when they eat; the legal card never said it.</p>
+     *
+     * @param date  day of the break
+     * @param debut {@code null} never happens here: a window the day leaves no
+     *              room for is dropped rather than printed as a promise
+     */
+    @Schema(requiredProperties = {"dureeMinutes"})
+    public record CoupureAnimateurView(
+            String libelle, LocalDate date, LocalTime debut, LocalTime fin, int dureeMinutes) {
+
+        /** Whether that legal break falls inside this meal break — then one card says both. */
+        public boolean couvre(PauseAnimateurView pause) {
+            return pause != null
+                    && date.equals(pause.date())
+                    && !pause.debut().isBefore(debut)
+                    && !pause.fin().isAfter(fin);
+        }
+    }
+
+    /**
+     * The meal breaks of every animateur, by animateur id (issue #598). Built
+     * once, like {@link #pausesByAnimateur}, for the exports that walk the
+     * whole roster.
+     */
+    public Map<String, List<CoupureAnimateurView>> coupuresByAnimateur(PlanningEvenement planning) {
+        Map<String, List<CoupureAnimateurView>> parAnimateur = new LinkedHashMap<>();
+        for (JourneeAnimateurView journee : analyze(planning).journees()) {
+            for (CoupureRepasView coupure : journee.coupuresRepas()) {
+                if (coupure.debut() == null) {
+                    continue;
+                }
+                parAnimateur
+                        .computeIfAbsent(journee.animateurId(), ignored -> new ArrayList<>())
+                        .add(new CoupureAnimateurView(
+                                coupure.libelle(),
+                                journee.date(),
+                                coupure.debut(),
+                                coupure.fin(),
+                                coupure.dureeRequiseMinutes()));
+            }
+        }
+        return parAnimateur;
+    }
+
     /** The stretches of one animateur's day, with the breaks each owes and the window of each. */
     private static Journee journee(
             List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres, ParametresLegaux parametres) {

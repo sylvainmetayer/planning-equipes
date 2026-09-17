@@ -259,6 +259,11 @@ const adminRoutes: Routes = [
     }),
   },
   {
+    path: 'intendance',
+    title: () => $localize`:@@route.intendance:Intendance des repas`,
+    loadComponent: () => import('./pages/intendance/intendance-page').then((m) => m.IntendancePage),
+  },
+  {
     path: 'constraints',
     title: () => $localize`:@@route.constraints:Contraintes`,
     loadComponent: () =>

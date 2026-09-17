@@ -14,6 +14,7 @@ import {
   ModeMarge,
   RapportFragilite,
   RapportMarge,
+  RapportIntendance,
   RapportPauses,
   StaffingSummary,
   TypologieItem,
@@ -25,6 +26,23 @@ export class AnalysesApi {
 
   breaks(): Promise<RapportPauses> {
     return this.api.get<RapportPauses>('/api/pauses');
+  }
+
+  /**
+   * The same meal breaks, counted rather than named: how many people are out,
+   * per half-hour and per emplacement (issue #598).
+   */
+  intendance(): Promise<RapportIntendance> {
+    return this.api.get<RapportIntendance>('/api/pauses/intendance');
+  }
+
+  /** The same list as a flat CSV, because it leaves the tool for the intendance. */
+  exportIntendance(): Promise<string> {
+    return this.api.downloadGet(
+      '/api/pauses/intendance/export',
+      'intendance-repas.csv',
+      'text/csv',
+    );
   }
 
   staffing(): Promise<StaffingSummary> {

@@ -649,6 +649,53 @@ export interface ContrainteAdHoc {
   creeLe?: string;
 }
 
+/**
+ * One emplacement of one meal window, on one day (`GET /api/pauses/intendance`,
+ * issue #598): how many people are on a break there, half-hour by half-hour.
+ *
+ * `personnes` and `mineurs` hold one count per slot of `FenetreIntendance.tranches`,
+ * in the same order. `total` is the distinct people over the whole window —
+ * never the sum of `personnes`, which counts somebody once per half-hour their
+ * break spans.
+ */
+export interface LigneEmplacementIntendance {
+  emplacementId: string;
+  emplacementNom: string;
+  personnes: number[];
+  mineurs: number[];
+  total: number;
+  totalMineurs: number;
+}
+
+/** One meal window of one day, as a table: half-hours across, emplacements down. */
+export interface FenetreIntendance {
+  libelle: string;
+  debut: string;
+  fin: string;
+  tranches: string[];
+  emplacements: LigneEmplacementIntendance[];
+  total: number;
+  totalMineurs: number;
+}
+
+/** One day of the event, one table per window it declares. */
+export interface JourneeIntendance {
+  date: string;
+  fenetres: FenetreIntendance[];
+}
+
+/**
+ * « Combien de sandwichs, et où les porter » — the meal breaks of the
+ * persisted plan, counted rather than named. `message` says why the report is
+ * empty when it is: a screen saying « 0 » and a screen saying « rien n'est
+ * résolu » are not the same screen.
+ */
+export interface RapportIntendance {
+  pasMinutes: number;
+  journees: JourneeIntendance[];
+  message: string;
+}
+
 /** What a {@link VerrouillagePlanning} freezes (issue #87; ANIMATEUR_CRENEAU: issue #165). */
 export type TypeVerrouillage = 'ANIMATEUR' | 'STAND' | 'JOUR' | 'CRENEAU' | 'ANIMATEUR_CRENEAU';
 

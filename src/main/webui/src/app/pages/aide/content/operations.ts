@@ -203,6 +203,7 @@ export function buildOperationsSections(): HelpSection[] {
           queryParams: { vue: 'pauses' },
           label: $localize`:@@aide.link.pauses:Pauses`,
         },
+        { route: '/intendance', label: $localize`:@@nav.link.intendance:Intendance des repas` },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'banc' },

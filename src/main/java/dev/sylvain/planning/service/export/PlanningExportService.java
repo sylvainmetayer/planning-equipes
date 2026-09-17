@@ -71,7 +71,11 @@ public class PlanningExportService {
      */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
         return exportAnimateurPdf(
-                planning, animateurId, provenance.courante(), pauses.pausesAnimateur(planning, animateurId));
+                planning,
+                animateurId,
+                provenance.courante(),
+                pauses.pausesAnimateur(planning, animateurId),
+                pauses.coupuresByAnimateur(planning).getOrDefault(animateurId, List.of()));
     }
 
     /**
@@ -82,14 +86,19 @@ public class PlanningExportService {
      */
     public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
         return exportAnimateurPdf(
-                planning, animateurId, provenance.publiee(), pauses.pausesAnimateur(planning, animateurId));
+                planning,
+                animateurId,
+                provenance.publiee(),
+                pauses.pausesAnimateur(planning, animateurId),
+                pauses.coupuresByAnimateur(planning).getOrDefault(animateurId, List.of()));
     }
 
     private byte[] exportAnimateurPdf(
             PlanningEvenement planning,
             String animateurId,
             ExportProvenance.Provenance provenanceDuPlan,
-            List<PauseAnalyzer.PauseAnimateurView> pausesDuJour) {
+            List<PauseAnalyzer.PauseAnimateurView> pausesDuJour,
+            List<PauseAnalyzer.CoupureAnimateurView> coupuresDuJour) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId()))
@@ -101,6 +110,7 @@ public class PlanningExportService {
                 teammatesByPoste(planning, animateurId),
                 daysOff(planning, animateurId),
                 pausesDuJour,
+                coupuresDuJour,
                 lienEspaceAnimateur(planning, animateurId),
                 provenanceDuPlan);
     }
@@ -228,12 +238,17 @@ public class PlanningExportService {
         // One analysis for the whole roster: per animateur, it would walk every
         // seat of the plan again, once per person in the ZIP.
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
+        Map<String, List<PauseAnalyzer.CoupureAnimateurView>> coupures = pauses.coupuresByAnimateur(planning);
         return buildZip(
                 planning,
                 List.of(new NamedFileBuilder(
                         ".pdf",
                         id -> exportAnimateurPdf(
-                                planning, id, provenance.courante(), parAnimateur.getOrDefault(id, List.of())))));
+                                planning,
+                                id,
+                                provenance.courante(),
+                                parAnimateur.getOrDefault(id, List.of()),
+                                coupures.getOrDefault(id, List.of())))));
     }
 
     public byte[] exportAllIcsZip(PlanningEvenement planning) {
@@ -252,13 +267,18 @@ public class PlanningExportService {
      */
     public byte[] exportAllBundleZip(PlanningEvenement planning) {
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
+        Map<String, List<PauseAnalyzer.CoupureAnimateurView>> coupures = pauses.coupuresByAnimateur(planning);
         return buildZip(
                 planning,
                 List.of(
                         new NamedFileBuilder(
                                 ".pdf",
                                 id -> exportAnimateurPdf(
-                                        planning, id, provenance.courante(), parAnimateur.getOrDefault(id, List.of()))),
+                                        planning,
+                                        id,
+                                        provenance.courante(),
+                                        parAnimateur.getOrDefault(id, List.of()),
+                                        coupures.getOrDefault(id, List.of()))),
                         new NamedFileBuilder(
                                 ".ics",
                                 id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))

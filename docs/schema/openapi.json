@@ -1424,6 +1424,28 @@
           }
         }
       },
+      "CoupureAnimateurView" : {
+        "required" : [ "dureeMinutes" ],
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "dureeMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "CoupureRepasView" : {
         "required" : [ "dureeRequiseMinutes", "plusGrandTrouMinutes", "satisfaite" ],
         "type" : "object",
@@ -2599,6 +2621,47 @@
           }
         }
       },
+      "FenetreIntendance" : {
+        "required" : [ "total", "totalMineurs" ],
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "tranches" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "local-time",
+              "examples" : [ "13:45:30.123456789" ],
+              "externalDocs" : {
+                "description" : "As defined by 'partial-time' in RFC3339",
+                "url" : "https://www.rfc-editor.org/rfc/rfc3339.html#section-5.6"
+              }
+            }
+          },
+          "emplacements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneEmplacement"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalMineurs" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "FenetreRepas" : {
         "type" : "object",
         "properties" : {
@@ -3231,6 +3294,20 @@
           }
         }
       },
+      "JourneeIntendance" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fenetres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FenetreIntendance"
+            }
+          }
+        }
+      },
       "JourneeType" : {
         "type" : "object",
         "properties" : {
@@ -3324,6 +3401,40 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "LigneEmplacement" : {
+        "type" : "object",
+        "required" : [ "total", "totalMineurs" ],
+        "properties" : {
+          "emplacementId" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "personnes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "mineurs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int32"
+            }
+          },
+          "total" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "totalMineurs" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -4655,6 +4766,25 @@
           },
           "faisabilite" : {
             "$ref" : "#/components/schemas/FeasibilityReport"
+          }
+        }
+      },
+      "RapportIntendance" : {
+        "required" : [ "pasMinutes" ],
+        "type" : "object",
+        "properties" : {
+          "pasMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "journees" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourneeIntendance"
+            }
+          },
+          "message" : {
+            "type" : "string"
           }
         }
       },
@@ -9631,6 +9761,38 @@
           }
         },
         "summary" : "Analyze",
+        "tags" : [ "Pause Resource" ]
+      }
+    },
+    "/api/pauses/intendance" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportIntendance"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Intendance",
+        "tags" : [ "Pause Resource" ]
+      }
+    },
+    "/api/pauses/intendance/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Intendance",
         "tags" : [ "Pause Resource" ]
       }
     },

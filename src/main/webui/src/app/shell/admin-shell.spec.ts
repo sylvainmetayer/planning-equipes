@@ -465,6 +465,7 @@ describe('AdminShell', () => {
         '/heatmap',
         '/historique',
         '/instantanes',
+        '/intendance',
         '/kpi',
         '/marge',
         '/mcp-client',

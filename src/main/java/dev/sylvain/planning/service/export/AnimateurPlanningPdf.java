@@ -12,7 +12,9 @@ import java.io.ByteArrayOutputStream;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -56,6 +58,7 @@ public class AnimateurPlanningPdf {
             Map<String, List<String>> teammatesByPoste,
             List<PlanningExportService.JourRepos> joursRepos,
             List<PauseAnalyzer.PauseAnimateurView> pauses,
+            List<PauseAnalyzer.CoupureAnimateurView> coupures,
             String lienEspaceAnimateur,
             ExportProvenance.Provenance provenance) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -73,6 +76,8 @@ public class AnimateurPlanningPdf {
             // Rest days are interleaved at their chronological place, so the
             // document reads as one continuous event rather than a list of
             // shifts with silently missing days.
+            Map<PosteAffectation, List<PauseAnalyzer.CoupureAnimateurView>> coupuresParPoste =
+                    ancrerCoupures(postes, coupures, pauses);
             Iterator<PlanningExportService.JourRepos> repos = joursRepos.iterator();
             PlanningExportService.JourRepos prochainRepos = repos.hasNext() ? repos.next() : null;
             for (PosteAffectation poste : postes) {
@@ -90,8 +95,16 @@ public class AnimateurPlanningPdf {
                 // reading their day, not a footnote.
                 for (PauseAnalyzer.PauseAnimateurView pause : pauses) {
                     if (pause.fallsInside(poste)) {
-                        document.add(pauseCard(pause));
+                        document.add(pauseCard(pause, coupureQuiCouvre(coupures, pause)));
                     }
+                }
+                // The meal break (issue #598) hangs off the shift it follows:
+                // it is a gap between two stretches, so it belongs under the
+                // one the animateur has just left. Printed here only when no
+                // legal break of the day already carried it — one card says
+                // both when they overlap.
+                for (PauseAnalyzer.CoupureAnimateurView coupure : coupuresParPoste.getOrDefault(poste, List.of())) {
+                    document.add(coupureCard(coupure));
                 }
             }
             while (prochainRepos != null) {
@@ -283,7 +296,82 @@ public class AnimateurPlanningPdf {
      * the one legal obligation the animateur has to act on themselves stands
      * out from the shifts somebody else planned.
      */
-    private PdfPTable pauseCard(PauseAnalyzer.PauseAnimateurView pause) {
+    /**
+     * The meal break covering this legal one, or {@code null}. The two are
+     * different objects — art. L3121-16 owes twenty minutes at the sixth hour,
+     * the meal break is the rule the organisation gives itself — but when the
+     * legal one falls inside the meal one, printing both makes the animateur
+     * read two obligations where there is one moment (issue #598).
+     */
+    private static PauseAnalyzer.CoupureAnimateurView coupureQuiCouvre(
+            List<PauseAnalyzer.CoupureAnimateurView> coupures, PauseAnalyzer.PauseAnimateurView pause) {
+        return coupures.stream()
+                .filter(coupure -> coupure.couvre(pause))
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * Each meal break hung off the shift it follows — the last one of its day
+     * that ends before it, or, for a break opening the day, the first one
+     * after. A document with no other timeline needs that anchor to print the
+     * break at its chronological place.
+     *
+     * <p>A break a legal one already carries is dropped here rather than
+     * printed twice: {@link #pauseCard} then says both in one card.</p>
+     */
+    private static Map<PosteAffectation, List<PauseAnalyzer.CoupureAnimateurView>> ancrerCoupures(
+            List<PosteAffectation> postes,
+            List<PauseAnalyzer.CoupureAnimateurView> coupures,
+            List<PauseAnalyzer.PauseAnimateurView> pauses) {
+        Map<PosteAffectation, List<PauseAnalyzer.CoupureAnimateurView>> parPoste = new LinkedHashMap<>();
+        for (PauseAnalyzer.CoupureAnimateurView coupure : coupures) {
+            if (pauses.stream().anyMatch(coupure::couvre)) {
+                continue;
+            }
+            PosteAffectation ancre = null;
+            PosteAffectation suivant = null;
+            for (PosteAffectation poste : postes) {
+                LocalDate date =
+                        poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+                if (!coupure.date().equals(date) || poste.heureFinEffectif() == null) {
+                    continue;
+                }
+                if (!poste.heureFinEffectif().isAfter(coupure.debut())) {
+                    ancre = poste;
+                } else if (suivant == null) {
+                    suivant = poste;
+                }
+            }
+            PosteAffectation retenu = ancre != null ? ancre : suivant;
+            if (retenu != null) {
+                parPoste.computeIfAbsent(retenu, ignored -> new ArrayList<>()).add(coupure);
+            }
+        }
+        return parPoste;
+    }
+
+    /** « Repas de 13:00 à 14:00 (60 min) », the meal break of issue #598. */
+    private PdfPTable coupureCard(PauseAnalyzer.CoupureAnimateurView coupure) {
+        return calloutCard("Repas de " + coupure.debut().format(PdfTheme.TIME_FORMAT) + " à "
+                + coupure.fin().format(PdfTheme.TIME_FORMAT) + " (" + coupure.dureeMinutes() + " min)");
+    }
+
+    private PdfPTable pauseCard(PauseAnalyzer.PauseAnimateurView pause, PauseAnalyzer.CoupureAnimateurView coupure) {
+        String moment = coupure == null
+                ? "Pause de " + pause.debut().format(PdfTheme.TIME_FORMAT) + " à "
+                        + pause.fin().format(PdfTheme.TIME_FORMAT) + " (" + pause.dureeMinutes() + " min)"
+                : "Repas de " + coupure.debut().format(PdfTheme.TIME_FORMAT) + " à "
+                        + coupure.fin().format(PdfTheme.TIME_FORMAT) + " (" + coupure.dureeMinutes()
+                        + " min), pause légale comprise";
+        return calloutCard(moment
+                + (pause.relaisDisponible()
+                        ? ", en relais avec l'équipe du stand"
+                        : " — personne d'autre sur le stand : demandez le relais à l'organisation"));
+    }
+
+    /** The accent-coloured strip both the legal break and the meal break print on. */
+    private PdfPTable calloutCard(String texte) {
         PdfPTable card = new PdfPTable(1);
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
@@ -292,11 +380,6 @@ public class AnimateurPlanningPdf {
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setPadding(8f);
         cell.setPaddingLeft(14f);
-        String texte = "Pause de " + pause.debut().format(PdfTheme.TIME_FORMAT) + " à "
-                + pause.fin().format(PdfTheme.TIME_FORMAT) + " (" + pause.dureeMinutes() + " min)"
-                + (pause.relaisDisponible()
-                        ? ", en relais avec l'équipe du stand"
-                        : " — personne d'autre sur le stand : demandez le relais à l'organisation");
         cell.addElement(new Paragraph(texte, theme.calloutTitleFont()));
         card.addCell(cell);
         return card;

@@ -63,7 +63,8 @@
     "ReconnaissanceJourneesTypes": "Reconnaissance",
     "RapportImportReferentiel": "ReferentielCsvImportReport",
     "LigneImportReferentiel": "LigneImportee",
-    "PrerequisValidation": "Prerequis"
+    "PrerequisValidation": "Prerequis",
+    "LigneEmplacementIntendance": "LigneEmplacement"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",

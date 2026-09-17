@@ -202,6 +202,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
         { path: '/journee', label: $localize`:@@nav.link.journee:Journée`, icon: 'view_day' },
         { path: '/hours', label: $localize`:@@nav.link.hours:Heures`, icon: 'schedule' },
         {
+          path: '/intendance',
+          label: $localize`:@@nav.link.intendance:Intendance des repas`,
+          icon: 'restaurant',
+          avance: true,
+        },
+        {
           path: '/equite',
           label: $localize`:@@nav.link.equite:Équité`,
           icon: 'balance',

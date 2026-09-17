@@ -1318,6 +1318,47 @@ La même lecture sert le planning individuel : l'espace de l'animateur
 son PDF (« Pause de 18:20 à 18:40 (20 min) », sous la vacation qui la doit) et
 son flux de calendrier (dans la description de l'événement).
 
+**Le PDF porte aussi la coupure repas** (issue #598), qui n'est pas la pause
+légale : celle-ci est la règle que l'organisation se donne, dure une heure par
+défaut et tombe dans les fenêtres midi/soir des paramètres légaux. Quand la
+pause légale tombe **dans** la coupure, une seule carte le dit (« Repas de
+13:00 à 14:00 (60 min), pause légale comprise ») : deux cartes feraient lire
+deux obligations là où il n'y a qu'un moment.
+
+## Intendance des repas
+
+`GET /api/pauses/intendance` est la **même** lecture, comptée au lieu d'être
+nommée (issue #598) : pour chaque jour et chaque fenêtre, combien de personnes
+sont en coupure, par tranche de trente minutes et par emplacement. La page
+Journée dit qui sort et quand — la bonne lecture pour organiser une relève ;
+celle-ci dit combien de sandwichs préparer et où les porter.
+
+- `journees[].fenetres[]` — une table par fenêtre déclarée : `tranches[]` (le
+  début de chaque demi-heure), `emplacements[]` (une ligne chacun) et les
+  totaux de la fenêtre.
+- `emplacements[].personnes[]` et `mineurs[]` — un compte par tranche, dans
+  l'ordre de `tranches[]`. `total` compte les **personnes distinctes** de la
+  fenêtre : ce n'est jamais la somme de `personnes[]`, qui compte quelqu'un une
+  fois par demi-heure que sa coupure traverse.
+- `message` — pourquoi le rapport est vide quand il l'est : rien de résolu,
+  aucune fenêtre déclarée, ou aucune journée ne traversant une fenêtre. Un
+  écran qui affiche « 0 » et un écran qui dit « rien n'est résolu » ne sont pas
+  le même écran.
+
+Où : l'emplacement du stand que la personne **quitte** quand la coupure
+commence — c'est là qu'elle est, et là qu'il faut porter à manger. Quand : là
+où `PauseAnalyzer` place la coupure, au plus tôt dans le trou libre, et non là
+où `FenetreRepas.auPlusTard` dit que l'organisation la préférerait (issue
+#596) ; les deux écrans lisent ainsi la même journée de la même façon.
+
+Personne n'est nommé, et les mineurs sont **comptés** : ni nom ni date de
+naissance ne sortent (`rgpd.md` §7). `GET /api/pauses/intendance/export` est la
+même liste à plat — `jour;fenetre;emplacement;tranche;personnes;dont mineurs` —
+parce qu'elle sort de l'outil pour aller à l'intendance.
+
+L'organisation des repas elle-même — qui prépare, qui livre, qui paie — reste
+hors de l'outil. Ce point n'expose que le chiffre que seul le planning connaît.
+
 ## Espace animateur
 
 Seules routes accessibles sans session admin. Le jeton — le lien imprimé sur le

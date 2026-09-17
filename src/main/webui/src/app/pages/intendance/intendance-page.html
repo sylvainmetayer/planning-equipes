@@ -1,0 +1,90 @@
+<h1 class="page-title" i18n="@@nav.link.intendance">Intendance des repas</h1>
+
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@intendance.title">Combien de personnes mangent, quand et où</h2>
+    <mat-card-subtitle i18n="@@intendance.subtitle">
+      Les coupures repas du planning enregistré, comptées par demi-heure et par emplacement : combien de
+      sandwichs préparer, et où les porter. Personne n'est nommé.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <button matButton="tonal" [disabled]="busy()" (click)="charger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    <button matButton="filled" [disabled]="busy() || exportBusy() || tableaux().length === 0" (click)="exporter()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@hours.exportCsv">Exporter en CSV</ng-container>
+    </button>
+  </mat-card-actions>
+  @if (busy()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  <mat-card-content>
+    <app-output-panel [text]="output()" />
+    @if (!busy() && message()) {
+      <p class="empty-hint">{{ message() }}</p>
+    }
+  </mat-card-content>
+</mat-card>
+
+@for (tableau of tableaux(); track tableau.titre + tableau.fenetre) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-header>
+      <h2 mat-card-title>{{ tableau.titre }} — {{ tableau.fenetre }}</h2>
+      <mat-card-subtitle>
+        <ng-container i18n="@@intendance.fenetreTotal">{{ tableau.total }} personne(s) en coupure sur cette fenêtre</ng-container>
+        @if (tableau.totalMineurs > 0) {
+          <ng-container i18n="@@intendance.fenetreMineurs">, dont {{ tableau.totalMineurs }} mineur(s)</ng-container>
+        }
+      </mat-card-subtitle>
+    </mat-card-header>
+    <mat-card-content class="table-wrapper">
+      <table class="heatmap-table" role="grid">
+        <caption class="visually-hidden" i18n="@@intendance.caption">
+          Personnes en coupure repas, par emplacement et par demi-heure
+        </caption>
+        <thead>
+          <tr>
+            <th scope="col" class="heatmap-row-header" i18n="@@intendance.column.emplacement">Emplacement</th>
+            @for (tranche of tableau.tranches; track tranche) {
+              <th scope="col" class="heatmap-day-header">{{ tranche }}</th>
+            }
+            <th scope="col" class="heatmap-day-header" i18n="@@intendance.column.total">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (ligne of tableau.lignes; track ligne.emplacementNom) {
+            <tr>
+              <th scope="row" class="heatmap-row-header">{{ ligne.emplacementNom }}</th>
+              @for (cellule of ligne.cellules; track $index) {
+                <td [matTooltip]="cellule.detail">
+                  @if (cellule.personnes > 0) {
+                    {{ cellule.personnes }}@if (cellule.mineurs > 0) { ({{ cellule.mineurs }})}
+                  } @else {
+                    —
+                  }
+                </td>
+              }
+              <td>{{ ligne.total }}</td>
+            </tr>
+          }
+        </tbody>
+        <tfoot>
+          <tr>
+            <th scope="row" class="heatmap-row-header" i18n="@@intendance.column.total">Total</th>
+            @for (total of tableau.totauxParTranche; track $index) {
+              <td>{{ total }}</td>
+            }
+            <td>{{ tableau.total }}</td>
+          </tr>
+        </tfoot>
+      </table>
+      <p class="hint" i18n="@@intendance.legende">
+        Entre parenthèses : les mineurs, comptés pour l'encadrement à l'heure du repas. Une personne compte
+        dans chaque demi-heure que sa coupure traverse ; la colonne Total ne la compte qu'une fois.
+      </p>
+    </mat-card-content>
+  </mat-card>
+}
