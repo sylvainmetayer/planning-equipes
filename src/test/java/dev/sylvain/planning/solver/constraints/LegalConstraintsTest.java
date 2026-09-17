@@ -499,6 +499,93 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- Two consecutive weeks at the cap (issue #593) ---------------------
+
+    /**
+     * 2026-07-08 is a Wednesday, so D1 and D1+7 sit in two consecutive ISO
+     * weeks. A cap of 480 min makes one 8 h day a full week, which keeps the
+     * fixtures readable.
+     */
+    private static final LocalDate SEMAINE_SUIVANTE = D1.plusWeeks(1);
+
+    private static final LocalDate DEUX_SEMAINES_PLUS_TARD = D1.plusWeeks(2);
+
+    private static Creneau huitHeures(String id, LocalDate date) {
+        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+    }
+
+    private static Creneau septHeures(String id, LocalDate date) {
+        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(16, 0));
+    }
+
+    @Test
+    void deuxSemainesConsecutivesAuPlafondSontRefusees() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, huitHeures("S1", D1), majeur),
+                        poste(standStrat, huitHeures("S2", SEMAINE_SUIVANTE), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(1);
+    }
+
+    @Test
+    void uneSemaineSousLePlafondSuivieDuneSemainePleineEstAcceptee() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, septHeures("S1", D1), majeur),
+                        poste(standStrat, huitHeures("S2", SEMAINE_SUIVANTE), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(0);
+    }
+
+    @Test
+    void deuxSemainesPleinesNonConsecutivesSontAcceptees() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, huitHeures("S1", D1), majeur),
+                        poste(standStrat, huitHeures("S3", DEUX_SEMAINES_PLUS_TARD), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(0);
+    }
+
+    /** Three full weeks in a row are two pairs: the penalty grows with the breach. */
+    @Test
+    void troisSemainesPleinesConsecutivesCoutentDeuxPaires() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, huitHeures("S1", D1), majeur),
+                        poste(standStrat, huitHeures("S2", SEMAINE_SUIVANTE), majeur),
+                        poste(standStrat, huitHeures("S3", DEUX_SEMAINES_PLUS_TARD), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(2);
+    }
+
+    /** A minor has their own weekly ceiling (art. L3162-1); this rule is the adults'. */
+    @Test
+    void leMineurNEstPasConcerneParLaRegleDesDeuxSemaines() {
+        Animateur mineur = mineurDebutant("M1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, huitHeures("S1", D1), mineur),
+                        poste(standStrat, huitHeures("S2", SEMAINE_SUIVANTE), mineur),
+                        plafondHuitHeures)
+                .penalizesBy(0);
+    }
+
     // --- Art. L3162-1: 35 h a week for a minor -----------------------------
 
     @Test

@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.ToIntBiFunction;
@@ -68,6 +69,7 @@ public final class LegalConstraints {
             travailDeNuitInterditPourMineur(constraintFactory),
             dureeQuotidienneMaxMineur(constraintFactory),
             dureeHebdomadaireMax(constraintFactory),
+            dureeHebdomadaireMaxDeuxSemaines(constraintFactory),
             dureeHebdomadaireMaxMineur(constraintFactory),
             dureeQuotidienneMaxMajeur(constraintFactory),
             reposQuotidienMinimal(constraintFactory),
@@ -916,6 +918,76 @@ public final class LegalConstraints {
                         Animateur::isMineurOn,
                         ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes)
                 .asConstraint("dureeHebdomadaireMaxMineur");
+    }
+
+    /**
+     * Two consecutive ISO weeks at the weekly maximum, for the same animateur.
+     *
+     * <p>{@link #dureeHebdomadaireMax} caps <b>each</b> week on its own, so
+     * nothing stood in the way of two full weeks back to back — and on an event
+     * straddling two ISO weeks with a tight demand, that is exactly the shape a
+     * solver converges to. The organisers asked for the short, operational form
+     * of art. <b>L3121-22</b> (44 h averaged over twelve consecutive weeks),
+     * which is the only form that means anything on a fortnight: not the
+     * rolling average, but no two maximal weeks in a row.</p>
+     *
+     * <p>The threshold is {@link ParametresLegaux#getDureeHebdomadaireMaxMinutes()}
+     * itself, never a second constant at 48 h that could drift away from it. A
+     * week counts as full at or above that value; since the weekly cap already
+     * forbids going over, « at or above » and « exactly at » coincide as long
+     * as that rule is on, and the reading still holds if it is switched off.</p>
+     *
+     * <p><b>What it does not catch:</b> 47 h 59 then 48 h, which the rule
+     * allows by construction — it is what the organisers asked for, in those
+     * words. A plan that needs one more minute will find it there rather than
+     * elsewhere. The average over twelve weeks (art. L3121-22) remains out of
+     * scope; see {@code docs/audit-conformite-rh.md}, line C3.</p>
+     *
+     * <p>Grouped per animateur — one tuple each, a map of week to minutes —
+     * rather than joined week against week: a grouped stream cannot be joined
+     * with itself, and the map is what makes « the week after this one » a
+     * lookup rather than a scan.</p>
+     */
+    private Constraint dureeHebdomadaireMaxDeuxSemaines(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMaxDeuxSemaines")
+                .filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null
+                        && poste.getAnimateur().isMajeurOn(poste.getCreneau().getDate()))
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        ConstraintCollectors.toMap(
+                                poste -> poste.getCreneau().lundiSemaineIso(),
+                                PosteAffectation::getDureeEffectiveMinutes,
+                                Integer::sum))
+                .join(ParametresLegaux.class)
+                .filter((animateur, parSemaine, parametres) ->
+                        semainesPleinesConsecutives(parSemaine, parametres.getDureeHebdomadaireMaxMinutes()) > 0)
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, parSemaine, parametres) ->
+                                semainesPleinesConsecutives(parSemaine, parametres.getDureeHebdomadaireMaxMinutes()))
+                .asConstraint("dureeHebdomadaireMaxDeuxSemaines");
+    }
+
+    /**
+     * How many pairs of consecutive full weeks the map holds. Three full weeks
+     * in a row are two pairs, so the penalty grows with the breach instead of
+     * flattening at one — the solver then has a gradient to follow.
+     */
+    private static int semainesPleinesConsecutives(Map<LocalDate, Integer> parSemaine, int plafondMinutes) {
+        int paires = 0;
+        for (Map.Entry<LocalDate, Integer> semaine : parSemaine.entrySet()) {
+            if (semaine.getValue() < plafondMinutes) {
+                continue;
+            }
+            Integer suivante = parSemaine.get(semaine.getKey().plusWeeks(1));
+            if (suivante != null && suivante >= plafondMinutes) {
+                paires++;
+            }
+        }
+        return paires;
     }
 
     /**

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.domain;
 
+import java.time.DayOfWeek;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -293,6 +294,17 @@ public class Creneau {
         int annee = date.get(IsoFields.WEEK_BASED_YEAR);
         int semaine = date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
         return String.format(Locale.ROOT, "%d-W%02d", annee, semaine);
+    }
+
+    /**
+     * The Monday of {@link #semaineIso()}, {@code null} without a date. The same
+     * week as the label above, as a date rather than as text: two weeks are
+     * consecutive when their Mondays are seven days apart, which no arithmetic
+     * on « 2026-W52 » then « 2027-W01 » gets right on its own. Read by
+     * {@code dureeHebdomadaireMaxDeuxSemaines}.
+     */
+    public LocalDate lundiSemaineIso() {
+        return date == null ? null : date.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
     /** Night ends at 06:00 for every minor, whatever their age (art. L3163-1). */

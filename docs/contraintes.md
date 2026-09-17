@@ -93,6 +93,29 @@ et la contrainte ne coûte rien.
 > aujourd'hui de préférence pour la variété des stands** : rétablir ce besoin
 > suppose d'abord d'arbitrer contre ces deux règles.
 
+## Deux semaines pleines d'affilée
+
+`dureeHebdomadaireMax` plafonne **chaque semaine ISO indépendamment** : rien
+n'empêchait donc deux semaines pleines dos à dos, ce qui est exactement la
+forme vers laquelle un solveur converge sur un événement à cheval sur deux
+semaines avec un besoin tendu.
+
+`dureeHebdomadaireMaxDeuxSemaines` (contrainte dure, issue #593) l'interdit
+pour les majeurs. Le seuil est celui de
+`ParametresLegaux.dureeHebdomadaireMaxMinutes` — jamais une seconde constante à
+48 h qui pourrait diverger — et la pénalité compte les **paires** de semaines
+pleines consécutives : trois semaines de suite coûtent deux fois plus, pour que
+le solveur ait une pente à descendre plutôt qu'un mur.
+
+C'est la forme courte de l'art. **L3121-22** (44 h en moyenne sur douze
+semaines consécutives), la seule qui ait un sens sur quinze jours : le solveur
+ne connaît ni les neuf semaines d'avant ni celles d'après. La moyenne glissante
+reste **hors périmètre assumé** — voir `docs/audit-conformite-rh.md`, ligne C3.
+
+> **Ce que la règle ne rattrape pas** : 47 h 59 puis 48 h, permis par
+> construction. C'est la formulation demandée par l'organisateur, mot pour mot ;
+> un plan qui a besoin d'une minute la trouvera là plutôt qu'ailleurs.
+
 ## La durée des pauses
 
 La pause qui coupe une période de travail continu se règle sur la page
@@ -927,6 +950,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `reposHebdomadaireMineur` | HARD | Légal (mineurs) | Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais ne forment la paire d'aucune des deux. Les dérogations conventionnelles supposent un accord étendu ou une autorisation de l'inspection du travail : elles ne sont pas présumées. |
 | `travailContinuMaxMineur` | HARD | Légal (mineurs) | Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause consécutive de la durée paramétrée est obligatoire, au minimum 30 minutes (Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
 | `dureeHebdomadaireMax` | HARD | Légal (temps de travail) | Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, d'ordre public / Convention collective de l'Animation art. 5.2). |
+| `dureeHebdomadaireMaxDeuxSemaines` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas atteindre la durée hebdomadaire maximale sur deux semaines ISO consécutives : 48 h une semaine puis 48 h la suivante est refusé, 47 h puis 48 h reste permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines (Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une seconde constante. |
 | `dureeHebdomadaireMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine (Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les vacances scolaires). |
 | `dureeQuotidienneMaxMajeur` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée (Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
 | `reposQuotidienMinimal` | HARD | Légal (temps de travail) | Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : 11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans (art. L3164-1). |

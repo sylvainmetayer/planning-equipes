@@ -198,6 +198,16 @@ public final class ConstraintCatalog {
                             + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
                             + "d'ordre public / Convention collective de l'Animation art. 5.2)."),
             new ConstraintDefinition(
+                    "dureeHebdomadaireMaxDeuxSemaines",
+                    Niveau.HARD,
+                    "Légal (temps de travail)",
+                    "Un animateur majeur ne peut pas atteindre la durée hebdomadaire maximale sur deux semaines ISO "
+                            + "consécutives : 48 h une semaine puis 48 h la suivante est refusé, 47 h puis 48 h reste "
+                            + "permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines "
+                            + "(Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze "
+                            + "jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une "
+                            + "seconde constante."),
+            new ConstraintDefinition(
                     "dureeHebdomadaireMaxMineur",
                     Niveau.HARD,
                     "Légal (mineurs)",

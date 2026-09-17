@@ -87,6 +87,7 @@ class ConstraintCatalogTest {
                         "dureeHebdomadaireMaxMineur",
                         "mineurNecessiteEncadrementMajeur",
                         "dureeHebdomadaireMax",
+                        "dureeHebdomadaireMaxDeuxSemaines",
                         "dureeQuotidienneMaxMajeur",
                         "reposQuotidienMinimal",
                         "maxJoursTravaillesParSemaine",
