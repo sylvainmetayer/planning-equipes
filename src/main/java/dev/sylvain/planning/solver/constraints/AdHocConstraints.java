@@ -191,9 +191,19 @@ public final class AdHocConstraints {
                 && expected.getId().equals(actual.getId());
     }
 
+    /**
+     * Whether the seat falls inside the constraint's scope.
+     *
+     * <p>A scope naming a créneau the grid no longer holds matches
+     * <b>nothing</b> (issue #577). The repository reads the id back by joining
+     * on the vacation's natural key, so it comes back {@code null} while that
+     * vacation is absent: a rule written for one slot must not quietly become
+     * a rule for the whole edition because the grid was regenerated.</p>
+     */
     private static boolean matchesScope(ContrainteAdHoc contrainte, PosteAffectation poste) {
         boolean creneauOk = contrainte.getCreneau() == null
                 || (poste.getCreneau() != null
+                        && contrainte.getCreneau().getId() != null
                         && contrainte
                                 .getCreneau()
                                 .getId()

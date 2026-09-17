@@ -24,6 +24,19 @@ import { errorMessage } from '../../core/error-message';
 type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
 const TYPE_VALUES: TypeVerrouillageManuel[] = ['ANIMATEUR', 'STAND', 'JOUR', 'CRENEAU'];
 
+/**
+ * The vacation a lock names, read off the lock itself rather than looked up in
+ * the grid (issue #577): the lock carries day and hours, so the row stays
+ * readable while the vacation is missing — which is exactly when somebody
+ * needs to see it.
+ */
+function vacationLabel(verrouillage: VerrouillagePlanning): string {
+  if (!verrouillage.creneauDate) {
+    return String(verrouillage.creneauId ?? '—');
+  }
+  return `${verrouillage.creneauDate} ${verrouillage.creneauHeureDebut}–${verrouillage.creneauHeureFin}`;
+}
+
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function typeLabel(value: TypeVerrouillage): string {
   switch (value) {
@@ -43,6 +56,8 @@ function typeLabel(value: TypeVerrouillage): string {
 interface VerrouillageRow extends VerrouillagePlanning {
   typeLabel: string;
   cibleLabel: string;
+  /** Empty unless the lock waits for a vacation the grid no longer holds (issue #577). */
+  attenteLabel: string;
   actif: boolean;
 }
 
@@ -72,7 +87,7 @@ interface VerrouillageRow extends VerrouillagePlanning {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class VerrouillagesPage {
-  protected readonly columns = ['type', 'cible', 'raison', 'actions'];
+  protected readonly columns = ['type', 'cible', 'etat', 'raison', 'actions'];
   protected readonly types = TYPE_VALUES.map((value) => ({ value, label: typeLabel(value) }));
   protected readonly store = inject(ReferenceDataStore);
   protected readonly verrous = inject(VerrouillageStore);
@@ -97,6 +112,9 @@ export class VerrouillagesPage {
       ...verrouillage,
       typeLabel: typeLabel(verrouillage.type),
       cibleLabel: this.cibleLabel(verrouillage),
+      attenteLabel: verrouillage.vacationMissing
+        ? $localize`:@@verrouillages.attente:En attente : la grille ne porte plus cette vacation. Le verrouillage reprend dès qu'elle est recréée à l'identique.`
+        : '',
       actif: true,
     })),
   );
@@ -246,28 +264,16 @@ export class VerrouillagesPage {
       }
       case 'JOUR':
         return verrouillage.jour ?? '—';
-      case 'CRENEAU': {
-        const creneau = this.store
-          .creneaux()
-          .find((candidate) => candidate.id === verrouillage.creneauId);
-        return creneau
-          ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`
-          : String(verrouillage.creneauId ?? '—');
-      }
+      case 'CRENEAU':
+        return vacationLabel(verrouillage);
       case 'ANIMATEUR_CRENEAU': {
         const animateur = this.store
           .animateurs()
           .find((candidate) => candidate.id === verrouillage.animateurId);
-        const creneau = this.store
-          .creneaux()
-          .find((candidate) => candidate.id === verrouillage.creneauId);
         const nomAnimateur = animateur
           ? `${animateur.prenom} ${animateur.nom}`.trim()
           : (verrouillage.animateurId ?? '—');
-        const libelleCreneau = creneau
-          ? `${creneau.date} ${creneau.heureDebut}–${creneau.heureFin}`
-          : String(verrouillage.creneauId ?? '—');
-        return `${nomAnimateur} · ${libelleCreneau}`;
+        return `${nomAnimateur} · ${vacationLabel(verrouillage)}`;
       }
     }
   }

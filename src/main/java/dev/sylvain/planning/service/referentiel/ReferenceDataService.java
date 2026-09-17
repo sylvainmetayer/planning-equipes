@@ -345,7 +345,11 @@ public class ReferenceDataService implements ReferenceData {
         // rule-scheduled stand as open all day.
         List<Stand> stands = listStands();
         HoraireStandResolver.apply(stands, creneaux);
-        return grille.validate(creneaux, stands, listAnimateurs(), getParametresLegaux());
+        // The locks travel with the grid being judged: a lock naming a vacation
+        // this grid does not hold is reported rather than cascaded away in
+        // silence (issue #577) — and reported on a preview, which is where
+        // « remplacer la grille » can still be reconsidered.
+        return grille.validate(creneaux, stands, listAnimateurs(), getParametresLegaux(), verrouillages.list());
     }
 
     public CreneauGridService.RapportGrille controlerGrille() {

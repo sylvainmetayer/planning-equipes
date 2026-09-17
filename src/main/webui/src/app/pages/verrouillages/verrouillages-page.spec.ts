@@ -331,6 +331,9 @@ describe('VerrouillagesPage impact and list', () => {
         animateurId: null,
         standId: null,
         creneauId: 1,
+        creneauDate: '2026-07-10',
+        creneauHeureDebut: '10:00',
+        creneauHeureFin: '12:00',
         jour: null,
         raison: null,
       },
@@ -340,6 +343,9 @@ describe('VerrouillagesPage impact and list', () => {
         animateurId: 'a2',
         standId: null,
         creneauId: 1,
+        creneauDate: '2026-07-10',
+        creneauHeureDebut: '10:00',
+        creneauHeureFin: '12:00',
         jour: null,
         raison: null,
       },
@@ -359,6 +365,31 @@ describe('VerrouillagesPage impact and list', () => {
     expect(racine().querySelectorAll('tbody tr')[4].querySelector('td')!.textContent!).toContain(
       'Animateur sur un créneau',
     );
+  });
+
+  it('keeps a lock whose vacation the grid no longer holds, and says it is waiting', async () => {
+    // Issue #577: the créneau was deleted and never recreated. The lock used to
+    // be cascaded away without a word, taking with it the promise a validated
+    // échange made; it now waits, and the row says so.
+    await rendre(planning(), [
+      {
+        id: 9,
+        type: 'CRENEAU',
+        animateurId: null,
+        standId: null,
+        creneauId: null,
+        creneauDate: '2026-07-11',
+        creneauHeureDebut: '14:00',
+        creneauHeureFin: '18:00',
+        jour: null,
+        raison: null,
+        vacationMissing: true,
+      },
+    ] as unknown as VerrouillagePlanning[]);
+
+    const cellules = racine().querySelectorAll('tbody tr')[0].querySelectorAll('td');
+    expect(cellules[1].textContent!.trim()).toBe('2026-07-11 14:00–18:00');
+    expect(cellules[2].textContent!).toContain('En attente');
   });
 
   it('falls back to the stored id when the target no longer exists', async () => {

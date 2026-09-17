@@ -281,8 +281,10 @@ public class EditionRepository {
     /** Ad hoc constraints last: they reference both a stand and a (remapped) créneau. */
     private void copyContraintesAdHoc(Connection connection, String sourceId, String cibleId) throws SQLException {
         try (PreparedStatement ps = connection.prepareStatement("""
-                INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le)
-                SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le
+                INSERT INTO contrainte_ad_hoc (edition_id, id, type, creneau_id, stand_id, raison, cree_par, cree_le,
+                creneau_date, creneau_heure_debut, creneau_heure_fin)
+                SELECT ?, c.id, c.type, r.nouvel_id, c.stand_id, c.raison, c.cree_par, c.cree_le,
+                       c.creneau_date, c.creneau_heure_debut, c.creneau_heure_fin
                 FROM contrainte_ad_hoc c
                 LEFT JOIN creneau_remap r ON r.ancien_id = c.creneau_id
                 WHERE c.edition_id = ?""")) {

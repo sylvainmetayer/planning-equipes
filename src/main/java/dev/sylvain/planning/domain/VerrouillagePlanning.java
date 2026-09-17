@@ -2,6 +2,7 @@ package dev.sylvain.planning.domain;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.Optional;
 
 /**
@@ -32,6 +33,9 @@ public class VerrouillagePlanning {
     private String animateurId;
     private String standId;
     private Long creneauId;
+    private LocalDate creneauDate;
+    private LocalTime creneauHeureDebut;
+    private LocalTime creneauHeureFin;
     private LocalDate jour;
     private String raison;
     private Instant creeLe;
@@ -102,6 +106,9 @@ public class VerrouillagePlanning {
         this.animateurId = null;
         this.standId = null;
         this.creneauId = null;
+        this.creneauDate = null;
+        this.creneauHeureDebut = null;
+        this.creneauHeureFin = null;
         this.jour = null;
         switch (target) {
             case VerrouillageTarget.OnAnimateur sur -> this.animateurId = sur.animateurId();
@@ -153,6 +160,47 @@ public class VerrouillagePlanning {
 
     public void setCreneauId(Long creneauId) {
         this.creneauId = creneauId;
+    }
+
+    public LocalDate getCreneauDate() {
+        return creneauDate;
+    }
+
+    public void setCreneauDate(LocalDate creneauDate) {
+        this.creneauDate = creneauDate;
+    }
+
+    public LocalTime getCreneauHeureDebut() {
+        return creneauHeureDebut;
+    }
+
+    public void setCreneauHeureDebut(LocalTime creneauHeureDebut) {
+        this.creneauHeureDebut = creneauHeureDebut;
+    }
+
+    public LocalTime getCreneauHeureFin() {
+        return creneauHeureFin;
+    }
+
+    public void setCreneauHeureFin(LocalTime creneauHeureFin) {
+        this.creneauHeureFin = creneauHeureFin;
+    }
+
+    /**
+     * The vacation this lock names, as a créneau-shaped target (issue #577).
+     * {@code null} when the lock does not aim at one.
+     */
+    public VacationVerrouillee vacation() {
+        return creneauDate == null ? null : new VacationVerrouillee(creneauDate, creneauHeureDebut, creneauHeureFin);
+    }
+
+    /**
+     * Whether this lock names a vacation the grid no longer holds (issue
+     * #577). A lock is not deleted with its créneau any more: it waits, and
+     * the screens say so rather than letting it vanish.
+     */
+    public boolean isVacationMissing() {
+        return creneauDate != null && creneauId == null;
     }
 
     public LocalDate getJour() {

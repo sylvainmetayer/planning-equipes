@@ -4,7 +4,7 @@
   i18n-marche="@@verrouillages.wip.marche"
   marche="poser et retirer un verrouillage, et le gel effectif des sièges déjà pourvus à la résolution suivante"
   i18n-manque="@@verrouillages.wip.manque"
-  manque="l'aperçu du planning gelé avant lancement, et la reprise d'un verrouillage après suppression du créneau visé" />
+  manque="l'aperçu du planning gelé avant lancement" />
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
@@ -103,7 +103,7 @@
   </mat-card-header>
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="rows()">
-      <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, période et actions</caption>
+      <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, état, période et actions</caption>
       <ng-container matColumnDef="type">
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
         <td mat-cell *matCellDef="let row">
@@ -114,6 +114,19 @@
       <ng-container matColumnDef="cible">
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.cible">Cible</th>
         <td mat-cell *matCellDef="let row">{{ row.cibleLabel }}</td>
+      </ng-container>
+      <ng-container matColumnDef="etat">
+        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.etat">État</th>
+        <td mat-cell *matCellDef="let row">
+          @if (row.attenteLabel) {
+            <span [matTooltip]="row.attenteLabel">
+              <mat-icon inline>hourglass_empty</mat-icon>
+              <ng-container i18n="@@verrouillages.etat.attente">En attente</ng-container>
+            </span>
+          } @else {
+            <span i18n="@@verrouillages.etat.actif">Actif</span>
+          }
+        </td>
       </ng-container>
       <ng-container matColumnDef="raison">
         <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>

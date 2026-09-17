@@ -288,6 +288,23 @@ qu'il tient, mais le solveur pourrait lui en attribuer d'autres ailleurs. Ce
 sont deux contraintes dures qui l'interdisent, à partir des verrous transmis
 comme faits du problème.
 
+**Un verrou de créneau nomme sa vacation, pas son identifiant** (jour, heure de
+début, heure de fin — issue #577). `creneau.id` est une identité `BIGINT` :
+supprimer les créneaux d'une journée puis les recréer à l'identique — une
+régénération de la grille, une journée type réappliquée — leur en donne de
+nouveaux. La colonne était déclarée `ON DELETE CASCADE`, si bien que toute
+suppression emportait le verrou **sans bruit** ; or valider un échange pose
+deux verrous sur le créneau que chacun reçoit, précisément pour que la
+régénération suivante ne défasse pas l'échange. L'identifiant reste stocké,
+mais comme un cache : il est réécrit à chaque lecture par une jointure sur la
+clé naturelle, et vaut `NULL` tant que la grille ne porte pas cette vacation.
+Un verrou dans cet état **attend** — l'écran Verrouillages le dit, et le
+contrôle de la grille le signale, y compris sur l'aperçu d'une dérivation,
+c'est-à-dire avant que « remplacer la grille » ne soit écrit. La portée d'une
+contrainte ad hoc suit la même règle, avec une conséquence de plus : une règle
+écrite pour un créneau disparu ne vaut **rien** au lieu de valoir pour toute
+l'édition.
+
 ### Replanification incrémentale
 
 Répond à « il est 9 h, untel se désiste, que fait-on ? ». Elle **repart du

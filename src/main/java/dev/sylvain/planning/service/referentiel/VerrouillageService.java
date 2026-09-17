@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.BusinessError;
@@ -44,6 +45,7 @@ public class VerrouillageService {
             throw new BusinessError.Invalid("Type de verrouillage manquant");
         }
         verrouillage.apply(validatedTarget(verrouillage));
+        nameVacation(verrouillage);
         if (verrouillage.getId() == null || verrouillage.getId().isBlank()) {
             verrouillage.setId(UUID.randomUUID().toString());
         }
@@ -85,6 +87,25 @@ public class VerrouillageService {
                 new VerrouillageTarget.OnAnimateurAndCreneau(
                         animateurExistant(verrouillage.getAnimateurId()), creneauExistant(verrouillage.getCreneauId()));
         };
+    }
+
+    /**
+     * Copies the créneau's natural key — day, hours — onto a lock that names
+     * one (issue #577). That key is what the lock is really about: the id is a
+     * cache, re-resolved on every read, and it goes to {@code NULL} rather than
+     * taking the lock down with it when the grid is regenerated.
+     */
+    private void nameVacation(VerrouillagePlanning verrouillage) {
+        if (verrouillage.getCreneauId() == null) {
+            return;
+        }
+        Creneau creneau = creneaux.findCreneau(verrouillage.getCreneauId());
+        if (creneau == null) {
+            throw new BusinessError.Invalid("Créneau inconnu : " + verrouillage.getCreneauId());
+        }
+        verrouillage.setCreneauDate(creneau.getDate());
+        verrouillage.setCreneauHeureDebut(creneau.getHeureDebut());
+        verrouillage.setCreneauHeureFin(creneau.getHeureFin());
     }
 
     private String animateurExistant(String animateurId) {

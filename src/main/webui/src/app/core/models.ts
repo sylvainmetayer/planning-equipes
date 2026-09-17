@@ -662,11 +662,26 @@ export interface VerrouillagePlanning {
   type: TypeVerrouillage;
   animateurId: string | null;
   standId: string | null;
+  /**
+   * The créneau the lock resolves to today, re-read on every request by
+   * matching the natural key below against the grid (issue #577) — `null`
+   * while the grid holds no such vacation.
+   */
   creneauId: number | null;
+  /** ISO date of the vacation a `CRENEAU`/`ANIMATEUR_CRENEAU` lock names. */
+  creneauDate?: string | null;
+  creneauHeureDebut?: string | null;
+  creneauHeureFin?: string | null;
   /** ISO date, for a `JOUR` lock. */
   jour: string | null;
   raison: string | null;
   creeLe?: string;
+  /**
+   * True when the lock names a vacation the grid no longer holds: it waits for
+   * it rather than having been deleted with the créneau, which is what used to
+   * happen — silently — on every grid regeneration (issue #577).
+   */
+  vacationMissing?: boolean;
 }
 
 /**

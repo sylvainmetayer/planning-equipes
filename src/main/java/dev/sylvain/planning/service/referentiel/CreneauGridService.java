@@ -7,6 +7,8 @@ import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.domain.VacationVerrouillee;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
@@ -27,6 +29,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -205,7 +208,11 @@ public class CreneauGridService {
      * it the mode the caller had to supply.</p>
      */
     public RapportGrille validate(
-            List<Creneau> creneaux, List<Stand> stands, List<Animateur> animateurs, ParametresLegaux legaux) {
+            List<Creneau> creneaux,
+            List<Stand> stands,
+            List<Animateur> animateurs,
+            ParametresLegaux legaux,
+            List<VerrouillagePlanning> verrouillages) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         List<Creneau> dates =
                 creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
@@ -213,6 +220,7 @@ public class CreneauGridService {
         anomalies.addAll(unitAnomalies(creneaux, legaux));
         anomalies.addAll(anomaliesByDay(dates));
         anomalies.addAll(datesIsolees(dates));
+        anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
 
         anomalies.sort(Comparator.comparingInt(
                         (GridAnomaly anomalie) -> anomalie.severite().ordinal())
@@ -232,6 +240,50 @@ public class CreneauGridService {
                         FeasibilityAnalyzer.encadrementMineursActif(parametres.disabledContraintes()));
 
         return new RapportGrille(creneaux.size(), anomalies, ouvertures, faisabilite);
+    }
+
+    /**
+     * The locks whose vacation this grid does not hold (issue #577).
+     *
+     * <p>Locks are no longer cascaded away with their créneau: they name the
+     * vacation by its natural key and find it again when the day is recreated
+     * unchanged. What this reports is the other case — the day did not come
+     * back — and it reports it <b>before</b> the write when the caller is
+     * previewing a derivation, which is exactly when « régénérer la grille »
+     * is about to drop the two locks a validated swap posed.</p>
+     *
+     * <p>One line per vacation, with a count and never a name: these
+     * sentences are read on screens whose client keeps a log (see
+     * {@code docs/rgpd.md} §7).</p>
+     */
+    private static List<GridAnomaly> verrouillagesWithoutVacation(
+            List<Creneau> creneaux, List<VerrouillagePlanning> verrouillages) {
+        if (verrouillages == null || verrouillages.isEmpty()) {
+            return List.of();
+        }
+        Set<VacationVerrouillee> tenues = creneaux.stream()
+                .filter(creneau -> creneau.getDate() != null)
+                .map(creneau ->
+                        new VacationVerrouillee(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()))
+                .collect(Collectors.toSet());
+        Map<VacationVerrouillee, Integer> perdues = new LinkedHashMap<>();
+        for (VerrouillagePlanning verrouillage : verrouillages) {
+            VacationVerrouillee vacation = verrouillage.vacation();
+            if (vacation != null && !tenues.contains(vacation)) {
+                perdues.merge(vacation, 1, Integer::sum);
+            }
+        }
+        List<GridAnomaly> anomalies = new ArrayList<>();
+        perdues.forEach((vacation, nombre) -> anomalies.add(new GridAnomaly(
+                SeveriteGrille.AVERTISSEMENT,
+                GridAnomalyType.VERROUILLAGE_SANS_VACATION,
+                vacation.date(),
+                nombre + " verrouillage(s) visent la vacation " + vacation
+                        + ", que la grille ne porte pas. Ils attendent qu'elle revienne : recréer la"
+                        + " vacation à l'identique les remet en service, la supprimer pour de bon demande"
+                        + " de les retirer depuis l'écran Verrouillages. Un échange validé pose deux de"
+                        + " ces verrous.")));
+        return anomalies;
     }
 
     /** Checks that need one créneau at a time: shape, then duration against the legal ceilings. */
@@ -469,7 +521,9 @@ public class CreneauGridService {
         VACATION_TROP_LONGUE,
         DATE_ISOLEE,
         /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat. */
-        RELAIS_REPAS_HORS_FENETRE
+        RELAIS_REPAS_HORS_FENETRE,
+        /** Locks naming a vacation this grid does not hold — see issue #577. */
+        VERROUILLAGE_SANS_VACATION
     }
 
     public record GridAnomaly(SeveriteGrille severite, GridAnomalyType type, LocalDate date, String message) {}

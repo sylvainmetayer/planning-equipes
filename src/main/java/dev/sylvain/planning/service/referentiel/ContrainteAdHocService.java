@@ -43,6 +43,7 @@ public class ContrainteAdHocService {
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
         contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
         refuseContradiction(contrainte);
+        nameVacation(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
         }
@@ -85,6 +86,7 @@ public class ContrainteAdHocService {
             throw new BusinessError.Invalid(String.join(" ", messages));
         }
         for (ContrainteAdHoc contrainte : contraintes) {
+            nameVacation(contrainte);
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
             }
@@ -92,6 +94,26 @@ public class ContrainteAdHocService {
         }
         changeTracker.markModified();
         return contraintes;
+    }
+
+    /**
+     * Fills in the day and the hours of the créneau a constraint is scoped to
+     * (issue #577), so the scope survives a grid regeneration: the id is
+     * re-resolved on read by joining on that natural key, and a rule written
+     * for one slot never silently becomes a rule for the whole edition.
+     */
+    private void nameVacation(ContrainteAdHoc contrainte) {
+        Creneau scope = contrainte.getCreneau();
+        if (scope == null || scope.getId() == null) {
+            return;
+        }
+        Creneau creneau = creneauService.find(scope.getId());
+        if (creneau == null) {
+            throw new BusinessError.Invalid("Créneau inconnu : " + scope.getId());
+        }
+        scope.setDate(creneau.getDate());
+        scope.setHeureDebut(creneau.getHeureDebut());
+        scope.setHeureFin(creneau.getHeureFin());
     }
 
     public void delete(String id) {

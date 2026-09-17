@@ -2639,7 +2639,7 @@
       },
       "GridAnomalyType" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE" ]
+        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE", "VERROUILLAGE_SANS_VACATION" ]
       },
       "HardMediumSoftScore" : {
         "type" : "object",
@@ -5995,6 +5995,15 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "creneauDate" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauHeureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "creneauHeureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
           "jour" : {
             "$ref" : "#/components/schemas/LocalDate"
           },
@@ -6003,6 +6012,9 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "vacationMissing" : {
+            "type" : "boolean"
           }
         }
       },

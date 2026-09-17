@@ -7,6 +7,8 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomaly;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomalyType;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RegleRecurrence;
@@ -130,7 +132,8 @@ class CreneauGridServiceTest {
     void unChevauchementEntreVacationsDuMemeJourNestPasUneAnomalie() {
         List<Creneau> qui = List.of(creneau("2026-07-06", "09:00", "13:00"), creneau("2026-07-06", "12:00", "18:00"));
 
-        assertThat(service.validate(qui, List.of(), List.of(), LEGAUX).anomalies())
+        assertThat(service.validate(qui, List.of(), List.of(), LEGAUX, List.of())
+                        .anomalies())
                 .isEmpty();
     }
 
@@ -139,8 +142,8 @@ class CreneauGridServiceTest {
         List<Creneau> withHole =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "14:00", "18:00"));
 
-        List<GridAnomaly> anomalies =
-                service.validate(withHole, List.of(), List.of(), LEGAUX).anomalies();
+        List<GridAnomaly> anomalies = service.validate(withHole, List.of(), List.of(), LEGAUX, List.of())
+                .anomalies();
 
         assertThat(anomalies).extracting(GridAnomaly::type).contains(GridAnomalyType.TROU_DANS_LA_JOURNEE);
         assertThat(anomalies).extracting(GridAnomaly::message).anyMatch(message -> message.contains("120 min"));
@@ -151,7 +154,7 @@ class CreneauGridServiceTest {
         List<Creneau> doublon =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "09:00", "12:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(doublon, List.of(), List.of(), LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(doublon, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies()).extracting(GridAnomaly::type).contains(GridAnomalyType.DOUBLON);
@@ -162,7 +165,7 @@ class CreneauGridServiceTest {
         // 07:00 -> 23:00 = 960 min, above 1440 - 660 (default daily rest) = 780.
         List<Creneau> trop = List.of(creneau("2026-07-06", "07:00", "23:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(trop, List.of(), List.of(), LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(trop, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies())
@@ -182,7 +185,8 @@ class CreneauGridServiceTest {
 
         ParametresLegaux permissifs = new ParametresLegaux();
         permissifs.setDureeVacationMaxMinutes(8 * 60);
-        assertThat(service.validate(longue, List.of(), List.of(), permissifs).anomalies())
+        assertThat(service.validate(longue, List.of(), List.of(), permissifs, List.of())
+                        .anomalies())
                 .extracting(GridAnomaly::type)
                 .doesNotContain(GridAnomalyType.VACATION_TROP_LONGUE);
     }
@@ -209,7 +213,7 @@ class CreneauGridServiceTest {
     void unCreneauTraversantMinuitNaPasUneDureeNegative() {
         List<Creneau> nuit = List.of(creneau("2026-07-06", "20:00", "00:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(nuit, List.of(), List.of(), LEGAUX);
+        CreneauGridService.RapportGrille rapport = service.validate(nuit, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isTrue();
         assertThat(rapport.anomalies()).isEmpty();
@@ -254,7 +258,8 @@ class CreneauGridServiceTest {
         Creneau nuit = creneau("2026-07-06", "23:00", "00:00");
         nuit.setCouverturePause(true);
 
-        List<GridAnomaly> anomalies = service.validate(List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX)
+        List<GridAnomaly> anomalies = service.validate(
+                        List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX, List.of())
                 .anomalies();
 
         List<GridAnomaly> horsFenetre = anomalies.stream()
@@ -271,10 +276,54 @@ class CreneauGridServiceTest {
                 .anyMatch(message -> message.contains("23:00-00:00"));
     }
 
+    // Issue #577: a lock names its vacation by day and hours, so it survives a
+    // delete-and-recreate. What the grid reports is the other case — the day
+    // did not come back — and it reports it on a preview, before « remplacer
+    // la grille » is written.
+    @Test
+    void unVerrouillageQueLaGrilleNePortePlusEstSignale() {
+        Creneau tenue = creneau("2026-07-06", "14:00", "18:00");
+
+        VerrouillagePlanning garde = verrouillage(LocalDate.of(2026, 7, 6), "14:00", "18:00");
+        VerrouillagePlanning perdu = verrouillage(LocalDate.of(2026, 7, 7), "14:00", "18:00");
+        VerrouillagePlanning perduAussi = verrouillage(LocalDate.of(2026, 7, 7), "14:00", "18:00");
+
+        List<GridAnomaly> anomalies = service
+                .validate(List.of(tenue), List.of(), List.of(), LEGAUX, List.of(garde, perdu, perduAussi))
+                .anomalies()
+                .stream()
+                .filter(anomalie -> anomalie.type() == GridAnomalyType.VERROUILLAGE_SANS_VACATION)
+                .toList();
+
+        assertThat(anomalies).hasSize(1);
+        assertThat(anomalies.getFirst().severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
+        assertThat(anomalies.getFirst().date()).isEqualTo(LocalDate.of(2026, 7, 7));
+        assertThat(anomalies.getFirst().message()).contains("2 verrouillage(s)").contains("2026-07-07 14:00-18:00");
+    }
+
+    @Test
+    void unVerrouillageQuiNeViseAucuneVacationNEstPasSignale() {
+        // ANIMATEUR and STAND locks carry no day: they never fall with the grid.
+        VerrouillagePlanning surAnimateur = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        surAnimateur.setAnimateurId("A1");
+
+        assertThat(service.validate(List.of(), List.of(), List.of(), LEGAUX, List.of(surAnimateur))
+                        .anomalies())
+                .isEmpty();
+    }
+
+    private static VerrouillagePlanning verrouillage(LocalDate date, String debut, String fin) {
+        VerrouillagePlanning verrouillage = new VerrouillagePlanning("V-" + date + debut, TypeVerrouillage.CRENEAU);
+        verrouillage.setCreneauDate(date);
+        verrouillage.setCreneauHeureDebut(LocalTime.parse(debut));
+        verrouillage.setCreneauHeureFin(LocalTime.parse(fin));
+        return verrouillage;
+    }
+
     /* -------------------------------- Outils -------------------------------- */
 
     private List<GridAnomalyType> typesDetectes(List<Creneau> creneaux) {
-        return service.validate(creneaux, List.of(), List.of(), LEGAUX).anomalies().stream()
+        return service.validate(creneaux, List.of(), List.of(), LEGAUX, List.of()).anomalies().stream()
                 .map(GridAnomaly::type)
                 .toList();
     }

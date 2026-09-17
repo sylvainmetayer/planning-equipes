@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import javax.sql.DataSource;
@@ -26,17 +27,32 @@ public class VerrouillageRepository {
     @Inject
     JdbcEditionScope scope;
 
+    /**
+     * The créneau id is <b>re-resolved</b> on every read, by joining the grid
+     * on the natural key the lock stores (issue #577): a créneau deleted and
+     * recreated unchanged has a new id, and the lock finds it again instead of
+     * having been cascaded away. It comes back {@code null} when the grid no
+     * longer holds that vacation — the lock waits rather than disappearing,
+     * and the screens say so.
+     */
     private static final String SELECT_VERROUILLAGE_SQL = """
-            SELECT id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le
-            FROM verrouillage_planning
-            WHERE edition_id = ?""";
+            SELECT v.id, v.type, v.animateur_id, v.stand_id, c.id AS creneau_id,
+                   v.creneau_date, v.creneau_heure_debut, v.creneau_heure_fin,
+                   v.jour, v.raison, v.cree_le
+            FROM verrouillage_planning v
+            LEFT JOIN creneau c
+              ON c.edition_id = v.edition_id
+             AND c.date_creneau = v.creneau_date
+             AND c.heure_debut = v.creneau_heure_debut
+             AND c.heure_fin = v.creneau_heure_fin
+            WHERE v.edition_id = ?""";
 
     /** Every lock of the current edition, most recent first — the ones a solve applies. */
     public List<VerrouillagePlanning> listVerrouillages() {
         List<VerrouillagePlanning> verrouillages = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps =
-                        scope.prepareScoped(connection, SELECT_VERROUILLAGE_SQL + " ORDER BY cree_le DESC, id")) {
+                        scope.prepareScoped(connection, SELECT_VERROUILLAGE_SQL + " ORDER BY v.cree_le DESC, v.id")) {
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
                     verrouillages.add(readVerrouillage(rs));
@@ -57,6 +73,9 @@ public class VerrouillageRepository {
         if (!rs.wasNull()) {
             verrouillage.setCreneauId(creneauId);
         }
+        verrouillage.setCreneauDate(rs.getObject("creneau_date", LocalDate.class));
+        verrouillage.setCreneauHeureDebut(rs.getObject("creneau_heure_debut", LocalTime.class));
+        verrouillage.setCreneauHeureFin(rs.getObject("creneau_heure_fin", LocalTime.class));
         verrouillage.setJour(rs.getObject("jour", LocalDate.class));
         verrouillage.setRaison(rs.getString("raison"));
         Timestamp creeLe = rs.getTimestamp("cree_le");
@@ -71,8 +90,9 @@ public class VerrouillageRepository {
      */
     public void saveVerrouillage(VerrouillagePlanning verrouillage) {
         String sql = """
- INSERT INTO verrouillage_planning (edition_id, id, type, animateur_id, stand_id, creneau_id, jour, raison, cree_le)
- VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+ INSERT INTO verrouillage_planning (edition_id, id, type, animateur_id, stand_id, creneau_id,
+                                    creneau_date, creneau_heure_debut, creneau_heure_fin, jour, raison, cree_le)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
  ON CONFLICT DO NOTHING""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -82,10 +102,13 @@ public class VerrouillageRepository {
             ps.setString(4, verrouillage.getAnimateurId());
             ps.setString(5, verrouillage.getStandId());
             ps.setObject(6, verrouillage.getCreneauId());
-            ps.setObject(7, verrouillage.getJour());
-            ps.setString(8, verrouillage.getRaison());
+            ps.setObject(7, verrouillage.getCreneauDate());
+            ps.setObject(8, verrouillage.getCreneauHeureDebut());
+            ps.setObject(9, verrouillage.getCreneauHeureFin());
+            ps.setObject(10, verrouillage.getJour());
+            ps.setString(11, verrouillage.getRaison());
             Instant creeLe = verrouillage.getCreeLe() != null ? verrouillage.getCreeLe() : Instant.now();
-            ps.setTimestamp(9, Timestamp.from(creeLe));
+            ps.setTimestamp(12, Timestamp.from(creeLe));
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save planning lock " + verrouillage.getId(), e);
