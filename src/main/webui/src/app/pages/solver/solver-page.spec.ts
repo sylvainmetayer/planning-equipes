@@ -7,7 +7,7 @@
 // `solver-volumetry`, `incremental-result` — and render here for real, on the
 // same mocks.
 
-import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';

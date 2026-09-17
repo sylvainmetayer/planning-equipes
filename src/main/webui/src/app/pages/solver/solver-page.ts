@@ -140,7 +140,7 @@ export class SolverPage {
    * the page keeps reading this one date, once, and nothing else of the
    * publication.
    */
-  private readonly dernierePublicationLe = signal<string | null>(null);
+  private readonly lastPublishedAt = signal<string | null>(null);
 
   /**
    * Result of the last incremental re-solve (issue #86), cleared as soon as a
@@ -264,7 +264,7 @@ export class SolverPage {
 
   constructor() {
     void this.loadLastRun();
-    void this.chargerDernierePublication();
+    void this.loadLastPublication();
     void this.chargerPointDeDepart();
     void this.problemes.reload();
     void this.crud.reload();
@@ -405,14 +405,14 @@ export class SolverPage {
   }
 
   /** Read once: a solve never changes when the plan was last published. */
-  private async chargerDernierePublication(): Promise<void> {
+  private async loadLastPublication(): Promise<void> {
     try {
       const apercu = await this.planningApi.publicationPreview();
-      this.dernierePublicationLe.set(apercu.dernierePublicationLe ?? null);
+      this.lastPublishedAt.set(apercu.dernierePublicationLe ?? null);
     } catch {
       // Nothing published, or the read failed: the confirmation simply says
       // less rather than refusing to open.
-      this.dernierePublicationLe.set(null);
+      this.lastPublishedAt.set(null);
     }
   }
 
@@ -423,7 +423,7 @@ export class SolverPage {
    */
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
-    const publishedAt = this.dernierePublicationLe();
+    const publishedAt = this.lastPublishedAt();
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous.`;
     const avertissement = publishedAt
       ? ' ' +
