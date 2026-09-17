@@ -142,12 +142,20 @@
                       @if (colonne.couverturePause) {
                         <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
                       }
-                      <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
-                              i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
-                              i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
-                              (click)="scissionActive.set(colonne.colonneId)">
-                        <mat-icon>call_split</mat-icon>
-                      </button>
+                      <span class="colonne-actions">
+                        <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
+                                i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
+                                i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
+                                (click)="scissionActive.set(colonne.colonneId)">
+                          <mat-icon>call_split</mat-icon>
+                        </button>
+                        <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
+                                i18n-matTooltip="@@ouvertures.saisie.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
+                                i18n-aria-label="@@ouvertures.saisie.appliquerColonne" aria-label="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
+                                (click)="applyColonne(colonne.colonneId)">
+                          <mat-icon>keyboard_double_arrow_down</mat-icon>
+                        </button>
+                      </span>
                     }
                   </th>
                 }
@@ -164,6 +172,13 @@
                             i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
                             (click)="recopierLigne(ligne.standId)">
                       <mat-icon>content_copy</mat-icon>
+                    </button>
+                    <button matIconButton type="button" class="dupliquer-ligne"
+                            [disabled]="editingLocked() || ligne.noLignePrecedente"
+                            i18n-matTooltip="@@ouvertures.saisie.dupliquerLigne" matTooltip="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
+                            i18n-aria-label="@@ouvertures.saisie.dupliquerLigne" aria-label="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
+                            (click)="copyLignePrecedente(ligne.standId)">
+                      <mat-icon>arrow_downward</mat-icon>
                     </button>
                   </th>
                   @for (cellule of ligne.cellules; track cellule.colonneId) {
@@ -238,6 +253,14 @@
                     @if (colonne.couverturePause) {
                       <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
                     }
+                    <span class="colonne-actions">
+                      <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
+                              i18n-matTooltip="@@ouvertures.saisie.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
+                              i18n-aria-label="@@ouvertures.saisie.appliquerColonne" aria-label="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
+                              (click)="applyColonne(colonne.colonneId)">
+                        <mat-icon>keyboard_double_arrow_down</mat-icon>
+                      </button>
+                    </span>
                   </th>
                 }
               </tr>
@@ -248,6 +271,13 @@
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>
+                    <button matIconButton type="button" class="dupliquer-ligne"
+                            [disabled]="editingLocked() || ligne.noLignePrecedente"
+                            i18n-matTooltip="@@ouvertures.saisie.dupliquerLigne" matTooltip="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
+                            i18n-aria-label="@@ouvertures.saisie.dupliquerLigne" aria-label="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
+                            (click)="copyLignePrecedente(ligne.standId)">
+                      <mat-icon>arrow_downward</mat-icon>
+                    </button>
                   </th>
                   @for (cellule of ligne.cellules; track cellule.colonneId) {
                     <td class="cellule-saisie" [class.premier-du-jour]="cellule.premierDuJour"

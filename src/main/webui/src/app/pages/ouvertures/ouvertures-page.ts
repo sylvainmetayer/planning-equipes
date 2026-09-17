@@ -19,6 +19,14 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
+import {
+  AccesGrille,
+  RecopieGrille,
+  hasLignePrecedente,
+  applyColonne,
+  copyLignePrecedente,
+  ligneSourceColonne,
+} from '../../core/grille-saisie';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -28,6 +36,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import {
   ColonneJourneeType,
+  accesGrilleJourneesTypes,
   colonnesJourneesTypes,
   ecrireColonneJourneeType,
   libelleColonneJourneeType,
@@ -57,6 +66,7 @@ import {
   AdresseCellule,
   Cellules,
   ColonneGrille,
+  accesGrilleDates,
   aplatissement,
   cellulesDepuis,
   colonneId,
@@ -130,6 +140,8 @@ interface LigneView {
   nom: string;
   /** Whether the filter shows the row; a hidden row keeps its cells, and its typed values. */
   visible: boolean;
+  /** Nothing to take from above: the row is the first one displayed, or is not displayed at all. */
+  noLignePrecedente: boolean;
   modifiee: boolean;
   cellules: CelluleView[];
 }
@@ -166,7 +178,7 @@ interface LigneView {
     RouterLink,
   ],
   templateUrl: './ouvertures-page.html',
-  styleUrl: '../../../styles/ouvertures.css',
+  styleUrls: ['../../../styles/ouvertures.css', '../../../styles/saisie-repetitive.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -275,6 +287,7 @@ export class OuverturesPage {
     // Every stand is rendered once and the filter only hides rows: rebuilding
     // twenty-eight rows of sixty cells when the field empties is what lagged.
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
+    const first = this.standIdsAffiches()[0];
     return (this.rapport()?.stands ?? []).map((ligne) => {
       const nom = ligne.nom || ligne.standId;
       const typees = cellules.get(ligne.standId);
@@ -283,6 +296,7 @@ export class OuverturesPage {
         standId: ligne.standId,
         nom,
         visible: visibles.has(ligne.standId),
+        noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
         cellules: colonnes.map((colonne) => {
           const clef = key(ligne.standId, colonne.colonneId);
@@ -357,12 +371,14 @@ export class OuverturesPage {
     const modifies = new Set(this.standsModifies());
     const verrouille = this.editingLocked();
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
+    const first = this.standIdsAffiches()[0];
     return (this.rapport()?.stands ?? []).map((ligne) => {
       const nom = ligne.nom || ligne.standId;
       return {
         standId: ligne.standId,
         nom,
         visible: visibles.has(ligne.standId),
+        noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
         cellules: colonnesJT.map((colonne) => {
           const valeur = valeurJourneeType(cellules, ligne.standId, colonne);
@@ -640,6 +656,9 @@ export class OuverturesPage {
    * itself, so editing a two-digit value stays possible.
    */
   protected onKeydown(event: KeyboardEvent, standId: string, colonneId: string): void {
+    if (this.mouvementClavier(event, standId, colonneId)) {
+      return;
+    }
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -677,6 +696,121 @@ export class OuverturesPage {
     );
   }
 
+  /* ---------------------------- repetitive entry ----------------------------- */
+
+  /**
+   * The two moves of repetitive entry from the keyboard: Ctrl+D takes the row
+   * above, Ctrl+Maj+Bas pushes this cell down its column. Bound to the grid,
+   * consuming only those two combinations; everything else travels up to the
+   * application's global listener. `true` once handled, so the caller stops.
+   */
+  private mouvementClavier(event: KeyboardEvent, standId: string, colonneId: string): boolean {
+    // AltGr is reported as Ctrl+Alt on Windows and Linux, so a guard on Ctrl
+    // alone would let « AltGr+D » rewrite a whole row while the organiser was
+    // only typing a character. Same guard as the global listener.
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) {
+      return false;
+    }
+    if (!event.shiftKey && (event.key === 'd' || event.key === 'D')) {
+      event.preventDefault();
+      this.copyLignePrecedente(standId);
+      return true;
+    }
+    if (event.shiftKey && event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.applyColonne(colonneId);
+      return true;
+    }
+    return false;
+  }
+
+  /** How the grid on screen reads and writes one cell: by date, or by template. */
+  private readonly accesGrille = computed<AccesGrille<Cellules, number | null>>(() =>
+    this.view() === 'JOURNEES_TYPES'
+      ? accesGrilleJourneesTypes(this.colonnesJourneesTypesParId())
+      : accesGrilleDates,
+  );
+
+  /** The columns of the grid on screen, in display order. */
+  private readonly colonneIdsAffiches = computed(() =>
+    this.view() === 'JOURNEES_TYPES'
+      ? this.colonnesJourneesTypes().map((colonne) => colonne.colonneId)
+      : this.colonnes().map((colonne) => colonne.colonneId),
+  );
+
+  /** The row above this one, on screen, copied onto it — the stand that opens like its neighbour. */
+  protected copyLignePrecedente(standId: string): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    if (!hasLignePrecedente(standId, this.standIdsAffiches())) {
+      this.notifications.notify({
+        title: $localize`:@@ouvertures.saisie.sansLignePrecedente:La première ligne affichée n'a pas de ligne au-dessus d'elle.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
+    this.applyMouvement(
+      copyLignePrecedente(
+        this.cellules(),
+        standId,
+        this.standIdsAffiches(),
+        this.colonneIdsAffiches(),
+        this.accesGrille(),
+      ),
+      $localize`:@@ouvertures.saisie.dupliqueVide:Rien à reprendre : cette ligne dit déjà ce que dit celle du dessus.`,
+    );
+  }
+
+  /**
+   * One value posed on every displayed row of a column: the active cell's when
+   * the focus is in that column, else the first row's. A cell whose dates
+   * disagree says nothing to propagate, and the move stops there rather than
+   * choosing one of them.
+   */
+  protected applyColonne(colonneId: string): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    const lignes = this.standIdsAffiches();
+    const active = this.celluleActive();
+    const source = ligneSourceColonne(
+      colonneId,
+      active === null ? null : { ligneId: active.standId, colonneId: active.colonneId },
+      lignes,
+    );
+    if (source === undefined) {
+      return;
+    }
+    const acces = this.accesGrille();
+    const valeur = acces.read(this.cellules(), source, colonneId);
+    if (valeur === undefined) {
+      this.notifications.notify({
+        title: $localize`:@@ouvertures.saisie.colonneSansValeur:Cette case ne dit rien à propager : réglez-la d'abord, date par date s'il le faut.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
+    this.applyMouvement(
+      applyColonne(this.cellules(), colonneId, valeur, lignes, acces),
+      $localize`:@@ouvertures.saisie.colonneVide:Rien à appliquer : toutes les lignes affichées disent déjà cette valeur.`,
+    );
+  }
+
+  /**
+   * Takes a move and says what it did. A move that changed nothing leaves no
+   * mark on screen, and silence would read as a failure — or worse, as a
+   * success.
+   */
+  private applyMouvement(resultat: RecopieGrille<Cellules>, messageVide: string): void {
+    this.cellules.set(resultat.cellules);
+    if (resultat.changees === 0) {
+      this.notifications.notify({ title: messageVide, variant: 'warning', timeout: 6000 });
+    }
+  }
+
   /** The day's cells, for every displayed stand, copied onto every other day. */
   protected recopierJour(date: string): void {
     this.appliquerRecopie((cellules) =>
@@ -697,22 +831,17 @@ export class OuverturesPage {
   }
 
   /**
-   * Applies a copy and says how many cells it changed. A day whose créneaux
+   * Applies a day copy and says how many cells it changed. A day whose créneaux
    * were sliced differently matches none of the target columns, and the copy
    * then does nothing at all — silence would read as success.
    */
   private appliquerRecopie(recopie: (cellules: Cellules) => Cellules): void {
     const before = this.cellules();
     const after = recopie(before);
-    const changees = countCopied(before, after, this.colonnes());
-    this.cellules.set(after);
-    if (changees === 0) {
-      this.notifications.notify({
-        title: $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
-        variant: 'warning',
-        timeout: 6000,
-      });
-    }
+    this.applyMouvement(
+      { cellules: after, changees: countCopied(before, after, this.colonnes()) },
+      $localize`:@@ouvertures.saisie.recopieVide:Aucune case recopiée : les créneaux des autres jours n'ont pas les mêmes horaires.`,
+    );
   }
 
   /**

@@ -415,6 +415,85 @@ describe('OuverturesPage — saisie', () => {
     expect(champ(fixture, 'A', 2).value).toBe('4');
   });
 
+  it('takes the row above into this one, on the button and on Ctrl+D', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    const boutons = root(fixture).querySelectorAll<HTMLButtonElement>('.dupliquer-ligne');
+    // The first displayed row has nothing above it.
+    expect(boutons[0].disabled).toBe(true);
+    expect(boutons[1].disabled).toBe(false);
+
+    boutons[1].click();
+    await fixture.whenStable();
+
+    // Stand B takes stand A's whole week, on every displayed column.
+    expect(champ(fixture, 'B', 1).value).toBe('2');
+    expect(champ(fixture, 'B', 2).value).toBe('4');
+    expect(champ(fixture, 'B', 3).value).toBe('2');
+    expect(champ(fixture, 'B', 4).value).toBe('4');
+    // And stand A is left exactly as it was.
+    expect(champ(fixture, 'A', 1).value).toBe('2');
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
+  });
+
+  it('applies the active cell to its whole column, and leaves the other columns alone', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    champ(fixture, 'A', 2).focus();
+    await fixture.whenStable();
+    root(fixture).querySelectorAll<HTMLButtonElement>('.appliquer-colonne')[1].click();
+    await fixture.whenStable();
+
+    expect(champ(fixture, 'B', 2).value).toBe('4');
+    // The 10-12 column of the same day says what it always said.
+    expect(champ(fixture, 'B', 1).value).toBe('1');
+    expect(champ(fixture, 'B', 4).value).toBe('-');
+  });
+
+  it('applies a column from the keyboard, from the cell the focus is in', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    const active = champ(fixture, 'A', 4);
+    active.focus();
+    taper(active, '6');
+    await fixture.whenStable();
+    active.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'ArrowDown',
+        ctrlKey: true,
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await fixture.whenStable();
+
+    expect(champ(fixture, 'B', 4).value).toBe('6');
+    expect(champ(fixture, 'B', 3).value).toBe('-');
+  });
+
+  it('leaves AltGr+D alone: on an AZERTY keyboard it is a character, not a move', async () => {
+    const { fixture } = mount({ vue: 'saisie' });
+    await fixture.whenStable();
+
+    champ(fixture, 'B', 1).dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'd',
+        ctrlKey: true,
+        altKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    await fixture.whenStable();
+
+    expect(champ(fixture, 'B', 2).value).toBe('-');
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+  });
+
   it('sends only the modified stands, each with all its cells, then reloads and reports', async () => {
     const { fixture, put, get, notify, ask } = mount({ vue: 'saisie' });
     await fixture.whenStable();
@@ -664,7 +743,7 @@ describe('OuverturesPage — grille par journée type', () => {
       { standId: string; cellules: { creneauId: number; effectif: number | null }[] }[],
     ];
     expect(envoye).toHaveLength(1);
-    // Les deux créneaux 14-20 de l'édition, un par date.
+    // Both 14-20 slots of the edition, one per date the template governs.
     expect(
       envoye[0].cellules
         .filter((cellule) => cellule.effectif === 5)
@@ -682,6 +761,53 @@ describe('OuverturesPage — grille par journée type', () => {
     const case14 = champ(fixture, 'A', 0, 'jt:4@14:00-20:00');
     expect(case14.value).toBe('≠');
     expect(case14.closest('td')!.classList.contains('cellule-ecart')).toBe(true);
+  });
+
+  it('applique une colonne de vacation à toutes les dates de la journée type', async () => {
+    const { fixture, put } = mount({ vue: 'journees-types' });
+    await fixture.whenStable();
+
+    champ(fixture, 'A', 0, 'jt:4@14:00-20:00').focus();
+    await fixture.whenStable();
+    root(fixture)
+      .querySelectorAll<HTMLButtonElement>('.grille-journees-types .appliquer-colonne')[1]
+      .click();
+    await fixture.whenStable();
+
+    expect(champ(fixture, 'B', 0, 'jt:4@14:00-20:00').value).toBe('4');
+    bouton(fixture, 'Enregistrer').click();
+    await fixture.whenStable();
+
+    const [envoye] = put.mock.calls[0] as unknown as [
+      { standId: string; cellules: { creneauId: number; effectif: number | null }[] }[],
+    ];
+    expect(envoye.map((stand) => stand.standId)).toEqual(['B']);
+    // Both 14-20 slots of the edition, one per date the template governs.
+    expect(
+      envoye[0].cellules
+        .filter((cellule) => cellule.effectif === 4)
+        .map((cellule) => cellule.creneauId),
+    ).toEqual([2, 4]);
+  });
+
+  it('refuse de propager une case dont les dates divergent, et le dit', async () => {
+    const divergent = rapport();
+    divergent.stands[0].jours[1].creneaux[1].effectif = 3;
+
+    const { fixture, notify } = mount({ vue: 'journees-types', rapport: divergent });
+    await fixture.whenStable();
+
+    champ(fixture, 'A', 0, 'jt:4@14:00-20:00').focus();
+    await fixture.whenStable();
+    root(fixture)
+      .querySelectorAll<HTMLButtonElement>('.grille-journees-types .appliquer-colonne')[1]
+      .click();
+    await fixture.whenStable();
+
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'warning', title: expect.stringContaining('propager') }),
+    );
+    expect(champ(fixture, 'B', 0, 'jt:4@14:00-20:00').value).toBe('-');
   });
 
   it('reste sur la grille par date quand l’édition n’a pas de journées types', async () => {

@@ -13,6 +13,7 @@
 // Nothing new is persisted and nothing new is sent: the save is the dated
 // grid's own, with every date the projection touched.
 
+import { AccesGrille } from '../../core/grille-saisie';
 import { formatHeure } from '../../core/time-of-day';
 import { AffectationJourneeType, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { Cellules, ColonneGrille, colonnes, ecrireCellule } from './grille-horaires';
@@ -207,4 +208,32 @@ export function resumeJourneesTypes(
 /** `10:00-12:00`, plus the relay marker — the header of one template column. */
 export function libelleColonneJourneeType(colonne: ColonneJourneeType): string {
   return `${formatHeure(colonne.heureDebut)}-${formatHeure(colonne.heureFin)}`;
+}
+
+/**
+ * How the per-template grid reads and writes one cell, for the shared moves of
+ * repetitive entry. Two cells hold nothing to copy: one whose dates disagree
+ * (« écart » is a report, not a value), and one standing for no date at all —
+ * writing there would write nowhere, and the move says so rather than
+ * pretending it worked.
+ */
+export function accesGrilleJourneesTypes(
+  colonnesParId: ReadonlyMap<string, ColonneJourneeType>,
+): AccesGrille<Cellules, number | null> {
+  return {
+    read: (cellules, standId, colonneId) => {
+      const colonne = colonnesParId.get(colonneId);
+      if (colonne === undefined || colonne.colonnes.length === 0) {
+        return undefined;
+      }
+      const valeur = valeurJourneeType(cellules, standId, colonne);
+      return valeur === 'ecart' ? undefined : valeur;
+    },
+    write: (cellules, standId, colonneId, valeur) => {
+      const colonne = colonnesParId.get(colonneId);
+      return colonne === undefined
+        ? cellules
+        : ecrireColonneJourneeType(cellules, standId, colonne, valeur);
+    },
+  };
 }

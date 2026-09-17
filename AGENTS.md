@@ -683,7 +683,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   working, and keep the E2E assertion on the count;
   `text-filter.ts` — accent/case-insensitive
   "contains every term" matching behind those pages' quick filter; `bulk-edit.ts` — the "leave unchanged / add / remove
-  / replace" modes a bulk edit applies to one row; `entity-labels.ts` — plural
+  / replace" modes a bulk edit applies to one row; `grille-saisie.ts` — the two
+  moves of repetitive entry the two entry grids share (take the row above,
+  apply one value down a column), generic over the cell so a grid only says how
+  it reads and writes one, and pure so the moves are tested once instead of
+  twice; `entity-labels.ts` — plural
   entity labels of the bulk actions;
   `solver-job.service.ts` — the poll and the job state, over
   `solver-stream.ts` (the SSE connection, its silence watchdog and its
@@ -722,7 +726,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
 - Bulk edits go through one dialog per entity (`<entity>-bulk-edit-dialog.ts`),
   whose rules live in a plain `<entity>-bulk-edit.ts` next to it so they are
   unit-tested without rendering. Every field defaults to "ne pas modifier": a
-  bulk edit only writes what the user explicitly filled in.
+  bulk edit only writes what the user explicitly filled in. The **entry grids**
+  (`/ouvertures`, by date and by journée type, and `/competences`) are the other
+  way in and follow the same law from the other end: a move writes only the
+  cells it names — the row it fills, or the one column it runs down — and
+  writes them locally, so « Enregistrer » stays the only thing that reaches the
+  server and « Annuler les modifications » undoes a move like any keystroke.
+  Their shared moves live in `core/grille-saisie.ts`; each grid contributes an
+  `AccesGrille` saying how it reads and writes one cell, and the per-template
+  grid is what makes "nothing to copy" a real case — a column whose dates
+  disagree is a report, not a value.
 - State flows one way: the solver page pushes the solved planning into
   `PlanningStateService`, calendars read it back read-only and never start a
   solve. Components don't call `fetch` directly.

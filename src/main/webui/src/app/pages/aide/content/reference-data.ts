@@ -163,7 +163,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.ouvertures.term.parJourneeType:Par journée type`,
-              text: $localize`:@@aide.ouvertures.def.parJourneeType:Disponible dès que l'édition a des journées types : une colonne par vacation, une case qui vaut d'un coup pour toutes les dates gouvernées. Soixante colonnes deviennent une quinzaine. Une case « ≠ » signale des dates qui ne disent pas la même chose ; la retaper les aligne.`,
+              text: $localize`:@@aide.ouvertures.def.parJourneeType:Disponible dès que l'édition a des journées types : une colonne par vacation, une case qui vaut d'un coup pour toutes les dates gouvernées. Soixante colonnes deviennent une quinzaine. Une case « ≠ » signale des dates qui ne disent pas la même chose ; la retaper les aligne. Tant qu'elle diverge, elle ne dit rien à propager : appliquer sa colonne est refusé plutôt que de trancher pour vous.`,
             },
             {
               term: $localize`:@@aide.ouvertures.term.journee:Journée`,
@@ -171,7 +171,7 @@ export function buildReferenceDataSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.ouvertures.term.saisir:Saisir`,
-              text: $localize`:@@aide.ouvertures.def.saisir:La même grille en écriture : l'effectif à tenir dans chaque case, « - » ou 0 pour fermer, une case vidée gardant sa valeur. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres. Les en-têtes et la colonne des stands restent en place pendant le défilement.`,
+              text: $localize`:@@aide.ouvertures.def.saisir:La même grille en écriture : l'effectif à tenir dans chaque case, « - » ou 0 pour fermer, une case vidée gardant sa valeur. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Les en-têtes et la colonne des stands restent en place pendant le défilement.`,
             },
           ],
         },
@@ -198,7 +198,7 @@ export function buildReferenceDataSections(): HelpSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.grille:La fiche animateur permet de saisir les appréciations une personne à la fois ; l'écran « Compétences » les montre toutes d'un coup, animateurs en lignes et typologies en colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille.`,
+          text: $localize`:@@aide.competences.grille:La fiche animateur permet de saisir les appréciations une personne à la fois ; l'écran « Compétences » les montre toutes d'un coup, animateurs en lignes et typologies en colonnes. Une case se change d'un clic (les niveaux défilent) ou d'une touche : 0 vide la case, 1, 2 et 3 posent le niveau. Les flèches, Entrée, Début et Fin déplacent la sélection comme dans un tableur, et la flèche bas depuis le filtre entre dans la grille. Ctrl+D reprend la ligne du dessus, Ctrl+Maj+Bas applique la case courante à toute sa colonne ; les mêmes gestes ont un bouton, qui apparaît au survol en tête de ligne et en tête de colonne.`,
         },
         {
           kind: 'paragraph',

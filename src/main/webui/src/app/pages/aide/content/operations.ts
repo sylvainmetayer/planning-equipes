@@ -290,6 +290,23 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.grilles:Les trois grilles de saisie — « Ouvertures des stands », par date et par journée type, et « Compétences » — se remplissent comme un tableur : les flèches passent d'une case à l'autre, Entrée descend, et deux gestes évitent de retaper ce qui se répète. Rien n'est enregistré avant « Enregistrer » : une reprise de trop s'annule avec le reste des modifications.`,
+        },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.shortcuts.term.gridRow:Ctrl+D`,
+              text: $localize`:@@aide.shortcuts.def.gridRow:Reprend dans la ligne courante ce que dit celle du dessus, colonne par colonne. « Celle du dessus » est celle que l'écran montre au-dessus : filtrez la grille, et c'est la ligne voisine à l'écran qui est reprise. La flèche en tête de ligne fait la même chose à la souris.`,
+            },
+            {
+              term: $localize`:@@aide.shortcuts.term.gridColumn:Ctrl+Maj+Bas`,
+              text: $localize`:@@aide.shortcuts.def.gridColumn:Applique la case courante à toutes les lignes affichées de sa colonne, et à elles seules : les autres colonnes de ces lignes ne bougent pas. La double flèche en tête de colonne fait la même chose à la souris, en partant de la case active ou, à défaut, de la première ligne.`,
+            },
+          ],
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.shortcuts.guard:Aucun raccourci à une touche ne se déclenche pendant que vous saisissez du texte : tant que le curseur est dans un champ, « g », « / » et « ? » restent des caractères ordinaires.`,
         },
       ],

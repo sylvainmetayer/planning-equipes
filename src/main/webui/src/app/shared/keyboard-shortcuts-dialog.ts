@@ -51,6 +51,20 @@ interface RaccourciGeneral {
         }
       </dl>
 
+      <h3 class="raccourcis-titre" i18n="@@shortcuts.grille.title">Dans une grille de saisie</h3>
+      <p class="raccourcis-intro" i18n="@@shortcuts.grille.intro">
+        Les grilles « Ouvertures des stands » et « Compétences ». Rien n'est enregistré avant
+        « Enregistrer » : une reprise de trop s'annule avec les modifications.
+      </p>
+      <dl class="raccourcis-liste">
+        @for (raccourci of grille; track raccourci.touches) {
+          <dt>
+            <kbd>{{ raccourci.touches }}</kbd>
+          </dt>
+          <dd>{{ raccourci.description }}</dd>
+        }
+      </dl>
+
       <h3 class="raccourcis-titre" i18n="@@shortcuts.navigation.title">
         Navigation : « g » puis une lettre
       </h3>
@@ -138,6 +152,26 @@ export class KeyboardShortcutsDialog {
     {
       touches: $localize`:@@shortcuts.key.space:Espace`,
       description: $localize`:@@shortcuts.table.select:Cocher ou décocher la ligne, pour une action groupée.`,
+    },
+  ];
+
+  /**
+   * Local to an entry grid, and only while the focus is in a cell — same
+   * reasoning as the table ones above. The moves themselves are in
+   * `core/grille-saisie.ts`, shared by the two grids.
+   */
+  protected readonly grille: RaccourciGeneral[] = [
+    {
+      touches: '↑ ↓ ← →',
+      description: $localize`:@@shortcuts.grille.move:Passer d'une case à l'autre ; Entrée descend, comme dans un tableur.`,
+    },
+    {
+      touches: 'Ctrl + D',
+      description: $localize`:@@shortcuts.grille.dupliquer:Reprendre dans cette ligne ce que dit la ligne du dessus.`,
+    },
+    {
+      touches: 'Ctrl + ' + $localize`:@@shortcuts.key.shift:Maj` + ' + ↓',
+      description: $localize`:@@shortcuts.grille.colonne:Appliquer la case courante à toutes les lignes affichées de sa colonne.`,
     },
   ];
 

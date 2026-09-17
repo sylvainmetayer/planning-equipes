@@ -1,0 +1,44 @@
+/*
+ * The two moves of repetitive entry, drawn the same on both entry grids
+ * (issue #316): « reprendre la ligne du dessus » on a row, « appliquer à toute
+ * la colonne » on a column header.
+ *
+ * Shared rather than said twice: the gesture is one, under two vocabularies —
+ * stands and créneaux here, animateurs and typologies there — and a button
+ * drawn differently on each grid would read as two different actions. Attached
+ * by the two pages through their `styleUrls`, the way `import-animateurs.css`
+ * already is, so it travels in their chunks and nowhere else.
+ */
+
+.dupliquer-ligne,
+.appliquer-colonne {
+  --mdc-icon-button-state-layer-size: 1.25rem;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  vertical-align: middle;
+}
+
+.dupliquer-ligne mat-icon,
+.appliquer-colonne mat-icon {
+  font-size: 0.85rem;
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+/* Sixty column headers and a hundred and fifty rows each wearing an arrow
+   would be noise, and the rule is the one « scinder » already follows: the
+   control appears under the pointer, and the keyboard reveals it by focusing
+   it — Tab reaches it, and the shortcuts dialog names both moves. */
+.dupliquer-ligne,
+.appliquer-colonne {
+  opacity: 0;
+  transition: opacity 120ms;
+}
+
+tr:hover .dupliquer-ligne,
+th:hover .appliquer-colonne,
+.dupliquer-ligne:focus-visible,
+.appliquer-colonne:focus-visible {
+  opacity: 1;
+}

@@ -9,6 +9,7 @@
 // are sent back — each with their whole map, since a save replaces the
 // animateur's appreciations in full, exactly as the fiche form does.
 
+import { AccesGrille } from '../../core/grille-saisie';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { Animateur, NiveauCompetence, SaisieAnimateurCompetences } from '../../core/models';
 
@@ -229,3 +230,14 @@ export function keepLocalRows(
   }
   return merged;
 }
+
+/**
+ * How the grid reads and writes one cell, for the shared moves of repetitive
+ * entry. Every cell holds a value — a level, or no appreciation — so there is
+ * never nothing to copy.
+ */
+export const accesGrilleCompetences: AccesGrille<CellulesCompetences, NiveauCompetence | null> = {
+  read: (cells, animateurId, typologieId) => levelAt(cells, { animateurId, typologieId }),
+  write: (cells, animateurId, typologieId, niveau) =>
+    writeCell(cells, { animateurId, typologieId }, niveau),
+};

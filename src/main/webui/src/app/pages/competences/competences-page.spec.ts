@@ -133,6 +133,38 @@ function touche(element: HTMLElement, key: string): void {
   element.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }));
 }
 
+function combinaison(element: HTMLElement, key: string, modificateurs: KeyboardEventInit): void {
+  element.dispatchEvent(
+    new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true, ...modificateurs }),
+  );
+}
+
+/** « Reprendre la ligne du dessus », on the row of that animateur. */
+function boutonLigne(
+  fixture: ComponentFixture<CompetencesPage>,
+  animateurId: string,
+): HTMLButtonElement {
+  const trouve = cellule(fixture, animateurId, 'jeux')
+    .closest('tr')!
+    .querySelector<HTMLButtonElement>('.dupliquer-ligne');
+  expect(trouve, `bouton « dupliquer » de ${animateurId}`).not.toBeNull();
+  return trouve!;
+}
+
+/** « Appliquer à toute la colonne », on the header of that typologie. */
+function boutonColonne(
+  fixture: ComponentFixture<CompetencesPage>,
+  libelle: string,
+): HTMLButtonElement {
+  const entete = Array.from(root(fixture).querySelectorAll('th.colonne-typologie')).find((each) =>
+    each.textContent?.includes(libelle),
+  );
+  expect(entete, `colonne « ${libelle} »`).toBeDefined();
+  const trouve = entete!.querySelector<HTMLButtonElement>('.appliquer-colonne');
+  expect(trouve, `bouton « appliquer » de ${libelle}`).not.toBeNull();
+  return trouve!;
+}
+
 function bouton(fixture: ComponentFixture<CompetencesPage>, libelle: string): HTMLButtonElement {
   const trouve = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
     each.textContent?.includes(libelle),
@@ -479,5 +511,105 @@ describe('CompetencesPage', () => {
     expect((scrollIntoView.mock.instances[0] as HTMLElement).classList).toContain(
       'competences-import',
     );
+  });
+
+  /* ------------------------- repetitive entry (#316) ------------------------- */
+
+  it('takes the row above into this one, on the button and on Ctrl+D', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+
+    // Alice is a référent on « jeux » and nothing else; Bruno holds nothing.
+    boutonLigne(fixture, 'B2').click();
+    await fixture.whenStable();
+
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').classList.contains('cellule-modifiee')).toBe(true);
+    expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
+
+    // The same move from the keyboard, once the row is back to what it said.
+    bouton(fixture, 'Annuler les modifications').click();
+    await fixture.whenStable();
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+
+    combinaison(cellule(fixture, 'B2', 'ateliers'), 'd', { ctrlKey: true });
+    await fixture.whenStable();
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+  });
+
+  it('has nothing to take on the first displayed row, and says so from the keyboard', async () => {
+    const { fixture, notify } = mount();
+    await fixture.whenStable();
+
+    expect(boutonLigne(fixture, 'A1').disabled).toBe(true);
+    expect(boutonLigne(fixture, 'B2').disabled).toBe(false);
+
+    combinaison(cellule(fixture, 'A1', 'jeux'), 'd', { ctrlKey: true });
+    await fixture.whenStable();
+
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'warning', title: expect.stringContaining('au-dessus') }),
+    );
+    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+  });
+
+  it('applies the active cell to its whole column, leaving the other columns alone', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+
+    touche(cellule(fixture, 'B2', 'ateliers'), '1');
+    cellule(fixture, 'B2', 'ateliers').focus();
+    await fixture.whenStable();
+
+    boutonColonne(fixture, 'Ateliers').click();
+    await fixture.whenStable();
+
+    expect(cellule(fixture, 'A1', 'ateliers').getAttribute('data-niveau')).toBe('DEBUTANT');
+    expect(cellule(fixture, 'B2', 'ateliers').getAttribute('data-niveau')).toBe('DEBUTANT');
+    // « jeux » belongs to nobody's business here: Alice keeps her référent.
+    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+  });
+
+  it('applies the column from the keyboard, and says when it changed nothing', async () => {
+    const { fixture, notify } = mount();
+    await fixture.whenStable();
+
+    const active = cellule(fixture, 'A1', 'jeux');
+    active.focus();
+    await fixture.whenStable();
+    combinaison(active, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+    await fixture.whenStable();
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+
+    // A second press has nothing left to do, and does not pretend otherwise.
+    combinaison(active, 'ArrowDown', { ctrlKey: true, shiftKey: true });
+    await fixture.whenStable();
+    expect(notify).toHaveBeenCalledWith(
+      expect.objectContaining({ variant: 'warning', title: expect.stringContaining('déjà') }),
+    );
+  });
+
+  it('leaves AltGr+D alone: on an AZERTY keyboard it is a character, not a move', async () => {
+    const { fixture } = mount();
+    await fixture.whenStable();
+
+    combinaison(cellule(fixture, 'B2', 'jeux'), 'd', { ctrlKey: true, altKey: true });
+    await fixture.whenStable();
+
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
+  });
+
+  it('locks both moves while a solve runs', async () => {
+    const { fixture } = mount({ editingLocked: true });
+    await fixture.whenStable();
+
+    expect(boutonLigne(fixture, 'B2').disabled).toBe(true);
+    expect(boutonColonne(fixture, 'Ateliers').disabled).toBe(true);
+
+    combinaison(cellule(fixture, 'B2', 'jeux'), 'd', { ctrlKey: true });
+    await fixture.whenStable();
+    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
   });
 });

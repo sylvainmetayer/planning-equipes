@@ -19,6 +19,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
 import { errorMessage } from '../../core/error-message';
+import {
+  RecopieGrille,
+  hasLignePrecedente,
+  applyColonne,
+  copyLignePrecedente,
+  ligneSourceColonne,
+} from '../../core/grille-saisie';
 import { intlLocale } from '../../core/locale';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -40,6 +47,7 @@ import {
 import {
   CompetenceAddress,
   CellulesCompetences,
+  accesGrilleCompetences,
   cellKey,
   cellsFrom,
   filterAnimateurs,
@@ -84,7 +92,11 @@ import {
     TableFilter,
   ],
   templateUrl: './competences-page.html',
-  styleUrls: ['./competences-page.css', '../../../styles/import-animateurs.css'],
+  styleUrls: [
+    './competences-page.css',
+    '../../../styles/import-animateurs.css',
+    '../../../styles/saisie-repetitive.css',
+  ],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partials.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -351,6 +363,9 @@ export class CompetencesPage {
    * the application's global listener.
    */
   protected onKey(event: KeyboardEvent, animateurId: string, typologieId: string): void {
+    if (this.mouvementClavier(event, animateurId, typologieId)) {
+      return;
+    }
     if (event.ctrlKey || event.metaKey || event.altKey) {
       return;
     }
@@ -376,6 +391,112 @@ export class CompetencesPage {
     }
     event.preventDefault();
     this.focusCell(target);
+  }
+
+  /* ---------------------------- repetitive entry ----------------------------- */
+
+  /**
+   * The first row displayed, which has nothing above it: what greys out its
+   * button. Read once per row rather than searched per row — a hundred and
+   * fifty animateurs make that the difference.
+   */
+  protected readonly firstLigne = computed(() => this.animateurIdsAffiches()[0] ?? null);
+
+  /** The row above this one, on screen, copied onto it — the newcomer appreciated like their binome. */
+  protected copyLignePrecedente(animateurId: string): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    if (!hasLignePrecedente(animateurId, this.animateurIdsAffiches())) {
+      this.notifications.notify({
+        title: $localize`:@@competences.sansLignePrecedente:La première ligne affichée n'a pas de ligne au-dessus d'elle.`,
+        variant: 'warning',
+        timeout: 6000,
+      });
+      return;
+    }
+    this.applyMouvement(
+      copyLignePrecedente(
+        this.cells(),
+        animateurId,
+        this.animateurIdsAffiches(),
+        this.typologieIdsAffiches(),
+        accesGrilleCompetences,
+      ),
+      $localize`:@@competences.dupliqueVide:Rien à reprendre : cette ligne dit déjà ce que dit celle du dessus.`,
+    );
+  }
+
+  /**
+   * One appreciation posed on every displayed row of a typologie: the active
+   * cell's when the focus is in that column, else the first row's.
+   */
+  protected applyColonne(typologieId: string): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    const lignes = this.animateurIdsAffiches();
+    const active = this.celluleActive();
+    const source = ligneSourceColonne(
+      typologieId,
+      active === null ? null : { ligneId: active.animateurId, colonneId: active.typologieId },
+      lignes,
+    );
+    if (source === undefined) {
+      return;
+    }
+    this.applyMouvement(
+      applyColonne(
+        this.cells(),
+        typologieId,
+        this.niveau(source, typologieId),
+        lignes,
+        accesGrilleCompetences,
+      ),
+      $localize`:@@competences.colonneVide:Rien à appliquer : toutes les lignes affichées disent déjà cette appréciation.`,
+    );
+  }
+
+  /**
+   * Takes a move and says what it did. A move that changed nothing leaves no
+   * mark on screen, and silence would read as a failure — or worse, as a
+   * success.
+   */
+  private applyMouvement(resultat: RecopieGrille<CellulesCompetences>, messageVide: string): void {
+    this.cells.set(resultat.cellules);
+    if (resultat.changees === 0) {
+      this.notifications.notify({ title: messageVide, variant: 'warning', timeout: 6000 });
+    }
+  }
+
+  /**
+   * The two moves of repetitive entry from the keyboard: Ctrl+D takes the row
+   * above, Ctrl+Maj+Bas pushes this cell down its column. Bound to the cell,
+   * consuming only those two combinations; everything else travels up to the
+   * application's global listener. `true` once handled, so the caller stops.
+   */
+  private mouvementClavier(
+    event: KeyboardEvent,
+    animateurId: string,
+    typologieId: string,
+  ): boolean {
+    // AltGr is reported as Ctrl+Alt on Windows and Linux, so a guard on Ctrl
+    // alone would let « AltGr+D » rewrite a whole row while the organiser was
+    // only typing a character. Same guard as the global listener.
+    if (!(event.ctrlKey || event.metaKey) || event.altKey) {
+      return false;
+    }
+    if (!event.shiftKey && (event.key === 'd' || event.key === 'D')) {
+      event.preventDefault();
+      this.copyLignePrecedente(animateurId);
+      return true;
+    }
+    if (event.shiftKey && event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.applyColonne(typologieId);
+      return true;
+    }
+    return false;
   }
 
   /* --------------------------------- filters --------------------------------- */

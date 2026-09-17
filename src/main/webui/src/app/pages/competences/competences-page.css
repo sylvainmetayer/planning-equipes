@@ -139,6 +139,19 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* The name and the id are two lines of their own, so « reprendre la ligne du
+   dessus » is pinned to the corner of the cell rather than pushed onto a
+   third one. The header is sticky, which makes it the containing block. */
+.competences-grille tbody .colonne-animateur {
+  padding-right: 1.4rem;
+}
+
+.competences-grille .colonne-animateur .dupliquer-ligne {
+  position: absolute;
+  top: 0.15rem;
+  right: 0.1rem;
+}
+
 .competences-grille .ligne-modifiee .colonne-animateur {
   font-weight: 600;
 }

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { cellulesDepuis, colonnes } from './grille-horaires';
 import {
+  accesGrilleJourneesTypes,
   colonnesJourneesTypes,
   ecrireColonneJourneeType,
   libelleColonneJourneeType,
@@ -232,5 +233,35 @@ describe('le résumé de la grille par journée type', () => {
     expect(resume.cellulesDatees).toBe(14);
     expect(resume.ecarts).toBe(1);
     expect(resume.datesSansColonne).toBe(0);
+  });
+});
+
+describe("l'accès à la grille par journée type", () => {
+  const acces = () =>
+    accesGrilleJourneesTypes(
+      new Map(colonnesJourneesTypes(rapport(), etat()).map((c) => [c.colonneId, c])),
+    );
+
+  it('lit la valeur commune aux dates de la colonne', () => {
+    const cellules = cellulesDepuis(rapport());
+    expect(acces().read(cellules, 'A', 'jt:4@10:00-12:00')).toBe(2);
+    expect(acces().read(cellules, 'B', 'jt:4@10:00-12:00')).toBeNull();
+  });
+
+  it("ne dit rien à recopier d'une colonne dont les dates divergent", () => {
+    // « A » takes 2 on 8 July and 3 on the 9th, under the same template.
+    const cellules = cellulesDepuis(rapport());
+    expect(acces().read(cellules, 'A', 'jt:4@14:00-20:00')).toBeUndefined();
+  });
+
+  it("ne dit rien à recopier d'une colonne inconnue", () => {
+    const cellules = cellulesDepuis(rapport());
+    expect(acces().read(cellules, 'A', 'jt:99@10:00-12:00')).toBeUndefined();
+  });
+
+  it('écrit sur toutes les dates de la colonne, et nulle part ailleurs', () => {
+    const cellules = acces().write(cellulesDepuis(rapport()), 'B', 'jt:4@10:00-12:00', 4);
+    expect(acces().read(cellules, 'B', 'jt:4@10:00-12:00')).toBe(4);
+    expect(cellules.get('B')?.get('5@10:00-12:00')).toBeNull();
   });
 });

@@ -17,6 +17,7 @@
 // are sent back — each with all its cells, since a save replaces the stand's
 // whole schedule.
 
+import { AccesGrille } from '../../core/grille-saisie';
 import { formatHeure } from '../../core/time-of-day';
 import {
   CelluleCreneauOuverture,
@@ -580,3 +581,14 @@ export function isPartialCell(partielles: ReadonlySet<string>, adresse: AdresseC
 }
 
 export type { CelluleCreneauOuverture };
+
+/**
+ * How the dated grid reads and writes one cell, for the shared moves of
+ * repetitive entry. Every cell holds a value — a headcount or « fermé » — so
+ * there is never nothing to copy.
+ */
+export const accesGrilleDates: AccesGrille<Cellules, number | null> = {
+  read: (cellules, standId, colonneId) => cellules.get(standId)?.get(colonneId) ?? null,
+  write: (cellules, standId, colonneId, valeur) =>
+    ecrireCellule(cellules, { standId, colonneId }, valeur),
+};
