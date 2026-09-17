@@ -52,6 +52,31 @@
   color: var(--mat-sys-tertiary);
 }
 
+/* The meal break is an hour away from the stand, the break above twenty
+   minutes on it: hatched rather than solid, so the two never read as the same
+   thing on the same track (issue #598). */
+.timeline-coupure {
+  position: absolute;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  min-width: 3px;
+  z-index: 1;
+  border-radius: var(--mat-sys-corner-extra-small);
+  border: 1px solid var(--mat-sys-secondary);
+  background: repeating-linear-gradient(
+    45deg,
+    var(--mat-sys-secondary-container),
+    var(--mat-sys-secondary-container) 4px,
+    var(--mat-sys-surface) 4px,
+    var(--mat-sys-surface) 8px
+  );
+  cursor: default;
+}
+
+.timeline-coupure-item {
+  color: var(--mat-sys-secondary);
+}
+
 .timeline-pause-item-alerte {
   color: var(--mat-sys-error);
   font-weight: 600;

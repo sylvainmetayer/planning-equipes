@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 
 /**
  * « Combien de sandwichs, et où les porter » (issue #598): the same meal
- * breaks {@link PauseAnalyzer} names person by person, counted per half-hour
- * and per emplacement.
+ * breaks {@link PauseAnalyzer} names person by person, counted hour by hour and
+ * per emplacement.
  */
 class IntendanceRepasAnalyzerTest {
 
@@ -37,7 +37,7 @@ class IntendanceRepasAnalyzerTest {
     }
 
     @Test
-    void comptelesPersonnesEnCoupureParDemiHeureEtParEmplacement() {
+    void comptelesPersonnesEnCoupureHeureParHeureEtParEmplacement() {
         Emplacement pavillon = emplacement("PAV", "Pavillon Bleu");
         Stand stand = stand("JEUX", pavillon);
         Animateur alice = adulte("alice");
@@ -55,20 +55,43 @@ class IntendanceRepasAnalyzerTest {
         RapportIntendance rapport =
                 analyzer.analyze(planning(List.of(alice, bob), postes), new ParametresLegaux(), MIDI);
 
-        assertThat(rapport.pasMinutes()).isEqualTo(30);
+        assertThat(rapport.pasMinutes()).isEqualTo(60);
         assertThat(rapport.journees()).hasSize(1);
         assertThat(rapport.journees().getFirst().date()).isEqualTo(JOUR);
         FenetreIntendance midi = rapport.journees().getFirst().fenetres().getFirst();
         assertThat(midi.libelle()).isEqualTo(FenetreRepas.MIDI);
-        assertThat(midi.tranches())
-                .containsExactly(LocalTime.of(12, 0), LocalTime.of(12, 30), LocalTime.of(13, 0), LocalTime.of(13, 30));
+        // « 12-13 » and « 13-14 »: the bands a service is organised on, not the
+        // half-hours nobody splits a meal across.
+        assertThat(midi.tranches()).containsExactly(LocalTime.of(12, 0), LocalTime.of(13, 0));
         assertThat(midi.total()).isEqualTo(2);
         assertThat(midi.totalMineurs()).isZero();
         LigneEmplacement ligne = midi.emplacements().getFirst();
         assertThat(ligne.emplacementNom()).isEqualTo("Pavillon Bleu");
-        // Both eat 12:00-13:00, which spans the first two half-hours and no other.
-        assertThat(ligne.personnes()).containsExactly(2, 2, 0, 0);
+        // Both eat 12:00-13:00, which is the first band and no other.
+        assertThat(ligne.personnes()).containsExactly(2, 0);
         assertThat(ligne.total()).isEqualTo(2);
+    }
+
+    /**
+     * A window that does not open on the hour is still read on the hour: the
+     * intendance serves « à midi », not « à midi et quart ». The first band may
+     * therefore start before the window and the last one end after it —
+     * truncating either would hide whoever eats in the minutes left over.
+     */
+    @Test
+    void lesBandesSontCaleesSurLHeureMemeQuandLaFenetreNeLEstPas() {
+        List<FenetreRepas> fenetre =
+                List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 15), LocalTime.of(13, 45), 60, true));
+        Stand stand = stand("JEUX", emplacement("PAV", "Pavillon Bleu"));
+        Animateur alice = adulte("alice");
+        List<PosteAffectation> postes = List.of(
+                poste("p1", stand, creneau(1, 9, 0, 12, 0), alice),
+                poste("p2", stand, creneau(2, 14, 0, 18, 0), alice));
+
+        RapportIntendance rapport = analyzer.analyze(planning(List.of(alice), postes), new ParametresLegaux(), fenetre);
+
+        assertThat(rapport.journees().getFirst().fenetres().getFirst().tranches())
+                .containsExactly(LocalTime.of(12, 0), LocalTime.of(13, 0));
     }
 
     @Test
@@ -95,7 +118,7 @@ class IntendanceRepasAnalyzerTest {
                 .findFirst()
                 .orElseThrow();
         assertThat(hall.totalMineurs()).isEqualTo(1);
-        assertThat(hall.mineurs()).containsExactly(1, 1, 0, 0);
+        assertThat(hall.mineurs()).containsExactly(1, 0);
         // The CSV carries the count and the emplacement, never a name.
         assertThat(analyzer.generateCsv(rapport))
                 .startsWith("jour;fenetre;emplacement;tranche;personnes;dont mineurs\n")

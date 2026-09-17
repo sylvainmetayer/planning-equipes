@@ -13,6 +13,7 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
+import { protectionApplies } from './constraint-protection';
 import { AnalysesApi } from './api/analyses-api';
 import { ConstraintsApi } from './api/constraints-api';
 import { CauseInfaisabilite, ConstraintsView, FeasibilityReport, RapportPauses } from './models';
@@ -65,13 +66,10 @@ export class ProblemesStore {
    */
   readonly reglesLegalesDesactivees = computed(() =>
     (this.constraints()?.contraintes ?? []).filter(
-      // `activeByDefault` and not just `!actif`: a rule the catalogue ships
-      // switched off (issue #595) is not a rule somebody switched off. Warning
-      // about it would put a permanent banner on every fresh edition, about a
-      // deviation nobody made — and a banner that is always there is a banner
-      // nobody reads when it finally means something.
-      (contrainte) =>
-        contrainte.protegee && !contrainte.actif && contrainte.activeByDefault !== false,
+      // `protectionApplies` and not just `!actif`: a rule the catalogue ships
+      // switched off (issue #595) is not a rule somebody switched off, and the
+      // banner, the badge and the confirmation all cover the same set.
+      (contrainte) => protectionApplies(contrainte) && !contrainte.actif,
     ),
   );
 

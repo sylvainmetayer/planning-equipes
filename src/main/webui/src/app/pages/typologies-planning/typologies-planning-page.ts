@@ -30,7 +30,7 @@ import {
   barres,
   classeHeures,
   filterTypologies,
-  maximumParJour,
+  dailyMaximum,
   underTension,
 } from './typologies-planning';
 
@@ -102,7 +102,7 @@ export class TypologiesPlanningPage {
     filterTypologies(this.rapport()?.typologies ?? [], this.filters()),
   );
   protected readonly barres = computed(() => barres(this.lignes()));
-  protected readonly maximumJour = computed(() => maximumParJour(this.lignes(), this.jours()));
+  protected readonly maximumJour = computed(() => dailyMaximum(this.lignes(), this.jours()));
 
   /** How many rows the filters hide, so a short table is never mistaken for an empty plan. */
   protected readonly masquees = computed(

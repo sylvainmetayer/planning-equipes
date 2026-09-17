@@ -21,6 +21,7 @@ import { MatSlideToggleChange, MatSlideToggleModule } from '@angular/material/sl
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
+import { protectionApplies } from '../../core/constraint-protection';
 import { intlLocale } from '../../core/locale';
 import { AxePivot, ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -175,6 +176,9 @@ export class ConstraintsPage {
   protected classeCellule(ecarts: number, maximum: number): string {
     return classeCellule(ecarts, maximum);
   }
+
+  /** Whether this rule wears the badge — the same set the confirmation covers. */
+  protected readonly protectionApplies = protectionApplies;
 
   /** What the reader sees in a column header: a date, a stand's name, a full name. */
   private libellePivot(axe: AxePivot, cle: string): string {

@@ -16,7 +16,16 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
-import { indexerPauses, pausesDe, SegmentPause, segmentsPause } from '../../core/pauses-index';
+import {
+  coupuresDe,
+  indexerCoupures,
+  indexerPauses,
+  pausesDe,
+  SegmentCoupure,
+  SegmentPause,
+  segmentsCoupure,
+  segmentsPause,
+} from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
@@ -189,6 +198,35 @@ export class AnimateurTimelinePage {
 
   protected pausesDuJour(day: TimelineDay): SegmentPause[] {
     return this.pausesParJour().get(day.jour) ?? [];
+  }
+
+  private readonly indexCoupures = computed(() => indexerCoupures(this.pauses()));
+
+  /**
+   * The meal breaks of each shown day, on the same track (issue #598). They
+   * were computed by the server and drawn nowhere: « quand est-ce que je mange »
+   * is the first thing an animateur reads their own planning for.
+   */
+  protected readonly coupuresParJour = computed<Map<number, SegmentCoupure[]>>(() => {
+    const animateurId = this.selectedAnimateurId();
+    const segments = new Map<number, SegmentCoupure[]>();
+    if (!animateurId) {
+      return segments;
+    }
+    for (const day of this.days()) {
+      const coupures = coupuresDe(this.indexCoupures(), day.date, animateurId);
+      if (coupures.length > 0) {
+        segments.set(
+          day.jour,
+          segmentsCoupure(coupures, day.amplitudeDebutMinutes, day.amplitudeMinutes),
+        );
+      }
+    }
+    return segments;
+  });
+
+  protected coupuresDuJour(day: TimelineDay): SegmentCoupure[] {
+    return this.coupuresParJour().get(day.jour) ?? [];
   }
 
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>

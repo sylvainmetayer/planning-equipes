@@ -50,8 +50,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class IntendanceRepasAnalyzer {
 
-    /** Half an hour: the natural unit of the meal windows, and the one the intendance plans on. */
-    public static final int PAS_MINUTES = 30;
+    /**
+     * The full hour: « combien à midi, combien à treize heures » is the question
+     * the intendance asks, and 12-13 / 13-14 is how it answers it. A half-hour
+     * grid doubled the columns to split a service nobody splits — the food goes
+     * out once an hour, not twice.
+     */
+    public static final int PAS_MINUTES = 60;
 
     /** Shown when a stand names no emplacement — a row that must still be carried food. */
     private static final Emplacement EMPLACEMENT_INCONNU = emplacementInconnu();
@@ -69,14 +74,14 @@ public class IntendanceRepasAnalyzer {
     /**
      * One emplacement of one window, on one day.
      *
-     * @param personnes one count per half-hour slot of the window, in the
-     *                  order of {@code FenetreIntendance.tranches}
+     * @param personnes one count per hourly band of the window, in the order
+     *                  of {@code FenetreIntendance.tranches}
      * @param mineurs   how many of them are minors — counted, never named, and
      *                  no birth date leaves the server (see
      *                  {@code docs/rgpd.md} §7)
      * @param total     distinct people on a break at this emplacement over the
      *                  whole window: never the sum of {@code personnes}, which
-     *                  counts somebody once per half-hour their break spans
+     *                  counts somebody once per hour their break spans
      */
     @Schema(requiredProperties = {"total", "totalMineurs"})
     public record LigneEmplacement(
@@ -88,10 +93,10 @@ public class IntendanceRepasAnalyzer {
             int totalMineurs) {}
 
     /**
-     * One meal window of one day, as a table: half-hours across, emplacements
-     * down.
+     * One meal window of one day, as a table: hours across, emplacements down.
      *
-     * @param tranches the start of each half-hour, from the window's own start
+     * @param tranches the start of each hourly band, anchored on the hour — a
+     *                 band runs from there to {@code pasMinutes} later
      */
     @Schema(requiredProperties = {"total", "totalMineurs"})
     public record FenetreIntendance(
@@ -195,13 +200,19 @@ public class IntendanceRepasAnalyzer {
     }
 
     /**
-     * The half-hours a window is read on. The last one may run past the
-     * window's end — a window of 12:00-13:20 owes three slots, and truncating
-     * the third would hide whoever eats at 13:05.
+     * The hours a window is read on, <b>anchored on the hour</b> rather than on
+     * the window's own start: a window of 12:15-13:45 is read as 12-13 and
+     * 13-14, which is how a service is organised — « à midi » and « à treize
+     * heures » — and not as 12:15-13:15, which names no moment anybody plans on.
+     *
+     * <p>The last band may therefore run past the window's end, and the first
+     * before its start. That is the point: truncating either would hide
+     * whoever eats at 13:50 in a window closing at 13:45.</p>
      */
     private static List<LocalTime> tranches(FenetreRepas fenetre) {
         List<LocalTime> tranches = new ArrayList<>();
-        for (int minute = fenetre.debutMinutes(); minute < fenetre.finMinutes(); minute += PAS_MINUTES) {
+        int premiere = (fenetre.debutMinutes() / PAS_MINUTES) * PAS_MINUTES;
+        for (int minute = premiere; minute < fenetre.finMinutes(); minute += PAS_MINUTES) {
             tranches.add(LocalTime.ofSecondOfDay(minute * 60L));
         }
         return List.copyOf(tranches);
@@ -279,9 +290,9 @@ public class IntendanceRepasAnalyzer {
     }
 
     /**
-     * The list the intendance takes with it. One line per slot rather than a
+     * The list the intendance takes with it. One line per band rather than a
      * cross-table: a spreadsheet pivots that in two clicks, and a flat file
-     * survives a window gaining a half-hour.
+     * survives a window gaining an hour.
      */
     public String generateCsv(RapportIntendance rapport) {
         StringBuilder csv = new StringBuilder("jour;fenetre;emplacement;tranche;personnes;dont mineurs\n");
@@ -322,7 +333,7 @@ public class IntendanceRepasAnalyzer {
     private static final class Compte {
 
         private final Emplacement emplacement;
-        /** Slot index (minutes from midnight ÷ 30) → {people, of whom minors}. */
+        /** Band index (minutes from midnight ÷ the step) → {people, of whom minors}. */
         private final Map<Integer, int[]> parTranche = new LinkedHashMap<>();
 
         private int total;
@@ -334,8 +345,8 @@ public class IntendanceRepasAnalyzer {
 
         /**
          * Somebody eats here. They count once in the window's total, and once
-         * in <b>every</b> half-hour their break spans — a 13:50-14:50 break is
-         * two trays to carry at two different moments, not half a tray each.
+         * in <b>every</b> hour their break spans — a 12:50-13:50 break is two
+         * trays to carry at two different moments, not half a tray each.
          */
         void ajouter(CoupureRepasView coupure, boolean mineur) {
             total++;

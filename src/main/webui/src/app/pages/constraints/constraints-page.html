@@ -188,7 +188,7 @@
                     (change)="toggleConstraint(constraint, $event)">
                     {{ actifLabel(constraint.actif) }}
                   </mat-slide-toggle>
-                  @if (constraint.protegee) {
+                  @if (protectionApplies(constraint)) {
                     <mat-icon class="constraint-protegee-icon"
                               matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
                               i18n-matTooltip="@@constraints.protegee.tooltip">gavel</mat-icon>

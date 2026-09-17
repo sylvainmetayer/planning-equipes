@@ -1,12 +1,30 @@
 import { describe, expect, it } from 'vitest';
-import { JourneeAnimateurPauses, PauseDueView, RapportPauses } from './models';
+import { CoupureRepasView, JourneeAnimateurPauses, PauseDueView, RapportPauses } from './models';
 import {
   compterSansRelais,
+  coupuresDe,
+  indexerCoupures,
   indexerPauses,
+  libelleCoupure,
   libellePause,
   pausesDe,
+  segmentsCoupure,
   segmentsPause,
 } from './pauses-index';
+
+function coupure(overrides: Partial<CoupureRepasView> = {}): CoupureRepasView {
+  return {
+    libelle: 'midi',
+    fenetreDebut: '12:00:00',
+    fenetreFin: '14:00:00',
+    dureeRequiseMinutes: 60,
+    debut: '12:00:00',
+    fin: '13:00:00',
+    plusGrandTrouMinutes: 120,
+    satisfaite: true,
+    ...overrides,
+  };
+}
 
 function pause(overrides: Partial<PauseDueView> = {}): PauseDueView {
   return {
@@ -189,6 +207,68 @@ describe('compterSansRelais / libellePause', () => {
     expect(libellePause(pause())).toBe('Pause 18:40 – 19:00 sur Village des jeux');
     expect(libellePause(pause({ relaisDisponible: false, relais: [] }))).toBe(
       "Pause 18:40 – 19:00 sur Village des jeux — personne d'autre sur le stand",
+    );
+  });
+});
+
+/**
+ * Issue #598, second pass: the meal break was computed and drawn nowhere.
+ * « Quand est-ce que je mange » is the first thing somebody reads their own
+ * planning for, so the timeline and the PDF both carry it now — and it is a
+ * different thing from the twenty-minute break on the stand above.
+ */
+describe('indexerCoupures', () => {
+  it('indexes the meal breaks by animateur-day, earliest first', () => {
+    const index = indexerCoupures(
+      rapport([
+        journee({
+          coupuresRepas: [
+            coupure({ libelle: 'soir', debut: '19:00:00', fin: '20:00:00' }),
+            coupure(),
+          ],
+        }),
+      ]),
+    );
+
+    expect(coupuresDe(index, '2026-07-10', 'alice').map((found) => found.libelle)).toEqual([
+      'midi',
+      'soir',
+    ]);
+    expect(coupuresDe(index, '2026-07-11', 'alice')).toEqual([]);
+  });
+
+  // A day that leaves no room owes a break the plan cannot place. Drawing it at
+  // midnight would be a lie; the Pauses screen already reports it as a breach.
+  it('leaves out a break the day makes no room for, rather than drawing it at midnight', () => {
+    const index = indexerCoupures(
+      rapport([
+        journee({ coupuresRepas: [coupure({ debut: null, fin: null, satisfaite: false })] }),
+      ]),
+    );
+
+    expect(coupuresDe(index, '2026-07-10', 'alice')).toEqual([]);
+  });
+});
+
+describe('segmentsCoupure', () => {
+  it('places the meal break on the same track as the breaks', () => {
+    // A 08:00-20:00 track, 720 minutes: a 12:00-13:00 meal starts a third in
+    // and takes a twelfth of it.
+    const [segment] = segmentsCoupure([coupure()], 8 * 60, 12 * 60);
+
+    expect(segment.offsetPercent).toBeCloseTo(33.33, 1);
+    expect(segment.widthPercent).toBeCloseTo(8.33, 1);
+    expect(segment.heureDebut).toBe('12:00');
+    expect(segment.label).toContain('Repas (midi)');
+  });
+
+  it('drops a meal break the track does not cover', () => {
+    expect(segmentsCoupure([coupure()], 14 * 60, 6 * 60)).toEqual([]);
+  });
+
+  it('names the window it belongs to', () => {
+    expect(libelleCoupure(coupure({ libelle: 'soir', debut: '19:00:00', fin: '20:00:00' }))).toBe(
+      'Repas (soir) 19:00 – 20:00',
     );
   });
 });

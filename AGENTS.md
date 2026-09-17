@@ -624,7 +624,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the fragility, the bench; the tab components under `pages/problemes`,
   `pages/staffing`, `pages/fragilite` and `pages/banc-de-touche` keep their own
   view state in the URL next to the page's key), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
-  breaks counted rather than named: how many people are out, per half-hour and
+  breaks counted rather than named: how many people are out, hour by hour and
   per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
   by typologie of jeu, under four renderings chosen on the page: the table, the
   compared bars, the typologie × jour heatmap and the cards; four filters narrow

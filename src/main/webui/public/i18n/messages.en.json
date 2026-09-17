@@ -1117,6 +1117,7 @@
   "pauses.mineur": "minor",
   "pauses.relais.aucun": "Nobody else on the stand",
   "pauses.planifiees.title": "Breaks already scheduled by the grid",
+  "pauses.coupure.label": "Meal ({$fenetre}) {$debut} \u2013 {$fin}",
   "pauses.segment.label": "Break {$debut} – {$fin} on {$stand}",
   "pauses.segment.sansRelais": "{$pause} — nobody else on the stand",
   "pauses.segment.simultanee": "{$pause} — at the same time as another break",

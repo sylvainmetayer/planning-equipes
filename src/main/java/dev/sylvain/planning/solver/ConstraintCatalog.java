@@ -154,9 +154,9 @@ public final class ConstraintCatalog {
                     "Sécurité (mineurs)",
                     "Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le "
                             + "même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une "
-                            + "obligation du Code du travail : le FESTIVAL la remplit par ses managers, qui ne sont pas "
-                            + "planifiés, et ne la demande donc pas au solveur. Une organisation sans encadrant hors "
-                            + "planning l'allume depuis l'écran Contraintes."),
+                            + "obligation du Code du travail : l'organisateur de l'évènement la remplit par ses "
+                            + "managers, qui ne sont pas planifiés, et ne la demande donc pas au solveur. Une "
+                            + "organisation sans encadrant hors planning l'allume depuis l'écran Contraintes."),
             new ConstraintDefinition(
                     "travailDeNuitInterditPourMineur",
                     Niveau.HARD,

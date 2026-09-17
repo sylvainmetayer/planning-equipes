@@ -118,10 +118,7 @@ export function classeHeures(heures: number, maximum: number): string {
 }
 
 /** The busiest cell of the typologie × jour table — the scale's reference. */
-export function maximumParJour(
-  lignes: readonly LigneTypologie[],
-  jours: readonly string[],
-): number {
+export function dailyMaximum(lignes: readonly LigneTypologie[], jours: readonly string[]): number {
   let maximum = 0;
   for (const ligne of lignes) {
     for (const jour of jours) {

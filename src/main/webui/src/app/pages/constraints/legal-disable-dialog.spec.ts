@@ -54,6 +54,32 @@ describe('LegalDisableConfirmService', () => {
     expect(dialog.open).not.toHaveBeenCalled();
   });
 
+  /**
+   * Issue #595 ships `mineurNecessiteEncadrementMajeur` off. Putting a rule
+   * back where the catalogue shipped it is not taking back a commitment, so it
+   * asks nothing — and the badge on its row is gated on the same predicate, so
+   * the screen never promises a ceremony that will not happen.
+   */
+  it('asks nothing about a rule the catalogue itself ships switched off', async () => {
+    await expect(service.allowsDisabling(contrainte({ activeByDefault: false }))).resolves.toBe(
+      true,
+    );
+
+    expect(dialog.open).not.toHaveBeenCalled();
+  });
+
+  // An older payload carries no `activeByDefault` at all: the confirmation must
+  // keep applying on it rather than fall silent.
+  it('still asks when the payload does not say what the default is', async () => {
+    answers(true);
+
+    await expect(service.allowsDisabling(contrainte({ activeByDefault: undefined }))).resolves.toBe(
+      true,
+    );
+
+    expect(dialog.open).toHaveBeenCalledOnce();
+  });
+
   it('names the rule and the article in the dialog it opens', async () => {
     answers(true);
 

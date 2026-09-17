@@ -1357,17 +1357,19 @@ deux obligations là où il n'y a qu'un moment.
 
 `GET /api/pauses/intendance` est la **même** lecture, comptée au lieu d'être
 nommée (issue #598) : pour chaque jour et chaque fenêtre, combien de personnes
-sont en coupure, par tranche de trente minutes et par emplacement. La page
+sont en coupure, heure pleine par heure pleine et par emplacement. La page
 Journée dit qui sort et quand — la bonne lecture pour organiser une relève ;
 celle-ci dit combien de sandwichs préparer et où les porter.
 
 - `journees[].fenetres[]` — une table par fenêtre déclarée : `tranches[]` (le
-  début de chaque demi-heure), `emplacements[]` (une ligne chacun) et les
-  totaux de la fenêtre.
+  début de chaque bande, **calé sur l'heure** et non sur le début de la fenêtre
+  — une fenêtre 12:15-13:45 se lit 12-13 puis 13-14), `emplacements[]` (une
+  ligne chacun) et les totaux de la fenêtre. La largeur d'une bande est donnée
+  par `pasMinutes`, jamais devinée.
 - `emplacements[].personnes[]` et `mineurs[]` — un compte par tranche, dans
   l'ordre de `tranches[]`. `total` compte les **personnes distinctes** de la
   fenêtre : ce n'est jamais la somme de `personnes[]`, qui compte quelqu'un une
-  fois par demi-heure que sa coupure traverse.
+  fois par heure que sa coupure traverse.
 - `message` — pourquoi le rapport est vide quand il l'est : rien de résolu,
   aucune fenêtre déclarée, ou aucune journée ne traversant une fenêtre. Un
   écran qui affiche « 0 » et un écran qui dit « rien n'est résolu » ne sont pas

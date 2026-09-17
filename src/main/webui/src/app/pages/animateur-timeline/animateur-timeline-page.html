@@ -2,7 +2,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@nav.link.timeline">Timeline animateur</h1>
     <mat-card-subtitle i18n="@@timeline.subtitle">
-      Amplitude journalière, vacations et pauses/déplacements d'un animateur, jour par jour.
+      Amplitude journalière, vacations, coupures repas et pauses/déplacements d'un animateur, jour par jour.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -132,6 +132,15 @@
                 [attr.aria-label]="pause.label"
               ></div>
             }
+            @for (coupure of coupuresDuJour(day); track coupure.heureDebut) {
+              <div
+                class="timeline-coupure"
+                [style.left.%]="coupure.offsetPercent"
+                [style.width.%]="coupure.widthPercent"
+                [matTooltip]="coupure.label"
+                [attr.aria-label]="coupure.label"
+              ></div>
+            }
           </div>
           <ul class="timeline-block-list">
             @for (block of day.blocks; track block.posteId) {
@@ -143,6 +152,12 @@
                 } @else {
                   <span class="timeline-block-list-team" i18n="@@timeline.alone">seul(e) sur ce stand</span>
                 }
+              </li>
+            }
+            @for (coupure of coupuresDuJour(day); track coupure.heureDebut) {
+              <li class="timeline-coupure-item">
+                <mat-icon inline aria-hidden="true">restaurant</mat-icon>
+                {{ coupure.label }}
               </li>
             }
             @for (pause of pausesDuJour(day); track pause.heureDebut) {

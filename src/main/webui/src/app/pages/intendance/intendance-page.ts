@@ -25,7 +25,7 @@ export interface CelluleIntendance {
   detail: string;
 }
 
-/** One emplacement's row, half-hour by half-hour. */
+/** One emplacement's row, hour by hour. */
 export interface LigneIntendance {
   emplacementNom: string;
   cellules: CelluleIntendance[];
@@ -33,7 +33,7 @@ export interface LigneIntendance {
   totalMineurs: number;
 }
 
-/** One window of one day, ready to render. */
+/** One window of one day, ready to render: hourly bands across, emplacements down. */
 export interface TableauIntendance {
   titre: string;
   fenetre: string;
@@ -41,7 +41,7 @@ export interface TableauIntendance {
   lignes: LigneIntendance[];
   total: number;
   totalMineurs: number;
-  /** Column totals, so « à 13:00, 24 personnes » reads without adding up the rows. */
+  /** Column totals, so « entre 13 et 14 h, 24 personnes » reads without adding up the rows. */
   slotTotals: number[];
 }
 
@@ -52,16 +52,35 @@ export interface TableauIntendance {
  */
 export function tableauxIntendance(rapport: RapportIntendance | null): TableauIntendance[] {
   const tableaux: TableauIntendance[] = [];
+  const pasMinutes = rapport?.pasMinutes ?? 60;
   for (const journee of rapport?.journees ?? []) {
     for (const fenetre of journee.fenetres) {
-      tableaux.push(tableau(journee, fenetre));
+      tableaux.push(tableau(journee, fenetre, pasMinutes));
     }
   }
   return tableaux;
 }
 
-function tableau(journee: JourneeIntendance, fenetre: FenetreIntendance): TableauIntendance {
-  const tranches = fenetre.tranches.map((tranche) => formatHeure(tranche));
+/**
+ * A column heading names the band, not its start: « 12–13 » is what somebody
+ * organising a service reads, « 12:00 » is a moment and answers nothing. The
+ * end comes from the report's own step, so a band that stops being an hour
+ * renames itself.
+ */
+function bande(debut: string, pasMinutes: number): string {
+  const [heures, minutes] = debut.split(':').map(Number);
+  const fin = (heures * 60 + minutes + pasMinutes) % (24 * 60);
+  const finHeure = String(Math.floor(fin / 60)).padStart(2, '0');
+  const finMinute = String(fin % 60).padStart(2, '0');
+  return `${formatHeure(debut)}–${formatHeure(`${finHeure}:${finMinute}`)}`;
+}
+
+function tableau(
+  journee: JourneeIntendance,
+  fenetre: FenetreIntendance,
+  pasMinutes: number,
+): TableauIntendance {
+  const tranches = fenetre.tranches.map((tranche) => bande(tranche, pasMinutes));
   const slotTotals = tranches.map((_, index) =>
     fenetre.emplacements.reduce((somme, ligne) => somme + (ligne.personnes[index] ?? 0), 0),
   );
@@ -100,7 +119,7 @@ function libelleCellule(personnes: number, mineurs: number): string {
  *
  * The Pauses view answers animateur by animateur — the right reading to
  * organise a relay, the wrong one to prepare sandwiches. This one is the same
- * meal breaks, counted per half-hour and per emplacement, from
+ * meal breaks, counted hour by hour and per emplacement, from
  * `GET /api/pauses/intendance`. A read-out of the persisted plan, never a
  * solve.
  *
@@ -118,9 +137,10 @@ function libelleCellule(personnes: number, mineurs: number): string {
     OutputPanel,
   ],
   templateUrl: './intendance-page.html',
-  // The pivot is the heatmap's table, down to its cells: same shape, same
-  // reading, so it wears the same stylesheet rather than a second copy of it.
-  styleUrl: '../../../styles/heatmap.css',
+  // The table is the heatmap's, down to its cells: same shape, same reading, so
+  // it wears the same stylesheet rather than a second copy of it; what this
+  // screen does differently is next door.
+  styleUrls: ['../../../styles/heatmap.css', './intendance-page.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the heatmap.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,

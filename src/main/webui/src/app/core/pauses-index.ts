@@ -4,7 +4,7 @@
 //
 // Pure functions: the report is the server's, the geometry is each view's.
 
-import { PauseDueView, RapportPauses } from './models';
+import { CoupureRepasView, PauseDueView, RapportPauses } from './models';
 import { formatHeure, minutesOfDay } from './time-of-day';
 
 /** `date|animateurId` → the breaks of that day, in start order. */
@@ -35,6 +35,45 @@ export function pausesDe(
   date: string | null | undefined,
   animateurId: string,
 ): PauseDueView[] {
+  return index.get(clePauses(date, animateurId)) ?? [];
+}
+
+/** `date|animateurId` → the meal breaks of that day, in start order. */
+export type IndexCoupures = Map<string, CoupureRepasView[]>;
+
+/**
+ * The meal breaks, indexed the same way. They are a different thing from the
+ * legal on-post break above — one is a whole hour away from the stand, the
+ * other twenty minutes on it — and the day views draw both: « quand est-ce que
+ * je mange » is the question an animateur reads their planning for, and it was
+ * answered nowhere.
+ *
+ * A break the day leaves no room for carries no `debut`; it is left out here
+ * rather than drawn at midnight, and the Pauses screen already reports it as a
+ * breach.
+ */
+export function indexerCoupures(rapport: RapportPauses | null | undefined): IndexCoupures {
+  const index: IndexCoupures = new Map();
+  for (const journee of rapport?.journees ?? []) {
+    const coupures = (journee.coupuresRepas ?? []).filter(
+      (coupure) => coupure.debut !== null && coupure.fin !== null,
+    );
+    if (coupures.length === 0) {
+      continue;
+    }
+    index.set(
+      clePauses(journee.date, journee.animateurId),
+      [...coupures].sort((a, b) => (a.debut ?? '').localeCompare(b.debut ?? '')),
+    );
+  }
+  return index;
+}
+
+export function coupuresDe(
+  index: IndexCoupures,
+  date: string | null | undefined,
+  animateurId: string,
+): CoupureRepasView[] {
   return index.get(clePauses(date, animateurId)) ?? [];
 }
 
@@ -105,6 +144,56 @@ export function libellePause(pause: PauseDueView): string {
     return $localize`:@@pauses.segment.simultanee:${base}:pause: — en même temps qu'une autre pause`;
   }
   return base;
+}
+
+/** A meal break drawn on a track: same geometry as a break, a different reading. */
+export interface SegmentCoupure {
+  heureDebut: string;
+  heureFin: string;
+  /** `midi` / `soir` — what the window was called. */
+  libelle: string;
+  offsetPercent: number;
+  widthPercent: number;
+  label: string;
+}
+
+/** Places meal breaks on the same track {@link segmentsPause} draws breaks on. */
+export function segmentsCoupure(
+  coupures: CoupureRepasView[],
+  debutMinutes: number,
+  amplitudeMinutes: number,
+): SegmentCoupure[] {
+  const amplitude = Math.max(1, amplitudeMinutes);
+  const segments: SegmentCoupure[] = [];
+  for (const coupure of coupures) {
+    if (coupure.debut === null || coupure.fin === null) {
+      continue;
+    }
+    const debut = minutesOfDay(coupure.debut);
+    let fin = minutesOfDay(coupure.fin);
+    if (fin <= debut) {
+      fin = debutMinutes + amplitude;
+    }
+    if (fin <= debutMinutes || debut >= debutMinutes + amplitude) {
+      continue;
+    }
+    segments.push({
+      heureDebut: formatHeure(coupure.debut),
+      heureFin: formatHeure(coupure.fin),
+      libelle: coupure.libelle,
+      offsetPercent: ((Math.max(debut, debutMinutes) - debutMinutes) / amplitude) * 100,
+      widthPercent:
+        ((Math.min(fin, debutMinutes + amplitude) - Math.max(debut, debutMinutes)) / amplitude) *
+        100,
+      label: libelleCoupure(coupure),
+    });
+  }
+  return segments;
+}
+
+/** « Repas (midi) 12:00 – 13:00 ». */
+export function libelleCoupure(coupure: CoupureRepasView): string {
+  return $localize`:@@pauses.coupure.label:Repas (${coupure.libelle}:fenetre:) ${formatHeure(coupure.debut ?? '')}:debut: – ${formatHeure(coupure.fin ?? '')}:fin:`;
 }
 
 /** How many breaks of the report — or of one day of it — have nobody to relay. */

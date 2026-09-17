@@ -5,7 +5,7 @@ import {
   barres,
   classeHeures,
   filterTypologies,
-  maximumParJour,
+  dailyMaximum,
   underTension,
 } from './typologies-planning';
 
@@ -141,13 +141,13 @@ describe('classeHeures', () => {
   });
 });
 
-describe('maximumParJour', () => {
+describe('dailyMaximum', () => {
   it('is the busiest day of the busiest typologie, and zero when nothing was held', () => {
     const lignes = [
       ligne({ heuresParJour: { '2026-07-06': 4, '2026-07-07': 9 } }),
       ligne({ heuresParJour: { '2026-07-06': 12 } }),
     ];
-    expect(maximumParJour(lignes, ['2026-07-06', '2026-07-07'])).toBe(12);
-    expect(maximumParJour([ligne({ heuresParJour: {} })], ['2026-07-06'])).toBe(0);
+    expect(dailyMaximum(lignes, ['2026-07-06', '2026-07-07'])).toBe(12);
+    expect(dailyMaximum([ligne({ heuresParJour: {} })], ['2026-07-06'])).toBe(0);
   });
 });

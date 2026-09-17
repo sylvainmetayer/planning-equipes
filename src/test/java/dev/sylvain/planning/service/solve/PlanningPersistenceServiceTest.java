@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -134,6 +135,45 @@ class PlanningPersistenceServiceTest {
     private static PlanningPersistenceService.Siege siege(
             String posteId, long creneauId, PlanningPersistenceService.VacationSnapshot vacation) {
         return new PlanningPersistenceService.Siege(posteId, "STAND-JOURS", creneauId, "A-JOURS", null, null, vacation);
+    }
+
+    /**
+     * Regression test (issue #598, review): the assembled plan carried the
+     * legal parameters but <b>not</b> the meal windows those parameters
+     * declare. Every reader that takes them from the plan — the animateur's
+     * PDF, their timeline, their espace — then saw a plan with no window at
+     * all, so {@code PauseAnalyzer} owed no coupure repas and none was ever
+     * drawn. The screens passing the windows in themselves were right all
+     * along, which is exactly why nothing failed.
+     */
+    @Test
+    void lePlanningAssembleporteLesFenetresRepasDesParametres() {
+        editionService.create(new Edition("EDITION-REPAS", "Édition repas", false, null));
+        try {
+            editionContext.executeIn("EDITION-REPAS", () -> {
+                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                Stand stand = referenceDataService.createStand(
+                        new Stand("STAND-REPAS", "Stand repas", Set.of("STRATEGIE"), 1, 1, false));
+                Creneau creneau = referenceDataService.createCreneau(
+                        new Creneau(null, 1, LocalDate.of(2026, 7, 16), LocalTime.of(9, 0), LocalTime.of(20, 0)));
+                Animateur animateur = referenceDataService.createAnimateur(
+                        new Animateur("A-REPAS", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+
+                PosteAffectation poste = new PosteAffectation("poste-repas", stand, creneau);
+                poste.setAnimateur(animateur);
+                persistenceService.persist(
+                        new PlanningEvenement(creneau.getDate(), List.of(animateur), List.of(poste)));
+
+                PlanningEvenement charge = persistenceService.loadPersistedPlanning();
+                assertThat(charge.getParametresLegaux()).isNotEmpty();
+                assertThat(charge.getFenetresRepas())
+                        .as("les fenêtres repas des paramètres voyagent avec le plan")
+                        .isEqualTo(
+                                FenetreRepas.from(charge.getParametresLegaux().get(0)));
+            });
+        } finally {
+            editionService.delete("EDITION-REPAS");
+        }
     }
 
     /**

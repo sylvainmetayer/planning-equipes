@@ -2,9 +2,11 @@ package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -681,7 +683,16 @@ public class PlanningPersistenceService {
         // The plan carries the legal parameters it was made under, so every
         // read-out downstream (breaks, exports, the animateur's espace) reads
         // the organiser's declarations from the plan itself.
-        evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
+        ParametresLegaux parametres = referenceDataService.getParametresLegaux();
+        evenement.setParametresLegaux(List.of(parametres));
+        // And the meal windows those parameters declare. They used to be left
+        // unset here: every reader that takes them from the plan — the
+        // animateur's PDF, their timeline, the espace — then saw a plan with no
+        // meal window at all, so `PauseAnalyzer` owed no coupure repas and none
+        // was ever drawn. The screens that pass the windows in themselves (the
+        // Pauses screen, the Intendance one) were right all along, which is
+        // exactly why the hole was invisible.
+        evenement.setFenetresRepas(FenetreRepas.from(parametres));
         return evenement;
     }
 

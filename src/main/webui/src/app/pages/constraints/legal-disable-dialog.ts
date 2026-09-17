@@ -16,6 +16,9 @@
 // minors' safety policy or of the meal break would over-claim, and a warning
 // that over-claims is one an administrator learns to skip.
 //
+// `protectionApplies`, not `protegee`, decides whether to ask at all: see
+// `core/constraint-protection.ts`.
+//
 // Confirmation only. No reason typed, nothing journalled: migration V39
 // removed exactly those columns because, with no authenticated user, the
 // author could only ever be the constant « ui » — neither attributable nor
@@ -33,6 +36,7 @@ import {
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
+import { protectionApplies } from '../../core/constraint-protection';
 import { ConstraintView } from '../../core/models';
 import { LegalText } from '../../shared/legal-text';
 
@@ -68,7 +72,11 @@ export class LegalDisableConfirmService {
    * so no caller can switch a legal rule off by forgetting to ask.
    */
   async allowsDisabling(constraint: ConstraintView): Promise<boolean> {
-    if (!constraint.protegee) {
+    // A rule the catalogue ships switched off is not one the organisation gave
+    // itself and is now taking back: putting it back where it shipped is not a
+    // decision, and asking a solemn confirmation for it teaches an
+    // administrator to click through the ones that matter.
+    if (!protectionApplies(constraint)) {
       return true;
     }
     const dialogRef = this.dialog.open<LegalDisableDialog, LegalDisableData, boolean>(
