@@ -32,7 +32,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class PlanningHoursService {
 
     /**
-     * 22:00 — the hour the FESTIVAL counts its night hours from, and the one art.
+     * 22:00 — the hour the organiser counts its night hours from, and the one art.
      * <b>L3163-1</b> opens a 16-to-18 year old's night at.
      *
      * <p>Not {@code ParametresLegaux.heureDebutSoiree}, which is 20:00 by

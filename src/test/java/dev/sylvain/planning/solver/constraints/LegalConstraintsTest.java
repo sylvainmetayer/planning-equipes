@@ -34,7 +34,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     /**
      * The catalogue ships {@code mineurNecessiteEncadrementMajeur} switched
-     * off (issue #595): the FESTIVAL's managers, who are never planned, provide
+     * off (issue #595): the organiser's managers, never planned, provide
      * that supervision, and no article of the Code du travail asks the solver
      * for it. An organiser without such a manager turns it on, which is what
      * the {@code actif = true} toggle below says — and what these two tests

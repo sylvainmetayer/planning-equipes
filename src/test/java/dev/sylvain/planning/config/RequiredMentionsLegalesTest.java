@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
  */
 class RequiredMentionsLegalesTest {
 
-    private static final String EDITEUR = "Association Festival, 1 rue du Jeu, 53000 Laval";
+    private static final String EDITEUR = "Association Ludique, 1 rue du Jeu, 53000 Laval";
     private static final String HEBERGEUR = "OVH SAS, 2 rue Kellermann, 59100 Roubaix";
     private static final String CONTACT = "contact@example.org";
     private static final String BASE_LEGALE = "Exécution du contrat de bénévolat";

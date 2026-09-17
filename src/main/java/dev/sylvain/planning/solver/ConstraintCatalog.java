@@ -65,7 +65,7 @@ public final class ConstraintCatalog {
      * when the organisation this deployment serves fills it outside the plan.
      * {@code mineurNecessiteEncadrementMajeur} is the case that created the
      * mechanism: no article of the Code du travail requires an adult beside a
-     * young worker, and the FESTIVAL's managers — who are never planned — provide
+     * young worker, and the organiser's managers — never planned — provide
      * that supervision themselves (issue #595, ADR 0041). The legal framework
      * for minors does not move an inch: {@code travailDeNuitInterditPourMineur},
      * {@code standReserveAuxMajeurs}, the duration caps and the rest stay

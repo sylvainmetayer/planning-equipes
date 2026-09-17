@@ -10,8 +10,8 @@ import java.util.List;
  *
  * <p>The meal break is <b>not</b> the legal break of art. L3121-16, which is
  * twenty minutes owed at the sixth hour and is carried by
- * {@code travailContinuMaxMajeur}. It is the organiser's own rule — the FESTIVAL
- * workbook's midday and evening rotations — and the two are distinct objects:
+ * {@code travailContinuMaxMajeur}. It is the organiser's own rule — the
+ * staffing workbook's midday and evening rotations — and the two are distinct objects:
  * declaring the legal break taken on the post
  * ({@link ParametresLegaux#isPauseSurPoste()}) says nothing about lunch, which
  * is precisely how a ten-hour unbroken day used to pass unnoticed (issue #438).
@@ -33,7 +33,7 @@ import java.util.List;
  * @param fin           instant it must have ended by
  * @param dureeMinutes  how long the break must last, uninterrupted
  * @param auPlusTard    which end of the window the break is preferred at:
- *                      {@code true} for midday, where the FESTIVAL wants 13-14
+ *                      {@code true} for midday, where the organiser wants 13-14
  *                      rather than 12-13 — the stands have just opened —
  *                      {@code false} for the evening, eaten early so the stands
  *                      reopen. The direction lives on the window rather than in

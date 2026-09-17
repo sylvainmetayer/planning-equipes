@@ -23,7 +23,7 @@ import java.util.List;
  *
  * <p>A free stretch of {@link FenetreRepas#dureeMinutes()} minutes lying
  * <b>entirely inside</b> the window. On a 12:00-14:00 window owing 60 minutes,
- * that is 12:00-13:00 or 13:00-14:00 — the two slots the FESTIVAL grid cuts for the
+ * that is 12:00-13:00 or 13:00-14:00 — the two slots the organiser's grid cuts for the
  * midday rotation — and also anything in between, such as 12:30-13:30. A break
  * running 13:45-14:45 does not count: it leaves the window, whose bounds are
  * the meal service, not a vague suggestion.</p>

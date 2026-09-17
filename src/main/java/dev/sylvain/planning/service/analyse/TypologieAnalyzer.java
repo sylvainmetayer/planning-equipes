@@ -28,7 +28,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * referential — id, label, ninja — and its detail view lists the animateurs
  * <i>vetted</i> on a typologie, never the ones the solver put there. The
  * assignment views are organised by stand, by day or by person. Yet the
- * typologie is the axis the FESTIVAL reasons about its games on, and the one a
+ * typologie is the axis the organiser reasons about its games on, and the one a
  * quality rule caps ({@code limiterTypologiesDistinctesParAnimateur}) and a
  * hard one quotas ({@code plafondCreneauxParTypologie}): a ceiling nobody can
  * see is a ceiling nobody can set.</p>

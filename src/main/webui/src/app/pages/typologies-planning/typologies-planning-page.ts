@@ -43,7 +43,7 @@ export type OngletTypologies = 'table' | 'barres' | 'heatmap' | 'cartes';
  *
  * <p>It used to be a card at the bottom of the Typologies referential, which
  * made it something one stumbled on while editing labels. The typologie is the
- * axis the FESTIVAL reasons about its games on, and the one a quality rule caps and
+ * axis the organiser reasons about its games on, and the one a quality rule caps and
  * a hard one quotas: the reading deserves its own address, and four renderings
  * of the same rows — a table to sort by, bars to compare on, a typologie × jour
  * heatmap to answer « quand mes jeux de stratégie tournent-ils », and cards for

@@ -657,8 +657,8 @@ de dix heures d'affilée sortait à zéro dur, sans que rien ne le signale
 La seule pause que le Code impose est celle de [L3121-16] — vingt minutes
 consécutives dès que le temps de travail quotidien atteint six heures — et
 `travailContinuMaxMajeur` la porte déjà. La coupure repas est la règle
-d'organisation de l'événement, celle pour laquelle la grille du classeur source
-taille ses vacations de midi. Elle est tenue **en dur par choix**, sous une
+d'organisation de l'événement, celle pour laquelle la grille du classeur
+source taille ses vacations de midi. Elle est tenue **en dur par choix**, sous une
 catégorie « Organisation (repas) » protégée : le catalogue n'avait pas de case
 pour une règle d'organisation dure, il en a une maintenant.
 
