@@ -233,10 +233,24 @@ test.describe('typologies', () => {
     await page.goto('/typologies-planning');
 
     await expect(page.getByRole('heading', { name: 'Planning par typologie' })).toBeVisible();
-    for (const onglet of ['Barres comparées', 'Typologie × jour', 'Cartes', 'Tableau']) {
-      await page.getByRole('button', { name: onglet }).click();
-      await expect(page.locator('.typologies-onglets')).toBeVisible();
-    }
+
+    // `mat-button-toggle` renders radios in a radiogroup, not buttons — same
+    // reading as the Diagnostic tabs. Each rendering is asserted on what only
+    // it draws, so a tab that switches without rendering fails here.
+    const onglets = page.getByRole('radiogroup', { name: 'Rendu du planning par typologie' });
+    await onglets.getByText('Barres comparées').click();
+    await expect(page.locator('.typologies-barres')).toBeVisible();
+
+    await onglets.getByText('Typologie × jour').click();
+    // Une édition sans jour tenu dit pourquoi elle ne dessine rien plutôt que
+    // de montrer une grille vide : les deux sont des succès.
+    await expect(page.locator('.typologies-heatmap, .empty-hint').first()).toBeVisible();
+
+    await onglets.getByText('Cartes').click();
+    await expect(page.locator('.typologies-cartes')).toBeVisible();
+
+    await onglets.getByText('Tableau').click();
+    await expect(page.locator('.typologies-table')).toBeVisible();
 
     // A search nothing matches empties the table and says so, rather than
     // looking like an edition with no typologies at all.
