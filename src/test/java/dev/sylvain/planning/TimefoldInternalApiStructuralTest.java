@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
  *
  * <p>{@code core.impl} is outside Timefold's semantic versioning: a minor bump
  * may rename, move or reshape anything in it, and the repository has already
- * paid one such break (the 2.x migration, {@code docs/migration-timefold-2.md}).
+ * paid one such break: the 2.x migration.
  * The rule is not "never depend on it" — the move-filter SPI only exists
  * there — but "never depend on it without saying what will catch the next
  * break". Issue #392's A9 found three filters that did.</p>

@@ -223,7 +223,7 @@
                 359 s, construction heuristic ending at -110 hard instead of
                 -218) — and never on its canicule variant, which reaches
                 feasibility in the construction heuristic and so does not
-                exercise this setting at all. See docs/migration-timefold-2.md.
+                exercise this setting at all.
             -->
             <acceptedCountLimit>1</acceptedCountLimit>
         </forager>

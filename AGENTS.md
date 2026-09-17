@@ -367,8 +367,8 @@ Single Quarkus service, no separate solver microservice. Package root:
   on a Community 2.x build the oracle is gated, so the test reports itself
   **skipped** instead of failing, and a green build then proves nothing about
   the diagnostic. A licence restores the comparison with no configuration
-  change. See `docs/decisions/0013-diagnostic-par-le-score-director.md` and
-  `docs/migration-timefold-2.md`. The three move filters
+  change. See `docs/decisions/0013-diagnostic-par-le-score-director.md`.
+  The three move filters
   (`EligibleAnimateurMoveFilter`, `HoleNeighbourPosteFilter`,
   `UnassignedPosteFilter`) and the move factory
   (`WeekRelocationMoveIteratorFactory`) depend on `core.impl` too — the

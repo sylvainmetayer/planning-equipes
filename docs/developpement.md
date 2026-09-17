@@ -666,7 +666,7 @@ Ce réglage s'appelait `REPRODUCIBLE` en Timefold 1.x. Ce mode **n'existe plus
 en 2.x** : la reproductibilité n'y est plus un mode mais une conséquence du
 `randomSeed`, et `NO_ASSERT` est le même compromis sous le nouveau nom. Écrire
 `REPRODUCIBLE` dans le fichier fait désormais échouer la construction de la
-*solver factory* — voir [`migration-timefold-2.md`](migration-timefold-2.md).
+*solver factory*.
 
 Il n'y a **pas** de `<moveThreadCount>` : la résolution incrémentale
 multi-thread appartient à Timefold Solver *Enterprise Edition*, produit
