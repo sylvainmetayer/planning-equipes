@@ -43,8 +43,7 @@ public class PlanningHoursService {
      * <p>Not the Code du travail's own night period either, which art.
      * <b>L3122-2</b> sets at 21:00-06:00 <i>absent a collective agreement</i>.
      * The counter reports what the organisation asked for; whether the
-     * applicable convention moves that bound is what {@code
-     * docs/audit-conformite-rh.md} leaves to confirm.</p>
+     * applicable convention moves that bound is left to confirm.</p>
      */
     public static final LocalTime HEURE_NUIT = LocalTime.of(22, 0);
 

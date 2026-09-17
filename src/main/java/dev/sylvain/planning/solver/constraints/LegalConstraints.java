@@ -941,7 +941,8 @@ public final class LegalConstraints {
      * allows by construction — it is what the organisers asked for, in those
      * words. A plan that needs one more minute will find it there rather than
      * elsewhere. The average over twelve weeks (art. L3121-22) remains out of
-     * scope; see {@code docs/audit-conformite-rh.md}, line C3.</p>
+     * scope, assumed as such: the solver knows neither the nine weeks before the
+     * edition nor those after.</p>
      *
      * <p>Grouped per animateur — one tuple each, a map of week to minutes —
      * rather than joined week against week: a grouped stream cannot be joined

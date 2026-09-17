@@ -76,5 +76,5 @@ Elle n'est pas remplacée, elle est conditionnée.
   fichier décrit un problème vérifié avec elle, et sans cette ligne le cas
   dégénéré ne dégénérerait plus.
 - La responsabilité de l'encadrement est **hors planning**. Ce n'est pas un avis
-  juridique : c'est un choix d'organisation, consigné dans
-  `docs/audit-conformite-rh.md`.
+  juridique : c'est un choix d'organisation, que l'organisation consigne de son
+  côté.

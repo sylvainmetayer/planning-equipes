@@ -139,7 +139,7 @@ le solveur ait une pente à descendre plutôt qu'un mur.
 C'est la forme courte de l'art. **L3121-22** (44 h en moyenne sur douze
 semaines consécutives), la seule qui ait un sens sur quinze jours : le solveur
 ne connaît ni les neuf semaines d'avant ni celles d'après. La moyenne glissante
-reste **hors périmètre assumé** — voir `docs/audit-conformite-rh.md`, ligne C3.
+reste donc **hors périmètre, assumé comme tel**.
 
 > **Ce que la règle ne rattrape pas** : 47 h 59 puis 48 h, permis par
 > construction. C'est la formulation demandée par l'organisateur, mot pour mot ;
