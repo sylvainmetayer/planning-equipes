@@ -67,7 +67,7 @@ export class EditionsPage {
    * mid-festival keeps its roster. Turned off, the copy is a year template:
    * the structure, nobody.
    */
-  protected readonly avecAnimateurs = signal(true);
+  protected readonly keepAnimateurs = signal(true);
   protected readonly enCours = signal(false);
 
   protected readonly courantId = computed(() => this.store.courant()?.id ?? null);
@@ -95,14 +95,14 @@ export class EditionsPage {
     };
     const source = this.sourceDuplication();
     await this.executer(async () => {
-      const avecAnimateurs = this.avecAnimateurs();
-      await this.editionsApi.create(target, source, avecAnimateurs);
+      const keepAnimateurs = this.keepAnimateurs();
+      await this.editionsApi.create(target, source, keepAnimateurs);
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
-      this.avecAnimateurs.set(true);
+      this.keepAnimateurs.set(true);
       this.notifications.notify({
         title: source
-          ? avecAnimateurs
+          ? keepAnimateurs
             ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
             : $localize`:@@editions.duplicatedSansAnimateurs:Édition ${nom}:nom: créée à partir de ${source}:source:, sans les animateurs.`
           : $localize`:@@editions.created:Édition ${nom}:nom: créée.`,

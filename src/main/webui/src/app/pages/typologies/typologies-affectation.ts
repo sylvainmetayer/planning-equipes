@@ -75,7 +75,7 @@ export class TypologiesAffectation {
 
   private readonly planningApi = inject(PlanningApi);
 
-  protected async charger(): Promise<void> {
+  protected async load(): Promise<void> {
     this.busy.set(true);
     this.output.set('');
     try {

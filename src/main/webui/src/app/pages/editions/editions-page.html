@@ -37,12 +37,12 @@
       </button>
       @if (sourceDuplication()) {
         <div class="span-3">
-          <mat-checkbox name="avecAnimateurs" [ngModel]="avecAnimateurs()"
-                        (ngModelChange)="avecAnimateurs.set($event)">
+          <mat-checkbox name="avecAnimateurs" [ngModel]="keepAnimateurs()"
+                        (ngModelChange)="keepAnimateurs.set($event)">
             <ng-container i18n="@@editions.field.avecAnimateurs">Reprendre les animateurs</ng-container>
           </mat-checkbox>
           <p class="hint">
-            @if (avecAnimateurs()) {
+            @if (keepAnimateurs()) {
               <ng-container i18n="@@editions.hint.avecAnimateurs">Les personnes suivent, avec compétences, indisponibilités, souhaits et ajustements. C'est ce qu'il faut pour une variante en cours d'événement.</ng-container>
             } @else {
               <ng-container i18n="@@editions.hint.sansAnimateurs">Seule la structure est copiée : stands, typologies, horaires, créneaux, paramètres. C'est le modèle d'année, à préparer sans recopier un fichier de personnes.</ng-container>

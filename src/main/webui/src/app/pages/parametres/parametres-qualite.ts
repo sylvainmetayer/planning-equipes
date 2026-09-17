@@ -42,11 +42,11 @@ export class ParametresQualiteCard {
   protected readonly error = signal('');
   protected readonly saved = signal(false);
 
-  protected readonly maxEmplacementsDistinctsParJour = signal<number | null>(null);
+  protected readonly dailyLocationsCap = signal<number | null>(null);
   protected readonly typologiesDistinctesMax = signal<number | null>(null);
   protected readonly heureServiceTardif = signal('');
   protected readonly heureServiceMatinal = signal('');
-  protected readonly reposSouhaiteApresServiceTardifHeures = signal<number | null>(null);
+  protected readonly restAfterLateServiceHours = signal<number | null>(null);
 
   private readonly constraintsApi = inject(ConstraintsApi);
 
@@ -67,13 +67,13 @@ export class ParametresQualiteCard {
   }
 
   private read(parametres: ParametresQualite): void {
-    this.maxEmplacementsDistinctsParJour.set(parametres.maxEmplacementsDistinctsParJour ?? null);
+    this.dailyLocationsCap.set(parametres.maxEmplacementsDistinctsParJour ?? null);
     this.typologiesDistinctesMax.set(parametres.typologiesDistinctesMax ?? null);
     // `HH:mm:ss` on the wire, `HH:mm` in a time input: the seconds are always
     // zero here and an input that shows them asks for a value nobody means.
     this.heureServiceTardif.set(heureCourte(parametres.heureServiceTardif));
     this.heureServiceMatinal.set(heureCourte(parametres.heureServiceMatinal));
-    this.reposSouhaiteApresServiceTardifHeures.set(
+    this.restAfterLateServiceHours.set(
       (parametres.reposSouhaiteApresServiceTardifMinutes ?? 0) / 60,
     );
   }
@@ -84,9 +84,9 @@ export class ParametresQualiteCard {
    * card did not show.
    */
   protected async save(): Promise<void> {
-    const emplacements = this.maxEmplacementsDistinctsParJour();
+    const emplacements = this.dailyLocationsCap();
     const typologies = this.typologiesDistinctesMax();
-    const reposHeures = this.reposSouhaiteApresServiceTardifHeures();
+    const reposHeures = this.restAfterLateServiceHours();
     if (
       emplacements === null ||
       emplacements < 1 ||

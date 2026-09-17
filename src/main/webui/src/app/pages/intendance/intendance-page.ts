@@ -42,7 +42,7 @@ export interface TableauIntendance {
   total: number;
   totalMineurs: number;
   /** Column totals, so « à 13:00, 24 personnes » reads without adding up the rows. */
-  totauxParTranche: number[];
+  slotTotals: number[];
 }
 
 /**
@@ -62,7 +62,7 @@ export function tableauxIntendance(rapport: RapportIntendance | null): TableauIn
 
 function tableau(journee: JourneeIntendance, fenetre: FenetreIntendance): TableauIntendance {
   const tranches = fenetre.tranches.map((tranche) => formatHeure(tranche));
-  const totauxParTranche = tranches.map((_, index) =>
+  const slotTotals = tranches.map((_, index) =>
     fenetre.emplacements.reduce((somme, ligne) => somme + (ligne.personnes[index] ?? 0), 0),
   );
   return {
@@ -81,7 +81,7 @@ function tableau(journee: JourneeIntendance, fenetre: FenetreIntendance): Tablea
     })),
     total: fenetre.total,
     totalMineurs: fenetre.totalMineurs,
-    totauxParTranche,
+    slotTotals,
   };
 }
 
@@ -138,10 +138,10 @@ export class IntendancePage {
   private readonly analyses = inject(AnalysesApi);
 
   constructor() {
-    void this.charger();
+    void this.load();
   }
 
-  protected async charger(): Promise<void> {
+  protected async load(): Promise<void> {
     this.busy.set(true);
     this.output.set('');
     try {

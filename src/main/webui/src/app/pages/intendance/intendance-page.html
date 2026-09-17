@@ -9,7 +9,7 @@
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton="tonal" [disabled]="busy()" (click)="charger()">
+    <button matButton="tonal" [disabled]="busy()" (click)="load()">
       <mat-icon>refresh</mat-icon>
       <ng-container i18n="@@common.refresh">Actualiser</ng-container>
     </button>
@@ -74,7 +74,7 @@
         <tfoot>
           <tr>
             <th scope="row" class="heatmap-row-header" i18n="@@intendance.column.total">Total</th>
-            @for (total of tableau.totauxParTranche; track $index) {
+            @for (total of tableau.slotTotals; track $index) {
               <td>{{ total }}</td>
             }
             <td>{{ tableau.total }}</td>

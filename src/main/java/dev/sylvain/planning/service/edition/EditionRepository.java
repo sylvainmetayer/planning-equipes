@@ -47,7 +47,7 @@ public class EditionRepository {
      * one. That test is what makes the next added column loud.</p>
      */
     static final List<TableToCopy> TABLES_A_COPIER = List.of(
-            new TableToCopy("typologie", "id, label, ninja"),
+            new TableToCopy("typologie", "id, label, ninja, max_creneaux_par_animateur"),
             new TableToCopy("emplacement", "id, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
             // #172 ends with « Envoyer à all », mute without it); neither token

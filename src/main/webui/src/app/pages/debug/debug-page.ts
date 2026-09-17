@@ -347,14 +347,14 @@ export class DebugPage {
    * analysed answers an empty view, which is said in words rather than left as
    * a lone pair of braces.
    */
-  protected async onChargerDiagnostic(): Promise<void> {
+  protected async onLoadDiagnostic(): Promise<void> {
     this.diagnosticBusy.set(true);
     try {
-      const vue = await this.constraintsApi.diagnose();
+      const diagnostic = await this.constraintsApi.diagnose();
       this.diagnosticJson.set(
-        vue.analysedAt === null
+        diagnostic.analysedAt === null
           ? $localize`:@@debug.diagnostic.empty:Aucun planning n'a encore été analysé sur cette édition.`
-          : JSON.stringify(vue, null, 2),
+          : JSON.stringify(diagnostic, null, 2),
       );
     } catch (error) {
       this.output.set(errorPrefix(error));

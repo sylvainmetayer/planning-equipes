@@ -94,8 +94,8 @@ function toDraft(typologie: TypologieItem | null): TypologieItem {
 
 /** A cap the form leaves empty, or a number under 1, is no cap at all. */
 function capOrNull(valeur: number | null | undefined): number | null {
-  const nombre = Number(valeur);
-  return valeur === null || valeur === undefined || !Number.isFinite(nombre) || nombre < 1
+  const parsed = Number(valeur);
+  return valeur === null || valeur === undefined || !Number.isFinite(parsed) || parsed < 1
     ? null
-    : Math.round(nombre);
+    : Math.round(parsed);
 }

@@ -277,7 +277,7 @@ class EditionResourceTest {
                 .body("{\"id\":\"AJUST-MODELE\",\"type\":\"INDISPONIBILITE_FORCEE\","
                         + "\"animateursConcernes\":[{\"id\":\"ANIM-MODELE\"}],\"raison\":\"Absent\"}")
                 .when()
-                .post("/api/contraintes")
+                .post("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200);
 
@@ -297,7 +297,7 @@ class EditionResourceTest {
                 .body("size()", org.hamcrest.Matchers.equalTo(0));
         given().header(HEADER, "MODELE-2027")
                 .when()
-                .get("/api/contraintes")
+                .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
                 .body("size()", org.hamcrest.Matchers.equalTo(0));
@@ -305,7 +305,7 @@ class EditionResourceTest {
         // The ad hoc constraint was written into DEFAUT, which no @AfterEach
         // clears: left there it would forbid ANIM-MODELE every seat, in every
         // test that solves after this one.
-        given().header(HEADER, DEFAUT).when().delete("/api/contraintes/AJUST-MODELE");
+        given().header(HEADER, DEFAUT).when().delete("/api/contraintes-ad-hoc/AJUST-MODELE");
     }
 
     /** The default is unchanged: the people follow, as the « plan canicule » ritual of #172 needs. */

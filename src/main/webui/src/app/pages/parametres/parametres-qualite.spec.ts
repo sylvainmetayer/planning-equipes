@@ -10,11 +10,11 @@ import { ParametresQualiteCard } from './parametres-qualite';
 
 /** Reaches the protected members the template binds to. */
 type CardInternals = {
-  maxEmplacementsDistinctsParJour: { (): number | null; set: (value: number | null) => void };
+  dailyLocationsCap: { (): number | null; set: (value: number | null) => void };
   typologiesDistinctesMax: { (): number | null; set: (value: number | null) => void };
   heureServiceTardif: { (): string; set: (value: string) => void };
   heureServiceMatinal: { (): string; set: (value: string) => void };
-  reposSouhaiteApresServiceTardifHeures: () => number | null;
+  restAfterLateServiceHours: () => number | null;
   error: () => string;
   save: () => Promise<void>;
 };
@@ -54,11 +54,11 @@ describe('ParametresQualiteCard', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(card.maxEmplacementsDistinctsParJour()).toBe(3);
+    expect(card.dailyLocationsCap()).toBe(3);
     expect(card.typologiesDistinctesMax()).toBe(2);
     // `HH:mm:ss` on the wire, `HH:mm` in the time input.
     expect(card.heureServiceTardif()).toBe('22:00');
-    expect(card.reposSouhaiteApresServiceTardifHeures()).toBe(12);
+    expect(card.restAfterLateServiceHours()).toBe(12);
 
     card.typologiesDistinctesMax.set(3);
     await card.save();

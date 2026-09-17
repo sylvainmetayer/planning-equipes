@@ -28,7 +28,7 @@ type CardInternals = {
   rapport: () => LigneTypologie[] | null;
   lignes: () => LigneTypologie[];
   aucuneAffectation: () => boolean;
-  charger: () => Promise<void>;
+  load: () => Promise<void>;
   exporter: () => Promise<void>;
   output: () => string;
 };
@@ -71,7 +71,7 @@ describe('TypologiesAffectation', () => {
     });
     const card = createCard();
 
-    await card.charger();
+    await card.load();
 
     expect(card.lignes()).toHaveLength(2);
     expect(card.ligne('AMBIANCE')?.label).toBe('Ambiance');
@@ -85,7 +85,7 @@ describe('TypologiesAffectation', () => {
     });
     const card = createCard();
 
-    await card.charger();
+    await card.load();
 
     expect(card.aucuneAffectation()).toBe(true);
   });
@@ -95,7 +95,7 @@ describe('TypologiesAffectation', () => {
       typologies: [ligne(), ligne({ typologie: 'AMBIANCE', label: 'Ambiance' })],
     });
     const card = createCard();
-    await card.charger();
+    await card.load();
 
     card.typologieId.set('AMBIANCE');
 
@@ -106,7 +106,7 @@ describe('TypologiesAffectation', () => {
     planningApi.typologiesReport.mockRejectedValue(new Error('boom'));
     const card = createCard();
 
-    await card.charger();
+    await card.load();
 
     expect(card.output()).not.toBe('');
     expect(card.rapport()).toBeNull();

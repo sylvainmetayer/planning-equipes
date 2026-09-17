@@ -139,8 +139,8 @@ export class HoursPage {
       );
     }
     const total = animateurs.reduce((sum, row) => sum + row.total, 0);
-    const somme = (lire: (row: HeuresAnimateur) => number) =>
-      animateurs.reduce((sum, row) => sum + lire(row), 0);
+    const somme = (read: (row: HeuresAnimateur) => number) =>
+      animateurs.reduce((sum, row) => sum + read(row), 0);
     return {
       animateurCount: animateurs.length,
       parSemaine,
@@ -213,8 +213,8 @@ function compareByColumn(a: HeuresAnimateur, b: HeuresAnimateur, column: string)
   if (column === 'animateur') {
     return a.nom.localeCompare(b.nom);
   }
-  const lire = COLONNES_PAIE[column];
-  const valueA = lire ? lire(a) : (a.heuresParSemaine[column] ?? 0);
-  const valueB = lire ? lire(b) : (b.heuresParSemaine[column] ?? 0);
+  const read = COLONNES_PAIE[column];
+  const valueA = read ? read(a) : (a.heuresParSemaine[column] ?? 0);
+  const valueB = read ? read(b) : (b.heuresParSemaine[column] ?? 0);
   return valueA - valueB;
 }

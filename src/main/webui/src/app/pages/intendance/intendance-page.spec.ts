@@ -59,7 +59,7 @@ describe('tableauxIntendance', () => {
   it('sums each half-hour across the emplacements', () => {
     // The column total is the number of trays to carry at that moment; the row
     // total counts a person once, whatever the half-hours their break spans.
-    expect(tableauxIntendance(rapport)[0].totauxParTranche).toEqual([3, 3, 2, 2]);
+    expect(tableauxIntendance(rapport)[0].slotTotals).toEqual([3, 3, 2, 2]);
     expect(tableauxIntendance(rapport)[0].total).toBe(5);
   });
 
