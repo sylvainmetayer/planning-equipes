@@ -136,7 +136,7 @@ export interface LienPivot {
  * person on their own timeline. The label names the target rather than the
  * screen, because that is what the reader was looking at when they clicked.
  */
-export function lienDeCellule(axe: AxePivot, cle: string, libelle: string): LienPivot {
+export function cellLink(axe: AxePivot, cle: string, libelle: string): LienPivot {
   if (axe === 'ANIMATEUR') {
     return {
       route: '/timeline',

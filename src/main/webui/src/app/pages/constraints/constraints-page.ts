@@ -33,7 +33,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
-import { classeCellule, ColonnePivot, buildPivot, lienDeCellule } from './ecarts-pivot';
+import { classeCellule, ColonnePivot, buildPivot, cellLink } from './ecarts-pivot';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -250,7 +250,7 @@ export class ConstraintsPage {
       // « 210 écarts ici » is a measurement, and a reader who cannot act on a
       // screen stops opening it (review of issue #496).
       remediation: contrainte?.remediation ?? '',
-      lien: lienDeCellule(axe, opened.cle, this.libellePivot(axe, opened.cle)),
+      lien: cellLink(axe, opened.cle, this.libellePivot(axe, opened.cle)),
       poids: contrainte?.poids ?? 1,
       niveau: contrainte ? niveauLabel(contrainte.niveau) : '',
       dosable: contrainte?.dosable ?? false,

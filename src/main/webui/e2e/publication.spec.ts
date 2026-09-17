@@ -88,7 +88,7 @@ test.describe('Publication du planning', () => {
   }) => {
     await deplacerUnSiege(admin);
     const page = await pageAdmin(browser, admin);
-    await page.goto('/solveur');
+    await page.goto('/publication');
 
     await expect(
       page.getByRole('button', { name: /Publier — 2 personnes concernées/ }),
@@ -124,7 +124,7 @@ test.describe('Publication du planning', () => {
       await route.fallback();
     });
 
-    await page.goto('/solveur');
+    await page.goto('/publication');
     const bouton = page.getByRole('button', { name: /Publier — 2 personnes concernées/ });
     await expect(bouton).toBeEnabled();
     await bouton.click();

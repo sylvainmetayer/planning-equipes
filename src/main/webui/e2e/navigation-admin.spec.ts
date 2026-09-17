@@ -31,6 +31,7 @@ test.afterAll(async () => {
 const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/', marker: "État de l'édition", sheet: 'accueil-ligne' },
   { path: '/solveur', marker: 'Calculer le planning', sheet: 'solver-volumetry' },
+  { path: '/publication', marker: 'Diffusion du planning', sheet: 'publication-etat' },
   { path: '/notifications', sheet: 'notification-jour' },
   // One page over four tabs, each visited: a tab's stylesheet travels with the
   // page's chunk, and only a browser can tell that it arrived.
@@ -71,6 +72,12 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/journee?vue=calendrier', sheet: 'day-calendar-grid' },
   { path: '/hours', marker: 'Heures planifiées par animateur', sheet: 'hours-total-row' },
   { path: '/equite', marker: 'Équité par animateur', sheet: 'equite-synthese-row' },
+  { path: '/intendance', marker: 'Intendance des repas', sheet: 'intendance-total' },
+  {
+    path: '/typologies-planning',
+    marker: 'Qui tient quoi, et pour quel volume',
+    sheet: 'typologies-barre-piste',
+  },
   { path: '/ouvertures', marker: 'Ouvertures des stands', sheet: 'ouvertures-synthese' },
   { path: '/diagnostic?onglet=besoin', marker: 'Minimum retenu', sheet: 'staffing-summary' },
   { path: '/diagnostic?onglet=banc', marker: 'Banc de touche', sheet: 'banc-controls' },

@@ -86,11 +86,11 @@ test("l'envoi des plannings par e-mail rend compte, individuellement et pour tou
   await page.getByRole('button', { name: 'Envoyer par e-mail' }).click();
   await expect(page.getByText('Planning envoyé à Alice E2E')).toBeVisible();
 
-  // Le pendant collectif vit sur la page Solveur : « Publier ». Le seed vient
-  // de publier, donc il n'y a plus personne à prévenir et le bouton le dit
-  // plutôt que d'inviter à un clic qui serait refusé. Le parcours complet
+  // Le pendant collectif vit sur la page Publication : « Publier ». Le seed
+  // vient de publier, donc il n'y a plus personne à prévenir et le bouton le
+  // dit plutôt que d'inviter à un clic qui serait refusé. Le parcours complet
   // (déplacer un siège, relire la liste, publier) est dans publication.spec.ts.
-  await page.goto('/solveur');
+  await page.goto('/publication');
   await expect(page.getByText('Tout le monde est à jour')).toBeVisible();
   await expect(page.getByText(/Dernière publication le/)).toBeVisible();
   await page.context().close();
