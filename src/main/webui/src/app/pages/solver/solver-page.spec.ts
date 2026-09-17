@@ -8,6 +8,7 @@
 // same mocks.
 
 import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
+import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -131,7 +132,6 @@ type PageInternals = {
   feasibility: Signal<FeasibilityReport | null>;
   hardScore: Signal<number | null>;
   hardIssues: Signal<HardIssue[]>;
-  exportBusy: WritableSignal<boolean>;
   incrementalStats: Signal<StatistiquesIncremental | null>;
   incrementalChangements: Signal<ChangementAffectation[]>;
   raisonVerrou: Signal<string>;
@@ -240,6 +240,8 @@ describe('SolverPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        // The page links to « Export & publication » since issue #320.
+        provideRouter([]),
         { provide: PlanningApi, useValue: planningApi },
         { provide: SolverJobService, useValue: jobs },
         { provide: PlanningStateService, useValue: planningState },
@@ -568,15 +570,18 @@ describe('SolverPage', () => {
       expect(page.impactPublication()).toBeNull();
     });
 
-    // The solve just rewrote the plan: the count of people to inform is the
-    // diffusion panel's, and it is the page that knows a solve landed.
-    it('asks the diffusion panel to re-read who is concerned once a solve lands', async () => {
+    // The diffusion moved to « Export & publication » (issue #320): this page
+    // solves, and nothing here reads who would be informed. The panel reads it
+    // when that screen opens, which is after the solve by construction.
+    it('reads the last publication once, and never again after a solve', async () => {
       createPage();
       await vi.waitFor(() => expect(planningApi.publicationPreview).toHaveBeenCalledOnce());
 
       pushResult('SOLVE', diagnostic());
 
-      expect(planningApi.publicationPreview).toHaveBeenCalledTimes(2);
+      // The date only feeds the « Recommencer de zéro » warning, and a solve
+      // does not change when the plan was last published.
+      expect(planningApi.publicationPreview).toHaveBeenCalledOnce();
     });
 
     it('sends the default start with the everyday button, and nothing else', async () => {
@@ -641,24 +646,13 @@ describe('SolverPage', () => {
       expect(page.raisonVerrou()).toContain("n'est pas encore connu");
     });
 
-    // An export in flight reads the persisted planning: it wins over the solver
-    // state, because it is the reason the user is actually blocked right now.
-    it('puts a running export ahead of the solver state', () => {
-      solverBusy.set(true);
-      activeJob.set(tracked());
+    // The export moved to « Export & publication » (issue #320), and with it
+    // the only reason this page could be blocked by something other than the
+    // solver: the lock reason is now the solver's, and only the solver's.
+    it('names nothing but the solver, now that the exports left the page', () => {
       const page = createPage();
 
-      page.exportBusy.set(true);
-
-      expect(page.raisonVerrou()).toContain('export');
-    });
-
-    it('names the export even when the solver is idle', () => {
-      const page = createPage();
-
-      page.exportBusy.set(true);
-
-      expect(page.raisonVerrou()).toContain('export');
+      expect(page.raisonVerrou()).toBe('');
     });
 
     it('goes back to silence once the job ends', () => {

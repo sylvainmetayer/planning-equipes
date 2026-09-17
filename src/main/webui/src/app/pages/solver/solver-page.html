@@ -96,7 +96,23 @@
 
 <app-solver-duration-card />
 
-<app-publication-panel (reported)="output.set($event)" (exportBusyChange)="exportBusy.set($event)" />
+<!-- Diffusion moved to its own screen (issue #320): the solver solves, and
+     « Export & publication » is where the plan leaves the tool. The link is
+     the last step of this page, not a card of it. -->
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@solver.diffusion.suite">Le planning vous convient ?</h2>
+    <mat-card-subtitle i18n="@@solver.diffusion.suiteHint">
+      Les documents à imprimer ou à archiver et l'envoi aux animateurs sont sur l'écran Export &amp; publication.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-actions class="card-actions">
+    <a matButton="filled" routerLink="/exports">
+      <mat-icon>outgoing_mail</mat-icon>
+      <ng-container i18n="@@nav.link.exports">Export &amp; publication</ng-container>
+    </a>
+  </mat-card-actions>
+</mat-card>
 
 <app-solver-volumetry />
 

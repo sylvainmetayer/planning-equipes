@@ -185,7 +185,7 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           // (c'est un nom Material Symbols) : un <mat-icon> sans glyphe affiche
           // son texte rogné. `file_download` est le miroir de l'import.
           path: '/exports',
-          label: $localize`:@@nav.link.exports:Exports`,
+          label: $localize`:@@nav.link.exports:Export & publication`,
           icon: 'file_download',
         },
       ],

@@ -276,7 +276,7 @@ export function buildReferenceDataSections(): HelpSection[] {
           route: '/imports',
           label: $localize`:@@aide.lien.importAnimateurs:Imports — onglet Animateurs`,
         },
-        { route: '/exports', label: $localize`:@@nav.link.exports:Exports` },
+        { route: '/exports', label: $localize`:@@nav.link.exports:Export & publication` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
       ],

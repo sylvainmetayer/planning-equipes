@@ -603,7 +603,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
-  `/imports`, `/export-csv`, `/creneaux`, `/typologies`,
+  `/imports`, `/exports` (« Export & publication » — everything that leaves the
+  tool: the planning documents to print or archive and the publication that
+  mails every animateur whose schedule changed, then the CSV archive and the
+  scenario file the import screen reads back; the diffusion moved off the
+  solver page with issue #320, so that page only solves), `/export-csv`,
+  `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/journee` (« Journée » — one day under four
@@ -641,8 +646,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   under the headings of `cliff.toml`: no endpoint, no stored page, and
   nothing to keep up to date by hand), the
   three public legal pages `/mentions-legales`, `/conditions-utilisation`,
-  `/politique-confidentialite`, and `/aide` (`/solver` and `/exports` redirect
-  to `/solveur`; `/data-transfer`, `/data-setup` and `/validateur-yaml` are
+  `/politique-confidentialite`, and `/aide` (`/solver` redirects to
+  `/solveur` and `/export-csv` to `/exports`;
+  `/data-transfer`, `/data-setup` and `/validateur-yaml` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
   slicing was removed, kept for old bookmarks/links, and so
   are the eight former screens `/day-calendar`, `/rail-jour`, `/carte-jour`,

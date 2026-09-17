@@ -7,7 +7,6 @@ import {
   inject,
   signal,
   untracked,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
@@ -56,8 +55,8 @@ import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
 import { IncrementalResult } from './incremental-result';
-import { PublicationPanel } from './publication-panel';
 import { ReplanificationDialog } from './replanification-dialog';
+import { RouterLink } from '@angular/router';
 import { ScoreCurveCard } from './score-curve-card';
 import { SolveRecap } from './solve-recap';
 import { SolverDurationCard } from './solver-duration-card';
@@ -85,10 +84,15 @@ function hardPart(score: string): number {
  * sync. Seeding the database lives on the Data setup page, emptying it on the
  * Debug page.
  *
- * <p>An orchestrator: the budget, the queue, the score curve, the diffusion,
- * the volumetry, the recap and the incremental diff are each a component of
- * their own next door. What stays here is what the result handler has to
- * write, and the three ways of launching a solve.</p>
+ * <p>An orchestrator: the budget, the queue, the score curve, the volumetry,
+ * the recap and the incremental diff are each a component of their own next
+ * door. What stays here is what the result handler has to write, and the three
+ * ways of launching a solve.</p>
+ *
+ * <p>The <b>diffusion</b> is no longer one of them (issue #320): exporting the
+ * documents and publishing to the animateurs moved to « Export & publication »,
+ * so this screen only solves. The link at the end of the page is the step
+ * after, not a card of it.</p>
  */
 @Component({
   selector: 'app-solver-page',
@@ -105,15 +109,15 @@ function hardPart(score: string): number {
     SolverDurationCard,
     SolverQueue,
     ScoreCurveCard,
-    PublicationPanel,
     SolverVolumetry,
     IncrementalResult,
     SolveRecap,
     ChangementsDonneesPanel,
     ValidationBanner,
+    RouterLink,
   ],
   templateUrl: './solver-page.html',
-  styleUrls: ['./solver.css', './publication.css', './replanification.css', './score-curve.css'],
+  styleUrls: ['./solver.css', './replanification.css', './score-curve.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -127,12 +131,16 @@ export class SolverPage {
   /** The same score net of its floors (issue #495), for the recap. */
   protected readonly scoreHorsPlancher = signal<string | null>(null);
   protected readonly hardIssues = signal<HardIssue[]>([]);
-  /** Raised by the diffusion panel while it builds a document; named as the lock reason below. */
-  protected readonly exportBusy = signal(false);
   protected readonly arretEnCours = signal(false);
 
-  /** The diffusion panel owns the publication preview; the page asks for a re-read after a solve. */
-  private readonly publication = viewChild.required(PublicationPanel);
+  /**
+   * When this edition was last published, or null. The diffusion itself moved
+   * to « Export & publication » (issue #320), but « Recommencer de zéro » still
+   * has to warn that starting cold may disturb people already informed — so
+   * the page keeps reading this one date, once, and nothing else of the
+   * publication.
+   */
+  private readonly dernierePublicationLe = signal<string | null>(null);
 
   /**
    * Result of the last incremental re-solve (issue #86), cleared as soon as a
@@ -256,6 +264,7 @@ export class SolverPage {
 
   constructor() {
     void this.loadLastRun();
+    void this.chargerDernierePublication();
     void this.chargerPointDeDepart();
     void this.problemes.reload();
     void this.crud.reload();
@@ -282,9 +291,6 @@ export class SolverPage {
       void this.validations.reload();
       void this.loadLastRun();
       void this.chargerPointDeDepart();
-      // The solve just rewrote the plan: the count of people to inform is no
-      // longer the one from before.
-      void this.publication().reloadPreview();
       // The solve rewrote both problem sources server-side (fresh feasibility
       // input and a new constraint analysis): re-read them for the summary.
       void this.problemes.reload();
@@ -316,9 +322,6 @@ export class SolverPage {
    * nothing says a run started from another browser is holding the lock.
    */
   protected readonly raisonVerrou = computed(() => {
-    if (this.exportBusy()) {
-      return $localize`:@@solver.locked.export:Un export est en cours de génération.`;
-    }
     if (!this.solverBusy()) {
       return '';
     }
@@ -399,7 +402,18 @@ export class SolverPage {
   protected onPlanPrecedentRestaure(message: string): void {
     this.planPrecedent.set(null);
     this.output.set(message);
-    void this.publication().reloadPreview();
+  }
+
+  /** Read once: a solve never changes when the plan was last published. */
+  private async chargerDernierePublication(): Promise<void> {
+    try {
+      const apercu = await this.planningApi.publicationPreview();
+      this.dernierePublicationLe.set(apercu.dernierePublicationLe ?? null);
+    } catch {
+      // Nothing published, or the read failed: the confirmation simply says
+      // less rather than refusing to open.
+      this.dernierePublicationLe.set(null);
+    }
   }
 
   /**
@@ -409,7 +423,7 @@ export class SolverPage {
    */
   protected async onRecommencerDeZero(): Promise<void> {
     const affectations = this.affectationsEnregistrees() ?? 0;
-    const publishedAt = this.publication().preview()?.dernierePublicationLe;
+    const publishedAt = this.dernierePublicationLe();
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous.`;
     const avertissement = publishedAt
       ? ' ' +

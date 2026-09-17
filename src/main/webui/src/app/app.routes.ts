@@ -210,7 +210,7 @@ const adminRoutes: Routes = [
   },
   {
     path: 'exports',
-    title: () => $localize`:@@route.exports:Exports`,
+    title: () => $localize`:@@route.exports:Export & publication`,
     loadComponent: () => import('./pages/exports/exports-page').then((m) => m.ExportsPage),
   },
   // The CSV archive was the whole screen until the scenario export joined it.
