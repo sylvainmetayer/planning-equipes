@@ -55,8 +55,15 @@ services:
       BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
       BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
       BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
-      # Mentions légales (page publique /mentions-legales). Vides = la page
-      # affiche ce qui manque plutôt que d'inventer un éditeur.
+      # Mentions légales (page publique /mentions-legales). Cinq d'entre elles
+      # sont EXIGÉES AU DÉMARRAGE en production, et ce profil lance bien
+      # l'image en production : sans la ligne ci-dessous, `docker compose
+      # --profile app up` refuserait de démarrer. Une pile locale est
+      # exactement l'instance « pas en service » que ce drapeau déclare, comme
+      # le harnais e2e — remplir cinq valeurs légales fictives dirait le
+      # contraire. Vides, la page affiche ce qui manque plutôt que d'inventer
+      # un éditeur.
+      LEGAL_DEMO_INSTANCE: ${LEGAL_DEMO_INSTANCE:-true}
       LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
       LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
       LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}

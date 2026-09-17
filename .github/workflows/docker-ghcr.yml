@@ -35,11 +35,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The Dockerfile copies this `.git` into the build, where
+          # generate-news.js reads it to write the « Nouveautés » screen. At
+          # the default depth of 1 that screen would list a single commit —
+          # and, on a housekeeping one, would claim no change matches the
+          # search rather than admit the history is unreadable. The full
+          # history also carries the tags the screen groups releases by.
+          fetch-depth: 0
 
       # Two things have to hold before anything is built, and both fail the
       # job rather than publish something misleading.
       #
-      # The depth-1 checkout of a tag push must leave `git describe --tags
+      # The checkout of a tag push must leave `git describe --tags
       # --exact-match` working: it is what generate-version.js (frontend
       # APP_VERSION) and the -Drevision derivation in the Dockerfile read.
       # Otherwise a vX.Y.Z image would report a SHA on the Débogage page.
@@ -177,8 +185,9 @@ jobs:
       # not move it. `imagetools create` re-points the manifest list without
       # rebuilding, so `:latest` is the exact image just pushed.
       #
-      # The depth-1 checkout only carries the tag being built, so the whole
-      # tag list is fetched here. `--prune --prune-tags` keeps the comparison
+      # The checkout brings the whole tag list along with the history, but
+      # the comparison below is too load-bearing to depend on that setting, so
+      # the tags are fetched here anyway. `--prune --prune-tags` keeps it
       # honest should the workspace ever outlive a run (a re-run, a runner that
       # is not disposable): a tag deleted from origin must not linger
       # locally, stay the `newest` for ever and freeze `:latest` — silently,

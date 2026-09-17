@@ -256,7 +256,16 @@ if (process.argv.includes('--check')) {
   if (committed !== document) {
     const expected = document.split('\n');
     const actual = committed.split('\n');
-    const rank = expected.findIndex((line, index) => line !== actual[index]);
+    // Over the longer of the two, not over `expected` alone: a committed file
+    // that merely carries extra lines at the end has no differing line within
+    // `expected`, findIndex then returns -1, and the message below points at
+    // line 0 with "(fin du fichier)" on both sides. The two contents differ,
+    // so this loop always stops before the bound.
+    const length = Math.max(expected.length, actual.length);
+    let rank = 0;
+    while (rank < length && expected[rank] === actual[rank]) {
+      rank += 1;
+    }
     fail(
       'docs/licences-tierces.md ne correspond plus aux dépendances du projet.\n' +
         `Première divergence, ligne ${rank + 1} :\n` +

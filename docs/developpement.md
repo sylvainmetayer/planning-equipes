@@ -92,7 +92,10 @@ dérive de son modèle.
 
 Conséquence à connaître : **un clone superficiel raccourcit l'écran
 Nouveautés**, et une arborescence sans `.git` le laisse vide en le disant. Le
-`Dockerfile` copie `.git` pour cette raison et pour `git describe`.
+`Dockerfile` copie `.git` pour cette raison et pour `git describe` — et c'est
+aussi pourquoi `docker-ghcr.yml`, qui construit l'image publiée, se place en
+`fetch-depth: 0` : au défaut de 1, l'écran de chaque image publiée ne
+listerait qu'un commit.
 
 ## i18n : traduction à l'exécution
 
