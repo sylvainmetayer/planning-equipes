@@ -254,3 +254,65 @@
 .heatmap-cell:not(.heatmap-cell-none) {
   cursor: pointer;
 }
+
+/* « Où se concentrent les écarts » (issue #496), folded until asked for. A
+   <details> rather than an expansion panel: the card is already the frame, and
+   a panel inside a card inside a card was exactly the stack the review
+   objected to. */
+.constraint-pivot {
+  padding: 1rem;
+}
+
+.constraint-pivot-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.constraint-pivot-summary:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.constraint-pivot-titre {
+  font: var(--mat-sys-title-medium);
+}
+
+.constraint-pivot-compte {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.constraint-pivot-sous-titre {
+  margin: 0.5rem 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+/* The rule names scroll under their column headings on a long table. */
+.constraint-pivot-sticky {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--mat-sys-surface);
+}
+
+.constraint-pivot-remediation {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--mat-sys-corner-small);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.constraint-pivot-liens {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}

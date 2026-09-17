@@ -17,7 +17,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import {
-  coupuresDe,
+  coupuresOf,
   indexerCoupures,
   indexerPauses,
   pausesDe,
@@ -207,14 +207,14 @@ export class AnimateurTimelinePage {
    * were computed by the server and drawn nowhere: « quand est-ce que je mange »
    * is the first thing an animateur reads their own planning for.
    */
-  protected readonly coupuresParJour = computed<Map<number, SegmentCoupure[]>>(() => {
+  protected readonly coupuresByDay = computed<Map<number, SegmentCoupure[]>>(() => {
     const animateurId = this.selectedAnimateurId();
     const segments = new Map<number, SegmentCoupure[]>();
     if (!animateurId) {
       return segments;
     }
     for (const day of this.days()) {
-      const coupures = coupuresDe(this.indexCoupures(), day.date, animateurId);
+      const coupures = coupuresOf(this.indexCoupures(), day.date, animateurId);
       if (coupures.length > 0) {
         segments.set(
           day.jour,
@@ -225,8 +225,8 @@ export class AnimateurTimelinePage {
     return segments;
   });
 
-  protected coupuresDuJour(day: TimelineDay): SegmentCoupure[] {
-    return this.coupuresParJour().get(day.jour) ?? [];
+  protected dayCoupures(day: TimelineDay): SegmentCoupure[] {
+    return this.coupuresByDay().get(day.jour) ?? [];
   }
 
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>

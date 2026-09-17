@@ -119,3 +119,41 @@ export function classeCellule(ecarts: number, maximum: number): string {
   }
   return part > 0.33 ? 'heatmap-cell heatmap-cell-warning' : 'heatmap-cell heatmap-cell-ok';
 }
+
+/** Where a cell of the pivot leads: the screen on which that breach is actually corrected. */
+export interface LienPivot {
+  route: string;
+  queryParams: Record<string, string>;
+  label: string;
+}
+
+/**
+ * The link out of an opened cell.
+ *
+ * A cell used to open on a count and stop there — a dead end. Each axis has
+ * exactly one screen where its breaches are looked at and fixed: a day is read
+ * on the Journée screen, a stand on the assignment calendar filtered on it, a
+ * person on their own timeline. The label names the target rather than the
+ * screen, because that is what the reader was looking at when they clicked.
+ */
+export function lienDeCellule(axe: AxePivot, cle: string, libelle: string): LienPivot {
+  if (axe === 'ANIMATEUR') {
+    return {
+      route: '/timeline',
+      queryParams: { animateur: cle },
+      label: $localize`:@@constraints.pivot.detail.versTimeline:Voir la journée de ${libelle}:qui:`,
+    };
+  }
+  if (axe === 'STAND') {
+    return {
+      route: '/calendar',
+      queryParams: { stand: cle },
+      label: $localize`:@@constraints.pivot.detail.versStand:Voir le planning de ${libelle}:stand:`,
+    };
+  }
+  return {
+    route: '/journee',
+    queryParams: { jour: cle },
+    label: $localize`:@@constraints.pivot.detail.versJournee:Voir la journée du ${libelle}:jour:`,
+  };
+}

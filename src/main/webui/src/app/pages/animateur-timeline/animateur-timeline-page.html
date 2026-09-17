@@ -132,7 +132,7 @@
                 [attr.aria-label]="pause.label"
               ></div>
             }
-            @for (coupure of coupuresDuJour(day); track coupure.heureDebut) {
+            @for (coupure of dayCoupures(day); track coupure.heureDebut) {
               <div
                 class="timeline-coupure"
                 [style.left.%]="coupure.offsetPercent"
@@ -154,7 +154,7 @@
                 }
               </li>
             }
-            @for (coupure of coupuresDuJour(day); track coupure.heureDebut) {
+            @for (coupure of dayCoupures(day); track coupure.heureDebut) {
               <li class="timeline-coupure-item">
                 <mat-icon inline aria-hidden="true">restaurant</mat-icon>
                 {{ coupure.label }}

@@ -686,7 +686,20 @@ que le serveur envoie.
 C'est la question qu'on se pose *avant* de décider quoi corriger : les six
 journées d'amplitude excessive sont-elles le week-end, les référents manquants
 sont-ils tous sur le même pavillon. L'écran Contraintes la croise sous sa liste,
-avec un sélecteur d'axe ; cliquer une case ouvre les lignes correspondantes.
+dans un bloc replié par défaut, avec un sélecteur d'axe.
+
+Cliquer une case l'ouvre sur **quoi faire**, pas seulement sur combien : la
+consigne de correction de la règle (`remediation`, ci-dessous), le lien vers
+l'écran où cet axe se corrige — la journée, le planning du stand, la timeline
+de la personne —, le poids actuel et ce qu'un assouplissement changerait, puis
+les lignes de violation quand le serveur les envoie.
+
+`remediation` accompagne chaque contrainte de `contraintes[]` : le levier que
+l'organisateur a réellement sur cette règle — recruter, ouvrir un stand plus
+tard, faire apprécier une typologie, baisser un poids. Les règles dont le
+levier est spécifique en portent un ; les autres reçoivent celui de leur
+catégorie, parce qu'une règle légale n'a jamais pour réponse « changez un
+réglage ». Jamais vide.
 
 Deux points à connaître :
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { CoupureRepasView, JourneeAnimateurPauses, PauseDueView, RapportPauses } from './models';
 import {
   compterSansRelais,
-  coupuresDe,
+  coupuresOf,
   indexerCoupures,
   indexerPauses,
   libelleCoupure,
@@ -230,11 +230,11 @@ describe('indexerCoupures', () => {
       ]),
     );
 
-    expect(coupuresDe(index, '2026-07-10', 'alice').map((found) => found.libelle)).toEqual([
+    expect(coupuresOf(index, '2026-07-10', 'alice').map((found) => found.libelle)).toEqual([
       'midi',
       'soir',
     ]);
-    expect(coupuresDe(index, '2026-07-11', 'alice')).toEqual([]);
+    expect(coupuresOf(index, '2026-07-11', 'alice')).toEqual([]);
   });
 
   // A day that leaves no room owes a break the plan cannot place. Drawing it at
@@ -246,7 +246,7 @@ describe('indexerCoupures', () => {
       ]),
     );
 
-    expect(coupuresDe(index, '2026-07-10', 'alice')).toEqual([]);
+    expect(coupuresOf(index, '2026-07-10', 'alice')).toEqual([]);
   });
 });
 

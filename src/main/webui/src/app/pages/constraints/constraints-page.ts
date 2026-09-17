@@ -33,7 +33,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
-import { classeCellule, ColonnePivot, buildPivot } from './ecarts-pivot';
+import { classeCellule, ColonnePivot, buildPivot, lienDeCellule } from './ecarts-pivot';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -157,6 +157,13 @@ export class ConstraintsPage {
   protected readonly axe = signal<AxePivot>('JOUR');
   /** The cell the reader opened, or null — its lines are listed under the table. */
   protected readonly openedCell = signal<{ contrainte: string; cle: string } | null>(null);
+  /**
+   * The pivot is folded until asked for. It answers « où » — a question one
+   * only has once the list above has said « combien » — and unfolding a
+   * forty-column table over the rules nobody came for is how a screen stops
+   * being read.
+   */
+  protected readonly pivotOuvert = signal(false);
 
   /**
    * The cross-table of the selected axis. Days read chronologically, which is
@@ -239,6 +246,15 @@ export class ConstraintsPage {
       ecarts,
       lignes,
       listable: contrainte?.niveau === 'HARD',
+      // What to do about it, where to go and do it, and what an easing costs:
+      // « 210 écarts ici » is a measurement, and a reader who cannot act on a
+      // screen stops opening it (review of issue #496).
+      remediation: contrainte?.remediation ?? '',
+      lien: lienDeCellule(axe, opened.cle, this.libellePivot(axe, opened.cle)),
+      poids: contrainte?.poids ?? 1,
+      niveau: contrainte ? niveauLabel(contrainte.niveau) : '',
+      dosable: contrainte?.dosable ?? false,
+      protegee: contrainte?.protegee ?? false,
     };
   });
 

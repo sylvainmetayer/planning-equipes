@@ -115,7 +115,7 @@ export class CreneauDerivationDialog {
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
   /** The cuts of one day, `10:00 (A, B et 3 autres)`, for the preview. */
-  protected coupuresDe(date: string): string[] {
+  protected coupuresOf(date: string): string[] {
     return (this.apercu()?.coupures ?? [])
       .filter((coupure) => coupure.date === date)
       .map((coupure) => {

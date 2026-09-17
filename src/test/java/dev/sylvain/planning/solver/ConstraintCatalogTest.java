@@ -142,4 +142,32 @@ class ConstraintCatalogTest {
 
         assertThat(noms).doesNotHaveDuplicates();
     }
+
+    /**
+     * Every rule says what to do about it (review of issue #496). The pivot
+     * answers « où » ; a screen that stops at « 210 écarts ici » is one nobody
+     * opens twice. A rule without a lever of its own falls back on its
+     * category's, and every category has one — so the answer is never empty
+     * and never the generic sentence for a rule founded in law.
+     */
+    @Test
+    void chaqueContraintePorteUneConsigneDeCorrection() {
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            assertThat(definition.remediation())
+                    .as("consigne de correction de %s", definition.name())
+                    .isNotBlank();
+        }
+    }
+
+    @Test
+    void uneRegleLegaleNeConseilleJamaisDeBaisserUnPoids() {
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            if (!definition.protegee()) {
+                continue;
+            }
+            assertThat(definition.remediation())
+                    .as("consigne de %s : une règle protégée ne se dose pas", definition.name())
+                    .doesNotContain("baissez son poids");
+        }
+    }
 }

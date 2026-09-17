@@ -1041,6 +1041,13 @@ export interface ConstraintView {
   niveau: NiveauContrainte;
   categorie: string;
   description: string;
+  /**
+   * What an organiser can do about this rule being in default — hire, open a
+   * stand later, vet somebody, lower a weight. The pivot of issue #496 says
+   * where the breaches concentrate; this says what to do about them, which a
+   * count on its own never did. Absent on an older payload.
+   */
+  remediation?: string;
   actif: boolean;
   /**
    * The rule founds the plan in law (« Légal (…) »), in the minors' safety

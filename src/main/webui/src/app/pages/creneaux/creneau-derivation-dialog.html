@@ -51,7 +51,7 @@
           @for (vacation of jour.vacations; track $index) {
             <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
           }
-          <span class="derivation-coupures" [attr.title]="coupuresDe(jour.date).join(' · ')">{{ coupuresDe(jour.date).length }} <ng-container i18n="@@creneaux.derivation.coupures">coupure(s)</ng-container></span>
+          <span class="derivation-coupures" [attr.title]="coupuresOf(jour.date).join(' · ')">{{ coupuresOf(jour.date).length }} <ng-container i18n="@@creneaux.derivation.coupures">coupure(s)</ng-container></span>
         </p>
       }
       @if (apercu.joursSansFenetre.length > 0) {

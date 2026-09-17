@@ -73,7 +73,123 @@ public final class ConstraintCatalog {
      */
     public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of("mineurNecessiteEncadrementMajeur");
 
+    /**
+     * What to do about a rule in default, rule by rule.
+     *
+     * <p>The pivot of issue #496 says <b>where</b> the breaches concentrate;
+     * « 210 écarts ici » is a measurement, not a next step, and a reader who
+     * cannot act on a screen stops opening it. This is the next step: the
+     * lever that actually moves that rule, in the organiser's own terms —
+     * hire, open a stand later, vet somebody, lower a weight.</p>
+     *
+     * <p>Only the rules whose lever is specific are listed. The others fall
+     * back on {@link ConstraintDefinition#remediation()}, which answers by
+     * category rather than inventing a false precision: what a legal rule
+     * needs is never « change a setting ».</p>
+     */
+    private static final Map<String, String> REMEDIATIONS = Map.ofEntries(
+            Map.entry(
+                    "posteDoitEtrePourvu",
+                    "Il manque du monde sur ces places : ajoutez des animateurs disponibles ce jour-là, "
+                            + "réduisez l'effectif minimum du stand, ou fermez le créneau."),
+            Map.entry(
+                    "animateurDisponible",
+                    "Le plan pose quelqu'un un jour qu'il a déclaré indisponible : corrigez la fiche de "
+                            + "l'animateur si la déclaration a changé, sinon laissez le solveur placer "
+                            + "quelqu'un d'autre."),
+            Map.entry(
+                    "plafondCreneauxParTypologie",
+                    "Le plafond de la typologie est atteint : montez-le sur l'écran Typologies, ou faites "
+                            + "apprécier cette typologie par d'autres animateurs pour élargir le vivier."),
+            Map.entry(
+                    "standComplexeAvecReferent",
+                    "Aucun animateur confirmé sur ces créneaux : montez le niveau d'un animateur sur la "
+                            + "typologie du stand, ou retirez l'exigence de référent au stand."),
+            Map.entry(
+                    "equilibrerCharge",
+                    "La charge est inégale : cherchez qui est très au-dessus sur l'écran Heures, et ouvrez "
+                            + "des disponibilités ailleurs — ou baissez le poids si l'écart vous convient."),
+            Map.entry(
+                    "experienceRequisePourStandsPremium",
+                    "Un stand premium est tenu sans animateur expérimenté : appréciez davantage "
+                            + "d'animateurs sur sa typologie, ou retirez le drapeau premium au stand."),
+            Map.entry(
+                    "souhaitsIncompatibles",
+                    "Les souhaits se contredisent ou sont hors d'atteinte : c'est une règle souple, "
+                            + "regardez les souhaits concernés sur les fiches, ou baissez son poids."),
+            Map.entry(
+                    "appreciationIncompatible",
+                    "Le plan place des animateurs sur des typologies qu'ils n'apprécient pas : complétez "
+                            + "les appréciations, ou acceptez l'écart en baissant le poids."),
+            Map.entry(
+                    "pauseSurPosteSansRelais",
+                    "Personne ne peut relayer pendant la pause : ouvrez une place de plus sur le stand à "
+                            + "ce moment-là, ou décalez les créneaux voisins."),
+            Map.entry(
+                    "coupureRepasObligatoire",
+                    "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
+                            + "élargissez la fenêtre repas dans les paramètres légaux, ou raccourcissez le "
+                            + "créneau."),
+            Map.entry(
+                    "limiterTypologiesDistinctesParAnimateur",
+                    "Trop de typologies différentes pour une même personne : relevez le plafond dans les "
+                            + "paramètres légaux, ou baissez le poids de la règle."),
+            Map.entry(
+                    "stabiliteDuPlanPublie",
+                    "Le plan s'écarte de ce qui a été publié : chaque écart est une vacation à "
+                            + "re-annoncer. Verrouillez ce qui doit tenir, ou montez le poids de la règle."),
+            Map.entry(
+                    "limiterEmplacementsParJour",
+                    "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
+                            + "les paramètres légaux, ou baissez le poids."),
+            Map.entry(
+                    "maxJoursConsecutifsTravailles",
+                    "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes, ou "
+                            + "relevez le plafond dans les paramètres légaux."));
+
+    /** Read by the Contraintes screen when a rule has no lever of its own. */
+    private static final Map<String, String> REMEDIATIONS_PAR_CATEGORIE = Map.of(
+            "Légal (mineurs)",
+            "Une règle légale ne se règle pas : il faut changer le plan. Retirez le mineur de ces "
+                    + "créneaux, ou raccourcissez-les.",
+            "Légal (temps de travail)",
+            "Une règle légale ne se règle pas : il faut changer le plan. Ajoutez du monde pour "
+                    + "alléger ces journées, ou raccourcissez les vacations.",
+            "Sécurité (mineurs)",
+            "Règle de sécurité posée par l'organisateur : ajoutez un majeur sur ces créneaux, ou "
+                    + "assumez l'encadrement hors planning et laissez la règle éteinte.",
+            CATEGORIE_ORGANISATION_REPAS,
+            "Réglez la fenêtre repas et sa durée dans les paramètres légaux, ou découpez les "
+                    + "journées trop longues en deux vacations.",
+            "Affectation",
+            "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
+                    + "allégez ce que les stands demandent.",
+            "Verrouillage",
+            "C'est un verrou posé à la main : levez-le depuis l'écran Verrouillages s'il n'a plus " + "lieu d'être.",
+            "Ajustement manuel",
+            "C'est une contrainte ad hoc écrite à la main : revoyez-la ou supprimez-la depuis "
+                    + "l'écran Ajustements manuels.");
+
+    /** The fallback of the fallback: a rule of a category nobody wrote a lever for. */
+    private static final String REMEDIATION_PAR_DEFAUT =
+            "Cette règle arbitre du confort : baissez son poids si l'écart vous convient, montez-le si "
+                    + "elle compte plus que les autres du même niveau.";
+
     public record ConstraintDefinition(String name, Niveau niveau, String categorie, String description) {
+
+        /**
+         * What an organiser can actually do about this rule being in default —
+         * the lever of {@link #REMEDIATIONS}, the one of its category, or the
+         * generic one. Never empty: a screen that says « 210 écarts » and
+         * nothing else is a screen nobody opens twice.
+         */
+        public String remediation() {
+            String propre = REMEDIATIONS.get(name);
+            if (propre != null) {
+                return propre;
+            }
+            return REMEDIATIONS_PAR_CATEGORIE.getOrDefault(categorie, REMEDIATION_PAR_DEFAUT);
+        }
 
         /** True when disabling this rule needs the confirmation described on {@link #CATEGORIES_PROTEGEES}. */
         public boolean protegee() {

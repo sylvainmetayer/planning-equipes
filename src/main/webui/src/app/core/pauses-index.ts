@@ -69,7 +69,7 @@ export function indexerCoupures(rapport: RapportPauses | null | undefined): Inde
   return index;
 }
 
-export function coupuresDe(
+export function coupuresOf(
   index: IndexCoupures,
   date: string | null | undefined,
   animateurId: string,

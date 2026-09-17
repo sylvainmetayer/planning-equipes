@@ -1231,6 +1231,9 @@
           "description" : {
             "type" : "string"
           },
+          "remediation" : {
+            "type" : "string"
+          },
           "actif" : {
             "type" : "boolean"
           },

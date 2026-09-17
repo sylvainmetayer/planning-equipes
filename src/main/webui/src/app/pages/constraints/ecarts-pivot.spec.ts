@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CellulePivot } from '../../core/models';
-import { classeCellule, buildPivot, MAX_COLONNES } from './ecarts-pivot';
+import { classeCellule, buildPivot, lienDeCellule, MAX_COLONNES } from './ecarts-pivot';
 
 /**
  * « Où se concentrent les écarts » (issue #496): the cross-table the Contraintes
@@ -78,5 +78,39 @@ describe('classeCellule', () => {
   it('leaves an empty cell plain', () => {
     expect(classeCellule(0, 7)).toBe('heatmap-cell heatmap-cell-none');
     expect(classeCellule(0, 0)).toBe('heatmap-cell heatmap-cell-none');
+  });
+});
+
+/**
+ * A cell used to open on a count and stop there. « 210 écarts ici » is a
+ * measurement, and a reader who cannot act on a screen stops opening it: each
+ * axis now leads to the one screen where its breaches are actually corrected.
+ */
+describe('lienDeCellule', () => {
+  it('sends a day to the Journée screen, a stand to its calendar, a person to their timeline', () => {
+    expect(lienDeCellule('JOUR', '2026-07-06', '2026-07-06')).toEqual({
+      route: '/journee',
+      queryParams: { jour: '2026-07-06' },
+      label: 'Voir la journée du 2026-07-06',
+    });
+    expect(lienDeCellule('STAND', 'BLEU', 'Pavillon Bleu')).toEqual({
+      route: '/calendar',
+      queryParams: { stand: 'BLEU' },
+      label: 'Voir le planning de Pavillon Bleu',
+    });
+    expect(lienDeCellule('ANIMATEUR', 'a1', 'Alice Martin')).toEqual({
+      route: '/timeline',
+      queryParams: { animateur: 'a1' },
+      label: 'Voir la journée de Alice Martin',
+    });
+  });
+
+  // The label names what the reader was looking at, not the screen: the id is
+  // what the link carries, the name is what it says.
+  it('links on the id and reads on the name', () => {
+    const lien = lienDeCellule('ANIMATEUR', 'a1', 'Alice Martin');
+
+    expect(lien.queryParams['animateur']).toBe('a1');
+    expect(lien.label).toContain('Alice Martin');
   });
 });
