@@ -77,12 +77,11 @@ class ClientVocabularyStructuralTest {
     private static final List<Pattern> RULES = List.of(TOWN, MASCOT, ACRONYM, IDENTIFIER);
 
     /** Not sources: build output, dependencies, and git's own storage. */
-    private static final Set<String> SKIPPED = Set.of(
-            ".git", "node_modules", "target", "dist", "coverage", ".angular", ".mvn");
+    private static final Set<String> SKIPPED =
+            Set.of(".git", "node_modules", "target", "dist", "coverage", ".angular", ".mvn");
 
     /** This file names what it refuses, so it cannot hold itself to the rule. */
-    private static final Path SELF =
-            Path.of("src/test/java/dev/sylvain/planning/ClientVocabularyStructuralTest.java");
+    private static final Path SELF = Path.of("src/test/java/dev/sylvain/planning/ClientVocabularyStructuralTest.java");
 
     private static final Path ROOT = Path.of(".");
 
@@ -96,8 +95,7 @@ class ClientVocabularyStructuralTest {
             for (int i = 0; i < lines.size(); i++) {
                 String line = lines.get(i);
                 int number = i + 1;
-                hit(line).ifPresent(m ->
-                        found.add(relative + ":" + number + " — « " + m + " » in: " + excerpt(line)));
+                hit(line).ifPresent(m -> found.add(relative + ":" + number + " — « " + m + " » in: " + excerpt(line)));
             }
         }
         assertThat(found)
