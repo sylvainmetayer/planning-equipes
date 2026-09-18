@@ -66,7 +66,7 @@
       <div class="legal-toggle">
         <mat-slide-toggle name="pauseSurPoste" [checked]="pauseSurPoste()" (change)="pauseSurPoste.set($event.checked)"
                           i18n="@@constraints.legal.field.pauseSurPoste">Pause légale prise sur le poste, par relais entre collègues</mat-slide-toggle>
-        <p class="legal-toggle-hint" i18n="@@constraints.legal.hint.pauseSurPoste">Quand elle est active, la pause due à la sixième heure (art. L3121-16) est organisée à l'intérieur de la vacation, et les plafonds quotidiens la déduisent. Sinon, une pause est un trou entre deux vacations.</p>
+        <p class="legal-toggle-hint" i18n="@@constraints.legal.hint.pauseSurPoste">Quand elle est active, la pause due à la sixième heure (art. L3121-16) est organisée à l'intérieur de la vacation, et les plafonds quotidien et hebdomadaires la déduisent : ce sont alors des heures de travail effectif. Le solveur exige en dur qu'un collègue puisse relayer sur le stand pendant chaque pause due — sans quoi elle ne serait pas prise. Sinon, une pause est un trou entre deux vacations.</p>
       </div>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="parametresLoading()">

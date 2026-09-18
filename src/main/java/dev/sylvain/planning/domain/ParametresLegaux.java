@@ -20,9 +20,17 @@ public class ParametresLegaux {
 
     /**
      * Absolute weekly working-time cap for every animateur, all paid. Default: 48 h = 2880 min, the ceiling set
-     * by both the Code du travail (art. L3121-20, durée maximale hebdomadaire
-     * absolue) and the Convention collective nationale de l'Animation (ÉCLAT,
-     * IDCC 1518, art. 5.2) — editable from the "Constraints" screen.
+     * by the Code du travail (art. L3121-20, durée maximale hebdomadaire
+     * absolue, disposition d'ordre public) — editable from the "Constraints"
+     * screen.
+     *
+     * <p>The Convention collective de l'Animation (ÉCLAT, IDCC 1518) used to
+     * be cited beside it, at art. 5.2. Two things were wrong with that: art.
+     * 5.2 is about rest days, the 48 h high week is at art. 5.7.2.3
+     * (modulation) — and the organisation this deployment serves has confirmed
+     * it does not fall under that convention. The Code alone founds the value.
+     * See {@code docs/contraintes.md}, « La convention collective de
+     * l'Animation ».</p>
      */
     public static final int DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT = 48 * 60;
 

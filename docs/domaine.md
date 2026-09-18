@@ -745,12 +745,24 @@ durées hebdomadaires de travail maximales**, paramétrables depuis la page
 
 | Champ | Défaut | Base légale | Contrainte qui le consomme |
 | --- | --- | --- | --- |
-| `dureeHebdomadaireMaxMinutes` | 48 h (2880 min) | Code du travail art. [L3121-20] (ordre public) ; CCN Animation ÉCLAT [IDCC 1518] art. 5.2 *[non vérifié]* | `dureeHebdomadaireMax` (**majeurs uniquement**) |
+| `dureeHebdomadaireMaxMinutes` | 48 h (2880 min) | Code du travail art. [L3121-20] (ordre public) | `dureeHebdomadaireMax` (**majeurs uniquement**) |
 | `dureeHebdomadaireMaxMineurMinutes` | 35 h (2100 min) | Code du travail art. [L3162-1] ; art. [D4153-3] pour les 14 à moins de 16 ans | `dureeHebdomadaireMaxMineur` |
 
-Les deux contraintes regroupent les `PosteAffectation` par animateur et semaine
-ISO (`Creneau.semaineIso()`) et pénalisent le dépassement au prorata des minutes
-excédentaires (gradient, pas simple booléen).
+La CCN de l'Animation (ÉCLAT, [IDCC 1518]) était citée ici à côté du Code, à
+son art. 5.2. C'était faux deux fois : l'art. 5.2 traite des jours de repos, et
+la semaine haute à 48 h figure à l'art. 5.7.2.3 (modulation) — et
+l'organisation a depuis confirmé qu'elle ne relève pas de cette convention. Le
+Code seul fonde la valeur. La même citation subsiste dans le commentaire de
+`V7__parametres_legaux.sql` : une migration appliquée ne se modifie pas, son
+empreinte est gelée (`FlywayMigrationsFrozenTest`), et un commentaire ne vaut
+pas de rompre les déploiements existants.
+
+Les deux contraintes regroupent les `PosteAffectation` par animateur et par
+**jour**, puis les jours par semaine ISO (`Creneau.semaineIso(LocalDate)`), et
+pénalisent le dépassement au prorata des minutes excédentaires (gradient, pas
+simple booléen). Le niveau intermédiaire n'est pas de la décoration : c'est là
+que se déduisent les pauses prises sur le poste, dont le calcul est journalier
+(voir « Pause prise sur le poste » ci-dessous).
 
 Les autres seuils légaux (repos quotidien, durée quotidienne, pauses, repos
 hebdomadaire, jours fériés) sont **des constantes du code**, pas des paramètres :
@@ -797,13 +809,26 @@ vacation 13 h-20 h est en règle avec l'art. [L3121-16]. Le paramètre légal
   comme prise à la sixième heure (à 4 h 30 pour un mineur) et ne pénalisent plus
   une séquence longue ;
 - `dureeQuotidienneMaxMajeur` et `dureeQuotidienneMaxMineur` déduisent de
-  l'amplitude les pauses ainsi organisées — 20 minutes par tranche de 6 h
-  entamée au-delà de la première (30 minutes par 4 h 30 pour un mineur) — pour
-  ne compter que le travail effectif, comme les art. L3121-18 et L3162-1.
+  l'amplitude les pauses ainsi organisées — la durée réglée par tranche de 6 h
+  entamée au-delà de la première (par 4 h 30 pour un mineur) — pour ne compter
+  que le travail effectif, comme les art. L3121-18 et L3162-1 ;
+- `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur` et
+  `dureeHebdomadaireMaxDeuxSemaines` déduisent **les mêmes** pauses, jour par
+  jour, avant de sommer la semaine. Elles sommaient l'amplitude jusqu'à l'issue
+  #31, ce qui donnait deux lectures contradictoires du même planning ;
+- `pauseSurPosteSansRelais` (dure) exige que quelqu'un d'autre tienne le stand
+  pendant chaque pause due : c'est ce qui fait que la déduction ci-dessus porte
+  sur une pause réellement prise.
 
 Une journée 14 h-minuit vaut ainsi 9 h 40 de travail effectif ; 13 h-minuit en
-vaut 10 h 40 et reste refusée. Le paramètre est **déclaratif** : l'outil ne
-vérifie pas que le stand peut relayer, c'est l'organisateur qui l'affirme.
+vaut 10 h 40 et reste refusée. Le paramètre reste **déclaratif** quant au
+principe — c'est l'organisateur qui affirme que la pause se prend par relais —
+mais l'existence du relais, elle, est vérifiée siège par siège depuis que
+`pauseSurPosteSansRelais` est dure.
+
+Les compteurs d'heures (écran Heures, équité, KPI) ne déduisent **rien** : ils
+comptent l'amplitude planifiée, et c'est voulu — voir
+[`contraintes.md`](contraintes.md#ce-qui-déduit-la-pause-et-ce-qui-compte-lamplitude).
 
 ## Fenêtres repas
 
