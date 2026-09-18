@@ -25,11 +25,12 @@ class VerrouillageResourceTest {
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200)
-                .body("id", notNullValue())
-                .body("type", equalTo("JOUR"))
-                .body("jour", equalTo(jour))
+                .body("verrouillage.id", notNullValue())
+                .body("verrouillage.type", equalTo("JOUR"))
+                .body("verrouillage.jour", equalTo(jour))
+                .body("avertissements", notNullValue())
                 .extract()
-                .path("id");
+                .path("verrouillage.id");
     }
 
     @Test
@@ -86,13 +87,13 @@ class VerrouillageResourceTest {
                 .post("/api/verrouillages")
                 .then()
                 .statusCode(200)
-                .body("type", equalTo("JOUR"))
-                .body("jour", equalTo("2026-07-14"))
-                .body("animateurId", nullValue())
-                .body("standId", nullValue())
-                .body("creneauId", nullValue())
+                .body("verrouillage.type", equalTo("JOUR"))
+                .body("verrouillage.jour", equalTo("2026-07-14"))
+                .body("verrouillage.animateurId", nullValue())
+                .body("verrouillage.standId", nullValue())
+                .body("verrouillage.creneauId", nullValue())
                 .extract()
-                .path("id");
+                .path("verrouillage.id");
 
         try {
             given().when()

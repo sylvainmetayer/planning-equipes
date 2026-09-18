@@ -69,6 +69,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md) | Une consigne d'édition ferme une bande horaire pour tous les stands, en quatrième couche du résolveur d'horaires, sans rien détruire de la grille | Accepté · révise 0001 § 6 bis, complète 0033 |
 | [0044](0044-le-passe-est-fige.md) | Le passé est figé : les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées par toute résolution, comptées par les règles et reprochées par aucune | Accepté · prolonge 0003 et 0024, complète 0043 |
 | [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) | Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable | Accepté · prolonge 0006 et 0041 |
+| [0046](0046-un-placement-intenable-est-dit-avant-le-calcul.md) | Un placement intenable est dit au moment du geste et reporté avant le calcul ; seule l'écriture directe d'un siège, qui n'attend plus rien, est refusée | Accepté · complète 0003 |
 | [0047](0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
