@@ -46,10 +46,10 @@ public class AnimateurPlanningPdf {
     private final PdfTheme theme;
     private final TypologieLibelles typologies;
 
-    @Inject
     /** The days of the document a consigne governs, and what to print under their date. Set per build. */
     private Map<LocalDate, String> journeesModifiees = Map.of();
 
+    @Inject
     public AnimateurPlanningPdf(PdfTheme theme, TypologieLibelles typologies) {
         this.theme = theme;
         this.typologies = typologies;
