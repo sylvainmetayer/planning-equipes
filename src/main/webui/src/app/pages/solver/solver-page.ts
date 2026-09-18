@@ -19,6 +19,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import {
+  CauseInfaisabilite,
   ChangementAffectation,
   FeasibilityReport,
   ImpactPublication,
@@ -51,6 +52,7 @@ import { ValidationsStore } from '../../core/validations.store';
 import { ValidationBanner } from '../../shared/validation-banner';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
+import { causesRestantesMessage } from '../../shared/feasibility-messages';
 import { OutputPanel } from '../../shared/output-panel';
 import { ProblemSummaryBanner } from '../../shared/problem-summary-banner';
 import { StatusMessage } from '../../shared/status-message';
@@ -74,6 +76,24 @@ import { errorPrefix } from '../../core/error-message';
 function hardPart(score: string): number {
   const match = /^(-?\d+)hard/.exec(score);
   return match ? Number(match[1]) : 0;
+}
+
+/** Blocking causes spelled out in the confirmation before eliding: a wall of text is not read. */
+const MAX_BLOQUANTES_CITEES = 3;
+
+/**
+ * The blocking causes as the confirmation's second paragraph. The server
+ * already wrote each sentence, and already ranked them worst first; what is
+ * decided here is how many of them a dialog can carry — the rest are counted,
+ * and the Problèmes screen holds the full list.
+ */
+function detailDesBloquantes(bloquantes: readonly CauseInfaisabilite[]): string {
+  const citees = bloquantes
+    .slice(0, MAX_BLOQUANTES_CITEES)
+    .map((cause) => cause.message)
+    .join(' ');
+  const restantes = bloquantes.length - MAX_BLOQUANTES_CITEES;
+  return restantes > 0 ? `${citees} ${causesRestantesMessage(restantes)}` : citees;
 }
 
 /**
@@ -479,7 +499,7 @@ export class SolverPage {
       (await this.confirm.ask({
         title: $localize`:@@solver.bloquantes.confirm.title:Lancer malgré un problème bloquant ?`,
         message,
-        detail: Promise.resolve(bloquantes.map((cause) => cause.message).join(' ')),
+        detail: Promise.resolve(detailDesBloquantes(bloquantes)),
         confirmLabel: $localize`:@@solver.bloquantes.confirm.action:Lancer quand même`,
         danger: true,
       })) === true
