@@ -1169,7 +1169,9 @@ export interface CellulePivot {
  * protective value stays free.
  *
  * - `dureeHebdomadaireMaxMinutes`: 48 h (2880 min) by default — Code du travail
- *   art. L3121-20, Convention collective de l'Animation (ÉCLAT, IDCC 1518).
+ *   art. L3121-20 alone. The Convention collective de l'Animation (ÉCLAT, IDCC
+ *   1518) used to be cited here at art. 5.2, which is about rest days; the
+ *   organisation has since confirmed it does not fall under that convention.
  * - `dureeHebdomadaireMaxMineurMinutes`: 35 h (2100 min) by default — Code du
  *   travail art. L3162-1 (art. D4153-3 under 16).
  */

@@ -27,6 +27,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * when a poste has no effective-window override) is handled in exactly one
  * place, and a poste narrowed by a partial stand closure (issue #60) counts
  * only the time actually staffed, not its créneau's full span.
+ *
+ * <p><b>These are planned hours — amplitude — not travail effectif.</b> When
+ * the edition declares the legal break taken on the post
+ * ({@code ParametresLegaux.pauseSurPoste}), the daily and weekly caps of
+ * {@code LegalConstraints} deduct that break; this screen does not, and neither
+ * do {@code EquiteService}, {@code PlanningKpiService} or
+ * {@code StaffingAnalyzer}. It is not an oversight: what an organiser reads
+ * here is what they are asking somebody to be present for, which is the
+ * quantity to share out fairly and to compare from one edition to the next. So
+ * a week may show a little more here than {@code dureeHebdomadaireMax}
+ * measures against its ceiling — thirty minutes a day at most — and the two
+ * numbers are both right, of two different things. See
+ * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
+ * l'amplitude ».</p>
  */
 @ApplicationScoped
 public class PlanningHoursService {

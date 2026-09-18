@@ -95,7 +95,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
-              text: $localize`:@@aide.config.def.legaux:Sur la page Paramètres. Les plafonds hebdomadaires (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) et la pause minimale entre deux vacations (30 min par défaut, sans base légale) se règlent au même endroit. Enfin, la pause légale prise sur le poste déclare que les vingt minutes dues à la sixième heure se prennent par relais entre collègues plutôt que comme un trou entre deux vacations.`,
+              text: $localize`:@@aide.config.def.legaux:Sur la page Paramètres. Les plafonds hebdomadaires (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) et la pause minimale entre deux vacations (30 min par défaut, sans base légale) se règlent au même endroit. Enfin, la pause légale prise sur le poste déclare que la pause due à la sixième heure — dont la durée se règle juste au-dessus, au moins 20 min pour un majeur et 30 pour un mineur — se prend par relais entre collègues plutôt que comme un trou entre deux vacations : les plafonds quotidien et hebdomadaires la déduisent alors, et le solveur refuse en dur une pause due sur un stand où personne ne peut relayer.`,
             },
             {
               term: $localize`:@@aide.config.term.contraintes:Activation des contraintes`,
