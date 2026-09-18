@@ -322,8 +322,13 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
  * sits at the aim point and "intercepts pointer events" — while a click
  * anywhere on the field opens the panel for real users and tests alike.
  */
-export async function ouvrirSelect(page: Page, label: string): Promise<void> {
-  await page.locator('mat-form-field').filter({ hasText: label }).first().click();
+/**
+ * Opens the first `mat-select` labelled `label` under `root`. Hand a dialog,
+ * not the page, when one is open: a page field of the same name behind the
+ * modal backdrop would be picked first and never receive the click.
+ */
+export async function ouvrirSelect(root: Page | Locator, label: string): Promise<void> {
+  await root.locator('mat-form-field').filter({ hasText: label }).first().click();
 }
 
 /**

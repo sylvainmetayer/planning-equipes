@@ -91,9 +91,9 @@ async function creerAnimateur(page: Page, id: string, prenom: string, nom: strin
   await dialog.getByLabel('Date de naissance').fill('1990-01-01');
   await dialog.getByLabel('E-mail').fill(`${id.toLowerCase()}@example.org`);
   await dialog.getByRole('button', { name: 'Ajouter une appréciation' }).click();
-  await ouvrirSelect(page, 'Typologie');
+  await ouvrirSelect(dialog, 'Typologie');
   await page.getByRole('option', { name: 'Jeux E2E' }).click();
-  await ouvrirSelect(page, 'Niveau');
+  await ouvrirSelect(dialog, 'Niveau');
   await page.getByRole('option', { name: 'AUTONOME' }).click();
   await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
   await expect(dialog).toBeHidden();
