@@ -653,7 +653,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   available then minus the seats to staff, read either on the seats a solve
   would have to fill or on the plan persisted), `/kpi`, `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
-  `/verrouillages`, `/ouvertures` (« Ouvertures des stands »),
+  `/verrouillages`, `/consignes` (« Consignes » — a band an arrêté closes
+  for every stand on a date, the compensation chosen, the presets; issue #4
+  / ADR 0043), `/ouvertures` (« Ouvertures des stands »),
   `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
