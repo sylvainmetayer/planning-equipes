@@ -328,7 +328,7 @@ public class PlanPublicationService {
                     destinataire.premiereDiffusion(),
                     destinataire.changements(),
                     destinataire.demandes(),
-                    consigneService.lignesJourneesModifiees(joursDe(planning, destinataire.animateurId())));
+                    consigneService.lignesJourneesModifiees(daysOf(planning, destinataire.animateurId())));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
@@ -337,7 +337,7 @@ public class PlanPublicationService {
     }
 
     /** The dates {@code animateurId} holds a seat on in {@code planning}. */
-    private static List<java.time.LocalDate> joursDe(PlanningEvenement planning, String animateurId) {
+    private static List<java.time.LocalDate> daysOf(PlanningEvenement planning, String animateurId) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId())

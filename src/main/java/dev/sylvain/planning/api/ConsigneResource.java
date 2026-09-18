@@ -64,7 +64,7 @@ public class ConsigneResource {
     @POST
     @Path("/apercu")
     public List<ApercuJour> apercu(Demande demande) {
-        return consignes.apercu(demandeRequise(demande));
+        return consignes.apercu(requiredDemande(demande));
     }
 
     /**
@@ -73,7 +73,7 @@ public class ConsigneResource {
      */
     @POST
     public List<ApercuJour> poser(Demande demande) {
-        return consignes.poser(demandeRequise(demande));
+        return consignes.poser(requiredDemande(demande));
     }
 
     /** The dates to lift. */
@@ -84,18 +84,18 @@ public class ConsigneResource {
     @POST
     @Path("/levee/apercu")
     public List<ApercuLevee> apercuLevee(Levee levee) {
-        return consignes.apercuLevee(datesRequises(levee));
+        return consignes.apercuLevee(requiredDates(levee));
     }
 
     /** Lifts the consigne of the given dates — days to come only. */
     @POST
     @Path("/levee")
     public Response lever(Levee levee) {
-        consignes.lever(datesRequises(levee));
+        consignes.lever(requiredDates(levee));
         return Response.noContent().build();
     }
 
-    /* ------------------------------- préréglages ------------------------------- */
+    /* -------------------------------- presets -------------------------------- */
 
     @GET
     @Path("/prereglages")
@@ -134,14 +134,14 @@ public class ConsigneResource {
         return Response.noContent().build();
     }
 
-    private static Demande demandeRequise(Demande demande) {
+    private static Demande requiredDemande(Demande demande) {
         if (demande == null) {
             throw new BusinessError.Invalid("Demande manquante");
         }
         return demande;
     }
 
-    private static List<LocalDate> datesRequises(Levee levee) {
+    private static List<LocalDate> requiredDates(Levee levee) {
         if (levee == null || levee.dates() == null || levee.dates().isEmpty()) {
             throw new BusinessError.Invalid("Aucune date à lever");
         }

@@ -109,10 +109,10 @@ public class ConsigneService {
     }
 
     /** The consignes by date. */
-    public Map<LocalDate, ConsigneEdition> parDate() {
-        Map<LocalDate, ConsigneEdition> parDate = new LinkedHashMap<>();
-        repository.list().forEach(consigne -> parDate.put(consigne.date(), consigne));
-        return parDate;
+    public Map<LocalDate, ConsigneEdition> byDate() {
+        Map<LocalDate, ConsigneEdition> consignesByDate = new LinkedHashMap<>();
+        repository.list().forEach(consigne -> consignesByDate.put(consigne.date(), consigne));
+        return consignesByDate;
     }
 
     /** Every créneau a consigne of the edition added to the grid. */
@@ -176,7 +176,7 @@ public class ConsigneService {
         for (ConsigneEdition consigne : consignes) {
             LocalDate date = consigne.date();
             Set<Long> ajoutes = new HashSet<>(consigne.creneauxAjoutes());
-            List<Creneau> duJour = creneauxDuJour(creneaux, date);
+            List<Creneau> duJour = creneauxOfDay(creneaux, date);
             List<Creneau> nominale =
                     duJour.stream().filter(c -> !ajoutes.contains(c.getId())).toList();
             List<PosteAffectation> avant =
@@ -215,12 +215,12 @@ public class ConsigneService {
         if (dates == null || dates.isEmpty()) {
             return List.of();
         }
-        Map<LocalDate, ConsigneEdition> parDate = parDate();
+        Map<LocalDate, ConsigneEdition> consignesByDate = byDate();
         return dates.stream()
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
-                .map(parDate::get)
+                .map(consignesByDate::get)
                 .filter(Objects::nonNull)
                 .map(ConsigneService::ligne)
                 .toList();
@@ -242,7 +242,7 @@ public class ConsigneService {
                 : heure.getHour() + "h" + String.format("%02d", heure.getMinute());
     }
 
-    /* ------------------------------ préselection ------------------------------ */
+    /* ------------------------------ preselection ------------------------------ */
 
     /**
      * One stand as the screen lists it for a date and a band: what the band
@@ -296,7 +296,7 @@ public class ConsigneService {
         }
         checkBande(fermetureDebut, fermetureFin);
         int[] bande = ConsigneResolver.minutes(fermetureDebut, fermetureFin);
-        List<Creneau> duJour = creneauxDuJour(referenceDataService.listCreneaux(), date);
+        List<Creneau> duJour = creneauxOfDay(referenceDataService.listCreneaux(), date);
         List<Stand> stands = nominal(referenceDataService.listStands(), duJour);
         Map<String, List<Ouverture>> actuelles = new HashMap<>();
         repository.find(date).ifPresent(consigne -> {
@@ -337,7 +337,7 @@ public class ConsigneService {
         return new Preselection(date, duJour.size(), lignes);
     }
 
-    /* --------------------------------- aperçu --------------------------------- */
+    /* --------------------------------- preview --------------------------------- */
 
     /**
      * One request covering several dates: the shape an arrêté takes — the same
@@ -482,7 +482,7 @@ public class ConsigneService {
         return new Contexte(
                 referenceDataService.listCreneaux(),
                 referenceDataService.listAnimateurs(),
-                parDate(),
+                byDate(),
                 joursValides,
                 referenceDataService.listVerrouillages(),
                 referenceDataService.listContraintesAdHoc(),
@@ -493,7 +493,7 @@ public class ConsigneService {
         LocalDate date = demandee.date();
         ConsigneEdition existante = contexte.existantes().get(date);
         Set<Long> dejaAjoutes = existante == null ? Set.of() : new HashSet<>(existante.creneauxAjoutes());
-        List<Creneau> duJour = creneauxDuJour(contexte.creneaux(), date);
+        List<Creneau> duJour = creneauxOfDay(contexte.creneaux(), date);
         // The nominal grid: the day's créneaux minus those a previous consigne added.
         List<Creneau> nominale =
                 duJour.stream().filter(c -> !dejaAjoutes.contains(c.getId())).toList();
@@ -717,11 +717,11 @@ public class ConsigneService {
             checkAVenir(consigne.date(), aujourdhui);
         }
         List<ApercuJour> apercu = apercu(demande);
-        Map<LocalDate, ConsigneEdition> existantes = parDate();
+        Map<LocalDate, ConsigneEdition> existantes = byDate();
         for (ConsigneEdition consigne : consignes) {
             ConsigneEdition existante = existantes.get(consigne.date());
             Set<Long> dejaAjoutes = existante == null ? Set.of() : new HashSet<>(existante.creneauxAjoutes());
-            List<Creneau> duJour = creneauxDuJour(referenceDataService.listCreneaux(), consigne.date());
+            List<Creneau> duJour = creneauxOfDay(referenceDataService.listCreneaux(), consigne.date());
             List<Creneau> nominale = duJour.stream()
                     .filter(c -> !dejaAjoutes.contains(c.getId()))
                     .toList();
@@ -799,7 +799,7 @@ public class ConsigneService {
         solverJobs.refuseIfSolving();
         checkDates(dates);
         LocalDate aujourdhui = clock.today();
-        Map<LocalDate, ConsigneEdition> existantes = parDate();
+        Map<LocalDate, ConsigneEdition> existantes = byDate();
         for (LocalDate date : dates) {
             checkAVenir(date, aujourdhui);
             if (!existantes.containsKey(date)) {
@@ -817,7 +817,7 @@ public class ConsigneService {
         changeTracker.markModified();
     }
 
-    /* ------------------------------- préréglages ------------------------------- */
+    /* -------------------------------- presets -------------------------------- */
 
     public List<PrereglageConsigne> listPrereglages() {
         return repository.listPrereglages();
@@ -993,7 +993,7 @@ public class ConsigneService {
         return stands;
     }
 
-    private static List<Creneau> creneauxDuJour(List<Creneau> creneaux, LocalDate date) {
+    private static List<Creneau> creneauxOfDay(List<Creneau> creneaux, LocalDate date) {
         return creneaux.stream()
                 .filter(c -> date.equals(c.getDate()))
                 .sorted(Comparator.comparing(Creneau::getHeureDebut).thenComparing(Creneau::getId))

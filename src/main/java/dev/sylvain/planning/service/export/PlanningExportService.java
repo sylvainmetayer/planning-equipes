@@ -129,15 +129,15 @@ public class PlanningExportService {
         if (consignes == null || !consignes.isResolvable()) {
             return Map.of();
         }
-        Map<LocalDate, ConsigneEdition> parDate = consignes.get().parDate();
-        if (parDate.isEmpty()) {
+        Map<LocalDate, ConsigneEdition> consignesByDate = consignes.get().byDate();
+        if (consignesByDate.isEmpty()) {
             return Map.of();
         }
         Map<LocalDate, String> lignes = new LinkedHashMap<>();
         for (PosteAffectation poste : postes) {
             LocalDate date =
                     poste.getCreneau() == null ? null : poste.getCreneau().getDate();
-            ConsigneEdition consigne = date == null ? null : parDate.get(date);
+            ConsigneEdition consigne = date == null ? null : consignesByDate.get(date);
             if (consigne != null) {
                 lignes.put(date, "Horaires modifiés — " + consigne.motif());
             }

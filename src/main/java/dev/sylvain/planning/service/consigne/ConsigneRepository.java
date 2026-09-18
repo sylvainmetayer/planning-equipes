@@ -34,14 +34,14 @@ public class ConsigneRepository {
     /** Every consigne of the current edition, by date. */
     public List<ConsigneEdition> list() {
         return scope.read("Failed to list the edition's consignes", connection -> {
-            Map<LocalDate, ConsigneEdition> parDate = new LinkedHashMap<>();
+            Map<LocalDate, ConsigneEdition> consignesByDate = new LinkedHashMap<>();
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT date_jour, fermeture_debut, fermeture_fin, motif, prereglage_nom, cree_le, modifie_le
                     FROM consigne_edition WHERE edition_id = ? ORDER BY date_jour""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
                         LocalDate date = rs.getObject("date_jour", LocalDate.class);
-                        parDate.put(
+                        consignesByDate.put(
                                 date,
                                 new ConsigneEdition(
                                         date,
@@ -57,7 +57,7 @@ public class ConsigneRepository {
                     }
                 }
             }
-            if (parDate.isEmpty()) {
+            if (consignesByDate.isEmpty()) {
                 return List.of();
             }
             Map<LocalDate, List<ConsigneEdition.Fenetre>> fenetres = new LinkedHashMap<>();
@@ -102,7 +102,7 @@ public class ConsigneRepository {
                 }
             }
             List<ConsigneEdition> consignes = new ArrayList<>();
-            for (ConsigneEdition brute : parDate.values()) {
+            for (ConsigneEdition brute : consignesByDate.values()) {
                 LocalDate date = brute.date();
                 consignes.add(new ConsigneEdition(
                         date,
@@ -246,7 +246,7 @@ public class ConsigneRepository {
         });
     }
 
-    /* ------------------------------ préréglages ------------------------------ */
+    /* ------------------------------- presets ------------------------------- */
 
     /** Every preset of the current edition, by name. */
     public List<PrereglageConsigne> listPrereglages() {

@@ -15,7 +15,6 @@ import dev.sylvain.planning.service.solve.ProblemBuilder;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,7 +72,7 @@ class ConsigneScenarioFestivalHivernalTest {
         }
         List<Creneau> grilleNominale = new ArrayList<>(creneauxParId.values());
         List<Stand> stands = new ArrayList<>(standsParId.values());
-        Map<LocalDate, Long> siegesNominauxParDate = siegesParDate(nominal.getPostes());
+        Map<LocalDate, Long> siegesNominauxParDate = seatsByDate(nominal.getPostes());
 
         // The consignes, and the créneaux they add where the grid stops short.
         List<Creneau> grille = new ArrayList<>(grilleNominale);
@@ -120,14 +119,14 @@ class ConsigneScenarioFestivalHivernalTest {
         // Nothing destroyed: every nominal créneau is still the same object in the grid.
         assertThat(grille).containsAll(grilleNominale);
         // Nothing moved outside the two dates.
-        Map<LocalDate, Long> siegesParDate = siegesParDate(postes);
+        Map<LocalDate, Long> seatsByDate = seatsByDate(postes);
         for (LocalDate date : siegesNominauxParDate.keySet()) {
             if (!date.equals(MERCREDI) && !date.equals(JEUDI)) {
-                assertThat(siegesParDate.get(date)).as(date.toString()).isEqualTo(siegesNominauxParDate.get(date));
+                assertThat(seatsByDate.get(date)).as(date.toString()).isEqualTo(siegesNominauxParDate.get(date));
             }
         }
-        assertThat(siegesParDate.get(MERCREDI)).isLessThan(siegesNominauxParDate.get(MERCREDI));
-        assertThat(siegesParDate.get(JEUDI)).isLessThan(siegesNominauxParDate.get(JEUDI));
+        assertThat(seatsByDate.get(MERCREDI)).isLessThan(siegesNominauxParDate.get(MERCREDI));
+        assertThat(seatsByDate.get(JEUDI)).isLessThan(siegesNominauxParDate.get(JEUDI));
         // The midday relays carry no seat, the afternoon runs 18h-20h, the evening is the witness stand's.
         for (Creneau creneau : grilleNominale) {
             if (!MERCREDI.equals(creneau.getDate())) {
@@ -172,13 +171,8 @@ class ConsigneScenarioFestivalHivernalTest {
         assertThat(dateSoir).isNotEmpty();
     }
 
-    private static Map<LocalDate, Long> siegesParDate(List<PosteAffectation> postes) {
+    private static Map<LocalDate, Long> seatsByDate(List<PosteAffectation> postes) {
         return postes.stream()
                 .collect(Collectors.groupingBy(p -> p.getCreneau().getDate(), TreeMap::new, Collectors.counting()));
-    }
-
-    @SuppressWarnings("unused")
-    private static Comparator<Creneau> parHeure() {
-        return Comparator.comparing(Creneau::getHeureDebut);
     }
 }

@@ -44,7 +44,7 @@ class ConsigneResolverTest {
 
     @Test
     void laBandeVideLesRelaisEtRaccourcitLApresMidiDeTousLesStands() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         ConsigneEdition consigne = consigne(LocalTime.of(12, 0), LocalTime.of(18, 0), List.of());
 
         resolve(List.of(bourse), consigne);
@@ -58,7 +58,7 @@ class ConsigneResolverTest {
 
     @Test
     void unStandNonOuvertResteFermeSurLeCreneauQueLaConsigneAAjoute() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         Stand sansRegle = stand("SANS-REGLE", 1);
         ConsigneEdition consigne = consigne(LocalTime.of(12, 0), LocalTime.of(18, 0), List.of())
                 .withCreneauxAjoutes(List.of(SOIR_AJOUTE.getId()));
@@ -75,7 +75,7 @@ class ConsigneResolverTest {
 
     @Test
     void uneOuvertureProlongeLaJourneeAvecLEffectifPerduDansLaBande() {
-        Stand bourse = standAvecRegle("BOURSE", 3);
+        Stand bourse = standWithRule("BOURSE", 3);
         ConsigneEdition consigne = consigne(
                         LocalTime.of(12, 0),
                         LocalTime.of(18, 0),
@@ -93,7 +93,7 @@ class ConsigneResolverTest {
 
     @Test
     void lEffectifSaisiLEmporteSurLHeritage() {
-        Stand bourse = standAvecRegle("BOURSE", 3);
+        Stand bourse = standWithRule("BOURSE", 3);
         ConsigneEdition consigne = consigne(
                         LocalTime.of(12, 0),
                         LocalTime.of(18, 0),
@@ -109,7 +109,7 @@ class ConsigneResolverTest {
 
     @Test
     void laBandeLEmporteSurUneOuvertureQuiLaChevauche() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         ConsigneEdition consigne = consigne(
                 LocalTime.of(12, 0),
                 LocalTime.of(18, 0),
@@ -124,7 +124,7 @@ class ConsigneResolverTest {
 
     @Test
     void unStandPeutRouvrirSurPlusieursFenetres() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         Creneau tot = creneau(7, LUNDI, 8, 10);
         ConsigneEdition consigne = consigne(
                         LocalTime.of(12, 0),
@@ -166,7 +166,7 @@ class ConsigneResolverTest {
 
     @Test
     void uneJourneeEntiereFermeTout() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         Stand sansRegle = stand("SANS-REGLE", 1);
         ConsigneEdition consigne = consigne(LocalTime.MIDNIGHT, null, List.of());
 
@@ -184,7 +184,7 @@ class ConsigneResolverTest {
 
     @Test
     void uneAutreDateEtLesListesPersisteesNeSontPasTouchees() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         ConsigneEdition consigne = consigne(
                 LocalTime.of(12, 0),
                 LocalTime.of(18, 0),
@@ -199,7 +199,7 @@ class ConsigneResolverTest {
 
     @Test
     void sansConsigneRienNeChange() {
-        Stand bourse = standAvecRegle("BOURSE", 2);
+        Stand bourse = standWithRule("BOURSE", 2);
         HoraireStandResolver.apply(List.of(bourse), GRILLE);
         List<OuvertureStand> avant = List.copyOf(bourse.getOuverturesEffectives());
 
@@ -228,7 +228,7 @@ class ConsigneResolverTest {
     }
 
     /** Open 10h-12h then 14h-20h every day, at {@code effectif}. */
-    private static Stand standAvecRegle(String id, int effectif) {
+    private static Stand standWithRule(String id, int effectif) {
         Stand stand = stand(id, 1);
         stand.setHoraires(List.of(HoraireStand.everyDay(
                 ModeHoraire.OUVERTURE,
