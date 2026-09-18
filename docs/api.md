@@ -114,6 +114,18 @@ Un chemin qui s'arrêterait avant la fin laisserait l'écran Contraintes sur
 l'analyse du solve précédent, sans lever d'erreur : le seul symptôme serait un
 écran qui ment. `SolveSynchronePipelineTest` verrouille les deux bouts.
 
+**Le passé est figé** ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+Pendant l'événement, chaque construction de problème depuis le référentiel
+reprend du plan enregistré les places des créneaux déjà commencés — date
+passée, ou aujourd'hui avec un début effectif atteint — et les épingle,
+titulaire gardé même devenu indisponible, place vide restée vide. « Aujourd'hui »
+est celui de [l'horloge du jour J](#figer-la-date-du-jour--développement-et-recette-uniquement).
+Ces places comptent dans les règles et ne sont jamais reprochées ; le score
+d'un solve pendant l'événement se lit donc sur ce qui reste à jouer. Un
+problème envoyé dans le corps de la requête voit ses places passées épinglées
+aussi, sans réamorçage : le serveur ne connaît pas le point de départ de
+l'appelant. `PASSE_FIGE=false` coupe la règle.
+
 **Un seul job de résolution à la fois pour toute l'application**, verrou porté
 par le serveur. Toute autre session voit le même job actif via
 `/api/jobs/active` et se voit refuser un second lancement en `409`, le corps
@@ -200,14 +212,17 @@ est ce qui le tient bas.
 
 Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
 résolution en file rejouée après un redémarrage démarre comme on le lui avait
-demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes }`,
+demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes, postesPasses }`,
 où `mode` vaut ce qui a été fait (`PLAN_COURANT` ou `AUCUN`, jamais `AUTO`,
 et `reamorcage` est absent quand le problème est venu dans le corps de la
 requête : son point de départ est celui de l'appelant, que le serveur ne peut
 pas nommer)
-— à côté de `previousPlan`, qui dit si le plan remplacé était meilleur. La
-même brique servira la reprise d'un job `INTERROMPU` (#183) : elle n'est
-spécifique à aucun écran.
+— à côté de `previousPlan`, qui dit si le plan remplacé était meilleur.
+`postesPasses` compte les places des créneaux déjà commencés, épinglées
+telles que travaillées quel que soit le mode, départ à froid compris
+([ADR 0044](decisions/0044-le-passe-est-fige.md)) ; 0 tant que l'événement
+n'a pas commencé. La même brique servira la reprise d'un job `INTERROMPU`
+(#183) : elle n'est spécifique à aucun écran.
 
 ### La file survit au redémarrage
 
@@ -357,6 +372,11 @@ Budget par défaut court (60 s), pas celui d'une résolution complète. Le job
 échoue explicitement s'il n'y a aucun plan à reprendre : la replanification part
 d'un résultat, pas de rien. Mécanique dans
 [`domaine.md`](domaine.md#replanification-incrémentale).
+
+Les places des créneaux déjà commencés sont réglées **avant** le périmètre :
+épinglées telles que travaillées, jamais rouvertes — `jours` nommant une
+journée passée ne rouvre rien — et comptées à part dans
+`statistiques.postesPasses` ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
 
 ### Instantanés et comparateur A/B
 
@@ -1266,10 +1286,15 @@ Le dump de l'application n'est **pas** l'un de ces chemins, et ne l'a jamais
 (`400`). L'exclusion est délibérée — elle est commentée dans
 `DatabaseDumpService`.
 
-**Ce que le mock remplace, exactement : la date, et seulement pour l'écran
-jour J** — quel jour est regardé, quels créneaux de ce jour sont encore devant,
-et lesquels une absence couvre — **et pour le repère du jour de l'espace
-animateur**. Celui-là se calcule dans le navigateur : `GET
+**Ce que le mock remplace, exactement : la date, pour l'écran jour J** —
+quel jour est regardé, quels créneaux de ce jour sont encore devant, et
+lesquels une absence couvre —, **pour la frontière des consignes**, **pour le
+passé que le solveur fige** ([ADR 0044](decisions/0044-le-passe-est-fige.md) :
+les places des créneaux commencés à cette date et cette heure sont reprises du
+plan enregistré et épinglées, ce qui est exactement ce qui permet de répéter
+une résolution « pendant l'événement » hors saison — et, sous `quarkus:dev`,
+ce qui rend au jeu d'exemple daté de juillet 2026 un avenir à résoudre) **et
+pour le repère du jour de l'espace animateur**. Celui-là se calcule dans le navigateur : `GET
 /api/espace-animateur/{jeton}` porte donc `dateDuJourFigee` et
 `heureDuJourFigee` (toujours `null` là où l'horloge simulée n'est pas autorisée), que la page substitue à
 la date et à l'heure du téléphone. Sans cela,

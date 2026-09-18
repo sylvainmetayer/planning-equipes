@@ -107,6 +107,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `REMOTE_USER_SECRET` | — | Secret partagé avec le proxy. **Obligatoire** si `REMOTE_USER_ENABLED=true` : sans lui le démarrage échoue |
 | `REMOTE_USER_ADMIN_EMAIL` | — | Adresse qui obtient le rôle admin ; les autres adresses reconnues sont des animateurs |
 | `SESSION_ENCRYPTION_KEY` | *(vide = clé générée au démarrage)* | Clé (≥ 16 caractères) de chiffrement du cookie de session admin ; la définir pour que les sessions survivent aux redémarrages |
+| `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. Par défaut, toute résolution pendant l'événement reprend du plan enregistré les places des créneaux commencés et les fige — voir [`domaine.md`](docs/domaine.md#consigne-dédition--la-quatrième-couche). À réserver à une recette qui rejoue une édition ancienne |
 | `HORLOGE_SIMULEE_AUTORISEE` | `false` | `true` : la page Débogage peut figer la date et l'heure que lisent le mode jour J et l'espace animateur, comme sous `quarkus:dev`. Pour un serveur de recette ; jamais en production — voir [`api.md`](docs/api.md#figer-la-date-du-jour--développement-et-recette-uniquement) |
 | `MAIL_HOST` / `MAIL_PORT` | `localhost` / `1025` | Serveur SMTP des notifications d'échange (Mailpit en local) |
 | `MAIL_MOCK` | `false` (tests : toujours mockés) | `true` : les mails sont journalisés au lieu d'être envoyés |
