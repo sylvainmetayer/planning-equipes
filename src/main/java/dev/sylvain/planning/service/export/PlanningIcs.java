@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.text.Normalizer;
@@ -27,6 +28,11 @@ import java.util.Locale;
  * client displays as "imported from", and the domain part of each event's
  * {@code UID}. Both are derived from the deployment's product name, so a
  * customer's calendar never names somebody else's software.</p>
+ *
+ * <p>A third names the édition: {@code X-WR-CALNAME} is what a client shows in
+ * its sidebar for a subscribed calendar, and without it the feed of an
+ * animateur who subscribed two years running appears twice under the same
+ * nothing (issue #608).</p>
  */
 @ApplicationScoped
 public class PlanningIcs {
@@ -73,6 +79,17 @@ public class PlanningIcs {
         return slug.isEmpty() ? DEFAULT_SLUG : slug;
     }
 
+    /**
+     * What a client shows under the calendar's name: the édition it comes from,
+     * and when the feed was read — the generation stamp this line has always
+     * carried, which is how one tells a stale import from a live subscription.
+     */
+    private static String calendrierDescription(String nomCalendrier) {
+        String genere =
+                "Généré le " + PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
+        return nomCalendrier == null || nomCalendrier.isBlank() ? genere : nomCalendrier + " — " + genere;
+    }
+
     public String exportAnimateurIcs(PlanningEvenement planning, String animateurId) {
         return exportAnimateurIcs(planning, animateurId, new PauseAnalyzer().pausesAnimateur(planning, animateurId));
     }
@@ -80,6 +97,15 @@ public class PlanningIcs {
     /** Same feed, with the breaks already read — what a roster-wide export passes in. */
     public String exportAnimateurIcs(
             PlanningEvenement planning, String animateurId, List<PauseAnalyzer.PauseAnimateurView> pauses) {
+        return exportAnimateurIcs(planning, animateurId, pauses, EtiquetteEdition.INCONNUE);
+    }
+
+    /** The same feed, named after the édition it belongs to (issue #608). */
+    public String exportAnimateurIcs(
+            PlanningEvenement planning,
+            String animateurId,
+            List<PauseAnalyzer.PauseAnimateurView> pauses,
+            EtiquetteEdition edition) {
         List<PosteAffectation> postes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId()))
@@ -91,9 +117,18 @@ public class PlanningIcs {
                 .append("VERSION:2.0\r\n")
                 .append("PRODID:")
                 .append(prodId)
-                .append("\r\n")
-                .append("X-WR-CALDESC:Généré le ")
-                .append(PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault())))
+                .append("\r\n");
+        // The name a calendar client shows in its sidebar, and the description
+        // it shows under it. Written only when the édition could be read: an
+        // empty name would be worse than none.
+        String nomCalendrier = edition == null ? null : edition.libelle();
+        if (nomCalendrier != null && !nomCalendrier.isBlank()) {
+            builder.append("X-WR-CALNAME:")
+                    .append(escapeIcs("Mon planning — " + nomCalendrier))
+                    .append("\r\n");
+        }
+        builder.append("X-WR-CALDESC:")
+                .append(escapeIcs(calendrierDescription(nomCalendrier)))
                 .append("\r\n")
                 .append("CALSCALE:GREGORIAN\r\n");
 

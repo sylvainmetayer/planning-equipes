@@ -79,6 +79,7 @@ public class PdfTheme {
     // --- Fonts: bold sans for headline figures, plain sans for supporting text ---
     private final Font brandLabelFont;
     private final Font nameFont;
+    private final Font editionFont;
     private final Font statNumberFont;
     private final Font statLabelFont;
     private final Font statSubLabelFont;
@@ -143,6 +144,7 @@ public class PdfTheme {
 
         this.brandLabelFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
         this.nameFont = new Font(Font.HELVETICA, 24, Font.BOLD, this.headline);
+        this.editionFont = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, this.muted);
         this.statNumberFont = new Font(Font.HELVETICA, 19, Font.BOLD, this.headline);
         this.statLabelFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, this.headline);
         this.statSubLabelFont = new Font(Font.HELVETICA, 6.5f, Font.BOLD, this.muted);
@@ -319,6 +321,17 @@ public class PdfTheme {
      * image column: a missing mark is better than someone else's.</p>
      */
     PdfPTable brandHeader(Document document, float titleWidth, String brandText, String title, float spacingAfter) {
+        return brandHeader(document, titleWidth, brandText, title, null, spacingAfter);
+    }
+
+    /**
+     * The same header with a line under the title — the édition the document is
+     * about (issue #608). A {@code null} or blank subtitle prints nothing, so a
+     * document produced where the édition cannot be read looks exactly as it
+     * did before.
+     */
+    PdfPTable brandHeader(
+            Document document, float titleWidth, String brandText, String title, String subtitle, float spacingAfter) {
         Image logo = loadOptionalImage(logoResource);
         PdfPTable header =
                 logo == null ? new PdfPTable(new float[] {titleWidth}) : new PdfPTable(new float[] {46f, titleWidth});
@@ -345,6 +358,11 @@ public class PdfTheme {
         brandLabel.setSpacingAfter(3f);
         titleCell.addElement(brandLabel);
         titleCell.addElement(new Paragraph(title, nameFont));
+        if (subtitle != null && !subtitle.isBlank()) {
+            Paragraph edition = new Paragraph(subtitle, editionFont);
+            edition.setSpacingBefore(2f);
+            titleCell.addElement(edition);
+        }
         header.addCell(titleCell);
         header.setSpacingAfter(spacingAfter);
         return header;

@@ -3464,5 +3464,7 @@
   "debug.resolution.subtitle": " Raw diagnostic of the last solve: score, unfilled seats, feasibility and per-constraint detail. ",
   "aide.lien.parametresEmails": "Settings — Automatic e-mails tab",
   "aide.lien.parametresGlobaux": "Settings — Global tab",
-  "aide.lien.debugYaml": "Debug — YAML validator tab"
+  "aide.lien.debugYaml": "Debug — YAML validator tab",
+  "espace.edition.jour": "on {$INTERPOLATION}",
+  "espace.edition.periode": "from {$INTERPOLATION} to {$INTERPOLATION_1}"
 }

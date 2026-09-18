@@ -11,6 +11,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -41,15 +42,19 @@ class PlanningExportServiceTest {
      * The two plans are dated apart on purpose — a document must carry the date
      * of the plan it renders, not of the other one (issue #245).
      */
+    /** The édition the documents are about, named and dated as the espace names it (issue #608). */
+    private static final EtiquetteEdition EDITION =
+            new EtiquetteEdition("Édition de test", LocalDate.parse("2026-07-10"), LocalDate.parse("2026-07-12"));
+
     private static final ExportProvenance PROVENANCE = new ExportProvenance() {
         @Override
         public Provenance courante() {
-            return new Provenance("Édition de test", Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
+            return new Provenance(EDITION, Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
         }
 
         @Override
         public Provenance publiee() {
-            return new Provenance("Édition de test", Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
+            return new Provenance(EDITION, Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
         }
     };
 
