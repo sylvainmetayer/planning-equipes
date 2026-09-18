@@ -32,11 +32,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param retires             seats held in the reference and empty (or gone)
  *                            now
  * @param remplaces           seats held by somebody else now
+ * @param horairesModifies    seats kept by the same person on other hours —
+ *                            a créneau a consigne trimmed, typically
  * @param animateursConcernes how many people {@code parAnimateur} lists
  */
 @Schema(
         requiredProperties = {
             "animateursConcernes",
+            "horairesModifies",
             "jour",
             "nouveaux",
             "parAnimateur",
@@ -54,6 +57,7 @@ public record ChangementsJournee(
         int nouveaux,
         int retires,
         int remplaces,
+        int horairesModifies,
         int animateursConcernes,
         List<SeatLine> parVacation,
         List<AnimateurLine> parAnimateur) {
@@ -97,7 +101,16 @@ public record ChangementsJournee(
         RETIRE,
 
         /** Held by somebody else now. */
-        REMPLACE
+        REMPLACE,
+
+        /**
+         * Held by the same person, on other hours: the seat the reference
+         * held and the one the plan holds are the same stand and day at
+         * different hours — a créneau trimmed or stretched by a consigne. One
+         * line rather than a retrait and a nouveau, as the person's own
+         * reading words it as one déplacement.
+         */
+        HORAIRES
     }
 
     /** Somebody holding a seat — the id the screen links, the name it prints. */
@@ -109,10 +122,17 @@ public record ChangementsJournee(
      * stand, day, hours — never by a poste id, which a solve renumbers without
      * moving anybody.
      *
-     * @param avant who held the seat in the reference, {@code null} for an
-     *              empty seat or one the reference did not hold
-     * @param apres who holds it now, {@code null} for an empty seat or one the
-     *              plan no longer holds
+     * @param heureDebut      the hours of the seat — for {@link
+     *                        SeatChangeType#HORAIRES}, the hours it has now
+     * @param heureDebutAvant the hours the reference held the seat on, only
+     *                        for {@link SeatChangeType#HORAIRES}; {@code null}
+     *                        otherwise, the hours being then the same on both
+     *                        sides
+     * @param avant           who held the seat in the reference, {@code null}
+     *                        for an empty seat or one the reference did not
+     *                        hold
+     * @param apres           who holds it now, {@code null} for an empty seat
+     *                        or one the plan no longer holds
      */
     @Schema(requiredProperties = {"date", "heureDebut", "heureFin", "standId", "standNom", "type"})
     public record SeatLine(
@@ -121,6 +141,8 @@ public record ChangementsJournee(
             LocalDate date,
             LocalTime heureDebut,
             LocalTime heureFin,
+            LocalTime heureDebutAvant,
+            LocalTime heureFinAvant,
             Holder avant,
             Holder apres,
             SeatChangeType type) {}
@@ -135,6 +157,6 @@ public record ChangementsJournee(
 
     /** The answer when the reference does not exist: nothing to compare, and said so. */
     public static ChangementsJournee withoutReference(LocalDate jour, ReferenceChangements reference) {
-        return new ChangementsJournee(jour, reference, false, null, 0, 0, 0, 0, List.of(), List.of());
+        return new ChangementsJournee(jour, reference, false, null, 0, 0, 0, 0, 0, List.of(), List.of());
     }
 }

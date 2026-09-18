@@ -66,6 +66,16 @@ class ChangementsJourneeServiceTest {
             return this;
         }
 
+        /** A seat whose hours a consigne trimmed inside the créneau's. */
+        Plan seat(Stand stand, Creneau creneau, Animateur animateur, LocalTime debut, LocalTime fin) {
+            PosteAffectation poste = new PosteAffectation(prefix + postes.size(), stand, creneau);
+            poste.setAnimateur(animateur);
+            poste.setHeureDebutEffective(debut);
+            poste.setHeureFinEffective(fin);
+            postes.add(poste);
+            return this;
+        }
+
         PlanningEvenement build() {
             return new PlanningEvenement(SAMEDI, List.of(CAMILLE, DOMINIQUE, SASHA), List.copyOf(postes));
         }
@@ -175,6 +185,73 @@ class ChangementsJourneeServiceTest {
                     .containsExactly(
                             tuple(TypeChangement.DEPLACEMENT, "samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h"));
         });
+    }
+
+    /**
+     * A person kept on the stand with hours a consigne trimmed is one line —
+     * « horaires modifiés » — not a seat retired plus a seat filled, so the
+     * counters agree with the person's own reading, which words it as one
+     * déplacement.
+     */
+    @Test
+    void aSeatKeptOnOtherHoursIsOneHoursChangeAndCountsAsThePersonReadingDoes() {
+        Plan avant = new Plan("a").seat(CIRQUE, SAMEDI_APREM, CAMILLE);
+        Plan apres = new Plan("b").seat(CIRQUE, SAMEDI_APREM, CAMILLE, LocalTime.of(16, 0), LocalTime.of(18, 0));
+
+        ChangementsJournee changements = compare(SAMEDI, avant, apres);
+
+        assertThat(changements.parVacation()).singleElement().satisfies(ligne -> {
+            assertThat(ligne.type()).isEqualTo(SeatChangeType.HORAIRES);
+            assertThat(ligne.standNom()).isEqualTo("Cirque");
+            assertThat(ligne.heureDebutAvant()).isEqualTo(LocalTime.of(14, 0));
+            assertThat(ligne.heureFinAvant()).isEqualTo(LocalTime.of(18, 0));
+            assertThat(ligne.heureDebut()).isEqualTo(LocalTime.of(16, 0));
+            assertThat(ligne.heureFin()).isEqualTo(LocalTime.of(18, 0));
+            assertThat(ligne.avant().animateurId()).isEqualTo("camille");
+            assertThat(ligne.apres().animateurId()).isEqualTo("camille");
+        });
+        assertThat(changements.horairesModifies()).isEqualTo(1);
+        assertThat(changements.nouveaux() + changements.retires() + changements.remplaces())
+                .isZero();
+        assertThat(changements.parAnimateur())
+                .singleElement()
+                .satisfies(ligne -> assertThat(ligne.changements())
+                        .extracting(change -> change.type(), change -> change.libelle())
+                        .containsExactly(tuple(
+                                TypeChangement.DEPLACEMENT, "samedi 11/07 : Cirque 16h-18h remplace Cirque 14h-18h")));
+        assertThat(changements.animateursConcernes()).isEqualTo(1);
+        // The two readings count the same day the same way.
+        assertThat(changements.horairesModifies()).isEqualTo(countOf(changements, TypeChangement.DEPLACEMENT));
+        assertThat(changements.nouveaux()).isEqualTo(countOf(changements, TypeChangement.AJOUT));
+        assertThat(changements.retires()).isEqualTo(countOf(changements, TypeChangement.RETRAIT));
+    }
+
+    /**
+     * Two seats of one person on one stand — morning and afternoon, both
+     * trimmed — are not paired: the person's reading keeps them as two
+     * retraits and two ajouts, and so does the seat reading.
+     */
+    @Test
+    void twoSeatsOfOnePersonOnOneStandAreNotFoldedIntoHoursChanges() {
+        Plan avant = new Plan("a").seat(CIRQUE, SAMEDI_MATIN, CAMILLE).seat(CIRQUE, SAMEDI_APREM, CAMILLE);
+        Plan apres = new Plan("b")
+                .seat(CIRQUE, SAMEDI_MATIN, CAMILLE, LocalTime.of(11, 0), LocalTime.of(12, 0))
+                .seat(CIRQUE, SAMEDI_APREM, CAMILLE, LocalTime.of(16, 0), LocalTime.of(18, 0));
+
+        ChangementsJournee changements = compare(SAMEDI, avant, apres);
+
+        assertThat(changements.horairesModifies()).isZero();
+        assertThat(changements.retires()).isEqualTo(2);
+        assertThat(changements.nouveaux()).isEqualTo(2);
+        assertThat(changements.retires()).isEqualTo(countOf(changements, TypeChangement.RETRAIT));
+        assertThat(changements.nouveaux()).isEqualTo(countOf(changements, TypeChangement.AJOUT));
+    }
+
+    private static long countOf(ChangementsJournee changements, TypeChangement type) {
+        return changements.parAnimateur().stream()
+                .flatMap(ligne -> ligne.changements().stream())
+                .filter(change -> change.type() == type)
+                .count();
     }
 
     /** Lines read as the day does: by hour, then by stand. */

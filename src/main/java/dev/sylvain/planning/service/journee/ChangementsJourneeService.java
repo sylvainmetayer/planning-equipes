@@ -114,11 +114,13 @@ public class ChangementsJourneeService {
         int nouveaux = 0;
         int retires = 0;
         int remplaces = 0;
+        int horairesModifies = 0;
         for (SeatLine ligne : parVacation) {
             switch (ligne.type()) {
                 case NOUVEAU -> nouveaux++;
                 case RETIRE -> retires++;
                 case REMPLACE -> remplaces++;
+                case HORAIRES -> horairesModifies++;
             }
         }
         return new ChangementsJournee(
@@ -129,6 +131,7 @@ public class ChangementsJourneeService {
                 nouveaux,
                 retires,
                 remplaces,
+                horairesModifies,
                 parAnimateur.size(),
                 parVacation,
                 parAnimateur);
@@ -181,6 +184,7 @@ public class ChangementsJourneeService {
                 lignes.add(line(cell, null, holder(ajouts.get(i), animateurs)));
             }
         }
+        lignes = pairHoursChanges(lignes);
         lignes.sort(Comparator.comparing(SeatLine::heureDebut, Comparator.nullsLast(Comparator.naturalOrder()))
                 .thenComparing(SeatLine::standNom, Comparator.nullsFirst(String.CASE_INSENSITIVE_ORDER))
                 .thenComparing(SeatLine::type));
@@ -191,7 +195,56 @@ public class ChangementsJourneeService {
         SeatChangeType type = avant == null
                 ? SeatChangeType.NOUVEAU
                 : apres == null ? SeatChangeType.RETIRE : SeatChangeType.REMPLACE;
-        return new SeatLine(cell.standId(), cell.standNom(), cell.date(), cell.debut(), cell.fin(), avant, apres, type);
+        return new SeatLine(
+                cell.standId(), cell.standNom(), cell.date(), cell.debut(), cell.fin(), null, null, avant, apres, type);
+    }
+
+    /**
+     * A person kept on the stand at other hours — a créneau a consigne trimmed
+     * — leaves one retrait and one nouveau on two cells. Folded here into one
+     * {@link SeatChangeType#HORAIRES} line, on the same rule as the person's
+     * reading ({@code PublicationDiffService}, same day and same stand at
+     * other hours): only when that person has exactly one seat on each side
+     * of the stand, so the counters of the two readings agree. Two seats
+     * moved on one stand — morning and evening both trimmed — stay two
+     * retraits and two nouveaux, as the person's reading keeps them apart.
+     */
+    private static List<SeatLine> pairHoursChanges(List<SeatLine> lignes) {
+        Map<String, List<SeatLine>> retraits = new LinkedHashMap<>();
+        Map<String, List<SeatLine>> ajouts = new LinkedHashMap<>();
+        for (SeatLine ligne : lignes) {
+            if (ligne.type() == SeatChangeType.RETIRE) {
+                retraits.computeIfAbsent(
+                                ligne.standId() + "|" + ligne.avant().animateurId(), unused -> new ArrayList<>())
+                        .add(ligne);
+            } else if (ligne.type() == SeatChangeType.NOUVEAU) {
+                ajouts.computeIfAbsent(ligne.standId() + "|" + ligne.apres().animateurId(), unused -> new ArrayList<>())
+                        .add(ligne);
+            }
+        }
+        List<SeatLine> pliees = new ArrayList<>(lignes);
+        for (Map.Entry<String, List<SeatLine>> entree : retraits.entrySet()) {
+            List<SeatLine> nouveaux = ajouts.get(entree.getKey());
+            if (entree.getValue().size() != 1 || nouveaux == null || nouveaux.size() != 1) {
+                continue;
+            }
+            SeatLine retrait = entree.getValue().get(0);
+            SeatLine nouveau = nouveaux.get(0);
+            pliees.remove(retrait);
+            pliees.remove(nouveau);
+            pliees.add(new SeatLine(
+                    nouveau.standId(),
+                    nouveau.standNom(),
+                    nouveau.date(),
+                    nouveau.heureDebut(),
+                    nouveau.heureFin(),
+                    retrait.heureDebut(),
+                    retrait.heureFin(),
+                    retrait.avant(),
+                    nouveau.apres(),
+                    SeatChangeType.HORAIRES));
+        }
+        return pliees;
     }
 
     /**
@@ -223,6 +276,12 @@ public class ChangementsJourneeService {
         return holders;
     }
 
+    /**
+     * The id as a holder. Every id a seat carries was collected by {@link
+     * #animateursById} from the very postes read here, so the lookup never
+     * misses; the id stands in for the name only as a belt-and-braces
+     * against a plan whose poste names an animateur its list does not hold.
+     */
     private static Holder holder(String animateurId, Map<String, Animateur> animateurs) {
         Animateur animateur = animateurs.get(animateurId);
         return new Holder(animateurId, animateur == null ? animateurId : animateur.nomAffiche());

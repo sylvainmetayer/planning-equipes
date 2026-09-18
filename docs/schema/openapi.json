@@ -970,7 +970,7 @@
         }
       },
       "ChangementsJournee" : {
-        "required" : [ "animateursConcernes", "jour", "nouveaux", "parAnimateur", "parVacation", "reference", "referenceDisponible", "remplaces", "retires" ],
+        "required" : [ "animateursConcernes", "horairesModifies", "jour", "nouveaux", "parAnimateur", "parVacation", "reference", "referenceDisponible", "remplaces", "retires" ],
         "type" : "object",
         "properties" : {
           "jour" : {
@@ -994,6 +994,10 @@
             "format" : "int32"
           },
           "remplaces" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "horairesModifies" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -6061,7 +6065,7 @@
       },
       "SeatChangeType" : {
         "type" : "string",
-        "enum" : [ "NOUVEAU", "RETIRE", "REMPLACE" ]
+        "enum" : [ "NOUVEAU", "RETIRE", "REMPLACE", "HORAIRES" ]
       },
       "SeatLine" : {
         "type" : "object",
@@ -6080,6 +6084,12 @@
             "$ref" : "#/components/schemas/LocalTime"
           },
           "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureDebutAvant" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFinAvant" : {
             "$ref" : "#/components/schemas/LocalTime"
           },
           "avant" : {

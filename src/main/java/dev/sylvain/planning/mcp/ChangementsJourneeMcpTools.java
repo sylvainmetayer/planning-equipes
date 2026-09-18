@@ -59,6 +59,7 @@ public class ChangementsJourneeMcpTools {
                 changements.nouveaux(),
                 changements.retires(),
                 changements.remplaces(),
+                changements.horairesModifies(),
                 changements.animateursConcernes(),
                 changements.parVacation().stream()
                         .map(ChangementsJourneeMcpTools::toView)
@@ -73,6 +74,8 @@ public class ChangementsJourneeMcpTools {
                 ligne.standId(),
                 ligne.heureDebut(),
                 ligne.heureFin(),
+                ligne.heureDebutAvant(),
+                ligne.heureFinAvant(),
                 ligne.avant() == null ? null : ligne.avant().animateurId(),
                 ligne.apres() == null ? null : ligne.apres().animateurId(),
                 ligne.type());
@@ -97,6 +100,7 @@ public class ChangementsJourneeMcpTools {
      *
      * @param referenceDisponible false when there is nothing to compare to —
      *                            the counts are then zero and say nothing
+     * @param horairesModifies    seats the same person keeps on other hours
      */
     public record ChangementsJourneeView(
             LocalDate jour,
@@ -106,15 +110,22 @@ public class ChangementsJourneeMcpTools {
             int nouveaux,
             int retires,
             int remplaces,
+            int horairesModifies,
             int animateursConcernes,
             List<SeatLineView> parVacation,
             List<AnimateurLineView> parAnimateur) {}
 
-    /** One seat whose holder changed: the stand, the hours, the two ids. */
+    /**
+     * One seat whose holder or hours changed: the stand, the hours, the two
+     * ids. {@code heureDebutAvant}/{@code heureFinAvant} only on a {@link
+     * SeatChangeType#HORAIRES} line, the hours the reference held the seat on.
+     */
     public record SeatLineView(
             String standId,
             LocalTime heureDebut,
             LocalTime heureFin,
+            LocalTime heureDebutAvant,
+            LocalTime heureFinAvant,
             String avantAnimateurId,
             String apresAnimateurId,
             SeatChangeType type) {}
