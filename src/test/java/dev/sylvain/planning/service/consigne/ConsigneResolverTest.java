@@ -107,6 +107,28 @@ class ConsigneResolverTest {
         assertThat(segments(APRES_MIDI, bourse)).containsExactly(new SegmentOuvert(240, 360, 3));
     }
 
+    /** An evening at 2 then a late evening at 7 on one stand: the headcount belongs to the window, not to the stand. */
+    @Test
+    void eachWindowOfAStandCarriesItsOwnHeadcount() {
+        Stand bourse = stand("BOURSE", 1);
+        bourse.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 3))));
+        ConsigneEdition consigne = consigne(
+                        LocalTime.of(12, 0),
+                        LocalTime.of(18, 0),
+                        List.of(
+                                ouverture("BOURSE", LocalTime.of(18, 0), LocalTime.of(20, 0), 2),
+                                ouverture("BOURSE", LocalTime.of(20, 0), LocalTime.of(22, 0), 7)))
+                .withCreneauxAjoutes(List.of(SOIR_AJOUTE.getId()));
+
+        resolve(List.of(bourse), consigne);
+
+        assertThat(segments(APRES_MIDI, bourse)).containsExactly(new SegmentOuvert(240, 360, 2));
+        assertThat(segments(SOIR_AJOUTE, bourse)).containsExactly(new SegmentOuvert(0, 120, 7));
+        // The stand's own morning is untouched by either window.
+        assertThat(segments(MATIN, bourse)).containsExactly(new SegmentOuvert(0, 120, 3));
+    }
+
     @Test
     void laBandeLEmporteSurUneOuvertureQuiLaChevauche() {
         Stand bourse = standWithRule("BOURSE", 2);

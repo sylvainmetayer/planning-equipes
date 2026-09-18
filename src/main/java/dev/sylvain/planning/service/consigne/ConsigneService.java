@@ -14,6 +14,7 @@ import dev.sylvain.planning.domain.ValidationJournee;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
@@ -72,6 +73,9 @@ public class ConsigneService {
 
     @Inject
     ConsigneRepository repository;
+
+    @Inject
+    JdbcEditionScope scope;
 
     @Inject
     ReferenceDataService referenceDataService;
@@ -342,7 +346,9 @@ public class ConsigneService {
     /**
      * One request covering several dates: the shape an arrêté takes — the same
      * band on two to five days — so extending is the same call with more
-     * dates, and changing a date is the same call on that date.
+     * dates, and changing a date is the same call on that date. An end typed
+     * {@code 00:00} — the band's, a window's, an opening's — is the day's end
+     * and lands as an open end (see {@link ConsigneEdition#openEnd}).
      */
     @Schema(requiredProperties = {"dates", "fermetureDebut", "motif"})
     public record Demande(
@@ -362,17 +368,18 @@ public class ConsigneService {
             List<ConsigneEdition> consignes = new ArrayList<>();
             for (LocalDate date : new LinkedHashSet<>(dates)) {
                 consignes.add(new ConsigneEdition(
-                        date,
-                        fermetureDebut,
-                        fermetureFin,
-                        motif == null ? null : motif.strip(),
-                        prereglage == null || prereglage.isBlank() ? null : prereglage.strip(),
-                        fenetres,
-                        ouvertures,
-                        List.of(),
-                        null,
-                        null,
-                        repas != null && repas.surcharge() ? repas : null));
+                                date,
+                                fermetureDebut,
+                                fermetureFin,
+                                motif == null ? null : motif.strip(),
+                                prereglage == null || prereglage.isBlank() ? null : prereglage.strip(),
+                                fenetres,
+                                ouvertures,
+                                List.of(),
+                                null,
+                                null,
+                                repas != null && repas.surcharge() ? repas : null)
+                        .normalised());
             }
             return consignes;
         }
@@ -602,8 +609,10 @@ public class ConsigneService {
                 postesApres.size(),
                 minutes(postesAvant),
                 minutes(postesApres),
+                // A créneau running to midnight ends at 00:00 in the grid's
+                // vocabulary; the preview says it the way a window does.
                 plan.aCreer().stream()
-                        .map(c -> new Fenetre(c.getHeureDebut(), c.getHeureFin()))
+                        .map(c -> new Fenetre(c.getHeureDebut(), c.getHeureFin()).normalised())
                         .toList(),
                 plan.aSupprimer().stream().map(ConsigneService::ref).toList(),
                 sansSiege,
@@ -709,6 +718,13 @@ public class ConsigneService {
      * — and adds whatever créneaux their openings need. Returns the preview's
      * figures, computed before the write: once the créneaux exist, a preview
      * can no longer tell them from the nominal grid.
+     *
+     * <p>One transaction for every date (ADR 0028): the créneaux added, the
+     * rows written, the créneaux a previous consigne no longer needs and the
+     * readings withdrawn commit together or not at all. An arrêté over five
+     * days that fails on the third leaves nothing of the first two behind —
+     * the screen would otherwise show two dates under consigne and three
+     * without, from one gesture that reported a failure.</p>
      */
     public List<ApercuJour> poser(Demande demande) {
         solverJobs.refuseIfSolving();
@@ -720,28 +736,34 @@ public class ConsigneService {
         }
         List<ApercuJour> apercu = apercu(demande);
         Map<LocalDate, ConsigneEdition> existantes = byDate();
-        for (ConsigneEdition consigne : consignes) {
-            ConsigneEdition existante = existantes.get(consigne.date());
-            Set<Long> dejaAjoutes = existante == null ? Set.of() : new HashSet<>(existante.creneauxAjoutes());
-            List<Creneau> duJour = creneauxOfDay(referenceDataService.listCreneaux(), consigne.date());
-            List<Creneau> nominale = duJour.stream()
-                    .filter(c -> !dejaAjoutes.contains(c.getId()))
-                    .toList();
-            Plan plan = planifier(consigne, duJour, nominale);
-            List<Long> ids = new ArrayList<>();
-            plan.conserves().forEach(creneau -> ids.add(creneau.getId()));
-            for (Creneau aCreer : plan.aCreer()) {
-                // The journaled write, like every other door onto the referential:
-                // the history records the créneau the consigne added.
-                ids.add(referenceDataService.writeCreneau(aCreer).creneau().getId());
+        List<Creneau> grille = referenceDataService.listCreneaux();
+        scope.write("Failed to lay the consignes down", connection -> {
+            for (ConsigneEdition consigne : consignes) {
+                ConsigneEdition existante = existantes.get(consigne.date());
+                Set<Long> dejaAjoutes = existante == null ? Set.of() : new HashSet<>(existante.creneauxAjoutes());
+                List<Creneau> duJour = creneauxOfDay(grille, consigne.date());
+                List<Creneau> nominale = duJour.stream()
+                        .filter(c -> !dejaAjoutes.contains(c.getId()))
+                        .toList();
+                Plan plan = planifier(consigne, duJour, nominale);
+                List<Long> ids = new ArrayList<>();
+                plan.conserves().forEach(creneau -> ids.add(creneau.getId()));
+                for (Creneau aCreer : plan.aCreer()) {
+                    ids.add(referenceDataService
+                            .writeCreneau(connection, aCreer)
+                            .creneau()
+                            .getId());
+                }
+                repository.save(connection, consigne.withCreneauxAjoutes(ids));
+                if (!plan.aSupprimer().isEmpty()) {
+                    referenceDataService.deleteCreneaux(
+                            connection,
+                            plan.aSupprimer().stream().map(Creneau::getId).toList());
+                }
             }
-            repository.save(consigne.withCreneauxAjoutes(ids));
-            if (!plan.aSupprimer().isEmpty()) {
-                referenceDataService.deleteCreneaux(
-                        plan.aSupprimer().stream().map(Creneau::getId).toList());
-            }
-        }
-        validations.withdrawDays(consignes.stream().map(ConsigneEdition::date).toList());
+            validations.withdrawDays(
+                    connection, consignes.stream().map(ConsigneEdition::date).toList());
+        });
         changeTracker.markModified();
         return apercu;
     }
@@ -845,19 +867,21 @@ public class ConsigneService {
                 throw new BusinessError.Invalid("Un préréglage nommé « " + nom + " » existe déjà");
             }
         }
-        checkBande(prereglage.fermetureDebut(), prereglage.fermetureFin());
-        String motif = checkedMotif(prereglage.motif());
-        checkFenetres(prereglage.fenetres(), prereglage.fermetureDebut(), prereglage.fermetureFin(), "Le préréglage");
-        checkRepas(prereglage.repas(), "Le préréglage");
+        PrereglageConsigne normalise = prereglage.normalised();
+        checkBande(normalise.fermetureDebut(), normalise.fermetureFin());
+        String motif = checkedMotif(normalise.motif());
+        checkFenetres(normalise.fenetres(), normalise.fermetureDebut(), normalise.fermetureFin(), "Le préréglage");
+        checkRepas(normalise.repas(), coupureRepasEdition(), "Le préréglage");
         PrereglageConsigne propre = new PrereglageConsigne(
                 id,
                 nom,
-                prereglage.fermetureDebut(),
-                prereglage.fermetureFin(),
+                normalise.fermetureDebut(),
+                normalise.fermetureFin(),
                 motif,
-                prereglage.fenetres(),
+                normalise.fenetres(),
                 null,
-                prereglage.repas() != null && prereglage.repas().surcharge() ? prereglage.repas() : null);
+                null,
+                normalise.repas() != null && normalise.repas().surcharge() ? normalise.repas() : null);
         repository.savePrereglage(propre);
         return repository.listPrereglages().stream()
                 .filter(p -> p.id().equals(id))
@@ -889,6 +913,7 @@ public class ConsigneService {
         referenceDataService.listStands().forEach(stand -> stands.put(stand.getId(), stand));
         Set<LocalDate> joursGrille = new HashSet<>();
         referenceDataService.listCreneaux().forEach(creneau -> joursGrille.add(creneau.getDate()));
+        int coupureEdition = coupureRepasEdition();
         for (ConsigneEdition consigne : consignes) {
             if (consigne.date() == null) {
                 throw new BusinessError.Invalid("Date manquante");
@@ -899,7 +924,7 @@ public class ConsigneService {
             checkBande(consigne.fermetureDebut(), consigne.fermetureFin());
             checkedMotif(consigne.motif());
             checkFenetres(consigne.fenetres(), consigne.fermetureDebut(), consigne.fermetureFin(), "La consigne");
-            checkRepas(consigne.repas(), "La consigne du " + consigne.date());
+            checkRepas(consigne.repas(), coupureEdition, "La consigne du " + consigne.date());
             Set<String> vues = new HashSet<>();
             Set<String> inconnus = new LinkedHashSet<>();
             for (Ouverture ouverture : consigne.ouvertures()) {
@@ -937,14 +962,30 @@ public class ConsigneService {
         }
     }
 
+    /** The edition's meal break, the one a consigne that restates a window without a break is judged against. */
+    private int coupureRepasEdition() {
+        return referenceDataService.getParametresLegaux().getCoupureRepasMinutes();
+    }
+
     /**
      * Refuses a meal override that states half a window, a window ending
-     * before it starts, a break that is not positive, or that gives no reason:
-     * the justification is what the organiser reads beside the day, and a
-     * departure from the edition's rule without one is the mistake this block
-     * exists to prevent.
+     * before it starts, a break that is not positive, a window shorter than
+     * the break it must hold, or that gives no reason: the justification is
+     * what the organiser reads beside the day, and a departure from the
+     * edition's rule without one is the mistake this block exists to prevent.
+     *
+     * <p>The length rule is what keeps the day governed at all: the solver
+     * drops a window shorter than its break as one nobody could honour
+     * ({@link dev.sylvain.planning.domain.FenetreRepas}), and a consigne
+     * stating one would then leave its date with no evening rule instead of
+     * a tighter one. Public and static, so the scenario import holds a file
+     * to the same rule.</p>
+     *
+     * @param coupureEditionMinutes the edition's break, read when the block
+     *                              restates a window without restating the
+     *                              break
      */
-    private static void checkRepas(ConsigneEdition.RepasConsigne repas, String sujet) {
+    public static void checkRepas(ConsigneEdition.RepasConsigne repas, int coupureEditionMinutes, String sujet) {
         if (repas == null || !repas.surcharge()) {
             return;
         }
@@ -970,6 +1011,21 @@ public class ConsigneService {
         if (repas.coupureMinutes() != null && repas.coupureMinutes() <= 0) {
             throw new BusinessError.Invalid(sujet + " : la coupure repas doit durer un nombre positif de minutes");
         }
+        int coupure = repas.coupureMinutes() != null ? repas.coupureMinutes() : coupureEditionMinutes;
+        if (repas.midiDebut() != null && minutesBetween(repas.midiDebut(), repas.midiFin()) < coupure) {
+            throw new BusinessError.Invalid(
+                    sujet + " : la fenêtre repas de midi (" + libelle(repas.midiDebut(), repas.midiFin())
+                            + ") est plus courte que la coupure de " + coupure + " min qu'elle doit contenir");
+        }
+        if (repas.soirDebut() != null && minutesBetween(repas.soirDebut(), repas.soirFin()) < coupure) {
+            throw new BusinessError.Invalid(
+                    sujet + " : la fenêtre repas du soir (" + libelle(repas.soirDebut(), repas.soirFin())
+                            + ") est plus courte que la coupure de " + coupure + " min qu'elle doit contenir");
+        }
+    }
+
+    private static int minutesBetween(LocalTime debut, LocalTime fin) {
+        return (fin.toSecondOfDay() - debut.toSecondOfDay()) / 60;
     }
 
     private static void checkBande(LocalTime debut, LocalTime fin) {
@@ -1086,6 +1142,10 @@ public class ConsigneService {
     }
 
     private static String libelle(Fenetre fenetre) {
-        return fenetre.debut() + "-" + (fenetre.fin() == null ? "minuit" : fenetre.fin());
+        return libelle(fenetre.debut(), fenetre.fin());
+    }
+
+    private static String libelle(LocalTime debut, LocalTime fin) {
+        return debut + "-" + (fin == null ? "minuit" : fin);
     }
 }

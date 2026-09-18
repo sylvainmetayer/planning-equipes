@@ -147,8 +147,16 @@ public class ConsigneRepository {
      * survives a replacement; the modification stamp is now.
      */
     public void save(ConsigneEdition consigne) {
-        scope.write("Failed to save the consigne of " + consigne.date(), connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        scope.write("Failed to save the consigne of " + consigne.date(), connection -> save(connection, consigne));
+    }
+
+    /**
+     * Same write, inside the caller's transaction (ADR 0028): laying a
+     * consigne down over five dates adds créneaux and rows for each, and a
+     * failure on the third must leave nothing of the first two.
+     */
+    public void save(Connection connection, ConsigneEdition consigne) throws SQLException {
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO consigne_edition (edition_id, date_jour, fermeture_debut, fermeture_fin, motif,
                                                   prereglage_nom, cree_le, modifie_le, repas_midi_debut,
                                                   repas_midi_fin, repas_soir_debut, repas_soir_fin,
@@ -166,68 +174,57 @@ public class ConsigneRepository {
                         repas_soir_fin = EXCLUDED.repas_soir_fin,
                         repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
                         repas_justification = EXCLUDED.repas_justification""")) {
-                ps.setObject(2, consigne.date());
-                ps.setObject(3, consigne.fermetureDebut());
-                ps.setObject(4, consigne.fermetureFin());
-                ps.setString(5, consigne.motif());
-                ps.setString(6, consigne.prereglage());
-                bindRepas(ps, 7, consigne.repas());
-                ps.executeUpdate();
-            }
-            deleteDated(
-                    connection,
-                    "DELETE FROM consigne_edition_fenetre WHERE edition_id = ? AND date_jour = ?",
-                    consigne.date());
-            deleteDated(
-                    connection,
-                    "DELETE FROM consigne_edition_ouverture WHERE edition_id = ? AND date_jour = ?",
-                    consigne.date());
-            deleteDated(
-                    connection,
-                    "DELETE FROM consigne_edition_creneau WHERE edition_id = ? AND date_jour = ?",
-                    consigne.date());
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+            ps.setObject(2, consigne.date());
+            ps.setObject(3, consigne.fermetureDebut());
+            ps.setObject(4, consigne.fermetureFin());
+            ps.setString(5, consigne.motif());
+            ps.setString(6, consigne.prereglage());
+            bindRepas(ps, 7, consigne.repas());
+            ps.executeUpdate();
+        }
+        deleteDated(
+                connection,
+                "DELETE FROM consigne_edition_fenetre WHERE edition_id = ? AND date_jour = ?",
+                consigne.date());
+        deleteDated(
+                connection,
+                "DELETE FROM consigne_edition_ouverture WHERE edition_id = ? AND date_jour = ?",
+                consigne.date());
+        deleteDated(
+                connection,
+                "DELETE FROM consigne_edition_creneau WHERE edition_id = ? AND date_jour = ?",
+                consigne.date());
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO consigne_edition_fenetre (edition_id, date_jour, position, heure_debut, heure_fin)
                     VALUES (?, ?, ?, ?, ?)""")) {
-                int position = 0;
-                for (ConsigneEdition.Fenetre fenetre : consigne.fenetres()) {
-                    ps.setObject(2, consigne.date());
-                    ps.setInt(3, position++);
-                    ps.setObject(4, fenetre.debut());
-                    ps.setObject(5, fenetre.fin());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
+            int position = 0;
+            for (ConsigneEdition.Fenetre fenetre : consigne.fenetres()) {
+                ps.setObject(2, consigne.date());
+                ps.setInt(3, position++);
+                ps.setObject(4, fenetre.debut());
+                ps.setObject(5, fenetre.fin());
+                ps.addBatch();
             }
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+            ps.executeBatch();
+        }
+        try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO consigne_edition_ouverture (edition_id, date_jour, stand_id, position,
                                                             heure_debut, heure_fin, effectif)
                     VALUES (?, ?, ?, ?, ?, ?, ?)""")) {
-                Map<String, Integer> positions = new LinkedHashMap<>();
-                for (ConsigneEdition.Ouverture ouverture : consigne.ouvertures()) {
-                    int position = positions.merge(ouverture.standId(), 1, Integer::sum) - 1;
-                    ps.setObject(2, consigne.date());
-                    ps.setString(3, ouverture.standId());
-                    ps.setInt(4, position);
-                    ps.setObject(5, ouverture.debut());
-                    ps.setObject(6, ouverture.fin());
-                    ps.setObject(7, ouverture.effectif());
-                    ps.addBatch();
-                }
-                ps.executeBatch();
+            Map<String, Integer> positions = new LinkedHashMap<>();
+            for (ConsigneEdition.Ouverture ouverture : consigne.ouvertures()) {
+                int position = positions.merge(ouverture.standId(), 1, Integer::sum) - 1;
+                ps.setObject(2, consigne.date());
+                ps.setString(3, ouverture.standId());
+                ps.setInt(4, position);
+                ps.setObject(5, ouverture.debut());
+                ps.setObject(6, ouverture.fin());
+                ps.setObject(7, ouverture.effectif());
+                ps.addBatch();
             }
-            insertCreneaux(connection, consigne.date(), consigne.creneauxAjoutes());
-        });
-    }
-
-    /** Records that the consigne of {@code date} added these créneaux to the grid. */
-    public void rememberCreneaux(LocalDate date, Collection<Long> creneauIds) {
-        if (creneauIds.isEmpty()) {
-            return;
+            ps.executeBatch();
         }
-        scope.write("Failed to record the créneaux the consigne of " + date + " added", connection -> {
-            insertCreneaux(connection, date, creneauIds);
-        });
+        insertCreneaux(connection, consigne.date(), consigne.creneauxAjoutes());
     }
 
     private void insertCreneaux(Connection connection, LocalDate date, Collection<Long> creneauIds)
@@ -269,7 +266,7 @@ public class ConsigneRepository {
         return scope.read("Failed to list the consigne presets", connection -> {
             Map<String, PrereglageConsigne> parId = new LinkedHashMap<>();
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, nom, fermeture_debut, fermeture_fin, motif, modifie_le,
+                    SELECT id, nom, fermeture_debut, fermeture_fin, motif, cree_le, modifie_le,
                            repas_midi_debut, repas_midi_fin, repas_soir_debut, repas_soir_fin,
                            repas_coupure_minutes, repas_justification
                     FROM prereglage_consigne WHERE edition_id = ? ORDER BY lower(nom), id""")) {
@@ -284,6 +281,7 @@ public class ConsigneRepository {
                                         rs.getObject("fermeture_fin", LocalTime.class),
                                         rs.getString("motif"),
                                         List.of(),
+                                        instant(rs.getTimestamp("cree_le")),
                                         instant(rs.getTimestamp("modifie_le")),
                                         readRepas(rs)));
                     }
@@ -314,6 +312,7 @@ public class ConsigneRepository {
                         brut.fermetureFin(),
                         brut.motif(),
                         fenetres.getOrDefault(brut.id(), List.of()),
+                        brut.creeLe(),
                         brut.modifieLe(),
                         brut.repas()));
             }

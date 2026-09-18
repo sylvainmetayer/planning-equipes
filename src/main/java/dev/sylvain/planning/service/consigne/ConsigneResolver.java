@@ -36,9 +36,10 @@ import java.util.Map;
  * evening nobody chose it for;</li>
  * <li><b>an opening is an extension</b>, chosen stand by stand: the stand
  * opens on its windows in addition to its own hours, never inside the band,
- * at the headcount typed, or else the highest headcount of the windows it lost
- * to the band, or else its minimum. Where a window overlaps hours the stand
- * already had, the higher headcount applies ({@code ProfilOuverture}).</li>
+ * each window at the headcount typed on it, or else the highest headcount of
+ * the windows the stand lost to the band, or else its minimum. Where a window
+ * overlaps hours the stand already had, the higher headcount applies
+ * ({@code ProfilOuverture}).</li>
  * </ol>
  *
  * <p>The day comes out stated as explicit openings — closed-by-default, in the
@@ -132,14 +133,16 @@ public final class ConsigneResolver {
             }
         }
 
-        // 3. The chosen windows, outside the band, at the typed or inherited headcount.
-        Integer typed = consigne.effectifOf(stand.getId()).orElse(null);
-        for (ConsigneEdition.Fenetre fenetre : consigne.openingsOf(stand.getId())) {
-            if (fenetre.debut() == null) {
+        // 3. The chosen windows, outside the band, each at its own headcount —
+        //    typed on that window, else inherited. A morning at 2 and an
+        //    evening at 7 are two different windows of one stand.
+        for (ConsigneEdition.Ouverture ouverture : consigne.openingsOf(stand.getId())) {
+            if (ouverture.debut() == null) {
                 continue;
             }
-            for (int[] morceau : soustraire(minutes(fenetre.debut(), fenetre.fin()), List.of(bande))) {
-                restes.add(new Segment(morceau, typed != null ? typed : herite));
+            Integer effectif = ouverture.effectif() != null ? ouverture.effectif() : herite;
+            for (int[] morceau : soustraire(minutes(ouverture.debut(), ouverture.fin()), List.of(bande))) {
+                restes.add(new Segment(morceau, effectif));
             }
         }
 

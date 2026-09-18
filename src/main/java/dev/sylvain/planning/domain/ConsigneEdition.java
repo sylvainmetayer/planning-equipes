@@ -4,7 +4,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
-import java.util.Optional;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -87,9 +86,20 @@ public record ConsigneEdition(
         }
     }
 
-    /** One stretch of a day, {@code [debut, fin)}; {@code fin} {@code null} reads « jusqu'à minuit ». */
+    /**
+     * One stretch of a day, {@code [debut, fin)}; {@code fin} {@code null}
+     * reads « jusqu'à minuit ». A caller typing {@code 00:00} as the end means
+     * the same thing, and every write path stores it as {@code null} through
+     * {@link #normalised()} — the database only knows the {@code null} form.
+     */
     @Schema(requiredProperties = {"debut"})
-    public record Fenetre(LocalTime debut, LocalTime fin) {}
+    public record Fenetre(LocalTime debut, LocalTime fin) {
+
+        /** The same window with a midnight end written as an open end. */
+        public Fenetre normalised() {
+            return new Fenetre(debut, openEnd(fin));
+        }
+    }
 
     /**
      * One stand opened on one window.
@@ -104,6 +114,11 @@ public record ConsigneEdition(
         public Fenetre fenetre() {
             return new Fenetre(debut, fin);
         }
+
+        /** The same opening with a midnight end written as an open end. */
+        public Ouverture normalised() {
+            return new Ouverture(standId, debut, openEnd(fin), effectif);
+        }
     }
 
     public ConsigneEdition {
@@ -112,26 +127,44 @@ public record ConsigneEdition(
         creneauxAjoutes = creneauxAjoutes == null ? List.of() : List.copyOf(creneauxAjoutes);
     }
 
+    /**
+     * An end of {@code 00:00} is midnight, the end of the day — the same thing
+     * as no end at all. Stored as {@code null} everywhere: the tables' checks
+     * only know that form, and a reader has one case to handle instead of two.
+     */
+    public static LocalTime openEnd(LocalTime fin) {
+        return fin == null || fin.equals(LocalTime.MIDNIGHT) ? null : fin;
+    }
+
     /** The band as a window. */
     public Fenetre bande() {
         return new Fenetre(fermetureDebut, fermetureFin);
     }
 
-    /** The windows chosen for {@code standId}, empty when the consigne does not open it. */
-    public List<Fenetre> openingsOf(String standId) {
+    /** The openings chosen for {@code standId}, each with its own headcount; empty when the consigne does not open it. */
+    public List<Ouverture> openingsOf(String standId) {
         return ouvertures.stream()
                 .filter(ouverture -> ouverture.standId().equals(standId))
-                .map(Ouverture::fenetre)
                 .toList();
     }
 
-    /** The headcount typed for {@code standId}, when one of its windows carries one. */
-    public Optional<Integer> effectifOf(String standId) {
-        return ouvertures.stream()
-                .filter(ouverture -> ouverture.standId().equals(standId))
-                .map(Ouverture::effectif)
-                .filter(effectif -> effectif != null)
-                .findFirst();
+    /**
+     * The same consigne with every midnight end — the band's, the default
+     * windows', the openings' — written as an open end.
+     */
+    public ConsigneEdition normalised() {
+        return new ConsigneEdition(
+                date,
+                fermetureDebut,
+                openEnd(fermetureFin),
+                motif,
+                prereglage,
+                fenetres.stream().map(Fenetre::normalised).toList(),
+                ouvertures.stream().map(Ouverture::normalised).toList(),
+                creneauxAjoutes,
+                creeLe,
+                modifieLe,
+                repas);
     }
 
     /** True when the consigne opens {@code standId} on at least one window. */

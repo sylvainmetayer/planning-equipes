@@ -292,9 +292,10 @@ public class ConsigneMcpTools {
                 id,
                 nom,
                 McpArgs.heure(fermetureDebut, "fermetureDebut"),
-                timeOrNull(fermetureFin),
+                endOrOpen(fermetureFin),
                 motif,
                 dayWindows(fenetres),
+                null,
                 null,
                 repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
     }
@@ -329,7 +330,7 @@ public class ConsigneMcpTools {
         return new Demande(
                 dates(dates),
                 McpArgs.heure(fermetureDebut, "fermetureDebut"),
-                timeOrNull(fermetureFin),
+                endOrOpen(fermetureFin),
                 motif,
                 prereglage,
                 dayWindows(fenetres),
@@ -368,7 +369,12 @@ public class ConsigneMcpTools {
         return valeur == null || valeur.isBlank() ? null : McpArgs.heure(valeur.trim(), "heure");
     }
 
-    /** {@code « 08:00-10:00,18:00- »}: windows of the day, the end omitted for midnight. */
+    /** An end omitted or written {@code 00:00} is midnight: the open end the service stores. */
+    static LocalTime endOrOpen(String valeur) {
+        return ConsigneEdition.openEnd(timeOrNull(valeur));
+    }
+
+    /** {@code « 08:00-10:00,18:00- »}: windows of the day, the end omitted or {@code 00:00} for midnight. */
     static List<Fenetre> dayWindows(String fenetres) {
         if (fenetres == null || fenetres.isBlank()) {
             return List.of();
@@ -379,7 +385,7 @@ public class ConsigneMcpTools {
             if (fenetre.isEmpty()) {
                 continue;
             }
-            result.add(fenetre(fenetre, "fenetres"));
+            result.add(fenetre(fenetre, "fenetres").normalised());
         }
         return result;
     }
@@ -413,7 +419,7 @@ public class ConsigneMcpTools {
                 }
                 reste = reste.substring(0, etoile).trim();
             }
-            Fenetre fenetre = fenetre(reste, "ouvertures");
+            Fenetre fenetre = fenetre(reste, "ouvertures").normalised();
             result.add(new Ouverture(standId, fenetre.debut(), fenetre.fin(), effectif));
         }
         return result;

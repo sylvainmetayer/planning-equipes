@@ -61,6 +61,7 @@ class ScenarioConsignesAllerRetourTest {
                 "Arrêté préfectoral canicule",
                 List.of(new ConsigneEdition.Fenetre(LocalTime.of(18, 0), null)),
                 Instant.EPOCH,
+                Instant.EPOCH,
                 REPAS);
 
         String yaml = export(List.of(apresMidi, soir), List.of(consigne), List.of(prereglage));

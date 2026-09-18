@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
@@ -132,8 +133,7 @@ class CreneauGridServiceTest {
     void unChevauchementEntreVacationsDuMemeJourNestPasUneAnomalie() {
         List<Creneau> qui = List.of(creneau("2026-07-06", "09:00", "13:00"), creneau("2026-07-06", "12:00", "18:00"));
 
-        assertThat(service.validate(qui, List.of(), List.of(), LEGAUX, List.of())
-                        .anomalies())
+        assertThat(validate(qui, List.of(), List.of(), LEGAUX, List.of()).anomalies())
                 .isEmpty();
     }
 
@@ -142,8 +142,8 @@ class CreneauGridServiceTest {
         List<Creneau> withHole =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "14:00", "18:00"));
 
-        List<GridAnomaly> anomalies = service.validate(withHole, List.of(), List.of(), LEGAUX, List.of())
-                .anomalies();
+        List<GridAnomaly> anomalies =
+                validate(withHole, List.of(), List.of(), LEGAUX, List.of()).anomalies();
 
         assertThat(anomalies).extracting(GridAnomaly::type).contains(GridAnomalyType.TROU_DANS_LA_JOURNEE);
         assertThat(anomalies).extracting(GridAnomaly::message).anyMatch(message -> message.contains("120 min"));
@@ -154,7 +154,7 @@ class CreneauGridServiceTest {
         List<Creneau> doublon =
                 List.of(creneau("2026-07-06", "09:00", "12:00"), creneau("2026-07-06", "09:00", "12:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(doublon, List.of(), List.of(), LEGAUX, List.of());
+        CreneauGridService.RapportGrille rapport = validate(doublon, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies()).extracting(GridAnomaly::type).contains(GridAnomalyType.DOUBLON);
@@ -165,7 +165,7 @@ class CreneauGridServiceTest {
         // 07:00 -> 23:00 = 960 min, above 1440 - 660 (default daily rest) = 780.
         List<Creneau> trop = List.of(creneau("2026-07-06", "07:00", "23:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(trop, List.of(), List.of(), LEGAUX, List.of());
+        CreneauGridService.RapportGrille rapport = validate(trop, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isFalse();
         assertThat(rapport.anomalies())
@@ -185,8 +185,7 @@ class CreneauGridServiceTest {
 
         ParametresLegaux permissifs = new ParametresLegaux();
         permissifs.setDureeVacationMaxMinutes(8 * 60);
-        assertThat(service.validate(longue, List.of(), List.of(), permissifs, List.of())
-                        .anomalies())
+        assertThat(validate(longue, List.of(), List.of(), permissifs, List.of()).anomalies())
                 .extracting(GridAnomaly::type)
                 .doesNotContain(GridAnomalyType.VACATION_TROP_LONGUE);
     }
@@ -213,7 +212,7 @@ class CreneauGridServiceTest {
     void unCreneauTraversantMinuitNaPasUneDureeNegative() {
         List<Creneau> nuit = List.of(creneau("2026-07-06", "20:00", "00:00"));
 
-        CreneauGridService.RapportGrille rapport = service.validate(nuit, List.of(), List.of(), LEGAUX, List.of());
+        CreneauGridService.RapportGrille rapport = validate(nuit, List.of(), List.of(), LEGAUX, List.of());
 
         assertThat(rapport.hasNoBlockingAnomaly()).isTrue();
         assertThat(rapport.anomalies()).isEmpty();
@@ -258,8 +257,7 @@ class CreneauGridServiceTest {
         Creneau nuit = creneau("2026-07-06", "23:00", "00:00");
         nuit.setCouverturePause(true);
 
-        List<GridAnomaly> anomalies = service.validate(
-                        List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX, List.of())
+        List<GridAnomaly> anomalies = validate(List.of(relais, midi, nuit), List.of(), List.of(), LEGAUX, List.of())
                 .anomalies();
 
         List<GridAnomaly> horsFenetre = anomalies.stream()
@@ -288,12 +286,12 @@ class CreneauGridServiceTest {
         VerrouillagePlanning perdu = verrouillage(LocalDate.of(2026, 7, 7), "14:00", "18:00");
         VerrouillagePlanning perduAussi = verrouillage(LocalDate.of(2026, 7, 7), "14:00", "18:00");
 
-        List<GridAnomaly> anomalies = service
-                .validate(List.of(tenue), List.of(), List.of(), LEGAUX, List.of(garde, perdu, perduAussi))
-                .anomalies()
-                .stream()
-                .filter(anomalie -> anomalie.type() == GridAnomalyType.VERROUILLAGE_SANS_VACATION)
-                .toList();
+        List<GridAnomaly> anomalies =
+                validate(List.of(tenue), List.of(), List.of(), LEGAUX, List.of(garde, perdu, perduAussi))
+                        .anomalies()
+                        .stream()
+                        .filter(anomalie -> anomalie.type() == GridAnomalyType.VERROUILLAGE_SANS_VACATION)
+                        .toList();
 
         assertThat(anomalies).hasSize(1);
         assertThat(anomalies.getFirst().severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
@@ -307,7 +305,7 @@ class CreneauGridServiceTest {
         VerrouillagePlanning surAnimateur = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
         surAnimateur.setAnimateurId("A1");
 
-        assertThat(service.validate(List.of(), List.of(), List.of(), LEGAUX, List.of(surAnimateur))
+        assertThat(validate(List.of(), List.of(), List.of(), LEGAUX, List.of(surAnimateur))
                         .anomalies())
                 .isEmpty();
     }
@@ -322,8 +320,18 @@ class CreneauGridServiceTest {
 
     /* -------------------------------- Outils -------------------------------- */
 
+    /** The verdict over the edition's own meal windows — the ones every test here judges against. */
+    private CreneauGridService.RapportGrille validate(
+            List<Creneau> creneaux,
+            List<dev.sylvain.planning.domain.Stand> stands,
+            List<dev.sylvain.planning.domain.Animateur> animateurs,
+            ParametresLegaux legaux,
+            List<VerrouillagePlanning> verrouillages) {
+        return service.validate(creneaux, stands, animateurs, legaux, verrouillages, FenetreRepas.from(legaux));
+    }
+
     private List<GridAnomalyType> typesDetectes(List<Creneau> creneaux) {
-        return service.validate(creneaux, List.of(), List.of(), LEGAUX, List.of()).anomalies().stream()
+        return validate(creneaux, List.of(), List.of(), LEGAUX, List.of()).anomalies().stream()
                 .map(GridAnomaly::type)
                 .toList();
     }

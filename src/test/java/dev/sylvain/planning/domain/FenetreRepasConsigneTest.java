@@ -75,6 +75,24 @@ class FenetreRepasConsigneTest {
         assertThat(soirConsigne.appliesTo(JOUR.plusDays(1))).isFalse();
     }
 
+    /**
+     * A restated window too short for its break is refused at entry; a row
+     * that predates the rule must still leave the edition's window in charge
+     * of that date rather than no window at all.
+     */
+    @Test
+    void aDatedWindowTooShortForTheBreakLeavesTheEditionWindowInCharge() {
+        ConsigneEdition.RepasConsigne repas = new ConsigneEdition.RepasConsigne(
+                null, null, LocalTime.of(19, 0), LocalTime.of(19, 30), null, "trop court");
+
+        List<FenetreRepas> fenetres = FenetreRepas.from(parametres(), List.of(consigne(repas)));
+
+        assertThat(fenetres).hasSize(2);
+        assertThat(fenetres).allMatch(f -> f.date() == null);
+        assertThat(fenetres.get(1).libelle()).isEqualTo(FenetreRepas.SOIR);
+        assertThat(fenetres.get(1).appliesTo(JOUR)).isTrue();
+    }
+
     @Test
     void laDureeSeuleSurchargeLesDeuxFenetresAvecLesHeuresDeLEdition() {
         ConsigneEdition.RepasConsigne repas =

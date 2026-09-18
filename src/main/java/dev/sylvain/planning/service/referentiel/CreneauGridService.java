@@ -206,20 +206,11 @@ public class CreneauGridService {
      * staggered vacations. Now that events declare their opening hours and
      * project them through journées types, that ambiguity is gone — and with
      * it the mode the caller had to supply.</p>
-     */
-    public RapportGrille validate(
-            List<Creneau> creneaux,
-            List<Stand> stands,
-            List<Animateur> animateurs,
-            ParametresLegaux legaux,
-            List<VerrouillagePlanning> verrouillages) {
-        return validate(creneaux, stands, animateurs, legaux, verrouillages, FenetreRepas.from(legaux));
-    }
-
-    /**
-     * Same, with the meal windows given rather than derived from the
-     * parameters: the ones a consigne restates on its date (issue #4) count
-     * for the relay check of that date.
+     *
+     * <p>The meal windows come given rather than derived from the parameters:
+     * the ones a consigne restates on its date (issue #4) count for the relay
+     * check of that date, and an overload deriving them from {@code legaux}
+     * alone would judge that date against the edition's window.</p>
      */
     public RapportGrille validate(
             List<Creneau> creneaux,
