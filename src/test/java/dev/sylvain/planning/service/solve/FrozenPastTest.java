@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
@@ -17,6 +19,9 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.TypeVerrouillage;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.ProblemBuilder.StatistiquesIncremental;
@@ -160,21 +165,123 @@ class FrozenPastTest {
         });
     }
 
+    /**
+     * The locks run first and the freeze second, on the same persisted plan:
+     * a lock on Bob pins his seat, the seat Alice held is cleared again by
+     * the lock pass (unlocked seats restart from scratch) and the freeze then
+     * hands it back to her — the past re-seeded positionally, the lock left
+     * exactly as it was. Built through the real lock path, because a state
+     * where a lock holds somebody at a place the plan gives to somebody else
+     * is one {@code seedFromAffectations} cannot produce: it re-seeds from the
+     * very same plan the freeze walks.
+     */
     @Test
     void aPastSeatTheLocksAlreadyPinnedIsLeftAsTheyLeftIt() {
-        PosteAffectation verrouille = poste("p0", matinHier);
-        verrouille.setAnimateur(bob);
-        verrouille.setVerrouille(true);
-        List<PosteAffectation> postes = List.of(verrouille, poste("p1", matinHier));
+        List<PosteAffectation> postes = List.of(poste("p0", matinHier), poste("p1", matinHier));
+        Map<String, List<String>> plan = Map.of(key("STAND-A", 1L), List.of("A1", "A2"));
+        VerrouillagePlanning verrouBob = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
+        verrouBob.setAnimateurId("A2");
 
-        FrozenPast.freeze(postes, animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2")), MIDI);
-
-        // The lock said Bob on the first place; the freeze does not re-read
-        // the plan over it, and the positional walk still gives Bob's
-        // persisted place to the seat that follows.
-        assertThat(postes.get(0).getAnimateur()).isEqualTo(bob);
-        assertThat(postes.get(0).isPasse()).isTrue();
+        ProblemBuilder.applyVerrouillages(postes, animateurs, List.of(verrouBob), plan);
+        assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
+        assertThat(postes.get(1).isVerrouille()).isTrue();
+
+        int passes = FrozenPast.freeze(postes, animateurs, plan, MIDI);
+
+        assertThat(passes).isEqualTo(2);
+        assertThat(postes.get(0).getAnimateur()).isEqualTo(alice);
+        assertThat(postes.get(0).isPasse()).isTrue();
+        assertThat(postes.get(0).isVerrouille()).isTrue();
+        assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
+        assertThat(postes.get(1).isPasse()).isTrue();
+        assertThat(postes.get(1).isVerrouille()).isTrue();
+    }
+
+    /* ------------------------------ the gestures ------------------------------ */
+
+    /**
+     * « Le passé ne se modifie plus » : every manual write on a past seat —
+     * the drag-and-drop, an échange, a repair applied or suggested — is
+     * refused in the same words, and the same gesture on a seat still ahead
+     * goes through. With the freeze off, nothing is refused.
+     */
+    @Test
+    void everyManualWriteOnAPastSeatIsRefusedAndNoneWhenTheFreezeIsOff() {
+        PosteAffectation hierAlice = poste("p0", matinHier);
+        hierAlice.setAnimateur(alice);
+        PosteAffectation hierBob = poste("p1", matinHier);
+        hierBob.setAnimateur(bob);
+        PosteAffectation demainAlice = poste("p2", matinDemain);
+        demainAlice.setAnimateur(alice);
+        PosteAffectation demainVide = poste("p3", matinDemain);
+        PlanningEvenement plan = new PlanningEvenement(
+                HIER, new ArrayList<>(animateurs), List.of(hierAlice, hierBob, demainAlice, demainVide));
+        plan.setParametresLegaux(List.of(new ParametresLegaux()));
+        PlanningWhatIf gele = whatIf(() -> MIDI);
+
+        assertThatThrownBy(() -> gele.simulateDeplacement(plan, "p0", null, "A2"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        assertThatThrownBy(() -> gele.simulateDeplacement(plan, "p2", "p0", null))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        assertThatThrownBy(() -> gele.simulateEchange(plan, "A1", "A2", 1L, "STAND-A"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        assertThatThrownBy(() -> gele.simulateDirectedEchange(plan, "A1", "A2", 6L, "STAND-A", 1L, "STAND-A"))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        assertThatThrownBy(() -> gele.suggererReparations(plan, "p1", null))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        assertThatThrownBy(() -> gele.applyReparations(plan, List.of("p3", "p0"), null))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.PAST_SEAT_REFUSAL);
+        // Tomorrow is still the operator's: the same gestures go through.
+        assertThat(gele.simulateDeplacement(plan, "p2", "p3", null).posteCibleId())
+                .isEqualTo("p3");
+        assertThat(gele.suggererReparations(plan, "p3", null).posteId()).isEqualTo("p3");
+
+        PlanningWhatIf libre = whatIf(() -> null);
+        assertThat(libre.simulateDeplacement(plan, "p0", null, "A2").animateurCibleId())
+                .isEqualTo("A2");
+        assertThat(libre.suggererReparations(plan, "p1", null).posteId()).isEqualTo("p1");
+    }
+
+    private static PlanningWhatIf whatIf(java.util.function.Supplier<PastHorizon> horizon) {
+        return new PlanningWhatIf(
+                configuration().diagnosticService(), new EmptyReferenceData(), null, planning -> {}, horizon);
+    }
+
+    /* ------------------------------ nothing ahead ------------------------------ */
+
+    /** A problem whose every seat is past has nothing to plan; one seat ahead, or no seat at all, is not that. */
+    @Test
+    void aProblemWithEverySeatPastIsRefusedAndOneSeatAheadIsEnough() {
+        PosteAffectation hier = poste("p0", matinHier);
+        PosteAffectation demain = poste("p1", matinDemain);
+        FrozenPast.mark(List.of(hier, demain), MIDI);
+
+        assertThatThrownBy(() -> FrozenPast.refuseIfNothingAhead(List.of(hier)))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.NOTHING_AHEAD_REFUSAL);
+        assertThatCode(() -> FrozenPast.refuseIfNothingAhead(List.of(hier, demain)))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> FrozenPast.refuseIfNothingAhead(List.of())).doesNotThrowAnyException();
+    }
+
+    @Test
+    void thePastSeatsHoldingNobodyAreCountedAsAWarning() {
+        PosteAffectation hierTenu = poste("p0", matinHier);
+        hierTenu.setAnimateur(alice);
+        PosteAffectation hierTrou = poste("p1", matinHier);
+        PosteAffectation demainTrou = poste("p2", matinDemain);
+        FrozenPast.mark(List.of(hierTenu, hierTrou, demainTrou), MIDI);
+
+        // Only the past hole: tomorrow's is a seat to fill, not history.
+        assertThat(FrozenPast.countEmptyPast(List.of(hierTenu, hierTrou, demainTrou)))
+                .isEqualTo(1);
     }
 
     /* --------------------------- incremental --------------------------- */
@@ -209,7 +316,8 @@ class FrozenPastTest {
         // Tomorrow follows the ordinary rule: valid, hence pinned.
         assertThat(postes.get(3).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(3).isPasse()).isFalse();
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(4, 1, 0, 0, 0, 3));
+        // Three past seats, one of them a hole: the warning the recap shows.
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(4, 1, 0, 0, 0, 3, 1));
     }
 
     @Test

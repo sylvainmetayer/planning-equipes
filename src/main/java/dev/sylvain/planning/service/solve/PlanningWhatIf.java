@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
@@ -33,6 +34,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -69,15 +71,49 @@ public final class PlanningWhatIf {
      */
     private final Consumer<PlanningEvenement> preparation;
 
+    /**
+     * The moment the past is judged against (ADR 0044), read when a gesture
+     * is asked: a seat of a timeslot already started is refused to every
+     * manual write — the drag-and-drop, an échange, a repair — and to the
+     * simulation that precedes it. {@code null} from the supplier is the
+     * freeze switched off, and then nothing is refused.
+     */
+    private final Supplier<PastHorizon> horizon;
+
     PlanningWhatIf(
             ConstraintDiagnosticService constraintDiagnosticService,
             ReferenceData referenceDataService,
             PlanningPersistenceService persistence,
             Consumer<PlanningEvenement> preparation) {
+        this(constraintDiagnosticService, referenceDataService, persistence, preparation, () -> null);
+    }
+
+    PlanningWhatIf(
+            ConstraintDiagnosticService constraintDiagnosticService,
+            ReferenceData referenceDataService,
+            PlanningPersistenceService persistence,
+            Consumer<PlanningEvenement> preparation,
+            Supplier<PastHorizon> horizon) {
         this.constraintDiagnosticService = constraintDiagnosticService;
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
         this.preparation = preparation;
+        this.horizon = horizon;
+    }
+
+    /**
+     * « Le passé ne se modifie plus » (ADR 0044): refuses the gesture when
+     * one of the seats it would rewrite belongs to a timeslot already
+     * started. Read once per gesture, so the two seats of a swap are judged
+     * against the same moment.
+     */
+    private void refuseIfPast(PosteAffectation... postes) {
+        PastHorizon moment = horizon.get();
+        for (PosteAffectation poste : postes) {
+            if (poste != null) {
+                FrozenPast.refuseIfPast(poste, moment);
+            }
+        }
     }
 
     /**
@@ -176,6 +212,9 @@ public final class PlanningWhatIf {
      */
     public SuggestionsReparation suggererReparations(PlanningEvenement solved, String posteId, Integer plafondDemande) {
         PosteAffectation poste = findPoste(solved, posteId);
+        // A past seat has no candidate: nothing the assistant proposes there
+        // could be applied (ADR 0044).
+        refuseIfPast(poste);
         Animateur actuel = poste.getAnimateur();
         int plafond = effectiveCandidateCap(plafondDemande);
 
@@ -610,7 +649,9 @@ public final class PlanningWhatIf {
      * seat, one read.</p>
      *
      * <p>Every seat is validated <b>before</b> the first write, so a lock on the
-     * third one does not leave the first two reassigned.</p>
+     * third one does not leave the first two reassigned. A seat of a timeslot
+     * already started is refused the same way (ADR 0044): the past is not
+     * repaired by hand either.</p>
      *
      * @param animateurId {@code null} empties the seats
      */
@@ -620,6 +661,7 @@ public final class PlanningWhatIf {
         if (animateurId != null) {
             findAnimateur(persiste, animateurId);
         }
+        refuseIfPast(postes.toArray(PosteAffectation[]::new));
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         for (PosteAffectation poste : postes) {
             if (verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
@@ -658,6 +700,7 @@ public final class PlanningWhatIf {
                 .findFirst()
                 .orElseThrow(() -> new BusinessError.Invalid(
                         "Aucun poste de l'animateur " + demandeurId + " sur ce créneau et ce stand"));
+        refuseIfPast(posteDemandeur);
         Animateur demandeur = posteDemandeur.getAnimateur();
         // Invalid and not NotFound, unlike the lookups of
         // explainAffectation/simulateSwap: there the id is the path of the
@@ -777,6 +820,9 @@ public final class PlanningWhatIf {
                     .findFirst()
                     .orElse(null);
         }
+        // Both ends of the gesture: a seat still ahead dropped on a past one
+        // would rewrite the past just the same (ADR 0044).
+        refuseIfPast(source, cible);
 
         PlanningAnalysis avant = constraintDiagnosticService.analyze(solved);
         PlanningAnalysis apres;
@@ -823,6 +869,7 @@ public final class PlanningWhatIf {
             String standCibleId) {
         PosteAffectation posteDemandeur = posteOf(solved, demandeurId, creneauId, standId);
         PosteAffectation posteCible = posteOf(solved, cibleId, creneauCibleId, standCibleId);
+        refuseIfPast(posteDemandeur, posteCible);
         Animateur demandeur = posteDemandeur.getAnimateur();
         Animateur target = posteCible.getAnimateur();
 

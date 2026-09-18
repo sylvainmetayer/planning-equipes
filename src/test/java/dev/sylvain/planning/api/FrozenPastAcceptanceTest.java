@@ -140,6 +140,75 @@ class FrozenPastAcceptanceTest {
         assertThat(persistedHardScore()).isZero();
     }
 
+    /**
+     * « Le passé ne se modifie plus » : the drag-and-drop and the repair
+     * refuse a seat of a day already worked, in the same words, while the
+     * same gestures on a day still ahead go through.
+     */
+    @Test
+    void aMoveAndARepairOnAPastSeatAreRefusedAndAcceptedOnADayAhead() throws InterruptedException {
+        solveComplet();
+        freezeClock(J3, "13:30");
+        String siegePasse = firstSeatOn(J1);
+        String siegeAVenir = firstSeatOn(J4);
+        String remplacant = firstHolderOn(J4);
+
+        given().when()
+                .post("/api/postes/" + siegePasse + "/deplacement?animateur=" + remplacant)
+                .then()
+                .statusCode(400)
+                .body(org.hamcrest.Matchers.containsString("Ce créneau est déjà commencé"));
+        given().when()
+                .post("/api/postes/" + siegePasse + "/affectation?animateurId=" + remplacant)
+                .then()
+                .statusCode(400)
+                .body(org.hamcrest.Matchers.containsString("le passé ne se modifie plus"));
+        // Dropping a seat still ahead onto a past one rewrites the past too.
+        given().when()
+                .post("/api/postes/" + siegeAVenir + "/deplacement?cible=" + siegePasse)
+                .then()
+                .statusCode(400);
+        // Thursday is still the operator's: scored, not refused.
+        given().when()
+                .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + firstHolderOn(J1))
+                .then()
+                .statusCode(200);
+    }
+
+    /** After the last day, a solve — full or incremental — has nothing to plan and says so. */
+    @Test
+    void aSolveWithEveryTimeslotAlreadyStartedIsRefused() throws InterruptedException {
+        solveComplet();
+        freezeClock("2027-07-20", null);
+
+        JsonPath complet = solveCompletWhateverTheOutcome();
+        assertThat(complet.getString("status")).isEqualTo("FAILED");
+        assertThat(complet.getString("error")).contains("Rien à planifier");
+        JsonPath incremental = solveIncrementalWhateverTheOutcome("{\"animateurIds\":[],\"jours\":[],\"standIds\":[]}");
+        assertThat(incremental.getString("status")).isEqualTo("FAILED");
+        assertThat(incremental.getString("error")).contains("tous les créneaux sont déjà commencés");
+    }
+
+    /**
+     * The first solve of an edition already under way: nobody is known to
+     * have held the days behind, so every past seat is pinned empty — not
+     * charged, but reported, on the full solve and on the incremental one.
+     */
+    @Test
+    void pastSeatsHoldingNobodyAreReportedAsAWarning() throws InterruptedException {
+        freezeClock(J3, "13:30");
+
+        JsonPath complet = solveComplet();
+        int postesPasses = complet.getInt("result.reamorcage.postesPasses");
+        assertThat(postesPasses).isPositive();
+        assertThat(complet.getInt("result.reamorcage.postesPassesVides")).isEqualTo(postesPasses);
+        assertThat(complet.getInt("result.diagnostic.hardScore")).isZero();
+
+        JsonPath incremental = solveIncremental("{\"animateurIds\":[],\"jours\":[],\"standIds\":[]}");
+        assertThat(incremental.getInt("result.statistiques.postesPasses")).isEqualTo(postesPasses);
+        assertThat(incremental.getInt("result.statistiques.postesPassesVides")).isEqualTo(postesPasses);
+    }
+
     /* ------------------------------- Helpers ------------------------------- */
 
     private static void freezeClock(String date, String heure) {
@@ -300,6 +369,12 @@ class FrozenPastAcceptanceTest {
     }
 
     private JsonPath solveComplet() throws InterruptedException {
+        JsonPath job = solveCompletWhateverTheOutcome();
+        assertThat(job.getString("status")).as(job.getString("error")).isEqualTo("COMPLETED");
+        return job;
+    }
+
+    private JsonPath solveCompletWhateverTheOutcome() throws InterruptedException {
         attendreSolveurLibre();
         String jobId = given().when()
                 .post("/api/solve/async/reference-data?seconds=5")
@@ -307,12 +382,16 @@ class FrozenPastAcceptanceTest {
                 .statusCode(202)
                 .extract()
                 .path("id");
-        JsonPath job = pollUntilFinished(jobId);
+        return pollUntilFinished(jobId);
+    }
+
+    private JsonPath solveIncremental(String corps) throws InterruptedException {
+        JsonPath job = solveIncrementalWhateverTheOutcome(corps);
         assertThat(job.getString("status")).as(job.getString("error")).isEqualTo("COMPLETED");
         return job;
     }
 
-    private JsonPath solveIncremental(String corps) throws InterruptedException {
+    private JsonPath solveIncrementalWhateverTheOutcome(String corps) throws InterruptedException {
         attendreSolveurLibre();
         String jobId = given().contentType(ContentType.JSON)
                 .body(corps)
@@ -322,9 +401,19 @@ class FrozenPastAcceptanceTest {
                 .statusCode(202)
                 .extract()
                 .path("id");
-        JsonPath job = pollUntilFinished(jobId);
-        assertThat(job.getString("status")).as(job.getString("error")).isEqualTo("COMPLETED");
-        return job;
+        return pollUntilFinished(jobId);
+    }
+
+    /** The id of the first persisted seat of that day holding somebody. */
+    @SuppressWarnings("unchecked")
+    private static String firstSeatOn(String date) {
+        for (Map<String, Object> poste : affectationsPersistees()) {
+            Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
+            if (animateur != null && date.equals(String.valueOf(creneauOf(poste).get("date")))) {
+                return String.valueOf(poste.get("id"));
+            }
+        }
+        throw new AssertionError("Nobody seated on " + date);
     }
 
     private static void attendreSolveurLibre() throws InterruptedException {
