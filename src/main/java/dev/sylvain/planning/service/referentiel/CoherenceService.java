@@ -4,9 +4,14 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Feeds {@link CoherenceAnalyzer} the referential it needs, and nothing else:
@@ -37,6 +42,26 @@ public class CoherenceService {
 
     @Inject
     AnimateurService animateurs;
+
+    @Inject
+    VerrouillageService verrouillages;
+
+    /**
+     * Read for one thing only: which seats of the persisted plan the animateurs
+     * of an exception already hold. {@code Instance} rather than a plain
+     * injection because this bean is also built by hand in the plain-Java
+     * harnesses, which have no database — the lock check is then simply not
+     * run, never guessed at.
+     */
+    @Inject
+    Instance<PlanningPersistenceService> plan;
+
+    /**
+     * The latest score analysis, read for the lock warning alone and behind the
+     * same indirection as {@link #plan}, for the same reason.
+     */
+    @Inject
+    Instance<ConstraintAnalysisStore> analyses;
 
     /** The event's span, derived from the créneaux — an {@code Edition} stores none. */
     public JoursEvenement joursEvenement() {
@@ -78,16 +103,50 @@ public class CoherenceService {
     }
 
     /**
-     * Warnings about a hand-entered exception just written: a forced assignment
-     * that falls only on days its animateurs declared off. The stands' recurring
-     * rules are resolved on the edition's grid first, so a stand-scoped exception
-     * reads the days that stand really opens.
+     * Warnings about a hand-entered exception just written: the three readings
+     * of « this forced assignment cannot be honoured » that
+     * {@link CoherenceAnalyzer#onContrainteAdHoc} collects. The stands'
+     * recurring rules are resolved on the edition's grid first, so a
+     * stand-scoped exception reads the days that stand really opens.
+     *
+     * <p>The locks and the seats of the persisted plan are read here too, and
+     * they are what the lock check needs: an exception naming somebody whose
+     * schedule is frozen over its whole scope is unsatisfiable, and saying so
+     * costs one read of the locks and one of the assignments — the same order
+     * as the créneaux and stands this method already reads.</p>
      */
     public List<Avertissement> onContrainteAdHoc(ContrainteAdHoc contrainte) {
         List<Creneau> edition = creneaux.list();
         List<Stand> resolus = stands.list();
         HoraireStandResolver.apply(resolus, edition);
-        return CoherenceAnalyzer.onContrainteAdHoc(contrainte, animateurs.list(), resolus, edition);
+        return CoherenceAnalyzer.onContrainteAdHoc(
+                contrainte,
+                animateurs.list(),
+                resolus,
+                edition,
+                verrouillages.list(),
+                plan.isResolvable() ? plan.get().loadPlacesTenues() : Set.of());
+    }
+
+    /**
+     * Warnings about the lock just posted: the seats it freezes already carry a
+     * hard violation in the latest analysis — see
+     * {@link CoherenceAnalyzer#onVerrouillage}.
+     *
+     * <p>The analysis is the stored one, asked for and never forced: on an
+     * edition nobody has solved there is nothing to read, and this warning has
+     * nothing to say rather than a solve to run.</p>
+     */
+    public List<Avertissement> onVerrouillage(VerrouillagePlanning verrouillage) {
+        if (!analyses.isResolvable()) {
+            return List.of();
+        }
+        ConstraintAnalysisStore.StoredAnalysis stockee = analyses.get().latest();
+        if (stockee == null || stockee.diagnostic() == null) {
+            return List.of();
+        }
+        return CoherenceAnalyzer.onVerrouillage(
+                verrouillage, stockee.diagnostic().contraintes(), creneaux.list());
     }
 
     /**

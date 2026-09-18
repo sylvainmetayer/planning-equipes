@@ -92,8 +92,9 @@ class ReparationMcpToolsTest {
     @Test
     void affecterUnPosteVerrouilleEstRefuse() throws InterruptedException {
         AffectationView poste = premierPostePourvu();
-        VerrouillageView verrou =
-                verrouillageTools.verrouiller("ANIMATEUR", poste.animateurId(), null, null, null, null, null);
+        VerrouillageView verrou = verrouillageTools
+                .verrouiller("ANIMATEUR", poste.animateurId(), null, null, null, null, null)
+                .verrouillage();
 
         assertThatThrownBy(() -> planningTools.affecter_poste(poste.posteId(), null, null))
                 .isInstanceOf(ToolCallException.class)
