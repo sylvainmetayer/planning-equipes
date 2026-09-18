@@ -111,6 +111,7 @@ crochet.
 | Relais SMTP | `MAIL_HOST` |
 | Suivi d'erreurs | `SENTRY_DSN` renseigné ⇒ Bugsink, hébergement UE, **pas de transfert à déclarer** |
 | Mesure d'audience | `CLOUDFLARE_WEB_ANALYTICS_TOKEN` renseigné ⇒ **transfert hors UE à déclarer**. Le défaut est vide : ne rien poser suffit à l'éteindre. Ce ne fut pas toujours le cas — le profil `%prod` portait le token de l'éditeur (`observabilite.md`) |
+| Vérification des mises à jour | Sur une version taguée, le navigateur de l'**administrateur connecté** demande à `api.github.com` s'il existe une release plus récente (`versioning.md` §3). Aucune donnée d'animateur ne part : l'appel n'a lieu qu'une fois la session administrateur confirmée, l'espace animateur ne le fait jamais, et seule l'adresse IP de l'administrateur atteint GitHub Inc. (États-Unis). Ce n'est donc pas un traitement de données d'animateur à déclarer au registre — la politique de confidentialité le dit néanmoins, puisque rien ne l'éteint par variable vide, contrairement aux deux outils ci-dessus. L'exploitant qui veut l'éteindre retire `https://api.github.com` de `connect-src` dans `CSP` (`securite.md`) |
 | Contact de notification et son suppléant | Nommés dans la convention (§6) — **une personne, pas une adresse générique** |
 | Dates | Début et fin de l'hébergement |
 

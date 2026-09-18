@@ -10,8 +10,7 @@
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { versionUrl } from '../core/version-link';
-import { APP_VERSION } from '../version';
+import { APP_VERSION, REPO_URL } from '../version';
 import { VersionFooter } from './version-footer';
 
 function rendre() {
@@ -33,9 +32,14 @@ describe('VersionFooter', () => {
 
     const lien = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
     // `APP_VERSION` is whatever the build sits on — a tag on a release, a SHA
-    // anywhere else — so the expectation goes through the same resolution the
-    // footer uses; `version-link.spec.ts` pins what that resolution does.
-    expect(lien.getAttribute('href')).toBe(versionUrl(APP_VERSION));
+    // anywhere else — so the expected address is rebuilt here from the version
+    // alone. Calling `versionUrl` instead would assert the component agrees
+    // with itself, and a regression inside it would ship a broken link under a
+    // green test.
+    const attendu = /^v\d+\.\d+\.\d+(-|$)/.test(APP_VERSION)
+      ? `${REPO_URL}/releases/tag/${APP_VERSION}`
+      : `${REPO_URL}/commit/${APP_VERSION}`;
+    expect(lien.getAttribute('href')).toBe(attendu);
   });
 
   it('ouvre le dépôt sans emporter l’adresse de la page', () => {

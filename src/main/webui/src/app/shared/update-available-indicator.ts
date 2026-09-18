@@ -11,8 +11,9 @@ import { UpdateCheckService } from '../core/update-check.service';
  * linking to its release notes. Deliberately not a notification — those are
  * about this instance's own data, and an upgrade is an operator's decision to
  * make on their own schedule, not an item to mark as read. Shown only on a
- * tagged build (see `UpdateCheckService`); self-starts the check so it can be
- * dropped once in the app shell like the indicators beside it.
+ * tagged build, and only to a confirmed administrator — the check itself holds
+ * both conditions, see `UpdateCheckService`. It self-starts that check so it
+ * can be dropped once in the app shell like the indicators beside it.
  */
 @Component({
   selector: 'app-update-available-indicator',
