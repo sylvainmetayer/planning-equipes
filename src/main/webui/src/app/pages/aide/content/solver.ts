@@ -48,6 +48,18 @@ export function buildSolverSections(): HelpSection[] {
               term: $localize`:@@aide.calculer.term.passe:Le passé est figé`,
               text: $localize`:@@aide.calculer.def.passe:Pendant l'événement, les trois calculs reprennent du planning enregistré les postes des créneaux déjà commencés — journée passée, ou créneau d'aujourd'hui dont l'heure est atteinte — et les figent tels qu'ils ont été travaillés, même si la personne a depuis déclaré la journée indisponible, même si le poste est resté vide. Ces postes comptent dans les repos, les cumuls et les jours d'affilée, mais aucune règle ne les reproche : le zéro dur se lit sur ce qui reste à jouer. Le compte rendu les annonce (« postes déjà commencés »). En développement, la date que lit cette règle se pose depuis la page Débogage ; en exploitation, la variable PASSE_FIGE=false la coupe, pour rejouer une édition ancienne.`,
             },
+            {
+              term: $localize`:@@aide.calculer.term.passeGestes:Le passé ne se modifie plus`,
+              text: $localize`:@@aide.calculer.def.passeGestes:Les gestes à la main suivent la même règle : déplacer une affectation sur une vue journalière, accepter un échange, appliquer ou demander une réparation sur un poste dont le créneau est déjà commencé est refusé — « Ce créneau est déjà commencé : le passé ne se modifie plus » — depuis l'écran, l'API ou un assistant. Le mode jour J continue d'agir sur les créneaux restants de la journée ; le siège d'un créneau en cours reste tel qu'il est, l'absence y est seulement enregistrée. Quand PASSE_FIGE=false, rien n'est refusé.`,
+            },
+            {
+              term: $localize`:@@aide.calculer.term.rienAPlanifier:Rien à planifier`,
+              text: $localize`:@@aide.calculer.def.rienAPlanifier:Un calcul lancé alors que tous les créneaux sont déjà commencés — l'édition est terminée, ou la date simulée est après l'événement — est refusé au lieu de produire un planning vide à zéro dur ; le job le dit dans son erreur. Quand des postes passés sont restés vides (aucun titulaire enregistré, par exemple au premier calcul lancé pendant l'événement), le calcul a lieu et le compte rendu l'annonce : « N sièges passés sont restés vides ».`,
+            },
+            {
+              term: $localize`:@@aide.calculer.term.plancherPasse:Un plancher pendant l'événement`,
+              text: $localize`:@@aide.calculer.def.plancherPasse:Les équilibres de charge et de créneaux pénibles mesurent l'édition entière, postes passés compris, et le calcul ne peut plus bouger que l'avenir : un écart déjà creusé avant aujourd'hui ne se rattrape pas et laisse un score medium qu'aucun calcul ne ramènera à zéro. C'est attendu, et c'est pourquoi le score se compare d'un calcul à l'autre plutôt qu'au zéro.`,
+            },
           ],
         },
         {

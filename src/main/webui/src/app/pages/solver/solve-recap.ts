@@ -82,25 +82,37 @@ export class SolveRecap {
     if (!reamorcage) {
       return '';
     }
+    // A result persisted before the rule carries no count: read as none.
+    const postesPasses = reamorcage.postesPasses ?? 0;
     if (reamorcage.mode === 'AUCUN') {
       const aFroid = $localize`:@@solver.reamorcage.aFroid:Point de départ : aucun, calcul de zéro.`;
-      return reamorcage.postesPasses > 0
-        ? `${aFroid} ${this.passesLabel(reamorcage.postesPasses)}`
-        : aFroid;
+      return postesPasses > 0 ? `${aFroid} ${this.passesLabel(postesPasses)}` : aFroid;
     }
     const depart =
       reamorcage.postesLiberes > 0
         ? $localize`:@@solver.reamorcage.planAvecLiberes:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris et ${reamorcage.postesLiberes}:liberes: laissés libres (animateur disparu ou devenu indisponible).`
         : $localize`:@@solver.reamorcage.plan:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris.`;
-    return reamorcage.postesPasses > 0
-      ? `${depart} ${this.passesLabel(reamorcage.postesPasses)}`
-      : depart;
+    return postesPasses > 0 ? `${depart} ${this.passesLabel(postesPasses)}` : depart;
   });
 
   /** « Le passé est figé » : said only when the event is under way, which is when it means something. */
   private passesLabel(postesPasses: number): string {
     return $localize`:@@solver.reamorcage.passes:${postesPasses}:count: postes déjà commencés, figés tels que travaillés.`;
   }
+
+  /**
+   * The past seats the saved plan gave nobody: a solve started during the
+   * event on an edition without a plan pins every day behind it empty. Not
+   * charged — zero hard says nothing about it — hence said here, as a
+   * warning, and only when there are some.
+   */
+  protected readonly passesVidesLabel = computed(() => {
+    const vides = this.reamorcage()?.postesPassesVides ?? 0;
+    if (vides === 0) {
+      return '';
+    }
+    return $localize`:@@solver.reamorcage.passesVides:${vides}:count: sièges passés sont restés vides.`;
+  });
 
   protected readonly impactLabel = computed(() => {
     const impact = this.impact();

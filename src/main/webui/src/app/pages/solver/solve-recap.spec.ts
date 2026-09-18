@@ -16,6 +16,7 @@ import { SolveRecap } from './solve-recap';
 
 type RecapInternals = {
   reamorcageLabel: Signal<string>;
+  passesVidesLabel: Signal<string>;
   impactLabel: Signal<string>;
   comparison: Signal<{ avant: string; apres: string } | null>;
   horsPlancherLabel: Signal<string>;
@@ -105,6 +106,40 @@ describe('SolveRecap', () => {
     expect(recap.reamorcageLabel()).toContain(
       '7 postes déjà commencés, figés tels que travaillés.',
     );
+  });
+
+  it('warns about the past seats left empty, and only then', () => {
+    const recap = createRecap({
+      lastRunAt: '2026-08-01T12:00:00Z',
+      reamorcage: {
+        mode: 'AUCUN',
+        postes: 0,
+        postesLiberes: 0,
+        postesPasses: 7,
+        postesPassesVides: 0,
+      },
+    });
+    expect(recap.passesVidesLabel()).toBe('');
+    expect(text()).not.toContain('restés vides');
+
+    fixture.componentRef.setInput('reamorcage', {
+      mode: 'AUCUN',
+      postes: 0,
+      postesLiberes: 0,
+      postesPasses: 7,
+      postesPassesVides: 3,
+    });
+    fixture.detectChanges();
+    expect(recap.passesVidesLabel()).toBe('3 sièges passés sont restés vides.');
+    expect(text()).toContain('3 sièges passés sont restés vides.');
+  });
+
+  it('reads a result persisted before the past was frozen as one without past seats', () => {
+    const recap = createRecap({
+      reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 },
+    });
+    expect(recap.reamorcageLabel()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
+    expect(recap.passesVidesLabel()).toBe('');
   });
 
   it('recaps a cold start, and stays silent on a payload from before the feature', () => {

@@ -23,11 +23,18 @@
         <div class="staffing-stat-value">{{ stats().postesNouveaux }}</div>
         <div class="staffing-stat-label" i18n="@@solver.incremental.stat.nouveaux">Nouveaux ou restés vides</div>
       </mat-card>
-      <mat-card appearance="outlined" class="staffing-stat">
-        <div class="staffing-stat-value">{{ stats().postesPasses }}</div>
-        <div class="staffing-stat-label" i18n="@@solver.incremental.stat.passes">Postes passés, figés</div>
-      </mat-card>
+      @if ((stats().postesPasses ?? 0) > 0) {
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ stats().postesPasses }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.incremental.stat.passes">Postes passés, figés</div>
+        </mat-card>
+      }
     </div>
+    @if ((stats().postesPassesVides ?? 0) > 0) {
+      <p class="calendar-meta solver-passes-vides" role="status" i18n="@@solver.incremental.passesVides">
+        {{ stats().postesPassesVides }} sièges passés sont restés vides.
+      </p>
+    }
     @if (changements().length === 0) {
       <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">
         Aucune équipe n'a changé : la replanification a retrouvé exactement les mêmes affectations.

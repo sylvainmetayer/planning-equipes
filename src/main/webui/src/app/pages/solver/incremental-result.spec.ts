@@ -7,7 +7,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { ChangementAffectation, StatistiquesIncremental } from '../../core/models';
 import { IncrementalResult } from './incremental-result';
 
-function statistiques(): StatistiquesIncremental {
+function statistiques(overrides: Partial<StatistiquesIncremental> = {}): StatistiquesIncremental {
   return {
     postesTotal: 200,
     postesFiges: 180,
@@ -15,6 +15,7 @@ function statistiques(): StatistiquesIncremental {
     postesLiberesManuellement: 2,
     postesNouveaux: 0,
     postesPasses: 0,
+    ...overrides,
   };
 }
 
@@ -39,9 +40,12 @@ describe('IncrementalResult', () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
   });
 
-  function render(changements: ChangementAffectation[]): HTMLElement {
+  function render(
+    changements: ChangementAffectation[],
+    stats: StatistiquesIncremental = statistiques(),
+  ): HTMLElement {
     fixture = TestBed.createComponent(IncrementalResult);
-    fixture.componentRef.setInput('stats', statistiques());
+    fixture.componentRef.setInput('stats', stats);
     fixture.componentRef.setInput('changements', changements);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
@@ -53,13 +57,31 @@ describe('IncrementalResult', () => {
     );
   }
 
-  it('frames the diff with the five counts, the past seats last', () => {
-    const root = render([]);
+  it('frames the diff with four counts, the past seats only once the event is under way', () => {
+    const values = (root: HTMLElement) =>
+      Array.from(root.querySelectorAll('.staffing-stat-value')).map((value) =>
+        value.textContent!.trim(),
+      );
+    expect(values(render([]))).toEqual(['180', '20', '2', '0']);
+    expect(values(render([], statistiques({ postesPasses: 40 })))).toEqual([
+      '180',
+      '20',
+      '2',
+      '0',
+      '40',
+    ]);
+    // A result persisted before the rule carries no count at all.
+    const { postesPasses: _ignored, ...ancien } = statistiques();
+    expect(values(render([], ancien as StatistiquesIncremental))).toEqual(['180', '20', '2', '0']);
+  });
 
-    const values = Array.from(root.querySelectorAll('.staffing-stat-value')).map((value) =>
-      value.textContent!.trim(),
-    );
-    expect(values).toEqual(['180', '20', '2', '0', '0']);
+  it('warns about the past seats left empty, and only then', () => {
+    expect(
+      render([], statistiques({ postesPasses: 40 })).querySelector('.solver-passes-vides'),
+    ).toBeNull();
+
+    const root = render([], statistiques({ postesPasses: 40, postesPassesVides: 5 }));
+    expect(root.textContent!.replace(/\s+/g, ' ')).toContain('5 sièges passés sont restés vides.');
   });
 
   it('says so when no crew changed, and draws no table', () => {
