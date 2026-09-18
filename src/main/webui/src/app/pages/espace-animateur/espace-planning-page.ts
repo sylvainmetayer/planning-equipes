@@ -13,7 +13,7 @@ import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 import { JourPlanning, isPasse, maintenantEffectif, repereMaintenant } from './espace-maintenant';
 import { lienCarte } from './lien-carte';
-import { bandeLabel } from '../consignes/consignes';
+import { bandeLabel } from '../../core/consigne-wording';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last

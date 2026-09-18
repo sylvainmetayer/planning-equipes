@@ -1,15 +1,15 @@
-// The pure side of the Consignes page (issue #4): how a band and a window
-// read, which dates can still take a consigne, how the form's state becomes
-// the request the server expects, and the moves of the stands list — the
-// merge with what the server proposes, the filters, « appliquer à la
-// sélection ». Unit tested without rendering, same split as
-// `journees-types.ts` next door.
+// The pure side of the Consignes page (issue #4): which dates can still take
+// a consigne, how the form's state becomes the request the server expects,
+// what blocks it, and the moves of the stands list — the merge with what the
+// server proposes, the filters, « appliquer à la sélection ». Unit tested
+// without rendering, same split as `journees-types.ts` next door. The wording
+// every screen shares lives in `core/consigne-wording.ts`.
 //
 // Hours come from the server as `HH:mm:ss` and leave as `HH:mm` (accepted).
 // A window's end left empty reads « jusqu'à minuit », the convention of every
 // dated window here, and travels as `null`.
 
-import { jourSemaineDe, normaliseHour } from '../../core/horaire-stand';
+import { normaliseHour } from '../../core/horaire-stand';
 import {
   ConsigneEdition,
   Creneau,
@@ -20,70 +20,6 @@ import {
   RepasConsigne,
   Stand,
 } from '../../core/models';
-import { libelleJour, libelleJourSemaine } from '../stands/stand-horaires';
-
-/* --------------------------------- wording --------------------------------- */
-
-/** `2026-07-10` → `Vendredi 10/07`: a date as the table and the selectors say it. */
-export function libelleDate(date: string): string {
-  return `${libelleJourSemaine(jourSemaineDe(date))} ${libelleJour(date)}`;
-}
-
-/** `12:00:00` → `12h`, `12:30:00` → `12h30`: the way an organiser says an hour. */
-export function heureLabel(heure: string): string {
-  const [heures, minutes = '00'] = heure.split(':');
-  return minutes === '00' ? `${Number(heures)}h` : `${Number(heures)}h${minutes}`;
-}
-
-/**
- * `12h–18h`, or `12h–minuit` for an open end. Called at runtime only
- * (`$localize`), never at module scope.
- */
-export function bandeLabel(debut: string, fin: string | null): string {
-  return `${heureLabel(debut)}–${fin ? heureLabel(fin) : minuitLabel()}`;
-}
-
-export function fenetreLabel(fenetre: FenetreConsigne): string {
-  return bandeLabel(fenetre.debut, fenetre.fin);
-}
-
-function minuitLabel(): string {
-  return $localize`:@@consignes.minuit:minuit`;
-}
-
-/** True when the consigne restates at least one meal window or the break — the chip's condition. */
-export function repasSurcharge(repas: RepasConsigne | null): repas is RepasConsigne {
-  return (
-    repas !== null &&
-    (repas.midiDebut !== null ||
-      repas.midiFin !== null ||
-      repas.soirDebut !== null ||
-      repas.soirFin !== null ||
-      repas.coupureMinutes !== null)
-  );
-}
-
-/**
- * The tooltip of the chip: the justification, then what is restated —
- * « Les équipes mangent pendant la fermeture · soir 18h–22h · coupure 45 min ».
- */
-export function repasLabel(repas: RepasConsigne): string {
-  const parts = [repas.justification.trim()];
-  if (repas.midiDebut && repas.midiFin) {
-    parts.push(
-      $localize`:@@consignes.repas.midi:midi ${bandeLabel(repas.midiDebut, repas.midiFin)}:bande:`,
-    );
-  }
-  if (repas.soirDebut && repas.soirFin) {
-    parts.push(
-      $localize`:@@consignes.repas.soir:soir ${bandeLabel(repas.soirDebut, repas.soirFin)}:bande:`,
-    );
-  }
-  if (repas.coupureMinutes !== null) {
-    parts.push($localize`:@@consignes.repas.coupure:coupure ${repas.coupureMinutes}:minutes: min`);
-  }
-  return parts.filter(Boolean).join(' · ');
-}
 
 /* ---------------------------------- dates ---------------------------------- */
 
@@ -114,10 +50,17 @@ export function openedStandsCount(consigne: ConsigneEdition): number {
 
 /* ------------------------------- form state ------------------------------- */
 
-/** A window as typed: `HH:mm`, the end empty for « jusqu'à minuit ». */
+/**
+ * A window as typed: `HH:mm`, the end empty for « jusqu'à minuit », and the
+ * headcount as text — empty to inherit. The headcount belongs to the window,
+ * not to the stand: a morning at 2 and an evening at 7 are two windows of one
+ * stand (product decision A). The day's default windows and a preset's carry
+ * an empty one, a stand's window its own.
+ */
 export interface FenetreSaisie {
   debut: string;
   fin: string;
+  effectif: string;
 }
 
 /** One stand of the form: what the server said of it, and what was chosen. */
@@ -131,9 +74,10 @@ export interface StandForm {
   /** Why the server set the stand aside, when it did. */
   motif: string | null;
   preCoche: boolean;
+  /** The stand's windows, each with its own headcount. */
   fenetres: FenetreSaisie[];
-  /** The headcount typed for the stand's windows, `null` to inherit. */
-  effectif: number | null;
+  /** The stand's ceiling, what a typed headcount is checked against; `null` when the store does not know the stand. */
+  effectifMax: number | null;
 }
 
 /**
@@ -170,7 +114,32 @@ export function fenetresSaisies(fenetres: readonly FenetreConsigne[]): FenetreSa
   return fenetres.map((fenetre) => ({
     debut: heureSaisie(fenetre.debut),
     fin: heureSaisie(fenetre.fin),
+    effectif: '',
   }));
+}
+
+/** A stand's openings read into its windows, each keeping the headcount typed on it. */
+export function ouverturesSaisies(ouvertures: readonly OuvertureConsigne[]): FenetreSaisie[] {
+  return ouvertures.map((ouverture) => ({
+    debut: heureSaisie(ouverture.debut),
+    fin: heureSaisie(ouverture.fin),
+    effectif: ouverture.effectif === null ? '' : String(ouverture.effectif),
+  }));
+}
+
+/** The headcount field read: a positive whole number, or `null` for an empty field. Unreadable text is `erreursForm`'s to name. */
+export function effectifDemande(texte: string): number | null {
+  const propre = texte.trim();
+  if (propre === '') {
+    return null;
+  }
+  const valeur = Number(propre);
+  return Number.isInteger(valeur) && valeur > 0 ? valeur : null;
+}
+
+/** True when the field holds something that is not a positive whole number — `0`, `-1`, `2.5`, `abc`. */
+export function effectifInvalide(texte: string): boolean {
+  return texte.trim() !== '' && effectifDemande(texte) === null;
 }
 
 /** The inverse: what the form sends, an empty end travelling as `null`. */
@@ -263,33 +232,111 @@ export type ErreurForm =
   | 'FERMETURE_FIN'
   | 'MOTIF'
   | 'FENETRE'
+  | 'FENETRE_ORDRE'
+  | 'FENETRE_BANDE'
+  | 'EFFECTIF'
+  | 'EFFECTIF_MAX'
   | 'REPAS_FENETRE'
+  | 'REPAS_ORDRE'
   | 'REPAS_COUPURE'
   | 'REPAS_JUSTIFICATION';
 
-export function erreursForm(form: ConsigneForm): ErreurForm[] {
+/**
+ * The server's rules said before it says them: a date the form does not
+ * offer (a deep link on a past day), a window ending at or before its start,
+ * a window the band swallows whole, a headcount that is not a positive whole
+ * number or above the stand's ceiling. `datesOffertes` left out checks the
+ * dates for presence only.
+ */
+export function erreursForm(
+  form: ConsigneForm,
+  datesOffertes: readonly string[] | null = null,
+): ErreurForm[] {
   const erreurs: ErreurForm[] = [];
-  if (form.dates.length === 0) {
+  if (
+    form.dates.length === 0 ||
+    (datesOffertes !== null && form.dates.some((date) => !datesOffertes.includes(date)))
+  ) {
     erreurs.push('DATES');
   }
-  if (normaliseHour(form.fermetureDebut) === null) {
+  const bandeDebut = normaliseHour(form.fermetureDebut);
+  if (bandeDebut === null) {
     erreurs.push('FERMETURE_DEBUT');
   }
-  if (form.fermetureFin !== '' && normaliseHour(form.fermetureFin) === null) {
+  const bandeFin = form.fermetureFin === '' ? null : normaliseHour(form.fermetureFin);
+  if (form.fermetureFin !== '' && bandeFin === null) {
     erreurs.push('FERMETURE_FIN');
   }
   if (form.motif.trim() === '') {
     erreurs.push('MOTIF');
   }
-  const fenetres = [
-    ...form.fenetres,
-    ...form.stands.filter((stand) => stand.coche).flatMap((stand) => stand.fenetres),
-  ];
+  const standsCoches = form.stands.filter((stand) => stand.coche);
+  const fenetres = [...form.fenetres, ...standsCoches.flatMap((stand) => stand.fenetres)];
   if (fenetres.some((fenetre) => fenetreInvalide(fenetre))) {
     erreurs.push('FENETRE');
   }
+  if (fenetres.some((fenetre) => windowReversed(fenetre))) {
+    erreurs.push('FENETRE_ORDRE');
+  }
+  if (
+    bandeDebut !== null &&
+    (form.fermetureFin === '' || bandeFin !== null) &&
+    fenetres.some((fenetre) => windowInsideBand(fenetre, bandeDebut, bandeFin))
+  ) {
+    erreurs.push('FENETRE_BANDE');
+  }
+  const effectifs = standsCoches.flatMap((stand) =>
+    stand.fenetres.map((fenetre) => ({ texte: fenetre.effectif, max: stand.effectifMax })),
+  );
+  if (effectifs.some(({ texte }) => effectifInvalide(texte))) {
+    erreurs.push('EFFECTIF');
+  }
+  if (
+    effectifs.some(({ texte, max }) => {
+      const effectif = effectifDemande(texte);
+      return effectif !== null && max !== null && effectif > max;
+    })
+  ) {
+    erreurs.push('EFFECTIF_MAX');
+  }
   erreurs.push(...erreursRepas(form.repas));
   return erreurs;
+}
+
+/** Minutes from midnight of a readable `HH:mm`; an empty or `00:00` end is the day's end. */
+function minutesOf(heure: string, ouverte: boolean): number | null {
+  if (ouverte && (heure === '' || normaliseHour(heure) === '00:00')) {
+    return 24 * 60;
+  }
+  const propre = normaliseHour(heure);
+  if (propre === null) {
+    return null;
+  }
+  const [h, m] = propre.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Both bounds readable, and the end not after the start. */
+function windowReversed(fenetre: FenetreSaisie): boolean {
+  const debut = minutesOf(fenetre.debut, false);
+  const fin = minutesOf(fenetre.fin, true);
+  return debut !== null && fin !== null && fin <= debut;
+}
+
+/** A readable, well-ordered window the band covers entirely: it would open nothing. */
+function windowInsideBand(
+  fenetre: FenetreSaisie,
+  bandeDebut: string,
+  bandeFin: string | null,
+): boolean {
+  const debut = minutesOf(fenetre.debut, false);
+  const fin = minutesOf(fenetre.fin, true);
+  const bDebut = minutesOf(bandeDebut, false);
+  const bFin = minutesOf(bandeFin ?? '', true);
+  if (debut === null || fin === null || bDebut === null || bFin === null || fin <= debut) {
+    return false;
+  }
+  return bDebut <= debut && fin <= bFin;
 }
 
 /**
@@ -306,6 +353,12 @@ export function erreursRepas(repas: RepasSaisie): ErreurForm[] {
   ) {
     erreurs.push('REPAS_FENETRE');
   }
+  if (
+    mealWindowReversed(repas.midiDebut, repas.midiFin) ||
+    mealWindowReversed(repas.soirDebut, repas.soirFin)
+  ) {
+    erreurs.push('REPAS_ORDRE');
+  }
   const coupure = repas.coupureMinutes.trim();
   if (coupure !== '' && !(Number.isInteger(Number(coupure)) && Number(coupure) > 0)) {
     erreurs.push('REPAS_COUPURE');
@@ -314,6 +367,13 @@ export function erreursRepas(repas: RepasSaisie): ErreurForm[] {
     erreurs.push('REPAS_JUSTIFICATION');
   }
   return erreurs;
+}
+
+/** Both bounds readable and the window not ending after it starts — a meal window has no open end. */
+function mealWindowReversed(debut: string, fin: string): boolean {
+  const d = normaliseHour(debut);
+  const f = normaliseHour(fin);
+  return d !== null && f !== null && f <= d;
 }
 
 /** One bound without the other, or a bound that cannot be read. */
@@ -374,8 +434,8 @@ function fenetreInvalide(fenetre: FenetreSaisie): boolean {
 /**
  * The request the server expects, from the form as it stands: the day's
  * default windows, and one opening per window of every ticked stand, each
- * carrying the stand's headcount (or `null` to inherit). A ticked stand with
- * no window opens nothing — the band still closes it, like every other. The
+ * carrying its own headcount (or `null` to inherit). A ticked stand with no
+ * window opens nothing — the band still closes it, like every other. The
  * meal section travels as `null` when nothing is restated in it.
  */
 export function buildDemande(form: ConsigneForm): DemandeConsigne {
@@ -384,12 +444,15 @@ export function buildDemande(form: ConsigneForm): DemandeConsigne {
     if (!stand.coche) {
       continue;
     }
-    for (const fenetre of fenetresDemandees(stand.fenetres)) {
+    for (const fenetre of stand.fenetres) {
+      if (fenetre.debut === '') {
+        continue;
+      }
       ouvertures.push({
         standId: stand.standId,
         debut: fenetre.debut,
-        fin: fenetre.fin,
-        effectif: stand.effectif,
+        fin: fenetre.fin === '' ? null : fenetre.fin,
+        effectif: effectifDemande(fenetre.effectif),
       });
     }
   }
@@ -424,6 +487,7 @@ export function mergePreselection(
   fenetresParDefaut: readonly FenetreSaisie[],
   precedents: readonly StandForm[],
   ouverturesInitiales: readonly OuvertureConsigne[] = [],
+  effectifMaxByStand: ReadonlyMap<string, number> = new Map(),
 ): StandForm[] {
   const byId = new Map(precedents.map((stand) => [stand.standId, stand]));
   return lignes.map((ligne) => {
@@ -447,23 +511,20 @@ export function mergePreselection(
       fenetres: precedent
         ? precedent.fenetres
         : depuisOuvertures
-          ? ouvertures.map((ouverture) => ({
-              debut: heureSaisie(ouverture.debut),
-              fin: heureSaisie(ouverture.fin),
-            }))
-          : fenetresParDefaut.map((fenetre) => ({ ...fenetre })),
-      effectif: precedent
-        ? precedent.effectif
-        : (ouvertures.find((ouverture) => ouverture.effectif !== null)?.effectif ?? null),
+          ? ouverturesSaisies(ouvertures)
+          : fenetresParDefaut.map((fenetre) => ({ ...fenetre, effectif: '' })),
+      effectifMax: effectifMaxByStand.get(ligne.standId) ?? null,
     };
   });
 }
 
 /**
  * The day's default windows changed: every ticked-or-not stand still carrying
- * the previous defaults untouched follows them, and a stand whose windows were
+ * the previous defaults' hours follows them, and a stand whose windows were
  * typed by hand keeps them. Without this, picking a preset after the stands
- * loaded would leave sixty rows on the old windows.
+ * loaded would leave sixty rows on the old windows. A headcount typed on a
+ * row's window stays on the window of the same rank — the hours moved, not
+ * what was decided for the stand.
  */
 export function followDefaultWindows(
   rows: readonly StandForm[],
@@ -475,7 +536,13 @@ export function followDefaultWindows(
   const previousKey = keyOf(anciennes);
   return rows.map((row) =>
     keyOf(row.fenetres) === previousKey
-      ? { ...row, fenetres: nouvelles.map((fenetre) => ({ ...fenetre })) }
+      ? {
+          ...row,
+          fenetres: nouvelles.map((fenetre, index) => ({
+            ...fenetre,
+            effectif: row.fenetres[index]?.effectif ?? '',
+          })),
+        }
       : row,
   );
 }
@@ -544,24 +611,32 @@ export function cocherAffiches(
 
 /**
  * « Appliquer à la sélection »: the same windows and/or the same headcount on
- * every displayed row that is ticked. A part left out (`undefined`) is not
- * touched — the bulk edits of the reference pages follow the same law.
+ * every window of every displayed row that is ticked. A part left out
+ * (`undefined`) is not touched — the bulk edits of the reference pages follow
+ * the same law; windows given without a headcount keep the one typed on the
+ * row's window of the same rank.
  */
 export function applyToSelection(
   rows: readonly StandForm[],
   affiches: ReadonlySet<string>,
-  changement: { fenetres?: FenetreSaisie[]; effectif?: number | null },
+  changement: { fenetres?: FenetreSaisie[]; effectif?: string },
 ): StandForm[] {
   return rows.map((row) => {
     if (!row.coche || !affiches.has(row.standId)) {
       return row;
     }
+    const fenetres = changement.fenetres
+      ? changement.fenetres.map((fenetre, index) => ({
+          ...fenetre,
+          effectif: row.fenetres[index]?.effectif ?? '',
+        }))
+      : row.fenetres;
     return {
       ...row,
-      fenetres: changement.fenetres
-        ? changement.fenetres.map((fenetre) => ({ ...fenetre }))
-        : row.fenetres,
-      effectif: changement.effectif === undefined ? row.effectif : changement.effectif,
+      fenetres:
+        changement.effectif === undefined
+          ? fenetres
+          : fenetres.map((fenetre) => ({ ...fenetre, effectif: changement.effectif ?? '' })),
     };
   });
 }
@@ -587,7 +662,7 @@ export function parseFenetresSaisie(text: string): FenetreSaisie[] | null {
     if (debut === null || fin === null) {
       return null;
     }
-    fenetres.push({ debut, fin });
+    fenetres.push({ debut, fin, effectif: '' });
   }
   return fenetres;
 }

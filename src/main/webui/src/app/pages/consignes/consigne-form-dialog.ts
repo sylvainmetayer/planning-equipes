@@ -2,8 +2,9 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
+  linkedSignal,
+  resource,
   signal,
   untracked,
 } from '@angular/core';
@@ -18,6 +19,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConsignesApi } from '../../core/api/consignes-api';
+import { bandeLabel, fenetreLabel, libelleDate } from '../../core/consigne-wording';
 import { normaliseHour } from '../../core/horaire-stand';
 import {
   ApercuConsigneJour,
@@ -25,11 +27,13 @@ import {
   Emplacement,
   FenetreConsigne,
   PrereglageConsigne,
+  PreselectionConsigne,
   Stand,
   TypologieItem,
   VacationRef,
 } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import {
   ConsigneForm,
@@ -40,16 +44,13 @@ import {
   RepasSaisie,
   StandForm,
   applyToSelection,
-  bandeLabel,
   buildDemande,
   cocherAffiches,
   erreursForm,
-  fenetreLabel,
   fenetresSaisies,
   filterStands,
   formVide,
   heureSaisie,
-  libelleDate,
   mergePreselection,
   parseFenetresSaisie,
   followDefaultWindows,
@@ -81,9 +82,11 @@ export interface ConsigneFormData {
  * adjusted one by one or in bulk. « Aperçu » shows what the write would do,
  * date by date; « Enregistrer » sends the very same request.
  *
- * <p>The stands list is re-read whenever the date or the band moves, and
- * what was chosen for a stand survives the re-read: the server's proposal
- * only fills the rows it has not met yet.</p>
+ * <p>The stands list is re-read whenever the date or the band moves — a
+ * `resource()` keyed on the three, so a reply to a request the form has moved
+ * past is dropped rather than landing over the current one — and what was
+ * chosen for a stand survives the re-read: the server's proposal only fills
+ * the rows it has not met yet.</p>
  */
 @Component({
   selector: 'app-consigne-form-dialog',
@@ -113,7 +116,22 @@ export class ConsigneFormDialog {
 
   protected readonly mode = this.data.mode;
 
-  protected readonly dates = signal<string[]>([...this.data.datesInitiales]);
+  /** The dates offered: the candidates, plus the row's own date when modifying it. */
+  protected readonly datesOffertes = computed(() => {
+    const dates = new Set(this.data.datesCandidates);
+    if (this.data.consigne && this.mode === 'modifier') {
+      dates.add(this.data.consigne.date);
+    }
+    return [...dates].sort().map((date) => ({ date, libelle: libelleDate(date) }));
+  });
+
+  // A deep link may name a day already begun: it is not ticked, and the
+  // dates rule below says so if it comes back.
+  protected readonly dates = signal<string[]>(
+    this.data.datesInitiales.filter((date) =>
+      this.datesOffertes().some((option) => option.date === date),
+    ),
+  );
   protected readonly fermetureDebut = signal(
     heureSaisie(this.data.consigne?.fermetureDebut ?? formVide().fermetureDebut),
   );
@@ -127,9 +145,65 @@ export class ConsigneFormDialog {
   );
   /** The meal windows restated for the dates, the edition's when nothing is typed. */
   protected readonly repas = signal<RepasSaisie>(repasSaisie(this.data.consigne?.repas ?? null));
-  protected readonly stands = signal<StandForm[]>([]);
-  protected readonly chargementStands = signal(false);
-  protected readonly creneauxOfDay = signal<number | null>(null);
+
+  /**
+   * What the server proposes for the first date and the band. Keyed on the
+   * three: a change of any of them starts a new request and the previous
+   * one's reply, should it arrive later, is discarded by the resource.
+   */
+  private readonly preselection = resource({
+    params: () => {
+      const date = this.dates()[0] ?? null;
+      const debut = normaliseHour(this.fermetureDebut());
+      const finSaisie = this.fermetureFin();
+      const fin = finSaisie === '' ? null : normaliseHour(finSaisie);
+      if (!date || !debut || (finSaisie !== '' && fin === null)) {
+        return undefined;
+      }
+      return { date, fermetureDebut: debut, fermetureFin: fin };
+    },
+    loader: ({ params }) => this.api.preselection(params),
+  });
+  protected readonly chargementStands = this.preselection.isLoading;
+  protected readonly erreurStands = errorText(this.preselection);
+  protected readonly creneauxOfDay = computed(() =>
+    this.preselection.hasValue() ? this.preselection.value().creneauxDuJour : null,
+  );
+  private readonly effectifMaxByStand = new Map(
+    this.data.stands.map((stand) => [stand.id, stand.effectifMax]),
+  );
+  /**
+   * The rows as the form shows them: what the server proposed, merged over
+   * what was already chosen. Written by every gesture on a stand, recomputed
+   * on every new proposal over its own previous value — the openings the row
+   * already holds seed the rows the server has not met yet. While a re-read
+   * is in flight the rows stay as they are; without a date to read for, the
+   * list is empty.
+   */
+  protected readonly stands = linkedSignal<
+    { preselection: PreselectionConsigne | null; idle: boolean },
+    StandForm[]
+  >({
+    source: () => ({
+      preselection: this.preselection.hasValue() ? this.preselection.value() : null,
+      idle: this.preselection.status() === 'idle',
+    }),
+    computation: ({ preselection, idle }, previous) => {
+      if (idle) {
+        return [];
+      }
+      if (!preselection) {
+        return previous?.value ?? [];
+      }
+      return mergePreselection(
+        preselection.stands,
+        untracked(this.fenetres),
+        previous?.value ?? [],
+        this.data.consigne?.ouvertures ?? [],
+        this.effectifMaxByStand,
+      );
+    },
+  });
 
   protected readonly filtres = signal<FiltresStands>({ ...FILTRES_VIDES });
   /** The bulk line: windows as one line, a headcount, applied to the displayed ticked rows. */
@@ -139,15 +213,6 @@ export class ConsigneFormDialog {
   protected readonly apercu = signal<ApercuConsigneJour[] | null>(null);
   protected readonly chargementApercu = signal(false);
   protected readonly enregistrement = signal(false);
-
-  /** The dates offered: the candidates, plus the row's own date when modifying it. */
-  protected readonly datesOffertes = computed(() => {
-    const dates = new Set(this.data.datesCandidates);
-    if (this.data.consigne && this.mode === 'modifier') {
-      dates.add(this.data.consigne.date);
-    }
-    return [...dates].sort().map((date) => ({ date, libelle: libelleDate(date) }));
-  });
 
   protected readonly form = computed<ConsigneForm>(() => ({
     dates: this.dates(),
@@ -159,7 +224,12 @@ export class ConsigneFormDialog {
     stands: this.stands(),
     repas: this.repas(),
   }));
-  protected readonly erreurs = computed(() => erreursForm(this.form()));
+  protected readonly erreurs = computed(() =>
+    erreursForm(
+      this.form(),
+      this.datesOffertes().map((option) => option.date),
+    ),
+  );
   protected readonly invalide = computed(() => this.erreurs().length > 0);
   protected readonly messageErreur = computed(() => {
     const first = this.erreurs()[0];
@@ -193,44 +263,6 @@ export class ConsigneFormDialog {
         return $localize`:@@consignes.form.title.poser:Poser une consigne`;
     }
   });
-
-  constructor() {
-    // The stands are read for the first date and the band; the openings the
-    // row already holds seed the rows the server has not met yet.
-    const ouverturesInitiales = this.data.consigne?.ouvertures ?? [];
-    effect(() => {
-      const date = this.dates()[0] ?? null;
-      const debut = normaliseHour(this.fermetureDebut());
-      const finSaisie = this.fermetureFin();
-      const fin = finSaisie === '' ? null : normaliseHour(finSaisie);
-      if (!date || !debut || (finSaisie !== '' && fin === null)) {
-        untracked(() => this.stands.set([]));
-        return;
-      }
-      untracked(() => void this.loadStands(date, debut, fin, ouverturesInitiales));
-    });
-  }
-
-  private async loadStands(
-    date: string,
-    fermetureDebut: string,
-    fermetureFin: string | null,
-    ouverturesInitiales: ConsigneEdition['ouvertures'],
-  ): Promise<void> {
-    this.chargementStands.set(true);
-    this.apercu.set(null);
-    try {
-      const preselection = await this.api.preselection({ date, fermetureDebut, fermetureFin });
-      this.creneauxOfDay.set(preselection.creneauxDuJour);
-      this.stands.set(
-        mergePreselection(preselection.stands, this.fenetres(), this.stands(), ouverturesInitiales),
-      );
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.chargementStands.set(false);
-    }
-  }
 
   /* ------------------------------ the band ------------------------------ */
 
@@ -278,7 +310,7 @@ export class ConsigneFormDialog {
   }
 
   protected addWindow(): void {
-    this.remplacerFenetres([...this.fenetres(), { debut: '', fin: '' }]);
+    this.remplacerFenetres([...this.fenetres(), { debut: '', fin: '', effectif: '' }]);
   }
 
   protected retirerFenetre(index: number): void {
@@ -309,13 +341,15 @@ export class ConsigneFormDialog {
     this.apercu.set(null);
   }
 
-  /** `type="number"` hands a number or `null` over; the field's text is what is read. */
-  protected onEffectif(standId: string, valeur: unknown): void {
-    this.patchStand(standId, { effectif: effectifDepuis(String(valeur ?? '')) });
+  /** `type="number"` hands a number or `null` over; the field's text is what is kept and judged. */
+  protected onEffectif(stand: StandForm, index: number, valeur: unknown): void {
+    this.patchFenetreStand(stand, index, { effectif: String(valeur ?? '') });
   }
 
   protected addStandWindow(stand: StandForm): void {
-    this.patchStand(stand.standId, { fenetres: [...stand.fenetres, { debut: '', fin: '' }] });
+    this.patchStand(stand.standId, {
+      fenetres: [...stand.fenetres, { debut: '', fin: '', effectif: '' }],
+    });
   }
 
   protected retirerFenetreStand(stand: StandForm, index: number): void {
@@ -354,7 +388,7 @@ export class ConsigneFormDialog {
     this.stands.update((rows) =>
       applyToSelection(rows, this.idsAffiches(), {
         fenetres: this.bulkWindows().trim() === '' ? undefined : fenetres,
-        effectif: effectifSaisi === '' ? undefined : effectifDepuis(effectifSaisi),
+        effectif: effectifSaisi === '' ? undefined : effectifSaisi,
       }),
     );
     this.apercu.set(null);
@@ -414,14 +448,16 @@ export class ConsigneFormDialog {
         return $localize`:@@consignes.form.error.motif:Le motif est obligatoire : il est imprimé partout où la journée est dite modifiée.`;
       case 'FENETRE':
         return $localize`:@@consignes.form.error.fenetre:Chaque fenêtre a besoin d'une heure de début ; une fin vide vaut minuit.`;
+      case 'FENETRE_ORDRE':
+        return $localize`:@@consignes.form.error.fenetreOrdre:Une fenêtre finit après son début, dans la même journée.`;
+      case 'FENETRE_BANDE':
+        return $localize`:@@consignes.form.error.fenetreBande:Une fenêtre est entièrement dans la bande fermée : elle n'ouvrirait rien.`;
+      case 'EFFECTIF':
+        return $localize`:@@consignes.form.error.effectif:Un effectif est un nombre entier supérieur à zéro ; vide, il hérite.`;
+      case 'EFFECTIF_MAX':
+        return $localize`:@@consignes.form.error.effectifMax:Un effectif dépasse le maximum de son stand.`;
       default:
         return repasErrorLabel(erreur);
     }
   }
-}
-
-/** What the headcount field holds: a positive integer, or nothing (inherit). */
-function effectifDepuis(valeur: string): number | null {
-  const parsed = Number(valeur);
-  return valeur.trim() !== '' && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }

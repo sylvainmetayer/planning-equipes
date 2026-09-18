@@ -92,6 +92,8 @@ export function repasErrorLabel(erreur: ErreurForm): string {
   switch (erreur) {
     case 'REPAS_FENETRE':
       return $localize`:@@consignes.form.error.repasFenetre:Une fenêtre repas a besoin de son début et de sa fin, ou d'aucun des deux.`;
+    case 'REPAS_ORDRE':
+      return $localize`:@@consignes.form.error.repasOrdre:Une fenêtre repas finit après son début.`;
     case 'REPAS_COUPURE':
       return $localize`:@@consignes.form.error.repasCoupure:La coupure repas est un nombre entier de minutes supérieur à zéro.`;
     case 'REPAS_JUSTIFICATION':

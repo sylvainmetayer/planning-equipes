@@ -3,14 +3,16 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
+import { bandeLabel } from '../../core/consigne-wording';
 import { ConsignesStore } from '../../core/consignes.store';
-import { bandeLabel } from '../consignes/consignes';
 
 /**
  * The consigne of the day on screen (issue #4), next to the relecture panel:
  * the band and the motif when the day is under one, and the link to the
  * Consignes page either way — modifying or lifting on one side, laying one
- * on the other. Nothing is written here; the gesture lives on its own page.
+ * on the other, the latter only on a day still to come: a consigne is laid
+ * on days ahead, and a link the server would refuse is not offered. Nothing
+ * is written here; the gesture lives on its own page.
  */
 @Component({
   selector: 'app-consigne-card',
@@ -40,10 +42,15 @@ import { bandeLabel } from '../consignes/consignes';
             <mat-icon>edit</mat-icon>
             <ng-container i18n="@@journee.consigne.modifier">Modifier ou lever</ng-container>
           </a>
-        } @else {
+        } @else if (peutPoser()) {
           <a matButton routerLink="/consignes" [queryParams]="{ date: jour(), nouvelle: '1' }">
             <mat-icon>gavel</mat-icon>
             <ng-container i18n="@@journee.consigne.poser">Poser une consigne sur cette journée</ng-container>
+          </a>
+        } @else {
+          <a matButton routerLink="/consignes">
+            <mat-icon>gavel</mat-icon>
+            <ng-container i18n="@@journee.consigne.voir">Voir les consignes</ng-container>
           </a>
         }
       </mat-card-actions>
@@ -58,6 +65,11 @@ export class ConsigneCard {
   readonly jour = input.required<string>();
 
   protected readonly consigne = computed(() => this.store.consigneOf(this.jour()));
+  /** A consigne is laid on a day strictly after the server's today — unknown before the first read. */
+  protected readonly peutPoser = computed(() => {
+    const aujourdhui = this.store.aujourdhui();
+    return aujourdhui !== null && this.jour() > aujourdhui;
+  });
   protected readonly bande = computed(() => {
     const consigne = this.consigne();
     return consigne ? bandeLabel(consigne.fermetureDebut, consigne.fermetureFin) : '';

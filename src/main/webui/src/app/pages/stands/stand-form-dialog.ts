@@ -21,7 +21,8 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { JourResolu, resoudreHoraires } from '../../core/horaire-stand';
-import { datesEvenement, decrireJour, libelleJour, premiereErreurHoraire } from './stand-horaires';
+import { libelleJour } from '../../core/horaire-stand';
+import { datesEvenement, decrireJour, premiereErreurHoraire } from './stand-horaires';
 import { HoraireReglesEditor } from './horaire-regles-editor';
 import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import {

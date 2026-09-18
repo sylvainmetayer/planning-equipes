@@ -10,7 +10,7 @@
 // Every `$localize` below sits inside a function body on purpose: called at
 // module scope it would run before `main.ts` has loaded the translations.
 
-import { Creneau, JourSemaine } from '../../core/models';
+import { Creneau } from '../../core/models';
 import {
   ErreurSaisieFenetres,
   JourResolu,
@@ -88,39 +88,9 @@ export function messageConflitDeMode(horaires: readonly HoraireDraft[]): string 
     : null;
 }
 
-/**
- * Weekday label of the `JOURS_SEMAINE` checkboxes. Written out rather than
- * derived from `Intl`, because the locale here is the app's own (translated at
- * runtime, see AGENTS.md) and not the browser's.
- */
-export function libelleJourSemaine(jour: JourSemaine): string {
-  switch (jour) {
-    case 'MONDAY':
-      return $localize`:@@common.weekday.monday:Lundi`;
-    case 'TUESDAY':
-      return $localize`:@@common.weekday.tuesday:Mardi`;
-    case 'WEDNESDAY':
-      return $localize`:@@common.weekday.wednesday:Mercredi`;
-    case 'THURSDAY':
-      return $localize`:@@common.weekday.thursday:Jeudi`;
-    case 'FRIDAY':
-      return $localize`:@@common.weekday.friday:Vendredi`;
-    case 'SATURDAY':
-      return $localize`:@@common.weekday.saturday:Samedi`;
-    case 'SUNDAY':
-      return $localize`:@@common.weekday.sunday:Dimanche`;
-  }
-}
-
 /** Days the preview covers: the edition's créneaux — what the solver builds from. */
 export function datesEvenement(creneaux: readonly Creneau[]): string[] {
   return [...new Set(creneaux.map((creneau) => creneau.date))].sort();
-}
-
-/** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
-export function libelleJour(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
 }
 
 /** One resolved day of the preview strip, in words. */

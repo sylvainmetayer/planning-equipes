@@ -17,7 +17,7 @@ import { ConsignesStore } from '../../core/consignes.store';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
-import { bandeLabel, libelleDate } from '../consignes/consignes';
+import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 
 /**
  * « État de l'édition », the home screen (issue #485): the cycle of the
