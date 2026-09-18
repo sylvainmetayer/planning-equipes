@@ -307,8 +307,27 @@ public class SolveurMcpTools {
                 job.getFinishedAt(),
                 job.getElapsedSeconds(),
                 job.getError(),
+                avertissement(job.getResult()),
                 job.getEditionId(),
                 job.getEditionNom());
+    }
+
+    /**
+     * « N sièges passés sont restés vides » (ADR 0044): the past seats the
+     * persisted plan gave nobody — never charged, so the zero hard of a solve
+     * during the event would otherwise hide them. {@code null} when there is
+     * nothing to warn about, on a job without a result included.
+     */
+    private static String avertissement(Object result) {
+        int vides =
+                switch (result) {
+                    case SolverJobService.ResultatSolve solve ->
+                        solve.reamorcage() == null ? 0 : solve.reamorcage().postesPassesVides();
+                    case SolverJobService.ResultatSolveIncremental incremental ->
+                        incremental.statistiques().postesPassesVides();
+                    case null, default -> 0;
+                };
+        return vides > 0 ? vides + " sièges passés sont restés vides." : null;
     }
 
     private static AffectationView toView(PosteAffectation poste) {
@@ -339,6 +358,7 @@ public class SolveurMcpTools {
             Instant finishedAt,
             long elapsedSeconds,
             String error,
+            String avertissement,
             String editionId,
             String editionNom) {}
 

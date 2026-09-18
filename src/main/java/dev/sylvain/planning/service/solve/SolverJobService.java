@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.edition.EditionRepository;
@@ -214,8 +215,11 @@ public class SolverJobService {
      *                      the persisted plan and pinned whatever the mode
      *                      (ADR 0044); 0 when the freeze is off or the event
      *                      is still ahead
+     * @param postesPassesVides among them, the seats holding nobody: shown
+     *                      as a warning on the recap, never charged
      */
-    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes, int postesPasses) {}
+    public record ReamorcageEffectue(
+            Reamorcage mode, int postes, int postesLiberes, int postesPasses, int postesPassesVides) {}
 
     /**
      * Full solve whose problem is built <b>inside the job</b>, from the
@@ -475,6 +479,15 @@ public class SolverJobService {
                 // is lost, the persisted plan stands.
                 LOG.warnf(failure, "Solver job %s was stopped by the server shutdown and its run is lost", job.getId());
                 job.markInterrompu(SHUTDOWN_RUN_LOST, null);
+            } else if (failure instanceof BusinessError) {
+                // A refusal from the domain — nothing left to plan, every
+                // seat already past (ADR 0044) — is the job's answer, not a
+                // bug: the operator reads it on the job, and nobody is paged
+                // for it.
+                job.markFailed(failure);
+                LOG.infof(
+                        "Solver job %s (%s, edition %s) refused: %s",
+                        job.getId(), job.getType(), job.getEditionId(), failure.getMessage());
             } else {
                 job.markFailed(failure);
                 reportFailure(job, failure);

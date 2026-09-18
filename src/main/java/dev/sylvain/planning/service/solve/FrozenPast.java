@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.HashMap;
@@ -52,7 +53,72 @@ import java.util.Map;
  */
 public final class FrozenPast {
 
+    /**
+     * What every manual write on a past seat answers with (ADR 0044): the
+     * drag-and-drop, an échange accepted, a repair applied or suggested. One
+     * sentence, so the screen, the API and MCP refuse in the same words.
+     */
+    public static final String PAST_SEAT_REFUSAL = "Ce créneau est déjà commencé : le passé ne se modifie plus.";
+
+    /**
+     * What a solve answers when every seat of the edition is past: there is
+     * nothing left to plan, and an « empty plan at zero hard » would say the
+     * opposite of what happened.
+     */
+    public static final String NOTHING_AHEAD_REFUSAL = "Rien à planifier : tous les créneaux sont déjà commencés — "
+            + "l'édition est terminée, ou la date simulée est après l'événement.";
+
     private FrozenPast() {}
+
+    /**
+     * Refuses a manual write on a seat whose timeslot has started (ADR 0044,
+     * the freeze applied to the gestures): a past seat is a fact, and no hand
+     * rewrites it either. A {@code null} horizon is the freeze switched off,
+     * and then nothing is refused.
+     *
+     * @throws BusinessError.Invalid on a past seat
+     */
+    public static void refuseIfPast(PosteAffectation poste, PastHorizon horizon) {
+        if (isPast(poste, horizon)) {
+            throw new BusinessError.Invalid(PAST_SEAT_REFUSAL);
+        }
+    }
+
+    /**
+     * Refuses a problem whose every seat is already marked past: a solve with
+     * nothing ahead would persist an empty future over a finished edition — or
+     * over one whose simulated date landed after the event — and report zero
+     * hard on it. A problem with no seat at all is refused earlier, on the
+     * reference data.
+     *
+     * @throws BusinessError.Invalid when nothing is left to plan
+     */
+    public static void refuseIfNothingAhead(List<PosteAffectation> postes) {
+        if (postes.isEmpty()) {
+            return;
+        }
+        for (PosteAffectation poste : postes) {
+            if (!poste.isPasse()) {
+                return;
+            }
+        }
+        throw new BusinessError.Invalid(NOTHING_AHEAD_REFUSAL);
+    }
+
+    /**
+     * How many seats already marked past hold nobody: worked by no one the
+     * plan knows of — never staffed, or staffed by somebody the referential
+     * has since forgotten. Reported as a warning, never charged.
+     */
+    public static int countEmptyPast(List<PosteAffectation> postes) {
+        int vides = 0;
+        for (PosteAffectation poste : postes) {
+            if (poste.isPasse() && poste.getAnimateur() == null) {
+                vides++;
+            }
+        }
+        return vides;
+    }
 
     /**
      * Whether this seat's timeslot had started at {@code horizon}: a strictly

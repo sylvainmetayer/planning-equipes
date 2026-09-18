@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.solve.ProblemBuilder.ProblemeReamorce;
 import java.time.LocalDate;
@@ -96,5 +98,13 @@ class ProblemBuilderColdStartLockTest {
         assertThat(seat.isVerrouille()).isTrue();
         assertThat(seat.isPasse()).isFalse();
         assertThat(probleme.postesPasses()).isZero();
+    }
+
+    /** With every seat already started there is nothing left to plan, cold start or not. */
+    @Test
+    void aColdStartWithEverySeatPastIsRefused() {
+        assertThatThrownBy(() -> coldStart(() -> new PastHorizon(JOUR.plusDays(1), LocalTime.NOON)))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessage(FrozenPast.NOTHING_AHEAD_REFUSAL);
     }
 }
