@@ -109,11 +109,11 @@ public class CoherenceService {
      * recurring rules are resolved on the edition's grid first, so a
      * stand-scoped exception reads the days that stand really opens.
      *
-     * <p>The locks and the seats of the persisted plan are read here too, and
-     * they are what the lock check needs: an exception naming somebody whose
-     * schedule is frozen over its whole scope is unsatisfiable, and saying so
-     * costs one read of the locks and one of the assignments — the same order
-     * as the créneaux and stands this method already reads.</p>
+     * <p>The locks are read here too, and the seats of the persisted plan with
+     * them when there is any lock to cross: an exception naming somebody whose
+     * schedule is frozen over its whole scope is unsatisfiable. With no lock
+     * recorded — the usual case — the assignments are not read at all, and the
+     * cost is one read of an empty table.</p>
      */
     public List<Avertissement> onContrainteAdHoc(ContrainteAdHoc contrainte) {
         List<Creneau> edition = creneaux.list();
@@ -134,9 +134,11 @@ public class CoherenceService {
      * hard violation in the latest analysis — see
      * {@link CoherenceAnalyzer#onVerrouillage}.
      *
-     * <p>The analysis is the stored one, asked for and never forced: on an
+     * <p>The analysis is the one the store already holds, never a solve: on an
      * edition nobody has solved there is nothing to read, and this warning has
-     * nothing to say rather than a solve to run.</p>
+     * nothing to say rather than a run to launch. An empty store does derive
+     * the analysis from the persisted plan — one score calculation, paid once
+     * per edition and per restart, as every reader of that store pays it.</p>
      */
     public List<Avertissement> onVerrouillage(VerrouillagePlanning verrouillage) {
         if (!analyses.isResolvable()) {

@@ -72,10 +72,13 @@ interdire. Les règles existent déjà (`travailDeNuitInterditPourMineur`,
 | Écriture directe d'un siège (`POST /api/postes/{id}/affectation`, `affecter_poste`) | Le geste dégraderait le score dur, ou introduirait une violation dure sur le siège lui-même | **Refusé**, en nommant les règles |
 | « Calculer », « Corriger », « Recommencer de zéro » | La faisabilité porte au moins une cause CRITIQUE autre qu'un sous-effectif | Confirmation, le calcul part si l'organisateur le dit |
 
-Les trois avertissements sur affectation forcée se lisent **une fois chacun**
-et ne se doublent pas : le jour déclaré indisponible est aussi un motif
-d'exclusion dur, et c'est la lecture en termes de déclaration qui garde le
-cas — c'est elle que l'organisateur sait traiter, en parlant à la personne.
+Les deux premiers avertissements sur affectation forcée ne se doublent jamais :
+le jour déclaré indisponible est aussi un motif d'exclusion dur, donc la lecture
+« motif légal » se tait sur un cas que la lecture « jour indisponible »
+rapporte — c'est celle-là que l'organisateur sait traiter, en parlant à la
+personne. Le troisième peut s'ajouter aux deux autres, et c'est voulu : un
+verrou et une règle légale sont deux blocages indépendants, qui se lèvent par
+deux gestes différents.
 
 ### Pourquoi le siège écrit directement, lui, est refusé
 
