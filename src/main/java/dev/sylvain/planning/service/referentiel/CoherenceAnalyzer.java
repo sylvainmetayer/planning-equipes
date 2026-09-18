@@ -8,16 +8,24 @@ import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.analyse.ViolationFormatter;
+import dev.sylvain.planning.solver.ConstraintCatalog;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * The cross-field checks a write runs on top of {@link CreneauValidator} and
@@ -469,22 +477,132 @@ public final class CoherenceAnalyzer {
                 + " et " + (dates.size() - DATES_CITEES) + " autre(s)";
     }
 
+    /* ---------------------------- Verrouillage ---------------------------- */
+
+    /**
+     * What is worth telling the operator about the lock they just posted: the
+     * seats it freezes already carry a hard violation in the latest analysis.
+     *
+     * <p>Accepted, and deliberately so — a lock says « this one does not
+     * move », not « stop judging this one »: the frozen seats stay scored, and
+     * the decision that settled it is what makes a solve on a locked plan
+     * honest about its hard score. But the gesture is the moment to say it. An
+     * organiser who freezes a day and launches a solve reads a negative hard
+     * score they did not cause with that click, and has no way back to the
+     * seats that carry it.</p>
+     *
+     * <p>Read on the <b>latest analysis</b>, never re-derived here: this is a
+     * warning about a state, and a state nobody has analysed yet has nothing to
+     * say. An edition with no analysis — nothing solved, or a restart — yields
+     * no warning rather than a guess.</p>
+     *
+     * @param diagnostics the per-constraint diagnostics of that analysis, empty
+     *                    when there is none
+     * @param creneaux    the edition's timeslots, to read the day of a
+     *                    {@code JOUR} lock against the timeslot a violation
+     *                    names; empty simply skips that one lock type
+     */
+    public static List<Avertissement> onVerrouillage(
+            VerrouillagePlanning verrouillage,
+            List<PlanningDiagnosticService.ConstraintDiagnostic> diagnostics,
+            List<Creneau> creneaux) {
+        if (verrouillage == null || diagnostics == null || diagnostics.isEmpty()) {
+            return List.of();
+        }
+        Map<Long, LocalDate> joursParCreneau = new HashMap<>();
+        for (Creneau creneau : creneaux == null ? List.<Creneau>of() : creneaux) {
+            if (creneau.getId() != null && creneau.getDate() != null) {
+                joursParCreneau.put(creneau.getId(), creneau.getDate());
+            }
+        }
+        TreeSet<String> regles = new TreeSet<>();
+        int places = 0;
+        for (PlanningDiagnosticService.ConstraintDiagnostic diagnostic : diagnostics) {
+            if (!ConstraintCatalog.NOMS_DURS.contains(diagnostic.name())) {
+                continue;
+            }
+            long touchees = diagnostic.references().stream()
+                    .filter(reference -> couvre(verrouillage, reference, joursParCreneau))
+                    .count();
+            if (touchees > 0) {
+                regles.add(diagnostic.name());
+                places += (int) touchees;
+            }
+        }
+        if (regles.isEmpty()) {
+            return List.of();
+        }
+        return List.of(new Avertissement(
+                TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,
+                "Le verrouillage " + verrouillage.getId() + " fige " + places + " situation(s) qui "
+                        + (places == 1 ? "casse" : "cassent") + " déjà une règle dure ("
+                        + String.join(", ", regles)
+                        + "). Un verrou n'exempte pas de ces règles : la prochaine résolution les comptera toujours, "
+                        + "et le score dur restera négatif tant que le verrou tient. Le verrouillage est enregistré."));
+    }
+
+    /**
+     * Whether a violation of the latest analysis falls inside the lock's
+     * target. Read on the ids the violation names, which is all
+     * {@code ViolationFormatter} keeps of a match: an unnamed side matches
+     * nothing, so a rule violated by a pair the lock does not cover is never
+     * counted.
+     */
+    private static boolean couvre(
+            VerrouillagePlanning verrouillage,
+            ViolationFormatter.ViolationReference reference,
+            Map<Long, LocalDate> joursParCreneau) {
+        return switch (verrouillage.target().orElse(null)) {
+            case VerrouillageTarget.OnAnimateur sur -> sur.animateurId().equals(reference.animateurId());
+            case VerrouillageTarget.OnStand sur -> sur.standId().equals(reference.standId());
+            case VerrouillageTarget.OnCreneau sur ->
+                Long.valueOf(sur.creneauId()).equals(reference.creneauId());
+            case VerrouillageTarget.OnJour sur ->
+                reference.creneauId() != null && sur.jour().equals(joursParCreneau.get(reference.creneauId()));
+            case VerrouillageTarget.OnAnimateurAndCreneau sur ->
+                sur.animateurId().equals(reference.animateurId())
+                        && Long.valueOf(sur.creneauId()).equals(reference.creneauId());
+            case null -> false;
+        };
+    }
+
     /* ------------------------------ Ad hoc -------------------------------- */
 
     /**
-     * A forced assignment that falls only on days every animateur it names
-     * declared off. Written all the same: the day off may be withdrawn, and
-     * the pre-solve analysis keeps reporting it for as long as it stands —
-     * see {@link ForcedAssignmentOnDayOff}. The sentence names the
-     * exception by its id and the dates, never an animateur.
+     * The three ways a forced assignment can be written today and be
+     * unsatisfiable tomorrow morning: its animateurs declared the days off
+     * ({@link ForcedAssignmentOnDayOff}), no seat of its scope may hold them
+     * ({@link ForcedAssignmentOnExcludedSeats}), or their schedules are locked
+     * over the whole scope ({@link ForcedAssignmentOnLockedSchedule}).
+     *
+     * <p>Written all the same, all three: a day off may be withdrawn, a birth
+     * date corrected, a lock lifted, and the pre-solve analysis keeps reporting
+     * whichever still stands. Every sentence names the exception by its id and
+     * the dates, never an animateur — {@link Avertissement} says why.</p>
+     *
+     * @param verrouillages the locks recorded for this edition, empty when the
+     *                      caller has none to offer: the lock check is then
+     *                      simply not run, never guessed at
+     * @param placesTenues  the seats of the persisted plan, same doctrine
      */
     public static List<Avertissement> onContrainteAdHoc(
-            ContrainteAdHoc contrainte, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
-        return ForcedAssignmentOnDayOff.detectAll(
-                        contrainte == null ? List.of() : List.of(contrainte), animateurs, stands, creneaux)
-                .stream()
-                .map(conflit ->
-                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE, conflit.message()))
-                .toList();
+            ContrainteAdHoc contrainte,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            List<VerrouillagePlanning> verrouillages,
+            Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> placesTenues) {
+        List<ContrainteAdHoc> une = contrainte == null ? List.of() : List.of(contrainte);
+        List<Avertissement> avertissements = new ArrayList<>();
+        ForcedAssignmentOnDayOff.detectAll(une, animateurs, stands, creneaux)
+                .forEach(conflit -> avertissements.add(
+                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE, conflit.message())));
+        ForcedAssignmentOnExcludedSeats.detectAll(une, animateurs, stands, creneaux)
+                .forEach(conflit -> avertissements.add(
+                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL, conflit.message())));
+        ForcedAssignmentOnLockedSchedule.detectAll(une, verrouillages, stands, creneaux, placesTenues)
+                .forEach(conflit -> avertissements.add(
+                        new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE, conflit.message())));
+        return List.copyOf(avertissements);
     }
 }

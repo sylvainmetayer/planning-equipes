@@ -96,7 +96,12 @@ class ForcedAssignmentOnDayOffTest {
         Animateur absent = offOn("A1", SAMEDI, DIMANCHE);
 
         assertThat(CoherenceAnalyzer.onContrainteAdHoc(
-                        forced(absent), List.of(absent), List.of(plateau), List.of(samediMatin, dimancheMatin)))
+                        forced(absent),
+                        List.of(absent),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        List.of(),
+                        Set.of()))
                 .singleElement()
                 .satisfies(avertissement -> assertThat(avertissement.type())
                         .isEqualTo(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE));

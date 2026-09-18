@@ -177,7 +177,9 @@ public class EtatEditionService {
                         referenceDataService.listSolvedStands(),
                         referenceDataService.listCreneaux(),
                         referenceDataService.listContraintesAdHoc(),
-                        FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees())),
+                        FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                        new FeasibilityAnalyzer.LockContext(
+                                referenceDataService.listVerrouillages(), persistenceService::loadPlacesTenues)),
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
