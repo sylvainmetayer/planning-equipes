@@ -5,6 +5,7 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
@@ -26,10 +27,12 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Medium constraints: strongly penalised but non-blocking organisational
- * quality rules: referent coverage on complex stands, balanced workload,
- * avoiding a majority of minors on a single slot, and capping consecutive
- * worked days.
+ * Organisational quality rules: referent coverage on complex stands, balanced
+ * workload, avoiding a majority of minors on a single slot, and capping
+ * consecutive worked days. Medium — strongly penalised but non-blocking — with
+ * two exceptions that are hard and say why in their own javadoc:
+ * {@code pauseSurPosteSansRelais}, and the default-off
+ * {@code maxJoursConsecutifsTravaillesDur}.
  */
 public final class QualiteConstraints {
 
@@ -55,6 +58,7 @@ public final class QualiteConstraints {
             souhaitsIncompatibles(constraintFactory),
             limiterTypologiesDistinctesParAnimateur(constraintFactory),
             maxJoursConsecutifsTravailles(constraintFactory),
+            maxJoursConsecutifsTravaillesDur(constraintFactory),
             pauseSurPosteSansRelais(constraintFactory),
             stabiliteDuPlanPublie(constraintFactory)
         };
@@ -641,12 +645,24 @@ public final class QualiteConstraints {
      *
      * <p>One point per break due with no relay at its latest start: the seat
      * held then, on that stand, has no other animateur covering the whole
-     * break. Medium, dosed like the other organisation rules: the cheapest
-     * answer is usually to give the relief seat to somebody else so nobody
-     * chains seven hours alone, and the score finds it. The breaks come from
-     * {@link PauseSurPoste}, which the Pauses screen reads too, so the two
-     * never disagree on what is due. Quiet when the break is not declared on
-     * the post: the legal rule then requires a real hole, and judges it.</p>
+     * break. The breaks come from {@link PauseSurPoste}, which the Pauses
+     * screen reads too, so the two never disagree on what is due. Quiet when
+     * the break is not declared on the post: the legal rule then requires a
+     * real hole, and judges it.</p>
+     *
+     * <p><b>Hard, not dosed.</b> It was a medium rule, and the cheapest answer
+     * to it — give the relief seat to somebody else — is one the score used to
+     * find often enough. But a relay that does not exist is not a comfort lost:
+     * without somebody to hold the stand, the person cannot leave it, so the
+     * break is still travail effectif (art. L3121-1, L3121-2) and the twenty
+     * minutes of art. L3121-16 — thirty, and 4 h 30, for a minor under art.
+     * L3162-3, which is d'ordre public — are simply not given. Under
+     * {@code pauseSurPoste} this rule is the only thing left checking them:
+     * {@code travailContinuMax*} goes quiet, and {@code dailyCap} /
+     * {@code weeklyCap} deduct the break from the caps. Dosing it would mean
+     * pricing the deduction of a break nobody took. See
+     * {@code docs/contraintes.md}, « La pause sur le poste demande un
+     * relais ».</p>
      */
     private Constraint pauseSurPosteSansRelais(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
@@ -674,14 +690,68 @@ public final class QualiteConstraints {
                                         ? null
                                         : poste.getStand().getId()),
                         Joiners.filtering(PauseSurPoste::relayableBy))
-                .penalize(HardMediumSoftScore.ONE_MEDIUM)
+                .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("pauseSurPosteSansRelais");
     }
 
     private Constraint maxJoursConsecutifsTravailles(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles")
-                .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+        return sequencesTropLongues(ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles"))
+                .penalize(
+                        HardMediumSoftScore.ONE_MEDIUM,
+                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .asConstraint("maxJoursConsecutifsTravailles");
+    }
+
+    /**
+     * The same six-day ceiling, held <b>hard</b> — off unless an edition asks
+     * for it.
+     *
+     * <p>Two rules rather than a weight, because a weight never changes a
+     * level: {@code SolverConfiguration.constraintWeightOverrides} maps onto
+     * the level the catalogue declares, and {@code ConstraintToggle} carries
+     * only {@code actif}. So « the six days, but blocking » can only be a
+     * second constraint, switched on from the Contraintes screen, from
+     * {@code activer_contrainte}, or from a scenario's
+     * {@code contraintes.activees}.</p>
+     *
+     * <p>Why it is not in « Légal (temps de travail) »: no article of the Code
+     * du travail founds a rolling six-day count. L3132-1 is read over the civil
+     * week (L3121-35), and the Cour de cassation has held that the weekly rest
+     * need not fall at the latest after six consecutive days (Cass. soc.
+     * 13 nov. 2025, n° 24-10.733; same reading CJUE C-306/16). Filing it as a
+     * legal rule would make the disabling confirmation claim a plan breaks the
+     * law when it does not. It is the organiser's policy, held at whatever
+     * level the organiser chose — see {@code docs/contraintes.md}, « Le niveau
+     * de la règle des jours d'affilée ».</p>
+     *
+     * <p>Both forms may be on at once: the hard one then blocks past six days
+     * and the medium one keeps costing on top, which is a legitimate way of
+     * saying « never more than six, and prefer fewer ». The comparison bench
+     * ran them the other way round — one at a time.</p>
+     */
+    private Constraint maxJoursConsecutifsTravaillesDur(ConstraintFactory constraintFactory) {
+        return sequencesTropLongues(ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravaillesDur"))
+                .penalize(
+                        HardMediumSoftScore.ONE_HARD,
+                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                .asConstraint("maxJoursConsecutifsTravaillesDur");
+    }
+
+    /**
+     * Animateurs whose longest run of consecutive worked days exceeds
+     * {@link #JOURS_CONSECUTIFS_TRAVAILLES_MAX}, with the run's length to hand
+     * — the body {@link #maxJoursConsecutifsTravailles} and
+     * {@link #maxJoursConsecutifsTravaillesDur} share, so the two forms can
+     * never disagree on what « six days in a row » counts. The toggle stays at
+     * each caller, with its own name spelled out, as every other rule of this
+     * package does: absent, the hard one is off (it is in
+     * {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}) and the medium one on.
+     */
+    private static BiConstraintStream<Animateur, Map<Integer, Boolean>> sequencesTropLongues(
+            UniConstraintStream<PosteAffectation> postes) {
+        return postes.filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
                 // Each worked day, and whether it still holds a seat ahead of
                 // now: a run of days entirely worked is history, a run that
                 // reaches into tomorrow is charged with its past days counted
@@ -690,11 +760,7 @@ public final class QualiteConstraints {
                         PosteAffectation::getAnimateur,
                         ConstraintCollectors.toMap(
                                 poste -> poste.getCreneau().getJour(), PastSeats::reproachable, Boolean::logicalOr))
-                .filter((animateur, jours) -> longestReproachableRun(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
-                .penalize(
-                        HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
-                .asConstraint("maxJoursConsecutifsTravailles");
+                .filter((animateur, jours) -> longestReproachableRun(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX);
     }
 
     /**

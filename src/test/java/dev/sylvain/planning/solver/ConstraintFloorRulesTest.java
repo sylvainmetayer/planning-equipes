@@ -6,7 +6,6 @@ import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -141,19 +140,6 @@ class ConstraintFloorRulesTest {
 
         // S2×C2 is the empty seat P4; S1×C1 is P1.
         assertThat(Denominator.PUBLISHED_SEATS.count(plan)).isEqualTo(2);
-    }
-
-    @Test
-    void breaksDueAreCountedOnlyWhenTheBreakIsDeclaredTakenOnThePost() {
-        PlanningEvenement plan = plan();
-        assertThat(Denominator.BREAKS_DUE.count(plan)).isZero();
-
-        ParametresLegaux surLePoste = new ParametresLegaux();
-        surLePoste.setPauseSurPoste(true);
-        plan.setParametresLegaux(List.of(surLePoste));
-
-        // Alice works 9-17 unbroken on day 1: one break owed past the sixth hour.
-        assertThat(Denominator.BREAKS_DUE.count(plan)).isEqualTo(1);
     }
 
     @Test

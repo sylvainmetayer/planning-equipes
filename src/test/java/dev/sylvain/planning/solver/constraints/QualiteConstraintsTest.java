@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -734,6 +735,69 @@ class QualiteConstraintsTest extends ConstraintTestBase {
             postes[index++] = poste(standStrat, jourConsecutif(i), a1);
         }
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
+    }
+
+    // --- maxJoursConsecutifsTravaillesDur (issue #31) -----------------------
+
+    /**
+     * The hard form of the same ceiling. It is in
+     * {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}, so an edition that
+     * never mentions it enforces nothing — which is what the third test below
+     * pins, and what a plain-Java harness handing the solver no toggle at all
+     * must also see.
+     */
+    private static final ConstraintToggle JOURS_DAFFILEE_EN_DUR =
+            new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true);
+
+    private Object[] joursConsecutifsToggled(Animateur animateur, int jours, ConstraintToggle toggle) {
+        Object[] facts = new Object[toggle == null ? jours : jours + 1];
+        for (int i = 0; i < jours; i++) {
+            facts[i] = poste(standStrat, jourConsecutif(i), animateur);
+        }
+        if (toggle != null) {
+            facts[jours] = toggle;
+        }
+        return facts;
+    }
+
+    @Test
+    void septJoursConsecutifsSontUnEcartDurQuandLaRegleEstAllumee() {
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(referentMajeur("A1"), 7, JOURS_DAFFILEE_EN_DUR))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void sixJoursConsecutifsNeCoutentRienMemeEnDur() {
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(referentMajeur("A1"), 6, JOURS_DAFFILEE_EN_DUR))
+                .penalizesBy(0);
+    }
+
+    /**
+     * Absent from the edition, absent from the score: seven days in a row cost
+     * nothing here, and keep costing their medium point on
+     * {@code maxJoursConsecutifsTravailles}, which stays on by default. The two
+     * halves in one test, because it is the pair that is the decision.
+     */
+    @Test
+    void sansToggleLaRegleDureEstMuetteEtLaRegleSoupleTientTouteSeule() {
+        Animateur a1 = referentMajeur("A1");
+
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(a1, 7, null))
+                .penalizesBy(0);
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(a1, 7, null))
+                .penalizesBy(1);
+    }
+
+    /** Twelve days in a row are six over the ceiling: the penalty follows the breach. */
+    @Test
+    void laPenaliteDureSuitLaLongueurDeLaSerie() {
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(referentMajeur("A1"), 12, JOURS_DAFFILEE_EN_DUR))
+                .penalizesBy(6);
     }
 
     /* ------------------ eviterFermeturePuisOuverture (#78) ------------------ */
