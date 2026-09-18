@@ -95,11 +95,11 @@ export class PrereglageDialog {
     };
     this.enregistrement.set(true);
     try {
-      const ecrit =
+      const written =
         this.editingId !== null
           ? await this.api.updatePrereglage(this.editingId, prereglage)
           : await this.api.createPrereglage(prereglage);
-      this.dialogRef.close(ecrit);
+      this.dialogRef.close(written);
     } catch (error) {
       this.crud.reportError(error);
     } finally {

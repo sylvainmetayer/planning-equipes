@@ -191,9 +191,9 @@ export class OuverturesPage {
   /** The consignes (issue #4): a day under one is marked, and its closed cells are not anomalies. */
   private readonly consignes = inject(ConsignesStore);
   /** Date → the badge's wording, for the days under a consigne. */
-  protected readonly consigneParDate = computed(() => {
+  protected readonly consigneByDate = computed(() => {
     const badges = new Map<string, { libelle: string; motif: string }>();
-    for (const [date, consigne] of this.consignes.parDate()) {
+    for (const [date, consigne] of this.consignes.byDate()) {
       badges.set(date, {
         libelle: $localize`:@@ouvertures.badge.consigne:fermé de ${bandeLabel(consigne.fermetureDebut, consigne.fermetureFin)}:bande: par consigne`,
         motif: consigne.motif,
@@ -1054,7 +1054,7 @@ export class OuverturesPage {
         return $localize`:@@ouvertures.etat.partiel:Ouvert partiellement`;
       case 'FERME':
         // Closed on a day under consigne is the consigne's doing, not a hole in the schedule.
-        return this.consigneParDate().has(cellule.date)
+        return this.consigneByDate().has(cellule.date)
           ? $localize`:@@ouvertures.etat.fermeParConsigne:Fermé par consigne`
           : $localize`:@@ouvertures.etat.ferme:Fermé`;
     }
@@ -1063,7 +1063,7 @@ export class OuverturesPage {
   /** The cell's class, muted rather than alarming when the consigne is what closed it. */
   protected classeCelluleConsigne(cellule: CelluleJourOuverture): string {
     const classe = classeCellule(cellule);
-    return cellule.etat === 'FERME' && this.consigneParDate().has(cellule.date)
+    return cellule.etat === 'FERME' && this.consigneByDate().has(cellule.date)
       ? `${classe} etat-ferme-consigne`
       : classe;
   }

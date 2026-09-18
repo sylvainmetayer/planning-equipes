@@ -148,8 +148,8 @@
             }
             <ng-container i18n="@@journeesTypes.appliquer.action">Appliquer le calendrier</ng-container>
           </button>
-          @if (datesEnEcart().size > 0) {
-            <span class="journees-types-ecarts" i18n="@@journeesTypes.ecarts">{{ datesEnEcart().size }} date(s) en écart avec leur journée type</span>
+          @if (driftingDates().size > 0) {
+            <span class="journees-types-ecarts" i18n="@@journeesTypes.ecarts">{{ driftingDates().size }} date(s) en écart avec leur journée type</span>
           }
         </div>
       </section>

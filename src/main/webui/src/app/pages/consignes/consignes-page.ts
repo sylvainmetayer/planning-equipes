@@ -35,10 +35,10 @@ import { ConsigneLeveeData, ConsigneLeveeDialog } from './consigne-levee-dialog'
 import {
   bandeLabel,
   datesCandidates,
-  estPassee,
+  isPast,
   fenetreLabel,
   libelleDate,
-  nombreStandsOuverts,
+  openedStandsCount,
 } from './consignes';
 import { PrereglageDialog, PrereglageDialogData } from './prereglage-dialog';
 
@@ -113,7 +113,7 @@ export class ConsignesPage {
   protected readonly aujourdhui = this.store.aujourdhui;
   protected readonly prereglages = computed(() => this.store.etat()?.prereglages ?? []);
   /** The date a link named (`?date=`), highlighted in the table. */
-  protected readonly dateCible = signal(this.route.snapshot.queryParamMap.get('date'));
+  protected readonly targetDate = signal(this.route.snapshot.queryParamMap.get('date'));
 
   protected readonly lignes = computed<LigneConsigne[]>(() => {
     const aujourdhui = this.aujourdhui();
@@ -128,10 +128,10 @@ export class ConsignesPage {
         bande: bandeLabel(consigne.fermetureDebut, consigne.fermetureFin),
         motif: consigne.motif,
         prereglage: consigne.prereglage ?? '',
-        standsOuverts: nombreStandsOuverts(consigne),
+        standsOuverts: openedStandsCount(consigne),
         fenetres: consigne.fenetres.map(fenetreLabel).join(', '),
         indicateur: indicateurs.get(consigne.date) ?? null,
-        passee: estPassee(consigne.date, aujourdhui),
+        passee: isPast(consigne.date, aujourdhui),
         consigne,
       }));
   });
@@ -155,8 +155,8 @@ export class ConsignesPage {
     consumeQueryParam('nouvelle', async () => {
       await Promise.all([referentiel, this.store.reload()]);
       const date = this.route.snapshot.queryParamMap.get('date');
-      const existante = date ? this.store.consigneDe(date) : null;
-      this.ouvrirForm(existante ? 'modifier' : 'poser', existante, date ? [date] : []);
+      const existante = date ? this.store.consigneOf(date) : null;
+      this.openForm(existante ? 'modifier' : 'poser', existante, date ? [date] : []);
     });
   }
 
@@ -164,29 +164,29 @@ export class ConsignesPage {
     await this.store.reload();
   }
 
-  protected bandeDe(prereglage: PrereglageConsigne): string {
+  protected bandOf(prereglage: PrereglageConsigne): string {
     return bandeLabel(prereglage.fermetureDebut, prereglage.fermetureFin);
   }
 
-  protected fenetresDe(prereglage: PrereglageConsigne): string {
+  protected windowsOf(prereglage: PrereglageConsigne): string {
     return prereglage.fenetres.map(fenetreLabel).join(', ');
   }
 
   /* ------------------------------ the consignes ------------------------------ */
 
   protected poser(): void {
-    this.ouvrirForm('poser', null, []);
+    this.openForm('poser', null, []);
   }
 
   protected modifier(ligne: LigneConsigne): void {
-    this.ouvrirForm('modifier', ligne.consigne, [ligne.date]);
+    this.openForm('modifier', ligne.consigne, [ligne.date]);
   }
 
   protected prolonger(ligne: LigneConsigne): void {
-    this.ouvrirForm('prolonger', ligne.consigne, []);
+    this.openForm('prolonger', ligne.consigne, []);
   }
 
-  private ouvrirForm(
+  private openForm(
     mode: ModeConsigne,
     consigne: ConsigneEdition | null,
     datesInitiales: string[],
@@ -222,7 +222,7 @@ export class ConsignesPage {
             variant: 'success',
             timeout: 6000,
           });
-          void this.apresEcriture();
+          void this.afterWrite();
         }
       });
   }
@@ -251,19 +251,19 @@ export class ConsignesPage {
             variant: 'success',
             timeout: 6000,
           });
-          void this.apresEcriture();
+          void this.afterWrite();
         }
       });
   }
 
   /** A consigne adds or removes créneaux: the grid the rest of the page reads has moved too. */
-  private async apresEcriture(): Promise<void> {
+  private async afterWrite(): Promise<void> {
     await Promise.all([this.store.reload(), this.crud.reload()]);
   }
 
   /* ------------------------------ the presets ------------------------------ */
 
-  protected ouvrirPrereglage(prereglage: PrereglageConsigne | null): void {
+  protected openPrereglage(prereglage: PrereglageConsigne | null): void {
     if (this.editingLocked()) {
       return;
     }
@@ -274,14 +274,14 @@ export class ConsignesPage {
     ref
       .afterClosed()
       .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe((ecrit) => {
-        if (ecrit) {
+      .subscribe((written) => {
+        if (written) {
           void this.store.reload();
         }
       });
   }
 
-  protected async supprimerPrereglage(prereglage: PrereglageConsigne): Promise<void> {
+  protected async deletePrereglage(prereglage: PrereglageConsigne): Promise<void> {
     if (this.editingLocked()) {
       return;
     }

@@ -41,7 +41,7 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="tonal" type="button" [disabled]="dates().length === 0 || chargement() || editingLocked()" (click)="previsualiser()">
+  <button matButton="tonal" type="button" [disabled]="dates().length === 0 || chargement() || editingLocked()" (click)="preview()">
     <mat-icon>preview</mat-icon>
     <ng-container i18n="@@consignes.form.apercu">Aperçu</ng-container>
   </button>

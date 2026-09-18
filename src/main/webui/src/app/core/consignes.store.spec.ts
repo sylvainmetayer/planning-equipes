@@ -57,14 +57,14 @@ describe('ConsignesStore', () => {
 
     expect(store.etat()).toBeNull();
     expect(store.aujourdhui()).toBeNull();
-    expect(store.consigneDe('2026-07-11')).toBeNull();
+    expect(store.consigneOf('2026-07-11')).toBeNull();
 
     await store.reload();
 
     expect(store.aujourdhui()).toBe('2026-07-10');
-    expect(store.consigneDe('2026-07-11')?.motif).toBe('Canicule');
-    expect(store.consigneDe('2026-07-13')).toBeNull();
-    expect(store.consigneDe(null)).toBeNull();
+    expect(store.consigneOf('2026-07-11')?.motif).toBe('Canicule');
+    expect(store.consigneOf('2026-07-13')).toBeNull();
+    expect(store.consigneOf(null)).toBeNull();
     expect([...store.creneauxAjoutes()].sort()).toEqual([41, 42, 43]);
     expect(store.error()).toBe('');
   });

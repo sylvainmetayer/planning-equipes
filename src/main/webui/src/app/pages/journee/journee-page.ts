@@ -184,7 +184,7 @@ export class JourneePage {
   protected readonly dateCourante = computed(() => this.jourCourant()?.date ?? null);
   /** True when the day on screen is under a consigne (issue #4): the selector says so. */
   protected readonly sousConsigne = computed(
-    () => this.consignes.consigneDe(this.dateCourante()) !== null,
+    () => this.consignes.consigneOf(this.dateCourante()) !== null,
   );
   /** What the page says after a reading was recorded or withdrawn. */
   protected readonly message = signal('');

@@ -67,7 +67,7 @@
           </li>
         }
       </ul>
-      <button matButton type="button" (click)="ajouterFenetre()">
+      <button matButton type="button" (click)="addWindow()">
         <mat-icon>add</mat-icon>
         <ng-container i18n="@@consignes.form.fenetre.ajouter">Ajouter une fenêtre</ng-container>
       </button>
@@ -77,7 +77,7 @@
       <h3 id="consigne-form-stands-titre">
         <ng-container i18n="@@consignes.form.stands.title">Stands à rouvrir</ng-container>
         @if (stands().length > 0) {
-          <span class="consigne-form-compteur" i18n="@@consignes.form.stands.compteur">{{ nombreCoches() }} coché(s) sur {{ stands().length }}</span>
+          <span class="consigne-form-compteur" i18n="@@consignes.form.stands.compteur">{{ tickedCount() }} coché(s) sur {{ stands().length }}</span>
         }
       </h3>
       @if (chargementStands()) {
@@ -85,7 +85,7 @@
       }
       @if (dates().length === 0) {
         <p class="empty-hint" i18n="@@consignes.form.stands.sansDate">Choisissez une date : les stands sont lus pour la première date et la bande.</p>
-      } @else if (creneauxDuJour() === 0) {
+      } @else if (creneauxOfDay() === 0) {
         <p class="empty-hint" i18n="@@consignes.form.stands.sansCreneau">Aucun créneau ce jour-là : la bande ne ferme rien, seules les fenêtres ajoutent des créneaux.</p>
       }
       @if (stands().length > 0) {
@@ -132,19 +132,19 @@
         <div class="consigne-form-masse">
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-masse-fenetres">
             <mat-label i18n="@@consignes.form.masse.fenetres">Fenêtres pour la sélection</mat-label>
-            <input matInput name="fenetresEnMasse" placeholder="18:00-22:00, 09:00-12:00" autocomplete="off" spellcheck="false"
-                   [ngModel]="fenetresEnMasse()" (ngModelChange)="fenetresEnMasse.set($event)" />
+            <input matInput name="bulkWindows" placeholder="18:00-22:00, 09:00-12:00" autocomplete="off" spellcheck="false"
+                   [ngModel]="bulkWindows()" (ngModelChange)="bulkWindows.set($event)" />
           </mat-form-field>
           <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-masse-effectif">
             <mat-label i18n="@@consignes.form.masse.effectif">Effectif</mat-label>
-            <input matInput name="effectifEnMasse" type="number" min="1" [ngModel]="effectifEnMasse()" (ngModelChange)="effectifEnMasse.set($event)" />
+            <input matInput name="bulkEffectif" type="number" min="1" [ngModel]="bulkEffectif()" (ngModelChange)="bulkEffectif.set($event)" />
           </mat-form-field>
-          <button matButton="tonal" type="button" [disabled]="!peutAppliquerEnMasse()" (click)="appliquerEnMasse()"
+          <button matButton="tonal" type="button" [disabled]="!canApplyBulk()" (click)="applyBulk()"
                   i18n-matTooltip="@@consignes.form.masse.tooltip" matTooltip="Sur les stands cochés affichés ; un champ vide ne change rien">
             <mat-icon>playlist_add_check</mat-icon>
             <ng-container i18n="@@consignes.form.masse.appliquer">Appliquer à la sélection</ng-container>
           </button>
-          @if (fenetresEnMasseLues() === null) {
+          @if (bulkWindowsParsed() === null) {
             <p class="field-error" role="alert" i18n="@@consignes.form.masse.erreur">Fenêtres illisibles : écrivez « 18:00-22:00, 09:00-12:00 », ou « 20:00- » jusqu'à minuit.</p>
           }
         </div>
@@ -183,7 +183,7 @@
                     }
                   </ul>
                   <div class="consigne-stand-actions">
-                    <button matButton type="button" (click)="ajouterFenetreStand(stand)">
+                    <button matButton type="button" (click)="addStandWindow(stand)">
                       <mat-icon>add</mat-icon>
                       <ng-container i18n="@@consignes.form.fenetre.ajouter">Ajouter une fenêtre</ng-container>
                     </button>
@@ -218,7 +218,7 @@
               <li i18n="@@consignes.apercu.sieges">Sièges : {{ jour.siegesAvant }} → {{ jour.siegesApres }} · minutes : {{ jour.minutesAvant }} → {{ jour.minutesApres }}</li>
               <li i18n="@@consignes.apercu.stands">{{ jour.standsOuverts }} stand(s) rouvert(s) · entrants : {{ jour.standsEntrants.length }} · sortants : {{ jour.standsSortants.length }}</li>
               @if (jour.creneauxAAjouter.length > 0) {
-                <li i18n="@@consignes.apercu.creneauxAAjouter">Créneaux à ajouter : {{ fenetresTexte(jour.creneauxAAjouter) }}</li>
+                <li i18n="@@consignes.apercu.creneauxAAjouter">Créneaux à ajouter : {{ windowsText(jour.creneauxAAjouter) }}</li>
               }
               @if (jour.creneauxARetirer.length > 0) {
                 <li i18n="@@consignes.apercu.creneauxARetirer">Créneaux à retirer : {{ vacations(jour.creneauxARetirer) }}</li>
@@ -252,11 +252,11 @@
 </mat-dialog-content>
 <mat-dialog-actions align="end">
   <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
-  <button matButton="tonal" type="button" [disabled]="invalide() || chargementApercu() || editingLocked()" (click)="previsualiser()">
+  <button matButton="tonal" type="button" [disabled]="invalide() || chargementApercu() || editingLocked()" (click)="preview()">
     <mat-icon>preview</mat-icon>
     <ng-container i18n="@@consignes.form.apercu">Aperçu</ng-container>
   </button>
-  <button matButton="filled" type="button" [disabled]="invalide() || enregistrement() || editingLocked()" (click)="enregistrer()">
+  <button matButton="filled" type="button" [disabled]="invalide() || enregistrement() || editingLocked()" (click)="save()">
     <mat-icon>save</mat-icon>
     <ng-container i18n="@@consignes.form.enregistrer">Enregistrer</ng-container>
   </button>

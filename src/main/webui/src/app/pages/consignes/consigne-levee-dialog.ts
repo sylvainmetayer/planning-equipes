@@ -60,7 +60,7 @@ export class ConsigneLeveeDialog {
     this.apercu.set(null);
   }
 
-  protected async previsualiser(): Promise<void> {
+  protected async preview(): Promise<void> {
     if (this.dates().length === 0 || this.chargement()) {
       return;
     }
