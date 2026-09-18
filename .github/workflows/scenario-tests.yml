@@ -81,8 +81,18 @@ concurrency:
 
 jobs:
   scenario:
-    # Même garde de fork que tests.yml, conservée pour la même raison.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Même garde de fork que tests.yml, conservée pour la même raison. Et,
+    # parce que `pom.xml` est dans la liste des chemins, une PR Renovate n'y
+    # passe que si elle porte le label `timefold` ou `quarkus` (renovate.json
+    # les pose sur ces deux groupes) : un bump de sentry ou de jackson ne
+    # change rien à la convergence, et coûtait dix minutes pour le dire.
+    if: >-
+      (github.event_name != 'pull_request'
+        || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'pull_request'
+        || github.event.pull_request.user.login != 'renovate[bot]'
+        || contains(github.event.pull_request.labels.*.name, 'timefold')
+        || contains(github.event.pull_request.labels.*.name, 'quarkus'))
     runs-on: ubuntu-latest
     # Ces scénarios résolvent jusqu'à la faisabilité dure, avec des budgets de
     # 480 s à 900 s par test. Un runner GitHub est plus lent que la machine de

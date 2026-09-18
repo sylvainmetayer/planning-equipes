@@ -1,10 +1,38 @@
 name: Tests
 
+# Une poussée qui ne touche que la documentation ne joue pas la suite — sauf
+# les fichiers qu'un test relit (DocumentationStructuralTest, McpToolNamesTest)
+# ou que ce job compare à ce qu'il produit (le contrat OpenAPI, l'inventaire
+# des licences). Sur une PR, GitHub évalue ce filtre sur l'ensemble des
+# fichiers de la PR, pas sur la dernière poussée : une PR mixte code + docs
+# rejoue tout à chaque poussée, et c'est voulu. Aucun check n'est requis sur
+# main aujourd'hui ; le jour où l'un le devient, il faudra un job toujours
+# présent qui conclut succès quand ce filtre a sauté le vrai.
 on:
   push:
     branches:
       - main
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**/*.md'
+      - 'docs/schema/**'
+      - 'docs/licences-tierces.md'
+      - 'docs/api.md'
+      - 'docs/contraintes.md'
+      - 'docs/mcp.md'
+      - 'AGENTS.md'
   pull_request:
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**/*.md'
+      - 'docs/schema/**'
+      - 'docs/licences-tierces.md'
+      - 'docs/api.md'
+      - 'docs/contraintes.md'
+      - 'docs/mcp.md'
+      - 'AGENTS.md'
   workflow_dispatch:
 
 permissions:
@@ -62,6 +90,25 @@ jobs:
           path: src/main/webui/node_modules
           key: quinoa-node-modules-${{ runner.os }}-${{ hashFiles('src/main/webui/package-lock.json') }}
 
+      # Un fichier commité que le dépôt ne produit plus est un fichier qu'on
+      # cesse de croire. L'inventaire des licences tierces
+      # (docs/licences-tierces.md) est la réponse donnée à qui déploie l'image
+      # — il ne vaut que s'il décrit les dépendances d'aujourd'hui, et Renovate
+      # en change chaque semaine. Ce job est le seul qui puisse le vérifier :
+      # il faut Maven pour résoudre le côté Java, et `node` est préinstallé sur
+      # les runners GitHub, donc le côté npm suit sans installation (le script
+      # lit le verrou, pas node_modules).
+      #
+      # Avant les tests, pas après : le contrôle ne demande que la résolution
+      # des dépendances, une minute, et un bump Maven le fait échouer par
+      # construction — huit PR Renovate ont attendu treize minutes de tests
+      # pour l'apprendre. Sur ces branches, licences-renovate.yml régénère le
+      # fichier et relance ce workflow.
+      - name: Check the committed third-party licence inventory
+        run: |
+          ./mvnw -B --no-transfer-progress license:add-third-party
+          node src/main/webui/scripts/licences-tierces.js --check
+
       # Unit tests, then integration tests (*IT) against the packaged app
       # (skipITs defaults to true in the pom). PostgreSQL is provided by
       # Quarkus dev services (Docker is preinstalled on GitHub runners), so no
@@ -95,19 +142,6 @@ jobs:
             diff target/openapi/openapi.json docs/schema/openapi.json | head -40
             exit 1
           fi
-
-      # Même famille que le contrôle ci-dessus : un fichier commité que le
-      # dépôt ne produit plus est un fichier qu'on cesse de croire. L'inventaire
-      # des licences tierces (docs/licences-tierces.md) est la réponse donnée à
-      # qui déploie l'image — il ne vaut que s'il décrit les dépendances
-      # d'aujourd'hui, et Renovate en change chaque semaine. Ce job est le seul
-      # qui puisse le vérifier : il faut Maven pour résoudre le côté Java, et
-      # `node` est préinstallé sur les runners GitHub, donc le côté npm suit
-      # sans installation (le script lit le verrou, pas node_modules).
-      - name: Check the committed third-party licence inventory
-        run: |
-          ./mvnw -B --no-transfer-progress license:add-third-party
-          node src/main/webui/scripts/licences-tierces.js --check
 
       - name: Upload test reports
         if: always()

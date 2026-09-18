@@ -1,0 +1,96 @@
+# L'inventaire des licences tierces, régénéré sur les PR Renovate.
+#
+# `docs/licences-tierces.md` est un fichier généré que le job `test` compare à
+# ce que le dépôt produit : un bump Maven ou npm le fait échouer par
+# construction, et huit PR Renovate ont été rouges d'un coup pour cette seule
+# raison — un verdict connu d'avance, obtenu après treize minutes de tests.
+# Renovate saurait le faire lui-même (`postUpgradeTasks`), mais seulement
+# auto-hébergé. Ici, ce job régénère le fichier et le commite sur la branche.
+#
+# Deux pièges, tous deux tenus :
+#   - une poussée faite avec GITHUB_TOKEN ne déclenche aucun workflow, sauf
+#     `workflow_dispatch` : le job relance donc lui-même les workflows de la
+#     PR sur la branche, et annule ceux qui tournaient encore sur le commit
+#     que sa poussée vient de remplacer ;
+#   - Renovate cesse de mettre à jour une branche que quelqu'un d'autre a
+#     touchée : `gitIgnoredAuthors` de renovate.json lui dit d'ignorer cet
+#     auteur-ci, et une rebase de sa part recrée la branche sans ce commit,
+#     que ce job repose alors.
+name: Licences tierces
+
+on:
+  pull_request:
+    paths:
+      - 'pom.xml'
+      - 'src/main/webui/package-lock.json'
+
+permissions:
+  contents: write
+  actions: write
+
+concurrency:
+  group: licences-${{ github.head_ref }}
+  cancel-in-progress: true
+
+jobs:
+  regenerer:
+    # Renovate seulement, et depuis ce dépôt : un humain qui bump une
+    # dépendance régénère le fichier lui-même, comme la doc le dit.
+    if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'renovate[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout the branch of the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # La branche elle-même, pas le commit de fusion que `pull_request`
+          # extrait par défaut : c'est là que le commit doit aller.
+          ref: ${{ github.head_ref }}
+
+      - name: Set up Java
+        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
+        with:
+          distribution: temurin
+          java-version: '25'
+          cache: maven
+
+      # Les deux générateurs, dans l'ordre que docs/developpement.md prescrit :
+      # Maven résout le côté Java, le script lit le verrou npm sans
+      # node_modules — `node` est préinstallé sur le runner.
+      - name: Regenerate the inventory
+        run: |
+          ./mvnw -B --no-transfer-progress license:add-third-party
+          node src/main/webui/scripts/licences-tierces.js
+
+      - name: Commit the inventory and replay the checks on it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+          SUPERSEDED_SHA: ${{ github.event.pull_request.head.sha }}
+          SOLVER_BUMP: ${{ contains(github.event.pull_request.labels.*.name, 'timefold') || contains(github.event.pull_request.labels.*.name, 'quarkus') }}
+        run: |
+          if git diff --quiet -- docs/licences-tierces.md; then
+            echo "L'inventaire est déjà celui de ces dépendances."
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m "chore(deps): régénérer l'inventaire des licences tierces" -- docs/licences-tierces.md
+          git push origin "HEAD:$BRANCH"
+
+          # Ce qui tournait encore sur le commit remplacé ne prouve plus rien.
+          for wf in tests.yml e2e.yml securite.yml scenario-tests.yml; do
+            for status in in_progress queued; do
+              gh run list --workflow "$wf" --commit "$SUPERSEDED_SHA" --status "$status" \
+                --json databaseId --jq '.[].databaseId' \
+                | xargs -r -n1 gh run cancel || true
+            done
+          done
+
+          for wf in tests.yml e2e.yml securite.yml; do
+            gh workflow run "$wf" --ref "$BRANCH"
+          done
+          if [ "$SOLVER_BUMP" = "true" ]; then
+            gh workflow run scenario-tests.yml --ref "$BRANCH"
+          fi
