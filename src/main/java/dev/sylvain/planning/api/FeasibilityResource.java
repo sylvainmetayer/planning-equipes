@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -30,6 +31,9 @@ public class FeasibilityResource {
     @Inject
     FeasibilityAnalyzer feasibilityAnalyzer;
 
+    @Inject
+    PlanningPersistenceService persistence;
+
     /**
      * Créneaux are read from the <em>active</em> group only, like
      * {@code PlanningService} does when it builds a problem: créneaux of the
@@ -39,7 +43,11 @@ public class FeasibilityResource {
      * on a créneau, so it has to see what the recurring horaires expand to.
      * The ad hoc constraints come along so contradictory exceptions — refused
      * at entry time, but possibly recorded before that check existed or
-     * imported together — are reported here too (issue #84).
+     * imported together — are reported here too (issue #84). The locks come
+     * along for the same kind of deadlock: a forced assignment naming only
+     * people whose schedule is frozen over its whole scope. The seats of the
+     * persisted plan are read only when a lock exists —
+     * {@link FeasibilityAnalyzer.LockContext} carries them as a supplier.
      */
     @GET
     public FeasibilityReport analyze() {
@@ -48,6 +56,8 @@ public class FeasibilityResource {
                 referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
-                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()));
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                new FeasibilityAnalyzer.LockContext(
+                        referenceDataService.listVerrouillages(), persistence::loadPlacesTenues));
     }
 }

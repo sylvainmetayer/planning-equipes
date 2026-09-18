@@ -613,6 +613,16 @@ public class ReferenceDataService implements ReferenceData {
         return verrouillages.list();
     }
 
+    /**
+     * Records the lock, then reports what is worth a second look: seats it
+     * freezes that already break a hard rule. The write happens first and is
+     * never undone by what comes back — see {@link Avertissement}.
+     */
+    public WrittenVerrouillage writeVerrouillage(VerrouillagePlanning verrouillage) {
+        VerrouillagePlanning ecrit = createVerrouillage(verrouillage);
+        return new WrittenVerrouillage(ecrit, coherence.onVerrouillage(ecrit));
+    }
+
     public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
         return verrouillages.create(verrouillage);
     }

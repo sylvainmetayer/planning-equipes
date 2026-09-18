@@ -40,8 +40,7 @@ public class VerrouillageResource {
      */
     @POST
     public Response create(VerrouillagePlanning verrouillage) {
-        return Response.ok(referenceDataService.createVerrouillage(verrouillage))
-                .build();
+        return Response.ok(referenceDataService.writeVerrouillage(verrouillage)).build();
     }
 
     @DELETE

@@ -115,7 +115,9 @@ public class PlanningMcpTools {
     @Tool(
             description = "Diagnostic de faisabilité avant résolution : calcul de capacité en Java pur (aucune "
                     + "résolution lancée) sur les données de référence courantes, listant les causes structurellement "
-                    + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires.",
+                    + "bloquantes : créneau en sous-effectif, contraintes ad hoc contradictoires, affectation forcée "
+                    + "intenable (jour déclaré indisponible, règle dure sur toutes les places de sa portée, "
+                    + "emploi du temps verrouillé).",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -129,7 +131,9 @@ public class PlanningMcpTools {
                 referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
-                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()));
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                new FeasibilityAnalyzer.LockContext(
+                        referenceDataService.listVerrouillages(), persistenceService::loadPlacesTenues));
     }
 
     @Tool(
