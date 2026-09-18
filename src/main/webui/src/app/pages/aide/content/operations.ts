@@ -113,7 +113,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.jourJ.portee:Marquer quelqu'un absent le déclare indisponible sur les créneaux restants de la journée, et sur ceux-là seulement. Un créneau est restant tant qu'il n'est pas terminé, celui en cours compris. Les créneaux passés ne sont jamais touchés : la personne les a réellement tenus.`,
+          text: $localize`:@@aide.jourJ.portee:Marquer quelqu'un absent le déclare indisponible sur les créneaux restants de la journée, et sur ceux-là seulement. Un créneau est restant tant qu'il n'est pas terminé, celui en cours compris. Les créneaux passés ne sont jamais touchés : la personne les a réellement tenus. Le siège d'un créneau déjà commencé n'est pas vidé non plus — le passé ne se modifie plus, l'absence y est seulement enregistrée.`,
         },
         {
           kind: 'paragraph',
