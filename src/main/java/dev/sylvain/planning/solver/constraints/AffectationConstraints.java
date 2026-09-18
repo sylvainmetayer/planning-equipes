@@ -63,29 +63,25 @@ public final class AffectationConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "plafondCreneauxParTypologie")
                 .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
                 .flatten(poste -> poste.getStand().getTypologiesProposees())
+                // Counted, not reproached (ADR 0044): the past seats stay in
+                // the count, and the cap is charged only while the animateur
+                // still holds a seat of that typologie ahead of now — folded
+                // into the group, next to the count.
                 .groupBy(
                         (poste, typologie) -> poste.getAnimateur(),
                         (poste, typologie) -> typologie,
-                        ConstraintCollectors.countBi())
-                // Counted, not reproached (ADR 0044): the past seats stay in
-                // the count, and the cap is charged only while the animateur
-                // still holds a seat of that typologie ahead of now.
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, typologie, tenus) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.filtering((animateur, typologie, tenus, poste) -> PastSeats.reproachable(poste)
-                                && poste.getStand() != null
-                                && poste.getStand().getTypologiesProposees().contains(typologie)))
+                        PastSeats.withAhead(ConstraintCollectors.countBi()))
                 .join(
                         QuotaTypologie.class,
-                        Joiners.equal((animateur, typologie, tenus) -> typologie, QuotaTypologie::getTypologie))
-                .filter((animateur, typologie, tenus, plafond) -> tenus > plafond.getMaxCreneaux())
+                        Joiners.equal((animateur, typologie, tenue) -> typologie, QuotaTypologie::getTypologie))
+                .filter((animateur, typologie, tenue, plafond) ->
+                        tenue.ahead() > 0 && tenue.value() > plafond.getMaxCreneaux())
                 // Reshaped before penalising so the écart reads as a sentence:
                 // who, which typologie and its cap, how many they hold.
                 .map(
-                        (animateur, typologie, tenus, plafond) -> animateur,
-                        (animateur, typologie, tenus, plafond) -> plafond,
-                        (animateur, typologie, tenus, plafond) -> tenus)
+                        (animateur, typologie, tenue, plafond) -> animateur,
+                        (animateur, typologie, tenue, plafond) -> plafond,
+                        (animateur, typologie, tenue, plafond) -> tenue.value())
                 .penalize(HardMediumSoftScore.ONE_HARD, (animateur, plafond, tenus) -> tenus - plafond.getMaxCreneaux())
                 .asConstraint("plafondCreneauxParTypologie");
     }

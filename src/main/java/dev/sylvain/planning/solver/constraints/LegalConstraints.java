@@ -471,22 +471,18 @@ public final class LegalConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursTravaillesParSemaine")
                 .filter(poste -> poste.getAnimateur() != null && horaireConnu(poste))
+                // The days already worked count; the week is charged only
+                // while one of its seats is still ahead (ADR 0044), folded
+                // next to the count.
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.countDistinct(
-                                poste -> poste.getCreneau().getDate()))
-                // The days already worked count; the week is charged only
-                // while one of its seats is still ahead (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, semaine, jours) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.equal((animateur, semaine, jours) -> semaine, LegalConstraints::semaineIsoOrNull),
-                        Joiners.filtering((animateur, semaine, jours, poste) -> PastSeats.reproachable(poste)))
-                .filter((animateur, semaine, jours) -> jours > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
-                .penalize(
-                        HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) -> jours - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                        PastSeats.withAhead(ConstraintCollectors.countDistinct(
+                                poste -> poste.getCreneau().getDate())))
+                .filter((animateur, semaine, jours) ->
+                        jours.ahead() > 0 && jours.value() > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE)
+                .penalize(HardMediumSoftScore.ONE_HARD, (animateur, semaine, jours) ->
+                        (int) (jours.value() - PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE))
                 .asConstraint("maxJoursTravaillesParSemaine");
     }
 
@@ -569,23 +565,21 @@ public final class LegalConstraints {
                 .filter(poste -> poste.getAnimateur() != null
                         && horaireConnu(poste)
                         && poste.getAnimateur().isMineurOn(poste.getCreneau().getDate()))
+                // Same reading as maxJoursTravaillesParSemaine (ADR 0044): the
+                // week is charged only while one of its seats is still ahead,
+                // folded next to the set.
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.toSet(poste -> poste.getCreneau().getDate()))
-                // Same reading as maxJoursTravaillesParSemaine (ADR 0044): the
-                // week is charged only while one of its seats is still ahead.
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, semaine, jours) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.equal((animateur, semaine, jours) -> semaine, LegalConstraints::semaineIsoOrNull),
-                        Joiners.filtering((animateur, semaine, jours, poste) -> PastSeats.reproachable(poste)))
-                .filter((animateur, semaine, jours) ->
-                        longestRunOfFreeDays(jours) < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE)
+                        PastSeats.withAhead(ConstraintCollectors.toSet(
+                                poste -> poste.getCreneau().getDate())))
+                .filter((animateur, semaine, jours) -> jours.ahead() > 0
+                        && longestRunOfFreeDays(jours.value())
+                                < PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE)
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, jours) ->
-                                PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE - longestRunOfFreeDays(jours))
+                        (animateur, semaine, jours) -> PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
+                                - longestRunOfFreeDays(jours.value()))
                 .asConstraint("reposHebdomadaireMineur");
     }
 
@@ -633,18 +627,6 @@ public final class LegalConstraints {
         return poste.getCreneau() != null
                 && poste.getCreneau().getDate() != null
                 && poste.getCreneau().getHeureDebut() != null;
-    }
-
-    /**
-     * The ISO week of the seat's timeslot, for the {@code ifExists} joiners
-     * that ask whether a week still holds a seat ahead of now (ADR 0044);
-     * {@code null} on a seat without a dated timeslot, which then joins no
-     * group.
-     */
-    static String semaineIsoOrNull(PosteAffectation poste) {
-        return poste.getCreneau() == null || poste.getCreneau().getDate() == null
-                ? null
-                : poste.getCreneau().semaineIso();
     }
 
     /**
@@ -1057,29 +1039,28 @@ public final class LegalConstraints {
      * bracket. Week attribution convention: a créneau is attributed in full to
      * the ISO week of its start date, see {@code Creneau.semaineIso()}.
      */
-    private static QuadConstraintBuilder<Animateur, String, Long, ParametresLegaux, HardMediumSoftScore> weeklyCap(
-            UniConstraintStream<PosteAffectation> postes,
-            BiPredicate<Animateur, LocalDate> bracket,
-            ToIntFunction<ParametresLegaux> cap) {
+    private static QuadConstraintBuilder<
+                    Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux, HardMediumSoftScore>
+            weeklyCap(
+                    UniConstraintStream<PosteAffectation> postes,
+                    BiPredicate<Animateur, LocalDate> bracket,
+                    ToIntFunction<ParametresLegaux> cap) {
         return postes.filter(poste -> poste.getAnimateur() != null
                         && poste.getCreneau() != null
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
+                // The hours already worked count; the week is charged only
+                // while one of its seats is still ahead (ADR 0044), folded
+                // next to the sum.
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().semaineIso(),
-                        ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes))
-                // The hours already worked count; the week is charged only
-                // while one of its seats is still ahead (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, semaine, duree) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.equal((animateur, semaine, duree) -> semaine, LegalConstraints::semaineIsoOrNull),
-                        Joiners.filtering((animateur, semaine, duree, poste) -> PastSeats.reproachable(poste)))
+                        PastSeats.withAhead(ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes)))
                 .join(ParametresLegaux.class)
-                .filter((animateur, semaine, dureeTotale, parametres) -> dureeTotale > cap.applyAsInt(parametres))
+                .filter((animateur, semaine, duree, parametres) ->
+                        duree.ahead() > 0 && duree.value() > cap.applyAsInt(parametres))
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
-                        (animateur, semaine, dureeTotale, parametres) -> dureeTotale - cap.applyAsInt(parametres));
+                        (animateur, semaine, duree, parametres) -> duree.value() - cap.applyAsInt(parametres));
     }
 
     /**

@@ -952,4 +952,61 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         new ParametresLegaux())
                 .penalizesBy(4 * 60);
     }
+
+    @Test
+    void twoFullWeeksAreHistoryOnceWorkedAndStillAPairWhileOneIsOpenWithNoMinuteDropped() {
+        // Each week reaches its 8 h in two 4 h seats: a merge that dropped
+        // minutes would read 4 h and see no full week at all.
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        postePasse(standStrat, creneauMatin, majeur),
+                        postePasse(standStrat, afternoon("J1-AM", 1, D1), majeur),
+                        postePasse(standStrat, matin("S2-MATIN", 8, SEMAINE_SUIVANTE), majeur),
+                        postePasse(standStrat, afternoon("S2-AM", 8, SEMAINE_SUIVANTE), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(0);
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        postePasse(standStrat, creneauMatin, majeur),
+                        postePasse(standStrat, afternoon("J1-AM", 1, D1), majeur),
+                        postePasse(standStrat, matin("S2-MATIN", 8, SEMAINE_SUIVANTE), majeur),
+                        poste(standStrat, afternoon("S2-AM", 8, SEMAINE_SUIVANTE), majeur),
+                        plafondHuitHeures)
+                .penalizesBy(1);
+    }
+
+    @Test
+    void aWeekWithoutItsWeeklyRestIsHistoryOnceWorkedAndChargedWhileASeatIsAheadWithThePastCounted() {
+        // Seven days 11:00-15:00: 780 min short (see the nominal case). All
+        // past: nothing. The Sunday still ahead: the six past days shape the
+        // rests all the same, and the same 780 min are charged.
+        Animateur majeur = referentMajeur("A1");
+        Object[] passes = new Object[7];
+        Object[] enCours = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            passes[i] = postePasse(standStrat, jourSemaine29(i), majeur);
+            enCours[i] = i < 6
+                    ? postePasse(standStrat, jourSemaine29(i), majeur)
+                    : poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("reposHebdomadaireMinimal").given(passes).penalizesBy(0);
+        verify("reposHebdomadaireMinimal").given(enCours).penalizesBy(35 * 60 - 22 * 60);
+    }
+
+    @Test
+    void sevenDaysWorkedAreHistoryButSixWorkedAndASeventhAheadAreCharged() {
+        Animateur majeur = referentMajeur("A1");
+        Object[] passes = new Object[7];
+        Object[] enCours = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            passes[i] = postePasse(standStrat, jourSemaine29(i), majeur);
+            enCours[i] = i < 6
+                    ? postePasse(standStrat, jourSemaine29(i), majeur)
+                    : poste(standStrat, jourSemaine29(i), majeur);
+        }
+        verify("maxJoursTravaillesParSemaine").given(passes).penalizesBy(0);
+        verify("maxJoursTravaillesParSemaine").given(enCours).penalizesBy(1);
+    }
 }

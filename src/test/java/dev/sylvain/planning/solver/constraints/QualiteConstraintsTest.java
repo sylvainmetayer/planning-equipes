@@ -1002,4 +1002,27 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         enCours[6] = poste(standStrat, jourConsecutif(6), a1);
         verify("maxJoursConsecutifsTravailles").given(enCours).penalizesBy(1);
     }
+
+    @Test
+    void anImbalanceBetweenSeatsAllWorkedIsHistoryAndOneReachingAheadIsChargedWithThePastWeighed() {
+        Animateur a1 = referentMajeur("A1");
+        verify("equilibrerCharge")
+                .given(
+                        postePasse(standStrat, creneauMatin, a1),
+                        postePasse(standStrat, creneauAprem, a1),
+                        postePasse(standStrat, matin("J2-MATIN", 2, D2), a1),
+                        postePasse(standStrat, afternoon("J2-AM", 2, D2), a1),
+                        postePasse(standWithStrategy("STAND-2"), creneauMatin, majeurAutonome("A2")))
+                .penalizesBy(0);
+        // The same four past seats of A1, one more ahead for A2: the balance
+        // reads five against one, not one against one.
+        verify("equilibrerCharge")
+                .given(
+                        postePasse(standStrat, creneauMatin, a1),
+                        postePasse(standStrat, creneauAprem, a1),
+                        postePasse(standStrat, matin("J2-MATIN", 2, D2), a1),
+                        postePasse(standStrat, afternoon("J2-AM", 2, D2), a1),
+                        poste(standWithStrategy("STAND-2"), creneauMatin, majeurAutonome("A2")))
+                .penalizesByMoreThan(0);
+    }
 }
