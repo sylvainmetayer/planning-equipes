@@ -89,8 +89,10 @@ public final class RepasConstraints {
                 .join(
                         FenetreRepas.class,
                         Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
-                .filter((animateur, date, postes, fenetre) ->
-                        CoupureRepas.of(postes, fenetre).manquante())
+                // A day entirely worked is not charged for the break it
+                // missed (ADR 0044); a day still under way is.
+                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
+                        && CoupureRepas.of(postes, fenetre).manquante())
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (animateur, date, postes, fenetre) ->
@@ -135,8 +137,8 @@ public final class RepasConstraints {
                 .join(
                         FenetreRepas.class,
                         Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
-                .filter((animateur, date, postes, fenetre) ->
-                        CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0)
+                .filter((animateur, date, postes, fenetre) -> PastSeats.reproachable(postes)
+                        && CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
                         (animateur, date, postes, fenetre) ->

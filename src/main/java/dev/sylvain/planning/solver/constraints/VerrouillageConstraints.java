@@ -46,7 +46,10 @@ public final class VerrouillageConstraints {
                         Joiners.equal(
                                 VerrouillagePlanning::getAnimateurId,
                                 poste -> poste.getAnimateur().getId()))
-                .filter((verrouillage, poste) -> !poste.isVerrouille())
+                // A past seat is pinned too, and stays out for the same
+                // reason; the explicit test keeps that true on an analysis of
+                // the persisted plan, which marks the past without pinning it.
+                .filter((verrouillage, poste) -> !poste.isVerrouille() && PastSeats.reproachable(poste))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurVerrouilleFige");
     }
@@ -74,7 +77,7 @@ public final class VerrouillageConstraints {
                         Joiners.equal(
                                 VerrouillagePlanning::getCreneauId,
                                 poste -> poste.getCreneau().getId()))
-                .filter((verrouillage, poste) -> !poste.isVerrouille())
+                .filter((verrouillage, poste) -> !poste.isVerrouille() && PastSeats.reproachable(poste))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("animateurVerrouilleCreneauFige");
     }

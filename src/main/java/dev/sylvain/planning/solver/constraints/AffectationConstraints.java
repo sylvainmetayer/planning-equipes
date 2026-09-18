@@ -67,6 +67,15 @@ public final class AffectationConstraints {
                         (poste, typologie) -> poste.getAnimateur(),
                         (poste, typologie) -> typologie,
                         ConstraintCollectors.countBi())
+                // Counted, not reproached (ADR 0044): the past seats stay in
+                // the count, and the cap is charged only while the animateur
+                // still holds a seat of that typologie ahead of now.
+                .ifExists(
+                        PosteAffectation.class,
+                        Joiners.equal((animateur, typologie, tenus) -> animateur, PosteAffectation::getAnimateur),
+                        Joiners.filtering((animateur, typologie, tenus, poste) -> PastSeats.reproachable(poste)
+                                && poste.getStand() != null
+                                && poste.getStand().getTypologiesProposees().contains(typologie)))
                 .join(
                         QuotaTypologie.class,
                         Joiners.equal((animateur, typologie, tenus) -> typologie, QuotaTypologie::getTypologie))
@@ -84,10 +93,11 @@ public final class AffectationConstraints {
     private Constraint posteDoitEtrePourvu(ConstraintFactory constraintFactory) {
         // forEach() excludes entities with a null planning variable value, so this
         // constraint (which specifically targets unassigned postes) must use
-        // forEachIncludingUnassigned() to actually see them.
+        // forEachIncludingUnassigned() to actually see them. A past hole is
+        // not charged (ADR 0044): nobody can be seated yesterday.
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "posteDoitEtrePourvu")
-                .filter(poste -> poste.getAnimateur() == null)
+                .filter(poste -> poste.getAnimateur() == null && PastSeats.reproachable(poste))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("posteDoitEtrePourvu");
     }
@@ -97,6 +107,7 @@ public final class AffectationConstraints {
                 .filter(poste -> {
                     Animateur animateur = poste.getAnimateur();
                     return animateur != null
+                            && PastSeats.reproachable(poste)
                             && poste.getCreneau() != null
                             && poste.getCreneau().getDate() != null
                             && animateur.isIndisponibleOn(poste.getCreneau().getDate());
@@ -139,7 +150,7 @@ public final class AffectationConstraints {
                         Joiners.equal(PosteAffectation::getAnimateur),
                         Joiners.lessThan(PosteAffectation::getId),
                         Joiners.overlapping(AffectationConstraints::debutCreneau, AffectationConstraints::finCreneau))
-                .filter((posteA, posteB) -> creneauHoraireConnu(posteB))
+                .filter((posteA, posteB) -> creneauHoraireConnu(posteB) && PastSeats.reproachable(posteA, posteB))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("pasDeChevauchementHoraire");
     }

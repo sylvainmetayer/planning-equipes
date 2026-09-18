@@ -223,4 +223,44 @@ class AffectationConstraintsTest extends ConstraintTestBase {
                         QUATRE_STRATEGIE)
                 .penalizesBy(1);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aPastHoleIsHistoryNotAViolation() {
+        verify("posteDoitEtrePourvu")
+                .given(postePasse(standStrat, creneauMatin, null))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void anOverlapBetweenTwoPastSeatsIsHistoryButOneReachingIntoTheFutureIsCharged() {
+        Animateur a1 = referentMajeur("A1");
+        Creneau chevauchant = creneau("J1-11-15", 1, D1, LocalTime.of(11, 0), LocalTime.of(15, 0));
+        verify("pasDeChevauchementHoraire")
+                .given(postePasse(standStrat, creneauMatin, a1), postePasse(standStrat, chevauchant, a1))
+                .penalizesBy(0);
+        verify("pasDeChevauchementHoraire")
+                .given(postePasse(standStrat, creneauMatin, a1), poste(standStrat, chevauchant, a1))
+                .penalizesBy(1);
+    }
+
+    @Test
+    void aQuotaCountsThePastSeatsAndIsChargedOnlyWhileASeatIsStillAhead() {
+        Animateur a1 = referentMajeur("A1");
+        QuotaTypologie plafond = new QuotaTypologie("STRATEGIE", 1);
+        // Two past seats over a cap of one: history.
+        verify("plafondCreneauxParTypologie")
+                .given(postePasse(standStrat, creneauMatin, a1), postePasse(standStrat, creneauAprem, a1), plafond)
+                .penalizesBy(0);
+        // The same two, plus a third still ahead: the past two count, and
+        // the whole breach is charged — the third seat is where it is paid.
+        verify("plafondCreneauxParTypologie")
+                .given(
+                        postePasse(standStrat, creneauMatin, a1),
+                        postePasse(standStrat, creneauAprem, a1),
+                        poste(standStrat, matin("J2-MATIN", 2, D2), a1),
+                        plafond)
+                .penalizesBy(2);
+    }
 }

@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -38,7 +39,10 @@ public final class AdHocConstraints {
     private Constraint indisponibiliteForcee(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "indisponibiliteForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE)
-                .join(PosteAffectation.class, Joiners.filtering(AdHocConstraints::violatesForcedIndisponibilite))
+                .join(
+                        PosteAffectation.class,
+                        Joiners.filtering((contrainte, poste) ->
+                                PastSeats.reproachable(poste) && violatesForcedIndisponibilite(contrainte, poste)))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("indisponibiliteForcee");
     }
@@ -77,8 +81,9 @@ public final class AdHocConstraints {
                                 poste -> poste.getAnimateur().getId()),
                         Joiners.equal(
                                 (contrainte, postePremier) -> postePremier.getCreneau(), PosteAffectation::getCreneau))
-                .filter((contrainte, postePremier, posteSecond) ->
-                        matchesScope(contrainte, postePremier) && matchesScope(contrainte, posteSecond))
+                .filter((contrainte, postePremier, posteSecond) -> PastSeats.reproachable(postePremier, posteSecond)
+                        && matchesScope(contrainte, postePremier)
+                        && matchesScope(contrainte, posteSecond))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("incompatibiliteAdHoc");
     }
@@ -109,7 +114,11 @@ public final class AdHocConstraints {
                                 poste -> poste.getAnimateur().getId()),
                         Joiners.equal(
                                 (contrainte, postePremier) -> postePremier.getCreneau(), PosteAffectation::getCreneau))
-                .filter((contrainte, postePremier, posteSecond) -> surMemeStand(postePremier, posteSecond)
+                // The same past rule as the penalties (ADR 0044): a reward on
+                // a pair already worked is a constant no move can act on, and
+                // it would only inflate the score the analyses compare.
+                .filter((contrainte, postePremier, posteSecond) -> PastSeats.reproachable(postePremier, posteSecond)
+                        && surMemeStand(postePremier, posteSecond)
                         && matchesScope(contrainte, postePremier)
                         && matchesScope(contrainte, posteSecond))
                 .reward(HardMediumSoftScore.ONE_SOFT)
@@ -153,12 +162,38 @@ public final class AdHocConstraints {
         return animateur == null ? null : animateur.getId();
     }
 
+    /**
+     * Unsatisfied while a seat of its scope is still ahead of now — or while
+     * its scope holds no seat at all, which is what a forced assignment on a
+     * vacation the grid does not carry looks like, and stays a violation to
+     * read on the Problèmes page. What is <em>not</em> charged (ADR 0044) is
+     * the third case, a scope whose every seat is past: a forced assignment
+     * on a timeslot already worked without it is history, not a hole the
+     * solver can fill. That case is the {@link #forcedAssignmentsInThePast}
+     * stream, excluded by an {@code ifNotExists} on the fact itself.
+     */
     private Constraint affectationForcee(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(ContrainteAdHoc.class), "affectationForcee")
                 .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
+                .ifNotExists(forcedAssignmentsInThePast(constraintFactory), Joiners.equal(ContrainteAdHoc::getId))
                 .ifNotExists(PosteAffectation.class, Joiners.filtering(this::satisfiesForcedAffectation))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("affectationForcee");
+    }
+
+    /** The forced assignments whose scope holds seats, every one of them past. */
+    private static UniConstraintStream<ContrainteAdHoc> forcedAssignmentsInThePast(
+            ConstraintFactory constraintFactory) {
+        return constraintFactory
+                .forEach(ContrainteAdHoc.class)
+                .filter(contrainte -> contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)
+                .ifExistsIncludingUnassigned(
+                        PosteAffectation.class,
+                        Joiners.filtering((contrainte, poste) -> poste.isPasse() && matchesScope(contrainte, poste)))
+                .ifNotExistsIncludingUnassigned(
+                        PosteAffectation.class,
+                        Joiners.filtering((contrainte, poste) ->
+                                PastSeats.reproachable(poste) && matchesScope(contrainte, poste)));
     }
 
     /**
