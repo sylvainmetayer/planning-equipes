@@ -20,11 +20,14 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.journal.ChampsModifies;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -61,7 +64,7 @@ public class ReferenceDataService implements ReferenceData {
     StandService stands;
 
     @Inject
-    dev.sylvain.planning.service.consigne.ConsigneRepository consignes;
+    ConsigneRepository consignes;
 
     @Inject
     EmplacementService emplacements;
@@ -342,6 +345,17 @@ public class ReferenceDataService implements ReferenceData {
 
     public int deleteCreneaux(Collection<Long> ids) {
         return creneaux.deleteInBulk(ids);
+    }
+
+    /** {@link #writeCreneau(Creneau)} inside the caller's transaction (ADR 0028) — the consigne's one grid write. */
+    public WrittenCreneau writeCreneau(Connection connection, Creneau creneau) throws SQLException {
+        Creneau ecrit = creneaux.create(connection, creneau);
+        return new WrittenCreneau(ecrit, coherence.onCreneau(ecrit));
+    }
+
+    /** {@link #deleteCreneaux} inside the caller's transaction. */
+    public int deleteCreneaux(Connection connection, Collection<Long> ids) throws SQLException {
+        return creneaux.deleteInBulk(connection, ids);
     }
 
     public ReferenceUsage countCreneauUsages(List<String> ids) {

@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -323,6 +324,90 @@ class ImportScenarioConsignesTest {
     }
 
     /** A hand-written preset carries no id and a consigne on a past date is accepted: the import is not the screen. */
+    /** An end written {@code 00:00} is « jusqu'à minuit », stored as the open end the tables know. */
+    @Test
+    void midnightAsAnEndInTheFileLandsAsAnOpenEnd() {
+        importFile(BASE + """
+
+                prereglagesConsigne:
+                  - nom: Journée entière
+                    fermetureDebut: "12:00"
+                    fermetureFin: "00:00"
+                    motif: Fermeture totale
+                    fenetres:
+                      - debut: "08:00"
+                        fin: "10:00"
+
+                consignes:
+                  - date: 2033-07-08
+                    fermetureDebut: "12:00"
+                    fermetureFin: "16:00"
+                    motif: Orage
+                    fenetres:
+                      - debut: "18:00"
+                        fin: "00:00"
+                    ouvertures:
+                      - standId: STAND-A
+                        debut: "18:00"
+                        fin: "00:00"
+                """);
+
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes[0].fenetres[0].fin", nullValue())
+                .body("consignes[0].ouvertures[0].fin", nullValue())
+                .body("prereglages[0].fermetureFin", nullValue());
+    }
+
+    /** The file is held to the screen's meal rules: both bounds of a window or none, and room for the break. */
+    @Test
+    void aMealBlockStatingHalfAWindowOrAWindowTooShortIsRefused() {
+        String demiFenetre = BASE + """
+
+                consignes:
+                  - date: 2033-07-08
+                    fermetureDebut: "12:00"
+                    fermetureFin: "16:00"
+                    motif: Orage
+                    repas:
+                      midiDebut: "12:00"
+                      justification: repas pris pendant la fermeture
+                """;
+        given().header(HEADER, EDITION)
+                .contentType("text/plain; charset=UTF-8")
+                .body(demiFenetre)
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("deux bornes"));
+
+        String tropCourte = BASE + """
+
+                consignes:
+                  - date: 2033-07-08
+                    fermetureDebut: "12:00"
+                    fermetureFin: "16:00"
+                    motif: Orage
+                    repas:
+                      soirDebut: "19:00"
+                      soirFin: "19:30"
+                      justification: repas pris pendant la fermeture
+                """;
+        given().header(HEADER, EDITION)
+                .contentType("text/plain; charset=UTF-8")
+                .body(tropCourte)
+                .when()
+                .post("/api/reference-data/import-scenario-fichier")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("plus courte que la coupure"));
+        given().header(HEADER, EDITION).when().get("/api/consignes").then().body("consignes", hasSize(0));
+    }
+
     @Test
     void aHandWrittenFileOnAPastDateIsImported() {
         importFile(BASE.replace("2033-07-08", "2020-07-08") + """

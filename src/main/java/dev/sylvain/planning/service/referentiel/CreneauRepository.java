@@ -180,18 +180,21 @@ public class CreneauRepository {
      * confirmation.</p>
      */
     public void deleteCreneau(Long id) {
-        scope.write("Failed to delete timeslot " + id, connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(
-                    connection, "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id = ?")) {
-                ps.setLong(2, id);
-                ps.executeUpdate();
-            }
-            try (PreparedStatement ps =
-                    scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ? AND id = ?")) {
-                ps.setLong(2, id);
-                ps.executeUpdate();
-            }
-        });
+        scope.write("Failed to delete timeslot " + id, connection -> deleteCreneauTx(connection, id));
+    }
+
+    /** Same delete, inside the caller's transaction: a consigne lays its dates down as one write or none. */
+    void deleteCreneauTx(Connection connection, Long id) throws SQLException {
+        try (PreparedStatement ps = scope.prepareScoped(
+                connection, "DELETE FROM poste_affectation WHERE edition_id = ? AND creneau_id = ?")) {
+            ps.setLong(2, id);
+            ps.executeUpdate();
+        }
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ? AND id = ?")) {
+            ps.setLong(2, id);
+            ps.executeUpdate();
+        }
     }
 
     /** Inserts a new timeslot row; the generated id is set back onto {@code creneau} and returned. */

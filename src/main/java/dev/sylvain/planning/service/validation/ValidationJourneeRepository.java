@@ -107,16 +107,21 @@ public class ValidationJourneeRepository {
         if (jours.isEmpty()) {
             return 0;
         }
-        return scope.writeAndReturn("Failed to withdraw the validations of the days a solve moved", connection -> {
-            int retirees = 0;
-            try (PreparedStatement ps = scope.prepareScoped(
-                    connection, "DELETE FROM validation_journee WHERE edition_id = ? AND jour = ?")) {
-                for (LocalDate jour : jours) {
-                    ps.setObject(2, jour);
-                    retirees += ps.executeUpdate();
-                }
+        return scope.writeAndReturn(
+                "Failed to withdraw the validations of the days a solve moved",
+                connection -> deleteJours(connection, jours));
+    }
+
+    /** Same withdrawal, inside the caller's transaction: a consigne lays its dates down as one write or none. */
+    public int deleteJours(Connection connection, Collection<LocalDate> jours) throws SQLException {
+        int retirees = 0;
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "DELETE FROM validation_journee WHERE edition_id = ? AND jour = ?")) {
+            for (LocalDate jour : jours) {
+                ps.setObject(2, jour);
+                retirees += ps.executeUpdate();
             }
-            return retirees;
-        });
+        }
+        return retirees;
     }
 }

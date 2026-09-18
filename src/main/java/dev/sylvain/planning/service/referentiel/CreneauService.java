@@ -7,6 +7,8 @@ import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -48,6 +50,19 @@ public class CreneauService {
         Creneau cree = repository.insertCreneau(creneau);
         changeTracker.markModified();
         return cree;
+    }
+
+    /**
+     * Same as {@link #create}, inside the caller's transaction (ADR 0028): a
+     * consigne adds the créneaux its openings need together with its rows,
+     * or not at all. The caller marks the referential modified once its
+     * transaction has committed.
+     */
+    public Creneau create(Connection connection, Creneau creneau) throws SQLException {
+        CreneauValidator.check(creneau);
+        creneau.setId(null);
+        repository.insertCreneauTx(connection, creneau);
+        return creneau;
     }
 
     public Creneau update(Long id, Creneau creneau) {
@@ -131,6 +146,17 @@ public class CreneauService {
             if (supprimes > 0) {
                 changeTracker.markModified();
             }
+        }
+        return supprimes;
+    }
+
+    /** Same as {@link #deleteInBulk}, inside the caller's transaction — see {@link #create(Connection, Creneau)}. */
+    public int deleteInBulk(Connection connection, Collection<Long> ids) throws SQLException {
+        solverJobs.refuseIfSolving();
+        int supprimes = 0;
+        for (Long id : ids) {
+            repository.deleteCreneauTx(connection, id);
+            supprimes++;
         }
         return supprimes;
     }

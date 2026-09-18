@@ -8,6 +8,8 @@ import dev.sylvain.planning.service.journal.JournalActionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.Collection;
@@ -135,16 +137,25 @@ public class ValidationJourneeService {
      * band are gone.
      */
     public int withdrawDays(Collection<LocalDate> jours) {
-        if (jours == null || jours.isEmpty()) {
-            return 0;
-        }
+        return repository.deleteJours(daysValidatedAmong(jours));
+    }
+
+    /** Same as {@link #withdrawDays(Collection)}, inside the caller's transaction (ADR 0028). */
+    public int withdrawDays(Connection connection, Collection<LocalDate> jours) throws SQLException {
+        return repository.deleteJours(connection, daysValidatedAmong(jours));
+    }
+
+    private Set<LocalDate> daysValidatedAmong(Collection<LocalDate> jours) {
         Set<LocalDate> valides = new LinkedHashSet<>();
+        if (jours == null || jours.isEmpty()) {
+            return valides;
+        }
         for (ValidationJournee validation : repository.list()) {
             if (jours.contains(validation.jour())) {
                 valides.add(validation.jour());
             }
         }
-        return repository.deleteJours(valides);
+        return valides;
     }
 
     /** The days the edition's timeslots span — the only ones a reading can name. */

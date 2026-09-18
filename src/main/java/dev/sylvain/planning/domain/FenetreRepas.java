@@ -103,17 +103,23 @@ public record FenetreRepas(
             int duree = repas.coupureMinutes() != null
                     ? repas.coupureMinutes()
                     : parametres == null ? 0 : parametres.getCoupureRepasMinutes();
+            // The edition's window steps aside only for a dated one that holds
+            // up: a restated window the break does not fit in (refused at
+            // entry, but a row may predate the rule) must not leave the date
+            // with no rule at all.
             if (repas.midiDebut() != null || repas.midiFin() != null || repas.coupureMinutes() != null) {
-                exclusions.computeIfAbsent(MIDI, k -> new LinkedHashSet<>()).add(consigne.date());
                 LocalTime debut = repas.midiDebut() != null ? repas.midiDebut() : coalesce(parametres, true, true);
                 LocalTime fin = repas.midiFin() != null ? repas.midiFin() : coalesce(parametres, true, false);
-                add(datees, MIDI, debut, fin, duree, true, consigne.date());
+                if (add(datees, MIDI, debut, fin, duree, true, consigne.date())) {
+                    exclusions.computeIfAbsent(MIDI, k -> new LinkedHashSet<>()).add(consigne.date());
+                }
             }
             if (repas.soirDebut() != null || repas.soirFin() != null || repas.coupureMinutes() != null) {
-                exclusions.computeIfAbsent(SOIR, k -> new LinkedHashSet<>()).add(consigne.date());
                 LocalTime debut = repas.soirDebut() != null ? repas.soirDebut() : coalesce(parametres, false, true);
                 LocalTime fin = repas.soirFin() != null ? repas.soirFin() : coalesce(parametres, false, false);
-                add(datees, SOIR, debut, fin, duree, false, consigne.date());
+                if (add(datees, SOIR, debut, fin, duree, false, consigne.date())) {
+                    exclusions.computeIfAbsent(SOIR, k -> new LinkedHashSet<>()).add(consigne.date());
+                }
             }
         }
         if (datees.isEmpty() && exclusions.isEmpty()) {
@@ -186,7 +192,8 @@ public record FenetreRepas(
         add(fenetres, libelle, debut, fin, dureeMinutes, auPlusTard, null);
     }
 
-    private static void add(
+    /** Adds the window when it can be honoured; says whether it was. */
+    private static boolean add(
             List<FenetreRepas> fenetres,
             String libelle,
             LocalTime debut,
@@ -195,12 +202,13 @@ public record FenetreRepas(
             boolean auPlusTard,
             LocalDate date) {
         if (debut == null || fin == null || !fin.isAfter(debut) || dureeMinutes <= 0) {
-            return;
+            return false;
         }
         if (fin.toSecondOfDay() - debut.toSecondOfDay() < dureeMinutes * 60) {
-            return;
+            return false;
         }
         fenetres.add(new FenetreRepas(libelle, debut, fin, dureeMinutes, auPlusTard, date, Set.of()));
+        return true;
     }
 
     /** Minutes from midnight of {@link #debut()} — the unit every window computation works in. */

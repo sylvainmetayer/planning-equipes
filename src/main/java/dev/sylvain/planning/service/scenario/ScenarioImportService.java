@@ -248,6 +248,7 @@ public class ScenarioImportService {
                 prereglage.fermetureFin(),
                 prereglage.motif(),
                 prereglage.fenetres(),
+                prereglage.creeLe(),
                 prereglage.modifieLe(),
                 prereglage.repas());
     }

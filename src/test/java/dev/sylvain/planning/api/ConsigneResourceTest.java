@@ -8,12 +8,25 @@ import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 
 import dev.sylvain.planning.config.DevMode;
+import dev.sylvain.planning.domain.ConsigneEdition;
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PrereglageConsigne;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import io.quarkus.arc.ClientProxy;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import jakarta.inject.Inject;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -32,6 +45,12 @@ class ConsigneResourceTest {
 
     private static final String JOUR = "2026-07-08";
     private static final String VEILLE = "2026-07-01";
+
+    @Inject
+    ReferenceDataService referenceData;
+
+    @Inject
+    ConsigneRepository consigneRepository;
 
     /** A server launched with {@code quarkus:dev}, as far as the guard can tell. */
     private static final class DevModeActif extends DevMode {
@@ -405,6 +424,189 @@ class ConsigneResourceTest {
                 .then()
                 .statusCode(204);
         given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+    }
+
+    /**
+     * « Jusqu'à minuit » is typed {@code 00:00} as readily as left empty, and
+     * the tables only know the empty form: both must land, and read back the
+     * same. Before this, {@code 00:00} passed the service and died on the
+     * {@code debut < fin} check of the table — a 500 from the screen.
+     */
+    @Test
+    void midnightAsAnEndIsStoredAsAnOpenEnd() {
+        Map<String, Object> corps = demande(List.of());
+        corps.put("fermetureFin", "00:00");
+        corps.put("fenetres", List.of(Map.of("debut", "08:00", "fin", "10:00")));
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+        given().when().get("/api/consignes").then().statusCode(200).body("consignes[0].fermetureFin", equalTo(null));
+
+        Map<String, Object> ouverture = ouverture("STAND-STRAT");
+        ouverture.put("fin", "00:00");
+        corps = demande(List.of(ouverture));
+        corps.put("fenetres", List.of(Map.of("debut", "18:00", "fin", "00:00")));
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("[0].creneauxAAjouter", hasSize(1))
+                .body("[0].creneauxAAjouter[0].fin", equalTo(null));
+        given().when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes[0].fermetureFin", equalTo("16:00:00"))
+                .body("consignes[0].fenetres[0].fin", equalTo(null))
+                .body("consignes[0].ouvertures[0].fin", equalTo(null));
+        // The créneau the opening needed runs to midnight, as any créneau crossing it does.
+        assertThat(creneaux().getList("heureDebut")).contains("18:00:00");
+
+        given().contentType("application/json")
+                .body(Map.of(
+                        "nom", "Journée entière",
+                        "fermetureDebut", "12:00",
+                        "fermetureFin", "00:00",
+                        "motif", "Fermeture totale",
+                        "fenetres", List.of(Map.of("debut", "14:00", "fin", "00:00"))))
+                .when()
+                .post("/api/consignes/prereglages")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("entièrement dans la bande"));
+        given().contentType("application/json")
+                .body(Map.of(
+                        "nom", "Journée entière",
+                        "fermetureDebut", "12:00",
+                        "fermetureFin", "00:00",
+                        "motif", "Fermeture totale",
+                        "fenetres", List.of(Map.of("debut", "08:00", "fin", "10:00"))))
+                .when()
+                .post("/api/consignes/prereglages")
+                .then()
+                .statusCode(200)
+                .body("fermetureFin", equalTo(null))
+                .body("fenetres[0].fin", equalTo("10:00:00"));
+    }
+
+    /** A meal window the break does not fit in would leave the date with no rule at all: refused. */
+    @Test
+    void aRestatedMealWindowShorterThanTheBreakIsRefused() {
+        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        Map<String, Object> repas = new HashMap<>();
+        repas.put("soirDebut", "19:00");
+        repas.put("soirFin", "19:30");
+        repas.put("justification", "Les équipes mangent pendant la fermeture");
+        corps.put("repas", repas);
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("plus courte que la coupure"));
+        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+    }
+
+    /**
+     * Five dates in one gesture, the third refused by the database: the
+     * créneaux and rows of the first two must not survive the failure — the
+     * screen would otherwise show two dates under consigne out of a request
+     * that reported none.
+     */
+    @Test
+    void aFailureOnTheThirdOfFiveDatesLeavesNothingBehind() {
+        LocalDate jour = LocalDate.parse(JOUR);
+        for (int i = 1; i <= 4; i++) {
+            referenceData.createCreneau(
+                    new Creneau(null, 0, jour.plusDays(i), LocalTime.of(9, 0), LocalTime.of(13, 0)));
+        }
+        int creneauxAvant = creneaux().getList("id").size();
+        ConsigneRepository real = ClientProxy.unwrap(consigneRepository);
+        QuarkusMock.installMockForType(new FailingOnThirdSave(real), ConsigneRepository.class);
+
+        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        corps.put(
+                "dates",
+                List.of(
+                        JOUR,
+                        jour.plusDays(1).toString(),
+                        jour.plusDays(2).toString(),
+                        jour.plusDays(3).toString(),
+                        jour.plusDays(4).toString()));
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(500);
+
+        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+        assertThat(creneaux().getList("id")).hasSize(creneauxAvant);
+        assertThat(creneaux().getList("heureDebut")).doesNotContain("18:00:00");
+    }
+
+    /** The real repository, except that the third consigne written in a transaction fails. */
+    private static final class FailingOnThirdSave extends ConsigneRepository {
+        private final ConsigneRepository real;
+        private int saves;
+
+        FailingOnThirdSave(ConsigneRepository real) {
+            this.real = real;
+        }
+
+        @Override
+        public void save(Connection connection, ConsigneEdition consigne) throws SQLException {
+            if (++saves == 3) {
+                throw new IllegalStateException("the third date fails");
+            }
+            real.save(connection, consigne);
+        }
+
+        @Override
+        public void save(ConsigneEdition consigne) {
+            real.save(consigne);
+        }
+
+        @Override
+        public List<ConsigneEdition> list() {
+            return real.list();
+        }
+
+        @Override
+        public Optional<ConsigneEdition> find(LocalDate date) {
+            return real.find(date);
+        }
+
+        @Override
+        public Set<Long> creneauxAjoutes() {
+            return real.creneauxAjoutes();
+        }
+
+        @Override
+        public boolean delete(LocalDate date) {
+            return real.delete(date);
+        }
+
+        @Override
+        public List<PrereglageConsigne> listPrereglages() {
+            return real.listPrereglages();
+        }
+
+        @Override
+        public void savePrereglage(PrereglageConsigne prereglage) {
+            real.savePrereglage(prereglage);
+        }
+
+        @Override
+        public boolean deletePrereglage(String id) {
+            return real.deletePrereglage(id);
+        }
     }
 
     @Test

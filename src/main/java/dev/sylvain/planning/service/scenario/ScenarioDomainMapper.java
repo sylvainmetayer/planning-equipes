@@ -432,7 +432,7 @@ final class ScenarioDomainMapper {
                 edition(scenario),
                 contraintes(scenario.contraintes()),
                 journeesTypes(scenario.journeesTypes()),
-                prereglagesConsigne(scenario.prereglagesConsigne()),
+                prereglagesConsigne(scenario.prereglagesConsigne(), coupureRepasMinutes(scenario)),
                 consignes(scenario));
     }
 
@@ -446,12 +446,14 @@ final class ScenarioDomainMapper {
      * naming créneaux of the file, and a reason as soon as the meal windows
      * are restated. The ids of the added créneaux are left empty here — the
      * file has none — and travel beside the consigne as day-and-hours keys.
+     * An end written {@code 00:00} lands as an open end, as on the screen.
      */
     static Optional<List<ConsigneScenario>> consignes(ScenarioDto scenario) {
         List<ConsigneDto> dtos = scenario.consignes();
         if (dtos == null) {
             return Optional.empty();
         }
+        int coupureMinutes = coupureRepasMinutes(scenario);
         Set<String> standsDuFichier = new HashSet<>();
         for (StandDto stand : required(scenario.stands(), "stands")) {
             standsDuFichier.add(stand.id());
@@ -489,7 +491,7 @@ final class ScenarioDomainMapper {
                     ouvertures.add(new ConsigneEdition.Ouverture(
                             ouverture.standId(),
                             required(ouverture.debut(), entree + ".ouvertures.debut"),
-                            ouverture.fin(),
+                            ConsigneEdition.openEnd(ouverture.fin()),
                             ouverture.effectif()));
                 }
             }
@@ -512,7 +514,7 @@ final class ScenarioDomainMapper {
                     new ConsigneEdition(
                             date,
                             dto.fermetureDebut(),
-                            dto.fermetureFin(),
+                            ConsigneEdition.openEnd(dto.fermetureFin()),
                             motif,
                             dto.prereglage() == null || dto.prereglage().isBlank() ? null : dto.prereglage(),
                             fenetresConsigne(dto.fenetres(), entree),
@@ -520,7 +522,7 @@ final class ScenarioDomainMapper {
                             List.of(),
                             null,
                             null,
-                            repasConsigne(dto.repas(), entree)),
+                            repasConsigne(dto.repas(), coupureMinutes, entree)),
                     creneauxAjoutes));
         }
         return Optional.of(consignes);
@@ -531,7 +533,8 @@ final class ScenarioDomainMapper {
      * id gets one when the import writes it; two presets of one name would be
      * refused by the screen, so they are refused here too.
      */
-    static Optional<List<PrereglageConsigne>> prereglagesConsigne(List<PrereglageConsigneDto> dtos) {
+    static Optional<List<PrereglageConsigne>> prereglagesConsigne(
+            List<PrereglageConsigneDto> dtos, int coupureMinutes) {
         if (dtos == null) {
             return Optional.empty();
         }
@@ -550,11 +553,12 @@ final class ScenarioDomainMapper {
                     dto.id() == null || dto.id().isBlank() ? null : dto.id(),
                     nom,
                     dto.fermetureDebut(),
-                    dto.fermetureFin(),
+                    ConsigneEdition.openEnd(dto.fermetureFin()),
                     requiredName(dto.motif(), entree + ".motif"),
                     fenetresConsigne(dto.fenetres(), entree),
                     null,
-                    repasConsigne(dto.repas(), entree)));
+                    null,
+                    repasConsigne(dto.repas(), coupureMinutes, entree)));
         }
         return Optional.of(prereglages);
     }
@@ -570,14 +574,31 @@ final class ScenarioDomainMapper {
         List<ConsigneEdition.Fenetre> fenetres = new ArrayList<>();
         if (dtos != null) {
             for (FenetreConsigneDto dto : dtos) {
-                fenetres.add(new ConsigneEdition.Fenetre(required(dto.debut(), entree + ".fenetres.debut"), dto.fin()));
+                fenetres.add(new ConsigneEdition.Fenetre(required(dto.debut(), entree + ".fenetres.debut"), dto.fin())
+                        .normalised());
             }
         }
         return fenetres;
     }
 
-    /** {@code null} when the block restates nothing; a block that does must say why. */
-    private static ConsigneEdition.RepasConsigne repasConsigne(RepasConsigneDto dto, String entree) {
+    /**
+     * The meal break the file's consignes are judged against: the one its
+     * {@code parametresLegaux:} section states, else the default — a window
+     * restated shorter than that break could never be honoured.
+     */
+    private static int coupureRepasMinutes(ScenarioDto scenario) {
+        return parametresLegaux(scenario.parametresLegaux())
+                .orElseGet(ParametresLegaux::new)
+                .getCoupureRepasMinutes();
+    }
+
+    /**
+     * {@code null} when the block restates nothing; a block that does must say
+     * why, and then obeys the rules the screen holds a request to — both
+     * bounds of a window or none, a window long enough for the break.
+     */
+    private static ConsigneEdition.RepasConsigne repasConsigne(
+            RepasConsigneDto dto, int coupureMinutes, String entree) {
         if (dto == null) {
             return null;
         }
@@ -595,6 +616,7 @@ final class ScenarioDomainMapper {
             throw new BusinessError.Invalid(
                     entree + " surcharge les fenêtres repas sans dire pourquoi : repas.justification est obligatoire.");
         }
+        ConsigneService.checkRepas(repas, coupureMinutes, entree);
         return repas;
     }
 
