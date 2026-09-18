@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -12,6 +13,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
@@ -50,6 +52,9 @@ class ReferenceUsageResourceTest {
     @Inject
     PlanningPersistenceService persistence;
 
+    @Inject
+    ConsigneRepository consignes;
+
     /**
      * One stand, one animateur and one timeslot, referenced once each way:
      * a filled seat, an {@code AFFECTATION_FORCEE} naming all three at once,
@@ -80,6 +85,21 @@ class ReferenceUsageResourceTest {
         lock("USAGE-V-STAND", TypeVerrouillage.STAND, verrou -> verrou.setStandId(STAND));
         lock("USAGE-V-ANIM", TypeVerrouillage.ANIMATEUR, verrou -> verrou.setAnimateurId(ANIMATEUR));
         lock("USAGE-V-CRENEAU", TypeVerrouillage.CRENEAU, verrou -> verrou.setCreneauId(CRENEAU));
+
+        // A consigne (issue #4) opening the stand on that day, and marking the
+        // timeslot as the one it added — both cascade away with a delete.
+        consignes.save(new ConsigneEdition(
+                JOUR,
+                LocalTime.of(12, 0),
+                LocalTime.of(16, 0),
+                "Arrêté préfectoral",
+                null,
+                List.of(),
+                List.of(new ConsigneEdition.Ouverture(STAND, LocalTime.of(18, 0), LocalTime.of(20, 0), null)),
+                List.of(CRENEAU),
+                null,
+                null,
+                null));
     }
 
     @AfterEach
@@ -87,6 +107,7 @@ class ReferenceUsageResourceTest {
         // The plan goes first: its seats reference the stands and the timeslot,
         // and a failing delete here would report the wrong cause.
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
+        consignes.delete(JOUR);
         List.of("USAGE-V-STAND", "USAGE-V-ANIM", "USAGE-V-CRENEAU").forEach(referenceData::deleteVerrouillage);
         referenceData.deleteContrainteAdHoc("USAGE-C1");
         referenceData.deleteCreneaux(List.of(CRENEAU));
@@ -96,27 +117,31 @@ class ReferenceUsageResourceTest {
     }
 
     @Test
-    void unStandRapporteSesPostesPourvusSesContraintesEtSesVerrous() {
+    void aStandReportsItsFilledSeatsItsConstraintsItsLocksAndItsConsignes() {
         usages("/api/stands", STAND)
                 .body("affectations", equalTo(1))
                 .body("contraintesAdHoc", equalTo(1))
-                .body("verrouillages", equalTo(1));
+                .body("verrouillages", equalTo(1))
+                .body("consignes", equalTo(1));
     }
 
+    /** A consigne names stands and timeslots, never a person: the counter is there, and zero. */
     @Test
-    void unAnimateurRapporteSesPostesSesContraintesEtSesVerrous() {
+    void anAnimateurReportsItsSeatsItsConstraintsAndItsLocks() {
         usages("/api/animateurs", ANIMATEUR)
                 .body("affectations", equalTo(2))
                 .body("contraintesAdHoc", equalTo(1))
-                .body("verrouillages", equalTo(1));
+                .body("verrouillages", equalTo(1))
+                .body("consignes", equalTo(0));
     }
 
     @Test
-    void unCreneauRapporteSesPostesSesContraintesEtSesVerrous() {
+    void aCreneauReportsItsSeatsItsConstraintsItsLocksAndTheConsigneThatAddedIt() {
         usages("/api/creneaux", String.valueOf(CRENEAU))
                 .body("affectations", equalTo(2))
                 .body("contraintesAdHoc", equalTo(1))
-                .body("verrouillages", equalTo(1));
+                .body("verrouillages", equalTo(1))
+                .body("consignes", equalTo(1));
     }
 
     /** Zero is an answer, not an absence: the confirmation still has something to say. */

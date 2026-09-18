@@ -10,9 +10,10 @@ import java.sql.SQLException;
 import java.util.Collection;
 
 /**
- * Counts what references a referential entity, across the three tables that
- * outlive it: the seats of the persisted plan, the ad hoc constraints and the
- * locks.
+ * Counts what references a referential entity, across the tables that outlive
+ * it: the seats of the persisted plan, the ad hoc constraints, the locks —
+ * and, for a stand and a timeslot, the consignes (issue #4) that open the
+ * stand or added the timeslot, which a delete would cascade away in silence.
  *
  * <p>Deliberately not split per family. A "how much would this delete take
  * with it" question spans tables no single family repository owns, and the
@@ -65,8 +66,12 @@ public class ReferenceUsageRepository {
                             WHERE edition_id = ? AND stand_id = ANY(?)""");
                     PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
+                            WHERE edition_id = ? AND stand_id = ANY(?)""");
+                    PreparedStatement consignes = scope.prepareScoped(connection, """
+                            SELECT COUNT(DISTINCT date_jour) FROM consigne_edition_ouverture
                             WHERE edition_id = ? AND stand_id = ANY(?)""")) {
-                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
+                return new ReferenceUsage(
+                        count(seats, bound), count(adHoc, bound), count(locks, bound), count(consignes, bound));
             } finally {
                 bound.free();
             }
@@ -95,7 +100,8 @@ public class ReferenceUsageRepository {
                     PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
                             WHERE edition_id = ? AND animateur_id = ANY(?)""")) {
-                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
+                // A consigne names stands and timeslots, never a person.
+                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound), 0);
             } finally {
                 bound.free();
             }
@@ -118,8 +124,12 @@ public class ReferenceUsageRepository {
                             WHERE edition_id = ? AND creneau_id = ANY(?)""");
                     PreparedStatement locks = scope.prepareScoped(connection, """
                             SELECT COUNT(*) FROM verrouillage_planning
+                            WHERE edition_id = ? AND creneau_id = ANY(?)""");
+                    PreparedStatement consignes = scope.prepareScoped(connection, """
+                            SELECT COUNT(*) FROM consigne_edition_creneau
                             WHERE edition_id = ? AND creneau_id = ANY(?)""")) {
-                return new ReferenceUsage(count(seats, bound), count(adHoc, bound), count(locks, bound));
+                return new ReferenceUsage(
+                        count(seats, bound), count(adHoc, bound), count(locks, bound), count(consignes, bound));
             } finally {
                 bound.free();
             }
