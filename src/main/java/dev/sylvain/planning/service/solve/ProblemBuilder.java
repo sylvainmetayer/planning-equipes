@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.constraints.AdHocConstraints;
 import java.time.LocalDate;
@@ -178,6 +179,8 @@ public final class ProblemBuilder {
      *                     the persisted plan and pinned whatever their state
      *                     (ADR 0044); counted apart from {@code postesFiges},
      *                     which stays the seats frozen because still valid
+     * @param postesPassesVides among them, the seats holding nobody — a
+     *                     warning for the operator, never a charge
      */
     public record StatistiquesIncremental(
             int postesTotal,
@@ -185,7 +188,8 @@ public final class ProblemBuilder {
             int postesLiberes,
             int postesLiberesManuellement,
             int postesNouveaux,
-            int postesPasses) {}
+            int postesPasses,
+            int postesPassesVides) {}
 
     /**
      * An incremental re-solve problem: the planning to hand to the solver, how
@@ -211,13 +215,18 @@ public final class ProblemBuilder {
      * @param postesPasses     seats of timeslots already started, re-seeded
      *                         from the persisted plan and pinned (ADR 0044);
      *                         0 when the freeze is off or the event is ahead
+     * @param postesPassesVides among them, the seats holding nobody: a past
+     *                         hole is history, never charged — reported so the
+     *                         operator reads it rather than infers it from a
+     *                         zero hard
      */
     public record ProblemeReamorce(
             PlanningEvenement planning,
             Reamorcage reamorcage,
             int postesReamorces,
             int postesLiberes,
-            int postesPasses) {}
+            int postesPasses,
+            int postesPassesVides) {}
 
     /**
      * The problem of a full solve, started from the persisted plan when
@@ -236,6 +245,12 @@ public final class ProblemBuilder {
      * cold start, by name. The same building block serves a warm restart of
      * an interrupted job (#183) the day that exists: nothing here is specific
      * to the Solveur screen.</p>
+     *
+     * <p>Refused, whatever the mode, when every seat of the edition is
+     * already past (ADR 0044): the edition is over, or the simulated date
+     * landed after the event, and there is nothing to plan.</p>
+     *
+     * @throws BusinessError.Invalid when no seat is left ahead of now
      */
     public ProblemeReamorce buildFromReferenceData(Reamorcage reamorcage) {
         Reamorcage demande = reamorcage == null ? Reamorcage.AUTO : reamorcage;
@@ -257,13 +272,16 @@ public final class ProblemBuilder {
         }
         Map<String, List<String>> planPersiste = demande == Reamorcage.AUCUN ? null : affectationsPrecedentes;
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, planPersiste, moment);
+        FrozenPast.refuseIfNothingAhead(planning.getPostes());
         int postesPasses = countPast(planning.getPostes());
+        int postesPassesVides = FrozenPast.countEmptyPast(planning.getPostes());
         if (affectationsPrecedentes.isEmpty()) {
-            return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0, postesPasses);
+            return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0, postesPasses, postesPassesVides);
         }
         int[] bilan = reamorcerDepuisAffectations(
                 planning.getPostes(), animateurs, affectationsPrecedentes, planning.getContraintesAdHoc());
-        return new ProblemeReamorce(planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1], postesPasses);
+        return new ProblemeReamorce(
+                planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1], postesPasses, postesPassesVides);
     }
 
     /**
@@ -343,6 +361,11 @@ public final class ProblemBuilder {
      * the standing plan stable, not to re-optimise it. Re-opening a validated
      * area is therefore an explicit act — name it in {@code scope}, or run
      * a full solve with locks protecting what must survive it.</p>
+     *
+     * <p>Refused like the full solve when every seat is already past
+     * (ADR 0044): nothing is left to re-fill.</p>
+     *
+     * @throws BusinessError.Invalid when no seat is left ahead of now
      */
     public ProblemeIncremental buildIncrementalFromReferenceData(ReplanificationScope scope) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -367,6 +390,7 @@ public final class ProblemBuilder {
                 scope == null ? ReplanificationScope.automatic() : scope,
                 contraintesAdHoc,
                 moment);
+        FrozenPast.refuseIfNothingAhead(postes);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -480,7 +504,14 @@ public final class ProblemBuilder {
             poste.setVerrouille(true);
             figes++;
         }
-        return new StatistiquesIncremental(postes.size(), figes, liberes, liberesManuellement, nouveaux, passes);
+        return new StatistiquesIncremental(
+                postes.size(),
+                figes,
+                liberes,
+                liberesManuellement,
+                nouveaux,
+                passes,
+                FrozenPast.countEmptyPast(postes));
     }
 
     private static boolean indisponible(Animateur animateur, PosteAffectation poste) {

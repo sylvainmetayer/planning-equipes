@@ -80,7 +80,8 @@ public class SolverJobTasks {
                             probleme.reamorcage(),
                             probleme.postesReamorces(),
                             probleme.postesLiberes(),
-                            probleme.postesPasses()),
+                            probleme.postesPasses(),
+                            probleme.postesPassesVides()),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
                     resolution.interruption());
