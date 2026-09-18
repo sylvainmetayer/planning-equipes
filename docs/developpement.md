@@ -746,6 +746,13 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
   bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue de tableau
   de bord existe.
 
+Les PR Renovate passent par le même `check-commits.sh` que les autres, sujet
+sous 72 caractères compris. Pour Maven, où `depName` vaut
+`groupId:artifactId`, le sujet ne garde que l'artifactId
+(`fix(deps): update timefold-solver-core to v2.6.0`) : avec le nom complet et
+le mot « dependency » du modèle par défaut, un artefact un peu long dépassait
+la limite et sa PR échouait avant d'avoir lancé un test.
+
 Ce que Renovate ne lit pas — le `node-version` d'`application.properties`, les
 `java-version:` des workflows, les `FROM` du `Dockerfile` — est tenu d'accord
 avec `mise.toml` par `ToolchainPinsStructuralTest` : une montée de version qui
