@@ -97,7 +97,7 @@ describe('ChangementsView', () => {
     fixture.componentRef.setInput('jour', '2026-08-01');
   });
 
-  function texte(): string {
+  function text(): string {
     return (fixture.nativeElement as HTMLElement).textContent ?? '';
   }
 
@@ -111,9 +111,9 @@ describe('ChangementsView', () => {
     await fixture.whenStable();
 
     expect(compteurs()).toEqual(['1', '0', '1', '1', '3']);
-    expect(texte()).not.toContain('filtré');
-    expect(texte()).toContain('14:00 – 20:00 → 18:00 – 20:00');
-    expect(texte()).toContain('horaires modifiés');
+    expect(text()).not.toContain('filtré');
+    expect(text()).toContain('14:00 – 20:00 → 18:00 – 20:00');
+    expect(text()).toContain('horaires modifiés');
   });
 
   it('counts what the filters kept, and says the figures are filtered', async () => {
@@ -121,7 +121,7 @@ describe('ChangementsView', () => {
     await fixture.whenStable();
 
     expect(compteurs()).toEqual(['1', '0', '0', '0', '1']);
-    expect(texte()).toContain('filtré');
+    expect(text()).toContain('filtré');
 
     // The stand filter on the people: by the ids the seat lines carry, so
     // « Tir » never catches a person whose sentence names another stand.
@@ -129,8 +129,8 @@ describe('ChangementsView', () => {
     fixture.componentRef.setInput('reading', 'animateurs');
     await fixture.whenStable();
     expect(compteurs()).toEqual(['0', '0', '1', '1', '3']);
-    expect(texte()).toContain('Carole Petit');
-    expect(texte()).toContain('Alice Martin');
+    expect(text()).toContain('Carole Petit');
+    expect(text()).toContain('Alice Martin');
   });
 
   it('keeps the figures across a reference toggle, not across a change of day', async () => {
