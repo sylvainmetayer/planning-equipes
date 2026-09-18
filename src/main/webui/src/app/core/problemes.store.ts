@@ -36,6 +36,26 @@ export class ProblemesStore {
   readonly error = this._error.asReadonly();
 
   readonly causes = computed<CauseInfaisabilite[]>(() => this.report()?.causes ?? []);
+
+  /**
+   * The CRITIQUE causes a solve cannot do anything about: a contradiction
+   * between two hand-entered exceptions, or a forced assignment nobody can
+   * honour. Each one guarantees a negative hard score whatever the time budget.
+   *
+   * A shortfall of animateurs is deliberately left out although it can be
+   * CRITIQUE too: the solver still mitigates it, and the pre-solve banner has
+   * always let that one through — this list is what the Solveur screen asks a
+   * confirmation for, and asking on a short-staffed evening would make the
+   * question meaningless.
+   *
+   * Reading `causes` is enough although the server caps that list at ten: they
+   * are ranked with these first, so any that exists is in it.
+   */
+  readonly causesBloquantes = computed<CauseInfaisabilite[]>(() =>
+    this.causes().filter(
+      (cause) => cause.severite === 'CRITIQUE' && cause.type !== 'CRENEAU_SOUS_EFFECTIF',
+    ),
+  );
   /** True only once a report has actually been loaded and says so. */
   readonly infeasible = computed(() => this.report()?.feasible === false);
 
