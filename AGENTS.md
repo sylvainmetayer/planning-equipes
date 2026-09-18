@@ -302,6 +302,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
+  - `service/journee/` — what the Journée page asks about one day and nothing
+    else answers: `ChangementsJourneeService` reads what moved on a date
+    against the last published plan or the pre-solve automatique snapshot,
+    seat by seat on the natural key (stand, day, hours — ADR 0025) and person
+    by person through `PublicationDiffService`, never a comparison of its own.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
     chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
@@ -624,14 +629,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solver page only solves), `/export-csv`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
-  renamed), `/calendar`, `/journee` (« Journée » — one day under four
-  renderings chosen by `?vue=calendrier|rail|carte|pauses`: the calendar stand
-  by stand, the rail animateur by animateur, the day replayed on the
-  emplacement map with one time cursor, the breaks; one day selector and the
+  renamed), `/calendar`, `/journee` (« Journée » — one day under five
+  renderings chosen by `?vue=calendrier|rail|carte|pauses|changements`: the
+  calendar stand by stand, the rail animateur by animateur, the day replayed on
+  the emplacement map with one time cursor, the breaks, and what changed since
+  the last publication or the last solve (`?reference=publication|resolution`,
+  absent = the publication when one exists; `?lecture=animateurs` for the
+  per-person reading); one day selector and the
   same `stand`, `animateur` and `q` filters in the URL, the plan and the breaks
   read once by the page and handed to the rendering on screen — the views under
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
-  `pages/pauses` are its components, not routes), `/constraints`,
+  `pages/pauses`, and `pages/journee/changements-vue`, are its components, not
+  routes), `/constraints`,
   `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
   `?onglet=problemes|besoin|fragilite|banc`: the problems, the staffing need,
   the fragility, the bench; the tab components under `pages/problemes`,
