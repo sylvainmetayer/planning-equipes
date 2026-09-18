@@ -103,8 +103,12 @@ public class EditionRepository {
             // and stay behind, like the plan itself.
             new TableToCopy(
                     "prereglage_consigne",
+                    // cree_le travels: a preset copied into the next edition keeps
+                    // its history, like an ad hoc constraint does. modifie_le is
+                    // reborn, as on every table.
                     "id, nom, fermeture_debut, fermeture_fin, motif, repas_midi_debut, repas_midi_fin, "
-                            + "repas_soir_debut, repas_soir_fin, repas_coupure_minutes, repas_justification"),
+                            + "repas_soir_debut, repas_soir_fin, repas_coupure_minutes, repas_justification, "
+                            + "cree_le"),
             new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"));
 
     record TableToCopy(String nom, String colonnes) {}
