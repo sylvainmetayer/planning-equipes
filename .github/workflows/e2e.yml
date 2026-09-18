@@ -38,7 +38,13 @@ jobs:
     # Même garde de fork que tests.yml, conservée pour la même raison.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    # La suite tourne en `workers: 1` et la semaine canicule sur
+    # festival-hivernal (trois résolutions réelles, trois publications avec un
+    # PDF par personne) s'accorde à elle seule vingt minutes : le dernier
+    # passage complet a pris 16,6 min, et 45 ne laissait plus de marge à un
+    # runner lent. Un vrai blocage se voit toujours — un spec qui n'avance plus
+    # est coupé par son propre budget bien avant l'heure.
+    timeout-minutes: 60
 
     # Le job tourne dans l'image officielle Playwright, qui porte les
     # bibliothèques système dont Chromium a besoin. Les installer sur l'hôte
