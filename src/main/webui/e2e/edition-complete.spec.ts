@@ -7,7 +7,7 @@
 // petit jeu qui passe par toutes les capacités de l'outil.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, dialogueOuvert, ouvrirSelect, pageAdmin } from './support';
+import { choisirOption, contexteAdmin, dialogueOuvert, ouvrirSelect, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
 const EDITION_NOM = 'E2E Journées types';
@@ -75,9 +75,10 @@ async function creerStand(page: Page, id: string, nom: string): Promise<void> {
   await dialog.getByLabel('Nom', { exact: true }).fill(nom);
   await dialog.getByLabel('Effectif minimum').fill('1');
   await dialog.getByLabel('Effectif maximum').fill('1');
-  await ouvrirSelect(page, 'Typologies de jeu');
+  await ouvrirSelect(dialog, 'Typologies de jeu');
   await page.getByRole('option', { name: 'Jeux E2E' }).click();
   await page.keyboard.press('Escape');
+  await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Créer le stand' }).click();
   await expect(dialog).toBeHidden();
 }
@@ -91,10 +92,8 @@ async function creerAnimateur(page: Page, id: string, prenom: string, nom: strin
   await dialog.getByLabel('Date de naissance').fill('1990-01-01');
   await dialog.getByLabel('E-mail').fill(`${id.toLowerCase()}@example.org`);
   await dialog.getByRole('button', { name: 'Ajouter une appréciation' }).click();
-  await ouvrirSelect(dialog, 'Typologie');
-  await page.getByRole('option', { name: 'Jeux E2E' }).click();
-  await ouvrirSelect(dialog, 'Niveau');
-  await page.getByRole('option', { name: 'AUTONOME' }).click();
+  await choisirOption(dialog, 'Typologie', 'Jeux E2E');
+  await choisirOption(dialog, 'Niveau', 'AUTONOME');
   await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
   await expect(dialog).toBeHidden();
 }
