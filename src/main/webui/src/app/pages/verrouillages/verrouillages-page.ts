@@ -204,7 +204,7 @@ export class VerrouillagesPage {
     }
     const type = this.type();
     try {
-      await this.verrous.create({
+      const avertissements = await this.verrous.create({
         type,
         animateurId: type === 'ANIMATEUR' ? this.animateurId() : null,
         standId: type === 'STAND' ? this.standId() : null,
@@ -213,6 +213,18 @@ export class VerrouillagesPage {
         raison: this.raison() || null,
       });
       this.raison.set('');
+      if (avertissements.length > 0) {
+        // Stays until dismissed, like every write-time warning: the lock is
+        // recorded, and what it froze is what the next solve will report as a
+        // hard score nobody caused with this click.
+        this.notifications.notify({
+          title: $localize`:@@verrouillages.createdWithWarnings:Verrouillage enregistré — ${avertissements.length}:count: point(s) à vérifier.`,
+          message: avertissements.map((avertissement) => avertissement.message).join(' '),
+          variant: 'warning',
+          timeout: 0,
+        });
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@verrouillages.created:Verrouillage enregistré.`,
         variant: 'success',

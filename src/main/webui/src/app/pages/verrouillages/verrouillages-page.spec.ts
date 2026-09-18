@@ -159,7 +159,7 @@ describe('VerrouillagesPage impact and list', () => {
     verrous = {
       verrouillages: signal(verrouillages),
       reload: vi.fn(async () => undefined),
-      create: vi.fn(async () => undefined),
+      create: vi.fn(async () => []),
       remove: vi.fn(async () => undefined),
     };
     TestBed.resetTestingModule();
@@ -281,6 +281,27 @@ describe('VerrouillagesPage impact and list', () => {
     // Left filled, the reason would silently ride along on the next lock.
     expect((racine().querySelector('input[name="raison"]') as HTMLInputElement).value).toBe('');
     expect(notify.mock.calls.at(-1)![0].variant).toBe('success');
+  });
+
+  // A lock is never refused over what it freezes (décision 0003): it pins the
+  // seats, it does not exempt them, and the warning is what says so.
+  it('shows what the lock froze that already breaks a hard rule, and saves it anyway', async () => {
+    await rendre(planning());
+    verrous.create.mockResolvedValue([
+      {
+        type: 'VERROUILLAGE_SUR_VIOLATION_DURE',
+        message: 'Le verrouillage V1 fige 2 situation(s)…',
+      },
+    ]);
+
+    await choisir('jour', '2026-07-10');
+    boutonVerrouiller().click();
+    await fixture.whenStable();
+
+    const snack = notify.mock.calls.at(-1)![0];
+    expect(snack.variant).toBe('warning');
+    expect(snack.timeout).toBe(0);
+    expect(snack.message).toContain('V1');
   });
 
   it('reports a refused lock instead of pretending it was saved', async () => {

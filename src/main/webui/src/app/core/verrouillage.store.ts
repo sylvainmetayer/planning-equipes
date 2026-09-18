@@ -5,7 +5,12 @@
 
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { ApiService } from './api.service';
-import { TypeVerrouillage, VerrouillagePlanning } from './models';
+import {
+  Avertissement,
+  TypeVerrouillage,
+  VerrouillagePlanning,
+  WrittenVerrouillage,
+} from './models';
 
 @Injectable({ providedIn: 'root' })
 export class VerrouillageStore {
@@ -22,11 +27,17 @@ export class VerrouillageStore {
     this._verrouillages.set(await this.api.get<VerrouillagePlanning[]>('/api/verrouillages'));
   }
 
+  /**
+   * Records the lock and answers what the server wants read about it — seats it
+   * freezes that already break a hard rule. The lock is written either way: a
+   * warning is not a refusal (see `Avertissement`).
+   */
   async create(
     verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage },
-  ): Promise<void> {
-    await this.api.post('/api/verrouillages', verrouillage);
+  ): Promise<Avertissement[]> {
+    const ecrit = await this.api.post<WrittenVerrouillage>('/api/verrouillages', verrouillage);
     await this.reload();
+    return ecrit?.avertissements ?? [];
   }
 
   async remove(id: string): Promise<void> {
