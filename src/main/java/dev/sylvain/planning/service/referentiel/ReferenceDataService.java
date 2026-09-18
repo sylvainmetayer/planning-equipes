@@ -623,6 +623,13 @@ public class ReferenceDataService implements ReferenceData {
         return new WrittenVerrouillage(ecrit, coherence.onVerrouillage(ecrit));
     }
 
+    /**
+     * The bare write, no warning. Kept for the two locks the application poses
+     * <b>by itself</b> — validating a day, accepting an échange — where there
+     * is no operator at the Verrouillages screen to read a sentence, and
+     * nothing to carry it back on. Every deliberate gesture goes through
+     * {@link #writeVerrouillage}.
+     */
     public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
         return verrouillages.create(verrouillage);
     }

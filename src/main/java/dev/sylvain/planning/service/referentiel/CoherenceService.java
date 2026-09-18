@@ -119,13 +119,14 @@ public class CoherenceService {
         List<Creneau> edition = creneaux.list();
         List<Stand> resolus = stands.list();
         HoraireStandResolver.apply(resolus, edition);
-        return CoherenceAnalyzer.onContrainteAdHoc(
-                contrainte,
-                animateurs.list(),
-                resolus,
-                edition,
-                verrouillages.list(),
-                plan.isResolvable() ? plan.get().loadPlacesTenues() : Set.of());
+        List<VerrouillagePlanning> verrous = verrouillages.list();
+        // The seats of the plan are a full scan of the assignments, and only
+        // the lock check reads them: with no lock recorded — the usual case —
+        // nothing needs them.
+        Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> tenues = verrous.isEmpty() || !plan.isResolvable()
+                ? Set.of()
+                : plan.get().loadPlacesTenues();
+        return CoherenceAnalyzer.onContrainteAdHoc(contrainte, animateurs.list(), resolus, edition, verrous, tenues);
     }
 
     /**
