@@ -209,10 +209,11 @@ Six familles :
   bout en bout, du plus petit problème à un mois de 150 stands, voir
   [plus bas](#la-gamme-de-scénarios) ;
 - **bout en bout** (Playwright) — **à chaque poussée et sur chaque pull
-  request**. Ils coûtent plusieurs minutes là où la suite unitaire répond en
-  six secondes, et ce coût est assumé : c'est la seule couche qui voit ce
-  qu'un navigateur fait vraiment. Voir [plus bas](#tests-de-bout-en-bout-playwright)
-  pour les lancer en local.
+  request**, sauf les specs marquées `@lourd`, jouées sur les seuls changements
+  qui peuvent les casser et chaque nuit. Ils coûtent plusieurs minutes là où
+  la suite unitaire répond en six secondes, et ce coût est assumé : c'est la
+  seule couche qui voit ce qu'un navigateur fait vraiment. Voir
+  [plus bas](#tests-de-bout-en-bout-playwright) pour les lancer en local.
 
 ### La boucle sans conteneur
 
@@ -409,6 +410,18 @@ cd src/main/webui && npm run e2e         # + --headed, --ui, --project=mobile, u
 Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`
 (défaut `http://localhost:8025`), `E2E_CHROMIUM`.
+
+**Une spec `@lourd` ne tourne pas sur chaque poussée.** La semaine canicule sur
+`festival-hivernal` (`canicule-festival-hivernal.spec.ts`) importe la fixture
+réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
+par personne : treize minutes sur un runner GitHub, les vingt-neuf autres
+specs en prennent sept. `e2e.yml` la laisse de côté (`--grep-invert @lourd`)
+et `e2e-lourd.yml` la joue (`--grep @lourd`) sur les changements du solveur,
+des consignes, de la publication et de ses propres fichiers — sa liste
+`paths`, à tenir à jour comme celle des scénarios — et chaque nuit sur `main`.
+Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
+c'est dire qu'elle résout une fixture réelle ; ce n'est pas l'endroit où
+ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
 
 Une suite mérite un mot : `e2e/icones.spec.ts` vérifie que la police des icônes
 arrive et se dessine. Un `<mat-icon>delete</mat-icon>` dont la police manque
@@ -692,11 +705,35 @@ il n'est sain que si l'affectation gelée est déjà bonne — d'où l'ordre
 
 ## Intégration continue
 
-Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Trois
+Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
-- **les tests de bout en bout ne tournent pas sur une PR**, seulement chaque
-  nuit : la pile complète coûte trop pour une boucle de relecture ;
+- **une poussée coûte une quarantaine de minutes de runner**, quel que soit
+  son contenu : Tests (≈ 13 + 3), E2E (≈ 10), scénarios (≈ 8 dès que la PR a
+  touché le solveur), Sécurité (≈ 1). D'où trois filtres : `tests.yml` et
+  `e2e.yml` ignorent une poussée qui ne touche que `docs/` et le Markdown
+  (moins les fichiers qu'un test relit ou que le job compare à son build,
+  réinclus nommément) ; les specs Playwright `@lourd` ont leur workflow, comme
+  les scénarios ; et une PR Renovate ne joue les scénarios que sous le label
+  `timefold` ou `quarkus`. Sur une PR, GitHub évalue un filtre `paths` sur
+  **l'ensemble des fichiers de la PR**, pas sur la dernière poussée : une PR
+  mixte code + documentation rejoue tout à chaque poussée, et c'est voulu — un
+  check « skipped » sur la dernière poussée masquerait le rouge de la
+  précédente ;
+- **sur une PR Renovate, `licences-renovate.yml` régénère
+  `docs/licences-tierces.md`** et le commite sur la branche, puisqu'un bump
+  fait échouer le contrôle par construction (le job `test` le joue d'ailleurs
+  en premier, avant les treize minutes de tests). Une poussée faite avec
+  `GITHUB_TOKEN` ne déclenche aucun workflow : le job relance lui-même Tests,
+  E2E et Sécurité par `workflow_dispatch` sur la branche, après avoir annulé
+  ce qui tournait encore sur le commit remplacé. `gitIgnoredAuthors` dans
+  `renovate.json` évite que Renovate tienne la branche pour « modifiée » et
+  cesse de la rebaser ; une rebase la recrée sans ce commit, que le job repose
+  aussitôt ;
+- **sur `main`, une fusion annule les runs de la précédente**
+  (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
+  là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
+  complet par fusion en coûterait davantage ;
 - **l'image publiée porte un SBOM et une signature cosign en mode keyless**. Les
   attestations GitHub natives attendent l'ouverture du dépôt ;
 - **tous les workflows tournent sur des runners GitHub** (`ubuntu-latest`).

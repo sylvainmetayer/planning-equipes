@@ -910,7 +910,16 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   scenario carries a minor, a night and an adults-only stand) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
   with `E2E_FUZZ_SEED`). CI runs them on every pull request (`e2e.yml`, on a
-  stack the job starts and throws away). Locally they **erase the database
+  stack `e2e-suite.yml` starts and throws away) — **except the specs tagged
+  `@lourd`**: the organiser's heatwave week on `festival-hivernal` solves three
+  times for real and weighed 13 of the suite's 20 minutes, so `e2e-lourd.yml`
+  plays those on the changes that can break them (its `paths` list, kept in
+  step like the scenario one) and every night, the way `scenario-tests.yml`
+  does. Tag a spec that way when it solves a real-world fixture, never to
+  hide a slow test. `tests.yml` and `e2e.yml` also skip a push that touches
+  only `docs/` and Markdown — minus the files a backend test reads or the
+  `test` job compares to its build, which are re-included by name. Locally
+  they **erase the database
   they target**: run them only against a disposable stack (see
   `docs/developpement.md` § Tests de bout en bout).
 
@@ -1034,7 +1043,13 @@ Renovate (`renovate.json` at the repo root) tracks Maven dependencies (including
 the `quarkus.platform.version` / `timefold.solver.version` properties), the npm
 dependencies of `src/main/webui`, Docker images, GitHub Actions and the
 `mise.toml` toolchain. Keep the config in that
-single file; document behaviour changes in `docs/developpement.md`. Quarkus and
+single file; document behaviour changes in `docs/developpement.md`. On a
+Renovate PR, `licences-renovate.yml` regenerates `docs/licences-tierces.md`,
+commits it on the branch and re-dispatches the checks itself (a push made with
+`GITHUB_TOKEN` triggers nothing) — `gitIgnoredAuthors` in `renovate.json` is
+what lets Renovate keep rebasing a branch that commit sits on. The scenario
+workflow runs on a Renovate PR only when it carries the `timefold` or
+`quarkus` label, which `renovate.json` puts on those two groups. Quarkus and
 Timefold bumps must be validated with `./mvnw verify -DskipITs=false` **and**
 `./mvnw test -Pscenario-tests`: the five files that depend on
 `ai.timefold.solver.core.impl` (listed by `TimefoldInternalApiStructuralTest`)
