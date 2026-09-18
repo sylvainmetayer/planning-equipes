@@ -4,13 +4,11 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
-import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 /**
  * Soft preferences: tie-breakers that shape an otherwise valid plan — spread
@@ -51,21 +49,20 @@ public final class PreferenceConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "favoriserMixiteDesNiveaux")
                 .filter(poste -> poste.getAnimateur() != null)
+                // Charged only while a staffed seat of the line is still ahead
+                // of now (ADR 0044), folded next to the two counts.
                 .groupBy(
                         PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0),
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur().isDebutantFor(poste.getStand()) ? 1 : 0))
-                // Charged only while a seat of the line is still ahead of now
-                // (ADR 0044), an empty one included: a beginner could still
-                // be seated there.
-                .ifExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.equal((stand, creneau, referents, debutants) -> stand, PosteAffectation::getStand),
-                        Joiners.equal((stand, creneau, referents, debutants) -> creneau, PosteAffectation::getCreneau),
-                        Joiners.filtering(
-                                (stand, creneau, referents, debutants, poste) -> PastSeats.reproachable(poste)))
-                .filter((stand, creneau, referents, debutants) -> referents > 0 && debutants == 0)
+                        ConstraintCollectors.compose(
+                                ConstraintCollectors.sum(
+                                        poste -> poste.getAnimateur().isReferentFor(poste.getStand()) ? 1 : 0),
+                                ConstraintCollectors.sum(
+                                        poste -> poste.getAnimateur().isDebutantFor(poste.getStand()) ? 1 : 0),
+                                PastSeats.ahead(),
+                                Niveaux::new))
+                .filter((stand, creneau, niveaux) ->
+                        niveaux.ahead() > 0 && niveaux.referents() > 0 && niveaux.debutants() == 0)
                 .penalize(HardMediumSoftScore.ONE_SOFT)
                 .asConstraint("favoriserMixiteDesNiveaux");
     }
@@ -80,20 +77,14 @@ public final class PreferenceConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "equilibrerCreneauxPenibles")
                 .filter(poste -> poste.getAnimateur() != null && isDemanding(poste.getStand()))
-                .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
                 // The demanding seats already held weigh in the balance; it is
-                // charged only while one is still ahead of now (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.filtering(
-                                (balance, poste) -> PastSeats.reproachable(poste) && isDemanding(poste.getStand())))
+                // charged only while one is still ahead of now (ADR 0044) —
+                // folded into the group, like equilibrerCharge.
+                .groupBy(PastSeats.withAhead(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur)))
+                .filter(charge -> charge.ahead() > 0)
                 .penalize(
                         HardMediumSoftScore.ONE_SOFT,
-                        loadBalance -> loadBalance
-                                .unfairness()
-                                .multiply(UNFAIRNESS_SCALE)
-                                .setScale(0, RoundingMode.HALF_UP)
-                                .intValue())
+                        charge -> PastSeats.scaledUnfairness(charge.value(), UNFAIRNESS_SCALE))
                 .asConstraint("equilibrerCreneauxPenibles");
     }
 
@@ -119,15 +110,14 @@ public final class PreferenceConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "preserverBufferPolyvalents")
                 .filter(poste ->
                         poste.getAnimateur() != null && poste.getAnimateur().isNinja() && poste.getCreneau() != null)
+                // A timeslot already started keeps whoever it has (ADR 0044):
+                // the reserve is only asked of the timeslots still ahead,
+                // folded next to the count.
                 .groupBy(
                         PosteAffectation::getCreneau,
-                        ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
-                // A timeslot already started keeps whoever it has (ADR 0044):
-                // the reserve is only asked of the timeslots still ahead.
-                .ifExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.equal((creneau, occupes) -> creneau, PosteAffectation::getCreneau),
-                        Joiners.filtering((creneau, occupes, poste) -> PastSeats.reproachable(poste)))
+                        PastSeats.withAhead(ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur)))
+                .filter((creneau, occupes) -> occupes.ahead() > 0)
+                .map((creneau, occupes) -> creneau, (creneau, occupes) -> occupes.value())
                 .join(constraintFactory
                         .forEach(Animateur.class)
                         .filter(Animateur::isNinja)
@@ -138,6 +128,9 @@ public final class PreferenceConstraints {
                         (creneau, occupes, total) -> POLYVALENTS_LIBRES_MIN - (total - occupes))
                 .asConstraint("preserverBufferPolyvalents");
     }
+
+    /** Referents and beginners on one line, and how many of its seats are still ahead. */
+    private record Niveaux(long referents, long debutants, long ahead) {}
 
     private boolean isDemanding(Stand stand) {
         return stand != null && (stand.getNiveauEffort() == NiveauEffort.EPUISANT || stand.isPremium());

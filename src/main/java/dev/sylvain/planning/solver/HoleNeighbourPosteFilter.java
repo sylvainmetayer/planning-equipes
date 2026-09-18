@@ -52,7 +52,9 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
 
     @Override
     public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, PosteAffectation poste) {
-        if (poste.getCreneau() == null) {
+        // A pinned seat cannot be ruined, whatever it holds: a lock, or a past
+        // seat (ADR 0044) — including a past hole, which no move can fill.
+        if (poste.getCreneau() == null || poste.isVerrouille()) {
             return false;
         }
         if (poste.getAnimateur() == null) {
@@ -103,7 +105,11 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
     private static Map<LocalDate, List<long[]>> scanner(List<PosteAffectation> postes) {
         Map<LocalDate, List<long[]>> parJour = new HashMap<>();
         for (PosteAffectation poste : postes) {
+            // A pinned hole is not a hole worth looking at: the past ones
+            // (ADR 0044) would otherwise keep the memo from ever being empty,
+            // and aim the ruin at hours where every neighbour is pinned too.
             if (poste.getAnimateur() != null
+                    || poste.isVerrouille()
                     || poste.getCreneau() == null
                     || poste.getCreneau().getDate() == null) {
                 continue;

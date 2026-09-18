@@ -82,4 +82,15 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
                         poste(autreSeul, apresMidi, a2))
                 .penalizesBy(2);
     }
+
+    /** Counted, never reproached (ADR 0044): a day entirely worked owes nobody a relay any more. */
+    @Test
+    void aBreakWithoutRelayOnADayAlreadyWorkedIsHistory() {
+        verify("pauseSurPosteSansRelais")
+                .given(onPost(true), postePasse(releve, treizeQuatorze, a1), postePasse(seul, apresMidi, a1))
+                .penalizesBy(0);
+        verify("pauseSurPosteSansRelais")
+                .given(onPost(true), postePasse(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
+                .penalizesBy(1);
+    }
 }

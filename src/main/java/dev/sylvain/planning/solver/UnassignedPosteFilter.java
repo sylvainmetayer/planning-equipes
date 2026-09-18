@@ -17,6 +17,8 @@ public final class UnassignedPosteFilter implements SelectionFilter<PlanningEven
 
     @Override
     public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, PosteAffectation poste) {
-        return poste.getAnimateur() == null;
+        // A pinned hole — a past seat nobody held (ADR 0044) — is not one the
+        // selectors can fill: attempts spent on it are attempts lost.
+        return poste.getAnimateur() == null && !poste.isVerrouille();
     }
 }

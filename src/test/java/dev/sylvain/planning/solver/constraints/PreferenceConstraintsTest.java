@@ -129,7 +129,27 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
         verify("favoriserMixiteDesNiveaux")
                 .given(
                         postePasse(standStrat, creneauMatin, referentMajeur("A1")),
-                        poste(standStrat, creneauMatin, null))
+                        poste(standStrat, creneauMatin, majeurAutonome("A2")))
                 .penalizesBy(1);
+    }
+
+    @Test
+    void anImbalanceOfDemandingSeatsAllWorkedIsHistory() {
+        Animateur a1 = referentMajeur("A1");
+        Stand epuisant = standEpuisant("STAND-EPUISANT");
+        verify("equilibrerCreneauxPenibles")
+                .given(
+                        postePasse(epuisant, creneauMatin, a1),
+                        postePasse(epuisant, creneauAprem, a1),
+                        postePasse(epuisant, matin("J2-MATIN", 2, D2), a1),
+                        postePasse(epuisant, afternoon("J2-AM", 2, D2), majeurAutonome("A2")))
+                .penalizesBy(0);
+        verify("equilibrerCreneauxPenibles")
+                .given(
+                        postePasse(epuisant, creneauMatin, a1),
+                        postePasse(epuisant, creneauAprem, a1),
+                        postePasse(epuisant, matin("J2-MATIN", 2, D2), a1),
+                        poste(epuisant, afternoon("J2-AM", 2, D2), majeurAutonome("A2")))
+                .penalizesByMoreThan(0);
     }
 }

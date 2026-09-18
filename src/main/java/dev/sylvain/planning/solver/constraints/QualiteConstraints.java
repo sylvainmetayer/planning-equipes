@@ -17,7 +17,6 @@ import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -120,22 +119,16 @@ public final class QualiteConstraints {
     private Constraint standComplexeAvecReferent(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "standComplexeAvecReferent")
+                // The line is charged only while one of its staffed seats is
+                // still ahead of now (ADR 0044), folded next to the count.
                 .groupBy(
                         PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
+                        PastSeats.withAhead(ConstraintCollectors.sum(poste -> poste.getAnimateur() != null
                                         && poste.getAnimateur().isReferentFor(poste.getStand())
                                 ? 1
-                                : 0))
-                // The line is charged only while one of its seats is still
-                // ahead of now (ADR 0044) — an empty one included, since a
-                // referent could still be seated there.
-                .ifExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.equal((stand, creneau, referents) -> stand, PosteAffectation::getStand),
-                        Joiners.equal((stand, creneau, referents) -> creneau, PosteAffectation::getCreneau),
-                        Joiners.filtering((stand, creneau, referents, poste) -> PastSeats.reproachable(poste)))
-                .filter((stand, creneau, nombreReferents) -> nombreReferents == 0)
+                                : 0)))
+                .filter((stand, creneau, referents) -> referents.ahead() > 0 && referents.value() == 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("standComplexeAvecReferent");
     }
@@ -158,17 +151,15 @@ public final class QualiteConstraints {
         // signal without the huge non-zero baseline of a sum-of-squares formula.
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "equilibrerCharge")
                 .filter(poste -> poste.getAnimateur() != null)
-                .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
                 // The past seats weigh in the balance; it is charged only while
-                // a seat is still ahead of now (ADR 0044).
-                .ifExists(PosteAffectation.class, Joiners.filtering((balance, poste) -> PastSeats.reproachable(poste)))
+                // a seat is still ahead of now (ADR 0044) — folded into the
+                // group, since a filter on this one global tuple would re-scan
+                // every seat at every move.
+                .groupBy(PastSeats.withAhead(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur)))
+                .filter(charge -> charge.ahead() > 0)
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
-                        loadBalance -> loadBalance
-                                .unfairness()
-                                .multiply(UNFAIRNESS_SCALE)
-                                .setScale(0, RoundingMode.HALF_UP)
-                                .intValue())
+                        charge -> PastSeats.scaledUnfairness(charge.value(), UNFAIRNESS_SCALE))
                 .asConstraint("equilibrerCharge");
     }
 
@@ -176,24 +167,25 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "repartitionMineursParCreneau")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+                // The line is charged only while one of its seats is still
+                // ahead of now (ADR 0044), folded next to the two counts.
                 .groupBy(
                         PosteAffectation::getStand,
                         PosteAffectation::getCreneau,
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                        .isMineurOn(poste.getCreneau().getDate())
-                                ? 1
-                                : 0),
-                        ConstraintCollectors.sum(poste -> poste.getAnimateur()
-                                        .isMajeurOn(poste.getCreneau().getDate())
-                                ? 1
-                                : 0))
-                .ifExistsIncludingUnassigned(
-                        PosteAffectation.class,
-                        Joiners.equal((stand, creneau, mineurs, majeurs) -> stand, PosteAffectation::getStand),
-                        Joiners.equal((stand, creneau, mineurs, majeurs) -> creneau, PosteAffectation::getCreneau),
-                        Joiners.filtering((stand, creneau, mineurs, majeurs, poste) -> PastSeats.reproachable(poste)))
-                .filter((stand, creneau, mineurs, majeurs) -> mineurs > majeurs)
-                .penalize(HardMediumSoftScore.ONE_MEDIUM, (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
+                        ConstraintCollectors.compose(
+                                ConstraintCollectors.sum(poste -> poste.getAnimateur()
+                                                .isMineurOn(poste.getCreneau().getDate())
+                                        ? 1
+                                        : 0),
+                                ConstraintCollectors.sum(poste -> poste.getAnimateur()
+                                                .isMajeurOn(poste.getCreneau().getDate())
+                                        ? 1
+                                        : 0),
+                                PastSeats.ahead(),
+                                Ages::new))
+                .filter((stand, creneau, ages) -> ages.ahead() > 0 && ages.mineurs() > ages.majeurs())
+                .penalize(HardMediumSoftScore.ONE_MEDIUM, (stand, creneau, ages) ->
+                        (int) (ages.mineurs() - ages.majeurs()))
                 .asConstraint("repartitionMineursParCreneau");
     }
 
@@ -243,13 +235,15 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
-                .groupBy(PosteAffectation::getStand, ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
                 // The faces already seen count; the stand is charged only
-                // while one of its seats is still ahead of now (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((stand, tetes) -> stand, PosteAffectation::getStand),
-                        Joiners.filtering((stand, tetes, poste) -> PastSeats.reproachable(poste)))
+                // while one of its seats is still ahead of now (ADR 0044) —
+                // folded into the group, a premium stand holding hundreds of
+                // seats a filter would re-scan at every move.
+                .groupBy(
+                        PosteAffectation::getStand,
+                        PastSeats.withAhead(ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur)))
+                .filter((stand, visages) -> visages.ahead() > 0)
+                .map((stand, visages) -> stand, (stand, visages) -> visages.value())
                 .join(crewByStand(constraintFactory), Joiners.equal((stand, têtes) -> stand, Equipage::stand))
                 .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage.sieges())
                 .penalize(
@@ -276,6 +270,9 @@ public final class QualiteConstraints {
 
     /** A premium stand and the seats of its busiest créneau. */
     private record Equipage(Stand stand, int sieges) {}
+
+    /** Minors and adults on one line, and how many of its seats are still ahead. */
+    private record Ages(long mineurs, long majeurs, long ahead) {}
 
     /**
      * Same animateur, two back-to-back slots (same day, one ending exactly when
@@ -342,24 +339,21 @@ public final class QualiteConstraints {
                         && poste.getStand() != null
                         && poste.getStand().getEmplacement() != null
                         && poste.getCreneau() != null)
+                // The zones already crossed count; the day is charged only
+                // while one of its seats is still ahead of now (ADR 0044),
+                // folded next to the set.
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getJour(),
-                        ConstraintCollectors.toSet(poste -> poste.getStand().getEmplacement()))
-                // The zones already crossed count; the day is charged only
-                // while one of its seats is still ahead of now (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, jour, emplacements) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.equal((animateur, jour, emplacements) -> jour, QualiteConstraints::jourOrNull),
-                        Joiners.filtering((animateur, jour, emplacements, poste) -> PastSeats.reproachable(poste)))
+                        PastSeats.withAhead(ConstraintCollectors.toSet(
+                                poste -> poste.getStand().getEmplacement())))
                 .join(ParametresQualite.class)
-                .filter((animateur, jour, emplacements, parametres) ->
-                        emplacements.size() > parametres.maxEmplacementsDistinctsParJour())
+                .filter((animateur, jour, emplacements, parametres) -> emplacements.ahead() > 0
+                        && emplacements.value().size() > parametres.maxEmplacementsDistinctsParJour())
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
                         (animateur, jour, emplacements, parametres) ->
-                                emplacements.size() - parametres.maxEmplacementsDistinctsParJour())
+                                emplacements.value().size() - parametres.maxEmplacementsDistinctsParJour())
                 .asConstraint("limiterEmplacementsParJour");
     }
 
@@ -479,15 +473,14 @@ public final class QualiteConstraints {
                         ConstraintCollectors.compose(
                                 ConstraintCollectors.min(LegalConstraints::debut),
                                 ConstraintCollectors.max(LegalConstraints::fin),
-                                ConstraintCollectors.sum(
-                                        (PosteAffectation poste) -> PastSeats.reproachable(poste) ? 1 : 0),
+                                PastSeats.ahead(),
                                 Bornes::new))
                 .map((animateur, jour, bornes) ->
                         new Journee(animateur, jour, bornes.debut(), bornes.fin(), bornes.ahead() > 0));
     }
 
     /** The two ends of a day's work, and how many of its seats are still ahead of now. */
-    private record Bornes(LocalDateTime debut, LocalDateTime fin, Long ahead) {}
+    private record Bornes(LocalDateTime debut, LocalDateTime fin, long ahead) {}
 
     /**
      * An animateur's working day, folded to its two ends.
@@ -505,11 +498,6 @@ public final class QualiteConstraints {
         LocalDate date() {
             return debut.toLocalDate();
         }
-    }
-
-    /** The day number of the seat's timeslot, for the {@code ifExists} joiners; {@code null} without one. */
-    private static Integer jourOrNull(PosteAffectation poste) {
-        return poste.getCreneau() == null ? null : poste.getCreneau().getJour();
     }
 
     /** True when the day's work ends at or after the late hour of that day. */
@@ -600,20 +588,19 @@ public final class QualiteConstraints {
                         && poste.getStand() != null
                         && !poste.getAnimateur().isNinja())
                 .flatten(QualiteConstraints::likedTypologiesOfPoste)
+                // The games already learnt count; the animateur is charged only
+                // while one of their seats is still ahead of now (ADR 0044),
+                // folded next to the set.
                 .groupBy(
                         (poste, typologie) -> poste.getAnimateur(),
-                        ConstraintCollectors.toSet((poste, typologie) -> typologie))
-                // The games already learnt count; the animateur is charged only
-                // while one of their seats is still ahead of now (ADR 0044).
-                .ifExists(
-                        PosteAffectation.class,
-                        Joiners.equal((animateur, typologies) -> animateur, PosteAffectation::getAnimateur),
-                        Joiners.filtering((animateur, typologies, poste) -> PastSeats.reproachable(poste)))
+                        PastSeats.withAhead(ConstraintCollectors.toSet((poste, typologie) -> typologie)))
                 .join(ParametresQualite.class)
-                .filter((animateur, typologies, parametres) -> typologies.size() > parametres.typologiesDistinctesMax())
+                .filter((animateur, typologies, parametres) ->
+                        typologies.ahead() > 0 && typologies.value().size() > parametres.typologiesDistinctesMax())
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, typologies, parametres) -> typologies.size() - parametres.typologiesDistinctesMax())
+                        (animateur, typologies, parametres) ->
+                                typologies.value().size() - parametres.typologiesDistinctesMax())
                 .asConstraint("limiterTypologiesDistinctesParAnimateur");
     }
 
