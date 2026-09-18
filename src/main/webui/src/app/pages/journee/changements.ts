@@ -2,7 +2,14 @@
 // reading a query param names, and the words the table puts on a change.
 
 import { ReferenceChangementsParam } from '../../core/api/journees-api';
-import { ChangementsJournee, ReferenceChangements, TypeChangementSiege } from '../../core/models';
+import {
+  ChangementAnimateur,
+  ChangementSiege,
+  ChangementsJournee,
+  ReferenceChangements,
+  TypeChangementSiege,
+} from '../../core/models';
+import { correspondAuFiltre } from '../../core/text-filter';
 
 /** The two readings of the same changes, and the values of the `lecture` query param. */
 export type ChangementsReading = 'vacations' | 'animateurs';
@@ -36,6 +43,53 @@ export function isUnchanged(changements: ChangementsJournee): boolean {
     changements.referenceDisponible &&
     changements.parVacation.length === 0 &&
     changements.parAnimateur.length === 0
+  );
+}
+
+/**
+ * The page's shared filters — free text, a stand, an animateur — on the seat
+ * lines: a seat matches the animateur whichever side of the change they are on.
+ */
+export function filterSeatLines(
+  lines: readonly ChangementSiege[],
+  recherche: string,
+  stand: string,
+  animateur: string,
+): ChangementSiege[] {
+  return lines.filter(
+    (line) =>
+      (!stand || line.standId === stand) &&
+      (!animateur ||
+        line.avant?.animateurId === animateur ||
+        line.apres?.animateurId === animateur) &&
+      correspondAuFiltre(recherche, [
+        line.standNom,
+        line.standId,
+        line.avant?.nomAffiche,
+        line.apres?.nomAffiche,
+      ]),
+  );
+}
+
+/**
+ * The same filters on the per-person reading. The stand is not a field of a
+ * person's line, so it is looked for in the sentences themselves — they name
+ * the stand, as the mail does.
+ */
+export function filterPersonLines(
+  lines: readonly ChangementAnimateur[],
+  recherche: string,
+  standNom: string,
+  animateur: string,
+): ChangementAnimateur[] {
+  return lines.filter(
+    (line) =>
+      (!animateur || line.animateurId === animateur) &&
+      (!standNom || line.changements.some((change) => change.libelle.includes(standNom))) &&
+      correspondAuFiltre(recherche, [
+        line.nomAffiche,
+        ...line.changements.map((change) => change.libelle),
+      ]),
   );
 }
 

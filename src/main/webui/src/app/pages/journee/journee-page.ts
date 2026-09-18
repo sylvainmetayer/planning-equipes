@@ -160,6 +160,10 @@ export class JourneePage {
       .map(([id, label]) => ({ id, label }))
       .sort((gauche, droite) => gauche.label.localeCompare(droite.label));
   });
+  /** The stand names by id, for the rendering that only sees a stand in a sentence. */
+  protected readonly standNoms = computed<ReadonlyMap<string, string>>(
+    () => new Map(this.stands().map((option) => [option.id, option.label])),
+  );
   protected readonly animateurs = computed<Option[]>(() =>
     (this.planning()?.animateurs ?? [])
       .map((animateur) => ({

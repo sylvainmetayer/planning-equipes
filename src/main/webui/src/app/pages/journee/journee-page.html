@@ -146,6 +146,10 @@
     @case ('changements') {
       <app-changements-vue
         [jour]="jourCourant()?.date ?? null"
+        [recherche]="filtre()"
+        [stand]="stand()"
+        [animateur]="animateur()"
+        [standNoms]="standNoms()"
         [(reference)]="referenceChangements"
         [(reading)]="lectureChangements"
       />

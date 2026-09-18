@@ -77,9 +77,11 @@
 
         @if (unchanged()) {
           <p class="empty-hint" i18n="@@journee.changements.aucun">Aucun changement sur cette journée.</p>
+        } @else if (nothingMatches()) {
+          <p class="empty-hint" i18n="@@journee.changements.aucunFiltre">Aucun changement ne correspond aux filtres.</p>
         } @else if (reading() === 'animateurs') {
           <ul class="journee-changements-animateurs">
-            @for (personne of changes.parAnimateur; track personne.animateurId) {
+            @for (personne of personLines(); track personne.animateurId) {
               <li>
                 <a routerLink="/timeline" [queryParams]="{ animateur: personne.animateurId }">{{ personne.nomAffiche }}</a>
                 <ul>
@@ -104,7 +106,7 @@
                 </tr>
               </thead>
               <tbody>
-                @for (ligne of changes.parVacation; track $index) {
+                @for (ligne of seatLines(); track $index) {
                   <tr>
                     <th scope="row">{{ ligne.standNom || ligne.standId }}</th>
                     <td>{{ hours(ligne) }}</td>

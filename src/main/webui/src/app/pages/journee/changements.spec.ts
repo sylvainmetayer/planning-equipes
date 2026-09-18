@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { ChangementsJournee } from '../../core/models';
 import {
+  ChangementAnimateur,
+  ChangementSiege,
+  ChangementsJournee,
+  TitulaireSiege,
+  TypeChangementSiege,
+} from '../../core/models';
+import {
+  filterPersonLines,
+  filterSeatLines,
   isUnchanged,
   readReading,
   readReference,
@@ -61,6 +69,84 @@ describe('isUnchanged', () => {
     ).toBe(false);
   });
 });
+
+describe('filterSeatLines', () => {
+  const alice = { animateurId: 'a1', nomAffiche: 'Alice Martin' };
+  const bob = { animateurId: 'a2', nomAffiche: 'Bob Durand' };
+  const lines: ChangementSiege[] = [
+    seat('TIR', 'Tir à l’arc', alice, bob, 'REMPLACE'),
+    seat('DIXIT', 'Dixit', null, alice, 'NOUVEAU'),
+    seat('DIXIT', 'Dixit', bob, null, 'RETIRE'),
+  ];
+
+  it('keeps everything when nothing is typed or picked', () => {
+    expect(filterSeatLines(lines, '', '', '')).toHaveLength(3);
+  });
+
+  it('narrows on the stand, and on the animateur whichever side of the change they are on', () => {
+    expect(filterSeatLines(lines, '', 'DIXIT', '').map((line) => line.type)).toEqual([
+      'NOUVEAU',
+      'RETIRE',
+    ]);
+    expect(filterSeatLines(lines, '', '', 'a1').map((line) => line.standId)).toEqual([
+      'TIR',
+      'DIXIT',
+    ]);
+  });
+
+  it('matches the typed text against the stand and both holders, accents aside', () => {
+    expect(filterSeatLines(lines, 'tir arc', '', '')).toHaveLength(1);
+    expect(filterSeatLines(lines, 'durand', '', '').map((line) => line.type)).toEqual([
+      'REMPLACE',
+      'RETIRE',
+    ]);
+  });
+});
+
+describe('filterPersonLines', () => {
+  const lines: ChangementAnimateur[] = [
+    {
+      animateurId: 'a1',
+      nomAffiche: 'Alice Martin',
+      changements: [{ type: 'AJOUT', libelle: 'samedi 01/08 : Dixit 10h-12h (nouveau)' }],
+    },
+    {
+      animateurId: 'a2',
+      nomAffiche: 'Bob Durand',
+      changements: [{ type: 'RETRAIT', libelle: 'samedi 01/08 : Tir à l’arc 14h-18h (retiré)' }],
+    },
+  ];
+
+  it('narrows on the animateur, on the stand named in the sentences, and on the typed text', () => {
+    expect(filterPersonLines(lines, '', '', 'a2').map((line) => line.animateurId)).toEqual(['a2']);
+    expect(filterPersonLines(lines, '', 'Dixit', '').map((line) => line.animateurId)).toEqual([
+      'a1',
+    ]);
+    expect(filterPersonLines(lines, 'retire', '', '').map((line) => line.animateurId)).toEqual([
+      'a2',
+    ]);
+    expect(filterPersonLines(lines, '', '', '')).toHaveLength(2);
+  });
+});
+
+function seat(
+  standId: string,
+  standNom: string,
+  avant: TitulaireSiege | null,
+  apres: TitulaireSiege | null,
+  type: TypeChangementSiege,
+): ChangementSiege {
+  return {
+    standId,
+    standNom,
+    date: '2026-08-01',
+    heureDebut: '10:00',
+    heureFin: '12:00',
+    avant,
+    apres,
+    type,
+  };
+}
 
 describe('typeSiegeLabel', () => {
   it('words each seat change', () => {

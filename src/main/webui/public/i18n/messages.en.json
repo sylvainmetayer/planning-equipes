@@ -3388,6 +3388,7 @@
   "journee.changements.compteur.remplaces": "replaced",
   "journee.changements.compteur.animateurs": "staff members concerned",
   "journee.changements.aucun": "No change on this day.",
+  "journee.changements.aucunFiltre": "No change matches the filters.",
   "journee.changements.table.caption": "Seats of the day whose holder changed",
   "journee.changements.colonne.stand": "Stand",
   "journee.changements.colonne.creneau": "Timeslot",
