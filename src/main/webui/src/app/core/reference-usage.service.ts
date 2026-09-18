@@ -32,7 +32,12 @@ const RESOURCES_COMPTEES: readonly string[] = ['stands', 'animateurs', 'creneaux
  */
 const MAX_REQUEST_LENGTH = 2000;
 
-const AUCUN: ReferenceUsage = { affectations: 0, contraintesAdHoc: 0, verrouillages: 0 };
+const AUCUN: ReferenceUsage = {
+  affectations: 0,
+  contraintesAdHoc: 0,
+  verrouillages: 0,
+  consignes: 0,
+};
 
 @Injectable({ providedIn: 'root' })
 export class ReferenceUsageService {
@@ -100,6 +105,7 @@ function additionner(cumul: ReferenceUsage, lot: ReferenceUsage): ReferenceUsage
     affectations: cumul.affectations + lot.affectations,
     contraintesAdHoc: cumul.contraintesAdHoc + lot.contraintesAdHoc,
     verrouillages: cumul.verrouillages + lot.verrouillages,
+    consignes: cumul.consignes + lot.consignes,
   };
 }
 
@@ -108,16 +114,23 @@ function additionner(cumul: ReferenceUsage, lot: ReferenceUsage): ReferenceUsage
  *
  * Zero is said rather than omitted — "nothing references it" is the answer
  * that lets someone delete without hesitating, and silence would read as "the
- * count failed". But it is said by **naming the three counters**, never as a
+ * count failed". But it is said by **naming the four counters**, never as a
  * blanket "nothing refers to it": other tables cascade on these referentials
  * without being counted here (a stand's demandes d'échange, its opening hours,
  * an animateur's competences and wishes), and an absolute sentence would
- * promise something this call never checked.
+ * promise something this call never checked. The consignes (issue #4) are
+ * named only when one names the row: a person is never under a consigne,
+ * and « aucune consigne » under an animateur would read as a check nobody made.
  */
 export function phraseUsages(usages: ReferenceUsage): string {
-  const total = usages.affectations + usages.contraintesAdHoc + usages.verrouillages;
+  const total =
+    usages.affectations + usages.contraintesAdHoc + usages.verrouillages + usages.consignes;
   if (total === 0) {
     return $localize`:@@usages.none:Aucune affectation, aucun ajustement manuel et aucun verrouillage ne le référencent.`;
   }
-  return $localize`:@@usages.counts:Référencé par ${usages.affectations}:affectations: affectation(s), ${usages.contraintesAdHoc}:contraintes: ajustement(s) manuel(s) et ${usages.verrouillages}:verrouillages: verrouillage(s).`;
+  const trois = $localize`:@@usages.counts:Référencé par ${usages.affectations}:affectations: affectation(s), ${usages.contraintesAdHoc}:contraintes: ajustement(s) manuel(s) et ${usages.verrouillages}:verrouillages: verrouillage(s).`;
+  if (usages.consignes === 0) {
+    return trois;
+  }
+  return `${trois} ${$localize`:@@usages.consignes:${usages.consignes}:consignes: journée(s) sous consigne l'ouvrent ou l'ont ajouté.`}`;
 }

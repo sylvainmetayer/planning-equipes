@@ -2610,6 +2610,8 @@ export interface ReferenceUsage {
   contraintesAdHoc: number;
   /** Locks freezing it. */
   verrouillages: number;
+  /** Dates under consigne (issue #4) opening the stand, or that added the timeslot; always 0 for an animateur. */
+  consignes: number;
 }
 
 /* ---------- Self-service declaration of availability (issue #291) ---------- */
@@ -3482,6 +3484,7 @@ export interface PrereglageConsigne {
   fenetres: FenetreConsigne[];
   /** The meal windows a consigne made from the preset restates, `null` for the edition's. */
   repas: RepasConsigne | null;
+  creeLe: string | null;
   modifieLe: string | null;
 }
 

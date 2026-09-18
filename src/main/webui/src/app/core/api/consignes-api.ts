@@ -16,7 +16,7 @@ import {
 } from '../models';
 
 /** What a preset write carries: the preset without its id and its stamp. */
-export type PrereglageConsigneSaisi = Omit<PrereglageConsigne, 'id' | 'modifieLe'>;
+export type PrereglageConsigneSaisi = Omit<PrereglageConsigne, 'id' | 'creeLe' | 'modifieLe'>;
 
 @Injectable({ providedIn: 'root' })
 export class ConsignesApi {

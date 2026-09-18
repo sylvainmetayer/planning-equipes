@@ -4944,7 +4944,7 @@
         }
       },
       "PrereglageConsigne" : {
-        "required" : [ "id", "nom", "fermetureDebut", "motif", "fenetres" ],
+        "required" : [ "nom", "fermetureDebut", "motif", "fenetres" ],
         "type" : "object",
         "properties" : {
           "id" : {
@@ -4967,6 +4967,9 @@
             "items" : {
               "$ref" : "#/components/schemas/Fenetre"
             }
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
@@ -5667,7 +5670,7 @@
         }
       },
       "ReferenceUsage" : {
-        "required" : [ "affectations", "contraintesAdHoc", "verrouillages" ],
+        "required" : [ "affectations", "contraintesAdHoc", "verrouillages", "consignes" ],
         "type" : "object",
         "properties" : {
           "affectations" : {
@@ -5679,6 +5682,10 @@
             "format" : "int32"
           },
           "verrouillages" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "consignes" : {
             "type" : "integer",
             "format" : "int32"
           }
