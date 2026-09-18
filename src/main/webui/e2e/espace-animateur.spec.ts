@@ -146,8 +146,16 @@ test.describe('espace animateur', () => {
     );
     await expect(pageAdmin.getByText('[object Object]')).toHaveCount(0);
     await pageAdmin.getByRole('button', { name: 'Accepter', exact: true }).first().click();
-    // Confirmation dialog.
+    // Confirmation dialog — and the decision itself, awaited on the wire: the
+    // list already reads « Acceptée » for the colleague's own accord, so the
+    // text alone would let the admin context close before the request left.
+    const decision = pageAdmin.waitForResponse(
+      (response) =>
+        response.request().method() === 'POST' &&
+        /\/api\/echanges\/[^/]+\/acceptation$/.test(response.url()),
+    );
     await pageAdmin.getByRole('dialog').getByRole('button', { name: 'Accepter' }).click();
+    expect((await decision).ok()).toBe(true);
     await expect(pageAdmin.getByText('Acceptée').first()).toBeVisible();
     await contexteAdminNavigateur.close();
 

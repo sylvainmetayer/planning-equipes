@@ -142,7 +142,9 @@ test('une édition saisie de bout en bout, résolue, et relue sur l’axe du tem
 
   // 1. L'édition.
   await page.goto('/editions');
-  await page.getByLabel('Nom').fill(EDITION_NOM);
+  // By placeholder: every listed edition also carries a « Nom » field, the
+  // inline rename, and the list may land before or after this line.
+  await page.getByPlaceholder('Année 2026').fill(EDITION_NOM);
   await page.getByRole('button', { name: 'Ajouter' }).click();
   const ligneEdition = page.getByRole('row', { name: new RegExp(EDITION_NOM) });
   await expect(ligneEdition).toBeVisible();

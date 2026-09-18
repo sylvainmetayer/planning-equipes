@@ -36,12 +36,12 @@ const SHIFT_DAYS = 1722 * 7;
 const MOTIF = 'Arrêté préfectoral canicule';
 
 /**
- * The full solve reaches zero hard in about 70 s locally on this fixture,
- * roughly twice that on the CI runner: the budget leaves room. The
- * incremental solves only re-fill the days the consigne touched.
+ * Every solve of the journey is a full one restarted from the plan (see
+ * `lockDaysExcept`): the nominal reaches zero hard in about 70 s locally on
+ * this fixture, roughly twice that on the CI runner, and the two others start
+ * from a plan already staffed. The budget leaves room.
  */
 const FULL_SOLVE_SECONDS = 240;
-const INCREMENTAL_SOLVE_SECONDS = 120;
 
 /** Where the e2e stack's Mailpit serves its REST API (docker, port 8025). */
 const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
@@ -114,15 +114,28 @@ async function solveFromReferenceData(): Promise<JobTermine> {
   return awaitJob(id, FULL_SOLVE_SECONDS);
 }
 
-/** Purely automatic perimeter: what the late change invalidated, nothing more. */
-async function solveIncremental(): Promise<JobTermine> {
-  const launch = await admin.post(
-    `/api/solve/incremental/async?seconds=${INCREMENTAL_SOLVE_SECONDS}`,
-    { data: { animateurIds: [], jours: [], standIds: [] } },
-  );
-  expect(launch.status(), await launch.text()).toBe(202);
-  const { id } = (await launch.json()) as { id: string };
-  return awaitJob(id, INCREMENTAL_SOLVE_SECONDS);
+/**
+ * The organiser's way of re-solving around a consigne: lock every other day
+ * (`JOUR` locks, the deliberate freeze of issue #87), then run a full solve
+ * restarted from the plan. The incremental re-solve is the wrong tool here,
+ * twice over: its automatic perimeter pins every seat whose holder is still
+ * available — including, after a lift, a person whose 18h–20h grew back to
+ * 14h–20h next to another seat, a hard violation nobody can move any more —
+ * and its local search on a mostly-pinned problem is too slow to trade seats
+ * within the budget when the construction leaves one empty. A full solve keeps
+ * the unlocked seats movable and fixes both.
+ */
+async function lockDaysExcept(free: readonly string[]): Promise<void> {
+  const days = new Set((await creneaux()).map((creneau) => creneau.date).filter(Boolean));
+  for (const jour of [...days].sort()) {
+    if (free.includes(jour as string)) {
+      continue;
+    }
+    const lock = await admin.post('/api/verrouillages', {
+      data: { type: 'JOUR', jour, raison: 'E2E : journée hors consigne, préservée' },
+    });
+    expect(lock.ok(), await lock.text()).toBe(true);
+  }
 }
 
 /** The hard score of the last analysed plan, as the Contraintes screen reads it. */
@@ -441,9 +454,10 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   // The edition's own meal windows never move: the override is dated.
   expect(await legalParameters()).toEqual(legalBefore);
 
-  // Re-solved incrementally, still feasible, and the publication names only
-  // the three days.
-  const underConsigne = await solveIncremental();
+  // Re-solved with every other day locked: still feasible, and the
+  // publication names only the three days.
+  await lockDaysExcept(DAYS);
+  const underConsigne = await solveFromReferenceData();
   expect(underConsigne.result?.diagnostic.hardScore, 'the compensation must be staffable').toBe(0);
   await expect.poll(constraintsHardScore, { timeout: 60_000 }).toBe(0);
 
@@ -507,7 +521,10 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
       .sort(),
   ).toEqual(nominalGridDay3);
 
-  const afterLifting = await solveIncremental();
+  // The two days still under consigne are published and validated: locked
+  // too, so only the lifted day moves.
+  await lockDaysExcept([DAY3]);
+  const afterLifting = await solveFromReferenceData();
   expect(afterLifting.result?.diagnostic.hardScore, 'the nominal day must be feasible again').toBe(
     0,
   );

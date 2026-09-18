@@ -250,6 +250,19 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
   les consignes : supprimer un stand emportait ses ouvertures, supprimer un
   créneau sa marque « ajouté par consigne », en silence.
 - **Limites assumées.**
+  - **Relancer autour d'une consigne, c'est verrouiller puis résoudre en
+    entier — pas replanifier en incrémental.** Le périmètre automatique de
+    la replanification épingle tout siège dont le titulaire est encore
+    disponible : à la levée, la personne dont le 18 h-20 h redevient un
+    14 h-20 h à côté d'un autre siège tient une violation dure que plus
+    aucun mouvement ne peut défaire ; et quand la construction laisse un
+    siège vide sur une soirée saturée, la recherche locale d'un problème
+    presque entièrement épinglé est trop lente pour échanger des sièges
+    dans le budget. Le geste qui tient, rejoué de bout en bout par
+    `canicule-festival-hivernal.spec.ts` : un verrou `JOUR` sur chaque
+    journée à préserver, puis une résolution complète réamorcée depuis le
+    plan — les sièges libres restent mobiles, et la recherche locale répare
+    ce que l'incrémental aurait figé.
   - **La bande est obligatoire.** Une consigne sans bande — ajouter une
     nocturne — n'est pas une consigne ; c'est une journée type.
   - **Une bande par jour.** Deux fermetures le même jour demandent une
