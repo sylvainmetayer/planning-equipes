@@ -60,7 +60,8 @@ class McpAnnotationsStructurelleTest {
             "synthese_",
             "suggerer_",
             "volumes",
-            "edition_courante");
+            "edition_courante",
+            "changements_journee");
 
     /**
      * Tools that overwrite or drop something the user cannot get back by
