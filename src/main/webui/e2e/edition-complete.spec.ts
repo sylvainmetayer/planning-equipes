@@ -78,7 +78,7 @@ async function creerStand(page: Page, id: string, nom: string): Promise<void> {
   await ouvrirSelect(dialog, 'Typologies de jeu');
   await page.getByRole('option', { name: 'Jeux E2E' }).click();
   await page.keyboard.press('Escape');
-  await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
+  await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0);
   await dialog.getByRole('button', { name: 'Créer le stand' }).click();
   await expect(dialog).toBeHidden();
 }
