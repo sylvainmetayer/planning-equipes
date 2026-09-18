@@ -1333,6 +1333,9 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "repas" : {
+            "$ref" : "#/components/schemas/RepasConsigne"
           }
         }
       },
@@ -2095,6 +2098,9 @@
             "items" : {
               "$ref" : "#/components/schemas/Ouverture"
             }
+          },
+          "repas" : {
+            "$ref" : "#/components/schemas/RepasConsigne"
           }
         }
       },
@@ -3060,6 +3066,18 @@
           },
           "auPlusTard" : {
             "type" : "boolean"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "datesExclues" : {
+            "type" : "array",
+            "uniqueItems" : true,
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
           }
         }
       },
@@ -4952,6 +4970,9 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "repas" : {
+            "$ref" : "#/components/schemas/RepasConsigne"
           }
         }
       },
@@ -5750,6 +5771,31 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "RepasConsigne" : {
+        "type" : "object",
+        "required" : [ "justification" ],
+        "properties" : {
+          "midiDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "midiFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "soirDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "soirFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "coupureMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "justification" : {
+            "type" : "string"
           }
         }
       },

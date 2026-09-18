@@ -23,6 +23,7 @@ import {
   ConsigneEdition,
   IndicateurConsigne,
   PrereglageConsigne,
+  RepasConsigne,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
@@ -39,6 +40,8 @@ import {
   fenetreLabel,
   libelleDate,
   openedStandsCount,
+  repasLabel,
+  repasSurcharge,
 } from './consignes';
 import { PrereglageDialog, PrereglageDialogData } from './prereglage-dialog';
 
@@ -51,6 +54,8 @@ interface LigneConsigne {
   prereglage: string;
   standsOuverts: number;
   fenetres: string;
+  /** The tooltip of the « repas surchargé » chip, empty when the edition's meal windows apply. */
+  repas: string;
   indicateur: IndicateurConsigne | null;
   passee: boolean;
   consigne: ConsigneEdition;
@@ -130,6 +135,7 @@ export class ConsignesPage {
         prereglage: consigne.prereglage ?? '',
         standsOuverts: openedStandsCount(consigne),
         fenetres: consigne.fenetres.map(fenetreLabel).join(', '),
+        repas: repasSurcharge(consigne.repas) ? repasLabel(consigne.repas) : '',
         indicateur: indicateurs.get(consigne.date) ?? null,
         passee: isPast(consigne.date, aujourdhui),
         consigne,
@@ -170,6 +176,11 @@ export class ConsignesPage {
 
   protected windowsOf(prereglage: PrereglageConsigne): string {
     return prereglage.fenetres.map(fenetreLabel).join(', ');
+  }
+
+  /** The chip's tooltip, empty when nothing is restated. */
+  protected repasOf(repas: RepasConsigne | null): string {
+    return repasSurcharge(repas) ? repasLabel(repas) : '';
   }
 
   /* ------------------------------ the consignes ------------------------------ */

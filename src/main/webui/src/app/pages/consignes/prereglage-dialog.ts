@@ -10,12 +10,16 @@ import { normaliseHour } from '../../core/horaire-stand';
 import { PrereglageConsigne } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
+import { ConsigneRepasFields } from './consigne-repas-fields';
 import {
+  erreursRepas,
   fenetresDemandees,
   fenetresSaisies,
   formatFenetresSaisie,
   heureSaisie,
   parseFenetresSaisie,
+  repasDemande,
+  repasSaisie,
 } from './consignes';
 
 export interface PrereglageDialogData {
@@ -23,9 +27,10 @@ export interface PrereglageDialogData {
 }
 
 /**
- * One preset — « Plan canicule » — its band, its motif and its default
- * windows on one line, the way the series dialog reads a day. Nothing is laid
- * on a date here: a preset changes nothing until a consigne is made from it.
+ * One preset — « Plan canicule » — its band, its motif, its default windows
+ * on one line, the way the series dialog reads a day, and the meal windows a
+ * consigne made from it restates. Nothing is laid on a date here: a preset
+ * changes nothing until a consigne is made from it.
  */
 @Component({
   selector: 'app-prereglage-dialog',
@@ -36,6 +41,7 @@ export interface PrereglageDialogData {
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    ConsigneRepasFields,
   ],
   templateUrl: './prereglage-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +68,7 @@ export class PrereglageDialog {
       ? formatFenetresSaisie(fenetresSaisies(this.data.prereglage.fenetres))
       : '',
   );
+  protected readonly repas = signal(repasSaisie(this.data.prereglage?.repas ?? null));
   protected readonly enregistrement = signal(false);
 
   protected readonly formTitle = this.editingId
@@ -78,7 +85,8 @@ export class PrereglageDialog {
       this.motif().trim() === '' ||
       normaliseHour(this.fermetureDebut()) === null ||
       (this.fermetureFin() !== '' && normaliseHour(this.fermetureFin()) === null) ||
-      this.fenetres() === null,
+      this.fenetres() === null ||
+      erreursRepas(this.repas()).length > 0,
   );
 
   protected async save(): Promise<void> {
@@ -92,6 +100,7 @@ export class PrereglageDialog {
       fermetureFin: this.fermetureFin() === '' ? null : this.fermetureFin(),
       motif: this.motif().trim(),
       fenetres: fenetresDemandees(fenetres),
+      repas: repasDemande(this.repas()),
     };
     this.enregistrement.set(true);
     try {

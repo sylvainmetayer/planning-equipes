@@ -37,6 +37,7 @@ import {
   FILTRES_VIDES,
   FenetreSaisie,
   FiltresStands,
+  RepasSaisie,
   StandForm,
   applyToSelection,
   bandeLabel,
@@ -52,7 +53,9 @@ import {
   mergePreselection,
   parseFenetresSaisie,
   followDefaultWindows,
+  repasSaisie,
 } from './consignes';
+import { ConsigneRepasFields, repasErrorLabel } from './consigne-repas-fields';
 
 /** Poser a new consigne, modifier the one a row carries, or prolonger it on other dates. */
 export type ModeConsigne = 'poser' | 'modifier' | 'prolonger';
@@ -95,6 +98,7 @@ export interface ConsigneFormData {
     MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
+    ConsigneRepasFields,
   ],
   templateUrl: './consigne-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -121,6 +125,8 @@ export class ConsigneFormDialog {
   protected readonly fenetres = signal<FenetreSaisie[]>(
     fenetresSaisies(this.data.consigne?.fenetres ?? []),
   );
+  /** The meal windows restated for the dates, the edition's when nothing is typed. */
+  protected readonly repas = signal<RepasSaisie>(repasSaisie(this.data.consigne?.repas ?? null));
   protected readonly stands = signal<StandForm[]>([]);
   protected readonly chargementStands = signal(false);
   protected readonly creneauxOfDay = signal<number | null>(null);
@@ -151,6 +157,7 @@ export class ConsigneFormDialog {
     prereglage: this.prereglage(),
     fenetres: this.fenetres(),
     stands: this.stands(),
+    repas: this.repas(),
   }));
   protected readonly erreurs = computed(() => erreursForm(this.form()));
   protected readonly invalide = computed(() => this.erreurs().length > 0);
@@ -227,7 +234,7 @@ export class ConsigneFormDialog {
 
   /* ------------------------------ the band ------------------------------ */
 
-  /** A preset fills the band, the motif and the day's windows; the stands follow the windows. */
+  /** A preset fills the band, the motif, the day's windows and the meal windows; the stands follow the windows. */
   protected choisirPrereglage(id: string | null): void {
     const prereglage = this.data.prereglages.find((candidat) => candidat.id === id) ?? null;
     this.prereglage.set(prereglage?.nom ?? null);
@@ -238,6 +245,12 @@ export class ConsigneFormDialog {
     this.fermetureFin.set(heureSaisie(prereglage.fermetureFin));
     this.motif.set(prereglage.motif);
     this.remplacerFenetres(fenetresSaisies(prereglage.fenetres));
+    this.repas.set(repasSaisie(prereglage.repas));
+  }
+
+  protected onRepas(repas: RepasSaisie): void {
+    this.repas.set(repas);
+    this.apercu.set(null);
   }
 
   /** The id of the preset whose name the form carries, for the selector. */
@@ -401,6 +414,8 @@ export class ConsigneFormDialog {
         return $localize`:@@consignes.form.error.motif:Le motif est obligatoire : il est imprimé partout où la journée est dite modifiée.`;
       case 'FENETRE':
         return $localize`:@@consignes.form.error.fenetre:Chaque fenêtre a besoin d'une heure de début ; une fin vide vaut minuit.`;
+      default:
+        return repasErrorLabel(erreur);
     }
   }
 }
