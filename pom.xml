@@ -22,13 +22,13 @@
 
     <properties>
         <revision>999-SNAPSHOT</revision>
-        <compiler-plugin.version>3.15.0</compiler-plugin.version>
+        <compiler-plugin.version>3.16.0</compiler-plugin.version>
         <maven.compiler.release>25</maven.compiler.release>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
         <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>
-        <quarkus.platform.version>3.38.3</quarkus.platform.version>
+        <quarkus.platform.version>3.39.3</quarkus.platform.version>
         <timefold.solver.version>2.5.0</timefold.solver.version>
         <quinoa.version>2.9.0</quinoa.version>
         <sentry.version>8.53.0</sentry.version>
@@ -44,7 +44,7 @@
              l'application packagée en %prod, où la valeur d'exemple est
              refusée au démarrage. -->
         <it.admin.password>it-admin-Hs3vQ9zR</it.admin.password>
-        <surefire-plugin.version>3.5.6</surefire-plugin.version>
+        <surefire-plugin.version>3.6.0</surefire-plugin.version>
         <spotless-plugin.version>3.10.2</spotless-plugin.version>
         <palantir-java-format.version>2.98.0</palantir-java-format.version>
         <license-plugin.version>2.7.1</license-plugin.version>
@@ -482,7 +482,7 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.6.3</version>
+                        <version>3.6.4</version>
                         <executions>
                             <execution>
                                 <id>generate-scenario-schema</id>
