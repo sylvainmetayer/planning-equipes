@@ -4,7 +4,7 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@journee.title">Journée</h1>
     <mat-card-subtitle i18n="@@journee.subtitle">
-      Une journée du planning, sous quatre rendus : par stand, par animateur, sur la carte, ou par ses pauses.
+      Une journée du planning, sous cinq rendus : par stand, par animateur, sur la carte, par ses pauses, ou par ses changements.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -48,6 +48,10 @@
         <mat-button-toggle value="pauses">
           <mat-icon>free_breakfast</mat-icon>
           <ng-container i18n="@@journee.vue.pauses">Pauses</ng-container>
+        </mat-button-toggle>
+        <mat-button-toggle value="changements">
+          <mat-icon>difference</mat-icon>
+          <ng-container i18n="@@journee.vue.changements">Changements</ng-container>
         </mat-button-toggle>
       </mat-button-toggle-group>
       @if (viewChanged()) {
@@ -138,6 +142,13 @@
       } @placeholder {
         <mat-progress-bar mode="indeterminate" />
       }
+    }
+    @case ('changements') {
+      <app-changements-vue
+        [jour]="jourCourant()?.date ?? null"
+        [(reference)]="referenceChangements"
+        [(reading)]="lectureChangements"
+      />
     }
     @case ('pauses') {
       <app-pauses-vue

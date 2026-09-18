@@ -36,9 +36,18 @@ export function buildOperationsSections(): HelpSection[] {
           kind: 'paragraph',
           text: $localize`:@@aide.relecture.resolution:Une résolution qui déplace un siège d'une journée acceptée retire cette validation, et le récapitulatif le dit : personne n'a relu ce que le calcul vient d'écrire. Une journée aussi verrouillée garde sa validation, puisque rien n'a pu y bouger. Au moment de publier, le panneau de diffusion rappelle combien de journées non relues partiraient.`,
         },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.relecture.changements:Le rendu « Changements » de la page Journée liste ce qui a bougé ce jour-là : siège par siège (stand, créneau, qui était là, qui y est maintenant) ou personne par personne, dans les phrases mêmes du courriel de publication. Deux références : depuis la dernière publication — ce que les gens ont reçu — ou depuis la dernière résolution, pour voir ce que le calcul vient de réécrire. Tant qu'aucune n'existe, l'onglet le dit plutôt que de compter zéro changement.`,
+        },
       ],
       links: [
         { route: '/journee', label: $localize`:@@nav.link.journee:Journée` },
+        {
+          route: '/journee',
+          queryParams: { vue: 'changements' },
+          label: $localize`:@@aide.link.changementsJour:Changements de la journée`,
+        },
         { route: '/verrouillages', label: $localize`:@@nav.link.verrouillages:Verrouillages` },
       ],
     },

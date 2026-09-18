@@ -15,6 +15,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
 import { errorPrefix } from '../../core/error-message';
 import { Emplacement, PlanningEvenement, RapportPauses, TypologieItem } from '../../core/models';
@@ -28,6 +29,8 @@ import { CalendarDayView } from '../calendar-day/calendar-day-vue';
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
 import { PausesView } from '../pauses/pauses-vue';
+import { ChangementsReading, readReading, readReference } from './changements';
+import { ChangementsView } from './changements-vue';
 import { ConsigneCard } from './consigne-card';
 import { ValidationPanel } from './validation-panel';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
@@ -47,9 +50,9 @@ interface Option {
 }
 
 /**
- * « Journée » : one day of the persisted plan, under four renderings — the
+ * « Journée » : one day of the persisted plan, under five renderings — the
  * calendar stand by stand, the rail animateur by animateur, the map hour by
- * hour, the breaks — sharing one day selector and the same filters, all
+ * hour, the breaks, what changed since a reference — sharing one day selector and the same filters, all
  * carried by the URL. Switching the rendering changes nothing but the
  * rendering: the plan, the breaks, the typologies and the emplacements are
  * read once here and handed to whichever view is on screen.
@@ -72,6 +75,7 @@ interface Option {
     ValidationBanner,
     ValidationPanel,
     ConsigneCard,
+    ChangementsView,
     CalendarDayView,
     RailJourView,
     PausesView,
@@ -112,6 +116,9 @@ export class JourneePage {
   protected readonly withoutRelais = signal(false);
   protected readonly coupuresManquantes = signal(false);
   protected readonly seulementProblemes = signal(false);
+  /** The Changements rendering's own state: the reference nobody chose stays null, the server picks. */
+  protected readonly referenceChangements = signal<ReferenceChangementsParam | null>(null);
+  protected readonly lectureChangements = signal<ChangementsReading>('vacations');
 
   protected readonly jours = computed<JourEvenement[]>(() =>
     planningDays(this.planning()?.postes ?? []),
@@ -172,7 +179,9 @@ export class JourneePage {
       this.instantCarte() !== null ||
       this.withoutRelais() ||
       this.coupuresManquantes() ||
-      this.seulementProblemes(),
+      this.seulementProblemes() ||
+      this.referenceChangements() !== null ||
+      this.lectureChangements() !== 'vacations',
   );
 
   /** Whether a filter hides part of the day — which the relecture panel, accepting it whole, has to say. */
@@ -203,6 +212,8 @@ export class JourneePage {
     this.withoutRelais.set(params.get('relais') === 'sans');
     this.coupuresManquantes.set(params.get('repas') === 'manquantes');
     this.seulementProblemes.set(params.get('problemes') === '1');
+    this.referenceChangements.set(readReference(params.get('reference')));
+    this.lectureChangements.set(readReading(params.get('lecture')));
     void this.refresh();
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a
@@ -224,11 +235,13 @@ export class JourneePage {
       relais: this.withoutRelais() ? 'sans' : null,
       repas: this.coupuresManquantes() ? 'manquantes' : null,
       problemes: this.seulementProblemes() ? '1' : null,
+      reference: this.referenceChangements(),
+      lecture: this.lectureChangements() === 'vacations' ? null : this.lectureChangements(),
     }));
   }
 
   /**
-   * Reads everything the four renderings need, in one go. The referentials
+   * Reads everything the renderings need, in one go. The referentials
    * degrade rather than fail: a legend without labels or a map without
    * coordinates is still a day worth reading.
    */
@@ -290,5 +303,7 @@ export class JourneePage {
     this.withoutRelais.set(false);
     this.coupuresManquantes.set(false);
     this.seulementProblemes.set(false);
+    this.referenceChangements.set(null);
+    this.lectureChangements.set('vacations');
   }
 }

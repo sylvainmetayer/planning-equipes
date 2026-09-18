@@ -1,12 +1,18 @@
 // The pure side of the Journée page: which days the plan holds, which of the
-// four renderings a query param names, and how a day is keyed in the URL.
+// five renderings a query param names, and how a day is keyed in the URL.
 
 import { PosteAffectation } from '../../core/models';
 
-/** The four renderings of one day, and the values of the `vue` query param. */
-export type JourneeView = 'calendrier' | 'rail' | 'carte' | 'pauses';
+/** The five renderings of one day, and the values of the `vue` query param. */
+export type JourneeView = 'calendrier' | 'rail' | 'carte' | 'pauses' | 'changements';
 
-export const JOURNEE_VIEWS: readonly JourneeView[] = ['calendrier', 'rail', 'carte', 'pauses'];
+export const JOURNEE_VIEWS: readonly JourneeView[] = [
+  'calendrier',
+  'rail',
+  'carte',
+  'pauses',
+  'changements',
+];
 
 /** One event day of the plan, as the shared selector lists it. */
 export interface JourEvenement {
