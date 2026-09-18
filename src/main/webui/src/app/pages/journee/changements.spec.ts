@@ -7,6 +7,8 @@ import {
   TypeChangementSiege,
 } from '../../core/models';
 import {
+  animateurIdsOnStand,
+  countSeatLines,
   filterPersonLines,
   filterSeatLines,
   isUnchanged,
@@ -25,6 +27,7 @@ function changements(overrides: Partial<ChangementsJournee> = {}): ChangementsJo
     nouveaux: 0,
     retires: 0,
     remplaces: 0,
+    horairesModifies: 0,
     animateursConcernes: 0,
     parVacation: [],
     parAnimateur: [],
@@ -103,6 +106,27 @@ describe('filterSeatLines', () => {
   });
 });
 
+describe('animateurIdsOnStand', () => {
+  const alice = { animateurId: 'a1', nomAffiche: 'Alice Martin' };
+  const bob = { animateurId: 'a2', nomAffiche: 'Bob Durand' };
+  const lines: ChangementSiege[] = [
+    seat('TIR', 'Tir', alice, bob, 'REMPLACE'),
+    seat('TIR-ARC', 'Tir à l’arc', null, alice, 'NOUVEAU'),
+    seat('DIXIT', 'Dixit', bob, null, 'RETIRE'),
+  ];
+
+  it('is nobody to narrow on without a stand', () => {
+    expect(animateurIdsOnStand(lines, '')).toBeNull();
+  });
+
+  it('names the people on either side of the seats of that stand, and that stand only', () => {
+    expect([...(animateurIdsOnStand(lines, 'TIR') ?? [])]).toEqual(['a1', 'a2']);
+    // « Tir » is a prefix of « Tir à l’arc »: an id match, never a name match.
+    expect([...(animateurIdsOnStand(lines, 'TIR-ARC') ?? [])]).toEqual(['a1']);
+    expect(animateurIdsOnStand(lines, 'PUZZLE')?.size).toBe(0);
+  });
+});
+
 describe('filterPersonLines', () => {
   const lines: ChangementAnimateur[] = [
     {
@@ -117,15 +141,40 @@ describe('filterPersonLines', () => {
     },
   ];
 
-  it('narrows on the animateur, on the stand named in the sentences, and on the typed text', () => {
-    expect(filterPersonLines(lines, '', '', 'a2').map((line) => line.animateurId)).toEqual(['a2']);
-    expect(filterPersonLines(lines, '', 'Dixit', '').map((line) => line.animateurId)).toEqual([
-      'a1',
-    ]);
-    expect(filterPersonLines(lines, 'retire', '', '').map((line) => line.animateurId)).toEqual([
+  it('narrows on the animateur, on the people the stand filter names, and on the typed text', () => {
+    expect(filterPersonLines(lines, '', null, 'a2').map((line) => line.animateurId)).toEqual([
       'a2',
     ]);
-    expect(filterPersonLines(lines, '', '', '')).toHaveLength(2);
+    expect(
+      filterPersonLines(lines, '', new Set(['a1']), '').map((line) => line.animateurId),
+    ).toEqual(['a1']);
+    expect(filterPersonLines(lines, '', new Set(), '')).toHaveLength(0);
+    expect(filterPersonLines(lines, 'retire', null, '').map((line) => line.animateurId)).toEqual([
+      'a2',
+    ]);
+    expect(filterPersonLines(lines, '', null, '')).toHaveLength(2);
+  });
+});
+
+describe('countSeatLines', () => {
+  it('counts the lines by type, so the counters can follow the filters', () => {
+    const alice = { animateurId: 'a1', nomAffiche: 'Alice Martin' };
+    const bob = { animateurId: 'a2', nomAffiche: 'Bob Durand' };
+    expect(
+      countSeatLines([
+        seat('TIR', 'Tir', alice, bob, 'REMPLACE'),
+        seat('DIXIT', 'Dixit', null, alice, 'NOUVEAU'),
+        seat('DIXIT', 'Dixit', bob, null, 'RETIRE'),
+        seat('DIXIT', 'Dixit', bob, bob, 'HORAIRES'),
+        seat('PUZZLE', 'Puzzle', null, bob, 'NOUVEAU'),
+      ]),
+    ).toEqual({ nouveaux: 2, retires: 1, remplaces: 1, horairesModifies: 1 });
+    expect(countSeatLines([])).toEqual({
+      nouveaux: 0,
+      retires: 0,
+      remplaces: 0,
+      horairesModifies: 0,
+    });
   });
 });
 
@@ -142,6 +191,8 @@ function seat(
     date: '2026-08-01',
     heureDebut: '10:00',
     heureFin: '12:00',
+    heureDebutAvant: null,
+    heureFinAvant: null,
     avant,
     apres,
     type,
@@ -153,5 +204,6 @@ describe('typeSiegeLabel', () => {
     expect(typeSiegeLabel('NOUVEAU')).toBe('nouveau');
     expect(typeSiegeLabel('RETIRE')).toBe('retiré');
     expect(typeSiegeLabel('REMPLACE')).toBe('remplacé');
+    expect(typeSiegeLabel('HORAIRES')).toBe('horaires modifiés');
   });
 });

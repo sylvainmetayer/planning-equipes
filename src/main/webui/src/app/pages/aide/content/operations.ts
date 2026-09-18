@@ -38,7 +38,7 @@ export function buildOperationsSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.relecture.changements:Le rendu « Changements » de la page Journée liste ce qui a bougé ce jour-là : siège par siège (stand, créneau, qui était là, qui y est maintenant) ou personne par personne, dans les phrases mêmes du courriel de publication. Deux références : depuis la dernière publication — ce que les gens ont reçu — ou depuis la dernière résolution, pour voir ce que le calcul vient de réécrire. Tant qu'aucune n'existe, l'onglet le dit plutôt que de compter zéro changement.`,
+          text: $localize`:@@aide.relecture.changements:Le rendu « Changements » de la page Journée liste ce qui a bougé ce jour-là : siège par siège (stand, créneau, qui était là, qui y est maintenant) ou personne par personne, dans les phrases mêmes du courriel de publication. Deux références : depuis la dernière publication — ce que les gens ont reçu — ou depuis la dernière résolution, pour voir ce que le calcul vient de réécrire. La dernière résolution est celle qui a réellement remplacé le planning enregistré : un calcul interrompu ou refusé ne déplace pas ce repère, et une restauration ou un import faits entre deux calculs comptent dans les changements. Une personne gardée sur son stand avec des horaires rognés se lit « horaires modifiés », pas retirée puis nouvelle. Les compteurs suivent les filtres de la page et le disent. Tant qu'aucune référence n'existe, l'onglet le dit plutôt que de compter zéro changement.`,
         },
       ],
       links: [

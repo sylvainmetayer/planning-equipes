@@ -57,22 +57,33 @@
       } @else {
         <p class="calendar-meta">{{ referenceLabel() }}</p>
         <div class="journee-changements-compteurs">
+          @let counts = counters();
           <span class="staffing-stat">
-            <span class="staffing-stat-value">{{ changes.nouveaux }}</span>
+            <span class="staffing-stat-value">{{ counts.nouveaux }}</span>
             <span class="staffing-stat-label" i18n="@@journee.changements.compteur.nouveaux">nouveaux</span>
           </span>
           <span class="staffing-stat">
-            <span class="staffing-stat-value">{{ changes.retires }}</span>
+            <span class="staffing-stat-value">{{ counts.retires }}</span>
             <span class="staffing-stat-label" i18n="@@journee.changements.compteur.retires">retirés</span>
           </span>
           <span class="staffing-stat">
-            <span class="staffing-stat-value">{{ changes.remplaces }}</span>
+            <span class="staffing-stat-value">{{ counts.remplaces }}</span>
             <span class="staffing-stat-label" i18n="@@journee.changements.compteur.remplaces">remplacés</span>
           </span>
           <span class="staffing-stat">
-            <span class="staffing-stat-value">{{ changes.animateursConcernes }}</span>
+            <span class="staffing-stat-value">{{ counts.horairesModifies }}</span>
+            <span class="staffing-stat-label" i18n="@@journee.changements.compteur.horaires">horaires modifiés</span>
+          </span>
+          <span class="staffing-stat">
+            <span class="staffing-stat-value">{{ peopleConcerned() }}</span>
             <span class="staffing-stat-label" i18n="@@journee.changements.compteur.animateurs">animateurs concernés</span>
           </span>
+          @if (filtered()) {
+            <span class="journee-changements-filtre">
+              <mat-icon>filter_alt</mat-icon>
+              <ng-container i18n="@@journee.changements.filtre">filtré</ng-container>
+            </span>
+          }
         </div>
 
         @if (unchanged()) {
@@ -95,7 +106,7 @@
         } @else {
           <div class="table-wrapper">
             <table class="journee-changements-table">
-              <caption class="visually-hidden" i18n="@@journee.changements.table.caption">Sièges de la journée dont le titulaire a changé</caption>
+              <caption class="visually-hidden" i18n="@@journee.changements.table.caption">Sièges de la journée dont le titulaire ou les horaires ont changé</caption>
               <thead>
                 <tr>
                   <th scope="col" i18n="@@journee.changements.colonne.stand">Stand</th>

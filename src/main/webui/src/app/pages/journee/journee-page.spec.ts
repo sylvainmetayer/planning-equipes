@@ -104,6 +104,7 @@ describe('JourneePage', () => {
         nouveaux: 1,
         retires: 0,
         remplaces: 0,
+        horairesModifies: 0,
         animateursConcernes: 1,
         parVacation: [
           {
@@ -112,6 +113,8 @@ describe('JourneePage', () => {
             date: jour,
             heureDebut: '10:00:00',
             heureFin: '12:00:00',
+            heureDebutAvant: null,
+            heureFinAvant: null,
             avant: null,
             apres: { animateurId: 'alice', nomAffiche: 'Alice Martin' },
             type: 'NOUVEAU',
@@ -294,6 +297,7 @@ describe('JourneePage', () => {
       nouveaux: 0,
       retires: 0,
       remplaces: 0,
+      horairesModifies: 0,
       animateursConcernes: 0,
       parVacation: [],
       parAnimateur: [],

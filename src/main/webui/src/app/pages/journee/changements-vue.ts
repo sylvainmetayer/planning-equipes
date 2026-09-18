@@ -20,6 +20,8 @@ import { ChangementSiege, TypeChangementSiege } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
 import {
   ChangementsReading,
+  animateurIdsOnStand,
+  countSeatLines,
   filterPersonLines,
   filterSeatLines,
   isUnchanged,
@@ -38,6 +40,10 @@ import {
  * written to the URL by the page. A reference nobody chose is left to the
  * server, which picks the publication when one exists; the answer says which,
  * and that is what the toggle shows.</p>
+ *
+ * <p>The page's filters narrow both readings, and the counters follow them:
+ * four figures over the lines on screen, flagged « filtré » so they are not
+ * read as the whole day's.</p>
  */
 @Component({
   selector: 'app-changements-vue',
@@ -64,8 +70,6 @@ export class ChangementsView {
   readonly recherche = input('');
   readonly stand = input('');
   readonly animateur = input('');
-  /** The stands of the plan, to name the one the stand filter selects in the per-person sentences. */
-  readonly standNoms = input<ReadonlyMap<string, string>>(new Map());
 
   private readonly changements = resource({
     params: () => ({ jour: this.jour(), reference: this.reference() }),
@@ -74,10 +78,11 @@ export class ChangementsView {
         ? this.api.changements(params.jour, params.reference)
         : Promise.resolve(undefined),
   });
-  // Retained across a re-key so the card keeps its figures while the other
-  // reference loads; a refusal clears it, since figures under an error line
-  // could belong to another day.
-  private readonly retained = retainedValue(this.changements);
+  // Retained across a reference toggle so the card keeps its figures while
+  // the other reference loads — but not across a change of day, whose
+  // figures would then stand under the wrong heading; a refusal clears it
+  // too, since figures under an error line could belong to another day.
+  private readonly retained = retainedValue(this.changements, this.jour);
   protected readonly changes = computed(() =>
     this.changements.status() === 'error' ? null : this.retained(),
   );
@@ -101,13 +106,24 @@ export class ChangementsView {
       this.animateur(),
     ),
   );
+  /** The stand filter, for a person: those a seat line of that stand names. */
+  private readonly standAnimateurs = computed(() =>
+    animateurIdsOnStand(this.changes()?.parVacation ?? [], this.stand()),
+  );
   protected readonly personLines = computed(() =>
     filterPersonLines(
       this.changes()?.parAnimateur ?? [],
       this.recherche(),
-      this.standNoms().get(this.stand()) ?? this.stand(),
+      this.standAnimateurs(),
       this.animateur(),
     ),
+  );
+  /** The seat counters over the lines the filters kept — the whole day's when none is set. */
+  protected readonly counters = computed(() => countSeatLines(this.seatLines()));
+  protected readonly peopleConcerned = computed(() => this.personLines().length);
+  /** True when a filter of the page narrows what the card shows. */
+  protected readonly filtered = computed(
+    () => this.recherche().trim() !== '' || this.stand() !== '' || this.animateur() !== '',
   );
   /** True when the day did change, but nothing of it matches the page's filters. */
   protected readonly nothingMatches = computed(() => {
@@ -143,8 +159,13 @@ export class ChangementsView {
     this.reading.set(reading);
   }
 
+  /** « 14:00 – 18:00 », or « 14:00 – 20:00 → 18:00 – 20:00 » on a seat kept on other hours. */
   protected hours(ligne: ChangementSiege): string {
-    return `${heureCourte(ligne.heureDebut)} – ${heureCourte(ligne.heureFin)}`;
+    const now = `${heureCourte(ligne.heureDebut)} – ${heureCourte(ligne.heureFin)}`;
+    if (ligne.type !== 'HORAIRES' || !ligne.heureDebutAvant || !ligne.heureFinAvant) {
+      return now;
+    }
+    return `${heureCourte(ligne.heureDebutAvant)} – ${heureCourte(ligne.heureFinAvant)} → ${now}`;
   }
 
   protected typeLabel(type: TypeChangementSiege): string {
