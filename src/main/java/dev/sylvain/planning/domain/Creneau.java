@@ -288,6 +288,16 @@ public class Creneau {
      * stay short.</p>
      */
     public String semaineIso() {
+        return semaineIso(date);
+    }
+
+    /**
+     * The same label, off a bare date: the weekly constraints now group the
+     * seats by day before they group the days by week, so the week key is read
+     * from a {@link LocalDate} rather than from a créneau. One implementation,
+     * so the two forms can never disagree on what « 2026-W28 » means.
+     */
+    public static String semaineIso(LocalDate date) {
         if (date == null) {
             return "?";
         }
@@ -304,6 +314,11 @@ public class Creneau {
      * {@code dureeHebdomadaireMaxDeuxSemaines}.
      */
     public LocalDate lundiSemaineIso() {
+        return lundiSemaineIso(date);
+    }
+
+    /** The same Monday, off a bare date — see {@link #semaineIso(LocalDate)}. */
+    public static LocalDate lundiSemaineIso(LocalDate date) {
         return date == null ? null : date.with(java.time.temporal.TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
     }
 
