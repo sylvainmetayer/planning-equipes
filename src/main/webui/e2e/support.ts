@@ -349,8 +349,21 @@ export async function choisirOption(
 ): Promise<void> {
   await ouvrirSelect(root, label);
   const page = pageOf(root);
-  await page.getByRole('option', { name: option }).click();
-  await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0);
+  // A visible panel can still be animating in, and a click that lands then is
+  // not taken: the panel stays open. The backdrop tells; click again while it
+  // stays.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await page.getByRole('option', { name: option }).click();
+    try {
+      await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0, {
+        timeout: 3_000,
+      });
+      return;
+    } catch {
+      // Still open: the panel had not finished opening. Once more.
+    }
+  }
+  throw new Error(`l'option « ${option} » du select « ${label} » n'a pas été prise`);
 }
 
 function pageOf(root: Page | Locator): Page {
