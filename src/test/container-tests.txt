@@ -47,6 +47,7 @@ dev/sylvain/planning/api/EspacePlanPublieTest.java
 dev/sylvain/planning/api/EtatEditionResourceTest.java
 dev/sylvain/planning/api/FeasibilityResourceTest.java
 dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
+dev/sylvain/planning/api/FrozenPastAcceptanceTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
 dev/sylvain/planning/api/ImpactPublicationTest.java
