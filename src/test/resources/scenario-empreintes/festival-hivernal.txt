@@ -159,6 +159,7 @@
 .planning.fenetresRepas[1]  85c54c6119702d6a
 .planning.parametresLegaux[0]  16b5e8d86139921c
 .planning.parametresQualite[0]  ae58e0fa7b85be4c
+.planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario = null
 .planning.postes[0]  ccf115d62e66252f

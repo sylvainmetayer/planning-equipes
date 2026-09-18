@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
@@ -115,9 +116,8 @@ public class PlanningService {
         this.snapshotService = snapshotService;
         // Read at each build, never cached: a queued job builds its problem
         // when its turn comes, and a frozen date set meanwhile must be seen.
-        Supplier<FrozenPast.Horizon> horizon = passeFige && jourJClock != null
-                ? () -> new FrozenPast.Horizon(jourJClock.today(), jourJClock.now())
-                : () -> null;
+        Supplier<PastHorizon> horizon =
+                passeFige && jourJClock != null ? () -> PastHorizon.of(jourJClock.dateTime()) : () -> null;
         this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService, horizon);
         this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService, horizon);
         this.whatIf = new PlanningWhatIf(

@@ -8,6 +8,7 @@ import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.QuotaTypologie;
@@ -47,7 +48,7 @@ final class SolveRunner {
      * The moment the past is judged against (ADR 0044), read at every
      * preparation; {@code null} when the freeze is off. See {@link FrozenPast}.
      */
-    private final Supplier<FrozenPast.Horizon> horizon;
+    private final Supplier<PastHorizon> horizon;
 
     SolveRunner(SolverConfiguration configuration, ReferenceData referenceDataService, PlanSnapshotService snapshots) {
         this(configuration, referenceDataService, snapshots, () -> null);
@@ -57,7 +58,7 @@ final class SolveRunner {
             SolverConfiguration configuration,
             ReferenceData referenceDataService,
             PlanSnapshotService snapshots,
-            Supplier<FrozenPast.Horizon> horizon) {
+            Supplier<PastHorizon> horizon) {
         this.configuration = configuration;
         this.referenceDataService = referenceDataService;
         this.snapshots = snapshots;
@@ -132,9 +133,17 @@ final class SolveRunner {
     void prepareProblem(PlanningEvenement problem) {
         // The past, as a fact of the score (ADR 0044): marked on every
         // preparation, so the analyses of the persisted plan read the same
-        // « counted, never reproached » a solve does. Pinning it is the solve
-        // entry points' business — a diagnostic moves nothing.
-        FrozenPast.Horizon moment = horizon.get();
+        // « counted, never reproached » a solve does. Against the horizon the
+        // problem was built under when it carries one — the clock has moved
+        // since the build, the seats it re-seeded and pinned have not — and
+        // against the clock, read once and kept, for a problem that came
+        // without one. Pinning is the solve entry points' business: a
+        // diagnostic moves nothing.
+        PastHorizon moment = problem.getPastHorizon();
+        if (moment == null) {
+            moment = horizon.get();
+            problem.setPastHorizon(moment);
+        }
         if (moment != null && problem.getPostes() != null) {
             FrozenPast.mark(problem.getPostes(), moment);
         }

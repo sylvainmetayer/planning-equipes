@@ -95,6 +95,17 @@ public class PlanningEvenement {
     @JsonIgnore
     private Map<String, Integer> ponderationsScenario;
 
+    /**
+     * The moment this problem's past was judged against (ADR 0044), set once
+     * — by the builder, or by the first preparation of a problem that came
+     * without one — and read by every later preparation, so the seats pinned
+     * as past are exactly the seats marked as past. {@code null} while the
+     * freeze is off, or before the problem was ever prepared. Never on the
+     * wire: the server's clock is not the caller's to set.
+     */
+    @JsonIgnore
+    private PastHorizon pastHorizon;
+
     @PlanningScore
     private HardMediumSoftScore score;
 
@@ -240,5 +251,15 @@ public class PlanningEvenement {
 
     public void setScore(HardMediumSoftScore score) {
         this.score = score;
+    }
+
+    @JsonIgnore
+    public PastHorizon getPastHorizon() {
+        return pastHorizon;
+    }
+
+    @JsonIgnore
+    public void setPastHorizon(PastHorizon pastHorizon) {
+        this.pastHorizon = pastHorizon;
     }
 }

@@ -125,6 +125,22 @@ le passé sans l'épingler, ce qui suffit aux diagnostics du plan enregistré :
 ils lisent le même fournisseur de contraintes et disent donc la même chose
 qu'un solve.
 
+**Un seul horizon par problème.** L'horloge est lue une fois, en un seul
+instant (`JourJClock.dateTime()`, jamais `today()` puis `now()` — les deux
+lectures pourraient enjamber minuit), au moment où le problème est
+construit, et le problème la garde (`PlanningEvenement.pastHorizon`). La
+préparation qui précède la résolution marque contre cet horizon-là, pas
+contre l'horloge du moment : une place dont le début tombe entre la
+construction et la résolution — rouverte par le périmètre, ou vide sur un
+départ à froid — resterait sinon épinglée vide, sans avoir été réamorcée et
+sans que son trou soit reproché. Un problème arrivé sans horizon (le corps
+d'une requête, le plan enregistré d'une analyse) reçoit celui de la
+première préparation, et le garde de même. Les filtres de mouvements qui
+cherchent des places vides (`HoleNeighbourPosteFilter`,
+`UnassignedPosteFilter`) ignorent une place épinglée : un trou du passé
+n'est pas un trou à combler, et le mémo du premier resterait sinon
+définitivement non vide.
+
 ### Compté, non reproché
 
 Une règle uniforme, appliquée contrainte par contrainte : **une
@@ -150,6 +166,26 @@ implique n'est pas passée.** Sa forme suit celle de la règle.
 | `equilibrerCharge`, `equilibrerCreneauxPenibles` | global | les places passées pèsent dans l'équilibre, facturé tant qu'une place est à venir |
 | `affectationForcee` | par fait | facturée tant qu'une place de sa portée est à venir |
 | `animateurVerrouilleFige`, `animateurVerrouilleCreneauFige` | par verrou et place | une place passée est ignorée, épinglée ou non |
+
+**Ce que ça coûte au solveur, et pourquoi presque rien.** Les règles par
+place, par paire et par liste ajoutent un test sur un drapeau. Les règles
+agrégées — équilibres de charge, quota par typologie, roulement premium,
+plafonds hebdomadaires, jours par semaine, repos hebdomadaire des mineurs,
+emplacements par jour, typologies par animateur, lignes stand × créneau,
+buffer de polyvalents, « fermer tard puis ouvrir tôt » — **replient** la
+question dans le groupe lui-même (`PastSeats.withAhead` : le collecteur de
+la règle composé avec un compte des places à venir) : incrémental, O(1) par
+mouvement, et le tuple s'imprime comme avant dans le diagnostic. Un
+`ifExists` accroché à un tuple de groupe relit les places du groupe à
+chaque changement du groupe, à l'aller et au retour, freeze coupé compris :
+avec un tel nœud sur les deux équilibres globaux et neuf autres sur des
+groupes à clé, la vitesse d'évaluation des mouvements mesurée sur
+`festival-realiste-canicule.yaml` (`PlanningServiceScenarioFestivalRealisteTest`)
+était tombée de 19 000-19 700 à 14 500-14 800 mouvements par seconde ;
+repliée, elle est celle de la branche de base (19 400, une exécution de
+chaque côté sur la même machine).
+Le seul `ifExists` qui reste, sur `affectationForcee`, vaut par fait ad
+hoc, et il n'y en a presque jamais.
 
 Les analyses qui comptent hors du solveur (Pauses, Besoin, contrôle de
 grille, Heures, Équité) continuent de **décrire** le passé, y compris ce qui
