@@ -3,11 +3,9 @@ package dev.sylvain.planning.solver;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalTime;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -109,8 +107,6 @@ public final class ConstraintFloorRules {
         CONSECUTIVE_PAIRS(ConstraintFloorRules::consecutivePairs),
         /** Seats on a stand × timeslot line the published plan had, empty ones included. */
         PUBLISHED_SEATS(ConstraintFloorRules::publishedSeats),
-        /** Legal breaks owed on the post, when the edition declares them taken there. */
-        BREAKS_DUE(ConstraintFloorRules::breaksDue),
         /** No per-item reading: a single aggregate match, or a reward. Never a floor. */
         NONE(null);
 
@@ -216,7 +212,6 @@ public final class ConstraintFloorRules {
             rule("souhaitsIncompatibles", Denominator.FILLED_SEATS, MissingData.SOUHAITS),
             rule("limiterTypologiesDistinctesParAnimateur", Denominator.NONE, null),
             rule("maxJoursConsecutifsTravailles", Denominator.NONE, null),
-            rule("pauseSurPosteSansRelais", Denominator.BREAKS_DUE, null),
             rule("coupureRepasPlacementPrefere", Denominator.NONE, null),
             rule("affiniteAdHoc", Denominator.NONE, null),
             rule("favoriserMixiteDesNiveaux", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
@@ -301,33 +296,5 @@ public final class ConstraintFloorRules {
                         poste.getCreneau().getHeureDebut(),
                         poste.getCreneau().getHeureFin())))
                 .count();
-    }
-
-    /**
-     * The breaks {@code pauseSurPosteSansRelais} judges: what
-     * {@link PauseSurPoste#dues} owes for each animateur's day, and nothing
-     * when the edition does not declare the break taken on the post — the
-     * rule is then silent, and so is its denominator.
-     */
-    private static int breaksDue(PlanningEvenement planning) {
-        boolean pauseSurPoste = planning.getParametresLegaux() != null
-                && planning.getParametresLegaux().stream().anyMatch(parametres -> parametres.isPauseSurPoste());
-        if (!pauseSurPoste) {
-            return 0;
-        }
-        Map<String, List<PosteAffectation>> seatsByAnimateurDate = new HashMap<>();
-        filledSeats(planning)
-                .filter(poste -> poste.getCreneau().getDate() != null && poste.heureDebutEffectif() != null)
-                .forEach(poste -> seatsByAnimateurDate
-                        .computeIfAbsent(
-                                poste.getAnimateur().getId() + "|"
-                                        + poste.getCreneau().getDate(),
-                                key -> new ArrayList<>())
-                        .add(poste));
-        int due = 0;
-        for (List<PosteAffectation> day : seatsByAnimateurDate.values()) {
-            due += PauseSurPoste.dues(day).size();
-        }
-        return due;
     }
 }

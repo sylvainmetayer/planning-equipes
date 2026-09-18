@@ -70,8 +70,15 @@ public final class ConstraintCatalog {
      * for minors does not move an inch: {@code travailDeNuitInterditPourMineur},
      * {@code standReserveAuxMajeurs}, the duration caps and the rest stay
      * active.</p>
+     *
+     * <p>{@code maxJoursConsecutifsTravaillesDur} is the second: the hard form
+     * of the six-day ceiling, which no article of the Code du travail
+     * requires. The medium form is the default; an organisation that wants the
+     * run blocked rather than dosed turns this one on. Same mechanism, no
+     * migration.</p>
      */
-    public static final Set<String> DESACTIVEES_PAR_DEFAUT = Set.of("mineurNecessiteEncadrementMajeur");
+    public static final Set<String> DESACTIVEES_PAR_DEFAUT =
+            Set.of("mineurNecessiteEncadrementMajeur", "maxJoursConsecutifsTravaillesDur");
 
     /**
      * What to do about a rule in default, rule by rule.
@@ -144,8 +151,17 @@ public final class ConstraintCatalog {
                             + "les paramètres légaux, ou baissez le poids."),
             Map.entry(
                     "maxJoursConsecutifsTravailles",
-                    "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes, ou "
-                            + "relevez le plafond dans les paramètres légaux."));
+                    "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
+                            + "couvrir ces journées, ou baissez le poids de la règle si la série vous "
+                            + "convient. Le plafond de six jours n'est pas réglable — aucun paramètre "
+                            + "légal ne le porte."),
+            Map.entry(
+                    "maxJoursConsecutifsTravaillesDur",
+                    "Trop de jours d'affilée, et cette édition tient la règle en dur : ouvrez des "
+                            + "disponibilités sur d'autres personnes pour couvrir ces journées. Si la série "
+                            + "doit rester possible, désactivez maxJoursConsecutifsTravaillesDur depuis "
+                            + "l'écran Contraintes — maxJoursConsecutifsTravailles continue alors de la "
+                            + "pénaliser sans bloquer le plan."));
 
     /** Read by the Contraintes screen when a rule has no lever of its own. */
     private static final Map<String, String> REMEDIATIONS_PAR_CATEGORIE = Map.of(
@@ -319,7 +335,8 @@ public final class ConstraintCatalog {
                     "Légal (temps de travail)",
                     "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
                             + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
-                            + "d'ordre public / Convention collective de l'Animation art. 5.2)."),
+                            + "d'ordre public). Les pauses prises sur le poste, si l'organisateur les "
+                            + "déclare, sont déduites, comme au plafond quotidien."),
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxDeuxSemaines",
                     Niveau.HARD,
@@ -329,14 +346,16 @@ public final class ConstraintCatalog {
                             + "permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines "
                             + "(Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze "
                             + "jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une "
-                            + "seconde constante."),
+                            + "seconde constante. Une semaine se juge pleine en travail effectif : les pauses "
+                            + "prises sur le poste, si l'organisateur les déclare, en sont déduites."),
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxMineur",
                     Niveau.HARD,
                     "Légal (mineurs)",
                     "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
                             + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
-                            + "pendant les vacances scolaires)."),
+                            + "pendant les vacances scolaires). Les pauses prises sur le poste, si "
+                            + "l'organisateur les déclare, sont déduites, comme au plafond quotidien."),
             new ConstraintDefinition(
                     "dureeQuotidienneMaxMajeur",
                     Niveau.HARD,
@@ -522,17 +541,33 @@ public final class ConstraintCatalog {
                     Niveau.MEDIUM,
                     "Qualité d'organisation",
                     "Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour "
-                            + "de repos : moins est possible, plus ne devrait pas l'être."),
+                            + "de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, "
+                            + "dosable : aucun article du Code du travail n'impose un décompte glissant de six "
+                            + "jours (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, "
+                            + "n° 24-10.733)."),
+            new ConstraintDefinition(
+                    "maxJoursConsecutifsTravaillesDur",
+                    Niveau.HARD,
+                    "Qualité d'organisation",
+                    "Éteinte par défaut. Le même plafond de six jours consécutifs, tenu en dur : au-delà, le "
+                            + "plan est refusé au lieu d'être pénalisé. Un poids ne change jamais le niveau "
+                            + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
+                            + "Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. "
+                            + "Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une "
+                            + "politique de l'organisateur, pas une obligation du Code du travail."),
             new ConstraintDefinition(
                     "pauseSurPosteSansRelais",
-                    Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    Niveau.HARD,
+                    "Légal (temps de travail)",
                     "Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand "
                             + "pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et "
                             + "demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent "
-                            + "coûte : la personne est seule et personne ne peut la relayer. Le solveur préfère "
-                            + "alors ne pas enchaîner sept heures seul, ou mettre un collègue là. Muette quand la "
-                            + "pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et "
+                            + "est un écart dur : sans relais, la personne ne peut pas quitter son poste, la "
+                            + "pause reste du travail effectif (art. L3121-1 et L3121-2) et l'obligation de "
+                            + "l'art. L3121-16 — L3162-3 pour un mineur — n'est pas remplie. C'est aussi ce qui "
+                            + "autorise la déduction de la pause des plafonds quotidien et hebdomadaire : sans "
+                            + "relais, on déduirait une pause que personne n'a prise. Muette quand la pause "
+                            + "n'est pas déclarée sur le poste : travailContinuMaxMajeur et "
                             + "travailContinuMaxMineur exigent alors un vrai trou."),
             new ConstraintDefinition(
                     "favoriserMixiteDesNiveaux",
