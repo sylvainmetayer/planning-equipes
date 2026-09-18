@@ -31,3 +31,27 @@
   color: var(--mat-sys-error);
   font-weight: 500;
 }
+
+/* The consignes each side was captured under (issue #4), side by side. */
+.comparateur-consignes {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+}
+
+.comparateur-consignes ul,
+.comparateur-consignes p {
+  margin: 0.25rem 0 0;
+}
+
+.comparateur-consignes ul {
+  padding-left: 1.25rem;
+}
+
+@media (max-width: 600px) {
+  .comparateur-consignes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

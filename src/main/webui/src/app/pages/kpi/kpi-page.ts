@@ -49,6 +49,7 @@ export class KpiPage {
     'couverture',
     'fairness',
     'modifications',
+    'consignes',
     'duree',
     'actions',
   ];
@@ -148,7 +149,25 @@ export class KpiPage {
     return `${entry.kpi.modificationsManuelles}${taux}`;
   }
 
+  /**
+   * The days under a consigne and the seat-hours their bands took (issue #4);
+   * a dash for a row older than the measure — unmeasured is not zero.
+   */
+  protected consignesLabel(entry: KpiHistoriqueEntry): string {
+    const { journeesSousConsigne, heuresFermeesParConsigne } = entry.kpi;
+    if (journeesSousConsigne === null && heuresFermeesParConsigne === null) {
+      return '—';
+    }
+    const journees = journeesSousConsigne ?? 0;
+    const heures = heuresFermeesParConsigne ?? 0;
+    return $localize`:@@kpi.consignes.valeur:${journees}:journees: journée(s) · ${arrondiHeures(heures)}:heures: h fermées`;
+  }
+
   protected dureeLabel(entry: KpiHistoriqueEntry): string {
     return entry.kpi.dureeSolveSecondes === null ? '—' : `${entry.kpi.dureeSolveSecondes} s`;
   }
+}
+
+function arrondiHeures(heures: number): string {
+  return Number.isInteger(heures) ? String(heures) : heures.toFixed(1);
 }

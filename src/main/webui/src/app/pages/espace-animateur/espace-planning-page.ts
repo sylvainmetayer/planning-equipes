@@ -13,6 +13,7 @@ import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
 import { JourPlanning, isPasse, maintenantEffectif, repereMaintenant } from './espace-maintenant';
 import { lienCarte } from './lien-carte';
+import { bandeLabel } from '../consignes/consignes';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last
@@ -27,6 +28,17 @@ import { lienCarte } from './lien-carte';
 })
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
+
+  /* ------------- Journées aux horaires modifiés (issue #4) ------------- */
+
+  /** One line per consigne on a day this person works: the band, worded, and the motif. */
+  protected readonly consignes = computed(() =>
+    (this.espace.view()?.consignes ?? []).map((consigne) => ({
+      date: consigne.date,
+      bande: bandeLabel(consigne.fermetureDebut, consigne.fermetureFin),
+      motif: consigne.motif,
+    })),
+  );
 
   /* --------- « J'ai lu et je serai là » (issue #293) ---------- */
 

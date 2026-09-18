@@ -9,6 +9,7 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { ApiService } from '../../core/api.service';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
@@ -105,6 +106,18 @@ describe('JourneePage', () => {
         provideRouter([]),
         { provide: PlanningStateService, useValue: { loadForDisplay, set } },
         { provide: AnalysesApi, useValue: analysesApi },
+        {
+          provide: ConsignesStore,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            etat: () => null,
+            consignes: () => [],
+            aujourdhui: () => null,
+            parDate: () => new Map(),
+            creneauxAjoutes: () => new Set(),
+            consigneDe: () => null,
+          },
+        },
         { provide: ApiService, useValue: { get: vi.fn(async () => ({ assignments: 2 })) } },
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },

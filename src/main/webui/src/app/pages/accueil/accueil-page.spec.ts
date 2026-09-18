@@ -8,6 +8,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditionsApi } from '../../core/api/editions-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { EtatEdition } from '../../core/models';
 import { SolverJobService } from '../../core/solver-job.service';
 import { AccueilPage } from './accueil-page';
@@ -85,6 +86,18 @@ describe('AccueilPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: EditionsApi, useValue: editionsApi },
+        {
+          provide: ConsignesStore,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            etat: () => null,
+            consignes: () => [],
+            aujourdhui: () => null,
+            parDate: () => new Map(),
+            creneauxAjoutes: () => new Set(),
+            consigneDe: () => null,
+          },
+        },
         { provide: SolverJobService, useValue: jobs },
       ],
     });

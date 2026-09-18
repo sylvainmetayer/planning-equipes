@@ -120,6 +120,9 @@
                   <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="columnsOfDay(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    @if (consigneParDate().get(jour.date); as consigne) {
+                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
+                    }
                     <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur tous les autres jours, pour les stands affichés"
                             i18n-aria-label="@@ouvertures.saisie.recopierJour" aria-label="Recopier ce jour sur tous les autres jours, pour les stands affichés"
@@ -408,6 +411,9 @@
                       [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    @if (consigneParDate().get(jour.date); as consigne) {
+                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
+                    }
                     <button matIconButton type="button" class="voir-journee" (click)="voirJournee(jour.date)"
                             i18n-matTooltip="@@ouvertures.journee.voir" matTooltip="Voir cette journée sur l'axe du temps"
                             i18n-aria-label="@@ouvertures.journee.voir" aria-label="Voir cette journée sur l'axe du temps">
@@ -429,7 +435,7 @@
                     }
                   </th>
                   @for (cellule of ligne.jours; track cellule.date) {
-                    <td [class]="classeCellule(cellule)" [matTooltip]="infobulleCellule(cellule)"
+                    <td [class]="classeCelluleConsigne(cellule)" [matTooltip]="infobulleCellule(cellule)"
                         [attr.aria-label]="libelleEtat(cellule)">
                       @if (cellule.etat === 'FERME') {
                         <span class="cellule-vide" aria-hidden="true">—</span>

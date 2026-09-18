@@ -27,6 +27,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { CreneauxApi } from '../../core/api/creneaux-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
@@ -106,6 +107,8 @@ export class CreneauxPage {
 
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);
+  /** The consignes (issue #4): a date under one, and a créneau one added, are marked in the table. */
+  protected readonly consignes = inject(ConsignesStore);
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
 
@@ -208,6 +211,7 @@ export class CreneauxPage {
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.chargerGrille();
+    void this.consignes.reload();
     // `?edit=<id>`: a link from a symptom lands here with the créneau to open.
     // Followed, obeyed, then dropped — see `reference-table-page.ts`.
     consumeQueryParam('edit', async (edit) => {

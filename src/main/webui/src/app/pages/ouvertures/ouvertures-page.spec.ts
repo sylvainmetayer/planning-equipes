@@ -9,6 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { StandsApi } from '../../core/api/stands-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -117,6 +118,7 @@ function etatJourneesTypes(): EtatJourneesTypes {
       { date: '2026-07-09', journeeTypeId: 4 },
     ],
     datesEnEcart: [],
+    datesSousConsigne: [],
   };
 }
 
@@ -157,6 +159,18 @@ function mount(
     providers: [
       provideZonelessChangeDetection(),
       { provide: StandsApi, useValue: { openings: get, saveOpeningsGrid: put } },
+      {
+        provide: ConsignesStore,
+        useValue: {
+          reload: vi.fn(async () => undefined),
+          etat: () => null,
+          consignes: () => [],
+          aujourdhui: () => null,
+          parDate: () => new Map(),
+          creneauxAjoutes: () => new Set(),
+          consigneDe: () => null,
+        },
+      },
       { provide: JourneesTypesApi, useValue: { etat: etatJT } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {

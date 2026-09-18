@@ -120,6 +120,7 @@ function etat(): EtatJourneesTypes {
       { date: '2026-07-10', journeeTypeId: 6 },
     ],
     datesEnEcart: [],
+    datesSousConsigne: [],
   };
 }
 

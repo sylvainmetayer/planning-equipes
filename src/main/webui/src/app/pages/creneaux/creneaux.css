@@ -128,6 +128,25 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* A date under consigne (issue #4), and a créneau the consigne added: the
+   templates ignore both, and the grid says why they are there. */
+.journee-sous-consigne,
+.creneau-sous-consigne,
+.creneau-ajoute-consigne {
+  display: inline-block;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.creneau-sous-consigne,
+.creneau-ajoute-consigne {
+  margin-left: 0.35rem;
+}
+
 .ligne-en-ecart td:first-child {
   font-weight: 500;
 }

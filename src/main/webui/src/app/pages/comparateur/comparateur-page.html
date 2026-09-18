@@ -60,6 +60,32 @@
             qualité de la résolution.
           </p>
         }
+        @if (resultat.consignesDifferentes) {
+          <p class="locked-hint" i18n="@@comparateur.warning.consignes">
+            Les deux côtés n'ont pas été capturés sous les mêmes consignes : une partie des écarts vient des bandes
+            fermées, pas de la résolution.
+          </p>
+          <div class="comparateur-consignes">
+            @for (cote of [resultat.base, resultat.variante]; track $index) {
+              <div>
+                <strong>{{ libelleCote(cote) }}</strong>
+                @if (consignesDe(cote); as consignes) {
+                  @if (consignes.length === 0) {
+                    <p i18n="@@comparateur.consignes.aucune">Aucune consigne.</p>
+                  } @else {
+                    <ul>
+                      @for (consigne of consignes; track consigne) {
+                        <li>{{ consigne }}</li>
+                      }
+                    </ul>
+                  }
+                } @else {
+                  <p i18n="@@comparateur.consignes.inconnues">Consignes inconnues : instantané antérieur à leur capture.</p>
+                }
+              </div>
+            }
+          </div>
+        }
         @if (cotesPerimes().length > 0) {
           <p class="locked-hint" i18n="@@comparateur.warning.perimes">
             Instantané(s) périmé(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :

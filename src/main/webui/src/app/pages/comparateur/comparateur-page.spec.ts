@@ -53,6 +53,8 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     violationsParContrainte: {},
     scoreMediumHorsPlancher: null,
     plancherMedium: null,
+    journeesSousConsigne: null,
+    heuresFermeesParConsigne: null,
     ...overrides,
   };
 }
@@ -83,6 +85,7 @@ function cote(overrides: Partial<CoteComparaison> = {}): CoteComparaison {
     creeLe: '2026-08-01T10:00:00Z',
     kpi: kpi(),
     kpiRecalcule: false,
+    consignes: null,
     ...overrides,
   };
 }
@@ -93,6 +96,7 @@ function comparaison(overrides: Partial<ComparaisonSnapshots> = {}): Comparaison
     variante: cote({ snapshotId: 8, libelle: 'Après canicule' }),
     editionsDifferentes: false,
     volumetriesDifferentes: false,
+    consignesDifferentes: false,
     diffViolations: [],
     ...overrides,
   };

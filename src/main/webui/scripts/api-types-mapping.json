@@ -65,7 +65,16 @@
     "LigneImportReferentiel": "LigneImportee",
     "PrerequisValidation": "Prerequis",
     "LigneEmplacementIntendance": "LigneEmplacement",
-    "CellulePivot": "Cellule"
+    "CellulePivot": "Cellule",
+    "FenetreConsigne": "Fenetre",
+    "OuvertureConsigne": "Ouverture",
+    "IndicateurConsigne": "Indicateur",
+    "DemandePreselectionConsigne": "DemandePreselection",
+    "PreselectionConsigne": "Preselection",
+    "DemandeConsigne": "Demande",
+    "ApercuConsigneJour": "ApercuJour",
+    "LeveeConsigne": "Levee",
+    "ApercuLeveeConsigne": "ApercuLevee"
   },
   "horsContrat": {
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",

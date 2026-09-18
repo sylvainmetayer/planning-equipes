@@ -20,6 +20,7 @@ import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/
 import { StatusMessage } from '../../shared/status-message';
 import { LigneMetrique, construireLignesMetriques } from './comparateur-metrics';
 import { errorMessage } from '../../core/error-message';
+import { bandeLabel, libelleDate } from '../consignes/consignes';
 
 /** Value designating the currently persisted plan instead of a snapshot id. */
 const COURANT = 'courant';
@@ -169,6 +170,16 @@ export class ComparateurPage {
       .filter((snapshot) => snapshot.perime)
       .map((snapshot) => snapshot.libelle);
   });
+
+  /** The consignes one side was captured under (issue #4), worded; `null` when that side predates the capture. */
+  protected consignesDe(cote: CoteComparaison): string[] | null {
+    return (
+      cote.consignes?.map(
+        (consigne) =>
+          `${libelleDate(consigne.date)} · ${bandeLabel(consigne.fermetureDebut, consigne.fermetureFin)} · ${consigne.motif}`,
+      ) ?? null
+    );
+  }
 
   /** Column header of one side: its label, or the "current plan" wording it has none. */
   protected libelleCote(cote: CoteComparaison): string {

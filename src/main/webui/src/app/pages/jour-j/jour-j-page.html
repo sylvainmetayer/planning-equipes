@@ -42,6 +42,18 @@
   </mat-card-content>
 </mat-card>
 
+@if (consigne(); as consigne) {
+  <mat-card appearance="outlined" class="page-card jour-j-consigne">
+    <mat-card-content>
+      <mat-icon>gavel</mat-icon>
+      <div>
+        <p i18n="@@jourJ.consigne">Horaires modifiés par décision de l'organisation : tous les stands fermés de {{ consigne.bande }} — {{ consigne.motif }}</p>
+        <a routerLink="/consignes" i18n="@@jourJ.consigne.lien">Voir les consignes</a>
+      </div>
+    </mat-card-content>
+  </mat-card>
+}
+
 @if (rappel()) {
   <mat-card appearance="outlined" class="page-card jour-j-rappel">
     <mat-card-content>

@@ -19,6 +19,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
+import { ConsignesStore } from '../../core/consignes.store';
+import { bandeLabel } from '../consignes/consignes';
 import {
   AccesGrille,
   RecopieGrille,
@@ -186,6 +188,19 @@ interface LigneView {
 export class OuverturesPage {
   private readonly standsApi = inject(StandsApi);
   private readonly journeesTypesApi = inject(JourneesTypesApi);
+  /** The consignes (issue #4): a day under one is marked, and its closed cells are not anomalies. */
+  private readonly consignes = inject(ConsignesStore);
+  /** Date → the badge's wording, for the days under a consigne. */
+  protected readonly consigneParDate = computed(() => {
+    const badges = new Map<string, { libelle: string; motif: string }>();
+    for (const [date, consigne] of this.consignes.parDate()) {
+      badges.set(date, {
+        libelle: $localize`:@@ouvertures.badge.consigne:fermé de ${bandeLabel(consigne.fermetureDebut, consigne.fermetureFin)}:bande: par consigne`,
+        motif: consigne.motif,
+      });
+    }
+    return badges;
+  });
   private readonly crud = inject(ReferenceCrudService);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -441,6 +456,7 @@ export class OuverturesPage {
   }
 
   protected async recharger(): Promise<void> {
+    void this.consignes.reload();
     this.chargement.set(true);
     try {
       const rapport = await this.standsApi.openings();
@@ -1037,8 +1053,19 @@ export class OuverturesPage {
       case 'OUVERT_PARTIEL':
         return $localize`:@@ouvertures.etat.partiel:Ouvert partiellement`;
       case 'FERME':
-        return $localize`:@@ouvertures.etat.ferme:Fermé`;
+        // Closed on a day under consigne is the consigne's doing, not a hole in the schedule.
+        return this.consigneParDate().has(cellule.date)
+          ? $localize`:@@ouvertures.etat.fermeParConsigne:Fermé par consigne`
+          : $localize`:@@ouvertures.etat.ferme:Fermé`;
     }
+  }
+
+  /** The cell's class, muted rather than alarming when the consigne is what closed it. */
+  protected classeCelluleConsigne(cellule: CelluleJourOuverture): string {
+    const classe = classeCellule(cellule);
+    return cellule.etat === 'FERME' && this.consigneParDate().has(cellule.date)
+      ? `${classe} etat-ferme-consigne`
+      : classe;
   }
 
   protected libelleSource(cellule: CelluleJourOuverture): string {

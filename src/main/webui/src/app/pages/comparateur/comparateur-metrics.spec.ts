@@ -25,6 +25,8 @@ function kpi(overrides: Partial<PlanningKpi> = {}): PlanningKpi {
     violationsParContrainte: {},
     scoreMediumHorsPlancher: null,
     plancherMedium: null,
+    journeesSousConsigne: null,
+    heuresFermeesParConsigne: null,
     ...overrides,
   };
 }

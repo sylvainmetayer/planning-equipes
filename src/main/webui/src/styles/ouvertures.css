@@ -217,6 +217,26 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/* Closed by a consigne (issue #4): the day's badge says so, and the cell is
+   muted rather than read as a hole — nobody typed that closure. */
+.ouverture-cellule.etat-ferme-consigne {
+  background: var(--mat-sys-surface-container-low);
+  opacity: 0.7;
+}
+
+.ouvertures-grille .entete-consigne {
+  display: block;
+  margin-top: 0.15rem;
+  padding: 0.05rem 0.4rem;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-weight: 400;
+  font-size: 0.7rem;
+  white-space: normal;
+  max-width: 9rem;
+}
+
 /* Quelle couche a décidé du jour : un liseré, pour que l'état reste porté par le
    fond et la provenance par la bordure — deux informations, deux canaux. */
 .source-regle {

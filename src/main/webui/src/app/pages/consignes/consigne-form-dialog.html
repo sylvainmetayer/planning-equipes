@@ -1,0 +1,263 @@
+<h2 mat-dialog-title>{{ formTitle() }}</h2>
+<mat-dialog-content class="consigne-form">
+  @if (editingLocked()) {
+    <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  }
+  <fieldset class="form-fieldset" [disabled]="editingLocked()">
+    <section class="consigne-form-bande" aria-labelledby="consigne-form-bande-titre">
+      <h3 id="consigne-form-bande-titre" i18n="@@consignes.form.bande.title">Bande fermée</h3>
+      <div class="form-grid consigne-form-grille">
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label i18n="@@consignes.form.prereglage">Préréglage</mat-label>
+          <mat-select name="prereglage" [ngModel]="prereglageId()" (ngModelChange)="choisirPrereglage($event)">
+            <mat-option [value]="null" i18n="@@consignes.form.prereglage.aucun">Saisie libre</mat-option>
+            @for (prereglage of data.prereglages; track prereglage.id) {
+              <mat-option [value]="prereglage.id">{{ prereglage.nom }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint i18n="@@consignes.form.prereglage.hint">Remplit la bande, le motif et les fenêtres</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label i18n="@@consignes.form.dates">Dates</mat-label>
+          <mat-select name="dates" multiple [ngModel]="dates()" (ngModelChange)="onDates($event)">
+            @for (option of datesOffertes(); track option.date) {
+              <mat-option [value]="option.date">{{ option.libelle }}</mat-option>
+            }
+          </mat-select>
+          <mat-hint i18n="@@consignes.form.dates.hint">Jours à venir de la grille seulement</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@consignes.form.fermetureDebut">Fermé à partir de</mat-label>
+          <input matInput name="fermetureDebut" type="time" required [ngModel]="fermetureDebut()" (ngModelChange)="fermetureDebut.set($event); apercu.set(null)" />
+        </mat-form-field>
+        <mat-form-field appearance="outline">
+          <mat-label i18n="@@consignes.form.fermetureFin">Jusqu'à</mat-label>
+          <input matInput name="fermetureFin" type="time" [ngModel]="fermetureFin()" (ngModelChange)="fermetureFin.set($event); apercu.set(null)" />
+          <mat-hint i18n="@@consignes.form.fermetureFin.hint">Vide : jusqu'à minuit</mat-hint>
+        </mat-form-field>
+        <mat-form-field appearance="outline" class="span-2">
+          <mat-label i18n="@@consignes.form.motif">Motif</mat-label>
+          <input matInput name="motif" required maxlength="200" [ngModel]="motif()" (ngModelChange)="onMotif($event)" />
+        </mat-form-field>
+      </div>
+      @if (bandeAffichee()) {
+        <p class="consigne-form-resume" i18n="@@consignes.form.resume">Tous les stands fermés de {{ bandeAffichee() }}, sur {{ dates().length }} date(s).</p>
+      }
+    </section>
+
+    <section class="consigne-form-fenetres" aria-labelledby="consigne-form-fenetres-titre">
+      <h3 id="consigne-form-fenetres-titre" i18n="@@consignes.form.fenetres.title">Fenêtres de compensation par défaut</h3>
+      <p class="empty-hint" i18n="@@consignes.form.fenetres.hint">Ce que reçoit un stand coché avant tout réglage individuel.</p>
+      <ul class="consigne-fenetres">
+        @for (fenetre of fenetres(); track $index) {
+          <li class="consigne-fenetre">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label i18n="@@consignes.form.fenetre.debut">Début</mat-label>
+              <input matInput type="time" [name]="'fenetre-debut-' + $index" [ngModel]="fenetre.debut" (ngModelChange)="patchFenetre($index, { debut: $event })" />
+            </mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic">
+              <mat-label i18n="@@consignes.form.fenetre.fin">Fin (vide : minuit)</mat-label>
+              <input matInput type="time" [name]="'fenetre-fin-' + $index" [ngModel]="fenetre.fin" (ngModelChange)="patchFenetre($index, { fin: $event })" />
+            </mat-form-field>
+            <button matIconButton type="button" (click)="retirerFenetre($index)"
+                    i18n-matTooltip="@@consignes.form.fenetre.retirer" matTooltip="Retirer cette fenêtre"
+                    i18n-aria-label="@@consignes.form.fenetre.retirer" aria-label="Retirer cette fenêtre">
+              <mat-icon>close</mat-icon>
+            </button>
+          </li>
+        }
+      </ul>
+      <button matButton type="button" (click)="ajouterFenetre()">
+        <mat-icon>add</mat-icon>
+        <ng-container i18n="@@consignes.form.fenetre.ajouter">Ajouter une fenêtre</ng-container>
+      </button>
+    </section>
+
+    <section class="consigne-form-stands" aria-labelledby="consigne-form-stands-titre">
+      <h3 id="consigne-form-stands-titre">
+        <ng-container i18n="@@consignes.form.stands.title">Stands à rouvrir</ng-container>
+        @if (stands().length > 0) {
+          <span class="consigne-form-compteur" i18n="@@consignes.form.stands.compteur">{{ nombreCoches() }} coché(s) sur {{ stands().length }}</span>
+        }
+      </h3>
+      @if (chargementStands()) {
+        <mat-progress-bar mode="indeterminate" />
+      }
+      @if (dates().length === 0) {
+        <p class="empty-hint" i18n="@@consignes.form.stands.sansDate">Choisissez une date : les stands sont lus pour la première date et la bande.</p>
+      } @else if (creneauxDuJour() === 0) {
+        <p class="empty-hint" i18n="@@consignes.form.stands.sansCreneau">Aucun créneau ce jour-là : la bande ne ferme rien, seules les fenêtres ajoutent des créneaux.</p>
+      }
+      @if (stands().length > 0) {
+        <div class="consigne-form-filtres">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-recherche">
+            <mat-label i18n="@@consignes.form.filtre.recherche">Filtrer par nom</mat-label>
+            <input matInput name="recherche" [ngModel]="filtres().recherche" (ngModelChange)="patchFiltres({ recherche: $event })" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@consignes.form.filtre.typologie">Typologie</mat-label>
+            <mat-select name="typologie" [ngModel]="filtres().typologie" (ngModelChange)="patchFiltres({ typologie: $event })">
+              <mat-option value="" i18n="@@consignes.form.filtre.toutes">Toutes</mat-option>
+              @for (typologie of data.typologies; track typologie.id) {
+                <mat-option [value]="typologie.id">{{ typologie.label }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@consignes.form.filtre.emplacement">Emplacement</mat-label>
+            <mat-select name="emplacement" [ngModel]="filtres().emplacement" (ngModelChange)="patchFiltres({ emplacement: $event })">
+              <mat-option value="" i18n="@@consignes.form.filtre.tous">Tous</mat-option>
+              @for (emplacement of data.emplacements; track emplacement.id) {
+                <mat-option [value]="emplacement.id">{{ emplacement.nom }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic">
+            <mat-label i18n="@@consignes.form.filtre.premium">Premium</mat-label>
+            <mat-select name="premium" [ngModel]="filtres().premium" (ngModelChange)="patchFiltres({ premium: $event })">
+              <mat-option value="TOUS" i18n="@@consignes.form.filtre.tous">Tous</mat-option>
+              <mat-option value="PREMIUM" i18n="@@consignes.form.filtre.premiumSeuls">Premium seulement</mat-option>
+              <mat-option value="STANDARD" i18n="@@consignes.form.filtre.horsPremium">Hors premium</mat-option>
+            </mat-select>
+          </mat-form-field>
+          <button matButton type="button" (click)="toutCocher(true)">
+            <mat-icon>check_box</mat-icon>
+            <ng-container i18n="@@consignes.form.toutCocher">Tout cocher</ng-container>
+          </button>
+          <button matButton type="button" (click)="toutCocher(false)">
+            <mat-icon>check_box_outline_blank</mat-icon>
+            <ng-container i18n="@@consignes.form.toutDecocher">Tout décocher</ng-container>
+          </button>
+        </div>
+        <div class="consigne-form-masse">
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-masse-fenetres">
+            <mat-label i18n="@@consignes.form.masse.fenetres">Fenêtres pour la sélection</mat-label>
+            <input matInput name="fenetresEnMasse" placeholder="18:00-22:00, 09:00-12:00" autocomplete="off" spellcheck="false"
+                   [ngModel]="fenetresEnMasse()" (ngModelChange)="fenetresEnMasse.set($event)" />
+          </mat-form-field>
+          <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-masse-effectif">
+            <mat-label i18n="@@consignes.form.masse.effectif">Effectif</mat-label>
+            <input matInput name="effectifEnMasse" type="number" min="1" [ngModel]="effectifEnMasse()" (ngModelChange)="effectifEnMasse.set($event)" />
+          </mat-form-field>
+          <button matButton="tonal" type="button" [disabled]="!peutAppliquerEnMasse()" (click)="appliquerEnMasse()"
+                  i18n-matTooltip="@@consignes.form.masse.tooltip" matTooltip="Sur les stands cochés affichés ; un champ vide ne change rien">
+            <mat-icon>playlist_add_check</mat-icon>
+            <ng-container i18n="@@consignes.form.masse.appliquer">Appliquer à la sélection</ng-container>
+          </button>
+          @if (fenetresEnMasseLues() === null) {
+            <p class="field-error" role="alert" i18n="@@consignes.form.masse.erreur">Fenêtres illisibles : écrivez « 18:00-22:00, 09:00-12:00 », ou « 20:00- » jusqu'à minuit.</p>
+          }
+        </div>
+        <ul class="consigne-stands">
+          @for (stand of lignesAffichees(); track stand.standId) {
+            <li class="consigne-stand" [class.consigne-stand-coche]="stand.coche">
+              <div class="consigne-stand-entete">
+                <mat-checkbox [checked]="stand.coche" (change)="patchStand(stand.standId, { coche: $event.checked })">
+                  <span class="consigne-stand-nom">{{ stand.standNom || stand.standId }}</span>
+                </mat-checkbox>
+                <span class="consigne-stand-meta" i18n="@@consignes.form.stand.minutesPerdues">{{ stand.minutesPerdues }} min perdues</span>
+                <span class="consigne-stand-meta" i18n="@@consignes.form.stand.effectifHerite">effectif hérité {{ stand.effectifHerite }}</span>
+                @if (stand.exceptionDatee) {
+                  <span class="consigne-chip consigne-chip-exception" [matTooltip]="stand.motif ?? ''" i18n="@@consignes.form.stand.exception">horaires posés à la main ce jour-là</span>
+                }
+              </div>
+              @if (stand.coche) {
+                <div class="consigne-stand-reglages">
+                  <ul class="consigne-fenetres">
+                    @for (fenetre of stand.fenetres; track $index) {
+                      <li class="consigne-fenetre">
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label i18n="@@consignes.form.fenetre.debut">Début</mat-label>
+                          <input matInput type="time" [name]="stand.standId + '-debut-' + $index" [ngModel]="fenetre.debut" (ngModelChange)="patchFenetreStand(stand, $index, { debut: $event })" />
+                        </mat-form-field>
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic">
+                          <mat-label i18n="@@consignes.form.fenetre.fin">Fin (vide : minuit)</mat-label>
+                          <input matInput type="time" [name]="stand.standId + '-fin-' + $index" [ngModel]="fenetre.fin" (ngModelChange)="patchFenetreStand(stand, $index, { fin: $event })" />
+                        </mat-form-field>
+                        <button matIconButton type="button" (click)="retirerFenetreStand(stand, $index)"
+                                i18n-matTooltip="@@consignes.form.fenetre.retirer" matTooltip="Retirer cette fenêtre"
+                                i18n-aria-label="@@consignes.form.fenetre.retirer" aria-label="Retirer cette fenêtre">
+                          <mat-icon>close</mat-icon>
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                  <div class="consigne-stand-actions">
+                    <button matButton type="button" (click)="ajouterFenetreStand(stand)">
+                      <mat-icon>add</mat-icon>
+                      <ng-container i18n="@@consignes.form.fenetre.ajouter">Ajouter une fenêtre</ng-container>
+                    </button>
+                    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-stand-effectif">
+                      <mat-label i18n="@@consignes.form.stand.effectif">Effectif</mat-label>
+                      <input matInput type="number" min="1" [name]="stand.standId + '-effectif'" [placeholder]="'' + stand.effectifHerite"
+                             [ngModel]="stand.effectif ?? ''" (ngModelChange)="onEffectif(stand.standId, $event)" />
+                    </mat-form-field>
+                  </div>
+                </div>
+              }
+            </li>
+          } @empty {
+            <li class="empty-hint" i18n="@@consignes.form.stands.aucun">Aucun stand ne correspond à ce filtre.</li>
+          }
+        </ul>
+      }
+    </section>
+
+    @if (apercu(); as apercu) {
+      <section class="consigne-apercu" aria-labelledby="consigne-apercu-titre">
+        <h3 id="consigne-apercu-titre" i18n="@@consignes.apercu.title">Aperçu</h3>
+        @for (jour of apercu; track jour.date) {
+          <article class="consigne-apercu-jour">
+            <h4>
+              {{ libelleDate(jour.date) }}
+              @if (jour.dejaSousConsigne) {
+                <span class="consigne-chip" i18n="@@consignes.apercu.remplace">remplace la consigne en place</span>
+              }
+            </h4>
+            <ul class="consigne-apercu-lignes">
+              <li i18n="@@consignes.apercu.sieges">Sièges : {{ jour.siegesAvant }} → {{ jour.siegesApres }} · minutes : {{ jour.minutesAvant }} → {{ jour.minutesApres }}</li>
+              <li i18n="@@consignes.apercu.stands">{{ jour.standsOuverts }} stand(s) rouvert(s) · entrants : {{ jour.standsEntrants.length }} · sortants : {{ jour.standsSortants.length }}</li>
+              @if (jour.creneauxAAjouter.length > 0) {
+                <li i18n="@@consignes.apercu.creneauxAAjouter">Créneaux à ajouter : {{ fenetresTexte(jour.creneauxAAjouter) }}</li>
+              }
+              @if (jour.creneauxARetirer.length > 0) {
+                <li i18n="@@consignes.apercu.creneauxARetirer">Créneaux à retirer : {{ vacations(jour.creneauxARetirer) }}</li>
+              }
+              @if (jour.vacationsSansSiege.length > 0) {
+                <li i18n="@@consignes.apercu.vacationsSansSiege">Vacations sans siège : {{ vacations(jour.vacationsSansSiege) }}</li>
+              }
+              @if (jour.standsExceptionCoches.length > 0) {
+                <li i18n="@@consignes.apercu.exceptions">Stands aux horaires posés à la main, cochés : {{ jour.standsExceptionCoches.join(', ') }}</li>
+              }
+              <li i18n="@@consignes.apercu.mineurs">{{ jour.mineursConcernes }} mineur(s) concerné(s) · {{ jour.majeursDisponibles }} majeur(s) disponible(s)</li>
+              <li i18n="@@consignes.apercu.animateurs">{{ jour.animateursDansLaBande }} animateur(s) assis dans la bande · {{ jour.verrousTouches }} verrou(s) · {{ jour.contraintesTouchees }} ajustement(s) touché(s)</li>
+              @if (jour.validationRetiree) {
+                <li class="consigne-apercu-alerte">
+                  <mat-icon inline>warning</mat-icon>
+                  <ng-container i18n="@@consignes.apercu.validationRetiree">La validation de relecture de cette journée sera retirée.</ng-container>
+                </li>
+              }
+            </ul>
+          </article>
+        }
+      </section>
+    }
+    @if (chargementApercu()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (messageErreur(); as message) {
+      <p class="field-error consigne-form-erreur">{{ message }}</p>
+    }
+  </fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="tonal" type="button" [disabled]="invalide() || chargementApercu() || editingLocked()" (click)="previsualiser()">
+    <mat-icon>preview</mat-icon>
+    <ng-container i18n="@@consignes.form.apercu">Aperçu</ng-container>
+  </button>
+  <button matButton="filled" type="button" [disabled]="invalide() || enregistrement() || editingLocked()" (click)="enregistrer()">
+    <mat-icon>save</mat-icon>
+    <ng-container i18n="@@consignes.form.enregistrer">Enregistrer</ng-container>
+  </button>
+</mat-dialog-actions>

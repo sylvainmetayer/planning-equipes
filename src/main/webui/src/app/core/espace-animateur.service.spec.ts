@@ -22,6 +22,7 @@ function view(): EspaceAnimateurView {
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
+    consignes: [],
     pauses: [],
     changements: [],
     changementsLe: null,

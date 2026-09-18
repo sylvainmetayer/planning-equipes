@@ -36,6 +36,7 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     foireOuvreLe: null,
     foireFermeLe: null,
     abonnementToken: 'abo-1',
+    consignes: [],
     pauses: [],
     dateDuJourFigee: null,
     heureDuJourFigee: null,

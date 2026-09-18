@@ -116,7 +116,9 @@
                       </mat-select>
                     </td>
                     <td>
-                      @if (ligne.enEcart) {
+                      @if (ligne.sousConsigne) {
+                        <span class="journee-sous-consigne" i18n="@@journeesTypes.calendrier.sousConsigne">Sous consigne</span>
+                      } @else if (ligne.enEcart) {
                         <span class="journee-ecart" i18n="@@journeesTypes.calendrier.ecart">En écart avec les créneaux</span>
                       } @else {
                         <span class="journee-conforme" i18n="@@journeesTypes.calendrier.conforme">Appliquée</span>
