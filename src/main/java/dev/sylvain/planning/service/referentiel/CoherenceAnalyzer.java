@@ -497,7 +497,10 @@ public final class CoherenceAnalyzer {
      * no warning rather than a guess.</p>
      *
      * @param diagnostics the per-constraint diagnostics of that analysis, empty
-     *                    when there is none
+     *                    when there is none. Their violations are capped per
+     *                    constraint by {@code PlanningDiagnosticService}, so
+     *                    the count in the sentence is a floor — « au moins »,
+     *                    never a total
      * @param creneaux    the edition's timeslots, to read the day of a
      *                    {@code JOUR} lock against the timeslot a violation
      *                    names; empty simply skips that one lock type
@@ -534,7 +537,7 @@ public final class CoherenceAnalyzer {
         }
         return List.of(new Avertissement(
                 TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE,
-                "Le verrouillage " + verrouillage.getId() + " fige " + places + " situation(s) qui "
+                "Le verrouillage " + verrouillage.getId() + " fige au moins " + places + " situation(s) qui "
                         + (places == 1 ? "casse" : "cassent") + " déjà une règle dure ("
                         + String.join(", ", regles)
                         + "). Un verrou n'exempte pas de ces règles : la prochaine résolution les comptera toujours, "
