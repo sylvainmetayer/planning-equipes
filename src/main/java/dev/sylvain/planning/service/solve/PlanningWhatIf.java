@@ -747,8 +747,13 @@ public final class PlanningWhatIf {
         }
     }
 
-    /** The rules a refused gesture would break, named as the drag-and-drop names them. */
-    private static String describeHardViolations(List<HardViolation> violations) {
+    /**
+     * The rules a refused gesture would break, as the sentence that names them.
+     * Shared with {@link DeplacementService}: the drag-and-drop and the direct
+     * write refuse for the same reason, and a reader who meets both should not
+     * have to notice that the two wordings happen to match.
+     */
+    static String describeHardViolations(List<HardViolation> violations) {
         if (violations.isEmpty()) {
             return "une règle dure du planning.";
         }
@@ -757,6 +762,7 @@ public final class PlanningWhatIf {
                         .collect(Collectors.joining(" ; "))
                 + ".";
     }
+
     /**
      * Simulates a demande d'échange (issue #165) on an already-solved planning:
      * the demandeur's seat on ({@code creneauId}, {@code standId}) goes to
