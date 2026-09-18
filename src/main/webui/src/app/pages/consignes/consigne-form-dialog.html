@@ -73,6 +73,8 @@
       </button>
     </section>
 
+    <app-consigne-repas-fields [repas]="repas()" [fenetres]="fenetres()" [inlineErrors]="false" (repasChange)="onRepas($event)" />
+
     <section class="consigne-form-stands" aria-labelledby="consigne-form-stands-titre">
       <h3 id="consigne-form-stands-titre">
         <ng-container i18n="@@consignes.form.stands.title">Stands à rouvrir</ng-container>

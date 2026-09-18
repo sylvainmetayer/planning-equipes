@@ -17,6 +17,7 @@ import {
   FenetreConsigne,
   LigneStandConsigne,
   OuvertureConsigne,
+  RepasConsigne,
   Stand,
 } from '../../core/models';
 import { libelleJour, libelleJourSemaine } from '../stands/stand-horaires';
@@ -48,6 +49,40 @@ export function fenetreLabel(fenetre: FenetreConsigne): string {
 
 function minuitLabel(): string {
   return $localize`:@@consignes.minuit:minuit`;
+}
+
+/** True when the consigne restates at least one meal window or the break — the chip's condition. */
+export function repasSurcharge(repas: RepasConsigne | null): repas is RepasConsigne {
+  return (
+    repas !== null &&
+    (repas.midiDebut !== null ||
+      repas.midiFin !== null ||
+      repas.soirDebut !== null ||
+      repas.soirFin !== null ||
+      repas.coupureMinutes !== null)
+  );
+}
+
+/**
+ * The tooltip of the chip: the justification, then what is restated —
+ * « Les équipes mangent pendant la fermeture · soir 18h–22h · coupure 45 min ».
+ */
+export function repasLabel(repas: RepasConsigne): string {
+  const parts = [repas.justification.trim()];
+  if (repas.midiDebut && repas.midiFin) {
+    parts.push(
+      $localize`:@@consignes.repas.midi:midi ${bandeLabel(repas.midiDebut, repas.midiFin)}:bande:`,
+    );
+  }
+  if (repas.soirDebut && repas.soirFin) {
+    parts.push(
+      $localize`:@@consignes.repas.soir:soir ${bandeLabel(repas.soirDebut, repas.soirFin)}:bande:`,
+    );
+  }
+  if (repas.coupureMinutes !== null) {
+    parts.push($localize`:@@consignes.repas.coupure:coupure ${repas.coupureMinutes}:minutes: min`);
+  }
+  return parts.filter(Boolean).join(' · ');
 }
 
 /* ---------------------------------- dates ---------------------------------- */
@@ -101,6 +136,19 @@ export interface StandForm {
   effectif: number | null;
 }
 
+/**
+ * The meal windows as typed, `HH:mm` and minutes as text: a field left empty
+ * keeps the edition's value. The same shape serves the preset dialog.
+ */
+export interface RepasSaisie {
+  midiDebut: string;
+  midiFin: string;
+  soirDebut: string;
+  soirFin: string;
+  coupureMinutes: string;
+  justification: string;
+}
+
 export interface ConsigneForm {
   dates: string[];
   fermetureDebut: string;
@@ -110,6 +158,7 @@ export interface ConsigneForm {
   prereglage: string | null;
   fenetres: FenetreSaisie[];
   stands: StandForm[];
+  repas: RepasSaisie;
 }
 
 /** `HH:mm:ss` or `HH:mm` → `HH:mm`; `null` (until midnight) → empty. */
@@ -131,6 +180,65 @@ export function fenetresDemandees(fenetres: readonly FenetreSaisie[]): FenetreCo
     .map((fenetre) => ({ debut: fenetre.debut, fin: fenetre.fin === '' ? null : fenetre.fin }));
 }
 
+/** No meal window restated: the edition's apply. */
+export function repasVide(): RepasSaisie {
+  return {
+    midiDebut: '',
+    midiFin: '',
+    soirDebut: '',
+    soirFin: '',
+    coupureMinutes: '',
+    justification: '',
+  };
+}
+
+/** What a consigne or a preset carries, read into the fields; `null` reads as nothing typed. */
+export function repasSaisie(repas: RepasConsigne | null): RepasSaisie {
+  if (!repas) {
+    return repasVide();
+  }
+  return {
+    midiDebut: heureSaisie(repas.midiDebut),
+    midiFin: heureSaisie(repas.midiFin),
+    soirDebut: heureSaisie(repas.soirDebut),
+    soirFin: heureSaisie(repas.soirFin),
+    coupureMinutes: repas.coupureMinutes === null ? '' : String(repas.coupureMinutes),
+    justification: repas.justification,
+  };
+}
+
+/** True when no window and no break is typed — a justification alone restates nothing. */
+export function repasFormEmpty(repas: RepasSaisie): boolean {
+  return (
+    repas.midiDebut === '' &&
+    repas.midiFin === '' &&
+    repas.soirDebut === '' &&
+    repas.soirFin === '' &&
+    repas.coupureMinutes.trim() === ''
+  );
+}
+
+/**
+ * The inverse of {@link repasSaisie}: `null` when nothing is restated — the
+ * edition's windows apply and the server stores no override — else every
+ * field, an empty one travelling as `null` to keep the edition's value.
+ */
+export function repasDemande(repas: RepasSaisie): RepasConsigne | null {
+  if (repasFormEmpty(repas)) {
+    return null;
+  }
+  const heure = (value: string) => (value === '' ? null : value);
+  const coupure = repas.coupureMinutes.trim();
+  return {
+    midiDebut: heure(repas.midiDebut),
+    midiFin: heure(repas.midiFin),
+    soirDebut: heure(repas.soirDebut),
+    soirFin: heure(repas.soirFin),
+    coupureMinutes: coupure === '' ? null : Number(coupure),
+    justification: repas.justification.trim(),
+  };
+}
+
 /** An empty form, before any preset or row fills it. */
 export function formVide(): ConsigneForm {
   return {
@@ -141,6 +249,7 @@ export function formVide(): ConsigneForm {
     prereglage: null,
     fenetres: [],
     stands: [],
+    repas: repasVide(),
   };
 }
 
@@ -148,7 +257,15 @@ export function formVide(): ConsigneForm {
  * What blocks the request, in the order the form shows its fields; empty when
  * it can be sent. Codes rather than sentences: the dialog words them.
  */
-export type ErreurForm = 'DATES' | 'FERMETURE_DEBUT' | 'FERMETURE_FIN' | 'MOTIF' | 'FENETRE';
+export type ErreurForm =
+  | 'DATES'
+  | 'FERMETURE_DEBUT'
+  | 'FERMETURE_FIN'
+  | 'MOTIF'
+  | 'FENETRE'
+  | 'REPAS_FENETRE'
+  | 'REPAS_COUPURE'
+  | 'REPAS_JUSTIFICATION';
 
 export function erreursForm(form: ConsigneForm): ErreurForm[] {
   const erreurs: ErreurForm[] = [];
@@ -171,7 +288,79 @@ export function erreursForm(form: ConsigneForm): ErreurForm[] {
   if (fenetres.some((fenetre) => fenetreInvalide(fenetre))) {
     erreurs.push('FENETRE');
   }
+  erreurs.push(...erreursRepas(form.repas));
   return erreurs;
+}
+
+/**
+ * What blocks the meal section, the server's rules said before it says them:
+ * a window needs both bounds (readable) or none, the break is a whole number
+ * of minutes above zero, and the justification is required as soon as one
+ * field is set. Nothing typed, nothing blocked.
+ */
+export function erreursRepas(repas: RepasSaisie): ErreurForm[] {
+  const erreurs: ErreurForm[] = [];
+  if (
+    fenetreRepasInvalide(repas.midiDebut, repas.midiFin) ||
+    fenetreRepasInvalide(repas.soirDebut, repas.soirFin)
+  ) {
+    erreurs.push('REPAS_FENETRE');
+  }
+  const coupure = repas.coupureMinutes.trim();
+  if (coupure !== '' && !(Number.isInteger(Number(coupure)) && Number(coupure) > 0)) {
+    erreurs.push('REPAS_COUPURE');
+  }
+  if (!repasFormEmpty(repas) && repas.justification.trim() === '') {
+    erreurs.push('REPAS_JUSTIFICATION');
+  }
+  return erreurs;
+}
+
+/** One bound without the other, or a bound that cannot be read. */
+function fenetreRepasInvalide(debut: string, fin: string): boolean {
+  if (debut === '' && fin === '') {
+    return false;
+  }
+  return normaliseHour(debut) === null || normaliseHour(fin) === null;
+}
+
+/**
+ * « Aligner le soir sur la compensation »: the evening meal window becomes the
+ * earliest start and the latest end of the day's default windows, so that a
+ * service starting when the compensation opens or ending when it closes owes
+ * no break — the teams ate during the closed band. An open end (until
+ * midnight) reads as `23:59`, the last minute a time field can hold. The
+ * justification is filled when empty, never overwritten. Without a readable
+ * window, nothing moves.
+ */
+export function alignSoirOnCompensation(
+  repas: RepasSaisie,
+  fenetres: readonly FenetreSaisie[],
+): RepasSaisie {
+  const bornes = fenetres
+    .map((fenetre) => ({
+      debut: normaliseHour(fenetre.debut),
+      fin: fenetre.fin === '' ? '23:59' : normaliseHour(fenetre.fin),
+    }))
+    .filter((borne): borne is { debut: string; fin: string } => !!borne.debut && !!borne.fin);
+  if (bornes.length === 0) {
+    return repas;
+  }
+  const soirDebut = bornes.map((borne) => borne.debut).sort()[0];
+  const soirFin =
+    bornes
+      .map((borne) => borne.fin)
+      .sort()
+      .at(-1) ?? soirDebut;
+  return {
+    ...repas,
+    soirDebut,
+    soirFin,
+    justification:
+      repas.justification.trim() === ''
+        ? $localize`:@@consignes.form.repas.justification.fermeture:Les équipes mangent pendant la fermeture`
+        : repas.justification,
+  };
 }
 
 /** A window whose start is missing or unreadable, or whose end is typed and unreadable. */
@@ -186,7 +375,8 @@ function fenetreInvalide(fenetre: FenetreSaisie): boolean {
  * The request the server expects, from the form as it stands: the day's
  * default windows, and one opening per window of every ticked stand, each
  * carrying the stand's headcount (or `null` to inherit). A ticked stand with
- * no window opens nothing — the band still closes it, like every other.
+ * no window opens nothing — the band still closes it, like every other. The
+ * meal section travels as `null` when nothing is restated in it.
  */
 export function buildDemande(form: ConsigneForm): DemandeConsigne {
   const ouvertures: OuvertureConsigne[] = [];
@@ -211,6 +401,7 @@ export function buildDemande(form: ConsigneForm): DemandeConsigne {
     prereglage: form.prereglage,
     fenetres: fenetresDemandees(form.fenetres),
     ouvertures,
+    repas: repasDemande(form.repas),
   };
 }
 

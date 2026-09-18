@@ -43,6 +43,9 @@
           @if (ligne.fenetres) {
             <span class="consigne-fenetres-resume" i18n="@@consignes.column.fenetres">fenêtres : {{ ligne.fenetres }}</span>
           }
+          @if (ligne.repas) {
+            <span class="consigne-chip consigne-chip-repas" [matTooltip]="ligne.repas" i18n="@@consignes.repas.chip">repas surchargé</span>
+          }
         </td>
       </ng-container>
       <ng-container matColumnDef="motif">
@@ -144,6 +147,9 @@
             <span class="consigne-prereglage-motif">{{ prereglage.motif }}</span>
             @if (prereglage.fenetres.length > 0) {
               <span class="consigne-fenetres-resume" i18n="@@consignes.column.fenetres">fenêtres : {{ windowsOf(prereglage) }}</span>
+            }
+            @if (repasOf(prereglage.repas); as repas) {
+              <span class="consigne-chip consigne-chip-repas" [matTooltip]="repas" i18n="@@consignes.repas.chip">repas surchargé</span>
             }
           </div>
           <span class="consigne-prereglage-actions">

@@ -1,0 +1,45 @@
+<details class="consigne-form-repas" [open]="open()" (toggle)="open.set($any($event.target).open)">
+  <summary class="consigne-form-repas-summary">
+    <span class="consigne-form-repas-titre" i18n="@@consignes.form.repas.title">Fenêtres repas ce jour-là</span>
+    @if (!empty()) {
+      <span class="consigne-chip consigne-chip-repas" i18n="@@consignes.repas.chip">repas surchargé</span>
+    }
+  </summary>
+  <p class="empty-hint consigne-form-repas-hint" i18n="@@consignes.form.repas.hint">Les fenêtres repas de l'édition s'appliquent sauf si elles sont redites ici ; une fenêtre redite ne vaut que sur les dates de la consigne et part avec elle.</p>
+  <div class="consigne-form-repas-grille">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@consignes.form.repas.midiDebut">Midi, début</mat-label>
+      <input matInput type="time" name="repasMidiDebut" [ngModel]="repas().midiDebut" (ngModelChange)="patch({ midiDebut: $event })" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@consignes.form.repas.midiFin">Midi, fin</mat-label>
+      <input matInput type="time" name="repasMidiFin" [ngModel]="repas().midiFin" (ngModelChange)="patch({ midiFin: $event })" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@consignes.form.repas.soirDebut">Soir, début</mat-label>
+      <input matInput type="time" name="repasSoirDebut" [ngModel]="repas().soirDebut" (ngModelChange)="patch({ soirDebut: $event })" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@consignes.form.repas.soirFin">Soir, fin</mat-label>
+      <input matInput type="time" name="repasSoirFin" [ngModel]="repas().soirFin" (ngModelChange)="patch({ soirFin: $event })" />
+    </mat-form-field>
+    <mat-form-field appearance="outline" subscriptSizing="dynamic">
+      <mat-label i18n="@@consignes.form.repas.coupure">Coupure (minutes)</mat-label>
+      <input matInput type="number" min="1" name="repasCoupure" [ngModel]="repas().coupureMinutes" (ngModelChange)="onCoupure($event)" />
+    </mat-form-field>
+    <button matButton type="button" [disabled]="!canAlign()" (click)="align()"
+            i18n-matTooltip="@@consignes.form.repas.aligner.tooltip" matTooltip="Le soir prend le début le plus tôt et la fin la plus tardive des fenêtres de compensation par défaut">
+      <mat-icon>vertical_align_center</mat-icon>
+      <ng-container i18n="@@consignes.form.repas.aligner">Aligner le soir sur la compensation</ng-container>
+    </button>
+  </div>
+  <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-form-repas-justification">
+    <mat-label i18n="@@consignes.form.repas.justification">Justification</mat-label>
+    <textarea matInput rows="2" maxlength="500" name="repasJustification" [required]="!empty()"
+              [ngModel]="repas().justification" (ngModelChange)="patch({ justification: $event })"></textarea>
+    <mat-hint i18n="@@consignes.form.repas.justification.hint">Obligatoire dès qu'un champ est rempli ; un champ vide garde la valeur de l'édition</mat-hint>
+  </mat-form-field>
+  @if (inlineErrors() && messageErreur(); as message) {
+    <p class="field-error consigne-form-repas-erreur" role="alert">{{ message }}</p>
+  }
+</details>

@@ -814,6 +814,13 @@ export interface FenetreRepas {
    * reopen (issue #596).
    */
   auPlusTard?: boolean;
+  /**
+   * The one day this window governs (`AAAA-MM-JJ`), `null` for every day. A
+   * consigne restating its meal windows sends them dated (issue #4).
+   */
+  date: string | null;
+  /** For an undated window, the dates a dated one replaces it on. */
+  datesExclues: string[];
 }
 
 /** How many créneaux one animateur may hold on one typologie, over the whole edition (issue #594). */
@@ -3424,6 +3431,24 @@ export interface OuvertureConsigne {
 }
 
 /**
+ * The meal windows a consigne runs its own date on, when the edition's do not
+ * fit — the teams ate during the closed band, the evening reopened 18h–22h.
+ * Each field `null` keeps the edition's value; a window needs both bounds or
+ * none; `coupureMinutes` is above zero; the justification is required as soon
+ * as one field is set. Holds on the consigne's date only and leaves with it:
+ * the edition's legal parameters never move. Only the meal windows are
+ * overridable — the meal break is the organiser's rule — never the legal caps.
+ */
+export interface RepasConsigne {
+  midiDebut: string | null;
+  midiFin: string | null;
+  soirDebut: string | null;
+  soirFin: string | null;
+  coupureMinutes: number | null;
+  justification: string;
+}
+
+/**
  * What the organiser imposes on the whole event for one date: a band every
  * stand is shut on — an arrêté préfectoral, typically — and the compensation
  * chosen for it, stand by stand. One value per date.
@@ -3439,6 +3464,8 @@ export interface ConsigneEdition {
   /** The day's default compensation windows, what a ticked stand receives before any adjustment. */
   fenetres: FenetreConsigne[];
   ouvertures: OuvertureConsigne[];
+  /** The meal windows restated for the date, `null` when the edition's apply. */
+  repas: RepasConsigne | null;
   /** Ids of the créneaux the consigne added to the grid because none covered an opening. */
   creneauxAjoutes: number[];
   creeLe: string | null;
@@ -3453,6 +3480,8 @@ export interface PrereglageConsigne {
   fermetureFin: string | null;
   motif: string;
   fenetres: FenetreConsigne[];
+  /** The meal windows a consigne made from the preset restates, `null` for the edition's. */
+  repas: RepasConsigne | null;
   modifieLe: string | null;
 }
 
@@ -3518,6 +3547,8 @@ export interface DemandeConsigne {
   prereglage?: string | null;
   fenetres: FenetreConsigne[];
   ouvertures: OuvertureConsigne[];
+  /** `null` when the edition's meal windows apply. */
+  repas: RepasConsigne | null;
 }
 
 /** A vacation of the grid named by its day and hours. */

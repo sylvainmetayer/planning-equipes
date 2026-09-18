@@ -1,13 +1,16 @@
 // The pure side of the Consignes page: how a band reads, which dates can still
-// take a consigne, the request built from the form, the merge with what the
-// server proposes, the filters and the two bulk moves of the stands list.
+// take a consigne, the request built from the form, the meal windows restated
+// for the day, the merge with what the server proposes, the filters and the
+// two bulk moves of the stands list.
 
 import { describe, expect, it } from 'vitest';
 import { ConsigneEdition, Creneau, LigneStandConsigne, Stand } from '../../core/models';
 import {
   ConsigneForm,
   FILTRES_VIDES,
+  RepasSaisie,
   StandForm,
+  alignSoirOnCompensation,
   applyToSelection,
   bandeLabel,
   buildDemande,
@@ -25,6 +28,13 @@ import {
   openedStandsCount,
   parseFenetresSaisie,
   followDefaultWindows,
+  erreursRepas,
+  repasDemande,
+  repasFormEmpty,
+  repasLabel,
+  repasSaisie,
+  repasSurcharge,
+  repasVide,
 } from './consignes';
 
 function creneau(id: number, date: string): Creneau {
@@ -139,6 +149,7 @@ describe('the dates a consigne can be laid on', () => {
         { standId: 'A', debut: '09:00:00', fin: '12:00:00', effectif: null },
         { standId: 'B', debut: '18:00:00', fin: '22:00:00', effectif: 3 },
       ],
+      repas: null,
       creneauxAjoutes: [],
       creeLe: null,
       modifieLe: null,
@@ -184,6 +195,35 @@ describe('the request built from the form', () => {
       { standId: 'B', debut: '18:00', fin: null, effectif: null },
       { standId: 'B', debut: '09:00', fin: '11:00', effectif: null },
     ]);
+    // Nothing restated in the meal section: the edition's windows apply, no override travels.
+    expect(demande.repas).toBeNull();
+  });
+
+  it('sends the meal windows restated for the day, an empty field keeping the edition value', () => {
+    const demande = buildDemande({
+      ...form,
+      repas: {
+        ...repasVide(),
+        soirDebut: '18:00',
+        soirFin: '22:00',
+        justification: ' Les équipes mangent pendant la fermeture ',
+      },
+    });
+
+    expect(demande.repas).toEqual({
+      midiDebut: null,
+      midiFin: null,
+      soirDebut: '18:00',
+      soirFin: '22:00',
+      coupureMinutes: null,
+      justification: 'Les équipes mangent pendant la fermeture',
+    });
+    expect(
+      buildDemande({
+        ...form,
+        repas: { ...repasVide(), coupureMinutes: ' 45 ', justification: 'x' },
+      }).repas,
+    ).toMatchObject({ coupureMinutes: 45, soirDebut: null });
   });
 
   it('names what blocks the request, in the order of the fields', () => {
@@ -208,6 +248,117 @@ describe('the request built from the form', () => {
         ],
       }),
     ).toEqual([]);
+    // The meal section's codes come last, after the fields above it.
+    expect(
+      erreursForm({ ...form, motif: '', repas: { ...repasVide(), soirDebut: '18:00' } }),
+    ).toEqual(['MOTIF', 'REPAS_FENETRE', 'REPAS_JUSTIFICATION']);
+  });
+});
+
+describe('the meal windows restated for the day', () => {
+  const justified = (patch: Partial<RepasSaisie>): RepasSaisie => ({
+    ...repasVide(),
+    justification: 'Les équipes mangent pendant la fermeture',
+    ...patch,
+  });
+
+  it('reads what a consigne or a preset carries into the fields, and null as nothing typed', () => {
+    expect(repasSaisie(null)).toEqual(repasVide());
+    expect(repasFormEmpty(repasVide())).toBe(true);
+    const saisie = repasSaisie({
+      midiDebut: null,
+      midiFin: null,
+      soirDebut: '18:00:00',
+      soirFin: '22:00:00',
+      coupureMinutes: 45,
+      justification: 'Fermeture',
+    });
+    expect(saisie).toEqual({
+      midiDebut: '',
+      midiFin: '',
+      soirDebut: '18:00',
+      soirFin: '22:00',
+      coupureMinutes: '45',
+      justification: 'Fermeture',
+    });
+    expect(repasFormEmpty(saisie)).toBe(false);
+    // A justification alone restates nothing: the edition's windows apply.
+    expect(repasFormEmpty({ ...repasVide(), justification: 'x' })).toBe(true);
+    expect(repasDemande({ ...repasVide(), justification: 'x' })).toBeNull();
+  });
+
+  it('blocks a window with one bound, a break that is not a positive whole number, and a missing justification', () => {
+    expect(erreursRepas(repasVide())).toEqual([]);
+    expect(erreursRepas(justified({ soirDebut: '18:00', soirFin: '22:00' }))).toEqual([]);
+    expect(erreursRepas(justified({ midiDebut: '12:00' }))).toEqual(['REPAS_FENETRE']);
+    expect(erreursRepas(justified({ soirDebut: '18:00', soirFin: 'soir' }))).toEqual([
+      'REPAS_FENETRE',
+    ]);
+    expect(erreursRepas(justified({ coupureMinutes: '0' }))).toEqual(['REPAS_COUPURE']);
+    expect(erreursRepas(justified({ coupureMinutes: '4.5' }))).toEqual(['REPAS_COUPURE']);
+    expect(erreursRepas(justified({ coupureMinutes: '30' }))).toEqual([]);
+    expect(
+      erreursRepas({ ...repasVide(), soirDebut: '18:00', soirFin: '22:00', justification: ' ' }),
+    ).toEqual(['REPAS_JUSTIFICATION']);
+    expect(erreursRepas({ ...repasVide(), midiDebut: '12:00', coupureMinutes: '-1' })).toEqual([
+      'REPAS_FENETRE',
+      'REPAS_COUPURE',
+      'REPAS_JUSTIFICATION',
+    ]);
+  });
+
+  it('aligns the evening on the earliest start and the latest end of the compensation, and fills an empty justification', () => {
+    const aligned = alignSoirOnCompensation(repasVide(), [
+      { debut: '19:00', fin: '21:00' },
+      { debut: '18:00', fin: '20:00' },
+      { debut: '20:00', fin: '22:00' },
+    ]);
+    expect(aligned).toMatchObject({
+      soirDebut: '18:00',
+      soirFin: '22:00',
+      midiDebut: '',
+      coupureMinutes: '',
+      justification: 'Les équipes mangent pendant la fermeture',
+    });
+    expect(erreursRepas(aligned)).toEqual([]);
+
+    // A justification already typed is kept; an open end reads as the last minute of the day.
+    const kept = alignSoirOnCompensation(justified({ justification: 'Arrêté' }), [
+      { debut: '20:00', fin: '' },
+    ]);
+    expect(kept).toMatchObject({ soirDebut: '20:00', soirFin: '23:59', justification: 'Arrêté' });
+
+    // Without a readable window, nothing moves.
+    const untouched = justified({ midiDebut: '12:00', midiFin: '14:00' });
+    expect(alignSoirOnCompensation(untouched, [])).toBe(untouched);
+    expect(alignSoirOnCompensation(untouched, [{ debut: '', fin: '' }])).toBe(untouched);
+  });
+
+  it('words the chip: the justification, then what is restated', () => {
+    const repas = {
+      midiDebut: '12:00:00',
+      midiFin: '14:00:00',
+      soirDebut: '18:00:00',
+      soirFin: '22:00:00',
+      coupureMinutes: 45,
+      justification: 'Fermeture',
+    };
+    expect(repasSurcharge(repas)).toBe(true);
+    expect(repasSurcharge(null)).toBe(false);
+    expect(
+      repasSurcharge({
+        ...repas,
+        midiDebut: null,
+        midiFin: null,
+        soirDebut: null,
+        soirFin: null,
+        coupureMinutes: null,
+      }),
+    ).toBe(false);
+    expect(repasLabel(repas)).toBe('Fermeture · midi 12h–14h · soir 18h–22h · coupure 45 min');
+    expect(repasLabel({ ...repas, midiDebut: null, midiFin: null, coupureMinutes: null })).toBe(
+      'Fermeture · soir 18h–22h',
+    );
   });
 });
 

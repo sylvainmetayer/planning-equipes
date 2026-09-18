@@ -46,6 +46,11 @@ tr.consigne-ligne-passee td {
   color: var(--mat-sys-on-error-container);
 }
 
+.consigne-chip-repas {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
 /* ------------------------------- presets ------------------------------- */
 
 .consignes-prereglages-liste {
@@ -215,6 +220,58 @@ tr.consigne-ligne-passee td {
   margin-top: 0.75rem;
 }
 
+/* -------------------------- the meal windows -------------------------- */
+
+/* A <details> rather than a section: most consignes leave the edition's meal
+   windows alone, and the fold says so before a single field is read. */
+.consigne-form-repas {
+  margin: 1rem 0 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.consigne-form-repas-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.consigne-form-repas-summary:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+.consigne-form-repas-titre {
+  font: var(--mat-sys-title-small);
+}
+
+.consigne-form-repas-hint {
+  margin: 0.5rem 0;
+}
+
+.consigne-form-repas-grille {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+}
+
+.consigne-form-repas-grille mat-form-field {
+  width: 9rem;
+}
+
+.consigne-form-repas-justification {
+  width: 100%;
+}
+
+.consigne-form-repas-erreur {
+  margin: 0.5rem 0 0;
+}
+
 /* ------------------------------ the preview ------------------------------ */
 
 .consigne-apercu-jour h4 {
@@ -261,7 +318,8 @@ tr.consigne-ligne-passee td {
   }
 
   .consigne-form-filtres mat-form-field,
-  .consigne-fenetre mat-form-field {
+  .consigne-fenetre mat-form-field,
+  .consigne-form-repas-grille mat-form-field {
     width: 100%;
   }
 }
