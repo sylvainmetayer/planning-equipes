@@ -49,6 +49,7 @@ dev/sylvain/planning/api/FoireAndEspaceExportsTest.java
 dev/sylvain/planning/api/HistoriqueResourceTest.java
 dev/sylvain/planning/api/HorlogeSimuleeRecetteTest.java
 dev/sylvain/planning/api/ImpactPublicationTest.java
+dev/sylvain/planning/api/ImportScenarioConsignesTest.java
 dev/sylvain/planning/api/ImportScenarioContraintesAdHocTest.java
 dev/sylvain/planning/api/ImportScenarioContraintesTest.java
 dev/sylvain/planning/api/ImportScenarioJourneesTypesTest.java

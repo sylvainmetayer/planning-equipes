@@ -1,14 +1,23 @@
 package dev.sylvain.planning.service.scenario;
 
+import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * Importing a scenario into the referential: the order the sections are applied
@@ -27,7 +36,9 @@ import java.util.Optional;
  * planning auto-derives an id-as-its-own-label entry for every typologie a
  * stand or an animateur references, and overwrites the label when it does — an
  * explicit {@code {id, label}} pair applied first would simply be erased. Then
- * the constraints.</p>
+ * the constraints. Then the consignes (ADR 0043), last of all: their openings
+ * name stands and their added créneaux name créneaux, both of which must have
+ * landed — with their final ids — before a consigne can point at them.</p>
  */
 @ApplicationScoped
 public class ScenarioImportService {
@@ -43,6 +54,9 @@ public class ScenarioImportService {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    ConsigneRepository consigneRepository;
 
     /**
      * Imports one of the scenarios bundled under
@@ -78,6 +92,7 @@ public class ScenarioImportService {
             applyTypologies(sections);
             applyJourneesTypes(sections);
             applyContraintes(sections);
+            applyConsignes(sections);
         });
     }
 
@@ -163,6 +178,78 @@ public class ScenarioImportService {
                         definition.name(), contraintes.poids().get(definition.name()));
             }
         });
+    }
+
+    /**
+     * Applies the two consigne sections (ADR 0043), each replacing the
+     * edition's own when present and leaving it alone when absent — the rule
+     * of every other referential the file carries.
+     *
+     * <p>Written through the repository, never through
+     * {@code ConsigneService.poser}: that gesture refuses a date already
+     * worked, and adds to the grid the créneaux its openings need. A file may
+     * legitimately carry a consigne on a past date — the statistics of a day
+     * are what was actually done — and the créneaux it added are in the
+     * {@code creneaux:} section already, so they have just been written with
+     * the rest of the grid. What is left to do is to tie them back: the file
+     * names them by day and hours, the grid now knows them by id.</p>
+     *
+     * <p>One exception to « already written »: the planning import keeps the
+     * créneaux a stand opens on, and a créneau a consigne added belongs to
+     * nobody's usual hours (ADR 0043) — a stand is open on it only through
+     * the consigne. Such a créneau reaches the grid without a seat and is
+     * dropped on the way, so it is created here, the way the consigne created
+     * it the first time.</p>
+     */
+    private void applyConsignes(ScenarioYamlReader.ScenarioSections sections) {
+        sections.prereglagesConsigne().ifPresent(prereglages -> {
+            for (PrereglageConsigne existant : consigneRepository.listPrereglages()) {
+                consigneRepository.deletePrereglage(existant.id());
+            }
+            for (PrereglageConsigne prereglage : prereglages) {
+                consigneRepository.savePrereglage(prereglage.id() != null ? prereglage : withGeneratedId(prereglage));
+            }
+        });
+        sections.consignes().ifPresent(consignes -> {
+            for (var existante : consigneRepository.list()) {
+                consigneRepository.delete(existante.date());
+            }
+            Map<ConsigneService.VacationRef, Long> idsParCle = new HashMap<>();
+            for (Creneau creneau : referenceDataService.listCreneaux()) {
+                idsParCle.put(
+                        new ConsigneService.VacationRef(
+                                creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()),
+                        creneau.getId());
+            }
+            for (ScenarioYamlReader.ConsigneScenario entree : consignes) {
+                List<Long> ids = new ArrayList<>();
+                for (ConsigneService.VacationRef cle : entree.creneauxAjoutes()) {
+                    Long id = idsParCle.get(cle);
+                    if (id == null) {
+                        id = referenceDataService
+                                .writeCreneau(new Creneau(null, 0, cle.date(), cle.heureDebut(), cle.heureFin()))
+                                .creneau()
+                                .getId();
+                        idsParCle.put(cle, id);
+                    }
+                    ids.add(id);
+                }
+                consigneRepository.save(entree.consigne().withCreneauxAjoutes(ids));
+            }
+        });
+    }
+
+    /** A preset written by hand carries no id; the screen would have drawn one, so does the import. */
+    private static PrereglageConsigne withGeneratedId(PrereglageConsigne prereglage) {
+        return new PrereglageConsigne(
+                UUID.randomUUID().toString(),
+                prereglage.nom(),
+                prereglage.fermetureDebut(),
+                prereglage.fermetureFin(),
+                prereglage.motif(),
+                prereglage.fenetres(),
+                prereglage.modifieLe(),
+                prereglage.repas());
     }
 
     /**

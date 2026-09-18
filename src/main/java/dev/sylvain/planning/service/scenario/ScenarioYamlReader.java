@@ -1,18 +1,21 @@
 package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioBinder;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.io.IOException;
@@ -258,6 +261,13 @@ public final class ScenarioYamlReader {
      *                            wholesale — a file that pins nothing but the section
      *                            itself re-enables everything, which is what "this is
      *                            the tuning this scenario was verified with" means
+     * @param prereglagesConsigne the consigne presets the file carries (ADR 0043).
+     *                            Present, they replace the edition's; absent, the
+     *                            edition keeps its own
+     * @param consignes           the dated consignes, each with the créneaux it added
+     *                            named by day and hours. Same rule: present replaces,
+     *                            absent leaves alone. Applied after the créneaux
+     *                            landed, since that is what the keys resolve against
      */
     public record ScenarioSections(
             Optional<ParametresLegaux> parametresLegaux,
@@ -266,7 +276,18 @@ public final class ScenarioYamlReader {
             List<TypologieItem> typologies,
             Optional<EditionCibleDto> edition,
             Optional<ContraintesScenario> contraintes,
-            Optional<JourneesTypesScenario> journeesTypes) {}
+            Optional<JourneesTypesScenario> journeesTypes,
+            Optional<List<PrereglageConsigne>> prereglagesConsigne,
+            Optional<List<ConsigneScenario>> consignes) {}
+
+    /**
+     * One entry of the {@code consignes:} section, parsed: the consigne with
+     * an empty {@code creneauxAjoutes} — the file carries no créneau id — and,
+     * beside it, the créneaux it added named the way the publication names a
+     * vacation. The import resolves them against the créneaux it has just
+     * written and records the ids on the consigne.
+     */
+    public record ConsigneScenario(ConsigneEdition consigne, List<ConsigneService.VacationRef> creneauxAjoutes) {}
 
     /**
      * The {@code journeesTypes:} section of a scenario, parsed: the templates

@@ -13,6 +13,7 @@
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.consignes = null
 .sections.contraintes = null
 .sections.edition = null
 .sections.journeesTypes = null
@@ -33,4 +34,5 @@
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 400
 .sections.parametresSolveur.mailFinResolution = false
+.sections.prereglagesConsigne = null
 .sections.typologies = (vide)

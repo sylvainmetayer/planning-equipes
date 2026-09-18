@@ -18,6 +18,7 @@
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 3
@@ -27,4 +28,5 @@
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.parametresSolveur = null
+.sections.prereglagesConsigne = null
 .sections.typologies = (vide)

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import java.util.List;
@@ -104,6 +106,16 @@ public interface ReferenceData {
 
     /** Which date each template governs; empty when the edition assigns none. */
     default List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
+        return List.of();
+    }
+
+    /** The edition's consignes (ADR 0043), one per date; none by default, for the readers that predate them. */
+    default List<ConsigneEdition> listConsignes() {
+        return List.of();
+    }
+
+    /** The presets those consignes are made from; none by default. */
+    default List<PrereglageConsigne> listPrereglagesConsigne() {
         return List.of();
     }
 }

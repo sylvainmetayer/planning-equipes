@@ -45,7 +45,8 @@ class ConsigneCoucheStructurelleTest {
             "service/referentiel/CoherenceService.java",
                     "warns about what a stand, a créneau or an exception says, against the stand's own hours",
             "service/scenario/ScenarioDomainMapper.java",
-                    "reads a scenario file, which has no consigne section: the rules are all it can expand",
+                    "reads a scenario file into its nominal problem: the consignes section is handed to the import,"
+                            + " never laid on the seats it builds",
             "service/solve/PlanningService.java",
                     "exports the référentiel to a scenario file, whose stands are described nominally",
             "service/consigne/ConsigneService.java",

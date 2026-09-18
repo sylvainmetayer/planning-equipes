@@ -94,6 +94,13 @@ public class PlanningService {
      * Loads a named scenario from the {@link ScenarioYamlReader#SCENARIOS_DIR} folder. The name is
      * a bare file name (e.g. {@code scenario-complet.yaml}); any path component
      * is rejected so callers cannot escape the scenarios folder.
+     *
+     * <p>The problem built here is the file's <b>nominal</b> grid: a
+     * {@code consignes:} section it may carry is not applied to the seats. The
+     * consigne layer is laid on by {@code StandService.resolve} when the
+     * problem is built from the referential (ADR 0043), so a file's consignes
+     * take effect once the file is <em>imported</em>, never when it is solved
+     * straight from disk.</p>
      */
     public PlanningEvenement buildExample(String scenarioName) {
         try {
@@ -211,7 +218,9 @@ public class PlanningService {
                 referenceDataService.getConstraintWeights(),
                 referenceDataService.snapshotContraintes(),
                 referenceDataService.listJourneesTypes(),
-                referenceDataService.calendrierJourneesTypes()));
+                referenceDataService.calendrierJourneesTypes(),
+                referenceDataService.listConsignes(),
+                referenceDataService.listPrereglagesConsigne()));
     }
 
     // --- Scenario reading: façade over ScenarioYamlReader -------------------

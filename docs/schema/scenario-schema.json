@@ -44,6 +44,49 @@
       },
       "required" : [ "competences", "dateNaissance", "id", "nom", "prenom" ]
     },
+    "ConsigneDto" : {
+      "type" : "object",
+      "properties" : {
+        "creneauxAjoutes" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/CreneauAjouteDto"
+          }
+        },
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "fenetres" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/FenetreConsigneDto"
+          }
+        },
+        "fermetureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fermetureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "motif" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "ouvertures" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/OuvertureConsigneDto"
+          }
+        },
+        "prereglage" : {
+          "type" : "string"
+        },
+        "repas" : {
+          "$ref" : "#/$defs/RepasConsigneDto"
+        }
+      },
+      "required" : [ "date", "fermetureDebut", "motif" ]
+    },
     "ContrainteAdHocDto" : {
       "type" : "object",
       "properties" : {
@@ -97,6 +140,21 @@
           }
         }
       }
+    },
+    "CreneauAjouteDto" : {
+      "type" : "object",
+      "properties" : {
+        "date" : {
+          "$ref" : "#/$defs/LocalDate"
+        },
+        "heureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "heureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "date", "heureDebut", "heureFin" ]
     },
     "CreneauDto" : {
       "type" : "object",
@@ -162,6 +220,18 @@
         }
       },
       "required" : [ "id", "nom" ]
+    },
+    "FenetreConsigneDto" : {
+      "type" : "object",
+      "properties" : {
+        "debut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "debut" ]
     },
     "FenetreHoraireDto" : {
       "type" : "object",
@@ -303,6 +373,27 @@
       "type" : "string",
       "enum" : [ "NORMAL", "EPUISANT" ]
     },
+    "OuvertureConsigneDto" : {
+      "type" : "object",
+      "properties" : {
+        "debut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "effectif" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "fin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "standId" : {
+          "type" : "string",
+          "minLength" : 1
+        }
+      },
+      "required" : [ "debut", "standId" ]
+    },
     "OuvertureStandDto" : {
       "type" : "object",
       "properties" : {
@@ -441,6 +532,65 @@
       },
       "required" : [ "creneauId", "id", "standId" ]
     },
+    "PrereglageConsigneDto" : {
+      "type" : "object",
+      "properties" : {
+        "fenetres" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/$defs/FenetreConsigneDto"
+          }
+        },
+        "fermetureDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "fermetureFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "id" : {
+          "type" : "string"
+        },
+        "motif" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "nom" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "repas" : {
+          "$ref" : "#/$defs/RepasConsigneDto"
+        }
+      },
+      "required" : [ "fermetureDebut", "motif", "nom" ]
+    },
+    "RepasConsigneDto" : {
+      "type" : "object",
+      "properties" : {
+        "coupureMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
+        "justification" : {
+          "type" : "string",
+          "minLength" : 1
+        },
+        "midiDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "midiFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "soirDebut" : {
+          "$ref" : "#/$defs/LocalTime"
+        },
+        "soirFin" : {
+          "$ref" : "#/$defs/LocalTime"
+        }
+      },
+      "required" : [ "justification" ]
+    },
     "StandDto" : {
       "type" : "object",
       "properties" : {
@@ -559,6 +709,12 @@
         "$ref" : "#/$defs/AnimateurDto"
       }
     },
+    "consignes" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/ConsigneDto"
+      }
+    },
     "contraintes" : {
       "$ref" : "#/$defs/ContraintesDto"
     },
@@ -605,6 +761,12 @@
       "type" : "array",
       "items" : {
         "$ref" : "#/$defs/PosteDto"
+      }
+    },
+    "prereglagesConsigne" : {
+      "type" : "array",
+      "items" : {
+        "$ref" : "#/$defs/PrereglageConsigneDto"
       }
     },
     "stands" : {

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -17,33 +18,42 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
+import dev.sylvain.planning.scenario.dto.ConsigneDto;
 import dev.sylvain.planning.scenario.dto.ContrainteAdHocDto;
 import dev.sylvain.planning.scenario.dto.ContraintesDto;
+import dev.sylvain.planning.scenario.dto.CreneauAjouteDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
+import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
+import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
+import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
+import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
 import dev.sylvain.planning.scenario.dto.VacationTypeDto;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ConsigneScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ContraintesScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ReferenceScenario;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader.ScenarioSections;
@@ -59,6 +69,7 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -97,6 +108,12 @@ final class ScenarioDomainMapper {
     /**
      * The whole problem a file describes, seats included — generated from
      * stands × créneaux when the file lists none, taken as written otherwise.
+     *
+     * <p>Nominal, deliberately: the {@code consignes:} section is read by
+     * {@link #sections} for the import and never applied to the seats built
+     * here. The consigne layer belongs to {@code StandService.resolve}, over
+     * the referential (ADR 0043); a scenario solved straight from its file
+     * is solved on its nominal grid.</p>
      */
     static PlanningEvenement planning(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         ReferenceScenario reference = reference(scenario);
@@ -414,7 +431,171 @@ final class ScenarioDomainMapper {
                 typologies(scenario.typologies()),
                 edition(scenario),
                 contraintes(scenario.contraintes()),
-                journeesTypes(scenario.journeesTypes()));
+                journeesTypes(scenario.journeesTypes()),
+                prereglagesConsigne(scenario.prereglagesConsigne()),
+                consignes(scenario));
+    }
+
+    /* ------------------------------ consignes ------------------------------ */
+
+    /**
+     * The {@code consignes:} section (ADR 0043), checked against the rest of
+     * the file the way the Consignes screen checks a request against the
+     * edition: a band that starts, a motif, one line per date, a date the
+     * grid has créneaux on, openings naming stands of the file, added créneaux
+     * naming créneaux of the file, and a reason as soon as the meal windows
+     * are restated. The ids of the added créneaux are left empty here — the
+     * file has none — and travel beside the consigne as day-and-hours keys.
+     */
+    static Optional<List<ConsigneScenario>> consignes(ScenarioDto scenario) {
+        List<ConsigneDto> dtos = scenario.consignes();
+        if (dtos == null) {
+            return Optional.empty();
+        }
+        Set<String> standsDuFichier = new HashSet<>();
+        for (StandDto stand : required(scenario.stands(), "stands")) {
+            standsDuFichier.add(stand.id());
+        }
+        Set<ConsigneService.VacationRef> creneauxDuFichier = new HashSet<>();
+        Set<LocalDate> joursGrille = new HashSet<>();
+        for (CreneauDto creneau : required(scenario.creneaux(), "creneaux")) {
+            creneauxDuFichier.add(
+                    new ConsigneService.VacationRef(creneau.date(), creneau.heureDebut(), creneau.heureFin()));
+            joursGrille.add(creneau.date());
+        }
+        List<ConsigneScenario> consignes = new ArrayList<>();
+        Set<LocalDate> dates = new HashSet<>();
+        for (int i = 0; i < dtos.size(); i++) {
+            ConsigneDto dto = dtos.get(i);
+            String entree = "consignes[" + i + "]";
+            LocalDate date = required(dto.date(), entree + ".date");
+            if (!dates.add(date)) {
+                throw new BusinessError.Invalid(
+                        "La section consignes porte deux fois le " + date + " : une consigne est une ligne par date.");
+            }
+            if (!joursGrille.contains(date)) {
+                throw new BusinessError.Invalid(
+                        entree + " : aucun créneau le " + date + " sous « creneaux », rien à fermer ce jour-là.");
+            }
+            checkBande(dto.fermetureDebut(), dto.fermetureFin(), entree);
+            String motif = requiredName(dto.motif(), entree + ".motif");
+            List<ConsigneEdition.Ouverture> ouvertures = new ArrayList<>();
+            if (dto.ouvertures() != null) {
+                for (OuvertureConsigneDto ouverture : dto.ouvertures()) {
+                    if (ouverture.standId() == null || !standsDuFichier.contains(ouverture.standId())) {
+                        throw new BusinessError.Invalid(entree + " ouvre le stand « " + ouverture.standId()
+                                + " », que la section stands du fichier ne déclare pas.");
+                    }
+                    ouvertures.add(new ConsigneEdition.Ouverture(
+                            ouverture.standId(),
+                            required(ouverture.debut(), entree + ".ouvertures.debut"),
+                            ouverture.fin(),
+                            ouverture.effectif()));
+                }
+            }
+            List<ConsigneService.VacationRef> creneauxAjoutes = new ArrayList<>();
+            if (dto.creneauxAjoutes() != null) {
+                for (CreneauAjouteDto ajoute : dto.creneauxAjoutes()) {
+                    ConsigneService.VacationRef cle = new ConsigneService.VacationRef(
+                            required(ajoute.date(), entree + ".creneauxAjoutes.date"),
+                            required(ajoute.heureDebut(), entree + ".creneauxAjoutes.heureDebut"),
+                            required(ajoute.heureFin(), entree + ".creneauxAjoutes.heureFin"));
+                    if (!creneauxDuFichier.contains(cle)) {
+                        throw new BusinessError.Invalid(entree + " dit avoir ajouté le créneau du " + cle.date()
+                                + " " + cle.heureDebut() + "-" + cle.heureFin()
+                                + ", que la section creneaux du fichier ne liste pas.");
+                    }
+                    creneauxAjoutes.add(cle);
+                }
+            }
+            consignes.add(new ConsigneScenario(
+                    new ConsigneEdition(
+                            date,
+                            dto.fermetureDebut(),
+                            dto.fermetureFin(),
+                            motif,
+                            dto.prereglage() == null || dto.prereglage().isBlank() ? null : dto.prereglage(),
+                            fenetresConsigne(dto.fenetres(), entree),
+                            ouvertures,
+                            List.of(),
+                            null,
+                            null,
+                            repasConsigne(dto.repas(), entree)),
+                    creneauxAjoutes));
+        }
+        return Optional.of(consignes);
+    }
+
+    /**
+     * The {@code prereglagesConsigne:} section. A preset written without an
+     * id gets one when the import writes it; two presets of one name would be
+     * refused by the screen, so they are refused here too.
+     */
+    static Optional<List<PrereglageConsigne>> prereglagesConsigne(List<PrereglageConsigneDto> dtos) {
+        if (dtos == null) {
+            return Optional.empty();
+        }
+        List<PrereglageConsigne> prereglages = new ArrayList<>();
+        Set<String> noms = new HashSet<>();
+        for (int i = 0; i < dtos.size(); i++) {
+            PrereglageConsigneDto dto = dtos.get(i);
+            String entree = "prereglagesConsigne[" + i + "]";
+            String nom = requiredName(dto.nom(), entree + ".nom").strip();
+            if (!noms.add(nom.toLowerCase(Locale.ROOT))) {
+                throw new BusinessError.Invalid(
+                        "La section prereglagesConsigne nomme deux fois « " + nom + " » : un préréglage par nom.");
+            }
+            checkBande(dto.fermetureDebut(), dto.fermetureFin(), entree);
+            prereglages.add(new PrereglageConsigne(
+                    dto.id() == null || dto.id().isBlank() ? null : dto.id(),
+                    nom,
+                    dto.fermetureDebut(),
+                    dto.fermetureFin(),
+                    requiredName(dto.motif(), entree + ".motif"),
+                    fenetresConsigne(dto.fenetres(), entree),
+                    null,
+                    repasConsigne(dto.repas(), entree)));
+        }
+        return Optional.of(prereglages);
+    }
+
+    private static void checkBande(LocalTime debut, LocalTime fin, String entree) {
+        required(debut, entree + ".fermetureDebut");
+        if (fin != null && !fin.equals(LocalTime.MIDNIGHT) && !debut.isBefore(fin)) {
+            throw new BusinessError.Invalid(entree + " : la bande interdite doit finir après son début.");
+        }
+    }
+
+    private static List<ConsigneEdition.Fenetre> fenetresConsigne(List<FenetreConsigneDto> dtos, String entree) {
+        List<ConsigneEdition.Fenetre> fenetres = new ArrayList<>();
+        if (dtos != null) {
+            for (FenetreConsigneDto dto : dtos) {
+                fenetres.add(new ConsigneEdition.Fenetre(required(dto.debut(), entree + ".fenetres.debut"), dto.fin()));
+            }
+        }
+        return fenetres;
+    }
+
+    /** {@code null} when the block restates nothing; a block that does must say why. */
+    private static ConsigneEdition.RepasConsigne repasConsigne(RepasConsigneDto dto, String entree) {
+        if (dto == null) {
+            return null;
+        }
+        ConsigneEdition.RepasConsigne repas = new ConsigneEdition.RepasConsigne(
+                dto.midiDebut(),
+                dto.midiFin(),
+                dto.soirDebut(),
+                dto.soirFin(),
+                dto.coupureMinutes(),
+                dto.justification());
+        if (!repas.surcharge()) {
+            return null;
+        }
+        if (dto.justification() == null || dto.justification().isBlank()) {
+            throw new BusinessError.Invalid(
+                    entree + " surcharge les fenêtres repas sans dire pourquoi : repas.justification est obligatoire.");
+        }
+        return repas;
     }
 
     /**
