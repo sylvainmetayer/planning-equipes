@@ -76,6 +76,7 @@ function statistiques(): StatistiquesIncremental {
     postesLiberes: 20,
     postesLiberesManuellement: 2,
     postesNouveaux: 0,
+    postesPasses: 0,
   };
 }
 
@@ -555,13 +556,14 @@ describe('SolverPage', () => {
       pushResult('SOLVE', {
         diagnostic: diagnostic({ hardScore: 0 }),
         previousPlan: null,
-        reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2 },
+        reamorcage: { mode: 'PLAN_COURANT', postes: 10, postesLiberes: 2, postesPasses: 0 },
         impactPublication: { personnes: 12, publieLe: '2026-09-01T10:00:00Z' },
       });
       expect(page.reamorcageEffectue()).toEqual({
         mode: 'PLAN_COURANT',
         postes: 10,
         postesLiberes: 2,
+        postesPasses: 0,
       });
       expect(page.impactPublication()).toEqual({ personnes: 12, publieLe: '2026-09-01T10:00:00Z' });
 

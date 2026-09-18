@@ -14,6 +14,7 @@ function statistiques(): StatistiquesIncremental {
     postesLiberes: 20,
     postesLiberesManuellement: 2,
     postesNouveaux: 0,
+    postesPasses: 0,
   };
 }
 
@@ -52,13 +53,13 @@ describe('IncrementalResult', () => {
     );
   }
 
-  it('frames the diff with the four counts', () => {
+  it('frames the diff with the five counts, the past seats last', () => {
     const root = render([]);
 
     const values = Array.from(root.querySelectorAll('.staffing-stat-value')).map((value) =>
       value.textContent!.trim(),
     );
-    expect(values).toEqual(['180', '20', '2', '0']);
+    expect(values).toEqual(['180', '20', '2', '0', '0']);
   });
 
   it('says so when no crew changed, and draws no table', () => {

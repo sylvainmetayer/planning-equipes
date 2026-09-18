@@ -42,6 +42,15 @@ export function buildSolverSections(): HelpSection[] {
           text: $localize`:@@aide.calculer.verrous:Les verrouillages ne sont pas un quatrième mode : ils s'appliquent aux trois. Un animateur, un stand, une journée ou un créneau verrouillé n'est touché ni par un calcul complet ni par une correction.`,
         },
         {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.calculer.term.passe:Le passé est figé`,
+              text: $localize`:@@aide.calculer.def.passe:Pendant l'événement, les trois calculs reprennent du planning enregistré les postes des créneaux déjà commencés — journée passée, ou créneau d'aujourd'hui dont l'heure est atteinte — et les figent tels qu'ils ont été travaillés, même si la personne a depuis déclaré la journée indisponible, même si le poste est resté vide. Ces postes comptent dans les repos, les cumuls et les jours d'affilée, mais aucune règle ne les reproche : le zéro dur se lit sur ce qui reste à jouer. Le compte rendu les annonce (« postes déjà commencés »). En développement, la date que lit cette règle se pose depuis la page Débogage ; en exploitation, la variable PASSE_FIGE=false la coupe, pour rejouer une édition ancienne.`,
+            },
+          ],
+        },
+        {
           kind: 'paragraph',
           text: $localize`:@@aide.calculer.attente:Quand le solveur est occupé, chacun des trois boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même dès que la tâche en cours sera terminée.`,
         },

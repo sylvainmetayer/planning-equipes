@@ -27,6 +27,7 @@ describe('extraireDiagnostic', () => {
         postesLiberes: 1,
         postesLiberesManuellement: 0,
         postesNouveaux: 0,
+        postesPasses: 0,
       },
       changements: [],
     };
