@@ -74,6 +74,10 @@ export function buildOperationsSections(): HelpSection[] {
               term: $localize`:@@aide.consignes.term.soirBloque:Le soir reste à moitié vide : la coupure repas`,
               text: $localize`:@@aide.consignes.def.soirBloque:Une fenêtre du soir derrière un après-midi raccourci — 18 h-22 h derrière un 14 h-20 h devenu 18 h-20 h — demande deux personnes par siège tant que la coupure repas du soir (19 h-21 h) interdit d'enchaîner 18 h-20 h puis 20 h-22 h. La réponse est dans la consigne elle-même, section « Fenêtres repas ce jour-là » : alignez la fenêtre du soir sur la compensation (18 h-22 h) en donnant la raison — les équipes ont mangé pendant la fermeture. Elle ne vaut que sur ces dates et part avec la consigne ; les paramètres de l'édition ne bougent pas. Puis relancez la résolution. L'autre levier est de rouvrir moins de stands le soir. Le repos quotidien de onze heures n'est pas en cause.`,
             },
+            {
+              term: $localize`:@@aide.consignes.term.relancer:Relancer après une consigne : verrouiller, puis résoudre en entier`,
+              text: $localize`:@@aide.consignes.def.relancer:Posez un verrou « journée » sur chaque journée à préserver, puis lancez une résolution complète : elle repart du plan en place et ne touche qu'aux journées libres. Évitez la replanification incrémentale ici — elle fige tout siège dont le titulaire est encore disponible, y compris, après une levée, un après-midi redevenu 14 h-20 h à côté d'un autre siège, et elle n'échange que très lentement des sièges quand une soirée saturée en laisse un vide.`,
+            },
           ],
         },
       ],
