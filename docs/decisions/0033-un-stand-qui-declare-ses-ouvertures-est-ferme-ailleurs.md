@@ -98,3 +98,40 @@ la réécriture à sens constant qu'il prétend être.
   personne n'en dépendait — mais c'est une rupture, et elle est ici.
 - **L'import de scénario en hérite sans un mot** : un fichier qui déclare des
   ouvertures dit désormais ce qu'il a l'air de dire.
+
+## Complément ([0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md))
+
+Une **quatrième couche** s'applique désormais au-dessus des trois : la
+**consigne d'édition**, ce qu'une autorité impose à tout l'événement sur une
+date — une bande horaire fermée pour tous les stands, et les fenêtres où
+certains rouvrent en compensation. Elle n'est pas une règle du stand ni une
+exception datée : elle vient d'en dehors du stand, s'applique à tous sans
+qu'aucun l'ait déclarée, et se lève sans rien réécrire.
+
+`StandService.resolve` est le point d'entrée : `HoraireStandResolver.apply`
+pour les couches 1 à 3, puis `ConsigneResolver.apply` par-dessus, sur les
+seules fenêtres effectives. L'invariant **un seul mode par jour** est
+préservé, parce que la couche 4 ne mélange rien : elle repart de la journée
+que les trois couches ont produite, lue en segments ouverts ; en retire la
+bande, puis les créneaux que la consigne a ajoutés à la grille ; y ajoute les
+fenêtres choisies pour ce stand, hors bande ; et **réénonce la journée
+entière** — en ouvertures explicites (fermé par défaut) quand il reste
+quelque chose, en fermeture de journée entière quand il ne reste rien. Rien
+en aval — segments, contraintes, exports — n'a donc à connaître la consigne,
+comme rien n'avait à connaître les règles.
+
+La limite de la couche 1 — une exception *remplace* la journée — est
+précisément ce qui rendait la consigne nécessaire : rouvrir 18 h-22 h par une
+exception datée faisait ressaisir toute la journée du stand, sur tous les
+stands, pour chaque jour d'alerte. La couche 4 se **soustrait et s'ajoute** à
+ce que les trois premières disent, mais elle est la seule à le faire, et
+seulement pour une décision qui n'appartient pas au stand.
+
+Un test structurel, `ConsigneCoucheStructurelleTest`, tient ce que le nom du
+point d'entrée promet : tout appelant de `HoraireStandResolver.apply` dans
+le code de production est soit `StandService.resolve`, soit inscrit avec sa
+raison dans une liste — compactage, élagage, dérivation de grille, cohérence,
+scénario, et la journée nominale que la consigne elle-même calcule, tous
+raisonnant sur ce qu'un stand *déclare*. Un appelant oublié doterait en
+silence une bande qu'un arrêté a fermée ; c'est la même classe de défaut
+qu'un prédicat d'édition oublié, et le même genre de filet.

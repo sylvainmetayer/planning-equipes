@@ -527,6 +527,72 @@ rend aussi les dates **en écart**, celles dont les créneaux ne suivent plus
 leur journée type. Voir
 [ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md).
 
+## Une consigne ferme une bande pour tous, et se pose en quatre appels
+
+Un arrêté tombe à 20 h et ferme 12 h-18 h demain et après-demain pour tous
+les stands ; la question est de savoir si le plan peut être retourné avant la
+nuit. Huit outils miroitent l'écran Consignes
+([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
+`lister_consignes`, `consulter_preselection_consigne`, `simuler_consigne`,
+`appliquer_consigne`, `simuler_levee_consigne`, `lever_consigne`,
+`definir_prereglage_consigne` et `supprimer_prereglage_consigne`. Aucun ne
+nomme une personne : les aperçus sont des comptes.
+
+Deux syntaxes textuelles, sur une ligne. Les **fenêtres** de la journée —
+la bande, les fenêtres de compensation par défaut d'une consigne ou d'un
+préréglage — s'écrivent `HH:MM-HH:MM`, séparées par des virgules, la fin
+omise pour « jusqu'à minuit » : « `18:00-22:00` », « `08:00-10:00,18:00-` ».
+Les **ouvertures** nomment le stand, sa fenêtre et, après `*`, l'effectif :
+« `BOURSE=18:00-22:00*2,ENFANTS=18:00-20:00` » ; un stand ouvert sur deux
+fenêtres est nommé deux fois ; sans `*N`, l'effectif hérite du plus fort
+effectif que le stand perd dans la bande, sinon de son minimum. La bande se
+donne à part (`fermetureDebut`, `fermetureFin` omise = jusqu'à minuit), les
+dates séparées par des virgules, et le motif est obligatoire : il est imprimé
+partout où la journée est dite modifiée.
+
+La séquence, le soir de l'arrêté :
+
+1. `consulter_preselection_consigne` sur chaque date, avec la bande : ce
+   qu'elle prend à chaque stand (minutes perdues), l'effectif hérité, les
+   stands proposés cochés, et ceux écartés parce qu'ils ont posé leurs
+   horaires à la main ce jour-là — cochables quand même. N'écrit rien ;
+2. `simuler_consigne` avec les dates, la bande, le motif, les fenêtres et les
+   ouvertures retenues : par jour, sièges et minutes avant et après, créneaux
+   à ajouter à la grille, vacations qui perdent leurs sièges, mineurs face aux
+   majeurs disponibles, validation de relecture retirée, verrous et règles ad
+   hoc touchés, personnes du plan assises dans la bande. C'est la validation
+   complète, sans écriture : une requête que la simulation accepte sera
+   acceptée telle quelle ;
+3. `appliquer_consigne`, mêmes arguments : pose la consigne — ou remplace
+   celle qu'une date porte déjà — et ajoute à la grille les seuls créneaux que
+   les ouvertures exigent. Rien n'est supprimé de la grille nominale, et les
+   dates doivent être à venir. Prolonger l'alerte, c'est le même appel avec
+   les dates ajoutées ;
+4. `resoudre_incremental` : les sièges de la bande n'existent plus, ceux des
+   fenêtres ajoutées sont à pourvoir, et la stabilité du plan publié retient
+   tout le reste ;
+5. `etat_publication`, puis `publier_planning` : le diff par personne
+   annonce les vacations raccourcies et celles ajoutées, et le courriel liste
+   les journées aux horaires modifiés avec le motif.
+
+Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés
+qui partiraient avec leurs sièges et compte les personnes assises dessus ;
+`lever_consigne` les retire, rend aux stands leurs horaires, retire la
+validation de relecture des journées, et refuse une date passée ou en cours —
+un jour travaillé garde la consigne qui l'a gouverné. Relancer ensuite
+`resoudre_incremental` : la règle de stabilité rend les après-midis à leurs
+titulaires, et `publier_planning` annonce le retrait des soirées ajoutées.
+
+`definir_prereglage_consigne` mémorise « Plan canicule » — bande, motif,
+fenêtres par défaut — validé à froid, sans rien poser, copié à la
+duplication de l'édition ; `supprimer_prereglage_consigne` le retire sans
+toucher aux consignes déjà posées avec lui. `lister_consignes` rend les
+consignes, les préréglages et la date que le serveur tient pour aujourd'hui ;
+`lister_journees_types` marque les dates **sous consigne**, que
+`materialiser_journees_types` ne touche pas. Appliquer et lever sont
+journalisés et changent ce qu'une résolution reçoit ; les simulations et la
+pré-sélection n'écrivent rien.
+
 ## Hors périmètre, volontairement
 
 | Ce qui n'a pas d'outil | Pourquoi |

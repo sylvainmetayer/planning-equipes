@@ -66,6 +66,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0040](0040-mentions-legales-exigees-au-demarrage.md) | Les mentions légales d'une instance en service sont exigées au démarrage, pas listées dans une case à cocher | Accepté |
 | [0041](0041-encadrement-des-mineurs-eteint-par-defaut.md) | L'encadrement des mineurs est une règle éteinte par défaut | Accepté · révise 0035 |
 | [0042](0042-quota-par-typologie-sur-la-typologie.md) | Le quota par typologie se pose sur la typologie, pas sur une contrainte ad hoc | Accepté |
+| [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md) | Une consigne d'édition ferme une bande horaire pour tous les stands, en quatrième couche du résolveur d'horaires, sans rien détruire de la grille | Accepté · révise 0001 § 6 bis, complète 0033 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

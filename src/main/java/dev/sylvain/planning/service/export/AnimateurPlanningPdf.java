@@ -46,9 +46,6 @@ public class AnimateurPlanningPdf {
     private final PdfTheme theme;
     private final TypologieLibelles typologies;
 
-    /** The days of the document a consigne governs, and what to print under their date. Set per build. */
-    private Map<LocalDate, String> journeesModifiees = Map.of();
-
     @Inject
     public AnimateurPlanningPdf(PdfTheme theme, TypologieLibelles typologies) {
         this.theme = theme;
@@ -65,7 +62,10 @@ public class AnimateurPlanningPdf {
             String lienEspaceAnimateur,
             ExportProvenance.Provenance provenance,
             Map<LocalDate, String> journeesModifiees) {
-        this.journeesModifiees = journeesModifiees == null ? Map.of() : journeesModifiees;
+        // The days a consigne governs, and what to print under their date —
+        // handed down rather than kept on the bean, which is shared by every
+        // build running at once.
+        Map<LocalDate, String> notes = journeesModifiees == null ? Map.of() : journeesModifiees;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -91,10 +91,11 @@ public class AnimateurPlanningPdf {
                 while (prochainRepos != null
                         && datePoste != null
                         && prochainRepos.date().isBefore(datePoste)) {
-                    document.add(reposCard(prochainRepos));
+                    document.add(reposCard(prochainRepos, notes));
                     prochainRepos = repos.hasNext() ? repos.next() : null;
                 }
-                document.add(buildAssignmentCard(poste, teammatesByPoste.getOrDefault(poste.getId(), List.of())));
+                document.add(
+                        buildAssignmentCard(poste, teammatesByPoste.getOrDefault(poste.getId(), List.of()), notes));
                 // The break sits right under the shift it falls in, at its
                 // chronological place: a line the animateur reads while
                 // reading their day, not a footnote.
@@ -113,7 +114,7 @@ public class AnimateurPlanningPdf {
                 }
             }
             while (prochainRepos != null) {
-                document.add(reposCard(prochainRepos));
+                document.add(reposCard(prochainRepos, notes));
                 prochainRepos = repos.hasNext() ? repos.next() : null;
             }
         }
@@ -237,7 +238,8 @@ public class AnimateurPlanningPdf {
     }
 
     /** One rounded card per assignment: day/date with a "JOURx" badge, a time pill, the stand, its location and the teammates. */
-    private PdfPTable buildAssignmentCard(PosteAffectation poste, List<String> coequipiers) {
+    private PdfPTable buildAssignmentCard(
+            PosteAffectation poste, List<String> coequipiers, Map<LocalDate, String> notes) {
         Creneau creneau = poste.getCreneau();
 
         PdfPTable card = new PdfPTable(new float[] {2.4f, 1.8f, 2.5f, 2.3f});
@@ -246,18 +248,15 @@ public class AnimateurPlanningPdf {
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
         card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(theme.cardBackground(), theme.accent(), 10f));
 
-        card.addCell(dayCell(creneau));
+        card.addCell(dayCell(creneau.getJour(), creneau.getDate(), notes.get(creneau.getDate())));
         card.addCell(timePillCell(poste.heureDebutEffectif(), poste.heureFinEffectif()));
         card.addCell(standCell(poste.getStand(), coequipiers));
         card.addCell(locationCell(poste.getStand()));
         return card;
     }
 
-    private PdfPCell dayCell(Creneau creneau) {
-        return dayCell(creneau.getJour(), creneau.getDate());
-    }
-
-    private PdfPCell dayCell(int jour, LocalDate date) {
+    /** @param note what a consigne says of that day (issue #4), {@code null} on an ordinary day */
+    private PdfPCell dayCell(int jour, LocalDate date, String note) {
         PdfPCell cell = new PdfPCell();
         cell.setBorder(Rectangle.NO_BORDER);
         cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
@@ -272,11 +271,10 @@ public class AnimateurPlanningPdf {
         // A day a consigne governs (issue #4) says so under its date: the
         // hours printed beside it are not the usual ones, and the person
         // must read why from the document itself, not only from a mail.
-        String modifiee = journeesModifiees.get(date);
-        if (modifiee != null) {
-            Paragraph note = new Paragraph(modifiee, theme.footerFont());
-            note.setSpacingBefore(3f);
-            cell.addElement(note);
+        if (note != null) {
+            Paragraph ligne = new Paragraph(note, theme.footerFont());
+            ligne.setSpacingBefore(3f);
+            cell.addElement(ligne);
         }
         return cell;
     }
@@ -286,14 +284,14 @@ public class AnimateurPlanningPdf {
      * badge and date on the left, a plain « Repos » where a stand would be —
      * so a day off reads as planned, not as a hole in the document.
      */
-    private PdfPTable reposCard(PlanningExportService.JourRepos jourRepos) {
+    private PdfPTable reposCard(PlanningExportService.JourRepos jourRepos, Map<LocalDate, String> notes) {
         PdfPTable card = new PdfPTable(new float[] {2.4f, 6.6f});
         card.setWidthPercentage(100);
         card.setSpacingAfter(9f);
         card.getDefaultCell().setBorder(Rectangle.NO_BORDER);
         card.setTableEvent(new PdfTheme.RoundedBackgroundEvent(theme.cardBackground(), theme.muted(), 10f));
 
-        card.addCell(dayCell(jourRepos.jour(), jourRepos.date()));
+        card.addCell(dayCell(jourRepos.jour(), jourRepos.date(), notes.get(jourRepos.date())));
 
         PdfPCell repos = new PdfPCell();
         repos.setBorder(Rectangle.NO_BORDER);

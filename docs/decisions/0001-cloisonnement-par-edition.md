@@ -340,8 +340,18 @@ globalement.
 
 ## 6 bis. Le rituel de bascule
 
+> **Révisé par [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).**
+> Le cas qui motivait ce rituel — un arrêté de canicule qui ferme une bande
+> horaire pour tous les stands sur quelques jours — est désormais une
+> **consigne d'édition**, posée dans l'édition vivante : les liens déjà
+> distribués, les abonnements ICS, les rappels, les confirmations et les
+> verrous restent où ils sont, et la stabilité du plan publié rend leurs
+> après-midis aux titulaires à la levée. La duplication reste le geste d'une
+> **vraie variante** — une autre grille, une autre équipe — et les six étapes
+> ci-dessous restent son mode d'emploi.
+
 L'édition étant l'unique porteur de variantes, préparer puis jouer un plan
-alternatif (canicule, repli) suit six étapes :
+alternatif (autre grille, autre équipe, repli) suit six étapes :
 
 1. **La veille** : dupliquer l'édition courante (« 2026 » → « 2026-canicule »).
    La copie embarque e-mails, indisponibilités et règles d'horaires ; ni les
