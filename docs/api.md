@@ -1397,6 +1397,28 @@ concernées). Elles sont refusées à la saisie, donc ce que cette cause désign
 signalerait. Toujours `CRITIQUE`, et classée avant les sous-effectifs : elle se
 corrige en supprimant une ligne que l'utilisateur a saisie lui-même.
 
+Trois causes de plus disent la même chose d'une **affectation forcée que
+personne ne peut tenir** : `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` (tous les
+animateurs nommés se sont déclarés indisponibles sur tout son périmètre),
+`AFFECTATION_FORCEE_MOTIF_LEGAL` (aucune place du périmètre ne les accepte, au
+titre d'une règle dure du couple place × animateur) et
+`AFFECTATION_FORCEE_SIEGE_VERROUILLE` (leur emploi du temps est verrouillé sur
+tout le périmètre sans qu'aucun y tienne déjà de place). Toutes `CRITIQUE`,
+toutes portant l'exception dans `contrainteIds`, toutes averties aussi à
+l'écriture — voir *Avertissements de saisie* et
+[0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md). La
+troisième ne se lit que pour un appelant qui apporte les verrous, ce que font
+`GET /api/feasibility`, l'état d'édition, le diagnostic post-résolution et
+`analyser_faisabilite` ; les places du plan enregistré ne sont relues que s'il
+existe au moins un verrou.
+
+**Ce que l'IHM en fait avant de lancer.** Les trois causes ci-dessus et la
+contradiction entre exceptions déclenchent une confirmation sur les trois
+boutons de l'écran Solveur : elles garantissent un score dur négatif quel que
+soit le budget. Le sous-effectif, même classé `CRITIQUE`, n'en déclenche
+aucune — le solveur l'atténue encore, et une confirmation qui se déclenche sur
+chaque soirée tendue n'est plus lue.
+
 Quatre bornes pour le besoin minimum, la plus grande étant retenue. Chacune
 découle d'une règle que `LegalConstraints` applique vraiment, si bien que le
 plancher et le solveur ne peuvent pas se contredire :
@@ -2126,10 +2148,11 @@ POST /api/animateurs  →  200
 `POST /api/animateurs` et `PUT /api/animateurs/{id}` répondent `{ animateur, avertissements }`,
 `POST /api/creneaux` et `PUT /api/creneaux/{id}` répondent `{ creneau, avertissements }` — le
 créneau y porte son `id` généré, comme avant — et `POST /api/stands` et `PUT /api/stands/{id}`
-répondent `{ stand, avertissements }`, et `POST /api/contraintes-ad-hoc` répond
-`{ contrainte, avertissements }`. Les autres référentiels répondent
+répondent `{ stand, avertissements }`, `POST /api/contraintes-ad-hoc` répond
+`{ contrainte, avertissements }` et `POST /api/verrouillages` répond
+`{ verrouillage, avertissements }`. Les autres référentiels répondent
 toujours l'entité nue : une clé `avertissements` absente veut dire « rien à
-signaler ». `avertissements` est toujours présent sur ces quatre ressources, vide
+signaler ». `avertissements` est toujours présent sur ces cinq ressources, vide
 quand tout va bien.
 
 | `type` | Ce qui l'a déclenché |
@@ -2143,6 +2166,9 @@ quand tout va bien.
 | `STAND_EXCEPTION_HORS_EVENEMENT` | Une exception datée du stand nomme un jour hors de l'intervalle `[premier créneau, dernier créneau]` — le lendemain d'un créneau qui franchit minuit est exclu de ce compte : le domaine lit vraiment cette date. |
 | `STAND_JAMAIS_OUVERT` | Après l'écriture, le stand n'est ouvert sur aucun créneau : il n'ouvrira aucun poste. |
 | `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` | L'affectation forcée écrite ne tombe que sur des jours où tous les animateurs qu'elle nomme se sont déclarés indisponibles : elle ne pourra pas être tenue. Écrite quand même — le jour d'indisponibilité peut être retiré — et reprise comme cause bloquante par l'analyse de faisabilité tant qu'elle tient. Le message nomme l'ajustement et les dates, jamais l'animateur. |
+| `AFFECTATION_FORCEE_MOTIF_LEGAL` | Aucune place du périmètre de l'affectation forcée n'accepte l'un des animateurs qu'elle nomme, au titre d'une règle dure lisible sur le couple place × animateur : mineur la nuit, un jour férié, sur un stand réservé aux majeurs, au-delà de son plafond quotidien. Le message nomme les règles du catalogue, l'ajustement et les dates, jamais l'animateur. |
+| `AFFECTATION_FORCEE_SIEGE_VERROUILLE` | L'emploi du temps de chacun des animateurs que l'affectation forcée nomme est verrouillé sur tout son périmètre, sans qu'aucun d'eux y tienne déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception. Seuls les verrous `ANIMATEUR` et `ANIMATEUR_CRENEAU` comptent — les autres épinglent les places tenues et laissent les places vides remplissables. |
+| `VERROUILLAGE_SUR_VIOLATION_DURE` | Le verrouillage écrit fige des situations qui cassent déjà une règle dure dans la dernière analyse. Écrit quand même : un verrou fige, il n'exempte pas ([0003](decisions/0003-verrouillage-par-pin-natif.md)), et les places restent jugées. Le message nomme les règles et le nombre de situations, jamais l'animateur. Rien n'est dit sur une édition qu'aucune résolution n'a encore analysée : il n'y a rien à lire, et rien n'est deviné. |
 
 Les trois avertissements de stand ne sont émis **que si l'écriture touche à
 l'horaire** (règles, fermetures, ouvertures) : renommer un stand qui n'a jamais

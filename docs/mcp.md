@@ -164,6 +164,8 @@ qui vient d'afficher la donnée.
 | Outil | Ce qu'il fait autrement | Pourquoi |
 | --- | --- | --- |
 | `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
+| `affecter_poste` | refuse un animateur que le siège ne peut pas accueillir : le geste est scoré sur le plan enregistré, et rejeté s'il dégrade le score dur ou introduit une violation dure sur le siège lui-même ([ADR 0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)) | l'écran de réparation ne propose jamais qu'un candidat déjà scoré ; un assistant nomme qui il veut, et cette porte acceptait n'importe qui |
+| `verrouiller` | rend `{ verrouillage, avertissements }` là où il rendait le verrou nu | le code `VERROUILLAGE_SUR_VIOLATION_DURE` dit que les places figées cassent déjà une règle dure : le verrou est écrit — il fige, il n'exempte pas — mais un assistant qui enchaîne sur `lancer_solveur` doit savoir d'où viendra le score dur négatif |
 | `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
 | `retirer_validation_journee` | échoue sur un id inconnu, là où `DELETE /api/validations/{id}` répond 404 de la même façon | même raison que `deverrouiller` : « retirée » sur une relecture qui n'existait pas laisserait croire la journée revenue à relire |
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |

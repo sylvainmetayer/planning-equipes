@@ -41,7 +41,7 @@ class ForcedAssignmentOnLockedScheduleTest {
         return verrouillage;
     }
 
-    private static VerrouillagePlanning surAnimateurEtCreneau(String animateurId, long creneauId) {
+    private static VerrouillagePlanning surAnimateurSurCreneau(String animateurId, long creneauId) {
         VerrouillagePlanning verrouillage = new VerrouillagePlanning("V2", TypeVerrouillage.ANIMATEUR_CRENEAU);
         verrouillage.setAnimateurId(animateurId);
         verrouillage.setCreneauId(creneauId);
@@ -73,7 +73,7 @@ class ForcedAssignmentOnLockedScheduleTest {
 
     @Test
     void aTimeslotLockLeavesTheOtherDayFree() {
-        assertThat(detect(forced(ALICE), List.of(surAnimateurEtCreneau("A1", 1L)), Set.of()))
+        assertThat(detect(forced(ALICE), List.of(surAnimateurSurCreneau("A1", 1L)), Set.of()))
                 .isEmpty();
     }
 
@@ -82,7 +82,7 @@ class ForcedAssignmentOnLockedScheduleTest {
         ContrainteAdHoc surSamedi = forced(ALICE);
         surSamedi.setCreneau(new Creneau(1L, 0, null, null, null));
 
-        assertThat(detect(surSamedi, List.of(surAnimateurEtCreneau("A1", 1L)), Set.of()))
+        assertThat(detect(surSamedi, List.of(surAnimateurSurCreneau("A1", 1L)), Set.of()))
                 .singleElement()
                 .satisfies(conflit -> assertThat(conflit.dates()).containsExactly(SAMEDI));
     }
