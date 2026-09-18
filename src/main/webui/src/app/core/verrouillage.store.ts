@@ -35,9 +35,9 @@ export class VerrouillageStore {
   async create(
     verrouillage: Partial<VerrouillagePlanning> & { type: TypeVerrouillage },
   ): Promise<Avertissement[]> {
-    const ecrit = await this.api.post<WrittenVerrouillage>('/api/verrouillages', verrouillage);
+    const written = await this.api.post<WrittenVerrouillage>('/api/verrouillages', verrouillage);
     await this.reload();
-    return ecrit?.avertissements ?? [];
+    return written?.avertissements ?? [];
   }
 
   async remove(id: string): Promise<void> {
