@@ -320,6 +320,28 @@ lever retire la validation de relecture des journées touchées, verrou ou non
 — les sièges de la bande n'existent plus, la journée relue n'est plus celle
 qui sera travaillée.
 
+**Le passé est figé.** La consigne n'est pas seule à le tenir : depuis
+[ADR 0044](decisions/0044-le-passe-est-fige.md), **toute résolution** —
+complète, incrémentale, depuis l'écran ou par MCP — reprend du plan enregistré
+les places des créneaux déjà commencés et les épingle, quel que soit leur
+état : le titulaire est gardé même s'il a depuis déclaré la journée
+indisponible ou qu'une indisponibilité forcée le couvre maintenant (il était
+là) ; un titulaire supprimé laisse la place vide, et une place passée vide est
+épinglée quand même (personne ne peut tenir hier). Un créneau est *commencé*
+si sa date est passée, ou si c'est aujourd'hui et que le début effectif de la
+place est atteint ; un créneau à cheval sur minuit appartient à sa date de
+début. « Aujourd'hui » est celui de l'horloge du jour J — la machine en
+production, la date figée depuis la page Débogage sous `quarkus:dev` ou avec
+`HORLOGE_SIMULEE_AUTORISEE=true`. Ces places **comptent** dans les règles qui
+lient les jours (repos quotidien entre hier et aujourd'hui, repos et durée
+hebdomadaires, jours consécutifs, pause entre vacations, « fermer tard puis
+ouvrir tôt »…) mais ne sont **jamais reprochées** : un trou d'hier, un mineur
+placé la nuit hier ne bloquent pas le zéro dur d'aujourd'hui — règle par
+règle dans [`contraintes.md`](contraintes.md#compté-non-reproché--le-passé).
+Le périmètre d'une replanification ne rouvre jamais une place passée.
+`PASSE_FIGE=false` coupe la règle, pour une recette qui rejoue une édition
+ancienne.
+
 **Les heures effectives partout.** Cumuls, repos, « fermer tard puis ouvrir
 tôt », heures, équité, indicateurs : tout lit déjà la fenêtre effective, et
 une journée sous consigne compte donc ce qui est réellement travaillé sans
@@ -433,6 +455,7 @@ référentiel.
 
 | Situation d'une place | Ce qui est fait |
 | --- | --- |
+| Créneau déjà commencé ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | **Épinglée telle que travaillée**, avant toute autre règle : titulaire gardé même invalidé depuis, vide restée vide, jamais rouverte par le périmètre. Comptée à part (`postesPasses`) |
 | Désignée par le périmètre demandé | Libérée quoi qu'il arrive : l'utilisateur dit « refais ça » |
 | Titulaire encore valable | **Épinglée** |
 | Titulaire invalidé par un changement tardif — supprimé, indisponible, ou couvert par une indisponibilité forcée | Libérée. L'épingler figerait une violation dure que plus personne ne pourrait corriger. Le test de validité **réutilise le prédicat du solveur**, pour que les deux ne puissent pas diverger |
@@ -845,6 +868,9 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
   personne voit est ce qu'on lui a envoyé.
 - Les bornes d'une édition se dérivent de ses créneaux — une `Edition` ne
   stocke pas de dates, et une édition sans créneau n'a pas de bornes.
+- Une place d'un créneau déjà commencé est reprise du plan enregistré et
+  épinglée par toute résolution ; elle compte dans les règles, aucune ne la
+  reproche ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
 - Les noms de domaine restent en français métier.
 
 <!-- Liens vers Légifrance. Chaque référence pointe vers la recherche par

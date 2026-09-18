@@ -949,6 +949,37 @@ continuité descend le poids de celle-ci ; une édition tendue peut la mettre à
 zéro sans toucher au catalogue, ou vider un des deux seuils dans la
 configuration.
 
+## Compté, non reproché : le passé
+
+Pendant l'événement, une résolution reçoit les places des créneaux déjà
+commencés **reprises du plan enregistré et épinglées** — « le passé est
+figé », [ADR 0044](decisions/0044-le-passe-est-fige.md), mécanique dans
+[`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche). Ces places
+portent un drapeau `passe` que chaque contrainte lit selon une seule règle :
+
+- une place passée **compte** — elle reste dans chaque flux, groupe et
+  jointure : ce que quelqu'un a travaillé hier conditionne le repos qui lui
+  est dû cette nuit, les heures qui lui restent dans la semaine, les jours
+  d'affilée qu'il atteint ;
+- une place passée n'est **jamais reprochée** — une correspondance dont
+  toutes les places sont passées (un trou d'hier, un mineur la nuit hier, une
+  coupure repas manquée hier) est de l'histoire que le solveur ne peut pas
+  réparer, et la facturer empêcherait un avenir faisable d'atteindre le zéro
+  dur. Une correspondance n'est facturée que si **au moins une** des places
+  qu'elle implique n'est pas passée.
+
+Concrètement : une règle par place ignore la place passée ; une règle par
+paire ne facture pas une paire dont les deux places sont passées ; une règle
+groupée par animateur et jour ou semaine compte tout mais ne facture le groupe
+que s'il tient encore une place à venir ; la récompense d'affinité suit la
+même lecture. Le tableau règle par règle est dans l'ADR. Les diagnostics qui
+rejouent le score sur le plan enregistré — écran Contraintes,
+`expliquer_echec_contraintes_dures`, planchers, simulations — passent par le
+même fournisseur de contraintes et lisent donc la même chose. Les analyses
+qui comptent hors du solveur (Pauses, Besoin, contrôle de grille, Heures)
+**décrivent** toujours le passé, y compris ce qui s'y est mal passé : elles
+disent ce qui a été fait, elles ne le reprochent pas non plus.
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
