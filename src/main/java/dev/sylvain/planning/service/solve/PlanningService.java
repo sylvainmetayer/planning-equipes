@@ -57,6 +57,9 @@ public class PlanningService {
     /** The published plan, for {@code stabiliteDuPlanPublie}; null in a plain-Java harness like the persistence above. */
     private final PlanSnapshotService snapshotService;
 
+    /** The moment the past is judged against (ADR 0044); {@code null} from the supplier when the freeze is off. */
+    private final Supplier<PastHorizon> horizon;
+
     /**
      * The plain-Java constructor: no clock, so the past is never frozen — the
      * scenario harnesses solve fixtures dated wherever the file says, and a
@@ -116,15 +119,15 @@ public class PlanningService {
         this.snapshotService = snapshotService;
         // Read at each build, never cached: a queued job builds its problem
         // when its turn comes, and a frozen date set meanwhile must be seen.
-        Supplier<PastHorizon> horizon =
-                passeFige && jourJClock != null ? () -> PastHorizon.of(jourJClock.dateTime()) : () -> null;
+        this.horizon = passeFige && jourJClock != null ? () -> PastHorizon.of(jourJClock.dateTime()) : () -> null;
         this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService, horizon);
         this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService, horizon);
         this.whatIf = new PlanningWhatIf(
                 solverConfiguration.diagnosticService(),
                 referenceDataService,
                 planningPersistenceService,
-                solveRunner::prepareProblem);
+                solveRunner::prepareProblem,
+                horizon);
         this.diagnosticService = new PlanningDiagnosticService(
                 solverConfiguration.diagnosticService(),
                 solverConfiguration.solutionManager(),
@@ -135,6 +138,16 @@ public class PlanningService {
 
     public PlanningEvenement buildExample() {
         return buildExample(ScenarioYamlReader.DEFAULT_SCENARIO);
+    }
+
+    /**
+     * The moment the past is judged against right now (ADR 0044): what a
+     * service outside this package asks before it rewrites seats by hand —
+     * the jour-J screen, which must leave a seat already started as it is.
+     * {@code null} when the freeze is off.
+     */
+    public PastHorizon pastHorizon() {
+        return horizon.get();
     }
 
     /**

@@ -3,12 +3,14 @@ package dev.sylvain.planning.service.espace;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.FrozenPast;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
@@ -168,7 +170,10 @@ public class JourJService {
     /**
      * Records that {@code animateurId} is not there for the rest of
      * {@code date}: one {@code INDISPONIBILITE_FORCEE} per timeslot still
-     * ahead, and every seat they were holding over those timeslots emptied.
+     * ahead, and every seat they were holding over those timeslots emptied —
+     * except the seat of a timeslot that has already started, which the
+     * freeze keeps as it is (ADR 0044): the exception is recorded on it, the
+     * seat is not rewritten.
      *
      * <p>Refused as a whole — before anything is written — when one of those
      * exceptions would contradict an ad hoc exception already recorded (a
@@ -202,11 +207,16 @@ public class JourJService {
         PlanningEvenement plan = persistenceService.loadPersistedPlanning();
         Set<Long> idsRestants =
                 restants.stream().map(Creneau::getId).collect(Collectors.toCollection(LinkedHashSet::new));
+        // The seat of a timeslot already started stays as it is (ADR 0044):
+        // the absence is recorded on it all the same, but « le passé ne se
+        // modifie plus » — the freeze pins it, and the repair would be refused.
+        PastHorizon horizon = planningService.pastHorizon();
         List<PosteAffectation> aLiberer = plan.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId()))
                 .filter(poste -> poste.getCreneau() != null
                         && idsRestants.contains(poste.getCreneau().getId()))
+                .filter(poste -> !FrozenPast.isPast(poste, horizon))
                 .sorted(Comparator.comparing(PosteAffectation::getId))
                 .toList();
         refuseLockedSeats(aLiberer);
