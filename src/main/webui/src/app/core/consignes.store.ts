@@ -24,7 +24,7 @@ export class ConsignesStore {
   /** The server's today, `null` until the first read. */
   readonly aujourdhui = computed(() => this.etat()?.aujourdhui ?? null);
   /** Date → its consigne, the lookup every badge does. */
-  readonly parDate = computed(
+  readonly byDate = computed(
     () => new Map(this.consignes().map((consigne) => [consigne.date, consigne])),
   );
   /** Ids of every créneau a consigne added to the grid. */
@@ -33,8 +33,8 @@ export class ConsignesStore {
   );
 
   /** The consigne governing `date`, `null` on an ordinary day. */
-  consigneDe(date: string | null): ConsigneEdition | null {
-    return date ? (this.parDate().get(date) ?? null) : null;
+  consigneOf(date: string | null): ConsigneEdition | null {
+    return date ? (this.byDate().get(date) ?? null) : null;
   }
 
   async reload(): Promise<void> {

@@ -57,7 +57,7 @@ export class ConsigneCard {
   /** The day on screen, `AAAA-MM-JJ`. */
   readonly jour = input.required<string>();
 
-  protected readonly consigne = computed(() => this.store.consigneDe(this.jour()));
+  protected readonly consigne = computed(() => this.store.consigneOf(this.jour()));
   protected readonly bande = computed(() => {
     const consigne = this.consigne();
     return consigne ? bandeLabel(consigne.fermetureDebut, consigne.fermetureFin) : '';

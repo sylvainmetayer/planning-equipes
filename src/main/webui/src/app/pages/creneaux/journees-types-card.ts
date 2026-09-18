@@ -107,13 +107,13 @@ export class JourneesTypesCard {
     () => new Set(this.etat()?.datesSousConsigne ?? []),
   );
   /** A date under consigne is never « en écart »: the consigne is what its créneaux follow. */
-  protected readonly datesEnEcart = computed(() => {
+  protected readonly driftingDates = computed(() => {
     const sousConsigne = this.datesSousConsigne();
     return new Set((this.etat()?.datesEnEcart ?? []).filter((date) => !sousConsigne.has(date)));
   });
   protected readonly bornes = computed(() => bornesCalendrier(this.calendrier()));
   protected readonly lignes = computed<LigneCalendrier[]>(() => {
-    const ecarts = this.datesEnEcart();
+    const ecarts = this.driftingDates();
     const sousConsigne = this.datesSousConsigne();
     return this.calendrier().map((affectation) => ({
       date: affectation.date,

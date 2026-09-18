@@ -120,7 +120,7 @@
                   <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="columnsOfDay(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
-                    @if (consigneParDate().get(jour.date); as consigne) {
+                    @if (consigneByDate().get(jour.date); as consigne) {
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
                     }
                     <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
@@ -411,7 +411,7 @@
                       [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
-                    @if (consigneParDate().get(jour.date); as consigne) {
+                    @if (consigneByDate().get(jour.date); as consigne) {
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
                     }
                     <button matIconButton type="button" class="voir-journee" (click)="voirJournee(jour.date)"

@@ -115,7 +115,7 @@
       <tr mat-header-row *matHeaderRowDef="columns"></tr>
       <tr mat-row *matRowDef="let ligne; columns: columns"
           [attr.data-date]="ligne.date"
-          [class.consigne-ligne-cible]="ligne.date === dateCible()"
+          [class.consigne-ligne-cible]="ligne.date === targetDate()"
           [class.consigne-ligne-passee]="ligne.passee"></tr>
     </table>
     @if (lignes().length === 0 && !chargement()) {
@@ -140,18 +140,18 @@
         <li class="consigne-prereglage">
           <div class="consigne-prereglage-corps">
             <strong>{{ prereglage.nom }}</strong>
-            <span class="consigne-bande">{{ bandeDe(prereglage) }}</span>
+            <span class="consigne-bande">{{ bandOf(prereglage) }}</span>
             <span class="consigne-prereglage-motif">{{ prereglage.motif }}</span>
             @if (prereglage.fenetres.length > 0) {
-              <span class="consigne-fenetres-resume" i18n="@@consignes.column.fenetres">fenêtres : {{ fenetresDe(prereglage) }}</span>
+              <span class="consigne-fenetres-resume" i18n="@@consignes.column.fenetres">fenêtres : {{ windowsOf(prereglage) }}</span>
             }
           </div>
           <span class="consigne-prereglage-actions">
-            <button matIconButton type="button" [disabled]="editingLocked()" (click)="ouvrirPrereglage(prereglage)"
+            <button matIconButton type="button" [disabled]="editingLocked()" (click)="openPrereglage(prereglage)"
                     i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier">
               <mat-icon>edit</mat-icon>
             </button>
-            <button matIconButton type="button" class="danger-action" [disabled]="editingLocked()" (click)="supprimerPrereglage(prereglage)"
+            <button matIconButton type="button" class="danger-action" [disabled]="editingLocked()" (click)="deletePrereglage(prereglage)"
                     i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer">
               <mat-icon>delete</mat-icon>
             </button>
@@ -161,7 +161,7 @@
     </ul>
   </mat-card-content>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="ouvrirPrereglage(null)">
+    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openPrereglage(null)">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@consignes.prereglages.creer">Nouveau préréglage</ng-container>
     </button>

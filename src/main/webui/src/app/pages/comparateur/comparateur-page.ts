@@ -172,7 +172,7 @@ export class ComparateurPage {
   });
 
   /** The consignes one side was captured under (issue #4), worded; `null` when that side predates the capture. */
-  protected consignesDe(cote: CoteComparaison): string[] | null {
+  protected consignesOf(cote: CoteComparaison): string[] | null {
     return (
       cote.consignes?.map(
         (consigne) =>

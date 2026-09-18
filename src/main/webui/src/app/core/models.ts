@@ -3399,7 +3399,7 @@ export interface ProgressionValidations {
   joursValides: string[];
 }
 
-/* ------------------------ Consignes d'édition (issue #4) ------------------------ */
+/* --------------------------- Edition consignes (issue #4) --------------------------- */
 
 /**
  * One stretch of a day, `[debut, fin)`, hours as `HH:mm:ss` from the server

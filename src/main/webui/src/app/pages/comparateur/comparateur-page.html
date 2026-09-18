@@ -69,7 +69,7 @@
             @for (cote of [resultat.base, resultat.variante]; track $index) {
               <div>
                 <strong>{{ libelleCote(cote) }}</strong>
-                @if (consignesDe(cote); as consignes) {
+                @if (consignesOf(cote); as consignes) {
                   @if (consignes.length === 0) {
                     <p i18n="@@comparateur.consignes.aucune">Aucune consigne.</p>
                   } @else {

@@ -38,20 +38,20 @@ import {
   FenetreSaisie,
   FiltresStands,
   StandForm,
-  appliquerALaSelection,
+  applyToSelection,
   bandeLabel,
   buildDemande,
   cocherAffiches,
   erreursForm,
   fenetreLabel,
   fenetresSaisies,
-  filtrerStands,
+  filterStands,
   formVide,
   heureSaisie,
   libelleDate,
   mergePreselection,
   parseFenetresSaisie,
-  suivreFenetresParDefaut,
+  followDefaultWindows,
 } from './consignes';
 
 /** Poser a new consigne, modifier the one a row carries, or prolonger it on other dates. */
@@ -123,12 +123,12 @@ export class ConsigneFormDialog {
   );
   protected readonly stands = signal<StandForm[]>([]);
   protected readonly chargementStands = signal(false);
-  protected readonly creneauxDuJour = signal<number | null>(null);
+  protected readonly creneauxOfDay = signal<number | null>(null);
 
   protected readonly filtres = signal<FiltresStands>({ ...FILTRES_VIDES });
   /** The bulk line: windows as one line, a headcount, applied to the displayed ticked rows. */
-  protected readonly fenetresEnMasse = signal('');
-  protected readonly effectifEnMasse = signal('');
+  protected readonly bulkWindows = signal('');
+  protected readonly bulkEffectif = signal('');
 
   protected readonly apercu = signal<ApercuConsigneJour[] | null>(null);
   protected readonly chargementApercu = signal(false);
@@ -155,17 +155,17 @@ export class ConsigneFormDialog {
   protected readonly erreurs = computed(() => erreursForm(this.form()));
   protected readonly invalide = computed(() => this.erreurs().length > 0);
   protected readonly messageErreur = computed(() => {
-    const premiere = this.erreurs()[0];
-    return premiere ? this.libelleErreur(premiere) : '';
+    const first = this.erreurs()[0];
+    return first ? this.libelleErreur(first) : '';
   });
 
   protected readonly lignesAffichees = computed(() =>
-    filtrerStands(this.stands(), this.data.stands, this.filtres()),
+    filterStands(this.stands(), this.data.stands, this.filtres()),
   );
   private readonly idsAffiches = computed(
     () => new Set(this.lignesAffichees().map((ligne) => ligne.standId)),
   );
-  protected readonly nombreCoches = computed(
+  protected readonly tickedCount = computed(
     () => this.stands().filter((stand) => stand.coche).length,
   );
   protected readonly bandeAffichee = computed(() => {
@@ -200,11 +200,11 @@ export class ConsigneFormDialog {
         untracked(() => this.stands.set([]));
         return;
       }
-      untracked(() => void this.chargerStands(date, debut, fin, ouverturesInitiales));
+      untracked(() => void this.loadStands(date, debut, fin, ouverturesInitiales));
     });
   }
 
-  private async chargerStands(
+  private async loadStands(
     date: string,
     fermetureDebut: string,
     fermetureFin: string | null,
@@ -214,7 +214,7 @@ export class ConsigneFormDialog {
     this.apercu.set(null);
     try {
       const preselection = await this.api.preselection({ date, fermetureDebut, fermetureFin });
-      this.creneauxDuJour.set(preselection.creneauxDuJour);
+      this.creneauxOfDay.set(preselection.creneauxDuJour);
       this.stands.set(
         mergePreselection(preselection.stands, this.fenetres(), this.stands(), ouverturesInitiales),
       );
@@ -260,11 +260,11 @@ export class ConsigneFormDialog {
   private remplacerFenetres(nouvelles: FenetreSaisie[]): void {
     const anciennes = this.fenetres();
     this.fenetres.set(nouvelles);
-    this.stands.update((rows) => suivreFenetresParDefaut(rows, anciennes, nouvelles));
+    this.stands.update((rows) => followDefaultWindows(rows, anciennes, nouvelles));
     this.apercu.set(null);
   }
 
-  protected ajouterFenetre(): void {
+  protected addWindow(): void {
     this.remplacerFenetres([...this.fenetres(), { debut: '', fin: '' }]);
   }
 
@@ -301,7 +301,7 @@ export class ConsigneFormDialog {
     this.patchStand(standId, { effectif: effectifDepuis(String(valeur ?? '')) });
   }
 
-  protected ajouterFenetreStand(stand: StandForm): void {
+  protected addStandWindow(stand: StandForm): void {
     this.patchStand(stand.standId, { fenetres: [...stand.fenetres, { debut: '', fin: '' }] });
   }
 
@@ -322,25 +322,25 @@ export class ConsigneFormDialog {
   }
 
   /** The bulk line read back, `null` while it cannot be read — the button waits. */
-  protected readonly fenetresEnMasseLues = computed(() =>
-    this.fenetresEnMasse().trim() === '' ? [] : parseFenetresSaisie(this.fenetresEnMasse()),
+  protected readonly bulkWindowsParsed = computed(() =>
+    this.bulkWindows().trim() === '' ? [] : parseFenetresSaisie(this.bulkWindows()),
   );
-  protected readonly peutAppliquerEnMasse = computed(
+  protected readonly canApplyBulk = computed(
     () =>
-      this.fenetresEnMasseLues() !== null &&
-      (this.fenetresEnMasse().trim() !== '' || this.effectifEnMasse().trim() !== ''),
+      this.bulkWindowsParsed() !== null &&
+      (this.bulkWindows().trim() !== '' || this.bulkEffectif().trim() !== ''),
   );
 
   /** Windows and/or headcount on every displayed ticked row; a part left empty is not touched. */
-  protected appliquerEnMasse(): void {
-    const fenetres = this.fenetresEnMasseLues();
-    if (!this.peutAppliquerEnMasse() || fenetres === null) {
+  protected applyBulk(): void {
+    const fenetres = this.bulkWindowsParsed();
+    if (!this.canApplyBulk() || fenetres === null) {
       return;
     }
-    const effectifSaisi = this.effectifEnMasse().trim();
+    const effectifSaisi = this.bulkEffectif().trim();
     this.stands.update((rows) =>
-      appliquerALaSelection(rows, this.idsAffiches(), {
-        fenetres: this.fenetresEnMasse().trim() === '' ? undefined : fenetres,
+      applyToSelection(rows, this.idsAffiches(), {
+        fenetres: this.bulkWindows().trim() === '' ? undefined : fenetres,
         effectif: effectifSaisi === '' ? undefined : effectifDepuis(effectifSaisi),
       }),
     );
@@ -349,7 +349,7 @@ export class ConsigneFormDialog {
 
   /* ------------------------------ preview, save ------------------------------ */
 
-  protected async previsualiser(): Promise<void> {
+  protected async preview(): Promise<void> {
     if (this.invalide() || this.chargementApercu()) {
       return;
     }
@@ -363,7 +363,7 @@ export class ConsigneFormDialog {
     }
   }
 
-  protected async enregistrer(): Promise<void> {
+  protected async save(): Promise<void> {
     if (this.invalide() || this.enregistrement()) {
       return;
     }
@@ -385,7 +385,7 @@ export class ConsigneFormDialog {
     return refs.map((ref) => bandeLabel(ref.heureDebut, ref.heureFin)).join(', ');
   }
 
-  protected fenetresTexte(fenetres: FenetreConsigne[]): string {
+  protected windowsText(fenetres: FenetreConsigne[]): string {
     return fenetres.map(fenetreLabel).join(', ');
   }
 
@@ -407,6 +407,6 @@ export class ConsigneFormDialog {
 
 /** What the headcount field holds: a positive integer, or nothing (inherit). */
 function effectifDepuis(valeur: string): number | null {
-  const nombre = Number(valeur);
-  return valeur.trim() !== '' && Number.isInteger(nombre) && nombre > 0 ? nombre : null;
+  const parsed = Number(valeur);
+  return valeur.trim() !== '' && Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }

@@ -8,23 +8,23 @@ import {
   ConsigneForm,
   FILTRES_VIDES,
   StandForm,
-  appliquerALaSelection,
+  applyToSelection,
   bandeLabel,
   buildDemande,
   cocherAffiches,
   datesCandidates,
   erreursForm,
-  estPassee,
+  isPast,
   fenetresDemandees,
   fenetresSaisies,
-  filtrerStands,
+  filterStands,
   formVide,
   formatFenetresSaisie,
   heureLabel,
   mergePreselection,
-  nombreStandsOuverts,
+  openedStandsCount,
   parseFenetresSaisie,
-  suivreFenetresParDefaut,
+  followDefaultWindows,
 } from './consignes';
 
 function creneau(id: number, date: string): Creneau {
@@ -120,10 +120,10 @@ describe('the dates a consigne can be laid on', () => {
   });
 
   it('reads today and before as past, and tomorrow as to come', () => {
-    expect(estPassee('2026-07-10', '2026-07-10')).toBe(true);
-    expect(estPassee('2026-07-09', '2026-07-10')).toBe(true);
-    expect(estPassee('2026-07-11', '2026-07-10')).toBe(false);
-    expect(estPassee('2026-07-11', null)).toBe(false);
+    expect(isPast('2026-07-10', '2026-07-10')).toBe(true);
+    expect(isPast('2026-07-09', '2026-07-10')).toBe(true);
+    expect(isPast('2026-07-11', '2026-07-10')).toBe(false);
+    expect(isPast('2026-07-11', null)).toBe(false);
   });
 
   it('counts a stand once however many windows it holds', () => {
@@ -143,7 +143,7 @@ describe('the dates a consigne can be laid on', () => {
       creeLe: null,
       modifieLe: null,
     };
-    expect(nombreStandsOuverts(consigne)).toBe(2);
+    expect(openedStandsCount(consigne)).toBe(2);
   });
 });
 
@@ -305,7 +305,7 @@ describe('merging the stands the server proposes', () => {
 
   it('makes the untouched rows follow a change of the default windows, and leaves the typed ones alone', () => {
     const nouvelles = [{ debut: '19:00', fin: '23:00' }];
-    const rows = suivreFenetresParDefaut(
+    const rows = followDefaultWindows(
       [
         standForm({ standId: 'A' }),
         standForm({ standId: 'B', fenetres: [{ debut: '09:00', fin: '12:00' }] }),
@@ -342,7 +342,7 @@ describe('the stands list', () => {
 
   it('filters by name without accents or case, by category, by location and by premium tier', () => {
     const ids = (recherche = '', reste: Partial<typeof FILTRES_VIDES> = {}) =>
-      filtrerStands(rows, stands, { ...FILTRES_VIDES, recherche, ...reste }).map((r) => r.standId);
+      filterStands(rows, stands, { ...FILTRES_VIDES, recherche, ...reste }).map((r) => r.standId);
 
     expect(ids()).toEqual(['A', 'B', 'C', 'X']);
     expect(ids('echecs')).toEqual(['A']);
@@ -367,18 +367,18 @@ describe('the stands list', () => {
     const affiches = new Set(['A', 'B', 'C']);
     const fenetres = [{ debut: '09:00', fin: '11:00' }];
 
-    const avecFenetres = appliquerALaSelection(rows, affiches, { fenetres });
-    expect(avecFenetres[0].fenetres).toEqual(fenetres);
-    expect(avecFenetres[0].effectif).toBeNull();
+    const withWindows = applyToSelection(rows, affiches, { fenetres });
+    expect(withWindows[0].fenetres).toEqual(fenetres);
+    expect(withWindows[0].effectif).toBeNull();
     // Unticked: untouched. Hidden: untouched.
-    expect(avecFenetres[1].fenetres).toEqual(rows[1].fenetres);
-    expect(avecFenetres[3].fenetres).toEqual(rows[3].fenetres);
+    expect(withWindows[1].fenetres).toEqual(rows[1].fenetres);
+    expect(withWindows[3].fenetres).toEqual(rows[3].fenetres);
 
-    const avecEffectif = appliquerALaSelection(rows, affiches, { effectif: 4 });
-    expect(avecEffectif[0]).toMatchObject({ fenetres: rows[0].fenetres, effectif: 4 });
-    expect(avecEffectif[2].effectif).toBe(4);
+    const withEffectif = applyToSelection(rows, affiches, { effectif: 4 });
+    expect(withEffectif[0]).toMatchObject({ fenetres: rows[0].fenetres, effectif: 4 });
+    expect(withEffectif[2].effectif).toBe(4);
 
-    const remisAHeriter = appliquerALaSelection(avecEffectif, affiches, { effectif: null });
+    const remisAHeriter = applyToSelection(withEffectif, affiches, { effectif: null });
     expect(remisAHeriter[0].effectif).toBeNull();
   });
 

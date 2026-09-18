@@ -29,7 +29,7 @@ import { bandeLabel } from '../consignes/consignes';
 export class EspacePlanningPage {
   protected readonly espace = inject(EspaceAnimateurService);
 
-  /* ------------- Journées aux horaires modifiés (issue #4) ------------- */
+  /* ------------- Days with hours modified by a consigne (issue #4) ------------- */
 
   /** One line per consigne on a day this person works: the band, worded, and the motif. */
   protected readonly consignes = computed(() =>

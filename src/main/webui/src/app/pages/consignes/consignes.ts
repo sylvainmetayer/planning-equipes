@@ -68,12 +68,12 @@ export function datesCandidates(creneaux: readonly Creneau[], aujourdhui: string
 }
 
 /** True when the date is today or before: read-only on screen. */
-export function estPassee(date: string, aujourdhui: string | null): boolean {
+export function isPast(date: string, aujourdhui: string | null): boolean {
   return aujourdhui !== null && date <= aujourdhui;
 }
 
 /** How many distinct stands a consigne opens — one stand may hold several windows. */
-export function nombreStandsOuverts(consigne: ConsigneEdition): number {
+export function openedStandsCount(consigne: ConsigneEdition): number {
   return new Set(consigne.ouvertures.map((ouverture) => ouverture.standId)).size;
 }
 
@@ -234,9 +234,9 @@ export function mergePreselection(
   precedents: readonly StandForm[],
   ouverturesInitiales: readonly OuvertureConsigne[] = [],
 ): StandForm[] {
-  const parId = new Map(precedents.map((stand) => [stand.standId, stand]));
+  const byId = new Map(precedents.map((stand) => [stand.standId, stand]));
   return lignes.map((ligne) => {
-    const precedent = parId.get(ligne.standId);
+    const precedent = byId.get(ligne.standId);
     const ouvertures =
       ligne.ouvertures.length > 0
         ? ligne.ouvertures
@@ -274,16 +274,16 @@ export function mergePreselection(
  * typed by hand keeps them. Without this, picking a preset after the stands
  * loaded would leave sixty rows on the old windows.
  */
-export function suivreFenetresParDefaut(
+export function followDefaultWindows(
   rows: readonly StandForm[],
   anciennes: readonly FenetreSaisie[],
   nouvelles: readonly FenetreSaisie[],
 ): StandForm[] {
-  const cle = (fenetres: readonly FenetreSaisie[]) =>
+  const keyOf = (fenetres: readonly FenetreSaisie[]) =>
     fenetres.map((f) => `${f.debut}-${f.fin}`).join(',');
-  const ancienneCle = cle(anciennes);
+  const previousKey = keyOf(anciennes);
   return rows.map((row) =>
-    cle(row.fenetres) === ancienneCle
+    keyOf(row.fenetres) === previousKey
       ? { ...row, fenetres: nouvelles.map((fenetre) => ({ ...fenetre })) }
       : row,
   );
@@ -313,15 +313,15 @@ function normalise(value: string): string {
  * store's; a stand the store does not know (deleted since) matches by name
  * only, so it never vanishes from a list the server proposed.
  */
-export function filtrerStands(
+export function filterStands(
   rows: readonly StandForm[],
   stands: readonly Stand[],
   filtres: FiltresStands,
 ): StandForm[] {
-  const parId = new Map(stands.map((stand) => [stand.id, stand]));
+  const byId = new Map(stands.map((stand) => [stand.id, stand]));
   const termes = normalise(filtres.recherche).split(/\s+/).filter(Boolean);
   return rows.filter((row) => {
-    const stand = parId.get(row.standId);
+    const stand = byId.get(row.standId);
     const nom = normalise(`${row.standNom} ${row.standId}`);
     if (!termes.every((terme) => nom.includes(terme))) {
       return false;
@@ -356,7 +356,7 @@ export function cocherAffiches(
  * every displayed row that is ticked. A part left out (`undefined`) is not
  * touched — the bulk edits of the reference pages follow the same law.
  */
-export function appliquerALaSelection(
+export function applyToSelection(
   rows: readonly StandForm[],
   affiches: ReadonlySet<string>,
   changement: { fenetres?: FenetreSaisie[]; effectif?: number | null },
