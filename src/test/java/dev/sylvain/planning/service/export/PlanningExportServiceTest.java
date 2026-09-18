@@ -61,7 +61,8 @@ class PlanningExportServiceTest {
     private final PlanningExportService service = new PlanningExportService(
             new ApplicationLinks(Optional.empty()),
             new AnimateurPlanningPdf(new PdfTheme(), Map::of),
-            new GlobalPlanningPdf(new PdfTheme()),
+            new AnimateurFeuillePdf(new PdfTheme(), Map::of),
+            new GlobalPlanningPdf(new PdfTheme(), Map::of),
             new PlanningIcs(),
             PROVENANCE);
     private final AtomicInteger posteSequence = new AtomicInteger();
@@ -430,7 +431,8 @@ class PlanningExportServiceTest {
         return new PlanningExportService(
                 new ApplicationLinks(Optional.of(baseUrl)),
                 new AnimateurPlanningPdf(new PdfTheme(), Map::of),
-                new GlobalPlanningPdf(new PdfTheme()),
+                new AnimateurFeuillePdf(new PdfTheme(), Map::of),
+                new GlobalPlanningPdf(new PdfTheme(), Map::of),
                 new PlanningIcs(),
                 PROVENANCE);
     }

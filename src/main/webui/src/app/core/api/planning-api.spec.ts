@@ -88,6 +88,19 @@ describe('PlanningApi', () => {
     );
   });
 
+  // The folded sheet is the same archive route, asked for by its format: the
+  // organisation prints one page per person instead of five.
+  it('asks the folded-sheet layout by its format parameter', async () => {
+    await planning.exportFeuilles(PLANNING);
+
+    expect(api.downloadPost).toHaveBeenCalledWith(
+      '/api/planning/export/pdf/all?format=feuille',
+      'planning-feuilles.zip',
+      PLANNING,
+      'application/zip',
+    );
+  });
+
   // An animateur id is free text: it travels encoded, or a slash in it would change the route.
   it('encodes the animateur id in the per-animateur export and send', async () => {
     await planning.exportForAnimateur('pdf', 'a/1', 'planning.pdf', PLANNING, 'application/pdf');

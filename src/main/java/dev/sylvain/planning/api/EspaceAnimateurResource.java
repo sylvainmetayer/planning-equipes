@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
+import dev.sylvain.planning.service.export.FormatPlanning;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
@@ -241,14 +242,19 @@ public class EspaceAnimateurResource {
      * My planning as a PDF — same document as the admin's individual export,
      * downloadable by the animateur themself. Stays available when the foire
      * is closed: closing only stops the échanges, never the consultation.
+     *
+     * <p>{@code ?format=feuille} answers with the folded landscape sheet
+     * instead of the booklet; anything else, including nothing, is the
+     * booklet.</p>
      */
     @GET
     @Path("/{jeton}/planning.pdf")
     @EspaceSessionRequired
     @Produces("application/pdf")
-    public Response planningPdf() {
+    public Response planningPdf(@QueryParam("format") String format) {
         PlanningEvenement planning = planPublieService.planPublie();
-        byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant());
+        byte[] contenu = planningExportService.exportAnimateurPdfPublie(
+                planning, animateurCourant(), FormatPlanning.fromParameter(format));
         return Response.ok(contenu)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
                 .build();

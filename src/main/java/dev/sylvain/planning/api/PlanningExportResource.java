@@ -1,6 +1,7 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.export.FormatPlanning;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.inject.Inject;
@@ -10,6 +11,7 @@ import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -45,13 +47,20 @@ public class PlanningExportResource {
                 .build();
     }
 
+    /**
+     * One PDF per animateur in a ZIP, in the layout asked for: {@code livret}
+     * (the default) or {@code feuille} — the folded landscape sheet, one page
+     * per person, which is what a mass print run wants.
+     */
     @POST
     @Path("/pdf/all")
     @Produces("application/zip")
-    public Response exportAllPdfZip(PlanningEvenement planningEvenement) {
-        byte[] content = planningExportService.exportAllPdfZip(planningEvenement);
+    public Response exportAllPdfZip(@QueryParam("format") String format, PlanningEvenement planningEvenement) {
+        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        byte[] content = planningExportService.exportAllPdfZip(planningEvenement, layout);
+        String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning-pdf.zip";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-pdf.zip\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .build();
     }
 
@@ -59,8 +68,11 @@ public class PlanningExportResource {
     @Path("/pdf/animateur/{animateurId}")
     @Produces("application/pdf")
     public Response exportAnimateurPdf(
-            @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
-        byte[] content = planningExportService.exportAnimateurPdf(planningEvenement, animateurId);
+            @PathParam("animateurId") String animateurId,
+            @QueryParam("format") String format,
+            PlanningEvenement planningEvenement) {
+        byte[] content = planningExportService.exportAnimateurPdf(
+                planningEvenement, animateurId, FormatPlanning.fromParameter(format));
         String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         return Response.ok(content)
                 .header(
@@ -72,8 +84,9 @@ public class PlanningExportResource {
     @POST
     @Path("/bundle/all")
     @Produces("application/zip")
-    public Response exportAllBundleZip(PlanningEvenement planningEvenement) {
-        byte[] content = planningExportService.exportAllBundleZip(planningEvenement);
+    public Response exportAllBundleZip(@QueryParam("format") String format, PlanningEvenement planningEvenement) {
+        byte[] content =
+                planningExportService.exportAllBundleZip(planningEvenement, FormatPlanning.fromParameter(format));
         return Response.ok(content)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning.zip\"")
                 .build();
