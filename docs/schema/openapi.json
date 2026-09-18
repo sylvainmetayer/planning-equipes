@@ -480,6 +480,126 @@
         "type" : "string",
         "enum" : [ "STAND_JAMAIS_OUVERT", "FENETRE_SANS_EFFET", "SEGMENT_TROP_COURT" ]
       },
+      "ApercuJour" : {
+        "required" : [ "date", "dejaSousConsigne", "creneauxDuJour", "siegesAvant", "siegesApres", "minutesAvant", "minutesApres", "creneauxAAjouter", "creneauxARetirer", "vacationsSansSiege", "standsOuverts", "standsEntrants", "standsSortants", "standsExceptionCoches", "mineursConcernes", "majeursDisponibles", "validationRetiree", "verrousTouches", "contraintesTouchees", "animateursDansLaBande" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "dejaSousConsigne" : {
+            "type" : "boolean"
+          },
+          "creneauxDuJour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesAvant" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesApres" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minutesAvant" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minutesApres" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "creneauxAAjouter" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Fenetre"
+            }
+          },
+          "creneauxARetirer" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationRef"
+            }
+          },
+          "vacationsSansSiege" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationRef"
+            }
+          },
+          "standsOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "standsEntrants" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "standsSortants" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "standsExceptionCoches" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "mineursConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "majeursDisponibles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "validationRetiree" : {
+            "type" : "boolean"
+          },
+          "verrousTouches" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "contraintesTouchees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursDansLaBande" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "ApercuLevee" : {
+        "required" : [ "date", "sousConsigne", "creneauxARetirer", "validationRetiree", "animateursSurLesCreneauxRetires" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "sousConsigne" : {
+            "type" : "boolean"
+          },
+          "creneauxARetirer" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VacationRef"
+            }
+          },
+          "validationRetiree" : {
+            "type" : "boolean"
+          },
+          "animateursSurLesCreneauxRetires" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "ApercuPublication" : {
         "required" : [ "jamaisPublie", "journeesNonValidees", "nombreConcernes", "planVide", "solveEnCours" ],
         "type" : "object",
@@ -899,7 +1019,7 @@
         }
       },
       "ComparaisonSnapshots" : {
-        "required" : [ "editionsDifferentes", "volumetriesDifferentes" ],
+        "required" : [ "editionsDifferentes", "volumetriesDifferentes", "consignesDifferentes" ],
         "type" : "object",
         "properties" : {
           "base" : {
@@ -919,6 +1039,9 @@
             "items" : {
               "$ref" : "#/components/schemas/DiffContrainte"
             }
+          },
+          "consignesDifferentes" : {
+            "type" : "boolean"
           }
         }
       },
@@ -1164,6 +1287,102 @@
           },
           "relanceLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ConsigneEdition" : {
+        "required" : [ "date", "fermetureDebut", "motif", "fenetres", "ouvertures", "creneauxAjoutes" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "prereglage" : {
+            "type" : "string"
+          },
+          "fenetres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Fenetre"
+            }
+          },
+          "ouvertures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Ouverture"
+            }
+          },
+          "creneauxAjoutes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "ConsigneEspaceView" : {
+        "required" : [ "date", "fermetureDebut", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ConsigneJourJ" : {
+        "required" : [ "fermetureDebut", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ConsigneSnapshot" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
           }
         }
       },
@@ -1445,6 +1664,12 @@
           },
           "kpiRecalcule" : {
             "type" : "boolean"
+          },
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneSnapshot"
+            }
           }
         }
       },
@@ -1835,6 +2060,44 @@
           }
         }
       },
+      "Demande" : {
+        "required" : [ "dates", "fermetureDebut", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "dates" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "prereglage" : {
+            "type" : "string"
+          },
+          "fenetres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Fenetre"
+            }
+          },
+          "ouvertures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Ouverture"
+            }
+          }
+        }
+      },
       "DemandeAbsence" : {
         "type" : "object",
         "properties" : {
@@ -1931,6 +2194,21 @@
           },
           "communiqueeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "DemandePreselection" : {
+        "required" : [ "date", "fermetureDebut" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },
@@ -2281,6 +2559,12 @@
           },
           "heureDuJourFigee" : {
             "$ref" : "#/components/schemas/LocalTime"
+          },
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneEspaceView"
+            }
           }
         }
       },
@@ -2343,6 +2627,33 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatConsignes" : {
+        "required" : [ "consignes", "prereglages", "aujourdhui", "indicateurs" ],
+        "type" : "object",
+        "properties" : {
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneEdition"
+            }
+          },
+          "prereglages" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/PrereglageConsigne"
+            }
+          },
+          "aujourdhui" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "indicateurs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Indicateur"
+            }
           }
         }
       },
@@ -2446,11 +2757,14 @@
             "items" : {
               "$ref" : "#/components/schemas/AnimateurNomme"
             }
+          },
+          "consigne" : {
+            "$ref" : "#/components/schemas/ConsigneJourJ"
           }
         }
       },
       "EtatJourneesTypes" : {
-        "required" : [ "journeesTypes", "calendrier", "datesEnEcart" ],
+        "required" : [ "journeesTypes", "calendrier", "datesEnEcart", "datesSousConsigne" ],
         "type" : "object",
         "properties" : {
           "journeesTypes" : {
@@ -2466,6 +2780,14 @@
             }
           },
           "datesEnEcart" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "datesSousConsigne" : {
             "type" : "array",
             "items" : {
               "type" : "string",
@@ -2638,6 +2960,18 @@
           },
           "message" : {
             "type" : "string"
+          }
+        }
+      },
+      "Fenetre" : {
+        "type" : "object",
+        "required" : [ "debut" ],
+        "properties" : {
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },
@@ -3105,6 +3439,38 @@
           }
         }
       },
+      "Indicateur" : {
+        "type" : "object",
+        "required" : [ "date", "motif", "siegesNominaux", "siegesSousConsigne", "minutesFermees", "minutesRouvertes", "animateursConcernes" ],
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "siegesNominaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesSousConsigne" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minutesFermees" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "minutesRouvertes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "IndisponibiliteStand" : {
         "type" : "object",
         "properties" : {
@@ -3397,6 +3763,20 @@
           }
         }
       },
+      "Levee" : {
+        "required" : [ "dates" ],
+        "type" : "object",
+        "properties" : {
+          "dates" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          }
+        }
+      },
       "LigneCompactage" : {
         "required" : [ "compacte", "ecartMinutes", "exceptionsApres", "fenetresAvant", "reglesApres", "reglesElaguees" ],
         "type" : "object",
@@ -3651,6 +4031,41 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "LigneStand1" : {
+        "required" : [ "standId", "standNom", "minutesPerdues", "effectifHerite", "exceptionDatee", "preCoche", "ouvertures" ],
+        "type" : "object",
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "minutesPerdues" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifHerite" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "exceptionDatee" : {
+            "type" : "boolean"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "preCoche" : {
+            "type" : "boolean"
+          },
+          "ouvertures" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Ouverture"
+            }
           }
         }
       },
@@ -3911,6 +4326,25 @@
             "$ref" : "#/components/schemas/MediaType"
           },
           "data" : { }
+        }
+      },
+      "Ouverture" : {
+        "type" : "object",
+        "required" : [ "standId", "debut" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
         }
       },
       "OuvertureStand" : {
@@ -4311,6 +4745,14 @@
           "plancherMedium" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "journeesSousConsigne" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "heuresFermeesParConsigne" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
@@ -4483,6 +4925,36 @@
           }
         }
       },
+      "PrereglageConsigne" : {
+        "required" : [ "id", "nom", "fermetureDebut", "motif", "fenetres" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "fenetres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Fenetre"
+            }
+          },
+          "modifieLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
       "Prerequis" : {
         "required" : [ "code", "connu", "nombre", "satisfait" ],
         "type" : "object",
@@ -4532,6 +5004,25 @@
           },
           "tousSatisfaits" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "Preselection" : {
+        "required" : [ "date", "creneauxDuJour", "stands" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "creneauxDuJour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneStand1"
+            }
           }
         }
       },
@@ -5572,6 +6063,12 @@
           },
           "perime" : {
             "type" : "boolean"
+          },
+          "consignes" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConsigneSnapshot"
+            }
           }
         }
       },
@@ -6133,6 +6630,21 @@
           "manque" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "VacationRef" : {
+        "type" : "object",
+        "required" : [ "date", "heureDebut" ],
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
           }
         }
       },
@@ -6936,6 +7448,295 @@
         },
         "summary" : "Get",
         "tags" : [ "Config Resource" ]
+      }
+    },
+    "/api/consignes" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Demande"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApercuJour"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Poser",
+        "tags" : [ "Consigne Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatConsignes"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Etat",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/apercu" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Demande"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApercuJour"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Apercu",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/levee" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Levee"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Lever",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/levee/apercu" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/Levee"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/ApercuLevee"
+                  }
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Apercu Levee",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/prereglages" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/PrereglageConsigne"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Prereglages",
+        "tags" : [ "Consigne Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PrereglageConsigne"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PrereglageConsigne"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create Prereglage",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/prereglages/{id}" : {
+      "put" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/PrereglageConsigne"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/PrereglageConsigne"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Update Prereglage",
+        "tags" : [ "Consigne Resource" ]
+      },
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          }
+        },
+        "summary" : "Delete Prereglage",
+        "tags" : [ "Consigne Resource" ]
+      }
+    },
+    "/api/consignes/preselection" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandePreselection"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Preselection"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Preselection",
+        "tags" : [ "Consigne Resource" ]
       }
     },
     "/api/constraints" : {
