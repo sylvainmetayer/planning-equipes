@@ -329,6 +329,31 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
  */
 export async function ouvrirSelect(root: Page | Locator, label: string): Promise<void> {
   await root.locator('mat-form-field').filter({ hasText: label }).first().click();
+  // The panel, open for good: an option clicked during the opening animation
+  // is not taken, and the panel then stays open behind its transparent
+  // backdrop — every later click on the page is intercepted until the test
+  // times out.
+  await expect(pageOf(root).getByRole('listbox')).toBeVisible();
+}
+
+/**
+ * Opens the `mat-select` labelled `label` under `root` and picks `option`,
+ * then waits for the panel's backdrop to be gone — the next click may aim at
+ * the field right under it.
+ */
+export async function choisirOption(
+  root: Page | Locator,
+  label: string,
+  option: string,
+): Promise<void> {
+  await ouvrirSelect(root, label);
+  const page = pageOf(root);
+  await page.getByRole('option', { name: option }).click();
+  await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
+}
+
+function pageOf(root: Page | Locator): Page {
+  return 'page' in root ? root.page() : root;
 }
 
 /**
