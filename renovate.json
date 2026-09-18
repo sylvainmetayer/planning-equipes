@@ -58,6 +58,11 @@
       "minimumReleaseAge": "7 days"
     },
     {
+      "description": "Maven depName is groupId:artifactId, and the default topic « dependency {{depName}} » pushed the subject past the 71 characters check-commits.sh allows (« io.quarkiverse.mcp:quarkus-mcp-server-http » made 77, « ai.timefold.solver:timefold-solver-core » 78): the artifactId alone names the dependency, and the noun is dropped for the same reason",
+      "matchManagers": ["maven"],
+      "commitMessageTopic": "{{{replace '^.*:' '' depName}}}"
+    },
+    {
       "description": "Quarkus platform and extensions move together",
       "matchManagers": ["maven"],
       "matchPackageNames": ["io.quarkus{/,}**", "io.quarkus.platform{/,}**"],
