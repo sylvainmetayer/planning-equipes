@@ -6,13 +6,11 @@ import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.DeplacementSimulation;
-import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A seat moved by hand on a day view (issue #308): the drag-and-drop of the
@@ -77,8 +75,8 @@ public class DeplacementService {
         DeplacementSimulation simulation =
                 planningService.simulateDeplacement(persiste, posteSourceId, posteCibleId, animateurCibleId);
         if (simulation.casseContrainteDure()) {
-            throw new BusinessError.Invalid(
-                    "Déplacement refusé : il casserait " + describe(simulation.nouvellesViolationsDures()));
+            throw new BusinessError.Invalid("Déplacement refusé : il casserait "
+                    + PlanningWhatIf.describeHardViolations(simulation.nouvellesViolationsDures()));
         }
         refuseIfLocked(persiste, simulation);
         Map<String, String> ecritures = new LinkedHashMap<>();
@@ -187,15 +185,5 @@ public class DeplacementService {
             throw new BusinessError.Invalid("L'emploi du temps de cette personne est verrouillé : déverrouillez-le "
                     + "avant de lui donner ce siège.");
         }
-    }
-
-    private static String describe(List<HardViolation> violations) {
-        if (violations.isEmpty()) {
-            return "une règle dure du planning.";
-        }
-        return violations.stream()
-                        .map(violation -> violation.description() + " (" + violation.matchesSupplementaires() + ")")
-                        .collect(Collectors.joining(" ; "))
-                + ".";
     }
 }
