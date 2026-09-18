@@ -155,7 +155,7 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>2.6</version>
+            <version>2.7</version>
         </dependency>
         <!-- dev.sylvain.planning.scenario: standalone
              scenario-file DTOs, validated with Bean Validation and used to
