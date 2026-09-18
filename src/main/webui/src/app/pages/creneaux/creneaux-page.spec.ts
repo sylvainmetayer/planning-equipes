@@ -16,6 +16,7 @@ import { Sort } from '@angular/material/sort';
 import { provideRouter, Router } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
@@ -157,11 +158,28 @@ describe('CreneauxPage', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
+        {
+          provide: ConsignesStore,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            etat: () => null,
+            consignes: () => [],
+            aujourdhui: () => null,
+            parDate: () => new Map(),
+            creneauxAjoutes: () => new Set(),
+            consigneDe: () => null,
+          },
+        },
         // The day-templates card reads its own state; an empty one keeps it quiet here.
         {
           provide: JourneesTypesApi,
           useValue: {
-            etat: vi.fn(async () => ({ journeesTypes: [], calendrier: [], datesEnEcart: [] })),
+            etat: vi.fn(async () => ({
+              journeesTypes: [],
+              calendrier: [],
+              datesEnEcart: [],
+              datesSousConsigne: [],
+            })),
           },
         },
         { provide: ReferenceCrudService, useValue: crud },
@@ -422,6 +440,18 @@ describe('CreneauxPage rendering', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: CreneauxApi, useValue: creneauxApi },
+        {
+          provide: ConsignesStore,
+          useValue: {
+            reload: vi.fn(async () => undefined),
+            etat: () => null,
+            consignes: () => [],
+            aujourdhui: () => null,
+            parDate: () => new Map(),
+            creneauxAjoutes: () => new Set(),
+            consigneDe: () => null,
+          },
+        },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         {

@@ -252,6 +252,12 @@ const adminRoutes: Routes = [
       import('./pages/verrouillages/verrouillages-page').then((m) => m.VerrouillagesPage),
   },
   {
+    // A band every stand is shut on for one date, by decision (issue #4).
+    path: 'consignes',
+    title: () => $localize`:@@route.consignes:Consignes`,
+    loadComponent: () => import('./pages/consignes/consignes-page').then((m) => m.ConsignesPage),
+  },
+  {
     path: 'calendar',
     title: () => $localize`:@@route.calendar:Calendrier des affectations`,
     loadComponent: () =>

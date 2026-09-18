@@ -35,6 +35,7 @@ const ETAT: EtatJourneesTypes = {
     { date: '2027-07-13', journeeTypeId: 2 },
   ],
   datesEnEcart: ['2027-07-13'],
+  datesSousConsigne: [],
 };
 
 type CardInternals = {

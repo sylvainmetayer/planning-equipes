@@ -101,6 +101,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/graphe', sheet: 'graphe-corps' },
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
+  { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
   { path: '/parametres', marker: 'Paramètres légaux', sheet: 'parametres-renvois' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
   { path: '/imports?onglet=scenario', marker: 'Un fichier scénario' },

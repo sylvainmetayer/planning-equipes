@@ -270,7 +270,7 @@ public class ConsigneService {
                 "preCoche",
                 "ouvertures"
             })
-    public record LigneStand(
+    public record LigneStandConsigne(
             String standId,
             String standNom,
             int minutesPerdues,
@@ -282,7 +282,7 @@ public class ConsigneService {
 
     /** The stands of the edition read against one date and one band. */
     @Schema(requiredProperties = {"date", "creneauxDuJour", "stands"})
-    public record Preselection(LocalDate date, int creneauxDuJour, List<LigneStand> stands) {}
+    public record Preselection(LocalDate date, int creneauxDuJour, List<LigneStandConsigne> stands) {}
 
     /**
      * What the band takes from each stand on {@code date}, before anything is
@@ -306,7 +306,7 @@ public class ConsigneService {
                         .add(ouverture);
             }
         });
-        List<LigneStand> lignes = new ArrayList<>();
+        List<LigneStandConsigne> lignes = new ArrayList<>();
         for (Stand stand : stands) {
             int perdues = 0;
             Integer herite = null;
@@ -322,7 +322,7 @@ public class ConsigneService {
             }
             boolean exception =
                     HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.EXCEPTION;
-            lignes.add(new LigneStand(
+            lignes.add(new LigneStandConsigne(
                     stand.getId(),
                     stand.getNom(),
                     perdues,
@@ -332,8 +332,8 @@ public class ConsigneService {
                     perdues > 0 && !exception,
                     actuelles.getOrDefault(stand.getId(), List.of())));
         }
-        lignes.sort(Comparator.comparing(LigneStand::standNom, String.CASE_INSENSITIVE_ORDER)
-                .thenComparing(LigneStand::standId));
+        lignes.sort(Comparator.comparing(LigneStandConsigne::standNom, String.CASE_INSENSITIVE_ORDER)
+                .thenComparing(LigneStandConsigne::standId));
         return new Preselection(date, duJour.size(), lignes);
     }
 

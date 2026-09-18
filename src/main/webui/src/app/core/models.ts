@@ -1322,6 +1322,12 @@ export interface EtatJourneesTypes {
   journeesTypes: JourneeType[];
   calendrier: AffectationJourneeType[];
   datesEnEcart: string[];
+  /**
+   * Dates under a consigne (issue #4): the templates ignore them — neither
+   * drift nor deletion — and the calendar shows them as such rather than as
+   * « en écart ». A date in both lists reads « sous consigne » only.
+   */
+  datesSousConsigne: string[];
 }
 
 /** What applying the calendar does or would do, and the verdict on the resulting grid. */
@@ -1943,6 +1949,11 @@ export interface CoteComparaison {
   kpi: PlanningKpi;
   /** The KPI were not stored and had to be recomputed: violations are unmeasured. */
   kpiRecalcule: boolean;
+  /**
+   * The consignes in force when this side was captured (issue #4); `null` on a
+   * snapshot older than that capture, where they are simply unknown.
+   */
+  consignes: ConsigneSnapshot[] | null;
 }
 
 /** Violations of one constraint on each side; null = not measured, which is not zero. */
@@ -1958,6 +1969,8 @@ export interface ComparaisonSnapshots {
   variante: CoteComparaison;
   editionsDifferentes: boolean;
   volumetriesDifferentes: boolean;
+  /** The two sides were not captured under the same consignes: part of the gap is the band, not the solve. */
+  consignesDifferentes: boolean;
   diffViolations: DiffContrainte[];
 }
 
@@ -2327,6 +2340,11 @@ export interface EspaceAnimateurView {
   dateDuJourFigee: string | null;
   /** `HH:mm:ss` frozen with it, `null` while the phone's own time is the one to read. */
   heureDuJourFigee: string | null;
+  /**
+   * The consignes (issue #4) on the dates this person holds a seat: the band
+   * every stand was shut on and why, said on the day card and above it.
+   */
+  consignes: ConsigneEspaceView[];
 }
 
 /**
@@ -2812,6 +2830,10 @@ export interface PlanningKpi {
   scoreMediumHorsPlancher: number | null;
   /** Constant part of the medium score, signed like it; null when not measured. */
   plancherMedium: number | null;
+  /** Days under a consigne (issue #4) when the plan was measured; null on a row older than the measure. */
+  journeesSousConsigne: number | null;
+  /** Seat-hours the consignes' bands took away; null on a row older than the measure. */
+  heuresFermeesParConsigne: number | null;
 }
 
 /** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */
@@ -2952,6 +2974,8 @@ export interface EtatJourJ {
    * them a seat.
    */
   animateurs: AnimateurNomme[];
+  /** The consigne governing this day (issue #4), `null` on an ordinary day. */
+  consigne: ConsigneJourJ | null;
 }
 
 /** What one « marquer absent » wrote, so the screen goes straight to the holes it opened. */
@@ -3373,4 +3397,194 @@ export interface ProgressionValidations {
   journeesValidees: number;
   /** The accepted days themselves, `AAAA-MM-JJ`, ascending. */
   joursValides: string[];
+}
+
+/* ------------------------ Consignes d'édition (issue #4) ------------------------ */
+
+/**
+ * One stretch of a day, `[debut, fin)`, hours as `HH:mm:ss` from the server
+ * (`HH:mm` is accepted when sent back). `fin` null reads « jusqu'à minuit »,
+ * the convention of every dated window of this application.
+ */
+export interface FenetreConsigne {
+  debut: string;
+  fin: string | null;
+}
+
+/**
+ * One stand opened on one compensation window. `effectif` null inherits the
+ * highest headcount the band took from the stand, or its minimum when nothing
+ * was lost.
+ */
+export interface OuvertureConsigne {
+  standId: string;
+  debut: string;
+  fin: string | null;
+  effectif: number | null;
+}
+
+/**
+ * What the organiser imposes on the whole event for one date: a band every
+ * stand is shut on — an arrêté préfectoral, typically — and the compensation
+ * chosen for it, stand by stand. One value per date.
+ */
+export interface ConsigneEdition {
+  date: string;
+  fermetureDebut: string;
+  /** `null` = until midnight. */
+  fermetureFin: string | null;
+  motif: string;
+  /** Name of the preset the consigne was made from, `null` when typed freely. */
+  prereglage: string | null;
+  /** The day's default compensation windows, what a ticked stand receives before any adjustment. */
+  fenetres: FenetreConsigne[];
+  ouvertures: OuvertureConsigne[];
+  /** Ids of the créneaux the consigne added to the grid because none covered an opening. */
+  creneauxAjoutes: number[];
+  creeLe: string | null;
+  modifieLe: string | null;
+}
+
+/** A named preset — « Plan canicule » — the band, the motif and the default windows, kept on the edition. */
+export interface PrereglageConsigne {
+  id: string;
+  nom: string;
+  fermetureDebut: string;
+  fermetureFin: string | null;
+  motif: string;
+  fenetres: FenetreConsigne[];
+  modifieLe: string | null;
+}
+
+/** What one modified day cost, read off the seats: kept in the statistics for good. */
+export interface IndicateurConsigne {
+  date: string;
+  motif: string;
+  siegesNominaux: number;
+  siegesSousConsigne: number;
+  minutesFermees: number;
+  minutesRouvertes: number;
+  animateursConcernes: number;
+}
+
+/** `GET /api/consignes`: everything the screen reads in one call. */
+export interface EtatConsignes {
+  consignes: ConsigneEdition[];
+  prereglages: PrereglageConsigne[];
+  /** The server's today (the simulated clock respected): only dates strictly after it can move. */
+  aujourdhui: string;
+  indicateurs: IndicateurConsigne[];
+}
+
+/** Body of `POST /api/consignes/preselection`: a date and a band, to read the stands against. */
+export interface DemandePreselectionConsigne {
+  date: string;
+  fermetureDebut: string;
+  fermetureFin?: string | null;
+}
+
+/**
+ * One stand read against a date and a band: what it loses, what it would
+ * inherit, and whether the screen proposes it ticked.
+ */
+export interface LigneStandConsigne {
+  standId: string;
+  standNom: string;
+  minutesPerdues: number;
+  effectifHerite: number;
+  /** The stand typed dated hours on that day: set aside with a reason, but still tickable. */
+  exceptionDatee: boolean;
+  motif: string | null;
+  preCoche: boolean;
+  /** What the consigne this date already carries opens on this stand; empty otherwise. */
+  ouvertures: OuvertureConsigne[];
+}
+
+export interface PreselectionConsigne {
+  date: string;
+  creneauxDuJour: number;
+  stands: LigneStandConsigne[];
+}
+
+/**
+ * Body of `POST /api/consignes` and its preview: one request covering several
+ * dates, the shape an arrêté takes. Hours may be sent as `HH:mm`.
+ */
+export interface DemandeConsigne {
+  dates: string[];
+  fermetureDebut: string;
+  fermetureFin?: string | null;
+  motif: string;
+  prereglage?: string | null;
+  fenetres: FenetreConsigne[];
+  ouvertures: OuvertureConsigne[];
+}
+
+/** A vacation of the grid named by its day and hours. */
+export interface VacationRef {
+  date: string;
+  heureDebut: string;
+  heureFin: string | null;
+}
+
+/** What one day of consigne costs, before it is written — `POST /api/consignes/apercu`. */
+export interface ApercuConsigneJour {
+  date: string;
+  dejaSousConsigne: boolean;
+  creneauxDuJour: number;
+  siegesAvant: number;
+  siegesApres: number;
+  minutesAvant: number;
+  minutesApres: number;
+  creneauxAAjouter: FenetreConsigne[];
+  creneauxARetirer: VacationRef[];
+  vacationsSansSiege: VacationRef[];
+  standsOuverts: number;
+  standsEntrants: string[];
+  standsSortants: string[];
+  standsExceptionCoches: string[];
+  mineursConcernes: number;
+  majeursDisponibles: number;
+  /** The day's « relu et accepté » would be withdrawn (ADR 0039). */
+  validationRetiree: boolean;
+  verrousTouches: number;
+  contraintesTouchees: number;
+  animateursDansLaBande: number;
+}
+
+/** Body of `POST /api/consignes/levee` and its preview. */
+export interface LeveeConsigne {
+  dates: string[];
+}
+
+/** What lifting one date would do — `POST /api/consignes/levee/apercu`. */
+export interface ApercuLeveeConsigne {
+  date: string;
+  sousConsigne: boolean;
+  creneauxARetirer: VacationRef[];
+  validationRetiree: boolean;
+  animateursSurLesCreneauxRetires: number;
+}
+
+/** A consigne as the espace animateur states it: the dates where this person holds a seat. */
+export interface ConsigneEspaceView {
+  date: string;
+  fermetureDebut: string;
+  fermetureFin: string | null;
+  motif: string;
+}
+
+/** The consigne of the day the Jour J screen looks at. */
+export interface ConsigneJourJ {
+  fermetureDebut: string;
+  fermetureFin: string | null;
+  motif: string;
+}
+
+/** A consigne as a snapshot carries it: what was in force at the capture. */
+export interface ConsigneSnapshot {
+  date: string;
+  fermetureDebut: string;
+  fermetureFin: string | null;
+  motif: string;
 }

@@ -21,12 +21,14 @@ import { Emplacement, PlanningEvenement, RapportPauses, TypologieItem } from '..
 import { PlanningStateService } from '../../core/planning-state.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { ValidationsStore } from '../../core/validations.store';
+import { ConsignesStore } from '../../core/consignes.store';
 import { TableFilter } from '../../shared/table-filter';
 import { ValidationBanner } from '../../shared/validation-banner';
 import { CalendarDayView } from '../calendar-day/calendar-day-vue';
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
 import { PausesView } from '../pauses/pauses-vue';
+import { ConsigneCard } from './consigne-card';
 import { ValidationPanel } from './validation-panel';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
 import {
@@ -69,6 +71,7 @@ interface Option {
     TableFilter,
     ValidationBanner,
     ValidationPanel,
+    ConsigneCard,
     CalendarDayView,
     RailJourView,
     PausesView,
@@ -87,6 +90,7 @@ export class JourneePage {
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly validations = inject(ValidationsStore);
+  private readonly consignes = inject(ConsignesStore);
 
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -178,6 +182,10 @@ export class JourneePage {
 
   /** The ISO date of the day on screen, which is what a reading names; null on an undated day. */
   protected readonly dateCourante = computed(() => this.jourCourant()?.date ?? null);
+  /** True when the day on screen is under a consigne (issue #4): the selector says so. */
+  protected readonly sousConsigne = computed(
+    () => this.consignes.consigneDe(this.dateCourante()) !== null,
+  );
   /** What the page says after a reading was recorded or withdrawn. */
   protected readonly message = signal('');
 
@@ -241,6 +249,7 @@ export class JourneePage {
       // The banner is refreshed with the plan it comments on: a solve that
       // withdrew readings must not leave the old count on screen.
       void this.validations.reload();
+      void this.consignes.reload();
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));

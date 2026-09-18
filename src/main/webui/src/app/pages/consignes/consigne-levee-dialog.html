@@ -1,0 +1,52 @@
+<h2 mat-dialog-title i18n="@@consignes.levee.title">Lever une consigne</h2>
+<mat-dialog-content class="consigne-levee">
+  @if (editingLocked()) {
+    <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  }
+  <p class="empty-hint" i18n="@@consignes.levee.hint">Les créneaux ajoutés par la consigne partent avec leurs sièges ; les créneaux nominaux restent.</p>
+  <mat-form-field appearance="outline" class="consigne-levee-dates">
+    <mat-label i18n="@@consignes.form.dates">Dates</mat-label>
+    <mat-select name="dates" multiple [disabled]="editingLocked()" [ngModel]="dates()" (ngModelChange)="onDates($event)">
+      @for (option of options(); track option.date) {
+        <mat-option [value]="option.date">{{ option.libelle }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+  @if (chargement()) {
+    <mat-progress-bar mode="indeterminate" />
+  }
+  @if (apercu(); as apercu) {
+    <ul class="consigne-apercu-lignes">
+      @for (jour of apercu; track jour.date) {
+        <li>
+          <strong>{{ libelleDate(jour.date) }}</strong>
+          @if (!jour.sousConsigne) {
+            <ng-container i18n="@@consignes.levee.pasSousConsigne"> : pas sous consigne, rien à lever.</ng-container>
+          } @else {
+            <ng-container i18n="@@consignes.levee.detail"> : {{ jour.creneauxARetirer.length }} créneau(x) à retirer, {{ jour.animateursSurLesCreneauxRetires }} animateur(s) assis dessus.</ng-container>
+            @if (jour.creneauxARetirer.length > 0) {
+              <span class="consigne-levee-vacations">{{ vacations(jour.creneauxARetirer) }}</span>
+            }
+            @if (jour.validationRetiree) {
+              <span class="consigne-apercu-alerte">
+                <mat-icon inline>warning</mat-icon>
+                <ng-container i18n="@@consignes.apercu.validationRetiree">La validation de relecture de cette journée sera retirée.</ng-container>
+              </span>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="tonal" type="button" [disabled]="dates().length === 0 || chargement() || editingLocked()" (click)="previsualiser()">
+    <mat-icon>preview</mat-icon>
+    <ng-container i18n="@@consignes.form.apercu">Aperçu</ng-container>
+  </button>
+  <button matButton="filled" type="button" class="danger-action" [disabled]="dates().length === 0 || apercu() === null || levee() || editingLocked()" (click)="lever()">
+    <mat-icon>undo</mat-icon>
+    <ng-container i18n="@@consignes.levee.confirmer">Lever</ng-container>
+  </button>
+</mat-dialog-actions>

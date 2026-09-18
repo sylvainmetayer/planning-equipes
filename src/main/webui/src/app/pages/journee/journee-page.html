@@ -25,6 +25,12 @@
               [attr.aria-label]="jourSuivantLabel" [title]="jourSuivantLabel">
         <mat-icon>chevron_right</mat-icon>
       </button>
+      @if (sousConsigne()) {
+        <span class="journee-badge-consigne">
+          <mat-icon inline>gavel</mat-icon>
+          <ng-container i18n="@@journee.badge.sousConsigne">sous consigne</ng-container>
+        </span>
+      }
       <mat-button-toggle-group class="journee-vues" [value]="view()" (change)="changeView($event.value)"
                                aria-label="Rendu de la journée" i18n-aria-label="@@journee.vue.label">
         <mat-button-toggle value="calendrier">
@@ -97,7 +103,10 @@
 </mat-card>
 
 @if (!error() && dateCourante(); as jour) {
-  <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
+  <div class="journee-panneaux">
+    <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
+    <app-consigne-card [jour]="jour" />
+  </div>
 }
 
 @if (!error() && !loading()) {

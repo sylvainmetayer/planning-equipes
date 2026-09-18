@@ -97,6 +97,13 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'lock',
         },
         {
+          // Closing every stand on a band of one date, by decision (issue #4):
+          // an act on the edition's days, next to the locks.
+          path: '/consignes',
+          label: $localize`:@@nav.link.consignes:Consignes`,
+          icon: 'gavel',
+        },
+        {
           path: '/diagnostic',
           label: $localize`:@@nav.link.diagnostic:Diagnostic`,
           icon: 'report_problem',

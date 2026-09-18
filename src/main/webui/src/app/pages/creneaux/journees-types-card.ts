@@ -52,6 +52,8 @@ interface LigneCalendrier {
   jourSemaine: string;
   journeeTypeId: number;
   enEcart: boolean;
+  /** Under a consigne (issue #4): the templates ignore the date, and it never reads « en écart ». */
+  sousConsigne: boolean;
 }
 
 /**
@@ -101,16 +103,25 @@ export class JourneesTypesCard {
 
   protected readonly journeesTypes = computed(() => this.etat()?.journeesTypes ?? []);
   protected readonly calendrier = computed(() => this.etat()?.calendrier ?? []);
-  protected readonly datesEnEcart = computed(() => new Set(this.etat()?.datesEnEcart ?? []));
+  protected readonly datesSousConsigne = computed(
+    () => new Set(this.etat()?.datesSousConsigne ?? []),
+  );
+  /** A date under consigne is never « en écart »: the consigne is what its créneaux follow. */
+  protected readonly datesEnEcart = computed(() => {
+    const sousConsigne = this.datesSousConsigne();
+    return new Set((this.etat()?.datesEnEcart ?? []).filter((date) => !sousConsigne.has(date)));
+  });
   protected readonly bornes = computed(() => bornesCalendrier(this.calendrier()));
   protected readonly lignes = computed<LigneCalendrier[]>(() => {
     const ecarts = this.datesEnEcart();
+    const sousConsigne = this.datesSousConsigne();
     return this.calendrier().map((affectation) => ({
       date: affectation.date,
       libelle: libelleJour(affectation.date),
       jourSemaine: libelleJourSemaine(jourSemaineDe(affectation.date)),
       journeeTypeId: affectation.journeeTypeId,
       enEcart: ecarts.has(affectation.date),
+      sousConsigne: sousConsigne.has(affectation.date),
     }));
   });
   protected readonly datesAAjouter = computed(() => datesDePlage(this.du(), this.au()));

@@ -26,6 +26,7 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
+import { bandeLabel } from '../consignes/consignes';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   aucuneSuggestion,
@@ -107,6 +108,13 @@ export class JourJPage {
   protected readonly avertissement = $localize`:@@jourJ.wip.message:Écran en cours de développement, et il agit : marquer un absent écrit de vraies indisponibilités et vide de vrais sièges du planning enregistré. Ses effets ne sont pas encore garantis.`;
 
   protected readonly resume = computed(() => resumeDuJour(this.etat()));
+  /** The day's consigne (issue #4), worded for the banner; empty on an ordinary day. */
+  protected readonly consigne = computed(() => {
+    const consigne = this.etat()?.consigne ?? null;
+    return consigne
+      ? { bande: bandeLabel(consigne.fermetureDebut, consigne.fermetureFin), motif: consigne.motif }
+      : null;
+  });
   protected readonly rappel = computed(() => rappelPublication(this.apercu()));
 
   /** Pre-labelled rows: the template never calls a function per row. */

@@ -53,6 +53,19 @@
 }
 
 <!--
+  Journées aux horaires modifiés par décision de l'organisation (#4) : la bande
+  fermée et le motif, une ligne par journée où la personne travaille. Au-dessus
+  des changements et des journées : c'est ce qui explique un planning qui ne
+  ressemble pas aux autres jours.
+-->
+@for (consigne of consignes(); track consigne.date) {
+  <section class="espace-consigne" role="status">
+    <mat-icon inline>gavel</mat-icon>
+    <span i18n="@@espace.planning.consigne">Horaires modifiés le {{ consigne.date | date: 'EEEE d MMMM' }} : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
+  </section>
+}
+
+<!--
   Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
   publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
   que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne

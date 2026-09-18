@@ -1,0 +1,48 @@
+<h2 mat-dialog-title>{{ formTitle }}</h2>
+<form (ngSubmit)="save()">
+<mat-dialog-content class="form-grid">
+<fieldset class="form-fieldset" [disabled]="editingLocked()">
+@if (editingLocked()) {
+  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@consignes.prereglage.field.nom">Nom</mat-label>
+  <input matInput name="nom" required maxlength="80" placeholder="Plan canicule" autocomplete="off"
+         [ngModel]="nom()" (ngModelChange)="nom.set($event)" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@consignes.form.fermetureDebut">Fermé à partir de</mat-label>
+  <input matInput name="fermetureDebut" type="time" required [ngModel]="fermetureDebut()" (ngModelChange)="fermetureDebut.set($event)" />
+</mat-form-field>
+<mat-form-field appearance="outline">
+  <mat-label i18n="@@consignes.form.fermetureFin">Jusqu'à</mat-label>
+  <input matInput name="fermetureFin" type="time" [ngModel]="fermetureFin()" (ngModelChange)="fermetureFin.set($event)" />
+  <mat-hint i18n="@@consignes.form.fermetureFin.hint">Vide : jusqu'à minuit</mat-hint>
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@consignes.form.motif">Motif</mat-label>
+  <input matInput name="motif" required maxlength="200" [ngModel]="motif()" (ngModelChange)="motif.set($event)" />
+</mat-form-field>
+<mat-form-field appearance="outline" class="span-2">
+  <mat-label i18n="@@consignes.prereglage.field.fenetres">Fenêtres de compensation par défaut</mat-label>
+  <input matInput name="fenetres" placeholder="18:00-22:00, 09:00-12:00" autocomplete="off" spellcheck="false"
+         [ngModel]="ligne()" (ngModelChange)="ligne.set($event)" />
+  <mat-hint i18n="@@consignes.prereglage.field.fenetres.hint">Une fenêtre par virgule ; « 20:00- » jusqu'à minuit</mat-hint>
+</mat-form-field>
+@if (fenetres() === null) {
+  <p class="field-error span-2" role="alert" i18n="@@consignes.form.masse.erreur">Fenêtres illisibles : écrivez « 18:00-22:00, 09:00-12:00 », ou « 20:00- » jusqu'à minuit.</p>
+}
+</fieldset>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button matButton type="button" (click)="dialogRef.close(null)" i18n="@@common.cancel">Annuler</button>
+  <button matButton="filled" type="submit" [disabled]="invalide() || enregistrement() || editingLocked()">
+    <mat-icon>save</mat-icon>
+    @if (editingId !== null) {
+      <ng-container i18n="@@consignes.prereglage.form.submit.edit">Modifier le préréglage</ng-container>
+    } @else {
+      <ng-container i18n="@@consignes.prereglage.form.submit.create">Créer le préréglage</ng-container>
+    }
+  </button>
+</mat-dialog-actions>
+</form>

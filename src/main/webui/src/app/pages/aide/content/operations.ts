@@ -43,6 +43,38 @@ export function buildOperationsSections(): HelpSection[] {
       ],
     },
     {
+      id: 'consignes',
+      icon: 'gavel',
+      title: $localize`:@@aide.consignes.title:Consignes (arrêté, canicule)`,
+      summary: $localize`:@@aide.consignes.summary:Fermer tous les stands sur une bande horaire de quelques jours, par décision, et rouvrir sur des fenêtres de compensation — sans rien détruire.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.consignes.intro:Un arrêté préfectoral tombe la veille au soir : de midi à 18 heures, plus personne dehors, pendant trois jours d'un événement qui en dure dix. Puis il est prolongé, puis levé. La page Consignes tient ce geste en une ligne par date : la bande fermée, le motif — obligatoire, il est imprimé partout où la journée est dite modifiée —, et les stands rouverts en compensation, le soir ou le matin.`,
+        },
+        {
+          kind: 'steps',
+          items: [
+            $localize`:@@aide.consignes.etape.poser:Poser : choisissez un préréglage (« Plan canicule » : bande, motif, fenêtres par défaut) ou saisissez librement, puis les dates. Seuls les jours à venir de la grille sont proposés : une journée commencée garde pour toujours la consigne qui l'a gouvernée.`,
+            $localize`:@@aide.consignes.etape.stands:Les stands sont lus pour la première date et la bande : ceux qui perdent des minutes arrivent pré-cochés avec les fenêtres par défaut et l'effectif hérité — le plus fort effectif perdu dans la bande. Un stand qui a posé des horaires datés ce jour-là est écarté, avec la raison, mais reste cochable. Filtrez par nom, typologie, emplacement ou premium ; « Appliquer à la sélection » règle d'un coup les fenêtres ou l'effectif des stands cochés affichés.`,
+            $localize`:@@aide.consignes.etape.apercu:« Aperçu » dit, date par date, ce que l'écriture ferait : sièges et minutes avant et après, créneaux à ajouter ou à retirer, vacations sans siège, stands entrants et sortants, mineurs concernés, verrous et ajustements touchés, animateurs assis dans la bande, et si la validation de relecture sera retirée. « Enregistrer » envoie exactement la même demande.`,
+            $localize`:@@aide.consignes.etape.modifier:Modifier remplace la consigne d'une date en place, Prolonger reprend sa bande, son motif et ses ouvertures sur d'autres dates, Lever la retire des dates choisies — les créneaux qu'elle avait ajoutés partent avec leurs sièges. Les trois gestes sont prévisualisés, et refusés sur une date déjà commencée.`,
+            $localize`:@@aide.consignes.etape.resolution:Le planning suit ensuite le chemin ordinaire : une résolution incrémentale replace les gens sur les créneaux qui restent et sur ceux ajoutés, puis la publication annonce les journées aux horaires modifiés. L'espace animateur, le jour J et le PDF individuel affichent le motif sous la date.`,
+          ],
+        },
+        {
+          kind: 'callout',
+          title: $localize`:@@aide.consignes.callout.title:Rien n'est détruit`,
+          text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées — et elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les journées types ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et un instantané emporte les consignes en vigueur à sa capture.`,
+        },
+      ],
+      links: [
+        { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
+        { route: '/journee', label: $localize`:@@nav.link.journee:Journée` },
+        { route: '/solveur', label: $localize`:@@nav.link.solver:Solveur` },
+      ],
+    },
+    {
       id: 'jour-j',
       icon: 'emergency',
       title: $localize`:@@aide.jourJ.title:Mode jour J`,

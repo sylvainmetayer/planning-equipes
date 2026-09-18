@@ -32,6 +32,7 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
     postesAPourvoir: [],
     absences: [],
     animateurs: [],
+    consigne: null,
     ...overrides,
   };
 }

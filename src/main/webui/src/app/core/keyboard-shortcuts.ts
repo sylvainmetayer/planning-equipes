@@ -201,6 +201,9 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/verrouillages',
       { label: $localize`:@@nav.link.verrouillages:Verrouillages`, icon: 'lock', touche: 'v' },
     ],
+    // No letter: the free ones are few, and a screen used a few days a year
+    // is reached through the palette's search.
+    ['/consignes', { label: $localize`:@@nav.link.consignes:Consignes`, icon: 'gavel' }],
     [
       '/mentions-legales',
       { label: $localize`:@@nav.link.mentionsLegales:Mentions légales`, icon: 'gavel' },

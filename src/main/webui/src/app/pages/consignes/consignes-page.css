@@ -1,0 +1,267 @@
+/* « Consignes » (issue #4): the table of the dates under consigne, the
+   presets, and the form dialog with its list of stands. Only what Material
+   does not already theme; colours come from the --mat-sys-* tokens. */
+
+.consignes-erreur {
+  color: var(--mat-sys-error);
+}
+
+.consigne-bande {
+  font-variant-numeric: tabular-nums;
+  font-weight: 500;
+}
+
+.consigne-fenetres-resume {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+/* The row a link named: what the eye lands on when arriving from the Journée. */
+tr.consigne-ligne-cible {
+  background: var(--mat-sys-secondary-container);
+}
+
+tr.consigne-ligne-passee td {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.consigne-chip {
+  display: inline-block;
+  padding: 0.1rem 0.55rem;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.consigne-chip-passee {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.consigne-chip-exception {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+/* ------------------------------- presets ------------------------------- */
+
+.consignes-prereglages-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.consigne-prereglage {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.consigne-prereglage-corps {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+}
+
+.consigne-prereglage-motif {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.consigne-prereglage-actions {
+  display: flex;
+  flex: none;
+}
+
+/* ------------------------------ the form ------------------------------ */
+
+.consigne-form h3,
+.consigne-apercu h3 {
+  font: var(--mat-sys-title-small);
+  margin: 1rem 0 0.5rem;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.consigne-form-compteur {
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
+}
+
+.consigne-form-resume {
+  margin: 0 0 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.consigne-fenetres {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.consigne-fenetre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.consigne-fenetre mat-form-field {
+  width: 10rem;
+}
+
+.consigne-form-filtres,
+.consigne-form-masse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.consigne-form-filtres mat-form-field {
+  width: 11rem;
+}
+
+.consigne-form-filtres .consigne-form-recherche {
+  flex: 1 1 14rem;
+}
+
+.consigne-form-masse-fenetres {
+  flex: 1 1 18rem;
+}
+
+.consigne-form-masse-effectif {
+  width: 7rem;
+}
+
+.consigne-form-masse .field-error {
+  flex-basis: 100%;
+  margin: 0;
+}
+
+.consigne-stands {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  max-height: 40vh;
+  overflow: auto;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+}
+
+.consigne-stand {
+  padding: 0.25rem 0.75rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.consigne-stand:last-child {
+  border-bottom: 0;
+}
+
+.consigne-stand-coche {
+  background: var(--mat-sys-surface-container-low);
+}
+
+.consigne-stand-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.consigne-stand-nom {
+  font-weight: 500;
+}
+
+.consigne-stand-meta {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+.consigne-stand-reglages {
+  padding: 0.25rem 0 0.5rem 2.5rem;
+}
+
+.consigne-stand-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.consigne-stand-effectif {
+  width: 8rem;
+}
+
+.consigne-form-erreur {
+  margin-top: 0.75rem;
+}
+
+/* ------------------------------ the preview ------------------------------ */
+
+.consigne-apercu-jour h4 {
+  font: var(--mat-sys-title-small);
+  margin: 0.5rem 0 0.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.consigne-apercu-lignes {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.consigne-apercu-alerte {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--mat-sys-error);
+}
+
+.consigne-levee-dates {
+  display: block;
+}
+
+.consigne-levee-vacations {
+  display: block;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 600px) {
+  .consigne-prereglage {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .consigne-stand-reglages {
+    padding-left: 0;
+  }
+
+  .consigne-form-filtres mat-form-field,
+  .consigne-fenetre mat-form-field {
+    width: 100%;
+  }
+}

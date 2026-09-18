@@ -23,6 +23,20 @@
     } @else if (erreur()) {
       <p class="empty-hint accueil-erreur" role="alert">{{ erreur() }}</p>
     }
+    @if (consignesAVenir().length > 0) {
+      <div class="accueil-consignes" role="status">
+        <mat-icon>gavel</mat-icon>
+        <div>
+          <p class="accueil-consignes-titre" i18n="@@accueil.consignes.titre">Journées sous consigne</p>
+          <ul class="accueil-consignes-liste">
+            @for (consigne of consignesAVenir(); track consigne.date) {
+              <li i18n="@@accueil.consignes.ligne">{{ consigne.libelleDate }} : fermé de {{ consigne.bande }} — {{ consigne.motif }}</li>
+            }
+          </ul>
+          <a routerLink="/consignes" i18n="@@accueil.consignes.lien">Voir les consignes</a>
+        </div>
+      </div>
+    }
     @if (etatEdition()) {
       @if (bilan(); as bilan) {
         <p class="accueil-bilan">

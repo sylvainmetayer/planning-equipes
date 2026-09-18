@@ -34,6 +34,7 @@ function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
       { animateurId: 'A1', nomAffiche: 'Alice Referente' },
       { animateurId: 'A2', nomAffiche: 'Bruno Autonome' },
     ],
+    consigne: null,
     ...overrides,
   };
 }
