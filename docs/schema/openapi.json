@@ -4034,7 +4034,7 @@
           }
         }
       },
-      "LigneStand1" : {
+      "LigneStandConsigne" : {
         "required" : [ "standId", "standNom", "minutesPerdues", "effectifHerite", "exceptionDatee", "preCoche", "ouvertures" ],
         "type" : "object",
         "properties" : {
@@ -5021,7 +5021,7 @@
           "stands" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/LigneStand1"
+              "$ref" : "#/components/schemas/LigneStandConsigne"
             }
           }
         }

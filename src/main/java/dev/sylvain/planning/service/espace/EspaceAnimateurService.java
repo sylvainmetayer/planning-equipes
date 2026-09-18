@@ -338,8 +338,8 @@ public class EspaceAnimateurService {
 
     /** The consignes on the dates the person holds a seat, by date. */
     private List<ConsigneEspaceView> consignesOf(List<PosteAnimateurView> postes) {
-        Map<LocalDate, ConsigneEdition> parDate = consigneService.parDate();
-        if (parDate.isEmpty()) {
+        Map<LocalDate, ConsigneEdition> consignesByDate = consigneService.byDate();
+        if (consignesByDate.isEmpty()) {
             return List.of();
         }
         return postes.stream()
@@ -347,7 +347,7 @@ public class EspaceAnimateurService {
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
-                .map(parDate::get)
+                .map(consignesByDate::get)
                 .filter(Objects::nonNull)
                 .map(consigne -> new ConsigneEspaceView(
                         consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))

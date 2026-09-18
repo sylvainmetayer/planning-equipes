@@ -76,7 +76,7 @@ public class ConsigneMcpTools {
                     String fermetureFin,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return consignes.preselection(
-                McpArgs.date(date, "date"), McpArgs.heure(fermetureDebut, "fermetureDebut"), heureOuNull(fermetureFin));
+                McpArgs.date(date, "date"), McpArgs.heure(fermetureDebut, "fermetureDebut"), timeOrNull(fermetureFin));
     }
 
     @Tool(
@@ -204,9 +204,9 @@ public class ConsigneMcpTools {
                 id,
                 nom,
                 McpArgs.heure(fermetureDebut, "fermetureDebut"),
-                heureOuNull(fermetureFin),
+                timeOrNull(fermetureFin),
                 motif,
-                fenetresDuJour(fenetres),
+                dayWindows(fenetres),
                 null));
     }
 
@@ -239,10 +239,10 @@ public class ConsigneMcpTools {
         return new Demande(
                 dates(dates),
                 McpArgs.heure(fermetureDebut, "fermetureDebut"),
-                heureOuNull(fermetureFin),
+                timeOrNull(fermetureFin),
                 motif,
                 prereglage,
-                fenetresDuJour(fenetres),
+                dayWindows(fenetres),
                 ouvertures(ouvertures));
     }
 
@@ -259,12 +259,12 @@ public class ConsigneMcpTools {
         return result;
     }
 
-    static LocalTime heureOuNull(String valeur) {
+    static LocalTime timeOrNull(String valeur) {
         return valeur == null || valeur.isBlank() ? null : McpArgs.heure(valeur.trim(), "heure");
     }
 
     /** {@code « 08:00-10:00,18:00- »}: windows of the day, the end omitted for midnight. */
-    static List<Fenetre> fenetresDuJour(String fenetres) {
+    static List<Fenetre> dayWindows(String fenetres) {
         if (fenetres == null || fenetres.isBlank()) {
             return List.of();
         }
@@ -321,7 +321,7 @@ public class ConsigneMcpTools {
                     + " » (attendu HH:MM-HH:MM, ou HH:MM- jusqu'à minuit)");
         }
         LocalTime debut = McpArgs.heure(texte.substring(0, tiret).trim(), champ);
-        LocalTime fin = heureOuNull(texte.substring(tiret + 1));
+        LocalTime fin = timeOrNull(texte.substring(tiret + 1));
         return new Fenetre(debut, fin);
     }
 
