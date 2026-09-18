@@ -114,17 +114,28 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   await fenetre.locator('input[type="time"]').nth(0).fill('18:00');
   await fenetre.locator('input[type="time"]').nth(1).fill('22:00');
 
-  // The stands, read from the server for the date and the band 12h–18h:
-  // both seeded stands lose the whole band and arrive ticked.
+  // The stands, read from the server for the date and the band 12h–18h: the
+  // whole edition's — the reference base carries stands beside the two seeded
+  // ones — with the seeded ones, open all day, losing the whole band and
+  // arriving ticked. What the screen lists is what the API pre-selects.
+  const preselection = (await (
+    await admin.post('/api/consignes/preselection', {
+      data: { date: DATE, fermetureDebut: '12:00', fermetureFin: '18:00' },
+    })
+  ).json()) as { stands: { standId: string; preCoche: boolean }[] };
+  const coches = preselection.stands
+    .filter((stand) => stand.preCoche)
+    .map((stand) => stand.standId);
+  expect(coches).toEqual(expect.arrayContaining([SEED.standDemandeur, SEED.standCible]));
   const stands = dialog.locator('.consigne-stand');
-  await expect(stands).toHaveCount(2);
+  await expect(stands).toHaveCount(preselection.stands.length);
   await expect(dialog).toContainText('Stand E2E un');
   await expect(dialog).toContainText('360 min perdues');
-  await expect(dialog).toContainText('2 coché(s) sur 2');
+  await expect(dialog).toContainText(`${coches.length} coché(s) sur ${preselection.stands.length}`);
 
   await dialog.getByRole('button', { name: 'Aperçu' }).click();
   await expect(dialog).toContainText('Sièges :');
-  await expect(dialog).toContainText('2 stand(s) rouvert(s)');
+  await expect(dialog).toContainText(`${coches.length} stand(s) rouvert(s)`);
 
   await dialog.getByRole('button', { name: 'Enregistrer' }).click();
   await expect(page.getByText('Consigne enregistrée sur 1 date(s).')).toBeVisible();
@@ -140,11 +151,10 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   };
   const consigne = etat.consignes.find((each) => each.date === DATE);
   expect(consigne?.motif).toBe(MOTIF);
-  expect(consigne?.ouvertures.map((ouverture) => ouverture.standId).sort()).toEqual([
-    SEED.standCible,
-    SEED.standDemandeur,
-  ]);
-  expect(consigne?.ouvertures[0].debut).toBe('18:00:00');
+  expect(consigne?.ouvertures.map((ouverture) => ouverture.standId).sort()).toEqual(
+    [...coches].sort(),
+  );
+  expect(consigne?.ouvertures.every((ouverture) => ouverture.debut === '18:00:00')).toBe(true);
 
   // The grid says which date is under consigne.
   await page.goto('/creneaux');
