@@ -2159,6 +2159,7 @@
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 3
@@ -2183,6 +2184,7 @@
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 1800
 .sections.parametresSolveur.mailFinResolution = false
+.sections.prereglagesConsigne = null
 .sections.typologies[0]  9c81268c6308892b
 .sections.typologies[1]  5e61c56178a7c22a
 .sections.typologies[2]  c48919e518530614

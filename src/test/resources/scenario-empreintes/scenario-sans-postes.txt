@@ -18,10 +18,12 @@
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.consignes = null
 .sections.contraintes = null
 .sections.edition = null
 .sections.journeesTypes = null
 .sections.parametresLegaux = null
 .sections.parametresQualite = null
 .sections.parametresSolveur = null
+.sections.prereglagesConsigne = null
 .sections.typologies = (vide)

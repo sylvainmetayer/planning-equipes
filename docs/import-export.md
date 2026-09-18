@@ -55,8 +55,10 @@ Les consignes d'édition en font partie — `consigne_edition`,
 `consigne_edition_creneau` — ainsi que leurs préréglages
 (`prereglage_consigne`, `prereglage_consigne_fenetre`) : elles changent les
 sièges qu'une résolution reçoit, et une restauration sans elles rebâtirait
-une journée nominale que l'organisateur avait fermée. Le scénario YAML, lui,
-n'a pas de section consigne : il décrit les stands nominalement.
+une journée nominale que l'organisateur avait fermée. Le scénario YAML les
+porte aussi, dans ses deux sections `prereglagesConsigne` et `consignes`
+(voir [plus bas](#consignes-et-préréglages)) — ses stands restent décrits
+nominalement, la consigne est une couche à part.
 
 L'export cloisonné par édition existe sous une autre forme : l'export de
 scénario YAML.
@@ -79,7 +81,10 @@ Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personne
   qui les référençaient par leur id de fichier sont réassociées ;
 - affectations et contraintes ad hoc de l'édition sont supprimées — ces
   dernières ne sont réécrites que si le fichier porte la section
-  `contraintesAdHoc`.
+  `contraintesAdHoc` ;
+- consignes et préréglages de consigne sont **remplacés** si le fichier porte
+  la section correspondante (`consignes`, `prereglagesConsigne`), et laissés
+  tels quels sinon.
 
 Une section `edition: { id, nom? }` route l'import vers une autre édition, créée
 vide au besoin. La réponse dit toujours où les données ont atterri : l'opérateur
@@ -90,7 +95,7 @@ peut consulter une édition différente de celle qui vient d'être écrite.
 « Exporter les données actuelles en scénario » écrit **toutes** les sections que
 l'import sait relire — pas seulement les entités, mais aussi `typologies`,
 `emplacements`, `parametresLegaux`, `parametresSolveur`, `journeesTypes`,
-`contraintes` et `contraintesAdHoc`.
+`contraintes`, `contraintesAdHoc`, `prereglagesConsigne` et `consignes`.
 
 C'est la raison d'être de l'export : **réimporter le fichier reproduit
 exactement le même problème**. Un champ oublié dans la section n'est pas « non
@@ -226,6 +231,83 @@ types disent. Absente, l'import **reconnaît** les journées types que les
 créneaux impliquent, pour qu'une édition importée se lise comme une édition
 tapée ([ADR 0032](decisions/0032-journees-types-nommees-vacations-fixes.md)).
 L'export écrit la section dès qu'une journée type existe.
+
+## Consignes et préréglages
+
+Deux sections optionnelles portent ce qu'un arrêté a imposé à l'édition
+([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)) :
+`prereglagesConsigne`, la liste des préréglages nommés (bande, motif,
+fenêtres de compensation par défaut, fenêtres repas éventuelles), et
+`consignes`, **une entrée par date** — bande interdite, motif, nom du
+préréglage d'origine, fenêtres par défaut, ouvertures stand par stand avec
+leur effectif, créneaux ajoutés, et le bloc `repas` quand la date roule sous
+d'autres fenêtres repas que l'édition. L'export les écrit dès qu'il y en a ;
+le bloc `repas` n'est écrit que lorsqu'il surcharge quelque chose, et sa
+`justification` est alors obligatoire, à la lecture comme à la saisie.
+
+```yaml
+prereglagesConsigne:
+  - id: 4f1c…
+    nom: Plan canicule
+    fermetureDebut: '12:00'
+    fermetureFin: '16:00'
+    motif: Arrêté préfectoral canicule
+    fenetres:
+      - debut: '18:00'
+        fin: '20:00'
+consignes:
+  - date: '2033-07-08'
+    fermetureDebut: '12:00'
+    fermetureFin: '16:00'
+    motif: Arrêté préfectoral canicule
+    prereglage: Plan canicule
+    fenetres:
+      - debut: '18:00'
+        fin: '20:00'
+    ouvertures:
+      - standId: STAND-A
+        debut: '18:00'
+        fin: '20:00'
+        effectif: 2
+    creneauxAjoutes:
+      - date: '2033-07-08'
+        heureDebut: '18:00'
+        heureFin: '20:00'
+    repas:
+      soirDebut: '18:00'
+      soirFin: '22:00'
+      justification: Repas pris pendant la bande fermée
+```
+
+**Les créneaux ajoutés voyagent par clé naturelle.** Une consigne sait quels
+créneaux elle a ajoutés à la grille, et cette liste est une liste d'ids en
+base ; or les ids de `creneaux` ne survivent pas à un export — l'import
+renumérote la section. Le créneau lui-même sort **tel quel sous `creneaux`**,
+comme n'importe quel autre ; `creneauxAjoutes` le désigne par **date, heure de
+début et heure de fin**, et l'import rattache la consigne au créneau qu'il
+vient d'écrire sous cette clé. Une clé qui ne désigne aucun créneau du
+fichier est refusée, comme une ouverture sur un stand que le fichier ne
+déclare pas. Un créneau ajouté qu'aucun stand n'ouvre nominalement — le cas
+normal : une soirée que seule la consigne ouvre — n'aurait aucun siège, et
+l'import du planning l'aurait laissé tomber ; la consigne le recrée alors,
+comme elle l'avait créé la première fois.
+
+**L'import écrit directement dans le référentiel**, après les stands et les
+créneaux (les ouvertures nomment des stands, les créneaux ajoutés des
+créneaux), et jamais par le geste de l'écran Consignes : celui-ci refuse une
+date passée ou en cours et ajoute lui-même les créneaux que ses fenêtres
+exigent, deux choses qu'un fichier a déjà tranchées. Une consigne sur une
+date passée s'importe donc — les statistiques d'une journée sont celles de ce
+qui a été fait. Un préréglage écrit à la main peut omettre son `id` ; l'import
+en tire un. Chacune des deux sections, présente, **remplace** l'existant de
+l'édition ; absente, elle le laisse en place — la règle de tous les
+référentiels du fichier.
+
+**Un scénario résolu depuis son fichier ne les applique pas.** La couche
+consigne est posée par `StandService.resolve` sur le référentiel ; un
+scénario chargé directement depuis `src/main/resources/scenarios/` (écran
+Débogage, `buildExample`) est résolu sur sa grille nominale. Les consignes
+d'un fichier prennent effet une fois le fichier **importé**.
 
 ## Import CSV des référentiels
 

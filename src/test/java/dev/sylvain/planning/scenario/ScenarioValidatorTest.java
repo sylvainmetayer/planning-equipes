@@ -174,4 +174,43 @@ class ScenarioValidatorTest {
     private static Stream<Path> scenariosLivres() throws IOException {
         return ScenariosLivres.all().stream();
     }
+    /**
+     * The consigne sections (ADR 0043) are checked like the rest: a band that
+     * starts, a motif, and a reason as soon as the meal windows are restated.
+     * What only the whole file can tell — a stand or a créneau the section
+     * names — is the import's to refuse, like every other cross-reference.
+     */
+    @Test
+    void aConsigneWithoutABandStartOrAMotifIsReported() throws IOException {
+        String consigne = """
+                consignes:
+                  - date: 2026-07-08
+                    fermetureDebut: "12:00"
+                    motif: Orage
+                    repas:
+                      soirDebut: "18:00"
+                      soirFin: "22:00"
+                      justification: Repas pris pendant la bande
+                """;
+        assertThat(ScenarioValidator.validate(MINIMAL + consigne)).isEmpty();
+
+        assertThat(ScenarioValidator.validate(MINIMAL + consigne.replace("    fermetureDebut: \"12:00\"\n", "")))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("consignes[0].fermetureDebut:"));
+        assertThat(ScenarioValidator.validate(MINIMAL + consigne.replace("    motif: Orage\n", "")))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("consignes[0].motif:"));
+        assertThat(ScenarioValidator.validate(
+                        MINIMAL + consigne.replace("      justification: Repas pris pendant la bande\n", "")))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("consignes[0].repas.justification:"));
+    }
+
+    @Test
+    void aPresetWithoutANameIsReported() throws IOException {
+        String prereglage = """
+                prereglagesConsigne:
+                  - fermetureDebut: "12:00"
+                    motif: Orage
+                """;
+        assertThat(ScenarioValidator.validate(MINIMAL + prereglage))
+                .anySatisfy(erreur -> assertThat(erreur).startsWith("prereglagesConsigne[0].nom:"));
+    }
 }

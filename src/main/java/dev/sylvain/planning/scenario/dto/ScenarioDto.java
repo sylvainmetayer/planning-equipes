@@ -34,4 +34,9 @@ public record ScenarioDto(
         // Absent: ScenarioDomainMapper generates the postes itself from
         // stands x creneaux (mirroring buildFromReferenceData).
         List<@Valid PosteDto> postes,
-        List<@Valid ContrainteAdHocDto> contraintesAdHoc) {}
+        List<@Valid ContrainteAdHocDto> contraintesAdHoc,
+        // The two consigne sections (ADR 0043) close the file: the presets, then
+        // the dated consignes, whose openings and added créneaux name entries of
+        // the sections above.
+        List<@Valid PrereglageConsigneDto> prereglagesConsigne,
+        List<@Valid ConsigneDto> consignes) {}

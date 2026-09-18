@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -13,22 +14,29 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.dto.AnimateurDto;
+import dev.sylvain.planning.scenario.dto.ConsigneDto;
 import dev.sylvain.planning.scenario.dto.ContrainteAdHocDto;
 import dev.sylvain.planning.scenario.dto.ContraintesDto;
+import dev.sylvain.planning.scenario.dto.CreneauAjouteDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.EmplacementDto;
+import dev.sylvain.planning.scenario.dto.FenetreConsigneDto;
 import dev.sylvain.planning.scenario.dto.FenetreHoraireDto;
 import dev.sylvain.planning.scenario.dto.FestivalDto;
 import dev.sylvain.planning.scenario.dto.HoraireStandDto;
 import dev.sylvain.planning.scenario.dto.IndisponibiliteStandDto;
 import dev.sylvain.planning.scenario.dto.JourneeTypeDto;
+import dev.sylvain.planning.scenario.dto.OuvertureConsigneDto;
 import dev.sylvain.planning.scenario.dto.OuvertureStandDto;
 import dev.sylvain.planning.scenario.dto.ParametresLegauxDto;
 import dev.sylvain.planning.scenario.dto.ParametresQualiteDto;
 import dev.sylvain.planning.scenario.dto.ParametresSolveurDto;
 import dev.sylvain.planning.scenario.dto.PosteDto;
+import dev.sylvain.planning.scenario.dto.PrereglageConsigneDto;
+import dev.sylvain.planning.scenario.dto.RepasConsigneDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.StandDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
@@ -86,7 +94,9 @@ final class ScenarioDtoAssembler {
                 stands(export.stands()),
                 animateurs(export.animateurs()),
                 export.postes() == null ? null : postes(export.postes()),
-                nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)));
+                nullWhenEmpty(contraintesAdHoc(export.contraintesAdHoc(), creneaux)),
+                nullWhenEmpty(prereglagesConsigne(export.prereglagesConsigne())),
+                nullWhenEmpty(consignes(export.consignes(), creneaux)));
     }
 
     private static <T> List<T> nullWhenEmpty(List<T> liste) {
@@ -379,5 +389,74 @@ final class ScenarioDtoAssembler {
                         parametres.getCoupureRepasSoirDebut(),
                         parametres.getCoupureRepasSoirFin(),
                         parametres.getHeureDebutSoiree());
+    }
+    /**
+     * The consignes (ADR 0043), one per date. The créneaux a consigne added are
+     * written by day and hours — the natural key of a créneau, the only one
+     * that survives the re-numbering of {@code creneaux:} on import — and an
+     * id the export does not carry is dropped rather than written blind, as
+     * an ad hoc constraint's is.
+     */
+    private static List<ConsigneDto> consignes(List<ConsigneEdition> consignes, List<Creneau> creneaux) {
+        if (consignes == null) {
+            return List.of();
+        }
+        Map<Long, Creneau> creneauxParId = new LinkedHashMap<>();
+        creneaux.forEach(creneau -> creneauxParId.put(creneau.getId(), creneau));
+        return consignes.stream()
+                .map(consigne -> new ConsigneDto(
+                        consigne.date(),
+                        consigne.fermetureDebut(),
+                        consigne.fermetureFin(),
+                        consigne.motif(),
+                        consigne.prereglage(),
+                        fenetresConsigne(consigne.fenetres()),
+                        consigne.ouvertures().stream()
+                                .map(ouverture -> new OuvertureConsigneDto(
+                                        ouverture.standId(), ouverture.debut(), ouverture.fin(), ouverture.effectif()))
+                                .toList(),
+                        consigne.creneauxAjoutes().stream()
+                                .map(creneauxParId::get)
+                                .filter(Objects::nonNull)
+                                .map(creneau -> new CreneauAjouteDto(
+                                        creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()))
+                                .toList(),
+                        repas(consigne.repas())))
+                .toList();
+    }
+
+    private static List<PrereglageConsigneDto> prereglagesConsigne(List<PrereglageConsigne> prereglages) {
+        if (prereglages == null) {
+            return List.of();
+        }
+        return prereglages.stream()
+                .map(prereglage -> new PrereglageConsigneDto(
+                        prereglage.id(),
+                        prereglage.nom(),
+                        prereglage.fermetureDebut(),
+                        prereglage.fermetureFin(),
+                        prereglage.motif(),
+                        fenetresConsigne(prereglage.fenetres()),
+                        repas(prereglage.repas())))
+                .toList();
+    }
+
+    private static List<FenetreConsigneDto> fenetresConsigne(List<ConsigneEdition.Fenetre> fenetres) {
+        return fenetres.stream()
+                .map(fenetre -> new FenetreConsigneDto(fenetre.debut(), fenetre.fin()))
+                .toList();
+    }
+
+    /** Absent rather than an empty block: a consigne that restates nothing runs under the edition's windows. */
+    private static RepasConsigneDto repas(ConsigneEdition.RepasConsigne repas) {
+        return repas == null || !repas.surcharge()
+                ? null
+                : new RepasConsigneDto(
+                        repas.midiDebut(),
+                        repas.midiFin(),
+                        repas.soirDebut(),
+                        repas.soirFin(),
+                        repas.coupureMinutes(),
+                        repas.justification());
     }
 }

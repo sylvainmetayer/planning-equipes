@@ -3068,6 +3068,7 @@
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)
+.sections.consignes = null
 .sections.contraintes.activees = (vide)
 .sections.contraintes.desactivees = (vide)
 .sections.contraintes.poids{appreciationIncompatible} = 3
@@ -3091,4 +3092,5 @@
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 480
 .sections.parametresSolveur.mailFinResolution = false
+.sections.prereglagesConsigne = null
 .sections.typologies = (vide)

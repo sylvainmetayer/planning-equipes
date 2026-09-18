@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -12,6 +13,7 @@ import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
@@ -431,6 +433,16 @@ public class ReferenceDataService implements ReferenceData {
     @Override
     public List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes() {
         return journeesTypes.calendrier();
+    }
+
+    @Override
+    public List<ConsigneEdition> listConsignes() {
+        return consignes.list();
+    }
+
+    @Override
+    public List<PrereglageConsigne> listPrereglagesConsigne() {
+        return consignes.listPrereglages();
     }
 
     public JourneeType createJourneeType(JourneeType journeeType) {

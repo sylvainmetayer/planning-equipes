@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.scenario;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -9,6 +10,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.scenario.ScenarioYaml;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation;
@@ -55,6 +57,10 @@ public final class ScenarioYamlWriter {
      *               {@code null}: the import regenerates the seats from the
      *               stands and créneaux (see {@link PlanningService#exportScenarioYaml()}).
      *               Only tests write one, to exercise how a pinned list reads back
+     * @param consignes the edition's consignes (ADR 0043), written with the
+     *               créneaux they added named by day and hours — the ids of
+     *               {@code creneaux} do not survive the file, the key does
+     * @param prereglagesConsigne the presets those consignes are made from
      */
     public record ScenarioExport(
             List<Animateur> animateurs,
@@ -70,7 +76,44 @@ public final class ScenarioYamlWriter {
             Map<String, Integer> poidsContraintes,
             List<ContrainteAdHoc> contraintesAdHoc,
             List<JourneeType> journeesTypes,
-            List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes) {
+            List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes,
+            List<ConsigneEdition> consignes,
+            List<PrereglageConsigne> prereglagesConsigne) {
+
+        /** Without consignes — the tests that predate them, and an edition that has none. */
+        public ScenarioExport(
+                List<Animateur> animateurs,
+                List<Stand> stands,
+                List<Creneau> creneaux,
+                List<PosteAffectation> postes,
+                List<TypologieItem> typologies,
+                List<Emplacement> emplacements,
+                ParametresLegaux parametresLegaux,
+                ParametresQualite parametresQualite,
+                ParametresSolveur parametresSolveur,
+                Map<String, Boolean> etatsContraintes,
+                Map<String, Integer> poidsContraintes,
+                List<ContrainteAdHoc> contraintesAdHoc,
+                List<JourneeType> journeesTypes,
+                List<JourneesTypesMaterialisation.Affectation> calendrierJourneesTypes) {
+            this(
+                    animateurs,
+                    stands,
+                    creneaux,
+                    postes,
+                    typologies,
+                    emplacements,
+                    parametresLegaux,
+                    parametresQualite,
+                    parametresSolveur,
+                    etatsContraintes,
+                    poidsContraintes,
+                    contraintesAdHoc,
+                    journeesTypes,
+                    calendrierJourneesTypes,
+                    List.of(),
+                    List.of());
+        }
 
         /** Without day templates — the tests that predate them, and an edition that has none. */
         public ScenarioExport(
