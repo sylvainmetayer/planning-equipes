@@ -131,7 +131,7 @@ jobs:
       - name: Scanner les sources
         env:
           # renovate: datasource=docker depName=semgrep/semgrep
-          SEMGREP_IMAGE: semgrep/semgrep:1.174.0
+          SEMGREP_IMAGE: semgrep/semgrep:1.177.0
         run: |
           docker run --rm \
             --volume "$PWD:/src:ro" \
