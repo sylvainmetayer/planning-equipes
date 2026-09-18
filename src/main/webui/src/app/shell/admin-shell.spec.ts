@@ -9,7 +9,7 @@
 
 import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { BreakpointObserver } from '@angular/cdk/layout';
-import { provideZonelessChangeDetection, Signal, WritableSignal } from '@angular/core';
+import { provideZonelessChangeDetection, Signal, WritableSignal, signal } from '@angular/core';
 import { BRANDING, BRANDING_NEUTRE } from '../core/branding';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
@@ -24,6 +24,7 @@ import { EditionStore } from '../core/edition.store';
 import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { SolverJobService } from '../core/solver-job.service';
+import { UpdateCheckService } from '../core/update-check.service';
 import { AdminShell } from './admin-shell';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
@@ -78,6 +79,7 @@ describe('AdminShell', () => {
   const snackBar = { dismiss: vi.fn() };
   const api = { get: vi.fn() };
   const adminApi = { logout: vi.fn() };
+  const updates = { available: signal(null), check: vi.fn() };
   /**
    * Handlers the shell registers, by job type. Keyed rather than collapsed into
    * one: the shell used to subscribe to `SOLVE` alone, and a type-blind double
@@ -146,6 +148,9 @@ describe('AdminShell', () => {
         { provide: MatSnackBar, useValue: snackBar },
         { provide: ApiService, useValue: api },
         { provide: AdminApi, useValue: adminApi },
+        // The shell renders `UpdateAvailableIndicator`, which would otherwise
+        // ask GitHub whether a newer release exists on a tagged build.
+        { provide: UpdateCheckService, useValue: updates },
         // A mascot is configured by default here: the Konami easter egg only
         // exists on a deployment that has one, and most of these tests are
         // about the sequence, not about the brand.
@@ -614,6 +619,7 @@ describe('AdminShell', () => {
           { provide: MatSnackBar, useValue: snackBar },
           { provide: ApiService, useValue: api },
           { provide: AdminApi, useValue: adminApi },
+          { provide: UpdateCheckService, useValue: updates },
           { provide: BRANDING, useValue: BRANDING_NEUTRE },
         ],
       });

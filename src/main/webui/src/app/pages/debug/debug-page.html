@@ -74,7 +74,7 @@
     </div>
     <p class="debug-version">
       <ng-container i18n="@@debug.version">Version :</ng-container>
-      <a [href]="repoUrl + '/commit/' + appVersion" target="_blank" rel="noopener">{{ appVersion }}</a>
+      <a [href]="appVersionUrl" target="_blank" rel="noopener">{{ appVersion }}</a>
       (<a [href]="repoUrl" target="_blank" rel="noopener" i18n="@@debug.repoLink">dépôt GitHub</a>)
     </p>
     @if (loading()) {

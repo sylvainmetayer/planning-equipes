@@ -3,13 +3,15 @@
 // The version used to live on `/debug` alone — a screen an animateur never
 // opens. What matters here is that the footer says the version in clear text
 // (a bug report has to be able to quote it), that it links to that exact
-// commit, and that the link leaks nothing: the espace animateur's URL carries
-// the access token, so `noreferrer` is not decoration.
+// revision — the release page of a tag, the commit of a SHA — and that the
+// link leaks nothing: the espace animateur's URL carries the access token, so
+// `noreferrer` is not decoration.
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { describe, expect, it } from 'vitest';
-import { APP_VERSION, REPO_URL } from '../version';
+import { versionUrl } from '../core/version-link';
+import { APP_VERSION } from '../version';
 import { VersionFooter } from './version-footer';
 
 function rendre() {
@@ -30,7 +32,10 @@ describe('VersionFooter', () => {
     const fixture = rendre();
 
     const lien = fixture.nativeElement.querySelector('a') as HTMLAnchorElement;
-    expect(lien.getAttribute('href')).toBe(`${REPO_URL}/commit/${APP_VERSION}`);
+    // `APP_VERSION` is whatever the build sits on — a tag on a release, a SHA
+    // anywhere else — so the expectation goes through the same resolution the
+    // footer uses; `version-link.spec.ts` pins what that resolution does.
+    expect(lien.getAttribute('href')).toBe(versionUrl(APP_VERSION));
   });
 
   it('ouvre le dépôt sans emporter l’adresse de la page', () => {
