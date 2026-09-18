@@ -18,6 +18,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * Builds the problem a solve runs on, out of the edition's reference data:
@@ -44,9 +45,25 @@ public final class ProblemBuilder {
      */
     private final PlanningPersistenceService persistence;
 
+    /**
+     * The moment the past is judged against (ADR 0044), read when a problem
+     * is built: {@code null} when the freeze is off. A supplier rather than a
+     * value because it is the server's clock at build time — a queued job
+     * builds its problem when its turn comes, not at the click.
+     */
+    private final Supplier<FrozenPast.Horizon> horizon;
+
     ProblemBuilder(ReferenceData referenceDataService, PlanningPersistenceService persistence) {
+        this(referenceDataService, persistence, () -> null);
+    }
+
+    ProblemBuilder(
+            ReferenceData referenceDataService,
+            PlanningPersistenceService persistence,
+            Supplier<FrozenPast.Horizon> horizon) {
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
+        this.horizon = horizon;
     }
 
     /**
@@ -122,6 +139,7 @@ public final class ProblemBuilder {
         } else if (!verrouillages.isEmpty()) {
             applyVerrouillages(postes, animateurs, verrouillages, planPersiste);
         }
+        freezePast(postes, animateurs, planPersiste);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -135,9 +153,51 @@ public final class ProblemBuilder {
         return evenement;
     }
 
-    /** How much of an incremental problem is frozen versus re-opened (issue #86). */
+    /**
+     * « Le passé est figé » (ADR 0044), on a problem built from the
+     * referential: every seat of a timeslot already started is re-seeded from
+     * the persisted plan and pinned, after the locks and before any warm
+     * start. The persisted plan is read here when the caller did not hand one
+     * over — a cold start ({@link Reamorcage#AUCUN}) ignores it for the
+     * future, never for the past.
+     */
+    private void freezePast(
+            List<PosteAffectation> postes, List<Animateur> animateurs, Map<String, List<String>> planPersiste) {
+        FrozenPast.Horizon moment = horizon.get();
+        if (moment == null) {
+            return;
+        }
+        Map<String, List<String>> plan = planPersiste != null && !planPersiste.isEmpty()
+                ? planPersiste
+                : persistence == null ? Map.of() : persistence.loadAnimateursByStandCreneau();
+        FrozenPast.freeze(postes, animateurs, plan, moment);
+    }
+
+    private static int countPast(List<PosteAffectation> postes) {
+        int passes = 0;
+        for (PosteAffectation poste : postes) {
+            if (poste.isPasse()) {
+                passes++;
+            }
+        }
+        return passes;
+    }
+
+    /**
+     * How much of an incremental problem is frozen versus re-opened (issue #86).
+     *
+     * @param postesPasses seats of timeslots already started, re-seeded from
+     *                     the persisted plan and pinned whatever their state
+     *                     (ADR 0044); counted apart from {@code postesFiges},
+     *                     which stays the seats frozen because still valid
+     */
     public record StatistiquesIncremental(
-            int postesTotal, int postesFiges, int postesLiberes, int postesLiberesManuellement, int postesNouveaux) {}
+            int postesTotal,
+            int postesFiges,
+            int postesLiberes,
+            int postesLiberesManuellement,
+            int postesNouveaux,
+            int postesPasses) {}
 
     /**
      * An incremental re-solve problem: the planning to hand to the solver, how
@@ -160,9 +220,16 @@ public final class ProblemBuilder {
      * @param postesLiberes    seats the persisted plan staffed but that had to
      *                         start empty: the animateur is gone, or has since
      *                         declared that day off
+     * @param postesPasses     seats of timeslots already started, re-seeded
+     *                         from the persisted plan and pinned (ADR 0044);
+     *                         0 when the freeze is off or the event is ahead
      */
     public record ProblemeReamorce(
-            PlanningEvenement planning, Reamorcage reamorcage, int postesReamorces, int postesLiberes) {}
+            PlanningEvenement planning,
+            Reamorcage reamorcage,
+            int postesReamorces,
+            int postesLiberes,
+            int postesPasses) {}
 
     /**
      * The problem of a full solve, started from the persisted plan when
@@ -194,12 +261,13 @@ public final class ProblemBuilder {
                     + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
+        int postesPasses = countPast(planning.getPostes());
         if (affectationsPrecedentes.isEmpty()) {
-            return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0);
+            return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0, postesPasses);
         }
         int[] bilan = reamorcerDepuisAffectations(
                 planning.getPostes(), animateurs, affectationsPrecedentes, planning.getContraintesAdHoc());
-        return new ProblemeReamorce(planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1]);
+        return new ProblemeReamorce(planning, Reamorcage.PLAN_COURANT, bilan[0], bilan[1], postesPasses);
     }
 
     /**
@@ -300,7 +368,8 @@ public final class ProblemBuilder {
                 animateurs,
                 affectationsPrecedentes,
                 scope == null ? ReplanificationScope.automatic() : scope,
-                contraintesAdHoc);
+                contraintesAdHoc,
+                horizon.get());
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -337,6 +406,25 @@ public final class ProblemBuilder {
             Map<String, List<String>> animateursPersistes,
             ReplanificationScope scope,
             List<ContrainteAdHoc> contraintesAdHoc) {
+        return figerPostesIncremental(postes, animateurs, animateursPersistes, scope, contraintesAdHoc, null);
+    }
+
+    /**
+     * Same, under a horizon (ADR 0044): a seat of a timeslot already started
+     * is settled <b>before</b> any of the rules above — marked past, re-seeded
+     * with whoever the persisted plan gave it (kept even if since declared
+     * unavailable, {@code null} if deleted) and pinned. It is neither
+     * « freed because invalid » nor re-opened by the perimeter, and it counts
+     * in {@code postesPasses} rather than in any other figure. A {@code null}
+     * horizon is the freeze switched off.
+     */
+    static StatistiquesIncremental figerPostesIncremental(
+            List<PosteAffectation> postes,
+            List<Animateur> animateurs,
+            Map<String, List<String>> animateursPersistes,
+            ReplanificationScope scope,
+            List<ContrainteAdHoc> contraintesAdHoc,
+            FrozenPast.Horizon horizon) {
         Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
             animateursById.put(animateur.getId(), animateur);
@@ -353,6 +441,7 @@ public final class ProblemBuilder {
         int liberes = 0;
         int liberesManuellement = 0;
         int nouveaux = 0;
+        int passes = 0;
         for (PosteAffectation poste : postes) {
             if (poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
@@ -362,6 +451,15 @@ public final class ProblemBuilder {
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
             int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
             String tenantId = place < tenants.size() ? tenants.get(place) : null;
+            if (FrozenPast.isPast(poste, horizon)) {
+                // History: whoever sat there sat there, and nobody can be
+                // seated there now — pinned even when empty.
+                poste.setPasse(true);
+                poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
+                poste.setVerrouille(true);
+                passes++;
+                continue;
+            }
             if (tenantId == null) {
                 nouveaux++;
                 continue;
@@ -384,7 +482,7 @@ public final class ProblemBuilder {
             poste.setVerrouille(true);
             figes++;
         }
-        return new StatistiquesIncremental(postes.size(), figes, liberes, liberesManuellement, nouveaux);
+        return new StatistiquesIncremental(postes.size(), figes, liberes, liberesManuellement, nouveaux, passes);
     }
 
     private static boolean indisponible(Animateur animateur, PosteAffectation poste) {

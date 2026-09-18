@@ -48,9 +48,15 @@ public record ReplanificationScope(Set<String> animateurIds, Set<LocalDate> jour
      * animateur the persisted plan gave it. A seat matches on any of the three
      * axes — they are a union, not an intersection: "cette journée" and "ce
      * stand" are two independent ways of saying what to redo.
+     *
+     * <p><b>Never a past seat</b> (ADR 0044): « refais la journée d'hier » is
+     * not something a solve can do, and a perimeter naming a day already
+     * worked re-opens only what is still ahead of it. The incremental
+     * reconciliation settles the past before asking the perimeter; the guard
+     * here is what keeps that true for any other caller.</p>
      */
     public boolean release(PosteAffectation poste, String tenantId) {
-        if (hasNoTarget()) {
+        if (hasNoTarget() || poste.isPasse()) {
             return false;
         }
         if (tenantId != null && animateurIds.contains(tenantId)) {

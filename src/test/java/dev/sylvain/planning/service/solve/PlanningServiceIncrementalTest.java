@@ -66,7 +66,7 @@ class PlanningServiceIncrementalTest {
         assertThat(postes.get(0).isVerrouille()).isTrue();
         assertThat(postes.get(1).getAnimateur()).isEqualTo(bob);
         assertThat(postes.get(1).isVerrouille()).isTrue();
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 2, 0, 0, 0));
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 2, 0, 0, 0, 0));
     }
 
     @Test
@@ -88,7 +88,7 @@ class PlanningServiceIncrementalTest {
         // The other day is untouched: only what the change invalidated re-opens.
         assertThat(postes.get(1).getAnimateur()).isEqualTo(alice);
         assertThat(postes.get(1).isVerrouille()).isTrue();
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 1, 0, 0));
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 1, 0, 0, 0));
     }
 
     @Test
@@ -122,7 +122,7 @@ class PlanningServiceIncrementalTest {
 
         assertThat(postes.get(1).getAnimateur()).isNull();
         assertThat(postes.get(2).getAnimateur()).isNull();
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(3, 1, 0, 0, 2));
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(3, 1, 0, 0, 2, 0));
     }
 
     @Test
@@ -141,7 +141,7 @@ class PlanningServiceIncrementalTest {
         // the operator saying "elle se désiste, refais-le".
         assertThat(byAnimateur.get(0).getAnimateur()).isNull();
         assertThat(byAnimateur.get(1).getAnimateur()).isEqualTo(bob);
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 0, 1, 0));
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 0, 1, 0, 0));
 
         List<PosteAffectation> parJour = List.of(poste("p0", standA, matinJ1), poste("p1", standA, matinJ2));
         ProblemBuilder.figerPostesIncremental(
@@ -183,7 +183,7 @@ class PlanningServiceIncrementalTest {
 
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(1).getAnimateur()).isEqualTo(alice);
-        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 1, 0, 0));
+        assertThat(stats).isEqualTo(new StatistiquesIncremental(2, 1, 1, 0, 0, 0));
     }
 
     @Test

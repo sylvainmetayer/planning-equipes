@@ -8,16 +8,19 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.scenario.ScenarioYamlReader;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.eclipse.microprofile.config.Config;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
@@ -53,6 +56,43 @@ public class PlanningService {
     /** The published plan, for {@code stabiliteDuPlanPublie}; null in a plain-Java harness like the persistence above. */
     private final PlanSnapshotService snapshotService;
 
+    /**
+     * The plain-Java constructor: no clock, so the past is never frozen — the
+     * scenario harnesses solve fixtures dated wherever the file says, and a
+     * freeze read off the machine's date would turn last year's fixture into
+     * a plan nothing may touch.
+     */
+    public PlanningService(
+            Long secondsLimit,
+            Long unimprovedSecondsLimit,
+            Integer maxEmplacementsParJour,
+            ReferenceData referenceDataService,
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            PlanningPersistenceService planningPersistenceService,
+            PlanSnapshotService snapshotService,
+            Config config) {
+        this(
+                secondsLimit,
+                unimprovedSecondsLimit,
+                maxEmplacementsParJour,
+                referenceDataService,
+                feasibilityAnalyzer,
+                planningPersistenceService,
+                snapshotService,
+                config,
+                null,
+                false);
+    }
+
+    /**
+     * @param jourJClock the server's notion of today (ADR 0044): the machine's
+     *                   clock in production, the date frozen from the Débogage
+     *                   screen where the simulated clock is allowed
+     * @param passeFige  {@code planning.solver.passe-fige} — the kill-switch
+     *                   of the freeze, off under {@code %test} so the fixtures
+     *                   dated in the past keep solving
+     */
+    @Inject
     public PlanningService(
             @ConfigProperty(name = "planning.solver.seconds-limit", defaultValue = "120") Long secondsLimit,
             @ConfigProperty(name = "planning.solver.unimproved-seconds-limit", defaultValue = "30")
@@ -65,14 +105,21 @@ public class PlanningService {
             FeasibilityAnalyzer feasibilityAnalyzer,
             PlanningPersistenceService planningPersistenceService,
             PlanSnapshotService snapshotService,
-            Config config) {
+            Config config,
+            JourJClock jourJClock,
+            @ConfigProperty(name = "planning.solver.passe-fige", defaultValue = "true") boolean passeFige) {
         this.solverConfiguration = new SolverConfiguration(
                 secondsLimit, unimprovedSecondsLimit, maxEmplacementsParJour, referenceDataService, config);
         this.referenceDataService = referenceDataService;
         this.planningPersistenceService = planningPersistenceService;
         this.snapshotService = snapshotService;
-        this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService);
-        this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService);
+        // Read at each build, never cached: a queued job builds its problem
+        // when its turn comes, and a frozen date set meanwhile must be seen.
+        Supplier<FrozenPast.Horizon> horizon = passeFige && jourJClock != null
+                ? () -> new FrozenPast.Horizon(jourJClock.today(), jourJClock.now())
+                : () -> null;
+        this.solveRunner = new SolveRunner(solverConfiguration, referenceDataService, snapshotService, horizon);
+        this.problemBuilder = new ProblemBuilder(referenceDataService, planningPersistenceService, horizon);
         this.whatIf = new PlanningWhatIf(
                 solverConfiguration.diagnosticService(),
                 referenceDataService,

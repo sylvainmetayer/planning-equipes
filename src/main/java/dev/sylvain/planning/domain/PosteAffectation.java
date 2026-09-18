@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.domain.common.PlanningId;
 import ai.timefold.solver.core.api.domain.entity.PlanningEntity;
 import ai.timefold.solver.core.api.domain.entity.PlanningPin;
 import ai.timefold.solver.core.api.domain.variable.PlanningVariable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import dev.sylvain.planning.solver.PosteAffectationDifficultyComparatorFactory;
 import java.time.LocalTime;
 
@@ -49,6 +50,24 @@ public class PosteAffectation {
      */
     @PlanningPin
     private boolean verrouille;
+
+    /**
+     * Seat of a timeslot already started when the problem was built — « le
+     * passé est figé » (ADR 0044). A plain fact, never a planning variable:
+     * set by {@code FrozenPast} at problem-building time from the server's
+     * clock, never by the solver, and never read from a caller's JSON — what
+     * the server's clock says is not the client's to decide, hence the
+     * {@link JsonIgnore}.
+     *
+     * <p>A past seat is <b>also</b> pinned ({@link #verrouille}), so no move
+     * touches it; {@link #verrouille} stays what the locks and the
+     * incremental freeze set. This flag is the other half: the constraint
+     * streams read it to <em>count</em> a past seat — what somebody worked
+     * yesterday conditions what they may do tomorrow — without ever
+     * <em>reproaching</em> it: a violation involving only past seats is
+     * history, not something a solve can fix.</p>
+     */
+    private boolean passe;
 
     public PosteAffectation() {}
 
@@ -96,6 +115,17 @@ public class PosteAffectation {
 
     public void setVerrouille(boolean verrouille) {
         this.verrouille = verrouille;
+    }
+
+    /** Whether this seat's timeslot had already started when the problem was built. */
+    @JsonIgnore
+    public boolean isPasse() {
+        return passe;
+    }
+
+    @JsonIgnore
+    public void setPasse(boolean passe) {
+        this.passe = passe;
     }
 
     public LocalTime getHeureDebutEffective() {

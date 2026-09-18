@@ -210,8 +210,12 @@ public class SolverJobService {
      *
      * @param postesLiberes seats the persisted plan staffed but that had to
      *                      start empty (animateur gone, or since unavailable)
+     * @param postesPasses  seats of timeslots already started, re-seeded from
+     *                      the persisted plan and pinned whatever the mode
+     *                      (ADR 0044); 0 when the freeze is off or the event
+     *                      is still ahead
      */
-    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes) {}
+    public record ReamorcageEffectue(Reamorcage mode, int postes, int postesLiberes, int postesPasses) {}
 
     /**
      * Full solve whose problem is built <b>inside the job</b>, from the
