@@ -114,18 +114,41 @@ describe('ReferenceUsageService', () => {
 
   describe('phraseUsages', () => {
     it("dit explicitement qu'aucune référence n'existe", () => {
-      const phrase = phraseUsages({ affectations: 0, contraintesAdHoc: 0, verrouillages: 0 });
+      const phrase = phraseUsages({
+        affectations: 0,
+        contraintesAdHoc: 0,
+        verrouillages: 0,
+        consignes: 0,
+      });
 
       expect(phrase).not.toBe('');
       expect(phrase).not.toContain('0');
     });
 
     it('énonce les trois compteurs, y compris ceux restés à zéro', () => {
-      const phrase = phraseUsages({ affectations: 7, contraintesAdHoc: 0, verrouillages: 2 });
+      const phrase = phraseUsages({
+        affectations: 7,
+        contraintesAdHoc: 0,
+        verrouillages: 2,
+        consignes: 0,
+      });
 
       expect(phrase).toContain('7');
       expect(phrase).toContain('0');
       expect(phrase).toContain('2');
+      expect(phrase).not.toContain('consigne');
+    });
+
+    it('names the consignes only when one opens the stand or added the timeslot', () => {
+      const phrase = phraseUsages({
+        affectations: 0,
+        contraintesAdHoc: 0,
+        verrouillages: 0,
+        consignes: 3,
+      });
+
+      expect(phrase).toContain('3');
+      expect(phrase).toContain('consigne');
     });
   });
 });
