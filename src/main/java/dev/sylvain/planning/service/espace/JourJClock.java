@@ -8,6 +8,7 @@ import jakarta.inject.Inject;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
@@ -131,6 +132,24 @@ public class JourJClock {
     public LocalTime now() {
         LocalTime fige = mocked().heure();
         return fige != null ? fige : LocalTime.now().withNano(0);
+    }
+
+    /**
+     * Today and the time of day in <b>one</b> reading — for a rule that
+     * compares both, such as the solver's frozen past (ADR 0044): two
+     * separate calls to {@link #today()} and {@link #now()} could straddle
+     * midnight and pair one day with the first minute of the next. Same
+     * substitutions as the two of them: a frozen date, a frozen time of day
+     * when there is one, the wall clock otherwise.
+     */
+    public LocalDateTime dateTime() {
+        Horloge fige = mocked();
+        if (fige.date() == null) {
+            return LocalDateTime.now().withNano(0);
+        }
+        return LocalDateTime.of(
+                fige.date(),
+                fige.heure() != null ? fige.heure() : LocalTime.now().withNano(0));
     }
 
     /**

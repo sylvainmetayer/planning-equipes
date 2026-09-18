@@ -11,6 +11,7 @@
 .planning.fenetresRepas[1]  6527fde991063640
 .planning.parametresLegaux[0]  85e1556072b6f89e
 .planning.parametresQualite[0]  ae58e0fa7b85be4c
+.planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{appreciationIncompatible} = 3
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 5

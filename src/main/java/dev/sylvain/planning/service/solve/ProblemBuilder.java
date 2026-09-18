@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -40,8 +41,8 @@ public final class ProblemBuilder {
 
     /**
      * The persisted plan; {@code null} in the plain-Java harnesses that build
-     * {@link PlanningService} with {@code new} — {@link #applyVerrouillages}
-     * guards on that, as it always did.
+     * {@link PlanningService} with {@code new} — the build then applies no
+     * lock and freezes no past, since there is nothing to read them from.
      */
     private final PlanningPersistenceService persistence;
 
@@ -51,16 +52,14 @@ public final class ProblemBuilder {
      * value because it is the server's clock at build time — a queued job
      * builds its problem when its turn comes, not at the click.
      */
-    private final Supplier<FrozenPast.Horizon> horizon;
+    private final Supplier<PastHorizon> horizon;
 
     ProblemBuilder(ReferenceData referenceDataService, PlanningPersistenceService persistence) {
         this(referenceDataService, persistence, () -> null);
     }
 
     ProblemBuilder(
-            ReferenceData referenceDataService,
-            PlanningPersistenceService persistence,
-            Supplier<FrozenPast.Horizon> horizon) {
+            ReferenceData referenceDataService, PlanningPersistenceService persistence, Supplier<PastHorizon> horizon) {
         this.referenceDataService = referenceDataService;
         this.persistence = persistence;
         this.horizon = horizon;
@@ -82,7 +81,9 @@ public final class ProblemBuilder {
         return buildFromReferenceData(
                 referenceDataService.listAnimateurs(),
                 referenceDataService.listSolvedStands(),
-                referenceDataService.listCreneaux());
+                referenceDataService.listCreneaux(),
+                null,
+                horizon.get());
     }
 
     /**
@@ -109,37 +110,43 @@ public final class ProblemBuilder {
     /**
      * The build itself, on lists already read from the referential. Locks, ad
      * hoc constraints and legal parameters are still read from here.
-     */
-    private PlanningEvenement buildFromReferenceData(
-            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
-        return buildFromReferenceData(animateurs, stands, creneaux, null);
-    }
-
-    /**
+     *
      * @param planPersiste the persisted assignments, when the caller has
      *                     already read them — the warm start of issue #174
-     *                     needs the very same map the locks walk, and reading
-     *                     it twice both costs a full read of a 3 500-seat plan
-     *                     and leaves a window in which the two disagree.
-     *                     {@code null} lets the locks read it themselves.
+     *                     needs the very same map the locks and the freeze
+     *                     walk, and reading it twice both costs a full read of
+     *                     a 3 500-seat plan and leaves a window in which the
+     *                     two disagree. {@code null} lets the build read it
+     *                     itself, once, and only if a lock or the freeze needs
+     *                     it.
+     * @param moment       the horizon the past is judged against (ADR 0044),
+     *                     read once by the caller; {@code null} when the
+     *                     freeze is off
      */
     private PlanningEvenement buildFromReferenceData(
             List<Animateur> animateurs,
             List<Stand> stands,
             List<Creneau> creneaux,
-            Map<String, List<String>> planPersiste) {
+            Map<String, List<String>> planPersiste,
+            PastHorizon moment) {
         if (animateurs.isEmpty() || stands.isEmpty() || creneaux.isEmpty()) {
             throw new IllegalStateException("Aucune donnée de référence. Chargez un scénario ou créez des stands, "
                     + "des animateurs et des créneaux d'abord.");
         }
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
-        if (planPersiste == null) {
-            applyVerrouillages(postes, animateurs, verrouillages);
-        } else if (!verrouillages.isEmpty()) {
-            applyVerrouillages(postes, animateurs, verrouillages, planPersiste);
+        Map<String, List<String>> plan = planPersiste;
+        if (plan == null && persistence != null && (moment != null || !verrouillages.isEmpty())) {
+            plan = persistence.loadAnimateursByStandCreneau();
         }
-        freezePast(postes, animateurs, planPersiste);
+        if (plan != null && !verrouillages.isEmpty()) {
+            applyVerrouillages(postes, animateurs, verrouillages, plan);
+        }
+        if (moment != null) {
+            // After the locks and before any warm start: a past seat is left
+            // as a lock left it, and the warm start skips what is pinned.
+            FrozenPast.freeze(postes, animateurs, plan == null ? Map.of() : plan, moment);
+        }
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -150,27 +157,8 @@ public final class ProblemBuilder {
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         evenement.setFenetresRepas(referenceDataService.fenetresRepas());
         evenement.setVerrouillages(verrouillages);
+        evenement.setPastHorizon(moment);
         return evenement;
-    }
-
-    /**
-     * « Le passé est figé » (ADR 0044), on a problem built from the
-     * referential: every seat of a timeslot already started is re-seeded from
-     * the persisted plan and pinned, after the locks and before any warm
-     * start. The persisted plan is read here when the caller did not hand one
-     * over — a cold start ({@link Reamorcage#AUCUN}) ignores it for the
-     * future, never for the past.
-     */
-    private void freezePast(
-            List<PosteAffectation> postes, List<Animateur> animateurs, Map<String, List<String>> planPersiste) {
-        FrozenPast.Horizon moment = horizon.get();
-        if (moment == null) {
-            return;
-        }
-        Map<String, List<String>> plan = planPersiste != null && !planPersiste.isEmpty()
-                ? planPersiste
-                : persistence == null ? Map.of() : persistence.loadAnimateursByStandCreneau();
-        FrozenPast.freeze(postes, animateurs, plan, moment);
     }
 
     private static int countPast(List<PosteAffectation> postes) {
@@ -254,13 +242,17 @@ public final class ProblemBuilder {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
-        Map<String, List<String>> affectationsPrecedentes =
-                demande == Reamorcage.AUCUN ? Map.of() : persistence.loadAnimateursByStandCreneau();
+        // One clock reading and one read of the plan per build: a cold start
+        // ignores the plan for the future, never for the past (ADR 0044).
+        PastHorizon moment = horizon.get();
+        Map<String, List<String>> planPersiste =
+                demande == Reamorcage.AUCUN && moment == null ? Map.of() : persistence.loadAnimateursByStandCreneau();
+        Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN ? Map.of() : planPersiste;
         if (demande == Reamorcage.PLAN_COURANT && affectationsPrecedentes.isEmpty()) {
             throw new IllegalStateException("Aucun plan enregistré sur cette édition : rien d'où repartir. "
                     + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
-        PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, affectationsPrecedentes);
+        PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, planPersiste, moment);
         int postesPasses = countPast(planning.getPostes());
         if (affectationsPrecedentes.isEmpty()) {
             return new ProblemeReamorce(planning, Reamorcage.AUCUN, 0, 0, postesPasses);
@@ -363,13 +355,14 @@ public final class ProblemBuilder {
         }
         List<PosteAffectation> postes = buildPostes(stands, creneaux);
         List<ContrainteAdHoc> contraintesAdHoc = referenceDataService.snapshotContraintes();
+        PastHorizon moment = horizon.get();
         StatistiquesIncremental statistiques = figerPostesIncremental(
                 postes,
                 animateurs,
                 affectationsPrecedentes,
                 scope == null ? ReplanificationScope.automatic() : scope,
                 contraintesAdHoc,
-                horizon.get());
+                moment);
         LocalDate dateDebut = creneaux.stream()
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
@@ -378,6 +371,7 @@ public final class ProblemBuilder {
         PlanningEvenement evenement = new PlanningEvenement(dateDebut, animateurs, postes, contraintesAdHoc);
         evenement.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         evenement.setVerrouillages(referenceDataService.listVerrouillages());
+        evenement.setPastHorizon(moment);
         return new ProblemeIncremental(evenement, statistiques, affectationsPrecedentes);
     }
 
@@ -424,7 +418,7 @@ public final class ProblemBuilder {
             Map<String, List<String>> animateursPersistes,
             ReplanificationScope scope,
             List<ContrainteAdHoc> contraintesAdHoc,
-            FrozenPast.Horizon horizon) {
+            PastHorizon horizon) {
         Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
             animateursById.put(animateur.getId(), animateur);
@@ -523,20 +517,10 @@ public final class ProblemBuilder {
      * holds the seat; anything seeded but not covered by a lock is cleared
      * again, leaving the unlocked part of the problem exactly as it was
      * before.</p>
-     */
-    private void applyVerrouillages(
-            List<PosteAffectation> postes, List<Animateur> animateurs, List<VerrouillagePlanning> verrouillages) {
-        PlanningPersistenceService persistenceService = persistence;
-        if (verrouillages.isEmpty() || persistenceService == null) {
-            return;
-        }
-        applyVerrouillages(postes, animateurs, verrouillages, persistenceService.loadAnimateursByStandCreneau());
-    }
-
-    /**
-     * The pinning itself, taking the persisted assignments as a parameter:
-     * package-private and static so it can be unit-tested without a database,
-     * like {@link #buildPostes}.
+     *
+     * <p>Package-private and static so it can be unit-tested without a
+     * database, like {@link #buildPostes}; the persisted plan is read by the
+     * build, once, and handed over.</p>
      */
     static void applyVerrouillages(
             List<PosteAffectation> postes,

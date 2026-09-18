@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -43,19 +44,13 @@ import java.util.Map;
  * what makes this testable before the event. A {@code null} horizon means the
  * freeze is off ({@code planning.solver.passe-fige=false}): nothing is marked,
  * nothing is pinned, and the solver keeps rewriting the past as it did before
- * this rule existed.</p>
+ * this rule existed. The horizon is read once per problem and kept on it
+ * ({@link dev.sylvain.planning.domain.PlanningEvenement#getPastHorizon()}):
+ * the preparation before the solve marks against the very horizon the build
+ * re-seeded and pinned against, so no seat crosses its start in between and
+ * ends up pinned empty without ever having been re-seeded.</p>
  */
 public final class FrozenPast {
-
-    /** The moment the freeze is judged against: today, and the time of day on today. */
-    public record Horizon(LocalDate today, LocalTime now) {
-
-        public Horizon {
-            if (today == null || now == null) {
-                throw new IllegalArgumentException("A horizon needs both a date and a time of day");
-            }
-        }
-    }
 
     private FrozenPast() {}
 
@@ -65,7 +60,7 @@ public final class FrozenPast {
      * time of day. A seat without a dated timeslot is never past — there is
      * nothing to compare — and a {@code null} horizon says the freeze is off.
      */
-    public static boolean isPast(PosteAffectation poste, Horizon horizon) {
+    public static boolean isPast(PosteAffectation poste, PastHorizon horizon) {
         if (horizon == null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
             return false;
         }
@@ -87,7 +82,7 @@ public final class FrozenPast {
      *
      * @return how many seats are past
      */
-    public static int mark(List<PosteAffectation> postes, Horizon horizon) {
+    public static int mark(List<PosteAffectation> postes, PastHorizon horizon) {
         int passes = 0;
         for (PosteAffectation poste : postes) {
             boolean passe = isPast(poste, horizon);
@@ -100,9 +95,10 @@ public final class FrozenPast {
     }
 
     /**
-     * Pins every seat already marked past, empty or not. What a solve on a
-     * caller-provided problem gets: the past cannot be re-seeded from a plan
-     * the caller did not send, but it can at least not be moved.
+     * Pins every seat already marked past, empty or not — marked by the
+     * horizon the problem carries, never by a fresh clock reading. What a
+     * solve on a caller-provided problem gets: the past cannot be re-seeded
+     * from a plan the caller did not send, but it can at least not be moved.
      */
     public static void pin(List<PosteAffectation> postes) {
         for (PosteAffectation poste : postes) {
@@ -132,7 +128,7 @@ public final class FrozenPast {
             List<PosteAffectation> postes,
             List<Animateur> animateurs,
             Map<String, List<String>> animateursPersistes,
-            Horizon horizon) {
+            PastHorizon horizon) {
         Map<String, Animateur> animateursById = new HashMap<>();
         for (Animateur animateur : animateurs) {
             animateursById.put(animateur.getId(), animateur);

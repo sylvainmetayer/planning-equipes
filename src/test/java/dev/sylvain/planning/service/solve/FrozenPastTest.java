@@ -2,18 +2,25 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import ai.timefold.solver.core.api.solver.SolverFactory;
+import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
+import ai.timefold.solver.core.config.solver.EnvironmentMode;
+import ai.timefold.solver.core.config.solver.SolverConfig;
+import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
-import dev.sylvain.planning.service.solve.FrozenPast.Horizon;
 import dev.sylvain.planning.service.solve.ProblemBuilder.StatistiquesIncremental;
+import dev.sylvain.planning.solver.PlanningConstraintProvider;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -34,7 +41,7 @@ class FrozenPastTest {
     private static final LocalDate HIER = LocalDate.of(2027, 7, 13);
     private static final LocalDate AUJOURDHUI = LocalDate.of(2027, 7, 14);
     private static final LocalDate DEMAIN = LocalDate.of(2027, 7, 15);
-    private static final Horizon MIDI = new Horizon(AUJOURDHUI, LocalTime.of(12, 0));
+    private static final PastHorizon MIDI = new PastHorizon(AUJOURDHUI, LocalTime.of(12, 0));
 
     private final Stand standA = new Stand("STAND-A", "Stand A", Set.of("STRATEGIE"), 2, 2, false);
     private final Creneau matinHier = new Creneau(1L, 1, HIER, LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -60,7 +67,7 @@ class FrozenPastTest {
     @Test
     void yesterdayIsPastWhateverTheHour() {
         assertThat(FrozenPast.isPast(poste("p", matinHier), MIDI)).isTrue();
-        assertThat(FrozenPast.isPast(poste("p", nuitHier), new Horizon(AUJOURDHUI, LocalTime.of(1, 0))))
+        assertThat(FrozenPast.isPast(poste("p", nuitHier), new PastHorizon(AUJOURDHUI, LocalTime.of(1, 0))))
                 .isTrue();
     }
 
@@ -69,13 +76,13 @@ class FrozenPastTest {
         assertThat(FrozenPast.isPast(poste("p", matinAujourdhui), MIDI)).isTrue();
         assertThat(FrozenPast.isPast(poste("p", apremAujourdhui), MIDI)).isFalse();
         // At the very minute the timeslot starts, it has started.
-        assertThat(FrozenPast.isPast(poste("p", apremAujourdhui), new Horizon(AUJOURDHUI, LocalTime.of(14, 0))))
+        assertThat(FrozenPast.isPast(poste("p", apremAujourdhui), new PastHorizon(AUJOURDHUI, LocalTime.of(14, 0))))
                 .isTrue();
     }
 
     @Test
     void tomorrowIsAheadWhateverTheHour() {
-        assertThat(FrozenPast.isPast(poste("p", matinDemain), new Horizon(AUJOURDHUI, LocalTime.of(23, 59))))
+        assertThat(FrozenPast.isPast(poste("p", matinDemain), new PastHorizon(AUJOURDHUI, LocalTime.of(23, 59))))
                 .isFalse();
     }
 
@@ -83,7 +90,7 @@ class FrozenPastTest {
     void aTimeslotCrossingMidnightBelongsToItsStartDate() {
         Creneau nuitAujourdhui = new Creneau(7L, 2, AUJOURDHUI, LocalTime.of(20, 0), LocalTime.of(2, 0));
         // 19:00 today: tonight's shift has not started, yesterday's night has.
-        Horizon soir = new Horizon(AUJOURDHUI, LocalTime.of(19, 0));
+        PastHorizon soir = new PastHorizon(AUJOURDHUI, LocalTime.of(19, 0));
         assertThat(FrozenPast.isPast(poste("p", nuitAujourdhui), soir)).isFalse();
         assertThat(FrozenPast.isPast(poste("p", nuitHier), soir)).isTrue();
     }
@@ -247,5 +254,112 @@ class FrozenPastTest {
         assertThat(solved.getPostes().get(0).getAnimateur()).isNull();
         assertThat(solved.getPostes().get(0).isVerrouille()).isTrue();
         assertThat(solved.getPostes().get(1).getAnimateur()).isNotNull();
+    }
+
+    /* ------------------------------ one horizon ------------------------------ */
+
+    /**
+     * The clock keeps moving between the build and the solve. A seat still
+     * ahead when the problem was built — re-opened by the perimeter, or empty
+     * on a cold start — must not be pinned empty by a preparation reading a
+     * later clock: the preparation marks against the horizon the problem
+     * carries, and pins only what that horizon marked.
+     */
+    @Test
+    void thePreparationReadsTheHorizonTheProblemWasBuiltUnderNotAFreshClock() {
+        PastHorizon auBuild = new PastHorizon(AUJOURDHUI, LocalTime.of(11, 0));
+        PosteAffectation apresMidi = poste("p0", apremAujourdhui);
+        PlanningEvenement problem = new PlanningEvenement(AUJOURDHUI, new ArrayList<>(animateurs), List.of(apresMidi));
+        FrozenPast.mark(problem.getPostes(), auBuild);
+        problem.setPastHorizon(auBuild);
+        SolveRunner runner = new SolveRunner(
+                configuration(),
+                new EmptyReferenceData(),
+                null,
+                () -> new PastHorizon(AUJOURDHUI, LocalTime.of(14, 30)));
+
+        runner.prepareProblem(problem);
+        FrozenPast.pin(problem.getPostes());
+
+        assertThat(apresMidi.isPasse()).isFalse();
+        assertThat(apresMidi.isVerrouille()).isFalse();
+        assertThat(problem.getPastHorizon()).isEqualTo(auBuild);
+    }
+
+    /** A problem that came without a horizon — a caller's body, the persisted plan — gets the clock's, once. */
+    @Test
+    void aProblemWithoutAHorizonReceivesTheClockAndKeepsIt() {
+        PosteAffectation matin = poste("p0", matinAujourdhui);
+        PlanningEvenement problem = new PlanningEvenement(AUJOURDHUI, new ArrayList<>(animateurs), List.of(matin));
+        List<PastHorizon> lectures = List.of(MIDI, new PastHorizon(DEMAIN, LocalTime.of(9, 0)));
+        int[] appels = {0};
+        SolveRunner runner =
+                new SolveRunner(configuration(), new EmptyReferenceData(), null, () -> lectures.get(appels[0]++));
+
+        runner.prepareProblem(problem);
+        runner.prepareProblem(problem);
+
+        assertThat(appels[0]).isEqualTo(1);
+        assertThat(problem.getPastHorizon()).isEqualTo(MIDI);
+        assertThat(matin.isPasse()).isTrue();
+    }
+
+    private static SolverConfiguration configuration() {
+        return new SolverConfiguration(
+                3L,
+                2L,
+                ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                new EmptyReferenceData(),
+                ConfigProvider.getConfig());
+    }
+
+    /* ------------------------------ full assert ------------------------------ */
+
+    /**
+     * The whole constraint set under {@code FULL_ASSERT}, on a problem carrying
+     * past seats — a held one, a pinned hole — next to seats still ahead:
+     * Timefold recomputes the score from scratch after every move and refuses
+     * any incremental drift, which is where a mistake around the {@code passe}
+     * flag (a group folded wrong, an {@code ifExists} out of step) would show.
+     */
+    @Test
+    void theConstraintsHoldUnderFullAssertWithPastSeatsInTheProblem() {
+        PosteAffectation hierTenu = poste("p0", matinHier);
+        hierTenu.setAnimateur(alice);
+        PosteAffectation hierTrou = poste("p1", matinHier);
+        PosteAffectation ceMatin = poste("p2", matinAujourdhui);
+        ceMatin.setAnimateur(bob);
+        PlanningEvenement problem = new PlanningEvenement(
+                HIER,
+                new ArrayList<>(animateurs),
+                List.of(hierTenu, hierTrou, ceMatin, poste("p3", apremAujourdhui), poste("p4", matinDemain)));
+        problem.setParametresLegaux(List.of(new ParametresLegaux()));
+        FrozenPast.mark(problem.getPostes(), MIDI);
+        FrozenPast.pin(problem.getPostes());
+        problem.setPastHorizon(MIDI);
+        new PlanningService(
+                        3L,
+                        2L,
+                        ParametresQualite.EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT,
+                        new EmptyReferenceData(),
+                        new FeasibilityAnalyzer(),
+                        null,
+                        null,
+                        ConfigProvider.getConfig())
+                .prepareForAnalysis(problem);
+        SolverConfig config = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        config.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
+        config.setEnvironmentMode(EnvironmentMode.FULL_ASSERT);
+        config.setTerminationConfig(new TerminationConfig().withSecondsSpentLimit(3L));
+
+        PlanningEvenement solved =
+                SolverFactory.<PlanningEvenement>create(config).buildSolver().solve(problem);
+
+        assertThat(solved.getScore().hardScore()).isZero();
+        assertThat(solved.getPostes().get(0).getAnimateur()).isEqualTo(alice);
+        assertThat(solved.getPostes().get(1).getAnimateur()).isNull();
+        assertThat(solved.getPostes().get(3).getAnimateur()).isNotNull();
+        assertThat(solved.getPostes().get(4).getAnimateur()).isNotNull();
     }
 }
