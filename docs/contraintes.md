@@ -763,9 +763,12 @@ est toujours la même : la donnée qui casse l'exception arrive presque toujours
 | `ForcedAssignmentOnExcludedSeats` | Aucune place du périmètre n'accepte l'un des animateurs nommés, au titre d'une règle dure du couple place × animateur — les motifs d'`EligibleAnimateurMoveFilter` : mineur la nuit, un jour férié, sur un stand réservé aux majeurs, au-delà de son plafond quotidien | `AFFECTATION_FORCEE_MOTIF_LEGAL`, le message nomme les règles du catalogue |
 | `ForcedAssignmentOnLockedSchedule` | L'emploi du temps de chacun des animateurs nommés est verrouillé (`ANIMATEUR` ou `ANIMATEUR_CRENEAU`) sur tout le périmètre, et aucun n'y tient déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
 
-Les trois ne se doublent jamais : le jour déclaré indisponible est *aussi* un
-motif d'exclusion dur, et c'est la lecture en termes de déclaration qui garde le
-cas — c'est elle que l'organisateur sait traiter, en parlant à la personne.
+Les deux premières ne se doublent jamais : le jour déclaré indisponible est
+*aussi* un motif d'exclusion dur, donc la seconde se tait sur un cas que la
+première rapporte — c'est la lecture en termes de déclaration que l'organisateur
+sait traiter, en parlant à la personne. La troisième, elle, peut s'ajouter aux
+deux autres, et c'est voulu : un verrou et une règle légale sont deux blocages
+indépendants, qui se lèvent par deux gestes différents.
 
 Deux précautions, pour ne jamais inventer un conflit. Les places du périmètre
 sont construites comme `ProblemBuilder` les génère — une par (stand ouvert sur

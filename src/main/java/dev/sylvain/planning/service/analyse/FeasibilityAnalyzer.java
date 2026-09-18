@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
@@ -35,15 +36,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>The result is a ranked list of blocking causes
  * ({@link CauseInfaisabilite}), each carrying a severity and the concrete
  * entities involved, so the setup screen can display them before any solve is
- * launched. Two kinds of cause are detected:
+ * launched. Five kinds of cause are detected:
  * {@link TypeCauseInfaisabilite#CRENEAU_SOUS_EFFECTIF} — the demand of a
- * créneau exceeds the number of animateurs available to serve it — and
+ * créneau exceeds the number of animateurs available to serve it —
  * {@link TypeCauseInfaisabilite#CONTRAINTES_AD_HOC_CONTRADICTOIRES} — two
- * hand-entered exceptions that cannot both hold (issue #84).
+ * hand-entered exceptions that cannot both hold (issue #84) — and the three
+ * {@code AFFECTATION_FORCEE_*}, one forced assignment nobody can honour
+ * (issue #30): its animateurs declared the days off, no seat of its scope may
+ * hold them, or their schedule is locked over the whole scope.
  *
- * <p>The second one is reported although the same check refuses such a pair at
- * entry time: exceptions recorded before that check existed, or imported
- * together, are exactly the ones nobody will find by re-reading the form.</p>
+ * <p>The last four are reported although the write already said so: an
+ * exception recorded before the check existed, or imported together with
+ * others, is exactly the one nobody will find by re-reading the form — and the
+ * three forced-assignment readings are warnings, never refusals, so what they
+ * describe is written and stays until somebody acts on it.</p>
  *
  * <p>The demand of a créneau is counted exactly as
  * {@link ProblemBuilder#buildPostes(List, List)} generates seats: for every
@@ -326,7 +332,15 @@ public class FeasibilityAnalyzer {
      */
     private List<CauseInfaisabilite> affectationsForceesVerrouillees(
             List<ContrainteAdHoc> contraintes, List<Stand> stands, List<Creneau> creneaux, LockContext verrous) {
-        if (verrous == null || verrous.verrouillages().isEmpty()) {
+        // Both halves are read before the supplier is: the seats cost a full
+        // scan of the assignments, and with no lock or no forced assignment
+        // there is nothing to cross them with.
+        if (verrous == null
+                || verrous.verrouillages().isEmpty()
+                || contraintes == null
+                || contraintes.stream()
+                        .noneMatch(contrainte ->
+                                contrainte != null && contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)) {
             return List.of();
         }
         List<CauseInfaisabilite> causes = new ArrayList<>();
