@@ -1,0 +1,15 @@
+-- Référence « depuis la dernière résolution » du rendu Changements de la page
+-- Journée (issue #6) : le plan enregistré est comparé à l'instantané
+-- automatique pris juste avant le dernier solve qui l'a **réellement**
+-- remplacé. Le dernier instantané automatique ne suffisait pas : un solve
+-- interrompu par le serveur ou refusé sur son problème capture lui aussi le
+-- plan avant de ne rien écrire, et l'onglet comparait alors le plan à
+-- lui-même — zéro changement, à tort.
+--
+-- `planning_resolution` est la ligne que la persistance d'un solve écrit :
+-- elle retient désormais l'id de l'instantané que ce solve a remplacé. Une
+-- restauration ou un import n'y touchent pas et restent donc pliés dans la
+-- comparaison. Pas de clé étrangère : un instantané supprimé ou purgé laisse
+-- une référence qui ne désigne plus rien, et la lecture répond alors « rien à
+-- comparer » plutôt que d'inventer un plan.
+ALTER TABLE planning_resolution ADD COLUMN snapshot_avant_solve_id BIGINT;

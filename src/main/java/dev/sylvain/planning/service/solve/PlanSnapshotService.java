@@ -483,6 +483,62 @@ public class PlanSnapshotService {
         }
     }
 
+    /**
+     * The automatique snapshot the last <b>effective</b> solve replaced,
+     * content included: the plan as it stood right before the last solve that
+     * actually wrote the persisted plan, which is the one {@code
+     * planning_resolution} records at that write. Not simply the most recent
+     * automatique snapshot: a solve the server interrupted, or one refused on
+     * its problem, captures the plan too and then writes nothing, and that
+     * capture equals the persisted plan — reading it would announce a day
+     * without change. A restore or an import between two solves records
+     * nothing here, so what they changed reads as changed since the solve.
+     *
+     * <p>{@code null} when no solve ever replaced a plan — the first solve of
+     * an edition finds nothing to capture — or when the snapshot recorded has
+     * been deleted since: the retention purge spares it, a hand delete does
+     * not.</p>
+     */
+    public SnapshotDetail loadLastBeforeSolve() {
+        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+                + " JOIN planning_resolution r ON r.edition_id = s.edition_id AND r.snapshot_avant_solve_id = s.id"
+                + " WHERE s.edition_id = ? AND s.automatique";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            return readDetail(ps);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the plan snapshot the last solve replaced", e);
+        }
+    }
+
+    /**
+     * A snapshotted seat as {@link PlanningPersistenceService#assemblerPlanning}
+     * reads one: the ids, the override hours, and — since issue #576 — the day
+     * and window the snapshot itself recorded, so a seat outlives the créneau
+     * it names. {@code null} for those on a snapshot captured before they were
+     * stored: that seat still resolves against today's référentiel.
+     */
+    public static PlanningPersistenceService.Siege seat(AffectationSnapshot affectation) {
+        PlanningPersistenceService.VacationSnapshot vacation = affectation.date() == null
+                ? null
+                : new PlanningPersistenceService.VacationSnapshot(
+                        LocalDate.parse(affectation.date()),
+                        time(affectation.heureDebut()),
+                        time(affectation.heureFin()));
+        return new PlanningPersistenceService.Siege(
+                affectation.posteId(),
+                affectation.standId(),
+                Long.parseLong(affectation.creneauId()),
+                affectation.animateurId(),
+                time(affectation.heureDebutEffective()),
+                time(affectation.heureFinEffective()),
+                vacation);
+    }
+
+    private static LocalTime time(String text) {
+        return text == null ? null : LocalTime.parse(text);
+    }
+
     /** Same as {@link #lastPublication()}, content included. */
     public SnapshotDetail loadLastPublication() {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
@@ -683,7 +739,12 @@ public class PlanSnapshotService {
         return manquants;
     }
 
-    /** Drops the oldest automatique snapshots beyond the configured retention. */
+    /**
+     * Drops the oldest automatique snapshots beyond the configured retention.
+     * Spared whatever its age: the one the last effective solve replaced,
+     * which {@link #loadLastBeforeSolve()} reads — a run of interrupted solves
+     * captures a snapshot each and must not push the only real reference out.
+     */
     private void purgeAutomatic(Connection connection) throws SQLException {
         String sql = """
  DELETE FROM plan_snapshot
@@ -691,10 +752,13 @@ public class PlanSnapshotService {
  AND automatique
  AND publie_le IS NULL
  AND id NOT IN (SELECT id FROM plan_snapshot WHERE edition_id = ?
- AND automatique ORDER BY cree_le DESC, id DESC LIMIT ?)""";
+ AND automatique ORDER BY cree_le DESC, id DESC LIMIT ?)
+ AND id NOT IN (SELECT snapshot_avant_solve_id FROM planning_resolution
+ WHERE edition_id = ? AND snapshot_avant_solve_id IS NOT NULL)""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setString(2, editionId());
             ps.setInt(3, Math.max(1, automatiquesConservees));
+            ps.setString(4, editionId());
             ps.executeUpdate();
         }
     }

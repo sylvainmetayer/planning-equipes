@@ -8,6 +8,7 @@ import {
   provideZonelessChangeDetection,
   resource,
   runInInjectionContext,
+  signal,
 } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -62,6 +63,36 @@ describe('resource-state', () => {
     await vi.waitFor(() => expect(error()).toBe(''));
 
     expect(value()).toEqual({ total: 5 });
+  });
+
+  it('drops the retained value when the scope it was read for changes', async () => {
+    const scope = signal('2026-08-01');
+    let release: (value: { total: number }) => void = () => undefined;
+    loader.mockResolvedValueOnce({ total: 3 });
+    const { source, value } = runInInjectionContext(TestBed.inject(Injector), () => {
+      const built = resource({ params: () => scope(), loader: () => loader() });
+      return { source: built, value: retainedValue(built, scope) };
+    });
+    await vi.waitFor(() => expect(value()).toEqual({ total: 3 }));
+
+    // A reload within the scope keeps the figures up while it runs. The
+    // loader runs after the status turned to loading, hence the wait on it.
+    loader.mockImplementationOnce(() => new Promise((resolve) => (release = resolve)));
+    source.reload();
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(2));
+    expect(source.isLoading()).toBe(true);
+    expect(value()).toEqual({ total: 3 });
+    release({ total: 4 });
+    await vi.waitFor(() => expect(value()).toEqual({ total: 4 }));
+
+    // Another scope does not: its figures are not this one's.
+    loader.mockImplementationOnce(() => new Promise((resolve) => (release = resolve)));
+    scope.set('2026-08-02');
+    await vi.waitFor(() => expect(loader).toHaveBeenCalledTimes(3));
+    expect(source.isLoading()).toBe(true);
+    expect(value()).toBeNull();
+    release({ total: 9 });
+    await vi.waitFor(() => expect(value()).toEqual({ total: 9 }));
   });
 
   it('words the failure with the formatter it is given', async () => {

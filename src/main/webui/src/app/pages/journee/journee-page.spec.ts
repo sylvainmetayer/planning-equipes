@@ -9,9 +9,16 @@ import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/route
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { JourneesApi } from '../../core/api/journees-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { ApiService } from '../../core/api.service';
-import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import {
+  ChangementsJournee,
+  Creneau,
+  PlanningEvenement,
+  PosteAffectation,
+  Stand,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -87,6 +94,42 @@ describe('JourneePage', () => {
     breaks: vi.fn(async () => null),
     emplacements: vi.fn(async () => []),
   };
+  const journeesApi = {
+    changements: vi.fn(
+      async (jour: string, reference: string | null): Promise<ChangementsJournee> => ({
+        jour,
+        reference: reference === 'resolution' ? 'RESOLUTION' : 'PUBLICATION',
+        referenceDisponible: true,
+        referenceLe: '2026-07-20T10:00:00Z',
+        nouveaux: 1,
+        retires: 0,
+        remplaces: 0,
+        horairesModifies: 0,
+        animateursConcernes: 1,
+        parVacation: [
+          {
+            standId: 'Tir',
+            standNom: 'Tir',
+            date: jour,
+            heureDebut: '10:00:00',
+            heureFin: '12:00:00',
+            heureDebutAvant: null,
+            heureFinAvant: null,
+            avant: null,
+            apres: { animateurId: 'alice', nomAffiche: 'Alice Martin' },
+            type: 'NOUVEAU',
+          },
+        ],
+        parAnimateur: [
+          {
+            animateurId: 'alice',
+            nomAffiche: 'Alice Martin',
+            changements: [{ type: 'AJOUT', libelle: 'samedi 01/08 : Tir 10h-12h (nouveau)' }],
+          },
+        ],
+      }),
+    ),
+  };
   let fixture: ComponentFixture<JourneePage>;
 
   beforeEach(() => {
@@ -95,6 +138,7 @@ describe('JourneePage', () => {
     analysesApi.typologies.mockClear();
     analysesApi.breaks.mockClear();
     analysesApi.emplacements.mockClear();
+    journeesApi.changements.mockClear();
     loadForDisplay.mockResolvedValue(planningDeuxJours());
   });
 
@@ -106,6 +150,7 @@ describe('JourneePage', () => {
         provideRouter([]),
         { provide: PlanningStateService, useValue: { loadForDisplay, set } },
         { provide: AnalysesApi, useValue: analysesApi },
+        { provide: JourneesApi, useValue: journeesApi },
         {
           provide: ConsignesStore,
           useValue: {
@@ -220,6 +265,50 @@ describe('JourneePage', () => {
     // gone, nothing wrote the key any more, and a reload brought the filter
     // back on a link that showed no sign of it.
     expect(url).not.toContain('lignes=');
+  });
+
+  it('reads the changes of the day on screen against the reference the URL names, and writes both back', async () => {
+    const page = await monter({ vue: 'changements', date: '2026-08-02', reference: 'resolution' });
+    await fixture.whenStable();
+
+    expect(journeesApi.changements).toHaveBeenCalledWith('2026-08-02', 'resolution');
+    expect(loadForDisplay).toHaveBeenCalledOnce();
+    const rendering = racine().querySelector('app-changements-vue');
+    expect(rendering).not.toBeNull();
+    expect(rendering?.textContent).toContain('Alice Martin');
+    expect(page.viewChanged()).toBe(true);
+    expect(TestBed.inject(Location).path()).toContain('reference=resolution');
+    expect(TestBed.inject(Location).path()).not.toContain('lecture=');
+
+    page.resetView();
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(TestBed.inject(Location).path()).not.toContain('reference=');
+    // The choice is the server's again: nothing is sent for the reference.
+    expect(journeesApi.changements).toHaveBeenLastCalledWith('2026-08-02', null);
+  });
+
+  it('leaves the reference to the server when nobody chose one, and shows the one it answered with', async () => {
+    journeesApi.changements.mockResolvedValueOnce({
+      jour: '2026-08-01',
+      reference: 'RESOLUTION',
+      referenceDisponible: false,
+      referenceLe: null,
+      nouveaux: 0,
+      retires: 0,
+      remplaces: 0,
+      horairesModifies: 0,
+      animateursConcernes: 0,
+      parVacation: [],
+      parAnimateur: [],
+    });
+    await monter({ vue: 'changements' });
+    await fixture.whenStable();
+
+    expect(journeesApi.changements).toHaveBeenCalledWith('2026-08-01', null);
+    const rendering = racine().querySelector('app-changements-vue');
+    expect(rendering?.textContent).toContain('Rien à comparer');
+    expect(TestBed.inject(Location).path()).not.toContain('reference=');
   });
 
   it('drops the session copy of the plan and re-reads when a rendering wrote to it', async () => {

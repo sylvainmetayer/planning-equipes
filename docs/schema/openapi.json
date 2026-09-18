@@ -255,6 +255,18 @@
           }
         }
       },
+      "AnimateurChange" : {
+        "type" : "object",
+        "required" : [ "libelle", "type" ],
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/TypeChangement"
+          },
+          "libelle" : {
+            "type" : "string"
+          }
+        }
+      },
       "AnimateurCsvImportReport" : {
         "required" : [ "accepted", "applied", "created", "deleted", "rejected", "total", "updated" ],
         "type" : "object",
@@ -415,6 +427,24 @@
           "postesNonDetailles" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "AnimateurLine" : {
+        "type" : "object",
+        "required" : [ "animateurId", "changements", "nomAffiche" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nomAffiche" : {
+            "type" : "string"
+          },
+          "changements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AnimateurChange"
+            }
           }
         }
       },
@@ -936,6 +966,56 @@
           "marge" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "ChangementsJournee" : {
+        "required" : [ "animateursConcernes", "horairesModifies", "jour", "nouveaux", "parAnimateur", "parVacation", "reference", "referenceDisponible", "remplaces", "retires" ],
+        "type" : "object",
+        "properties" : {
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "reference" : {
+            "$ref" : "#/components/schemas/ReferenceChangements"
+          },
+          "referenceDisponible" : {
+            "type" : "boolean"
+          },
+          "referenceLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "nouveaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "retires" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "remplaces" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "horairesModifies" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursConcernes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "parVacation" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/SeatLine"
+            }
+          },
+          "parAnimateur" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/AnimateurLine"
+            }
           }
         }
       },
@@ -3178,6 +3258,18 @@
             "items" : {
               "$ref" : "#/components/schemas/HeuresAnimateur"
             }
+          }
+        }
+      },
+      "Holder" : {
+        "type" : "object",
+        "required" : [ "animateurId", "nomAffiche" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nomAffiche" : {
+            "type" : "string"
           }
         }
       },
@@ -5669,6 +5761,10 @@
           }
         }
       },
+      "ReferenceChangements" : {
+        "type" : "string",
+        "enum" : [ "PUBLICATION", "RESOLUTION" ]
+      },
       "ReferenceUsage" : {
         "required" : [ "affectations", "contraintesAdHoc", "verrouillages", "consignes" ],
         "type" : "object",
@@ -5964,6 +6060,46 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "SeatChangeType" : {
+        "type" : "string",
+        "enum" : [ "NOUVEAU", "RETIRE", "REMPLACE", "HORAIRES" ]
+      },
+      "SeatLine" : {
+        "type" : "object",
+        "required" : [ "date", "heureDebut", "heureFin", "standId", "standNom", "type" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureDebutAvant" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFinAvant" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "avant" : {
+            "$ref" : "#/components/schemas/Holder"
+          },
+          "apres" : {
+            "$ref" : "#/components/schemas/Holder"
+          },
+          "type" : {
+            "$ref" : "#/components/schemas/SeatChangeType"
           }
         }
       },
@@ -6575,6 +6711,10 @@
       "TypeCauseInfaisabilite" : {
         "type" : "string",
         "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE" ]
+      },
+      "TypeChangement" : {
+        "type" : "string",
+        "enum" : [ "AJOUT", "RETRAIT", "DEPLACEMENT" ]
       },
       "TypeContrainteAdHoc" : {
         "type" : "string",
@@ -10276,6 +10416,38 @@
         },
         "summary" : "Delete",
         "tags" : [ "Journee Type Resource" ]
+      }
+    },
+    "/api/journees/{jour}/changements" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "jour",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "reference",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ChangementsJournee"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Changements",
+        "tags" : [ "Changements Journee Resource" ]
       }
     },
     "/api/kpi/historique" : {

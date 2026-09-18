@@ -96,6 +96,11 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/comparateur', sheet: 'comparateur-selection' },
   { path: '/historique', sheet: 'historique-controles' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
+  {
+    path: '/journee?vue=changements',
+    marker: 'Changements de la journée',
+    sheet: 'journee-changements-toolbar',
+  },
   { path: '/disponibilites', sheet: 'espace-dispo-intro' },
   { path: '/kpi' },
   { path: '/graphe', sheet: 'graphe-corps' },

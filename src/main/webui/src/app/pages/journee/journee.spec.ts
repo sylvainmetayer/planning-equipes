@@ -33,10 +33,11 @@ describe('planningDays', () => {
 });
 
 describe('readView', () => {
-  it('names one of the four renderings, the calendar otherwise', () => {
+  it('names one of the five renderings, the calendar otherwise', () => {
     expect(readView('rail')).toBe('rail');
     expect(readView('carte')).toBe('carte');
     expect(readView('pauses')).toBe('pauses');
+    expect(readView('changements')).toBe('changements');
     expect(readView('libres')).toBe('calendrier');
     expect(readView(null)).toBe('calendrier');
   });

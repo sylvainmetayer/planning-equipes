@@ -3408,6 +3408,72 @@ export interface ProgressionValidations {
   joursValides: string[];
 }
 
+/* ----------------------- Changes of a day (issue #6) ----------------------- */
+
+/** The plan a day is compared to: the last published one, or the plan before the last solve. */
+export type ReferenceChangements = 'PUBLICATION' | 'RESOLUTION';
+
+/**
+ * What happened to one seat of the day. `HORAIRES`: the same person keeps the
+ * stand on other hours — a créneau a consigne trimmed — one line rather than a
+ * seat retired plus a seat filled.
+ */
+export type TypeChangementSiege = 'NOUVEAU' | 'RETIRE' | 'REMPLACE' | 'HORAIRES';
+
+/** Somebody holding a seat — the id the screen links, the name it prints. */
+export interface TitulaireSiege {
+  animateurId: string;
+  nomAffiche: string;
+}
+
+/** One seat of the day whose holder changed, named by stand, day and hours. */
+export interface ChangementSiege {
+  standId: string;
+  standNom: string;
+  date: string;
+  /** The hours of the seat — on a `HORAIRES` line, the hours it has now. */
+  heureDebut: string;
+  heureFin: string;
+  /** Only on a `HORAIRES` line: the hours the reference held the seat on. Null otherwise. */
+  heureDebutAvant: string | null;
+  heureFinAvant: string | null;
+  /** Who held it in the reference; null for an empty seat or one the reference did not hold. */
+  avant: TitulaireSiege | null;
+  /** Who holds it now; null for an empty seat or one the plan no longer holds. */
+  apres: TitulaireSiege | null;
+  type: TypeChangementSiege;
+}
+
+/** One change of one person's day, worded as their mail would word it. */
+export interface ChangementAnimateurLigne {
+  type: 'AJOUT' | 'RETRAIT' | 'DEPLACEMENT';
+  libelle: string;
+}
+
+/** One person whose day differs from the reference, and every line they would read. */
+export interface ChangementAnimateur {
+  animateurId: string;
+  nomAffiche: string;
+  changements: ChangementAnimateurLigne[];
+}
+
+/** What moved on one day of the plan since a reference. */
+export interface ChangementsJournee {
+  jour: string;
+  reference: ReferenceChangements;
+  /** False when the reference does not exist: nothing to compare, and the counts say nothing. */
+  referenceDisponible: boolean;
+  referenceLe: string | null;
+  nouveaux: number;
+  retires: number;
+  remplaces: number;
+  /** Seats the same person keeps on other hours. */
+  horairesModifies: number;
+  animateursConcernes: number;
+  parVacation: ChangementSiege[];
+  parAnimateur: ChangementAnimateur[];
+}
+
 /* --------------------------- Edition consignes (issue #4) --------------------------- */
 
 /**
