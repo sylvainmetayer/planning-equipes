@@ -124,7 +124,8 @@ public class ConsigneResource {
                 prereglage.fermetureFin(),
                 prereglage.motif(),
                 prereglage.fenetres(),
-                null));
+                null,
+                prereglage.repas()));
     }
 
     @DELETE

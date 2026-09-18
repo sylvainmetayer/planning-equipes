@@ -8,7 +8,6 @@ import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.QuotaTypologie;
@@ -122,7 +121,7 @@ final class SolveRunner {
             problem.setParametresLegaux(List.of(referenceDataService.getParametresLegaux()));
         }
         if (problem.getFenetresRepas() == null || problem.getFenetresRepas().isEmpty()) {
-            problem.setFenetresRepas(FenetreRepas.from(referenceDataService.getParametresLegaux()));
+            problem.setFenetresRepas(referenceDataService.fenetresRepas());
         }
         if (problem.getConstraintsDesactivees() == null
                 || problem.getConstraintsDesactivees().isEmpty()) {

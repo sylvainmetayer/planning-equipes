@@ -101,7 +101,10 @@ public class EditionRepository {
             // « Plan canicule » is the same plan next year — so they travel;
             // the dated consignes made from them belong to one edition's days
             // and stay behind, like the plan itself.
-            new TableToCopy("prereglage_consigne", "id, nom, fermeture_debut, fermeture_fin, motif"),
+            new TableToCopy(
+                    "prereglage_consigne",
+                    "id, nom, fermeture_debut, fermeture_fin, motif, repas_midi_debut, repas_midi_fin, "
+                            + "repas_soir_debut, repas_soir_fin, repas_coupure_minutes, repas_justification"),
             new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"));
 
     record TableToCopy(String nom, String colonnes) {}

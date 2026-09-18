@@ -266,9 +266,24 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
     nocturnes infaisables (−720 dur) ; à 18 h-21 h, une personne du matin
     qui tient 18 h-22 h doit une coupure qu'elle ne peut pas prendre, et la
     semaine bute sur les six jours travaillés (922 jours-personnes sur 924 :
-    −782 dur). L'autre levier est de rouvrir moins de stands le soir. Que la
-    consigne porte elle-même sa fenêtre repas est une évolution possible, non
-    retenue ici : le paramètre suffit et se voit. L'aide admin le dit sous « Consignes ». Faire lire à la
+    −782 dur). L'autre levier est de rouvrir moins de stands le soir.
+
+    **Le réglage descend sur la consigne** (V92). Le porter dans les
+    paramètres légaux de l'édition était un réglage global pour un fait
+    daté : à poser avant la vague, à remettre à la levée, et l'oubli casse
+    dans les deux sens — les nocturnes ordinaires pendant l'alerte, le soir
+    sous consigne après. Une consigne, et un préréglage, portent donc leurs
+    propres fenêtres repas (midi, soir, durée de la coupure), chacune
+    facultative, avec une **justification en termes métier obligatoire** dès
+    qu'un champ est renseigné, imprimée à côté de la journée. Les faits
+    `FenetreRepas` deviennent datables : ceux de l'édition portent les dates
+    où ils s'effacent, ceux d'une consigne sa date, et la contrainte comme
+    chaque lecteur joignent les seules fenêtres qui gouvernent le jour.
+    Lever la consigne retire ses fenêtres avec elle. Seules les fenêtres
+    repas sont surchargeables : la coupure repas est la règle de
+    l'organisateur ([0006](0006-obligation-legale-ou-politique-organisateur.md)) ;
+    les plafonds légaux restent hors d'atteinte d'une consigne, par
+    construction et non par consigne de saisie. L'aide admin le dit sous « Consignes ». Faire lire à la
     coupure la bande fermée comme le repas pris est une évolution possible,
     non retenue ici : le paramètre suffit et se voit.
   - **Le diff de publication fait deux lignes** quand la bande retire aussi

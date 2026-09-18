@@ -240,7 +240,7 @@ class ConsigneResolverTest {
     private static ConsigneEdition consigne(
             LocalTime debut, LocalTime fin, List<ConsigneEdition.Ouverture> ouvertures) {
         return new ConsigneEdition(
-                LUNDI, debut, fin, "arrêté préfectoral", null, List.of(), ouvertures, List.of(), null, null);
+                LUNDI, debut, fin, "arrêté préfectoral", null, List.of(), ouvertures, List.of(), null, null, null);
     }
 
     private static ConsigneEdition.Ouverture ouverture(

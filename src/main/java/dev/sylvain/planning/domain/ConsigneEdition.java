@@ -36,6 +36,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param ouvertures       the stands opened, one entry per window
  * @param creneauxAjoutes  ids of the créneaux the consigne added to the grid
  *                         because none covered an opening
+ * @param repas            the meal windows this date runs under instead of the
+ *                         edition's, with the reason; {@code null} when the
+ *                         edition's own apply. Dated by construction: they
+ *                         govern this date only and leave with the consigne,
+ *                         so nobody has to remember to put a parameter back
  */
 @Schema(requiredProperties = {"date", "fermetureDebut", "motif", "fenetres", "ouvertures", "creneauxAjoutes"})
 public record ConsigneEdition(
@@ -48,7 +53,39 @@ public record ConsigneEdition(
         List<Ouverture> ouvertures,
         List<Long> creneauxAjoutes,
         Instant creeLe,
-        Instant modifieLe) {
+        Instant modifieLe,
+        RepasConsigne repas) {
+
+    /**
+     * The meal windows a consigne states for its date, each field
+     * {@code null} to keep the edition's value. The meal break is the
+     * organiser's own rule, not the Code du travail, which is why a consigne
+     * may restate it: people ate during the closed band, so an evening
+     * compensation 18h-22h owes no break — provided the evening window says
+     * so on that date. The legal caps (daily rest, daily and weekly hours,
+     * days per week) are the law and stay out of a consigne's reach.
+     *
+     * @param justification why, in the organiser's words — required as soon
+     *                      as one field is set, and printed beside the day
+     */
+    @Schema(requiredProperties = {"justification"})
+    public record RepasConsigne(
+            LocalTime midiDebut,
+            LocalTime midiFin,
+            LocalTime soirDebut,
+            LocalTime soirFin,
+            Integer coupureMinutes,
+            String justification) {
+
+        /** True when at least one field departs from the edition's parameters. */
+        public boolean surcharge() {
+            return midiDebut != null
+                    || midiFin != null
+                    || soirDebut != null
+                    || soirFin != null
+                    || coupureMinutes != null;
+        }
+    }
 
     /** One stretch of a day, {@code [debut, fin)}; {@code fin} {@code null} reads « jusqu'à minuit ». */
     @Schema(requiredProperties = {"debut"})
@@ -105,6 +142,16 @@ public record ConsigneEdition(
     /** The same consigne with the créneaux it added recorded. */
     public ConsigneEdition withCreneauxAjoutes(List<Long> ids) {
         return new ConsigneEdition(
-                date, fermetureDebut, fermetureFin, motif, prereglage, fenetres, ouvertures, ids, creeLe, modifieLe);
+                date,
+                fermetureDebut,
+                fermetureFin,
+                motif,
+                prereglage,
+                fenetres,
+                ouvertures,
+                ids,
+                creeLe,
+                modifieLe,
+                repas);
     }
 }

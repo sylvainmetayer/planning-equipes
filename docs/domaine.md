@@ -334,10 +334,23 @@ minutes fermées et rouvertes, ses animateurs concernés.
 > disponibilités des animateurs restent à la journée — les fenêtres tardives
 > se ferment aux mineurs par les règles de nuit et de repos, qui lisent le
 > créneau entier, pas la fenêtre effective ; et une fenêtre du soir qui
-> prolonge l'après-midi demande deux personnes par siège, la coupure repas du
-> soir interdisant d'enchaîner 18 h-20 h et 20 h-22 h — le levier est la
-> fenêtre du repas du soir dans les paramètres légaux, pas le repos quotidien
-> (voir l'ADR 0043, « Limites assumées »).
+> prolonge l'après-midi demande deux personnes par siège tant que la coupure
+> repas du soir interdit d'enchaîner 18 h-20 h et 20 h-22 h — la consigne
+> porte alors ses propres fenêtres repas, datées, avec leur justification
+> (voir ci-dessous et l'ADR 0043, « Limites assumées »).
+
+**Une consigne peut restater les fenêtres repas de sa date.** La coupure
+repas est la règle de l'organisateur, pas le Code du travail
+([`contraintes.md`](contraintes.md#la-coupure-repas)) : une consigne peut
+donc dire, pour sa seule date, d'autres fenêtres de midi et du soir et une
+autre durée de coupure, avec une justification obligatoire en termes métier.
+Les `FenetreRepas` que le solveur reçoit sont alors de deux sortes : celles
+de l'édition, qui portent les dates où elles s'effacent, et celles de la
+consigne, datées ; `FenetreRepas.appliesTo(date)` est ce que la contrainte
+et chaque lecteur (Pauses, Besoin, Intendance, contrôle de grille) demandent.
+Lever la consigne retire ses fenêtres avec elle : les paramètres légaux de
+l'édition n'ont jamais été écrits, il n'y a rien à remettre. Les plafonds
+légaux ne sont pas surchargeables.
 
 ### Fenêtre effective
 

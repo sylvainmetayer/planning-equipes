@@ -34,6 +34,29 @@ class RepasConstraintsTest extends ConstraintTestBase {
 
     // --- coupureRepasObligatoire -------------------------------------------
 
+    /**
+     * A consigne restating the evening window on its own date (issue #4):
+     * 18h-22h owes nothing to a window that opens at 18h, while the same
+     * stint on any other day still owes its hour inside 19h-21h. The
+     * edition's window is excluded on the consigne's date, the dated one
+     * applies there and nowhere else.
+     */
+    @Test
+    void uneFenetreDateeRemplaceCelleDeLEditionSurSaSeuleDate() {
+        FenetreRepas soirEdition = new FenetreRepas(
+                FenetreRepas.SOIR, LocalTime.of(19, 0), LocalTime.of(21, 0), 60, false, null, java.util.Set.of(D1));
+        FenetreRepas soirConsigne = new FenetreRepas(
+                FenetreRepas.SOIR, LocalTime.of(18, 0), LocalTime.of(22, 0), 60, false, D1, java.util.Set.of());
+        Creneau lendemain = creneau("18-22-J2", 2, D1.plusDays(1), LocalTime.of(18, 0), LocalTime.of(22, 0));
+
+        verify("coupureRepasObligatoire")
+                .given(soirEdition, soirConsigne, poste(standA, vacation("18-22", 18, 22), a84))
+                .penalizesBy(0);
+        verify("coupureRepasObligatoire")
+                .given(soirEdition, soirConsigne, poste(standA, lendemain, a84))
+                .penalizesBy(60);
+    }
+
     @Test
     void dixHeuresSansCoupureCoutentLaCoupureEntiere() {
         verify("coupureRepasObligatoire")

@@ -774,7 +774,9 @@ public class StaffingAnalyzer {
             int parLesHeures = (int) Math.ceil(heures * 60 / PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES);
             int picRepas = 0;
             for (FenetreRepas fenetre : fenetres) {
-                picRepas = Math.max(picRepas, picRepas(entree.getValue(), fenetre));
+                if (fenetre.appliesTo(entree.getKey())) {
+                    picRepas = Math.max(picRepas, picRepas(entree.getValue(), fenetre));
+                }
             }
             besoins.put(
                     entree.getKey(),

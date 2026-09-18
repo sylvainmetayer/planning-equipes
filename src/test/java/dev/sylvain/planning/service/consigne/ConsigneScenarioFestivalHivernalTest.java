@@ -91,6 +91,7 @@ class ConsigneScenarioFestivalHivernalTest {
                             STAND_TEMOIN, LocalTime.of(18, 0), LocalTime.of(22, 0), null)),
                     List.of(),
                     null,
+                    null,
                     null);
             List<Creneau> duJour = grilleNominale.stream()
                     .filter(c -> date.equals(c.getDate()))
