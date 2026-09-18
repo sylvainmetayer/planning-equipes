@@ -352,6 +352,9 @@ export class SolverPage {
    * result says exactly which crews moved.
    */
   protected async onSolveIncremental(): Promise<void> {
+    if (!(await this.confirmerCausesBloquantes())) {
+      return;
+    }
     const scope = await firstValueFrom(
       this.dialog.open(ReplanificationDialog, { width: '640px' }).afterClosed(),
     );
@@ -422,6 +425,9 @@ export class SolverPage {
    * a plan — « Calculer le planning » already starts cold then.
    */
   protected async onRecommencerDeZero(): Promise<void> {
+    if (!(await this.confirmerCausesBloquantes())) {
+      return;
+    }
     const affectations = this.affectationsEnregistrees() ?? 0;
     const publishedAt = this.lastPublishedAt();
     const message = $localize`:@@solver.aFroid.confirm.message:Le plan enregistré (${affectations}:count: affectations) ne servira pas de point de départ : le calcul repart de rien et peut finir en dessous.`;
@@ -436,11 +442,51 @@ export class SolverPage {
       danger: true,
     });
     if (confirme) {
-      await this.onTimefoldSolve('AUCUN');
+      await this.lancerSolve('AUCUN');
     }
   }
 
   protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
+    if (!(await this.confirmerCausesBloquantes())) {
+      return;
+    }
+    await this.lancerSolve(reamorcage);
+  }
+
+  /**
+   * Asks before spending solver time on a problem that cannot come out at zero
+   * hard (issue #30): a contradiction between two hand-entered exceptions, or a
+   * forced assignment nobody can honour. The run is machine time the organiser
+   * gets nothing out of, and the cause only shows once it is over, as a hard
+   * score they then have to decipher.
+   *
+   * Asks, never refuses — the banner's own doctrine. Launching anyway is a
+   * legitimate thing to want: the rest of the plan still improves, and the
+   * blocking cause may be one the organiser has decided to live with.
+   *
+   * A shortfall of animateurs asks nothing: see `causesBloquantes`.
+   */
+  private async confirmerCausesBloquantes(): Promise<boolean> {
+    const bloquantes = this.problemes.causesBloquantes();
+    if (bloquantes.length === 0) {
+      return true;
+    }
+    const message =
+      bloquantes.length === 1
+        ? $localize`:@@solver.bloquantes.confirm.message.une:Un problème rend ce planning impossible à résoudre sans écart : le calcul finira avec un score dur négatif quel que soit le temps qu'il tourne.`
+        : $localize`:@@solver.bloquantes.confirm.message.plusieurs:${bloquantes.length}:count: problèmes rendent ce planning impossible à résoudre sans écart : le calcul finira avec un score dur négatif quel que soit le temps qu'il tourne.`;
+    return (
+      (await this.confirm.ask({
+        title: $localize`:@@solver.bloquantes.confirm.title:Lancer malgré un problème bloquant ?`,
+        message,
+        detail: Promise.resolve(bloquantes.map((cause) => cause.message).join(' ')),
+        confirmLabel: $localize`:@@solver.bloquantes.confirm.action:Lancer quand même`,
+        danger: true,
+      })) === true
+    );
+  }
+
+  private async lancerSolve(reamorcage: Reamorcage): Promise<void> {
     const enFile = this.jobs.solverBusy();
     this.output.set(
       enFile

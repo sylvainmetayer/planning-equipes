@@ -22,6 +22,7 @@ import { SolverJobService, TrackedJob } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import {
+  CauseInfaisabilite,
   ChangementAffectation,
   ConstraintDiagnostic,
   FeasibilityReport,
@@ -194,12 +195,14 @@ describe('SolverPage', () => {
   // render here: `TestBed` auto-detects changes, so an incomplete mock would
   // throw during change detection instead of failing an assertion.
   const resolution = { dataStale: () => false, resolution: () => null, reload: vi.fn() };
+  const causesBloquantes = signal<CauseInfaisabilite[]>([]);
   const problemes = {
     reload: vi.fn(),
     alerteReglesLegales: () => '',
     alertePausesSansRelais: () => '',
     comptage: () => ({ total: 0 }),
     problemes: () => [],
+    causesBloquantes,
   };
 
   beforeEach(() => {
@@ -208,6 +211,7 @@ describe('SolverPage', () => {
     solverBusy.set(false);
     editingLocked.set(false);
     scoreTraceEdition.set(null);
+    causesBloquantes.set([]);
     for (const stub of [
       jobs.listJobs,
       jobs.submitSolveFromReferenceData,
@@ -617,6 +621,76 @@ describe('SolverPage', () => {
       await page.onRecommencerDeZero();
 
       expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUCUN');
+    });
+  });
+
+  // Issue #30: a run that cannot come out at zero hard is machine time the
+  // organiser gets nothing out of, and the cause only shows once it is over.
+  describe('before spending solver time on an impossible problem', () => {
+    const bloquante: CauseInfaisabilite = {
+      type: 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
+      severite: 'CRITIQUE',
+      message: "L'affectation forcée C01 ne peut pas être tenue.",
+      creneauId: null,
+      date: null,
+      heureDebut: null,
+      heureFin: null,
+      standIds: [],
+      contrainteIds: ['C01'],
+      demande: 0,
+      capacite: 0,
+      manque: 0,
+    };
+
+    it('does not ask when nothing blocks', async () => {
+      const page = createPage();
+      await fixture.whenStable();
+
+      await page.onTimefoldSolve();
+
+      expect(confirm.ask).not.toHaveBeenCalled();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalled();
+    });
+
+    it('names the blocking cause and does nothing when refused', async () => {
+      causesBloquantes.set([bloquante]);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onTimefoldSolve();
+
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Lancer malgré un problème bloquant ?', danger: true }),
+      );
+      await expect(confirm.ask.mock.calls.at(-1)![0].detail).resolves.toContain('C01');
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+
+    it('launches anyway once the user said so', async () => {
+      causesBloquantes.set([bloquante]);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(true);
+
+      await page.onTimefoldSolve();
+
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+    });
+
+    // Two dialogs on one click would be one too many: the blocking question
+    // comes first, and « Recommencer de zéro » asks its own only after it.
+    it('asks it before the cold-start question, and stops there when refused', async () => {
+      causesBloquantes.set([bloquante]);
+      planningApi.persistedCount.mockResolvedValue({ assignments: 12 });
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onRecommencerDeZero();
+
+      expect(confirm.ask).toHaveBeenCalledTimes(1);
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });
   });
 
