@@ -275,7 +275,11 @@ public class PlanningExportService {
 
     /** The animateur's planning as an iCalendar feed — see {@link PlanningIcs}. */
     public String exportAnimateurIcs(PlanningEvenement planning, String animateurId) {
-        return ics.exportAnimateurIcs(planning, animateurId);
+        return ics.exportAnimateurIcs(
+                planning,
+                animateurId,
+                pauses.pausesAnimateur(planning, animateurId),
+                provenance.publiee().edition());
     }
 
     /**
@@ -305,7 +309,11 @@ public class PlanningExportService {
                 planning,
                 List.of(new NamedFileBuilder(
                         ".ics",
-                        id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                        id -> ics.exportAnimateurIcs(
+                                        planning,
+                                        id,
+                                        parAnimateur.getOrDefault(id, List.of()),
+                                        provenance.courante().edition())
                                 .getBytes(StandardCharsets.UTF_8))));
     }
 
@@ -329,7 +337,11 @@ public class PlanningExportService {
                                         coupures.getOrDefault(id, List.of()))),
                         new NamedFileBuilder(
                                 ".ics",
-                                id -> ics.exportAnimateurIcs(planning, id, parAnimateur.getOrDefault(id, List.of()))
+                                id -> ics.exportAnimateurIcs(
+                                                planning,
+                                                id,
+                                                parAnimateur.getOrDefault(id, List.of()),
+                                                provenance.courante().edition())
                                         .getBytes(StandardCharsets.UTF_8))));
     }
 

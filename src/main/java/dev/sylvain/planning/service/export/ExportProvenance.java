@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import java.time.Instant;
 
 /**
@@ -44,11 +45,23 @@ public interface ExportProvenance {
     Provenance publiee();
 
     /**
-     * @param editionNom the édition's display name, {@code null} when it cannot
-     *                   be resolved — a document is still worth producing
-     * @param date       when the plan this document carries last moved,
-     *                   {@code null} when it never did
-     * @param nature     which plan that is, and therefore how the date is said
+     * @param edition the édition the document is about — its name and the days
+     *                its event spans (issue #608). Never {@code null}; the
+     *                fields inside it are, when the édition cannot be resolved,
+     *                because a document is still worth producing
+     * @param date    when the plan this document carries last moved,
+     *                {@code null} when it never did
+     * @param nature  which plan that is, and therefore how the date is said
      */
-    record Provenance(String editionNom, Instant date, Nature nature) {}
+    record Provenance(EtiquetteEdition edition, Instant date, Nature nature) {
+
+        public Provenance {
+            edition = edition == null ? EtiquetteEdition.INCONNUE : edition;
+        }
+
+        /** The name alone, which is what the footer has always printed. */
+        public String editionNom() {
+            return edition.nom();
+        }
+    }
 }

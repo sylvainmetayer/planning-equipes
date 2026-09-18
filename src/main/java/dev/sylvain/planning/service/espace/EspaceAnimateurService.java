@@ -14,6 +14,8 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.consigne.ConsigneService;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
+import dev.sylvain.planning.service.edition.EtiquetteEditionService;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
@@ -70,6 +72,9 @@ public class EspaceAnimateurService {
 
     @Inject
     ConsigneService consigneService;
+
+    @Inject
+    EtiquetteEditionService etiquetteService;
 
     @Inject
     DemandeEchangeService demandeEchangeService;
@@ -202,6 +207,15 @@ public class EspaceAnimateurService {
      *                 is nothing to show. Not the same instant as
      *                 {@code publieLe}: the edition may have published twice
      *                 since without this person's schedule moving
+     * @param editionNom name of the edition this planning belongs to (issue
+     *                 #608), {@code null} when it cannot be resolved. An
+     *                 animateur back from one year to the next holds two espace
+     *                 links, both valid for ever and both saying « votre
+     *                 planning »: nothing on either page said which year it was
+     * @param editionDebut first day of that edition's event, derived from its
+     *                 créneaux and not stored ({@code docs/domaine.md}),
+     *                 {@code null} when the edition holds no créneau
+     * @param editionFin last day, {@code null} under the same condition
      * @param dateDuJourFigee the date a developer froze on this server (see
      *                 {@link JourJClock}), {@code null} when the real clock is
      *                 in use — and always {@code null} where
@@ -232,7 +246,10 @@ public class EspaceAnimateurService {
             Instant changementsLe,
             LocalDate dateDuJourFigee,
             LocalTime heureDuJourFigee,
-            List<ConsigneEspaceView> consignes) {}
+            List<ConsigneEspaceView> consignes,
+            String editionNom,
+            LocalDate editionDebut,
+            LocalDate editionFin) {}
 
     /**
      * A day of the person's planning a consigne governs (issue #4): the espace
@@ -312,6 +329,7 @@ public class EspaceAnimateurService {
         DemandeEchangeService.FenetreFoire foire = demandeEchangeService.fenetre();
         PublicationTraceRepository.Destinataire lastTrace = traceRepository.lastScheduleSentTo(animateurId);
         JourJClock.Horloge horloge = clock.mocked();
+        EtiquetteEdition edition = etiquetteService.courante();
         boolean diffToShow = lastTrace != null
                 && !lastTrace.premiereDiffusion()
                 && !lastTrace.changements().isEmpty();
@@ -334,7 +352,10 @@ public class EspaceAnimateurService {
                 diffToShow ? lastTrace.envoyeLe() : null,
                 horloge.date(),
                 horloge.heure(),
-                consignesOf(postes, joursRepos, consigneService.byDate()));
+                consignesOf(postes, joursRepos, consigneService.byDate()),
+                edition.nom(),
+                edition.debut(),
+                edition.fin());
     }
 
     /**

@@ -99,6 +99,33 @@
       </p>
     </div>
   } @else {
+    <!--
+      De quelle édition est ce planning (#608) : un animateur revenu d'une année
+      sur l'autre a deux liens d'espace dans sa boîte mail, tous deux valides
+      indéfiniment, et les deux pages étaient rigoureusement identiques. Au
+      niveau du shell, donc sur les quatre pages de l'espace, et pas seulement
+      sur le planning. Les bornes se dérivent des créneaux (docs/domaine.md) :
+      une édition qui n'en a aucun porte son nom et rien d'autre.
+    -->
+    @if (espace.view(); as vue) {
+      @if (vue.editionNom || vue.editionDebut) {
+        <p class="espace-edition">
+          <mat-icon inline>event</mat-icon>
+          @if (vue.editionNom; as nom) {
+            <span class="espace-edition-nom">{{ nom }}</span>
+          }
+          @if (vue.editionDebut; as debut) {
+            @if (vue.editionFin; as fin) {
+              @if (debut === fin) {
+                <span i18n="@@espace.edition.jour">le {{ debut | date: 'd MMMM y' }}</span>
+              } @else {
+                <span i18n="@@espace.edition.periode">du {{ debut | date: 'd MMMM' }} au {{ fin | date: 'd MMMM y' }}</span>
+              }
+            }
+          }
+        </p>
+      }
+    }
     <nav class="espace-nav" i18n-aria-label="@@espace.navLabel" aria-label="Espace animateur">
       <a matButton [routerLink]="['/animateur', jeton()]" routerLinkActive="espace-nav-active"
          [routerLinkActiveOptions]="{ exact: true }" #rlaPlanning="routerLinkActive"

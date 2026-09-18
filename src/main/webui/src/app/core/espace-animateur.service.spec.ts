@@ -28,6 +28,9 @@ function view(): EspaceAnimateurView {
     changementsLe: null,
     dateDuJourFigee: null,
     heureDuJourFigee: null,
+    editionNom: 'Édition de test',
+    editionDebut: null,
+    editionFin: null,
   };
 }
 

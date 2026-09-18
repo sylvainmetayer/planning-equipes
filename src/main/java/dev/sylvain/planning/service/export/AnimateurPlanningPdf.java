@@ -72,7 +72,7 @@ public class AnimateurPlanningPdf {
         writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now(), provenance));
         document.open();
 
-        addHeader(document, animateurName, postes);
+        addHeader(document, animateurName, provenance.edition().libelle(), postes);
 
         if (postes.isEmpty()) {
             document.add(theme.emptyState());
@@ -144,7 +144,7 @@ public class AnimateurPlanningPdf {
         return callout;
     }
 
-    private void addHeader(Document document, String animateurName, List<PosteAffectation> postes) {
+    private void addHeader(Document document, String animateurName, String edition, List<PosteAffectation> postes) {
         float pageWidth = document.getPageSize().getWidth();
         float pageHeight = document.getPageSize().getHeight();
 
@@ -157,7 +157,10 @@ public class AnimateurPlanningPdf {
             document.add(strip);
         }
 
-        document.add(theme.brandHeader(document, 320f, "PLANNING", animateurName, 22f));
+        // The édition named right under the name (issue #608): an animateur who
+        // came back from one year to the next holds two of these documents, and
+        // « PLANNING / Prénom Nom » alone does not tell them apart.
+        document.add(theme.brandHeader(document, 320f, "PLANNING", animateurName, edition, 22f));
 
         PdfPTable stats = statBlock(postes);
         stats.setSpacingAfter(24f);

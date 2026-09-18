@@ -67,6 +67,9 @@ function view(overrides: Partial<EspaceAnimateurView> = {}): EspaceAnimateurView
     dateDuJourFigee: null,
     heureDuJourFigee: null,
     pauses: [],
+    editionNom: 'Édition de test',
+    editionDebut: null,
+    editionFin: null,
     ...overrides,
   };
 }
