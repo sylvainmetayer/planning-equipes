@@ -199,6 +199,14 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
       libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
     });
   }
+  // The deadlock has two halves and the cause only names one: the exception is
+  // on the Ajustements screen, the lock that blocks it on the other.
+  if (cause.type === 'AFFECTATION_FORCEE_SIEGE_VERROUILLE') {
+    liens.push({
+      route: '/verrouillages',
+      libelle: $localize`:@@problemes.lien.verrouillages:Voir les verrouillages`,
+    });
+  }
   return liens;
 }
 

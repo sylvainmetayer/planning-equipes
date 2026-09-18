@@ -1511,6 +1511,7 @@
   "problemes.lien.staffing": "Staffing need",
   "problemes.lien.contraintes": "View the rule",
   "problemes.lien.adHoc": "View manual adjustments",
+  "problemes.lien.verrouillages": "See the locks",
   "problemes.lien.pauses": "See the breaks",
   "problemes.pauses.titre": "Breaks without relay",
   "problemes.pauses.message": "{$count} legal break(s) fall on a stand where nobody else is present: the person is alone, nobody can relieve them. Plan an outside relay, or reinforce the stand.",

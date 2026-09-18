@@ -230,6 +230,40 @@ describe('construireProblemes', () => {
     ]);
   });
 
+  // The deadlock has two halves and the cause only names the exception.
+  it('sends a locked-schedule cause to the locks as well as to the adjustments', () => {
+    const liens = liensDeCause(
+      cause({
+        type: 'AFFECTATION_FORCEE_SIEGE_VERROUILLE',
+        severite: 'CRITIQUE',
+        creneauId: null,
+        standIds: [],
+        contrainteIds: ['C01'],
+        demande: 0,
+        capacite: 0,
+        manque: 0,
+      }),
+    );
+    expect(liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints', '/verrouillages']);
+  });
+
+  // Every other cause keeps the adjustments link alone.
+  it('does not offer the locks on a day-off cause', () => {
+    const liens = liensDeCause(
+      cause({
+        type: 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE',
+        severite: 'CRITIQUE',
+        creneauId: null,
+        standIds: [],
+        contrainteIds: ['C01'],
+        demande: 0,
+        capacite: 0,
+        manque: 0,
+      }),
+    );
+    expect(liens.map((lien) => lien.route)).toEqual(['/ad-hoc-constraints']);
+  });
+
   it('links each match of a HARD rule to the fiches it names, in place of the bare lines', () => {
     const [probleme] = construireProblemes(null, [
       contrainte({
