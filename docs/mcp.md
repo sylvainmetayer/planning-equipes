@@ -479,6 +479,18 @@ qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la
 journée, pas à un stand. La déclaration `pauseSurPoste` se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
 
+La **durée** de cette pause se règle par les mêmes outils :
+`dureePauseMajeurMinutes` et `dureePauseMineurMinutes`. Elles se refusent en
+dessous de leur plancher d'ordre public — 20 minutes pour un majeur (L3121-16),
+30 pour un mineur (L3162-3) — et rien ne les plafonne : donner plus de repos
+que le Code n'en doit reste la décision de l'organisateur. Ce sont elles que
+les plafonds quotidien **et hebdomadaires** déduisent quand la pause est
+déclarée prise sur le poste, et c'est aussi la longueur du trou qui sépare deux
+vacations au lieu de les souder en une seule séquence. Elles sortent dans la
+vue de `consulter_parametres_legaux`. Jusqu'ici les trente minutes que
+l'organisation a retenues ne se posaient que depuis l'écran Paramètres, le REST
+ou un YAML : un assistant ne pouvait pas les régler.
+
 ## L'équité se lit par id
 
 `equite_planning` rend le tableau de l'écran Équité sur le planning persisté :
