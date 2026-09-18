@@ -2000,6 +2000,8 @@ export interface StatistiquesIncremental {
   postesLiberes: number;
   postesLiberesManuellement: number;
   postesNouveaux: number;
+  /** Seats of timeslots already started, kept as worked and pinned whatever their state (« le passé est figé »). */
+  postesPasses: number;
 }
 
 /** One stand × créneau whose crew changed, both crews spelled out by name. */
@@ -2041,6 +2043,8 @@ export interface ReamorcageEffectue {
   postes: number;
   /** Seats the persisted plan staffed but that had to start empty (animateur gone, or since unavailable). */
   postesLiberes: number;
+  /** Seats of timeslots already started, kept as worked and pinned whatever the mode (« le passé est figé »). */
+  postesPasses: number;
 }
 
 /**

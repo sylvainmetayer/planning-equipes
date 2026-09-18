@@ -78,7 +78,7 @@ describe('SolveRecap', () => {
 
   it('recaps a re-seeded solve, with the seats it had to leave free', () => {
     const recap = createRecap({
-      reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0 },
+      reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0, postesPasses: 0 },
     });
     expect(recap.reamorcageLabel()).toBe('Point de départ : le plan enregistré, 12 postes repris.');
 
@@ -86,12 +86,31 @@ describe('SolveRecap', () => {
       mode: 'PLAN_COURANT',
       postes: 10,
       postesLiberes: 2,
+      postesPasses: 0,
     });
     expect(recap.reamorcageLabel()).toContain('10 postes repris et 2 laissés libres');
   });
 
+  it('names the past seats frozen as worked, only when the event is under way', () => {
+    const recap = createRecap({
+      reamorcage: { mode: 'PLAN_COURANT', postes: 12, postesLiberes: 0, postesPasses: 0 },
+    });
+    expect(recap.reamorcageLabel()).not.toContain('déjà commencés');
+    fixture.componentRef.setInput('reamorcage', {
+      mode: 'PLAN_COURANT',
+      postes: 10,
+      postesLiberes: 0,
+      postesPasses: 7,
+    });
+    expect(recap.reamorcageLabel()).toContain(
+      '7 postes déjà commencés, figés tels que travaillés.',
+    );
+  });
+
   it('recaps a cold start, and stays silent on a payload from before the feature', () => {
-    const recap = createRecap({ reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0 } });
+    const recap = createRecap({
+      reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0, postesPasses: 0 },
+    });
     expect(recap.reamorcageLabel()).toBe('Point de départ : aucun, calcul de zéro.');
 
     fixture.componentRef.setInput('reamorcage', null);
@@ -110,7 +129,7 @@ describe('SolveRecap', () => {
   });
 
   it('shows the run only once one has finished', () => {
-    createRecap({ reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0 } });
+    createRecap({ reamorcage: { mode: 'AUCUN', postes: 0, postesLiberes: 0, postesPasses: 0 } });
     expect(text()).not.toContain('Dernière exécution');
 
     fixture.componentRef.setInput('lastRunAt', '2026-08-01T12:00:00Z');

@@ -83,12 +83,24 @@ export class SolveRecap {
       return '';
     }
     if (reamorcage.mode === 'AUCUN') {
-      return $localize`:@@solver.reamorcage.aFroid:Point de départ : aucun, calcul de zéro.`;
+      const aFroid = $localize`:@@solver.reamorcage.aFroid:Point de départ : aucun, calcul de zéro.`;
+      return reamorcage.postesPasses > 0
+        ? `${aFroid} ${this.passesLabel(reamorcage.postesPasses)}`
+        : aFroid;
     }
-    return reamorcage.postesLiberes > 0
-      ? $localize`:@@solver.reamorcage.planAvecLiberes:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris et ${reamorcage.postesLiberes}:liberes: laissés libres (animateur disparu ou devenu indisponible).`
-      : $localize`:@@solver.reamorcage.plan:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris.`;
+    const depart =
+      reamorcage.postesLiberes > 0
+        ? $localize`:@@solver.reamorcage.planAvecLiberes:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris et ${reamorcage.postesLiberes}:liberes: laissés libres (animateur disparu ou devenu indisponible).`
+        : $localize`:@@solver.reamorcage.plan:Point de départ : le plan enregistré, ${reamorcage.postes}:count: postes repris.`;
+    return reamorcage.postesPasses > 0
+      ? `${depart} ${this.passesLabel(reamorcage.postesPasses)}`
+      : depart;
   });
+
+  /** « Le passé est figé » : said only when the event is under way, which is when it means something. */
+  private passesLabel(postesPasses: number): string {
+    return $localize`:@@solver.reamorcage.passes:${postesPasses}:count: postes déjà commencés, figés tels que travaillés.`;
+  }
 
   protected readonly impactLabel = computed(() => {
     const impact = this.impact();

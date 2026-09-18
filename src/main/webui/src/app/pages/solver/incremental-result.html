@@ -23,6 +23,10 @@
         <div class="staffing-stat-value">{{ stats().postesNouveaux }}</div>
         <div class="staffing-stat-label" i18n="@@solver.incremental.stat.nouveaux">Nouveaux ou restés vides</div>
       </mat-card>
+      <mat-card appearance="outlined" class="staffing-stat">
+        <div class="staffing-stat-value">{{ stats().postesPasses }}</div>
+        <div class="staffing-stat-label" i18n="@@solver.incremental.stat.passes">Postes passés, figés</div>
+      </mat-card>
     </div>
     @if (changements().length === 0) {
       <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">
