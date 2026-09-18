@@ -103,16 +103,17 @@ public class PlanningExportService {
                         && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
+        List<JourRepos> joursRepos = daysOff(planning, animateurId);
         return pdfAnimateur.construire(
                 resolveAnimateurName(planning, animateurId),
                 animateurPostes,
                 teammatesByPoste(planning, animateurId),
-                daysOff(planning, animateurId),
+                joursRepos,
                 pausesDuJour,
                 coupuresDuJour,
                 lienEspaceAnimateur(planning, animateurId),
                 provenanceDuPlan,
-                journeesModifiees(animateurPostes));
+                journeesModifiees(animateurPostes, joursRepos, consignesByDate()));
     }
 
     /**
@@ -124,25 +125,42 @@ public class PlanningExportService {
     @Inject
     Instance<ConsigneService> consignes;
 
-    /** The dates of {@code postes} a consigne governs, each with the sentence to print under the date. */
-    private Map<LocalDate, String> journeesModifiees(List<PosteAffectation> postes) {
+    private Map<LocalDate, ConsigneEdition> consignesByDate() {
         if (consignes == null || !consignes.isResolvable()) {
             return Map.of();
         }
-        Map<LocalDate, ConsigneEdition> consignesByDate = consignes.get().byDate();
+        return consignes.get().byDate();
+    }
+
+    /**
+     * The dates of the person's document a consigne governs, each with the
+     * sentence to print under the date: the days of {@code postes}, and the
+     * rest days — a day the band emptied for them prints « Repos », and the
+     * motif under it is what says the arrêté decided it, not the planner.
+     */
+    static Map<LocalDate, String> journeesModifiees(
+            List<PosteAffectation> postes,
+            List<JourRepos> joursRepos,
+            Map<LocalDate, ConsigneEdition> consignesByDate) {
         if (consignesByDate.isEmpty()) {
             return Map.of();
         }
         Map<LocalDate, String> lignes = new LinkedHashMap<>();
         for (PosteAffectation poste : postes) {
-            LocalDate date =
-                    poste.getCreneau() == null ? null : poste.getCreneau().getDate();
-            ConsigneEdition consigne = date == null ? null : consignesByDate.get(date);
-            if (consigne != null) {
-                lignes.put(date, "Horaires modifiés — " + consigne.motif());
-            }
+            note(lignes, poste.getCreneau() == null ? null : poste.getCreneau().getDate(), consignesByDate);
+        }
+        for (JourRepos repos : joursRepos) {
+            note(lignes, repos.date(), consignesByDate);
         }
         return lignes;
+    }
+
+    private static void note(
+            Map<LocalDate, String> lignes, LocalDate date, Map<LocalDate, ConsigneEdition> consignesByDate) {
+        ConsigneEdition consigne = date == null ? null : consignesByDate.get(date);
+        if (consigne != null) {
+            lignes.put(date, "Horaires modifiés — " + consigne.motif());
+        }
     }
 
     /** An event day the animateur is off: its day number and its date. */

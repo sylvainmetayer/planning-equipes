@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -267,6 +268,10 @@ public class PlanPublicationService {
             throw new BusinessError.Conflict("Personne n'est concerné : le planning publié est déjà à jour.");
         }
 
+        // The plan the diff was read against, kept before the capture makes
+        // the working plan the published one: a person the band emptied on a
+        // date holds a seat there only in this one, and still has to read why.
+        PlanningEvenement reference = planPublieService.planPublie();
         PlanSnapshotService.SnapshotMeta meta =
                 snapshotService.capturePubliee("Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
         if (meta == null) {
@@ -280,7 +285,7 @@ public class PlanPublicationService {
         List<String> echecs = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : apercu.destinataires()) {
-            StatutEnvoi statut = send(planning, destinataire);
+            StatutEnvoi statut = send(planning, reference, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
@@ -312,7 +317,8 @@ public class PlanPublicationService {
         return new RapportPublication(meta.id(), meta.publieLe(), envoyes, List.copyOf(sansEmail), List.copyOf(echecs));
     }
 
-    private StatutEnvoi send(PlanningEvenement planning, DestinatairePublication destinataire) {
+    private StatutEnvoi send(
+            PlanningEvenement planning, PlanningEvenement reference, DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
             return StatutEnvoi.SANS_EMAIL;
         }
@@ -328,7 +334,8 @@ public class PlanPublicationService {
                     destinataire.premiereDiffusion(),
                     destinataire.changements(),
                     destinataire.demandes(),
-                    consigneService.lignesJourneesModifiees(daysOf(planning, destinataire.animateurId())));
+                    consigneService.lignesJourneesModifiees(
+                            datesConcernees(planning, reference, destinataire.animateurId())));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
@@ -336,15 +343,30 @@ public class PlanPublicationService {
         }
     }
 
-    /** The dates {@code animateurId} holds a seat on in {@code planning}. */
-    private static List<java.time.LocalDate> daysOf(PlanningEvenement planning, String animateurId) {
+    /**
+     * The dates {@code animateurId} holds a seat on in either plan — the one
+     * being published or the one it replaces. A consigne on a date the band
+     * emptied for them shows in the second only: they read a bare « vacation
+     * retirée » otherwise, with nothing saying an arrêté decided it.
+     */
+    static List<java.time.LocalDate> datesConcernees(
+            PlanningEvenement planning, PlanningEvenement reference, String animateurId) {
+        return Stream.concat(daysOf(planning, animateurId), daysOf(reference, animateurId))
+                .distinct()
+                .sorted()
+                .toList();
+    }
+
+    private static Stream<java.time.LocalDate> daysOf(PlanningEvenement planning, String animateurId) {
+        if (planning == null) {
+            return Stream.empty();
+        }
         return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId())
-                        && poste.getCreneau() != null)
-                .map(poste -> poste.getCreneau().getDate())
-                .distinct()
-                .toList();
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null)
+                .map(poste -> poste.getCreneau().getDate());
     }
 
     /* -------------------------------- Helpers ------------------------------ */

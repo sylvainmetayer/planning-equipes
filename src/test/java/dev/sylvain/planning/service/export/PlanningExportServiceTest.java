@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.entry;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauCompetence;
@@ -78,6 +79,50 @@ class PlanningExportServiceTest {
      * « Repos » day — but only for animateurs who hold at least one seat:
      * someone absent from the plan is not "resting every day".
      */
+    /** The note under a date is read for the person's seats and their rest days alike (issue #4). */
+    @Test
+    void journeesModifieesCoverTheRestDaysToo() {
+        PlanningEvenement planning = fakePlanning();
+        List<PosteAffectation> postesAda = planning.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && "A-ADA".equals(poste.getAnimateur().getId()))
+                .toList();
+        List<PlanningExportService.JourRepos> repos = PlanningExportService.daysOff(planning, "A-ADA");
+        LocalDate jourRepos = repos.get(0).date();
+        LocalDate jourTravaille = postesAda.get(0).getCreneau().getDate();
+        Map<LocalDate, ConsigneEdition> consignes = Map.of(
+                jourRepos,
+                consigne(jourRepos, "Canicule"),
+                jourTravaille,
+                consigne(jourTravaille, "Orage"),
+                jourRepos.plusYears(1),
+                consigne(jourRepos.plusYears(1), "Hors planning"));
+
+        Map<LocalDate, String> notes = PlanningExportService.journeesModifiees(postesAda, repos, consignes);
+
+        assertThat(notes)
+                .containsEntry(jourRepos, "Horaires modifiés — Canicule")
+                .containsEntry(jourTravaille, "Horaires modifiés — Orage")
+                .hasSize(2);
+        assertThat(PlanningExportService.journeesModifiees(postesAda, repos, Map.of()))
+                .isEmpty();
+    }
+
+    private static ConsigneEdition consigne(LocalDate date, String motif) {
+        return new ConsigneEdition(
+                date,
+                LocalTime.of(12, 0),
+                LocalTime.of(18, 0),
+                motif,
+                null,
+                List.of(),
+                List.of(),
+                List.of(),
+                null,
+                null,
+                null);
+    }
+
     @Test
     void joursDeReposListsTheEventDaysWithoutAnyAssignment() {
         PlanningEvenement planning = new PlanningEvenement();
