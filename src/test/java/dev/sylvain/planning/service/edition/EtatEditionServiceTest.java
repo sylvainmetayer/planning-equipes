@@ -586,7 +586,7 @@ class EtatEditionServiceTest {
                 2,
                 OuvertureStandsAnalyzer.analyze(List.of(stand), List.of(creneau)),
                 new StaffingAnalyzer().analyze(List.of(poste("P1", stand, creneau)), animateurs, List.of(), 2100, 660),
-                new PlanningResolution(RESOLU_LE),
+                new PlanningResolution(RESOLU_LE, null),
                 diagnostic("0hard/0medium/-12soft", 0, List.of(contrainte("equilibreHeures", 3))),
                 RESOLU_LE.minusSeconds(60),
                 false,

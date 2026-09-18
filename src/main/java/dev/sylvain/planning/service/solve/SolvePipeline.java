@@ -218,7 +218,7 @@ public class SolvePipeline {
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
         Map<String, List<String>> avant = assignmentsBeforePersist();
-        persistenceService.persist(resolu);
+        persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         analysisStore.record(diagnostic);
         // KPI history (issue #89): one row per finished solve, carrying the real
@@ -255,7 +255,7 @@ public class SolvePipeline {
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
         Map<String, List<String>> avant = kept ? assignmentsBeforePersist() : null;
         if (kept) {
-            persistenceService.persist(resolu);
+            persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
             analysisStore.record(diagnostic);
             kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
             LOG.infof(

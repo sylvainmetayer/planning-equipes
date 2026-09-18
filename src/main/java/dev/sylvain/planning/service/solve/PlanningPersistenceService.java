@@ -18,6 +18,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.sql.Types;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -66,15 +67,35 @@ public class PlanningPersistenceService {
     /**
      * Writes the whole solution to the database in a single transaction and
      * returns how many assignment rows were stored.
+     *
+     * <p>A write outside of any solve — a test fixture, a plan put back by
+     * hand — so the snapshot the last solve replaced stays recorded, as a
+     * restore leaves it: what a solve replaced is only known to the solve.</p>
      */
     public int persist(PlanningEvenement planning) {
+        return persist(planning, null, false);
+    }
+
+    /**
+     * The same write, at the end of a solve that replaces the persisted plan:
+     * records which automatique snapshot it replaced, the reference the
+     * Changements rendering of the Journée page reads « depuis la dernière
+     * résolution » against. {@code null} when the solve replaced nothing —
+     * the first of an edition — or when the capture failed: the reference is
+     * then honestly missing rather than pointing at an older solve's.
+     */
+    public int persistAfterSolve(PlanningEvenement planning, Long snapshotBeforeSolveId) {
+        return persist(planning, snapshotBeforeSolveId, true);
+    }
+
+    private int persist(PlanningEvenement planning, Long snapshotBeforeSolveId, boolean fromSolve) {
         if (planning == null || planning.getPostes() == null) {
             return 0;
         }
         return scope.writeAndReturn("Failed to persist planning solution", connection -> {
             upsertReferenceData(connection, planning);
             int count = rewriteAssignments(connection, planning.getPostes());
-            recordResolution(connection);
+            recordResolution(connection, snapshotBeforeSolveId, fromSolve);
             return count;
         });
     }
@@ -474,25 +495,38 @@ public class PlanningPersistenceService {
         }
     }
 
-    /** Stamps when this edition's plan was last solved and persisted. */
-    private void recordResolution(Connection connection) throws SQLException {
+    /**
+     * Stamps when this edition's plan was last solved and persisted. A solve
+     * also records the snapshot it replaced — {@code null} included, which
+     * means « nothing to compare » — while any other write leaves the last
+     * solve's untouched.
+     */
+    private void recordResolution(Connection connection, Long snapshotBeforeSolveId, boolean fromSolve)
+            throws SQLException {
+        // One statement for both writes: the snapshot column moves only when
+        // a solve says so, and a first write outside a solve leaves it empty.
         String sql = """
- INSERT INTO planning_resolution (edition_id, resolu_le)
- VALUES (?, ?)
+ INSERT INTO planning_resolution (edition_id, resolu_le, snapshot_avant_solve_id)
+ VALUES (?, ?, ?)
  ON CONFLICT (edition_id)
- DO UPDATE SET resolu_le = EXCLUDED.resolu_le""";
+ DO UPDATE SET resolu_le = EXCLUDED.resolu_le,
+ snapshot_avant_solve_id = CASE WHEN ? THEN EXCLUDED.snapshot_avant_solve_id
+ ELSE planning_resolution.snapshot_avant_solve_id END""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setTimestamp(2, Timestamp.from(Instant.now()));
+            ps.setObject(3, fromSolve ? snapshotBeforeSolveId : null, Types.BIGINT);
+            ps.setBoolean(4, fromSolve);
             ps.executeUpdate();
         }
     }
 
     /**
-     * The groupe de créneaux the last persisted solve was computed for, and
-     * when it ran. {@code null} when nothing has been solved yet.
+     * When this edition's plan was last written by a solve or a restore, and
+     * which automatique snapshot the last <b>solve</b> replaced. {@code null}
+     * when nothing has been solved yet.
      */
     public PlanningResolution loadResolution() {
-        String sql = "SELECT resolu_le FROM planning_resolution WHERE edition_id = ?";
+        String sql = "SELECT resolu_le, snapshot_avant_solve_id FROM planning_resolution WHERE edition_id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql);
                 ResultSet rs = ps.executeQuery()) {
@@ -500,13 +534,22 @@ public class PlanningPersistenceService {
                 return null;
             }
             Timestamp resoluLe = rs.getTimestamp("resolu_le");
-            return new PlanningResolution(resoluLe != null ? resoluLe.toInstant() : null);
+            long snapshotId = rs.getLong("snapshot_avant_solve_id");
+            return new PlanningResolution(
+                    resoluLe != null ? resoluLe.toInstant() : null, rs.wasNull() ? null : snapshotId);
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load planning resolution", e);
         }
     }
 
-    public record PlanningResolution(Instant resoluLe) {}
+    /**
+     * @param resoluLe             when the plan was last written by a solve or a restore
+     * @param snapshotBeforeSolveId the automatique snapshot the last solve
+     *                             replaced — {@code null} when it replaced
+     *                             nothing. A restore leaves it as it is; the
+     *                             snapshot itself may have been deleted since
+     */
+    public record PlanningResolution(Instant resoluLe, Long snapshotBeforeSolveId) {}
 
     /**
      * Number of assignment rows currently stored, used to confirm persistence.

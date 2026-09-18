@@ -7,6 +7,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.solve.SolvePipeline;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
@@ -14,6 +17,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
+import java.util.function.Function;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -35,6 +39,12 @@ class ChangementsJourneeResourceTest {
 
     @Inject
     DataSource dataSource;
+
+    @Inject
+    SolvePipeline pipeline;
+
+    @Inject
+    EditionContext editionContext;
 
     /**
      * Snapshots survive the reset — that is what they are for — so a published
@@ -137,6 +147,41 @@ class ChangementsJourneeResourceTest {
         assertThat(depuisResolution.getString("reference")).isEqualTo("RESOLUTION");
         assertThat(depuisResolution.getBoolean("referenceDisponible")).isTrue();
         assertThat(depuisResolution.getList("parVacation.avant.animateurId")).contains(absent);
+    }
+
+    /**
+     * A solve that captures the plan and then writes nothing — refused on its
+     * problem here, interrupted by the server in production — must not become
+     * the reference: its capture equals the persisted plan, and reading it
+     * would announce a day without change.
+     */
+    @Test
+    void aSolveThatReplacedNothingLeavesTheEarlierResolutionAsReference() {
+        solve();
+        String absent = aSeatedAnimateur();
+        markUnavailable(absent);
+        solve();
+        JsonPath avantEchec = changements("?reference=resolution");
+        assertThat(avantEchec.getBoolean("referenceDisponible")).isTrue();
+        assertThat(avantEchec.getList("parVacation.avant.animateurId")).contains(absent);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> editionContext.executeIn(
+                        EditionRepository.EDITION_DEFAUT_ID,
+                        () -> pipeline.execute(
+                                "Édition de test",
+                                () -> {
+                                    throw new IllegalStateException("Problème invalide");
+                                },
+                                Function.identity(),
+                                1L,
+                                null,
+                                () -> false)))
+                .hasMessage("Problème invalide");
+
+        JsonPath apresEchec = changements("?reference=resolution");
+        assertThat(apresEchec.getBoolean("referenceDisponible")).isTrue();
+        assertThat(apresEchec.getString("referenceLe")).isEqualTo(avantEchec.getString("referenceLe"));
+        assertThat(apresEchec.getList("parVacation.avant.animateurId")).contains(absent);
     }
 
     @Test
