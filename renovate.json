@@ -12,6 +12,7 @@
   "prConcurrentLimit": 5,
   "prHourlyLimit": 2,
   "rebaseWhen": "conflicted",
+  "gitIgnoredAuthors": ["41898282+github-actions[bot]@users.noreply.github.com"],
   "enabledManagers": [
     "maven",
     "dockerfile",
