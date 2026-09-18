@@ -320,28 +320,6 @@ lever retire la validation de relecture des journées touchées, verrou ou non
 — les sièges de la bande n'existent plus, la journée relue n'est plus celle
 qui sera travaillée.
 
-**Le passé est figé.** La consigne n'est pas seule à le tenir : depuis
-[ADR 0044](decisions/0044-le-passe-est-fige.md), **toute résolution** —
-complète, incrémentale, depuis l'écran ou par MCP — reprend du plan enregistré
-les places des créneaux déjà commencés et les épingle, quel que soit leur
-état : le titulaire est gardé même s'il a depuis déclaré la journée
-indisponible ou qu'une indisponibilité forcée le couvre maintenant (il était
-là) ; un titulaire supprimé laisse la place vide, et une place passée vide est
-épinglée quand même (personne ne peut tenir hier). Un créneau est *commencé*
-si sa date est passée, ou si c'est aujourd'hui et que le début effectif de la
-place est atteint ; un créneau à cheval sur minuit appartient à sa date de
-début. « Aujourd'hui » est celui de l'horloge du jour J — la machine en
-production, la date figée depuis la page Débogage sous `quarkus:dev` ou avec
-`HORLOGE_SIMULEE_AUTORISEE=true`. Ces places **comptent** dans les règles qui
-lient les jours (repos quotidien entre hier et aujourd'hui, repos et durée
-hebdomadaires, jours consécutifs, pause entre vacations, « fermer tard puis
-ouvrir tôt »…) mais ne sont **jamais reprochées** : un trou d'hier, un mineur
-placé la nuit hier ne bloquent pas le zéro dur d'aujourd'hui — règle par
-règle dans [`contraintes.md`](contraintes.md#compté-non-reproché--le-passé).
-Le périmètre d'une replanification ne rouvre jamais une place passée.
-`PASSE_FIGE=false` coupe la règle, pour une recette qui rejoue une édition
-ancienne.
-
 **Les heures effectives partout.** Cumuls, repos, « fermer tard puis ouvrir
 tôt », heures, équité, indicateurs : tout lit déjà la fenêtre effective, et
 une journée sous consigne compte donc ce qui est réellement travaillé sans
@@ -373,6 +351,48 @@ et chaque lecteur (Pauses, Besoin, Intendance, contrôle de grille) demandent.
 Lever la consigne retire ses fenêtres avec elle : les paramètres légaux de
 l'édition n'ont jamais été écrits, il n'y a rien à remettre. Les plafonds
 légaux ne sont pas surchargeables.
+
+### Le passé est figé
+
+La consigne n'est pas seule à tenir le passé intact : depuis
+[ADR 0044](decisions/0044-le-passe-est-fige.md), **toute résolution** —
+complète, incrémentale, depuis l'écran ou par MCP — reprend du plan enregistré
+les places des créneaux déjà commencés et les épingle, quel que soit leur
+état : le titulaire est gardé même s'il a depuis déclaré la journée
+indisponible ou qu'une indisponibilité forcée le couvre maintenant (il était
+là) ; un titulaire supprimé laisse la place vide, et une place passée vide est
+épinglée quand même (personne ne peut tenir hier). Un créneau est *commencé*
+si sa date est passée, ou si c'est aujourd'hui et que le début effectif de la
+place est atteint ; un créneau à cheval sur minuit appartient à sa date de
+début. « Aujourd'hui » est celui de l'horloge du jour J — la machine en
+production, la date figée depuis la page Débogage sous `quarkus:dev` ou avec
+`HORLOGE_SIMULEE_AUTORISEE=true`. Ces places **comptent** dans les règles qui
+lient les jours (repos quotidien entre hier et aujourd'hui, repos et durée
+hebdomadaires, jours consécutifs, pause entre vacations, « fermer tard puis
+ouvrir tôt »…) mais ne sont **jamais reprochées** : un trou d'hier, un mineur
+placé la nuit hier ne bloquent pas le zéro dur d'aujourd'hui — règle par
+règle dans [`contraintes.md`](contraintes.md#compté-non-reproché--le-passé).
+Le périmètre d'une replanification ne rouvre jamais une place passée.
+
+**Le passé ne se modifie plus à la main non plus.** Les gestes qui
+réécrivent une place sans solveur — le glisser-déposer des vues journalières
+(`deplacer_affectation`), l'acceptation d'un échange, une réparation
+appliquée ou suggérée — refusent une place dont le créneau est commencé, au
+même horizon, avec la même phrase : « Ce créneau est déjà commencé : le passé
+ne se modifie plus » (`400` en REST, refus métier en MCP). Le mode jour J
+continue d'agir sur les créneaux restants de la journée ; l'absence est
+enregistrée sur le créneau en cours, son siège n'est pas vidé.
+
+**Rien à planifier.** Une résolution dont **toutes** les places sont passées
+— l'édition est terminée, ou la date simulée est après l'événement — est
+refusée plutôt que de produire un plan vide à zéro dur. Quand des places
+passées sont restées vides (aucun titulaire enregistré : un premier calcul
+lancé pendant l'événement, un titulaire supprimé), la résolution a lieu et
+son résultat porte `postesPassesVides`, annoncé comme un avertissement.
+
+`PASSE_FIGE=false` coupe la règle entière — épinglage, refus des gestes,
+refus d'une résolution sans avenir — pour une recette qui rejoue une édition
+ancienne.
 
 ### Fenêtre effective
 

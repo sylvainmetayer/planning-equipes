@@ -169,7 +169,8 @@ qui vient d'afficher la donnée.
 | `capturer_instantane`, `restaurer_instantane` | lèvent une erreur là où le REST renvoie un 409 avec un corps | une réponse d'outil que l'assistant lit comme un succès ne doit pas être celle qui dit que rien n'a été écrit |
 | `simuler_deplacement`, `deplacer_affectation` | un seul outil pour les trois gestes du glisser-déposer (#308), la cible étant un poste ou une personne | l'écran a un pointeur et sait où il dépose ; l'assistant nomme ce qu'il vise, et le serveur choisit entre déplacer, échanger et attribuer — puis refuse ce qui casserait une règle dure, comme pour l'écran |
 | `lancer_solveur` | repart du plan enregistré par défaut (`reamorcage=AUTO`), comme l'écran | un assistant qui relance « pour voir » détruirait sinon en silence la qualité déjà atteinte (#174) ; le départ à froid se demande, `reamorcage=AUCUN` |
-| `lancer_solveur`, `resoudre_incremental` | pendant l'événement, les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées, départ à froid et périmètre compris ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | un assistant ne peut pas plus réécrire hier que l'écran ; ce qui a été travaillé compte dans les règles et n'est reproché par aucune, si bien que le zéro dur se lit sur ce qui reste à jouer |
+| `lancer_solveur`, `resoudre_incremental` | pendant l'événement, les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées, départ à froid et périmètre compris ; un job dont toutes les places sont passées finit `FAILED` avec « Rien à planifier… » en `error`, et `statut_solveur` porte `avertissement` (« N sièges passés sont restés vides ») quand le passé tient des trous ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | un assistant ne peut pas plus réécrire hier que l'écran ; ce qui a été travaillé compte dans les règles et n'est reproché par aucune, si bien que le zéro dur se lit sur ce qui reste à jouer — et un plan vide à zéro dur serait lu comme un succès |
+| `deplacer_affectation`, `simuler_deplacement`, `accepter_demande_echange`, `analyser_impact_echange`, `suggerer_reparations`, `affecter_poste` | refusent un poste dont le créneau est déjà commencé, avec la phrase de l'écran : « Ce créneau est déjà commencé : le passé ne se modifie plus » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) | le passé est un fait pour l'assistant comme pour l'écran ; l'outil de simulation refuse déjà, pour qu'un assistant ne bâtisse pas un plan sur un geste que l'écriture refusera |
 | `modifier_stand`, `modifier_animateur`, `modifier_creneau`, `modifier_emplacement`, `modifier_typologie` | prennent un `modifieLe` **facultatif**, là où l'écran renvoie toujours celui qu'il a chargé | la fusion relit la fiche juste avant d'écrire, donc sans argument le contrôle de modification concurrente (#362) ne dit rien ; un assistant qui a lu la fiche plus tôt (`consulter_*`) et veut être refusé si elle a bougé depuis passe la valeur lue |
 | `lister_affectations`, `consulter_instantane` | plafonnent la liste (200 par défaut) et annoncent le total | un planning réel porte plusieurs milliers de postes ; le total à côté de la liste est ce qui rend la troncature lisible, plutôt qu'un plafond caché |
 | `lister_animateurs`, `lister_stands` | acceptent une `limite` mais ne plafonnent rien par défaut | leur taille est celle du référentiel, pas celle du planning : l'appelant qui les demande les veut en général en entier |
@@ -403,7 +404,10 @@ le même appel ne laisse plus aucune étape à laquelle un humain puisse dire no
 
 `affecter_poste` est le seul outil qui écrit dans le planning résolu lui-même,
 et il **refuse un poste verrouillé** — le verrou est ce qu'on lui demande de
-respecter, il ne doit pas pouvoir passer dessus en silence.
+respecter, il ne doit pas pouvoir passer dessus en silence. Il refuse de même
+un poste dont le créneau est **déjà commencé**, et `suggerer_reparations` n'y
+propose personne : le passé ne se modifie plus
+([ADR 0044](decisions/0044-le-passe-est-fige.md)).
 
 ## Le serveur ne sert pas que des outils
 
