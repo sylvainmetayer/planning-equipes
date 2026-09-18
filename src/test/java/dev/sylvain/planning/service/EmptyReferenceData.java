@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
 import java.util.List;
@@ -44,6 +45,12 @@ public class EmptyReferenceData implements ReferenceData {
     @Override
     public List<Stand> listSolvedStands() {
         return List.of();
+    }
+
+    @Override
+    public void resolveHoraires(List<Stand> stands, List<Creneau> creneaux) {
+        // No consigne without a database: the rules alone.
+        HoraireStandResolver.apply(stands, creneaux);
     }
 
     @Override

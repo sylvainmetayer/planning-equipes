@@ -35,6 +35,15 @@ public interface ReferenceData {
     /** Stands with their horaire rules expanded against the edition's days. */
     List<Stand> listSolvedStands();
 
+    /**
+     * Expands {@code stands}' schedules against {@code creneaux} — recurring
+     * rules, dated exceptions, then the edition's consignes (issue #4). The
+     * one entry point for a caller that reads its own lists: expanding the
+     * rules by hand would silently ignore a consigne and staff a band an
+     * arrêté closed.
+     */
+    void resolveHoraires(List<Stand> stands, List<Creneau> creneaux);
+
     List<Creneau> listCreneaux();
 
     List<Emplacement> listEmplacements();

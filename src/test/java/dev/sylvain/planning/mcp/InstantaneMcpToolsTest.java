@@ -33,7 +33,8 @@ class InstantaneMcpToolsTest {
             null,
             null,
             Instant.parse("2026-08-16T09:00:00Z"),
-            true);
+            true,
+            null);
 
     private static InstantaneMcpTools tools(SnapshotDetail detail) {
         InstantaneMcpTools tools = new InstantaneMcpTools();

@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -12,6 +13,7 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningRepository;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
@@ -30,6 +32,7 @@ import java.time.LocalTime;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -63,6 +66,9 @@ public class EspaceAnimateurService {
 
     @Inject
     PlanningExportService exportService;
+
+    @Inject
+    ConsigneService consigneService;
 
     @Inject
     DemandeEchangeService demandeEchangeService;
@@ -224,7 +230,16 @@ public class EspaceAnimateurService {
             List<String> changements,
             Instant changementsLe,
             LocalDate dateDuJourFigee,
-            LocalTime heureDuJourFigee) {}
+            LocalTime heureDuJourFigee,
+            List<ConsigneEspaceView> consignes) {}
+
+    /**
+     * A day of the person's planning a consigne governs (issue #4): the espace
+     * says why the hours of that day are not the usual ones, in the
+     * organiser's own words.
+     */
+    @Schema(requiredProperties = {"date", "fermetureDebut", "motif"})
+    public record ConsigneEspaceView(LocalDate date, LocalTime fermetureDebut, LocalTime fermetureFin, String motif) {}
 
     /**
      * One demande with every label resolved, shared by the espace and the
@@ -317,7 +332,26 @@ public class EspaceAnimateurService {
                 diffToShow ? lastTrace.changements() : List.of(),
                 diffToShow ? lastTrace.envoyeLe() : null,
                 horloge.date(),
-                horloge.heure());
+                horloge.heure(),
+                consignesOf(postes));
+    }
+
+    /** The consignes on the dates the person holds a seat, by date. */
+    private List<ConsigneEspaceView> consignesOf(List<PosteAnimateurView> postes) {
+        Map<LocalDate, ConsigneEdition> parDate = consigneService.parDate();
+        if (parDate.isEmpty()) {
+            return List.of();
+        }
+        return postes.stream()
+                .map(PosteAnimateurView::date)
+                .filter(Objects::nonNull)
+                .distinct()
+                .sorted()
+                .map(parDate::get)
+                .filter(Objects::nonNull)
+                .map(consigne -> new ConsigneEspaceView(
+                        consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
+                .toList();
     }
 
     private static List<PosteAnimateurView> postesOf(

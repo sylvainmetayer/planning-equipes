@@ -1,12 +1,15 @@
 package dev.sylvain.planning.service.export;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -108,7 +111,38 @@ public class PlanningExportService {
                 pausesDuJour,
                 coupuresDuJour,
                 lienEspaceAnimateur(planning, animateurId),
-                provenanceDuPlan);
+                provenanceDuPlan,
+                journeesModifiees(animateurPostes));
+    }
+
+    /**
+     * The consignes of the edition (issue #4), field-injected rather than a
+     * constructor parameter: the unit tests build this service by hand, and
+     * a document without any consigne is the ordinary case they exercise.
+     * Unresolvable there, it reads as « no consigne ».
+     */
+    @Inject
+    Instance<ConsigneService> consignes;
+
+    /** The dates of {@code postes} a consigne governs, each with the sentence to print under the date. */
+    private Map<LocalDate, String> journeesModifiees(List<PosteAffectation> postes) {
+        if (consignes == null || !consignes.isResolvable()) {
+            return Map.of();
+        }
+        Map<LocalDate, ConsigneEdition> parDate = consignes.get().parDate();
+        if (parDate.isEmpty()) {
+            return Map.of();
+        }
+        Map<LocalDate, String> lignes = new LinkedHashMap<>();
+        for (PosteAffectation poste : postes) {
+            LocalDate date =
+                    poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+            ConsigneEdition consigne = date == null ? null : parDate.get(date);
+            if (consigne != null) {
+                lignes.put(date, "Horaires modifiés — " + consigne.motif());
+            }
+        }
+        return lignes;
     }
 
     /** An event day the animateur is off: its day number and its date. */

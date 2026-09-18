@@ -113,6 +113,14 @@ public final class CatalogueActions {
         // validation lays a lock down: that lock writes its own VERROU_POSE.
         action("JOURNEE_VALIDEE", "Journée relue et acceptée", Entite.PLANNING);
         action("JOURNEE_VALIDATION_RETIREE", "Validation de journée retirée", Entite.PLANNING);
+        // A consigne (issue #4) changes which seats a solve is given — a band
+        // closed for every stand, openings chosen, créneaux added to the grid
+        // — hence changesData. A preset changes nothing until a consigne is
+        // made from it.
+        changesData("CONSIGNE_POSEE", "Consigne d'édition posée ou modifiée", Entite.PLANNING);
+        changesData("CONSIGNE_LEVEE", "Consigne d'édition levée", Entite.PLANNING);
+        action("PREREGLAGE_CONSIGNE_ENREGISTRE", "Préréglage de consigne enregistré", Entite.PLANNING);
+        action("PREREGLAGE_CONSIGNE_SUPPRIME", "Préréglage de consigne supprimé", Entite.PLANNING);
 
         /* ------------------------- Editions ------------------------- */
         action("EDITION_CREEE", "Édition créée", Entite.EDITION);
@@ -256,6 +264,11 @@ public final class CatalogueActions {
         route("VerrouillageResource#delete", "VERROU_RETIRE");
         route("ValidationJourneeResource#accept", "JOURNEE_VALIDEE");
         route("ValidationJourneeResource#withdraw", "JOURNEE_VALIDATION_RETIREE");
+        route("ConsigneResource#poser", "CONSIGNE_POSEE");
+        route("ConsigneResource#lever", "CONSIGNE_LEVEE");
+        route("ConsigneResource#createPrereglage", "PREREGLAGE_CONSIGNE_ENREGISTRE");
+        route("ConsigneResource#updatePrereglage", "PREREGLAGE_CONSIGNE_ENREGISTRE");
+        route("ConsigneResource#deletePrereglage", "PREREGLAGE_CONSIGNE_SUPPRIME");
 
         route("EditionResource#create", "EDITION_CREEE");
         route("EditionResource#rename", "EDITION_RENOMMEE");
@@ -378,6 +391,10 @@ public final class CatalogueActions {
         outil("deverrouiller", "VERROU_RETIRE");
         outil("ajouter_validation_journee", "JOURNEE_VALIDEE");
         outil("retirer_validation_journee", "JOURNEE_VALIDATION_RETIREE");
+        outil("appliquer_consigne", "CONSIGNE_POSEE");
+        outil("lever_consigne", "CONSIGNE_LEVEE");
+        outil("definir_prereglage_consigne", "PREREGLAGE_CONSIGNE_ENREGISTRE");
+        outil("supprimer_prereglage_consigne", "PREREGLAGE_CONSIGNE_SUPPRIME");
 
         outil("creer_edition", "EDITION_CREEE");
         outil("renommer_edition", "EDITION_RENOMMEE");
@@ -454,6 +471,9 @@ public final class CatalogueActions {
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewApplication", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewReconnaissance", "prévisualisation, n'écrit rien");
+        untracked("ConsigneResource#preselection", "lit les stands contre une bande, n'écrit rien");
+        untracked("ConsigneResource#apercu", "prévisualisation, n'écrit rien");
+        untracked("ConsigneResource#apercuLevee", "prévisualisation, n'écrit rien");
         untracked("previsualiser_reconnaissance_journees_types", "prévisualisation, n'écrit rien");
         untracked("ConstraintResource#diagnose", "relit l'analyse enregistrée, n'écrit rien");
         untracked("PlanningHoursResource#compute", "calcule les heures d'un planning envoyé, n'écrit rien");
