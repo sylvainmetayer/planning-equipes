@@ -635,6 +635,29 @@ mais par la publication qui la porte : accepter un échange change le plan de
 travail, pas le plan publié, et prévenir tout de suite promettrait un planning
 que l'espace ne montre pas encore.
 
+### Les changements d'une journée
+
+`GET /api/journees/{jour}/changements?reference=publication|resolution` — ce
+qui a bougé sur une journée, lu deux fois sur les mêmes faits : par siège
+(stand, heures, titulaire avant et après : `nouveau`, `retiré`, `remplacé`) et
+par animateur, dans les phrases mêmes que `GET /api/planning/publication` met
+dans le courriel. La seconde lecture **est** le diff de publication filtré sur
+la date, jamais une comparaison refaite : l'onglet Journée et l'écran
+Publication ne peuvent pas raconter deux histoires sur la même journée. La
+première apparie les sièges sur leur clé naturelle — stand, jour, heures —
+comme la règle de stabilité du plan publié, et les sièges d'une même case sont
+interchangeables, comme les compte déjà la replanification incrémentale.
+
+Deux références, et **aucune n'est inventée** : `publication` compare au dernier
+instantané publié, `resolution` à l'instantané automatique pris juste avant la
+dernière résolution. Sans paramètre, la publication quand il y en a une, la
+résolution sinon — la réponse dit laquelle (`reference`). Quand la référence
+n'existe pas — jamais publié, ou aucune résolution n'a encore remplacé un plan —
+la réponse porte `referenceDisponible: false` et des compteurs à zéro qui ne
+disent rien : « rien à comparer » n'est pas « aucun changement ». Une journée
+que la grille ne porte pas répond vide, pas `404`. Une lecture, sans trace au
+journal ; l'outil MCP `changements_journee` rend la même chose par ids.
+
 ## Accusé de réception du planning
 
 `POST /api/espace-animateur/{jeton}/confirmation` — « j'ai lu et je serai là ».

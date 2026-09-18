@@ -5,8 +5,6 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.List;
 
 /**
@@ -62,35 +60,6 @@ public class PlanPublieService {
             return persistenceService.assemblerPlanning(List.of());
         }
         return persistenceService.assemblerPlanning(
-                detail.affectations().stream().map(PlanPublieService::siege).toList());
-    }
-
-    private static PlanningPersistenceService.Siege siege(PlanSnapshotService.AffectationSnapshot affectation) {
-        return new PlanningPersistenceService.Siege(
-                affectation.posteId(),
-                affectation.standId(),
-                Long.parseLong(affectation.creneauId()),
-                affectation.animateurId(),
-                heure(affectation.heureDebutEffective()),
-                heure(affectation.heureFinEffective()),
-                vacation(affectation));
-    }
-
-    /**
-     * The vacation the snapshot itself describes (issue #576), {@code null} on
-     * a snapshot captured before the date was stored — that one still resolves
-     * against today's référentiel, exactly as it always did.
-     */
-    private static PlanningPersistenceService.VacationSnapshot vacation(
-            PlanSnapshotService.AffectationSnapshot affectation) {
-        if (affectation.date() == null) {
-            return null;
-        }
-        return new PlanningPersistenceService.VacationSnapshot(
-                LocalDate.parse(affectation.date()), heure(affectation.heureDebut()), heure(affectation.heureFin()));
-    }
-
-    private static LocalTime heure(String texte) {
-        return texte == null ? null : LocalTime.parse(texte);
+                detail.affectations().stream().map(PlanSnapshotService::seat).toList());
     }
 }

@@ -483,6 +483,54 @@ public class PlanSnapshotService {
         }
     }
 
+    /**
+     * The edition's most recent <b>automatique</b> snapshot, content included:
+     * the plan as it stood right before the last solve, since {@link
+     * #captureBeforeSolve()} is the only thing that captures one. {@code null}
+     * when no solve ever replaced a plan — the first solve of an edition finds
+     * nothing to capture — or when the retention has dropped it, which it
+     * never does to the most recent one.
+     */
+    public SnapshotDetail loadLastBeforeSolve() {
+        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+                + " WHERE s.edition_id = ? AND s.automatique"
+                + " ORDER BY s.cree_le DESC, s.id DESC LIMIT 1";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            return readDetail(ps);
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to load the last automatique plan snapshot", e);
+        }
+    }
+
+    /**
+     * A snapshotted seat as {@link PlanningPersistenceService#assemblerPlanning}
+     * reads one: the ids, the override hours, and — since issue #576 — the day
+     * and window the snapshot itself recorded, so a seat outlives the créneau
+     * it names. {@code null} for those on a snapshot captured before they were
+     * stored: that seat still resolves against today's référentiel.
+     */
+    public static PlanningPersistenceService.Siege seat(AffectationSnapshot affectation) {
+        PlanningPersistenceService.VacationSnapshot vacation = affectation.date() == null
+                ? null
+                : new PlanningPersistenceService.VacationSnapshot(
+                        LocalDate.parse(affectation.date()),
+                        time(affectation.heureDebut()),
+                        time(affectation.heureFin()));
+        return new PlanningPersistenceService.Siege(
+                affectation.posteId(),
+                affectation.standId(),
+                Long.parseLong(affectation.creneauId()),
+                affectation.animateurId(),
+                time(affectation.heureDebutEffective()),
+                time(affectation.heureFinEffective()),
+                vacation);
+    }
+
+    private static LocalTime time(String text) {
+        return text == null ? null : LocalTime.parse(text);
+    }
+
     /** Same as {@link #lastPublication()}, content included. */
     public SnapshotDetail loadLastPublication() {
         String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT

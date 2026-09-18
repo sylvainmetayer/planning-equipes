@@ -21,6 +21,7 @@ dev/sylvain/planning/api/AuthentificationRemoteUserTest.java
 dev/sylvain/planning/api/AvertissementsEcritureTest.java
 dev/sylvain/planning/api/BrandingConfigureeResourceTest.java
 dev/sylvain/planning/api/BrandingResourceTest.java
+dev/sylvain/planning/api/ChangementsJourneeResourceTest.java
 dev/sylvain/planning/api/CodeRequestLimiterTest.java
 dev/sylvain/planning/api/ColleagueLookupRateLimitTest.java
 dev/sylvain/planning/api/CollecteInvitationAtomicityTest.java
