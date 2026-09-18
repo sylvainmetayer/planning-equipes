@@ -667,6 +667,28 @@ describe('SolverPage', () => {
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
     });
 
+    // A dialog is not the Problèmes screen: three sentences, then a count.
+    it('spells out three causes and counts the rest', async () => {
+      causesBloquantes.set(
+        ['C01', 'C02', 'C03', 'C04', 'C05'].map((id) => ({
+          ...bloquante,
+          message: `L'affectation forcée ${id} ne peut pas être tenue.`,
+          contrainteIds: [id],
+        })),
+      );
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onTimefoldSolve();
+
+      const detail = await confirm.ask.mock.calls.at(-1)![0].detail;
+      expect(detail).toContain('C01');
+      expect(detail).toContain('C03');
+      expect(detail).not.toContain('C04');
+      expect(detail).toContain('2');
+    });
+
     it('launches anyway once the user said so', async () => {
       causesBloquantes.set([bloquante]);
       const page = createPage();
