@@ -37,16 +37,19 @@ public class PosteAffectation {
     private Animateur animateur;
 
     /**
-     * Seat validated by the user and frozen: no move (construction heuristic or
-     * local search) may change its {@link #animateur}. Set at problem-building
-     * time from the persisted
-     * {@link dev.sylvain.planning.domain.VerrouillagePlanning}
-     * rows, never by the solver, and never on an empty seat — pinning a hole
-     * would make it permanently unfillable.
+     * Seat frozen: no move (construction heuristic or local search) may change
+     * its {@link #animateur}. Set at problem-building time, never by the
+     * solver, by two things — the persisted
+     * {@link dev.sylvain.planning.domain.VerrouillagePlanning} rows, which
+     * never pin an empty seat (pinning a hole would make it permanently
+     * unfillable), and the past (ADR 0044, {@link #passe}), which pins a seat
+     * of a timeslot already started <em>empty or not</em>: nobody can staff
+     * yesterday, so a past hole is a fact, not a seat to fill.
      *
      * <p>A pinned seat is still scored normally: a lock can therefore leave a
      * visible violation in the plan, deliberately, rather than silently
-     * disabling the rules around it.</p>
+     * disabling the rules around it. A past seat is the exception, counted
+     * and never reproached — that is what the second flag is for.</p>
      */
     @PlanningPin
     private boolean verrouille;
