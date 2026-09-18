@@ -299,7 +299,10 @@ async function newestMailText(email: string, before: number): Promise<string> {
 
 /* ---------------------------------- the week ---------------------------------- */
 
-test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis levée sur un jour', async ({
+// @lourd in the title is a Playwright tag: thirteen minutes on the CI runner,
+// so e2e.yml leaves it out (--grep-invert) and e2e-lourd.yml plays it on the
+// changes that can break it, and every night.
+test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis levée sur un jour @lourd', async ({
   browser,
 }) => {
   // Three real solves on a 3 000-seat problem, and three mailings with a PDF
