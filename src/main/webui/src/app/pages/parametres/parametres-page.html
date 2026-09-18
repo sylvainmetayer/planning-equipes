@@ -1,232 +1,258 @@
 <h1 class="page-title" i18n="@@nav.link.parametres">Paramètres</h1>
 
-<!-- Pre-solve diagnostic: silent while the dataset is theoretically solvable. -->
+<!-- Pre-solve diagnostic: silent while the dataset is theoretically solvable.
+     Above the tabs on purpose — it speaks of the edition, not of a tab. -->
 <app-feasibility-banner [report]="problemes.report()" />
 
-<h2 class="section-title" i18n="@@parametres.section.edition">Paramètres de l'édition</h2>
+<mat-button-toggle-group class="parametres-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet des paramètres" i18n-aria-label="@@parametres.onglet.label">
+  <mat-button-toggle value="legaux">
+    <mat-icon>gavel</mat-icon>
+    <ng-container i18n="@@parametres.onglet.legaux">Légaux</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="edition">
+    <mat-icon>event_note</mat-icon>
+    <ng-container i18n="@@parametres.onglet.edition">Édition</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="emails">
+    <mat-icon>forward_to_inbox</mat-icon>
+    <ng-container i18n="@@parametres.onglet.emails">E-mails automatiques</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="globaux">
+    <mat-icon>dns</mat-icon>
+    <ng-container i18n="@@parametres.onglet.globaux">Globaux</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
 
-<app-parametres-legaux />
-
-<app-parametres-qualite />
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h3>
-    <mat-card-subtitle i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-card-subtitle>
-  </mat-card-header>
-  @if (alerteNinjaManquant()) {
-    <mat-card-content class="parametres-alerte-ninja">
-      <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
-    </mat-card-content>
-  }
-  <mat-card-actions class="card-actions">
-    <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
-      <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
-      <mat-select name="ninja" [disabled]="editionLocked()" [ngModel]="typologieNinjaId()"
-                  (ngModelChange)="setNinja($event)">
-        <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
-        @for (typologie of store.typologies(); track typologie.id) {
-          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-    <a matButton routerLink="/typologies">
-      <mat-icon>category</mat-icon>
-      <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
-    </a>
-  </mat-card-actions>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@parametres.mailFin.title">Prévenir par e-mail à la fin d'une résolution</h3>
-    <mat-card-subtitle i18n="@@parametres.mailFin.subtitle">
-      Recevez un e-mail à la fin de chaque résolution, avec l'édition, le score et la faisabilité du planning.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <mat-slide-toggle
-      [checked]="mailFinResolution()"
-      [disabled]="mailFinResolutionBusy() || adminEmail() === null"
-      (change)="basculerMailFinResolution($event.checked)"
-      i18n-matTooltip="@@parametres.mailFin.tooltip"
-      matTooltip="S'applique à cette édition : chaque résolution qui s'y termine écrit à l'administrateur."
-    >
-      <ng-container i18n="@@parametres.mailFin.toggle">M'écrire à la fin de chaque résolution de cette édition</ng-container>
-    </mat-slide-toggle>
-    @if (adminEmail(); as adresse) {
-      <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
-    } @else {
-      <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
-        Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : aucun e-mail ne peut partir.
-      </p>
-    }
-  </mat-card-content>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@parametres.ailleurs.title">Sur leur propre écran</h3>
-    <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
-      Ces réglages et ces opérations de l'édition vivent sur l'écran qu'ils concernent directement :
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    <ul class="parametres-renvois">
-      <li>
-        <a routerLink="/solveur" i18n="@@parametres.renvoi.solveur">Durée de résolution du solveur — page Solveur</a>
-      </li>
-      <li>
-        <a routerLink="/echanges" i18n="@@parametres.renvoi.echanges">Ouverture et fermeture de la foire au planning — page Échanges</a>
-      </li>
-      <li>
-        <a routerLink="/disponibilites" i18n="@@parametres.renvoi.disponibilites">Ouverture et fermeture de la collecte des disponibilités et des souhaits — page Disponibilités</a>
-      </li>
-      <li>
-        <a routerLink="/constraints" i18n="@@parametres.renvoi.contraintes">Activation et désactivation des contraintes — page Contraintes</a>
-      </li>
-      <li>
-        <a routerLink="/creneaux" i18n="@@parametres.renvoi.grille">Grille des créneaux, journées types et contrôle de cohérence — page Créneaux</a>
-      </li>
-      <li>
-        <a routerLink="/imports" i18n="@@parametres.renvoi.importScenario">Import d'un fichier scénario — page Imports, onglet Scénario</a>
-      </li>
-      <li>
-        <a routerLink="/exports" i18n="@@parametres.renvoi.exportScenario">Export de l'édition en scénario — page Exports</a>
-      </li>
-      <li>
-        <a routerLink="/debug" i18n="@@parametres.renvoi.scenarioLivre">Chargement d'un scénario pré-enregistré — page Débogage</a>
-      </li>
-    </ul>
-  </mat-card-content>
-</mat-card>
-
-<app-parametres-notifications />
-
-<h2 class="section-title" i18n="@@parametres.section.global">Paramètres globaux</h2>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@parametres.sauvegarde.title">Sauvegarde automatique</h3>
-    <mat-card-subtitle i18n="@@parametres.sauvegarde.subtitle">
-      Chaque nuit, toute la base est copiée dans un fichier de sauvegarde ; la restauration se fait sur la
-      base PostgreSQL, par l'exploitant.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-content>
-    @if (sauvegarde(); as etat) {
-      @if (etat.configured) {
-        <mat-slide-toggle
-          [checked]="etat.active"
-          [disabled]="sauvegardeBusy()"
-          (change)="basculerSauvegarde($event.checked)"
-          i18n-matTooltip="@@parametres.sauvegarde.tooltip"
-          matTooltip="Suspend la sauvegarde de cette nuit et des suivantes. Les fichiers déjà écrits sont conservés."
-        >
-          <ng-container i18n="@@parametres.sauvegarde.toggle">Sauvegarder la base automatiquement chaque nuit</ng-container>
-        </mat-slide-toggle>
-
-        <dl class="parametres-faits">
-          <dt i18n="@@parametres.sauvegarde.emplacement">Emplacement</dt>
-          <dd>{{ etat.directory }}</dd>
-          <dt i18n="@@parametres.sauvegarde.conservation">Copies conservées</dt>
-          <dd i18n="@@parametres.sauvegarde.conservationValeur">{{ etat.retention }} sauvegardes, la plus ancienne étant effacée à chaque nouvelle</dd>
-          @if (etat.nextRun) {
-            <dt i18n="@@parametres.sauvegarde.prochaine">Prochaine sauvegarde</dt>
-            <dd>{{ etat.nextRun | date: 'EEEE d MMMM y, HH:mm' }} ({{ etat.zone }})</dd>
-          }
-        </dl>
-
-        <p class="calendar-meta" i18n="@@parametres.sauvegarde.reglage">
-          Emplacement et nombre de copies sont réglés par l'hébergeur (variables BACKUP_DIR et
-          BACKUP_RETENTION).
-        </p>
-
-        @if (etat.lastRun.attemptedAt) {
-          @if (etat.lastRun.succeeded) {
-            <p class="calendar-meta" i18n="@@parametres.sauvegarde.derniereOk">
-              Dernière sauvegarde réussie le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
-              {{ etat.lastRun.file }}
-            </p>
-          } @else {
-            <p class="locked-hint" i18n="@@parametres.sauvegarde.derniereEchec">
-              La dernière sauvegarde a échoué le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
-              {{ etat.lastRun.message }}
-            </p>
-          }
-        } @else {
-          <p class="calendar-meta" i18n="@@parametres.sauvegarde.jamais">
-            Aucune sauvegarde n'a encore été tentée sur cette instance.
-          </p>
-        }
-
-        @if (etat.directoryError) {
-          <p class="locked-hint" i18n="@@parametres.sauvegarde.repertoireIllisible">
-            Le répertoire de sauvegarde n'a pas pu être lu : {{ etat.directoryError }}
-          </p>
-        } @else if (fichiersSauvegarde().length > 0) {
-          <table class="parametres-sauvegardes">
-            <caption i18n="@@parametres.sauvegarde.listeTitre">Sauvegardes présentes, de la plus récente à la plus ancienne</caption>
-            <tbody>
-              @for (fichier of fichiersSauvegarde(); track fichier.name) {
-                <tr>
-                  <td>{{ fichier.name }}</td>
-                  <td>{{ fichier.createdAt | date: 'd MMM y, HH:mm' }}</td>
-                  <td>{{ tailleLisible(fichier.sizeBytes) }}</td>
-                </tr>
-              }
-            </tbody>
-          </table>
-        } @else {
-          <p class="calendar-meta" i18n="@@parametres.sauvegarde.listeVide">
-            Le répertoire ne contient encore aucune sauvegarde.
-          </p>
-        }
-      } @else {
-        <p class="locked-hint" i18n="@@parametres.sauvegarde.nonConfiguree">
-          Aucun emplacement de sauvegarde n'est configuré (variable BACKUP_DIR) : rien n'est planifié.
-        </p>
+@switch (onglet()) {
+  @case ('edition') {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@typologies.field.ninja">Typologie ninja</h2>
+        <mat-card-subtitle i18n="@@typologies.field.ninjaHint">Un animateur qui possède cette typologie sait s'adapter : il peut être affecté à n'importe quel stand.</mat-card-subtitle>
+      </mat-card-header>
+      @if (alerteNinjaManquant()) {
+        <mat-card-content class="parametres-alerte-ninja">
+          <app-status-message [text]="alerteNinjaManquant()" tone="warning" />
+        </mat-card-content>
       }
-    }
-  </mat-card-content>
-</mat-card>
+      <mat-card-actions class="card-actions">
+        <mat-form-field appearance="outline" class="ninja-select" subscriptSizing="dynamic">
+          <mat-label i18n="@@typologies.field.ninja">Typologie ninja</mat-label>
+          <mat-select name="ninja" [disabled]="editionLocked()" [ngModel]="typologieNinjaId()"
+                      (ngModelChange)="setNinja($event)">
+            <mat-option [value]="null" i18n="@@typologies.field.noNinja">Aucune</mat-option>
+            @for (typologie of store.typologies(); track typologie.id) {
+              <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+            }
+          </mat-select>
+        </mat-form-field>
+        <a matButton routerLink="/typologies">
+          <mat-icon>category</mat-icon>
+          <ng-container i18n="@@parametres.versTypologies">Gérer les typologies</ng-container>
+        </a>
+      </mat-card-actions>
+    </mat-card>
 
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h3 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h3>
-    <mat-card-subtitle i18n="@@dataTransfer.sql.description">
-      Exporte ou rejoue toute la base en script SQL — toutes les éditions, et l'import écrase tout.
-    </mat-card-subtitle>
-  </mat-card-header>
-  @if (solverBusy()) {
-    <mat-card-content>
-      <p class="locked-hint" i18n="@@dataTransfer.locked">
-        Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.
-      </p>
-    </mat-card-content>
+    <app-parametres-qualite />
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.ailleurs.title">Sur leur propre écran</h2>
+        <mat-card-subtitle i18n="@@parametres.ailleurs.subtitle">
+          Ces réglages et ces opérations de l'édition vivent sur l'écran qu'ils concernent directement :
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <ul class="parametres-renvois">
+          <li>
+            <a routerLink="/solveur" i18n="@@parametres.renvoi.solveur">Durée de résolution du solveur — page Solveur</a>
+          </li>
+          <li>
+            <a routerLink="/echanges" i18n="@@parametres.renvoi.echanges">Ouverture et fermeture de la foire au planning — page Échanges</a>
+          </li>
+          <li>
+            <a routerLink="/disponibilites" i18n="@@parametres.renvoi.disponibilites">Ouverture et fermeture de la collecte des disponibilités et des souhaits — page Disponibilités</a>
+          </li>
+          <li>
+            <a routerLink="/constraints" i18n="@@parametres.renvoi.contraintes">Activation et désactivation des contraintes — page Contraintes</a>
+          </li>
+          <li>
+            <a routerLink="/creneaux" i18n="@@parametres.renvoi.grille">Grille des créneaux, journées types et contrôle de cohérence — page Créneaux</a>
+          </li>
+          <li>
+            <a routerLink="/imports" i18n="@@parametres.renvoi.importScenario">Import d'un fichier scénario — page Imports, onglet Scénario</a>
+          </li>
+          <li>
+            <a routerLink="/exports" i18n="@@parametres.renvoi.exportScenario">Export de l'édition en scénario — page Exports</a>
+          </li>
+          <li>
+            <a routerLink="/debug" [queryParams]="{ onglet: 'donnees' }" i18n="@@parametres.renvoi.scenarioLivre">Chargement d'un scénario pré-enregistré — page Débogage</a>
+          </li>
+        </ul>
+      </mat-card-content>
+    </mat-card>
   }
-  <mat-card-actions class="card-actions">
-    <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
-      <mat-icon>download</mat-icon>
-      <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
-    </button>
-    <button
-      matButton="outlined"
-      class="danger-action"
-      [disabled]="transferLocked()"
-      (click)="pickSqlFile()"
-    >
-      <mat-icon>upload</mat-icon>
-      <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
-    </button>
-    <input
-      #sqlInput
-      type="file"
-      accept=".sql,application/sql,text/plain"
-      hidden
-      (change)="onSqlFileSelected($event)"
-    />
-  </mat-card-actions>
-</mat-card>
+  @case ('emails') {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.mailFin.title">Prévenir par e-mail à la fin d'une résolution</h2>
+        <mat-card-subtitle i18n="@@parametres.mailFin.subtitle">
+          Recevez un e-mail à la fin de chaque résolution, avec l'édition, le score et la faisabilité du planning.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <mat-slide-toggle
+          [checked]="mailFinResolution()"
+          [disabled]="mailFinResolutionBusy() || adminEmail() === null"
+          (change)="basculerMailFinResolution($event.checked)"
+          i18n-matTooltip="@@parametres.mailFin.tooltip"
+          matTooltip="S'applique à cette édition : chaque résolution qui s'y termine écrit à l'administrateur."
+        >
+          <ng-container i18n="@@parametres.mailFin.toggle">M'écrire à la fin de chaque résolution de cette édition</ng-container>
+        </mat-slide-toggle>
+        @if (adminEmail(); as adresse) {
+          <p class="calendar-meta" i18n="@@parametres.mailFin.destinataire">Destinataire : {{ adresse }}</p>
+        } @else {
+          <p class="locked-hint" i18n="@@parametres.mailFin.sansAdresse">
+            Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : aucun e-mail ne peut partir.
+          </p>
+        }
+      </mat-card-content>
+    </mat-card>
 
+    <app-parametres-notifications />
+  }
+  @case ('globaux') {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.sauvegarde.title">Sauvegarde automatique</h2>
+        <mat-card-subtitle i18n="@@parametres.sauvegarde.subtitle">
+          Chaque nuit, toute la base est copiée dans un fichier de sauvegarde ; la restauration se fait sur la
+          base PostgreSQL, par l'exploitant.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        @if (sauvegarde(); as etat) {
+          @if (etat.configured) {
+            <mat-slide-toggle
+              [checked]="etat.active"
+              [disabled]="sauvegardeBusy()"
+              (change)="basculerSauvegarde($event.checked)"
+              i18n-matTooltip="@@parametres.sauvegarde.tooltip"
+              matTooltip="Suspend la sauvegarde de cette nuit et des suivantes. Les fichiers déjà écrits sont conservés."
+            >
+              <ng-container i18n="@@parametres.sauvegarde.toggle">Sauvegarder la base automatiquement chaque nuit</ng-container>
+            </mat-slide-toggle>
+
+            <dl class="parametres-faits">
+              <dt i18n="@@parametres.sauvegarde.emplacement">Emplacement</dt>
+              <dd>{{ etat.directory }}</dd>
+              <dt i18n="@@parametres.sauvegarde.conservation">Copies conservées</dt>
+              <dd i18n="@@parametres.sauvegarde.conservationValeur">{{ etat.retention }} sauvegardes, la plus ancienne étant effacée à chaque nouvelle</dd>
+              @if (etat.nextRun) {
+                <dt i18n="@@parametres.sauvegarde.prochaine">Prochaine sauvegarde</dt>
+                <dd>{{ etat.nextRun | date: 'EEEE d MMMM y, HH:mm' }} ({{ etat.zone }})</dd>
+              }
+            </dl>
+
+            <p class="calendar-meta" i18n="@@parametres.sauvegarde.reglage">
+              Emplacement et nombre de copies sont réglés par l'hébergeur (variables BACKUP_DIR et
+              BACKUP_RETENTION).
+            </p>
+
+            @if (etat.lastRun.attemptedAt) {
+              @if (etat.lastRun.succeeded) {
+                <p class="calendar-meta" i18n="@@parametres.sauvegarde.derniereOk">
+                  Dernière sauvegarde réussie le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
+                  {{ etat.lastRun.file }}
+                </p>
+              } @else {
+                <p class="locked-hint" i18n="@@parametres.sauvegarde.derniereEchec">
+                  La dernière sauvegarde a échoué le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
+                  {{ etat.lastRun.message }}
+                </p>
+              }
+            } @else {
+              <p class="calendar-meta" i18n="@@parametres.sauvegarde.jamais">
+                Aucune sauvegarde n'a encore été tentée sur cette instance.
+              </p>
+            }
+
+            @if (etat.directoryError) {
+              <p class="locked-hint" i18n="@@parametres.sauvegarde.repertoireIllisible">
+                Le répertoire de sauvegarde n'a pas pu être lu : {{ etat.directoryError }}
+              </p>
+            } @else if (fichiersSauvegarde().length > 0) {
+              <table class="parametres-sauvegardes">
+                <caption i18n="@@parametres.sauvegarde.listeTitre">Sauvegardes présentes, de la plus récente à la plus ancienne</caption>
+                <tbody>
+                  @for (fichier of fichiersSauvegarde(); track fichier.name) {
+                    <tr>
+                      <td>{{ fichier.name }}</td>
+                      <td>{{ fichier.createdAt | date: 'd MMM y, HH:mm' }}</td>
+                      <td>{{ tailleLisible(fichier.sizeBytes) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            } @else {
+              <p class="calendar-meta" i18n="@@parametres.sauvegarde.listeVide">
+                Le répertoire ne contient encore aucune sauvegarde.
+              </p>
+            }
+          } @else {
+            <p class="locked-hint" i18n="@@parametres.sauvegarde.nonConfiguree">
+              Aucun emplacement de sauvegarde n'est configuré (variable BACKUP_DIR) : rien n'est planifié.
+            </p>
+          }
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@dataTransfer.sql.title">Export SQL</h2>
+        <mat-card-subtitle i18n="@@dataTransfer.sql.description">
+          Exporte ou rejoue toute la base en script SQL — toutes les éditions, et l'import écrase tout.
+        </mat-card-subtitle>
+      </mat-card-header>
+      @if (solverBusy()) {
+        <mat-card-content>
+          <p class="locked-hint" i18n="@@dataTransfer.locked">
+            Les transferts sont verrouillés pendant que le solveur est en cours d'exécution.
+          </p>
+        </mat-card-content>
+      }
+      <mat-card-actions class="card-actions">
+        <button matButton="filled" [disabled]="transferLocked()" (click)="onExportSql()">
+          <mat-icon>download</mat-icon>
+          <ng-container i18n="@@dataTransfer.exportSql">Exporter le dump SQL</ng-container>
+        </button>
+        <button
+          matButton="outlined"
+          class="danger-action"
+          [disabled]="transferLocked()"
+          (click)="pickSqlFile()"
+        >
+          <mat-icon>upload</mat-icon>
+          <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
+        </button>
+        <input
+          #sqlInput
+          type="file"
+          accept=".sql,application/sql,text/plain"
+          hidden
+          (change)="onSqlFileSelected($event)"
+        />
+      </mat-card-actions>
+    </mat-card>
+  }
+  @default {
+    <app-parametres-legaux />
+  }
+}
+
+<!-- Outside the tabs: an error or a dump is answered by the tab that asked for
+     it, and staying put means the answer survives a tab change. -->
 <app-output-panel [text]="output()" />

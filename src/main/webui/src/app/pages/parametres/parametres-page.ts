@@ -8,16 +8,18 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AdminApi } from '../../core/api/admin-api';
 import { BRANDING, slugMarque } from '../../core/branding';
 import { EtatSauvegarde } from '../../core/models';
@@ -37,6 +39,8 @@ import { ParametresLegauxCard } from './parametres-legaux';
 import { ParametresQualiteCard } from './parametres-qualite';
 import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorPrefix } from '../../core/error-message';
+import { keepViewInQueryParams } from '../../core/view-query-params';
+import { OngletParametres, readOngletParametres } from './parametres';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -46,17 +50,28 @@ import { errorPrefix } from '../../core/error-message';
 export const REPLACE_KEYWORD = 'REMPLACER';
 
 /**
- * The single settings page, split in two sections mirroring the data model:
+ * The settings page, four tabs instead of one long scroll (issue #606), the
+ * same mechanics as Diagnostic and Imports — a toggle group, the tab carried
+ * by `?onglet=`, the default tab writing nothing:
  *
- * - "Paramètres de l'édition" — everything scoped by the `X-Edition-Id`
- *   partition: the legal parameters, the ninja typologie, plus pointers to
+ * - "Légaux" (default) — the legal parameters and the meal break: the floor an
+ *   edition is checked against, which is what this page is opened for.
+ * - "Édition" — the rest of what the `X-Edition-Id` partition scopes: the
+ *   ninja typologie, the organisational-quality thresholds, plus pointers to
  *   what stays on its own screen (solver duration, foire aux échanges,
  *   constraint toggles, découpage settings next to the generation that reads
  *   them, and the three scenario operations — load a bundled one on Débogage,
  *   import a file under Imports, write one out under Exports).
- * - "Paramètres globaux" — the SQL dump import/export and the automatic
- *   backup: both take the WHOLE database, every edition included, so neither
- *   belongs to any edition.
+ * - "E-mails automatiques" — what the edition sends of its own accord: to the
+ *   administrator at the end of a solve, to the animateurs as reminders and
+ *   relances. Not "Notifications", which is the name of another page.
+ * - "Globaux" — the SQL dump import/export and the automatic backup: both take
+ *   the WHOLE database, every edition included, so neither belongs to any
+ *   edition.
+ *
+ * The feasibility banner stays above the tabs: it speaks of the edition, not
+ * of a tab. So does the output panel — an error answered on one tab survives
+ * a move to another.
  *
  * Also runs the solver-free feasibility check on entry, as the former Données
  * page did: a structurally impossible planning is called out here rather than
@@ -69,6 +84,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     FormsModule,
     MatCardModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
     MatIconModule,
     MatSelectModule,
@@ -128,11 +144,31 @@ export class ParametresPage {
   protected readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
 
+  protected readonly onglet = signal<OngletParametres>('legaux');
+
+  private readonly route = inject(ActivatedRoute);
+
   constructor() {
+    // Followed rather than read once, like Diagnostic: clicking « Paramètres »
+    // in the menu from `/parametres?onglet=globaux`, or the « paramètres
+    // légaux » link of Pauses while another tab is open, navigates to this very
+    // route with another `onglet`, and the router reuses the component instead
+    // of building it again. `replaceState` (ADR 0018) emits nothing here, so
+    // the effect below cannot feed this subscription.
+    this.route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.onglet.set(readOngletParametres(params.get('onglet')));
+    });
+    keepViewInQueryParams(() => ({
+      onglet: this.onglet() === 'legaux' ? null : this.onglet(),
+    }));
     void this.problemes.reloadFeasibility();
     void this.crud.reload();
     void this.chargerReglagesNotification();
     void this.chargerSauvegarde();
+  }
+
+  protected changerOnglet(onglet: OngletParametres): void {
+    this.onglet.set(onglet);
   }
 
   /* --------------------- Notification de fin de résolution -------------------- */

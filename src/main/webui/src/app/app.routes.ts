@@ -46,6 +46,11 @@ function redirectToJournee(
 }
 
 function redirectToDiagnostic(onglet: string): RedirectFunction {
+  return redirectToOnglet('diagnostic', onglet);
+}
+
+/** A former screen that became a tab: its address keeps its own query params and gains the `onglet`. */
+function redirectToOnglet(page: string, onglet: string): RedirectFunction {
   return ({ queryParams }) => {
     const params = new URLSearchParams();
     params.set('onglet', onglet);
@@ -54,7 +59,7 @@ function redirectToDiagnostic(onglet: string): RedirectFunction {
         params.set(key, String(valeur));
       }
     }
-    return `/diagnostic?${params.toString()}`;
+    return `/${page}?${params.toString()}`;
   };
 }
 
@@ -173,7 +178,9 @@ const adminRoutes: Routes = [
   // The découpage had a page of its own, then a card on Paramètres, then
   // nothing: a grid is made of vacations, so the address lands on the grid.
   { path: 'decoupage', redirectTo: 'creneaux' },
-  { path: 'validateur-yaml', redirectTo: 'debug' },
+  // The tab it became, not the page's default one: the address named the
+  // validator, and a redirection that drops it lands on the raw analysis.
+  { path: 'validateur-yaml', redirectTo: redirectToOnglet('debug', 'yaml') },
   {
     path: 'stands',
     title: () => $localize`:@@route.stands:Stands`,

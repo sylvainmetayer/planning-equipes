@@ -7,7 +7,7 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <a matButton routerLink="/parametres">
+    <a matButton routerLink="/parametres" [queryParams]="{ onglet: 'edition' }">
       <mat-icon>settings</mat-icon>
       <ng-container i18n="@@typologies.ninjaVersParametres">La typologie ninja se choisit dans les Paramètres</ng-container>
     </a>

@@ -71,7 +71,7 @@ Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personne
 | --- | --- | --- |
 | Importer un fichier scénario | **Imports**, onglet Scénario (`/imports?onglet=scenario`) | C'est un fichier qu'un organisateur apporte, comme les cinq CSV d'à côté |
 | Exporter l'édition en scénario | **Exports** (`/exports`) | Le seul écran qui écrit des fichiers depuis l'édition courante |
-| Charger un scénario pré-enregistré | **Débogage** (`/debug`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
+| Charger un scénario pré-enregistré | **Débogage**, onglet *Données* (`/debug?onglet=donnees`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
 
 ## Ce que l'import d'un scénario remplace
 

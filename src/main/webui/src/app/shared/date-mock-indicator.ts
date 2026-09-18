@@ -27,7 +27,7 @@ import { TODAY_ANCHOR, DateMockService } from '../core/date-mock.service';
       <a
         class="date-mock-indicator"
         routerLink="/debug"
-        [queryParams]="{ focus: ancre }"
+        [queryParams]="{ onglet: 'verifications', focus: ancre }"
         [fragment]="ancre"
         [matTooltip]="tooltip()"
         matTooltipPosition="below"

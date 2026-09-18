@@ -276,6 +276,7 @@ describe('TypologiesPage table', () => {
     const lien = Array.from(racine().querySelectorAll('a')).find((each) =>
       each.textContent!.includes('ninja'),
     )!;
-    expect(lien.getAttribute('href')).toBe('/parametres');
+    // The tab the ninja picker lives on, not the page's default one (issue #606).
+    expect(lien.getAttribute('href')).toBe('/parametres?onglet=edition');
   });
 });
