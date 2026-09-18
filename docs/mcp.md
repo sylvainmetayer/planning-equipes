@@ -343,10 +343,16 @@ envoyer, comme l'écran.
 une date depuis la dernière publication (`reference=publication`) ou depuis le
 plan d'avant la dernière résolution (`reference=resolution`) — par siège (stand,
 heures, id du titulaire avant et après) et par animateur (vacations gagnées,
-retirées, déplacées, comptées). Sans référence, la publication s'il y en a une.
-`referenceDisponible` faux veut dire « rien à comparer », jamais « aucun
-changement ». Des ids et des comptes : les phrases du courriel restent à
-l'écran Journée.
+retirées, déplacées, comptées). La dernière résolution est celle qui a
+réellement remplacé le plan enregistré : un solve interrompu ou refusé ne
+déplace pas la référence, une restauration ou un import entre deux solves
+comptent dans les changements. Un siège gardé par la même personne à d'autres
+heures est une ligne `HORAIRES` (`heureDebutAvant`/`heureFinAvant` portent les
+heures d'avant), comptée dans `horairesModifies` — pas un retrait plus un
+nouveau, pour compter comme la lecture par animateur. Sans référence, la
+publication s'il y en a une. `referenceDisponible` faux veut dire « rien à
+comparer », jamais « aucun changement ». Des ids et des comptes : les phrases
+du courriel restent à l'écran Journée.
 
 `publier_planning` capture d'abord l'instantané publié, puis écrit aux gens :
 un envoi qui échoue à mi-chemin laisse un planning publié cohérent et une trace

@@ -639,18 +639,39 @@ que l'espace ne montre pas encore.
 
 `GET /api/journees/{jour}/changements?reference=publication|resolution` — ce
 qui a bougé sur une journée, lu deux fois sur les mêmes faits : par siège
-(stand, heures, titulaire avant et après : `nouveau`, `retiré`, `remplacé`) et
-par animateur, dans les phrases mêmes que `GET /api/planning/publication` met
-dans le courriel. La seconde lecture **est** le diff de publication filtré sur
-la date, jamais une comparaison refaite : l'onglet Journée et l'écran
-Publication ne peuvent pas raconter deux histoires sur la même journée. La
-première apparie les sièges sur leur clé naturelle — stand, jour, heures —
-comme la règle de stabilité du plan publié, et les sièges d'une même case sont
-interchangeables, comme les compte déjà la replanification incrémentale.
+(stand, heures, titulaire avant et après : `nouveau`, `retiré`, `remplacé`,
+`horaires modifiés`) et par animateur, dans les phrases mêmes que
+`GET /api/planning/publication` met dans le courriel. La seconde lecture
+**est** le diff de publication filtré sur la date, jamais une comparaison
+refaite : l'onglet Journée et l'écran Publication ne peuvent pas raconter deux
+histoires sur la même journée. Une nuance : ce diff est calculé sans le cadre
+de première diffusion (`premiereDiffusion`) — l'onglet lit des changements,
+jamais un planning annoncé en entier. La première lecture apparie les sièges
+sur leur clé naturelle — stand, jour, heures — comme la règle de stabilité du
+plan publié, et les sièges d'une même case sont interchangeables, comme les
+compte déjà la replanification incrémentale.
+
+**Une personne gardée sur son stand à d'autres heures** — un créneau rogné par
+une consigne — est une ligne `HORAIRES` (`heureDebutAvant`/`heureFinAvant`
+portent les heures de la référence, `heureDebut`/`heureFin` celles du plan),
+comptée dans `horairesModifies`, et non un siège retiré plus un siège nouveau.
+La règle est celle de la lecture par animateur : même jour, même stand,
+exactement un siège de chaque côté pour cette personne — deux sièges rognés
+sur un même stand restent deux retraits et deux nouveaux, des deux côtés. Les
+compteurs des deux lectures disent donc la même chose.
 
 Deux références, et **aucune n'est inventée** : `publication` compare au dernier
 instantané publié, `resolution` à l'instantané automatique pris juste avant la
-dernière résolution. Sans paramètre, la publication quand il y en a une, la
+dernière résolution **effective** — celle qui a réellement remplacé le plan
+enregistré, ce que `planning_resolution` retient à l'écriture
+(`snapshot_avant_solve_id`). Un solve interrompu par le serveur ou refusé sur
+son problème capture lui aussi le plan puis n'écrit rien : il ne déplace pas
+la référence, sinon l'onglet comparerait le plan à lui-même et annoncerait une
+journée sans changement. Une restauration ou un import faits entre deux
+résolutions n'y touchent pas non plus : ce qu'ils ont changé se lit comme
+changé depuis la résolution. La purge des instantanés automatiques épargne
+celui que la référence désigne ; une suppression à la main ramène à « rien à
+comparer ». Sans paramètre, la publication quand il y en a une, la
 résolution sinon — la réponse dit laquelle (`reference`). Quand la référence
 n'existe pas — jamais publié, ou aucune résolution n'a encore remplacé un plan —
 la réponse porte `referenceDisponible: false` et des compteurs à zéro qui ne
