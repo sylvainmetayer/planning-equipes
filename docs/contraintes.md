@@ -954,7 +954,7 @@ configuration.
 Pendant l'événement, une résolution reçoit les places des créneaux déjà
 commencés **reprises du plan enregistré et épinglées** — « le passé est
 figé », [ADR 0044](decisions/0044-le-passe-est-fige.md), mécanique dans
-[`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche). Ces places
+[`domaine.md`](domaine.md#le-passé-est-figé). Ces places
 portent un drapeau `passe` que chaque contrainte lit selon une seule règle :
 
 - une place passée **compte** — elle reste dans chaque flux, groupe et
@@ -979,6 +979,19 @@ même fournisseur de contraintes et lisent donc la même chose. Les analyses
 qui comptent hors du solveur (Pauses, Besoin, contrôle de grille, Heures)
 **décrivent** toujours le passé, y compris ce qui s'y est mal passé : elles
 disent ce qui a été fait, elles ne le reprochent pas non plus.
+
+**Un plancher medium pendant l'événement, assumé.** `equilibrerCharge` et
+`equilibrerCreneauxPenibles` mesurent l'édition entière — places passées
+comprises, puisque ce que chacun a déjà travaillé est ce qui rend l'équité
+lisible — et ne sont facturées que tant qu'une place est à venir. Mais la
+résolution ne peut plus bouger que l'avenir : un écart déjà creusé avant
+aujourd'hui ne se rattrape pas, et le score medium garde un plancher
+qu'aucune relance ne ramène à zéro. Il n'est ni signalé comme les
+[planchers par règle](#le-plancher--une-règle-qui-pénalise-tout-faute-de-donnée)
+ni soustrait : le score d'un solve pendant l'événement se compare au
+précédent, pas au zéro, et l'aide de l'écran Solveur le dit. Le lever
+demanderait de ne mesurer l'équilibre que sur l'avenir, ce qui inverserait
+la règle — l'animateur déjà chargé hier redeviendrait « à charger » demain.
 
 ## Hors périmètre assumé
 

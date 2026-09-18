@@ -124,7 +124,11 @@ Ces places comptent dans les règles et ne sont jamais reprochées ; le score
 d'un solve pendant l'événement se lit donc sur ce qui reste à jouer. Un
 problème envoyé dans le corps de la requête voit ses places passées épinglées
 aussi, sans réamorçage : le serveur ne connaît pas le point de départ de
-l'appelant. `PASSE_FIGE=false` coupe la règle.
+l'appelant. Une résolution dont **toutes** les places sont passées — édition
+terminée, date simulée après l'événement — est refusée plutôt que de produire
+un plan vide : le job finit `FAILED` avec « Rien à planifier : tous les
+créneaux sont déjà commencés… » en `error`, sans être remonté comme une panne.
+`PASSE_FIGE=false` coupe la règle.
 
 **Un seul job de résolution à la fois pour toute l'application**, verrou porté
 par le serveur. Toute autre session voit le même job actif via
@@ -212,7 +216,7 @@ est ce qui le tient bas.
 
 Le choix est **persisté avec le job** (`solver_job.reamorcage`, V68) : une
 résolution en file rejouée après un redémarrage démarre comme on le lui avait
-demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes, postesPasses }`,
+demandé. Le résultat le restitue — `reamorcage: { mode, postes, postesLiberes, postesPasses, postesPassesVides }`,
 où `mode` vaut ce qui a été fait (`PLAN_COURANT` ou `AUCUN`, jamais `AUTO`,
 et `reamorcage` est absent quand le problème est venu dans le corps de la
 requête : son point de départ est celui de l'appelant, que le serveur ne peut
@@ -221,7 +225,10 @@ pas nommer)
 `postesPasses` compte les places des créneaux déjà commencés, épinglées
 telles que travaillées quel que soit le mode, départ à froid compris
 ([ADR 0044](decisions/0044-le-passe-est-fige.md)) ; 0 tant que l'événement
-n'a pas commencé. La même brique servira la reprise d'un job `INTERROMPU`
+n'a pas commencé. `postesPassesVides` compte, parmi elles, celles qui ne
+tiennent personne — un premier calcul lancé pendant l'événement les a toutes
+vides — : un avertissement sur le compte rendu, jamais un point dur. Les
+deux sont absents d'un résultat enregistré avant la règle. La même brique servira la reprise d'un job `INTERROMPU`
 (#183) : elle n'est spécifique à aucun écran.
 
 ### La file survit au redémarrage
@@ -376,7 +383,10 @@ d'un résultat, pas de rien. Mécanique dans
 Les places des créneaux déjà commencés sont réglées **avant** le périmètre :
 épinglées telles que travaillées, jamais rouvertes — `jours` nommant une
 journée passée ne rouvre rien — et comptées à part dans
-`statistiques.postesPasses` ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+`statistiques.postesPasses`, celles restées vides dans
+`statistiques.postesPassesVides` ([ADR 0044](decisions/0044-le-passe-est-fige.md)).
+Une replanification dont toutes les places sont passées est refusée comme la
+résolution complète.
 
 ### Instantanés et comparateur A/B
 
@@ -1007,6 +1017,11 @@ siège verrouillé refuse (`400`), une résolution en cours aussi (`409`), les
 deux lignes s'écrivent dans une seule transaction, et l'analyse de contraintes
 stockée est re-dérivée du plan après coup, comme après une restauration.
 
+**Le passé ne se modifie plus** ([ADR 0044](decisions/0044-le-passe-est-fige.md)) :
+un siège dont le créneau est déjà commencé — à l'une ou l'autre extrémité du
+geste — refuse (`400`, « Ce créneau est déjà commencé : le passé ne se
+modifie plus »), simulation comprise, tant que `PASSE_FIGE` est allumé.
+
 Le clic sur un nom reste le chemin clavier de ce geste : « Pourquoi lui ? »
 et l'assistant de réparation ci-dessous.
 
@@ -1035,7 +1050,9 @@ sont évalués en premier, pour que la troncature garde les plus prometteurs.
 Appliquer une suggestion réaffecte **ce seul siège** dans `poste_affectation`,
 sans relancer de solveur ni réécrire le reste du plan : le résultat est
 exactement le plan simulé. Un poste couvert par un verrouillage est refusé
-(400) — déverrouillez-le d'abord.
+(400) — déverrouillez-le d'abord. Un poste dont le créneau est déjà commencé
+l'est aussi, à la suggestion comme à l'application (400, « Ce créneau est
+déjà commencé : le passé ne se modifie plus », [ADR 0044](decisions/0044-le-passe-est-fige.md)).
 
 C'est un `UPDATE` nu : hors verrouillage, il ne revérifie rien. Une liste de
 suggestions calculée **avant** une autre écriture est donc périmée, et l'appliquer
@@ -1745,7 +1762,10 @@ mardi »).
 
 L'acceptation applique l'échange exactement comme simulé, pose deux verrous
 `ANIMATEUR_CRENEAU` sur le créneau que chacun **reçoit**, et notifie. **Le
-solveur n'est pas relancé.**
+solveur n'est pas relancé.** Un créneau déjà commencé — donné ou reçu — refuse
+l'échange, à la proposition comme à l'acceptation (`400`, « Ce créneau est
+déjà commencé : le passé ne se modifie plus »,
+[ADR 0044](decisions/0044-le-passe-est-fige.md)).
 
 Un lot sollicite **chaque collègue visé**, une notification par collègue et non
 une par lot : le compte annoncé est celui de ses seules demandes, personne

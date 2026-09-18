@@ -153,14 +153,16 @@ implique n'est pas passée.** Sa forme suit celle de la règle.
 | `animateurDisponible`, `standReserveAuxMajeurs`, `travailDeNuitInterditPourMineur`, `travailInterditJourFerieMineur`, `mineurNecessiteEncadrementMajeur`, `experienceRequisePourStandsPremium`, `appreciationIncompatible`, `souhaitsIncompatibles`, `stabiliteDuPlanPublie`, `indisponibiliteForcee` | par place | une place passée est ignorée |
 | `pasDeChevauchementHoraire`, `reposQuotidienMinimal`, `pauseMinimaleEntreVacations`, `eviterChangementEmplacementEloigne`, `eviterEnchainementStandsEpuisants`, `incompatibiliteAdHoc`, `affiniteAdHoc` (récompense) | par paire | facturée sauf si les deux places sont passées ; hier soir compte contre demain matin |
 | `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur`, `travailContinuMaxMajeur`, `travailContinuMaxMineur`, `coupureRepasObligatoire`, `coupureRepasPlacementPrefere`, `pauseSurPosteSansRelais` | par animateur et jour, liste | mesurée sur toutes les places, facturée si le jour tient une place à venir |
-| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `maxJoursTravaillesParSemaine`, `reposHebdomadaireMineur` | par animateur et semaine, agrégat | agrégat sur toutes les places, facturé si la semaine tient une place à venir (`ifExists`) |
+| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur`, `maxJoursTravaillesParSemaine`, `reposHebdomadaireMineur` | par animateur et semaine, agrégat | agrégat sur toutes les places, facturé si la semaine tient une place à venir (compte des places à venir replié dans le groupe, `PastSeats.withAhead`) |
 | `reposHebdomadaireMinimal` | par animateur, toutes semaines | les occupations sont celles de toutes les places, seules les semaines tenant une place à venir portent leur déficit |
 | `dureeHebdomadaireMaxDeuxSemaines` | par animateur, paires de semaines | une paire de semaines pleines est facturée si l'une des deux tient une place à venir |
 | `maxJoursConsecutifsTravailles` | par animateur, séries de jours | une série entièrement passée n'est pas facturée ; une série qui atteint demain l'est, ses jours passés comptés |
 | `eviterFermeturePuisOuverture` | par nuit entre deux journées | facturée si l'une des deux journées tient une place à venir |
-| `plafondCreneauxParTypologie`, `limiterTypologiesDistinctesParAnimateur` | par animateur sur l'édition | les places passées comptent, facturé tant que l'animateur tient une place à venir |
+| `plafondCreneauxParTypologie` | par animateur et typologie sur l'édition | les places passées comptent, facturé tant que l'animateur tient une place à venir **de cette typologie** |
+| `limiterTypologiesDistinctesParAnimateur` | par animateur sur l'édition | les places passées comptent, facturé tant que l'animateur tient une place à venir |
 | `limiterEmplacementsParJour` | par animateur et jour, ensemble | facturé si le jour tient une place à venir |
-| `standComplexeAvecReferent`, `repartitionMineursParCreneau`, `favoriserMixiteDesNiveaux` | par stand × créneau | facturé si la ligne tient une place à venir, vide comprise |
+| `standComplexeAvecReferent` | par stand × créneau, places vides comprises | facturé si la ligne tient une place à venir, vide comprise |
+| `repartitionMineursParCreneau`, `favoriserMixiteDesNiveaux` | par stand × créneau, places tenues | facturé si la ligne tient une place tenue à venir |
 | `eviterRoulementStandsPremium` | par stand | les têtes déjà vues comptent, facturé si le stand tient une place à venir |
 | `preserverBufferPolyvalents` | par créneau | facturé si le créneau tient une place à venir |
 | `equilibrerCharge`, `equilibrerCreneauxPenibles` | global | les places passées pèsent dans l'équilibre, facturé tant qu'une place est à venir |
@@ -192,6 +194,39 @@ grille, Heures, Équité) continuent de **décrire** le passé, y compris ce qui
 s'y est mal passé : elles disent ce qui a été fait, elles ne le reprochent
 pas non plus.
 
+### Les gestes manuels ne réécrivent plus le passé
+
+Le premier état de cette décision laissait les gestes à la main — le
+glisser-déposer des vues journalières, l'acceptation d'un échange, une
+réparation appliquée ou suggérée — libres de réécrire une place passée, leur
+simulation lisant un passé non reproché. Retenu depuis : **ils refusent**.
+Une place passée est un fait, et un fait ne se corrige pas plus à la main
+qu'au solveur ; un déplacement accepté sur hier aurait aussi produit, à la
+publication suivante, le « votre emploi du temps a changé » sur une journée
+derrière soi que la règle existe pour empêcher. Chaque écriture qui déplace
+un animateur sur une place — `deplacer_affectation` et son écran,
+`accepter_demande_echange`, `suggerer_reparations` et l'application d'une
+réparation, ainsi que la simulation qui précède chacune — lit le même
+`PastHorizon` et refuse d'une seule phrase : « Ce créneau est déjà commencé :
+le passé ne se modifie plus » (`400` en REST, refus métier en MCP). Le
+commutateur coupé, rien n'est refusé. Le mode jour J garde son périmètre —
+les créneaux restants de la journée — et n'écrit plus le siège d'un créneau
+en cours : l'absence y est enregistrée, le siège reste tel quel.
+
+### Une résolution sans avenir est refusée
+
+Une résolution dont toutes les places sont passées — l'édition est terminée,
+ou la date simulée est après l'événement — produisait un plan vide à zéro
+dur, que l'écran Contraintes lisait comme un succès. Retenu : elle est
+**refusée**, complète comme incrémentale, avec « Rien à planifier : tous les
+créneaux sont déjà commencés — l'édition est terminée, ou la date simulée est
+après l'événement » ; le job porte la phrase en erreur, sans être compté
+comme une panne. Quand des places passées sont restées vides — aucun
+titulaire enregistré, parce que c'est le premier calcul de l'événement ou
+que le titulaire a été supprimé — la résolution a lieu et son résultat porte
+`postesPassesVides`, montré comme un avertissement sur la ligne du compte
+rendu, sur l'écran Solveur et dans la vue MCP du job.
+
 ### Le commutateur
 
 `planning.solver.passe-fige=${PASSE_FIGE:true}`, coupé sous `%test` : les
@@ -218,9 +253,21 @@ exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
 - Sous `quarkus:dev` avec l'horloge réelle, un jeu d'exemple daté dans le
   passé est entièrement figé : poser la date du jour depuis la page Débogage
   lui rend son avenir. La page d'aide le dit.
-- Les gestes manuels sur une journée passée — glisser-déposer, échange,
-  réparation — ne sont pas refusés par cette décision ; leur simulation lit
-  un passé non reproché. Les interdire est un choix à part, non pris ici.
+- Les gestes manuels sur une place passée — glisser-déposer, échange,
+  réparation, et leur simulation — sont refusés, dans les mêmes termes
+  partout, tant que le commutateur est allumé.
+- Une résolution dont toutes les places sont passées est refusée ; des
+  places passées vides sont annoncées, jamais reprochées.
+- **Un plancher medium pendant l'événement, assumé.** Les deux équilibres
+  globaux mesurent l'édition entière et ne peuvent plus bouger que l'avenir :
+  un écart déjà creusé ne se rattrape pas, et le score medium garde un
+  plancher qu'aucune relance ne ramène à zéro. Il se lit d'un solve à
+  l'autre, pas au zéro ([`contraintes.md`](../contraintes.md#compté-non-reproché--le-passé)).
+- **Pas de couverture de bout en bout, assumé.** La CI de bout en bout coupe
+  le commutateur : ses amorces sont datées derrière l'horloge réelle et
+  l'application empaquetée refuse l'horloge simulée. Les redater dans
+  l'avenir en gardant les âges des mineurs est un chantier à part ; la règle
+  est couverte par `FrozenPastAcceptanceTest` sur l'horloge figée.
 - `PosteAffectation` porte un drapeau de plus, jamais sérialisé : le contrat
   JSON ne bouge pas. `StatistiquesIncremental` et `ReamorcageEffectue`
-  portent `postesPasses`.
+  portent `postesPasses` et `postesPassesVides`.
