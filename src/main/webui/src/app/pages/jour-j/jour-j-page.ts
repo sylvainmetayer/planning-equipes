@@ -26,7 +26,7 @@ import {
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
-import { bandeLabel } from '../consignes/consignes';
+import { bandeLabel } from '../../core/consigne-wording';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import {
   aucuneSuggestion,

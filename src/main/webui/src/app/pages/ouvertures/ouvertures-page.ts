@@ -20,7 +20,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { ConsignesStore } from '../../core/consignes.store';
-import { bandeLabel } from '../consignes/consignes';
+import { bandeLabel } from '../../core/consigne-wording';
 import {
   AccesGrille,
   RecopieGrille,

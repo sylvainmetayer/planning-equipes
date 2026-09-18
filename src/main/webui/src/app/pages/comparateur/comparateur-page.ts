@@ -20,7 +20,7 @@ import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/
 import { StatusMessage } from '../../shared/status-message';
 import { LigneMetrique, construireLignesMetriques } from './comparateur-metrics';
 import { errorMessage } from '../../core/error-message';
-import { bandeLabel, libelleDate } from '../consignes/consignes';
+import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 
 /** Value designating the currently persisted plan instead of a snapshot id. */
 const COURANT = 'courant';

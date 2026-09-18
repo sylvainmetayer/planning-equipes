@@ -10,7 +10,7 @@ import { ConsignesApi } from '../../core/api/consignes-api';
 import { ApercuLeveeConsigne, VacationRef } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
-import { bandeLabel, libelleDate } from './consignes';
+import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 
 export interface ConsigneLeveeData {
   /** The dates still to come that carry a consigne: the only ones that can be lifted. */

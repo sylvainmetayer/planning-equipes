@@ -30,7 +30,7 @@ import {
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { libelleJour, libelleJourSemaine } from '../stands/stand-horaires';
+import { libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import { JourneeTypeDialog, JourneeTypeDialogData } from './journee-type-dialog';
 import {
   JourneesTypesApplicationData,

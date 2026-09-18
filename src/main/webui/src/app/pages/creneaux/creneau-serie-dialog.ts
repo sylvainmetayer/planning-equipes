@@ -12,7 +12,7 @@ import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { JourSemaine, RapportGrille, RapportRecurrence, RegleRecurrence } from '../../core/models';
-import { libelleJourSemaine } from '../stands/stand-horaires';
+import { libelleJourSemaine } from '../../core/horaire-stand';
 import { summarizeVacationsByDay } from './jours-resume';
 import {
   ErreurSerie,

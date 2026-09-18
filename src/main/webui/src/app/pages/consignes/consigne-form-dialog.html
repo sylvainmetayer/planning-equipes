@@ -1,4 +1,5 @@
 <h2 mat-dialog-title>{{ formTitle() }}</h2>
+<form (ngSubmit)="save()">
 <mat-dialog-content class="consigne-form">
   @if (editingLocked()) {
     <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -84,6 +85,9 @@
       </h3>
       @if (chargementStands()) {
         <mat-progress-bar mode="indeterminate" />
+      }
+      @if (erreurStands(); as message) {
+        <p class="field-error" role="alert">{{ message }}</p>
       }
       @if (dates().length === 0) {
         <p class="empty-hint" i18n="@@consignes.form.stands.sansDate">Choisissez une date : les stands sont lus pour la première date et la bande.</p>
@@ -176,6 +180,11 @@
                           <mat-label i18n="@@consignes.form.fenetre.fin">Fin (vide : minuit)</mat-label>
                           <input matInput type="time" [name]="stand.standId + '-fin-' + $index" [ngModel]="fenetre.fin" (ngModelChange)="patchFenetreStand(stand, $index, { fin: $event })" />
                         </mat-form-field>
+                        <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-stand-effectif">
+                          <mat-label i18n="@@consignes.form.stand.effectif">Effectif</mat-label>
+                          <input matInput type="number" min="1" [name]="stand.standId + '-effectif-' + $index" [placeholder]="'' + stand.effectifHerite"
+                                 [ngModel]="fenetre.effectif" (ngModelChange)="onEffectif(stand, $index, $event)" />
+                        </mat-form-field>
                         <button matIconButton type="button" (click)="retirerFenetreStand(stand, $index)"
                                 i18n-matTooltip="@@consignes.form.fenetre.retirer" matTooltip="Retirer cette fenêtre"
                                 i18n-aria-label="@@consignes.form.fenetre.retirer" aria-label="Retirer cette fenêtre">
@@ -189,11 +198,6 @@
                       <mat-icon>add</mat-icon>
                       <ng-container i18n="@@consignes.form.fenetre.ajouter">Ajouter une fenêtre</ng-container>
                     </button>
-                    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="consigne-stand-effectif">
-                      <mat-label i18n="@@consignes.form.stand.effectif">Effectif</mat-label>
-                      <input matInput type="number" min="1" [name]="stand.standId + '-effectif'" [placeholder]="'' + stand.effectifHerite"
-                             [ngModel]="stand.effectif ?? ''" (ngModelChange)="onEffectif(stand.standId, $event)" />
-                    </mat-form-field>
                   </div>
                 </div>
               }
@@ -248,7 +252,7 @@
       <mat-progress-bar mode="indeterminate" />
     }
     @if (messageErreur(); as message) {
-      <p class="field-error consigne-form-erreur">{{ message }}</p>
+      <p class="field-error consigne-form-erreur" role="alert">{{ message }}</p>
     }
   </fieldset>
 </mat-dialog-content>
@@ -258,8 +262,9 @@
     <mat-icon>preview</mat-icon>
     <ng-container i18n="@@consignes.form.apercu">Aperçu</ng-container>
   </button>
-  <button matButton="filled" type="button" [disabled]="invalide() || enregistrement() || editingLocked()" (click)="save()">
+  <button matButton="filled" type="submit" [disabled]="invalide() || enregistrement() || editingLocked()">
     <mat-icon>save</mat-icon>
     <ng-container i18n="@@consignes.form.enregistrer">Enregistrer</ng-container>
   </button>
 </mat-dialog-actions>
+</form>

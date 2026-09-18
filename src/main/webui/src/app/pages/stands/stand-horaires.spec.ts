@@ -1,13 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { JourResolu } from '../../core/horaire-stand';
+import { JourResolu, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import { Creneau, HoraireStand, JourSemaine } from '../../core/models';
 import {
   datesEvenement,
   decrireJour,
   effectifDepuisSaisie,
   erreurRegle,
-  libelleJour,
-  libelleJourSemaine,
   premiereErreurHoraire,
 } from './stand-horaires';
 

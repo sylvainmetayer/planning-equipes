@@ -28,7 +28,7 @@ import {
   segmentsPause,
 } from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
-import { bandeLabel } from '../consignes/consignes';
+import { bandeLabel } from '../../core/consigne-wording';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';

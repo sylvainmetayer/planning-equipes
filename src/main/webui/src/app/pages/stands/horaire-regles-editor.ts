@@ -33,7 +33,8 @@ import {
   patchDansListe,
   retirerDe,
 } from './stand-draft';
-import { erreurRegle, libelleJourSemaine, messageConflitDeMode } from './stand-horaires';
+import { libelleJourSemaine } from '../../core/horaire-stand';
+import { erreurRegle, messageConflitDeMode } from './stand-horaires';
 
 /**
  * The editor of a stand's recurring rules, shared by the stand form and the

@@ -1,18 +1,19 @@
-// The pure side of the Consignes page: how a band reads, which dates can still
-// take a consigne, the request built from the form, the meal windows restated
-// for the day, the merge with what the server proposes, the filters and the
-// two bulk moves of the stands list.
+// The pure side of the Consignes page: which dates can still take a consigne,
+// the request built from the form and what blocks it, the meal windows
+// restated for the day, the merge with what the server proposes, the filters
+// and the two bulk moves of the stands list. The wording is tested with
+// `core/consigne-wording.ts`.
 
 import { describe, expect, it } from 'vitest';
 import { ConsigneEdition, Creneau, LigneStandConsigne, Stand } from '../../core/models';
 import {
   ConsigneForm,
   FILTRES_VIDES,
+  FenetreSaisie,
   RepasSaisie,
   StandForm,
   alignSoirOnCompensation,
   applyToSelection,
-  bandeLabel,
   buildDemande,
   cocherAffiches,
   datesCandidates,
@@ -23,19 +24,22 @@ import {
   filterStands,
   formVide,
   formatFenetresSaisie,
-  heureLabel,
   mergePreselection,
   openedStandsCount,
+  ouverturesSaisies,
   parseFenetresSaisie,
   followDefaultWindows,
   erreursRepas,
   repasDemande,
   repasFormEmpty,
-  repasLabel,
   repasSaisie,
-  repasSurcharge,
   repasVide,
 } from './consignes';
+
+/** A window as typed, the headcount empty unless given. */
+function fenetre(debut: string, fin: string, effectif = ''): FenetreSaisie {
+  return { debut, fin, effectif };
+}
 
 function creneau(id: number, date: string): Creneau {
   return { id, jour: 1, date, heureDebut: '10:00', heureFin: '12:00' };
@@ -63,8 +67,8 @@ function standForm(overrides: Partial<StandForm> & { standId: string }): StandFo
     exceptionDatee: false,
     motif: null,
     preCoche: true,
-    fenetres: [{ debut: '18:00', fin: '22:00' }],
-    effectif: null,
+    fenetres: [fenetre('18:00', '22:00')],
+    effectifMax: 4,
     ...overrides,
   };
 }
@@ -86,30 +90,28 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
   };
 }
 
-describe('the wording of a band', () => {
-  it('says an hour the way an organiser does, and midnight for an open end', () => {
-    expect(heureLabel('12:00:00')).toBe('12h');
-    expect(heureLabel('09:30:00')).toBe('9h30');
-    expect(heureLabel('18:00')).toBe('18h');
-    expect(bandeLabel('12:00:00', '18:00:00')).toBe('12h–18h');
-    expect(bandeLabel('12:00:00', null)).toBe('12h–minuit');
-  });
-
+describe('the hours read into the form and back', () => {
   it('reads the server hours into the form and back, an empty end travelling as null', () => {
     const saisies = fenetresSaisies([
       { debut: '18:00:00', fin: '22:00:00' },
       { debut: '20:00:00', fin: null },
     ]);
-    expect(saisies).toEqual([
-      { debut: '18:00', fin: '22:00' },
-      { debut: '20:00', fin: '' },
-    ]);
+    expect(saisies).toEqual([fenetre('18:00', '22:00'), fenetre('20:00', '')]);
     expect(fenetresDemandees(saisies)).toEqual([
       { debut: '18:00', fin: '22:00' },
       { debut: '20:00', fin: null },
     ]);
     // A window with no start is not a window: it is dropped rather than sent.
-    expect(fenetresDemandees([{ debut: '', fin: '22:00' }])).toEqual([]);
+    expect(fenetresDemandees([fenetre('', '22:00')])).toEqual([]);
+  });
+
+  it('reads a stand openings with the headcount typed on each window', () => {
+    expect(
+      ouverturesSaisies([
+        { standId: 'A', debut: '18:00:00', fin: '22:00:00', effectif: 2 },
+        { standId: 'A', debut: '09:00:00', fin: null, effectif: null },
+      ]),
+    ).toEqual([fenetre('18:00', '22:00', '2'), fenetre('09:00', '', '')]);
   });
 });
 
@@ -166,22 +168,19 @@ describe('the request built from the form', () => {
     fermetureFin: '',
     motif: '  Arrêté canicule ',
     prereglage: 'Plan canicule',
-    fenetres: [{ debut: '18:00', fin: '22:00' }],
+    fenetres: [fenetre('18:00', '22:00')],
     stands: [
-      standForm({ standId: 'A', effectif: 3 }),
+      standForm({ standId: 'A', fenetres: [fenetre('18:00', '22:00', '3')] }),
       standForm({
         standId: 'B',
-        fenetres: [
-          { debut: '18:00', fin: '' },
-          { debut: '09:00', fin: '11:00' },
-        ],
+        fenetres: [fenetre('18:00', '', ' 2 '), fenetre('09:00', '11:00')],
       }),
       standForm({ standId: 'C', coche: false }),
       standForm({ standId: 'D', fenetres: [] }),
     ],
   };
 
-  it('sends one opening per window of every ticked stand, with its headcount, and an open end as null', () => {
+  it('sends one opening per window of every ticked stand, each with its own headcount, and an open end as null', () => {
     const demande = buildDemande(form);
 
     expect(demande.dates).toEqual(['2026-07-12', '2026-07-11']);
@@ -192,11 +191,24 @@ describe('the request built from the form', () => {
     expect(demande.fenetres).toEqual([{ debut: '18:00', fin: '22:00' }]);
     expect(demande.ouvertures).toEqual([
       { standId: 'A', debut: '18:00', fin: '22:00', effectif: 3 },
-      { standId: 'B', debut: '18:00', fin: null, effectif: null },
+      { standId: 'B', debut: '18:00', fin: null, effectif: 2 },
       { standId: 'B', debut: '09:00', fin: '11:00', effectif: null },
     ]);
     // Nothing restated in the meal section: the edition's windows apply, no override travels.
     expect(demande.repas).toBeNull();
+  });
+
+  it('round-trips a consigne opening a stand at 2 then at 4 on two windows, unchanged', () => {
+    const ouvertures = [
+      { standId: 'A', debut: '08:00:00', fin: '10:00:00', effectif: 2 },
+      { standId: 'A', debut: '18:00:00', fin: '22:00:00', effectif: 4 },
+    ];
+    const rows = mergePreselection([ligne({ standId: 'A', ouvertures })], [], []);
+
+    expect(buildDemande({ ...form, stands: rows }).ouvertures).toEqual([
+      { standId: 'A', debut: '08:00', fin: '10:00', effectif: 2 },
+      { standId: 'A', debut: '18:00', fin: '22:00', effectif: 4 },
+    ]);
   });
 
   it('sends the meal windows restated for the day, an empty field keeping the edition value', () => {
@@ -226,32 +238,98 @@ describe('the request built from the form', () => {
     ).toMatchObject({ coupureMinutes: 45, soirDebut: null });
   });
 
+  // The band above runs to midnight and would swallow the evening windows:
+  // the rules below are read on a band that leaves the evening open.
+  const validForm: ConsigneForm = { ...form, fermetureFin: '16:00' };
+
   it('names what blocks the request, in the order of the fields', () => {
-    expect(erreursForm(form)).toEqual([]);
-    expect(erreursForm({ ...form, dates: [], motif: ' ' })).toEqual(['DATES', 'MOTIF']);
-    expect(erreursForm({ ...form, fermetureDebut: '', fermetureFin: 'soir' })).toEqual([
+    expect(erreursForm(validForm)).toEqual([]);
+    expect(erreursForm({ ...validForm, dates: [], motif: ' ' })).toEqual(['DATES', 'MOTIF']);
+    expect(erreursForm({ ...validForm, fermetureDebut: '', fermetureFin: 'soir' })).toEqual([
       'FERMETURE_DEBUT',
       'FERMETURE_FIN',
     ]);
     // A window with no start on a ticked stand blocks; the same on an unticked one does not.
     expect(
       erreursForm({
-        ...form,
-        stands: [standForm({ standId: 'A', fenetres: [{ debut: '', fin: '22:00' }] })],
+        ...validForm,
+        stands: [standForm({ standId: 'A', fenetres: [fenetre('', '22:00')] })],
       }),
     ).toEqual(['FENETRE']);
     expect(
       erreursForm({
-        ...form,
-        stands: [
-          standForm({ standId: 'A', coche: false, fenetres: [{ debut: '', fin: '22:00' }] }),
-        ],
+        ...validForm,
+        stands: [standForm({ standId: 'A', coche: false, fenetres: [fenetre('', '22:00')] })],
       }),
     ).toEqual([]);
     // The meal section's codes come last, after the fields above it.
     expect(
-      erreursForm({ ...form, motif: '', repas: { ...repasVide(), soirDebut: '18:00' } }),
+      erreursForm({ ...validForm, motif: '', repas: { ...repasVide(), soirDebut: '18:00' } }),
     ).toEqual(['MOTIF', 'REPAS_FENETRE', 'REPAS_JUSTIFICATION']);
+  });
+
+  it('refuses a date the form does not offer — a deep link on a day already begun', () => {
+    expect(erreursForm(validForm, ['2026-07-11', '2026-07-12'])).toEqual([]);
+    expect(erreursForm(validForm, ['2026-07-12'])).toEqual(['DATES']);
+  });
+
+  it('mirrors the server: a window ending at or before its start, or swallowed by the band', () => {
+    const errorsWith = (fenetres: FenetreSaisie[]) =>
+      erreursForm({
+        ...form,
+        fermetureFin: '18:00',
+        stands: [standForm({ standId: 'A', fenetres })],
+      });
+
+    expect(errorsWith([fenetre('22:00', '20:00')])).toEqual(['FENETRE_ORDRE']);
+    expect(errorsWith([fenetre('20:00', '20:00')])).toEqual(['FENETRE_ORDRE']);
+    // An end of 00:00 is midnight, not a reversed window.
+    expect(errorsWith([fenetre('20:00', '00:00')])).toEqual([]);
+    expect(errorsWith([fenetre('13:00', '17:00')])).toEqual(['FENETRE_BANDE']);
+    expect(errorsWith([fenetre('12:00', '18:00')])).toEqual(['FENETRE_BANDE']);
+    // Overlapping the band on one side opens something: allowed.
+    expect(errorsWith([fenetre('16:00', '20:00')])).toEqual([]);
+    // A band until midnight swallows an evening window whole.
+    expect(
+      erreursForm({
+        ...form,
+        fermetureFin: '',
+        stands: [standForm({ standId: 'A', fenetres: [fenetre('18:00', '')] })],
+      }),
+    ).toEqual(['FENETRE_BANDE']);
+    // The day's default windows follow the same rules.
+    expect(
+      erreursForm({ ...form, fermetureFin: '18:00', fenetres: [fenetre('14:00', '16:00')] }),
+    ).toEqual(['FENETRE_BANDE']);
+  });
+
+  it('refuses a headcount that is not a positive whole number, or above the stand ceiling', () => {
+    const errorsWith = (effectif: string, effectifMax: number | null = 4) =>
+      erreursForm({
+        ...validForm,
+        stands: [
+          standForm({ standId: 'A', effectifMax, fenetres: [fenetre('18:00', '22:00', effectif)] }),
+        ],
+      });
+
+    expect(errorsWith('')).toEqual([]);
+    expect(errorsWith('4')).toEqual([]);
+    expect(errorsWith('0')).toEqual(['EFFECTIF']);
+    expect(errorsWith('-1')).toEqual(['EFFECTIF']);
+    expect(errorsWith('2.5')).toEqual(['EFFECTIF']);
+    expect(errorsWith('abc')).toEqual(['EFFECTIF']);
+    expect(errorsWith('5')).toEqual(['EFFECTIF_MAX']);
+    // A stand the store does not know has no ceiling to check against.
+    expect(errorsWith('50', null)).toEqual([]);
+    // An unticked stand's headcount is not judged.
+    expect(
+      erreursForm({
+        ...validForm,
+        stands: [
+          standForm({ standId: 'A', coche: false, fenetres: [fenetre('18:00', '22:00', '0')] }),
+        ],
+      }),
+    ).toEqual([]);
   });
 });
 
@@ -297,6 +375,12 @@ describe('the meal windows restated for the day', () => {
     expect(erreursRepas(justified({ coupureMinutes: '0' }))).toEqual(['REPAS_COUPURE']);
     expect(erreursRepas(justified({ coupureMinutes: '4.5' }))).toEqual(['REPAS_COUPURE']);
     expect(erreursRepas(justified({ coupureMinutes: '30' }))).toEqual([]);
+    expect(erreursRepas(justified({ soirDebut: '21:00', soirFin: '19:00' }))).toEqual([
+      'REPAS_ORDRE',
+    ]);
+    expect(erreursRepas(justified({ midiDebut: '12:00', midiFin: '12:00' }))).toEqual([
+      'REPAS_ORDRE',
+    ]);
     expect(
       erreursRepas({ ...repasVide(), soirDebut: '18:00', soirFin: '22:00', justification: ' ' }),
     ).toEqual(['REPAS_JUSTIFICATION']);
@@ -309,9 +393,9 @@ describe('the meal windows restated for the day', () => {
 
   it('aligns the evening on the earliest start and the latest end of the compensation, and fills an empty justification', () => {
     const aligned = alignSoirOnCompensation(repasVide(), [
-      { debut: '19:00', fin: '21:00' },
-      { debut: '18:00', fin: '20:00' },
-      { debut: '20:00', fin: '22:00' },
+      fenetre('19:00', '21:00'),
+      fenetre('18:00', '20:00'),
+      fenetre('20:00', '22:00'),
     ]);
     expect(aligned).toMatchObject({
       soirDebut: '18:00',
@@ -324,46 +408,19 @@ describe('the meal windows restated for the day', () => {
 
     // A justification already typed is kept; an open end reads as the last minute of the day.
     const kept = alignSoirOnCompensation(justified({ justification: 'Arrêté' }), [
-      { debut: '20:00', fin: '' },
+      fenetre('20:00', ''),
     ]);
     expect(kept).toMatchObject({ soirDebut: '20:00', soirFin: '23:59', justification: 'Arrêté' });
 
     // Without a readable window, nothing moves.
     const untouched = justified({ midiDebut: '12:00', midiFin: '14:00' });
     expect(alignSoirOnCompensation(untouched, [])).toBe(untouched);
-    expect(alignSoirOnCompensation(untouched, [{ debut: '', fin: '' }])).toBe(untouched);
-  });
-
-  it('words the chip: the justification, then what is restated', () => {
-    const repas = {
-      midiDebut: '12:00:00',
-      midiFin: '14:00:00',
-      soirDebut: '18:00:00',
-      soirFin: '22:00:00',
-      coupureMinutes: 45,
-      justification: 'Fermeture',
-    };
-    expect(repasSurcharge(repas)).toBe(true);
-    expect(repasSurcharge(null)).toBe(false);
-    expect(
-      repasSurcharge({
-        ...repas,
-        midiDebut: null,
-        midiFin: null,
-        soirDebut: null,
-        soirFin: null,
-        coupureMinutes: null,
-      }),
-    ).toBe(false);
-    expect(repasLabel(repas)).toBe('Fermeture · midi 12h–14h · soir 18h–22h · coupure 45 min');
-    expect(repasLabel({ ...repas, midiDebut: null, midiFin: null, coupureMinutes: null })).toBe(
-      'Fermeture · soir 18h–22h',
-    );
+    expect(alignSoirOnCompensation(untouched, [fenetre('', '')])).toBe(untouched);
   });
 });
 
 describe('merging the stands the server proposes', () => {
-  const defauts = [{ debut: '18:00', fin: '22:00' }];
+  const defauts = [fenetre('18:00', '22:00')];
 
   it('ticks a proposed stand with the default windows, and sets aside one with dated hours', () => {
     const rows = mergePreselection(
@@ -384,10 +441,21 @@ describe('merging the stands the server proposes', () => {
     expect(rows[0].fenetres).toEqual(defauts);
     expect(rows[0].fenetres).not.toBe(defauts);
     expect(rows[2].motif).toBe('Horaires posés');
-    expect(rows[2].effectif).toBeNull();
+    expect(rows[2].effectifMax).toBeNull();
   });
 
-  it('starts from what the date already opens on a stand, headcount included', () => {
+  it('reads each stand ceiling from the referential, for the headcount rule', () => {
+    const rows = mergePreselection(
+      [ligne({ standId: 'A' }), ligne({ standId: 'Z' })],
+      defauts,
+      [],
+      [],
+      new Map([['A', 3]]),
+    );
+    expect(rows.map((row) => row.effectifMax)).toEqual([3, null]);
+  });
+
+  it('starts from what the date already opens on a stand, headcount of each window included', () => {
     const rows = mergePreselection(
       [
         ligne({
@@ -404,11 +472,7 @@ describe('merging the stands the server proposes', () => {
     );
 
     expect(rows[0].coche).toBe(true);
-    expect(rows[0].fenetres).toEqual([
-      { debut: '19:00', fin: '' },
-      { debut: '09:00', fin: '11:00' },
-    ]);
-    expect(rows[0].effectif).toBe(4);
+    expect(rows[0].fenetres).toEqual([fenetre('19:00', '', '4'), fenetre('09:00', '11:00')]);
   });
 
   it('seeds a stand from the openings given for it — a row being modified or prolonged', () => {
@@ -421,10 +485,9 @@ describe('merging the stands the server proposes', () => {
 
     expect(rows[0]).toMatchObject({
       coche: true,
-      fenetres: [{ debut: '20:00', fin: '23:00' }],
-      effectif: 2,
+      fenetres: [fenetre('20:00', '23:00', '2')],
     });
-    expect(rows[1]).toMatchObject({ coche: true, fenetres: defauts, effectif: null });
+    expect(rows[1]).toMatchObject({ coche: true, fenetres: defauts });
   });
 
   it('keeps what was chosen for a stand across a re-read, and drops the stands the server no longer lists', () => {
@@ -432,8 +495,7 @@ describe('merging the stands the server proposes', () => {
       standForm({
         standId: 'A',
         coche: false,
-        fenetres: [{ debut: '20:00', fin: '' }],
-        effectif: 5,
+        fenetres: [fenetre('20:00', '', '5')],
       }),
       standForm({ standId: 'Z' }),
     ];
@@ -446,8 +508,7 @@ describe('merging the stands the server proposes', () => {
     expect(rows.map((row) => row.standId)).toEqual(['A', 'B']);
     expect(rows[0]).toMatchObject({
       coche: false,
-      fenetres: [{ debut: '20:00', fin: '' }],
-      effectif: 5,
+      fenetres: [fenetre('20:00', '', '5')],
       // What the server says of the stand is refreshed even so.
       minutesPerdues: 120,
     });
@@ -455,18 +516,21 @@ describe('merging the stands the server proposes', () => {
   });
 
   it('makes the untouched rows follow a change of the default windows, and leaves the typed ones alone', () => {
-    const nouvelles = [{ debut: '19:00', fin: '23:00' }];
+    const nouvelles = [fenetre('19:00', '23:00')];
     const rows = followDefaultWindows(
       [
         standForm({ standId: 'A' }),
-        standForm({ standId: 'B', fenetres: [{ debut: '09:00', fin: '12:00' }] }),
+        standForm({ standId: 'B', fenetres: [fenetre('09:00', '12:00')] }),
+        // The hours are the defaults, the headcount was typed: the hours move, the headcount stays.
+        standForm({ standId: 'C', fenetres: [fenetre('18:00', '22:00', '3')] }),
       ],
       defauts,
       nouvelles,
     );
 
     expect(rows[0].fenetres).toEqual(nouvelles);
-    expect(rows[1].fenetres).toEqual([{ debut: '09:00', fin: '12:00' }]);
+    expect(rows[1].fenetres).toEqual([fenetre('09:00', '12:00')]);
+    expect(rows[2].fenetres).toEqual([fenetre('19:00', '23:00', '3')]);
   });
 });
 
@@ -514,39 +578,46 @@ describe('the stands list', () => {
     expect(decoches.map((row) => row.coche)).toEqual([false, false, true, true]);
   });
 
-  it('applies windows and a headcount to the displayed ticked rows, and only what was given', () => {
+  it('applies windows and a headcount to every window of the displayed ticked rows, and only what was given', () => {
     const affiches = new Set(['A', 'B', 'C']);
-    const fenetres = [{ debut: '09:00', fin: '11:00' }];
+    const fenetres = [fenetre('09:00', '11:00'), fenetre('18:00', '')];
 
     const withWindows = applyToSelection(rows, affiches, { fenetres });
     expect(withWindows[0].fenetres).toEqual(fenetres);
-    expect(withWindows[0].effectif).toBeNull();
     // Unticked: untouched. Hidden: untouched.
     expect(withWindows[1].fenetres).toEqual(rows[1].fenetres);
     expect(withWindows[3].fenetres).toEqual(rows[3].fenetres);
 
-    const withEffectif = applyToSelection(rows, affiches, { effectif: 4 });
-    expect(withEffectif[0]).toMatchObject({ fenetres: rows[0].fenetres, effectif: 4 });
-    expect(withEffectif[2].effectif).toBe(4);
+    const withEffectif = applyToSelection(withWindows, affiches, { effectif: '4' });
+    expect(withEffectif[0].fenetres).toEqual([
+      fenetre('09:00', '11:00', '4'),
+      fenetre('18:00', '', '4'),
+    ]);
+    expect(withEffectif[2].fenetres).toEqual([
+      fenetre('09:00', '11:00', '4'),
+      fenetre('18:00', '', '4'),
+    ]);
+    expect(withEffectif[1].fenetres).toEqual(rows[1].fenetres);
 
-    const remisAHeriter = applyToSelection(withEffectif, affiches, { effectif: null });
-    expect(remisAHeriter[0].effectif).toBeNull();
+    // Windows alone keep the headcount typed on the window of the same rank.
+    const rehoused = applyToSelection(withEffectif, affiches, { fenetres: [fenetre('20:00', '')] });
+    expect(rehoused[0].fenetres).toEqual([fenetre('20:00', '', '4')]);
+
+    const remisAHeriter = applyToSelection(withEffectif, affiches, { effectif: '' });
+    expect(remisAHeriter[0].fenetres.map((f) => f.effectif)).toEqual(['', '']);
   });
 
   it('reads the bulk line, an open end for midnight, and refuses anything unreadable whole', () => {
     expect(parseFenetresSaisie('18h-22h, 9:00-12:00; 20h-')).toEqual([
-      { debut: '18:00', fin: '22:00' },
-      { debut: '09:00', fin: '12:00' },
-      { debut: '20:00', fin: '' },
+      fenetre('18:00', '22:00'),
+      fenetre('09:00', '12:00'),
+      fenetre('20:00', ''),
     ]);
     expect(parseFenetresSaisie('')).toEqual([]);
     expect(parseFenetresSaisie('18h-22h, soir')).toBeNull();
     expect(parseFenetresSaisie('18h-25h')).toBeNull();
-    expect(
-      formatFenetresSaisie([
-        { debut: '18:00', fin: '22:00' },
-        { debut: '20:00', fin: '' },
-      ]),
-    ).toBe('18:00-22:00, 20:00-');
+    expect(formatFenetresSaisie([fenetre('18:00', '22:00'), fenetre('20:00', '')])).toBe(
+      '18:00-22:00, 20:00-',
+    );
   });
 });

@@ -17,6 +17,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { ConsignesApi } from '../../core/api/consignes-api';
+import {
+  bandeLabel,
+  fenetreLabel,
+  libelleDate,
+  repasLabel,
+  repasSurcharge,
+} from '../../core/consigne-wording';
 import { ConsignesStore } from '../../core/consignes.store';
 import {
   ApercuConsigneJour,
@@ -33,16 +40,7 @@ import { consumeQueryParam } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { ConsigneFormData, ConsigneFormDialog, ModeConsigne } from './consigne-form-dialog';
 import { ConsigneLeveeData, ConsigneLeveeDialog } from './consigne-levee-dialog';
-import {
-  bandeLabel,
-  datesCandidates,
-  isPast,
-  fenetreLabel,
-  libelleDate,
-  openedStandsCount,
-  repasLabel,
-  repasSurcharge,
-} from './consignes';
+import { datesCandidates, isPast, openedStandsCount } from './consignes';
 import { PrereglageDialog, PrereglageDialogData } from './prereglage-dialog';
 
 /** One row of the table: the consigne, its figures, and whether it can still move. */
@@ -158,11 +156,17 @@ export class ConsignesPage {
     const referentiel = this.crud.reload();
     // `?date=…&nouvelle=1`: a link from the Journée lands here with the form
     // open on that date. Obeyed once, then dropped — see `view-query-params.ts`.
+    // A day already begun is not ticked: the server would refuse it, and the
+    // form says so rather than letting « Enregistrer » find out.
     consumeQueryParam('nouvelle', async () => {
       await Promise.all([referentiel, this.store.reload()]);
       const date = this.route.snapshot.queryParamMap.get('date');
       const existante = date ? this.store.consigneOf(date) : null;
-      this.openForm(existante ? 'modifier' : 'poser', existante, date ? [date] : []);
+      this.openForm(
+        existante ? 'modifier' : 'poser',
+        existante,
+        date && this.datesCandidates().includes(date) ? [date] : [],
+      );
     });
   }
 
