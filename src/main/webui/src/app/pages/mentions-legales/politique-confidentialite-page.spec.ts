@@ -93,6 +93,23 @@ describe('PolitiqueConfidentialitePage', () => {
     expect(texteErreurs).toContain("l'outil technique décrit ci-dessous");
   });
 
+  it('annonce l’appel à GitHub, que le déploiement fasse tourner un outil ou non', async () => {
+    // The administration asks GitHub whether a newer version exists. Unlike the
+    // audience measurement and the error monitoring, no empty variable turns it
+    // off, so the sentence has to hold in both configurations — including the
+    // one that names no other third party at all.
+    const withoutTools = monter(VIDE);
+    await withoutTools.whenStable();
+    expect(withoutTools.nativeElement.textContent as string).toContain(
+      "Seule l'adresse IP de la personne connectée à l'administration",
+    );
+
+    TestBed.resetTestingModule();
+    const withTools = monter({ ...VIDE, mesureAudience: true, suiviErreurs: true });
+    await withTools.whenStable();
+    expect(withTools.nativeElement.textContent as string).toContain('GitHub');
+  });
+
   it('s’adresse aux mineurs, et dit à quoi sert leur date de naissance', async () => {
     const fixture = monter(VIDE);
     await fixture.whenStable();

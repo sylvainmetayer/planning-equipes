@@ -83,7 +83,8 @@ ouverts : l'endpoint Bugsink et le serveur de tuiles sont propres à chaque
 déploiement. Un déploiement qui connaît les siens gagne à les nommer dans `CSP`
 plutôt qu'à garder `https:` — en y ajoutant `https://api.github.com` s'il tient
 à l'indication « nouvelle version disponible » de la barre d'outils, la seule
-autre destination que le navigateur d'un administrateur contacte de lui-même
+autre destination qu'un navigateur contacte de lui-même, et seulement une fois
+la session d'administration confirmée
 ([`versioning.md`](versioning.md) § 3).
 
 `style-src` garde `'unsafe-inline'` dans tous les cas : Angular Material écrit

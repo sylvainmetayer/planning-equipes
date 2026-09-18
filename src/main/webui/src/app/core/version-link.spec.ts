@@ -31,6 +31,14 @@ describe('versionUrl', () => {
   it('garde un commit sur sa page de commit', () => {
     expect(versionUrl('2f7a1c3', REPO)).toBe(`${REPO}/commit/2f7a1c3`);
   });
+
+  it('traite la valeur de secours comme une révision, faute de mieux', () => {
+    // `generate-version.js` writes « unknown » when the build sees no git
+    // history at all — a source export, a bare copy. The address then leads
+    // nowhere, as it did before this resolution existed; what matters is that
+    // the footer still renders a link rather than « undefined ».
+    expect(versionUrl('unknown', REPO)).toBe(`${REPO}/commit/unknown`);
+  });
 });
 
 describe('compareVersions', () => {

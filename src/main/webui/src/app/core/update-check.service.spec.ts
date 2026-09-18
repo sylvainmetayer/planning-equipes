@@ -1,13 +1,16 @@
 // The « a newer release exists » check: asked of GitHub once, only from a
-// tagged build, and never loud — the hint is a courtesy, and an unreachable
-// GitHub is not this application's problem to report.
+// tagged build, only once an admin session is confirmed, and never loud — the
+// hint is a courtesy, and an unreachable GitHub is not this application's
+// problem to report.
 
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { AdminApi } from './api/admin-api';
 import { latestReleaseEndpoint, UpdateCheckService } from './update-check.service';
 
 describe('UpdateCheckService', () => {
   let service: UpdateCheckService;
+  const session = vi.fn();
 
   function repond(body: unknown, ok = true): ReturnType<typeof vi.fn> {
     const fetchMock = vi
@@ -22,9 +25,17 @@ describe('UpdateCheckService', () => {
     await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
-  beforeEach(() => {
+  /** A fresh service over a session probe that answers « logged in ». */
+  function reconstruire(authentifie = true): void {
+    session.mockReset();
+    session.mockResolvedValue({ authentifie, nom: authentifie ? 'admin' : null });
     TestBed.resetTestingModule();
+    TestBed.configureTestingModule({ providers: [{ provide: AdminApi, useValue: { session } }] });
     service = TestBed.inject(UpdateCheckService);
+  }
+
+  beforeEach(() => {
+    reconstruire();
   });
 
   afterEach(() => {
@@ -66,8 +77,7 @@ describe('UpdateCheckService', () => {
     expect(service.available()).toBeNull();
 
     // A maintenance line deployed ahead of GitHub's « latest » (versioning.md § 5).
-    TestBed.resetTestingModule();
-    service = TestBed.inject(UpdateCheckService);
+    reconstruire();
     repond({ tag_name: 'v1.0.0', html_url: '' });
     service.check('v1.0.1');
     await attendre();
@@ -81,6 +91,56 @@ describe('UpdateCheckService', () => {
     await attendre();
 
     expect(fetchMock).not.toHaveBeenCalled();
+    expect(session).not.toHaveBeenCalled();
+    expect(service.available()).toBeNull();
+  });
+
+  // The admin shell has no route guard: it renders for anybody who opens the
+  // application and only redirects once an API call answers 401. Without this
+  // gate, an animateur's — often a minor's — IP address would reach GitHub on
+  // the way to the login page, and the anonymous per-IP quota it burns is the
+  // one the real administrators need.
+  it('ne demande rien à GitHub sans session administrateur', async () => {
+    reconstruire(false);
+    const fetchMock = repond({ tag_name: 'v9.9.9' });
+
+    service.check('v1.0.0');
+    await attendre();
+
+    expect(session).toHaveBeenCalledOnce();
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(service.available()).toBeNull();
+  });
+
+  // The ordinary way in: the shell renders without a session, gets refused,
+  // and the login navigates back to it without reloading the page. A check
+  // that latched on the first refusal would hide the hint for the whole
+  // working session.
+  it('redemande une fois la connexion faite', async () => {
+    reconstruire(false);
+    const fetchMock = repond({ tag_name: 'v1.1.0' });
+
+    service.check('v1.0.0');
+    await attendre();
+    expect(fetchMock).not.toHaveBeenCalled();
+
+    session.mockResolvedValue({ authentifie: true, nom: 'admin' });
+    service.check('v1.0.0');
+    await attendre();
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(service.available()?.version).toBe('v1.1.0');
+  });
+
+  it('ne demande rien à GitHub quand la sonde de session échoue', async () => {
+    reconstruire();
+    session.mockRejectedValue(new Error('401'));
+    const fetchMock = repond({ tag_name: 'v9.9.9' });
+
+    service.check('v1.0.0');
+    await attendre();
+
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(service.available()).toBeNull();
   });
 
@@ -91,6 +151,7 @@ describe('UpdateCheckService', () => {
     service.check('v1.0.0');
     await attendre();
 
+    expect(session).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 
@@ -100,15 +161,13 @@ describe('UpdateCheckService', () => {
     await attendre();
     expect(service.available()).toBeNull();
 
-    TestBed.resetTestingModule();
-    service = TestBed.inject(UpdateCheckService);
+    reconstruire();
     repond({ tag_name: 'nightly' });
     service.check('v1.0.0');
     await attendre();
     expect(service.available()).toBeNull();
 
-    TestBed.resetTestingModule();
-    service = TestBed.inject(UpdateCheckService);
+    reconstruire();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     service.check('v1.0.0');
     await attendre();

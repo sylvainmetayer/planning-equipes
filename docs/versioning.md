@@ -136,8 +136,15 @@ quand elle est plus récente que celle qui tourne ; le clic ouvre ses notes de
 version. C'est le navigateur de l'administrateur qui interroge l'API publique
 de GitHub (`/releases/latest`, une fois par chargement de page,
 `core/update-check.service.ts`) — jamais le serveur, qui peut très bien être
-déployé sans sortie réseau. Un build sur un SHA n'interroge rien : « une version
-plus récente existe » y est vrai tous les jours et n'apprend rien. GitHub
+déployé sans sortie réseau. **Et seulement celui d'un administrateur
+connecté** : la coquille d'administration n'a pas de garde de route, elle
+s'affiche puis redirige sur le premier 401, si bien qu'un visiteur quelconque
+aurait joint GitHub avant cette redirection — l'adresse IP d'un animateur,
+souvent mineur, livrée pour rien, et le quota anonyme par IP de GitHub épuisé
+au détriment des vrais administrateurs. La session est donc confirmée sur
+`/api/auth/me` avant le moindre appel sortant. Un build sur un SHA n'interroge
+rien : « une version plus récente existe » y est vrai tous les jours et
+n'apprend rien. GitHub
 injoignable, quota d'API épuisé, réponse inattendue : l'icône reste absente,
 sans message — c'est une courtoisie, pas une alerte. Un déploiement qui nomme
 ses endpoints dans `CSP` (`securite.md`) doit y laisser `https://api.github.com`
