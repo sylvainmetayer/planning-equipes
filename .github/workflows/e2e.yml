@@ -132,6 +132,15 @@ jobs:
           # exactement l'instance « pas en service » que ce drapeau déclare —
           # remplir cinq variables légales fictives dirait le contraire.
           LEGAL_DEMO_INSTANCE: 'true'
+          # « Le passé est figé » (ADR 0044) est coupé ici : les jeux de
+          # données des specs sont datés en juillet-août 2026, derrière
+          # l'horloge réelle, et l'application packagée refuse l'horloge
+          # simulée. Avec la règle, chaque résolution reprendrait ces journées
+          # du plan enregistré — vide au premier calcul — et n'affecterait
+          # personne. Les specs qui résolvent devraient dater leurs amorces
+          # dans l'avenir en gardant les âges des mineurs ; d'ici là, la règle
+          # est couverte par FrozenPastAcceptanceTest, sur l'horloge figée.
+          PASSE_FIGE: 'false'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025
