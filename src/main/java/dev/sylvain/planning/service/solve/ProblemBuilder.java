@@ -242,16 +242,20 @@ public final class ProblemBuilder {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
-        // One clock reading and one read of the plan per build: a cold start
-        // ignores the plan for the future, never for the past (ADR 0044).
+        // One clock reading and one read of the plan per build. A cold start
+        // ignores the plan for the future, never for the past nor for the
+        // locks: it hands the build no plan at all (null), and the build reads
+        // it itself, once, if a lock or the freeze needs it — an empty map
+        // would silently freeze nothing.
         PastHorizon moment = horizon.get();
-        Map<String, List<String>> planPersiste =
-                demande == Reamorcage.AUCUN && moment == null ? Map.of() : persistence.loadAnimateursByStandCreneau();
-        Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN ? Map.of() : planPersiste;
+        Map<String, List<String>> affectationsPrecedentes = demande == Reamorcage.AUCUN || persistence == null
+                ? Map.of()
+                : persistence.loadAnimateursByStandCreneau();
         if (demande == Reamorcage.PLAN_COURANT && affectationsPrecedentes.isEmpty()) {
             throw new IllegalStateException("Aucun plan enregistré sur cette édition : rien d'où repartir. "
                     + "Lancez un calcul de zéro (reamorcage=AUCUN), ou laissez le choix automatique.");
         }
+        Map<String, List<String>> planPersiste = demande == Reamorcage.AUCUN ? null : affectationsPrecedentes;
         PlanningEvenement planning = buildFromReferenceData(animateurs, stands, creneaux, planPersiste, moment);
         int postesPasses = countPast(planning.getPostes());
         if (affectationsPrecedentes.isEmpty()) {
