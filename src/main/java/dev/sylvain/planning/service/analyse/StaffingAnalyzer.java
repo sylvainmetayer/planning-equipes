@@ -53,6 +53,14 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * headcount of a meal-pause
  * coverage vacation. Whatever the seats are, they are what has to be staffed.</p>
  *
+ * <p>The hour-based bounds divide by <b>planned amplitude</b> and never deduct
+ * a break taken on the post, where {@code dureeHebdomadaireMax} does. That
+ * makes each animateur look like they can carry slightly fewer hours than the
+ * cap really allows, so the bound comes out <em>higher</em> — pessimistic, and
+ * a floor that is too high is never a floor that lets an infeasible edition
+ * through. See {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce
+ * qui compte l'amplitude ».</p>
+ *
  * <h2>The five bounds</h2>
  *
  * <p>Five bounds are computed and the largest wins. Each one is a

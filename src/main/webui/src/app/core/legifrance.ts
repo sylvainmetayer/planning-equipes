@@ -19,12 +19,13 @@
 const RECHERCHE_ARTICLE =
   'https://www.legifrance.gouv.fr/search/code?tab_selection=code&searchField=NUM_ARTICLE&query=';
 
-/**
- * Convention collective nationale ÉCLAT (animation, IDCC 1518). Its clauses
- * are numbered `5.2`, `6.2`… — too generic to be recognised in prose the way
- * an article number is, so the link is placed by hand where ÉCLAT is cited.
- */
-export const URL_CCN_ECLAT = 'https://www.legifrance.gouv.fr/conv_coll/id/KALICONT000005635177';
+// The Convention collective nationale ÉCLAT (animation, IDCC 1518) used to be
+// linked from here, by hand, because its clauses are numbered `5.2`, `6.2`… —
+// too generic to be recognised in prose the way an article number is. The
+// organisation has confirmed it does not fall under that convention, the
+// citations that pointed at it were wrong on their article anyway, and nothing
+// called the constant any more. See docs/contraintes.md, « La convention
+// collective de l'Animation ».
 
 /**
  * Matches an article of a French code as our texts write it: a `L`, `D` or `R`
