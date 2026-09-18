@@ -972,4 +972,34 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .given(desactivee, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
                 .penalizesBy(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aPastSeatCannotBeGivenBackToWhoeverWasTold() {
+        verify("stabiliteDuPlanPublie")
+                .given(
+                        postePasse(standStrat, creneauMatin, majeurAutonome("A2")),
+                        publie(standStrat, creneauMatin, "A1"))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aRunOfDaysEntirelyWorkedIsHistoryButOneReachingIntoTomorrowIsCharged() {
+        Animateur a1 = referentMajeur("A1");
+        Object[] passes = new Object[7];
+        for (int i = 0; i < 7; i++) {
+            passes[i] = postePasse(standStrat, jourConsecutif(i), a1);
+        }
+        verify("maxJoursConsecutifsTravailles").given(passes).penalizesBy(0);
+
+        // Six days worked, the seventh still ahead: the six count, the
+        // seventh is charged.
+        Object[] enCours = new Object[7];
+        for (int i = 0; i < 6; i++) {
+            enCours[i] = postePasse(standStrat, jourConsecutif(i), a1);
+        }
+        enCours[6] = poste(standStrat, jourConsecutif(6), a1);
+        verify("maxJoursConsecutifsTravailles").given(enCours).penalizesBy(1);
+    }
 }

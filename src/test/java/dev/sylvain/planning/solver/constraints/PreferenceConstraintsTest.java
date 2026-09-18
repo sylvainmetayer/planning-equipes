@@ -118,4 +118,18 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
                         poste(premium, afternoon("J2-AM", 2, D2), majeurAutonome("A2")))
                 .penalizesByMoreThan(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aReferentLeftWithoutABeginnerOnAPastLineIsHistory() {
+        verify("favoriserMixiteDesNiveaux")
+                .given(postePasse(standStrat, creneauMatin, referentMajeur("A1")))
+                .penalizesBy(0);
+        verify("favoriserMixiteDesNiveaux")
+                .given(
+                        postePasse(standStrat, creneauMatin, referentMajeur("A1")),
+                        poste(standStrat, creneauMatin, null))
+                .penalizesBy(1);
+    }
 }

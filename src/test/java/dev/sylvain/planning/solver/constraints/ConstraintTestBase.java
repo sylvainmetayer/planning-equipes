@@ -196,6 +196,18 @@ abstract class ConstraintTestBase {
     }
 
     /**
+     * A seat of a timeslot already started when the problem was built (ADR
+     * 0044): counted by every rule, reproached by none. Marked, not pinned —
+     * the analyses of the persisted plan mark without pinning, and the rule
+     * has to hold there too.
+     */
+    protected PosteAffectation postePasse(Stand stand, Creneau creneau, Animateur animateur) {
+        PosteAffectation p = poste(stand, creneau, animateur);
+        p.setPasse(true);
+        return p;
+    }
+
+    /**
      * A poste covering only part of {@code creneau} — the case created by a
      * partial stand closure (issue #60): {@code creneau} is still the real,
      * persisted créneau, but {@link PosteAffectation#getHeureDebutEffective()}

@@ -890,4 +890,66 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         new ParametresLegaux())
                 .penalizesBy(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void thePastEveningCountsAgainstTheMorningStillAhead() {
+        // 20:00 → 00:00 already worked, then 08:00 → 12:00 tomorrow: the 8 h
+        // of rest are 3 h short, and tomorrow can still move.
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin8J2 = creneau("J2-8-12", 2, D2, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        verify("reposQuotidienMinimal")
+                .given(postePasse(standStrat, creneauNuit, majeur), poste(standStrat, matin8J2, majeur))
+                .penalizesBy(3 * 60);
+    }
+
+    @Test
+    void aShortRestBetweenTwoPastDaysIsHistory() {
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin8J2 = creneau("J2-8-12", 2, D2, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        verify("reposQuotidienMinimal")
+                .given(postePasse(standStrat, creneauNuit, majeur), postePasse(standStrat, matin8J2, majeur))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void theHoursAlreadyWorkedCountInTheWeekStillOpen() {
+        // A 400 min cap: 240 min already worked, 240 min still ahead in the
+        // same ISO week — 80 min over, charged, because tomorrow can move.
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux parametres = new ParametresLegaux(400);
+        verify("dureeHebdomadaireMax")
+                .given(postePasse(standStrat, creneauMatin, majeur), poste(standStrat, apremJ2, majeur), parametres)
+                .penalizesBy(80);
+        // The same week entirely worked: history.
+        verify("dureeHebdomadaireMax")
+                .given(
+                        postePasse(standStrat, creneauMatin, majeur),
+                        postePasse(standStrat, apremJ2, majeur),
+                        parametres)
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aPastDayOverTheDailyCapIsHistoryButTodayStillUnderWayIsCharged() {
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin = creneau("J1-8-12", 1, D1, LocalTime.of(8, 0), LocalTime.of(12, 0));
+        Creneau aprem = creneau("J1-13-19", 1, D1, LocalTime.of(13, 0), LocalTime.of(19, 0));
+        Creneau soir = creneau("J1-19-23", 1, D1, LocalTime.of(19, 0), LocalTime.of(23, 0));
+        verify("dureeQuotidienneMaxMajeur")
+                .given(
+                        postePasse(standStrat, matin, majeur),
+                        postePasse(standStrat, aprem, majeur),
+                        postePasse(standStrat, soir, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+        verify("dureeQuotidienneMaxMajeur")
+                .given(
+                        postePasse(standStrat, matin, majeur),
+                        postePasse(standStrat, aprem, majeur),
+                        poste(standStrat, soir, majeur),
+                        new ParametresLegaux())
+                .penalizesBy(4 * 60);
+    }
 }

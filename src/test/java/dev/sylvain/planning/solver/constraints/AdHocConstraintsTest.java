@@ -152,4 +152,37 @@ class AdHocConstraintsTest extends ConstraintTestBase {
                         contrainte("C1", TypeContrainteAdHoc.AFFINITE, creneauAprem, null, a1, a2))
                 .rewardsWith(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aForcedUnavailabilityBreachedOnAPastSeatIsHistory() {
+        Animateur a1 = referentMajeur("A1");
+        verify("indisponibiliteForcee")
+                .given(
+                        a1,
+                        postePasse(standStrat, creneauMatin, a1),
+                        contrainte("C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, creneauMatin, null, a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aForcedAssignmentOnATimeslotAlreadyWorkedWithoutItIsHistory() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = majeurAutonome("A2");
+        verify("affectationForcee")
+                .given(
+                        a1,
+                        a2,
+                        postePasse(standStrat, creneauMatin, a2),
+                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
+                .penalizesBy(0);
+        verify("affectationForcee")
+                .given(
+                        a1,
+                        a2,
+                        poste(standStrat, creneauMatin, a2),
+                        contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
+                .penalizesBy(1);
+    }
 }

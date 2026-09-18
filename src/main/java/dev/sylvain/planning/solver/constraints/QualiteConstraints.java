@@ -23,6 +23,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -84,7 +85,10 @@ public final class QualiteConstraints {
     private Constraint stabiliteDuPlanPublie(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "stabiliteDuPlanPublie")
-                .filter(poste -> poste.getStand() != null
+                // A past seat cannot be given back to whoever was told
+                // (ADR 0044): what it holds is what was worked.
+                .filter(poste -> PastSeats.reproachable(poste)
+                        && poste.getStand() != null
                         && poste.getCreneau() != null
                         && poste.getCreneau().getDate() != null)
                 .ifExists(
@@ -123,6 +127,14 @@ public final class QualiteConstraints {
                                         && poste.getAnimateur().isReferentFor(poste.getStand())
                                 ? 1
                                 : 0))
+                // The line is charged only while one of its seats is still
+                // ahead of now (ADR 0044) — an empty one included, since a
+                // referent could still be seated there.
+                .ifExistsIncludingUnassigned(
+                        PosteAffectation.class,
+                        Joiners.equal((stand, creneau, referents) -> stand, PosteAffectation::getStand),
+                        Joiners.equal((stand, creneau, referents) -> creneau, PosteAffectation::getCreneau),
+                        Joiners.filtering((stand, creneau, referents, poste) -> PastSeats.reproachable(poste)))
                 .filter((stand, creneau, nombreReferents) -> nombreReferents == 0)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("standComplexeAvecReferent");
@@ -147,6 +159,9 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "equilibrerCharge")
                 .filter(poste -> poste.getAnimateur() != null)
                 .groupBy(ConstraintCollectors.loadBalance(PosteAffectation::getAnimateur))
+                // The past seats weigh in the balance; it is charged only while
+                // a seat is still ahead of now (ADR 0044).
+                .ifExists(PosteAffectation.class, Joiners.filtering((balance, poste) -> PastSeats.reproachable(poste)))
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
                         loadBalance -> loadBalance
@@ -172,6 +187,11 @@ public final class QualiteConstraints {
                                         .isMajeurOn(poste.getCreneau().getDate())
                                 ? 1
                                 : 0))
+                .ifExistsIncludingUnassigned(
+                        PosteAffectation.class,
+                        Joiners.equal((stand, creneau, mineurs, majeurs) -> stand, PosteAffectation::getStand),
+                        Joiners.equal((stand, creneau, mineurs, majeurs) -> creneau, PosteAffectation::getCreneau),
+                        Joiners.filtering((stand, creneau, mineurs, majeurs, poste) -> PastSeats.reproachable(poste)))
                 .filter((stand, creneau, mineurs, majeurs) -> mineurs > majeurs)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM, (stand, creneau, mineurs, majeurs) -> mineurs - majeurs)
                 .asConstraint("repartitionMineursParCreneau");
@@ -182,6 +202,7 @@ public final class QualiteConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "experienceRequisePourStandsPremium")
                 .filter(poste -> poste.getStand().isPremium()
                         && poste.getAnimateur() != null
+                        && PastSeats.reproachable(poste)
                         && poste.getAnimateur().isDebutantFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("experienceRequisePourStandsPremium");
@@ -223,6 +244,12 @@ public final class QualiteConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "eviterRoulementStandsPremium")
                 .filter(poste -> poste.getStand().isPremium())
                 .groupBy(PosteAffectation::getStand, ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur))
+                // The faces already seen count; the stand is charged only
+                // while one of its seats is still ahead of now (ADR 0044).
+                .ifExists(
+                        PosteAffectation.class,
+                        Joiners.equal((stand, tetes) -> stand, PosteAffectation::getStand),
+                        Joiners.filtering((stand, tetes, poste) -> PastSeats.reproachable(poste)))
                 .join(crewByStand(constraintFactory), Joiners.equal((stand, têtes) -> stand, Equipage::stand))
                 .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage.sieges())
                 .penalize(
@@ -278,7 +305,8 @@ public final class QualiteConstraints {
                         Joiners.equal(
                                 poste -> poste.getCreneau().getHeureFin(),
                                 poste -> poste.getCreneau().getHeureDebut()))
-                .filter((precedent, suivant) -> !precedent.getStand().equals(suivant.getStand())
+                .filter((precedent, suivant) -> PastSeats.reproachable(precedent, suivant)
+                        && !precedent.getStand().equals(suivant.getStand())
                         && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterChangementEmplacementEloigne");
@@ -318,6 +346,13 @@ public final class QualiteConstraints {
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getJour(),
                         ConstraintCollectors.toSet(poste -> poste.getStand().getEmplacement()))
+                // The zones already crossed count; the day is charged only
+                // while one of its seats is still ahead of now (ADR 0044).
+                .ifExists(
+                        PosteAffectation.class,
+                        Joiners.equal((animateur, jour, emplacements) -> animateur, PosteAffectation::getAnimateur),
+                        Joiners.equal((animateur, jour, emplacements) -> jour, QualiteConstraints::jourOrNull),
+                        Joiners.filtering((animateur, jour, emplacements, poste) -> PastSeats.reproachable(poste)))
                 .join(ParametresQualite.class)
                 .filter((animateur, jour, emplacements, parametres) ->
                         emplacements.size() > parametres.maxEmplacementsDistinctsParJour())
@@ -349,8 +384,9 @@ public final class QualiteConstraints {
                         Joiners.equal(
                                 poste -> poste.getCreneau().getHeureFin(),
                                 poste -> poste.getCreneau().getHeureDebut()))
-                .filter((precedent, suivant) ->
-                        suivant.getStand() != null && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
+                .filter((precedent, suivant) -> PastSeats.reproachable(precedent, suivant)
+                        && suivant.getStand() != null
+                        && suivant.getStand().getNiveauEffort() == NiveauEffort.EPUISANT)
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterEnchainementStandsEpuisants");
     }
@@ -417,7 +453,10 @@ public final class QualiteConstraints {
                                         Joiners.equal(veille -> veille.jour() + 1, Journee::jour)),
                         "eviterFermeturePuisOuverture")
                 .join(ParametresQualite.class)
+                // The evening already worked counts against the morning still
+                // ahead (ADR 0044); two past days are history.
                 .filter((veille, lendemain, parametres) -> parametres.penaliseFermeturePuisOuverture()
+                        && (veille.reproachable() || lendemain.reproachable())
                         && fermetureTardive(veille, parametres)
                         && ouvertureMatinale(lendemain, parametres)
                         && reposManquant(veille, lendemain, parametres) > 0)
@@ -437,23 +476,40 @@ public final class QualiteConstraints {
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getJour(),
-                        ConstraintCollectors.min(LegalConstraints::debut),
-                        ConstraintCollectors.max(LegalConstraints::fin))
-                .map(Journee::new);
+                        ConstraintCollectors.compose(
+                                ConstraintCollectors.min(LegalConstraints::debut),
+                                ConstraintCollectors.max(LegalConstraints::fin),
+                                ConstraintCollectors.sum(
+                                        (PosteAffectation poste) -> PastSeats.reproachable(poste) ? 1 : 0),
+                                Bornes::new))
+                .map((animateur, jour, bornes) ->
+                        new Journee(animateur, jour, bornes.debut(), bornes.fin(), bornes.ahead() > 0));
     }
+
+    /** The two ends of a day's work, and how many of its seats are still ahead of now. */
+    private record Bornes(LocalDateTime debut, LocalDateTime fin, Long ahead) {}
 
     /**
      * An animateur's working day, folded to its two ends.
      *
-     * @param debut first instant worked. Its date is the day's own: every
-     *              créneau sharing a {@code jour} shares a date, and a vacation
-     *              always starts on that date even when it ends after midnight
+     * @param debut        first instant worked. Its date is the day's own: every
+     *                     créneau sharing a {@code jour} shares a date, and a vacation
+     *                     always starts on that date even when it ends after midnight
+     * @param reproachable whether one of the day's seats is still ahead of
+     *                     now (ADR 0044) — a night between two days entirely
+     *                     worked is history
      */
-    private record Journee(Animateur animateur, int jour, LocalDateTime debut, LocalDateTime fin) {
+    private record Journee(
+            Animateur animateur, int jour, LocalDateTime debut, LocalDateTime fin, boolean reproachable) {
 
         LocalDate date() {
             return debut.toLocalDate();
         }
+    }
+
+    /** The day number of the seat's timeslot, for the {@code ifExists} joiners; {@code null} without one. */
+    private static Integer jourOrNull(PosteAffectation poste) {
+        return poste.getCreneau() == null ? null : poste.getCreneau().getJour();
     }
 
     /** True when the day's work ends at or after the late hour of that day. */
@@ -490,8 +546,9 @@ public final class QualiteConstraints {
     private Constraint appreciationIncompatible(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "appreciationIncompatible")
-                .filter(poste ->
-                        poste.getAnimateur() != null && !poste.getAnimateur().hasCompetenceFor(poste.getStand()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && PastSeats.reproachable(poste)
+                        && !poste.getAnimateur().hasCompetenceFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("appreciationIncompatible");
     }
@@ -504,8 +561,9 @@ public final class QualiteConstraints {
      */
     private Constraint souhaitsIncompatibles(ConstraintFactory constraintFactory) {
         return ConstraintToggleSupport.actif(constraintFactory.forEach(PosteAffectation.class), "souhaitsIncompatibles")
-                .filter(poste ->
-                        poste.getAnimateur() != null && !poste.getAnimateur().hasSouhaitFor(poste.getStand()))
+                .filter(poste -> poste.getAnimateur() != null
+                        && PastSeats.reproachable(poste)
+                        && !poste.getAnimateur().hasSouhaitFor(poste.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("souhaitsIncompatibles");
     }
@@ -545,6 +603,12 @@ public final class QualiteConstraints {
                 .groupBy(
                         (poste, typologie) -> poste.getAnimateur(),
                         ConstraintCollectors.toSet((poste, typologie) -> typologie))
+                // The games already learnt count; the animateur is charged only
+                // while one of their seats is still ahead of now (ADR 0044).
+                .ifExists(
+                        PosteAffectation.class,
+                        Joiners.equal((animateur, typologies) -> animateur, PosteAffectation::getAnimateur),
+                        Joiners.filtering((animateur, typologies, poste) -> PastSeats.reproachable(poste)))
                 .join(ParametresQualite.class)
                 .filter((animateur, typologies, parametres) -> typologies.size() > parametres.typologiesDistinctesMax())
                 .penalize(
@@ -610,7 +674,9 @@ public final class QualiteConstraints {
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                .filter((animateur, date, postes, parametres) -> parametres.isPauseSurPoste())
+                // A day entirely worked owes nobody a relay any more (ADR 0044).
+                .filter((animateur, date, postes, parametres) ->
+                        parametres.isPauseSurPoste() && PastSeats.reproachable(postes))
                 .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes, parametres))
                 .flattenLast(dues -> dues)
                 .ifNotExists(
@@ -629,25 +695,41 @@ public final class QualiteConstraints {
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles")
                 .filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
+                // Each worked day, and whether it still holds a seat ahead of
+                // now: a run of days entirely worked is history, a run that
+                // reaches into tomorrow is charged with its past days counted
+                // (ADR 0044).
                 .groupBy(
                         PosteAffectation::getAnimateur,
-                        ConstraintCollectors.toSet(poste -> poste.getCreneau().getJour()))
-                .filter((animateur, jours) -> longestConsecutiveSequence(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                        ConstraintCollectors.toMap(
+                                poste -> poste.getCreneau().getJour(), PastSeats::reproachable, Boolean::logicalOr))
+                .filter((animateur, jours) -> longestReproachableRun(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX)
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jours) -> longestConsecutiveSequence(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
                 .asConstraint("maxJoursConsecutifsTravailles");
     }
 
-    /** Longest run of consecutive integers inside the set. */
-    private static int longestConsecutiveSequence(Set<Integer> jours) {
-        List<Integer> tries = jours.stream().sorted().toList();
+    /**
+     * Longest run of consecutive day numbers among the keys, counting only the
+     * runs in which at least one day is still ahead of now — the map's value.
+     */
+    private static int longestReproachableRun(Map<Integer, Boolean> jours) {
+        List<Integer> tries = jours.keySet().stream().sorted().toList();
         int longest = 0;
         int courante = 0;
+        boolean reproachable = false;
         int precedent = Integer.MIN_VALUE;
         for (int jour : tries) {
-            courante = jour == precedent + 1 ? courante + 1 : 1;
-            longest = Math.max(longest, courante);
+            if (jour != precedent + 1) {
+                courante = 0;
+                reproachable = false;
+            }
+            courante++;
+            reproachable |= jours.get(jour);
+            if (reproachable) {
+                longest = Math.max(longest, courante);
+            }
             precedent = jour;
         }
         return longest;

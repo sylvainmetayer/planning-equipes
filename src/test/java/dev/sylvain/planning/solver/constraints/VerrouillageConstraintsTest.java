@@ -126,4 +126,16 @@ class VerrouillageConstraintsTest extends ConstraintTestBase {
                 .given(a1, poste(standStrat, creneauMatin, a1), verrouillage)
                 .penalizesBy(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aPastSeatOfALockedAnimateurIsNeverAViolationEvenUnpinned() {
+        // The analyses of the persisted plan mark the past without pinning
+        // it: the rule has to read the flag, not only the pin.
+        Animateur a1 = referentMajeur("A1");
+        verify("animateurVerrouilleFige")
+                .given(a1, postePasse(standStrat, creneauMatin, a1), verrouAnimateur("V1", a1))
+                .penalizesBy(0);
+    }
 }

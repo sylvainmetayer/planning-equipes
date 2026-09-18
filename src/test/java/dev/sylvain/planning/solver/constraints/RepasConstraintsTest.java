@@ -283,4 +283,28 @@ class RepasConstraintsTest extends ConstraintTestBase {
                 .given(MIDI, poste(standA, vacation("10-20", 10, 20), a84))
                 .penalizesBy(0);
     }
+
+    /* ------------------- counted, never reproached (ADR 0044) ------------------- */
+
+    @Test
+    void aMealBreakMissedOnAPastDayIsHistory() {
+        // 10-12, 12-13, 13-14, 14-20 leave no break in the midday window:
+        // 60 hard on a day still ahead, nothing once the day is worked.
+        Object[] journee = {
+            poste(standA, vacation("10-12", 10, 12), a84),
+            poste(standB, vacation("12-13", 12, 13), a84),
+            poste(standC, vacation("13-14", 13, 14), a84),
+            poste(standA, vacation("14-20", 14, 20), a84),
+            MIDI
+        };
+        verify("coupureRepasObligatoire").given(journee).penalizesBy(60);
+        Object[] hier = {
+            postePasse(standA, vacation("10-12", 10, 12), a84),
+            postePasse(standB, vacation("12-13", 12, 13), a84),
+            postePasse(standC, vacation("13-14", 13, 14), a84),
+            postePasse(standA, vacation("14-20", 14, 20), a84),
+            MIDI
+        };
+        verify("coupureRepasObligatoire").given(hier).penalizesBy(0);
+    }
 }
