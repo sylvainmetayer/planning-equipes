@@ -87,7 +87,7 @@ const MAX_BLOQUANTES_CITEES = 3;
  * decided here is how many of them a dialog can carry — the rest are counted,
  * and the Problèmes screen holds the full list.
  */
-function detailDesBloquantes(bloquantes: readonly CauseInfaisabilite[]): string {
+function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): string {
   const citees = bloquantes
     .slice(0, MAX_BLOQUANTES_CITEES)
     .map((cause) => cause.message)
@@ -499,7 +499,7 @@ export class SolverPage {
       (await this.confirm.ask({
         title: $localize`:@@solver.bloquantes.confirm.title:Lancer malgré un problème bloquant ?`,
         message,
-        detail: Promise.resolve(detailDesBloquantes(bloquantes)),
+        detail: Promise.resolve(detailCausesBloquantes(bloquantes)),
         confirmLabel: $localize`:@@solver.bloquantes.confirm.action:Lancer quand même`,
         danger: true,
       })) === true
