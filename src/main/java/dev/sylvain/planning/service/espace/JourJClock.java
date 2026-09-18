@@ -11,8 +11,9 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 
 /**
- * The source of "today" for the mode jour J screen and the espace animateur's
- * day marker — and for nothing else.
+ * The source of "today" for the mode jour J screen, the espace animateur's
+ * day marker, the consignes' « jours à venir seulement » — and, since ADR
+ * 0044, for the solver's frozen past.
  *
  * <h2>Why it exists</h2>
  *
@@ -43,6 +44,23 @@ import java.time.LocalTime;
  * for it. A time needs a date: « 14:00 » against the machine's date would be a
  * moment sliding by one day at midnight.</p>
  *
+ * <h2>And the solver's past</h2>
+ *
+ * <p>« Le passé est figé » (ADR 0044): when a problem is built, every seat of
+ * a timeslot already started — a date before {@link #today()}, or today's
+ * date with a start at or before {@link #now()} — is re-seeded from the
+ * persisted plan and pinned, and the constraints count it without reproaching
+ * it. The solver used to be deliberately excluded from this clock, on the
+ * ground that a mock reaching into it could distort a plan. It reads it now,
+ * and that is safe for the same reason the screens are: the mocked value is
+ * <b>ignored wherever the permission is not granted</b>, so a production
+ * solve always judges the past against the machine's date, whatever the
+ * table holds. Where it is granted — {@code quarkus:dev}, a staging server —
+ * a frozen date is exactly what lets a solve during the event be rehearsed
+ * out of season, and what the acceptance tests of the rule are written on.
+ * The kill-switch {@code planning.solver.passe-fige} turns the reading off
+ * without touching this class.</p>
+ *
  * <p>Deliberately left alone, and none of them route through here:</p>
  *
  * <ul>
@@ -53,8 +71,9 @@ import java.time.LocalTime;
  *       exception, publication and snapshot timestamps): those record when
  *       something really happened, and a record that lies about that is worse
  *       than no record;</li>
- *   <li>the scheduled backup, the solver jobs, the espace animateur codes and
- *       every other deadline: they answer to the machine's clock.</li>
+ *   <li>the scheduled backup, the solver jobs' own timestamps, the espace
+ *       animateur codes and every other deadline: they answer to the
+ *       machine's clock.</li>
  * </ul>
  *
  * <h2>Why the guard is here and not in the browser</h2>

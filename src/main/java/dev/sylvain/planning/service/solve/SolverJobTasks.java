@@ -76,7 +76,11 @@ public class SolverJobTasks {
             return new ResultatSolve(
                     resolution.diagnostic(),
                     resolution.previousPlan(),
-                    new ReamorcageEffectue(probleme.reamorcage(), probleme.postesReamorces(), probleme.postesLiberes()),
+                    new ReamorcageEffectue(
+                            probleme.reamorcage(),
+                            probleme.postesReamorces(),
+                            probleme.postesLiberes(),
+                            probleme.postesPasses()),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
                     resolution.interruption());

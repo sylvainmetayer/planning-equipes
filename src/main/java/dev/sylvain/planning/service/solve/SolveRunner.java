@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Runs a solve, and fills the problem with the server-side facts first.
@@ -42,10 +43,25 @@ final class SolveRunner {
     /** The published plan; {@code null} in the plain-Java harnesses that build {@link PlanningService} with {@code new}. */
     private final PlanSnapshotService snapshots;
 
+    /**
+     * The moment the past is judged against (ADR 0044), read at every
+     * preparation; {@code null} when the freeze is off. See {@link FrozenPast}.
+     */
+    private final Supplier<FrozenPast.Horizon> horizon;
+
     SolveRunner(SolverConfiguration configuration, ReferenceData referenceDataService, PlanSnapshotService snapshots) {
+        this(configuration, referenceDataService, snapshots, () -> null);
+    }
+
+    SolveRunner(
+            SolverConfiguration configuration,
+            ReferenceData referenceDataService,
+            PlanSnapshotService snapshots,
+            Supplier<FrozenPast.Horizon> horizon) {
         this.configuration = configuration;
         this.referenceDataService = referenceDataService;
         this.snapshots = snapshots;
+        this.horizon = horizon;
     }
 
     public PlanningEvenement solve(PlanningEvenement problem) {
@@ -66,6 +82,7 @@ final class SolveRunner {
     public PlanningEvenement solve(
             PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
+        FrozenPast.pin(problem.getPostes());
         Solver<PlanningEvenement> solver = configuration
                 .resolveSolverFactory(secondsLimitOverride, problem)
                 .buildSolver();
@@ -86,6 +103,7 @@ final class SolveRunner {
      */
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         prepareProblem(problem);
+        FrozenPast.pin(problem.getPostes());
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -112,6 +130,14 @@ final class SolveRunner {
     }
 
     void prepareProblem(PlanningEvenement problem) {
+        // The past, as a fact of the score (ADR 0044): marked on every
+        // preparation, so the analyses of the persisted plan read the same
+        // « counted, never reproached » a solve does. Pinning it is the solve
+        // entry points' business — a diagnostic moves nothing.
+        FrozenPast.Horizon moment = horizon.get();
+        if (moment != null && problem.getPostes() != null) {
+            FrozenPast.mark(problem.getPostes(), moment);
+        }
         if (problem.getContraintesAdHoc() == null
                 || problem.getContraintesAdHoc().isEmpty()) {
             problem.setContraintesAdHoc(referenceDataService.snapshotContraintes());
