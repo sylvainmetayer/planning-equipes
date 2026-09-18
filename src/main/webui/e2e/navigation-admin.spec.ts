@@ -107,10 +107,17 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   { path: '/ad-hoc-constraints' },
   { path: '/verrouillages', marker: 'Verrouiller une partie du planning' },
   { path: '/consignes', marker: 'Consignes', sheet: 'consigne-prereglage' },
-  { path: '/parametres', marker: 'Paramètres légaux', sheet: 'parametres-renvois' },
+  // Paramètres and Débogage are tab pages since issue #606: the default tab
+  // carries the marker and the route's own stylesheet, and one other tab of
+  // each is visited to prove the `?onglet=` addresses land where they say.
+  { path: '/parametres', marker: 'Paramètres légaux', sheet: 'parametres-onglets' },
+  { path: '/parametres?onglet=edition', marker: 'Typologie ninja', sheet: 'parametres-renvois' },
+  { path: '/parametres?onglet=globaux', marker: 'Sauvegarde automatique' },
   { path: '/mcp-client', marker: 'Se connecter au serveur MCP', sheet: 'mcp-pre' },
   { path: '/imports?onglet=scenario', marker: 'Un fichier scénario' },
-  { path: '/debug', marker: 'Validateur YAML', sheet: 'scenario-select' },
+  { path: '/debug', marker: 'Dernière analyse', sheet: 'debug-onglets' },
+  { path: '/debug?onglet=donnees', marker: 'Scénarios', sheet: 'scenario-select' },
+  { path: '/debug?onglet=yaml', marker: 'Validateur YAML' },
 ];
 
 /** True when a loaded stylesheet has a rule naming `.${classe}` — the route's chunk brought its CSS. */
@@ -266,7 +273,7 @@ test('le menu simple masque les écrans de diagnostic, et les montre sur demande
 
   // Reached by its address anyway: the route is open whatever the menu lists.
   await page.goto('/debug');
-  await expect(page.locator('#contenu')).toContainText('Validateur YAML');
+  await expect(page.locator('#contenu')).toContainText('Dernière analyse');
   await expect(navigation.getByRole('link', { name: 'Débogage' })).toBeVisible();
   await expect(navigation.getByRole('link', { name: 'Historique' })).toHaveCount(0);
   await page.context().close();

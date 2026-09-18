@@ -232,7 +232,12 @@ describe('ParametresPage rendering', () => {
   };
 
   async function rendre(
-    options: { adminEmail?: string | null; sauvegarde?: EtatSauvegarde } = {},
+    options: {
+      adminEmail?: string | null;
+      sauvegarde?: EtatSauvegarde;
+      /** Which tab to open; the page opens on « Légaux » (issue #606). */
+      onglet?: 'Édition' | 'E-mails automatiques' | 'Globaux';
+    } = {},
   ): Promise<void> {
     editingLocked.set(false);
     mailFinResolution.set(false);
@@ -308,6 +313,19 @@ describe('ParametresPage rendering', () => {
     });
     fixture = TestBed.createComponent(ParametresPage);
     await fixture.whenStable();
+    if (options.onglet) {
+      await ouvrirOnglet(options.onglet);
+    }
+  }
+
+  /** Clicks a tab of the toggle group, as a reader does — the cards under it are then rendered. */
+  async function ouvrirOnglet(nom: string): Promise<void> {
+    const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
+      each.textContent!.includes(nom),
+    );
+    expect(onglet, `onglet « ${nom} » absent`).toBeDefined();
+    (onglet as HTMLElement).querySelector('button')!.click();
+    await fixture.whenStable();
   }
 
   function racine(): HTMLElement {
@@ -353,7 +371,7 @@ describe('ParametresPage rendering', () => {
   }
 
   it('locks the SQL dump replay while a solve runs', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
     editingLocked.set(true);
     await fixture.whenStable();
 
@@ -361,7 +379,7 @@ describe('ParametresPage rendering', () => {
   });
 
   it('sends the reader to the screens the scenario operations moved to', async () => {
-    await rendre();
+    await rendre({ onglet: 'Édition' });
 
     const renvois = text(carte('Sur leur propre écran'));
     expect(renvois).toContain('page Imports, onglet Scénario');
@@ -370,7 +388,7 @@ describe('ParametresPage rendering', () => {
   });
 
   it('offers the end-of-solve mail when the server has an admin address', async () => {
-    await rendre({ adminEmail: 'admin@exemple.test' });
+    await rendre({ adminEmail: 'admin@exemple.test', onglet: 'E-mails automatiques' });
 
     const toggle = interrupteur();
     expect(toggle.disabled).toBe(false);
@@ -383,7 +401,7 @@ describe('ParametresPage rendering', () => {
   });
 
   it('disables the mail switch, and explains why, when no admin address is configured', async () => {
-    await rendre({ adminEmail: null });
+    await rendre({ adminEmail: null, onglet: 'E-mails automatiques' });
 
     // A switch that flips and sends nothing is the failure this guards.
     expect(interrupteur().disabled).toBe(true);
@@ -401,7 +419,7 @@ describe('ParametresPage rendering', () => {
   }
 
   it('never replays a SQL dump without a typed confirmation and a snapshot offer', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
     recopie.demander.mockResolvedValue(false);
 
     choisirDump();
@@ -424,7 +442,7 @@ describe('ParametresPage rendering', () => {
   // A dump is not scoped to an edition, so it must not ask for an edition
   // name: that would describe an operation narrower than the one it runs.
   it('asks for a keyword and says every edition is overwritten', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
 
     choisirDump();
     await fixture.whenStable();
@@ -436,7 +454,7 @@ describe('ParametresPage rendering', () => {
   });
 
   it('exports the database as a file named after the deployment', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
 
     bouton('Exporter le dump SQL').click();
     await fixture.whenStable();
@@ -452,7 +470,7 @@ describe('ParametresPage rendering', () => {
   // a dead deployment all look the same on a card that only shows a switch.
 
   it('shows where the dumps go, how many are kept and which ones are there', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
 
     const contenu = text(carte('Sauvegarde automatique'));
     expect(contenu).toContain('/backups');
@@ -463,6 +481,7 @@ describe('ParametresPage rendering', () => {
 
   it('reports the last failed night instead of looking idle', async () => {
     await rendre({
+      onglet: 'Globaux',
       sauvegarde: {
         ...SAUVEGARDE,
         lastRun: {
@@ -479,6 +498,7 @@ describe('ParametresPage rendering', () => {
 
   it('says the feature is inert when the deployment configured no directory', async () => {
     await rendre({
+      onglet: 'Globaux',
       sauvegarde: { ...SAUVEGARDE, configured: false, directory: null, files: [], nextRun: null },
     });
 
@@ -489,7 +509,7 @@ describe('ParametresPage rendering', () => {
   });
 
   it('suspends the nightly backup through the server, never in the browser alone', async () => {
-    await rendre();
+    await rendre({ onglet: 'Globaux' });
 
     const bascule = carte('Sauvegarde automatique').querySelector(
       'mat-slide-toggle button[role="switch"]',

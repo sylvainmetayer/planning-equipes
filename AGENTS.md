@@ -618,7 +618,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   per step with its state and a link to the screen that moves it, read in one
   call from `GET /api/editions/courant/etat`), `/solveur` (the solver page,
   the former home),
-  `/debug`, `/mcp-client`, `/notifications`, `/parametres`, `/stands`, `/emplacements`,
+  `/debug` (« Débogage » — four tabs chosen by
+  `?onglet=resolution|verifications|donnees|yaml`: the raw analysis with the
+  version and the API docs, the checks — test notification, test exception,
+  test mail, Mailpit, and the frozen date where the server allows it —, the
+  database and the bundled scenarios, and the YAML validator),
+  `/mcp-client`, `/notifications`,
+  `/parametres` (« Paramètres » — four tabs chosen by
+  `?onglet=legaux|edition|emails|globaux`: the legal parameters and the meal
+  break, the edition's own settings — ninja typologie, organisational-quality
+  thresholds, the pointers to what lives on its own screen —, the e-mails the
+  edition sends of itself, and the whole-database settings — nightly backup and
+  SQL dump), `/stands`, `/emplacements`,
   `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
   `/imports`, `/exports` (« Export » — the data the edition writes of itself:

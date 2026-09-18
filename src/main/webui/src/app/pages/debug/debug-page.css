@@ -1,0 +1,9 @@
+/* The Débogage page: one row of tabs; each tab brings its own stylesheet. */
+
+.debug-onglets {
+  flex-wrap: wrap;
+}
+
+.debug-onglets .mat-icon {
+  margin-right: 0.35rem;
+}
