@@ -243,7 +243,13 @@ préréglage d'origine, fenêtres par défaut, ouvertures stand par stand avec
 leur effectif, créneaux ajoutés, et le bloc `repas` quand la date roule sous
 d'autres fenêtres repas que l'édition. L'export les écrit dès qu'il y en a ;
 le bloc `repas` n'est écrit que lorsqu'il surcharge quelque chose, et sa
-`justification` est alors obligatoire, à la lecture comme à la saisie.
+`justification` est alors obligatoire, à la lecture comme à la saisie — comme
+les deux bornes d'une fenêtre repas, ou aucune, et une fenêtre assez longue
+pour la coupure qu'elle doit contenir : le fichier est tenu aux règles de
+l'écran. Une fin de bande, de fenêtre ou d'ouverture écrite `'00:00'` est
+« jusqu'à minuit » et relue comme une fin absente. L'`effectif` d'une
+ouverture est celui de cette fenêtre : un stand rouvert sur deux fenêtres à
+des effectifs différents s'écrit en deux entrées.
 
 ```yaml
 prereglagesConsigne:

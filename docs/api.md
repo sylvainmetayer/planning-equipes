@@ -468,12 +468,20 @@ et prolonger une alerte est le même appel avec des dates en plus. Un créneau
 que la consigne précédente avait ajouté est conservé — avec ses sièges —
 quand une fenêtre l'exige encore exactement, retiré sinon
 (`creneauxARetirer`). Les heures s'acceptent en `HH:mm` ; une fin absente ou
-à `00:00` se lit « jusqu'à minuit ».
+à `00:00` se lit « jusqu'à minuit », et **s'enregistre comme fin ouverte** —
+la bande, une fenêtre par défaut, une ouverture : `00:00` écrit, `null` relu,
+sur l'écran, en MCP et à l'import de scénario pareillement. Les tables ne
+connaissent que cette forme. Les dates d'une même requête s'écrivent en **une
+seule transaction** : un arrêté sur cinq jours dont la troisième date échoue
+ne laisse rien des deux premières.
 
 **L'aperçu vaut validation complète, sans écriture.** `POST /api/consignes/apercu`
 rejoue toute la validation de la requête — bande, motif, fenêtres hors de la
 bande, stands connus, effectifs sous le maximum du stand, un stand par
-fenêtre — et rend une ligne par date : sièges et minutes avant et après,
+fenêtre — et rend une ligne par date. **L'effectif est celui de l'ouverture**,
+pas du stand : un même stand rouvert le matin à 2 et le soir à 7 porte deux
+ouvertures, chacune avec le sien ; absent, il hérite du plus fort effectif que
+le stand perd dans la bande, sinon de son minimum. L'aperçu rend : sièges et minutes avant et après,
 créneaux à ajouter et à retirer, vacations qui perdent leurs sièges, stands
 entrants et sortants, exceptions cochées, mineurs et majeurs disponibles,
 validation retirée, verrous et règles ad hoc qui nomment une vacation de la
@@ -517,7 +525,18 @@ les emportent ([`import-export.md`](import-export.md#dump-sql)).
 non.** Un préréglage (« Plan canicule ») décrit la forme de l'événement ; une
 consigne appartient aux jours d'une édition, comme le plan. Le nom du
 préréglage porté par une consigne est un nom, pas une clé : supprimer le
-préréglage ne réécrit pas l'histoire des dates qu'il a gouvernées.
+préréglage ne réécrit pas l'histoire des dates qu'il a gouvernées. Son `id`
+est **facultatif à la création** (`POST /api/consignes/prereglages`, comme
+dans un fichier de scénario) : le serveur en frappe un, et tout ce qui est
+relu en porte un.
+
+**Le motif atteint la personne dont la bande vide la journée.** Les lignes
+« journées aux horaires modifiés » du courriel de publication sont lues sur
+les dates où la personne tient un siège dans le plan publié **ou dans celui
+qu'il remplace** ; l'espace animateur et le PDF individuel portent le motif
+sur ses jours de repos aussi. Sans cela, quelqu'un dont l'arrêté a fermé
+toute la journée lisait une « vacation retirée » nue — le repos d'une
+personne et la décision d'une autorité sont deux choses.
 
 **`GET /api/consignes` porte aussi les indicateurs.** Une ligne par journée
 sous consigne — sièges nominaux et sous consigne, minutes fermées, minutes
@@ -533,8 +552,13 @@ par une consigne appartiennent à la consigne.
 consigne, la demande et le préréglage : `midiDebut`/`midiFin`,
 `soirDebut`/`soirFin`, `coupureMinutes`, `justification`). Chaque champ
 absent garde la valeur de l'édition ; une fenêtre se donne avec ses deux
-bornes ou aucune ; la `justification`, en termes métier, est obligatoire dès
-qu'un champ est renseigné (`400` sinon) et s'affiche à côté de la journée.
+bornes ou aucune, **et doit contenir la coupure** — celle de la consigne,
+sinon celle de l'édition : un soir 19 h-19 h 30 sous une coupure de 60 min
+est refusé (`400`), car le solveur écarte une fenêtre trop courte pour sa
+coupure comme intenable, et la date se retrouverait sans aucune règle au
+lieu d'une règle plus stricte ; la `justification`, en termes métier, est
+obligatoire dès qu'un champ est renseigné (`400` sinon) et s'affiche à côté
+de la journée.
 La surcharge est **datée par construction** : elle ne gouverne que la date de
 la consigne — le solveur, les écrans Pauses, Besoin et Intendance et le
 contrôle de grille lisent, ce jour-là, la fenêtre de la consigne et, les
@@ -2117,8 +2141,10 @@ vaut que pour le plan enregistré (voir
 
 `GET /api/stands/usages`, `/api/animateurs/usages` et `/api/creneaux/usages`
 chiffrent ce qui référence une sélection — postes **pourvus** du planning
-persisté, ajustements manuels, verrouillages — pour que la confirmation de
-suppression le dise avant de supprimer. Répéter `id` compte plusieurs entités :
+persisté, ajustements manuels, verrouillages, et les **consignes** (journées
+sous consigne qui rouvrent le stand, ou qui ont ajouté le créneau ; toujours
+zéro pour un animateur, qu'une consigne ne nomme jamais) — pour que la
+confirmation de suppression le dise avant de supprimer. Répéter `id` compte plusieurs entités :
 `?id=S1&id=S2` renvoie **un total agrégé**, pas un détail ligne par ligne, et
 une suppression en lot n'a donc qu'un appel à faire. Le client redécoupe quand
 la chaîne de requête approche la limite de ligne du serveur — budget sur la
@@ -2140,12 +2166,14 @@ Quatre propriétés, et aucune n'est un oubli :
   `404` ;
 - **un siège vide ne compte pas** : ce que le chiffre annonce, c'est le nombre
   de créneaux effectivement tenus par quelqu'un qui disparaîtront ;
-- **trois compteurs, pas un inventaire.** Zéro partout se dit en les nommant
+- **quatre compteurs, pas un inventaire.** Zéro partout se dit en les nommant
   (« aucune affectation, aucun ajustement manuel et aucun verrouillage »), et
   jamais « rien ne le référence » : d'autres tables suivent en cascade sans
   être comptées ici — demandes d'échange, horaires et ouvertures d'un stand,
   compétences et souhaits d'un animateur. Les compter aussi est un autre
-  chantier ; affirmer qu'elles n'existent pas serait un mensonge.
+  chantier ; affirmer qu'elles n'existent pas serait un mensonge. Les
+  consignes s'y sont ajoutées parce qu'une suppression emportait en silence
+  l'ouverture d'un stand ou la marque « ajouté par consigne » d'un créneau.
 
 ### Import CSV des animateurs
 

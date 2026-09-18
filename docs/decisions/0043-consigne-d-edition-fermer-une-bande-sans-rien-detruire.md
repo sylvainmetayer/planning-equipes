@@ -80,7 +80,9 @@ Une **consigne** est **une ligne par date** de l'édition. Elle porte :
 
 - la **bande interdite** : un début obligatoire, une fin facultative — `null`
   se lit « jusqu'à minuit », la convention de toutes les fenêtres datées ;
-  `00:00` → `null` est la journée entière ;
+  `00:00` → `null` est la journée entière, et cette normalisation est faite
+  **à chaque écriture** (écran, MCP, import de scénario), la base ne
+  connaissant que la forme `null` ;
 - un **motif obligatoire**, repris tel quel partout où la journée est dite
   modifiée : courriel, espace, PDF, jour J ;
 - le **nom du préréglage** dont elle est issue, facultatif. Un nom, pas une
@@ -88,8 +90,9 @@ Une **consigne** est **une ligne par date** de l'édition. Elle porte :
   qu'il a gouvernées ;
 - des **fenêtres de compensation par défaut**, plusieurs possibles, avant ou
   après la bande — ce que reçoit un stand coché avant tout réglage individuel ;
-- des **ouvertures** : un stand, une fenêtre, un effectif facultatif ;
-  plusieurs fenêtres par stand ;
+- des **ouvertures** : un stand, une fenêtre, un effectif facultatif **porté
+  par la fenêtre** — un stand rouvert le matin à 2 et le soir à 7 est deux
+  ouvertures, chacune avec le sien ; plusieurs fenêtres par stand ;
 - les **créneaux ajoutés** à la grille, marqués comme tels
   (`consigne_edition_creneau`).
 
@@ -116,8 +119,8 @@ jamais écrites. Pour chaque stand d'une date sous consigne, dans cet ordre :
    doté sur une soirée que personne n'a choisie pour lui.
 3. **Une ouverture est une extension, choisie stand par stand.** Le stand
    ouvre sur ses fenêtres *en plus* de ses horaires, jamais dans la bande, à
-   l'effectif saisi ; sinon au **plus fort effectif qu'il perd dans la
-   bande** ; sinon à son minimum. Là où une fenêtre recouvre des heures que le
+   l'effectif saisi sur cette fenêtre ; sinon au **plus fort effectif qu'il
+   perd dans la bande** ; sinon à son minimum. Là où une fenêtre recouvre des heures que le
    stand avait déjà, le plus haut des deux effectifs s'applique, comme entre
    deux fenêtres du stand.
 
@@ -135,6 +138,13 @@ réapparaissent telles quelles à la levée. La seule écriture sur la grille es
 **additive** : quand aucun créneau ne couvre une fenêtre choisie — 20 h-22 h
 après une journée qui finit à 20 h — le créneau manquant est **ajouté** et
 marqué. Il n'est jamais ajouté sans qu'une ouverture l'exige.
+
+**Toutes les dates d'une requête, ou aucune.** Poser écrit ses créneaux,
+ses lignes et le retrait des relectures dans **une seule transaction**
+([0028](0028-transactions-declaratives-narayana.md), la `Connection`
+descendue aux dépôts) : un arrêté sur cinq jours dont la troisième date
+échoue ne laisse pas deux journées sous consigne et trois sans, issues d'un
+même geste qui a dit avoir échoué.
 
 **Jours à venir seulement.** Poser, modifier et lever refusent une date passée
 ou en cours (`date > aujourd'hui`, horloge simulée du jour J respectée). Une
@@ -204,7 +214,12 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
   ait rien rendu à la main. Le courriel « planning publié » liste les
   « Journées aux horaires modifiés par décision de l'organisation » ; l'espace
   animateur et le jour J affichent un bandeau ; le PDF individuel imprime
-  « horaires modifiés — motif » sous la date.
+  « horaires modifiés — motif » sous la date. **La personne dont la bande
+  vide toute la journée le lit aussi** : les dates concernées sont celles où
+  elle tient un siège dans le plan publié *ou dans celui qu'il remplace*, et
+  l'espace comme le PDF portent le motif sur ses jours de repos — sans quoi
+  elle ne recevait qu'une « vacation retirée » nue, comme si le planificateur
+  l'avait oubliée.
 - **Journal.** `CONSIGNE_POSEE` et `CONSIGNE_LEVEE` changent ce qu'une
   résolution reçoit ; `PREREGLAGE_CONSIGNE_ENREGISTRE` et
   `PREREGLAGE_CONSIGNE_SUPPRIME` non. Les aperçus n'écrivent rien et ne sont
@@ -231,7 +246,9 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
 - **Ce que cela coûte.** Six tables, une colonne sur `plan_snapshot`, une
   quatrième couche à connaître pour qui lit des fenêtres effectives — et le
   test structurel, qui est le prix de ne pas avoir à y penser. Une page et
-  huit outils MCP de plus.
+  huit outils MCP de plus. Le décompte des usages avant suppression compte
+  les consignes : supprimer un stand emportait ses ouvertures, supprimer un
+  créneau sa marque « ajouté par consigne », en silence.
 - **Limites assumées.**
   - **La bande est obligatoire.** Une consigne sans bande — ajouter une
     nocturne — n'est pas une consigne ; c'est une journée type.
@@ -275,7 +292,11 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
     sous consigne après. Une consigne, et un préréglage, portent donc leurs
     propres fenêtres repas (midi, soir, durée de la coupure), chacune
     facultative, avec une **justification en termes métier obligatoire** dès
-    qu'un champ est renseigné, imprimée à côté de la journée. Les faits
+    qu'un champ est renseigné, imprimée à côté de la journée, et une fenêtre
+    redite **assez longue pour sa coupure** : le solveur écarte comme
+    intenable une fenêtre plus courte que la coupure, et l'accepter aurait
+    laissé la date sans aucune règle du soir au lieu d'une règle plus
+    stricte. Les faits
     `FenetreRepas` deviennent datables : ceux de l'édition portent les dates
     où ils s'effacent, ceux d'une consigne sa date, et la contrainte comme
     chaque lecteur joignent les seules fenêtres qui gouvernent le jour.

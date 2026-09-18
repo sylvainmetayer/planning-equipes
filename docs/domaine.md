@@ -284,7 +284,7 @@ fenêtre, un effectif facultatif, plusieurs fenêtres par stand — et les
    une soirée que personne n'a choisie pour lui ;
 3. **une ouverture est une extension choisie stand par stand** : le stand
    ouvre sur ses fenêtres en plus de ses horaires, jamais dans la bande, à
-   l'effectif saisi, sinon au **plus fort effectif qu'il perd dans la bande**,
+   l'effectif saisi **sur cette fenêtre**, sinon au **plus fort effectif qu'il perd dans la bande**,
    sinon à son minimum. Là où une fenêtre recouvre des heures qu'il avait
    déjà, le plus haut des deux effectifs s'applique.
 
