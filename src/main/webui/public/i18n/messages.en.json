@@ -485,6 +485,7 @@
   "constraints.legal.hint.heureDebutSoiree": "A seat's hours past this time count as evening hours.",
   "aide.views.term.equite": "Equity",
   "aide.views.def.equite": "What each person got, to arbitrate before publishing and to answer afterwards — “I have three late nights and he has none”. One line per assigned staff member: total hours and per week, evening, week-end and public-holiday hours, seats and demanding seats, distinct stands, categories and locations, share of seats on a wished category, worked days, rest days, longest run. Next to each value, its gap to the median. The table sorts, filters and exports to CSV. The legend says which columns a solver rule actually measures: evening, week-end and public-holiday hours are weighted by none — the screen shows them, it does not correct them.",
+  "updateAvailable.tooltip": "New version available: {$version}",
   "dataStale.tooltip": "Reference data has changed since the last solve: the displayed schedule may no longer be up to date.",
   "accueil.title": "Edition status",
   "accueil.subtitle": " — each step of the cycle, its state and the screen that moves it forward.",

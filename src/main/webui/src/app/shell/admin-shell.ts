@@ -47,6 +47,7 @@ import { DataStaleIndicator } from '../shared/data-stale-indicator';
 import { DateMockIndicator } from '../shared/date-mock-indicator';
 import { ScrollHint } from '../shared/scroll-hint';
 import { SolverRunningIndicator } from '../shared/solver-running-indicator';
+import { UpdateAvailableIndicator } from '../shared/update-available-indicator';
 import { EditionActuelleBar } from '../shared/edition-actuelle-bar';
 import { VersionFooter } from '../shared/version-footer';
 import { BRANDING } from '../core/branding';
@@ -78,6 +79,7 @@ import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
     DateMockIndicator,
     ScrollHint,
     SolverRunningIndicator,
+    UpdateAvailableIndicator,
     EditionActuelleBar,
     VersionFooter,
   ],

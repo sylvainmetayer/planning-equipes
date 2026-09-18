@@ -22,7 +22,7 @@ Tout le reste **dérive** du tag, sans intervention :
 
 | Où | Comment |
 | --- | --- |
-| Frontend (`APP_VERSION`, pied de page des deux coquilles — admin et espace animateur — et page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court |
+| Frontend (`APP_VERSION`, pied de page des deux coquilles — admin et espace animateur — et page *Débogage*) | `generate-version.js` : le tag exact (`v1.2.0`), sinon le SHA court. Le lien mène à la page de la release GitHub pour un tag (`/releases/tag/v1.2.0`, que GitHub rend aussi pour un tag sans release), au commit pour un SHA (`core/version-link.ts`) |
 | Écran *Nouveautés* (`/nouveautes`) | `generate-news.js` : l'historique git lu au build, découpé par tag `vX.Y.Z` — ce qui suit le dernier tag s'affiche sous « À venir » |
 | Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` — une valeur qui ne ressemble volontairement à aucune version publiée |
 | Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` — `SentryInitializer` ne pose que le DSN et l'environnement |
@@ -126,6 +126,22 @@ non d'un fichier tenu à la main : mêmes filtres et mêmes intertitres que
 `cliff.toml`, jusqu'au « ⚠️ Attention ». Un sujet mal libellé se lit donc deux
 fois — dans les notes de version et dans l'application — ce qui est une raison
 de plus de le corriger avant fusion.
+
+### Savoir qu'une version plus récente existe
+
+Un exploitant n'a pas à surveiller le dépôt : sur un build **posé sur un tag**,
+la barre d'outils de l'administration affiche, à côté de la cloche des
+notifications, une icône dont l'infobulle nomme la dernière release publiée
+quand elle est plus récente que celle qui tourne ; le clic ouvre ses notes de
+version. C'est le navigateur de l'administrateur qui interroge l'API publique
+de GitHub (`/releases/latest`, une fois par chargement de page,
+`core/update-check.service.ts`) — jamais le serveur, qui peut très bien être
+déployé sans sortie réseau. Un build sur un SHA n'interroge rien : « une version
+plus récente existe » y est vrai tous les jours et n'apprend rien. GitHub
+injoignable, quota d'API épuisé, réponse inattendue : l'icône reste absente,
+sans message — c'est une courtoisie, pas une alerte. Un déploiement qui nomme
+ses endpoints dans `CSP` (`securite.md`) doit y laisser `https://api.github.com`
+pour la conserver, ou l'omettre pour la désactiver.
 
 ## 4. Déployer : un `vX.Y.Z`, jamais `:main` ni `:latest`
 

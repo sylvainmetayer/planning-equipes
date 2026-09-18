@@ -32,6 +32,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
+import { versionUrl } from '../../core/version-link';
 import { APP_VERSION, REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
 import { ScenarioPreenregistre } from './scenario-preenregistre';
@@ -102,6 +103,7 @@ export class DebugPage {
   protected readonly diagnosticBusy = signal(false);
   protected readonly resetting = signal(false);
   protected readonly appVersion = APP_VERSION;
+  protected readonly appVersionUrl = versionUrl(APP_VERSION);
   protected readonly repoUrl = REPO_URL;
 
   /** The server-side solver lock: emptying the database under a solve would corrupt it. */
