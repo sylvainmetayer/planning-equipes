@@ -75,6 +75,9 @@ public class JourJService {
     ReferenceDataService referenceDataService;
 
     @Inject
+    dev.sylvain.planning.service.consigne.ConsigneService consigneService;
+
+    @Inject
     PlanningPersistenceService persistenceService;
 
     @Inject
@@ -138,7 +141,12 @@ public class JourJService {
                 animateursAffectes(postesRestants, identites, absentIds),
                 postesAPourvoir(postesRestants),
                 absences,
-                nommes(identites));
+                nommes(identites),
+                consigneService
+                        .find(jour)
+                        .map(consigne ->
+                                new ConsigneJourJ(consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
+                        .orElse(null));
     }
 
     /**
@@ -668,7 +676,12 @@ public class JourJService {
             List<AnimateurAffecte> animateursDeService,
             List<PosteAPourvoir> postesAPourvoir,
             List<AbsenceJourJ> absences,
-            List<AnimateurNomme> animateurs) {}
+            List<AnimateurNomme> animateurs,
+            ConsigneJourJ consigne) {}
+
+    /** The consigne governing the day (issue #4), {@code null} on an ordinary day. */
+    @Schema(requiredProperties = {"fermetureDebut", "motif"})
+    public record ConsigneJourJ(java.time.LocalTime fermetureDebut, java.time.LocalTime fermetureFin, String motif) {}
 
     /** An animateur of the edition, named. */
     public record AnimateurNomme(String animateurId, String nomAffiche) {}

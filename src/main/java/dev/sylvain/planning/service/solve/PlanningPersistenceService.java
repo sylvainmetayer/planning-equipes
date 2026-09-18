@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.JdbcEditionScope;
-import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -109,6 +108,12 @@ public class PlanningPersistenceService {
             "contrainte_ad_hoc",
             "verrouillage_planning",
             "validation_journee",
+            "consigne_edition_creneau",
+            "consigne_edition_ouverture",
+            "consigne_edition_fenetre",
+            "consigne_edition",
+            "prereglage_consigne_fenetre",
+            "prereglage_consigne",
             "stand_typologie",
             "animateur_competence",
             "animateur_jour_indispo",
@@ -633,7 +638,7 @@ public class PlanningPersistenceService {
         // Every group's créneaux, not just the active one's: this view shows what
         // is persisted, so the horaires have to be resolved against the same
         // days it displays.
-        HoraireStandResolver.apply(stands, creneaux);
+        referenceDataService.resolveHoraires(stands, creneaux);
         Map<String, Stand> standsById = indexById(stands, Stand::getId);
         Map<Long, Creneau> creneauxById = indexById(creneaux, Creneau::getId);
 

@@ -186,6 +186,11 @@ public class ReferenceDataService implements ReferenceData {
         return stands.listSolved();
     }
 
+    @Override
+    public void resolveHoraires(List<Stand> aResoudre, List<Creneau> creneaux) {
+        stands.resolve(aResoudre, creneaux);
+    }
+
     public Stand createStand(Stand stand) {
         return stands.create(stand);
     }
@@ -343,13 +348,13 @@ public class ReferenceDataService implements ReferenceData {
         // persisted one: a preview of a grid the edition does not have yet — the
         // ordinary case when deriving or seeding it — would otherwise read every
         // rule-scheduled stand as open all day.
-        List<Stand> stands = listStands();
-        HoraireStandResolver.apply(stands, creneaux);
+        List<Stand> resolus = listStands();
+        resolveHoraires(resolus, creneaux);
         // The locks travel with the grid being judged: a lock naming a vacation
         // this grid does not hold is reported rather than cascaded away in
         // silence (issue #577) — and reported on a preview, which is where
         // « remplacer la grille » can still be reconsidered.
-        return grille.validate(creneaux, stands, listAnimateurs(), getParametresLegaux(), verrouillages.list());
+        return grille.validate(creneaux, resolus, listAnimateurs(), getParametresLegaux(), verrouillages.list());
     }
 
     public CreneauGridService.RapportGrille controlerGrille() {

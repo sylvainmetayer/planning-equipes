@@ -12,6 +12,14 @@
 </ul>
 <p style="margin:0 0 12px;">Le planning à jour est en pièce jointe.</p>
 {/if}
+{#if journeesModifiees}
+<p style="margin:0 0 4px;">Journées aux horaires modifiés par décision de l'organisation :</p>
+<ul style="margin:0 0 12px;padding-left:20px;">
+{#for journee in journeesModifiees}
+<li style="margin:0 0 4px;">{journee}</li>
+{/for}
+</ul>
+{/if}
 {#if demandes}
 <p style="margin:0 0 4px;">Vos demandes d'échange :</p>
 <ul style="margin:0 0 12px;padding-left:20px;">

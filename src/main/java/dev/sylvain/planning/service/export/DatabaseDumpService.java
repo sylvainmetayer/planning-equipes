@@ -84,6 +84,18 @@ public class DatabaseDumpService {
             // do — a restore that dropped them would hand the organiser back a
             // plan nobody had read.
             "validation_journee",
+            // The edition's consignes (issue #4): a band closed on given dates,
+            // the compensation chosen, and the créneaux they added — plus the
+            // presets they are made from. They change which seats a solve is
+            // given, so a restore without them would rebuild a nominal day the
+            // organiser had closed. Parents first: the stands and créneaux they
+            // point at are above.
+            "consigne_edition",
+            "consigne_edition_fenetre",
+            "consigne_edition_ouverture",
+            "consigne_edition_creneau",
+            "prereglage_consigne",
+            "prereglage_consigne_fenetre",
             "demande_echange",
             "planning_resolution",
             "parametres_legaux",

@@ -47,6 +47,9 @@ public class AnimateurPlanningPdf {
     private final TypologieLibelles typologies;
 
     @Inject
+    /** The days of the document a consigne governs, and what to print under their date. Set per build. */
+    private Map<LocalDate, String> journeesModifiees = Map.of();
+
     public AnimateurPlanningPdf(PdfTheme theme, TypologieLibelles typologies) {
         this.theme = theme;
         this.typologies = typologies;
@@ -60,7 +63,9 @@ public class AnimateurPlanningPdf {
             List<PauseAnalyzer.PauseAnimateurView> pauses,
             List<PauseAnalyzer.CoupureAnimateurView> coupures,
             String lienEspaceAnimateur,
-            ExportProvenance.Provenance provenance) {
+            ExportProvenance.Provenance provenance,
+            Map<LocalDate, String> journeesModifiees) {
+        this.journeesModifiees = journeesModifiees == null ? Map.of() : journeesModifiees;
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4, 40, 40, 40, 54);
         PdfWriter writer = PdfWriter.getInstance(document, output);
@@ -264,6 +269,15 @@ public class AnimateurPlanningPdf {
         dateLine.setSpacingBefore(7f);
 
         cell.addElement(dateLine);
+        // A day a consigne governs (issue #4) says so under its date: the
+        // hours printed beside it are not the usual ones, and the person
+        // must read why from the document itself, not only from a mail.
+        String modifiee = journeesModifiees.get(date);
+        if (modifiee != null) {
+            Paragraph note = new Paragraph(modifiee, theme.footerFont());
+            note.setSpacingBefore(3f);
+            cell.addElement(note);
+        }
         return cell;
     }
 

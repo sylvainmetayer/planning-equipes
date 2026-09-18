@@ -127,6 +127,26 @@ public class ValidationJourneeService {
         return repository.deleteJours(valides);
     }
 
+    /**
+     * Withdraws the validations of {@code jours}, lock or not, and says how
+     * many were withdrawn. A consigne (issue #4) closes a band on the day and
+     * reopens stands on it: the day that was read is no longer the day that
+     * will be worked, frozen or not — a lock pins seats, and the seats of the
+     * band are gone.
+     */
+    public int withdrawDays(Collection<LocalDate> jours) {
+        if (jours == null || jours.isEmpty()) {
+            return 0;
+        }
+        Set<LocalDate> valides = new LinkedHashSet<>();
+        for (ValidationJournee validation : repository.list()) {
+            if (jours.contains(validation.jour())) {
+                valides.add(validation.jour());
+            }
+        }
+        return repository.deleteJours(valides);
+    }
+
     /** The days the edition's timeslots span — the only ones a reading can name. */
     Set<LocalDate> joursEvenement() {
         Set<LocalDate> jours = new LinkedHashSet<>();

@@ -51,6 +51,9 @@ public class SnapshotComparisonService {
     EditionContext editionContext;
 
     @Inject
+    dev.sylvain.planning.service.consigne.ConsigneRepository consigneRepository;
+
+    @Inject
     EditionRepository editionRepository;
 
     /**
@@ -73,7 +76,8 @@ public class SnapshotComparisonService {
             String editionNom,
             Instant creeLe,
             PlanningKpi kpi,
-            boolean kpiRecalcule) {}
+            boolean kpiRecalcule,
+            List<PlanSnapshotService.ConsigneSnapshot> consignes) {}
 
     /**
      * Violation counts of one constraint on each side. {@code null} on a side
@@ -91,13 +95,22 @@ public class SnapshotComparisonService {
      *                               seats, so absolute scores are not directly
      *                               comparable whatever the editions
      */
-    @Schema(requiredProperties = {"editionsDifferentes", "volumetriesDifferentes"})
+    /**
+     * @param consignesDifferentes the two sides were not captured under the
+     *                             same consignes (issue #4): a difference in
+     *                             seats or hours then comes from a band an
+     *                             arrêté closed, not from a solver setting.
+     *                             False when either side predates the figure,
+     *                             since nothing can be said
+     */
+    @Schema(requiredProperties = {"editionsDifferentes", "volumetriesDifferentes", "consignesDifferentes"})
     public record ComparaisonSnapshots(
             CoteComparaison base,
             CoteComparaison variante,
             boolean editionsDifferentes,
             boolean volumetriesDifferentes,
-            List<DiffContrainte> diffViolations) {}
+            List<DiffContrainte> diffViolations,
+            boolean consignesDifferentes) {}
 
     /**
      * Compares two sides, each designated either by a snapshot id or by
@@ -116,7 +129,10 @@ public class SnapshotComparisonService {
                 coteVariante,
                 !Objects.equals(coteBase.editionId(), coteVariante.editionId()),
                 coteBase.kpi().postesTotal() != coteVariante.kpi().postesTotal(),
-                diffViolations(coteBase.kpi(), coteVariante.kpi()));
+                diffViolations(coteBase.kpi(), coteVariante.kpi()),
+                coteBase.consignes() != null
+                        && coteVariante.consignes() != null
+                        && !Objects.equals(coteBase.consignes(), coteVariante.consignes()));
     }
 
     /** {@code null} when {@code selecteur} designates a snapshot that does not exist. */
@@ -147,7 +163,11 @@ public class SnapshotComparisonService {
                 nomEdition(editionId),
                 resolution == null ? null : resolution.resoluLe(),
                 kpiService.computeCurrent(null),
-                false);
+                false,
+                consigneRepository.list().stream()
+                        .map(consigne -> new PlanSnapshotService.ConsigneSnapshot(
+                                consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()))
+                        .toList());
     }
 
     private CoteComparaison cote(SnapshotDetail detail) {
@@ -170,7 +190,8 @@ public class SnapshotComparisonService {
                 detail.meta().editionNom(),
                 detail.meta().creeLe(),
                 kpi,
-                recalcule);
+                recalcule,
+                detail.meta().consignes());
     }
 
     private String nomEdition(String editionId) {

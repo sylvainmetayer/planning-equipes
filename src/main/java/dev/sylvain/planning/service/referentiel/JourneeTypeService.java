@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.VacationType;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RapportGrille;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Affectation;
 import dev.sylvain.planning.service.referentiel.JourneesTypesMaterialisation.Plan;
@@ -43,6 +44,9 @@ public class JourneeTypeService {
 
     @Inject
     ReferenceDataChangeTracker changeTracker;
+
+    @Inject
+    ConsigneRepository consignes;
 
     @Inject
     SolverJobService solverJobs;
@@ -154,15 +158,48 @@ public class JourneeTypeService {
     /* ------------------------------ Whole state ------------------------------ */
 
     /** Everything the card reads in one call, the drift between calendar and grid included. */
-    @Schema(requiredProperties = {"journeesTypes", "calendrier", "datesEnEcart"})
+    /**
+     * @param datesSousConsigne the dates a consigne governs (issue #4): the
+     *                          card shows them « sous consigne » rather than
+     *                          « en écart », since the créneaux the consigne
+     *                          added are not a drift from the template
+     */
+    @Schema(requiredProperties = {"journeesTypes", "calendrier", "datesEnEcart", "datesSousConsigne"})
     public record EtatJourneesTypes(
-            List<JourneeType> journeesTypes, List<Affectation> calendrier, List<LocalDate> datesEnEcart) {}
+            List<JourneeType> journeesTypes,
+            List<Affectation> calendrier,
+            List<LocalDate> datesEnEcart,
+            List<LocalDate> datesSousConsigne) {}
 
     public EtatJourneesTypes etat() {
         List<JourneeType> journeesTypes = repository.list();
         List<Affectation> calendrier = repository.calendrier();
-        Plan plan = JourneesTypesMaterialisation.planifier(journeesTypes, calendrier, creneaux.listCreneaux());
-        return new EtatJourneesTypes(journeesTypes, calendrier, plan.datesEnEcart());
+        Plan plan = JourneesTypesMaterialisation.planifier(journeesTypes, calendrier, grilleNominale());
+        return new EtatJourneesTypes(journeesTypes, calendrier, plan.datesEnEcart(), datesSousConsigne());
+    }
+
+    /**
+     * The grid without the créneaux a consigne added (issue #4). A template
+     * never names an evening an arrêté made necessary, and applying it must
+     * neither count that evening as a drift nor delete it with its seats —
+     * that would destroy the compensation in the middle of an alert. Those
+     * créneaux belong to the consigne, which removes them when it is lifted.
+     */
+    private List<Creneau> grilleNominale() {
+        Set<Long> ajoutes = consignes.creneauxAjoutes();
+        if (ajoutes.isEmpty()) {
+            return creneaux.listCreneaux();
+        }
+        return creneaux.listCreneaux().stream()
+                .filter(creneau -> !ajoutes.contains(creneau.getId()))
+                .toList();
+    }
+
+    private List<LocalDate> datesSousConsigne() {
+        return consignes.list().stream()
+                .map(dev.sylvain.planning.domain.ConsigneEdition::date)
+                .sorted()
+                .toList();
     }
 
     /* ------------------------------ Application ------------------------------ */
@@ -233,7 +270,7 @@ public class JourneeTypeService {
             throw new BusinessError.Invalid(
                     "Aucune date n'est affectée à une journée type : rien à appliquer. Ajoutez des dates d'abord.");
         }
-        return JourneesTypesMaterialisation.planifier(journeesTypes, calendrier, creneaux.listCreneaux());
+        return JourneesTypesMaterialisation.planifier(journeesTypes, calendrier, grilleNominale());
     }
 
     /** The créneaux on dates the calendar leaves alone — part of the grid the verdict judges. */

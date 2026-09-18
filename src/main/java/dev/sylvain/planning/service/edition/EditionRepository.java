@@ -96,7 +96,13 @@ public class EditionRepository {
                     "parametres_qualite",
                     "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max"),
-            new TableToCopy("parametres_solveur", "duree_resolution_secondes, mail_fin_resolution"));
+            new TableToCopy("parametres_solveur", "duree_resolution_secondes, mail_fin_resolution"),
+            // Consigne presets (V90, issue #4) describe the event's shape —
+            // « Plan canicule » is the same plan next year — so they travel;
+            // the dated consignes made from them belong to one edition's days
+            // and stay behind, like the plan itself.
+            new TableToCopy("prereglage_consigne", "id, nom, fermeture_debut, fermeture_fin, motif"),
+            new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"));
 
     record TableToCopy(String nom, String colonnes) {}
 

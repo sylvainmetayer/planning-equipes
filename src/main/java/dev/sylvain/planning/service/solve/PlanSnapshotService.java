@@ -1,10 +1,13 @@
 package dev.sylvain.planning.service.solve;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import dev.sylvain.planning.domain.ConsigneEdition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.analyse.PlanningKpiService;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -71,6 +74,9 @@ public class PlanSnapshotService {
 
     @Inject
     SolverJobService solverJobs;
+
+    @Inject
+    ConsigneRepository consigneRepository;
 
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
@@ -148,7 +154,8 @@ public class PlanSnapshotService {
             PlanningKpiService.PlanningKpi kpi,
             Instant publieLe,
             Instant referenceModifieLe,
-            boolean perime) {
+            boolean perime,
+            List<ConsigneSnapshot> consignes) {
 
         /**
          * A snapshot is stale as soon as the referential was written after it
@@ -159,6 +166,13 @@ public class PlanSnapshotService {
             return creeLe != null && referenceModifieLe != null && referenceModifieLe.isAfter(creeLe);
         }
     }
+
+    /**
+     * One consigne governing the edition when the snapshot was captured
+     * (issue #4): the band and its motif, so the plan says why a day had
+     * not its usual hours long after the consigne was lifted.
+     */
+    public record ConsigneSnapshot(LocalDate date, LocalTime fermetureDebut, LocalTime fermetureFin, String motif) {}
 
     /** A snapshot with its content. */
     public record SnapshotDetail(SnapshotMeta meta, List<AffectationSnapshot> affectations) {}
@@ -248,10 +262,11 @@ public class PlanSnapshotService {
             Instant publieLe) {
         String contenu = writeContent(affectations);
         PlanningKpiService.PlanningKpi kpi = kpiCourant();
+        List<ConsigneSnapshot> consignes = consignesCourantes();
         String sql = """
  INSERT INTO plan_snapshot (edition_id, libelle, automatique, score, nombre_affectations, cree_le, contenu, kpi,
- publie_le)
- VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)
+ publie_le, consignes)
+ VALUES (?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?, ?::jsonb)
  RETURNING id, cree_le""";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
@@ -263,6 +278,7 @@ public class PlanSnapshotService {
             ps.setString(7, contenu);
             ps.setString(8, kpi == null ? null : writeKpi(kpi));
             ps.setTimestamp(9, publieLe == null ? null : Timestamp.from(publieLe));
+            ps.setString(10, writeConsignes(consignes));
             try (ResultSet rs = ps.executeQuery()) {
                 rs.next();
                 Instant creeLe = rs.getTimestamp("cree_le").toInstant();
@@ -279,7 +295,8 @@ public class PlanSnapshotService {
                         kpi,
                         publieLe,
                         edition.referenceModifieLe(),
-                        SnapshotMeta.perime(creeLe, edition.referenceModifieLe()));
+                        SnapshotMeta.perime(creeLe, edition.referenceModifieLe()),
+                        consignes);
                 if (automatique) {
                     purgeAutomatic(connection);
                 }
@@ -338,7 +355,7 @@ public class PlanSnapshotService {
     /** Columns every read below projects, so {@link #readMeta} always finds them. */
     private static final String COLONNES_META = "s.id, s.libelle, s.automatique, s.score, "
             + "s.nombre_affectations, s.cree_le, s.edition_id, s.publie_le, e.nom AS edition_nom, "
-            + "e.reference_modifie_le";
+            + "e.reference_modifie_le, s.consignes";
 
     private static final String DEPUIS_SNAPSHOT =
             " FROM plan_snapshot s " + "LEFT JOIN edition e ON e.id = s.edition_id";
@@ -697,7 +714,38 @@ public class PlanSnapshotService {
                 readKpi(rs.getString("kpi")),
                 instant(rs.getTimestamp("publie_le")),
                 referenceModifieLe,
-                SnapshotMeta.perime(creeLe, referenceModifieLe));
+                SnapshotMeta.perime(creeLe, referenceModifieLe),
+                readConsignes(rs.getString("consignes")));
+    }
+
+    /** The consignes governing the edition now, as a snapshot will remember them. */
+    private List<ConsigneSnapshot> consignesCourantes() {
+        List<ConsigneSnapshot> consignes = new ArrayList<>();
+        for (ConsigneEdition consigne : consigneRepository.list()) {
+            consignes.add(new ConsigneSnapshot(
+                    consigne.date(), consigne.fermetureDebut(), consigne.fermetureFin(), consigne.motif()));
+        }
+        return consignes;
+    }
+
+    private String writeConsignes(List<ConsigneSnapshot> consignes) {
+        try {
+            return objectMapper.writeValueAsString(consignes);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialise the snapshot's consignes", e);
+        }
+    }
+
+    /** {@code null} on a snapshot captured before the column existed: unknown, not « none ». */
+    private List<ConsigneSnapshot> readConsignes(String json) {
+        if (json == null) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(json, new TypeReference<List<ConsigneSnapshot>>() {});
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to read the snapshot's consignes", e);
+        }
     }
 
     /**

@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapshot;
@@ -48,6 +49,9 @@ public class PlanningKpiService {
     @Inject
     ConstraintAnalysisStore analysisStore;
 
+    @Inject
+    ConsigneService consigneService;
+
     /**
      * Everything a plan is measured by. The nullable fields are the ones that
      * depend on a stored score analysis: when none exists — a plan persisted
@@ -66,6 +70,12 @@ public class PlanningKpiService {
      *                          {@code violationsParContrainte}
      * @param plancherMedium    the constant part of the medium score, signed
      *                          like it; {@code null} when not measured
+     * @param journeesSousConsigne dates a consigne governed when the plan was
+     *                          measured (issue #4); {@code null} on a KPI
+     *                          computed before the figure existed
+     * @param heuresFermeesParConsigne seat-hours the bands of those consignes
+     *                          took away from the nominal days; {@code null}
+     *                          for the same reason
      */
     @Schema(
             requiredProperties = {
@@ -97,7 +107,9 @@ public class PlanningKpiService {
             Long dureeSolveSecondes,
             Map<String, Integer> violationsParContrainte,
             Integer scoreMediumHorsPlancher,
-            Integer plancherMedium) {}
+            Integer plancherMedium,
+            Integer journeesSousConsigne,
+            Double heuresFermeesParConsigne) {}
 
     /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
     record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
@@ -124,13 +136,19 @@ public class PlanningKpiService {
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
         int modifications = referenceDataService.listContraintesAdHoc().size()
                 + referenceDataService.listVerrouillages().size();
+        List<ConsigneService.Indicateur> indicateurs = consigneService.indicateurs();
         return compute(
                 affectations,
                 diagnostic == null ? null : diagnostic.score(),
                 violationsByContrainte(diagnostic),
                 modifications,
                 dureeSolveSecondes,
-                diagnostic == null ? null : diagnostic.plancherMedium());
+                diagnostic == null ? null : diagnostic.plancherMedium(),
+                indicateurs.size(),
+                indicateurs.stream()
+                                .mapToInt(ConsigneService.Indicateur::minutesFermees)
+                                .sum()
+                        / 60.0);
     }
 
     /**
@@ -202,6 +220,30 @@ public class PlanningKpiService {
             Integer modificationsManuelles,
             Long dureeSolveSecondes,
             Integer plancherMedium) {
+        return compute(
+                affectations,
+                score,
+                violationsParContrainte,
+                modificationsManuelles,
+                dureeSolveSecondes,
+                plancherMedium,
+                null,
+                null);
+    }
+
+    /**
+     * Same, with the consigne figures of the plan (issue #4): how many dates a
+     * consigne governed, and the seat-hours their bands took away.
+     */
+    public static PlanningKpi compute(
+            List<AffectationKpi> affectations,
+            String score,
+            Map<String, Integer> violationsParContrainte,
+            Integer modificationsManuelles,
+            Long dureeSolveSecondes,
+            Integer plancherMedium,
+            Integer journeesSousConsigne,
+            Double heuresFermeesParConsigne) {
         Set<String> stands = new LinkedHashSet<>();
         Set<String> creneaux = new LinkedHashSet<>();
         Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
@@ -245,7 +287,9 @@ public class PlanningKpiService {
                 dureeSolveSecondes,
                 violationsParContrainte == null ? Map.of() : violationsParContrainte,
                 niveaux == null || plancherMedium == null ? null : niveaux[1] - plancherMedium,
-                plancherMedium);
+                plancherMedium,
+                journeesSousConsigne,
+                heuresFermeesParConsigne);
     }
 
     private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {}

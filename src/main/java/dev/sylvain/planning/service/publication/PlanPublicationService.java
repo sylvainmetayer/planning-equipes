@@ -79,6 +79,9 @@ public class PlanPublicationService {
     DemandeEchangeService demandeEchangeService;
 
     @Inject
+    dev.sylvain.planning.service.consigne.ConsigneService consigneService;
+
+    @Inject
     ReferenceDataService referenceDataService;
 
     @Inject
@@ -324,12 +327,24 @@ public class PlanPublicationService {
                     PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
                     destinataire.premiereDiffusion(),
                     destinataire.changements(),
-                    destinataire.demandes());
+                    destinataire.demandes(),
+                    consigneService.lignesJourneesModifiees(joursDe(planning, destinataire.animateurId())));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
             return StatutEnvoi.ECHEC;
         }
+    }
+
+    /** The dates {@code animateurId} holds a seat on in {@code planning}. */
+    private static List<java.time.LocalDate> joursDe(PlanningEvenement planning, String animateurId) {
+        return planning.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && animateurId.equals(poste.getAnimateur().getId())
+                        && poste.getCreneau() != null)
+                .map(poste -> poste.getCreneau().getDate())
+                .distinct()
+                .toList();
     }
 
     /* -------------------------------- Helpers ------------------------------ */

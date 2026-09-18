@@ -81,7 +81,9 @@ class McpAnnotationsStructurelleTest {
             "materialiser_journees_types",
             "reconnaitre_journees_types",
             "lancer_solveur",
-            "resoudre_incremental");
+            "resoudre_incremental",
+            // Lifting a consigne removes the créneaux it added, with their seats.
+            "lever_consigne");
 
     /** Tools that write without destroying: creations, edits, toggles, locks. */
     private static final List<String> ECRITURE = List.of(

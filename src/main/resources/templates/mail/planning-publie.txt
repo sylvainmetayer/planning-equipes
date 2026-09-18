@@ -11,6 +11,14 @@ Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :
 
 Le planning à jour est en pièce jointe.
 {/if}
+{#if journeesModifiees}
+
+Journées aux horaires modifiés par décision de l'organisation :
+
+{#for journee in journeesModifiees}
+- {journee}
+{/for}
+{/if}
 {#if demandes}
 
 Vos demandes d'échange :

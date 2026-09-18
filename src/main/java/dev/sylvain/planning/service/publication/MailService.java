@@ -84,6 +84,10 @@ public class MailService {
      *                          corrections, and is left out of the body
      * @param changements       one sentence per moved vacation, in reading order
      * @param demandes          where their échange requests stand, if any
+     * @param journeesModifiees the days of their planning a consigne governs
+     *                          (issue #4), each with its motif — an arrêté is
+     *                          the one reason a vacation moves that the person
+     *                          must hear, not just see
      */
     public void sendPlanningPublie(
             String emailAnimateur,
@@ -93,7 +97,8 @@ public class MailService {
             String fileName,
             boolean premiereDiffusion,
             List<String> changements,
-            List<String> demandes) {
+            List<String> demandes,
+            List<String> journeesModifiees) {
         MailContent content = templates.render(
                 "mail/planning-publie",
                 productName.subject(premiereDiffusion ? "votre planning individuel" : "votre planning a changé"),
@@ -107,7 +112,9 @@ public class MailService {
                         "changements",
                         changements == null ? List.of() : changements,
                         "demandes",
-                        demandes == null ? List.of() : demandes));
+                        demandes == null ? List.of() : demandes,
+                        "journeesModifiees",
+                        journeesModifiees == null ? List.of() : journeesModifiees));
         mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 

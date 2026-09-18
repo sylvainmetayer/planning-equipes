@@ -48,6 +48,7 @@ class EditionDuplicationStructurelleTest {
             "stand.modifie_le", "same",
             "animateur.modifie_le", "same",
             "journee_type.modifie_le", "same",
+            "prereglage_consigne.modifie_le", "same",
             "animateur.access_token",
                     "credential: the default mints a fresh one per edition, so one person's espace "
                             + "link is never shared between two editions",

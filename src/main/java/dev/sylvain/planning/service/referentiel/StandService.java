@@ -7,6 +7,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.Ids;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.consigne.ConsigneRepository;
+import dev.sylvain.planning.service.consigne.ConsigneResolver;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -42,6 +44,9 @@ public class StandService {
     @Inject
     SolverJobService solverJobs;
 
+    @Inject
+    ConsigneRepository consignes;
+
     /**
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated
      * exceptions, side by side, with no expansion. This is the CRUD view — what
@@ -65,8 +70,20 @@ public class StandService {
      */
     public List<Stand> listSolved() {
         List<Stand> stands = list();
-        HoraireStandResolver.apply(stands, creneaux.list());
+        resolve(stands, creneaux.list());
         return stands;
+    }
+
+    /**
+     * Rules and dated exceptions first, then the edition's consignes on top
+     * (issue #4): the one entry point every reader of effective windows goes
+     * through. A caller that expanded the rules itself would silently ignore
+     * a consigne and staff a band an arrêté closed —
+     * {@code ConsigneCoucheStructurelleTest} refuses any such caller.
+     */
+    public void resolve(List<Stand> stands, List<Creneau> creneaux) {
+        HoraireStandResolver.apply(stands, creneaux);
+        ConsigneResolver.apply(stands, consignes.list(), creneaux);
     }
 
     /** One stand as persisted, or {@code null}: what a write compares itself against. */

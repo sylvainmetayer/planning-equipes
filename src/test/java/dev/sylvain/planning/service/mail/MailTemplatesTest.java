@@ -155,6 +155,8 @@ class MailTemplatesTest {
                         "changements",
                         List.of("samedi : A remplace B", "dimanche : libre"),
                         "demandes",
+                        List.of(),
+                        "journeesModifiees",
                         List.of()));
 
         assertThat(content.text())
