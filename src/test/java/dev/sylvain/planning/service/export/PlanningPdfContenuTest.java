@@ -88,6 +88,40 @@ class PlanningPdfContenuTest {
         write("contenu-animateur.txt", text);
     }
 
+    /**
+     * A day the band closed for the whole person prints « Repos » — and the
+     * motif under its date, or the document reads as if the planner had
+     * simply left them out. The note reaches the rest card, not only the
+     * assignment card.
+     */
+    @Test
+    void aRestDayUnderConsignePrintsTheMotifUnderItsDate() throws IOException {
+        PlanningEvenement planning = planning();
+        List<PosteAffectation> postesAda = planning.getPostes().stream()
+                .filter(poste -> poste.getAnimateur() != null
+                        && "A-ADA".equals(poste.getAnimateur().getId()))
+                .toList();
+        List<PlanningExportService.JourRepos> repos = PlanningExportService.daysOff(planning, "A-ADA");
+        assertThat(repos).extracting(PlanningExportService.JourRepos::date).containsExactly(LocalDate.of(2026, 8, 15));
+
+        byte[] pdf = new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
+                .construire(
+                        "Ada Lovelace",
+                        postesAda,
+                        Map.of(),
+                        repos,
+                        List.of(),
+                        List.of(),
+                        null,
+                        PROVENANCE.publiee(),
+                        Map.of(LocalDate.of(2026, 8, 15), "Horaires modifiés — Canicule"));
+
+        String text = textOf(pdf);
+        assertThat(text).contains("Repos");
+        assertThat(text.lines().map(String::strip).toList())
+                .containsSubsequence("Samedi 15 août", "Horaires modifiés — Canicule");
+    }
+
     @Test
     void lePdfIndividuelAnnonceLaPauseSousLaVacationQuiLaDoit() throws IOException {
         // 13:00-20:00 on one stand with a colleague: the break is owed at 19:00

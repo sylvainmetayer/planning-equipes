@@ -35,6 +35,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -333,17 +334,22 @@ public class EspaceAnimateurService {
                 diffToShow ? lastTrace.envoyeLe() : null,
                 horloge.date(),
                 horloge.heure(),
-                consignesOf(postes));
+                consignesOf(postes, joursRepos, consigneService.byDate()));
     }
 
-    /** The consignes on the dates the person holds a seat, by date. */
-    private List<ConsigneEspaceView> consignesOf(List<PosteAnimateurView> postes) {
-        Map<LocalDate, ConsigneEdition> consignesByDate = consigneService.byDate();
+    /**
+     * The consignes on the dates of the person's planning, by date: the days
+     * they hold a seat, and their rest days — a day the band emptied for them
+     * is a rest day on screen, and the motif is what says it was decided.
+     */
+    static List<ConsigneEspaceView> consignesOf(
+            List<PosteAnimateurView> postes,
+            List<LocalDate> joursRepos,
+            Map<LocalDate, ConsigneEdition> consignesByDate) {
         if (consignesByDate.isEmpty()) {
             return List.of();
         }
-        return postes.stream()
-                .map(PosteAnimateurView::date)
+        return Stream.concat(postes.stream().map(PosteAnimateurView::date), joursRepos.stream())
                 .filter(Objects::nonNull)
                 .distinct()
                 .sorted()
