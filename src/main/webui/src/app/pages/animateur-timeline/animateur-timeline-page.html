@@ -106,6 +106,15 @@
           <h2 mat-card-title>{{ day.title }}</h2>
           <mat-card-subtitle>{{ day.amplitudeLabel }}</mat-card-subtitle>
         </mat-card-header>
+        @if (consigneNote(day); as note) {
+          <p class="timeline-consigne-note">
+            <span class="timeline-badge-consigne">
+              <mat-icon inline>gavel</mat-icon>
+              <ng-container i18n="@@timeline.badge.sousConsigne">sous consigne</ng-container>
+            </span>
+            {{ note }}
+          </p>
+        }
         <mat-card-content>
           <div class="timeline-track">
             @for (gap of day.gaps; track $index) {

@@ -3361,6 +3361,8 @@
   "journee.consigne.modifier": "Modify or lift",
   "journee.consigne.poser": "Lay down a consigne on this day",
   "journee.badge.sousConsigne": "under consigne",
+  "timeline.badge.sousConsigne": "under consigne",
+  "timeline.consigne.note": "{$motif} — stands closed {$bande}",
   "jourJ.consigne": "Hours modified by decision of the organisation: every stand closed from {$INTERPOLATION} — {$INTERPOLATION_1}",
   "jourJ.consigne.lien": "See the consignes",
   "espace.planning.consigne": "Hours modified on {$INTERPOLATION}: {$INTERPOLATION_1} (closed from {$INTERPOLATION_2})",

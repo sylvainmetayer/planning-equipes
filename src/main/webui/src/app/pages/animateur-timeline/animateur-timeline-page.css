@@ -20,6 +20,29 @@
   margin-bottom: 1rem;
 }
 
+/* Same pill as the Journée tab: a day under consigne is told everywhere the
+   day is read. */
+.timeline-consigne-note {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 1rem;
+  font-size: 0.875rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.timeline-badge-consigne {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  font-size: 0.8125rem;
+}
+
 .timeline-track {
   position: relative;
   height: 2.5rem;
