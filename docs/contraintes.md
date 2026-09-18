@@ -54,6 +54,13 @@ exigé sur la plage fermée.
 Ce mécanisme **ne crée jamais de créneau supplémentaire** : la clé étrangère
 reste le créneau réel, la fenêtre effective vit sur le poste.
 
+Une consigne d'édition — la bande qu'un arrêté ferme pour tous les stands, et
+les fenêtres rouvertes en compensation
+([`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche)) — se lit
+par ces mêmes fenêtres effectives : aucune contrainte n'a à la connaître, et
+ce qui suit vaut tel quel pour une journée sous consigne, la règle de nuit
+des mineurs comprise.
+
 Deux familles lisent cette fenêtre plutôt que celle du créneau :
 
 - **`pasDeChevauchementHoraire`** — deux postes du même animateur sur deux

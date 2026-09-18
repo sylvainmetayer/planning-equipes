@@ -98,6 +98,13 @@ dérivation depuis les horaires des stands), si bien qu'une édition importée e
 une édition tapée se lisent pareil sur l'écran Créneaux. La logique est pure
 (`JourneesTypesMaterialisation`), le service ne fait que la persister.
 
+Une **date sous consigne** ([ci-dessous](#consigne-dédition--la-quatrième-couche))
+se lit à part : les créneaux qu'une consigne a ajoutés à la grille — la
+soirée qu'un arrêté a rendue nécessaire — ne sont ni comptés en écart ni
+supprimés à l'application, puisqu'une journée type ne les nomme jamais ; ils
+appartiennent à la consigne, qui les retire à sa levée. La carte affiche ces
+dates « sous consigne » (`datesSousConsigne`) plutôt qu'« en écart ».
+
 Cette dérivation est écrite une fois (`service/referentiel/JoursEvenement`) et lue à la
 fois par la collecte des disponibilités et par les avertissements de saisie
 (voir [`api.md`](api.md#avertissements-de-saisie)).
@@ -242,6 +249,91 @@ d'ouverture** en désaccord, jamais en appariant les segments : un « fermé
 de segments de 1 à 0, alors que le désaccord réel est la seule minute d'un poste
 qui n'aurait jamais dû être à pourvoir. Compter les segments ferait refuser
 exactement les stands que la réécriture aide le plus.
+
+### Consigne d'édition : la quatrième couche
+
+Un arrêté préfectoral — canicule, orage — ferme une bande horaire pour
+**tous** les stands sur quelques dates, la veille au soir, avec prolongations
+et levées. Ce n'est ni une règle du stand ni une exception datée : la décision
+vient d'en dehors, s'applique à tous sans qu'aucun l'ait déclarée, et doit se
+lever sans rien réécrire. C'est une **consigne d'édition**
+([ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md)),
+lue par `ConsigneResolver` **au-dessus des trois couches** et par le seul
+point d'entrée `StandService.resolve` — un appelant qui déroulerait les règles
+lui-même doterait en silence une bande fermée, et
+`ConsigneCoucheStructurelleTest` le refuse.
+
+**Le modèle** : une ligne par date. Une **bande interdite** — début
+obligatoire, fin facultative valant « jusqu'à minuit », `00:00` → `null` pour
+la journée entière — un **motif obligatoire**, le nom du **préréglage**
+d'origine s'il y en a un (« Plan canicule » : bande, motif et fenêtres par
+défaut, mémorisé sur l'édition, validé à froid, copié à la duplication ; les
+consignes datées ne le sont pas), des **fenêtres de compensation par défaut**
+(plusieurs, avant ou après la bande), des **ouvertures** — un stand, une
+fenêtre, un effectif facultatif, plusieurs fenêtres par stand — et les
+**créneaux ajoutés** à la grille, marqués comme tels.
+
+**Trois règles, dans cet ordre**, pour chaque stand d'une date sous consigne :
+
+1. **la bande ferme tous les stands**, au-dessus de leurs règles et de leurs
+   exceptions, **et ne ferme que cela** : un stand garde ses horaires hors de
+   la bande, coché ou non. Un 14 h-20 h devient un 18 h-20 h ;
+2. **les créneaux que la consigne a ajoutés n'appartiennent aux horaires de
+   personne** : un stand y est fermé, sauf si une de ses propres fenêtres de
+   consigne les couvre. Sans quoi un stand ouvert par défaut serait doté sur
+   une soirée que personne n'a choisie pour lui ;
+3. **une ouverture est une extension choisie stand par stand** : le stand
+   ouvre sur ses fenêtres en plus de ses horaires, jamais dans la bande, à
+   l'effectif saisi, sinon au **plus fort effectif qu'il perd dans la bande**,
+   sinon à son minimum. Là où une fenêtre recouvre des heures qu'il avait
+   déjà, le plus haut des deux effectifs s'applique.
+
+La journée en sort **réénoncée entière** : en ouvertures explicites (fermé par
+défaut) quand il reste quelque chose, en fermeture de journée entière quand il
+ne reste rien. **Un seul mode par jour**, comme après les trois couches, et
+rien en aval n'a à connaître la consigne. L'expansion ne s'écrit que sur les
+fenêtres effectives.
+
+**Ce qui est ajouté à la grille, et rien d'autre.** Une fenêtre choisie
+qu'aucun créneau ne couvre — 20 h-22 h après une journée qui finit à 20 h —
+fait **ajouter** le créneau manquant, marqué comme ajouté par la consigne.
+C'est la seule écriture sur la grille, et elle est additive ; un créneau n'est
+jamais ajouté sans qu'une ouverture l'exige. Modifier une consigne conserve
+un créneau ajouté — avec ses sièges — quand une fenêtre l'exige encore
+exactement, et retire les autres.
+
+**Ce qui n'est jamais détruit.** Les créneaux nominaux gardent id, sièges et
+verrous ; les vacations de la bande deviennent des vacations **sans siège** —
+un stand fermé sur tout un créneau n'y engendre aucun poste, fermé sur une
+partie il engendre les postes du reste, à leur
+[fenêtre effective](#fenêtre-effective). Lever la consigne, c'est ne plus
+l'appliquer : les stands retrouvent leurs horaires, et seuls les créneaux
+ajoutés partent, avec leurs sièges — la publication suivante annonce leur
+retrait. La règle de stabilité du plan publié fait le reste : le titulaire
+d'un 14 h-20 h reste sur le 18 h-20 h pendant l'alerte et retrouve son
+après-midi à la levée.
+
+**Le passé reste intact.** Poser, modifier et lever refusent une date passée
+ou en cours : une date déjà travaillée garde pour toujours la consigne qui
+l'a gouvernée, et ses statistiques sont celles de ce qui a été fait. Poser ou
+lever retire la validation de relecture des journées touchées, verrou ou non
+— les sièges de la bande n'existent plus, la journée relue n'est plus celle
+qui sera travaillée.
+
+**Les heures effectives partout.** Cumuls, repos, « fermer tard puis ouvrir
+tôt », heures, équité, indicateurs : tout lit déjà la fenêtre effective, et
+une journée sous consigne compte donc ce qui est réellement travaillé sans
+qu'aucun calcul change. Un instantané porte les consignes en vigueur à sa
+capture (`null` sur un instantané antérieur : « inconnu », jamais « aucune »),
+le KPI porte `journeesSousConsigne` et `heuresFermeesParConsigne`, et chaque
+journée sous consigne expose ses sièges nominaux et sous consigne, ses
+minutes fermées et rouvertes, ses animateurs concernés.
+
+> **Limites assumées** : la bande est obligatoire (une consigne sans bande
+> n'est pas une consigne, c'est une journée type) ; une bande par jour ; les
+> disponibilités des animateurs restent à la journée — les fenêtres tardives
+> se ferment aux mineurs par les règles de nuit et de repos, qui lisent le
+> créneau entier, pas la fenêtre effective.
 
 ### Fenêtre effective
 

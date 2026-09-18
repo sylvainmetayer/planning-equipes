@@ -302,6 +302,19 @@ Single Quarkus service, no separate solver microservice. Package root:
     `ValidationPrerequisService` narrows the Problèmes, Pauses and Fragilité
     reports to one date rather than recomputing them, so the panel and those
     three screens cannot tell two stories about the same day.
+  - `service/consigne/` — what an authority imposes on the whole event for
+    one date (ADR 0043): a band every stand is shut on, and the compensation
+    chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
+    stand's schedule, pure and static, applied by `StandService.resolve` on
+    top of `HoraireStandResolver` (rules, then dated exceptions) and on the
+    effective windows only; `ConsigneService` proposes, previews, lays down,
+    changes and lifts consignes and their presets — the only grid write it
+    makes is adding the timeslots an opening needs, and lifting removes those
+    alone; `ConsigneRepository` owns the six tables. Every reader of
+    effective windows goes through `StandService.resolve` /
+    `ReferenceData.resolveHoraires`: `ConsigneCoucheStructurelleTest` refuses
+    any other production caller of `HoraireStandResolver.apply` that is not
+    argued in its list, the same net as the edition-scoping tests.
   - `service/edition/`; `service/publication/` (publishing, delivery,
     confirmations, `MailService`); `service/export/` (`PlanningExportService`
     over `AnimateurPlanningPdf`, `GlobalPlanningPdf` and `PlanningIcs`, sharing
@@ -1081,6 +1094,7 @@ visible half of the third, a French word that carries an accent.
 | `DemandeEchange` | *swap request* | |
 | `Typologie` | *game category* | a CRUD referential, not an enum |
 | `Horaire` | *opening hours* | |
+| `ConsigneEdition` | *consigne* | **not translated** — "directive" and "instruction" both lose what the French word carries: an order received from outside (an arrêté) and relayed as such to the whole event. Its *bande* is *the band* in prose; `PrereglageConsigne` is *a preset* |
 | `Vacation` | ***shift*** | false friend: English *vacation* means holidays |
 | `Amplitude` | ***opening span*** | false friend: English *amplitude* is about oscillations |
 

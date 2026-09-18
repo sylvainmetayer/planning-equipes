@@ -435,6 +435,100 @@ variante *est* une autre édition — mais l'IHM doit le dire. Dans `diffViolati
 dégradé d'un instantané qui ne porte pas de KPI stockés : couverture et
 volumétrie exactes, écarts non mesurés.
 
+**Un instantané porte les consignes en vigueur à sa capture** (`consignes` :
+par date, la bande et le motif). `null` sur un instantané antérieur veut dire
+**inconnu**, jamais « aucune » ; un tableau vide dit qu'il n'y en avait pas.
+Le comparateur en tire `consignesDifferentes`, et le laisse à `false` dès
+qu'un côté ne sait pas : une différence de sièges ou d'heures vient alors
+d'une bande qu'un arrêté a fermée, pas d'un réglage du solveur.
+
+## Consignes
+
+Une consigne ferme une bande horaire pour **tous** les stands d'une date, et
+rouvre ceux qu'on nomme sur des fenêtres de compensation ; le modèle est dans
+[`domaine.md`](domaine.md#consigne-dédition--la-quatrième-couche), le
+raisonnement dans
+[ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).
+Ce qui suit est ce que le schéma ne dit pas.
+
+**Jours à venir seulement.** Poser, modifier et lever refusent (`400`) une
+date qui n'est pas strictement après *aujourd'hui* — et *aujourd'hui* est
+celui de l'horloge du jour J, donc de la date figée par
+`/api/debug/date-du-jour` en développement et en recette (voir
+[*Figer la date du jour*](#figer-la-date-du-jour--développement-et-recette-uniquement)).
+`GET /api/consignes` renvoie `aujourdhui` pour que l'écran calcule la même
+frontière que le serveur. Une date déjà travaillée garde pour toujours la
+consigne qui l'a gouvernée ; une date sans créneau est refusée (« rien à
+fermer ce jour-là »).
+
+**La même requête pose, remplace ou prolonge.** `POST /api/consignes` prend
+des dates ; une date qui ne portait rien reçoit la consigne, une date qui en
+portait une la voit **remplacée en place** (`dejaSousConsigne` dans l'aperçu),
+et prolonger une alerte est le même appel avec des dates en plus. Un créneau
+que la consigne précédente avait ajouté est conservé — avec ses sièges —
+quand une fenêtre l'exige encore exactement, retiré sinon
+(`creneauxARetirer`). Les heures s'acceptent en `HH:mm` ; une fin absente ou
+à `00:00` se lit « jusqu'à minuit ».
+
+**L'aperçu vaut validation complète, sans écriture.** `POST /api/consignes/apercu`
+rejoue toute la validation de la requête — bande, motif, fenêtres hors de la
+bande, stands connus, effectifs sous le maximum du stand, un stand par
+fenêtre — et rend une ligne par date : sièges et minutes avant et après,
+créneaux à ajouter et à retirer, vacations qui perdent leurs sièges, stands
+entrants et sortants, exceptions cochées, mineurs et majeurs disponibles,
+validation retirée, verrous et règles ad hoc qui nomment une vacation de la
+bande, personnes du plan enregistré assises dans la bande. `POST /api/consignes`
+renvoie le même aperçu, **calculé avant l'écriture** : une fois les créneaux
+ajoutés, rien ne les distingue plus de la grille nominale. `creneauxDuJour`
+est là pour lever une ambiguïté : une date où l'édition n'a pas de grille se
+lirait sinon comme une date que la consigne a vidée. Les deux écritures sont
+refusées (`409`) pendant une résolution de l'édition, comme celles du
+référentiel.
+
+**La pré-sélection écarte sans interdire.** `POST /api/consignes/preselection`
+propose cochés les stands qui perdent des minutes dans la bande ; un stand qui
+a posé ses horaires **à la main** ce jour-là (`exceptionDatee`, avec son
+`motif`) est écarté mais reste cochable — quelqu'un a décidé quelque chose
+pour cette date, et la consigne ne le contredit pas en silence. La liste est
+recalculée à chaque ouverture du formulaire, jamais reprise par inertie ;
+`ouvertures` dit ce que la consigne existante de la date ouvre déjà sur ce
+stand.
+
+**Lever supprime les créneaux ajoutés, avec leurs sièges.** C'est la seule
+suppression de toute la fonctionnalité, et elle est annoncée :
+`POST /api/consignes/levee/apercu` nomme les vacations qui partent et compte
+les personnes qui y sont assises, et la publication suivante les dit
+« retirées » depuis l'instantané publié, comme toute vacation disparue de la
+grille. Les vacations nominales de la bande, elles, n'ont jamais bougé : elles
+retrouvent leurs sièges à la levée, et la stabilité du plan publié rend
+l'après-midi à son titulaire à la résolution suivante.
+
+**Poser ou lever retire la validation de relecture** des journées touchées,
+**verrou ou non** — là où une résolution la conserve sur une journée
+verrouillée ([*Publication*](#publication), ADR 0039). Un verrou fige des
+sièges ; ceux de la bande n'existent plus. L'aperçu le dit
+(`validationRetiree`).
+
+**`POST /api/planning/reset` efface aussi les consignes et les préréglages**
+de l'édition, comme tout ce qu'un solve reçoit. L'export et l'import de base
+les emportent ([`import-export.md`](import-export.md#dump-sql)).
+
+**Les préréglages sont copiés à la duplication d'édition, les consignes
+non.** Un préréglage (« Plan canicule ») décrit la forme de l'événement ; une
+consigne appartient aux jours d'une édition, comme le plan. Le nom du
+préréglage porté par une consigne est un nom, pas une clé : supprimer le
+préréglage ne réécrit pas l'histoire des dates qu'il a gouvernées.
+
+**`GET /api/consignes` porte aussi les indicateurs.** Une ligne par journée
+sous consigne — sièges nominaux et sous consigne, minutes fermées, minutes
+rouvertes, animateurs concernés — lue sur les sièges, jamais sur la saisie ;
+`animateursConcernes` compte les personnes du plan enregistré qui tiennent un
+siège ce jour-là. Le KPI du plan en dérive `journeesSousConsigne` et
+`heuresFermeesParConsigne`, `null` sur une mesure antérieure à la colonne.
+`GET /api/journees-types` renvoie `datesSousConsigne` : ces dates ne sont ni
+« en écart » ni touchées par une application, puisque les créneaux ajoutés
+par une consigne appartiennent à la consigne.
+
 ## Publication
 
 `GET /api/planning/publication` — qui serait prévenu, et ce qu'il lirait.

@@ -242,7 +242,8 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Fonctionnalité | En une phrase |
 | --- | --- |
 | Éditions | Tout le référentiel et les résultats sont cloisonnés par édition (« Année 2025 », « Année 2026 ») ; deux onglets peuvent travailler sur deux éditions à la fois |
-| Plans alternatifs | Dupliquer l'édition pour préparer un scénario de repli (canicule…), le résoudre à l'avance, et basculer le matin venu |
+| Plans alternatifs | Dupliquer l'édition pour préparer une vraie variante (autre grille, autre équipe), la résoudre à l'avance, et basculer le matin venu |
+| Consigne d'édition | Un arrêté ferme une bande horaire pour tous les stands sur quelques jours : la consigne la pose sur les dates à venir, propose cochés les stands qui perdent des heures, les rouvre sur des fenêtres de compensation — le soir, le matin — et ne détruit rien de la grille : les vacations fermées perdent leurs sièges, les seuls créneaux ajoutés sont ceux que les réouvertures exigent. Un aperçu chiffré précède chaque pose, prolongation ou levée ; la résolution incrémentale et la publication font le reste, et la levée rend leurs après-midis aux titulaires. Le courriel, l'espace et le PDF disent « horaires modifiés » avec le motif ; une journée passée garde pour toujours la consigne qui l'a gouvernée ; un préréglage nommé (« Plan canicule ») rend chaque vague identique au geste près |
 
 ### Référentiels
 

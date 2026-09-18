@@ -21,7 +21,7 @@ arrive avec son tableur de bénévoles.
 | Geste | Ce que ça fait | Les personnes |
 | --- | --- | --- |
 | **Scénario YAML** | décrit un événement entier et **remplace** le référentiel de l'édition visée ; un fichier qu'on s'échange, qu'on versionne, qu'on rejoue en test | oui, la section `animateurs` |
-| **Duplication d'édition** (`POST /api/editions/{id}/dupliquer`) | crée une **nouvelle édition** et y recopie tout le référentiel de la source — stands, emplacements, typologies, horaires récurrents, créneaux, dosages de contraintes et paramètres — jamais le planning résolu : « 2026 = 2025 moins les affectations » | oui **par défaut** |
+| **Duplication d'édition** (`POST /api/editions/{id}/dupliquer`) | crée une **nouvelle édition** et y recopie tout le référentiel de la source — stands, emplacements, typologies, horaires récurrents, créneaux, dosages de contraintes, paramètres et préréglages de consigne — jamais le planning résolu ni les consignes datées : « 2026 = 2025 moins les affectations » | oui **par défaut** |
 | **Modèle d'année** (`…/dupliquer?avecAnimateurs=false`) | la même duplication, **sans les personnes** | non |
 
 La bibliothèque de modèles que l'issue #90 demandait n'existe pas sous ce
@@ -49,6 +49,14 @@ confort.
 C'est la seule opération **globale à l'instance** : une sauvegarde de la base,
 toutes éditions comprises. L'import rejoue le script en une transaction et
 n'accepte que `INSERT` / `DELETE` / `TRUNCATE` sur les tables métier.
+
+Les consignes d'édition en font partie — `consigne_edition`,
+`consigne_edition_fenetre`, `consigne_edition_ouverture`,
+`consigne_edition_creneau` — ainsi que leurs préréglages
+(`prereglage_consigne`, `prereglage_consigne_fenetre`) : elles changent les
+sièges qu'une résolution reçoit, et une restauration sans elles rebâtirait
+une journée nominale que l'organisateur avait fermée. Le scénario YAML, lui,
+n'a pas de section consigne : il décrit les stands nominalement.
 
 L'export cloisonné par édition existe sous une autre forme : l'export de
 scénario YAML.
