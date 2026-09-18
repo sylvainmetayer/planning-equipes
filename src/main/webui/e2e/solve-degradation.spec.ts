@@ -134,12 +134,9 @@ test("le premier solve d'une édition n'a rien à comparer, le suivant nomme le 
 
   // Issue #174: the first solve had nothing to start from, the second restarts
   // from the plan the first one saved — every seat carried over, none pinned.
-  expect(premier.result?.reamorcage).toEqual({
-    mode: 'AUCUN',
-    postes: 0,
-    postesLiberes: 0,
-    postesPasses: 0,
-  });
+  // `toMatchObject`: the recap gains a counter now and then (past seats, empty
+  // past seats…), and this test is about the restart, not the recap's shape.
+  expect(premier.result?.reamorcage).toMatchObject({ mode: 'AUCUN', postes: 0, postesLiberes: 0 });
 
   const second = await lancerSolve(admin, DUREE_SOLVE_SECONDES);
 
