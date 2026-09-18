@@ -1,0 +1,82 @@
+# Les specs Playwright @lourd, lancées sur ce qui peut les casser.
+#
+# La semaine canicule sur festival-hivernal (issue #4) importe la fixture
+# réelle — 153 animateurs, 65 stands — la résout trois fois pour de vrai et la
+# publie trois fois avec un PDF par personne : 13 minutes à elle seule, sur les
+# 20 que durait la suite E2E entière, rejouées à chaque poussée de chaque PR,
+# y compris une correction de libellé. Elle suit désormais la logique de
+# scenario-tests.yml : sur les seuls changements qui touchent ce qu'elle
+# traverse (le solveur, les consignes, la publication, ses propres fichiers),
+# et chaque nuit sur main pour que rien ne dorme longtemps.
+#
+# Le reste de la suite reste sur chaque poussée, dans e2e.yml.
+name: Tests E2E lourds
+
+on:
+  pull_request:
+    # Liste dupliquée ci-dessous pour le push : GitHub Actions n'interprète pas
+    # les ancres YAML.
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/java/dev/sylvain/planning/service/solve/**'
+      - 'src/main/java/dev/sylvain/planning/service/consigne/**'
+      - 'src/main/java/dev/sylvain/planning/service/publication/**'
+      - 'src/main/java/dev/sylvain/planning/service/export/**'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
+      - 'src/main/resources/solver/**'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/festival-hivernal.yaml'
+      - 'src/main/webui/src/app/pages/consignes/**'
+      - 'src/main/webui/src/app/pages/publication/**'
+      - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
+      - 'src/main/webui/e2e/support.ts'
+      - 'src/main/webui/e2e/reference.ts'
+      - 'src/main/webui/playwright.config.ts'
+      - '.github/workflows/e2e-lourd.yml'
+      - '.github/workflows/e2e-suite.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/main/java/dev/sylvain/planning/solver/**'
+      - 'src/main/java/dev/sylvain/planning/domain/**'
+      - 'src/main/java/dev/sylvain/planning/service/solve/**'
+      - 'src/main/java/dev/sylvain/planning/service/consigne/**'
+      - 'src/main/java/dev/sylvain/planning/service/publication/**'
+      - 'src/main/java/dev/sylvain/planning/service/export/**'
+      - 'src/main/java/dev/sylvain/planning/service/referentiel/HoraireStandResolver.java'
+      - 'src/main/resources/solver/**'
+      - 'src/main/resources/application.properties'
+      - 'src/main/resources/scenarios/festival-hivernal.yaml'
+      - 'src/main/webui/src/app/pages/consignes/**'
+      - 'src/main/webui/src/app/pages/publication/**'
+      - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
+      - 'src/main/webui/e2e/support.ts'
+      - 'src/main/webui/e2e/reference.ts'
+      - 'src/main/webui/playwright.config.ts'
+      - '.github/workflows/e2e-lourd.yml'
+      - '.github/workflows/e2e-suite.yml'
+  schedule:
+    # Chaque nuit à 3 h UTC, sur main : ce que le filtre ci-dessus laisse
+    # passer est rattrapé le lendemain matin, jamais plus tard.
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-lourd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e-lourd:
+    # Même garde de fork que tests.yml, conservée pour la même raison.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/e2e-suite.yml
+    with:
+      playwright-args: --grep @lourd
+      # Trois résolutions réelles et trois publications : la spec s'accorde
+      # vingt minutes à elle seule, et un runner lent en prend plus.
+      timeout-minutes: 60

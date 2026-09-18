@@ -16,11 +16,23 @@
 # regardait. Un test qui ne barre pas la route se lit comme un test qui passe.
 name: Tests E2E
 
+# Une poussée qui ne touche que la documentation ne monte pas la pile : rien
+# de ce qu'un navigateur voit n'a changé. Sur une PR, GitHub évalue ce filtre
+# sur l'ensemble des fichiers de la PR, pas sur la dernière poussée — une PR
+# mixte code + docs rejoue donc tout à chaque poussée, et c'est voulu.
 on:
   push:
     branches:
       - main
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**/*.md'
   pull_request:
+    paths:
+      - '**'
+      - '!docs/**'
+      - '!**/*.md'
   workflow_dispatch:
 
 permissions:
@@ -37,204 +49,11 @@ jobs:
   e2e:
     # Même garde de fork que tests.yml, conservée pour la même raison.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
-    # La suite tourne en `workers: 1` et la semaine canicule sur
-    # festival-hivernal (trois résolutions réelles, trois publications avec un
-    # PDF par personne) s'accorde à elle seule vingt minutes : le dernier
-    # passage complet a pris 16,6 min, et 45 ne laissait plus de marge à un
-    # runner lent. Un vrai blocage se voit toujours — un spec qui n'avance plus
-    # est coupé par son propre budget bien avant l'heure.
-    timeout-minutes: 60
-
-    # Le job tourne dans l'image officielle Playwright, qui porte les
-    # bibliothèques système dont Chromium a besoin. Les installer sur l'hôte
-    # (`playwright install --with-deps`) marcherait sur un runner jetable, mais
-    # coûterait cette installation à chaque exécution ; l'image les apporte
-    # déjà. Sans elles, le binaire se télécharge très bien puis refuse de
-    # démarrer (`libglib-2.0.so.0: cannot open shared object file`).
-    #
-    # La balise doit suivre la version de `@playwright/test` dans
-    # `src/main/webui/package.json` : une dérive redonne un navigateur que
-    # l'image n'outille pas.
-    container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble
-      # Chromium plante sur le /dev/shm par défaut d'un conteneur (64 Mo).
-      options: --ipc=host
-
-    # Pile jetable, montée pour cette exécution seule. La suite écrase la base
-    # via `/api/database/import` : elle ne doit jamais viser autre chose que
-    # ces conteneurs-là.
-    services:
-      postgres:
-        image: postgres:18
-        env:
-          POSTGRES_DB: festival
-          POSTGRES_USER: festival
-          POSTGRES_PASSWORD: e2e-db-Xq7mR2vL
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U festival"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-      mailpit:
-        image: axllent/mailpit:v1.31
-        ports:
-          # 1025 = SMTP, par où l'application dépose. 8025 = l'API REST, par où
-          # les specs relisent le code d'accès reçu par l'animateur. N'exposer
-          # que le premier laisse la suite muette sur tout le parcours espace.
-          - 1025:1025
-          - 8025:8025
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Java
-        uses: actions/setup-java@dd06d9cba3e5552c54d9f8ea23572deb30010f7c # v6.0.0
-        with:
-          distribution: temurin
-          java-version: '25'
-          cache: maven
-
-      - name: Set up Node
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: '24'
-          cache: npm
-          cache-dependency-path: src/main/webui/package-lock.json
-
-      # Quinoa construit le frontend pendant le package : l'application servie
-      # est donc exactement celle qu'un déploiement sert, pas un `ng serve`.
-      - name: Build the application
-        run: ./mvnw -B --no-transfer-progress package -DskipTests
-
-      - name: Install frontend dependencies
-        working-directory: src/main/webui
-        run: npm ci
-
-      # Pas d'installation de navigateur : l'image en embarque un, outillé.
-      # `npx playwright install` en téléchargerait un autre, à côté des
-      # bibliothèques prévues pour celui-là.
-
-      - name: Start the application
-        env:
-          DB_URL: jdbc:postgresql://postgres:5432/festival
-          DB_USER: festival
-          DB_PASSWORD: e2e-db-Xq7mR2vL
-          HTTP_PORT: 8080
-          # Pas la valeur d'exemple : DefaultSecrets refuse le boot dessus, et
-          # ce job lance le jar packagé, donc en LaunchMode production.
-          ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
-          # Même raison, autre garde : RequiredMentionsLegales refuse une page
-          # de mentions légales vide en production. Un harnais de test est
-          # exactement l'instance « pas en service » que ce drapeau déclare —
-          # remplir cinq variables légales fictives dirait le contraire.
-          LEGAL_DEMO_INSTANCE: 'true'
-          # « Le passé est figé » (ADR 0044) est coupé ici : les jeux de
-          # données des specs sont datés en juillet-août 2026, derrière
-          # l'horloge réelle, et l'application packagée refuse l'horloge
-          # simulée. Avec la règle, chaque résolution reprendrait ces journées
-          # du plan enregistré — vide au premier calcul — et n'affecterait
-          # personne. Les specs qui résolvent devraient dater leurs amorces
-          # dans l'avenir en gardant les âges des mineurs ; d'ici là, la règle
-          # est couverte par FrozenPastAcceptanceTest, sur l'horloge figée.
-          PASSE_FIGE: 'false'
-          MAIL_MOCK: 'false'
-          MAIL_HOST: mailpit
-          MAIL_PORT: 1025
-          MAIL_FROM: planning-equipes@localhost
-          PUBLIC_URL: http://localhost:8080
-        run: |
-          java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
-          echo $! > app.pid
-          # `/api/config` est la seule route publique sans session : c'est donc
-          # elle qui dit que l'application répond vraiment, et pas seulement
-          # que le port est ouvert.
-          # `curl` est présent dans l'image Playwright ; s'il venait à
-          # disparaître, l'attente échouerait avant l'application.
-          for _ in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/api/config > /dev/null; then
-              echo "Application prête."
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "L'application n'a pas répondu en 120 s :"
-          cat app.log
-          exit 1
-
-      - name: Run the Playwright suite
-        working-directory: src/main/webui
-        env:
-          # L'application tourne dans ce conteneur-ci, donc localhost ; Mailpit
-          # est un service voisin, donc son nom. Dans un job conteneurisé les
-          # services ne sont pas sur localhost — c'est la différence qui casse
-          # une recette recopiée d'un job classique.
-          E2E_BASE_URL: http://localhost:8080
-          E2E_MAILPIT_URL: http://mailpit:8025
-          E2E_ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
-        run: npm run e2e
-
-      # Ce qu'un échec a sous les yeux, lisible dans le journal du job sans
-      # télécharger l'artefact : la photographie de la page que Playwright
-      # joint à chaque échec, et les erreurs que l'application a journalisées.
-      - name: Print the failure context
-        if: failure()
-        run: |
-          for contexte in $(find src/main/webui/test-results -name error-context.md 2>/dev/null); do
-            echo "::group::$contexte"
-            head -n 250 "$contexte"
-            echo "::endgroup::"
-          done
-          if [ -f app.log ]; then
-            echo "::group::app.log — ERROR/WARN"
-            grep -nE "ERROR|WARN|Exception" app.log | tail -n 200 || true
-            echo "::endgroup::"
-          fi
-
-      # Les traces ne sont conservées qu'en cas d'échec (`trace:
-      # 'retain-on-failure'`), donc cet artefact est vide quand tout va bien.
-      - name: Upload the Playwright traces
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: playwright-traces
-          path: src/main/webui/test-results/**
-          if-no-files-found: ignore
-          retention-days: 7
-
-      # Un échec se relit sans la pile : le journal de l'application est la
-      # moitié de l'histoire que les traces ne disent pas.
-      - name: Upload the application log
-        if: failure()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: application-log
-          path: app.log
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Stop the application
-        if: always()
-        run: |
-          if [ -f app.pid ]; then
-            kill "$(cat app.pid)" 2>/dev/null || true
-          fi
-
-      # Ce job tourne en root dans son conteneur, et écrit dans l'espace de
-      # travail que le runner partage avec tous les autres jobs. Sans cette
-      # étape, il y laisse des fichiers root : le `checkout` du job suivant
-      # échoue alors sur `Permission denied` en tentant de nettoyer, et
-      # l'ensemble de la CI reste bloqué jusqu'à une intervention manuelle sur
-      # la machine. C'est arrivé.
-      #
-      # L'uid n'est pas codé en dur : `RUNNER_TEMP` est créé hors conteneur par
-      # l'utilisateur du runner, il porte donc la bonne identité numérique.
-      - name: Give the workspace back to the runner
-        if: always()
-        run: |
-          proprietaire=$(stat -c '%u:%g' "$RUNNER_TEMP")
-          echo "Restitution de $GITHUB_WORKSPACE à $proprietaire"
-          chown -R "$proprietaire" "$GITHUB_WORKSPACE" || true
+    uses: ./.github/workflows/e2e-suite.yml
+    with:
+      # Tout sauf les specs @lourd — la semaine canicule sur festival-hivernal
+      # pesait 13 des 20 minutes de la suite ; elle tourne dans e2e-lourd.yml.
+      playwright-args: --grep-invert @lourd
+      # Le dernier passage complet sans @lourd tient en ~10 min, montage de la
+      # pile compris ; un runner lent a de la marge, un blocage n'en a pas.
+      timeout-minutes: 25
