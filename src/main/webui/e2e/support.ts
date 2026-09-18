@@ -339,7 +339,8 @@ export async function ouvrirSelect(root: Page | Locator, label: string): Promise
 /**
  * Opens the `mat-select` labelled `label` under `root` and picks `option`,
  * then waits for the panel's backdrop to be gone — the next click may aim at
- * the field right under it.
+ * the field right under it. That backdrop is the transparent one: a dialog
+ * keeps its own, dark, for as long as it is open.
  */
 export async function choisirOption(
   root: Page | Locator,
@@ -349,7 +350,7 @@ export async function choisirOption(
   await ouvrirSelect(root, label);
   const page = pageOf(root);
   await page.getByRole('option', { name: option }).click();
-  await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);
+  await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0);
 }
 
 function pageOf(root: Page | Locator): Page {
