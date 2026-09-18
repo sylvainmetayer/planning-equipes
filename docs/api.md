@@ -529,6 +529,25 @@ siège ce jour-là. Le KPI du plan en dérive `journeesSousConsigne` et
 « en écart » ni touchées par une application, puisque les créneaux ajoutés
 par une consigne appartiennent à la consigne.
 
+**Une consigne peut porter ses propres fenêtres repas** (`repas` sur la
+consigne, la demande et le préréglage : `midiDebut`/`midiFin`,
+`soirDebut`/`soirFin`, `coupureMinutes`, `justification`). Chaque champ
+absent garde la valeur de l'édition ; une fenêtre se donne avec ses deux
+bornes ou aucune ; la `justification`, en termes métier, est obligatoire dès
+qu'un champ est renseigné (`400` sinon) et s'affiche à côté de la journée.
+La surcharge est **datée par construction** : elle ne gouverne que la date de
+la consigne — le solveur, les écrans Pauses, Besoin et Intendance et le
+contrôle de grille lisent, ce jour-là, la fenêtre de la consigne et, les
+autres jours, celle de l'édition — et elle part avec la consigne à la levée.
+`GET /api/parametres-legaux` ne bouge jamais : rien à remettre en place, rien
+à oublier. Seules les fenêtres repas sont surchargeables — la coupure repas
+est la règle de l'organisateur ; les plafonds légaux (repos quotidien,
+durées, jours par semaine) restent hors d'atteinte d'une consigne. Le cas
+d'usage est le soir de canicule : une compensation 18 h-22 h derrière un
+14 h-20 h devenu 18 h-20 h demanderait deux personnes par siège sous la
+fenêtre 19 h-21 h de l'édition ; « soir 18 h-22 h, les équipes mangent
+pendant la fermeture » ramène le besoin à une personne par siège.
+
 ## Publication
 
 `GET /api/planning/publication` — qui serait prévenu, et ce qu'il lirait.

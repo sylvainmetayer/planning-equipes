@@ -65,6 +65,8 @@ class ConsigneResourceTest {
                 .then()
                 .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
+        // The duplicate one test makes: gone whether that test reached its own cleanup or not.
+        given().when().delete("/api/editions/COPIE");
     }
 
     private static Map<String, Object> demande(List<Map<String, Object>> ouvertures) {
@@ -168,6 +170,9 @@ class ConsigneResourceTest {
                 .body("consignes[0].date", equalTo(JOUR))
                 .body("consignes[0].motif", equalTo("Arrêté préfectoral canicule"))
                 .body("consignes[0].ouvertures", hasSize(1))
+                // An inherited headcount reads back as absent, never as zero:
+                // sent back as is, the row would be refused as « not positive ».
+                .body("consignes[0].ouvertures[0].effectif", equalTo(null))
                 .body("consignes[0].creneauxAjoutes", hasSize(1));
 
         JsonPath grille = creneaux();
@@ -349,6 +354,59 @@ class ConsigneResourceTest {
         given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
     }
 
+    /**
+     * A consigne may restate the meal windows of its own date (issue #4): the
+     * evening compensation is where lunch already happened, and the rule of
+     * the edition must not be edited by hand and put back at the lifting.
+     */
+    @Test
+    void aConsigneMayRestateTheMealWindowsOfItsDayWithAReason() {
+        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        Map<String, Object> repas = new HashMap<>();
+        repas.put("soirDebut", "18:00");
+        repas.put("soirFin", "20:00");
+        corps.put("repas", repas);
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("justification"));
+
+        repas.put("justification", "Les équipes mangent pendant la fermeture de midi");
+        given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/consignes")
+                .then()
+                .statusCode(200);
+        given().when()
+                .get("/api/consignes")
+                .then()
+                .statusCode(200)
+                .body("consignes[0].repas.soirDebut", equalTo("18:00:00"))
+                .body("consignes[0].repas.soirFin", equalTo("20:00:00"))
+                .body("consignes[0].repas.midiDebut", equalTo(null))
+                .body("consignes[0].repas.justification", containsString("mangent"));
+
+        // The edition's own parameters have not moved.
+        given().when()
+                .get("/api/parametres-legaux")
+                .then()
+                .statusCode(200)
+                .body("coupureRepasSoirDebut", equalTo("19:00:00"));
+
+        // Lifting takes the override away with the consigne: nothing to put back.
+        given().contentType("application/json")
+                .body(Map.of("dates", List.of(JOUR)))
+                .when()
+                .post("/api/consignes/levee")
+                .then()
+                .statusCode(204);
+        given().when().get("/api/consignes").then().statusCode(200).body("consignes", hasSize(0));
+    }
+
     @Test
     void presetsAreKeptOnTheEditionAndTravelWithADuplicate() {
         String id = given().contentType("application/json")
@@ -357,13 +415,19 @@ class ConsigneResourceTest {
                         "fermetureDebut", "12:00",
                         "fermetureFin", "18:00",
                         "motif", "Arrêté préfectoral canicule",
-                        "fenetres", List.of(Map.of("debut", "18:00", "fin", "22:00"))))
+                        "fenetres", List.of(Map.of("debut", "18:00", "fin", "22:00")),
+                        "repas",
+                                Map.of(
+                                        "soirDebut", "18:00",
+                                        "soirFin", "22:00",
+                                        "justification", "Les équipes mangent pendant la fermeture")))
                 .when()
                 .post("/api/consignes/prereglages")
                 .then()
                 .statusCode(200)
                 .body("nom", equalTo("Plan canicule"))
                 .body("fenetres", hasSize(1))
+                .body("repas.soirDebut", equalTo("18:00:00"))
                 .extract()
                 .jsonPath()
                 .getString("id");
@@ -382,7 +446,12 @@ class ConsigneResourceTest {
                         "fermetureDebut", "13:00",
                         "fermetureFin", "18:00",
                         "motif", "Arrêté préfectoral canicule",
-                        "fenetres", List.of()))
+                        "fenetres", List.of(),
+                        "repas",
+                                Map.of(
+                                        "soirDebut", "18:00",
+                                        "soirFin", "22:00",
+                                        "justification", "Les équipes mangent pendant la fermeture")))
                 .when()
                 .put("/api/consignes/prereglages/" + id)
                 .then()
@@ -419,6 +488,7 @@ class ConsigneResourceTest {
                 .statusCode(200)
                 .body("prereglages", hasSize(1))
                 .body("prereglages[0].nom", equalTo("Plan canicule"))
+                .body("prereglages[0].repas.soirFin", equalTo("22:00:00"))
                 .body("consignes", hasSize(0));
         given().when().delete("/api/editions/COPIE").then().statusCode(204);
 

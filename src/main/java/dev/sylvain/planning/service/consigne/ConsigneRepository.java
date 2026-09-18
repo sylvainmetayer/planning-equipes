@@ -36,7 +36,9 @@ public class ConsigneRepository {
         return scope.read("Failed to list the edition's consignes", connection -> {
             Map<LocalDate, ConsigneEdition> consignesByDate = new LinkedHashMap<>();
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT date_jour, fermeture_debut, fermeture_fin, motif, prereglage_nom, cree_le, modifie_le
+                    SELECT date_jour, fermeture_debut, fermeture_fin, motif, prereglage_nom, cree_le, modifie_le,
+                           repas_midi_debut, repas_midi_fin, repas_soir_debut, repas_soir_fin,
+                           repas_coupure_minutes, repas_justification
                     FROM consigne_edition WHERE edition_id = ? ORDER BY date_jour""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -53,7 +55,8 @@ public class ConsigneRepository {
                                         List.of(),
                                         List.of(),
                                         instant(rs.getTimestamp("cree_le")),
-                                        instant(rs.getTimestamp("modifie_le"))));
+                                        instant(rs.getTimestamp("modifie_le")),
+                                        readRepas(rs)));
                     }
                 }
             }
@@ -79,14 +82,17 @@ public class ConsigneRepository {
                     WHERE edition_id = ? ORDER BY date_jour, stand_id, position""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
+                        // wasNull reads the last column fetched: asked right after
+                        // the headcount, before the other columns of the row.
                         int effectif = rs.getInt("effectif");
+                        Integer effectifOuNull = rs.wasNull() ? null : effectif;
                         ouvertures
                                 .computeIfAbsent(rs.getObject("date_jour", LocalDate.class), d -> new ArrayList<>())
                                 .add(new ConsigneEdition.Ouverture(
                                         rs.getString("stand_id"),
                                         rs.getObject("heure_debut", LocalTime.class),
                                         rs.getObject("heure_fin", LocalTime.class),
-                                        rs.wasNull() ? null : effectif));
+                                        effectifOuNull));
                     }
                 }
             }
@@ -114,7 +120,8 @@ public class ConsigneRepository {
                         ouvertures.getOrDefault(date, List.of()),
                         creneaux.getOrDefault(date, List.of()),
                         brute.creeLe(),
-                        brute.modifieLe()));
+                        brute.modifieLe(),
+                        brute.repas()));
             }
             return consignes;
         });
@@ -143,19 +150,28 @@ public class ConsigneRepository {
         scope.write("Failed to save the consigne of " + consigne.date(), connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     INSERT INTO consigne_edition (edition_id, date_jour, fermeture_debut, fermeture_fin, motif,
-                                                  prereglage_nom, cree_le, modifie_le)
-                    VALUES (?, ?, ?, ?, ?, ?, now(), now())
+                                                  prereglage_nom, cree_le, modifie_le, repas_midi_debut,
+                                                  repas_midi_fin, repas_soir_debut, repas_soir_fin,
+                                                  repas_coupure_minutes, repas_justification)
+                    VALUES (?, ?, ?, ?, ?, ?, now(), now(), ?, ?, ?, ?, ?, ?)
                     ON CONFLICT (edition_id, date_jour) DO UPDATE SET
                         fermeture_debut = EXCLUDED.fermeture_debut,
                         fermeture_fin = EXCLUDED.fermeture_fin,
                         motif = EXCLUDED.motif,
                         prereglage_nom = EXCLUDED.prereglage_nom,
-                        modifie_le = now()""")) {
+                        modifie_le = now(),
+                        repas_midi_debut = EXCLUDED.repas_midi_debut,
+                        repas_midi_fin = EXCLUDED.repas_midi_fin,
+                        repas_soir_debut = EXCLUDED.repas_soir_debut,
+                        repas_soir_fin = EXCLUDED.repas_soir_fin,
+                        repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
+                        repas_justification = EXCLUDED.repas_justification""")) {
                 ps.setObject(2, consigne.date());
                 ps.setObject(3, consigne.fermetureDebut());
                 ps.setObject(4, consigne.fermetureFin());
                 ps.setString(5, consigne.motif());
                 ps.setString(6, consigne.prereglage());
+                bindRepas(ps, 7, consigne.repas());
                 ps.executeUpdate();
             }
             deleteDated(
@@ -253,7 +269,9 @@ public class ConsigneRepository {
         return scope.read("Failed to list the consigne presets", connection -> {
             Map<String, PrereglageConsigne> parId = new LinkedHashMap<>();
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, nom, fermeture_debut, fermeture_fin, motif, modifie_le
+                    SELECT id, nom, fermeture_debut, fermeture_fin, motif, modifie_le,
+                           repas_midi_debut, repas_midi_fin, repas_soir_debut, repas_soir_fin,
+                           repas_coupure_minutes, repas_justification
                     FROM prereglage_consigne WHERE edition_id = ? ORDER BY lower(nom), id""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
@@ -266,7 +284,8 @@ public class ConsigneRepository {
                                         rs.getObject("fermeture_fin", LocalTime.class),
                                         rs.getString("motif"),
                                         List.of(),
-                                        instant(rs.getTimestamp("modifie_le"))));
+                                        instant(rs.getTimestamp("modifie_le")),
+                                        readRepas(rs)));
                     }
                 }
             }
@@ -295,7 +314,8 @@ public class ConsigneRepository {
                         brut.fermetureFin(),
                         brut.motif(),
                         fenetres.getOrDefault(brut.id(), List.of()),
-                        brut.modifieLe()));
+                        brut.modifieLe(),
+                        brut.repas()));
             }
             return prereglages;
         });
@@ -305,19 +325,28 @@ public class ConsigneRepository {
     public void savePrereglage(PrereglageConsigne prereglage) {
         scope.write("Failed to save the consigne preset " + prereglage.id(), connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    INSERT INTO prereglage_consigne (edition_id, id, nom, fermeture_debut, fermeture_fin, motif, modifie_le)
-                    VALUES (?, ?, ?, ?, ?, ?, now())
+                    INSERT INTO prereglage_consigne (edition_id, id, nom, fermeture_debut, fermeture_fin, motif,
+                                                     modifie_le, repas_midi_debut, repas_midi_fin, repas_soir_debut,
+                                                     repas_soir_fin, repas_coupure_minutes, repas_justification)
+                    VALUES (?, ?, ?, ?, ?, ?, now(), ?, ?, ?, ?, ?, ?)
                     ON CONFLICT (edition_id, id) DO UPDATE SET
                         nom = EXCLUDED.nom,
                         fermeture_debut = EXCLUDED.fermeture_debut,
                         fermeture_fin = EXCLUDED.fermeture_fin,
                         motif = EXCLUDED.motif,
-                        modifie_le = now()""")) {
+                        modifie_le = now(),
+                        repas_midi_debut = EXCLUDED.repas_midi_debut,
+                        repas_midi_fin = EXCLUDED.repas_midi_fin,
+                        repas_soir_debut = EXCLUDED.repas_soir_debut,
+                        repas_soir_fin = EXCLUDED.repas_soir_fin,
+                        repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
+                        repas_justification = EXCLUDED.repas_justification""")) {
                 ps.setString(2, prereglage.id());
                 ps.setString(3, prereglage.nom());
                 ps.setObject(4, prereglage.fermetureDebut());
                 ps.setObject(5, prereglage.fermetureFin());
                 ps.setString(6, prereglage.motif());
+                bindRepas(ps, 7, prereglage.repas());
                 ps.executeUpdate();
             }
             try (PreparedStatement ps = scope.prepareScoped(
@@ -350,6 +379,32 @@ public class ConsigneRepository {
                 return ps.executeUpdate() > 0;
             }
         });
+    }
+
+    /** The meal override of a row, {@code null} when every column is. */
+    private static ConsigneEdition.RepasConsigne readRepas(ResultSet rs) throws SQLException {
+        int minutes = rs.getInt("repas_coupure_minutes");
+        Integer coupure = rs.wasNull() ? null : minutes;
+        ConsigneEdition.RepasConsigne repas = new ConsigneEdition.RepasConsigne(
+                rs.getObject("repas_midi_debut", LocalTime.class),
+                rs.getObject("repas_midi_fin", LocalTime.class),
+                rs.getObject("repas_soir_debut", LocalTime.class),
+                rs.getObject("repas_soir_fin", LocalTime.class),
+                coupure,
+                rs.getString("repas_justification"));
+        return repas.surcharge() ? repas : null;
+    }
+
+    /** Binds the six meal columns from {@code index}, all {@code NULL} without an override. */
+    private static void bindRepas(PreparedStatement ps, int index, ConsigneEdition.RepasConsigne repas)
+            throws SQLException {
+        ConsigneEdition.RepasConsigne r = repas != null && repas.surcharge() ? repas : null;
+        ps.setObject(index, r == null ? null : r.midiDebut());
+        ps.setObject(index + 1, r == null ? null : r.midiFin());
+        ps.setObject(index + 2, r == null ? null : r.soirDebut());
+        ps.setObject(index + 3, r == null ? null : r.soirFin());
+        ps.setObject(index + 4, r == null ? null : r.coupureMinutes());
+        ps.setString(index + 5, r == null ? null : r.justification());
     }
 
     private static Instant instant(Timestamp timestamp) {

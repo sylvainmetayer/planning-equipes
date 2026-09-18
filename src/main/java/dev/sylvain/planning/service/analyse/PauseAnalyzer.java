@@ -557,7 +557,11 @@ public class PauseAnalyzer {
     private static List<CoupureRepasView> coupuresRepas(
             List<PosteAffectation> postesDuJour, List<FenetreRepas> fenetres) {
         List<CoupureRepasView> vues = new ArrayList<>();
+        LocalDate date = postesDuJour.get(0).getCreneau().getDate();
         for (FenetreRepas fenetre : fenetres) {
+            if (!fenetre.appliesTo(date)) {
+                continue;
+            }
             CoupureRepas coupure = CoupureRepas.of(postesDuJour, fenetre);
             if (!coupure.due()) {
                 continue;

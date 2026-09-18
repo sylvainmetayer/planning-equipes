@@ -166,7 +166,7 @@ public class IntendanceRepasAnalyzer {
             List<FenetreIntendance> vues = new ArrayList<>();
             for (FenetreRepas fenetre : fenetresRepas) {
                 Map<String, Compte> parEmplacement = comptes.get(date).get(fenetre.libelle());
-                if (parEmplacement == null || parEmplacement.isEmpty()) {
+                if (!fenetre.appliesTo(date) || parEmplacement == null || parEmplacement.isEmpty()) {
                     continue;
                 }
                 vues.add(fenetreView(fenetre, parEmplacement));

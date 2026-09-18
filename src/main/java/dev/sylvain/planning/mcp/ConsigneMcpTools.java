@@ -105,9 +105,41 @@ public class ConsigneMcpTools {
                             description = "Ouvertures « STAND=HH:MM-HH:MM[*effectif] », séparées par des virgules",
                             required = false)
                     String ouvertures,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas de midi valable ce jour-là seulement « HH:MM-HH:MM » ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasMidi,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas du soir valable ce jour-là seulement « HH:MM-HH:MM » — 18:00-22:00 "
+                                            + "pour une compensation 18h-22h, les gens ayant mangé pendant la bande ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasSoir,
+            @ToolArg(
+                            description =
+                                    "Durée de la coupure repas ce jour-là, en minutes ; omise = celle de l'édition",
+                            required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(
+                            description =
+                                    "Pourquoi les fenêtres repas changent ce jour-là, en termes métier ; obligatoire "
+                                            + "dès qu'une des trois est renseignée",
+                            required = false)
+                    String justificationRepas,
             @ToolArg(description = "Nom du préréglage d'origine, s'il y en a un", required = false) String prereglage,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return consignes.apercu(demande(dates, fermetureDebut, fermetureFin, motif, fenetres, ouvertures, prereglage));
+        return consignes.apercu(demande(
+                dates,
+                fermetureDebut,
+                fermetureFin,
+                motif,
+                fenetres,
+                ouvertures,
+                prereglage,
+                repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
     }
 
     @Tool(
@@ -137,9 +169,41 @@ public class ConsigneMcpTools {
                             description = "Ouvertures « STAND=HH:MM-HH:MM[*effectif] », séparées par des virgules",
                             required = false)
                     String ouvertures,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas de midi valable ce jour-là seulement « HH:MM-HH:MM » ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasMidi,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas du soir valable ce jour-là seulement « HH:MM-HH:MM » — 18:00-22:00 "
+                                            + "pour une compensation 18h-22h, les gens ayant mangé pendant la bande ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasSoir,
+            @ToolArg(
+                            description =
+                                    "Durée de la coupure repas ce jour-là, en minutes ; omise = celle de l'édition",
+                            required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(
+                            description =
+                                    "Pourquoi les fenêtres repas changent ce jour-là, en termes métier ; obligatoire "
+                                            + "dès qu'une des trois est renseignée",
+                            required = false)
+                    String justificationRepas,
             @ToolArg(description = "Nom du préréglage d'origine, s'il y en a un", required = false) String prereglage,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return consignes.poser(demande(dates, fermetureDebut, fermetureFin, motif, fenetres, ouvertures, prereglage));
+        return consignes.poser(demande(
+                dates,
+                fermetureDebut,
+                fermetureFin,
+                motif,
+                fenetres,
+                ouvertures,
+                prereglage,
+                repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
     }
 
     @Tool(
@@ -198,6 +262,30 @@ public class ConsigneMcpTools {
                                     "Fenêtres de compensation par défaut « HH:MM-HH:MM », séparées par des virgules",
                             required = false)
                     String fenetres,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas de midi valable ce jour-là seulement « HH:MM-HH:MM » ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasMidi,
+            @ToolArg(
+                            description =
+                                    "Fenêtre repas du soir valable ce jour-là seulement « HH:MM-HH:MM » — 18:00-22:00 "
+                                            + "pour une compensation 18h-22h, les gens ayant mangé pendant la bande ; omise = "
+                                            + "celle de l'édition",
+                            required = false)
+                    String repasSoir,
+            @ToolArg(
+                            description =
+                                    "Durée de la coupure repas ce jour-là, en minutes ; omise = celle de l'édition",
+                            required = false)
+                    Integer coupureRepasMinutes,
+            @ToolArg(
+                            description =
+                                    "Pourquoi les fenêtres repas changent ce jour-là, en termes métier ; obligatoire "
+                                            + "dès qu'une des trois est renseignée",
+                            required = false)
+                    String justificationRepas,
             @ToolArg(description = "Id du préréglage à remplacer ; omis = création", required = false) String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return consignes.savePrereglage(new PrereglageConsigne(
@@ -207,7 +295,8 @@ public class ConsigneMcpTools {
                 timeOrNull(fermetureFin),
                 motif,
                 dayWindows(fenetres),
-                null));
+                null,
+                repas(repasMidi, repasSoir, coupureRepasMinutes, justificationRepas)));
     }
 
     @Tool(
@@ -235,7 +324,8 @@ public class ConsigneMcpTools {
             String motif,
             String fenetres,
             String ouvertures,
-            String prereglage) {
+            String prereglage,
+            ConsigneEdition.RepasConsigne repas) {
         return new Demande(
                 dates(dates),
                 McpArgs.heure(fermetureDebut, "fermetureDebut"),
@@ -243,7 +333,22 @@ public class ConsigneMcpTools {
                 motif,
                 prereglage,
                 dayWindows(fenetres),
-                ouvertures(ouvertures));
+                ouvertures(ouvertures),
+                repas);
+    }
+
+    /** The meal override of a day, {@code null} when none of the three is given. */
+    static ConsigneEdition.RepasConsigne repas(String midi, String soir, Integer coupureMinutes, String justification) {
+        Fenetre fenetreMidi = midi == null || midi.isBlank() ? null : fenetre(midi.trim(), "repasMidi");
+        Fenetre fenetreSoir = soir == null || soir.isBlank() ? null : fenetre(soir.trim(), "repasSoir");
+        ConsigneEdition.RepasConsigne repas = new ConsigneEdition.RepasConsigne(
+                fenetreMidi == null ? null : fenetreMidi.debut(),
+                fenetreMidi == null ? null : fenetreMidi.fin(),
+                fenetreSoir == null ? null : fenetreSoir.debut(),
+                fenetreSoir == null ? null : fenetreSoir.fin(),
+                coupureMinutes,
+                justification);
+        return repas.surcharge() ? repas : null;
     }
 
     static List<LocalDate> dates(String dates) {
@@ -336,12 +441,14 @@ public class ConsigneMcpTools {
                 consigne.prereglage(),
                 consigne.fenetres(),
                 consigne.ouvertures(),
-                consigne.creneauxAjoutes());
+                consigne.creneauxAjoutes(),
+                consigne.repas());
     }
 
     /**
-     * One consigne. The motif is the organiser's description of the decision
-     * (« arrêté préfectoral du 3 août »), never a person's text.
+     * One consigne. The motif and the meal justification are the organiser's
+     * description of a decision (« arrêté préfectoral du 3 août », « les
+     * équipes mangent pendant la fermeture »), never a person's text.
      */
     public record ConsigneView(
             LocalDate date,
@@ -351,7 +458,8 @@ public class ConsigneMcpTools {
             String prereglage,
             List<Fenetre> fenetres,
             List<Ouverture> ouvertures,
-            List<Long> creneauxAjoutes) {}
+            List<Long> creneauxAjoutes,
+            ConsigneEdition.RepasConsigne repas) {}
 
     /** The consignes, the presets, and the day the server counts from. */
     public record ConsignesView(

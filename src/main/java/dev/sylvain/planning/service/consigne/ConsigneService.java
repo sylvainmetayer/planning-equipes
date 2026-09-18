@@ -352,7 +352,8 @@ public class ConsigneService {
             String motif,
             String prereglage,
             List<Fenetre> fenetres,
-            List<Ouverture> ouvertures) {
+            List<Ouverture> ouvertures,
+            ConsigneEdition.RepasConsigne repas) {
 
         List<ConsigneEdition> versConsignes() {
             if (dates == null || dates.isEmpty()) {
@@ -370,7 +371,8 @@ public class ConsigneService {
                         ouvertures,
                         List.of(),
                         null,
-                        null));
+                        null,
+                        repas != null && repas.surcharge() ? repas : null));
             }
             return consignes;
         }
@@ -846,8 +848,16 @@ public class ConsigneService {
         checkBande(prereglage.fermetureDebut(), prereglage.fermetureFin());
         String motif = checkedMotif(prereglage.motif());
         checkFenetres(prereglage.fenetres(), prereglage.fermetureDebut(), prereglage.fermetureFin(), "Le préréglage");
+        checkRepas(prereglage.repas(), "Le préréglage");
         PrereglageConsigne propre = new PrereglageConsigne(
-                id, nom, prereglage.fermetureDebut(), prereglage.fermetureFin(), motif, prereglage.fenetres(), null);
+                id,
+                nom,
+                prereglage.fermetureDebut(),
+                prereglage.fermetureFin(),
+                motif,
+                prereglage.fenetres(),
+                null,
+                prereglage.repas() != null && prereglage.repas().surcharge() ? prereglage.repas() : null);
         repository.savePrereglage(propre);
         return repository.listPrereglages().stream()
                 .filter(p -> p.id().equals(id))
@@ -889,6 +899,7 @@ public class ConsigneService {
             checkBande(consigne.fermetureDebut(), consigne.fermetureFin());
             checkedMotif(consigne.motif());
             checkFenetres(consigne.fenetres(), consigne.fermetureDebut(), consigne.fermetureFin(), "La consigne");
+            checkRepas(consigne.repas(), "La consigne du " + consigne.date());
             Set<String> vues = new HashSet<>();
             Set<String> inconnus = new LinkedHashSet<>();
             for (Ouverture ouverture : consigne.ouvertures()) {
@@ -923,6 +934,41 @@ public class ConsigneService {
             if (!inconnus.isEmpty()) {
                 throw new BusinessError.Invalid("Stand inconnu dans cette édition : " + String.join(", ", inconnus));
             }
+        }
+    }
+
+    /**
+     * Refuses a meal override that states half a window, a window ending
+     * before it starts, a break that is not positive, or that gives no reason:
+     * the justification is what the organiser reads beside the day, and a
+     * departure from the edition's rule without one is the mistake this block
+     * exists to prevent.
+     */
+    private static void checkRepas(ConsigneEdition.RepasConsigne repas, String sujet) {
+        if (repas == null || !repas.surcharge()) {
+            return;
+        }
+        if (repas.justification() == null || repas.justification().isBlank()) {
+            throw new BusinessError.Invalid(
+                    sujet + " surcharge les fenêtres repas sans dire pourquoi : la justification est obligatoire");
+        }
+        if (repas.justification().strip().length() > 500) {
+            throw new BusinessError.Invalid(sujet + " : justification trop longue (500 caractères au plus)");
+        }
+        if ((repas.midiDebut() == null) != (repas.midiFin() == null)) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas de midi requiert ses deux bornes, ou aucune");
+        }
+        if ((repas.soirDebut() == null) != (repas.soirFin() == null)) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas du soir requiert ses deux bornes, ou aucune");
+        }
+        if (repas.midiDebut() != null && !repas.midiDebut().isBefore(repas.midiFin())) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas de midi doit finir après son début");
+        }
+        if (repas.soirDebut() != null && !repas.soirDebut().isBefore(repas.soirFin())) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas du soir doit finir après son début");
+        }
+        if (repas.coupureMinutes() != null && repas.coupureMinutes() <= 0) {
+            throw new BusinessError.Invalid(sujet + " : la coupure repas doit durer un nombre positif de minutes");
         }
     }
 

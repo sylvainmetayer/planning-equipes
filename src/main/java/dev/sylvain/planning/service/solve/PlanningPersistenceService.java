@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
@@ -697,7 +696,7 @@ public class PlanningPersistenceService {
         // was ever drawn. The screens that pass the windows in themselves (the
         // Pauses screen, the Intendance one) were right all along, which is
         // exactly why the hole was invisible.
-        evenement.setFenetresRepas(FenetreRepas.from(parametres));
+        evenement.setFenetresRepas(referenceDataService.fenetresRepas());
         return evenement;
     }
 

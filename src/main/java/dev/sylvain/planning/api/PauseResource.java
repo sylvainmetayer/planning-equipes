@@ -1,6 +1,5 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.service.analyse.IntendanceRepasAnalyzer;
 import dev.sylvain.planning.service.analyse.IntendanceRepasAnalyzer.RapportIntendance;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
@@ -46,7 +45,7 @@ public class PauseResource {
         return pauseAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),
-                FenetreRepas.from(referenceDataService.getParametresLegaux()));
+                referenceDataService.fenetresRepas());
     }
 
     /**
@@ -60,7 +59,7 @@ public class PauseResource {
         return intendanceAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),
-                FenetreRepas.from(referenceDataService.getParametresLegaux()));
+                referenceDataService.fenetresRepas());
     }
 
     /** The same list, as the flat CSV the intendance takes with it. */

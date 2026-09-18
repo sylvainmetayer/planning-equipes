@@ -17,6 +17,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param fermetureFin {@code null} reads « jusqu'à minuit », like a consigne's
  * @param fenetres     the default compensation windows a consigne made from
  *                     this preset proposes
+ * @param repas        the meal windows a consigne made from this preset runs
+ *                     under, with the reason; {@code null} for the edition's
  */
 @Schema(requiredProperties = {"id", "nom", "fermetureDebut", "motif", "fenetres"})
 public record PrereglageConsigne(
@@ -26,7 +28,8 @@ public record PrereglageConsigne(
         LocalTime fermetureFin,
         String motif,
         List<ConsigneEdition.Fenetre> fenetres,
-        Instant modifieLe) {
+        Instant modifieLe,
+        ConsigneEdition.RepasConsigne repas) {
 
     public PrereglageConsigne {
         fenetres = fenetres == null ? List.of() : List.copyOf(fenetres);

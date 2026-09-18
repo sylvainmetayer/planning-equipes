@@ -213,11 +213,26 @@ public class CreneauGridService {
             List<Animateur> animateurs,
             ParametresLegaux legaux,
             List<VerrouillagePlanning> verrouillages) {
+        return validate(creneaux, stands, animateurs, legaux, verrouillages, FenetreRepas.from(legaux));
+    }
+
+    /**
+     * Same, with the meal windows given rather than derived from the
+     * parameters: the ones a consigne restates on its date (issue #4) count
+     * for the relay check of that date.
+     */
+    public RapportGrille validate(
+            List<Creneau> creneaux,
+            List<Stand> stands,
+            List<Animateur> animateurs,
+            ParametresLegaux legaux,
+            List<VerrouillagePlanning> verrouillages,
+            List<FenetreRepas> fenetresRepas) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         List<Creneau> dates =
                 creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
 
-        anomalies.addAll(unitAnomalies(creneaux, legaux));
+        anomalies.addAll(unitAnomalies(creneaux, legaux, fenetresRepas == null ? List.of() : fenetresRepas));
         anomalies.addAll(anomaliesByDay(dates));
         anomalies.addAll(datesIsolees(dates));
         anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
@@ -287,10 +302,10 @@ public class CreneauGridService {
     }
 
     /** Checks that need one créneau at a time: shape, then duration against the legal ceilings. */
-    private static List<GridAnomaly> unitAnomalies(List<Creneau> creneaux, ParametresLegaux legaux) {
+    private static List<GridAnomaly> unitAnomalies(
+            List<Creneau> creneaux, ParametresLegaux legaux, List<FenetreRepas> fenetresRepas) {
         List<GridAnomaly> anomalies = new ArrayList<>();
         int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
-        List<FenetreRepas> fenetresRepas = FenetreRepas.from(legaux);
         for (Creneau creneau : creneaux) {
             if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
                 anomalies.add(new GridAnomaly(
@@ -355,7 +370,9 @@ public class CreneauGridService {
         if (fin <= debut) {
             return false;
         }
-        return fenetres.stream().anyMatch(fenetre -> debut >= fenetre.debutMinutes() && fin <= fenetre.finMinutes());
+        return fenetres.stream()
+                .filter(fenetre -> fenetre.appliesTo(creneau.getDate()))
+                .anyMatch(fenetre -> debut >= fenetre.debutMinutes() && fin <= fenetre.finMinutes());
     }
 
     private static String libelleFenetresRepas(List<FenetreRepas> fenetres) {

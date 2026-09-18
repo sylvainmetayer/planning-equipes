@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
@@ -84,6 +85,15 @@ public interface ReferenceData {
     Map<String, Integer> getConstraintWeights();
 
     ParametresLegaux getParametresLegaux();
+
+    /**
+     * The meal windows a solve and every read-out honour: the edition's, and
+     * on a date under a consigne that restates them (issue #4), that
+     * consigne's, dated. The one place the two are merged — a caller building
+     * the facts from the parameters alone would read the edition's rule on a
+     * day the organiser said otherwise.
+     */
+    List<FenetreRepas> fenetresRepas();
 
     ParametresSolveur getParametresSolveur();
 

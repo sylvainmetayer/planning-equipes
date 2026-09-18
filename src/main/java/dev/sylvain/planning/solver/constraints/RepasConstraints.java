@@ -4,6 +4,7 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
+import ai.timefold.solver.core.api.score.stream.Joiners;
 import dev.sylvain.planning.domain.CoupureRepas;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -41,6 +42,11 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * group holds a handful of seats; the window is then joined, which is what
  * makes a day straddling midday <i>and</i> evening produce one violation per
  * window rather than one aggregate nobody can act on.</p>
+ *
+ * <p>A window may be dated (issue #4): a consigne restates the meal windows
+ * of its own day, and the join keeps, for each animateur-day, the windows
+ * that govern that date — the consigne's on its date, the edition's
+ * elsewhere. See {@link FenetreRepas#appliesTo}.</p>
  *
  * @see CoupureRepas for what is owed, what satisfies it, and why
  */
@@ -80,7 +86,9 @@ public final class RepasConstraints {
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
-                .join(FenetreRepas.class)
+                .join(
+                        FenetreRepas.class,
+                        Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
                 .filter((animateur, date, postes, fenetre) ->
                         CoupureRepas.of(postes, fenetre).manquante())
                 .penalize(
@@ -124,7 +132,9 @@ public final class RepasConstraints {
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
-                .join(FenetreRepas.class)
+                .join(
+                        FenetreRepas.class,
+                        Joiners.filtering((animateur, date, postes, fenetre) -> fenetre.appliesTo(date)))
                 .filter((animateur, date, postes, fenetre) ->
                         CoupureRepas.of(postes, fenetre).preferredSlotGapMinutes() > 0)
                 .penalize(

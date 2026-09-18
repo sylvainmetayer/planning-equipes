@@ -548,7 +548,15 @@ fenêtres est nommé deux fois ; sans `*N`, l'effectif hérite du plus fort
 effectif que le stand perd dans la bande, sinon de son minimum. La bande se
 donne à part (`fermetureDebut`, `fermetureFin` omise = jusqu'à minuit), les
 dates séparées par des virgules, et le motif est obligatoire : il est imprimé
-partout où la journée est dite modifiée.
+partout où la journée est dite modifiée. Les **fenêtres repas du jour**
+s'énoncent à part, chacune en `HH:MM-HH:MM` (`repasMidi`, `repasSoir`), avec
+`coupureRepasMinutes` et `justificationRepas`, obligatoire dès qu'une des
+trois est donnée : « `repasSoir=18:00-22:00`, les équipes mangent pendant la
+fermeture ». Elles ne valent que sur les dates de la consigne et partent avec
+elle ; les paramètres légaux de l'édition ne bougent pas. C'est le levier du
+soir de canicule : sans lui, une compensation 18 h-22 h derrière un 18 h-20 h
+demande deux personnes par siège, et la simulation ne descendra pas à zéro
+écart dur.
 
 La séquence, le soir de l'arrêté :
 

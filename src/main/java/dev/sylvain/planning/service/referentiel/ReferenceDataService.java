@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.JourneeType;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
@@ -56,6 +57,9 @@ public class ReferenceDataService implements ReferenceData {
 
     @Inject
     StandService stands;
+
+    @Inject
+    dev.sylvain.planning.service.consigne.ConsigneRepository consignes;
 
     @Inject
     EmplacementService emplacements;
@@ -189,6 +193,11 @@ public class ReferenceDataService implements ReferenceData {
     @Override
     public void resolveHoraires(List<Stand> aResoudre, List<Creneau> creneaux) {
         stands.resolve(aResoudre, creneaux);
+    }
+
+    @Override
+    public List<FenetreRepas> fenetresRepas() {
+        return FenetreRepas.from(getParametresLegaux(), consignes.list());
     }
 
     public Stand createStand(Stand stand) {
@@ -354,7 +363,8 @@ public class ReferenceDataService implements ReferenceData {
         // this grid does not hold is reported rather than cascaded away in
         // silence (issue #577) — and reported on a preview, which is where
         // « remplacer la grille » can still be reconsidered.
-        return grille.validate(creneaux, resolus, listAnimateurs(), getParametresLegaux(), verrouillages.list());
+        return grille.validate(
+                creneaux, resolus, listAnimateurs(), getParametresLegaux(), verrouillages.list(), fenetresRepas());
     }
 
     public CreneauGridService.RapportGrille controlerGrille() {

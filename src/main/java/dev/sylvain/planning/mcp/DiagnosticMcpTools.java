@@ -1,6 +1,5 @@
 package dev.sylvain.planning.mcp;
 
-import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
@@ -270,7 +269,7 @@ public class DiagnosticMcpTools {
         PauseAnalyzer.RapportPauses rapport = pauseAnalyzer.analyze(
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresLegaux(),
-                FenetreRepas.from(referenceDataService.getParametresLegaux()));
+                referenceDataService.fenetresRepas());
         LocalDate jour = McpArgs.date(date, "date");
         boolean sansRelais = Boolean.TRUE.equals(sansRelaisSeulement);
         boolean planifieesVisibles = standId == null && !sansRelais;
