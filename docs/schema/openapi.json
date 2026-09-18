@@ -9626,6 +9626,13 @@
     },
     "/api/espace-animateur/{jeton}/planning.pdf" : {
       "get" : {
+        "parameters" : [ {
+          "name" : "format",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -10959,6 +10966,13 @@
     },
     "/api/planning/export/bundle/all" : {
       "post" : {
+        "parameters" : [ {
+          "name" : "format",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -11048,6 +11062,13 @@
     },
     "/api/planning/export/pdf/all" : {
       "post" : {
+        "parameters" : [ {
+          "name" : "format",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
         "requestBody" : {
           "content" : {
             "application/json" : {
@@ -11079,6 +11100,12 @@
           "name" : "animateurId",
           "in" : "path",
           "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "format",
+          "in" : "query",
           "schema" : {
             "type" : "string"
           }

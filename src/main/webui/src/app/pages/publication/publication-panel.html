@@ -11,8 +11,15 @@
       <ng-container i18n="@@solver.export">Exporter le planning (PDF + ICS)</ng-container>
     </button>
     <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
+            i18n-matTooltip="@@solver.exportFeuilles.tooltip"
+            matTooltip="Une feuille A4 paysage par personne : calendrier au recto, coéquipiers et lieux au verso. Une impression par animateur au lieu de cinq."
+            (click)="exportFeuilles()">
+      <mat-icon>print</mat-icon>
+      <ng-container i18n="@@solver.exportFeuilles">Exporter les feuilles recto-verso (PDF)</ng-container>
+    </button>
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
             i18n-matTooltip="@@solver.exportGlobal.tooltip"
-            matTooltip="Toutes les affectations dans un seul PDF, journée par journée puis stand par stand."
+            matTooltip="Toutes les affectations dans un seul PDF : vue d'ensemble, journées, stands et animateurs, avec un sommaire cliquable."
             (click)="exportGlobalPdf()">
       <mat-icon>picture_as_pdf</mat-icon>
       <ng-container i18n="@@solver.exportGlobal">Exporter le planning global (PDF)</ng-container>

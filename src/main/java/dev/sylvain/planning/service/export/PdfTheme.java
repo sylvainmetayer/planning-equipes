@@ -26,12 +26,10 @@ import org.openpdf.text.Phrase;
 import org.openpdf.text.Rectangle;
 import org.openpdf.text.pdf.BaseFont;
 import org.openpdf.text.pdf.ColumnText;
-import org.openpdf.text.pdf.PdfAction;
 import org.openpdf.text.pdf.PdfContentByte;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPCellEvent;
 import org.openpdf.text.pdf.PdfPTable;
-import org.openpdf.text.pdf.PdfPTableEvent;
 import org.openpdf.text.pdf.PdfPageEventHelper;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
@@ -58,6 +56,9 @@ public class PdfTheme {
     static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ISO_LOCAL_DATE;
     static final DateTimeFormatter TIME_FORMAT = DateTimeFormatter.ofPattern("HH:mm");
     static final DateTimeFormatter FRENCH_DAY_DATE_FORMAT = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
+    /** The first date of a period, shorn of the month the second one carries. */
+    static final DateTimeFormatter JOUR_SANS_MOIS = DateTimeFormatter.ofPattern("EEEE d", Locale.FRENCH);
+
     static final DateTimeFormatter GENERATED_AT_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy 'à' HH:mm");
 
     /** Prefix marking an image bundled in the application rather than mounted next to it. */
@@ -79,18 +80,39 @@ public class PdfTheme {
     // --- Fonts: bold sans for headline figures, plain sans for supporting text ---
     private final Font brandLabelFont;
     private final Font nameFont;
-    private final Font statNumberFont;
-    private final Font statLabelFont;
-    private final Font statSubLabelFont;
-    private final Font dateFont;
     private final Font calloutTitleFont;
     private final Font calloutTextFont;
-    private final Font badgeFont;
-    private final Font timeFont;
     private final Font standFont;
     private final Font locationFont;
     /** Teammates line under the stand name: present but secondary to the stand itself. */
     private final Font teamFont;
+
+    // --- Redesign of the individual booklet and of the organiser's document:
+    // an overview built of figures, a timeline and section titles, where the
+    // former layout only ever had cards ---
+    private final Font periodeFont;
+    private final Font chiffreFont;
+    private final Font chiffreLabelFont;
+    private final Font sectionFont;
+    private final Font sousTitreFont;
+    private final Font friseLabelFont;
+    private final Font friseJourFont;
+    private final Font friseBarreFont;
+    private final Font friseTotalFont;
+    private final Font legendeFont;
+    private final Font jourTitreFont;
+    private final Font jourNumeroFont;
+    private final Font jourTotalFont;
+    private final Font heureFont;
+    private final Font heureFinFont;
+    private final Font bandeauFont;
+    private final Font compteurFont;
+    private final Font effectifFont;
+    private final Font tableMiniFont;
+    private final Font tableMiniHeaderFont;
+    private final Font lienFont;
+    private final Font lienLabelFont;
+    private final Font lienCourantFont;
 
     private final Font emptyStateFont;
     private final Font footerFont;
@@ -143,17 +165,34 @@ public class PdfTheme {
 
         this.brandLabelFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
         this.nameFont = new Font(Font.HELVETICA, 24, Font.BOLD, this.headline);
-        this.statNumberFont = new Font(Font.HELVETICA, 19, Font.BOLD, this.headline);
-        this.statLabelFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, this.headline);
-        this.statSubLabelFont = new Font(Font.HELVETICA, 6.5f, Font.BOLD, this.muted);
-        this.dateFont = new Font(Font.HELVETICA, 13, Font.BOLD, this.headline);
         this.calloutTitleFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
         this.calloutTextFont = new Font(Font.HELVETICA, 10.5f, Font.NORMAL, this.headline);
-        this.badgeFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, Color.WHITE);
-        this.timeFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.muted);
         this.standFont = new Font(Font.HELVETICA, 10.5f, Font.BOLD, this.headline);
         this.locationFont = new Font(Font.HELVETICA, 9, Font.NORMAL, this.muted);
         this.teamFont = new Font(Font.HELVETICA, 9, Font.ITALIC, this.muted);
+        this.periodeFont = new Font(Font.HELVETICA, 10, Font.NORMAL, this.muted);
+        this.chiffreFont = new Font(Font.HELVETICA, 22, Font.BOLD, this.headline);
+        this.chiffreLabelFont = new Font(Font.HELVETICA, 7.5f, Font.NORMAL, this.muted);
+        this.sectionFont = new Font(Font.HELVETICA, 14, Font.BOLD, this.headline);
+        this.sousTitreFont = new Font(Font.HELVETICA, 8, Font.NORMAL, this.muted);
+        this.friseLabelFont = new Font(Font.HELVETICA, 6.5f, Font.NORMAL, this.muted);
+        this.friseJourFont = new Font(Font.HELVETICA, 7, Font.BOLD, this.headline);
+        this.friseBarreFont = new Font(Font.HELVETICA, 6, Font.BOLD, Color.WHITE);
+        this.friseTotalFont = new Font(Font.HELVETICA, 7, Font.BOLD, this.headline);
+        this.legendeFont = new Font(Font.HELVETICA, 6.5f, Font.NORMAL, this.headline);
+        this.jourTitreFont = new Font(Font.HELVETICA, 13, Font.BOLD, this.headline);
+        this.jourNumeroFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, this.muted);
+        this.jourTotalFont = new Font(Font.HELVETICA, 11, Font.BOLD, this.accent);
+        this.heureFont = new Font(Font.HELVETICA, 11, Font.BOLD, this.headline);
+        this.heureFinFont = new Font(Font.HELVETICA, 8.5f, Font.NORMAL, this.muted);
+        this.bandeauFont = new Font(Font.HELVETICA, 7.5f, Font.BOLD, this.accent);
+        this.compteurFont = new Font(Font.HELVETICA, 11, Font.BOLD, this.accent);
+        this.effectifFont = new Font(Font.HELVETICA, 20, Font.BOLD, this.headline);
+        this.tableMiniFont = new Font(Font.HELVETICA, 6, Font.NORMAL, this.headline);
+        this.tableMiniHeaderFont = new Font(Font.HELVETICA, 6, Font.BOLD, this.headline);
+        this.lienFont = new Font(Font.HELVETICA, 9, Font.BOLD, this.accent);
+        this.lienLabelFont = new Font(Font.HELVETICA, 7, Font.NORMAL, this.muted);
+        this.lienCourantFont = new Font(Font.HELVETICA, 9, Font.BOLD, this.headline);
         this.emptyStateFont = new Font(Font.HELVETICA, 10, Font.ITALIC, this.muted);
         this.footerFont = new Font(Font.HELVETICA, 8, Font.NORMAL, this.muted);
         this.tableHeaderFont = new Font(Font.HELVETICA, 8, Font.BOLD, this.headline);
@@ -206,36 +245,12 @@ public class PdfTheme {
         return nameFont;
     }
 
-    Font statNumberFont() {
-        return statNumberFont;
-    }
-
-    Font statLabelFont() {
-        return statLabelFont;
-    }
-
-    Font statSubLabelFont() {
-        return statSubLabelFont;
-    }
-
-    Font dateFont() {
-        return dateFont;
-    }
-
     Font calloutTitleFont() {
         return calloutTitleFont;
     }
 
     Font calloutTextFont() {
         return calloutTextFont;
-    }
-
-    Font badgeFont() {
-        return badgeFont;
-    }
-
-    Font timeFont() {
-        return timeFont;
     }
 
     Font standFont() {
@@ -252,6 +267,137 @@ public class PdfTheme {
 
     Font footerFont() {
         return footerFont;
+    }
+
+    /** Italic muted: « Repos », « Aucune affectation » — what is said when nothing is planned. */
+    Font emptyStateFont() {
+        return emptyStateFont;
+    }
+
+    Font periodeFont() {
+        return periodeFont;
+    }
+
+    Font chiffreFont() {
+        return chiffreFont;
+    }
+
+    Font chiffreLabelFont() {
+        return chiffreLabelFont;
+    }
+
+    Font sectionFont() {
+        return sectionFont;
+    }
+
+    Font sousTitreFont() {
+        return sousTitreFont;
+    }
+
+    Font friseLabelFont() {
+        return friseLabelFont;
+    }
+
+    Font friseJourFont() {
+        return friseJourFont;
+    }
+
+    Font friseBarreFont() {
+        return friseBarreFont;
+    }
+
+    Font friseTotalFont() {
+        return friseTotalFont;
+    }
+
+    Font legendeFont() {
+        return legendeFont;
+    }
+
+    Font jourTitreFont() {
+        return jourTitreFont;
+    }
+
+    Font jourNumeroFont() {
+        return jourNumeroFont;
+    }
+
+    Font jourTotalFont() {
+        return jourTotalFont;
+    }
+
+    Font heureFont() {
+        return heureFont;
+    }
+
+    Font heureFinFont() {
+        return heureFinFont;
+    }
+
+    Font bandeauFont() {
+        return bandeauFont;
+    }
+
+    Font compteurFont() {
+        return compteurFont;
+    }
+
+    Font effectifFont() {
+        return effectifFont;
+    }
+
+    Font tableMiniFont() {
+        return tableMiniFont;
+    }
+
+    Font tableMiniHeaderFont() {
+        return tableMiniHeaderFont;
+    }
+
+    Font lienFont() {
+        return lienFont;
+    }
+
+    Font lienLabelFont() {
+        return lienLabelFont;
+    }
+
+    /** The entry of the navigation strip the reader is already on: named, not a link. */
+    Font lienCourantFont() {
+        return lienCourantFont;
+    }
+
+    /**
+     * The four steps of the organiser's heat scale, from the lightest to the
+     * strongest: the deployment's accent diluted in white rather than a fixed
+     * yellow, so a white-labelled document keeps reading as its own.
+     *
+     * @param niveau 0 to 3; anything outside is clamped
+     */
+    Color chaleur(int niveau) {
+        float[] parts = {0.14f, 0.34f, 0.62f, 0.9f};
+        float part = parts[Math.max(0, Math.min(parts.length - 1, niveau))];
+        return melange(accent, Color.WHITE, part);
+    }
+
+    /** The background of a day band, a section header or a rest row: the accent, barely there. */
+    Color voile() {
+        return melange(accent, Color.WHITE, 0.07f);
+    }
+
+    /** {@code part} of {@code couleur} over {@code fond} — no alpha in a PDF fill, so the blend is computed. */
+    static Color melange(Color couleur, Color fond, float part) {
+        float reste = 1f - part;
+        return new Color(
+                Math.round(couleur.getRed() * part + fond.getRed() * reste),
+                Math.round(couleur.getGreen() * part + fond.getGreen() * reste),
+                Math.round(couleur.getBlue() * part + fond.getBlue() * reste));
+    }
+
+    /** Whether white text reads on that fill, by relative luminance — a legend nobody can read is worse than no colour. */
+    static Color lisibleSur(Color fond) {
+        double luminance = (0.2126 * fond.getRed() + 0.7152 * fond.getGreen() + 0.0722 * fond.getBlue()) / 255.0;
+        return luminance > 0.62 ? Color.BLACK : Color.WHITE;
     }
 
     Font tableHeaderFont() {
@@ -362,6 +508,23 @@ public class PdfTheme {
         return paragraph;
     }
 
+    /**
+     * « Du lundi 14 au mardi 29 septembre 2026 » — the month and the year said
+     * once when both dates share them, which is the ordinary case of an
+     * édition and the form a reader expects on a cover.
+     */
+    static String formatPeriode(LocalDate premier, LocalDate dernier) {
+        if (premier == null || dernier == null) {
+            return "";
+        }
+        if (premier.equals(dernier)) {
+            return formatFrenchDayDate(premier) + " " + premier.getYear();
+        }
+        boolean memeMois = premier.getMonth() == dernier.getMonth() && premier.getYear() == dernier.getYear();
+        String debut = memeMois ? JOUR_SANS_MOIS.format(premier) : FRENCH_DAY_DATE_FORMAT.format(premier);
+        return "Du " + debut + " au " + FRENCH_DAY_DATE_FORMAT.format(dernier) + " " + dernier.getYear();
+    }
+
     static String formatFrenchDayDate(LocalDate date) {
         String raw = FRENCH_DAY_DATE_FORMAT.format(date);
         return raw.substring(0, 1).toUpperCase(Locale.FRENCH) + raw.substring(1);
@@ -417,21 +580,6 @@ public class PdfTheme {
         }
     }
 
-    /** Draws a small clock face (circle + two hands) used ahead of a time-slot pill's text. */
-    static void drawClockIcon(PdfContentByte canvas, float centerX, float centerY, float radius, Color color) {
-        canvas.saveState();
-        canvas.setColorStroke(color);
-        canvas.setLineWidth(0.8f);
-        canvas.circle(centerX, centerY, radius);
-        canvas.stroke();
-        canvas.moveTo(centerX, centerY);
-        canvas.lineTo(centerX, centerY + radius * 0.55f);
-        canvas.moveTo(centerX, centerY);
-        canvas.lineTo(centerX + radius * 0.5f, centerY - radius * 0.15f);
-        canvas.stroke();
-        canvas.restoreState();
-    }
-
     /** Draws a small outlined map-pin (circle head, pointed tail, center dot) used ahead of a location's text. */
     static void drawPinIcon(PdfContentByte canvas, float centerX, float centerY, float radius, Color color) {
         float headCenterY = centerY + radius * 0.55f;
@@ -448,184 +596,6 @@ public class PdfTheme {
         canvas.circle(centerX, headCenterY, radius * 0.28f);
         canvas.fill();
         canvas.restoreState();
-    }
-
-    /** Fills a cell's own box with a rounded rectangle, used for stat tiles and pill badges. */
-    static final class RoundedCellFillEvent implements PdfPCellEvent {
-        private final Color fill;
-        private final float radius;
-
-        RoundedCellFillEvent(Color fill, float radius) {
-            this.fill = fill;
-            this.radius = radius;
-        }
-
-        @Override
-        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
-            PdfContentByte background = canvases[PdfPTable.BACKGROUNDCANVAS];
-            background.saveState();
-            background.setColorFill(fill);
-            background.roundRectangle(
-                    position.getLeft(), position.getBottom(), position.getWidth(), position.getHeight(), radius);
-            background.fill();
-            background.restoreState();
-        }
-    }
-
-    /** Draws a centered pill (background + clock icon + text) sized to its own content, ignoring the cell's own padding. */
-    static final class TimePillEvent implements PdfPCellEvent {
-        private final String text;
-        private final Font font;
-        private final Color background;
-        private final Color contentColor;
-        private final float pillWidth;
-        private final float pillHeight;
-        private final float iconDiameter;
-        private final float iconGap;
-
-        TimePillEvent(
-                String text,
-                Font font,
-                Color background,
-                Color contentColor,
-                float pillWidth,
-                float pillHeight,
-                float iconDiameter,
-                float iconGap) {
-            this.text = text;
-            this.font = font;
-            this.background = background;
-            this.contentColor = contentColor;
-            this.pillWidth = pillWidth;
-            this.pillHeight = pillHeight;
-            this.iconDiameter = iconDiameter;
-            this.iconGap = iconGap;
-        }
-
-        @Override
-        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
-            float left = position.getLeft() + (position.getWidth() - pillWidth) / 2f;
-            float bottom = position.getBottom() + (position.getHeight() - pillHeight) / 2f;
-            float centerY = bottom + pillHeight / 2f;
-
-            PdfContentByte background2 = canvases[PdfPTable.BACKGROUNDCANVAS];
-            background2.saveState();
-            background2.setColorFill(background);
-            background2.roundRectangle(left, bottom, pillWidth, pillHeight, pillHeight / 2f);
-            background2.fill();
-            background2.restoreState();
-
-            BaseFont baseFont = font.getCalculatedBaseFont(false);
-            float textWidth = baseFont.getWidthPoint(text, font.getCalculatedSize());
-            float contentLeft = left + (pillWidth - (iconDiameter + iconGap + textWidth)) / 2f;
-
-            PdfContentByte line = canvases[PdfPTable.LINECANVAS];
-            drawClockIcon(line, contentLeft + iconDiameter / 2f, centerY, iconDiameter / 2f, contentColor);
-
-            PdfContentByte textCanvas = canvases[PdfPTable.TEXTCANVAS];
-            textCanvas.saveState();
-            textCanvas.beginText();
-            textCanvas.setFontAndSize(baseFont, font.getCalculatedSize());
-            textCanvas.setColorFill(contentColor);
-            textCanvas.setTextMatrix(contentLeft + iconDiameter + iconGap, centerY - font.getCalculatedSize() * 0.35f);
-            textCanvas.showText(text);
-            textCanvas.endText();
-            textCanvas.restoreState();
-        }
-    }
-
-    /** Draws a right-aligned pin icon + location name as a single unit, clickable when a URL is supplied. */
-    static final class LocationPinEvent implements PdfPCellEvent {
-        private final String text;
-        private final Font font;
-        private final Color color;
-        private final float iconDiameter;
-        private final float iconGap;
-        private final String url;
-
-        LocationPinEvent(String text, Font font, Color color, float iconDiameter, float iconGap, String url) {
-            this.text = text;
-            this.font = font;
-            this.color = color;
-            this.iconDiameter = iconDiameter;
-            this.iconGap = iconGap;
-            this.url = url;
-        }
-
-        @Override
-        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
-            BaseFont baseFont = font.getCalculatedBaseFont(false);
-            float textWidth = baseFont.getWidthPoint(text, font.getCalculatedSize());
-            float right = position.getRight() - 14f;
-            float centerY = position.getBottom() + position.getHeight() / 2f;
-            float textLeft = right - textWidth;
-            float iconCenterX = textLeft - iconGap - iconDiameter / 2f;
-
-            PdfContentByte line = canvases[PdfPTable.LINECANVAS];
-            drawPinIcon(line, iconCenterX, centerY, iconDiameter / 2f, color);
-
-            PdfContentByte textCanvas = canvases[PdfPTable.TEXTCANVAS];
-            textCanvas.saveState();
-            textCanvas.beginText();
-            textCanvas.setFontAndSize(baseFont, font.getCalculatedSize());
-            textCanvas.setColorFill(color);
-            textCanvas.setTextMatrix(textLeft, centerY - font.getCalculatedSize() * 0.35f);
-            textCanvas.showText(text);
-            textCanvas.endText();
-            textCanvas.restoreState();
-
-            if (url != null) {
-                float left = iconCenterX - iconDiameter / 2f - 2f;
-                textCanvas.setAction(new PdfAction(url), left, position.getBottom(), right + 2f, position.getTop());
-            }
-        }
-    }
-
-    /** Draws a single seamless rounded rectangle behind a whole (single-row) table, used for the assignment cards. */
-    static final class RoundedBackgroundEvent implements PdfPTableEvent {
-        private final Color fill;
-        private final Color border;
-        private final float radius;
-
-        RoundedBackgroundEvent(Color fill, Color border, float radius) {
-            this.fill = fill;
-            this.border = border;
-            this.radius = radius;
-        }
-
-        @Override
-        public void tableLayout(
-                PdfPTable table,
-                float[][] widths,
-                float[] heights,
-                int headerRows,
-                int rowStart,
-                PdfContentByte[] canvases) {
-            float left = widths[0][0];
-            float right = widths[0][widths[0].length - 1];
-            float top = heights[0];
-            float bottom = heights[heights.length - 1];
-
-            // Painted on BASECANVAS rather than BACKGROUNDCANVAS: table-level backgrounds are drawn
-            // after each row's cells, so using the same canvas as a cell event (e.g. the time pill)
-            // would paint over it. BASECANVAS sits one layer below and is unaffected by draw order.
-            PdfContentByte background = canvases[PdfPTable.BASECANVAS];
-            background.saveState();
-            background.setColorFill(fill);
-            background.roundRectangle(left, bottom, right - left, top - bottom, radius);
-            background.fill();
-            background.restoreState();
-
-            if (border != null) {
-                PdfContentByte line = canvases[PdfPTable.LINECANVAS];
-                line.saveState();
-                line.setColorStroke(border);
-                line.setLineWidth(1f);
-                line.roundRectangle(left + 0.5f, bottom + 0.5f, right - left - 1f, top - bottom - 1f, radius);
-                line.stroke();
-                line.restoreState();
-            }
-        }
     }
 
     /** Draws the "généré le ..." footer and a "Page x/y" counter, back-filled once the total page count is known. */
@@ -676,12 +646,282 @@ public class PdfTheme {
             BaseFont baseFont = font.getCalculatedBaseFont(false);
             for (int i = 0; i < pageCounterTemplates.size(); i++) {
                 PdfTemplate template = pageCounterTemplates.get(i);
-                String text = "Page " + (i + 1) + "/" + totalPages;
+                // « 1 / 5 » rather than « Page 1/5 »: on a document read folded
+                // in a pocket, the two words are what the number has to fight.
+                String text = (i + 1) + " / " + totalPages;
                 template.beginText();
                 template.setFontAndSize(baseFont, font.getSize());
                 template.setColorFill(color);
                 template.showTextAligned(Element.ALIGN_RIGHT, text, 70f, 3f, 0);
                 template.endText();
+            }
+        }
+    }
+
+    /** Draws a small sun (disc + four rays), the mark of a day an authority's consigne governs. */
+    static void drawSunIcon(PdfContentByte canvas, float centerX, float centerY, float radius, Color color) {
+        canvas.saveState();
+        canvas.setColorFill(color);
+        canvas.circle(centerX, centerY, radius * 0.62f);
+        canvas.fill();
+        canvas.setColorStroke(color);
+        canvas.setLineWidth(0.5f);
+        // Rays on the four cardinal directions: the diagonals of a first
+        // attempt read as a cross at this size, which is the one thing a
+        // weather mark must not look like.
+        for (int i = 0; i < 4; i++) {
+            double angle = i * Math.PI / 2;
+            float dx = (float) Math.cos(angle);
+            float dy = (float) Math.sin(angle);
+            canvas.moveTo(centerX + dx * radius * 0.9f, centerY + dy * radius * 0.9f);
+            canvas.lineTo(centerX + dx * radius * 1.45f, centerY + dy * radius * 1.45f);
+        }
+        canvas.stroke();
+        canvas.restoreState();
+    }
+
+    /**
+     * One mark on a day's timeline: a shift drawn as a filled bar, or a break
+     * drawn as a dashed outline — the animateur owes themselves the second one,
+     * so it must not read as a third stand.
+     *
+     * @param libelle what is written inside the bar, dropped when the bar is too narrow for it
+     */
+    record Barre(int debutMinutes, int finMinutes, Color couleur, String libelle, boolean pause) {}
+
+    /**
+     * Draws one row of the overview timeline inside its own cell: the hour
+     * guides, then the day's bars positioned on the shared axis.
+     *
+     * <p>Drawn rather than laid out because a row is a <b>scale</b>: two shifts
+     * of the same day must land under the same hour on every row of the page,
+     * which nested tables of proportional widths cannot promise.</p>
+     */
+    static final class FriseEvent implements PdfPCellEvent {
+        private final List<Barre> barres;
+        private final int debutAmplitude;
+        private final int finAmplitude;
+        private final int pasMinutes;
+        private final Color guide;
+        private final Color fond;
+        private final Font libelleFont;
+
+        FriseEvent(
+                List<Barre> barres,
+                int debutAmplitude,
+                int finAmplitude,
+                int pasMinutes,
+                Color guide,
+                Color fond,
+                Font libelleFont) {
+            this.barres = barres;
+            this.debutAmplitude = debutAmplitude;
+            this.finAmplitude = finAmplitude;
+            this.pasMinutes = pasMinutes;
+            this.guide = guide;
+            this.fond = fond;
+            this.libelleFont = libelleFont;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            float left = position.getLeft();
+            float width = position.getWidth();
+            int span = Math.max(1, finAmplitude - debutAmplitude);
+            PdfContentByte fondCanvas = canvases[PdfPTable.BACKGROUNDCANVAS];
+
+            if (fond != null) {
+                fondCanvas.saveState();
+                fondCanvas.setColorFill(fond);
+                fondCanvas.rectangle(left, position.getBottom(), width, position.getHeight());
+                fondCanvas.fill();
+                fondCanvas.restoreState();
+            }
+
+            fondCanvas.saveState();
+            fondCanvas.setColorStroke(guide);
+            fondCanvas.setLineWidth(0.4f);
+            for (int minute = debutAmplitude; minute <= finAmplitude; minute += pasMinutes) {
+                float x = left + width * (minute - debutAmplitude) / span;
+                fondCanvas.moveTo(x, position.getBottom());
+                fondCanvas.lineTo(x, position.getTop());
+            }
+            fondCanvas.stroke();
+            fondCanvas.restoreState();
+
+            for (Barre barre : barres) {
+                float x1 = left + width * (clamp(barre.debutMinutes()) - debutAmplitude) / span;
+                float x2 = left + width * (clamp(barre.finMinutes()) - debutAmplitude) / span;
+                float largeur = Math.max(1.5f, x2 - x1);
+                if (barre.pause()) {
+                    PdfContentByte ligne = canvases[PdfPTable.LINECANVAS];
+                    ligne.saveState();
+                    ligne.setColorStroke(barre.couleur());
+                    ligne.setLineWidth(0.7f);
+                    ligne.setLineDash(1.6f, 1.4f, 0f);
+                    float hauteur = position.getHeight() * 0.42f;
+                    ligne.rectangle(x1, position.getBottom() + (position.getHeight() - hauteur) / 2f, largeur, hauteur);
+                    ligne.stroke();
+                    ligne.restoreState();
+                    continue;
+                }
+                float hauteur = position.getHeight() - 2.5f;
+                float bas = position.getBottom() + 1.25f;
+                fondCanvas.saveState();
+                fondCanvas.setColorFill(barre.couleur());
+                fondCanvas.roundRectangle(x1, bas, largeur, hauteur, 1.5f);
+                fondCanvas.fill();
+                fondCanvas.restoreState();
+
+                String libelle = barre.libelle();
+                if (libelle == null || libelle.isBlank()) {
+                    continue;
+                }
+                Font font = new Font(libelleFont);
+                font.setColor(lisibleSur(barre.couleur()));
+                BaseFont baseFont = font.getCalculatedBaseFont(false);
+                float taille = font.getCalculatedSize();
+                float disponible = largeur - 4f;
+                String texte = libelle;
+                while (baseFont.getWidthPoint(texte, taille) > disponible && texte.length() > 1) {
+                    texte = texte.substring(0, texte.length() - 1);
+                }
+                if (baseFont.getWidthPoint(texte, taille) > disponible) {
+                    continue;
+                }
+                PdfContentByte texteCanvas = canvases[PdfPTable.TEXTCANVAS];
+                texteCanvas.saveState();
+                texteCanvas.beginText();
+                texteCanvas.setFontAndSize(baseFont, taille);
+                texteCanvas.setColorFill(font.getColor());
+                texteCanvas.setTextMatrix(x1 + 2f, bas + (hauteur - taille) / 2f + 0.8f);
+                texteCanvas.showText(texte);
+                texteCanvas.endText();
+                texteCanvas.restoreState();
+            }
+        }
+
+        private int clamp(int minute) {
+            return Math.max(debutAmplitude, Math.min(finAmplitude, minute));
+        }
+    }
+
+    /** Draws the hour labels of the timeline's axis, on the same scale as the rows below it. */
+    static final class FriseAxeEvent implements PdfPCellEvent {
+        private final int debutAmplitude;
+        private final int finAmplitude;
+        private final int pasMinutes;
+        private final Font font;
+
+        FriseAxeEvent(int debutAmplitude, int finAmplitude, int pasMinutes, Font font) {
+            this.debutAmplitude = debutAmplitude;
+            this.finAmplitude = finAmplitude;
+            this.pasMinutes = pasMinutes;
+            this.font = font;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            int span = Math.max(1, finAmplitude - debutAmplitude);
+            PdfContentByte canvas = canvases[PdfPTable.TEXTCANVAS];
+            for (int minute = debutAmplitude; minute <= finAmplitude; minute += pasMinutes) {
+                float x = position.getLeft() + position.getWidth() * (minute - debutAmplitude) / span;
+                String texte = (minute / 60) % 24 + "h";
+                ColumnText.showTextAligned(
+                        canvas, Element.ALIGN_CENTER, new Phrase(texte, font), x, position.getBottom() + 1.5f, 0);
+            }
+        }
+    }
+
+    /**
+     * A row of the timeline that is not a working day: a flat band with a word
+     * in it. « Repos » is a decision, and a blank row would read as an
+     * oversight.
+     */
+    static final class FriseTextEvent implements PdfPCellEvent {
+        private final String texte;
+        private final Font font;
+        private final Color fond;
+
+        FriseTextEvent(String texte, Font font, Color fond) {
+            this.texte = texte;
+            this.font = font;
+            this.fond = fond;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            PdfContentByte canvas = canvases[PdfPTable.BACKGROUNDCANVAS];
+            canvas.saveState();
+            canvas.setColorFill(fond);
+            canvas.rectangle(position.getLeft(), position.getBottom(), position.getWidth(), position.getHeight());
+            canvas.fill();
+            canvas.restoreState();
+            ColumnText.showTextAligned(
+                    canvases[PdfPTable.TEXTCANVAS],
+                    Element.ALIGN_LEFT,
+                    new Phrase(texte, font),
+                    position.getLeft() + 5f,
+                    position.getBottom() + (position.getHeight() - font.getCalculatedSize()) / 2f + 0.8f,
+                    0);
+        }
+    }
+
+    /** A small filled chip, the colour of a legend entry or of a stand on a day card. */
+    static final class PastilleEvent implements PdfPCellEvent {
+        private final Color couleur;
+        private final float diametre;
+
+        PastilleEvent(Color couleur, float diametre) {
+            this.couleur = couleur;
+            this.diametre = diametre;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            PdfContentByte canvas = canvases[PdfPTable.BACKGROUNDCANVAS];
+            float bas = position.getBottom() + (position.getHeight() - diametre) / 2f;
+            canvas.saveState();
+            canvas.setColorFill(couleur);
+            canvas.roundRectangle(position.getLeft(), bas, diametre, diametre, diametre / 3f);
+            canvas.fill();
+            canvas.restoreState();
+        }
+    }
+
+    /** The two marks a document draws beside a text rather than writing: a sun, a map pin. */
+    enum Icone {
+        /** A day an authority's consigne governs. */
+        SOLEIL,
+        /** A place, ahead of its name. */
+        REPERE
+    }
+
+    /**
+     * Draws one of those marks in its own cell, at its left edge or at its
+     * right — an icon a font does not carry, and which the layout therefore
+     * cannot write.
+     */
+    static final class IconeEvent implements PdfPCellEvent {
+        private final Icone icone;
+        private final Color couleur;
+        private final boolean aDroite;
+
+        IconeEvent(Icone icone, Color couleur, boolean aDroite) {
+            this.icone = icone;
+            this.couleur = couleur;
+            this.aDroite = aDroite;
+        }
+
+        @Override
+        public void cellLayout(PdfPCell cell, Rectangle position, PdfContentByte[] canvases) {
+            float x = aDroite ? position.getRight() - 5f : position.getLeft() + 4.5f;
+            float y = position.getBottom() + position.getHeight() / 2f;
+            PdfContentByte canvas = canvases[PdfPTable.LINECANVAS];
+            if (icone == Icone.SOLEIL) {
+                drawSunIcon(canvas, x, y, 3f, couleur);
+            } else {
+                drawPinIcon(canvas, x, y, 2.6f, couleur);
             }
         }
     }

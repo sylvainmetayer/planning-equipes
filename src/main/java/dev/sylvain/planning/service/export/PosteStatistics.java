@@ -6,67 +6,18 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import org.openpdf.text.Chunk;
-import org.openpdf.text.Element;
-import org.openpdf.text.Paragraph;
-import org.openpdf.text.Rectangle;
-import org.openpdf.text.pdf.PdfPCell;
 
 /**
- * What a set of seats amounts to — how many days, stands, timeslots, hours —
- * and the tile that displays it.
+ * What a set of seats amounts to — how many days, stands, timeslots, hours.
  *
- * <p>The individual PDF and the global PDF lay the same row of tiles in their
- * header, over different sets: one the assignments of a single person, the
- * other those of the whole event. Counting and displaying in the same place
- * is what guarantees that "3 JOURS" means the same thing on both documents.</p>
+ * <p>The individual document and the organiser's one head their first page
+ * with the same figures over different sets: one the assignments of a single
+ * person, the other those of the whole event. Counting in one place is what
+ * guarantees that « 3 jours » means the same thing on both.</p>
  */
 final class PosteStatistics {
 
     private PosteStatistics() {}
-
-    static PdfPCell gapCell() {
-        PdfPCell cell = new PdfPCell();
-        cell.setBorder(Rectangle.NO_BORDER);
-        return cell;
-    }
-
-    /**
-     * @param theme    the deployment's palette and fonts
-     * @param subLabel extra line below the main label (e.g. total hours), omitted when {@code null}.
-     */
-    static PdfPCell statCell(PdfTheme theme, int value, String label, String subLabel) {
-        PdfPCell cell = new PdfPCell();
-        cell.setBorder(Rectangle.NO_BORDER);
-        cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-        cell.setVerticalAlignment(Element.ALIGN_MIDDLE);
-        cell.setPadding(14f);
-        cell.setCellEvent(new PdfTheme.RoundedCellFillEvent(theme.highlight(), 10f));
-
-        Paragraph number = new Paragraph(String.valueOf(value), theme.statNumberFont());
-        number.setAlignment(Element.ALIGN_CENTER);
-        number.setSpacingAfter(2f);
-
-        Paragraph labelParagraph = new Paragraph();
-        labelParagraph.setAlignment(Element.ALIGN_CENTER);
-        Chunk labelChunk = new Chunk(label, theme.statLabelFont());
-        labelChunk.setCharacterSpacing(1.1f);
-        labelParagraph.add(labelChunk);
-
-        cell.addElement(number);
-        cell.addElement(labelParagraph);
-
-        if (subLabel != null) {
-            Paragraph subLabelParagraph = new Paragraph();
-            subLabelParagraph.setAlignment(Element.ALIGN_CENTER);
-            subLabelParagraph.setSpacingBefore(3f);
-            Chunk subLabelChunk = new Chunk(subLabel, theme.statSubLabelFont());
-            subLabelChunk.setCharacterSpacing(0.6f);
-            subLabelParagraph.add(subLabelChunk);
-            cell.addElement(subLabelParagraph);
-        }
-        return cell;
-    }
 
     static double totalHeures(List<PosteAffectation> postes) {
         int totalMinutes = 0;

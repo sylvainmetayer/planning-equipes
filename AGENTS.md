@@ -322,8 +322,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     argued in its list, the same net as the edition-scoping tests.
   - `service/edition/`; `service/publication/` (publishing, delivery,
     confirmations, `MailService`); `service/export/` (`PlanningExportService`
-    over `AnimateurPlanningPdf`, `GlobalPlanningPdf` and `PlanningIcs`, sharing
-    `PdfTheme` — server-side only; `DatabaseDumpService`); `service/espace/`
+    over `AnimateurPlanningPdf`, `AnimateurFeuillePdf`, `GlobalPlanningPdf`
+    and `PlanningIcs`, sharing `PdfTheme` — server-side only; the two
+    individual layouts render one `AnimateurPlanningView`, which is what keeps
+    them saying the same thing, and colour their bars from
+    `TypologiePalette`; `DatabaseDumpService`); `service/espace/`
     (`DemandeEchangeService` / `EspaceAnimateurService`, the foire au planning
     of issue #165; `ApplicationLinks`, every public URL printed in a mail or a
     PDF); and the ones that predate the split — `service/diagnostic/`,
