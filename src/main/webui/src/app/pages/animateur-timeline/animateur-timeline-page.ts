@@ -16,6 +16,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import {
   coupuresOf,
   indexerCoupures,
@@ -27,6 +28,7 @@ import {
   segmentsPause,
 } from '../../core/pauses-index';
 import { uniqueById } from '../../core/date-utils';
+import { bandeLabel } from '../consignes/consignes';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -162,6 +164,7 @@ export class AnimateurTimelinePage {
   private readonly notifications = inject(NotificationService);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
+  private readonly consignes = inject(ConsignesStore);
 
   protected readonly animateurOptions = computed<AnimateurOption[]>(() =>
     buildAnimateurOptions(this.planning()?.postes ?? []),
@@ -229,6 +232,20 @@ export class AnimateurTimelinePage {
     return this.coupuresByDay().get(day.jour) ?? [];
   }
 
+  /**
+   * The note of a day under consigne: the Journée tab and the PDF already say
+   * it, and the animateur reading their own line was the only one not told
+   * why the afternoon is empty.
+   */
+  protected consigneNote(day: TimelineDay): string | null {
+    const consigne = this.consignes.consigneOf(day.date);
+    if (!consigne) {
+      return null;
+    }
+    const bande = bandeLabel(consigne.fermetureDebut, consigne.fermetureFin);
+    return $localize`:@@timeline.consigne.note:${consigne.motif}:motif: — stands fermés ${bande}:bande:`;
+  }
+
   protected readonly standsSummary = computed<TimelineStandsSummary>(() =>
     buildStandsSummary(this.days(), typologieLabels(this.typologies())),
   );
@@ -262,6 +279,8 @@ export class AnimateurTimelinePage {
   protected async refresh(): Promise<void> {
     this.loading.set(true);
     this.error.set('');
+    // Same tolerance as the referentials below: a failed read leaves the note out.
+    void this.consignes.reload();
     try {
       const [planning, typologies, pauses] = await Promise.all([
         this.planningState.loadForDisplay(),

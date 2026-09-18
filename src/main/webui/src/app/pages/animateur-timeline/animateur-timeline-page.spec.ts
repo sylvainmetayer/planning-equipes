@@ -11,9 +11,17 @@ import { ActivatedRoute } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { ConsignesStore } from '../../core/consignes.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningStateService } from '../../core/planning-state.service';
-import { Animateur, Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
+import {
+  Animateur,
+  ConsigneEdition,
+  Creneau,
+  PlanningEvenement,
+  PosteAffectation,
+  Stand,
+} from '../../core/models';
 import {
   AnimateurTimelinePage,
   buildAnimateurOptions,
@@ -463,6 +471,26 @@ describe('AnimateurTimelinePage', () => {
     loadForDisplay: ReturnType<typeof vi.fn>;
     require: ReturnType<typeof vi.fn>;
   };
+  let consignesStore: {
+    reload: ReturnType<typeof vi.fn>;
+    consigneOf: (date: string | null) => ConsigneEdition | null;
+  };
+
+  function consigneCanicule(date: string): ConsigneEdition {
+    return {
+      date,
+      fermetureDebut: '12:00',
+      fermetureFin: '18:00',
+      motif: 'Plan canicule',
+      prereglage: null,
+      fenetres: [],
+      ouvertures: [],
+      repas: null,
+      creneauxAjoutes: [],
+      creeLe: null,
+      modifieLe: null,
+    };
+  }
 
   function planningDeDeux(): PlanningEvenement {
     const matin = creneau({ id: 1, jour: 1 });
@@ -493,9 +521,13 @@ describe('AnimateurTimelinePage', () => {
 
   async function rendre(
     evenement: PlanningEvenement | null,
-    options: { animateurEnParametre?: string | null } = {},
+    options: { animateurEnParametre?: string | null; consignes?: ConsigneEdition[] } = {},
     analyses: { breaks?: () => unknown } = {},
   ): Promise<void> {
+    consignesStore = {
+      reload: vi.fn(async () => undefined),
+      consigneOf: (date) => (options.consignes ?? []).find((each) => each.date === date) ?? null,
+    };
     analysesApi = {
       typologies: vi.fn(async () => []),
       breaks: vi.fn(async () => analyses.breaks?.() ?? null),
@@ -518,6 +550,7 @@ describe('AnimateurTimelinePage', () => {
         { provide: PlanningApi, useValue: planningApi },
         { provide: NotificationService, useValue: { notify } },
         { provide: PlanningStateService, useValue: planningState },
+        { provide: ConsignesStore, useValue: consignesStore },
         { provide: Location, useValue: { path: () => '/timeline', replaceState } },
         {
           provide: ActivatedRoute,
@@ -590,6 +623,21 @@ describe('AnimateurTimelinePage', () => {
     // vacation, là où Alice en a deux.
     await rendre(planningDeDeux(), { animateurEnParametre: 'a2' });
     expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
+  });
+
+  it('tells the animateur when their day is under consigne, as the Journée tab and the PDF do', async () => {
+    await rendre(planningDeDeux(), { consignes: [consigneCanicule('2026-08-01')] });
+
+    const note = racine().querySelector('.timeline-consigne-note')!.textContent!;
+    expect(note).toContain('sous consigne');
+    expect(note).toContain('Plan canicule');
+    expect(note).toContain('12h–18h');
+  });
+
+  it('says nothing about consignes on an ordinary day', async () => {
+    await rendre(planningDeDeux(), { consignes: [consigneCanicule('2026-08-02')] });
+
+    expect(racine().querySelector('.timeline-consigne-note')).toBeNull();
   });
 
   it('names the teammates of each seat, and says so when there are none', async () => {
