@@ -333,7 +333,11 @@ minutes fermées et rouvertes, ses animateurs concernés.
 > n'est pas une consigne, c'est une journée type) ; une bande par jour ; les
 > disponibilités des animateurs restent à la journée — les fenêtres tardives
 > se ferment aux mineurs par les règles de nuit et de repos, qui lisent le
-> créneau entier, pas la fenêtre effective.
+> créneau entier, pas la fenêtre effective ; et une fenêtre du soir qui
+> prolonge l'après-midi demande deux personnes par siège, la coupure repas du
+> soir interdisant d'enchaîner 18 h-20 h et 20 h-22 h — le levier est la
+> fenêtre du repas du soir dans les paramètres légaux, pas le repos quotidien
+> (voir l'ADR 0043, « Limites assumées »).
 
 ### Fenêtre effective
 

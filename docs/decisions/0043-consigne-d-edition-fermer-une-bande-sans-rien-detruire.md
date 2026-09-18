@@ -246,6 +246,31 @@ fois les créneaux ajoutés, rien ne les distingue plus de la grille nominale.
     un créneau 18 h-23 h dont la consigne ne rouvre que 18 h-20 h reste
     interdit à un mineur. Délibéré : une règle de sécurité ne devient pas plus
     permissive par effet de bord.
+  - **Une fenêtre du soir qui prolonge l'après-midi double le besoin en
+    personnes.** Derrière un 14 h-20 h devenu 18 h-20 h, une compensation
+    18 h-22 h ajoute un 20 h-22 h que la coupure repas du soir (19 h-21 h par
+    défaut, dure) interdit d'enchaîner avec le 18 h-20 h : chaque siège du
+    soir demande deux personnes distinctes. Mesuré sur l'édition de test
+    (154 animateurs, 114 stands rouverts) : 120 à 129 sièges à 18 h-20 h plus
+    56 à 20 h-22 h, soit 176 à 185 personnes pour 153 à 154 disponibles, et
+    23 à 35 sièges de fin de soirée vides par jour — un plafond que 900 s de
+    résolution ne franchissent pas. Le levier est un paramètre légal, pas un
+    temps de repos : aligner la fenêtre du repas du soir sur toute la
+    compensation — 18 h-22 h pour un soir rouvert de 18 h à 22 h — puisque
+    les gens ont mangé pendant la bande. Un service qui commence à
+    l'ouverture de la fenêtre ou finit à sa fermeture ne doit rien : plus
+    personne ne doit de coupure un jour sous consigne, et les nocturnes
+    ordinaires gardent la leur, leur trou 20 h-21 h restant dans la fenêtre.
+    Les deux autres réglages essayés d'abord ne tiennent pas : repoussée à
+    21 h-23 h, la fenêtre remplit le soir sous consigne mais rend les
+    nocturnes infaisables (−720 dur) ; à 18 h-21 h, une personne du matin
+    qui tient 18 h-22 h doit une coupure qu'elle ne peut pas prendre, et la
+    semaine bute sur les six jours travaillés (922 jours-personnes sur 924 :
+    −782 dur). L'autre levier est de rouvrir moins de stands le soir. Que la
+    consigne porte elle-même sa fenêtre repas est une évolution possible, non
+    retenue ici : le paramètre suffit et se voit. L'aide admin le dit sous « Consignes ». Faire lire à la
+    coupure la bande fermée comme le repas pris est une évolution possible,
+    non retenue ici : le paramètre suffit et se voit.
   - **Le diff de publication fait deux lignes** quand la bande retire aussi
     un relais : la personne lit sa vacation raccourcie et son relais
     « retiré », deux phrases pour une seule décision. Le motif dans la liste

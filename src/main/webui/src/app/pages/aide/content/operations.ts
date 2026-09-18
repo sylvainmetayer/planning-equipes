@@ -67,6 +67,15 @@ export function buildOperationsSections(): HelpSection[] {
           title: $localize`:@@aide.consignes.callout.title:Rien n'est détruit`,
           text: $localize`:@@aide.consignes.callout.text:La bande ferme tous les stands, sans exception, au-dessus de leurs règles et de leurs exceptions datées — et elle ne ferme que cela : un stand non coché garde ses horaires hors bande. Les créneaux nominaux gardent leur identifiant, leurs sièges et leurs verrous ; les vacations de la bande deviennent simplement sans siège. Les créneaux manquants pour couvrir une fenêtre sont ajoutés et marqués « ajouté par consigne » ; les journées types ignorent ces dates, affichées « sous consigne » plutôt qu'en écart. Les statistiques comptent les heures réellement travaillées, et un instantané emporte les consignes en vigueur à sa capture.`,
         },
+        {
+          kind: 'definitions',
+          items: [
+            {
+              term: $localize`:@@aide.consignes.term.soirBloque:Le soir reste à moitié vide : la coupure repas`,
+              text: $localize`:@@aide.consignes.def.soirBloque:Une fenêtre du soir qui prolonge l'après-midi — 18 h-22 h derrière un 14 h-20 h devenu 18 h-20 h — demande deux personnes par siège, pas une : la coupure repas du soir (19 h-21 h par défaut) interdit à la même personne d'enchaîner 18 h-20 h puis 20 h-22 h. Comptez les sièges de 18 h-20 h plus ceux de 20 h-22 h ; au-delà du nombre d'animateurs disponibles ce jour-là, aucune résolution n'atteindra zéro écart dur, et ce sont les sièges de fin de soirée qui restent vides. Le levier est dans les paramètres légaux, pas dans les temps de repos : les gens ont mangé pendant la bande fermée, alignez la fenêtre du repas du soir sur toute la compensation (18 h-22 h pour un soir rouvert de 18 h à 22 h) : un service qui commence à l'ouverture de la fenêtre ou finit à sa fermeture ne doit rien, personne ne doit donc de coupure un jour sous consigne, et les nocturnes ordinaires gardent la leur puisque leur trou de 20 h à 21 h reste dans la fenêtre. Une fenêtre plus courte que la compensation (18 h-21 h) laisse une personne du matin devoir une coupure qu'elle ne peut pas prendre ; une fenêtre repoussée après (21 h-23 h) casse les nocturnes. Puis relancez la résolution. Réduire les fenêtres de compensation ou le nombre de stands rouverts le soir est l'autre levier. Le repos quotidien de onze heures n'est pas en cause : finir à 22 h permet de reprendre à 9 h.`,
+            },
+          ],
+        },
       ],
       links: [
         { route: '/consignes', label: $localize`:@@nav.link.consignes:Consignes` },
