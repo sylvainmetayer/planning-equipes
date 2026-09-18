@@ -337,33 +337,22 @@ export async function ouvrirSelect(root: Page | Locator, label: string): Promise
 }
 
 /**
- * Opens the `mat-select` labelled `label` under `root` and picks `option`,
- * then waits for the panel's backdrop to be gone — the next click may aim at
- * the field right under it. That backdrop is the transparent one: a dialog
- * keeps its own, dark, for as long as it is open.
+ * Picks `option` in the `mat-select` labelled `label` under `root` — by
+ * keyboard, through the select's own typeahead, so no panel opens and no
+ * backdrop stands in the way of the next click. The mouse path proved flaky
+ * on CI: a click that lands on the field while its panel is still animating
+ * toggles it back open, and every later click is then intercepted. What is
+ * asserted is the value the field shows, which is what the form will save.
  */
 export async function choisirOption(
   root: Page | Locator,
   label: string,
   option: string,
 ): Promise<void> {
-  await ouvrirSelect(root, label);
-  const page = pageOf(root);
-  // A visible panel can still be animating in, and a click that lands then is
-  // not taken: the panel stays open. The backdrop tells; click again while it
-  // stays.
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await page.getByRole('option', { name: option }).click();
-    try {
-      await expect(page.locator('.cdk-overlay-transparent-backdrop')).toHaveCount(0, {
-        timeout: 3_000,
-      });
-      return;
-    } catch {
-      // Still open: the panel had not finished opening. Once more.
-    }
-  }
-  throw new Error(`l'option « ${option} » du select « ${label} » n'a pas été prise`);
+  const combobox = root.getByRole('combobox', { name: label }).first();
+  await combobox.focus();
+  await combobox.pressSequentially(option, { delay: 20 });
+  await expect(combobox).toContainText(option);
 }
 
 function pageOf(root: Page | Locator): Page {
