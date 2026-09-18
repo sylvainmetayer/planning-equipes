@@ -541,18 +541,21 @@ nomme une personne : les aperçus sont des comptes.
 Deux syntaxes textuelles, sur une ligne. Les **fenêtres** de la journée —
 la bande, les fenêtres de compensation par défaut d'une consigne ou d'un
 préréglage — s'écrivent `HH:MM-HH:MM`, séparées par des virgules, la fin
-omise pour « jusqu'à minuit » : « `18:00-22:00` », « `08:00-10:00,18:00-` ».
-Les **ouvertures** nomment le stand, sa fenêtre et, après `*`, l'effectif :
-« `BOURSE=18:00-22:00*2,ENFANTS=18:00-20:00` » ; un stand ouvert sur deux
-fenêtres est nommé deux fois ; sans `*N`, l'effectif hérite du plus fort
-effectif que le stand perd dans la bande, sinon de son minimum. La bande se
+omise ou à `00:00` pour « jusqu'à minuit » : « `18:00-22:00` »,
+« `08:00-10:00,18:00-` » ; la relecture rend cette fin ouverte (`null`).
+Les **ouvertures** nomment le stand, sa fenêtre et, après `*`, l'effectif
+**de cette fenêtre** : « `BOURSE=08:00-10:00*2,BOURSE=18:00-22:00*7` » ouvre
+la Bourse à 2 le matin et à 7 le soir ; un stand ouvert sur deux fenêtres est
+nommé deux fois ; sans `*N`, la fenêtre hérite du plus fort effectif que le
+stand perd dans la bande, sinon de son minimum. La bande se
 donne à part (`fermetureDebut`, `fermetureFin` omise = jusqu'à minuit), les
 dates séparées par des virgules, et le motif est obligatoire : il est imprimé
 partout où la journée est dite modifiée. Les **fenêtres repas du jour**
 s'énoncent à part, chacune en `HH:MM-HH:MM` (`repasMidi`, `repasSoir`), avec
 `coupureRepasMinutes` et `justificationRepas`, obligatoire dès qu'une des
 trois est donnée : « `repasSoir=18:00-22:00`, les équipes mangent pendant la
-fermeture ». Elles ne valent que sur les dates de la consigne et partent avec
+fermeture ». Une fenêtre redite doit contenir la coupure — la sienne, sinon
+celle de l'édition — ou l'outil refuse. Elles ne valent que sur les dates de la consigne et partent avec
 elle ; les paramètres légaux de l'édition ne bougent pas. C'est le levier du
 soir de canicule : sans lui, une compensation 18 h-22 h derrière un 18 h-20 h
 demande deux personnes par siège, et la simulation ne descendra pas à zéro
@@ -573,15 +576,16 @@ La séquence, le soir de l'arrêté :
    acceptée telle quelle ;
 3. `appliquer_consigne`, mêmes arguments : pose la consigne — ou remplace
    celle qu'une date porte déjà — et ajoute à la grille les seuls créneaux que
-   les ouvertures exigent. Rien n'est supprimé de la grille nominale, et les
-   dates doivent être à venir. Prolonger l'alerte, c'est le même appel avec
-   les dates ajoutées ;
+   les ouvertures exigent. Rien n'est supprimé de la grille nominale, les
+   dates doivent être à venir, et toutes s'écrivent ensemble ou pas du tout.
+   Prolonger l'alerte, c'est le même appel avec les dates ajoutées ;
 4. `resoudre_incremental` : les sièges de la bande n'existent plus, ceux des
    fenêtres ajoutées sont à pourvoir, et la stabilité du plan publié retient
    tout le reste ;
 5. `etat_publication`, puis `publier_planning` : le diff par personne
    annonce les vacations raccourcies et celles ajoutées, et le courriel liste
-   les journées aux horaires modifiés avec le motif.
+   les journées aux horaires modifiés avec le motif — pour la personne dont
+   la bande vide toute la journée aussi, lue sur le plan publié précédent.
 
 Lever suit le même pli : `simuler_levee_consigne` nomme les créneaux ajoutés
 qui partiraient avec leurs sièges et compte les personnes assises dessus ;
