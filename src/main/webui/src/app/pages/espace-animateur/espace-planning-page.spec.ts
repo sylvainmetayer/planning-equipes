@@ -189,8 +189,8 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     );
 
     // Reading order inside the band, and Material's own action hierarchy:
-    // filled for the subscription, outlined for the PDF, plain text for the
-    // one-shot ICS. Nothing invented, no hard-coded colour.
+    // filled for the subscription, outlined for the two PDF layouts, plain
+    // text for the one-shot ICS. Nothing invented, no hard-coded colour.
     const actions = Array.from(
       racine().querySelectorAll<HTMLAnchorElement>('.espace-agenda-actions a'),
     );
@@ -198,10 +198,23 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     // target) all carry a class, and the icon is a `mat-icon` element.
     expect(
       actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim()),
-    ).toEqual(["S'abonner dans mon agenda", 'Télécharger en PDF', 'Télécharger le fichier ICS']);
+    ).toEqual([
+      "S'abonner dans mon agenda",
+      'Télécharger le livret PDF',
+      'Télécharger la feuille recto-verso',
+      'Télécharger le fichier ICS',
+    ]);
     expect(actions[0].classList).toContain('mat-mdc-unelevated-button');
     expect(actions[1].classList).toContain('mat-mdc-outlined-button');
-    expect(actions[2].classList).toContain('mat-mdc-button');
+    expect(actions[2].classList).toContain('mat-mdc-outlined-button');
+    expect(actions[3].classList).toContain('mat-mdc-button');
+
+    // The two layouts are one route and a parameter: the booklet is what the
+    // address alone answers, the folded sheet is asked for by name.
+    expect(actions[1].getAttribute('href')).toBe('/api/espace-animateur/jeton-1/planning.pdf');
+    expect(actions[2].getAttribute('href')).toBe(
+      '/api/espace-animateur/jeton-1/planning.pdf?format=feuille',
+    );
   });
 
   it('keeps the address, its copy and its replacement folded away by default', async () => {
@@ -248,7 +261,8 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
-    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(3);
+    // The subscription, the two PDF layouts, the one-shot ICS.
+    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(4);
   });
 
   it('hides the whole block while the espace is not loaded yet', async () => {

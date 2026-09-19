@@ -152,6 +152,14 @@
             <artifactId>openpdf</artifactId>
             <version>3.0.5</version>
         </dependency>
+        <!-- QR encoding only: OpenPDF draws no barcode of its own, and the
+             espace's link is what an animateur scans off their printed PDF.
+             Apache-2.0, no transitive dependency. -->
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>3.5.4</version>
+        </dependency>
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>

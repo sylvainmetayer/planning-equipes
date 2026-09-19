@@ -10,7 +10,7 @@ micro-service, pas de serveur Node en production.
 | Optimisation | Timefold Solver Community, `HardMediumSoftScore` |
 | Persistance | PostgreSQL + Flyway |
 | Frontend | Angular 22 standalone, signals, zoneless, servi par Quinoa |
-| Exports | OpenPDF, génération ICS maison — toujours côté serveur |
+| Exports | OpenPDF, encodage QR par zxing-core, génération ICS maison — toujours côté serveur |
 | MCP | `quarkus-mcp-server-http` ([`mcp.md`](mcp.md)) |
 | Toolchain | `mise.toml` : Temurin 25, Maven 3.9.9, Node 24 |
 

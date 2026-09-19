@@ -1,9 +1,17 @@
 // The public links of the espace animateur — the URL token is the credential,
 // so these are addresses a page shows, not calls it makes.
 
-/** The animateur's planning as a PDF, downloadable without a session. */
-export function espacePlanningPdfUrl(jeton: string): string {
-  return `/api/espace-animateur/${jeton}/planning.pdf`;
+/** Which layout of the individual PDF is asked for — see the backend's FormatPlanning. */
+export type FormatPlanning = 'livret' | 'feuille';
+
+/**
+ * The animateur's planning as a PDF, downloadable without a session. The
+ * booklet is the default; the folded sheet is the same content on one
+ * landscape page, printed on both sides.
+ */
+export function espacePlanningPdfUrl(jeton: string, format: FormatPlanning = 'livret'): string {
+  const base = `/api/espace-animateur/${jeton}/planning.pdf`;
+  return format === 'livret' ? base : `${base}?format=${format}`;
 }
 
 /** The same planning as a one-off calendar file. */
