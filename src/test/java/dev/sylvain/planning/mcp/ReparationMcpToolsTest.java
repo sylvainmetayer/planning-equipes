@@ -112,12 +112,18 @@ class ReparationMcpToolsTest {
                 .isInstanceOf(RuntimeException.class);
     }
 
+    /**
+     * A business refusal since the assistant reads the persisted plan through
+     * {@code persistedSuggererReparations}: the sentence reaches the caller as
+     * a tool result in error (issue #529) instead of « Internal error ».
+     */
     @Test
     void suggererSansPlanningPersisteLeDit() {
         scenarioTools.reinitialiser_donnees(null);
 
         assertThatThrownBy(() -> planningTools.suggerer_reparations("P1", null, null))
-                .isInstanceOf(IllegalStateException.class)
+                .isInstanceOf(ToolCallException.class)
+                .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");
     }
 
