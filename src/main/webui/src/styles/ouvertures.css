@@ -134,6 +134,19 @@
   vertical-align: middle;
 }
 
+/*
+ * La marge de renfort du stand (issue #505). Discrète et neutre : elle dit
+ * « on peut en mettre de plus », jamais « il en manque ». La lire comme une
+ * seconde valeur à pourvoir serait exactement le besoin inventé que la
+ * génération des sièges refuse de produire.
+ */
+.ouvertures-grille .stand-renforts {
+  margin-left: 0.4rem;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
 .ouvertures-grille .row-problem-icon {
   font-size: 1rem;
   width: 1rem;

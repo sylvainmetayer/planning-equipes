@@ -297,6 +297,12 @@ export interface LigneStandOuverture {
   standId: string;
   nom: string;
   effectifMin: number;
+  /**
+   * The capacity the stand declares above its cells (issue #505). The grid
+   * reads the band as « 2 + 1 » : what a window asks for, and the renforts the
+   * solver may add on top — a bonus, never a second number to staff.
+   */
+  effectifMax: number;
   jours: CelluleJourOuverture[];
   minutesOuvertes: number;
   postes: number;
@@ -635,6 +641,12 @@ export interface PosteAffectation {
    */
   heureDebutEffective?: string | null;
   heureFinEffective?: string | null;
+  /**
+   * Renfort (issue #505): a seat opened above the staffing the window declares,
+   * up to the stand's `effectifMax`. Nobody is owed it, so an empty one is
+   * never a shortfall — drawn as a hole it would be a false alarm.
+   */
+  optionnel?: boolean;
 }
 
 export interface ContrainteAdHoc {

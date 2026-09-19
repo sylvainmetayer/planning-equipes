@@ -165,6 +165,36 @@ génération rendrait obligatoires plus de sièges que le stand n'est déclaré
 capable d'en tenir, et les deux nombres se contrediraient sur chaque écran qui
 les montre. Le validateur et le formulaire le refusent tous les deux.
 
+### Au-dessus de l'effectif demandé : les renforts
+
+`effectifMax` n'était lu par personne : la fiche annonçait une capacité que le
+solveur n'utilisait jamais. Depuis l'[ADR 0046](decisions/0046-sieges-optionnels-jusqu-a-l-effectif-max.md),
+la génération ouvre entre l'effectif de la fenêtre et ce maximum des **sièges
+optionnels** — des *renforts*.
+
+Une seule chose les distingue d'un siège ordinaire : `posteDoitEtrePourvu` les
+ignore, donc **les laisser vides n'est jamais une violation ni un écart**. Pour
+tout le reste ils sont des sièges — qui s'y assied travaille vraiment, donc les
+règles légales, l'équilibre de charge et le décompte d'heures les comptent, et
+une règle SOFT, `pourvoirLesSiegesOptionnels`, récompense celui qui est pris.
+
+C'est ce qui sépare une **capacité** d'un **besoin**. Pénaliser un renfort vide
+ramènerait le besoin inventé que la génération refuse de produire : 31 % de
+sièges obligatoires en trop, mesurés sur `scenario-complet.yaml`.
+
+Trois conséquences à connaître :
+
+- les renforts sont générés **après** les sièges dus de la même clé
+  (stand, créneau) ; le réamorçage d'un plan enregistré rend les places dans
+  cet ordre, et c'est lui qui fait retomber les gens sur ce qui est dû avant ce
+  qui est un bonus ;
+- **la recherche de faisabilité ne les voit pas** — ni ses sélecteurs, ni le
+  ruine-reconstruit, ni la chaîne de relogement. Sans cela le festival hivernal
+  cessait d'atteindre zéro dur ;
+- un renfort vide n'est un manque **pour aucun écran** : diagnostic, fragilité,
+  besoin en animateurs, validation d'une journée, mode jour J et PDF global
+  l'excluent tous.
+
 Un créneau à cheval sur deux fenêtres d'effectifs différents produit **deux
 groupes de sièges**, chacun portant la [fenêtre effective](#fenêtre-effective)
 de son segment. Là où deux fenêtres se recouvrent, le recouvrement prend le

@@ -75,6 +75,11 @@ interface StandLine {
    * when it was in fact exactly as staffed as intended.</p>
    */
   effectifRequis: number;
+  /**
+   * Renforts opened on this line (issue #505): seats above the declared
+   * staffing that nobody is owed. Shown as a bonus, never counted as a want.
+   */
+  renforts: number;
   /** True when this line is a meal-pause coverage vacation: a deliberately reduced headcount, flagged as information, never as a shortfall. */
   couverturePause: boolean;
 }
@@ -323,6 +328,15 @@ export class CalendarDayView {
     return isStandLineUnderstaffed(stand);
   }
 
+  /**
+   * A renfort is a bonus, and the screen has to say so (issue #505): drawn as
+   * a seat like any other, an empty one reads as somebody missing — the false
+   * alarm the whole feature exists to avoid.
+   */
+  protected renfortTooltip(stand: StandLine): string {
+    return $localize`:@@calendarDay.renfort:${stand.effectifRequis}:requis: demandé(s), ${stand.renforts}:renforts: renfort(s) possible(s) en plus`;
+  }
+
   protected understaffedTooltip(stand: StandLine): string {
     return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.entries.length}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
   }
@@ -404,6 +418,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
         heureFin: string;
         entries: AssignedEntry[];
         postesLibres: PosteAffectation[];
+        renforts: number;
         sieges: number;
       }
     >
@@ -436,11 +451,25 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
     const key = `${stand.id}::${heureDebut}::${heureFin}`;
     let entry = standMap.get(key);
     if (!entry) {
-      entry = { stand, heureDebut, heureFin, entries: [], postesLibres: [], sieges: 0 };
+      entry = {
+        stand,
+        heureDebut,
+        heureFin,
+        entries: [],
+        postesLibres: [],
+        sieges: 0,
+        renforts: 0,
+      };
       standMap.set(key, entry);
     }
-    // Every poste is one seat this line has to fill, whoever ends up on it.
-    entry.sieges += 1;
+    // Every poste is one seat this line has to fill, whoever ends up on it —
+    // except a renfort (issue #505), counted apart: it was opened above the
+    // staffing the window asks for, so a line without it is not short-handed.
+    if (poste.optionnel) {
+      entry.renforts += 1;
+    } else {
+      entry.sieges += 1;
+    }
     if (poste.animateur) {
       const label = `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim();
       entry.entries.push({ poste, label });
@@ -467,6 +496,7 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               entries: entry.entries,
               postesLibres: entry.postesLibres,
               effectifRequis: entry.sieges,
+              renforts: entry.renforts,
               couverturePause: creneau.couverturePause === true,
             }))
             .sort(

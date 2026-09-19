@@ -70,6 +70,16 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+/**
+ * A renfort is open on this line (issue #505): a seat above the declared
+ * staffing that nobody is owed. Neutral like the pause icon, and deliberately
+ * not the error or warning colour — it says « on peut en mettre un de plus »,
+ * never « il en manque un ».
+ */
+.renfort-icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
 /** Some, but fewer than the seats generated for the line, animateurs assigned — distinct from fully unassigned (.empty-slot). */
 .understaffed-slot {
   color: var(--mat-sys-error);
