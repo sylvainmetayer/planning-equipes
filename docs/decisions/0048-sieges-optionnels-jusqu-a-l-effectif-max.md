@@ -101,6 +101,13 @@ sécurité des tests reste 900 s, soit près de huit fois la mesure.
   sont donc les sièges dus, `posteOptionnelCount` est ce qui les surplombe, et
   l'espace de recherche — le seul chiffre qui soit vraiment le nombre
   d'entités de Timefold — rajoute les deux.
+- **Un verrouillage fige aussi le renfort vide qu'il couvre.** Un siège vide
+  n'est jamais épinglé — épingler un trou le rendrait impossible à combler —
+  mais la raison tombe pour un siège que personne ne doit : sans cela, une
+  journée verrouillée gagnerait le renfort que la résolution suivante décide
+  d'y poser, c'est-à-dire exactement le changement que le verrou interdit. Un
+  verrou par animateur ne couvre aucun de ces sièges, puisqu'il désigne celui
+  qui l'occupe.
 - **Le drapeau est persisté et sérialisé**, contrairement à `passe` : les écrans
   lisent le plan enregistré, et un renfort vide qui s'y relirait comme un trou
   serait précisément la fausse alerte que cette décision supprime.

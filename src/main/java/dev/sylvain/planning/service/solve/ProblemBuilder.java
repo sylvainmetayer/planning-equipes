@@ -545,7 +545,11 @@ public final class ProblemBuilder {
      * <p>Only a seat that <em>was</em> staffed can be frozen: an empty seat is
      * left unassigned and movable, because pinning a hole would make it
      * permanently unfillable. For the same reason, a lock recorded before any
-     * solve has been persisted simply freezes nothing.</p>
+     * solve has been persisted simply freezes nothing. <b>An empty renfort is
+     * the exception</b> (issue #505): nobody owes it, so freezing it costs no
+     * seat — and leaving it free would let a locked day gain a reinforcement
+     * the next solve decides to add, which is the very change the lock
+     * forbids.</p>
      *
      * <p>Seats are re-seeded before the locks are evaluated because a
      * {@link TypeVerrouillage#ANIMATEUR} lock is expressed in terms of who
@@ -607,6 +611,17 @@ public final class ProblemBuilder {
                 poste.setAnimateur(animateursById.get(tenants.get(place)));
             }
             if (poste.getAnimateur() == null) {
+                // An empty renfort a lock covers stays empty (issue #505). The
+                // reason an empty seat is never pinned — pinning a hole makes
+                // it permanently unfillable — does not hold for a seat nobody
+                // owes; and without this, a locked day gains whoever the next
+                // solve decides to reinforce it with, which is exactly the
+                // change the lock was laid down to prevent. An ANIMATEUR lock
+                // reads the seat's holder and so covers none of these.
+                if (poste.isOptionnel()
+                        && verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste))) {
+                    poste.setVerrouille(true);
+                }
                 continue;
             }
             boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
