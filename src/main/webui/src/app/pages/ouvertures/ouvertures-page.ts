@@ -140,6 +140,12 @@ interface CelluleView {
 interface LigneView {
   standId: string;
   nom: string;
+  /**
+   * Renforts the stand declares above its cells (issue #505): zero for two
+   * stands out of three, and said once per row rather than inside a cell — a
+   * cell is what a window asks for, the band sits on top of every one of them.
+   */
+  renforts: number;
   /** Whether the filter shows the row; a hidden row keeps its cells, and its typed values. */
   visible: boolean;
   /** Nothing to take from above: the row is the first one displayed, or is not displayed at all. */
@@ -310,6 +316,10 @@ export class OuverturesPage {
       return {
         standId: ligne.standId,
         nom,
+        // The renfort band the stand declares above its cells (issue #505):
+        // said once per row, never inside a cell — a cell is what a window
+        // asks for, and the band is a capacity on top of every one of them.
+        renforts: Math.max(0, ligne.effectifMax - ligne.effectifMin),
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
@@ -392,6 +402,7 @@ export class OuverturesPage {
       return {
         standId: ligne.standId,
         nom,
+        renforts: Math.max(0, ligne.effectifMax - ligne.effectifMin),
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),

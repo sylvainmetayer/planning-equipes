@@ -158,11 +158,18 @@ public final class OuvertureStandsAnalyzer {
      * @param modifieLe the stand's stamp as this grid read it, echoed back by
      *                  the save as its precondition (issue #362)
      */
-    @Schema(requiredProperties = {"effectifMin", "minutesOuvertes", "postes"})
+    @Schema(requiredProperties = {"effectifMax", "effectifMin", "minutesOuvertes", "postes"})
     public record LigneStand(
             String standId,
             String nom,
             int effectifMin,
+            /**
+             * The capacity the stand declares above its cells (issue #505).
+             * The grid shows the band as « 2 + 1 » : what a window asks for,
+             * and the renforts the solver may add on top — a bonus, never a
+             * second number to staff.
+             */
+            int effectifMax,
             List<CelluleJour> jours,
             int minutesOuvertes,
             int postes,
@@ -280,6 +287,7 @@ public final class OuvertureStandsAnalyzer {
                     stand.getId(),
                     stand.getNom(),
                     stand.getEffectifMin(),
+                    stand.getEffectifMax(),
                     cellules,
                     minutesStand,
                     postesStand,

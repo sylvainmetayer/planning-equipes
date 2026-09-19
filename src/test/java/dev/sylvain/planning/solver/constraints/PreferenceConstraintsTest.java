@@ -45,8 +45,7 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     /** A renfort already worked is a constant no move can act on (ADR 0044). */
     @Test
     void aPastRenfortEarnsNothing() {
-        PosteAffectation passe =
-                posteOptionnel(standStrat, creneauMatin, referentMajeur("A1"));
+        PosteAffectation passe = posteOptionnel(standStrat, creneauMatin, referentMajeur("A1"));
         passe.setPasse(true);
         verify("pourvoirLesSiegesOptionnels").given(passe).rewardsWith(0);
     }
