@@ -642,7 +642,7 @@ public class GlobalPlanningPdf {
         return table;
     }
 
-    /** The stand's name, and under it the typologie it is coloured by everywhere else. */
+    /** The stand's name, as a link to its own block further down the document. */
     private Phrase standName(Stand stand) {
         Phrase phrase = new Phrase();
         Chunk lien = new Chunk(stand.getNom(), theme.tableMiniFont());
@@ -804,31 +804,46 @@ public class GlobalPlanningPdf {
 
     private void fillWindows(PdfPTable table, List<Fenetre> fenetres, List<LigneAffectation> lignes) {
         for (Fenetre fenetre : fenetres) {
-            LigneAffectation ligne = lignes.stream()
+            // Every line of that window, not the first: two créneaux of the
+            // same day can carry the same hours, and the one dropped took its
+            // animateurs — and its unfilled seats — out of the document.
+            table.addCell(celluleAnimateurs(lignes.stream()
                     .filter(candidate -> new Fenetre(candidate.debut(), candidate.fin()).equals(fenetre))
-                    .findFirst()
-                    .orElse(null);
-            table.addCell(celluleAnimateurs(ligne));
+                    .toList()));
         }
     }
 
     /** Names on the line, « — » when the stand is closed, the shortfall spelled out in the accent colour. */
     private PdfPCell celluleAnimateurs(LigneAffectation ligne) {
+        return celluleAnimateurs(ligne == null ? List.of() : List.of(ligne));
+    }
+
+    /**
+     * What a cell of the grid says about one window: every animateur of every
+     * line landing there, and what the window still owes.
+     */
+    private PdfPCell celluleAnimateurs(List<LigneAffectation> lignes) {
         PdfPCell cell = new PdfPCell();
         cell.setBorderColor(theme.pill());
         cell.setPadding(2.5f);
-        if (ligne == null) {
+        if (lignes.isEmpty()) {
             cell.setPhrase(new Phrase("—", theme.lienLabelFont()));
             return cell;
         }
-        if (ligne.animateurs().isEmpty()) {
+        List<String> animateurs = lignes.stream()
+                .flatMap(ligne -> ligne.animateurs().stream())
+                .sorted(String.CASE_INSENSITIVE_ORDER)
+                .toList();
+        int manquants = lignes.stream()
+                .mapToInt(ligne -> ligne.sieges()[0] - ligne.animateurs().size())
+                .sum();
+        if (animateurs.isEmpty()) {
             cell.setPhrase(new Phrase("Aucun animateur affecté", theme.tableAlertFont()));
             return cell;
         }
-        Paragraph paragraphe = new Paragraph(String.join(", ", ligne.animateurs()), theme.tableMiniFont());
-        if (ligne.incomplete()) {
-            paragraphe.add(new Chunk(
-                    "  ·  " + nonPourvus(ligne.sieges()[0] - ligne.animateurs().size()), theme.tableAlertFont()));
+        Paragraph paragraphe = new Paragraph(String.join(", ", animateurs), theme.tableMiniFont());
+        if (manquants > 0) {
+            paragraphe.add(new Chunk("  ·  " + nonPourvus(manquants), theme.tableAlertFont()));
         }
         cell.addElement(paragraphe);
         return cell;
