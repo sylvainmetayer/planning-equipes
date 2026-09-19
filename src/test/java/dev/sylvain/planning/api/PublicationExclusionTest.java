@@ -65,12 +65,12 @@ class PublicationExclusionTest {
         forgetPublications();
         persistence.clearDatabase();
         persistPlan("EXC-A", "EXC-B");
-        donnerEmail("EXC-A", EMAIL_ALICE);
-        donnerEmail("EXC-B", EMAIL_BRUNO);
+        withEmail("EXC-A", EMAIL_ALICE);
+        withEmail("EXC-B", EMAIL_BRUNO);
     }
 
     @AfterEach
-    void nettoyer() {
+    void cleanUp() {
         forgetPublications();
     }
 
@@ -80,7 +80,7 @@ class PublicationExclusionTest {
     void anExcludedPersonReceivesNothingAndStaysToBeTold() {
         publier();
         mailbox.clear();
-        echangerLesDeuxSieges();
+        swapTheTwoSeats();
 
         JsonPath rapport = publier("EXC-B");
 
@@ -105,7 +105,7 @@ class PublicationExclusionTest {
     @Test
     void theGapAccumulatesUntilTheMessageFinallyGoesOut() {
         publier();
-        echangerLesDeuxSieges();
+        swapTheTwoSeats();
         publier("EXC-B");
         // A third state: Bruno leaves the plan entirely.
         persistPlanSolo("EXC-A");
@@ -125,7 +125,7 @@ class PublicationExclusionTest {
     @Test
     void theTraceAndTheHistoryBothNameWhoWasLeftOut() {
         publier();
-        echangerLesDeuxSieges();
+        swapTheTwoSeats();
         publier("EXC-B");
 
         JsonPath trace = given().when()
@@ -228,9 +228,9 @@ class PublicationExclusionTest {
         Animateur alice = alice();
         Animateur bruno = bruno();
         Creneau creneau = creneau();
-        PosteAffectation posteUn = new PosteAffectation("EXC-P1", standUn(), creneau);
+        PosteAffectation posteUn = new PosteAffectation("EXC-P1", firstStand(), creneau);
         posteUn.setAnimateur("EXC-A".equals(surStandUn) ? alice : bruno);
-        PosteAffectation posteDeux = new PosteAffectation("EXC-P2", standDeux(), creneau);
+        PosteAffectation posteDeux = new PosteAffectation("EXC-P2", secondStand(), creneau);
         posteDeux.setAnimateur("EXC-A".equals(surStandDeux) ? alice : bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
     }
@@ -239,12 +239,12 @@ class PublicationExclusionTest {
     private void persistPlanSolo(String surStandUn) {
         Animateur alice = alice();
         Animateur bruno = bruno();
-        PosteAffectation posteUn = new PosteAffectation("EXC-P1", standUn(), creneau());
+        PosteAffectation posteUn = new PosteAffectation("EXC-P1", firstStand(), creneau());
         posteUn.setAnimateur("EXC-A".equals(surStandUn) ? alice : bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteUn)));
     }
 
-    private void echangerLesDeuxSieges() {
+    private void swapTheTwoSeats() {
         persistPlan("EXC-B", "EXC-A");
     }
 
@@ -256,11 +256,11 @@ class PublicationExclusionTest {
         return new Animateur("EXC-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
     }
 
-    private static Stand standUn() {
+    private static Stand firstStand() {
         return new Stand("EXC-S1", "Stand excl un", Set.of(), 1, 1, false);
     }
 
-    private static Stand standDeux() {
+    private static Stand secondStand() {
         return new Stand("EXC-S2", "Stand excl deux", Set.of(), 1, 1, false);
     }
 
@@ -268,7 +268,7 @@ class PublicationExclusionTest {
         return new Creneau(CRENEAU_ID, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0));
     }
 
-    private void donnerEmail(String animateurId, String email) {
+    private void withEmail(String animateurId, String email) {
         Animateur animateur = referenceData.listAnimateurs().stream()
                 .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
