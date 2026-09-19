@@ -5,10 +5,10 @@
 import { describe, expect, it } from 'vitest';
 import { LigneRenfort, RapportRenforts } from '../../core/models';
 import {
-  celluleDuJour,
+  cellForDay,
   heuresInutilisees,
   lignesAffichees,
-  partDuBonus,
+  bonusShare,
   readTri,
   tauxEmploi,
 } from './renforts';
@@ -61,13 +61,13 @@ describe('heuresInutilisees', () => {
   });
 });
 
-describe('celluleDuJour', () => {
+describe('cellForDay', () => {
   it('reads the hours of that day', () => {
-    expect(celluleDuJour(ligne(), '2027-07-08')).toEqual({ ouvertes: 6, pourvues: 4 });
+    expect(cellForDay(ligne(), '2027-07-08')).toEqual({ ouvertes: 6, pourvues: 4 });
   });
 
   it('is null on a day the stand opens nothing — a hole, not a zero', () => {
-    expect(celluleDuJour(ligne(), '2027-07-10')).toBeNull();
+    expect(cellForDay(ligne(), '2027-07-10')).toBeNull();
   });
 });
 
@@ -140,13 +140,13 @@ describe('the two shares of the summary', () => {
   });
 
   it('gives what the bonus adds on top of what is owed', () => {
-    expect(partDuBonus(rapport())).toBeCloseTo(0.1);
+    expect(bonusShare(rapport())).toBeCloseTo(0.1);
   });
 
   it('is null rather than a division by zero when nothing is opened or owed', () => {
     expect(tauxEmploi(rapport({ heuresOuvertes: 0 }))).toBeNull();
-    expect(partDuBonus(rapport({ heuresDues: 0 }))).toBeNull();
+    expect(bonusShare(rapport({ heuresDues: 0 }))).toBeNull();
     expect(tauxEmploi(undefined)).toBeNull();
-    expect(partDuBonus(undefined)).toBeNull();
+    expect(bonusShare(undefined)).toBeNull();
   });
 });

@@ -27,7 +27,7 @@ export function heuresInutilisees(ligne: LigneRenfort): number {
  * Hours of one stand on one day, `null` when that day holds neither an opened
  * nor a staffed renfort — a hole the grid draws as such rather than as a zero.
  */
-export function celluleDuJour(
+export function cellForDay(
   ligne: LigneRenfort,
   date: string,
 ): { ouvertes: number; pourvues: number } | null {
@@ -83,7 +83,7 @@ export function tauxEmploi(rapport: RapportRenforts | undefined): number | null 
  * is owed. It is the figure a budget conversation starts from: « les renforts
  * pèsent 12 % de plus que le nécessaire ».
  */
-export function partDuBonus(rapport: RapportRenforts | undefined): number | null {
+export function bonusShare(rapport: RapportRenforts | undefined): number | null {
   if (!rapport || rapport.heuresDues <= 0) {
     return null;
   }
