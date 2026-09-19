@@ -215,6 +215,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, ce qui l'empêcherait de prendre la place libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation.`,
             },
             {
+              term: $localize`:@@aide.views.term.renforts:Renforts`,
+              text: $localize`:@@aide.views.def.renforts:Où sont les heures bonus. Un stand dont l'effectif maximum dépasse ce que ses fenêtres demandent ouvre des renforts : des sièges que le solveur peut pourvoir, qu'il ne doit jamais pourvoir, et qu'aucun écran ne comptait jusqu'ici. Une ligne par stand, une colonne par jour, deux chiffres par cellule — les heures ouvertes, celles que la dernière résolution a réellement employées. L'écart entre les deux dit ce qu'une coupe coûte : un stand qui ouvre quarante heures dont quatre ont servi se réduit sans que personne ne s'en aperçoive. La vue est en lecture seule ; le levier est l'effectif maximum, sur la fiche du stand.`,
+            },
+            {
               term: $localize`:@@aide.views.term.graphe:Graphe`,
               text: $localize`:@@aide.views.def.graphe:La même donnée prise par le terrain : un emplacement, les stands qui s'y trouvent, les créneaux où ils sont armés, qui y est affecté. Une colonne par niveau, on clique pour ouvrir la suivante. Les emplacements et leurs stands se parcourent tout de suite ; les deux dernières colonnes attendent une résolution.`,
             },
@@ -233,6 +237,7 @@ export function buildOperationsSections(): HelpSection[] {
         { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
         { route: '/marge', label: $localize`:@@nav.link.marge:Marge disponible` },
+        { route: '/renforts', label: $localize`:@@nav.link.renforts:Renforts` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         {
           route: '/journee',

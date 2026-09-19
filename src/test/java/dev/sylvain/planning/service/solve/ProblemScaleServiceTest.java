@@ -71,6 +71,9 @@ class ProblemScaleServiceTest {
         assertThat(volumetrie.posteCount()).isEqualTo(1);
         assertThat(volumetrie.posteOptionnelCount()).isEqualTo(1);
         assertThat(volumetrie.hoursToFill()).isCloseTo(3.0, within(0.001));
+        // The bonus hours are reported, and reported apart: what the event
+        // owes and what it may spend on top are two budgets (issue #505).
+        assertThat(volumetrie.hoursOptionnelles()).isCloseTo(3.0, within(0.001));
     }
 
     @Test

@@ -1,0 +1,134 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@renforts.title">Renforts</h1>
+    <mat-card-subtitle i18n="@@renforts.hint">
+      Les heures ouvertes au-dessus de l'effectif demandé, stand par stand.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    @if (rapport.isLoading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreur(); as erreur) {
+      <p class="summary-banner summary-banner-error" role="alert">{{ erreur }}</p>
+    }
+    @if (message(); as message) {
+      <p class="summary-banner" role="status">{{ message }}</p>
+    }
+
+    @if (rapport.value(); as rapport) {
+      <div class="renforts-stats">
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ rapport.heuresDues | number: '1.0-0' }} h</div>
+          <div class="staffing-stat-label" i18n="@@renforts.statDues">Heures dues</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">+{{ rapport.heuresOuvertes | number: '1.0-0' }} h</div>
+          <div class="staffing-stat-label" i18n="@@renforts.statOuvertes">Heures de renfort ouvertes</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">{{ rapport.heuresPourvues | number: '1.0-0' }} h</div>
+          <div class="staffing-stat-label" i18n="@@renforts.statPourvues">Dont pourvues</div>
+        </mat-card>
+      </div>
+
+      @if (partDuBonus(); as part) {
+        <p class="renforts-formule" i18n="@@renforts.formule">
+          Les renforts ajoutent {{ part | percent: '1.0-0' }} au-dessus de ce que l'édition doit.
+          @if (tauxEmploi(); as taux) {
+            La dernière résolution en a employé {{ taux | percent: '1.0-0' }}.
+          }
+        </p>
+      }
+      @if (!planEnregistre()) {
+        <p class="summary-banner" role="status" i18n="@@renforts.sansPlan">
+          Aucun plan enregistré : la colonne « pourvues » reste à zéro tant qu'une résolution n'a pas eu lieu.
+        </p>
+      }
+    }
+
+    @if (jours().length > 0) {
+      <app-table-filter
+        [(value)]="filtre"
+        [matches]="lignes().length"
+        [total]="rapport.value()?.stands?.length ?? 0"
+        data-page-filter
+      />
+
+      <mat-button-toggle-group
+        class="renforts-tri"
+        [value]="tri()"
+        (change)="changerTri($event.value)"
+        aria-label="Trier les stands"
+        i18n-aria-label="@@renforts.triLabel"
+      >
+        <mat-button-toggle value="ouvertes" i18n="@@renforts.triOuvertes">Ouvertes</mat-button-toggle>
+        <mat-button-toggle value="pourvues" i18n="@@renforts.triPourvues">Pourvues</mat-button-toggle>
+        <mat-button-toggle value="inutilisees" i18n="@@renforts.triInutilisees">Inutilisées</mat-button-toggle>
+        <mat-button-toggle value="nom" i18n="@@renforts.triNom">Nom</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <div class="renforts-table-wrapper">
+        <table class="renforts-table">
+          <caption class="visually-hidden" i18n="@@renforts.tableCaption">
+            Heures de renfort ouvertes et pourvues, par stand et par jour
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@renforts.colStand">Stand</th>
+              <th scope="col" class="renforts-num" i18n="@@renforts.colOuvertes">Ouvertes</th>
+              <th scope="col" class="renforts-num" i18n="@@renforts.colPourvues">Pourvues</th>
+              <th scope="col" class="renforts-num" i18n="@@renforts.colInutilisees">Inutilisées</th>
+              @for (jour of jours(); track jour) {
+                <th scope="col" class="renforts-num">{{ jourCourt(jour) }}</th>
+              }
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignes(); track ligne.standId) {
+              <tr>
+                <th scope="row">
+                  <a [routerLink]="['/stands']" [queryParams]="{ q: ligne.standId }">{{ ligne.nom }}</a>
+                  @if (ligne.emplacementNom) {
+                    <span class="renforts-emplacement">{{ ligne.emplacementNom }}</span>
+                  }
+                </th>
+                <td class="renforts-num renforts-ouvertes">{{ ligne.heuresOuvertes | number: '1.0-1' }}</td>
+                <td class="renforts-num">{{ ligne.heuresPourvues | number: '1.0-1' }}</td>
+                <td class="renforts-num renforts-inutilisees">{{ inutilisees(ligne) | number: '1.0-1' }}</td>
+                @for (jour of jours(); track jour) {
+                  @if (cellule(ligne, jour); as cellule) {
+                    <td
+                      class="renforts-num"
+                      [matTooltip]="
+                        cellule.pourvues + ' h pourvues sur ' + cellule.ouvertes + ' h ouvertes'
+                      "
+                    >
+                      {{ cellule.ouvertes | number: '1.0-1' }}
+                      <span class="renforts-cellule-pourvues">{{ cellule.pourvues | number: '1.0-1' }}</span>
+                    </td>
+                  } @else {
+                    <td class="renforts-num renforts-vide" aria-hidden="true">·</td>
+                  }
+                }
+              </tr>
+            }
+          </tbody>
+          <tfoot>
+            <tr>
+              <th scope="row" i18n="@@renforts.total">Total affiché</th>
+              <td class="renforts-num renforts-ouvertes">{{ totalOuvertes() | number: '1.0-1' }}</td>
+              <td class="renforts-num">{{ totalPourvues() | number: '1.0-1' }}</td>
+              <td class="renforts-num renforts-inutilisees">
+                {{ totalOuvertes() - totalPourvues() | number: '1.0-1' }}
+              </td>
+              @for (jour of jours(); track jour) {
+                <td class="renforts-num" aria-hidden="true"></td>
+              }
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

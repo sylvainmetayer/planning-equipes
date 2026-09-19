@@ -40,7 +40,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * organiser declared on purpose. So {@code posteCount} and the hours are the
  * seats that are owed, {@code posteOptionnelCount} is what sits above them,
  * and the search-space figure — the one that really is Timefold's entity
- * count — adds the two back together.</p>
+ * count — adds the two back together. The bonus hours are reported the same
+ * way, as {@code hoursOptionnelles} beside {@code hoursToFill}: what the event
+ * owes and what it may spend on top are two budgets, and the « Renforts »
+ * screen says where the second one sits.</p>
  *
  * <p>The two hour figures put the counts in perspective. <b>Hours to fill</b>
  * is the sum of every owed seat's effective duration — a seat narrowed by a
@@ -70,6 +73,8 @@ public class ProblemScaleService {
      *                              staffing and never owed
      * @param contrainteAdHocCount  the ad hoc rules layered on top
      * @param hoursToFill           sum of the effective duration of every owed seat
+     * @param hoursOptionnelles     the same sum over the renforts — the bonus
+     *                              hours the edition may spend but does not owe
      * @param hoursAvailable        legal ceiling of what the animateurs may work
      */
     @Schema(
@@ -77,6 +82,7 @@ public class ProblemScaleService {
                 "animateurCount",
                 "contrainteAdHocCount",
                 "hoursAvailable",
+                "hoursOptionnelles",
                 "hoursToFill",
                 "posteCount",
                 "posteOptionnelCount"
@@ -87,6 +93,7 @@ public class ProblemScaleService {
             int posteOptionnelCount,
             int contrainteAdHocCount,
             double hoursToFill,
+            double hoursOptionnelles,
             double hoursAvailable) {
 
         /** The figures of a problem built by hand — the plain-Java harness of the tests. */
@@ -115,12 +122,15 @@ public class ProblemScaleService {
                     .toList());
             List<PosteAffectation> dus =
                     postes.stream().filter(poste -> !poste.isOptionnel()).toList();
+            List<PosteAffectation> renforts =
+                    postes.stream().filter(PosteAffectation::isOptionnel).toList();
             return new ProblemScale(
                     animateurs.size(),
                     dus.size(),
-                    postes.size() - dus.size(),
+                    renforts.size(),
                     contrainteAdHocCount,
                     hoursToFill(dus),
+                    hoursToFill(renforts),
                     hoursAvailable(animateurs, jours, legaux));
         }
 

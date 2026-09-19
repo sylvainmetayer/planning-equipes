@@ -108,6 +108,17 @@ sécurité des tests reste 900 s, soit près de huit fois la mesure.
   d'y poser, c'est-à-dire exactement le changement que le verrou interdit. Un
   verrou par animateur ne couvre aucun de ces sièges, puisqu'il désigne celui
   qui l'occupe.
+- **Un écran dit où sont les heures bonus** (`/renforts`). Les autres vues
+  lisent le renfort comme un bonus et s'arrêtent là — une icône au calendrier,
+  « + 1 optionnel » aux ouvertures, « 2/3 +1 » au PDF ; aucune ne les
+  additionne, et c'est l'addition qui répond à « le budget se réduit, où
+  couper ». Une ligne par stand, une colonne par jour, deux chiffres par
+  case : les heures **ouvertes**, lues sur les sièges qu'une résolution
+  construirait maintenant, et les heures **pourvues**, lues sur le plan
+  enregistré. Deux sources, assumées : l'écart entre elles dit si une coupe
+  est gratuite ou si quelqu'un la sentira. L'écran est en lecture seule, le
+  levier restant l'`effectifMax` de la fiche du stand, avec sa garde
+  « min ≤ max » et son horodatage de concurrence.
 - **Le drapeau est persisté et sérialisé**, contrairement à `passe` : les écrans
   lisent le plan enregistré, et un renfort vide qui s'y relirait comme un trou
   serait précisément la fausse alerte que cette décision supprime.
