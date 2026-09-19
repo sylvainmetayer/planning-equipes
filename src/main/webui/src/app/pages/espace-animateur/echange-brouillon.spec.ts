@@ -20,6 +20,8 @@ function poste(creneauId: number, standId: string): PosteAnimateurView {
     emplacementNom: null,
     emplacementLatitude: null,
     emplacementLongitude: null,
+    typologieId: 'CONSTRUCTION',
+    typologieLibelle: 'Jeux de construction',
   };
 }
 

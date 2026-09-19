@@ -25,6 +25,8 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
     emplacementNom: null,
     emplacementLatitude: null,
     emplacementLongitude: null,
+    typologieId: 'CONSTRUCTION',
+    typologieLibelle: 'Jeux de construction',
     ...overrides,
   };
 }

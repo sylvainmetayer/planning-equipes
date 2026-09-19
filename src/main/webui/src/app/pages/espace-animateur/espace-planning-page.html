@@ -1,283 +1,263 @@
 <!--
-  Repère « maintenant » (#535) : le seul écran du produit lu PENDANT
-  l'événement, debout, sur un téléphone. En tête, ce qui se passe là ; les
-  journées écoulées sont repliées plus bas, si bien que la carte d'aujourd'hui
-  est la première qu'on rencontre — sans défilement et sans qu'aucune journée
-  ne disparaisse.
+  L'espace est lu PENDANT l'événement, debout, sur un téléphone (#615). Trois
+  onglets, et la journée d'abord : « Jour » répond à « je fais quoi, là ? »,
+  « Aperçu » à « et l'ensemble ? », « Coéquipiers » à « suis-je avec
+  quelqu'un ? ». Une seule colonne de cartes de la première journée à la
+  dernière ne répondait qu'à la première, et encore, au prix d'un défilement.
 -->
-@if (repere(); as maintenant) {
-  <section class="espace-maintenant" aria-labelledby="espace-maintenant-titre">
-    <h2 id="espace-maintenant-titre" class="espace-maintenant-titre" i18n="@@espace.planning.maintenantTitre">
-      Aujourd'hui
-    </h2>
-    @if (maintenant.enCours; as poste) {
-      <p class="espace-maintenant-poste">
-        <mat-icon inline>play_circle</mat-icon>
-        <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
-      </p>
-    } @else if (maintenant.prochain; as poste) {
-      <p class="espace-maintenant-poste">
-        <mat-icon inline>schedule</mat-icon>
-        <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
-      </p>
-    } @else if (maintenant.reposAujourdhui) {
-      <p class="espace-maintenant-poste">
-        <mat-icon inline>self_improvement</mat-icon>
-        <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
-      </p>
-    } @else {
-      <p class="espace-maintenant-poste">
-        <mat-icon inline>done_all</mat-icon>
-        <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
-      </p>
-    }
-    @if (posteRepere(); as poste) {
-      @if (poste.emplacementNom; as lieu) {
-        <p class="espace-maintenant-lieu">
-          <mat-icon inline>place</mat-icon>
-          @if (lienEmplacement(poste); as carte) {
-            <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
-          } @else {
-            <span>{{ lieu }}</span>
-          }
-        </p>
-      }
-    }
-    @for (pause of maintenant.remainingPauses; track pause.standId + '-' + pause.heureLimite) {
-      <p class="espace-maintenant-pause">
-        <mat-icon inline>free_breakfast</mat-icon>
-        <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
-      </p>
-    }
-  </section>
-}
+<mat-button-toggle-group class="espace-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                         aria-label="Onglet de mon planning" i18n-aria-label="@@espace.planning.onglet.label">
+  <mat-button-toggle value="jour">
+    <mat-icon>today</mat-icon>
+    <ng-container i18n="@@espace.planning.onglet.jour">Jour</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="apercu">
+    <mat-icon>view_timeline</mat-icon>
+    <ng-container i18n="@@espace.planning.onglet.apercu">Aperçu</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="coequipiers">
+    <mat-icon>group</mat-icon>
+    <ng-container i18n="@@espace.planning.onglet.coequipiers">Coéquipiers</ng-container>
+  </mat-button-toggle>
+</mat-button-toggle-group>
 
-<!--
-  Journées aux horaires modifiés par décision de l'organisation (#4) : la bande
-  fermée et le motif, une ligne par journée où la personne travaille. Au-dessus
-  des changements et des journées : c'est ce qui explique un planning qui ne
-  ressemble pas aux autres jours.
--->
-@for (consigne of consignes(); track consigne.date) {
-  <section class="espace-consigne" role="status">
-    <mat-icon inline>gavel</mat-icon>
-    <span i18n="@@espace.planning.consigne">Horaires modifiés le {{ consigne.date | date: 'EEEE d MMMM' }} : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
-  </section>
-}
-
-<!--
-  Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
-  publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
-  que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne
-  peut pas demander de confirmer ce qu'on n'a pas montré.
-  Replié par défaut : une republication qui touche dix postes faisait dix
-  lignes avant la première journée, sur un téléphone. Le titre dit combien il
-  y en a, un geste les ouvre.
--->
-@if (changements().length > 0) {
-  <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
-           aria-labelledby="espace-changements-titre">
-    <h2 id="espace-changements-titre" class="espace-changements-titre">
-      <button type="button" class="espace-changements-bascule"
-              [attr.aria-expanded]="changementsDeplies()" aria-controls="espace-changements-detail"
-              (click)="basculerChangements()">
-        <mat-icon inline>campaign</mat-icon>
-        <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous ({{ changements().length }})</span>
-        <mat-icon inline>{{ changementsDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
-      </button>
-    </h2>
-    @if (espace.view()?.changementsLe; as annonceLe) {
-      <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
+@switch (onglet()) {
+  @case ('jour') {
+    @if (jours().length === 0) {
+      <p class="espace-vide" i18n="@@espace.planning.vide">
+        Aucune affectation pour le moment : le planning n'a pas encore été publié.
+      </p>
     }
-    <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que désigne
-         l'`aria-controls` du bouton ci-dessus. -->
-    <div id="espace-changements-detail">
-      @if (changementsDeplies()) {
-        <ul class="espace-changements-lignes">
-          @for (ligne of changements(); track $index) {
-            <li>{{ ligne }}</li>
-          }
-        </ul>
-      }
-    </div>
-  </section>
-}
-
-@if (jours().length === 0) {
-  <p class="espace-vide" i18n="@@espace.planning.vide">
-    Aucune affectation pour le moment : le planning n'a pas encore été publié.
-  </p>
-} @else {
-  @if (espace.view()?.publieLe; as publie) {
-    <p class="espace-groupe">
-      <mat-icon inline>event_note</mat-icon>
-      <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
-    </p>
+    <!--
+      Ce qui est dû avant d'être lu : la consigne qui explique des horaires
+      inhabituels, les changements annoncés, puis la confirmation de présence.
+      Toujours en tête de l'onglet Jour tant qu'ils sont dus.
+    -->
+  <!--
+    Journées aux horaires modifiés par décision de l'organisation (#4) : la bande
+    fermée et le motif, une ligne par journée où la personne travaille. Au-dessus
+    des changements et des journées : c'est ce qui explique un planning qui ne
+    ressemble pas aux autres jours.
+  -->
+  @for (consigne of consignes(); track consigne.date) {
+    <section class="espace-consigne" role="status">
+      <mat-icon inline>gavel</mat-icon>
+      <span i18n="@@espace.planning.consigne">Horaires modifiés le {{ consigne.date | date: 'EEEE d MMMM' }} : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
+    </section>
   }
-  @if (confirmationDemandee()) {
-    <div class="espace-confirmation">
-      <button matButton="filled" type="button" [disabled]="confirmationEnCours()" (click)="confirmer()">
-        <mat-icon>check_circle</mat-icon>
-        <span i18n="@@espace.planning.confirmer">J'ai lu et je serai là</span>
-      </button>
-      <p class="espace-confirmation-aide" i18n="@@espace.planning.confirmerAide">
-        Un clic suffit : l'organisation saura que vous avez pris connaissance de ce planning.
-      </p>
-      @if (erreurConfirmation(); as erreur) {
-        <p class="espace-confirmation-erreur">{{ erreur }}</p>
-      }
-    </div>
-  } @else if (espace.view()?.confirmeLe; as confirme) {
-    <p class="espace-confirmation-faite">
-      <mat-icon inline>check_circle</mat-icon>
-      <span i18n="@@espace.planning.confirmeLe">Présence confirmée le {{ confirme | date: 'short' }}</span>
-    </p>
-  }
-}
 
-<!--
-  Au-dessus des cartes de journée, et non plus tout en bas de page : sur le
-  téléphone d'un animateur qui a trois jours de vacations, le pied de page ne se
-  lit jamais, et l'abonnement — la seule des trois sorties qui suive les
-  republications — n'était donc jamais découvert.
-  La bande reste courte à dessein (un titre, les actions, un dépliant) pour que
-  la première journée du planning, ce que la personne vient lire, reste visible
-  sans défiler. L'adresse elle-même, sa copie et son remplacement sont derrière
-  le dépliant : ils se règlent une fois et ne se relisent plus.
-  La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
-  l'abonnement, contour pour le PDF, texte pour l'ICS ponctuel — le fichier est
-  une photo qui périme à la republication, quand l'abonnement, lui, suit.
--->
-@if (urlAbonnement() || telechargementsOfferts()) {
-  <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
-    <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
-      Emporter mon planning
-    </h2>
-    <div class="espace-agenda-actions">
-      @if (lienWebcal(); as webcal) {
-        <a
-          class="espace-agenda-abonnement espace-agenda-large"
-          matButton="filled"
-          [href]="webcal"
-        >
-          <mat-icon>event_repeat</mat-icon>
-          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
-        </a>
+  <!--
+    Ce qui a changé pour moi (#532) : les phrases exactes du dernier mail de
+    publication, telles qu'elles ont été envoyées. Au-dessus des journées, parce
+    que c'est ce qu'on redemande de confirmer juste en dessous — et qu'on ne
+    peut pas demander de confirmer ce qu'on n'a pas montré.
+    Replié par défaut : une republication qui touche dix postes faisait dix
+    lignes avant la première journée, sur un téléphone. Le titre dit combien il
+    y en a, un geste les ouvre.
+  -->
+  @if (changements().length > 0) {
+    <section class="espace-changements" [class.espace-changements-actes]="changementsActes()"
+             aria-labelledby="espace-changements-titre">
+      <h2 id="espace-changements-titre" class="espace-changements-titre">
+        <button type="button" class="espace-changements-bascule"
+                [attr.aria-expanded]="changementsDeplies()" aria-controls="espace-changements-detail"
+                (click)="basculerChangements()">
+          <mat-icon inline>campaign</mat-icon>
+          <span i18n="@@espace.planning.changementsTitre">Ce qui a changé pour vous ({{ changements().length }})</span>
+          <mat-icon inline>{{ changementsDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        </button>
+      </h2>
+      @if (espace.view()?.changementsLe; as annonceLe) {
+        <p class="espace-changements-date" i18n="@@espace.planning.changementsLe">Annoncé le {{ annonceLe | date: 'short' }}</p>
       }
-      @if (telechargementsOfferts()) {
-        <a matButton="outlined" [href]="lienPdf()" download>
-          <mat-icon>picture_as_pdf</mat-icon>
-          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
-        </a>
-        <a matButton="outlined" [href]="lienPdfFeuille()" download>
-          <mat-icon>description</mat-icon>
-          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
-        </a>
-        <a class="espace-agenda-large" matButton [href]="lienIcs()" download>
-          <mat-icon>event</mat-icon>
-          <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
-        </a>
-      }
-    </div>
-    <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
-      L'abonnement suit chaque nouvelle publication ; les PDF et le fichier ICS sont une photo prise
-      aujourd'hui. Le livret se lit page à page, la feuille tient dans une poche.
-    </p>
-    @if (urlAbonnement(); as url) {
-      <button matButton type="button"
-              [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
-              (click)="basculerDetailsAbonnement()">
-        <mat-icon>{{ abonnementDeplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
-        <span i18n="@@espace.planning.abonnementDetails">Copier l'adresse, ou la remplacer</span>
-      </button>
-      <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que
-           désigne l'`aria-controls` du bouton ci-dessus. -->
-      <div id="espace-abonnement-details" class="espace-abonnement-details">
-        @if (abonnementDeplie()) {
-          <div class="espace-abonnement">
-            <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
-              Certaines applications, Google Agenda en premier, demandent de coller cette adresse
-              plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
-              planning.
-            </p>
-            <code class="espace-abonnement-url">{{ url }}</code>
-            <button matButton="outlined" type="button" (click)="copierAbonnement()">
-              <mat-icon>content_copy</mat-icon>
-              <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
-            </button>
-            @if (abonnementCopie()) {
-              <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
-                Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
-              </p>
+      <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que désigne
+           l'`aria-controls` du bouton ci-dessus. -->
+      <div id="espace-changements-detail">
+        @if (changementsDeplies()) {
+          <ul class="espace-changements-lignes">
+            @for (ligne of changements(); track $index) {
+              <li>{{ ligne }}</li>
             }
-            @if (rotationADemander()) {
-              <div class="espace-abonnement-revocation">
-                <p i18n="@@espace.planning.abonnementRevoquerAide">
-                  L'ancienne adresse cessera immédiatement de fonctionner : les agendas déjà abonnés
-                  devront l'être à nouveau avec la nouvelle.
-                </p>
-                <button matButton="filled" type="button" [disabled]="rotationEnCours()"
-                        (click)="regenererAbonnement()">
-                  <span i18n="@@espace.planning.abonnementRevoquerConfirmer">Créer une nouvelle adresse</span>
-                </button>
-                <button matButton type="button" [disabled]="rotationEnCours()"
-                        (click)="rotationADemander.set(false)">
-                  <span i18n="@@espace.planning.abonnementRevoquerAnnuler">Annuler</span>
-                </button>
-              </div>
-            } @else {
-              <button matButton type="button" (click)="rotationADemander.set(true)">
-                <mat-icon>link_off</mat-icon>
-                <span i18n="@@espace.planning.abonnementRevoquer">Cette adresse a fuité, la remplacer</span>
-              </button>
-            }
-            @if (erreurAbonnement(); as erreur) {
-              <p class="espace-abonnement-erreur">{{ erreur }}</p>
-            }
-          </div>
+          </ul>
         }
       </div>
-    }
-  </section>
-}
+    </section>
+  }
 
-<!--
-  Les journées écoulées ne sont pas supprimées, elles sont repliées derrière un
-  seul bouton (#535) : un planning tronqué se lit comme une erreur, et sur un
-  événement d'un mois trente en-têtes à franchir avant aujourd'hui ne valent
-  guère mieux. Le bouton est au-dessus de la liste, là où ces journées
-  reprennent leur place chronologique une fois dépliées.
--->
-@if (joursPasses().length > 0) {
-  <button class="espace-jours-passes" matButton type="button"
-          [attr.aria-expanded]="passesDeplies()" (click)="basculerJoursPasses()">
-    <mat-icon>{{ passesDeplies() ? 'expand_less' : 'expand_more' }}</mat-icon>
-    @if (passesDeplies()) {
-      <span i18n="@@espace.planning.joursPassesMasquer">Masquer les journées passées</span>
-    } @else {
-      <span i18n="@@espace.planning.joursPassesVoir">Voir les journées passées ({{ joursPasses().length }})</span>
+    @if (espace.view()?.publieLe; as publie) {
+      <p class="espace-groupe">
+        <mat-icon inline>event_note</mat-icon>
+        <span i18n="@@espace.planning.publieLe">Planning communiqué le {{ publie | date: 'short' }}</span>
+      </p>
     }
-  </button>
-}
-
-@for (jour of joursAffiches(); track jour.date) {
-  <mat-card class="espace-jour" appearance="outlined"
-            [class.espace-jour-passe]="isJourPasse(jour)"
-            [class.espace-jour-aujourdhui]="isAujourdhui(jour)">
-    <mat-card-header>
-      <mat-card-title>{{ jour.date ? (jour.date | date: 'EEEE d MMMM') : '—' }}</mat-card-title>
-      @if (isAujourdhui(jour)) {
-        <mat-card-subtitle i18n="@@espace.planning.jourAujourdhui">Aujourd'hui</mat-card-subtitle>
-      }
-    </mat-card-header>
-    <mat-card-content>
-      @if (jour.repos) {
-        <p class="espace-repos">
-          <mat-icon inline>self_improvement</mat-icon>
-          <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
+    @if (confirmationDemandee()) {
+      <div class="espace-confirmation">
+        <button matButton="filled" type="button" [disabled]="confirmationEnCours()" (click)="confirmer()">
+          <mat-icon>check_circle</mat-icon>
+          <span i18n="@@espace.planning.confirmer">J'ai lu et je serai là</span>
+        </button>
+        <p class="espace-confirmation-aide" i18n="@@espace.planning.confirmerAide">
+          Un clic suffit : l'organisation saura que vous avez pris connaissance de ce planning.
         </p>
+        @if (erreurConfirmation(); as erreur) {
+          <p class="espace-confirmation-erreur">{{ erreur }}</p>
+        }
+      </div>
+    } @else if (espace.view()?.confirmeLe; as confirme) {
+      <p class="espace-confirmation-faite">
+        <mat-icon inline>check_circle</mat-icon>
+        <span i18n="@@espace.planning.confirmeLe">Présence confirmée le {{ confirme | date: 'short' }}</span>
+      </p>
+    }
+
+    <!--
+      La bande de jours : une puce par journée de l'édition, repos compris. Elle
+      défile horizontalement — c'est elle qui défile, jamais la page — et chaque
+      puce est un vrai bouton, avec un libellé complet pour un lecteur d'écran.
+    -->
+    <div class="espace-bande" role="group"
+         i18n-aria-label="@@espace.planning.bandeLabel" aria-label="Choisir une journée">
+      @for (puce of bandeJours(); track puce.date) {
+        <button type="button" class="espace-bande-jour"
+                [class.espace-bande-jour-actif]="puce.date === jourAffiche()?.date"
+                [class.espace-bande-jour-aujourdhui]="puce.aujourdhui"
+                [class.espace-bande-jour-repos]="puce.repos"
+                [attr.aria-pressed]="puce.date === jourAffiche()?.date"
+                [attr.aria-label]="libellePuce(puce)"
+                (click)="choisirJour(puce.date)">
+          <span class="espace-bande-date">{{ puce.date | date: 'EEE d' }}</span>
+          @if (puce.repos) {
+            <span class="espace-bande-heures" i18n="@@espace.planning.bandeRepos">repos</span>
+          } @else {
+            <span class="espace-bande-heures" i18n="@@espace.planning.bandeHeures">{{ puce.heures }} h</span>
+          }
+          @if (puce.consigne) {
+            <span class="espace-bande-consigne" aria-hidden="true">&bull;</span>
+          }
+        </button>
       }
-      @for (pause of jour.pauses; track pause.standId + '-' + pause.heureLimite) {
+    </div>
+
+    @if (jourAffiche(); as jour) {
+      <section class="espace-journee" aria-labelledby="espace-journee-titre">
+        <h2 id="espace-journee-titre" class="espace-journee-titre">
+          <span class="espace-journee-date">{{ jour.date | date: 'EEEE d MMMM' }}</span>
+          <span class="espace-journee-compte">
+            @if (jour.repos || jour.postes.length === 0) {
+              <ng-container i18n="@@espace.planning.jourRepos">Repos</ng-container>
+            } @else {
+              <ng-container i18n="@@espace.planning.jourResume">{{ jour.postes.length }} créneau(x) · {{ heuresDuJour(jour) }} h</ng-container>
+            }
+          </span>
+        </h2>
+
+        <!--
+          Le bandeau d'état, quand la journée affichée est aujourd'hui : c'est le
+          repère #535 tel quel (`repereMaintenant`), jamais un second calcul.
+        -->
+        @if (jour.date === repere()?.aujourdhui) {
+          @if (repere(); as maintenant) {
+            <p class="espace-maintenant-poste" role="status">
+              @if (maintenant.enCours; as poste) {
+                <mat-icon inline>play_circle</mat-icon>
+                <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
+              } @else if (maintenant.prochain; as poste) {
+                <mat-icon inline>schedule</mat-icon>
+                <span i18n="@@espace.planning.maintenantProchain">Prochain poste : {{ poste.standNom }}, {{ poste.date | date: 'EEEE d MMMM' }} à {{ heure(poste.heureDebut) }}</span>
+              } @else if (maintenant.reposAujourdhui) {
+                <mat-icon inline>self_improvement</mat-icon>
+                <span i18n="@@espace.planning.maintenantRepos">Repos aujourd'hui — aucune affectation.</span>
+              } @else {
+                <mat-icon inline>done_all</mat-icon>
+                <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
+              }
+            </p>
+            @for (pause of maintenant.remainingPauses; track pause.standId + '-' + pause.heureLimite) {
+              <p class="espace-maintenant-pause">
+                <mat-icon inline>free_breakfast</mat-icon>
+                <span i18n="@@espace.planning.maintenantPause">Pause à prendre au plus tard à {{ pause.heureLimite.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+              </p>
+            }
+          }
+        }
+
+        @if (consigneDuJour(); as consigne) {
+          <p class="espace-consigne" role="status">
+            <mat-icon inline>gavel</mat-icon>
+            <span i18n="@@espace.planning.consigneDuJour">Horaires modifiés : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
+          </p>
+        }
+
+        @if (jour.repos || jour.postes.length === 0) {
+          <p class="espace-repos">
+            <mat-icon inline>self_improvement</mat-icon>
+            <span i18n="@@espace.planning.repos">Repos — aucune affectation ce jour.</span>
+          </p>
+        }
+
+        @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
+          <mat-card class="espace-poste-carte" appearance="outlined"
+                    [class.espace-poste-carte-passee]="isPosteTermine(poste)">
+            <mat-card-content>
+              <p class="espace-poste-entete">
+                <span class="espace-poste-horaire">{{ heure(poste.heureDebut) }} &rarr; {{ heure(poste.heureFin) }}</span>
+                @if (isPosteEnCours(poste)) {
+                  <span class="espace-poste-badge espace-poste-badge-encours" i18n="@@espace.planning.badgeEnCours">En cours</span>
+                } @else if (isPosteTermine(poste)) {
+                  <span class="espace-poste-badge" i18n="@@espace.planning.badgeTermine">Terminé</span>
+                }
+              </p>
+              <p class="espace-poste-stand">{{ poste.standNom }}</p>
+              @if (poste.typologieLibelle; as typologie) {
+                <p class="espace-poste-typologie">
+                  <span class="typologie-dot" [class]="couleurTypologie(poste.typologieId)" aria-hidden="true">{{ typologie.charAt(0) }}</span>
+                  <span>{{ typologie }}</span>
+                </p>
+              }
+              @if (poste.emplacementNom; as lieu) {
+                <p class="espace-poste-lieu">
+                  <mat-icon inline>place</mat-icon>
+                  <span>{{ lieu }}</span>
+                  @if (lienEmplacement(poste); as carte) {
+                    <!-- `noopener noreferrer` : le jeton d'espace vit dans l'URL de
+                         cette page, il ne doit pas partir dans le `Referer` du
+                         fournisseur de cartes. -->
+                    <a [href]="carte" target="_blank" rel="noopener noreferrer" i18n="@@espace.planning.itineraire">Itinéraire</a>
+                  }
+                </p>
+              }
+              @if (poste.coequipiers.length > 0) {
+                <p class="espace-poste-equipe">
+                  <mat-icon inline>group</mat-icon>
+                  <span>{{ poste.coequipiers.join(', ') }}</span>
+                </p>
+              }
+            </mat-card-content>
+          </mat-card>
+
+          @for (pause of pausesDansLePoste(jour, poste); track pause.standId + '-' + pause.heureLimite) {
+            <p class="espace-pause">
+              <mat-icon inline>free_breakfast</mat-icon>
+              <span i18n="@@espace.planning.pause">Pause de {{ pause.debut.slice(0, 5) }} à {{ pause.fin.slice(0, 5) }}, sur {{ pause.standNom }}</span>
+              @if (pause.emplacementNom; as lieu) {
+                <!-- Sortir suppose de savoir où revenir (#534). -->
+                <span class="espace-poste-lieu">
+                  <mat-icon inline>place</mat-icon>
+                  @if (lienEmplacement(pause); as carte) {
+                    <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
+                  } @else {
+                    <span>{{ lieu }}</span>
+                  }
+                </span>
+              }
+              @if (!pause.relaisDisponible) {
+                <span class="espace-pause-seul" i18n="@@espace.planning.pauseSansRelais">— personne d'autre sur le stand : demandez le relais à l'organisation</span>
+              }
+            </p>
+          }
+        }
+
+        @for (pause of pausesOrphelines(jour); track pause.standId + '-' + pause.heureLimite) {
         <p class="espace-pause">
           <mat-icon inline>free_breakfast</mat-icon>
           <span i18n="@@espace.planning.pause">Pause de {{ pause.debut.slice(0, 5) }} à {{ pause.fin.slice(0, 5) }}, sur {{ pause.standNom }}</span>
@@ -296,34 +276,275 @@
           }
         </p>
       }
-      <ul class="espace-postes">
-        @for (poste of jour.postes; track poste.standId + '-' + poste.creneauId + '-' + poste.heureDebut) {
-          <li class="espace-poste">
-            <span class="espace-poste-horaire">{{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
-            <span class="espace-poste-stand">{{ poste.standNom }}</span>
-            @if (poste.emplacementNom; as lieu) {
-              <span class="espace-poste-lieu">
-                <mat-icon inline>place</mat-icon>
-                @if (lienEmplacement(poste); as carte) {
-                  <!-- `noopener noreferrer` : le jeton d'espace vit dans l'URL de
-                       cette page, il ne doit pas partir dans le `Referer` du
-                       fournisseur de cartes (même précaution que les liens
-                       légaux du bandeau). -->
-                  <a [href]="carte" target="_blank" rel="noopener noreferrer">{{ lieu }}</a>
-                } @else {
-                  <span>{{ lieu }}</span>
-                }
-              </span>
+
+      <nav class="espace-journee-nav" i18n-aria-label="@@espace.planning.navJourLabel" aria-label="Journée précédente ou suivante">
+          @if (jourPrecedent(); as precedent) {
+            <button matButton type="button" (click)="choisirJour(precedent)">
+              <mat-icon>chevron_left</mat-icon>
+              <span>{{ precedent | date: 'EEE d' }}</span>
+            </button>
+          }
+          @if (jourSuivant(); as suivant) {
+            <button matButton type="button" class="espace-journee-nav-suivant" (click)="choisirJour(suivant)">
+              <span>{{ suivant | date: 'EEE d' }}</span>
+              <mat-icon>chevron_right</mat-icon>
+            </button>
+          }
+        </nav>
+      </section>
+    }
+  }
+  @case ('apercu') {
+    <!-- Les quatre chiffres et la frise n'ont de sens qu'avec des journées ;
+         la bande « Emporter mon planning » est offerte dès la première visite,
+         avant toute publication : s'abonner en avance est le bon geste. -->
+    @if (jours().length > 0) {
+      <section class="espace-apercu" aria-labelledby="espace-apercu-titre">
+        <h2 id="espace-apercu-titre" class="espace-apercu-titre" i18n="@@espace.planning.apercuTitre">
+          Tout mon planning
+        </h2>
+        <dl class="espace-stats">
+          <div>
+            <dt i18n="@@espace.planning.statHeures">Heures</dt>
+            <dd>{{ stats().heures }}</dd>
+          </div>
+          <div>
+            <dt i18n="@@espace.planning.statCreneaux">Créneaux</dt>
+            <dd>{{ stats().creneaux }}</dd>
+          </div>
+          <div>
+            <dt i18n="@@espace.planning.statStands">Stands</dt>
+            <dd>{{ stats().stands }}</dd>
+          </div>
+          <div>
+            <dt i18n="@@espace.planning.statJours">Jours</dt>
+            <dd>{{ stats().jours }}</dd>
+          </div>
+        </dl>
+
+        <!--
+          La frise : une ligne par journée sur un axe commun, une barre par
+          créneau, colorée par typologie de stand — la même attribution que les
+          vues d'administration et le PDF (`core/typologie-colors.ts`), jamais une
+          table en dur par nom de stand.
+        -->
+        <div class="espace-frise-axe" aria-hidden="true">
+          @for (minute of axe().graduations; track minute) {
+            <span>{{ graduation(minute) }}</span>
+          }
+        </div>
+        <ul class="espace-frise">
+          @for (ligne of frise(); track ligne.date) {
+            <li class="espace-frise-ligne"
+                [class.espace-frise-semaine]="ligne.debutDeSemaine"
+                [class.espace-frise-aujourdhui]="ligne.aujourdhui">
+              <button type="button" class="espace-frise-bouton"
+                      [attr.aria-label]="libelleLigneFrise(ligne)"
+                      (click)="ouvrirJour(ligne.date)">
+                <span class="espace-frise-date">{{ ligne.date | date: 'EEE d' }}</span>
+                <span class="espace-frise-piste">
+                  @for (barre of ligne.barres; track barre.standNom + barre.heureDebut) {
+                    <span class="espace-frise-barre" [class]="couleurTypologie(barre.typologieId)"
+                          [style.left.%]="barre.gauchePct" [style.width.%]="barre.largeurPct"></span>
+                  }
+                  @if (ligne.repos) {
+                    <span class="espace-frise-repos" i18n="@@espace.planning.friseRepos">repos</span>
+                  }
+                </span>
+                <span class="espace-frise-total">
+                  @if (!ligne.repos) {
+                    <ng-container i18n="@@espace.planning.friseHeures">{{ ligne.heures }} h</ng-container>
+                  }
+                  @if (ligne.consigne) {
+                    <span class="espace-bande-consigne" aria-hidden="true">&bull;</span>
+                  }
+                </span>
+              </button>
+            </li>
+          }
+        </ul>
+
+        @if (legende().length > 0) {
+          <ul class="espace-legende">
+            @for (typologie of legende(); track typologie.id) {
+              <li>
+                <span class="typologie-dot" [class]="couleurTypologie(typologie.id)" aria-hidden="true">{{ typologie.libelle.charAt(0) }}</span>
+                <span>{{ typologie.libelle }}</span>
+              </li>
             }
-            @if (poste.coequipiers.length > 0) {
-              <span class="espace-poste-equipe">
-                <mat-icon inline>group</mat-icon>
-                {{ poste.coequipiers.join(', ') }}
-              </span>
-            }
+            <li>
+              <span class="espace-bande-consigne" aria-hidden="true">&bull;</span>
+              <span i18n="@@espace.planning.legendeConsigne">Journée aux horaires modifiés</span>
+            </li>
+          </ul>
+        }
+      </section>
+    }
+
+  <!--
+    Au-dessus des cartes de journée, et non plus tout en bas de page : sur le
+    téléphone d'un animateur qui a trois jours de vacations, le pied de page ne se
+    lit jamais, et l'abonnement — la seule des trois sorties qui suive les
+    republications — n'était donc jamais découvert.
+    La bande reste courte à dessein (un titre, les actions, un dépliant) pour que
+    la première journée du planning, ce que la personne vient lire, reste visible
+    sans défiler. L'adresse elle-même, sa copie et son remplacement sont derrière
+    le dépliant : ils se règlent une fois et ne se relisent plus.
+    La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
+    l'abonnement, contour pour le PDF, texte pour l'ICS ponctuel — le fichier est
+    une photo qui périme à la republication, quand l'abonnement, lui, suit.
+  -->
+  @if (urlAbonnement() || telechargementsOfferts()) {
+    <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
+      <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
+        Emporter mon planning
+      </h2>
+      <div class="espace-agenda-actions">
+        @if (lienWebcal(); as webcal) {
+          <a class="espace-agenda-abonnement espace-agenda-large" matButton="filled" [href]="webcal">
+            <mat-icon>event_repeat</mat-icon>
+            <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
+          </a>
+        }
+        @if (telechargementsOfferts()) {
+          <a matButton="outlined" [href]="lienPdf()" download>
+            <mat-icon>picture_as_pdf</mat-icon>
+            <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
+          </a>
+          <a matButton="outlined" [href]="lienPdfFeuille()" download>
+            <mat-icon>description</mat-icon>
+            <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
+          </a>
+          <a class="espace-agenda-large" matButton [href]="lienIcs()" download>
+            <mat-icon>event</mat-icon>
+            <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
+          </a>
+        }
+      </div>
+      <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
+        L'abonnement suit chaque nouvelle publication ; les PDF et le fichier ICS sont une photo prise
+        aujourd'hui. Le livret se lit page à page, la feuille tient dans une poche.
+      </p>
+      @if (urlAbonnement(); as url) {
+        <button matButton type="button"
+                [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
+                (click)="basculerDetailsAbonnement()">
+          <mat-icon>{{ abonnementDeplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
+          <span i18n="@@espace.planning.abonnementDetails">Copier l'adresse, ou la remplacer</span>
+        </button>
+        <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que
+             désigne l'`aria-controls` du bouton ci-dessus. -->
+        <div id="espace-abonnement-details" class="espace-abonnement-details">
+          @if (abonnementDeplie()) {
+            <div class="espace-abonnement">
+              <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
+                Certaines applications, Google Agenda en premier, demandent de coller cette adresse
+                plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
+                planning.
+              </p>
+              <code class="espace-abonnement-url">{{ url }}</code>
+              <button matButton="outlined" type="button" (click)="copierAbonnement()">
+                <mat-icon>content_copy</mat-icon>
+                <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
+              </button>
+              @if (abonnementCopie()) {
+                <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
+                  Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
+                </p>
+              }
+              @if (rotationADemander()) {
+                <div class="espace-abonnement-revocation">
+                  <p i18n="@@espace.planning.abonnementRevoquerAide">
+                    L'ancienne adresse cessera immédiatement de fonctionner : les agendas déjà abonnés
+                    devront l'être à nouveau avec la nouvelle.
+                  </p>
+                  <button matButton="filled" type="button" [disabled]="rotationEnCours()"
+                          (click)="regenererAbonnement()">
+                    <span i18n="@@espace.planning.abonnementRevoquerConfirmer">Créer une nouvelle adresse</span>
+                  </button>
+                  <button matButton type="button" [disabled]="rotationEnCours()"
+                          (click)="rotationADemander.set(false)">
+                    <span i18n="@@espace.planning.abonnementRevoquerAnnuler">Annuler</span>
+                  </button>
+                </div>
+              } @else {
+                <button matButton type="button" (click)="rotationADemander.set(true)">
+                  <mat-icon>link_off</mat-icon>
+                  <span i18n="@@espace.planning.abonnementRevoquer">Cette adresse a fuité, la remplacer</span>
+                </button>
+              }
+              @if (erreurAbonnement(); as erreur) {
+                <p class="espace-abonnement-erreur">{{ erreur }}</p>
+              }
+            </div>
+          }
+        </div>
+      }
+    </section>
+  }
+  }
+  @case ('coequipiers') {
+    <section class="espace-equipe" aria-labelledby="espace-equipe-titre">
+      <h2 id="espace-equipe-titre" class="espace-equipe-titre" i18n="@@espace.planning.equipeTitre">
+        Suis-je avec quelqu'un ?
+      </h2>
+      <mat-form-field appearance="outline" class="espace-equipe-recherche" subscriptSizing="dynamic">
+        <mat-label i18n="@@espace.planning.equipeRecherche">Chercher un nom</mat-label>
+        <input matInput type="search" name="coequipier" autocomplete="off"
+               [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" />
+        <mat-icon matSuffix>search</mat-icon>
+      </mat-form-field>
+
+      @if (coequipiers().length === 0) {
+        <p class="espace-equipe-vide" i18n="@@espace.planning.equipeVide">
+          Personne avec ce nom dans votre planning.
+        </p>
+      }
+      <ul class="espace-equipe-liste">
+        @for (coequipier of coequipiers(); track coequipier.nom) {
+          <li class="espace-equipe-personne">
+            <p class="espace-equipe-nom">
+              <span>{{ coequipier.nom }}</span>
+              <span class="espace-equipe-compte" i18n="@@espace.planning.equipeCompte">{{ coequipier.occurrences.length }}×</span>
+            </p>
+            <ul class="espace-equipe-occurrences">
+              @for (occurrence of coequipier.occurrences; track occurrence.date + occurrence.heureDebut + occurrence.standNom) {
+                <li>
+                <span class="espace-equipe-quand">{{ occurrence.date | date: 'EEE d' }}</span>
+                · {{ occurrence.heureDebut }}–{{ occurrence.heureFin }} · {{ occurrence.standNom }}
+              </li>
+              }
+            </ul>
           </li>
         }
       </ul>
-    </mat-card-content>
-  </mat-card>
+
+      <!--
+        Montage, démontage : la moitié de l'effectif sur un stand. Cent noms ne
+        répondent à rien, et ils noieraient les quatre personnes avec qui on
+        passe vraiment sa quinzaine. L'effectif, donc, et pas de liste.
+      -->
+      @if (affluences().length > 0) {
+        <ul class="espace-equipe-affluences">
+          @for (affluence of affluences(); track affluence.date + affluence.standNom) {
+            <li i18n="@@espace.planning.equipeAffluence">
+              {{ affluence.standNom }}, {{ affluence.date | date: 'EEE d' }} : {{ affluence.effectif }} personnes présentes
+            </li>
+          }
+        </ul>
+      }
+    </section>
+  }
 }
+
+<!--
+  Épinglé en bas, à portée de pouce, sous les trois onglets : proposer un
+  échange est l'action de cet espace, et elle ne doit pas dépendre de
+  l'onglet qu'on lit.
+-->
+<div class="espace-action-epinglee">
+  <a matButton="filled" [routerLink]="['/animateur', espace.jeton(), 'echanges']">
+    <mat-icon>swap_horiz</mat-icon>
+    <span i18n="@@espace.planning.proposerEchange">Proposer un échange de créneau</span>
+  </a>
+</div>
