@@ -2368,6 +2368,20 @@ export interface EspaceAnimateurView {
    * every stand was shut on and why, said on the day card and above it.
    */
   consignes: ConsigneEspaceView[];
+  /**
+   * Name of the edition this planning belongs to (issue #608), `null` when the
+   * server cannot resolve it. Somebody who came back from one year to the next
+   * holds two espace links, both valid for ever and both saying « votre
+   * planning »: nothing on either page said which year it was.
+   */
+  editionNom: string | null;
+  /**
+   * First day of that edition's event, derived from its créneaux rather than
+   * stored (`docs/domaine.md`) — `null` when the edition holds no créneau.
+   */
+  editionDebut: string | null;
+  /** Last day, `null` under the same condition. */
+  editionFin: string | null;
 }
 
 /**

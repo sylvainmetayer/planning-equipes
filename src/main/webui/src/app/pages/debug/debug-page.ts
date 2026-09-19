@@ -9,8 +9,10 @@ import {
   viewChild,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -35,6 +37,8 @@ import { OutputPanel } from '../../shared/output-panel';
 import { versionUrl } from '../../core/version-link';
 import { APP_VERSION, REPO_URL } from '../../version';
 import { StatusMessage } from '../../shared/status-message';
+import { keepViewInQueryParams } from '../../core/view-query-params';
+import { OngletDebug, readOngletDebug } from './debug';
 import { ScenarioPreenregistre } from './scenario-preenregistre';
 import { YamlValidator } from './yaml-validator';
 import { errorMessage, errorPrefix } from '../../core/error-message';
@@ -60,6 +64,14 @@ export const CLEAR_KEYWORD = 'VIDER';
  * tooling that belongs with the other diagnostics rather than on the
  * day-to-day Paramètres page. What an organiser does with a scenario — upload
  * one, write one out — stays on the Imports and Exports screens.
+ *
+ * <p>Four tabs since issue #606, the same mechanics as Diagnostic and Imports:
+ * « Résolution » (default — the raw analysis, the version, the API docs),
+ * « Vérifications » (a test notification, a test exception, a test mail,
+ * Mailpit, and the frozen date where it is allowed), « Données » (the database
+ * and the bundled scenarios) and « Validateur YAML ». The output panel stays
+ * under the tabs: what an action answered is read after it, and changing tab
+ * is not a reason to lose it.</p>
  */
 @Component({
   selector: 'app-debug-page',
@@ -67,6 +79,7 @@ export const CLEAR_KEYWORD = 'VIDER';
     FormsModule,
     MatCardModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -78,6 +91,7 @@ export const CLEAR_KEYWORD = 'VIDER';
   ],
   templateUrl: './debug-page.html',
   styleUrls: [
+    './debug-page.css',
     './debug-date-du-jour.css',
     './debug-diagnostic.css',
     './scenario-preenregistre.css',
@@ -131,6 +145,8 @@ export class DebugPage {
   protected readonly todayAnchor = TODAY_ANCHOR;
   protected readonly dateDuJourErreur = signal('');
 
+  protected readonly onglet = signal<OngletDebug>('resolution');
+
   /**
    * Resolves only once the field is rendered, which is itself conditional on
    * the server saying the setting may be used — so this is what the deep link
@@ -144,24 +160,46 @@ export class DebugPage {
    * steal the focus back every time the page re-renders. An unknown value
    * simply does nothing (decision 0012: reading view state is tolerant).
    */
-  private focusEnAttente =
-    inject(ActivatedRoute, { optional: true })?.snapshot.queryParamMap.get('focus') ===
-    TODAY_ANCHOR;
+  private readonly route = inject(ActivatedRoute, { optional: true });
+
+  private focusPending = this.route?.snapshot.queryParamMap.get('focus') === TODAY_ANCHOR;
 
   constructor() {
+    // Followed rather than read once, like Diagnostic: the router reuses this
+    // component when one navigates to `/debug` again with another `onglet` —
+    // from the menu, from the date-frozen indicator, from the « page Débogage »
+    // pointers of Paramètres and Imports. `replaceState` (ADR 0018) emits
+    // nothing, so the writer below cannot feed this subscription.
+    this.route?.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      // `?focus=date-du-jour` names a control that lives on the Vérifications
+      // tab: an old link that predates the tabs still lands on its field.
+      const demande = params.get('onglet');
+      this.onglet.set(
+        demande === null && params.get('focus') === TODAY_ANCHOR
+          ? 'verifications'
+          : readOngletDebug(demande),
+      );
+    });
+    keepViewInQueryParams(() => ({
+      onglet: this.onglet() === 'resolution' ? null : this.onglet(),
+    }));
     void this.chargerMailConfig();
     void this.refresh();
     effect(() => {
       const champ = this.champDateDuJour();
-      if (!champ || !this.focusEnAttente) {
+      if (!champ || !this.focusPending) {
         return;
       }
-      this.focusEnAttente = false;
+      this.focusPending = false;
       // Scrolling is the nicety, the focus is the point: jsdom has no
       // scrollIntoView, and neither does an old browser.
       champ.nativeElement.scrollIntoView?.({ block: 'center' });
       champ.nativeElement.focus();
     });
+  }
+
+  protected changerOnglet(onglet: OngletDebug): void {
+    this.onglet.set(onglet);
   }
 
   /**

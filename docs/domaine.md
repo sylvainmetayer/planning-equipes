@@ -576,6 +576,17 @@ instantané marqué publié (`plan_snapshot.publie_le`). C'est un instantané et
 rien d'autre : le contenu dénormalisé de l'ADR 0007 était déjà exactement « un
 planning complet, indépendant de ce qui bouge après ».
 
+**L'espace animateur nomme son édition.** Le nom de l'édition et ses bornes
+descendent jusqu'à la page (`editionNom`, `editionDebut`, `editionFin` de
+`GET /api/espace-animateur/{jeton}`), jusqu'à l'en-tête du PDF individuel et
+jusqu'au nom du calendrier d'abonnement (`X-WR-CALNAME`). Rien n'est stocké
+pour cela : le nom vient de l'`Edition`, les bornes se dérivent des créneaux
+comme partout ailleurs, et une édition sans créneau porte son nom sans dates.
+La raison est un cas précis (#608) : un animateur revenu d'une année sur
+l'autre a **deux** liens d'espace valides dans sa boîte mail, et deux pages
+rigoureusement identiques ; se tromper de lien donnait un planning parfaitement
+cohérent, simplement pas celui de cette année.
+
 **L'espace animateur lit le planning publié.** Ce qu'une personne voit est ce
 qu'on lui a envoyé — un échange validé, un remplacement appliqué, une nouvelle
 résolution ne déplacent son espace qu'une fois publiés. Tant que rien ne l'a été

@@ -1,7 +1,7 @@
 package dev.sylvain.planning.service.export;
 
-import dev.sylvain.planning.domain.Edition;
-import dev.sylvain.planning.service.edition.EditionService;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
+import dev.sylvain.planning.service.edition.EtiquetteEditionService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -20,35 +20,30 @@ import java.time.Instant;
 @ApplicationScoped
 public class PersistedExportProvenance implements ExportProvenance {
 
-    private final EditionService editions;
+    private final EtiquetteEditionService etiquettes;
     private final PlanningPersistenceService persistence;
     private final PlanSnapshotService snapshots;
 
     @Inject
     public PersistedExportProvenance(
-            EditionService editions, PlanningPersistenceService persistence, PlanSnapshotService snapshots) {
-        this.editions = editions;
+            EtiquetteEditionService etiquettes, PlanningPersistenceService persistence, PlanSnapshotService snapshots) {
+        this.etiquettes = etiquettes;
         this.persistence = persistence;
         this.snapshots = snapshots;
     }
 
     @Override
     public Provenance courante() {
-        return new Provenance(editionNom(), solvedAt(), Nature.RESOLUTION);
+        return new Provenance(etiquette(), solvedAt(), Nature.RESOLUTION);
     }
 
     @Override
     public Provenance publiee() {
-        return new Provenance(editionNom(), publishedAt(), Nature.PUBLICATION);
+        return new Provenance(etiquette(), publishedAt(), Nature.PUBLICATION);
     }
 
-    private String editionNom() {
-        try {
-            Edition edition = editions.editionCourante();
-            return edition == null ? null : edition.getNom();
-        } catch (RuntimeException e) {
-            return null;
-        }
+    private EtiquetteEdition etiquette() {
+        return etiquettes.courante();
     }
 
     private Instant solvedAt() {

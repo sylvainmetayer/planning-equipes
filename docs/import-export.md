@@ -71,7 +71,7 @@ Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personne
 | --- | --- | --- |
 | Importer un fichier scénario | **Imports**, onglet Scénario (`/imports?onglet=scenario`) | C'est un fichier qu'un organisateur apporte, comme les cinq CSV d'à côté |
 | Exporter l'édition en scénario | **Exports** (`/exports`) | Le seul écran qui écrit des fichiers depuis l'édition courante |
-| Charger un scénario pré-enregistré | **Débogage** (`/debug`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
+| Charger un scénario pré-enregistré | **Débogage**, onglet *Données* (`/debug?onglet=donnees`) | Le sélecteur liste les cinquante et quelques fichiers livrés — gamme et cas extrêmes compris : un catalogue de développement, pas d'organisation |
 
 ## Ce que l'import d'un scénario remplace
 
@@ -878,8 +878,8 @@ l'ICS les champs `LOCATION` et `GEO`.
 Le document remis à un animateur n'est pas une liste de créneaux : c'est un
 livret en **trois parties**, dans cet ordre, chaque page numérotée « n / N ».
 
-1. **Vue d'ensemble.** L'en-tête (nom, période, nombre de jours dont ceux de
-   repos), quatre chiffres — heures travaillées, créneaux, stands, jours
+1. **Vue d'ensemble.** L'en-tête (nom, nom de l'édition, période, nombre de
+   jours dont ceux de repos), quatre chiffres — heures travaillées, créneaux, stands, jours
    travaillés —, puis la frise « Vos N jours en un coup d'œil » : une ligne par
    jour de l'édition, repos compris, sur un axe horaire commun, une barre par
    poste et le total du jour à droite. En dessous, la légende des couleurs,
@@ -931,6 +931,11 @@ Le même contenu se demande sous deux formes, par le paramètre `format` :
 | --- | --- | --- |
 | `livret` (défaut) | A4 portrait, plusieurs pages, les trois parties ci-dessus | l'espace animateur, les mails de publication, l'export d'un animateur |
 | `feuille` | **une** feuille A4 paysage recto-verso : recto un calendrier semaine par ligne (lundi → dimanche) avec mini-frise et créneaux, verso les coéquipiers, les grandes équipes et les lieux | l'impression en masse par l'organisation — un tirage par personne au lieu de cinq |
+
+Les deux nomment leur **édition** sous le nom de l'animateur : le nom seul, les
+bornes étant déjà sur la ligne de période juste en dessous. Une personne revenue
+d'une année sur l'autre a deux documents à distinguer, et le pied de page ne se
+lit pas d'un coup d'œil.
 
 Les deux formats sont offerts **à l'animateur comme à l'organisation** :
 l'espace animateur propose « Télécharger le livret PDF » et « Télécharger la

@@ -94,7 +94,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now(), provenance));
         document.open();
 
-        document.add(entete(view, lienEspaceAnimateur));
+        document.add(entete(view, lienEspaceAnimateur, provenance.edition().nom()));
         if (view.vide()) {
             document.add(theme.emptyState());
             document.close();
@@ -113,7 +113,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
 
     // --- Front side: the calendar ------------------------------------------------------
 
-    private PdfPTable entete(AnimateurPlanningView view, String lien) {
+    private PdfPTable entete(AnimateurPlanningView view, String lien, String edition) {
         PdfPTable qr = QrCodeEspace.bloc(lien, 48f, theme.headline());
         PdfPTable table =
                 qr == null ? new PdfPTable(new float[] {346f, 436f}) : new PdfPTable(new float[] {330f, 396f, 56f});
@@ -132,6 +132,12 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         Paragraph nom = new Paragraph(view.nom(), theme.nameFont());
         nom.setSpacingAfter(2f);
         identite.addElement(nom);
+        // The édition under the name, as the booklet says it (issue #608): two
+        // years of sheets are otherwise the same sheet twice. The span is on
+        // the next line, so its name is all this one owes.
+        if (edition != null && !edition.isBlank()) {
+            identite.addElement(new Paragraph(edition, theme.editionFont()));
+        }
         identite.addElement(new Paragraph(view.periode(), theme.periodeFont()));
         table.addCell(identite);
 

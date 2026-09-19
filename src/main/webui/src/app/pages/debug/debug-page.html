@@ -2,215 +2,267 @@
   <mat-card-header>
     <h1 mat-card-title i18n="@@nav.link.debug">Débogage</h1>
     <mat-card-subtitle i18n="@@debug.description">
-      Diagnostic brut de la dernière résolution : score, postes non pourvus, faisabilité et détail par
-      contrainte.
+      Les outils techniques de l'instance : la sortie brute de la dernière résolution, les vérifications
+      (notifications, erreurs, e-mails, date figée), les données de démonstration et le validateur YAML.
     </mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
-    <div class="calendar-toolbar">
-      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
-        <mat-icon>refresh</mat-icon>
-        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
-      </button>
-    </div>
-    <p class="debug-version" i18n="@@debug.testNotifications.hint">
-      Génère une notification de test (visible ici en toast, puis dans l'onglet Notifications) :
-    </p>
-    <div class="calendar-toolbar">
-      <button matButton="outlined" type="button" (click)="sendTestNotification('info')">
-        <mat-icon>info</mat-icon>
-        <ng-container i18n="@@debug.testNotification.info">Info</ng-container>
-      </button>
-      <button matButton="outlined" type="button" (click)="sendTestNotification('warning')">
-        <mat-icon>warning</mat-icon>
-        <ng-container i18n="@@debug.testNotification.warning">Warning</ng-container>
-      </button>
-      <button matButton="outlined" type="button" (click)="sendTestNotification('alert')">
-        <mat-icon>error</mat-icon>
-        <ng-container i18n="@@debug.testNotification.alert">Alert</ng-container>
-      </button>
-    </div>
-    <p class="debug-version" i18n="@@debug.testException.hint">
-      Génère une exception de test, pour vérifier que le suivi d'erreurs (Sentry/Bugsink) est bien branché :
-    </p>
-    <div class="calendar-toolbar">
-      <button matButton="outlined" type="button" (click)="triggerFrontException()">
+    <mat-button-toggle-group class="debug-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
+                             aria-label="Onglet du débogage" i18n-aria-label="@@debug.onglet.label">
+      <mat-button-toggle value="resolution">
+        <mat-icon>data_object</mat-icon>
+        <ng-container i18n="@@debug.onglet.resolution">Résolution</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="verifications">
         <mat-icon>bug_report</mat-icon>
-        <ng-container i18n="@@debug.testException.front">Exception front</ng-container>
-      </button>
-      <button matButton="outlined" type="button" (click)="triggerBackException()">
-        <mat-icon>bug_report</mat-icon>
-        <ng-container i18n="@@debug.testException.back">Exception back</ng-container>
-      </button>
-    </div>
-    <p class="debug-version" i18n="@@debug.mailTest.hint">
-      Envoie un vrai message à l'adresse administrateur configurée :
-    </p>
-    @if (mailAdmin() === null) {
-      <app-status-message
-        i18n-text="@@debug.mailTest.absent"
-        text="Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : ce test et les notifications d'échange sont désactivés."
-        tone="warning"
-      />
-    }
-    <div class="calendar-toolbar">
-      <button matButton="outlined" type="button" [disabled]="mailTestBusy() || mailAdmin() === null"
-              (click)="envoyerMailTest()">
-        <mat-icon>outgoing_mail</mat-icon>
-        <ng-container i18n="@@debug.mailTest.bouton">Envoyer un mail de test</ng-container>
-      </button>
-    </div>
-    <p class="debug-version" i18n="@@debug.mail.hint">
-      Les e-mails sortants (codes d'accès, plannings) sont visibles dans le débogueur d'e-mails :
-    </p>
-    <div class="calendar-toolbar">
-      <!-- `/mail` resolves relative to whatever host serves this app; routing
-           it to Mailpit is a deployment-side reverse-proxy concern, like `/db`
-           below (proxy.conf.json wires both for `ng serve`). -->
-      <a matButton="outlined" href="/mail" target="_blank" rel="noopener">
-        <mat-icon>outgoing_mail</mat-icon>
-        <ng-container i18n="@@debug.mailLink">Ouvrir le débogueur d'e-mails (Mailpit)</ng-container>
-      </a>
-    </div>
-    <p class="debug-version">
-      <ng-container i18n="@@debug.version">Version :</ng-container>
-      <a [href]="appVersionUrl" target="_blank" rel="noopener">{{ appVersion }}</a>
-      (<a [href]="repoUrl" target="_blank" rel="noopener" i18n="@@debug.repoLink">dépôt GitHub</a>)
-    </p>
-    @if (loading()) {
-      <mat-progress-bar mode="indeterminate" />
-    }
-    @if (error()) {
-      <p class="calendar-empty">{{ error() }}</p>
-    }
-    @if (!loading() && !error() && !output()) {
-      <p class="empty-hint" i18n="@@debug.empty">Aucune résolution ni analyse pour cette session pour le moment.</p>
-    }
+        <ng-container i18n="@@debug.onglet.verifications">Vérifications</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="donnees">
+        <mat-icon>storage</mat-icon>
+        <ng-container i18n="@@debug.onglet.donnees">Données</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="yaml">
+        <mat-icon>rule</mat-icon>
+        <ng-container i18n="@@debug.onglet.yaml">Validateur YAML</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
   </mat-card-content>
 </mat-card>
 
-@if (dates.modifiable()) {
-  <mat-card appearance="outlined" class="page-card">
-    <mat-card-header>
-      <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
-      <mat-card-subtitle i18n="@@debug.dateDuJour.description">
-        Fige la date du serveur, et si besoin l'heure, pour essayer le mode jour J et l'espace
-        animateur hors de l'événement. Sans heure, l'horloge tourne ; date vide : horloge réelle.
-      </mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <mat-form-field appearance="outline" class="debug-date-du-jour">
-        <mat-label i18n="@@debug.dateDuJour.label">Date du jour</mat-label>
-        <input
-          matInput
-          #champDateDuJour
-          [id]="todayAnchor"
-          type="date"
-          name="dateDuJour"
-          [ngModel]="dates.dateDuJour()"
-          (ngModelChange)="onDateDuJour($event)"
-        />
-      </mat-form-field>
-      <mat-form-field appearance="outline" class="debug-date-du-jour">
-        <mat-label i18n="@@debug.heureDuJour.label">Heure (facultative)</mat-label>
-        <input
-          matInput
-          id="heure-du-jour"
-          type="time"
-          name="heureDuJour"
-          [disabled]="!dates.actif()"
-          [ngModel]="dates.heureMock()"
-          (ngModelChange)="onHeureMock($event)"
-        />
-      </mat-form-field>
-      @if (dateDuJourErreur()) {
-        <p class="field-error">{{ dateDuJourErreur() }}</p>
-      }
-      @if (dates.actif()) {
-        <p class="debug-date-du-jour-actif" i18n="@@debug.dateDuJour.actif">
-          Date figée : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité.
+@switch (onglet()) {
+  @case ('verifications') {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@debug.verifications.title">Vérifications</h2>
+        <mat-card-subtitle i18n="@@debug.verifications.subtitle">
+          Provoquer ce qui doit sortir de l'application — une notification, une erreur, un e-mail — pour
+          vérifier que la chaîne est branchée.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <p class="debug-version" i18n="@@debug.testNotifications.hint">
+          Génère une notification de test (visible ici en toast, puis dans l'onglet Notifications) :
         </p>
+        <div class="calendar-toolbar">
+          <button matButton="outlined" type="button" (click)="sendTestNotification('info')">
+            <mat-icon>info</mat-icon>
+            <ng-container i18n="@@debug.testNotification.info">Info</ng-container>
+          </button>
+          <button matButton="outlined" type="button" (click)="sendTestNotification('warning')">
+            <mat-icon>warning</mat-icon>
+            <ng-container i18n="@@debug.testNotification.warning">Warning</ng-container>
+          </button>
+          <button matButton="outlined" type="button" (click)="sendTestNotification('alert')">
+            <mat-icon>error</mat-icon>
+            <ng-container i18n="@@debug.testNotification.alert">Alert</ng-container>
+          </button>
+        </div>
+        <p class="debug-version" i18n="@@debug.testException.hint">
+          Génère une exception de test, pour vérifier que le suivi d'erreurs (Sentry/Bugsink) est bien branché :
+        </p>
+        <div class="calendar-toolbar">
+          <button matButton="outlined" type="button" (click)="triggerFrontException()">
+            <mat-icon>bug_report</mat-icon>
+            <ng-container i18n="@@debug.testException.front">Exception front</ng-container>
+          </button>
+          <button matButton="outlined" type="button" (click)="triggerBackException()">
+            <mat-icon>bug_report</mat-icon>
+            <ng-container i18n="@@debug.testException.back">Exception back</ng-container>
+          </button>
+        </div>
+        <p class="debug-version" i18n="@@debug.mailTest.hint">
+          Envoie un vrai message à l'adresse administrateur configurée :
+        </p>
+        @if (mailAdmin() === null) {
+          <app-status-message
+            i18n-text="@@debug.mailTest.absent"
+            text="Aucune adresse administrateur n'est configurée (variable MAIL_ADMIN) : ce test et les notifications d'échange sont désactivés."
+            tone="warning"
+          />
+        }
+        <div class="calendar-toolbar">
+          <button matButton="outlined" type="button" [disabled]="mailTestBusy() || mailAdmin() === null"
+                  (click)="envoyerMailTest()">
+            <mat-icon>outgoing_mail</mat-icon>
+            <ng-container i18n="@@debug.mailTest.bouton">Envoyer un mail de test</ng-container>
+          </button>
+        </div>
+        <p class="debug-version" i18n="@@debug.mail.hint">
+          Les e-mails sortants (codes d'accès, plannings) sont visibles dans le débogueur d'e-mails :
+        </p>
+        <div class="calendar-toolbar">
+          <!-- `/mail` resolves relative to whatever host serves this app; routing
+               it to Mailpit is a deployment-side reverse-proxy concern, like `/db`
+               below (proxy.conf.json wires both for `ng serve`). -->
+          <a matButton="outlined" href="/mail" target="_blank" rel="noopener">
+            <mat-icon>outgoing_mail</mat-icon>
+            <ng-container i18n="@@debug.mailLink">Ouvrir le débogueur d'e-mails (Mailpit)</ng-container>
+          </a>
+        </div>
+      </mat-card-content>
+    </mat-card>
+
+    @if (dates.modifiable()) {
+      <mat-card appearance="outlined" class="page-card">
+        <mat-card-header>
+          <h2 mat-card-title i18n="@@debug.dateDuJour.title">Date du jour (mock)</h2>
+          <mat-card-subtitle i18n="@@debug.dateDuJour.description">
+            Fige la date du serveur, et si besoin l'heure, pour essayer le mode jour J et l'espace
+            animateur hors de l'événement. Sans heure, l'horloge tourne ; date vide : horloge réelle.
+          </mat-card-subtitle>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-form-field appearance="outline" class="debug-date-du-jour">
+            <mat-label i18n="@@debug.dateDuJour.label">Date du jour</mat-label>
+            <input
+              matInput
+              #champDateDuJour
+              [id]="todayAnchor"
+              type="date"
+              name="dateDuJour"
+              [ngModel]="dates.dateDuJour()"
+              (ngModelChange)="onDateDuJour($event)"
+            />
+          </mat-form-field>
+          <mat-form-field appearance="outline" class="debug-date-du-jour">
+            <mat-label i18n="@@debug.heureDuJour.label">Heure (facultative)</mat-label>
+            <input
+              matInput
+              id="heure-du-jour"
+              type="time"
+              name="heureDuJour"
+              [disabled]="!dates.actif()"
+              [ngModel]="dates.heureMock()"
+              (ngModelChange)="onHeureMock($event)"
+            />
+          </mat-form-field>
+          @if (dateDuJourErreur()) {
+            <p class="field-error">{{ dateDuJourErreur() }}</p>
+          }
+          @if (dates.actif()) {
+            <p class="debug-date-du-jour-actif" i18n="@@debug.dateDuJour.actif">
+              Date figée : les écrans qui raisonnent sur « maintenant » ne montrent pas la réalité.
+            </p>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
+  }
+  @case ('donnees') {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>
+        <mat-card-subtitle i18n="@@dataSetup.database.description">
+          Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
+          cours d'exécution.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions class="card-actions">
+        <button
+          matButton="outlined"
+          class="danger-action"
+          [disabled]="solverBusy() || resetting()"
+          (click)="onResetDatabase()"
+        >
+          <mat-icon>delete_sweep</mat-icon>
+          <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
+        </button>
+        <!-- `/db` resolves relative to whatever host serves this app; routing it to
+             pgAdmin is a deployment-side reverse-proxy concern (see proxy.conf.json
+             for the `ng serve` wiring). -->
+        <a matButton="outlined" href="/db" target="_blank" rel="noopener">
+          <mat-icon>storage</mat-icon>
+          <ng-container i18n="@@dataSetup.database.pgAdminLink"
+            >Accéder à la base de données (pgAdmin)</ng-container
+          >
+        </a>
+      </mat-card-actions>
+    </mat-card>
+
+    <app-scenario-preenregistre />
+  }
+  @case ('yaml') {
+    <app-yaml-validator />
+  }
+  @default {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@debug.resolution.title">Dernière analyse</h2>
+        <mat-card-subtitle i18n="@@debug.resolution.subtitle">
+          Diagnostic brut de la dernière résolution : score, postes non pourvus, faisabilité et détail par
+          contrainte.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="calendar-toolbar">
+          <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+            <mat-icon>refresh</mat-icon>
+            <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+          </button>
+        </div>
+        @if (loading()) {
+          <mat-progress-bar mode="indeterminate" />
+        }
+        @if (error()) {
+          <p class="calendar-empty">{{ error() }}</p>
+        }
+        @if (!loading() && !error() && !output()) {
+          <p class="empty-hint" i18n="@@debug.empty">Aucune résolution ni analyse pour cette session pour le moment.</p>
+        }
+        <p class="debug-version">
+          <ng-container i18n="@@debug.version">Version :</ng-container>
+          <a [href]="appVersionUrl" target="_blank" rel="noopener">{{ appVersion }}</a>
+          (<a [href]="repoUrl" target="_blank" rel="noopener" i18n="@@debug.repoLink">dépôt GitHub</a>)
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@debug.diagnostic.title">Diagnostic de contraintes (brut)</h2>
+        <mat-card-subtitle i18n="@@debug.diagnostic.subtitle">
+          Le diagnostic complet du planning enregistré, sérialisé — ce que la page Solveur déversait dans son panneau
+          de sortie. Ici pour le diagnostic technique, hors du chemin normal.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions class="card-actions">
+        <button matButton="outlined" [disabled]="diagnosticBusy()" (click)="onLoadDiagnostic()">
+          <mat-icon>data_object</mat-icon>
+          <ng-container i18n="@@debug.diagnostic.load">Charger le diagnostic</ng-container>
+        </button>
+      </mat-card-actions>
+      @if (diagnosticBusy()) {
+        <mat-progress-bar mode="indeterminate" />
       }
-    </mat-card-content>
-  </mat-card>
+      @if (diagnosticJson(); as json) {
+        <mat-card-content>
+          <pre class="debug-diagnostic-json">{{ json }}</pre>
+        </mat-card-content>
+      }
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@debug.api.title">Documentation de l'API</h2>
+        <mat-card-subtitle i18n="@@debug.api.subtitle">
+          Description OpenAPI de l'API REST et explorateur pour l'essayer ; les deux exigent une session
+          administrateur.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-actions class="card-actions">
+        <a matButton="outlined" href="/q/swagger-ui" target="_blank" rel="noopener">
+          <mat-icon>api</mat-icon>
+          <ng-container i18n="@@debug.api.swaggerUi">Explorer l'API (Swagger UI)</ng-container>
+        </a>
+        <a matButton="outlined" href="/q/openapi" target="_blank" rel="noopener">
+          <mat-icon>description</mat-icon>
+          <ng-container i18n="@@debug.api.openapi">Télécharger la description OpenAPI</ng-container>
+        </a>
+      </mat-card-actions>
+    </mat-card>
+  }
 }
 
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@dataSetup.database.title">Base de données</h2>
-    <mat-card-subtitle i18n="@@dataSetup.database.description">
-      Interagir avec la base de données. Ces actions sont verrouillées pendant que le solveur est en
-      cours d'exécution.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button
-      matButton="outlined"
-      class="danger-action"
-      [disabled]="solverBusy() || resetting()"
-      (click)="onResetDatabase()"
-    >
-      <mat-icon>delete_sweep</mat-icon>
-      <ng-container i18n="@@dataSetup.resetDatabase">Vider la base de données</ng-container>
-    </button>
-    <!-- `/db` resolves relative to whatever host serves this app; routing it to
-         pgAdmin is a deployment-side reverse-proxy concern (see proxy.conf.json
-         for the `ng serve` wiring). -->
-    <a matButton="outlined" href="/db" target="_blank" rel="noopener">
-      <mat-icon>storage</mat-icon>
-      <ng-container i18n="@@dataSetup.database.pgAdminLink"
-        >Accéder à la base de données (pgAdmin)</ng-container
-      >
-    </a>
-  </mat-card-actions>
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@debug.diagnostic.title">Diagnostic de contraintes (brut)</h2>
-    <mat-card-subtitle i18n="@@debug.diagnostic.subtitle">
-      Le diagnostic complet du planning enregistré, sérialisé — ce que la page Solveur déversait dans son panneau
-      de sortie. Ici pour le diagnostic technique, hors du chemin normal.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <button matButton="outlined" [disabled]="diagnosticBusy()" (click)="onLoadDiagnostic()">
-      <mat-icon>data_object</mat-icon>
-      <ng-container i18n="@@debug.diagnostic.load">Charger le diagnostic</ng-container>
-    </button>
-  </mat-card-actions>
-  @if (diagnosticBusy()) {
-    <mat-progress-bar mode="indeterminate" />
-  }
-  @if (diagnosticJson(); as json) {
-    <mat-card-content>
-      <pre class="debug-diagnostic-json">{{ json }}</pre>
-    </mat-card-content>
-  }
-</mat-card>
-
-<mat-card appearance="outlined" class="page-card">
-  <mat-card-header>
-    <h2 mat-card-title i18n="@@debug.api.title">Documentation de l'API</h2>
-    <mat-card-subtitle i18n="@@debug.api.subtitle">
-      Description OpenAPI de l'API REST et explorateur pour l'essayer ; les deux exigent une session
-      administrateur.
-    </mat-card-subtitle>
-  </mat-card-header>
-  <mat-card-actions class="card-actions">
-    <a matButton="outlined" href="/q/swagger-ui" target="_blank" rel="noopener">
-      <mat-icon>api</mat-icon>
-      <ng-container i18n="@@debug.api.swaggerUi">Explorer l'API (Swagger UI)</ng-container>
-    </a>
-    <a matButton="outlined" href="/q/openapi" target="_blank" rel="noopener">
-      <mat-icon>description</mat-icon>
-      <ng-container i18n="@@debug.api.openapi">Télécharger la description OpenAPI</ng-container>
-    </a>
-  </mat-card-actions>
-</mat-card>
-
-<app-scenario-preenregistre />
-
-<app-yaml-validator />
-
+<!-- Outside the tabs: the raw output and the errors of an action are read
+     after it, and a tab change is not a reason to lose them. -->
 <app-output-panel [text]="output()" />

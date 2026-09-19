@@ -117,6 +117,22 @@ app-espace-animateur-shell {
   }
 }
 
+/* Which edition this planning is of (issue #608): one quiet line above the
+   tabs, read once on arrival and never in the way of the planning under it. */
+.espace-edition {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.9rem;
+}
+
+.espace-edition-nom {
+  font-weight: 500;
+  color: var(--mat-sys-on-surface);
+}
+
 /* Four tabs — « Mon planning », « Mes échanges », « Mes disponibilités »,
    « Aide » — no longer fit one row of a narrow phone, and equal shares turned
    each of them into two letters: two rows of real touch targets beat one row

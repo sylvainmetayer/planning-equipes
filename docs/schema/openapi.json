@@ -2651,6 +2651,15 @@
             "items" : {
               "$ref" : "#/components/schemas/ConsigneEspaceView"
             }
+          },
+          "editionNom" : {
+            "type" : "string"
+          },
+          "editionDebut" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "editionFin" : {
+            "$ref" : "#/components/schemas/LocalDate"
           }
         }
       },

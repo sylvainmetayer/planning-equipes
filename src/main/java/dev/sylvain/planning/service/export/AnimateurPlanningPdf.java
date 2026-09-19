@@ -91,7 +91,7 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now(), provenance));
         document.open();
 
-        addHeader(document, view);
+        addHeader(document, view, provenance.edition().nom());
 
         if (view.vide()) {
             document.add(theme.emptyState());
@@ -138,7 +138,7 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
 
     // --- Page 1: the overview -------------------------------------------------
 
-    private void addHeader(Document document, AnimateurPlanningView view) {
+    private void addHeader(Document document, AnimateurPlanningView view, String edition) {
         float pageWidth = document.getPageSize().getWidth();
         float pageHeight = document.getPageSize().getHeight();
 
@@ -151,7 +151,12 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
             document.add(strip);
         }
 
-        document.add(theme.brandHeader(document, 320f, "PLANNING INDIVIDUEL", view.nom(), 4f));
+        // The édition named right under the name (issue #608): an animateur who
+        // came back from one year to the next holds two of these documents, and
+        // « PLANNING / Prénom Nom » alone does not tell them apart. Its name
+        // alone: the line under it already spells the span out, which is what
+        // the full label would repeat.
+        document.add(theme.brandHeader(document, 320f, "PLANNING INDIVIDUEL", view.nom(), edition, 4f));
 
         Paragraph periode = new Paragraph(view.periode(), theme.periodeFont());
         periode.setSpacingAfter(14f);

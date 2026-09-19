@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import java.io.IOException;
@@ -41,6 +42,10 @@ import org.openpdf.text.pdf.parser.PdfTextExtractor;
  */
 class PlanningPdfContenuTest {
 
+    /** The édition the documents are about, named and dated as the espace names it (issue #608). */
+    private static final EtiquetteEdition EDITION =
+            new EtiquetteEdition("Édition de test", LocalDate.parse("2026-07-10"), LocalDate.parse("2026-07-12"));
+
     /**
      * A fixed provenance: these tests read the documents, not the database.
      * The two plans are dated apart on purpose — a document must carry the date
@@ -49,12 +54,12 @@ class PlanningPdfContenuTest {
     private static final ExportProvenance PROVENANCE = new ExportProvenance() {
         @Override
         public Provenance courante() {
-            return new Provenance("Édition de test", Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
+            return new Provenance(EDITION, Instant.parse("2026-07-01T08:30:00Z"), Nature.RESOLUTION);
         }
 
         @Override
         public Provenance publiee() {
-            return new Provenance("Édition de test", Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
+            return new Provenance(EDITION, Instant.parse("2026-06-28T17:00:00Z"), Nature.PUBLICATION);
         }
     };
 
@@ -424,6 +429,25 @@ class PlanningPdfContenuTest {
         }
     }
 
+    /**
+     * The name of the édition, in the header rather than in the small print of
+     * the footer (issue #608): somebody holding last year's PDF and this year's
+     * tells them apart at a glance, not by reading the bottom of the page.
+     */
+    @Test
+    void lePdfIndividuelNommeSonEditionSousLeNomDeLAnimateur() throws IOException {
+        // Its name alone, because the line under it already spells the span
+        // out — the full label « nom — du … au … » would date the cover twice.
+        // Both layouts say it: an animateur holds one or the other, never both.
+        for (FormatPlanning format : FormatPlanning.values()) {
+            String couverture = pageTextOf(service.exportAnimateurPdf(planning(), "A-ADA", format), 1);
+            assertThat(couverture)
+                    .as("la couverture " + format + " nomme l'édition")
+                    .contains("Édition de test")
+                    .contains("Du vendredi 14 au samedi 15 août 2026");
+        }
+    }
+
     /** An édition never solved says so rather than leaving the reader to guess. */
     @Test
     void uneEditionJamaisResolueLeDitDansLePied() throws IOException {
@@ -470,12 +494,12 @@ class PlanningPdfContenuTest {
                 new ExportProvenance() {
                     @Override
                     public Provenance courante() {
-                        return new Provenance("Édition de test", null, Nature.RESOLUTION);
+                        return new Provenance(EDITION, null, Nature.RESOLUTION);
                     }
 
                     @Override
                     public Provenance publiee() {
-                        return new Provenance("Édition de test", null, Nature.PUBLICATION);
+                        return new Provenance(EDITION, null, Nature.PUBLICATION);
                     }
                 });
     }

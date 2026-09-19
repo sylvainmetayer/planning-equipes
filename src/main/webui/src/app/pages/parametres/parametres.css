@@ -1,4 +1,4 @@
-/* Paramètres page: the two sections, the ninja warning, the backup facts and the dumps on disk. */
+/* Paramètres page: the tabs, the ninja warning, the backup facts and the dumps on disk. */
 
 /* Ninja typologie picker sits inline with the "Ajouter" button on the Typologies page. */
 .ninja-select {
@@ -20,12 +20,16 @@
   color: var(--mat-sys-on-tertiary-container);
 }
 
-/* Paramètres: the two sections (édition / global) need a heading level between
-   the page title and the cards. */
-.section-title {
-  margin: 1.5rem 0 0.5rem;
-  font-size: 1.15rem;
-  font-weight: 500;
+/* Paramètres: the tabs replaced the two section headings — the tab names what
+   the cards under it have in common, so no level sits between the page title
+   and the cards any more. */
+.parametres-onglets {
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.parametres-onglets .mat-icon {
+  margin-right: 0.35rem;
 }
 
 .parametres-renvois {

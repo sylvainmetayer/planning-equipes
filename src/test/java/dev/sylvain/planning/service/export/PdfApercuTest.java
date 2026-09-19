@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.edition.EtiquetteEdition;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import java.io.IOException;
@@ -51,15 +52,19 @@ class PdfApercuTest {
 
     private static final TypologieLibelles TYPOLOGIES = () -> LIBELLES;
 
+    /** The édition the preview documents are about, named and dated like a real one. */
+    private static final EtiquetteEdition EDITION =
+            new EtiquetteEdition("festival-demo", LocalDate.parse("2026-09-14"), LocalDate.parse("2026-09-29"));
+
     private static final ExportProvenance PROVENANCE = new ExportProvenance() {
         @Override
         public Provenance courante() {
-            return new Provenance("festival-demo", Instant.parse("2026-09-17T19:34:00Z"), Nature.RESOLUTION);
+            return new Provenance(EDITION, Instant.parse("2026-09-17T19:34:00Z"), Nature.RESOLUTION);
         }
 
         @Override
         public Provenance publiee() {
-            return new Provenance("festival-demo", Instant.parse("2026-09-17T19:34:00Z"), Nature.PUBLICATION);
+            return new Provenance(EDITION, Instant.parse("2026-09-17T19:34:00Z"), Nature.PUBLICATION);
         }
     };
 

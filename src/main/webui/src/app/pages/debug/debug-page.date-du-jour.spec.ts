@@ -6,7 +6,8 @@
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { DateMockService } from '../../core/date-mock.service';
@@ -40,6 +41,12 @@ describe('DebugPage — date du jour', () => {
       dateDuJour?: string;
       heureDuJour?: string;
       focus?: string | null;
+      /**
+       * The tab the address names. The field lives on « Vérifications » since
+       * issue #606, so that is the default here; the deep link of the toolbar
+       * warning is the case where no tab is named and the page has to pick it.
+       */
+      onglet?: string | null;
     } = {},
   ): Promise<void> {
     const dateDuJour = signal(options.dateDuJour ?? '');
@@ -93,7 +100,14 @@ describe('DebugPage — date du jour', () => {
         },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: { get: () => options.focus ?? null } } },
+          useValue: (() => {
+            const onglet = options.onglet === undefined ? 'verifications' : options.onglet;
+            const params = convertToParamMap({
+              ...(options.focus ? { focus: options.focus } : {}),
+              ...(onglet ? { onglet } : {}),
+            });
+            return { snapshot: { queryParamMap: params }, queryParamMap: of(params) };
+          })(),
         },
       ],
     });
@@ -208,8 +222,10 @@ describe('DebugPage — date du jour', () => {
 
   /** What the toolbar warning links to: the control, focused, not just the page. */
   it('focuses the field when reached through the deep link', async () => {
-    await rendre({ focus: 'date-du-jour' });
+    await rendre({ focus: 'date-du-jour', onglet: null });
 
+    // The tab was not named, and the field it holds is nonetheless on screen.
+    expect(champ()).not.toBeNull();
     expect(document.activeElement).toBe(champ());
   });
 

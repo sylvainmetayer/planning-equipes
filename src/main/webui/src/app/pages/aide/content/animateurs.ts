@@ -160,7 +160,11 @@ export function buildAnimateurSideSections(): HelpSection[] {
       ],
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
-        { route: '/parametres', label: $localize`:@@nav.link.parametres:Paramètres` },
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'emails' },
+          label: $localize`:@@aide.lien.parametresEmails:Paramètres — onglet E-mails automatiques`,
+        },
         { route: '/notifications', label: $localize`:@@nav.link.notifications:Notifications` },
       ],
     },
