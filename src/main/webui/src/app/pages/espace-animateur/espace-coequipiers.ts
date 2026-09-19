@@ -42,7 +42,7 @@ export interface AffluenceStand {
   effectif: number;
 }
 
-export interface VueCoequipiers {
+export interface CoequipiersView {
   /** The people met, the most frequent first, then by name. */
   coequipiers: Coequipier[];
   /** The crowds, chronologically — montage, démontage, an opening ceremony. */
@@ -56,8 +56,8 @@ export interface VueCoequipiers {
  * four days with comes before the one met once, and two people met as often
  * are in an order that does not move between two readings.</p>
  */
-export function vueCoequipiers(jours: readonly JourPlanning[]): VueCoequipiers {
-  const parNom = new Map<string, OccurrenceCoequipier[]>();
+export function coequipiersView(jours: readonly JourPlanning[]): CoequipiersView {
+  const byNom = new Map<string, OccurrenceCoequipier[]>();
   const affluences: AffluenceStand[] = [];
   for (const jour of jours) {
     for (const poste of jour.postes) {
@@ -72,16 +72,16 @@ export function vueCoequipiers(jours: readonly JourPlanning[]): VueCoequipiers {
         continue;
       }
       for (const nom of poste.coequipiers) {
-        const occurrences = parNom.get(nom);
+        const occurrences = byNom.get(nom);
         if (occurrences) {
           occurrences.push(occurrence);
         } else {
-          parNom.set(nom, [occurrence]);
+          byNom.set(nom, [occurrence]);
         }
       }
     }
   }
-  const coequipiers = [...parNom.entries()]
+  const coequipiers = [...byNom.entries()]
     .map(([nom, occurrences]) => ({ nom, occurrences }))
     .sort(
       (left, right) =>
@@ -95,7 +95,7 @@ export function vueCoequipiers(jours: readonly JourPlanning[]): VueCoequipiers {
  * everywhere else a name is looked up in this application. An empty search
  * matches everybody, so the tab filters unconditionally instead of branching.
  */
-export function filtrerCoequipiers(
+export function filterCoequipiers(
   coequipiers: readonly Coequipier[],
   recherche: string,
 ): Coequipier[] {

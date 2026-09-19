@@ -4,10 +4,10 @@ import { JourPlanning } from './espace-maintenant';
 import {
   axeFrise,
   finSurLAxe,
-  heuresDuJour,
+  dayHours,
   legendeTypologies,
   lignesFrise,
-  minutesDeLHeure,
+  minutesSinceMidnight,
   statsPlanning,
 } from './espace-apercu';
 
@@ -33,12 +33,12 @@ function jour(date: string, postes: PosteAnimateurView[], repos = false): JourPl
   return { date, postes, repos, pauses: [] };
 }
 
-describe('minutesDeLHeure', () => {
+describe('minutesSinceMidnight', () => {
   it('reads the hours the API sends, seconds included', () => {
-    expect(minutesDeLHeure('10:00:00')).toBe(600);
-    expect(minutesDeLHeure('09:30')).toBe(570);
-    expect(minutesDeLHeure(null)).toBeNull();
-    expect(minutesDeLHeure('plus tard')).toBeNull();
+    expect(minutesSinceMidnight('10:00:00')).toBe(600);
+    expect(minutesSinceMidnight('09:30')).toBe(570);
+    expect(minutesSinceMidnight(null)).toBeNull();
+    expect(minutesSinceMidnight('plus tard')).toBeNull();
   });
 });
 
@@ -155,11 +155,11 @@ describe('statsPlanning', () => {
   });
 });
 
-describe('heuresDuJour', () => {
+describe('dayHours', () => {
   it('counts a night shift on the day that opens it', () => {
-    expect(
-      heuresDuJour(jour('2026-02-15', [poste({ heureDebut: '22:00', heureFin: '02:00' })])),
-    ).toBe(4);
+    expect(dayHours(jour('2026-02-15', [poste({ heureDebut: '22:00', heureFin: '02:00' })]))).toBe(
+      4,
+    );
   });
 });
 
