@@ -241,4 +241,69 @@ class PublicationDiffServiceTest {
                 .extracting(ChangementVacation::libelle)
                 .isEqualTo("samedi 11/07 : Cirque ?-? (nouveau)");
     }
+
+    /* --------------------------- Minor changes ----------------------------- */
+
+    /**
+     * « Ces trois-là ne bougent que de dix minutes, inutile de les alarmer »
+     * (issue #503): the same vacation, on the same stand, sliding within the
+     * quarter of an hour somebody plans their arrival on.
+     */
+    @Test
+    void aSlideWithinTheThresholdOnTheSameStandIsMinor() {
+        assertThat(PublicationDiffService.isMinor(deplacement(
+                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"),
+                        new Vacation(SAMEDI, LocalTime.of(14, 10), LocalTime.of(18, 0), "cirque", "Cirque"))))
+                .isTrue();
+    }
+
+    @Test
+    void aSlideBeyondTheThresholdIsNotMinor() {
+        assertThat(PublicationDiffService.isMinor(deplacement(
+                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"),
+                        new Vacation(SAMEDI, LocalTime.of(14, 16), LocalTime.of(18, 0), "cirque", "Cirque"))))
+                .isFalse();
+    }
+
+    /** The threshold applies to both ends: a shift that stretches the evening is not a détail. */
+    @Test
+    void aSlideMinorAtTheStartAndMajorAtTheEndIsNotMinor() {
+        assertThat(PublicationDiffService.isMinor(deplacement(
+                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"), vacation(SAMEDI, 14, 20, "cirque", "Cirque"))))
+                .isFalse();
+    }
+
+    @Test
+    void changingStandIsNeverMinorHoweverSmallTheSlide() {
+        assertThat(PublicationDiffService.isMinor(deplacement(
+                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"), vacation(SAMEDI, 14, 18, "ninja", "Ninja"))))
+                .isFalse();
+    }
+
+    /**
+     * A seat somebody does not know they hold, or no longer holds, is the
+     * thing this whole feature exists to say — whatever its length.
+     */
+    @Test
+    void anAdditionAndAWithdrawalAreNeverMinor() {
+        Vacation cirque = vacation(SAMEDI, 14, 18, "cirque", "Cirque");
+        assertThat(PublicationDiffService.isMinor(
+                        new ChangementVacation(TypeChangement.AJOUT, cirque, null, "peu importe")))
+                .isFalse();
+        assertThat(PublicationDiffService.isMinor(
+                        new ChangementVacation(TypeChangement.RETRAIT, cirque, null, "peu importe")))
+                .isFalse();
+    }
+
+    @Test
+    void aVacationWithoutReadableHoursIsNeverMinor() {
+        assertThat(PublicationDiffService.isMinor(deplacement(
+                        new Vacation(SAMEDI, null, null, "cirque", "Cirque"),
+                        vacation(SAMEDI, 14, 18, "cirque", "Cirque"))))
+                .isFalse();
+    }
+
+    private static ChangementVacation deplacement(Vacation avant, Vacation apres) {
+        return new ChangementVacation(TypeChangement.DEPLACEMENT, apres, avant, "peu importe");
+    }
 }

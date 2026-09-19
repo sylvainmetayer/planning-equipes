@@ -99,7 +99,9 @@ public class PublicationMcpTools {
                     + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
                     + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
                     + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
-                    + "comptés ici et détaillés par id par lister_destinataires_publication.",
+                    + "comptés ici et détaillés par id par lister_destinataires_publication. L'argument exclusions "
+                    + "diffère le message des ids qu'il nomme : ces personnes ne reçoivent rien et restent à "
+                    + "prévenir à la publication suivante, avec l'écart accumulé depuis leur dernier message.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -107,14 +109,20 @@ public class PublicationMcpTools {
                             idempotentHint = false,
                             openWorldHint = true))
     RapportPublicationView publier_planning(
+            @ToolArg(
+                            description = "Ids des animateurs dont le message est différé ; absent = prévenir tout le "
+                                    + "monde",
+                            required = false)
+                    List<String> exclusions,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        RapportPublication rapport = publicationService.publier();
+        RapportPublication rapport = publicationService.publier(exclusions == null ? List.of() : exclusions);
         return new RapportPublicationView(
                 rapport.snapshotId(),
                 rapport.publieLe(),
                 rapport.envoyes(),
                 rapport.sansEmail().size(),
-                rapport.echecs().size());
+                rapport.echecs().size(),
+                rapport.differes().size());
     }
 
     @Tool(
@@ -236,7 +244,9 @@ public class PublicationMcpTools {
                 destinataire.email() != null && !destinataire.email().isBlank(),
                 destinataire.premiereDiffusion(),
                 destinataire.changements(),
-                destinataire.demandes());
+                destinataire.demandes(),
+                destinataire.mineur(),
+                destinataire.reporte());
     }
 
     /**
@@ -263,12 +273,14 @@ public class PublicationMcpTools {
             boolean adresseConnue,
             boolean premiereDiffusion,
             List<String> changements,
-            List<String> demandes) {}
+            List<String> demandes,
+            boolean mineur,
+            boolean reporte) {}
 
     /**
      * One line of a publication's trace.
      *
-     * @param statut     ENVOYE, SANS_EMAIL ou ECHEC — the counts of
+     * @param statut     ENVOYE, SANS_EMAIL, ECHEC ou EXCLU — the counts of
      *                   {@code publier_planning}, named by id
      * @param changements what that person was told, exactly as their mail
      *                    worded it
@@ -280,8 +292,11 @@ public class PublicationMcpTools {
      * @param sansAdresse how many concerned people have no address on their
      *                    fiche; {@code lister_destinataires_publication} names
      *                    them by id
+     * @param differes    how many were deliberately left out of this send;
+     *                    the same tool names them by id, with the statut EXCLU
      */
-    public record RapportPublicationView(long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs) {}
+    public record RapportPublicationView(
+            long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs, int differes) {}
 
     public record EnvoiView(boolean envoye, String echec) {}
 

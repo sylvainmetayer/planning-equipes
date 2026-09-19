@@ -79,5 +79,13 @@ export function resumePublication(rapport: RapportPublication): {
       $localize`:@@publication.resume.echecs:Échec de l'envoi : ${rapport.echecs.join(', ')}:noms:`,
     );
   }
+  // Said in the same breath as the sends, and not as a warning: deferring
+  // somebody is a decision the admin just took, and what they need back is the
+  // confirmation that nothing was lost by taking it.
+  if (rapport.differes.length > 0) {
+    details.push(
+      $localize`:@@publication.resume.differes:Non prévenu(s), à reprendre à la prochaine publication : ${rapport.differes.join(', ')}:noms:`,
+    );
+  }
   return { titre, details: details.length > 0 ? details.join(' — ') : undefined };
 }

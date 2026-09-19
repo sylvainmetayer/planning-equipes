@@ -629,6 +629,31 @@ mesure ce qui a changé, pas ce qui a été délivré. Le rapport nomme les manq
 et `POST /api/planning/envoi/animateur/{id}` est le rattrapage — il renvoie le
 plan **publié**, refusé (`400`) tant que rien ne l'a été.
 
+### Différer le message de quelqu'un
+
+Le `POST` prend un corps JSON — `{"exclusions": ["id", …]}` — et **demande
+désormais un `Content-Type: application/json`**, là où il acceptait n'importe
+quoi : la liste est de longueur libre, et un id d'animateur est fourni par le
+client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter.
+Un corps vide suffit à dire « je n'exclus personne ».
+
+Ce que l'exclusion fait, et ce qu'elle ne fait pas (ADR 0045) : elle **diffère**
+le message, elle ne le supprime pas. La capture a lieu pour tout le monde —
+l'espace suit le plan publié —, mais le **repère de comparaison de la personne**
+(`animateur.plan_notifie_id`) ne bouge pas. La publication suivante la nomme à
+nouveau, avec l'écart cumulé depuis ce qu'elle a réellement reçu, et
+`reporte` vaut `true` sur sa ligne d'aperçu. Exclure *tous* les destinataires
+est un `409` : publier sans prévenir personne n'a pas de sens.
+
+Chaque ligne d'aperçu porte de quoi trier et filtrer sans lire de français :
+`ajouts`, `retraits`, `deplacements`, et `mineur` — la même vacation, sur le
+même stand, glissée d'un quart d'heure au plus, sans décision d'échange en
+attente. `mineur` est un **critère de lecture**, jamais une exclusion
+automatique : décider de ne pas prévenir quelqu'un est un acte.
+
+`GET /api/planning/publication/export` rend la même liste en CSV, une ligne par
+personne, les phrases dans une cellule.
+
 `GET /api/planning/publication/destinataires` rend la trace : qui a été prévenu
 de quoi, et quand, y compris ceux qu'on n'a pas pu joindre (`SANS_EMAIL`,
 `ECHEC`). Sans paramètre, celle de la dernière publication ; liste vide quand

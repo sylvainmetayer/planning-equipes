@@ -22,15 +22,17 @@ class PublicationMcpToolsTest {
 
     private static final Instant ENVOYE_LE = Instant.parse("2026-06-01T08:00:00Z");
 
+    /** One recipient, with everything the REST view carries and MCP must drop. */
+    private static DestinatairePublication destinataire(
+            String id, String nom, String email, boolean premiereDiffusion, List<String> changements) {
+        return new DestinatairePublication(
+                id, nom, email, premiereDiffusion, changements, List.of(), 1, 0, 0, false, false, null, null);
+    }
+
     @Test
-    void unDestinataireSeReduitAUnIdEtAUnBooleenDAdresse() {
-        DestinatairePublicationView vue = PublicationMcpTools.toView(new DestinatairePublication(
-                "a1",
-                "Camille Martin",
-                "camille@example.org",
-                true,
-                List.of("samedi 10:00-12:00 — Stand A"),
-                List.of()));
+    void aRecipientComesDownToAnIdAndAnAddressBoolean() {
+        DestinatairePublicationView vue = PublicationMcpTools.toView(destinataire(
+                "a1", "Camille Martin", "camille@example.org", true, List.of("samedi 10:00-12:00 — Stand A")));
 
         assertThat(vue.animateurId()).isEqualTo("a1");
         assertThat(vue.adresseConnue()).isTrue();
@@ -43,15 +45,39 @@ class PublicationMcpToolsTest {
      * and it must answer that without the address being read anywhere.
      */
     @Test
-    void uneFicheSansAdresseSeVoitSansQueLAdresseSorte() {
-        assertThat(PublicationMcpTools.toView(
-                                new DestinatairePublication("a2", "Dominique Roy", null, false, List.of(), List.of()))
+    void aFicheWithoutAnAddressShowsUpWithoutTheAddressLeaving() {
+        assertThat(PublicationMcpTools.toView(destinataire("a2", "Dominique Roy", null, false, List.of()))
                         .adresseConnue())
                 .isFalse();
-        assertThat(PublicationMcpTools.toView(
-                                new DestinatairePublication("a3", "Dominique Roy", "   ", false, List.of(), List.of()))
+        assertThat(PublicationMcpTools.toView(destinataire("a3", "Dominique Roy", "   ", false, List.of()))
                         .adresseConnue())
                 .isFalse();
+    }
+
+    /**
+     * The two flags the review table sorts and filters on travel to an
+     * assistant too: « qui n'a toujours pas été prévenu ? » is a question it
+     * must be able to answer without a name (issue #503).
+     */
+    @Test
+    void theDeferredAndMinorFlagsTravelToTheAssistant() {
+        DestinatairePublicationView vue = PublicationMcpTools.toView(new DestinatairePublication(
+                "a4",
+                "Dominique Roy",
+                "d@example.org",
+                false,
+                List.of("lundi"),
+                List.of(),
+                0,
+                0,
+                1,
+                true,
+                true,
+                null,
+                null));
+
+        assertThat(vue.mineur()).isTrue();
+        assertThat(vue.reporte()).isTrue();
     }
 
     @Test
