@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
@@ -505,6 +506,17 @@ public final class CoherenceAnalyzer {
      *                    {@code JOUR} lock against the timeslot a violation
      *                    names; empty simply skips that one lock type
      */
+    // A violation naming nobody is not one this lock freezes: ProblemBuilder
+    // pins a covered seat only when it holds somebody, so the empty seat a
+    // `posteDoitEtrePourvu` match points at stays fillable by the next solve.
+    // Counting it turned « freeze this reviewed day » — a day routinely
+    // reviewed with seats still open — into a warning whose closing sentence
+    // was plainly false. What this costs is a match naming several people at
+    // once, which ViolationFormatter reduces to no id at all
+    // (`incompatibiliteAdHoc`): a lock over those two seats goes unsaid. An
+    // advisory sentence missed is worth less than one that fires on the
+    // ordinary gesture, and a warning that fires on correct data stops being
+    // read.
     public static List<Avertissement> onVerrouillage(
             VerrouillagePlanning verrouillage,
             List<PlanningDiagnosticService.ConstraintDiagnostic> diagnostics,
@@ -525,6 +537,7 @@ public final class CoherenceAnalyzer {
                 continue;
             }
             long touchees = diagnostic.references().stream()
+                    .filter(reference -> reference.animateurId() != null)
                     .filter(reference -> couvre(verrouillage, reference, joursParCreneau))
                     .count();
             if (touchees > 0) {
@@ -587,6 +600,10 @@ public final class CoherenceAnalyzer {
      *                      caller has none to offer: the lock check is then
      *                      simply not run, never guessed at
      * @param placesTenues  the seats of the persisted plan, same doctrine
+     * @param horizon       the moment the past is judged against (ADR 0044),
+     *                      {@code null} when the freeze is off: an exception
+     *                      whose whole scope is behind us is history, and
+     *                      {@code affectationForcee} does not charge it either
      */
     public static List<Avertissement> onContrainteAdHoc(
             ContrainteAdHoc contrainte,
@@ -594,16 +611,17 @@ public final class CoherenceAnalyzer {
             List<Stand> stands,
             List<Creneau> creneaux,
             List<VerrouillagePlanning> verrouillages,
-            Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> placesTenues) {
+            Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> placesTenues,
+            PastHorizon horizon) {
         List<ContrainteAdHoc> une = contrainte == null ? List.of() : List.of(contrainte);
         List<Avertissement> avertissements = new ArrayList<>();
-        ForcedAssignmentOnDayOff.detectAll(une, animateurs, stands, creneaux)
+        ForcedAssignmentOnDayOff.detectAll(une, animateurs, stands, creneaux, horizon)
                 .forEach(conflit -> avertissements.add(
                         new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE, conflit.message())));
-        ForcedAssignmentOnExcludedSeats.detectAll(une, animateurs, stands, creneaux)
+        ForcedAssignmentOnExcludedSeats.detectAll(une, animateurs, stands, creneaux, horizon)
                 .forEach(conflit -> avertissements.add(
                         new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL, conflit.message())));
-        ForcedAssignmentOnLockedSchedule.detectAll(une, verrouillages, stands, creneaux, placesTenues)
+        ForcedAssignmentOnLockedSchedule.detectAll(une, verrouillages, stands, creneaux, placesTenues, horizon)
                 .forEach(conflit -> avertissements.add(
                         new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE, conflit.message())));
         return List.copyOf(avertissements);

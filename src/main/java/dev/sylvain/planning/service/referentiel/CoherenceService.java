@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Instance;
 import jakarta.inject.Inject;
@@ -62,6 +63,14 @@ public class CoherenceService {
      */
     @Inject
     Instance<ConstraintAnalysisStore> analyses;
+
+    /**
+     * The moment the past is judged against (ADR 0044), behind the same
+     * indirection: a rule left on a day already worked is history, and the
+     * warnings say nothing about it.
+     */
+    @Inject
+    Instance<PlanningService> planning;
 
     /** The event's span, derived from the créneaux — an {@code Edition} stores none. */
     public JoursEvenement joursEvenement() {
@@ -126,7 +135,14 @@ public class CoherenceService {
         Set<ForcedAssignmentOnLockedSchedule.PlaceTenue> tenues = verrous.isEmpty() || !plan.isResolvable()
                 ? Set.of()
                 : plan.get().loadPlacesTenues();
-        return CoherenceAnalyzer.onContrainteAdHoc(contrainte, animateurs.list(), resolus, edition, verrous, tenues);
+        return CoherenceAnalyzer.onContrainteAdHoc(
+                contrainte,
+                animateurs.list(),
+                resolus,
+                edition,
+                verrous,
+                tenues,
+                planning.isResolvable() ? planning.get().pastHorizon() : null);
     }
 
     /**

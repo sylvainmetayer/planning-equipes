@@ -132,8 +132,10 @@ public class PlanningMcpTools {
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
                 FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
-                new FeasibilityAnalyzer.LockContext(
-                        referenceDataService.listVerrouillages(), persistenceService::loadPlacesTenues));
+                new FeasibilityAnalyzer.PlanContext(
+                        referenceDataService.listVerrouillages(),
+                        persistenceService::loadPlacesTenues,
+                        planningService.pastHorizon()));
     }
 
     @Tool(

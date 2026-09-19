@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDate;
@@ -49,7 +50,8 @@ class ForcedAssignmentOnExcludedSeatsTest {
 
     private List<ForcedAssignmentOnExcludedSeats.Conflit> detect(
             ContrainteAdHoc contrainte, List<Creneau> grille, List<Stand> stands, Animateur... animateurs) {
-        return ForcedAssignmentOnExcludedSeats.detectAll(List.of(contrainte), List.of(animateurs), stands, grille);
+        return ForcedAssignmentOnExcludedSeats.detectAll(
+                List.of(contrainte), List.of(animateurs), stands, grille, null);
     }
 
     @Test
@@ -114,7 +116,7 @@ class ForcedAssignmentOnExcludedSeatsTest {
         contrainte.setCreneau(new Creneau(1L, 0, null, null, null));
 
         assertThat(ForcedAssignmentOnDayOff.detectAll(
-                        List.of(contrainte), List.of(jeune), List.of(plateau), List.of(nuitSamedi)))
+                        List.of(contrainte), List.of(jeune), List.of(plateau), List.of(nuitSamedi), null))
                 .hasSize(1);
         assertThat(detect(contrainte, List.of(nuitSamedi), List.of(plateau), jeune))
                 .isEmpty();
@@ -130,6 +132,23 @@ class ForcedAssignmentOnExcludedSeatsTest {
                 .isEmpty();
         assertThat(detect(forced(jeune), List.of(nuitSamedi), List.of(plateau))).isEmpty();
         assertThat(detect(forced(jeune), List.of(), List.of(plateau), jeune)).isEmpty();
+    }
+
+    /**
+     * A timeslot reference whose id came back {@code null} — the grid no longer
+     * holds that vacation — matches no seat, exactly as
+     * {@code AdHocConstraints.matchesScope} reads it (issue #577). Widening it
+     * to the whole grid would report a conflict on days the exception never
+     * covered.
+     */
+    @Test
+    void anExceptionOnAVacationTheGridNoLongerHoldsCoversNothing() {
+        Animateur jeune = mineur("A1");
+        ContrainteAdHoc surCreneauDisparu = forced(jeune);
+        surCreneauDisparu.setCreneau(new Creneau(null, 0, null, null, null));
+
+        assertThat(detect(surCreneauDisparu, List.of(nuitSamedi), List.of(plateau), jeune))
+                .isEmpty();
     }
 
     @Test
@@ -149,9 +168,32 @@ class ForcedAssignmentOnExcludedSeatsTest {
         contrainte.setCreneau(new Creneau(1L, 0, null, null, null));
 
         assertThat(CoherenceAnalyzer.onContrainteAdHoc(
-                        contrainte, List.of(jeune), List.of(plateau), List.of(nuitSamedi), List.of(), Set.of()))
+                        contrainte, List.of(jeune), List.of(plateau), List.of(nuitSamedi), List.of(), Set.of(), null))
                 .singleElement()
                 .satisfies(avertissement ->
                         assertThat(avertissement.type()).isEqualTo(TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL));
+    }
+
+    /** Same silence on the past as its two siblings — see ADR 0044. */
+    @Test
+    void aScopeEntirelyInThePastIsNotReproached() {
+        Animateur jeune = mineur("A1");
+        ContrainteAdHoc contrainte = forced(jeune);
+        contrainte.setCreneau(new Creneau(1L, 0, null, null, null));
+
+        assertThat(ForcedAssignmentOnExcludedSeats.detectAll(
+                        List.of(contrainte),
+                        List.of(jeune),
+                        List.of(plateau),
+                        List.of(nuitSamedi),
+                        new PastHorizon(DIMANCHE, LocalTime.of(8, 0))))
+                .isEmpty();
+        assertThat(ForcedAssignmentOnExcludedSeats.detectAll(
+                        List.of(contrainte),
+                        List.of(jeune),
+                        List.of(plateau),
+                        List.of(nuitSamedi),
+                        new PastHorizon(SAMEDI, LocalTime.of(8, 0))))
+                .hasSize(1);
     }
 }

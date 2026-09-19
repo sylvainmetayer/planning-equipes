@@ -192,7 +192,11 @@ test('un animateur verrouillé garde exactement son planning après re-résoluti
     data: { type: 'ANIMATEUR', animateurId: 'SOLV-P', raison: 'E2E : Paula validée' },
   });
   expect(verrou.ok(), await verrou.text()).toBe(true);
-  const verrouId = ((await verrou.json()) as { id: string }).id;
+  // `{ verrouillage, avertissements }` since the lock write started warning:
+  // reading `.id` here left the cleanup deleting `undefined` — which answers
+  // 204 like any other id — and the ANIMATEUR lock leaking into the next test.
+  const verrouId = ((await verrou.json()) as { verrouillage: { id: string } }).verrouillage.id;
+  expect(verrouId, 'le POST doit rendre le verrou sous `verrouillage`').toBeTruthy();
 
   const apres = await lancerSolve(admin, 6);
   expect(apres.result?.diagnostic.hardScore).toBe(0);
