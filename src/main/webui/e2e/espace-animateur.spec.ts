@@ -38,6 +38,11 @@ test.afterAll(async () => {
   await admin.dispose();
 });
 
+/** Un onglet de l'espace : le libellé porte aussi la ligature de l'icône. */
+function ongletEspace(page: import('@playwright/test').Page, nom: string) {
+  return page.locator('mat-button-toggle', { hasText: nom }).locator('button');
+}
+
 test.describe('espace animateur', () => {
   test('un jeton inconnu montre une impasse propre, sans chrome admin', async ({ page }) => {
     await page.goto('/animateur/jeton-invente');
@@ -169,7 +174,9 @@ test.describe('espace animateur', () => {
     // #532, le bandeau « Ce qui a changé pour vous » rejoue les phrases de la
     // publication, qui nomment le stand elles aussi. Ce qui se vérifie ici est
     // le planning, pas ce qu'on en a dit.
-    const journees = page.locator('.espace-jour');
+    // L'onglet Jour ouvre sur la première journée hors événement, celle qui
+    // porte justement le poste d'Alice.
+    const journees = page.locator('.espace-journee');
     await expect(journees.getByText('Stand E2E un')).toBeVisible();
     await expect(journees.getByText('Stand E2E deux')).toHaveCount(0);
 
@@ -263,7 +270,10 @@ test.describe('espace animateur', () => {
 
   test("l'espace propose l'abonnement, et le téléchargement en second", async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
-    await page.goto(`/animateur/${jeton}`);
+    // La bande vit sous l'onglet « Aperçu » depuis #615 : c'est là que se
+    // range ce qui concerne le planning entier.
+    await page.goto(`/animateur/${jeton}?onglet=apercu`);
+    await expect(page.getByRole('heading', { name: 'Tout mon planning' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
     await expect(page.getByRole('link', { name: "S'abonner dans mon agenda" })).toBeVisible();
     // En complément, pas à la place : les deux fichiers ponctuels restent là.
@@ -280,36 +290,57 @@ test.describe('espace animateur', () => {
   /**
    * La demande d'origine, transformée en garde : le bloc d'abonnement était
    * sous TOUTES les cartes de journée, donc invisible sans dérouler l'écran
-   * entier. Rien d'autre n'empêcherait qu'il y redescende un jour.
+   * entier. Depuis #615 ce n'est plus un problème de hauteur mais d'onglet, et
+   * la garde le suit : chaque onglet doit tenir ce qu'il promet dès l'ouverture.
    *
    * Le test vaut surtout sur le projet `mobile` (viewport Pixel 7), mais il
    * tient aussi sur bureau — et il vérifie les deux moitiés du compromis :
-   * l'abonnement est atteignable sans défiler, ET la première journée du
-   * planning, ce que la personne vient lire, n'a pas été repoussée hors écran
-   * pour lui faire de la place.
+   * la journée est là sans défiler, et l'abonnement l'est aussi, un onglet
+   * plus loin, sans que l'un ait chassé l'autre.
    */
-  test("l'abonnement est visible sans défiler, sans chasser le planning", async ({ page }) => {
+  test('chaque onglet tient sa promesse sans défiler', async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
 
+    const hauteur = page.viewportSize()!.height;
+    const journee = page.locator('.espace-journee').first();
+    await expect(journee).toBeVisible();
+    expect(await page.evaluate(() => window.scrollY)).toBe(0);
+    const boiteJournee = await journee.boundingBox();
+    expect(boiteJournee, "la journée n'a pas de boîte").not.toBeNull();
+    expect(boiteJournee!.y).toBeLessThan(hauteur);
+
+    // Et la page elle-même ne défile pas latéralement : seule la bande le fait.
+    const debordement = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(debordement).toBeLessThanOrEqual(0);
+
+    await ongletEspace(page, 'Aperçu').click();
     const abonnement = page.getByRole('link', { name: "S'abonner dans mon agenda" });
     await expect(abonnement).toBeVisible();
-    const premiereJournee = page.locator('.espace-jour').first();
-    await expect(premiereJournee).toBeVisible();
-
-    // Aucun défilement n'a eu lieu, et rien n'en a provoqué.
-    expect(await page.evaluate(() => window.scrollY)).toBe(0);
-    const hauteur = page.viewportSize()!.height;
-
     const bande = await abonnement.boundingBox();
     expect(bande, "le bouton d'abonnement n'a pas de boîte").not.toBeNull();
     expect(bande!.y + bande!.height).toBeLessThanOrEqual(hauteur);
+  });
 
-    // Le haut de la première journée doit rester dans l'écran : remonter
-    // l'abonnement ne doit pas revenir à cacher ce qu'on vient consulter.
-    const journee = await premiereJournee.boundingBox();
-    expect(journee, "la première journée n'a pas de boîte").not.toBeNull();
-    expect(journee!.y).toBeLessThan(hauteur);
+  /** Les trois onglets, et l'action de l'espace sous les trois. */
+  test('les trois onglets répondent à leurs trois questions', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.goto(`/animateur/${jeton}`);
+
+    await expect(page.locator('.espace-bande-jour').first()).toBeVisible();
+    await expect(page.getByText('Stand E2E un')).toBeVisible();
+
+    await ongletEspace(page, 'Aperçu').click();
+    await expect(page.locator('.espace-frise-ligne').first()).toBeVisible();
+    await expect(page).toHaveURL(/onglet=apercu/);
+
+    await ongletEspace(page, 'Coéquipiers').click();
+    await expect(page.getByLabel('Chercher un nom')).toBeVisible();
+
+    // L'action de cet espace reste à portée de pouce sous les trois.
+    await expect(page.getByRole('link', { name: 'Proposer un échange de créneau' })).toBeVisible();
   });
 
   test("le périmètre du jeton : l'espace ne donne aucune session admin", async ({ page }) => {

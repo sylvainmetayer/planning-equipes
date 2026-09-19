@@ -138,6 +138,20 @@ public class EspaceAnimateurService {
      *                       <b>both</b> coordinates are set
      * @param emplacementLongitude see {@code emplacementLatitude}
      */
+    /**
+     * @param typologieId    the typologie that colours this seat on screen and
+     *                       on the PDF (issue #615), {@code null} when the
+     *                       stand proposes none. A stand proposes a <b>set</b>
+     *                       of typologies, so one has to be picked: the first
+     *                       by id, which is stable across two readings of the
+     *                       same plan — a set has no order of its own, and a
+     *                       colour that changes between two page loads would
+     *                       be worse than no colour
+     * @param typologieLibelle its label, as the referential words it; the id
+     *                       itself when the referential no longer knows it —
+     *                       a seat losing its category silently would be worse
+     *                       than a raw id
+     */
     public record PosteAnimateurView(
             Long creneauId,
             LocalDate date,
@@ -148,7 +162,9 @@ public class EspaceAnimateurService {
             List<String> coequipiers,
             String emplacementNom,
             Double emplacementLatitude,
-            Double emplacementLongitude) {}
+            Double emplacementLongitude,
+            String typologieId,
+            String typologieLibelle) {}
 
     /** A colleague an échange can target. First name + name: what a PDF already prints. */
     public record ColleagueView(String id, String nomComplet) {}
@@ -311,7 +327,7 @@ public class EspaceAnimateurService {
 
         PlanningEvenement planning = planPublieService.planPublie();
         Map<String, List<String>> coequipiers = exportService.teammatesByPoste(planning, animateurId);
-        List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers);
+        List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers, typologieService.labelsById());
 
         List<ColleagueView> collegues = animateurs.stream()
                 .filter(candidat -> !candidat.getId().equals(animateurId))
@@ -382,7 +398,10 @@ public class EspaceAnimateurService {
     }
 
     private static List<PosteAnimateurView> postesOf(
-            PlanningEvenement planning, String animateurId, Map<String, List<String>> coequipiers) {
+            PlanningEvenement planning,
+            String animateurId,
+            Map<String, List<String>> coequipiers,
+            Map<String, String> libellesTypologies) {
         return planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId())
@@ -408,9 +427,30 @@ public class EspaceAnimateurService {
                             // not a position, and the espace would have to
                             // guess what to do with it.
                             emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLatitude(),
-                            emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLongitude());
+                            emplacement == null || !emplacement.isGeocoded() ? null : emplacement.getLongitude(),
+                            typologiePrincipale(poste.getStand()),
+                            libelleTypologie(poste.getStand(), libellesTypologies));
                 })
                 .toList();
+    }
+
+    /**
+     * The typologie a stand is coloured by: the first of its set, by id.
+     *
+     * <p>A stand proposes several — « Loup-Garou » may be a game of ambiance
+     * and a game of strategy — and one colour cannot say two things. The id
+     * order is arbitrary but <b>stable</b>, which is the property that matters:
+     * the same plan read twice, on screen and on the PDF, colours the same seat
+     * the same way. The label travels next to the colour everywhere it is used,
+     * so nothing is ever said by the colour alone.</p>
+     */
+    private static String typologiePrincipale(Stand stand) {
+        return stand.getTypologiesProposees().stream().sorted().findFirst().orElse(null);
+    }
+
+    private static String libelleTypologie(Stand stand, Map<String, String> libelles) {
+        String id = typologiePrincipale(stand);
+        return id == null ? null : libelles.getOrDefault(id, id);
     }
 
     /**
@@ -449,7 +489,7 @@ public class EspaceAnimateurService {
         if (!connu) {
             throw new BusinessError.NotFound("Animateur inconnu : " + collegueId);
         }
-        return postesOf(planPublieService.planPublie(), collegueId, Map.of());
+        return postesOf(planPublieService.planPublie(), collegueId, Map.of(), typologieService.labelsById());
     }
 
     /**

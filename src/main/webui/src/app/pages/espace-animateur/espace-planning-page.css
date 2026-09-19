@@ -1,0 +1,390 @@
+/* The espace planning page: its three tabs (issue #615) — the day strip, the
+   day itself, the frieze and the teammate search.
+
+   A stylesheet of its own rather than more of `styles/espace-animateur.css`:
+   that file is loaded by the espace shell, so every one of the four espace
+   pages carries it, and it draws what they share (the toolbar, the navigation,
+   the cards). What one route draws belongs to that route (AGENTS.md) — and the
+   per-component budget, an error above 12 kB, says the same thing in figures. */
+
+/* ---------------------------------------------------------------------------
+   Three tabs, and the day first (issue #615). Everything below is drawn for a
+   390 px screen held in one hand: nothing but the day strip and the frieze
+   scrolls sideways, and the page itself never does.
+   --------------------------------------------------------------------------- */
+
+.espace-onglets {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.espace-onglets .mat-button-toggle {
+  flex: 1 1 0;
+}
+
+.espace-onglets .mat-icon {
+  margin-right: 0.25rem;
+}
+
+/* The day strip: it scrolls, the page does not. */
+.espace-bande {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.35rem;
+  margin-bottom: 0.75rem;
+  scrollbar-width: thin;
+}
+
+.espace-bande-jour {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  min-width: 3.6rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: inherit;
+  cursor: pointer;
+}
+
+.espace-bande-date {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.espace-bande-heures {
+  font-size: 0.7rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-bande-jour-repos .espace-bande-heures {
+  font-style: italic;
+}
+
+.espace-bande-jour-actif {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  border-color: var(--mat-sys-secondary);
+}
+
+.espace-bande-jour-actif .espace-bande-heures {
+  color: inherit;
+}
+
+/* Today is marked whether or not it is the day being read. */
+.espace-bande-jour-aujourdhui {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: -2px;
+}
+
+.espace-bande-consigne {
+  color: var(--mat-sys-tertiary);
+  font-size: 1rem;
+  line-height: 0.6;
+}
+
+.espace-journee-titre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0 0 0.5rem;
+  font-size: 1.1rem;
+}
+
+/* Only the first letter: `capitalize` would also raise the month's, and French
+   writes « Lundi 13 juillet », not « Lundi 13 Juillet ». On a span of its own
+   and `inline-block`, because `::first-letter` applies to neither an inline
+   element nor a flex container — and the title is both. */
+.espace-journee-date {
+  display: inline-block;
+}
+
+.espace-journee-date::first-letter {
+  text-transform: uppercase;
+}
+
+.espace-journee-compte {
+  font-size: 0.85rem;
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+  text-transform: none;
+}
+
+.espace-poste-carte {
+  margin-bottom: 0.6rem;
+}
+
+/*
+ * A shift already over steps back without becoming unreadable: the surface
+ * changes, the text colour does not — `on-surface-variant` on
+ * `surface-container` stays above 4.5:1, where an opacity would have taken
+ * both below it.
+ */
+.espace-poste-carte-passee {
+  background: var(--mat-sys-surface-container);
+}
+
+.espace-poste-carte-passee .espace-poste-stand,
+.espace-poste-carte-passee .espace-poste-horaire {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-poste-entete {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.25rem;
+}
+
+.espace-poste-badge {
+  padding: 0.1rem 0.5rem;
+  border-radius: 1rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: var(--mat-sys-surface-container-highest);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-poste-badge-encours {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.espace-poste-typologie,
+.espace-poste-lieu,
+.espace-poste-equipe {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-journee-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.5rem;
+}
+
+.espace-journee-nav-suivant {
+  margin-left: auto;
+}
+
+/* The four figures of « Aperçu ». */
+.espace-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+}
+
+.espace-stats div {
+  text-align: center;
+}
+
+.espace-stats dt {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-stats dd {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* The frieze: one row per day on a common axis. */
+.espace-frise-axe {
+  display: flex;
+  justify-content: space-between;
+  margin-left: 3.2rem;
+  margin-right: 3rem;
+  font-size: 0.65rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-frise {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.espace-frise-semaine {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding-top: 0.2rem;
+}
+
+.espace-frise-bouton {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+  padding: 0.2rem 0;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.espace-frise-aujourdhui .espace-frise-bouton {
+  background: var(--mat-sys-surface-container-high);
+  border-radius: 0.5rem;
+}
+
+.espace-frise-date {
+  flex: 0 0 3rem;
+  font-size: 0.75rem;
+  text-transform: capitalize;
+}
+
+.espace-frise-piste {
+  position: relative;
+  flex: 1 1 auto;
+  height: 1.1rem;
+  border-radius: 0.3rem;
+  background: var(--mat-sys-surface-container-highest);
+}
+
+.espace-frise-barre {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 0.3rem;
+}
+
+.espace-frise-repos {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-frise-total {
+  flex: 0 0 2.8rem;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-legende {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.espace-legende li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* « Coéquipiers ». */
+.espace-equipe-recherche {
+  width: 100%;
+  margin-bottom: 0.75rem;
+}
+
+.espace-equipe-liste,
+.espace-equipe-affluences {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.espace-equipe-personne {
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.espace-equipe-nom {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0;
+  font-weight: 500;
+}
+
+.espace-equipe-compte {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-equipe-occurrences {
+  list-style: none;
+  margin: 0.2rem 0 0;
+  padding: 0;
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* The date, not the stand: `capitalize` on the whole line turned « Jeu de
+   rôle » into « Jeu De Rôle ». Here it holds « jeu. 16 » and nothing else, so
+   raising each word raises the only one there is — and `::first-letter`, which
+   would be the exact tool, does not apply to an inline element. */
+.espace-equipe-quand {
+  text-transform: capitalize;
+}
+
+.espace-equipe-affluences {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.espace-equipe-vide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/*
+ * The one action of this espace, pinned within reach of a thumb: proposing a
+ * swap must not depend on which tab is being read.
+ */
+.espace-action-epinglee {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  padding: 0.6rem 0;
+  margin-top: 0.75rem;
+  /* Opaque, and a rule above it: the content scrolls under this bar, and a
+     bar one reads through is a bar one mistakes for content. */
+  background: var(--mat-sys-surface);
+  border-top: 1px solid var(--mat-sys-outline-variant);
+}
+
+.espace-action-epinglee a {
+  flex: 1 1 auto;
+}
+
+/* Wide enough for a table: the strip becomes a column and the frieze breathes. */
+@media (min-width: 40rem) {
+  .espace-bande {
+    flex-wrap: wrap;
+    overflow-x: visible;
+  }
+
+  .espace-stats {
+    max-width: 30rem;
+  }
+}

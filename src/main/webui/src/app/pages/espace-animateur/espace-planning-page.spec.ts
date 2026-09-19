@@ -8,14 +8,16 @@
 // a phone, where a refused clipboard (Chrome's `NotAllowedError` on a document
 // that lost focus) is a routine outcome, not an edge case.
 //
-// The band's ORDER is frozen here too: the subscription comes before the day
-// cards and before the two one-shot files. At the bottom of the page it was
-// never reached on a phone, and a snapshot file silently going stale is the
-// defect issue #324 exists to remove — so a future edit must not quietly send
-// it back down or demote it below the download.
+// The band's ORDER is frozen here too: the subscription comes first in it,
+// before the two one-shot files. At the bottom of the page it was never
+// reached on a phone, and a snapshot file silently going stale is the defect
+// issue #324 exists to remove — so a future edit must not demote it below the
+// download. Since issue #615 it lives under the « Aperçu » tab, which is what
+// these tests open first: a band nobody reaches is the same defect again.
 
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { EspaceAnimateurView, PauseAnimateurView, PosteAnimateurView } from '../../core/models';
@@ -56,6 +58,8 @@ function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView 
     emplacementNom: null,
     emplacementLatitude: null,
     emplacementLongitude: null,
+    typologieId: 'CONSTRUCTION',
+    typologieLibelle: 'Jeux de construction',
     ...overrides,
   };
 }
@@ -99,6 +103,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         {
           provide: EspaceAnimateurService,
           useValue: {
@@ -111,6 +116,18 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       ],
     });
     fixture = TestBed.createComponent(EspacePlanningPage);
+    await fixture.whenStable();
+    // « Emporter mon planning » lives under « Aperçu » since issue #615.
+    await ouvrirOnglet('Aperçu');
+  }
+
+  /** Clicks a tab of the toggle group, as a reader does. */
+  async function ouvrirOnglet(nom: string): Promise<void> {
+    const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
+      each.textContent!.includes(nom),
+    );
+    expect(onglet, `onglet « ${nom} » absent`).toBeDefined();
+    (onglet as HTMLElement).querySelector('button')!.click();
     await fixture.whenStable();
   }
 
@@ -177,16 +194,14 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(url).not.toContain('jeton-1');
   });
 
-  it('puts the band above the day cards, and the subscription first in it', async () => {
+  it('puts the band under the overview, and the subscription first in it', async () => {
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
-    const bande = racine().querySelector('.espace-agenda')!;
-    const premiereJournee = racine().querySelector('.espace-jour')!;
-    // Node.DOCUMENT_POSITION_FOLLOWING: the card comes after the band.
-    expect(bande.compareDocumentPosition(premiereJournee) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
+    // One tab away rather than one scroll away: the band is the whole of what
+    // « Aperçu » ends on, and the day tab is not cluttered with it.
+    expect(racine().querySelector('.espace-agenda')).not.toBeNull();
+    expect(racine().querySelector('.espace-poste-carte')).toBeNull();
 
     // Reading order inside the band, and Material's own action hierarchy:
     // filled for the subscription, outlined for the PDF, plain text for the
@@ -302,7 +317,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(succes()).not.toBeNull();
   });
 
-  it('prints the break of the day under its title, and says when nobody can relay', async () => {
+  it('prints the break under the shift it cuts into, and says when nobody can relay', async () => {
     espaceView.set(
       view({
         postes: [poste()],
@@ -310,6 +325,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       }),
     );
     await rendre();
+    await ouvrirOnglet('Jour');
 
     const note = (fixture.nativeElement as HTMLElement).querySelector('.espace-pause')!;
     expect(note.textContent).toContain('Pause de 18:40 à 19:00, sur Stand un');
@@ -322,6 +338,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       }),
     );
     await rendre();
+    await ouvrirOnglet('Jour');
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.espace-pause-seul')?.textContent,
     ).toContain("personne d'autre sur le stand");
@@ -346,6 +363,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         {
           provide: EspaceAnimateurService,
           useValue: {
@@ -363,6 +381,17 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
 
   function racine(): HTMLElement {
     return fixture.nativeElement as HTMLElement;
+  }
+
+  /** The chips of the day strip, one per day of the edition. */
+  function bande(): HTMLButtonElement[] {
+    return Array.from(racine().querySelectorAll('.espace-bande-jour'));
+  }
+
+  /** Opens a day from the strip, as a thumb does. */
+  async function choisirJour(index: number): Promise<void> {
+    bande()[index].click();
+    await fixture.whenStable();
   }
 
   /** Clicks the folded title: the list of changes opens (or closes) on it. */
@@ -398,10 +427,10 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       'samedi 11/07 : Ninja 14h-18h remplace Cirque 14h-18h',
       'dimanche 12/07 : Kubb 10h-12h (nouveau)',
     ]);
-    // Above the day cards: it is what the button just below asks to confirm,
-    // and nobody can be asked to confirm what they were never shown.
-    const firstDayCard = racine().querySelector('.espace-jour')!;
-    expect(bandeau.compareDocumentPosition(firstDayCard) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+    // Above the day being read: it is what the button just below asks to
+    // confirm, and nobody can be asked to confirm what they were never shown.
+    const journee = racine().querySelector('.espace-journee')!;
+    expect(bandeau.compareDocumentPosition(journee) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING,
     );
   });
@@ -476,8 +505,12 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    const lien = racine().querySelector<HTMLAnchorElement>('.espace-poste-lieu a')!;
-    expect(lien.textContent!.trim()).toBe('Hall B');
+    // The name is read, and the link next to it is the gesture: « Itinéraire »
+    // says what tapping it does, where a stand name as a link did not.
+    const lieu = racine().querySelector('.espace-poste-lieu')!;
+    expect(lieu.textContent).toContain('Hall B');
+    const lien = lieu.querySelector('a')!;
+    expect(lien.textContent!.trim()).toBe('Itinéraire');
     expect(lien.getAttribute('href')).toBe(
       'https://www.openstreetmap.org/?mlat=47.2184&mlon=-1.5536#map=18/47.2184/-1.5536',
     );
@@ -534,12 +567,17 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    const tete = racine().querySelector('.espace-maintenant')!;
+    const tete = racine().querySelector('.espace-maintenant-poste')!;
     // Read at a glance: the seconds the server sends have no place here, nor
-    // on the day card below.
+    // on the seat card below.
     expect(tete.textContent).toContain('En ce moment : Stand un, 10:00–12:00');
-    expect(tete.querySelector('.espace-maintenant-lieu')!.textContent).toContain('Hall B');
-    expect(racine().querySelector('.espace-poste-horaire')!.textContent).toBe('10:00–12:00');
+    // The place is on the seat's own card, where « Itinéraire » is offered.
+    expect(racine().querySelector('.espace-poste-lieu')!.textContent).toContain('Hall B');
+    expect(racine().querySelector('.espace-poste-horaire')!.textContent!.trim()).toBe(
+      '10:00 → 12:00',
+    );
+    // And it is the seat in progress, said as such.
+    expect(racine().querySelector('.espace-poste-badge-encours')).not.toBeNull();
   });
 
   it("annonce le prochain poste quand aucun n'est en cours", async () => {
@@ -548,7 +586,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       view({ postes: [poste(), poste({ creneauId: 2, date: '2026-07-12', standNom: 'Kubb' })] }),
     );
 
-    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+    expect(racine().querySelector('.espace-maintenant-poste')!.textContent).toContain(
       'Prochain poste : Stand un',
     );
   });
@@ -559,13 +597,16 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       view({ postes: [poste()], joursRepos: ['2026-07-11'] }),
     );
 
-    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain('Repos aujourd');
-    // The « Repos » card stays: it is an answer, not a hole.
-    const cartes = Array.from(racine().querySelectorAll('.espace-jour'));
-    expect(cartes.some((carte) => carte.querySelector('.espace-repos'))).toBe(true);
+    expect(racine().querySelector('.espace-maintenant-poste')!.textContent).toContain(
+      'Repos aujourd',
+    );
+    // « Repos » is said, not left blank: it is an answer, not a hole — on the
+    // day itself and on its chip in the strip.
+    expect(racine().querySelector('.espace-repos')).not.toBeNull();
+    expect(racine().querySelector('.espace-bande-jour-repos')).not.toBeNull();
   });
 
-  it('replie les journées écoulées derrière un seul bouton, sans les supprimer', async () => {
+  it('ouvre sur aujourd’hui et garde les journées écoulées à une touche', async () => {
     await rendre(
       new Date(2026, 6, 12, 11, 0),
       view({
@@ -577,22 +618,23 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    // Today first, the two elapsed days behind the button.
-    const cartes = () => Array.from(racine().querySelectorAll('.espace-jour'));
-    expect(cartes()).toHaveLength(1);
-    expect(cartes()[0].classList).toContain('espace-jour-aujourdhui');
-    const declencheur = racine().querySelector<HTMLButtonElement>('.espace-jours-passes')!;
-    expect(declencheur.textContent).toContain('Voir les journées passées (2)');
-    expect(declencheur.getAttribute('aria-expanded')).toBe('false');
+    // Every day of the edition is on the strip, elapsed ones included: a
+    // planning that stops short reads as a bug, and one that hides Friday
+    // behind a fold is one nobody checks what they did on.
+    expect(bande()).toHaveLength(3);
+    expect(bande()[2].classList).toContain('espace-bande-jour-actif');
+    expect(bande()[2].classList).toContain('espace-bande-jour-aujourdhui');
+    // The day on screen is the one the strip marks, whatever locale the test
+    // environment renders its date in.
+    expect(racine().querySelector('.espace-journee-titre')!.textContent).toContain('12');
 
-    declencheur.click();
-    await fixture.whenStable();
+    // One touch reaches an elapsed day, and its seats say they are over.
+    await choisirJour(0);
 
-    // Folded, never removed: a planning that stops short reads as a bug.
-    expect(cartes()).toHaveLength(3);
-    expect(cartes()[0].classList).toContain('espace-jour-passe');
-    expect(racine().querySelector('.espace-jours-passes')!.getAttribute('aria-expanded')).toBe(
-      'true',
+    expect(bande()[0].classList).toContain('espace-bande-jour-actif');
+    expect(bande()[2].classList).not.toContain('espace-bande-jour-actif');
+    expect(racine().querySelector('.espace-poste-carte')!.classList).toContain(
+      'espace-poste-carte-passee',
     );
   });
 
@@ -610,15 +652,16 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+    expect(racine().querySelector('.espace-maintenant-poste')!.textContent).toContain(
       'En ce moment : Stand un',
     );
-    expect(racine().querySelector('.espace-jours-passes')).toBeNull();
-    const cartes = Array.from(racine().querySelectorAll('.espace-jour'));
-    expect(cartes).toHaveLength(2);
-    expect(cartes[0].classList).not.toContain('espace-jour-passe');
-    // « Aujourd'hui » marks the day's card, not yesterday's.
-    expect(cartes[1].classList).toContain('espace-jour-aujourdhui');
+    // « Aujourd'hui » marks the 12th, and the seat still being held — dated
+    // the 11th — is not said to be over.
+    expect(bande()[1].classList).toContain('espace-bande-jour-aujourdhui');
+    await choisirJour(0);
+    expect(racine().querySelector('.espace-poste-carte')!.classList).not.toContain(
+      'espace-poste-carte-passee',
+    );
   });
 
   it('se place sur la date figée du serveur plutôt que sur celle du téléphone', async () => {
@@ -641,11 +684,12 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+    expect(racine().querySelector('.espace-maintenant-poste')!.textContent).toContain(
       'Prochain poste : Kubb',
     );
-    expect(racine().querySelector('.espace-jours-passes')).not.toBeNull();
-    expect(racine().querySelector('.espace-jour')!.classList).toContain('espace-jour-aujourdhui');
+    // The frozen day is the one the strip opens on, not the phone's.
+    expect(bande()[1].classList).toContain('espace-bande-jour-actif');
+    expect(bande()[1].classList).toContain('espace-bande-jour-aujourdhui');
   });
 
   it("prend aussi l'heure figée : le poste en cours se vérifie sans l'attendre", async () => {
@@ -666,7 +710,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       }),
     );
 
-    expect(racine().querySelector('.espace-maintenant')!.textContent).toContain(
+    expect(racine().querySelector('.espace-maintenant-poste')!.textContent).toContain(
       'En ce moment : Kubb',
     );
   });
@@ -677,11 +721,13 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
       view({ postes: [poste(), poste({ creneauId: 2, date: '2026-07-12', standNom: 'Kubb' })] }),
     );
 
-    // Before the first day, after the last: the page goes back to its plain
-    // form rather than carrying a misleading head block.
-    expect(racine().querySelector('.espace-maintenant')).toBeNull();
-    expect(racine().querySelector('.espace-jours-passes')).toBeNull();
-    expect(racine().querySelectorAll('.espace-jour')).toHaveLength(2);
+    // Before the first day, after the last: no state band — « votre prochain
+    // poste » would announce in July what is read in September — and the strip
+    // opens on the first day rather than on nothing.
+    expect(racine().querySelector('.espace-maintenant-poste')).toBeNull();
+    expect(bande()).toHaveLength(2);
+    expect(bande()[0].classList).toContain('espace-bande-jour-actif');
+    expect(racine().querySelector('.espace-bande-jour-aujourdhui')).toBeNull();
   });
 
   it('garde la journée du jour dépliée même quand le fuseau la place un autre jour en UTC', async () => {
@@ -702,8 +748,8 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
         }),
       );
 
-      expect(racine().querySelector('.espace-jour')!.classList).toContain('espace-jour-aujourdhui');
-      expect(racine().querySelector('.espace-jours-passes')).toBeNull();
+      expect(bande()[0].classList).toContain('espace-bande-jour-aujourdhui');
+      expect(bande()[0].classList).toContain('espace-bande-jour-actif');
     } finally {
       vi.unstubAllEnvs();
     }

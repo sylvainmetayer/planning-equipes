@@ -61,6 +61,17 @@ class EspaceAnimateurConsignesTest {
 
     private static PosteAnimateurView poste(LocalDate date) {
         return new PosteAnimateurView(
-                1L, date, LocalTime.of(9, 0), LocalTime.of(13, 0), "S", "Stand", List.of(), null, null, null);
+                1L,
+                date,
+                LocalTime.of(9, 0),
+                LocalTime.of(13, 0),
+                "S",
+                "Stand",
+                List.of(),
+                null,
+                null,
+                null,
+                "AMBIANCE",
+                "Jeux d'ambiance");
     }
 }
