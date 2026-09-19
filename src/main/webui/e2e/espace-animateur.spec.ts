@@ -268,11 +268,9 @@ test.describe('espace animateur', () => {
     await expect(page.getByRole('link', { name: "S'abonner dans mon agenda" })).toBeVisible();
     // En complément, pas à la place : les fichiers ponctuels restent là — le
     // PDF sous ses deux mises en page, et l'ICS.
-    await expect(page.getByRole('link', { name: 'Télécharger le livret PDF' })).toBeVisible();
-    await expect(
-      page.getByRole('link', { name: 'Télécharger la feuille recto-verso' }),
-    ).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Télécharger le fichier ICS' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Livret PDF' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Feuille A4' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeVisible();
 
     // L'adresse elle-même est repliée : elle se règle une fois et occuperait,
     // dépliée, la place que le planning doit garder.

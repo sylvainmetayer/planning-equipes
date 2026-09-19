@@ -155,7 +155,11 @@
     </h2>
     <div class="espace-agenda-actions">
       @if (lienWebcal(); as webcal) {
-        <a class="espace-agenda-abonnement" matButton="filled" [href]="webcal">
+        <a
+          class="espace-agenda-abonnement espace-agenda-large"
+          matButton="filled"
+          [href]="webcal"
+        >
           <mat-icon>event_repeat</mat-icon>
           <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
         </a>
@@ -163,15 +167,15 @@
       @if (telechargementsOfferts()) {
         <a matButton="outlined" [href]="lienPdf()" download>
           <mat-icon>picture_as_pdf</mat-icon>
-          <span i18n="@@espace.planning.telechargerPdf">Télécharger le livret PDF</span>
+          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
         </a>
         <a matButton="outlined" [href]="lienPdfFeuille()" download>
           <mat-icon>description</mat-icon>
-          <span i18n="@@espace.planning.telechargerFeuille">Télécharger la feuille recto-verso</span>
+          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
         </a>
-        <a matButton [href]="lienIcs()" download>
+        <a class="espace-agenda-large" matButton [href]="lienIcs()" download>
           <mat-icon>event</mat-icon>
-          <span i18n="@@espace.planning.telechargerIcs">Télécharger le fichier ICS</span>
+          <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
         </a>
       }
     </div>
