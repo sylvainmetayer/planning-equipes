@@ -5048,6 +5048,12 @@
           "emplacementLongitude" : {
             "type" : "number",
             "format" : "double"
+          },
+          "typologieId" : {
+            "type" : "string"
+          },
+          "typologieLibelle" : {
+            "type" : "string"
           }
         }
       },
