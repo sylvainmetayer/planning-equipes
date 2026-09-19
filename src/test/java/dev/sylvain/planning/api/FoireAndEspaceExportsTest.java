@@ -20,6 +20,7 @@ import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Set;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openpdf.text.pdf.PdfReader;
 
 /**
  * Opening and closing the foire au planning, and the espace downloads
@@ -195,6 +197,48 @@ class FoireAndEspaceExportsTest {
                 .extract()
                 .asString();
         assertThat(ics).startsWith("BEGIN:VCALENDAR").contains("Stand foire un");
+    }
+
+    /**
+     * The same planning under its two layouts: the booklet by default, the
+     * folded sheet when asked for, and the booklet again on a format nobody
+     * knows — a typo on a download deserves the usual document, not a 400.
+     */
+    @Test
+    void lEspaceChoisitEntreLeLivretEtLaFeuilleRectoVerso() {
+        String token = tokenOf("FOIRE-A");
+        configure(false);
+
+        byte[] livret = telecharge(token, "");
+        byte[] feuille = telecharge(token, "?format=feuille");
+        byte[] inconnu = telecharge(token, "?format=papyrus");
+
+        assertThat(pages(feuille)).isEqualTo(2);
+        assertThat(pages(livret)).isEqualTo(pages(inconnu));
+        assertThat(pages(livret)).isNotEqualTo(pages(feuille));
+    }
+
+    private static byte[] telecharge(String token, String requete) {
+        return given().when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf" + requete)
+                .then()
+                .statusCode(200)
+                .contentType("application/pdf")
+                .extract()
+                .asByteArray();
+    }
+
+    private static int pages(byte[] pdf) {
+        try {
+            PdfReader reader = new PdfReader(pdf);
+            try {
+                return reader.getNumberOfPages();
+            } finally {
+                reader.close();
+            }
+        } catch (IOException e) {
+            throw new AssertionError("le PDF servi est illisible", e);
+        }
     }
 
     @Test

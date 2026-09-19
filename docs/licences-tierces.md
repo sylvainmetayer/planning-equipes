@@ -32,7 +32,7 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 182 | 4 |
+| Apache-2.0 | 183 | 4 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
 | CC0-1.0 | 1 | — |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **210** | **89** |
+| **Total** | **211** | **89** |
 
 ## Dépendances Java
 
@@ -71,6 +71,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.5 | LGPL-2.1 ou MPL-2.0 |
 | `com.github.victools:jsonschema-generator` | 4.38.0 | Apache-2.0 |
+| `com.google.zxing:core` | 3.5.4 | Apache-2.0 |
 | `com.sun.istack:istack-commons-runtime` | 4.1.2 | EDL-1.0 |
 | `io.agroal:agroal-api` | 3.2.1 | Apache-2.0 |
 | `io.agroal:agroal-narayana` | 3.2.1 | Apache-2.0 |

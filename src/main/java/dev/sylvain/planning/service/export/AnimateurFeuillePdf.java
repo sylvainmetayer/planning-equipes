@@ -114,7 +114,9 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
     // --- Front side: the calendar ------------------------------------------------------
 
     private PdfPTable entete(AnimateurPlanningView view, String lien) {
-        PdfPTable table = new PdfPTable(new float[] {346f, 436f});
+        PdfPTable qr = QrCodeEspace.bloc(lien, 48f, theme.headline());
+        PdfPTable table =
+                qr == null ? new PdfPTable(new float[] {346f, 436f}) : new PdfPTable(new float[] {330f, 396f, 56f});
         table.setTotalWidth(LARGEUR);
         table.setLockedWidth(true);
         table.setSpacingAfter(10f);
@@ -158,6 +160,17 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
             droite.addElement(lienParagraphe);
         }
         table.addCell(droite);
+
+        if (qr != null) {
+            // Scanned off the folded sheet: the link underneath is long, and
+            // the sheet is read standing up between two shifts.
+            PdfPCell code = new PdfPCell();
+            code.setBorder(Rectangle.NO_BORDER);
+            code.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            code.setVerticalAlignment(Element.ALIGN_MIDDLE);
+            code.addElement(qr);
+            table.addCell(code);
+        }
         return table;
     }
 

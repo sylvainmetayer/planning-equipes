@@ -251,6 +251,34 @@ class PlanningPdfContenuTest {
     }
 
     /**
+     * The espace band closes the overview when the overview leaves room for
+     * it. The link stays written under the QR code: a photocopy too pale to
+     * scan, and a reader who wants to see where the code leads, both need it.
+     */
+    @Test
+    void leCartoucheDeLEspaceFermeLaPremierePageQuandElleALaPlace() throws IOException {
+        PlanningEvenement planning = planning();
+        byte[] pdf = new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
+                .render(
+                        "Ada Lovelace",
+                        planning.getPostes().stream()
+                                .filter(poste -> poste.getAnimateur() != null
+                                        && "A-ADA".equals(poste.getAnimateur().getId()))
+                                .toList(),
+                        Map.of(),
+                        PlanningExportService.daysOff(planning, "A-ADA"),
+                        List.of(),
+                        List.of(),
+                        "https://planning.example.org/animateur/jeton-1",
+                        PROVENANCE.publiee(),
+                        Map.of());
+
+        assertThat(pageTextOf(pdf, 1))
+                .contains("VOTRE ESPACE EN LIGNE")
+                .contains("https://planning.example.org/animateur/jeton-1");
+    }
+
+    /**
      * The folded sheet says the same things as the booklet on two sides: a
      * calendar week by week, then the teams and the places.
      */
@@ -398,6 +426,15 @@ class PlanningPdfContenuTest {
                         return new Provenance("Édition de test", null, Nature.PUBLICATION);
                     }
                 });
+    }
+
+    private static String pageTextOf(byte[] pdf, int page) throws IOException {
+        PdfReader reader = new PdfReader(pdf);
+        try {
+            return new PdfTextExtractor(reader).getTextFromPage(page);
+        } finally {
+            reader.close();
+        }
     }
 
     private static int pagesOf(byte[] pdf) throws IOException {
