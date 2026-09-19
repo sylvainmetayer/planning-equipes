@@ -105,8 +105,14 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         document.add(frise(view));
         document.add(legende(view));
         document.add(standsByLieu(view));
-        if (lienEspaceAnimateur != null) {
-            document.add(espaceAnimateurCallout(lienEspaceAnimateur));
+        // The espace band closes the overview when the overview leaves room
+        // for it, and closes the document otherwise: a long édition fills page
+        // one, and a band pushed alone onto a page of its own would cost a
+        // sheet to say one sentence.
+        PdfPTable espace = lienEspaceAnimateur == null ? null : espaceAnimateurCallout(lienEspaceAnimateur);
+        boolean espacePlace = espace != null && fitsUnderTheOverview(document, writer, espace);
+        if (espacePlace) {
+            document.add(espace);
         }
 
         document.newPage();
@@ -122,6 +128,9 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
             document.add(blocEquipesNombreuses(view));
         }
         document.add(lieuxBlock(view));
+        if (espace != null && !espacePlace) {
+            document.add(espace);
+        }
 
         document.close();
         return output.toByteArray();
@@ -376,12 +385,28 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
     }
 
     /**
+     * Whether a table still fits under what the <b>overview</b> has already
+     * been given. Two conditions, and the second is the one that bites: a page
+     * one filled to the last line has already carried the flow onto page two,
+     * where anything fits — and where the band would sit alone.
+     */
+    private static boolean fitsUnderTheOverview(Document document, PdfWriter writer, PdfPTable table) {
+        if (writer.getPageNumber() != 1) {
+            return false;
+        }
+        float restant = writer.getVerticalPosition(true) - document.bottomMargin();
+        // Plus the band's own spacing before it, which the table height does not carry.
+        return table.getTotalHeight() + 16f <= restant;
+    }
+
+    /**
      * Personal espace link (issue #165), closing the overview: click it on
      * screen, or type the printed URL — it opens their planning and the échange
      * request form, no account needed.
      */
     private PdfPTable espaceAnimateurCallout(String lien) {
-        PdfPTable card = new PdfPTable(1);
+        PdfPTable qr = QrCodeEspace.bloc(lien, 62f, theme.headline());
+        PdfPTable card = qr == null ? new PdfPTable(1) : new PdfPTable(new float[] {LARGEUR - 78f, 78f});
         card.setTotalWidth(LARGEUR);
         card.setLockedWidth(true);
         card.setSpacingBefore(16f);
@@ -406,6 +431,24 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
         lienParagraphe.setSpacingBefore(2f);
         cell.addElement(lienParagraphe);
         card.addCell(cell);
+
+        if (qr != null) {
+            // The link is the credential and it is long: nobody types it off a
+            // printed sheet. The URL stays written under it all the same — for
+            // a photocopy too pale to scan, and for a reader who wants to see
+            // where the code leads before following it.
+            PdfPCell code = new PdfPCell();
+            code.setBorder(Rectangle.NO_BORDER);
+            code.setBackgroundColor(theme.voile());
+            code.setPadding(8f);
+            code.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            code.addElement(qr);
+            Paragraph legende = new Paragraph("Scannez", theme.lienLabelFont());
+            legende.setAlignment(Element.ALIGN_CENTER);
+            legende.setSpacingBefore(2f);
+            code.addElement(legende);
+            card.addCell(code);
+        }
         return card;
     }
 

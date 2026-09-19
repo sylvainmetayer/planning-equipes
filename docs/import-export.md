@@ -912,6 +912,17 @@ Deux règles de fond :
 Un animateur sans affectation garde l'état vide (« Aucune affectation pour cet
 événement. ») et le lien de son espace.
 
+Le cartouche « Votre espace en ligne » porte un **QR code** (`QrCodeEspace`,
+encodage `zxing-core`, modules dessinés en vectoriel plutôt qu'en image
+tramée) : le lien est la donnée d'authentification de l'espace, il est long, et
+personne ne le recopie depuis une feuille imprimée. L'adresse reste écrite en
+dessous — pour une photocopie trop pâle pour être scannée, et pour qui veut
+voir où mène le code avant de le suivre. Sur le livret, le cartouche ferme la
+vue d'ensemble quand elle lui laisse la place, et ferme le document sinon :
+une édition longue remplit la première page, et une bande seule sur sa propre
+page coûterait une feuille pour dire une phrase. Sur la feuille recto-verso, le
+QR est dans le bandeau d'en-tête, à côté du lien.
+
 #### Deux mises en page : `format=livret` ou `format=feuille`
 
 Le même contenu se demande sous deux formes, par le paramètre `format` :
@@ -926,12 +937,16 @@ bornes étant déjà sur la ligne de période juste en dessous. Une personne rev
 d'une année sur l'autre a deux documents à distinguer, et le pied de page ne se
 lit pas d'un coup d'œil.
 
+Les deux formats sont offerts **à l'animateur comme à l'organisation** :
+l'espace animateur propose « Télécharger le livret PDF » et « Télécharger la
+feuille recto-verso », l'écran *Diffusion du planning* les mêmes deux sorties
+pour toute l'édition.
+
 Le paramètre est accepté sur `GET /api/espace-animateur/{jeton}/planning.pdf`,
 `POST /api/planning/export/pdf/animateur/{id}`, `POST
 /api/planning/export/pdf/all` et `POST /api/planning/export/bundle/all`. Une
 valeur inconnue vaut `livret` : une faute de frappe sur un téléchargement ne
-mérite pas un 400. L'écran *Diffusion du planning* expose les deux (« Exporter
-le planning (PDF + ICS) » et « Exporter les feuilles recto-verso »).
+mérite pas un 400.
 
 Les deux mises en page composent la **même** vue interne
 (`AnimateurPlanningVue`), ce qui est ce qui les empêche de dire deux choses

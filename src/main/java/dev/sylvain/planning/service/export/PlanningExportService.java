@@ -417,6 +417,17 @@ public class PlanningExportService {
     }
 
     /**
+     * File name of an individual planning, one layout apart from the other:
+     * {@code planning-Prenom-Nom.pdf} and {@code planning-Prenom-Nom-feuille.pdf}.
+     * Somebody downloading both must end up with two files, not one overwriting
+     * the other.
+     */
+    public static String planningFileName(String nomAffiche, String extension, FormatPlanning format) {
+        String nom = planningFileName(nomAffiche, extension);
+        return format == FormatPlanning.FEUILLE ? nom.replaceFirst("\\.(?=[^.]*$)", "-feuille.") : nom;
+    }
+
+    /**
      * File name of an individual planning: {@code planning-Prenom-Nom.pdf}.
      * Written here rather than in every resource — the admin who gets the PDF by
      * mail and the animateur who downloads it from their espace must read the

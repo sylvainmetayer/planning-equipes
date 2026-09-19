@@ -253,10 +253,12 @@ public class EspaceAnimateurResource {
     @Produces("application/pdf")
     public Response planningPdf(@QueryParam("format") String format) {
         PlanningEvenement planning = planPublieService.planPublie();
-        byte[] contenu = planningExportService.exportAnimateurPdfPublie(
-                planning, animateurCourant(), FormatPlanning.fromParameter(format));
+        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant(), layout);
         return Response.ok(contenu)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileName(planning, "pdf", layout) + "\"")
                 .build();
     }
 
@@ -380,6 +382,12 @@ public class EspaceAnimateurResource {
     private String fileName(PlanningEvenement planning, String extension) {
         return PlanningExportService.planningFileName(
                 planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
+    }
+
+    /** The same name, told apart by layout: two downloads must not be one file. */
+    private String fileName(PlanningEvenement planning, String extension, FormatPlanning format) {
+        return PlanningExportService.planningFileName(
+                planningExportService.resolveAnimateurName(planning, animateurCourant()), extension, format);
     }
 
     private static Response badRequest(IllegalArgumentException e) {
