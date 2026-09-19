@@ -5,7 +5,7 @@ import {
   changeSummary,
   confirmationLabel,
   filterRecipients,
-  readTri,
+  readRecipientSort,
   sortRecipients,
 } from './publication-diff';
 
@@ -28,12 +28,12 @@ function destinataire(partiel: Partial<DestinatairePublication> = {}): Destinata
   };
 }
 
-describe('readTri', () => {
+describe('readRecipientSort', () => {
   it('lit les deux ordres et ramène tout le reste au nom', () => {
-    expect(readTri('ampleur')).toBe('ampleur');
-    expect(readTri('nom')).toBe('nom');
-    expect(readTri(null)).toBe('nom');
-    expect(readTri('par-couleur')).toBe('nom');
+    expect(readRecipientSort('ampleur')).toBe('ampleur');
+    expect(readRecipientSort('nom')).toBe('nom');
+    expect(readRecipientSort(null)).toBe('nom');
+    expect(readRecipientSort('par-couleur')).toBe('nom');
   });
 });
 
