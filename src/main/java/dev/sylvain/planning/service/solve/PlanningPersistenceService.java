@@ -349,8 +349,8 @@ public class PlanningPersistenceService {
 
         String insert = """
  INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
- heure_debut_effective, heure_fin_effective)
- VALUES (?, ?, ?, ?, ?, ?, ?)""";
+ heure_debut_effective, heure_fin_effective, optionnel)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
         int count = 0;
         try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
             for (PosteAffectation poste : postes) {
@@ -364,6 +364,7 @@ public class PlanningPersistenceService {
                         5, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
                 ps.setObject(6, poste.getHeureDebutEffective());
                 ps.setObject(7, poste.getHeureFinEffective());
+                ps.setBoolean(8, poste.isOptionnel());
                 ps.addBatch();
                 count++;
             }
@@ -633,7 +634,8 @@ public class PlanningPersistenceService {
             String animateurId,
             LocalTime heureDebutEffective,
             LocalTime heureFinEffective,
-            VacationSnapshot vacation) {
+            VacationSnapshot vacation,
+            boolean optionnel) {
 
         /** A seat that has nothing but ids to say, and a référentiel to say it against. */
         public Siege(
@@ -643,7 +645,19 @@ public class PlanningPersistenceService {
                 String animateurId,
                 LocalTime heureDebutEffective,
                 LocalTime heureFinEffective) {
-            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null);
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null, false);
+        }
+
+        /** Same, with the window a seat was written under — a renfort is not one by default. */
+        public Siege(
+                String posteId,
+                String standId,
+                long creneauId,
+                String animateurId,
+                LocalTime heureDebutEffective,
+                LocalTime heureFinEffective,
+                VacationSnapshot vacation) {
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, vacation, false);
         }
     }
 
@@ -700,6 +714,7 @@ public class PlanningPersistenceService {
                 continue;
             }
             PosteAffectation poste = new PosteAffectation(siege.posteId(), stand, creneau);
+            poste.setOptionnel(siege.optionnel());
             if (siege.animateurId() != null) {
                 poste.setAnimateur(animateursById.get(siege.animateurId()));
             }
@@ -758,7 +773,7 @@ public class PlanningPersistenceService {
     private List<Siege> readSieges() {
         List<Siege> sieges = new ArrayList<>();
         String sql = """
- SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective, optionnel
  FROM poste_affectation
  WHERE edition_id = ?
  ORDER BY id""";
@@ -772,7 +787,9 @@ public class PlanningPersistenceService {
                         rs.getLong("creneau_id"),
                         rs.getString("animateur_id"),
                         rs.getObject("heure_debut_effective", LocalTime.class),
-                        rs.getObject("heure_fin_effective", LocalTime.class)));
+                        rs.getObject("heure_fin_effective", LocalTime.class),
+                        null,
+                        rs.getBoolean("optionnel")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load persisted planning", e);

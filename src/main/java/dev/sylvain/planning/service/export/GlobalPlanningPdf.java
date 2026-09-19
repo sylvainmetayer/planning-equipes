@@ -95,8 +95,13 @@ public class GlobalPlanningPdf {
                             poste.heureDebutEffectif(),
                             poste.heureFinEffectif(),
                             new ArrayList<>(),
+                            new int[] {0},
                             new int[] {0}));
-            ligne.sieges()[0]++;
+            if (poste.isOptionnel()) {
+                ligne.renforts()[0]++;
+            } else {
+                ligne.sieges()[0]++;
+            }
             if (poste.getAnimateur() != null) {
                 ligne.animateurs().add(poste.getAnimateur().nomAffiche());
             }
@@ -115,9 +120,18 @@ public class GlobalPlanningPdf {
      *               the count can be incremented while grouping — never the
      *               stand's {@code effectifMin}, which a meal-pause coverage
      *               vacation deliberately halves
+     * @param renforts optional seats of the same line (issue #505), counted
+     *               apart: they are a capacity the organiser may leave unused,
+     *               so a line without them is complete
      */
     private record LigneAffectation(
-            Stand stand, Creneau creneau, LocalTime debut, LocalTime fin, List<String> animateurs, int[] sieges) {
+            Stand stand,
+            Creneau creneau,
+            LocalTime debut,
+            LocalTime fin,
+            List<String> animateurs,
+            int[] sieges,
+            int[] renforts) {
 
         boolean incomplete() {
             return animateurs.size() < sieges[0];
@@ -282,9 +296,15 @@ public class GlobalPlanningPdf {
         return cell;
     }
 
+    /**
+     * « 2/3 » — held over owed — and « 2/3 +1 » when the line also opens a
+     * renfort: the organiser reads what is missing and what is a bonus on the
+     * same line, without the second ever making the first look unmet.
+     */
     private PdfPCell effectifCell(LigneAffectation ligne) {
+        String renforts = ligne.renforts()[0] > 0 ? " +" + ligne.renforts()[0] : "";
         PdfPCell cell = new PdfPCell(new Phrase(
-                ligne.animateurs().size() + "/" + ligne.sieges()[0],
+                ligne.animateurs().size() + "/" + ligne.sieges()[0] + renforts,
                 ligne.incomplete() ? theme.tableAlertFont() : theme.tableBodyFont()));
         cell.setBorderColor(theme.pill());
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);
