@@ -148,6 +148,11 @@ class PlanningServiceScenarioFestivalRealisteTest {
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();
-        assertThat(solved.getPostes()).noneMatch(poste -> poste.getAnimateur() == null);
+        // A renfort may stay empty (issue #505): the fixture declares a
+        // capacity above the staffing its windows ask for, and feasibility is
+        // about what is owed, not about exhausting that capacity.
+        assertThat(solved.getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .noneMatch(poste -> poste.getAnimateur() == null);
     }
 }
