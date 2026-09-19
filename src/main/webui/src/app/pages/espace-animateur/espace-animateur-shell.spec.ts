@@ -86,7 +86,7 @@ describe('EspaceAnimateurShell — quelle édition', () => {
     fixture.detectChanges();
   }
 
-  function texte(): string {
+  function textOf(): string {
     return (fixture.nativeElement as HTMLElement).textContent!.replace(/\s+/g, ' ');
   }
 
@@ -95,41 +95,41 @@ describe('EspaceAnimateurShell — quelle édition', () => {
   });
 
   it("nomme l'édition et ses bornes au-dessus des onglets", () => {
-    expect(texte()).toContain('Festival 26');
-    expect(texte()).toContain('du 1 février au 16 février 2026');
+    expect(textOf()).toContain('Festival 26');
+    expect(textOf()).toContain('du 1 février au 16 février 2026');
   });
 
-  /** Deux éditions, deux pages : c'est la ligne qui les distingue. */
+  /** Two éditions, two pages: this line is what tells them apart. */
   it('affiche une autre étiquette pour une autre édition', async () => {
     await rendre(
       view({ editionNom: 'Festival 25', editionDebut: '2025-02-02', editionFin: '2025-02-17' }),
     );
 
-    expect(texte()).toContain('Festival 25');
-    expect(texte()).toContain('2025');
-    expect(texte()).not.toContain('Festival 26');
+    expect(textOf()).toContain('Festival 25');
+    expect(textOf()).toContain('2025');
+    expect(textOf()).not.toContain('Festival 26');
   });
 
-  /** Une édition d'un seul jour ne se lit pas « du 14 au 14 ». */
+  /** A one-day édition does not read « du 14 au 14 ». */
   it("dit « le » quand l'événement tient sur une journée", async () => {
     await rendre(view({ editionDebut: '2026-02-14', editionFin: '2026-02-14' }));
 
-    expect(texte()).toContain('le 14 février 2026');
-    expect(texte()).not.toContain('du 14');
+    expect(textOf()).toContain('le 14 février 2026');
+    expect(textOf()).not.toContain('du 14');
   });
 
   /**
-   * Les bornes se dérivent des créneaux (docs/domaine.md) : une édition qui
-   * n'en porte aucun n'a pas de bornes, et son nom reste la seule étiquette.
+   * The bounds are derived from the créneaux (docs/domaine.md): an édition
+   * holding none has no bounds, and its name is then the whole label.
    */
   it("garde le nom quand l'édition n'a pas encore de créneau", async () => {
     await rendre(view({ editionDebut: null, editionFin: null }));
 
-    expect(texte()).toContain('Festival 26');
-    expect(texte()).not.toContain('février');
+    expect(textOf()).toContain('Festival 26');
+    expect(textOf()).not.toContain('février');
   });
 
-  /** Une édition illisible côté serveur laisse la page telle qu'elle était. */
+  /** An édition the server cannot read leaves the page as it was. */
   it("n'affiche pas de bandeau vide quand le serveur ne sait pas nommer l'édition", async () => {
     await rendre(view({ editionNom: null, editionDebut: null, editionFin: null }));
 
