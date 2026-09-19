@@ -139,7 +139,7 @@ describe('ParametresPage — onglets', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function textOf(): string {
     return racine().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -167,26 +167,26 @@ describe('ParametresPage — onglets', () => {
 
   it('names its four tabs and opens on the legal parameters', () => {
     expect(onglets()).toEqual(['Légaux', 'Édition', 'E-mails automatiques', 'Globaux']);
-    expect(texte()).toContain('Paramètres légaux');
-    expect(texte()).toContain('Coupure repas');
+    expect(textOf()).toContain('Paramètres légaux');
+    expect(textOf()).toContain('Coupure repas');
     // And none of the other tabs' cards is on screen with them.
-    expect(texte()).not.toContain('Typologie ninja');
-    expect(texte()).not.toContain('Sauvegarde automatique');
+    expect(textOf()).not.toContain('Typologie ninja');
+    expect(textOf()).not.toContain('Sauvegarde automatique');
   });
 
   it('puts each card under the tab that names it', async () => {
     await cliquerOnglet('Édition');
-    expect(texte()).toContain('Typologie ninja');
-    expect(texte()).toContain("Qualité d'organisation");
-    expect(texte()).toContain('Sur leur propre écran');
+    expect(textOf()).toContain('Typologie ninja');
+    expect(textOf()).toContain("Qualité d'organisation");
+    expect(textOf()).toContain('Sur leur propre écran');
 
     await cliquerOnglet('E-mails automatiques');
-    expect(texte()).toContain("Prévenir par e-mail à la fin d'une résolution");
-    expect(texte()).toContain('Rappels et relances automatiques');
+    expect(textOf()).toContain("Prévenir par e-mail à la fin d'une résolution");
+    expect(textOf()).toContain('Rappels et relances automatiques');
 
     await cliquerOnglet('Globaux');
-    expect(texte()).toContain('Sauvegarde automatique');
-    expect(texte()).toContain('Export SQL');
+    expect(textOf()).toContain('Sauvegarde automatique');
+    expect(textOf()).toContain('Export SQL');
   });
 
   /**
@@ -199,13 +199,13 @@ describe('ParametresPage — onglets', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('Sauvegarde automatique');
+    expect(textOf()).toContain('Sauvegarde automatique');
   });
 
   it('opens on the default tab when the address names one it does not know', async () => {
     await rendre({ onglet: 'notifications' });
 
-    expect(texte()).toContain('Paramètres légaux');
+    expect(textOf()).toContain('Paramètres légaux');
   });
 
   /** It speaks of the edition, not of a tab: hiding it behind one would lose it. */

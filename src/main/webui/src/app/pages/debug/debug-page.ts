@@ -162,7 +162,7 @@ export class DebugPage {
    */
   private readonly route = inject(ActivatedRoute, { optional: true });
 
-  private focusEnAttente = this.route?.snapshot.queryParamMap.get('focus') === TODAY_ANCHOR;
+  private focusPending = this.route?.snapshot.queryParamMap.get('focus') === TODAY_ANCHOR;
 
   constructor() {
     // Followed rather than read once, like Diagnostic: the router reuses this
@@ -187,10 +187,10 @@ export class DebugPage {
     void this.refresh();
     effect(() => {
       const champ = this.champDateDuJour();
-      if (!champ || !this.focusEnAttente) {
+      if (!champ || !this.focusPending) {
         return;
       }
-      this.focusEnAttente = false;
+      this.focusPending = false;
       // Scrolling is the nicety, the focus is the point: jsdom has no
       // scrollIntoView, and neither does an old browser.
       champ.nativeElement.scrollIntoView?.({ block: 'center' });

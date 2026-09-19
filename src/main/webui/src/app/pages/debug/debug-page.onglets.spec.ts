@@ -92,7 +92,7 @@ describe('DebugPage — onglets', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function textOf(): string {
     return racine().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -121,22 +121,22 @@ describe('DebugPage — onglets', () => {
 
   it('names its four tabs and opens on the raw analysis', () => {
     expect(onglets()).toEqual(['Résolution', 'Vérifications', 'Données', 'Validateur YAML']);
-    expect(texte()).toContain('Dernière analyse');
-    expect(texte()).toContain("Documentation de l'API");
+    expect(textOf()).toContain('Dernière analyse');
+    expect(textOf()).toContain("Documentation de l'API");
     // And none of the other tabs' cards is on screen with it.
-    expect(texte()).not.toContain('Base de données');
-    expect(texte()).not.toContain('Validateur YAML (');
+    expect(textOf()).not.toContain('Base de données');
+    expect(textOf()).not.toContain('Validateur YAML (');
   });
 
   it('puts each card under the tab that names it', async () => {
     await cliquerOnglet('Vérifications');
-    expect(texte()).toContain('Envoyer un mail de test');
-    expect(texte()).toContain('Mailpit');
-    expect(texte()).toContain('Date du jour');
+    expect(textOf()).toContain('Envoyer un mail de test');
+    expect(textOf()).toContain('Mailpit');
+    expect(textOf()).toContain('Date du jour');
 
     await cliquerOnglet('Données');
-    expect(texte()).toContain('Vider la base de données');
-    expect(texte()).toContain('Scénarios');
+    expect(textOf()).toContain('Vider la base de données');
+    expect(textOf()).toContain('Scénarios');
 
     await cliquerOnglet('Validateur YAML');
     expect(racine().querySelector('app-yaml-validator')).not.toBeNull();
@@ -152,13 +152,13 @@ describe('DebugPage — onglets', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('Vider la base de données');
+    expect(textOf()).toContain('Vider la base de données');
   });
 
   it('opens on the default tab when the address names one it does not know', async () => {
     await rendre({ onglet: 'validateur-yaml' });
 
-    expect(texte()).toContain('Dernière analyse');
+    expect(textOf()).toContain('Dernière analyse');
   });
 
   /**
@@ -170,8 +170,8 @@ describe('DebugPage — onglets', () => {
     await rendre({ onglet: 'verifications', dateModifiable: false });
 
     expect(onglets()).toContain('Vérifications');
-    expect(texte()).toContain('Envoyer un mail de test');
-    expect(texte()).not.toContain('Date du jour');
+    expect(textOf()).toContain('Envoyer un mail de test');
+    expect(textOf()).not.toContain('Date du jour');
   });
 
   /** The output panel answers an action of one tab and is read after it. */

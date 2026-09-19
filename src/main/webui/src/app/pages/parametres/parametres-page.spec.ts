@@ -314,12 +314,12 @@ describe('ParametresPage rendering', () => {
     fixture = TestBed.createComponent(ParametresPage);
     await fixture.whenStable();
     if (options.onglet) {
-      await ouvrirOnglet(options.onglet);
+      await openTab(options.onglet);
     }
   }
 
   /** Clicks a tab of the toggle group, as a reader does — the cards under it are then rendered. */
-  async function ouvrirOnglet(nom: string): Promise<void> {
+  async function openTab(nom: string): Promise<void> {
     const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
       each.textContent!.includes(nom),
     );
