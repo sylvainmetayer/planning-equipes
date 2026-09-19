@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WrittenVerrouillage;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -37,11 +38,16 @@ public class VerrouillageResource {
      * Records a lock. The groupe de créneaux defaults to the active one, and
      * the id to a generated UUID. Locking an already-locked target succeeds
      * without creating a duplicate.
+     *
+     * <p>Answers {@code { verrouillage, avertissements }} like the other
+     * referentials that warn — freezing seats that already break a hard rule is
+     * accepted, and said. Typed rather than wrapped in a {@code Response}: the
+     * published OpenAPI is the contract, and a {@code Response} describes
+     * nothing in it.</p>
      */
     @POST
-    public Response create(VerrouillagePlanning verrouillage) {
-        return Response.ok(referenceDataService.createVerrouillage(verrouillage))
-                .build();
+    public WrittenVerrouillage create(VerrouillagePlanning verrouillage) {
+        return referenceDataService.writeVerrouillage(verrouillage);
     }
 
     @DELETE

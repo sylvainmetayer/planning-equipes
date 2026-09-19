@@ -3,6 +3,8 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -30,6 +32,17 @@ public class FeasibilityResource {
     @Inject
     FeasibilityAnalyzer feasibilityAnalyzer;
 
+    @Inject
+    PlanningPersistenceService persistence;
+
+    /**
+     * For its {@code pastHorizon()} alone: the moment the frozen past is judged
+     * against (ADR 0044), which only the solver façade pairs with the
+     * {@code planning.solver.passe-fige} kill-switch. No solve is started here.
+     */
+    @Inject
+    PlanningService planningService;
+
     /**
      * Créneaux are read from the <em>active</em> group only, like
      * {@code PlanningService} does when it builds a problem: créneaux of the
@@ -39,7 +52,13 @@ public class FeasibilityResource {
      * on a créneau, so it has to see what the recurring horaires expand to.
      * The ad hoc constraints come along so contradictory exceptions — refused
      * at entry time, but possibly recorded before that check existed or
-     * imported together — are reported here too (issue #84).
+     * imported together — are reported here too (issue #84). The locks come
+     * along for the same kind of deadlock: a forced assignment naming only
+     * people whose schedule is frozen over its whole scope. The seats of the
+     * persisted plan are read only when a lock exists —
+     * {@link FeasibilityAnalyzer.PlanContext} carries them as a supplier, and
+     * the horizon of the frozen past (ADR 0044) alongside them, so a forced
+     * assignment left on a day already worked is not reported as blocking.
      */
     @GET
     public FeasibilityReport analyze() {
@@ -48,6 +67,10 @@ public class FeasibilityResource {
                 referenceDataService.listSolvedStands(),
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
-                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()));
+                FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                new FeasibilityAnalyzer.PlanContext(
+                        referenceDataService.listVerrouillages(),
+                        persistence::loadPlacesTenues,
+                        planningService.pastHorizon()));
     }
 }

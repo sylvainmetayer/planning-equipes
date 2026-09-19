@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WrittenVerrouillage;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -63,14 +64,15 @@ public class VerrouillageMcpTools {
             description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
                     + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
                     + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
-                    + "de doublon.",
+                    + "de doublon. Répond aussi les codes d'avertissement du geste : "
+                    + "VERROUILLAGE_SUR_VIOLATION_DURE quand les places figées cassent déjà une règle dure.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    VerrouillageView verrouiller(
+    WrittenVerrouillageView verrouiller(
             @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
             @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false)
                     String animateurId,
@@ -87,8 +89,12 @@ public class VerrouillageMcpTools {
         verrouillage.setCreneauId(creneauId);
         verrouillage.setJour(McpArgs.date(jour, "jour"));
         verrouillage.setRaison(raison);
-        return toView(referenceDataService.createVerrouillage(verrouillage));
+        WrittenVerrouillage ecrit = referenceDataService.writeVerrouillage(verrouillage);
+        return new WrittenVerrouillageView(toView(ecrit.verrouillage()), WarningCodes.of(ecrit.avertissements()));
     }
+
+    /** The lock written, and the codes of what it raised — the sentence stays on the screen. */
+    public record WrittenVerrouillageView(VerrouillageView verrouillage, List<String> avertissements) {}
 
     /**
      * Unlike {@code DELETE /api/verrouillages/{id}}, which answers 204 whatever

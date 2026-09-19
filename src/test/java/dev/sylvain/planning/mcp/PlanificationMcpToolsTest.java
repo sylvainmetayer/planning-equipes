@@ -115,8 +115,9 @@ class PlanificationMcpToolsTest {
                         .findFirst()
                         .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
-        VerrouillageView pose = verrouillageTools.verrouiller(
-                "ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", null);
+        VerrouillageView pose = verrouillageTools
+                .verrouiller("ANIMATEUR", animateurId, null, null, null, "vérifié avec l'équipe", null)
+                .verrouillage();
 
         assertThat(pose.type()).isEqualTo("ANIMATEUR");
         assertThat(pose.animateurId()).isEqualTo(animateurId);

@@ -3,11 +3,16 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
+import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnExcludedSeats;
+import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
@@ -17,7 +22,9 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -30,15 +37,20 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <p>The result is a ranked list of blocking causes
  * ({@link CauseInfaisabilite}), each carrying a severity and the concrete
  * entities involved, so the setup screen can display them before any solve is
- * launched. Two kinds of cause are detected:
+ * launched. Five kinds of cause are detected:
  * {@link TypeCauseInfaisabilite#CRENEAU_SOUS_EFFECTIF} — the demand of a
- * créneau exceeds the number of animateurs available to serve it — and
+ * créneau exceeds the number of animateurs available to serve it —
  * {@link TypeCauseInfaisabilite#CONTRAINTES_AD_HOC_CONTRADICTOIRES} — two
- * hand-entered exceptions that cannot both hold (issue #84).
+ * hand-entered exceptions that cannot both hold (issue #84) — and the three
+ * {@code AFFECTATION_FORCEE_*}, one forced assignment nobody can honour
+ * (issue #30): its animateurs declared the days off, no seat of its scope may
+ * hold them, or their schedule is locked over the whole scope.
  *
- * <p>The second one is reported although the same check refuses such a pair at
- * entry time: exceptions recorded before that check existed, or imported
- * together, are exactly the ones nobody will find by re-reading the form.</p>
+ * <p>The last four are reported although the write already said so: an
+ * exception recorded before the check existed, or imported together with
+ * others, is exactly the one nobody will find by re-reading the form — and the
+ * three forced-assignment readings are warnings, never refusals, so what they
+ * describe is written and stays until somebody acts on it.</p>
  *
  * <p>The demand of a créneau is counted exactly as
  * {@link ProblemBuilder#buildPostes(List, List)} generates seats: for every
@@ -145,6 +157,24 @@ public class FeasibilityAnalyzer {
             List<Creneau> creneaux,
             List<ContrainteAdHoc> contraintesAdHoc,
             boolean encadrementMineursActif) {
+        return analyze(animateurs, stands, creneaux, contraintesAdHoc, encadrementMineursActif, PlanContext.NONE);
+    }
+
+    /**
+     * @param contexte what the caller knows about the plan — see
+     *        {@link PlanContext}. A caller that can read the locks passes them,
+     *        and a forced assignment nobody it names is free to honour is
+     *        reported as a blocking cause; one that cannot passes
+     *        {@link PlanContext#NONE}, and that single check is skipped rather
+     *        than guessed at.
+     */
+    public FeasibilityReport analyze(
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            List<ContrainteAdHoc> contraintesAdHoc,
+            boolean encadrementMineursActif,
+            PlanContext contexte) {
         List<Animateur> animateursSurs = animateurs == null ? List.of() : animateurs;
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
@@ -152,7 +182,12 @@ public class FeasibilityAnalyzer {
         List<CauseInfaisabilite> causes = new ArrayList<>(
                 creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs, encadrementMineursActif));
         causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
-        causes.addAll(affectationsForceesIntenables(contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs));
+        PastHorizon horizon = contexte == null ? null : contexte.horizon();
+        causes.addAll(
+                affectationsForceesIntenables(contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs, horizon));
+        causes.addAll(affectationsForceesHorsEligibilite(
+                contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs, horizon));
+        causes.addAll(affectationsForceesVerrouillees(contraintesAdHoc, standsSurs, creneauxSurs, contexte));
         causes.sort(ORDRE_CAUSES);
 
         int manqueAnimateurs = causes.stream()
@@ -261,28 +296,105 @@ public class FeasibilityAnalyzer {
      * days declared now, since they usually arrive after the exception.
      */
     private List<CauseInfaisabilite> affectationsForceesIntenables(
-            List<ContrainteAdHoc> contraintes, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+            List<ContrainteAdHoc> contraintes,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (ForcedAssignmentOnDayOff.Conflit conflit :
-                ForcedAssignmentOnDayOff.detectAll(contraintes, animateurs, stands, creneaux)) {
-            Creneau creneau = conflit.contrainte().getCreneau();
-            causes.add(new CauseInfaisabilite(
+                ForcedAssignmentOnDayOff.detectAll(contraintes, animateurs, stands, creneaux, horizon)) {
+            causes.add(forcedAssignmentCause(
                     TypeCauseInfaisabilite.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
-                    SeveriteInfaisabilite.CRITIQUE,
+                    conflit.contrainte(),
                     conflit.message(),
-                    creneau == null ? null : creneau.getId(),
-                    conflit.dates().size() == 1 ? conflit.dates().getFirst() : null,
-                    null,
-                    null,
-                    // No stand named: a stand on a cause sends the reader to the
-                    // openings, and nothing about the openings is wrong here.
-                    List.of(),
-                    List.of(conflit.contrainte().getId()),
-                    0,
-                    0,
-                    0));
+                    conflit.dates()));
         }
         return causes;
+    }
+
+    /**
+     * One cause per forced assignment no seat of its scope may hold — a minor
+     * on a night slot, on a public holiday, on an adults-only stand, past their
+     * daily cap. CRITIQUE like its two siblings: the rules it breaks are hard
+     * ones, and no budget buys a way round them.
+     */
+    private List<CauseInfaisabilite> affectationsForceesHorsEligibilite(
+            List<ContrainteAdHoc> contraintes,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
+        List<CauseInfaisabilite> causes = new ArrayList<>();
+        for (ForcedAssignmentOnExcludedSeats.Conflit conflit :
+                ForcedAssignmentOnExcludedSeats.detectAll(contraintes, animateurs, stands, creneaux, horizon)) {
+            causes.add(forcedAssignmentCause(
+                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_MOTIF_LEGAL,
+                    conflit.contrainte(),
+                    conflit.message(),
+                    conflit.dates()));
+        }
+        return causes;
+    }
+
+    /**
+     * One cause per forced assignment every animateur it names is locked out of.
+     * Runs only when the caller brought locks, and reads the persisted seats
+     * only then: with none recorded there is nothing to cross and nothing to
+     * pay for.
+     */
+    private List<CauseInfaisabilite> affectationsForceesVerrouillees(
+            List<ContrainteAdHoc> contraintes, List<Stand> stands, List<Creneau> creneaux, PlanContext contexte) {
+        // Both halves are read before the supplier is: the seats cost a full
+        // scan of the assignments, and with no lock or no forced assignment
+        // there is nothing to cross them with.
+        if (contexte == null
+                || contexte.verrouillages().isEmpty()
+                || contraintes == null
+                || contraintes.stream()
+                        .noneMatch(contrainte ->
+                                contrainte != null && contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE)) {
+            return List.of();
+        }
+        List<CauseInfaisabilite> causes = new ArrayList<>();
+        for (ForcedAssignmentOnLockedSchedule.Conflit conflit : ForcedAssignmentOnLockedSchedule.detectAll(
+                contraintes,
+                contexte.verrouillages(),
+                stands,
+                creneaux,
+                contexte.placesTenues().get(),
+                contexte.horizon())) {
+            causes.add(forcedAssignmentCause(
+                    TypeCauseInfaisabilite.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
+                    conflit.contrainte(),
+                    conflit.message(),
+                    conflit.dates()));
+        }
+        return causes;
+    }
+
+    /**
+     * The shape the three « this forced assignment cannot be honoured » causes
+     * share: the exception named, a date only when the scope is one day, and no
+     * stand — a stand on a cause sends the reader to the openings, and nothing
+     * about the openings is wrong here.
+     */
+    private static CauseInfaisabilite forcedAssignmentCause(
+            TypeCauseInfaisabilite type, ContrainteAdHoc contrainte, String message, List<LocalDate> dates) {
+        Creneau creneau = contrainte.getCreneau();
+        return new CauseInfaisabilite(
+                type,
+                SeveriteInfaisabilite.CRITIQUE,
+                message,
+                creneau == null ? null : creneau.getId(),
+                dates.size() == 1 ? dates.getFirst() : null,
+                null,
+                null,
+                List.of(),
+                List.of(contrainte.getId()),
+                0,
+                0,
+                0);
     }
 
     /**
@@ -426,12 +538,57 @@ public class FeasibilityAnalyzer {
         return stand.getNom() == null || stand.getNom().isBlank() ? stand.getId() : stand.getNom();
     }
 
+    /**
+     * What the caller knows about the plan around the reference data: the locks
+     * of the edition, the seats of the persisted plan the animateurs of an
+     * exception may already hold, and the moment the past is judged against.
+     *
+     * <p>The seats come as a {@link Supplier} and not as a set, because reading
+     * them is a full scan of the assignments: with no lock recorded — the usual
+     * case — nothing needs them, and this analysis runs on every load of the
+     * Solveur, Édition and Problèmes screens. {@link #NONE} is the caller that
+     * has none of the three to offer, and the lock check is then simply not
+     * run.</p>
+     *
+     * @param horizon the moment « le passé est figé » is judged against (ADR
+     *        0044), or {@code null} when the freeze is off or the caller cannot
+     *        read it. The three forced-assignment readings stay silent on a
+     *        scope entirely behind it: those seats are re-seeded and pinned, and
+     *        the constraints count them without reproaching them — reporting one
+     *        as blocking would ask the operator to undo a day already worked.
+     */
+    public record PlanContext(
+            List<VerrouillagePlanning> verrouillages,
+            Supplier<Set<ForcedAssignmentOnLockedSchedule.PlaceTenue>> placesTenues,
+            PastHorizon horizon) {
+
+        public static final PlanContext NONE = new PlanContext(List.of(), Set::of, null);
+
+        public PlanContext {
+            verrouillages = verrouillages == null ? List.of() : List.copyOf(verrouillages);
+            Objects.requireNonNull(placesTenues, "placesTenues");
+        }
+    }
+
     /** Kind of blocking cause detected before any solve. */
     public enum TypeCauseInfaisabilite {
         CRENEAU_SOUS_EFFECTIF,
         CONTRAINTES_AD_HOC_CONTRADICTOIRES,
         /** A forced assignment falling only on days its animateurs declared off — see {@link ForcedAssignmentOnDayOff}. */
-        AFFECTATION_FORCEE_JOUR_INDISPONIBLE
+        AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
+        /**
+         * A forced assignment no seat of its scope may hold, for a reason read
+         * on the (seat, animateur) pair alone — see
+         * {@link ForcedAssignmentOnExcludedSeats}. {@code contrainteIds} names
+         * the exception; the message names the rules of the catalogue.
+         */
+        AFFECTATION_FORCEE_MOTIF_LEGAL,
+        /**
+         * A forced assignment whose every named animateur has a locked schedule
+         * over its whole scope, without already sitting in it — see
+         * {@link ForcedAssignmentOnLockedSchedule}.
+         */
+        AFFECTATION_FORCEE_SIEGE_VERROUILLE
     }
 
     /**

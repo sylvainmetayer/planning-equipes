@@ -160,9 +160,13 @@ public class JourJService {
      * whole planning as its request body — reasonable for a desktop screen that
      * already holds it, a megabyte per seat on the phone this one runs on. Same
      * service call, same bounded cost, one identifier on the wire.</p>
+     *
+     * <p>Prepared like the write that follows it: a plan read back from the
+     * database carries seats and no rules, and a suggestion scored without them
+     * is one {@code applyReparation} can refuse a click later.</p>
      */
     public SuggestionsReparation suggestions(String posteId, Integer plafond) {
-        return planningService.suggererReparations(persistenceService.loadPersistedPlanning(), posteId, plafond);
+        return planningService.persistedSuggererReparations(posteId, plafond);
     }
 
     /* -------------------------------- Writes ------------------------------- */

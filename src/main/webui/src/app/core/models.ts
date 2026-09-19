@@ -524,7 +524,10 @@ export type TypeAvertissement =
   | 'STAND_FENETRE_SANS_EFFET'
   | 'STAND_JAMAIS_OUVERT'
   | 'CRENEAU_DEBORDE_OUVERTURE_STANDS'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE';
+  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
+  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
+  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
+  | 'VERROUILLAGE_SUR_VIOLATION_DURE';
 
 export interface Avertissement {
   type: TypeAvertissement;
@@ -559,6 +562,12 @@ export interface WrittenAnimateur {
 /** Body of `POST`/`PUT /api/creneaux` — same shape, same reason. */
 export interface WrittenCreneau {
   creneau: Creneau;
+  avertissements: Avertissement[];
+}
+
+/** Body of `POST /api/verrouillages` — the lock as written, and what it froze that already breaks a rule. */
+export interface WrittenVerrouillage {
+  verrouillage: VerrouillagePlanning;
   avertissements: Avertissement[];
 }
 
@@ -864,11 +873,18 @@ export interface ConstraintDiagnostic {
  *   cannot both hold, whatever the solver does. Refused at entry time, so this
  *   only ever reports what was recorded before that check existed or imported
  *   in one go — `contrainteIds` names the exceptions to arbitrate.
+ * - The three `AFFECTATION_FORCEE_*`: one forced assignment nobody can honour.
+ *   Its animateurs declared the days off, no seat of its scope may hold them
+ *   (a minor on a night slot, an adults-only stand…), or their schedule is
+ *   locked over the whole scope. Warned at entry time, reported here for as
+ *   long as it stands — `contrainteIds` names the exception to move or delete.
  */
 export type TypeCauseInfaisabilite =
   | 'CRENEAU_SOUS_EFFECTIF'
   | 'CONTRAINTES_AD_HOC_CONTRADICTOIRES'
-  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE';
+  | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
+  | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
+  | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE';
 
 /** `CRITIQUE` = no coverage possible at all; `ELEVE` = partial coverage only. */
 export type SeveriteInfaisabilite = 'CRITIQUE' | 'ELEVE';

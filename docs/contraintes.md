@@ -574,18 +574,44 @@ nomment elles aussi l'exception par son id.
 **Le budget d'exceptions a été explicitement écarté** : voir
 [0010](decisions/0010-contraintes-ad-hoc-contradiction-plutot-que-budget.md).
 
-### L'affectation forcée un jour d'indisponibilité
+### Les trois affectations forcées qu'on ne peut pas tenir
 
-Une `AFFECTATION_FORCEE` dont **tous** les animateurs sont indisponibles à
-**chaque** date de son périmètre ne peut pas être tenue. Ce n'est pas une
-contradiction entre exceptions — elle oppose une exception à un jour déclaré —
-et elle n'est pas refusée : l'indisponibilité arrive le plus souvent *après*,
-par la déclaration de l'animateur, qu'on ne refuse pas. Elle est donc dite deux
-fois, sans bloquer : un avertissement `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` à
-l'écriture de l'ajustement, et une cause bloquante du même nom dans l'analyse de
-faisabilité tant qu'elle tient (`ForcedAssignmentOnDayOff`). Et le solve garde
-le jour d'indisponibilité : c'est l'exception qui n'est pas tenue (voir
-ci-dessous).
+Une `AFFECTATION_FORCEE` peut être intenable sans contredire aucune autre
+exception : elle oppose une exception à une donnée qui, elle, ne se refuse pas.
+Trois lectures, trois classes pures, la même doctrine — avertir à l'écriture,
+reporter comme cause bloquante tant que ça tient, ne jamais refuser. La raison
+est toujours la même : la donnée qui casse l'exception arrive presque toujours
+**après** elle, et un refus ne tiendrait que jusque-là
+([0045](decisions/0045-un-placement-intenable-est-dit-avant-le-calcul.md)).
+
+| Lecture | Ce qui rend l'exception intenable | Avertissement et cause |
+| --- | --- | --- |
+| `ForcedAssignmentOnDayOff` | **Tous** les animateurs nommés se sont déclarés indisponibles à **chaque** date du périmètre | `AFFECTATION_FORCEE_JOUR_INDISPONIBLE` |
+| `ForcedAssignmentOnExcludedSeats` | Aucune place du périmètre n'accepte l'un des animateurs nommés, au titre d'une règle dure du couple place × animateur — les motifs d'`EligibleAnimateurMoveFilter` : mineur la nuit, un jour férié, sur un stand réservé aux majeurs, au-delà de son plafond quotidien | `AFFECTATION_FORCEE_MOTIF_LEGAL`, le message nomme les règles du catalogue |
+| `ForcedAssignmentOnLockedSchedule` | L'emploi du temps de chacun des animateurs nommés est verrouillé (`ANIMATEUR` ou `ANIMATEUR_CRENEAU`) sur tout le périmètre, et aucun n'y tient déjà de place : le solveur ne peut ni bouger le verrou ni ignorer l'exception | `AFFECTATION_FORCEE_SIEGE_VERROUILLE` |
+
+Les deux premières ne se doublent jamais : le jour déclaré indisponible est
+*aussi* un motif d'exclusion dur, donc la seconde se tait sur un cas que la
+première rapporte — c'est la lecture en termes de déclaration que l'organisateur
+sait traiter, en parlant à la personne. La troisième, elle, peut s'ajouter aux
+deux autres, et c'est voulu : un verrou et une règle légale sont deux blocages
+indépendants, qui se lèvent par deux gestes différents.
+
+Deux précautions, pour ne jamais inventer un conflit. Les places du périmètre
+sont construites comme `ProblemBuilder` les génère — une par (stand ouvert sur
+le créneau, créneau) — donc un périmètre qui n'ouvre nulle part, ou qui nomme un
+stand inconnu du référentiel, ne porte aucune place et ne dit rien. Et les
+plafonds de durée se lisent avec la pause sur poste déclarée, la lecture la plus
+permissive : un conflit rapporté ici est un conflit que le solveur rencontrerait
+quoi qu'en dise l'édition.
+
+Seuls les verrous `ANIMATEUR` et `ANIMATEUR_CRENEAU` entrent dans la troisième
+lecture. Un verrou de stand, de créneau ou de journée épingle les places qui
+**tiennent quelqu'un** et laisse les places vides remplissables : il ne s'oppose
+donc jamais à l'affectation que l'exception réclame.
+
+Et le solve garde le jour d'indisponibilité, le verrou et la règle légale :
+c'est l'exception qui n'est pas tenue (voir ci-dessous).
 
 ## Les exclusions d'éligibilité pèsent plus lourd que tout
 

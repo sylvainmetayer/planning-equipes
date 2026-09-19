@@ -621,6 +621,33 @@ public final class PlanningWhatIf {
     }
 
     /**
+     * The same search as {@link #suggererReparations}, on the <b>persisted</b>
+     * plan rather than on one the caller uploads — and prepared exactly as
+     * {@link #applyReparation} prepares it.
+     *
+     * <p>That symmetry is the whole point. A plan read back from the database
+     * carries seats, not rules: no typologie quota, no disabled constraint, no
+     * weight of this edition. Scored bare, the search offered candidates the
+     * write then refused with a 400 — it proposed somebody over a typologie cap
+     * and rejected them one click later. The two gestures now read the same
+     * rules, so what the assistant lists is what the assistant can apply.</p>
+     *
+     * @throws BusinessError.Conflict when no solve has been persisted yet:
+     *         there is no seat to repair, and « poste inconnu » would send the
+     *         reader looking for an id that is not the problem
+     */
+    public SuggestionsReparation persistedSuggererReparations(String posteId, Integer plafondDemande) {
+        PlanningEvenement persiste = persistence.loadPersistedPlanning();
+        if (persiste == null
+                || persiste.getPostes() == null
+                || persiste.getPostes().isEmpty()) {
+            throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
+        }
+        preparation.accept(persiste);
+        return suggererReparations(persiste, posteId, plafondDemande);
+    }
+
+    /**
      * Applies one repair suggestion to the <b>persisted</b> plan (issue #71):
      * the seat changes hands and nothing else does, which is exactly the plan
      * {@link #suggererReparations} scored. A single surgical {@code UPDATE},
@@ -634,7 +661,13 @@ public final class PlanningWhatIf {
      * @param animateurId {@code null} empties the seat
      */
     public void applyReparation(String posteId, String animateurId) {
-        applyReparations(persistence.loadPersistedPlanning(), List.of(posteId), animateurId);
+        PlanningEvenement persiste = persistence.loadPersistedPlanning();
+        // Prepared like a solve prepares it (ad hoc rules, toggles, weights):
+        // the hard verdict below has to be read on the rules this edition runs
+        // under, not on the catalogue's defaults — the same care
+        // {@code DeplacementService} takes before scoring a drag-and-drop.
+        preparation.accept(persiste);
+        applyReparations(persiste, List.of(posteId), animateurId);
     }
 
     /**
@@ -653,14 +686,25 @@ public final class PlanningWhatIf {
      * already started is refused the same way (ADR 0044): the past is not
      * repaired by hand either.</p>
      *
-     * @param animateurId {@code null} empties the seats
+     * <p>And, when somebody is being seated, the gesture is <b>scored first</b>
+     * — see {@link #refuseIfBreaksHardRules}. The screen this write serves
+     * never offers a candidate breaking a hard rule, so the check costs it
+     * nothing; {@code affecter_poste} over MCP and
+     * {@code POST /api/postes/{id}/affectation} accept any animateur, and used
+     * to seat a minor on a night slot without a word. The plan handed here must
+     * therefore be one a solve would recognise — {@code preparation}
+     * applied — whenever {@code animateurId} names somebody.</p>
+     *
+     * @param animateurId {@code null} empties the seats, which no hard rule can
+     *                    refuse: the seat costs its {@code posteDoitEtrePourvu}
+     *                    point either way, and freeing somebody who has just
+     *                    called in sick is the one gesture that must never be
+     *                    blocked by the plan it is repairing
      */
     public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
         List<PosteAffectation> postes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
-        if (animateurId != null) {
-            findAnimateur(persiste, animateurId);
-        }
+        Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);
         refuseIfPast(postes.toArray(PosteAffectation[]::new));
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         for (PosteAffectation poste : postes) {
@@ -669,10 +713,83 @@ public final class PlanningWhatIf {
                         "Ce poste est verrouillé : déverrouillez-le avant d'y appliquer une réparation.");
             }
         }
+        refuseIfBreaksHardRules(persiste, postes, repreneur);
         for (PosteAffectation poste : postes) {
             persistence.reaffecterPoste(poste.getId(), animateurId);
         }
     }
+
+    /**
+     * Scores the seating on the plan itself and refuses it when it would break
+     * a hard rule, in the terms {@link #suggererReparations} already uses to
+     * drop a candidate — and for the same two reasons, because one of them
+     * alone lets the case through.
+     *
+     * <p>The plan-wide score catches what the seat cannot show: a weekly cap or
+     * a rest period broken on a seat this write does not touch. The per-seat
+     * check catches what the score hides: filling an empty seat settles one
+     * hard point ({@code posteDoitEtrePourvu}) and can spend it on another, so
+     * a minor seated on a night slot leaves the total flat while plainly
+     * breaking a rule.</p>
+     *
+     * <p>Nothing to score when the seats are being emptied: see the caller.</p>
+     */
+    private void refuseIfBreaksHardRules(
+            PlanningEvenement persiste, List<PosteAffectation> postes, Animateur repreneur) {
+        if (repreneur == null) {
+            return;
+        }
+        PlanningAnalysis avant = constraintDiagnosticService.analyze(persiste);
+        List<Animateur> occupants =
+                postes.stream().map(PosteAffectation::getAnimateur).toList();
+        PlanningAnalysis apres;
+        postes.forEach(poste -> poste.setAnimateur(repreneur));
+        try {
+            apres = constraintDiagnosticService.analyze(persiste);
+        } finally {
+            for (int rang = 0; rang < postes.size(); rang++) {
+                postes.get(rang).setAnimateur(occupants.get(rang));
+            }
+        }
+        if (apres.score().hardScore() < avant.score().hardScore()) {
+            throw new BusinessError.Invalid("Affectation refusée : elle casserait "
+                    + describeHardViolations(extraHardViolations(avant, apres)));
+        }
+        for (PosteAffectation poste : postes) {
+            Set<String> nomsAvant = impactsFor(avant, poste, true).stream()
+                    .map(ContrainteImpact::name)
+                    .collect(Collectors.toSet());
+            List<ContrainteImpact> introduites = impactsFor(apres, poste, true).stream()
+                    .filter(impact -> DUR.equals(impact.niveau()))
+                    .filter(impact -> !nomsAvant.contains(impact.name()))
+                    .toList();
+            if (!introduites.isEmpty()) {
+                throw new BusinessError.Invalid("Affectation refusée sur le poste " + poste.getId()
+                        + " : elle casserait "
+                        + introduites.stream()
+                                .map(impact -> impact.description() == null ? impact.name() : impact.description())
+                                .collect(Collectors.joining(" ; "))
+                        + ".");
+            }
+        }
+    }
+
+    /**
+     * The rules a refused gesture would break, as the sentence that names them.
+     * Shared with {@link DeplacementService}: the drag-and-drop and the direct
+     * write refuse for the same reason, and a reader who meets both should not
+     * have to notice that the two wordings happen to match.
+     */
+    static String describeHardViolations(List<HardViolation> violations) {
+        if (violations.isEmpty()) {
+            return "une règle dure du planning.";
+        }
+        return violations.stream()
+                        .map(violation -> violation.description() + " (" + violation.matchesSupplementaires() + ")")
+                        .collect(Collectors.joining(" ; "))
+                + ".";
+    }
+
     /**
      * Simulates a demande d'échange (issue #165) on an already-solved planning:
      * the demandeur's seat on ({@code creneauId}, {@code standId}) goes to

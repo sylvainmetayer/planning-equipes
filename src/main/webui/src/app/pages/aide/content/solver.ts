@@ -64,6 +64,10 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.calculer.bloquants:Quand le bandeau de faisabilité porte un problème qu'aucun calcul ne peut résoudre — deux ajustements manuels qui se contredisent, une affectation forcée que personne ne peut tenir — les trois boutons demandent confirmation avant de partir, et nomment la cause : le calcul finirait en score dur négatif quel que soit le temps qu'il tourne. Lancer quand même reste possible, le reste du planning s'améliore. Un manque d'animateurs, lui, ne demande rien : le solveur remplit encore ce qu'il peut.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.calculer.attente:Quand le solveur est occupé, chacun des trois boutons planifie le calcul au lieu de le refuser : il démarrera de lui-même dès que la tâche en cours sera terminée.`,
         },
       ],
@@ -107,7 +111,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.verrouillages:Verrouillages`,
-              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible plutôt que de masquer un problème. Ce n'est pas un ajustement manuel — voir l'encart « Ajustement manuel ou verrouillage ? ».`,
+              text: $localize`:@@aide.config.def.verrouillages:Geler un animateur, un stand, une journée ou un créneau pour que la prochaine résolution n'y touche plus et optimise le reste. Une place non pourvue n'est jamais gelée, et les places gelées continuent d'être évaluées : un verrou laisse donc une alerte visible plutôt que de masquer un problème — et quand ce que vous figez casse déjà une règle dure, l'enregistrement le dit, pour que le score dur négatif du prochain calcul ne soit pas une surprise. Ce n'est pas un ajustement manuel — voir l'encart « Ajustement manuel ou verrouillage ? ».`,
             },
           ],
         },
@@ -423,6 +427,10 @@ export function buildSolverSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.adHoc.chevauchement:Le chevauchement se calcule sur les horaires du créneau tels qu'ils sont saisis, pas sur ce qu'une fermeture de stand en laisse réellement. Deux affectations forcées sur des créneaux qui se recouvrent, mais sur deux stands fermés à des heures complémentaires, seront donc refusées. Dans ce cas, visez des créneaux qui ne se recouvrent pas.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.intenable:Trois autres situations sont signalées sans être refusées, parce que ce qui casse l'affectation forcée arrive le plus souvent après elle : tous les animateurs nommés se sont déclarés indisponibles sur tout le périmètre ; aucune place du périmètre ne peut les accueillir au regard d'une règle dure — un mineur la nuit, un jour férié, un stand réservé aux majeurs, un plafond quotidien dépassé ; leur emploi du temps est verrouillé sur tout le périmètre sans qu'ils y tiennent déjà de place. Un message le dit à l'enregistrement, la page Problèmes le reprend comme cause bloquante tant que ça tient, et « Calculer » demande confirmation avant de partir.`,
         },
         {
           kind: 'paragraph',

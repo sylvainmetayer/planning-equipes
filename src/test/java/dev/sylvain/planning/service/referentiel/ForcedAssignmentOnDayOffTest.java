@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDate;
@@ -35,9 +36,10 @@ class ForcedAssignmentOnDayOffTest {
         return contrainte;
     }
 
+    /** No horizon: the freeze off, which is how the whole suite reads these rules by default. */
     private List<ForcedAssignmentOnDayOff.Conflit> detect(ContrainteAdHoc contrainte, Animateur... animateurs) {
         return ForcedAssignmentOnDayOff.detectAll(
-                List.of(contrainte), List.of(animateurs), List.of(plateau), List.of(samediMatin, dimancheMatin));
+                List.of(contrainte), List.of(animateurs), List.of(plateau), List.of(samediMatin, dimancheMatin), null);
     }
 
     @Test
@@ -96,9 +98,43 @@ class ForcedAssignmentOnDayOffTest {
         Animateur absent = offOn("A1", SAMEDI, DIMANCHE);
 
         assertThat(CoherenceAnalyzer.onContrainteAdHoc(
-                        forced(absent), List.of(absent), List.of(plateau), List.of(samediMatin, dimancheMatin)))
+                        forced(absent),
+                        List.of(absent),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        List.of(),
+                        Set.of(),
+                        null))
                 .singleElement()
                 .satisfies(avertissement -> assertThat(avertissement.type())
                         .isEqualTo(TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE));
+    }
+
+    /**
+     * A scope entirely behind the horizon says nothing: those seats are
+     * re-seeded and pinned, and {@code affectationForcee} counts them without
+     * reproaching them (ADR 0044). Reporting one would ask the organiser to
+     * undo a day already worked.
+     */
+    @Test
+    void aScopeEntirelyInThePastIsNotReproached() {
+        Animateur absent = offOn("A1", SAMEDI, DIMANCHE);
+        ContrainteAdHoc contrainte = forced(absent);
+
+        assertThat(ForcedAssignmentOnDayOff.detectAll(
+                        List.of(contrainte),
+                        List.of(absent),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        new PastHorizon(DIMANCHE.plusDays(1), LocalTime.of(8, 0))))
+                .isEmpty();
+        // One day still ahead is enough to keep the reading.
+        assertThat(ForcedAssignmentOnDayOff.detectAll(
+                        List.of(contrainte),
+                        List.of(absent),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        new PastHorizon(DIMANCHE, LocalTime.of(8, 0))))
+                .hasSize(1);
     }
 }

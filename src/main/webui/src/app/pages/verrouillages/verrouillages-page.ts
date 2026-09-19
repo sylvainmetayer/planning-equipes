@@ -13,7 +13,13 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
-import { PlanningEvenement, TypeVerrouillage, VerrouillagePlanning } from '../../core/models';
+import {
+  Avertissement,
+  PlanningEvenement,
+  TypeVerrouillage,
+  VerrouillagePlanning,
+  estJournalisable,
+} from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
@@ -67,6 +73,11 @@ interface VerrouillageRow extends VerrouillagePlanning {
  * had staffed — empty seats are never frozen, so a lock can't make a hole
  * permanent.
  */
+/** The sentences of a batch of warnings, as one paragraph. */
+function phrases(avertissements: readonly Avertissement[]): string {
+  return avertissements.map((avertissement) => avertissement.message).join(' ');
+}
+
 @Component({
   selector: 'app-verrouillages-page',
   imports: [
@@ -204,7 +215,7 @@ export class VerrouillagesPage {
     }
     const type = this.type();
     try {
-      await this.verrous.create({
+      const avertissements = await this.verrous.create({
         type,
         animateurId: type === 'ANIMATEUR' ? this.animateurId() : null,
         standId: type === 'STAND' ? this.standId() : null,
@@ -213,6 +224,22 @@ export class VerrouillagesPage {
         raison: this.raison() || null,
       });
       this.raison.set('');
+      if (avertissements.length > 0) {
+        // Stays until dismissed, like every write-time warning: the lock is
+        // recorded, and what it froze is what the next solve will report as a
+        // hard score nobody caused with this click.
+        this.notifications.notify({
+          title: $localize`:@@verrouillages.createdWithWarnings:Verrouillage enregistré — ${avertissements.length}:count: point(s) à vérifier.`,
+          message: phrases(avertissements),
+          // The journal outlives the logout: it only ever carries what is safe
+          // to keep there (`docs/rgpd.md` §7). Nothing this warning says names
+          // anybody today — the filter is what keeps that true tomorrow.
+          messageJournal: phrases(avertissements.filter(estJournalisable)),
+          variant: 'warning',
+          timeout: 0,
+        });
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@verrouillages.created:Verrouillage enregistré.`,
         variant: 'success',

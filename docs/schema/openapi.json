@@ -6715,11 +6715,11 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "VERROUILLAGE_SUR_VIOLATION_DURE" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE" ]
+        "enum" : [ "CRENEAU_SOUS_EFFECTIF", "CONTRAINTES_AD_HOC_CONTRADICTOIRES", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE" ]
       },
       "TypeChangement" : {
         "type" : "string",
@@ -6992,6 +6992,20 @@
         "properties" : {
           "stand" : {
             "$ref" : "#/components/schemas/Stand"
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Avertissement"
+            }
+          }
+        }
+      },
+      "WrittenVerrouillage" : {
+        "type" : "object",
+        "properties" : {
+          "verrouillage" : {
+            "$ref" : "#/components/schemas/VerrouillagePlanning"
           },
           "avertissements" : {
             "type" : "array",
@@ -12899,7 +12913,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/WrittenVerrouillage"
+                }
               }
             }
           },

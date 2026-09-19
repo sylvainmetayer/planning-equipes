@@ -613,6 +613,26 @@ public class ReferenceDataService implements ReferenceData {
         return verrouillages.list();
     }
 
+    /**
+     * Records the lock, then reports what is worth a second look: seats it
+     * freezes that already break a hard rule. The write happens first and is
+     * never undone by what comes back — see {@link Avertissement}.
+     */
+    public WrittenVerrouillage writeVerrouillage(VerrouillagePlanning verrouillage) {
+        VerrouillagePlanning ecrit = createVerrouillage(verrouillage);
+        return new WrittenVerrouillage(ecrit, coherence.onVerrouillage(ecrit));
+    }
+
+    /**
+     * The bare write, no warning. Kept for the two locks that come <b>with
+     * another gesture</b> rather than from the Verrouillages screen: accepting
+     * an échange, which poses its own {@code ANIMATEUR_CRENEAU} lock with
+     * nobody to read a sentence, and freezing a day one has just marked read,
+     * where the screen has already listed that day's hard gaps before
+     * accepting — saying it again at the lock is repeating what the operator
+     * just read past. Every gesture whose subject <em>is</em> the lock goes
+     * through {@link #writeVerrouillage}.
+     */
     public VerrouillagePlanning createVerrouillage(VerrouillagePlanning verrouillage) {
         return verrouillages.create(verrouillage);
     }

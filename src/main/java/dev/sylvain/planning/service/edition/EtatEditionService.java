@@ -35,6 +35,7 @@ import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService.PlanningResolution;
+import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService;
 import dev.sylvain.planning.service.validation.ValidationPrerequisService.ProgressionValidations;
@@ -58,9 +59,9 @@ import java.util.Optional;
  * through the resource test.</p>
  *
  * <p>It never fails on an empty edition — the first screen a new user sees is
- * this one — and it never touches the solver: a running solve is a state to
- * report, not a lock to wait for. Every read here is one the screens already
- * make while a solve runs.</p>
+ * this one — and it never <em>runs</em> the solver: a running solve is a state
+ * to report, not a lock to wait for. Every read here is one the screens
+ * already make while a solve runs.</p>
  */
 @ApplicationScoped
 public class EtatEditionService {
@@ -82,6 +83,14 @@ public class EtatEditionService {
 
     @Inject
     FeasibilityAnalyzer feasibilityAnalyzer;
+
+    /**
+     * For its {@code pastHorizon()} alone — see the note above on never
+     * touching the solver: reading the moment the frozen past is judged against
+     * (ADR 0044) starts nothing and waits for nothing.
+     */
+    @Inject
+    PlanningService planningService;
 
     @Inject
     ConstraintAnalysisStore analysisStore;
@@ -177,7 +186,11 @@ public class EtatEditionService {
                         referenceDataService.listSolvedStands(),
                         referenceDataService.listCreneaux(),
                         referenceDataService.listContraintesAdHoc(),
-                        FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees())),
+                        FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
+                        new FeasibilityAnalyzer.PlanContext(
+                                referenceDataService.listVerrouillages(),
+                                persistenceService::loadPlacesTenues,
+                                planningService.pastHorizon())),
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
