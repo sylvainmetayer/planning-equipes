@@ -182,12 +182,31 @@ niveau du catalogue, et `ConstraintToggle` ne porte que `actif`) :
 | `maxJoursConsecutifsTravailles` | MEDIUM, dosable | **active**, poids 1 |
 | `maxJoursConsecutifsTravaillesDur` | HARD | **éteinte** |
 
-Les deux partagent leur corps et le seuil de six, donc ne peuvent pas diverger
-sur ce qu'elles comptent ; les deux peuvent être actives en même temps, ce qui
-dit « jamais plus de six, et de préférence moins ». La forme dure s'allume par
-l'écran Contraintes, par `activer_contrainte` ou par `contraintes.activees`
-d'un scénario — aucune migration, même mécanisme que
+Les deux partagent leur corps **et leur seuil**, donc ne peuvent pas diverger
+sur ce qu'elles comptent ni sur combien de jours elles laissent passer ; les
+deux peuvent être actives en même temps, ce qui dit « jamais plus de N, et de
+préférence moins ». La forme dure s'allume par l'écran Contraintes, par
+`activer_contrainte` ou par `contraintes.activees` d'un scénario — aucune
+migration, même mécanisme que
 [0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
+
+Le seuil lui-même se règle par édition : page Paramètres, carte « Qualité
+d'organisation », champ « Jours travaillés d'affilée »
+(`joursConsecutifsMax`, six par défaut). Il a quitté la constante du
+code parce qu'il ne décide pas du confort mais de la **faisabilité** : la règle
+exige un jour de repos dans *chaque* fenêtre de (seuil + 1) jours, donc un jour
+de plus ou de moins change le nombre de jours-repos à trouver dans la grille.
+Mesuré sur `festival-hivernal` avec la forme dure allumée, même graine :
+
+| Seuil | Résultat |
+|---|---|
+| 6 jours (défaut) | −22 écarts durs après 20 min, 22 sièges vides |
+| 7 jours | −10 après 5 min |
+| **8 jours** | **zéro écart dur en 294 s** |
+
+Autrement dit, sur cette grille la forme dure devient tenable à partir de huit
+jours, et le choix du seuil vaut mieux que le dosage du poids : le poids ne
+peut pas rendre atteignable ce que l'arithmétique interdit.
 
 Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
 `festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
@@ -1238,8 +1257,8 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
 | `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, 2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux typologies le même après-midi et deux à une semaine d'écart comptent pareil. |
-| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun article du Code du travail n'impose un décompte glissant de six jours (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733). |
-| `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de six jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
+| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé sur la page Paramètres (six par défaut) sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733). |
+| `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la page Paramètres : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
 | `pauseSurPosteSansRelais` | HARD | Légal (temps de travail) | Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent est un écart dur : sans relais, la personne ne peut pas quitter son poste, la pause reste du travail effectif (art. L3121-1 et L3121-2) et l'obligation de l'art. L3121-16 — L3162-3 pour un mineur — n'est pas remplie. C'est aussi ce qui autorise la déduction de la pause des plafonds quotidien et hebdomadaire : sans relais, on déduirait une pause que personne n'a prise. Muette quand la pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et travailContinuMaxMineur exigent alors un vrai trou. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |

@@ -4567,7 +4567,7 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax" ],
         "type" : "object",
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
@@ -4585,6 +4585,10 @@
             "format" : "int32"
           },
           "typologiesDistinctesMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "joursConsecutifsMax" : {
             "type" : "integer",
             "format" : "int32"
           }

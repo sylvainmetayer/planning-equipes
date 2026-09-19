@@ -540,17 +540,19 @@ public final class ConstraintCatalog {
                     "maxJoursConsecutifsTravailles",
                     Niveau.MEDIUM,
                     "Qualité d'organisation",
-                    "Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour "
-                            + "de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, "
-                            + "dosable : aucun article du Code du travail n'impose un décompte glissant de six "
-                            + "jours (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, "
-                            + "n° 24-10.733)."),
+                    "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
+                            + "sur la page Paramètres (six par défaut) sans au moins un jour de repos : moins "
+                            + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
+                            + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
+                            + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733)."),
             new ConstraintDefinition(
                     "maxJoursConsecutifsTravaillesDur",
                     Niveau.HARD,
                     "Qualité d'organisation",
-                    "Éteinte par défaut. Le même plafond de six jours consécutifs, tenu en dur : au-delà, le "
-                            + "plan est refusé au lieu d'être pénalisé. Un poids ne change jamais le niveau "
+                    "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
+                            + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
+                            + "réglable sur la page Paramètres : les deux formes le lisent au même endroit. "
+                            + "Un poids ne change jamais le niveau "
                             + "d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran "
                             + "Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. "
                             + "Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une "

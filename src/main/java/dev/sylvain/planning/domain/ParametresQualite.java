@@ -41,19 +41,28 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        day: two typologies on one afternoon and two typologies a week apart
  *        count the same. Ninjas are exempt, versatility being what they are
  *        there for.
+ * @param joursConsecutifsMax how many days in a row an animateur may
+ *        work before {@code maxJoursConsecutifsTravailles} — and its hard twin
+ *        {@code maxJoursConsecutifsTravaillesDur}, which the catalogue ships
+ *        off — start counting the excess. Both read this one value, so the
+ *        dosed form and the blocking form can never disagree on what « days in
+ *        a row » means. Counted on the grid's own day numbers, not on
+ *        calendar dates: a day the event does not cover breaks no run.
  */
 @Schema(
         requiredProperties = {
             "maxEmplacementsDistinctsParJour",
             "reposSouhaiteApresServiceTardifMinutes",
-            "typologiesDistinctesMax"
+            "typologiesDistinctesMax",
+            "joursConsecutifsMax"
         })
 public record ParametresQualite(
         int maxEmplacementsDistinctsParJour,
         LocalTime heureServiceTardif,
         LocalTime heureServiceMatinal,
         int reposSouhaiteApresServiceTardifMinutes,
-        int typologiesDistinctesMax) {
+        int typologiesDistinctesMax,
+        int joursConsecutifsMax) {
 
     /** @see #maxEmplacementsDistinctsParJour() */
     public static final int EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT = 3;
@@ -92,6 +101,21 @@ public record ParametresQualite(
      */
     public static final int TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT = 2;
 
+    /**
+     * 6 — the ceiling the organisation stated, and the value both forms of the
+     * rule carried as a private constant of {@code QualiteConstraints} until it
+     * became an edition's to set. No article of the Code du travail founds a
+     * rolling count of consecutive days (see ADR 0045), so this is an
+     * organiser's policy and belongs here rather than with the legal
+     * parameters: nothing refuses a value, where a legal floor would.
+     *
+     * <p>The threshold is worth setting rather than merely dosing, because on
+     * a grid that asks for nearly everybody every day it decides feasibility,
+     * not comfort: one day more or less changes how many rest days the rule
+     * demands inside every window of {@code max + 1} days.</p>
+     */
+    public static final int JOURS_CONSECUTIFS_MAX_PAR_DEFAUT = 6;
+
     public ParametresQualite() {
         this(EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT);
     }
@@ -102,7 +126,8 @@ public record ParametresQualite(
                 HEURE_SERVICE_TARDIF_PAR_DEFAUT,
                 HEURE_SERVICE_MATINAL_PAR_DEFAUT,
                 REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT,
-                TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+                TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+                JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
     }
 
     /**

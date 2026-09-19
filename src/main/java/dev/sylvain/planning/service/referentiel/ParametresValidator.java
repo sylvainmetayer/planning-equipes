@@ -123,6 +123,10 @@ final class ParametresValidator {
                     "Le plafond de typologies distinctes par animateur doit valoir au moins 1 : "
                             + "à zéro, tout animateur affecté serait en écart.");
         }
+        if (parametres.joursConsecutifsMax() < 1) {
+            throw new BusinessError.Invalid("Le plafond de jours travaillés d'affilée doit valoir au moins 1 : "
+                    + "à zéro, tout animateur affecté serait en écart.");
+        }
         if (parametres.reposSouhaiteApresServiceTardifMinutes() < 0) {
             throw new BusinessError.Invalid("Le repos souhaité après un service tardif ne peut pas être négatif.");
         }

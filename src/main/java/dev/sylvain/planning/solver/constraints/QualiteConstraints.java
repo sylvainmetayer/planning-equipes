@@ -5,7 +5,7 @@ import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
-import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
+import ai.timefold.solver.core.api.score.stream.tri.TriConstraintStream;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
@@ -619,10 +619,8 @@ public final class QualiteConstraints {
      * rule since the underlying legal basis for a rolling (non-weekly) count
      * is not established.
      */
-    private static final int JOURS_CONSECUTIFS_TRAVAILLES_MAX = 6;
-
     /**
-     * No animateur works more than {@link #JOURS_CONSECUTIFS_TRAVAILLES_MAX}
+     * No animateur works more than {@code ParametresQualite.joursConsecutifsMax}
      * calendar days in a row.
      *
      * <p>Grouped on {@code getJour()} rather than the calendar date: adjacent
@@ -708,7 +706,8 @@ public final class QualiteConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles"))
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
-                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                        (animateur, jours, parametres) ->
+                                longestReproachableRun(jours) - parametres.joursConsecutifsMax())
                 .asConstraint("maxJoursConsecutifsTravailles");
     }
 
@@ -744,21 +743,23 @@ public final class QualiteConstraints {
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravaillesDur"))
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
-                        (animateur, jours) -> longestReproachableRun(jours) - JOURS_CONSECUTIFS_TRAVAILLES_MAX)
+                        (animateur, jours, parametres) ->
+                                longestReproachableRun(jours) - parametres.joursConsecutifsMax())
                 .asConstraint("maxJoursConsecutifsTravaillesDur");
     }
 
     /**
-     * Animateurs whose longest run of consecutive worked days exceeds
-     * {@link #JOURS_CONSECUTIFS_TRAVAILLES_MAX}, with the run's length to hand
-     * — the body {@link #maxJoursConsecutifsTravailles} and
-     * {@link #maxJoursConsecutifsTravaillesDur} share, so the two forms can
-     * never disagree on what « six days in a row » counts. The toggle stays at
-     * each caller, with its own name spelled out, as every other rule of this
-     * package does: absent, the hard one is off (it is in
-     * {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}) and the medium one on.
+     * Animateurs whose longest run of consecutive worked days exceeds the
+     * edition's {@code joursConsecutifsMax}, with the run's length
+     * and the threshold to hand — the body {@link #maxJoursConsecutifsTravailles}
+     * and {@link #maxJoursConsecutifsTravaillesDur} share, so the two forms can
+     * never disagree on what « days in a row » counts, nor on how many are
+     * allowed. The toggle stays at each caller, with its own name spelled out,
+     * as every other rule of this package does: absent, the hard one is off (it
+     * is in {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}) and the medium
+     * one on.
      */
-    private static BiConstraintStream<Animateur, Map<Integer, Boolean>> sequencesTropLongues(
+    private static TriConstraintStream<Animateur, Map<Integer, Boolean>, ParametresQualite> sequencesTropLongues(
             UniConstraintStream<PosteAffectation> postes) {
         return postes.filter(poste -> poste.getAnimateur() != null && poste.getCreneau() != null)
                 // Each worked day, and whether it still holds a seat ahead of
@@ -769,7 +770,9 @@ public final class QualiteConstraints {
                         PosteAffectation::getAnimateur,
                         ConstraintCollectors.toMap(
                                 poste -> poste.getCreneau().getJour(), PastSeats::reproachable, Boolean::logicalOr))
-                .filter((animateur, jours) -> longestReproachableRun(jours) > JOURS_CONSECUTIFS_TRAVAILLES_MAX);
+                .join(ParametresQualite.class)
+                .filter((animateur, jours, parametres) ->
+                        longestReproachableRun(jours) > parametres.joursConsecutifsMax());
     }
 
     /**

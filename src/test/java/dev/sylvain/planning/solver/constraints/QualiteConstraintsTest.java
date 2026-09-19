@@ -615,7 +615,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 ParametresQualite.HEURE_SERVICE_TARDIF_PAR_DEFAUT,
                 ParametresQualite.HEURE_SERVICE_MATINAL_PAR_DEFAUT,
                 ParametresQualite.REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT,
-                3);
+                3,
+                ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
 
         verify("limiterTypologiesDistinctesParAnimateur")
                 .given(
@@ -695,6 +696,24 @@ class QualiteConstraintsTest extends ConstraintTestBase {
 
     // --- maxJoursConsecutifsTravailles --------------------------------------
 
+    /**
+     * The ceiling travels as a {@link ParametresQualite} problem fact since it
+     * became an edition's to set, so every test of the two forms states the one
+     * it exercises. {@code SIX_DAY_CEILING} repeats the shipped default.
+     */
+    private static final ParametresQualite SIX_DAY_CEILING = new ParametresQualite();
+
+    private static ParametresQualite dayCeiling(int jours) {
+        ParametresQualite defauts = new ParametresQualite();
+        return new ParametresQualite(
+                defauts.maxEmplacementsDistinctsParJour(),
+                defauts.heureServiceTardif(),
+                defauts.heureServiceMatinal(),
+                defauts.reposSouhaiteApresServiceTardifMinutes(),
+                defauts.typologiesDistinctesMax(),
+                jours);
+    }
+
     /** A short timeslot (9:00 - 13:00) on day {@code offset + 1}, offset calendar days after D1. */
     private Creneau jourConsecutif(int offset) {
         return creneau("JC-" + offset, offset + 1, D1.plusDays(offset), LocalTime.of(9, 0), LocalTime.of(13, 0));
@@ -703,20 +722,22 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void septJoursConsecutifsTravaillesEstPenalise() {
         Animateur a1 = referentMajeur("A1");
-        Object[] postes = new Object[7];
+        Object[] postes = new Object[8];
         for (int i = 0; i < 7; i++) {
             postes[i] = poste(standStrat, jourConsecutif(i), a1);
         }
+        postes[7] = SIX_DAY_CEILING;
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(1);
     }
 
     @Test
     void sixJoursConsecutifsTravaillesNEstPasPenalise() {
         Animateur a1 = referentMajeur("A1");
-        Object[] postes = new Object[6];
+        Object[] postes = new Object[7];
         for (int i = 0; i < 6; i++) {
             postes[i] = poste(standStrat, jourConsecutif(i), a1);
         }
+        postes[6] = SIX_DAY_CEILING;
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
     }
 
@@ -725,7 +746,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         // A rest day resets the run: 6 + 6 with a gap between must not be
         // confused with 12 (or even 7) days in a row.
         Animateur a1 = referentMajeur("A1");
-        Object[] postes = new Object[12];
+        Object[] postes = new Object[13];
         int index = 0;
         for (int i = 0; i < 6; i++) {
             postes[index++] = poste(standStrat, jourConsecutif(i), a1);
@@ -734,6 +755,7 @@ class QualiteConstraintsTest extends ConstraintTestBase {
         for (int i = 7; i < 13; i++) {
             postes[index++] = poste(standStrat, jourConsecutif(i), a1);
         }
+        postes[index] = SIX_DAY_CEILING;
         verify("maxJoursConsecutifsTravailles").given(postes).penalizesBy(0);
     }
 
@@ -750,12 +772,18 @@ class QualiteConstraintsTest extends ConstraintTestBase {
             new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true);
 
     private Object[] joursConsecutifsToggled(Animateur animateur, int jours, ConstraintToggle toggle) {
-        Object[] facts = new Object[toggle == null ? jours : jours + 1];
+        return joursConsecutifsToggled(animateur, jours, toggle, SIX_DAY_CEILING);
+    }
+
+    private Object[] joursConsecutifsToggled(
+            Animateur animateur, int jours, ConstraintToggle toggle, ParametresQualite plafond) {
+        Object[] facts = new Object[toggle == null ? jours + 1 : jours + 2];
         for (int i = 0; i < jours; i++) {
             facts[i] = poste(standStrat, jourConsecutif(i), animateur);
         }
+        facts[jours] = plafond;
         if (toggle != null) {
-            facts[jours] = toggle;
+            facts[jours + 1] = toggle;
         }
         return facts;
     }
@@ -800,6 +828,32 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(6);
     }
 
+    /**
+     * The ceiling is the edition's, not the code's. An organiser who sets seven
+     * days pays nothing for a seventh — and one who sets five pays for the
+     * sixth, which the shipped default lets through. Both forms read the same
+     * value, so the pair is checked together: a ceiling that moved for one form
+     * only would be a plan the screens describe two ways.
+     */
+    @Test
+    void lePlafondEstCeluiDeLEdition() {
+        Animateur a1 = referentMajeur("A1");
+
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(a1, 7, null, dayCeiling(7)))
+                .penalizesBy(0);
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(a1, 7, JOURS_DAFFILEE_EN_DUR, dayCeiling(7)))
+                .penalizesBy(0);
+
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(a1, 6, null, dayCeiling(5)))
+                .penalizesBy(1);
+        verify("maxJoursConsecutifsTravaillesDur")
+                .given(joursConsecutifsToggled(a1, 6, JOURS_DAFFILEE_EN_DUR, dayCeiling(5)))
+                .penalizesBy(1);
+    }
+
     /* ------------------ eviterFermeturePuisOuverture (#78) ------------------ */
     //
     // Thresholds travel as a ParametresQualite problem fact, so each test states
@@ -816,7 +870,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
             LocalTime.of(22, 0),
             LocalTime.of(10, 0),
             12 * 60,
-            ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+            ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+            ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
 
     private PosteAffectation vacation(String id, int jour, java.time.LocalDate date, int debut, int fin, Animateur a) {
         return poste(standStrat, creneau(id, jour, date, LocalTime.of(debut, 0), LocalTime.of(fin, 0)), a);
@@ -996,9 +1051,19 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void uneHeureDeSeuilAbsenteRendLaRegleInerte() {
         Animateur a1 = majeurAutonome("A1");
         ParametresQualite sansSeuilTardif = new ParametresQualite(
-                3, null, LocalTime.of(10, 0), 12 * 60, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+                3,
+                null,
+                LocalTime.of(10, 0),
+                12 * 60,
+                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+                ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
         ParametresQualite sansSeuilMatinal = new ParametresQualite(
-                3, LocalTime.of(22, 0), null, 12 * 60, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+                3,
+                LocalTime.of(22, 0),
+                null,
+                12 * 60,
+                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+                ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
 
         verify("eviterFermeturePuisOuverture")
                 .given(sansSeuilTardif, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
@@ -1021,7 +1086,8 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 LocalTime.of(22, 0),
                 LocalTime.of(10, 0),
                 10 * 60,
-                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+                ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
         verify("eviterFermeturePuisOuverture")
                 .given(souhaitTropBas, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
                 .penalizesBy(0);
@@ -1031,7 +1097,12 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     void unReposSouhaiteNulRendLaRegleInerte() {
         Animateur a1 = majeurAutonome("A1");
         ParametresQualite desactivee = new ParametresQualite(
-                3, LocalTime.of(22, 0), LocalTime.of(10, 0), 0, ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT);
+                3,
+                LocalTime.of(22, 0),
+                LocalTime.of(10, 0),
+                0,
+                ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
+                ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
         verify("eviterFermeturePuisOuverture")
                 .given(desactivee, vacation("J1-SOIR", 1, D1, 18, 23, a1), vacation("J2-MATIN", 2, D2, 10, 14, a1))
                 .penalizesBy(0);
@@ -1051,19 +1122,21 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     @Test
     void aRunOfDaysEntirelyWorkedIsHistoryButOneReachingIntoTomorrowIsCharged() {
         Animateur a1 = referentMajeur("A1");
-        Object[] passes = new Object[7];
+        Object[] passes = new Object[8];
         for (int i = 0; i < 7; i++) {
             passes[i] = postePasse(standStrat, jourConsecutif(i), a1);
         }
+        passes[7] = SIX_DAY_CEILING;
         verify("maxJoursConsecutifsTravailles").given(passes).penalizesBy(0);
 
         // Six days worked, the seventh still ahead: the six count, the
         // seventh is charged.
-        Object[] enCours = new Object[7];
+        Object[] enCours = new Object[8];
         for (int i = 0; i < 6; i++) {
             enCours[i] = postePasse(standStrat, jourConsecutif(i), a1);
         }
         enCours[6] = poste(standStrat, jourConsecutif(6), a1);
+        enCours[7] = SIX_DAY_CEILING;
         verify("maxJoursConsecutifsTravailles").given(enCours).penalizesBy(1);
     }
 

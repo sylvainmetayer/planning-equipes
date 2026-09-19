@@ -1,4 +1,4 @@
-// The quality-parameters card of the Paramètres page (issue #591): five
+// The quality-parameters card of the Paramètres page (issue #591): six
 // thresholds loaded whole and sent back whole, and the pair of service hours
 // refused half-filled.
 
@@ -12,6 +12,7 @@ import { ParametresQualiteCard } from './parametres-qualite';
 type CardInternals = {
   dailyLocationsCap: { (): number | null; set: (value: number | null) => void };
   typologiesDistinctesMax: { (): number | null; set: (value: number | null) => void };
+  joursConsecutifsMax: { (): number | null; set: (value: number | null) => void };
   heureServiceTardif: { (): string; set: (value: string) => void };
   heureServiceMatinal: { (): string; set: (value: string) => void };
   restAfterLateServiceHours: () => number | null;
@@ -35,6 +36,7 @@ describe('ParametresQualiteCard', () => {
       heureServiceMatinal: '10:00:00',
       reposSouhaiteApresServiceTardifMinutes: 720,
       typologiesDistinctesMax: 2,
+      joursConsecutifsMax: 6,
     });
     TestBed.configureTestingModule({
       providers: [
@@ -56,6 +58,7 @@ describe('ParametresQualiteCard', () => {
 
     expect(card.dailyLocationsCap()).toBe(3);
     expect(card.typologiesDistinctesMax()).toBe(2);
+    expect(card.joursConsecutifsMax()).toBe(6);
     // `HH:mm:ss` on the wire, `HH:mm` in the time input.
     expect(card.heureServiceTardif()).toBe('22:00');
     expect(card.restAfterLateServiceHours()).toBe(12);
@@ -66,6 +69,7 @@ describe('ParametresQualiteCard', () => {
     expect(constraintsApi.saveQualityParameters).toHaveBeenCalledWith({
       maxEmplacementsDistinctsParJour: 3,
       typologiesDistinctesMax: 3,
+      joursConsecutifsMax: 6,
       heureServiceTardif: '22:00',
       heureServiceMatinal: '10:00',
       reposSouhaiteApresServiceTardifMinutes: 720,
