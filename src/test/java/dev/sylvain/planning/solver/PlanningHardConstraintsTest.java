@@ -124,7 +124,8 @@ class PlanningHardConstraintsTest {
                         null,
                         animateur.getId(),
                         null,
-                        null))
+                        null,
+                        false))
                 .toList();
         return new PlanSnapshotService() {
             @Override
