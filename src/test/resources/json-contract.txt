@@ -53,6 +53,7 @@ api.PlanSnapshotResource$ErreurRestauration = message, perime, referenceModifieL
 api.PlanningResource$PersistenceStatus = assignments
 api.PlanningResource$PlanningResolutionView = derniereModificationDonnees, resoluLe, solved
 api.PlanningResource$ResetSummary = animateurs, creneaux, postes, stands
+api.PublicationResource$DemandePublication = exclusions
 api.ReferenceDataResource$ImportScenarioResult = editionCreee, editionId, editionNom
 api.ReferenceDataResource$ImportTargetView = editionId, editionNomExistant, editionNomFichier, existe
 api.ReferenceDataResource$ScenarioValidationResult = erreurs, valide
