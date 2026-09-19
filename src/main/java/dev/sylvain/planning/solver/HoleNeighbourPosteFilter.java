@@ -52,16 +52,19 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
 
     @Override
     public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, PosteAffectation poste) {
+        // A renfort is never ruined nor recreated here (issue #505): the ruin
+        // frees a neighbourhood so a hole can be filled, and a recreate that
+        // may re-seat somebody on a renfort undoes exactly what it freed.
+        if (poste.isOptionnel()) {
+            return false;
+        }
         // A pinned seat cannot be ruined, whatever it holds: a lock, or a past
         // seat (ADR 0044) — including a past hole, which no move can fill.
         if (poste.getCreneau() == null || poste.isVerrouille()) {
             return false;
         }
-        // An empty renfort is not a hole (issue #505): ruining its neighbours
-        // to fill it would spend the ruin-and-recreate budget on a seat nobody
-        // is missing on.
         if (poste.getAnimateur() == null) {
-            return !poste.isOptionnel();
+            return true;
         }
         Map<LocalDate, List<long[]>> trous = trous(scoreDirector.getWorkingSolution());
         if (trous.isEmpty()) {
