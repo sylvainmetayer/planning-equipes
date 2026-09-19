@@ -198,12 +198,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     // target) all carry a class, and the icon is a `mat-icon` element.
     expect(
       actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim()),
-    ).toEqual([
-      "S'abonner dans mon agenda",
-      'Télécharger le livret PDF',
-      'Télécharger la feuille recto-verso',
-      'Télécharger le fichier ICS',
-    ]);
+    ).toEqual(["S'abonner dans mon agenda", 'Livret PDF', 'Feuille A4', 'Fichier ICS']);
     expect(actions[0].classList).toContain('mat-mdc-unelevated-button');
     expect(actions[1].classList).toContain('mat-mdc-outlined-button');
     expect(actions[2].classList).toContain('mat-mdc-outlined-button');

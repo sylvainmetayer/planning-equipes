@@ -420,25 +420,34 @@ app-espace-animateur-shell {
  * couvre la ligne et le libellé ne se tronque pas. Le contenu reste aligné à
  * gauche, comme une liste d'actions et non trois liens flottants.
  */
+/*
+ * On a phone, two columns: the abonnement and the ICS take a whole row, the
+ * two PDF layouts share one — they are one choice, and a fourth row pushed
+ * the first day of the planning off the screen, which is what the reader came
+ * for.
+ */
 .espace-agenda-actions {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   align-self: stretch;
   gap: 0.5rem;
 }
 
-.espace-agenda-actions a {
+.espace-agenda-actions > .espace-agenda-large {
+  grid-column: 1 / -1;
   justify-content: flex-start;
 }
 
 @media (min-width: 40rem) {
   .espace-agenda-actions {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     align-self: auto;
   }
 
-  .espace-agenda-actions a {
+  .espace-agenda-actions a,
+  .espace-agenda-actions > .espace-agenda-large {
     justify-content: center;
   }
 }

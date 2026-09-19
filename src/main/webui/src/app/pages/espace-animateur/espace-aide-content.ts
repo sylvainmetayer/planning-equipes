@@ -177,9 +177,9 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
           kind: 'list',
           items: [
             $localize`:@@espace.aide.emporter.item0:« S'abonner dans mon agenda » — à privilégier : donnée une fois à votre agenda, l'adresse le tient à jour à chaque nouvelle publication. Rien à refaire ensuite.`,
-            $localize`:@@espace.aide.emporter.item1:« Télécharger le livret PDF » : une vue d'ensemble de vos journées, leur détail, puis vos coéquipiers et vos lieux.`,
-            $localize`:@@espace.aide.emporter.itemFeuille:« Télécharger la feuille recto-verso » : le même planning sur une seule feuille, calendrier au recto, équipes et lieux au verso — celle qui tient dans une poche.`,
-            $localize`:@@espace.aide.emporter.item2:« Télécharger le fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans votre agenda.`,
+            $localize`:@@espace.aide.emporter.item1:« Livret PDF » : une vue d'ensemble de vos journées, leur détail, puis vos coéquipiers et vos lieux.`,
+            $localize`:@@espace.aide.emporter.itemFeuille:« Feuille A4 » : le même planning sur une seule feuille, calendrier au recto, équipes et lieux au verso — celle qui tient dans une poche.`,
+            $localize`:@@espace.aide.emporter.item2:« Fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans votre agenda.`,
           ],
         },
         {
