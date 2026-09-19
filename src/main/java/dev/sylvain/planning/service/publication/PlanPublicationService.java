@@ -244,20 +244,28 @@ public class PlanPublicationService {
      * this service: there is nobody left to write to.</p>
      */
     private Map<String, List<Vacation>> vacationsNotifiees(Map<String, Long> marqueurs, Set<String> connus) {
-        Map<Long, Optional<Map<String, List<Vacation>>>> parSnapshot = new LinkedHashMap<>();
+        List<Long> references = marqueurs.entrySet().stream()
+                .filter(marqueur -> connus.contains(marqueur.getKey()))
+                .map(Map.Entry::getValue)
+                .distinct()
+                .toList();
+        // Read in one go: each reference used to assemble a whole plan of its
+        // own, re-reading the animateurs, the créneaux, the stands and every
+        // horaire — once per distinct marker.
+        Map<Long, Optional<Map<String, List<Vacation>>>> parSnapshot =
+                planPublieService.vacationsBySnapshot(references);
         Map<String, List<Vacation>> notifiees = new LinkedHashMap<>();
         for (Map.Entry<String, Long> marqueur : marqueurs.entrySet()) {
             if (!connus.contains(marqueur.getKey())) {
                 continue;
             }
-            Optional<Map<String, List<Vacation>>> duSnapshot = parSnapshot.computeIfAbsent(
-                    marqueur.getValue(),
-                    id -> planPublieService.plan(id).map(PublicationDiffService::vacationsByAnimateur));
             // A marker naming a snapshot that is gone leaves no entry at all:
             // an empty list would claim this person was told they had nothing,
             // where the truth is that nothing is left to compare against.
-            duSnapshot.ifPresent(vacations ->
-                    notifiees.put(marqueur.getKey(), vacations.getOrDefault(marqueur.getKey(), List.of())));
+            parSnapshot
+                    .getOrDefault(marqueur.getValue(), Optional.empty())
+                    .ifPresent(vacations ->
+                            notifiees.put(marqueur.getKey(), vacations.getOrDefault(marqueur.getKey(), List.of())));
         }
         return notifiees;
     }
@@ -430,9 +438,18 @@ public class PlanPublicationService {
                     "Tous les destinataires sont exclus : cette publication ne préviendrait personne.");
         }
 
-        // The plan the diff was read against, kept before the capture makes
-        // the working plan the published one: a person the band emptied on a
-        // date holds a seat there only in this one, and still has to read why.
+        // The plan each person's diff was read against, kept before the
+        // capture makes the working plan the published one: somebody the band
+        // emptied on a date holds a seat there only in their reference, and
+        // still has to read why. Per person, not global (issue #503): a
+        // deferred recipient is compared to the snapshot they really received,
+        // and reading the global one here would drop the consigne sentence on
+        // exactly the dates only their own reference knows about.
+        Map<String, List<Vacation>> referencesParAnimateur = vacationsNotifiees(
+                notifiedPlans.byAnimateur(),
+                apercu.destinataires().stream()
+                        .map(DestinatairePublication::animateurId)
+                        .collect(Collectors.toSet()));
         PlanningEvenement reference = planPublieService.planPublie();
         PlanSnapshotService.SnapshotMeta meta =
                 snapshotService.capturePubliee("Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
@@ -447,7 +464,7 @@ public class PlanPublicationService {
         List<String> echecs = new ArrayList<>();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
-            StatutEnvoi statut = send(planning, reference, destinataire);
+            StatutEnvoi statut = send(planning, reference, referencesParAnimateur, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
@@ -511,7 +528,10 @@ public class PlanPublicationService {
     }
 
     private StatutEnvoi send(
-            PlanningEvenement planning, PlanningEvenement reference, DestinatairePublication destinataire) {
+            PlanningEvenement planning,
+            PlanningEvenement reference,
+            Map<String, List<Vacation>> referencesParAnimateur,
+            DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
             return StatutEnvoi.SANS_EMAIL;
         }
@@ -527,8 +547,11 @@ public class PlanPublicationService {
                     destinataire.premiereDiffusion(),
                     destinataire.changements(),
                     destinataire.demandes(),
-                    consigneService.lignesJourneesModifiees(
-                            datesConcernees(planning, reference, destinataire.animateurId())));
+                    consigneService.lignesJourneesModifiees(datesConcernees(
+                            planning,
+                            reference,
+                            referencesParAnimateur.get(destinataire.animateurId()),
+                            destinataire.animateurId())));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
@@ -538,13 +561,24 @@ public class PlanPublicationService {
 
     /**
      * The dates {@code animateurId} holds a seat on in either plan — the one
-     * being published or the one it replaces. A consigne on a date the band
-     * emptied for them shows in the second only: they read a bare « vacation
-     * retirée » otherwise, with nothing saying an arrêté decided it.
+     * being published or the one they were last told about. A consigne on a
+     * date the band emptied for them shows in the second only: they read a
+     * bare « vacation retirée » otherwise, with nothing saying an arrêté
+     * decided it.
+     *
+     * @param notifiees the vacations this person was last sent, when a marker
+     *                  names the snapshot they received (issue #503). Their
+     *                  own reference, which a deferred recipient's differs
+     *                  from; {@code null} falls back on the global published
+     *                  plan, which is what the marker means when it is absent
      */
     static List<java.time.LocalDate> datesConcernees(
-            PlanningEvenement planning, PlanningEvenement reference, String animateurId) {
-        return Stream.concat(daysOf(planning, animateurId), daysOf(reference, animateurId))
+            PlanningEvenement planning, PlanningEvenement reference, List<Vacation> notifiees, String animateurId) {
+        Stream<java.time.LocalDate> lues = notifiees == null
+                ? daysOf(reference, animateurId)
+                : notifiees.stream().map(Vacation::date);
+        return Stream.concat(daysOf(planning, animateurId), lues)
+                .filter(java.util.Objects::nonNull)
                 .distinct()
                 .sorted()
                 .toList();
