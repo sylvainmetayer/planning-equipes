@@ -130,7 +130,7 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT max_emplacements_distincts_par_jour, heure_service_tardif,
                         heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
-                        typologies_distinctes_max
+                        typologies_distinctes_max, jours_consecutifs_max
                         FROM parametres_qualite
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -140,7 +140,8 @@ public class ParametresRepository {
                         rs.getObject("heure_service_tardif", LocalTime.class),
                         rs.getObject("heure_service_matinal", LocalTime.class),
                         rs.getInt("repos_souhaite_apres_service_tardif_minutes"),
-                        rs.getInt("typologies_distinctes_max"));
+                        rs.getInt("typologies_distinctes_max"),
+                        rs.getInt("jours_consecutifs_max"));
             }
             return defauts;
         } catch (SQLException e) {
@@ -153,8 +154,9 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_qualite (edition_id, max_emplacements_distincts_par_jour,
                         heure_service_tardif, heure_service_matinal,
-                        repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max)
-                        VALUES (?, ?, ?, ?, ?, ?)
+                        repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max,
+                        jours_consecutifs_max)
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET
                         max_emplacements_distincts_par_jour = EXCLUDED.max_emplacements_distincts_par_jour,
@@ -162,12 +164,14 @@ public class ParametresRepository {
                         heure_service_matinal = EXCLUDED.heure_service_matinal,
                         repos_souhaite_apres_service_tardif_minutes =
                                 EXCLUDED.repos_souhaite_apres_service_tardif_minutes,
-                        typologies_distinctes_max = EXCLUDED.typologies_distinctes_max""")) {
+                        typologies_distinctes_max = EXCLUDED.typologies_distinctes_max,
+                        jours_consecutifs_max = EXCLUDED.jours_consecutifs_max""")) {
             ps.setInt(2, parametres.maxEmplacementsDistinctsParJour());
             ps.setObject(3, parametres.heureServiceTardif());
             ps.setObject(4, parametres.heureServiceMatinal());
             ps.setInt(5, parametres.reposSouhaiteApresServiceTardifMinutes());
             ps.setInt(6, parametres.typologiesDistinctesMax());
+            ps.setInt(7, parametres.joursConsecutifsMax());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save quality parameters", e);

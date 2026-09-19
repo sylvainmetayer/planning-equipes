@@ -484,6 +484,11 @@
         "heureServiceTardif" : {
           "$ref" : "#/$defs/LocalTime"
         },
+        "joursConsecutifsMax" : {
+          "type" : "integer",
+          "format" : "int32",
+          "exclusiveMinimum" : 0
+        },
         "maxEmplacementsDistinctsParJour" : {
           "type" : "integer",
           "format" : "int32",

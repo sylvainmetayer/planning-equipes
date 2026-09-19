@@ -28,7 +28,9 @@ public final class ParametresQualiteDefaults {
                                 "planning.contraintes.repos-souhaite-apres-service-tardif-minutes", Integer.class)
                         .orElse(ParametresQualite.REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT),
                 config.getOptionalValue("planning.contraintes.typologies-distinctes-max", Integer.class)
-                        .orElse(ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT));
+                        .orElse(ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT),
+                config.getOptionalValue("planning.contraintes.jours-consecutifs-max", Integer.class)
+                        .orElse(ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT));
     }
 
     /**

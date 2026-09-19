@@ -22,6 +22,12 @@
         <mat-hint i18n="@@parametres.qualite.hint.typologies">Sur l'édition entière, pas par jour : deux typologies le même après-midi et deux à une semaine d'écart comptent pareil. Les ninjas en sont exemptés.</mat-hint>
       </mat-form-field>
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.qualite.field.joursAffilee">Jours travaillés d'affilée</mat-label>
+        <input matInput type="number" min="1" step="1" name="joursConsecutifsMax"
+               [ngModel]="joursConsecutifsMax()" (ngModelChange)="joursConsecutifsMax.set($event)" />
+        <mat-hint i18n="@@parametres.qualite.hint.joursAffilee">Au-delà, chaque jour en trop est pénalisé. Un jour de moins exige un repos de plus par semaine glissante.</mat-hint>
+      </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label i18n="@@parametres.qualite.field.serviceTardif">Heure d'un service tardif</mat-label>
         <input matInput type="time" name="heureServiceTardif"
                [ngModel]="heureServiceTardif()" (ngModelChange)="heureServiceTardif.set($event)" />

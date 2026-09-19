@@ -67,9 +67,14 @@ ou `contraintes.activees` d'un scénario.
 
 Cinq règles :
 
-1. **Les deux partagent leur corps** (`sequencesTropLongues`) et la constante
-   `JOURS_CONSECUTIFS_TRAVAILLES_MAX = 6` : elles ne peuvent pas diverger sur
-   ce que « six jours d'affilée » compte.
+1. **Les deux partagent leur corps** (`sequencesTropLongues`) et leur seuil :
+   elles ne peuvent pas diverger sur ce que « jours d'affilée » compte, ni sur
+   combien elles en laissent passer. Ce seuil a d'abord été la constante
+   `JOURS_CONSECUTIFS_MAX = 6` ; il est depuis réglable par édition
+   (`ParametresQualite.joursConsecutifsMax`, six par défaut), les
+   deux formes le lisant au même endroit. Le niveau par défaut tranché ici ne
+   change pas : ce qui devient réglable, c'est le nombre de jours, pas le fait
+   que la forme dure soit éteinte.
 2. **Les deux restent en « Qualité d'organisation »**, jamais en « Légal » :
    aucun article du Code ne les fonde, et la catégorie décide de ce que dit la
    confirmation de désactivation.
@@ -89,7 +94,11 @@ ci-dessous.
 ## Conséquences
 
 - Une organisation qui veut le plafond bloquant l'allume par édition, sans
-  livraison ni migration.
+  livraison ni migration — et choisit le nombre de jours qui va avec, ce qui
+  change tout sur une grille tendue : sur `festival-hivernal`, la forme dure
+  laisse 22 sièges vides à six jours, dix à sept, et **atteint zéro écart dur
+  en 294 s à huit**. Le seuil décide de la faisabilité là où le poids ne
+  pouvait rien.
 - Le jour où la convention collective s'appliquerait, la bonne forme dure ne
   serait pas celle-ci mais « deux jours de repos consécutifs par semaine
   civile pour tous » — l'extension de `reposHebdomadaireMineur`. Cette ADR ne

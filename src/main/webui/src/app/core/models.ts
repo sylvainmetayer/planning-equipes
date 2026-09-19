@@ -778,6 +778,8 @@ export interface ParametresQualite {
   reposSouhaiteApresServiceTardifMinutes?: number;
   /** Distinct typologies one animateur may cover over the WHOLE edition before being penalised. */
   typologiesDistinctesMax?: number;
+  /** Days in a row one animateur may work before the excess is counted; read by both forms of the rule. */
+  joursConsecutifsMax?: number;
 }
 
 export interface HardMediumSoftScore {

@@ -11,8 +11,9 @@ import { ParametresQualite } from '../../core/models';
 
 /**
  * The organisational-quality thresholds of the edition: how many emplacements
- * and how many typologies one animateur may spread over, and what counts as a
- * late closing followed by an early opening.
+ * and how many typologies one animateur may spread over, how many days in a row
+ * they may work, and what counts as a late closing followed by an early
+ * opening.
  *
  * <p>These used to be deployment configuration, identical for every edition and
  * shown nowhere (issue #591): an organiser for whom three typologies is normal
@@ -44,6 +45,7 @@ export class ParametresQualiteCard {
 
   protected readonly dailyLocationsCap = signal<number | null>(null);
   protected readonly typologiesDistinctesMax = signal<number | null>(null);
+  protected readonly joursConsecutifsMax = signal<number | null>(null);
   protected readonly heureServiceTardif = signal('');
   protected readonly heureServiceMatinal = signal('');
   protected readonly restAfterLateServiceHours = signal<number | null>(null);
@@ -69,6 +71,7 @@ export class ParametresQualiteCard {
   private read(parametres: ParametresQualite): void {
     this.dailyLocationsCap.set(parametres.maxEmplacementsDistinctsParJour ?? null);
     this.typologiesDistinctesMax.set(parametres.typologiesDistinctesMax ?? null);
+    this.joursConsecutifsMax.set(parametres.joursConsecutifsMax ?? null);
     // `HH:mm:ss` on the wire, `HH:mm` in a time input: the seconds are always
     // zero here and an input that shows them asks for a value nobody means.
     this.heureServiceTardif.set(heureCourte(parametres.heureServiceTardif));
@@ -79,19 +82,22 @@ export class ParametresQualiteCard {
   }
 
   /**
-   * Saves the five thresholds as one record, like the legal card: the server
+   * Saves the six thresholds as one record, like the legal card: the server
    * replaces the whole row, so a partial save would silently reset what this
    * card did not show.
    */
   protected async save(): Promise<void> {
     const emplacements = this.dailyLocationsCap();
     const typologies = this.typologiesDistinctesMax();
+    const joursAffilee = this.joursConsecutifsMax();
     const reposHeures = this.restAfterLateServiceHours();
     if (
       emplacements === null ||
       emplacements < 1 ||
       typologies === null ||
       typologies < 1 ||
+      joursAffilee === null ||
+      joursAffilee < 1 ||
       reposHeures === null ||
       reposHeures < 0
     ) {
@@ -113,6 +119,7 @@ export class ParametresQualiteCard {
         await this.constraintsApi.saveQualityParameters({
           maxEmplacementsDistinctsParJour: Math.round(emplacements),
           typologiesDistinctesMax: Math.round(typologies),
+          joursConsecutifsMax: Math.round(joursAffilee),
           heureServiceTardif: this.heureServiceTardif() || null,
           heureServiceMatinal: this.heureServiceMatinal() || null,
           reposSouhaiteApresServiceTardifMinutes: Math.round(reposHeures * 60),

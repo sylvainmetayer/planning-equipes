@@ -17,7 +17,7 @@ import java.time.LocalTime;
  * <p>The two hours are <b>wholesale</b>: present, the section describes the
  * whole quality tuning, so an hour it leaves out is an hour the edition does
  * not have — which is exactly how {@code eviterFermeturePuisOuverture} is
- * neutralised. An export always writes the five fields, so a round trip is
+ * neutralised. An export always writes the six fields, so a round trip is
  * exact. The numbers keep the usual convention instead — what the file does
  * not carry keeps the importing edition's value — because no number of theirs
  * can mean « none ».</p>
@@ -27,4 +27,5 @@ public record ParametresQualiteDto(
         LocalTime heureServiceTardif,
         LocalTime heureServiceMatinal,
         @PositiveOrZero Integer reposSouhaiteApresServiceTardifMinutes,
-        @Positive Integer typologiesDistinctesMax) {}
+        @Positive Integer typologiesDistinctesMax,
+        @Positive Integer joursConsecutifsMax) {}
