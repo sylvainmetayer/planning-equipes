@@ -677,11 +677,20 @@ public final class QualiteConstraints {
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                // A day entirely worked owes nobody a relay any more (ADR 0044).
+                // A day entirely worked owes nobody a relay any more (ADR 0044),
+                // and computing its breaks would be work for nothing.
                 .filter((animateur, date, postes, parametres) ->
                         parametres.isPauseSurPoste() && PastSeats.reproachable(postes))
                 .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes, parametres))
                 .flattenLast(dues -> dues)
+                // And the break itself must still be ahead. The day-level guard
+                // above is not enough: a day that already worked its morning and
+                // still holds an evening seat would have its morning's missing
+                // relay charged, on a stretch whose every seat is pinned — an
+                // écart dur no move can repair, so no re-solve started mid-event
+                // could ever reach zero again. The seat a relay would have to
+                // cover is the one that decides.
+                .filter(due -> PastSeats.reproachable(due.tenu()))
                 .ifNotExists(
                         PosteAffectation.class,
                         Joiners.equal(

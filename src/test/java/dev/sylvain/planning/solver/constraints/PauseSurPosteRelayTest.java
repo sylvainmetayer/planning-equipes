@@ -3,6 +3,7 @@ package dev.sylvain.planning.solver.constraints;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,49 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
                         poste(seul, apresMidi, a1),
                         poste(seul, apresMidi, a2))
                 .penalizesBy(0);
+    }
+
+    private static PosteAffectation passe(PosteAffectation poste) {
+        poste.setPasse(true);
+        return poste;
+    }
+
+    /**
+     * The past is frozen (ADR 0044): a break owed inside a stretch already
+     * worked is charged to nobody, even when the same day still holds a seat
+     * ahead. Its seats are pinned, so a hard écart there could never be
+     * repaired — a re-solve started mid-event would never reach zero again.
+     *
+     * <p>The evening seat is what makes this case worth a test: the rule
+     * groups by animateur <em>and day</em>, so the day-level « is anything
+     * still ahead » guard answers yes, and only the break's own seat says
+     * otherwise.</p>
+     */
+    @Test
+    void unePauseDueDansUneSequencePasseeNEstReprocheeAPersonne() {
+        Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
+
+        verify("pauseSurPosteSansRelais")
+                .given(
+                        onPost(true),
+                        passe(poste(releve, treizeQuatorze, a1)),
+                        passe(poste(seul, apresMidi, a1)),
+                        poste(seul, soiree, a1))
+                .penalizesBy(0);
+    }
+
+    /** The same shape with nothing behind us: the break is owed, and charged. */
+    @Test
+    void laMemeJourneeEntierementAVenirCouteSaPauseSansRelais() {
+        Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
+
+        verify("pauseSurPosteSansRelais")
+                .given(
+                        onPost(true),
+                        poste(releve, treizeQuatorze, a1),
+                        poste(seul, apresMidi, a1),
+                        poste(seul, soiree, a1))
+                .penalizesBy(1);
     }
 
     @Test
