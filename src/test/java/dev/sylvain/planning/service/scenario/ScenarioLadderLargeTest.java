@@ -113,7 +113,7 @@ class ScenarioLadderLargeTest {
         // there is none where the window already asks for the maximum. Read
         // per vacation rather than as one global figure — a count of the whole
         // rung would move on any capacity edit without saying which.
-        assertThat(renfortsParVacation(loaded, "STAND-02", LocalDate.of(2027, 6, 14)))
+        assertThat(renfortsByVacation(loaded, "STAND-02", LocalDate.of(2027, 6, 14)))
                 .containsOnly(Map.entry(LocalTime.of(10, 0), 1L));
         Map<LocalTime, Long> chevauchementParVacation = seatsOnStand(
                         loaded.problem().getPostes(), "STAND-02")
@@ -260,7 +260,7 @@ class ScenarioLadderLargeTest {
     }
 
     /** Renforts of one stand on one day, by the start time of their vacation. */
-    private static Map<LocalTime, Long> renfortsParVacation(Loaded loaded, String standId, LocalDate date) {
+    private static Map<LocalTime, Long> renfortsByVacation(Loaded loaded, String standId, LocalDate date) {
         return seatsOnStand(loaded.problem().getPostes(), standId).stream()
                 .filter(PosteAffectation::isOptionnel)
                 .filter(poste -> poste.getCreneau().getDate().equals(date))
