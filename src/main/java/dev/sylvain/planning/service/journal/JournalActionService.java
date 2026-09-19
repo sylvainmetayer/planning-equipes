@@ -93,6 +93,32 @@ public class JournalActionService {
                 statut));
     }
 
+    /**
+     * Records a second action the admin's request carried out, beside the one
+     * its route names.
+     *
+     * <p>The filter writes exactly one line per call, which is right for the
+     * ordinary case and wrong for a call that acts on several people at once:
+     * a publication that defers three messages performs three acts on three
+     * fiches, and « Planning publié » alone would leave no trace of any of
+     * them. What goes in is the id, as everywhere else here — the name is
+     * joined when the history is read.</p>
+     */
+    public void recordAdminAction(String code, String entiteId) {
+        ActionJournalisee action = CatalogueActions.systeme(code);
+        append(new EntreeJournal(
+                0,
+                Instant.now(),
+                Acteur.ADMIN,
+                nomAdmin(),
+                action.code(),
+                action.entite() == null ? null : action.entite().name(),
+                entiteId,
+                List.of(),
+                Resultat.SUCCES,
+                null));
+    }
+
     /** Records something the application did on its own, off any request. */
     public void recordSystemAction(String code, String entiteId) {
         ActionJournalisee action = CatalogueActions.systeme(code);

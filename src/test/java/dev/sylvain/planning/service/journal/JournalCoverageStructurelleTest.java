@@ -157,12 +157,14 @@ class JournalCoverageStructurelleTest {
     }
 
     /**
-     * Action codes named by the sources themselves — a scheduled call, or a
+     * Action codes named by the sources themselves — a scheduled call, a
+     * second act a request carried out beside the one its route names, or a
      * route stating which of several actions it just performed. Also proves
      * every such code exists, since the assertion above compares both ways.
      */
     private static Set<String> codesQuotedBySources() throws IOException {
-        Pattern cite = Pattern.compile("(?:recordSystemAction|currentAction\\.action)\\(\\s*[^)]*?\"([A-Z_]+)\"");
+        Pattern cite = Pattern.compile(
+                "(?:recordSystemAction|recordAdminAction|currentAction\\.action)\\(\\s*[^)]*?\"([A-Z_]+)\"");
         Set<String> codes = new TreeSet<>();
         try (Stream<Path> fichiers = Files.walk(Path.of("src/main/java/dev/sylvain/planning"))) {
             for (Path fichier :

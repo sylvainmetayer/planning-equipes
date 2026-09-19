@@ -4,6 +4,7 @@ import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import io.quarkus.test.junit.QuarkusTest;
+import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
 import java.util.List;
@@ -81,7 +82,12 @@ class ImpactPublicationTest {
                 .as("nothing published yet")
                 .isNull();
 
-        edition().when().post("/api/planning/publication").then().statusCode(200);
+        edition()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
 
         // Same referential, re-solved from the published plan: nobody moves.
         JsonPath second = solve();
@@ -112,7 +118,12 @@ class ImpactPublicationTest {
                 .then()
                 .statusCode(200);
         solve();
-        edition().when().post("/api/planning/publication").then().statusCode(200);
+        edition()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
 
         List<Map<String, Object>> postes = edition()
                 .when()
@@ -220,7 +231,12 @@ class ImpactPublicationTest {
                 .then()
                 .statusCode(200);
 
-        edition().when().post("/api/planning/publication").then().statusCode(200);
+        edition()
+                .contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/publication")
+                .then()
+                .statusCode(200);
 
         JsonPath apres = solve();
         assertThat(apres.getString("status")).isEqualTo("COMPLETED");

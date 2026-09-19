@@ -104,9 +104,22 @@ export class PlanningApi {
     return this.api.get<ApercuPublication>('/api/planning/publication');
   }
 
-  /** Mails every animateur holding a seat — real mail to real people, confirmed by the caller first. */
-  publish(): Promise<RapportPublication> {
-    return this.api.post<RapportPublication>('/api/planning/publication', null);
+  /**
+   * Mails every animateur holding a seat — real mail to real people, confirmed
+   * by the caller first. `exclusions` names the people whose message is
+   * deferred: they receive nothing and come back in the next count.
+   */
+  publish(exclusions: readonly string[] = []): Promise<RapportPublication> {
+    return this.api.post<RapportPublication>('/api/planning/publication', { exclusions });
+  }
+
+  /** The review table as a CSV, read away from the screen. Sends nothing. */
+  exportPublicationDiff(): Promise<string> {
+    return this.api.downloadGet(
+      '/api/planning/publication/export',
+      'diff-publication.csv',
+      'text/csv',
+    );
   }
 
   /** Worked hours against the legal ceilings, recomputed server-side on the planning sent. */
