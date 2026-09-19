@@ -317,20 +317,29 @@ class PlanningServiceScenarioFromTextTest {
     }
 
     @Test
-    void genereLesPostesQuandLaSectionEstAbsenteDuFichier() {
+    void theSeatsAreGeneratedWhenTheFileNamesNone() {
         PlanningService service = service();
         String yaml = scenarioYamlText("scenario-sans-postes.yaml");
 
         PlanningEvenement planning = service.buildFromScenarioText(yaml).planning();
 
         // 2 timeslots x (STAND-A effectifMin 2 + STAND-B effectifMin 1) = 6.
-        assertThat(planning.getPostes()).hasSize(6);
         assertThat(planning.getPostes())
-                .filteredOn(poste -> "STAND-A".equals(poste.getStand().getId()))
+                .filteredOn(poste -> !poste.isOptionnel())
+                .hasSize(6);
+        assertThat(planning.getPostes())
+                .filteredOn(poste -> "STAND-A".equals(poste.getStand().getId()) && !poste.isOptionnel())
                 .hasSize(4);
         assertThat(planning.getPostes())
-                .filteredOn(poste -> "STAND-B".equals(poste.getStand().getId()))
+                .filteredOn(poste -> "STAND-B".equals(poste.getStand().getId()) && !poste.isOptionnel())
                 .hasSize(2);
+        // STAND-A declares a capacity of 3 above its 2, STAND-B declares none:
+        // one renfort per timeslot on the first, nothing on the second
+        // (issue #505).
+        assertThat(planning.getPostes())
+                .filteredOn(PosteAffectation::isOptionnel)
+                .hasSize(2)
+                .allSatisfy(poste -> assertThat(poste.getStand().getId()).isEqualTo("STAND-A"));
     }
 
     @Test

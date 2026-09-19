@@ -222,9 +222,14 @@ final class ScenarioLadder {
                 .toList();
     }
 
-    /** Seats per stand id and date, the shape a scenario's openings are easiest to state in. */
+    /**
+     * Seats per stand id and date, the shape a scenario's openings are easiest
+     * to state in. Renforts are left out (issue #505): what a rung pins is the
+     * staffing a window declares, and a seat nobody is owed is not part of it.
+     */
     static Map<String, Map<LocalDate, Long>> seatCountByStandAndDate(Collection<PosteAffectation> postes) {
         return postes.stream()
+                .filter(poste -> !poste.isOptionnel())
                 .collect(Collectors.groupingBy(
                         poste -> poste.getStand().getId(),
                         TreeMap::new,
@@ -261,7 +266,12 @@ final class ScenarioLadder {
         assertThat(solved.getScore().hardScore())
                 .as("hard score, broken rules %s", brokenHardConstraints(solved))
                 .isZero();
-        assertThat(solved.getPostes()).noneMatch(poste -> poste.getAnimateur() == null);
+        // Renforts are allowed to stay empty (issue #505): they are generated
+        // above what a window declares, and a rung is feasible when everything
+        // it *owes* is staffed, not when its capacity is exhausted.
+        assertThat(solved.getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .noneMatch(poste -> poste.getAnimateur() == null);
         assertCoreRules(solved);
     }
 

@@ -1076,6 +1076,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
 | `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
+| `pourvoirLesSiegesOptionnels` | SOFT | Préférences | Employer le volant disponible : au-dessus de l'effectif demandé, un stand déclare une capacité (effectifMax) où le solveur peut poser un renfort. Chaque renfort pourvu rapporte. Un renfort laissé vide ne coûte rien et n'est jamais un écart — c'est ce qui distingue une capacité d'un besoin. |
 <!-- catalogue:fin -->
 
 ## Ajouter une contrainte

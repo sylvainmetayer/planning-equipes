@@ -90,10 +90,13 @@ public final class AffectationConstraints {
         // forEach() excludes entities with a null planning variable value, so this
         // constraint (which specifically targets unassigned postes) must use
         // forEachIncludingUnassigned() to actually see them. A past hole is
-        // not charged (ADR 0044): nobody can be seated yesterday.
+        // not charged (ADR 0044): nobody can be seated yesterday. An optional
+        // seat is not charged either (issue #505, ADR 0046): it was generated
+        // above what the window declares, so nobody is missing on it — that is
+        // the whole difference between a renfort and a seat.
         return ConstraintToggleSupport.actif(
                         constraintFactory.forEachIncludingUnassigned(PosteAffectation.class), "posteDoitEtrePourvu")
-                .filter(poste -> poste.getAnimateur() == null && PastSeats.reproachable(poste))
+                .filter(poste -> poste.getAnimateur() == null && !poste.isOptionnel() && PastSeats.reproachable(poste))
                 .penalize(HardMediumSoftScore.ONE_HARD)
                 .asConstraint("posteDoitEtrePourvu");
     }
