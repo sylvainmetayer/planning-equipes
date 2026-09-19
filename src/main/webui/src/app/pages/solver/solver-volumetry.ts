@@ -23,6 +23,10 @@ export class SolverVolumetry {
 
   protected readonly animateurCount = computed(() => this.referenceData.scale().animateurCount);
   protected readonly posteCount = computed(() => this.referenceData.scale().posteCount);
+  /** Renforts above the declared staffing: a bonus beside the need, never inside it. */
+  protected readonly posteOptionnelCount = computed(
+    () => this.referenceData.scale().posteOptionnelCount,
+  );
   protected readonly adHocConstraintCount = computed(
     () => this.referenceData.scale().contrainteAdHocCount,
   );
@@ -58,7 +62,9 @@ export class SolverVolumetry {
    */
   protected readonly problemScale = computed(() => {
     const animateurs = this.animateurCount();
-    const postes = this.posteCount();
+    // Timefold's real entity count: the renforts are entities too, they are
+    // only kept out of the figures labelled « à pourvoir » (ADR 0046).
+    const postes = this.posteCount() + this.posteOptionnelCount();
     return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
   });
 }

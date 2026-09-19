@@ -128,6 +128,9 @@
           },
           "heureFinEffective" : {
             "type" : "string"
+          },
+          "optionnel" : {
+            "type" : "boolean"
           }
         }
       },
@@ -4179,7 +4182,7 @@
         }
       },
       "LigneStand" : {
-        "required" : [ "effectifMin", "minutesOuvertes", "postes" ],
+        "required" : [ "effectifMax", "effectifMin", "minutesOuvertes", "postes" ],
         "type" : "object",
         "properties" : {
           "standId" : {
@@ -4189,6 +4192,10 @@
             "type" : "string"
           },
           "effectifMin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifMax" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -5004,6 +5011,9 @@
           "verrouille" : {
             "type" : "boolean"
           },
+          "optionnel" : {
+            "type" : "boolean"
+          },
           "dureeEffectiveMinutes" : {
             "type" : "integer",
             "format" : "int32"
@@ -5220,7 +5230,7 @@
         }
       },
       "ProblemScale" : {
-        "required" : [ "animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount" ],
+        "required" : [ "animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount", "posteOptionnelCount" ],
         "type" : "object",
         "properties" : {
           "animateurCount" : {
@@ -5228,6 +5238,10 @@
             "format" : "int32"
           },
           "posteCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "posteOptionnelCount" : {
             "type" : "integer",
             "format" : "int32"
           },

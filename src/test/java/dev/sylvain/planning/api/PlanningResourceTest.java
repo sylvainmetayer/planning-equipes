@@ -199,6 +199,7 @@ class PlanningResourceTest {
                 .statusCode(200)
                 .body("animateurCount", equalTo(0))
                 .body("posteCount", equalTo(0))
+                .body("posteOptionnelCount", equalTo(0))
                 .body("contrainteAdHocCount", equalTo(0))
                 .body("hoursToFill", equalTo(0f))
                 .body("hoursAvailable", equalTo(0f));
@@ -244,7 +245,11 @@ class PlanningResourceTest {
                 .then()
                 .statusCode(200)
                 .body("animateurCount", equalTo(0))
+                // effectifMin 2, effectifMax 3: two seats owed and one renfort,
+                // which stays out of both figures labelled « à pourvoir »
+                // (issue #505, ADR 0046).
                 .body("posteCount", equalTo(2))
+                .body("posteOptionnelCount", equalTo(1))
                 .body("hoursToFill", equalTo(4f))
                 .body("hoursAvailable", equalTo(0f));
 

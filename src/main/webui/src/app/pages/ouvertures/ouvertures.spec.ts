@@ -37,6 +37,7 @@ function ligne(patch: Partial<LigneStandOuverture> = {}): LigneStandOuverture {
     standId: 'BOURSE',
     nom: 'Autres - Bourse',
     effectifMin: 2,
+    effectifMax: 2,
     jours: [cellule()],
     minutesOuvertes: 600,
     postes: 2,

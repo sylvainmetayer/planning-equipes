@@ -15,6 +15,12 @@
         <div class="staffing-stat-value">{{ posteCount() }}</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.postes">Postes à pourvoir</div>
       </mat-card>
+      @if (posteOptionnelCount() > 0) {
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">+{{ posteOptionnelCount() }}</div>
+          <div class="staffing-stat-label" i18n="@@solver.volumetry.postesOptionnels">Renforts possibles</div>
+        </mat-card>
+      }
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ creneauCount() }}</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.creneaux">Créneaux</div>

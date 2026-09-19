@@ -36,8 +36,8 @@ différence avec la version rejetée plus haut.
 
 ### Une récompense, jamais une pénalité
 
-Pénaliser un renfort vide ramènerait exactement le besoin inventé de 2018 :
-l'organisateur verrait un manque là où il a déclaré une marge. La règle
+Pénaliser un renfort vide ramènerait exactement le besoin inventé décrit
+plus haut : l'organisateur verrait un manque là où il a déclaré une marge. La règle
 récompense donc, et en SOFT — sous tout le medium — pour qu'un renfort ne
 concurrence jamais un siège dû : le solveur en prend un quand il n'a rien de
 mieux à faire de la personne.
@@ -94,6 +94,13 @@ sécurité des tests reste 900 s, soit près de huit fois la mesure.
   (stand, créneau). Le réamorçage d'un plan enregistré rend les places dans
   l'ordre, et c'est cet ordre qui fait retomber les gens sur ce qui est dû
   avant ce qui est un bonus.
+- **La volumétrie les compte à côté, jamais dedans.** La carte annonce des
+  « postes à pourvoir » et son taux de remplissage alerte dès qu'il approche
+  de 1 : y verser les renforts gonflerait le besoin d'un quart à une moitié et
+  crierait au loup sur une marge déclarée exprès. `posteCount` et les heures
+  sont donc les sièges dus, `posteOptionnelCount` est ce qui les surplombe, et
+  l'espace de recherche — le seul chiffre qui soit vraiment le nombre
+  d'entités de Timefold — rajoute les deux.
 - **Le drapeau est persisté et sérialisé**, contrairement à `passe` : les écrans
   lisent le plan enregistré, et un renfort vide qui s'y relirait comme un trou
   serait précisément la fausse alerte que cette décision supprime.

@@ -1192,6 +1192,37 @@ continuité descend le poids de celle-ci ; une édition tendue peut la mettre à
 zéro sans toucher au catalogue, ou vider un des deux seuils dans la
 configuration.
 
+## Récompensé, jamais dû : le renfort
+
+Entre l'effectif que la fenêtre déclare et l'`effectifMax` du stand, la
+génération ouvre des sièges **optionnels** — des renforts, mécanique dans
+[`domaine.md`](domaine.md#au-dessus-de-leffectif-demandé--les-renforts) et
+décision dans
+[ADR 0046](decisions/0046-sieges-optionnels-jusqu-a-l-effectif-max.md). Une
+seule règle les concerne, `pourvoirLesSiegesOptionnels`, et elle **récompense**
+au lieu de pénaliser : un renfort pourvu rapporte, un renfort vide ne coûte
+rien.
+
+L'inverse — facturer le renfort vide — a déjà été essayé, sous la forme d'une
+génération qui rendait obligatoires tous les sièges jusqu'au maximum : 2 736
+sièges dus là où `scenario-complet.yaml` en demande 2 088, 31 % de besoin
+inventé, et des résolutions qui n'atteignaient plus la faisabilité. La
+récompense dit la même chose sans le mensonge : l'organisateur a déclaré une
+marge, pas un manque.
+
+**Elle est SOFT, et c'est ce qui la rend inoffensive.** Sous tout le medium,
+elle ne peut jamais faire préférer un renfort à un siège dû ni à la stabilité
+du plan publié : le solveur en prend un quand il n'a rien de mieux à faire de
+la personne. Ce qui n'était *pas* inoffensif, et que la mesure a révélé, c'est
+la place des renforts dans la recherche de faisabilité elle-même — d'où les
+filtres qui rendent sa phase 1 entièrement aveugle à eux. Le tableau des quatre
+mesures est dans l'ADR.
+
+Un renfort pourvu est un siège comme un autre pour toutes les autres règles :
+qui s'y assied travaille vraiment, donc le repos, les plafonds, les règles
+mineurs, `equilibrerCharge` et `equilibrerCreneauxPenibles` le comptent. Seul
+`posteDoitEtrePourvu` l'ignore.
+
 ## Compté, non reproché : le passé
 
 Pendant l'événement, une résolution reçoit les places des créneaux déjà
