@@ -12,7 +12,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
 import javax.sql.DataSource;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -38,7 +40,16 @@ public class PublicationTraceRepository {
         SANS_EMAIL,
 
         /** The send itself failed; the individual resend button is the way back. */
-        ECHEC
+        ECHEC,
+
+        /**
+         * Concerned, and deliberately left out of that send (issue #503):
+         * « on ne prévient pas Untel ce soir, on l'appelle d'abord ». Nothing
+         * left for them, so their marker did not move and they come back in
+         * the next count — the line is what says a publication went out
+         * knowing somebody was not told.
+         */
+        EXCLU
     }
 
     /**
@@ -164,14 +175,51 @@ public class PublicationTraceRepository {
      *
      * <p>Read whatever the send's outcome was: a line the mail never carried —
      * no address on the fiche, a send that failed — is exactly the one the
-     * espace has to show, since nothing else ever will.</p>
+     * espace has to show, since nothing else ever will. A <b>deferred</b> line
+     * is the one exception (issue #503): it records a publication that
+     * deliberately said nothing to this person, so replaying it in their
+     * espace would show them, as their last message, one that was never
+     * sent.</p>
      */
+    /**
+     * The people whose <b>last</b> line of the trace says they were deferred:
+     * a publication went out knowing they were concerned and said nothing to
+     * them, and nothing has said anything since (issue #503).
+     *
+     * <p>Read as « the most recent line, whatever its statut », not « is there
+     * an EXCLU line somewhere »: somebody deferred one evening and written to
+     * the next morning is no longer owed anything, and a list that kept
+     * naming them would be one the screen learns to skip.</p>
+     */
+    public Set<String> deferred() {
+        String sql = """
+ SELECT DISTINCT ON (animateur_id) animateur_id, statut
+ FROM publication_destinataire
+ WHERE edition_id = ?
+ ORDER BY animateur_id, envoye_le DESC, id DESC""";
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+            Set<String> differes = new LinkedHashSet<>();
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    if (StatutEnvoi.EXCLU.name().equals(rs.getString("statut"))) {
+                        differes.add(rs.getString("animateur_id"));
+                    }
+                }
+            }
+            return differes;
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the deferred recipients", e);
+        }
+    }
+
     public Destinataire lastScheduleSentTo(String animateurId) {
         String sql = """
  SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
  premiere_diffusion
  FROM publication_destinataire
  WHERE edition_id = ? AND animateur_id = ?
+ AND statut <> 'EXCLU'
  AND (premiere_diffusion OR COALESCE(changements, '[]'::jsonb) <> '[]'::jsonb)
  ORDER BY envoye_le DESC, id DESC
  LIMIT 1""";

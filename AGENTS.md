@@ -626,7 +626,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/publication` (« Publication » — what reaches real people: the planning
   documents to print or archive, and the mailing to every animateur whose
   schedule changed; a screen of its own under Solveur since issue #320, so the
-  solver page only solves), `/export-csv`, `/creneaux`, `/typologies`,
+  solver page only solves. Before sending, the review table — one row per
+  person, ordered by `?tri=nom|ampleur`, minor changes folded by
+  `?mineurs=masques`, each row a checkbox that **defers** that person's message
+  rather than dropping it, ADR 0045), `/export-csv`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
   renamed), `/calendar`, `/journee` (« Journée » — one day under five

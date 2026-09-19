@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being
@@ -61,5 +62,30 @@ public class PlanPublieService {
         }
         return persistenceService.assemblerPlanning(
                 detail.affectations().stream().map(PlanSnapshotService::seat).toList());
+    }
+
+    /**
+     * The plan one given snapshot holds, read exactly as {@link #planPublie()}
+     * reads the last published one.
+     *
+     * <p>What the publication diff needs since somebody can be deferred
+     * (issue #503): « ce qu'on a annoncé » is then no longer one reference for
+     * everybody but one per person, and the people carried over from a
+     * previous publication are read against the snapshot they really
+     * received.</p>
+     *
+     * <p>Empty when the snapshot no longer exists — deleted, or purged by the
+     * retention sweep. Not an empty <b>plan</b>, which would claim that person
+     * was told they had nothing: the caller reads the absence as « jamais
+     * prévenu », the only truthful reading once there is nothing left to
+     * compare against.</p>
+     */
+    public Optional<PlanningEvenement> plan(long snapshotId) {
+        PlanSnapshotService.SnapshotDetail detail = snapshotService.load(snapshotId);
+        if (detail == null) {
+            return Optional.empty();
+        }
+        return Optional.of(persistenceService.assemblerPlanning(
+                detail.affectations().stream().map(PlanSnapshotService::seat).toList()));
     }
 }

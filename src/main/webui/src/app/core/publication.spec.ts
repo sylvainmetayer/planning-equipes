@@ -83,6 +83,7 @@ describe('resumePublication', () => {
       envoyes: 3,
       sansEmail: [],
       echecs: [],
+      differes: [],
     });
 
     expect(resume.titre).toContain('3');
@@ -96,9 +97,28 @@ describe('resumePublication', () => {
       envoyes: 1,
       sansEmail: ['Bruno Petit'],
       echecs: ['Chloé Durand'],
+      differes: [],
     });
 
     expect(resume.details).toContain('Bruno Petit');
     expect(resume.details).toContain('Chloé Durand');
+  });
+
+  /**
+   * Deferring somebody is a decision the admin has just taken, and what they
+   * need back is that nothing was lost by taking it (issue #503).
+   */
+  it('nomme les personnes non prévenues et dit qu’elles reviendront', () => {
+    const resume = resumePublication({
+      snapshotId: 7,
+      publieLe: '2026-08-25T12:30:00Z',
+      envoyes: 2,
+      sansEmail: [],
+      echecs: [],
+      differes: ['Bruno Petit'],
+    });
+
+    expect(resume.details).toContain('Bruno Petit');
+    expect(resume.details).toContain('prochaine publication');
   });
 });

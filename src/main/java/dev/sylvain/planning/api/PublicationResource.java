@@ -15,6 +15,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
@@ -45,11 +46,44 @@ public class PublicationResource {
         return publicationService.apercu();
     }
 
-    /** Publishes, and writes to the concerned people only. */
+    /**
+     * What the admin takes out of this send (issue #503).
+     *
+     * @param exclusions animateur ids whose message is deferred: they keep the
+     *                   plan they were really told about, so they come back in
+     *                   the next count. An absent body, or an empty list,
+     *                   publishes to everybody concerned.
+     */
+    public record DemandePublication(List<String> exclusions) {}
+
+    /**
+     * Publishes, and writes to the concerned people the admin kept.
+     *
+     * <p>The deferred people travel in a body rather than as repeated query
+     * parameters: the list is unbounded, and an animateur id is
+     * client-supplied — only « not blank » is required of it — so neither a
+     * separator nor a URL is a safe place to carry a variable number of them.
+     * The call therefore now requires a {@code Content-Type: application/json},
+     * where it used to accept anything; an empty body is enough to say « je
+     * n'exclus personne ».</p>
+     */
     @POST
-    @Consumes(MediaType.WILDCARD)
-    public RapportPublication publier() {
-        return publicationService.publier();
+    @Consumes(MediaType.APPLICATION_JSON)
+    public RapportPublication publier(DemandePublication demande) {
+        return publicationService.publier(demande == null ? List.of() : demande.exclusions());
+    }
+
+    /**
+     * The same review table as a file: one line per person, the sentences in
+     * one cell. Read away from the screen — « on passe la liste en réunion » —
+     * and it sends nothing, exactly like the preview above.
+     */
+    @GET
+    @Path("/export")
+    @Produces("text/csv")
+    public Response exportCsv() {
+        return CsvDownload.attachment(
+                PlanPublicationService.generateCsv(publicationService.apercu()), "diff-publication.csv");
     }
 
     /**

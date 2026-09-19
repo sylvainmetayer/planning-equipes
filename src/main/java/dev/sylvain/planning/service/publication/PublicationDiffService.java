@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
@@ -14,6 +15,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -80,6 +82,53 @@ public class PublicationDiffService {
      *                   was not reviewed
      */
     public record ChangementVacation(TypeChangement type, Vacation vacation, Vacation precedente, String libelle) {}
+
+    /**
+     * How far a vacation may slide on the same stand before it is worth
+     * alarming somebody (issue #503).
+     *
+     * <p>Fifteen minutes, and written here rather than configured: it is not a
+     * tuning knob but the definition of « ces trois-là ne bougent que de dix
+     * minutes, inutile de les alarmer ». A quarter of an hour is the
+     * granularity a volunteer plans their arrival on; below it, the person
+     * shows up when they meant to and reads a mail that tells them nothing.</p>
+     *
+     * <p>It never suppresses anything on its own: it only lets the screen
+     * group those rows behind one filter, and the admin decides.</p>
+     */
+    public static final Duration DECALAGE_MINEUR = Duration.ofMinutes(15);
+
+    /**
+     * Whether a change is one nobody needs to be alarmed about: the same
+     * vacation, on the same stand and the same day, sliding by no more than
+     * {@link #DECALAGE_MINEUR} at either end.
+     *
+     * <p>Only a déplacement can qualify. An ajout and a retrait are never
+     * minor whatever their length — a seat somebody does not know they hold,
+     * or no longer holds, is the thing this whole feature exists to say.</p>
+     */
+    public static boolean isMinor(ChangementVacation changement) {
+        if (changement == null || changement.type() != TypeChangement.DEPLACEMENT || changement.precedente() == null) {
+            return false;
+        }
+        Vacation apres = changement.vacation();
+        Vacation avant = changement.precedente();
+        if (apres == null || avant == null) {
+            return false;
+        }
+        return Objects.equals(apres.standId(), avant.standId())
+                && Objects.equals(apres.date(), avant.date())
+                && within(apres.debut(), avant.debut())
+                && within(apres.fin(), avant.fin());
+    }
+
+    /** Two hours no further apart than the threshold; an unreadable one never is. */
+    private static boolean within(LocalTime gauche, LocalTime droite) {
+        if (gauche == null || droite == null) {
+            return false;
+        }
+        return Duration.between(gauche, droite).abs().compareTo(DECALAGE_MINEUR) <= 0;
+    }
 
     /**
      * Everything one person has to be told.

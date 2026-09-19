@@ -2742,6 +2742,23 @@ export interface DestinatairePublication {
   changements: string[];
   /** Where their échange requests stand, if any. */
   demandes: string[];
+  /** How many seats are new to them, of the sentences above. */
+  ajouts: number;
+  /** How many they no longer hold. */
+  retraits: number;
+  /** How many moved stand or hours. */
+  deplacements: number;
+  /**
+   * Every one of their changes is the same vacation sliding on the same stand
+   * by at most a quarter of an hour, and nothing else is waiting to be
+   * announced: « ces trois-là ne bougent que de dix minutes ».
+   */
+  mineur: boolean;
+  /** A previous publication deferred their message and they are still owed one. */
+  reporte: boolean;
+  /** Where their « j'ai lu » stands on the plan they were last sent. */
+  confirmation: string | null;
+  confirmeLe: string | null;
 }
 
 /** `/api/planning/publication`: who is concerned, and what publishing would say. */
@@ -2770,6 +2787,8 @@ export interface RapportPublication {
   envoyes: number;
   sansEmail: string[];
   echecs: string[];
+  /** Who the admin took out of this send: they come back in the next count. */
+  differes: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */
