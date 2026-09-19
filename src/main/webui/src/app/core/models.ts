@@ -753,14 +753,21 @@ export interface VerrouillagePlanning {
 /**
  * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
- * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
+ * entry per seat that is owed, not per stand, and `contrainteAdHocCount` are the extra
  * ad hoc rules layered on top. `hoursToFill` sums the effective duration of every
- * seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what the
- * animateurs may work over the event's days, unavailable days deducted.
+ * owed seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what
+ * the animateurs may work over the event's days, unavailable days deducted.
+ *
+ * `posteOptionnelCount` are the renforts generated above the declared staffing
+ * (ADR 0046): counted beside the figures above, never inside them — the card is
+ * labelled « postes à pourvoir » and its fill ratio warns near 1, so folding a
+ * margin the organiser declared into it would cry wolf. Timefold's real entity
+ * count is the two added back together.
  */
 export interface Scale {
   animateurCount: number;
   posteCount: number;
+  posteOptionnelCount: number;
   contrainteAdHocCount: number;
   hoursToFill: number;
   hoursAvailable: number;

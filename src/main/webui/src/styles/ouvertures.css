@@ -135,10 +135,10 @@
 }
 
 /*
- * La marge de renfort du stand (issue #505). Discrète et neutre : elle dit
- * « on peut en mettre de plus », jamais « il en manque ». La lire comme une
- * seconde valeur à pourvoir serait exactement le besoin inventé que la
- * génération des sièges refuse de produire.
+ * The stand's renfort margin (issue #505). Quiet and neutral: it says « on
+ * peut en mettre de plus », never « il en manque ». Read as a second figure
+ * to fill, it would be exactly the invented need the seat generation refuses
+ * to produce.
  */
 .ouvertures-grille .stand-renforts {
   margin-left: 0.4rem;

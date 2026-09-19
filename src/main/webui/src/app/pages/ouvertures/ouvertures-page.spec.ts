@@ -73,6 +73,7 @@ function rapport(): RapportOuvertures {
         standId: 'A',
         nom: 'Stand A',
         effectifMin: 2,
+        effectifMax: 2,
         jours: [
           jourStand('2026-07-08', [cellule(1, 2), cellule(2, 4)]),
           jourStand('2026-07-09', [cellule(3, 2), cellule(4, 4)]),
@@ -85,6 +86,7 @@ function rapport(): RapportOuvertures {
         standId: 'B',
         nom: 'Stand B',
         effectifMin: 1,
+        effectifMax: 1,
         jours: [
           jourStand('2026-07-08', [cellule(1, 1, true), cellule(2, null)]),
           jourStand('2026-07-09', [cellule(3, null), cellule(4, null)]),

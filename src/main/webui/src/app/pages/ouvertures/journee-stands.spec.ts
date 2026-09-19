@@ -24,6 +24,7 @@ function rapport(): RapportOuvertures {
         standId: 'A',
         nom: 'Stand A',
         effectifMin: 2,
+        effectifMax: 2,
         jours: [
           {
             date: '2027-07-12',
@@ -60,6 +61,7 @@ function rapport(): RapportOuvertures {
         standId: 'B',
         nom: 'Stand B',
         effectifMin: 1,
+        effectifMax: 1,
         jours: [
           {
             date: '2027-07-12',

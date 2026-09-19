@@ -1938,6 +1938,7 @@
   "dataSetup.importingScenarioFile": "Importing {$fileName}...",
   "dataSetup.scenarioFileImported": "Scenario {$fileName} imported: the reference data is populated.",
   "solver.volumetry.postes": "Seats to fill",
+  "solver.volumetry.postesOptionnels": "Possible extra hands",
   "solver.volumetry.contraintesAdHoc": "Manual adjustments",
   "solver.volumetry.hoursToFill": "Hours to fill",
   "solver.volumetry.hoursAvailable": "Hours available",

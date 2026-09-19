@@ -17,6 +17,7 @@ describe('SolverVolumetry', () => {
   const scale = signal({
     animateurCount: 0,
     posteCount: 0,
+    posteOptionnelCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
     hoursAvailable: 0,
@@ -28,6 +29,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 0,
       posteCount: 0,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
       hoursAvailable: 0,
@@ -55,6 +57,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 10,
       posteCount: 40,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 120,
       hoursAvailable: 0,
@@ -69,6 +72,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 10,
       posteCount: 40,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 120,
       hoursAvailable: 160,
@@ -83,6 +87,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 100,
       posteCount: 1500,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
       hoursAvailable: 0,
@@ -97,6 +102,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 1,
       posteCount: 1500,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
       hoursAvailable: 0,
@@ -106,6 +112,7 @@ describe('SolverVolumetry', () => {
     scale.set({
       animateurCount: 100,
       posteCount: 0,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
       hoursAvailable: 0,
@@ -113,10 +120,43 @@ describe('SolverVolumetry', () => {
     expect(createCard().problemScale()).toBe(0);
   });
 
+  it('counts the renforts in the search space but never in the seats to fill', () => {
+    scale.set({
+      animateurCount: 100,
+      posteCount: 1000,
+      posteOptionnelCount: 500,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
+    const card = createCard();
+
+    // 1500 entities in the search space, 1000 seats owed on the card.
+    expect(card.problemScale()).toBe(3000);
+    expect(text()).toContain('+500');
+    expect(text()).toContain('Renforts possibles');
+    expect(text()).toContain('sur 1000 postes');
+  });
+
+  it('hides the renfort figure when no stand declares a margin', () => {
+    scale.set({
+      animateurCount: 10,
+      posteCount: 40,
+      posteOptionnelCount: 0,
+      contrainteAdHocCount: 0,
+      hoursToFill: 0,
+      hoursAvailable: 0,
+    });
+    createCard();
+
+    expect(text()).not.toContain('Renforts possibles');
+  });
+
   it('follows the store as it changes', () => {
     scale.set({
       animateurCount: 10,
       posteCount: 40,
+      posteOptionnelCount: 0,
       contrainteAdHocCount: 3,
       hoursToFill: 0,
       hoursAvailable: 0,

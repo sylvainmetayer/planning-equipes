@@ -135,6 +135,7 @@ export class ReferenceDataStore {
   private readonly _scale = signal<Scale>({
     animateurCount: 0,
     posteCount: 0,
+    posteOptionnelCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
     hoursAvailable: 0,

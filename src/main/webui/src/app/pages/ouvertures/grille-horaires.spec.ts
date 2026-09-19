@@ -68,6 +68,7 @@ function rapport(): RapportOuvertures {
         standId: 'A',
         nom: 'Stand A',
         effectifMin: 2,
+        effectifMax: 2,
         jours: [
           jourStand('2026-07-08', [cellule(1, 2), cellule(2, 4), cellule(3, 4)]),
           jourStand('2026-07-09', [cellule(4, 2), cellule(5, 4)]),
@@ -80,6 +81,7 @@ function rapport(): RapportOuvertures {
         standId: 'B',
         nom: 'Stand B',
         effectifMin: 1,
+        effectifMax: 1,
         jours: [
           jourStand('2026-07-08', [cellule(1, 1, true), cellule(2, null), cellule(3, null)]),
           jourStand('2026-07-09', [cellule(4, null), cellule(5, null)]),
@@ -442,6 +444,7 @@ describe('segmentsPartiels et aplatissement', () => {
           standId: 'A',
           nom: 'A',
           effectifMin: 1,
+          effectifMax: 1,
           minutesOuvertes: 0,
           postes: 0,
           modifieLe: null,

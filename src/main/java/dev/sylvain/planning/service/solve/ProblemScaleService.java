@@ -33,10 +33,19 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * available, and one with no stand or no timeslot simply reports zero. Never
  * an error: this feeds a read-only card, not a solve.</p>
  *
+ * <p><b>A renfort is counted apart</b> (issue #505, ADR 0046). The card is
+ * labelled « postes à pourvoir » and its fill ratio warns that a value close
+ * to one is already infeasible: folding the optional seats into it would
+ * inflate the need by a quarter to a half and cry wolf over a margin the
+ * organiser declared on purpose. So {@code posteCount} and the hours are the
+ * seats that are owed, {@code posteOptionnelCount} is what sits above them,
+ * and the search-space figure — the one that really is Timefold's entity
+ * count — adds the two back together.</p>
+ *
  * <p>The two hour figures put the counts in perspective. <b>Hours to fill</b>
- * is the sum of every seat's effective duration — a seat narrowed by a stand
- * closure counts only the time actually staffed, the same basis as the Heures
- * screen. <b>Hours available</b> is what the animateurs may legally work over
+ * is the sum of every owed seat's effective duration — a seat narrowed by a
+ * stand closure counts only the time actually staffed, the same basis as the
+ * Heures screen. <b>Hours available</b> is what the animateurs may legally work over
  * the event: per animateur and per ISO week, the days carrying a timeslot on
  * which they are not unavailable, six at most, each capped by the daily
  * ceiling of their age on that day, the whole capped by the weekly ceiling of
@@ -54,11 +63,14 @@ public class ProblemScaleService {
     ReferenceData referenceDataService;
 
     /**
-     * @param animateurCount       Timefold's value count
-     * @param posteCount           Timefold's entity count, one per seat to fill
-     * @param contrainteAdHocCount the ad hoc rules layered on top
-     * @param hoursToFill          sum of the effective duration of every seat
-     * @param hoursAvailable       legal ceiling of what the animateurs may work
+     * @param animateurCount        Timefold's value count
+     * @param posteCount            one per seat that is owed — Timefold's
+     *                              entity count minus the renforts
+     * @param posteOptionnelCount   the renforts, generated above the declared
+     *                              staffing and never owed
+     * @param contrainteAdHocCount  the ad hoc rules layered on top
+     * @param hoursToFill           sum of the effective duration of every owed seat
+     * @param hoursAvailable        legal ceiling of what the animateurs may work
      */
     @Schema(
             requiredProperties = {
@@ -66,10 +78,16 @@ public class ProblemScaleService {
                 "contrainteAdHocCount",
                 "hoursAvailable",
                 "hoursToFill",
-                "posteCount"
+                "posteCount",
+                "posteOptionnelCount"
             })
     public record ProblemScale(
-            int animateurCount, int posteCount, int contrainteAdHocCount, double hoursToFill, double hoursAvailable) {
+            int animateurCount,
+            int posteCount,
+            int posteOptionnelCount,
+            int contrainteAdHocCount,
+            double hoursToFill,
+            double hoursAvailable) {
 
         /** The figures of a problem built by hand — the plain-Java harness of the tests. */
         public static ProblemScale of(PlanningEvenement evenement) {
@@ -95,11 +113,14 @@ public class ProblemScaleService {
                     .map(PosteAffectation::getCreneau)
                     .filter(java.util.Objects::nonNull)
                     .toList());
+            List<PosteAffectation> dus =
+                    postes.stream().filter(poste -> !poste.isOptionnel()).toList();
             return new ProblemScale(
                     animateurs.size(),
-                    postes.size(),
+                    dus.size(),
+                    postes.size() - dus.size(),
                     contrainteAdHocCount,
-                    hoursToFill(postes),
+                    hoursToFill(dus),
                     hoursAvailable(animateurs, jours, legaux));
         }
 
