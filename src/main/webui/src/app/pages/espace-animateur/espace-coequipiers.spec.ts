@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { PosteAnimateurView } from '../../core/models';
 import { JourPlanning } from './espace-maintenant';
-import { EQUIPE_NOMBREUSE, filtrerCoequipiers, vueCoequipiers } from './espace-coequipiers';
+import { EQUIPE_NOMBREUSE, filterCoequipiers, coequipiersView } from './espace-coequipiers';
 
 function poste(overrides: Partial<PosteAnimateurView> = {}): PosteAnimateurView {
   return {
@@ -25,7 +25,7 @@ function jour(date: string, postes: PosteAnimateurView[]): JourPlanning {
   return { date, postes, repos: false, pauses: [] };
 }
 
-describe('vueCoequipiers', () => {
+describe('coequipiersView', () => {
   const jours = [
     jour('2026-02-15', [
       poste({ date: '2026-02-15', coequipiers: ['Zoé Durand', 'Alice Martin'] }),
@@ -42,7 +42,7 @@ describe('vueCoequipiers', () => {
   ];
 
   it('ranks the most frequent first, then by name', () => {
-    const { coequipiers } = vueCoequipiers(jours);
+    const { coequipiers } = coequipiersView(jours);
 
     expect(coequipiers.map((each) => [each.nom, each.occurrences.length])).toEqual([
       ['Alice Martin', 3],
@@ -51,7 +51,7 @@ describe('vueCoequipiers', () => {
   });
 
   it('says where each shift was shared', () => {
-    const [alice] = vueCoequipiers(jours).coequipiers;
+    const [alice] = coequipiersView(jours).coequipiers;
 
     expect(alice.occurrences[0]).toEqual({
       date: '2026-02-15',
@@ -68,7 +68,7 @@ describe('vueCoequipiers', () => {
    */
   it('counts a crowd instead of naming it', () => {
     const foule = Array.from({ length: EQUIPE_NOMBREUSE + 4 }, (_, index) => `Bénévole ${index}`);
-    const { coequipiers, affluences } = vueCoequipiers([
+    const { coequipiers, affluences } = coequipiersView([
       jour('2026-02-14', [poste({ date: '2026-02-14', standNom: 'Montage', coequipiers: foule })]),
       ...jours,
     ]);
@@ -86,25 +86,25 @@ describe('vueCoequipiers', () => {
   });
 
   it('answers an empty planning with two empty lists', () => {
-    expect(vueCoequipiers([])).toEqual({ coequipiers: [], affluences: [] });
+    expect(coequipiersView([])).toEqual({ coequipiers: [], affluences: [] });
   });
 });
 
-describe('filtrerCoequipiers', () => {
-  const liste = vueCoequipiers([
+describe('filterCoequipiers', () => {
+  const liste = coequipiersView([
     jour('2026-02-15', [poste({ coequipiers: ['Zoé Durand', 'Alice Martin'] })]),
   ]).coequipiers;
 
   it('ignores accents and case, as every other name lookup does', () => {
-    expect(filtrerCoequipiers(liste, 'zoe').map((each) => each.nom)).toEqual(['Zoé Durand']);
-    expect(filtrerCoequipiers(liste, 'MARTIN').map((each) => each.nom)).toEqual(['Alice Martin']);
+    expect(filterCoequipiers(liste, 'zoe').map((each) => each.nom)).toEqual(['Zoé Durand']);
+    expect(filterCoequipiers(liste, 'MARTIN').map((each) => each.nom)).toEqual(['Alice Martin']);
   });
 
   it('matches everybody on an empty search', () => {
-    expect(filtrerCoequipiers(liste, '   ')).toHaveLength(2);
+    expect(filterCoequipiers(liste, '   ')).toHaveLength(2);
   });
 
   it('answers nothing when nobody carries that name', () => {
-    expect(filtrerCoequipiers(liste, 'Bernard')).toEqual([]);
+    expect(filterCoequipiers(liste, 'Bernard')).toEqual([]);
   });
 });

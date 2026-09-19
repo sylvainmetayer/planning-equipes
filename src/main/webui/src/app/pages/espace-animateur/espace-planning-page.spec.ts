@@ -118,11 +118,11 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     fixture = TestBed.createComponent(EspacePlanningPage);
     await fixture.whenStable();
     // « Emporter mon planning » lives under « Aperçu » since issue #615.
-    await ouvrirOnglet('Aperçu');
+    await openTab('Aperçu');
   }
 
   /** Clicks a tab of the toggle group, as a reader does. */
-  async function ouvrirOnglet(nom: string): Promise<void> {
+  async function openTab(nom: string): Promise<void> {
     const onglet = Array.from(racine().querySelectorAll('mat-button-toggle')).find((each) =>
       each.textContent!.includes(nom),
     );
@@ -334,7 +334,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       }),
     );
     await rendre();
-    await ouvrirOnglet('Jour');
+    await openTab('Jour');
 
     const note = (fixture.nativeElement as HTMLElement).querySelector('.espace-pause')!;
     expect(note.textContent).toContain('Pause de 18:40 à 19:00, sur Stand un');
@@ -347,7 +347,7 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
       }),
     );
     await rendre();
-    await ouvrirOnglet('Jour');
+    await openTab('Jour');
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.espace-pause-seul')?.textContent,
     ).toContain("personne d'autre sur le stand");
