@@ -892,6 +892,14 @@ journée ne suffit pas — une journée dont la matinée est derrière nous et q
 garde un siège le soir répond « oui, il reste quelque chose devant ». C'est
 donc le siège que le relais aurait dû couvrir qui décide.
 
+**Le poids qu'une édition avait posé sur cette règle est effacé** (migration
+V95). Il avait été réglé sur un confort dosable ; il s'appliquerait maintenant
+en `ofHard(poids)`, multipliant un écart dur par une valeur que l'écran
+Contraintes ne montre plus, la molette disparaissant avec le niveau MEDIUM.
+L'absence de ligne vaut « valeur par défaut », soit 1. Les désactivations, elles,
+sont conservées : éteindre la règle reste un geste valable, protégé désormais
+par la confirmation des règles légales.
+
 ### Le dosage et la faisabilité
 
 Un poids fort sur une règle MEDIUM se paie sur la phase de faisabilité, qui

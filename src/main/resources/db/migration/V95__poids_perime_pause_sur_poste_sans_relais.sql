@@ -1,0 +1,22 @@
+-- `pauseSurPosteSansRelais` passe de MEDIUM à HARD (issue #31) : sans collègue
+-- pour tenir le stand, la pause reste du travail effectif (L3121-1) et
+-- l'obligation de L3121-16 n'est pas remplie.
+--
+-- Le poids stocké par une édition ne survit pas à ce changement de niveau. Il a
+-- été posé sur une règle de confort, dosable, dont l'écran Contraintes montrait
+-- la molette ; il s'appliquerait maintenant en `ofHard(poids)`, multipliant un
+-- écart dur par une valeur que plus personne ne voit — `dosable()` étant faux
+-- en HARD, la molette a disparu de l'écran. « Doser ce confort à 5 » ne veut
+-- pas dire « compter cinq fois chaque pause légale non prise ».
+--
+-- On efface donc la ligne plutôt que de l'hériter, à l'inverse de V86 qui
+-- reportait toggles et poids d'un nom à l'autre : là le nom changeait et
+-- l'intention tenait, ici le nom tient et l'intention ne vaut plus. L'absence
+-- de ligne signifie « valeur par défaut » (V53), soit 1, qui est le poids que
+-- toute règle dure porte dans `application.properties`.
+--
+-- `constraint_toggle` n'est pas touché : désactiver la règle reste un geste
+-- valable, et un administrateur qui l'avait éteinte la retrouve éteinte —
+-- protégée, désormais, par la confirmation des règles légales.
+
+DELETE FROM ponderation_contrainte WHERE nom = 'pauseSurPosteSansRelais';
