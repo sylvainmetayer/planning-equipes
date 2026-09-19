@@ -21,15 +21,28 @@ import {
   espacePlanningIcsUrl,
   espacePlanningPdfUrl,
 } from '../../core/api/espace-animateur-links';
+import { parseDateKey } from '../../core/date-utils';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { errorMessage } from '../../core/error-message';
 import { PauseAnimateurView, PosteAnimateurView } from '../../core/models';
-import { JourPlanning, maintenantEffectif, repereMaintenant } from './espace-maintenant';
+import {
+  aujourdhuiLocal,
+  JourPlanning,
+  maintenantEffectif,
+  repereMaintenant,
+} from './espace-maintenant';
 import { lienCarte } from './lien-carte';
 import { bandeLabel } from '../../core/consigne-wording';
 import { typologieColorClass } from '../../core/typologie-colors';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { axeFrise, dayHours, legendeTypologies, lignesFrise, statsPlanning } from './espace-apercu';
+import {
+  axeFrise,
+  dayHours,
+  legendeTypologies,
+  lignesFrise,
+  pauseInsidePoste,
+  statsPlanning,
+} from './espace-apercu';
 import { filterCoequipiers, coequipiersView } from './espace-coequipiers';
 import { OngletEspace, readOngletEspace } from './espace-onglets';
 
@@ -328,21 +341,40 @@ export class EspacePlanningPage {
   }
 
   /**
-   * Where the day strip opens: today while the event is on, the first day
-   * before it. After it, the last day — « votre prochain poste » has nothing
-   * left to name, and an empty strip would be the answer to a planning that
-   * still exists.
+   * Where the day strip opens: today while the event is on, otherwise the
+   * first day still ahead. Once every day is behind, the <b>last</b> one —
+   * « votre prochain poste » has nothing left to name, and the first day of a
+   * finished event is the least useful answer there is.
+   *
+   * <p>The server stops sending a repère after the event, so « today » is
+   * unknown then: an absent repère is what says the event is over, and the
+   * fallback reads it that way rather than landing on day one.</p>
    */
   protected readonly defaultDay = computed(() => {
     const jours = this.jours();
     if (jours.length === 0) {
       return null;
     }
-    const aujourdhui = this.repere()?.aujourdhui;
-    return aujourdhui && jours.some((jour) => jour.date === aujourdhui)
-      ? aujourdhui
-      : (jours.find((jour) => jour.date >= (aujourdhui ?? ''))?.date ?? jours[0].date);
+    // Today read directly, not through `repere()`: that one is null outside
+    // the event — both before and after — and the two cases want opposite
+    // answers. Comparing the date to the list tells them apart.
+    const aujourdhui = this.aujourdhui();
+    if (jours.some((jour) => jour.date === aujourdhui)) {
+      return aujourdhui;
+    }
+    return jours.find((jour) => jour.date >= aujourdhui)?.date ?? jours[jours.length - 1].date;
   });
+
+  /** The date the espace reads as today, the developer's frozen one included. */
+  private readonly aujourdhui = computed(() =>
+    aujourdhuiLocal(
+      maintenantEffectif(
+        this.maintenant(),
+        this.espace.view()?.dateDuJourFigee ?? null,
+        this.espace.view()?.heureDuJourFigee ?? null,
+      ),
+    ),
+  );
 
   /** The day on screen: the one asked for while it exists, else the default one. */
   protected readonly jourAffiche = computed(() => {
@@ -479,7 +511,10 @@ export class EspacePlanningPage {
    * spelled out. « lun. 14 / 3 h » is a glance, not a sentence.
    */
   protected libellePuce(puce: { date: string; heures: number; repos: boolean }): string {
-    const jour = new Date(puce.date).toLocaleDateString(undefined, {
+    // `parseDateKey`, not `new Date(iso)`: the latter reads midnight UTC, and
+    // west of it a screen reader would announce the day before the one the
+    // chip shows.
+    const jour = parseDateKey(puce.date).toLocaleDateString(undefined, {
       weekday: 'long',
       day: 'numeric',
       month: 'long',
@@ -518,13 +553,7 @@ export class EspacePlanningPage {
   }
 
   private fallsWithin(pause: PauseAnimateurView, poste: PosteAnimateurView): boolean {
-    const debut = this.heure(poste.heureDebut);
-    const fin = this.heure(poste.heureFin);
-    return (
-      pause.standId === poste.standId &&
-      pause.debut.slice(0, 5) >= debut &&
-      (fin <= debut || pause.fin.slice(0, 5) <= fin)
-    );
+    return pauseInsidePoste(pause, poste);
   }
 
   /**

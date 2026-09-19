@@ -137,8 +137,6 @@ public class EspaceAnimateurService {
      *                       like the name: a map link is only offered when
      *                       <b>both</b> coordinates are set
      * @param emplacementLongitude see {@code emplacementLatitude}
-     */
-    /**
      * @param typologieId    the typologie that colours this seat on screen and
      *                       on the PDF (issue #615), {@code null} when the
      *                       stand proposes none. A stand proposes a <b>set</b>

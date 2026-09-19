@@ -715,18 +715,20 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     );
   });
 
-  it('ne replie rien et ne dit rien hors événement', async () => {
+  it('ne replie rien, ne dit rien, et ouvre sur la dernière journée après l’événement', async () => {
     await rendre(
       new Date(2026, 8, 1, 12, 0),
       view({ postes: [poste(), poste({ creneauId: 2, date: '2026-07-12', standNom: 'Kubb' })] }),
     );
 
-    // Before the first day, after the last: no state band — « votre prochain
-    // poste » would announce in July what is read in September — and the strip
-    // opens on the first day rather than on nothing.
+    // After the last day: no state band — « votre prochain poste » would
+    // announce in July what is read in September — and the strip opens on the
+    // **last** day rather than on nothing. Not the first: an event that is
+    // over is read backwards from where it ended, and day one is the least
+    // useful place to land.
     expect(racine().querySelector('.espace-maintenant-poste')).toBeNull();
     expect(bande()).toHaveLength(2);
-    expect(bande()[0].classList).toContain('espace-bande-jour-actif');
+    expect(bande()[1].classList).toContain('espace-bande-jour-actif');
     expect(racine().querySelector('.espace-bande-jour-aujourdhui')).toBeNull();
   });
 
