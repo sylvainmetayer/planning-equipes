@@ -704,7 +704,7 @@ public final class ProblemBuilder {
                                 // the analyses count exactly what is generated here.
                                 : creneau.siegesSegment(segment.effectif());
                         for (int seat = 0; seat < seats; seat++) {
-                            PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
+                            PosteAffectation poste = new PosteAffectation(posteId(counter++), stand, creneau);
                             poste.setOptionnel(optionnel);
                             if (!creneauEntierOuvert) {
                                 poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
@@ -730,6 +730,26 @@ public final class ProblemBuilder {
      * staffs half a window — gets half the band too, instead of a renfort
      * band computed on a rule the mandatory seats do not follow.</p>
      */
+    /**
+     * Seat id, <b>zero-padded so it sorts the way it was generated</b>. The
+     * column is a {@code VARCHAR}, so the plain {@code "poste-" + counter}
+     * form sorted {@code poste-100} before {@code poste-98}: whenever one
+     * stand × créneau's seats straddled a digit boundary,
+     * {@code loadAnimateursByStandCreneau}'s {@code ORDER BY id} handed them
+     * back in a different order from the one they were built in, and the
+     * positional re-seed moved people onto a neighbouring seat. Harmless while
+     * the seats of a key were interchangeable; not since a partially closed
+     * stand gives them different effective windows — the person then came back
+     * with other hours, and a locked day announced a change nobody made.
+     *
+     * <p>Six digits carry a million seats, four times the largest extreme
+     * scenario. The id lives one solve and is rewritten by the next, so
+     * nothing persisted depends on the old shape.</p>
+     */
+    private static String posteId(int counter) {
+        return String.format("poste-%06d", counter);
+    }
+
     private static int siegesOptionnels(Creneau creneau, Stand stand, Creneau.SegmentOuvert segment) {
         int plafond = creneau.siegesSegment(Math.max(stand.getEffectifMax(), segment.effectif()));
         return Math.max(0, plafond - creneau.siegesSegment(segment.effectif()));
