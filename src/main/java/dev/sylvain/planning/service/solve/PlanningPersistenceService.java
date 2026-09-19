@@ -579,6 +579,14 @@ public class PlanningPersistenceService {
      * stand shifts every subsequent id. Seats of the same stand and créneau are
      * interchangeable anyway, so re-seeding them positionally restores the same
      * plan without depending on ids surviving a reference-data change.</p>
+     *
+     * <p><b>"Interchangeable" holds only as far as the order does.</b> A
+     * partially closed stand gives the seats of one créneau different
+     * effective windows, so the rank inside a group decides the hours somebody
+     * comes back on. That is why {@code ProblemBuilder} zero-pads the counter
+     * in the seat id: the column is a {@code VARCHAR}, and the plain
+     * {@code poste-98, poste-99, poste-100} form sorted here in an order the
+     * generation never used.</p>
      */
     public Map<String, List<String>> loadAnimateursByStandCreneau() {
         Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();

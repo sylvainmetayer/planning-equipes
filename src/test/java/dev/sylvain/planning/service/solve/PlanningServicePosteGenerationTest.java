@@ -43,6 +43,30 @@ class PlanningServicePosteGenerationTest {
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
+    /**
+     * The persisted plan is read back with {@code ORDER BY id} on a
+     * {@code VARCHAR} column, and re-seeded positionally: a seat id that does
+     * not sort the way it was generated puts people back on a neighbouring
+     * seat — another effective window, on a day that may be locked.
+     */
+    @Test
+    void seatIdsSortInTheOrderTheyWereGenerated() {
+        List<Creneau> creneaux = new java.util.ArrayList<>();
+        for (int jour = 1; jour <= 120; jour++) {
+            creneaux.add(new Creneau(
+                    (long) jour,
+                    jour,
+                    LocalDate.of(2026, 8, 14).plusDays(jour),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(13, 0)));
+        }
+
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA, standB), creneaux);
+
+        assertThat(postes).hasSize(240);
+        assertThat(postes).extracting(PosteAffectation::getId).isSortedAccordingTo(java.util.Comparator.naturalOrder());
+    }
+
     @Test
     void standFermeIntegralementNeGenereAucunPoste() {
         Stand standFerme = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
