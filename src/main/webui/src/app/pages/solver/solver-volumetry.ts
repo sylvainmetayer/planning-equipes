@@ -33,6 +33,10 @@ export class SolverVolumetry {
   protected readonly creneauCount = computed(() => this.referenceData.creneaux().length);
   /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
   protected readonly hoursToFill = computed(() => this.referenceData.scale().hoursToFill);
+  /** Bonus hours the renforts open: a capacity the edition may spend, never owes. */
+  protected readonly hoursOptionnelles = computed(
+    () => this.referenceData.scale().hoursOptionnelles,
+  );
   /** Legal ceiling of what the animateurs may work over the event, unavailable days deducted. */
   protected readonly hoursAvailable = computed(() => this.referenceData.scale().hoursAvailable);
 

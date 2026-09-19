@@ -138,6 +138,7 @@ export class ReferenceDataStore {
     posteOptionnelCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
+    hoursOptionnelles: 0,
     hoursAvailable: 0,
   });
   readonly scale = this._scale.asReadonly();

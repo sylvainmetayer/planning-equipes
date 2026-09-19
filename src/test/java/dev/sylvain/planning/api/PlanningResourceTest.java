@@ -202,6 +202,7 @@ class PlanningResourceTest {
                 .body("posteOptionnelCount", equalTo(0))
                 .body("contrainteAdHocCount", equalTo(0))
                 .body("hoursToFill", equalTo(0f))
+                .body("hoursOptionnelles", equalTo(0f))
                 .body("hoursAvailable", equalTo(0f));
     }
 
@@ -251,6 +252,7 @@ class PlanningResourceTest {
                 .body("posteCount", equalTo(2))
                 .body("posteOptionnelCount", equalTo(1))
                 .body("hoursToFill", equalTo(4f))
+                .body("hoursOptionnelles", equalTo(2f))
                 .body("hoursAvailable", equalTo(0f));
 
         given().when().post("/api/planning/reset").then().statusCode(200);

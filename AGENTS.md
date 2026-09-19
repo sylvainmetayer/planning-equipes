@@ -682,7 +682,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   animateur »), `/heatmap` (« Heatmap de charge »), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs
   available then minus the seats to staff, read either on the seats a solve
-  would have to fill or on the plan persisted), `/kpi`, `/comparateur`
+  would have to fill or on the plan persisted), `/renforts` (« Renforts » — the
+  bonus hours, stand by stand and day by day: what a stand's `effectifMax`
+  opens above what its windows ask for, and what the persisted plan took of
+  it; read-only, the lever being the stand's own fiche), `/kpi`, `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/consignes` (« Consignes » — a band an arrêté closes
   for every stand on a date, the compensation chosen, the presets; issue #4

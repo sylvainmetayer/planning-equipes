@@ -33,6 +33,12 @@
         <div class="staffing-stat-value">{{ hoursToFill() | number: '1.0-0' }} h</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursToFill">Heures à pourvoir</div>
       </mat-card>
+      @if (hoursOptionnelles() > 0) {
+        <mat-card appearance="outlined" class="staffing-stat">
+          <div class="staffing-stat-value">+{{ hoursOptionnelles() | number: '1.0-0' }} h</div>
+          <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursOptionnelles">Heures de renfort</div>
+        </mat-card>
+      }
       <mat-card appearance="outlined" class="staffing-stat">
         <div class="staffing-stat-value">{{ hoursAvailable() | number: '1.0-0' }} h</div>
         <div class="staffing-stat-label" i18n="@@solver.volumetry.hoursAvailable">Heures offertes</div>

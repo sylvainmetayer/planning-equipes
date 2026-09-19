@@ -499,6 +499,49 @@ export interface RapportMarge {
   message: string;
 }
 
+/** Renfort hours of one stand on one day (`GET /api/renforts`). */
+export interface CelluleRenfort {
+  date: string;
+  /** Bonus hours the stand opens that day — the capacity declared. */
+  heuresOuvertes: number;
+  /** Bonus hours somebody holds in the persisted plan — what it really cost. */
+  heuresPourvues: number;
+}
+
+/** One stand's bonus hours over the event, the lever a budget cut acts on. */
+export interface LigneRenfort {
+  standId: string;
+  nom: string;
+  /** The location the stand sits on; `null` when it has none. */
+  emplacementNom: string | null;
+  heuresOuvertes: number;
+  heuresPourvues: number;
+  jours: CelluleRenfort[];
+}
+
+/**
+ * What `GET /api/renforts` returns — computed without any solve (ADR 0046).
+ *
+ * The two hour figures come from two different things on purpose: `heuresOuvertes`
+ * from the seats a solve would build right now, which is what lowering a stand's
+ * `effectifMax` removes, and `heuresPourvues` from the plan already persisted,
+ * which is what the bonus actually cost. The gap between them says whether a cut
+ * is free or whether somebody will feel it.
+ */
+export interface RapportRenforts {
+  /** Every day at least one stand has something to say about, earliest first. */
+  jours: string[];
+  /** The rows, the stand opening the most bonus hours first. */
+  stands: LigneRenfort[];
+  heuresOuvertes: number;
+  heuresPourvues: number;
+  /** Hours the edition owes, renforts excluded — what the bonus is weighed against. */
+  heuresDues: number;
+  /** Without a persisted plan every `heuresPourvues` is zero because nothing was solved. */
+  planEnregistre: boolean;
+  message: string | null;
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;
@@ -779,6 +822,8 @@ export interface Scale {
   posteOptionnelCount: number;
   contrainteAdHocCount: number;
   hoursToFill: number;
+  /** Bonus hours the renforts open — a capacity, never a need. */
+  hoursOptionnelles: number;
   hoursAvailable: number;
 }
 

@@ -20,6 +20,7 @@ describe('SolverVolumetry', () => {
     posteOptionnelCount: 0,
     contrainteAdHocCount: 0,
     hoursToFill: 0,
+    hoursOptionnelles: 0,
     hoursAvailable: 0,
   });
   const creneaux = signal<unknown[]>([]);
@@ -32,6 +33,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     creneaux.set([]);
@@ -60,6 +62,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 120,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     const card = createCard();
@@ -75,6 +78,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 120,
+      hoursOptionnelles: 0,
       hoursAvailable: 160,
     });
     const card = createCard();
@@ -90,6 +94,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     const card = createCard();
@@ -105,6 +110,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     expect(createCard().problemScale()).toBe(0);
@@ -115,6 +121,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     expect(createCard().problemScale()).toBe(0);
@@ -127,6 +134,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 500,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     const card = createCard();
@@ -145,6 +153,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 0,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     createCard();
@@ -159,6 +168,7 @@ describe('SolverVolumetry', () => {
       posteOptionnelCount: 0,
       contrainteAdHocCount: 3,
       hoursToFill: 0,
+      hoursOptionnelles: 0,
       hoursAvailable: 0,
     });
     creneaux.set([{}, {}]);

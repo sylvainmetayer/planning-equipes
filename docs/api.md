@@ -157,6 +157,15 @@ approche de 1 : y verser une marge que l'organisateur a déclarée exprès
 crierait au loup. Un client qui veut la taille du problème additionne
 `posteCount` et `posteOptionnelCount`.
 
+`GET /api/renforts` reprend la même séparation à une autre échelle, stand par
+stand et jour par jour, et **lit ses deux chiffres à deux endroits** : les
+heures ouvertes viennent des sièges qu'une résolution construirait maintenant —
+ce qu'abaisser un `effectifMax` retire —, les heures pourvues du plan
+enregistré — ce que le bonus a réellement coûté. Une grille modifiée depuis la
+dernière résolution peut donc faire dépasser la seconde sur un stand : c'est un
+plan périmé qui le dit, pas une erreur, et le rapport montre les deux plutôt que
+de les réconcilier dans le dos du lecteur.
+
 Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
 pas une prévision : compétences, repos entre vacations et règle de pause en
 retranchent encore, si bien qu'un taux proche de 1 annonce déjà un planning
