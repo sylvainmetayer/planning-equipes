@@ -71,13 +71,16 @@ public class PlanningExportResource {
             @PathParam("animateurId") String animateurId,
             @QueryParam("format") String format,
             PlanningEvenement planningEvenement) {
-        byte[] content = planningExportService.exportAnimateurPdf(
-                planningEvenement, animateurId, FormatPlanning.fromParameter(format));
+        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        byte[] content = planningExportService.exportAnimateurPdf(planningEvenement, animateurId, layout);
         String safeAnimateurId = (animateurId == null ? "unknown" : animateurId).replaceAll("[\\\\/\\r\\n\\\"]", "_");
+        // The layout is part of the name: downloading both would otherwise
+        // leave one file, the second having overwritten the first.
+        String filename = layout == FormatPlanning.FEUILLE
+                ? "planning-" + safeAnimateurId + "-feuille.pdf"
+                : "planning-" + safeAnimateurId + ".pdf";
         return Response.ok(content)
-                .header(
-                        HttpHeaders.CONTENT_DISPOSITION,
-                        "attachment; filename=\"planning-" + safeAnimateurId + ".pdf\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .build();
     }
 
@@ -85,10 +88,11 @@ public class PlanningExportResource {
     @Path("/bundle/all")
     @Produces("application/zip")
     public Response exportAllBundleZip(@QueryParam("format") String format, PlanningEvenement planningEvenement) {
-        byte[] content =
-                planningExportService.exportAllBundleZip(planningEvenement, FormatPlanning.fromParameter(format));
+        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        byte[] content = planningExportService.exportAllBundleZip(planningEvenement, layout);
+        String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning.zip";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning.zip\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .build();
     }
 

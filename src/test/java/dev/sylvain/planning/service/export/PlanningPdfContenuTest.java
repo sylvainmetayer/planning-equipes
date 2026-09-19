@@ -310,6 +310,58 @@ class PlanningPdfContenuTest {
     }
 
     /**
+     * The folded sheet says everything the booklet says, however loaded the
+     * day: its calendar boxes have a minimum height, never a ceiling. Fixed,
+     * they cut what did not fit — a third shift lost its team line, and the
+     * two layouts told two different stories.
+     */
+    @Test
+    void uneJourneeChargeeNestPasCoupeeDansLaFeuille() throws IOException {
+        PlanningEvenement planning = planningJourneesChargees();
+
+        byte[] feuille = service.exportAnimateurPdf(planning, "A-ADA", FormatPlanning.FEUILLE);
+        String livret = textOf(service.exportAnimateurPdf(planning, "A-ADA", FormatPlanning.LIVRET));
+
+        // The CALENDAR side, and not the whole file: the back page names every
+        // team-mate anyway, so a cut on the front went unseen by a search over
+        // the document. « Ada Byron » only ever works the evening shift — the
+        // third line of the box, the one that fell off its bottom.
+        String calendrier = pageTextOf(feuille, 1);
+        for (String coequipier : List.of("Alan Turing", "Grace Hopper", "Ada Byron")) {
+            assertThat(calendrier).as("le calendrier nomme " + coequipier).contains(coequipier);
+            assertThat(livret).as("le livret nomme " + coequipier).contains(coequipier);
+        }
+    }
+
+    /**
+     * Two créneaux of one day can carry the same hours on the same stand —
+     * nothing in the referential forbids it. The grid cell of that window then
+     * holds both, names and unfilled seats alike: the line it dropped took its
+     * animateurs out of the document.
+     */
+    @Test
+    void deuxCreneauxDeMemesHorairesTiennentDansLaMemeCaseDuGlobal() throws IOException {
+        Stand stand = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 1, 2, false);
+        Creneau premier = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Creneau second = new Creneau(2L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        Animateur alan = new Animateur("A-ALAN", "Alan", "Turing", LocalDate.of(1992, 2, 2), false);
+        PosteAffectation vide = new PosteAffectation("p3", stand, second);
+        PlanningEvenement planning = new PlanningEvenement(
+                LocalDate.of(2026, 8, 14),
+                new ArrayList<>(List.of(ada, alan)),
+                new ArrayList<>(List.of(poste("p1", stand, premier, ada), poste("p2", stand, second, alan), vide)));
+
+        byte[] global = service.exportGlobalPdf(planning);
+
+        // The « Par journée » page, and not the whole file: « Par stand » and
+        // « Animateurs de A à Z » name everybody anyway, so a line dropped from
+        // the grid went unseen by a search over the document.
+        String journee = pageContaining(global, "Jour 1 —");
+        assertThat(journee).contains("Ada Lovelace").contains("Alan Turing").contains("non pourvu");
+    }
+
+    /**
      * The organiser's document is a summary and four sections: the overview
      * grid, then the same assignments by day, by stand and by person. The
      * seats nobody holds are written in plain sight.
@@ -437,6 +489,23 @@ class PlanningPdfContenuTest {
         }
     }
 
+    /** The text of the single page carrying that marker — a section is a page here. */
+    private static String pageContaining(byte[] pdf, String marker) throws IOException {
+        PdfReader reader = new PdfReader(pdf);
+        try {
+            PdfTextExtractor extracteur = new PdfTextExtractor(reader);
+            for (int page = 1; page <= reader.getNumberOfPages(); page++) {
+                String text = extracteur.getTextFromPage(page);
+                if (text.contains(marker)) {
+                    return text;
+                }
+            }
+            throw new AssertionError("aucune page ne porte « " + marker + " »");
+        } finally {
+            reader.close();
+        }
+    }
+
     private static int pagesOf(byte[] pdf) throws IOException {
         PdfReader reader = new PdfReader(pdf);
         try {
@@ -494,6 +563,39 @@ class PlanningPdfContenuTest {
      * hundred-strong set-up, and a day off — what the gathered team-mates and
      * the « effectif rather than names » rule need to be read on.
      */
+    /**
+     * Three shifts a day for four weeks — the shape that used to be cut: the
+     * more weeks the calendar holds, the shorter its rows, and a fixed height
+     * dropped whatever came last in the box.
+     */
+    private static PlanningEvenement planningJourneesChargees() {
+        Stand matinal = new Stand("STAND-M", "Stand du matin", Set.of("STRATEGIE"), 1, 4, false);
+        Stand midi = new Stand("STAND-D", "Stand de midi", Set.of("AMBIANCE"), 1, 4, false);
+        Stand soir = new Stand("STAND-S", "Stand du soir", Set.of("STRATEGIE"), 1, 4, false);
+
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        Animateur alan = new Animateur("A-ALAN", "Alan", "Turing", LocalDate.of(1992, 2, 2), false);
+        Animateur grace = new Animateur("A-GRACE", "Grace", "Hopper", LocalDate.of(1991, 3, 3), false);
+        Animateur byron = new Animateur("A-BYRON", "Ada", "Byron", LocalDate.of(1993, 4, 4), false);
+
+        List<PosteAffectation> postes = new ArrayList<>();
+        long creneauId = 1;
+        for (int jour = 1; jour <= 28; jour++) {
+            LocalDate date = LocalDate.of(2026, 8, 3).plusDays(jour - 1L);
+            Creneau matin = new Creneau(creneauId++, jour, date, LocalTime.of(9, 0), LocalTime.of(12, 0));
+            Creneau apresMidi = new Creneau(creneauId++, jour, date, LocalTime.of(13, 0), LocalTime.of(16, 0));
+            Creneau soiree = new Creneau(creneauId++, jour, date, LocalTime.of(17, 0), LocalTime.of(20, 0));
+            postes.add(poste("m-" + jour, matinal, matin, ada));
+            postes.add(poste("m2-" + jour, matinal, matin, alan));
+            postes.add(poste("d-" + jour, midi, apresMidi, ada));
+            postes.add(poste("d2-" + jour, midi, apresMidi, grace));
+            postes.add(poste("s-" + jour, soir, soiree, ada));
+            postes.add(poste("s2-" + jour, soir, soiree, byron));
+        }
+        return new PlanningEvenement(
+                LocalDate.of(2026, 8, 3), new ArrayList<>(List.of(ada, alan, grace, byron)), postes);
+    }
+
     private static PlanningEvenement planningFestival() {
         Stand strategie = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 1, 4, false);
         Stand montage = new Stand("STAND-M", "Montage du festival", Set.of("AMBIANCE"), 1, 20, false);

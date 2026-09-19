@@ -944,7 +944,7 @@ valeur inconnue vaut `livret` : une faute de frappe sur un téléchargement ne
 mérite pas un 400.
 
 Les deux mises en page composent la **même** vue interne
-(`AnimateurPlanningVue`), ce qui est ce qui les empêche de dire deux choses
+(`AnimateurPlanningView`), ce qui est ce qui les empêche de dire deux choses
 différentes ; c'est cette vue qui est testée, pas deux extractions de texte.
 
 ### Le planning global

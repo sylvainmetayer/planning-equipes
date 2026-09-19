@@ -217,7 +217,11 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         PdfPCell cell = new PdfPCell();
         cell.setBorderColor(theme.pill());
         cell.setPadding(4f);
-        cell.setFixedHeight(hauteur);
+        // A minimum, never a ceiling: the weeks line up on the light days, and
+        // a day with three shifts makes its own row taller. Fixed, the box cut
+        // what did not fit — and a planning that silently drops a team line is
+        // worse than a sheet that runs a little longer.
+        cell.setMinimumHeight(hauteur);
 
         if (jour == null) {
             // A day outside the event: the box exists so the weeks line up,
@@ -319,7 +323,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         titre.addElement(new Paragraph("Repères", theme.sectionFont()));
         titre.addElement(new Paragraph(
                 "La barre sous la date couvre "
-                        + (view.amplitudeDebutMinutes() / 60) + "h – " + (view.amplitudeFinMinutes() / 60)
+                        + (view.amplitudeDebutMinutes() / 60 % 24) + "h – " + (view.amplitudeFinMinutes() / 60 % 24)
                         + "h ; chaque segment est un créneau.",
                 theme.sousTitreFont()));
         table.addCell(titre);
