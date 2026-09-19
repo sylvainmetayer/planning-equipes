@@ -883,6 +883,15 @@ l'organisation affirme ne jamais produire. La réponse est de retailler la
 grille ou d'ouvrir une place de plus — pas de baisser un poids, qui n'existe
 plus ici.
 
+**Une pause due dans une séquence déjà écoulée n'est reprochée à personne.**
+Le passé est figé ([0044](decisions/0044-le-passe-est-fige.md)) : ses sièges
+sont épinglés, donc un écart dur posé là ne serait réparable par aucun
+mouvement, et un calcul relancé en cours d'événement n'atteindrait plus jamais
+zéro. La règle regroupe par animateur **et par jour**, et le garde-fou de
+journée ne suffit pas — une journée dont la matinée est derrière nous et qui
+garde un siège le soir répond « oui, il reste quelque chose devant ». C'est
+donc le siège que le relais aurait dû couvrir qui décide.
+
 ### Le dosage et la faisabilité
 
 Un poids fort sur une règle MEDIUM se paie sur la phase de faisabilité, qui
