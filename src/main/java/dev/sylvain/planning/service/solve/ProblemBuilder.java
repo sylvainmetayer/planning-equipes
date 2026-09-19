@@ -644,7 +644,7 @@ public final class ProblemBuilder {
      * for — the real reason it kept stalling short of hard-feasibility.</p>
      *
      * <p>What {@code effectifMax} <b>does</b> generate, since issue #505, is a
-     * band of <b>optional</b> seats above the window's own effectif (ADR 0046):
+     * band of <b>optional</b> seats above the window's own effectif (ADR 0048):
      * seats {@code posteDoitEtrePourvu} ignores, so leaving them empty is never
      * a violation and never an écart. The 31 % of mandatory seats measured
      * below is exactly what they do not become — the capacity a stand declares
@@ -707,7 +707,7 @@ public final class ProblemBuilder {
     /**
      * The renforts of one open segment: what the stand says it could take
      * ({@code effectifMax}) above what the window says it needs (issue #505,
-     * ADR 0046). Zero when the two meet, which is the case of two stands out
+     * ADR 0048). Zero when the two meet, which is the case of two stands out
      * of three.
      *
      * <p>Counted through {@link Creneau#siegesSegment(int)} on both sides

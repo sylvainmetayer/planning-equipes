@@ -74,7 +74,7 @@ public class PosteAffectation {
 
     /**
      * Seat generated <b>above</b> the staffing the window declares, up to the
-     * stand's {@code effectifMax} (issue #505, ADR 0046) — « mieux à trois,
+     * stand's {@code effectifMax} (issue #505, ADR 0048) — « mieux à trois,
      * tenable à deux ».
      *
      * <p>The difference with an ordinary seat is one thing only:

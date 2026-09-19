@@ -17,7 +17,7 @@ import java.util.Map;
  * violations (unfilled postes, double-bookings) FIRST_FIT was producing.
  *
  * <p><b>A renfort is placed last, whatever its rarity</b> (issue #505,
- * ADR 0046). The heuristic walks the entities in decreasing difficulty and
+ * ADR 0048). The heuristic walks the entities in decreasing difficulty and
  * seats somebody on each in turn: an optional seat taken early is a person
  * spent before the seats that are owed have been served, and the plan ends
  * short of feasibility with its capacity comfortably filled. Measured on

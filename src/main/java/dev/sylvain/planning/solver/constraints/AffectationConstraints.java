@@ -91,7 +91,7 @@ public final class AffectationConstraints {
         // constraint (which specifically targets unassigned postes) must use
         // forEachIncludingUnassigned() to actually see them. A past hole is
         // not charged (ADR 0044): nobody can be seated yesterday. An optional
-        // seat is not charged either (issue #505, ADR 0046): it was generated
+        // seat is not charged either (issue #505, ADR 0048): it was generated
         // above what the window declares, so nobody is missing on it — that is
         // the whole difference between a renfort and a seat.
         return ConstraintToggleSupport.actif(

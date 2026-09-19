@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalTime;
@@ -26,6 +27,21 @@ class AffectationConstraintsTest extends ConstraintTestBase {
         verify("posteDoitEtrePourvu")
                 .given(poste(standStrat, creneauMatin, referentMajeur("A1")))
                 .penalizesBy(0);
+    }
+
+    /**
+     * The one difference between a renfort and a seat (issue #505): nobody is
+     * missing on it, so leaving it empty is never a violation. Without this,
+     * declaring a capacity a stand cannot always staff would make every plan
+     * infeasible — the very inflation `effectifMax` was kept out of seat
+     * generation to avoid.
+     */
+    @Test
+    void anEmptyRenfortIsNotAViolation() {
+        PosteAffectation renfort = new PosteAffectation("P-RENFORT", standStrat, creneauMatin);
+        renfort.setOptionnel(true);
+
+        verify("posteDoitEtrePourvu").given(renfort).penalizesBy(0);
     }
 
     @Test

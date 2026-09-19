@@ -7,7 +7,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 
 /**
  * Restricts an entity selector to the seats somebody is owed — renforts left
- * out (issue #505, ADR 0046).
+ * out (issue #505, ADR 0048).
  *
  * <p>Phase 1 of the local search has one job: reach feasibility. Renforts
  * cannot take part in it — leaving one empty is never a violation — so every

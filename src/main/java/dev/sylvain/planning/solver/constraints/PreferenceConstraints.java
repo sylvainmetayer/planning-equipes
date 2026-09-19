@@ -46,7 +46,7 @@ public final class PreferenceConstraints {
 
     /**
      * Employ the volant available rather than leave it idle (issue #505,
-     * ADR 0046): a renfort that somebody takes is worth a point.
+     * ADR 0048): a renfort that somebody takes is worth a point.
      *
      * <p>A <b>reward</b>, and soft, and that pairing is the whole design. A
      * penalty on an empty renfort would make the capacity a stand declares

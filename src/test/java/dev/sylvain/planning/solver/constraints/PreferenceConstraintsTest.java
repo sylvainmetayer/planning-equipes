@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver.constraints;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import org.junit.jupiter.api.Test;
 
@@ -11,6 +12,44 @@ class PreferenceConstraintsTest extends ConstraintTestBase {
     private final Stand standAutre = standWithStrategy("STAND-AUTRE");
     private final Creneau creneauMatin = matin("J1-MATIN", 1, D1);
     private final Creneau creneauAprem = afternoon("J1-AM", 1, D1);
+
+    /* ----------------------- Renforts (issue #505) ------------------------ */
+
+    @Test
+    void aRenfortSomebodyTakesIsRewarded() {
+        verify("pourvoirLesSiegesOptionnels")
+                .given(posteOptionnel(standStrat, creneauMatin, referentMajeur("A1")))
+                .rewardsWith(1);
+    }
+
+    /**
+     * The whole point of a renfort: leaving it empty is not a violation, and
+     * not a missed reward either — the score says nothing at all about it, so
+     * a capacity nobody staffs never reads as a need nobody met.
+     */
+    @Test
+    void anEmptyRenfortIsWorthNothingAndCostsNothing() {
+        verify("pourvoirLesSiegesOptionnels")
+                .given(new PosteAffectation("P-VIDE", standStrat, creneauMatin))
+                .rewardsWith(0);
+    }
+
+    /** An ordinary seat is the job, not a bonus: filling it earns nothing here. */
+    @Test
+    void anOrdinarySeatEarnsNothingFromThisRule() {
+        verify("pourvoirLesSiegesOptionnels")
+                .given(poste(standStrat, creneauMatin, referentMajeur("A1")))
+                .rewardsWith(0);
+    }
+
+    /** A renfort already worked is a constant no move can act on (ADR 0044). */
+    @Test
+    void aPastRenfortEarnsNothing() {
+        PosteAffectation passe =
+                posteOptionnel(standStrat, creneauMatin, referentMajeur("A1"));
+        passe.setPasse(true);
+        verify("pourvoirLesSiegesOptionnels").given(passe).rewardsWith(0);
+    }
 
     @Test
     void referentSansDebutantEstPenaliseEnSoft() {
