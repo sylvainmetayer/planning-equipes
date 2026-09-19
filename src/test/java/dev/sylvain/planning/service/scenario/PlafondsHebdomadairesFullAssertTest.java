@@ -8,9 +8,13 @@ import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
 import ai.timefold.solver.core.config.solver.EnvironmentMode;
 import ai.timefold.solver.core.config.solver.SolverConfig;
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
+import dev.sylvain.planning.service.solve.FrozenPast;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.time.LocalDate;
+import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -29,6 +33,16 @@ import org.junit.jupiter.api.Test;
  * re-inserted into another, or a break deducted on insert and not on retract,
  * fails here rather than in a plan nobody can explain.</p>
  *
+ * <p>The seats already worked are pinned, so what the rules see is a real
+ * mid-event problem rather than a blank one. That pairing is the point:
+ * neither FULL_ASSERT test covered it — {@code gamme-13} carries a past but
+ * declares no break on the post, this rung declared the break but had no past
+ * — and the two rules read the past at two different grains. The weekly caps
+ * fold « is any day of this week still ahead » into their collector;
+ * {@code pauseSurPosteSansRelais} asks it of the single seat a relay would
+ * have had to cover. A fold that answers one grain with the other stays
+ * invisible until a mid-event re-solve stops reaching zero.</p>
+ *
  * <p>Three seconds is not a convergence budget and is not meant to be: what is
  * being exercised is every move the search tries in that time, each one
  * verified. The same run was played by hand on {@code festival-hivernal} — the
@@ -40,6 +54,10 @@ class PlafondsHebdomadairesFullAssertTest {
 
     private static final String RUNG = "gamme-10-4j-8stands-20animateurs-journees-types-multiples";
 
+    /** Friday 3 September 2027 at two in the afternoon: two days and a morning of the rung are behind us. */
+    private static final PastHorizon VENDREDI_APRES_MIDI =
+            new PastHorizon(LocalDate.of(2027, 9, 3), LocalTime.of(14, 0));
+
     @Test
     void lesPlafondsHebdomadairesNeCorrompentPasLeScoreSousFullAssert() {
         Loaded loaded = load(RUNG);
@@ -47,6 +65,13 @@ class PlafondsHebdomadairesFullAssertTest {
         assertThat(problem.getParametresLegaux())
                 .as("the rung must declare the break taken on the post, or this test exercises nothing")
                 .anyMatch(parametres -> parametres.isPauseSurPoste());
+        int passes = FrozenPast.mark(problem.getPostes(), VENDREDI_APRES_MIDI);
+        assertThat(passes)
+                .as("the horizon must cut the rung in two, or the past is not exercised")
+                .isPositive()
+                .isLessThan(problem.getPostes().size());
+        FrozenPast.pin(problem.getPostes());
+        problem.setPastHorizon(VENDREDI_APRES_MIDI);
         // Prepares the problem as a solve would: meal windows, quotas, weights.
         ScenarioLadder.service().diagnose(problem);
 
