@@ -35,7 +35,7 @@ class PlanPublicationDatesConcerneesTest {
         PlanningEvenement reference = planning(poste("p1", LUNDI, ADA), poste("p2", MARDI, ADA));
         PlanningEvenement publie = planning(poste("p3", LUNDI, ADA), poste("p4", MERCREDI, ADA));
 
-        assertThat(PlanPublicationService.datesConcernees(publie, reference, "ADA"))
+        assertThat(PlanPublicationService.datesConcernees(publie, reference, null, "ADA"))
                 .containsExactly(LUNDI, MARDI, MERCREDI);
     }
 
@@ -44,7 +44,7 @@ class PlanPublicationDatesConcerneesTest {
         PlanningEvenement reference = planning(poste("p1", MARDI, ALAN));
         PlanningEvenement publie = planning(poste("p2", LUNDI, ADA), poste("p3", MERCREDI, ALAN));
 
-        assertThat(PlanPublicationService.datesConcernees(publie, reference, "ADA"))
+        assertThat(PlanPublicationService.datesConcernees(publie, reference, null, "ADA"))
                 .containsExactly(LUNDI);
     }
 
@@ -52,9 +52,36 @@ class PlanPublicationDatesConcerneesTest {
     void aFirstPublicationHasNoReferencePlan() {
         PlanningEvenement publie = planning(poste("p1", LUNDI, ADA));
 
-        assertThat(PlanPublicationService.datesConcernees(publie, null, "ADA")).containsExactly(LUNDI);
-        assertThat(PlanPublicationService.datesConcernees(publie, planning(), "ADA"))
+        assertThat(PlanPublicationService.datesConcernees(publie, null, null, "ADA"))
                 .containsExactly(LUNDI);
+        assertThat(PlanPublicationService.datesConcernees(publie, planning(), null, "ADA"))
+                .containsExactly(LUNDI);
+    }
+
+    /**
+     * A deferred recipient is compared to the snapshot they really received,
+     * not to the last published plan (issue #503): the consigne sentence has
+     * to follow the dates <em>their own</em> reference knows about.
+     */
+    @Test
+    void thePersonsOwnNotifiedVacationsWinOverTheGlobalReference() {
+        PlanningEvenement reference = planning(poste("p1", MARDI, ADA));
+        PlanningEvenement publie = planning(poste("p2", LUNDI, ADA));
+        List<PublicationDiffService.Vacation> notifiees = List.of(
+                new PublicationDiffService.Vacation(MERCREDI, LocalTime.of(9, 0), LocalTime.of(12, 0), "S", "Stand"));
+
+        assertThat(PlanPublicationService.datesConcernees(publie, reference, notifiees, "ADA"))
+                .containsExactly(LUNDI, MERCREDI);
+    }
+
+    /** No marker: the global published plan is what « ce qu'on a annoncé » means. */
+    @Test
+    void anAbsentMarkerFallsBackOnTheGlobalReference() {
+        PlanningEvenement reference = planning(poste("p1", MARDI, ADA));
+        PlanningEvenement publie = planning(poste("p2", LUNDI, ADA));
+
+        assertThat(PlanPublicationService.datesConcernees(publie, reference, null, "ADA"))
+                .containsExactly(LUNDI, MARDI);
     }
 
     private static PlanningEvenement planning(PosteAffectation... postes) {

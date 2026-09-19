@@ -44,14 +44,23 @@ describe('PlanningApi', () => {
     expect(api.get).toHaveBeenCalledWith('/api/planning/snapshots/compare?base=courant&variante=8');
   });
 
-  it('posts the planning it was given for the hours report, and nothing for a publication or a reset', async () => {
+  it('posts the planning it was given for the hours report, and its exclusions for a publication', async () => {
     await planning.hoursReport(PLANNING);
     await planning.publish();
     await planning.reset();
 
     expect(api.post).toHaveBeenNthCalledWith(1, '/api/planning/hours', PLANNING);
-    expect(api.post).toHaveBeenNthCalledWith(2, '/api/planning/publication', null);
+    expect(api.post).toHaveBeenNthCalledWith(2, '/api/planning/publication', { exclusions: [] });
     expect(api.post).toHaveBeenNthCalledWith(3, '/api/planning/reset', {});
+  });
+
+  /** Deferring somebody is what the body carries, and the only thing (issue #503). */
+  it('names the deferred people in the publication body', async () => {
+    await planning.publish(['a1', 'a2']);
+
+    expect(api.post).toHaveBeenCalledWith('/api/planning/publication', {
+      exclusions: ['a1', 'a2'],
+    });
   });
 
   it('names the file and the content type of every download', async () => {

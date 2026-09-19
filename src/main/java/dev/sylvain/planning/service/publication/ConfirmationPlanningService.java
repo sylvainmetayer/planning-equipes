@@ -118,6 +118,19 @@ public class ConfirmationPlanningService {
         return repository.byId(animateurId);
     }
 
+    /**
+     * Every stored answer at once, by animateur id — what a caller needs when
+     * it is about to ask the same question of a hundred and fifty people.
+     *
+     * <p>{@link #stored(String)} is the single-row read, right for the espace's
+     * own payload and wrong here: the publication preview reads a confirmation
+     * per recipient, and doing that one query at a time put a hundred and fifty
+     * round trips on the path of the one action that also sends the mail.</p>
+     */
+    public Map<String, ConfirmationPlanningRepository.Confirmation> storedByAnimateur() {
+        return repository.byAnimateur();
+    }
+
     /** The whole edition's answers, one line per animateur, sorted by display name. */
     public List<ConfirmationView> byAnimateur() {
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();

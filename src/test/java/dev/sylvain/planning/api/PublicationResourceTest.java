@@ -192,7 +192,8 @@ class PublicationResourceTest {
         mailbox.clear();
 
         assertThat(apercu().getInt("nombreConcernes")).isZero();
-        given().when()
+        given().contentType(ContentType.JSON)
+                .when()
                 .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
@@ -217,7 +218,8 @@ class PublicationResourceTest {
         persistence.clearDatabase();
 
         assertThat(apercu().getBoolean("planVide")).isTrue();
-        given().when()
+        given().contentType(ContentType.JSON)
+                .when()
                 .post("/api/planning/publication")
                 .then()
                 .statusCode(409)

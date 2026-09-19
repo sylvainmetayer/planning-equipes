@@ -65,7 +65,7 @@ test.describe('Publication du planning', () => {
     expect(etat.dernierePublicationLe).not.toBeNull();
     expect(etat.nombreConcernes).toBe(0);
 
-    const refus = await admin.post('/api/planning/publication');
+    const refus = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
     expect(refus.status(), await refus.text()).toBe(409);
   });
 
@@ -150,7 +150,7 @@ test.describe('Publication du planning', () => {
   test('publier écrit aux seules personnes concernées, puis le décompte retombe à zéro', async () => {
     await deplacerUnSiege(admin);
 
-    const publication = await admin.post('/api/planning/publication');
+    const publication = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
     expect(publication.ok(), await publication.text()).toBe(true);
     const rapport = (await publication.json()) as { envoyes: number; sansEmail: string[] };
     // Alice a une adresse, Bruno n'en a pas : le rapport le nomme au lieu de
@@ -172,6 +172,53 @@ test.describe('Publication du planning', () => {
     ]);
   });
 
+  /**
+   * Issue #503 : exclure quelqu'un diffère son message, il ne le supprime pas.
+   * La capture, elle, a bien lieu pour tout le monde — c'est ce qui garde
+   * l'espace cohérent (ADR 0011).
+   */
+  test('décocher quelqu’un le laisse à prévenir à la publication suivante', async ({ browser }) => {
+    await deplacerUnSiege(admin);
+    const page = await pageAdmin(browser, admin);
+    await page.goto('/publication');
+
+    await page.getByRole('button', { name: 'Voir qui est concerné et ce qui change' }).click();
+    const ligneBruno = page.locator('tbody tr', { hasText: 'Bruno' });
+    await expect(ligneBruno).toBeVisible();
+    await ligneBruno.getByRole('checkbox').click();
+    await expect(page.getByText(/Les personnes décochées ne recevront rien/)).toBeVisible();
+
+    await page.getByRole('button', { name: /Publier — 2 personnes concernées/ }).click();
+    await page.getByRole('button', { name: 'Publier', exact: true }).click();
+
+    // Alice est prévenue, Bruno reste dans le décompte avec son propre écart.
+    await expect(
+      page.getByRole('button', { name: /Publier — 1 personne concernée/ }),
+    ).toBeVisible();
+    const restant = await apercu(admin);
+    expect(restant.destinataires.map((chacun) => chacun.animateurId)).toEqual([SEED.cible]);
+    expect(restant.destinataires[0].reporte).toBe(true);
+
+    const trace = await admin.get('/api/planning/publication/destinataires');
+    const destinataires = (await trace.json()) as { animateurId: string; statut: string }[];
+    expect(destinataires.find((chacun) => chacun.animateurId === SEED.cible)?.statut).toBe('EXCLU');
+
+    await page.close();
+  });
+
+  test('le détail des changements se télécharge en CSV', async () => {
+    await deplacerUnSiege(admin);
+
+    const csv = await admin.get('/api/planning/publication/export');
+    expect(csv.ok(), await csv.text()).toBe(true);
+    expect(csv.headers()['content-type']).toContain('text/csv');
+
+    const lignes = (await csv.text()).split('\n');
+    expect(lignes[0]).toContain('animateurId;nomAffiche;email;premiereDiffusion;reporte');
+    // Une ligne par personne à prévenir, en-tête comprise.
+    expect(lignes.filter((ligne) => ligne.trim() !== '')).toHaveLength(3);
+  });
+
   test('l’espace d’un animateur ne bouge qu’une fois publié', async () => {
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(admin, jeton, EMAIL_ALICE);
@@ -185,7 +232,7 @@ test.describe('Publication du planning', () => {
     const pendant = await admin.get(`/api/espace-animateur/${jeton}`);
     expect(((await pendant.json()) as { postes: unknown[] }).postes).toHaveLength(1);
 
-    const publication = await admin.post('/api/planning/publication');
+    const publication = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
     expect(publication.ok(), await publication.text()).toBe(true);
 
     const apres = await admin.get(`/api/espace-animateur/${jeton}`);

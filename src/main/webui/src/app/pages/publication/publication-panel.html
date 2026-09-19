@@ -25,6 +25,13 @@
       <mat-icon>forward_to_inbox</mat-icon>
       <span>{{ publishLabel() }}</span>
     </button>
+    <button matButton="tonal" [disabled]="exportBusy() || editingLocked()"
+            i18n-matTooltip="@@publication.exportDiff.tooltip"
+            matTooltip="Une ligne par personne à prévenir, à relire ou à discuter hors de l'application."
+            (click)="exportDiff()">
+      <mat-icon>table_view</mat-icon>
+      <ng-container i18n="@@publication.exportDiff">Exporter le détail (CSV)</ng-container>
+    </button>
   </mat-card-actions>
 
   @if (busy()) {
@@ -71,29 +78,80 @@
         }
       </button>
       @if (listOpen()) {
-        <ul class="publication-destinataires">
-          @for (destinataire of preview()?.destinataires ?? []; track destinataire.animateurId) {
-            <li>
-              <p class="publication-destinataire-nom">
-                {{ destinataire.nomAffiche }}
-                @if (!destinataire.email) {
-                  <span class="publication-sans-email" i18n="@@publication.sansEmail">— sans adresse e-mail</span>
-                }
-                @if (destinataire.premiereDiffusion) {
-                  <span class="publication-premiere" i18n="@@publication.premiereDiffusion">— première diffusion</span>
-                }
-              </p>
-              <ul class="publication-changements">
-                @for (ligne of destinataire.changements; track ligne) {
-                  <li>{{ ligne }}</li>
-                }
-                @for (ligne of destinataire.demandes; track ligne) {
-                  <li class="publication-demande">{{ ligne }}</li>
-                }
-              </ul>
-            </li>
+        <div class="publication-outils">
+          <mat-button-toggle-group [value]="sortOrder()" (change)="chooseSort($event.value)"
+                                   i18n-aria-label="@@publication.tri.label" aria-label="Ordre de la liste">
+            <mat-button-toggle value="nom" i18n="@@publication.tri.nom">Par nom</mat-button-toggle>
+            <mat-button-toggle value="ampleur" i18n="@@publication.tri.ampleur">Par ampleur</mat-button-toggle>
+          </mat-button-toggle-group>
+          @if (minorCount() > 0 || minorHidden()) {
+            <mat-checkbox [checked]="minorHidden()" (change)="toggleMinorFilter($event.checked)">
+              <ng-container i18n="@@publication.mineurs.masquer">
+                Masquer les changements mineurs ({{ minorCount() }})
+              </ng-container>
+            </mat-checkbox>
           }
-        </ul>
+        </div>
+        <table class="publication-table">
+          <caption class="visually-hidden" i18n="@@publication.table.caption">
+            Personnes à prévenir : ce qui change pour chacune, sa dernière confirmation, et la case qui diffère son message.
+          </caption>
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@publication.table.prevenir">Prévenir</th>
+              <th scope="col" i18n="@@publication.table.personne">Personne</th>
+              <th scope="col" i18n="@@publication.table.changement">Ce qui change</th>
+              <th scope="col" i18n="@@publication.table.confirmation">Dernière confirmation</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (destinataire of rows(); track destinataire.animateurId) {
+              <tr [class.publication-ligne-exclue]="isExcluded(destinataire.animateurId)">
+                <td>
+                  <mat-checkbox [checked]="!isExcluded(destinataire.animateurId)"
+                                (change)="toggleExclusion(destinataire.animateurId, $event.checked)"
+                                [attr.aria-label]="destinataire.nomAffiche"></mat-checkbox>
+                </td>
+                <td>
+                  <span class="publication-destinataire-nom">{{ destinataire.nomAffiche }}</span>
+                  @if (!destinataire.email) {
+                    <span class="publication-sans-email" i18n="@@publication.sansEmail">— sans adresse e-mail</span>
+                  }
+                  @if (destinataire.reporte) {
+                    <span class="publication-reporte" i18n="@@publication.reporte">— non prévenu à la dernière publication</span>
+                  }
+                </td>
+                <td>
+                  <p class="publication-ampleur">
+                    {{ changeSummaryOf(destinataire) }}
+                    @if (destinataire.mineur) {
+                      <span class="publication-mineur" i18n="@@publication.mineur">— changement mineur</span>
+                    }
+                  </p>
+                  <ul class="publication-changements">
+                    @for (ligne of destinataire.changements; track ligne) {
+                      <li>{{ ligne }}</li>
+                    }
+                    @for (ligne of destinataire.demandes; track ligne) {
+                      <li class="publication-demande">{{ ligne }}</li>
+                    }
+                  </ul>
+                </td>
+                <td class="publication-confirmation">{{ confirmationOf(destinataire) }}</td>
+              </tr>
+            }
+          </tbody>
+        </table>
+        @if (rows().length === 0) {
+          <p class="publication-note" i18n="@@publication.table.vide">
+            Le filtre masque toutes les lignes : ces personnes seront prévenues quand même.
+          </p>
+        }
+        @if (preview()?.nombreConcernes !== notifiedCount()) {
+          <p class="publication-note" i18n="@@publication.exclusions.rappel">
+            Les personnes décochées ne recevront rien et resteront à prévenir à la prochaine publication.
+          </p>
+        }
       }
     }
   </mat-card-content>

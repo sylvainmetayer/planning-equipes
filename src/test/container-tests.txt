@@ -71,6 +71,7 @@ dev/sylvain/planning/api/ParametresLegauxResourceTest.java
 dev/sylvain/planning/api/PauseResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
 dev/sylvain/planning/api/PlanningResourceTest.java
+dev/sylvain/planning/api/PublicationExclusionTest.java
 dev/sylvain/planning/api/PublicationResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTest.java
 dev/sylvain/planning/api/ReferenceDataResourceTypologiesTest.java

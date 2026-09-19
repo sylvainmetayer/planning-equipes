@@ -64,3 +64,79 @@
   color: var(--mat-sys-on-surface-variant);
   margin: 0 0 0.5rem;
 }
+
+/* The review table read before sending (issue #503).
+
+   One row per person, and the box at the head of the row: the gesture is « je
+   ne préviens pas celle-là ce soir », not « je supprime une ligne ». An
+   unticked row fades instead of disappearing — what one has decided not to do
+   must stay readable until the send. */
+
+.publication-outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0;
+}
+
+.publication-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.publication-table th,
+.publication-table td {
+  text-align: left;
+  vertical-align: top;
+  padding: 0.5rem 0.75rem 0.5rem 0;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.publication-table th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.publication-ligne-exclue {
+  opacity: 0.55;
+}
+
+.publication-ampleur {
+  margin: 0;
+  font-weight: 600;
+}
+
+.publication-reporte,
+.publication-mineur {
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.publication-confirmation {
+  white-space: nowrap;
+  opacity: 0.85;
+}
+
+@media (max-width: 720px) {
+  .publication-table,
+  .publication-table tbody,
+  .publication-table tr,
+  .publication-table td {
+    display: block;
+  }
+
+  .publication-table thead {
+    display: none;
+  }
+
+  .publication-table tr {
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--mat-sys-outline-variant);
+  }
+
+  .publication-table td {
+    border: none;
+    padding: 0.1rem 0;
+  }
+}

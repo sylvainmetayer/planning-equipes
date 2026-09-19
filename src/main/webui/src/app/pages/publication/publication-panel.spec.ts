@@ -21,6 +21,16 @@ type PanelInternals = {
   publish: () => Promise<void>;
   exportGlobalPdf: () => Promise<void>;
   exportBundle: () => Promise<void>;
+  exportDiff: () => Promise<void>;
+  rows: Signal<{ animateurId: string }[]>;
+  minorCount: Signal<number>;
+  notifiedCount: Signal<number>;
+  minorHidden: Signal<boolean>;
+  isExcluded: (animateurId: string) => boolean;
+  toggleExclusion: (animateurId: string, prevenir: boolean) => void;
+  toggleMinorFilter: (masquer: boolean) => void;
+  chooseSort: (tri: 'nom' | 'ampleur') => void;
+  reloadPreview: () => Promise<void>;
 };
 
 describe('PublicationPanel', () => {
@@ -29,6 +39,7 @@ describe('PublicationPanel', () => {
     publish: vi.fn(),
     exportGlobalPdf: vi.fn(),
     exportBundle: vi.fn(),
+    exportPublicationDiff: vi.fn(),
   };
   const planningState = { require: vi.fn() };
   const confirm = { ask: vi.fn() };
@@ -56,6 +67,7 @@ describe('PublicationPanel', () => {
       planningApi.publish,
       planningApi.exportGlobalPdf,
       planningApi.exportBundle,
+      planningApi.exportPublicationDiff,
       planningState.require,
       confirm.ask,
     ]) {
@@ -88,7 +100,7 @@ describe('PublicationPanel', () => {
     planningApi.publish.mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [] });
+          finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [], differes: [] });
         }),
     );
     return { terminer: () => finish() };
@@ -234,6 +246,135 @@ describe('PublicationPanel', () => {
 
       expect(exportBusyChanges.at(-1)).toBe(false);
       expect(messages.at(-1)).toContain('Planning vide.');
+    });
+  });
+
+  /* -------------------------- The review table --------------------------- */
+
+  describe('review table', () => {
+    function destinataire(partiel: Record<string, unknown>): Record<string, unknown> {
+      return {
+        animateurId: 'a1',
+        nomAffiche: 'Alice Martin',
+        email: 'alice@example.org',
+        premiereDiffusion: false,
+        changements: ['samedi 11/07 : Cirque 14h-18h (nouveau)'],
+        demandes: [],
+        ajouts: 1,
+        retraits: 0,
+        deplacements: 0,
+        mineur: false,
+        reporte: false,
+        confirmation: null,
+        confirmeLe: null,
+        ...partiel,
+      };
+    }
+
+    async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
+      planningApi.publicationPreview.mockResolvedValue({
+        ...apercuPret,
+        nombreConcernes: destinataires.length,
+        destinataires,
+      });
+      const panel = createPanel();
+      await vi.waitFor(() => expect(panel.rows()).toHaveLength(destinataires.length));
+      return panel;
+    }
+
+    it('names the deferred people to the server, and nobody else', async () => {
+      confirm.ask.mockResolvedValue(true);
+      planningApi.publish.mockResolvedValue({
+        envoyes: 1,
+        sansEmail: [],
+        echecs: [],
+        differes: ['Bruno Petit'],
+      });
+      const panel = await panelWith([
+        destinataire({}),
+        destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
+      ]);
+
+      panel.toggleExclusion('a2', false);
+      expect(panel.isExcluded('a2')).toBe(true);
+      expect(panel.notifiedCount()).toBe(1);
+
+      await panel.publish();
+
+      expect(planningApi.publish).toHaveBeenCalledExactlyOnceWith(['a2']);
+      expect(messages.at(-1)).toContain('Bruno Petit');
+    });
+
+    /**
+     * The last tick is the one that would publish to nobody: the button has to
+     * be inert before the click, not refused by the server after it.
+     */
+    it('goes inert when every single person has been unticked', async () => {
+      const panel = await panelWith([destinataire({})]);
+
+      panel.toggleExclusion('a1', false);
+
+      expect(panel.notifiedCount()).toBe(0);
+      expect(panel.publishable()).toBe(false);
+    });
+
+    it('folds the minor changes away without excluding them', async () => {
+      const panel = await panelWith([
+        destinataire({}),
+        destinataire({ animateurId: 'a2', mineur: true, ajouts: 0, deplacements: 1 }),
+      ]);
+
+      expect(panel.minorCount()).toBe(1);
+      panel.toggleMinorFilter(true);
+
+      expect(panel.rows()).toHaveLength(1);
+      // Hiding is looking, not deciding: both people are still to be notified.
+      expect(panel.notifiedCount()).toBe(2);
+    });
+
+    it('puts the biggest change first when asked to', async () => {
+      const panel = await panelWith([
+        destinataire({}),
+        destinataire({ animateurId: 'a2', ajouts: 3, retraits: 1 }),
+      ]);
+
+      panel.chooseSort('ampleur');
+
+      expect(panel.rows().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
+    });
+
+    /**
+     * An exclusion only means something about somebody the list still names:
+     * a change undone between two reads must not leave them silently ticked
+     * off for the next publication.
+     */
+    it('drops an exclusion once its person leaves the list', async () => {
+      const panel = await panelWith([
+        destinataire({}),
+        destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
+      ]);
+      panel.toggleExclusion('a2', false);
+
+      planningApi.publicationPreview.mockResolvedValue({
+        ...apercuPret,
+        nombreConcernes: 1,
+        destinataires: [destinataire({})],
+      });
+      await panel.reloadPreview();
+
+      expect(panel.isExcluded('a2')).toBe(false);
+      expect(panel.notifiedCount()).toBe(1);
+    });
+
+    it('downloads the review table without sending anything', async () => {
+      planningApi.exportPublicationDiff.mockResolvedValue('Téléchargement démarré.');
+      const panel = await panelWith([destinataire({})]);
+
+      await panel.exportDiff();
+
+      expect(planningApi.exportPublicationDiff).toHaveBeenCalledOnce();
+      expect(planningApi.publish).not.toHaveBeenCalled();
+      expect(messages.at(-1)).toBe('Téléchargement démarré.');
     });
   });
 });

@@ -51,6 +51,14 @@ export function buildAnimateurSideSections(): HelpSection[] {
               term: $localize`:@@aide.foire.term.envoi:Publier le planning`,
               text: $localize`:@@aide.foire.def.envoi:Le bouton « Publier » de la page Publication porte son décompte : « Publier — 3 personnes concernées ». Il n'écrit qu'aux animateurs dont l'emploi du temps a changé depuis la dernière publication, et le message dit ce qui change pour chacun. Dix corrections d'affilée ne font donc pas dix courriels : elles remplissent une file que vous videz quand vous avez fini. Le compte rendu nomme les animateurs sans adresse et les envois en échec. Sur un gros effectif, l'envoi prend plusieurs dizaines de secondes.`,
             },
+            {
+              term: $localize`:@@aide.foire.term.relecture:Relire la liste avant d'envoyer`,
+              text: $localize`:@@aide.foire.def.relecture:« Voir qui est concerné » ouvre une ligne par personne : ce qui change pour elle, sa dernière confirmation, et une case cochée. Triez par ampleur pour commencer par les plus gros changements, repliez les changements mineurs — même stand, un quart d'heure de décalage au plus — et exportez le tout en CSV pour le relire ailleurs. Le filtre ne décide rien : les lignes repliées partent quand même.`,
+            },
+            {
+              term: $localize`:@@aide.foire.term.differer:Ne pas prévenir quelqu'un ce soir`,
+              text: $localize`:@@aide.foire.def.differer:Décochez une personne et son message est différé, pas perdu : elle ne reçoit rien, et la publication suivante la nomme à nouveau avec l'écart cumulé depuis son dernier message — celui qu'elle a vraiment reçu, pas le plan publié entre-temps. C'est le geste de « je l'appelle d'abord ». Tout décocher est refusé : publier sans prévenir personne n'aurait aucun sens.`,
+            },
           ],
         },
         {

@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -103,6 +104,12 @@ public class PlanPublicationService {
     @Inject
     ConfirmationPlanningService confirmationService;
 
+    @Inject
+    NotifiedPlanRepository notifiedPlans;
+
+    @Inject
+    dev.sylvain.planning.service.journal.JournalActionService journal;
+
     /**
      * One person the next publication would write to, with the exact sentences
      * they would read.
@@ -113,15 +120,40 @@ public class PlanPublicationService {
      *                    pending. Never enough on their own to make somebody a
      *                    recipient unless a decision was taken: nothing decided
      *                    means nothing to announce.
+     * @param ajouts      how many seats are new to them, of the sentences
+     *                    above — counted here rather than parsed from the
+     *                    wording, so the screen can sort on the size of a
+     *                    change without reading French (issue #503)
+     * @param retraits    how many they no longer hold
+     * @param deplacements how many moved stand or hours
+     * @param mineur      every one of their changes is the same vacation
+     *                    sliding on the same stand by at most
+     *                    {@link PublicationDiffService#DECALAGE_MINEUR}, and
+     *                    no échange decision is waiting to be announced:
+     *                    « ces trois-là ne bougent que de dix minutes »
+     * @param reporte     they were deferred by a previous publication and are
+     *                    still owed a message — the écart below is counted
+     *                    from what they really received, not from the last
+     *                    plan published
+     * @param confirmation where their « j'ai lu » stands on the plan they were
+     *                    last sent, {@code null} when they never answered
+     * @param confirmeLe  when they answered it
      */
-    @Schema(requiredProperties = {"premiereDiffusion"})
+    @Schema(requiredProperties = {"premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte"})
     public record DestinatairePublication(
             String animateurId,
             String nomAffiche,
             String email,
             boolean premiereDiffusion,
             List<String> changements,
-            List<String> demandes) {}
+            List<String> demandes,
+            int ajouts,
+            int retraits,
+            int deplacements,
+            boolean mineur,
+            boolean reporte,
+            String confirmation,
+            Instant confirmeLe) {}
 
     /**
      * What the screen shows before anything is sent.
@@ -153,28 +185,38 @@ public class PlanPublicationService {
      *
      * @param sansEmail names of concerned people with no address on their fiche
      * @param echecs    names of concerned people whose mail did not leave
+     * @param differes  names of the people the admin took out of this send.
+     *                  They keep the reference they really received, so they
+     *                  come back in the next count with the écart accumulated
+     *                  since — nothing is lost by deferring somebody
      */
     @Schema(requiredProperties = {"envoyes", "snapshotId"})
     public record RapportPublication(
-            long snapshotId, Instant publieLe, int envoyes, List<String> sansEmail, List<String> echecs) {}
+            long snapshotId,
+            Instant publieLe,
+            int envoyes,
+            List<String> sansEmail,
+            List<String> echecs,
+            List<String> differes) {}
 
     /* ------------------------------- Preview ------------------------------- */
 
     /** Who would be written to, and what they would read. Reads only; sends nothing. */
     public ApercuPublication apercu() {
         PlanningEvenement courant = persistenceService.loadPersistedPlanning();
-        PlanningEvenement publie = planPublieService.planPublie();
         boolean jamaisPublie = planPublieService.jamaisPublie();
         PlanSnapshotService.SnapshotMeta derniere = planPublieService.lastPublication();
 
         Map<String, Identite> identites = identites();
+        Map<String, Long> marqueurs = notifiedPlans.byAnimateur();
         List<ChangementAnimateur> changements = diffService.comparer(
-                PublicationDiffService.vacationsByAnimateur(publie),
+                vacationsNotifiees(marqueurs, identites.keySet()),
                 PublicationDiffService.vacationsByAnimateur(courant),
                 identites,
                 jamaisPublie);
 
-        List<DestinatairePublication> destinataires = assembler(changements, identites);
+        List<DestinatairePublication> destinataires =
+                assembler(changements, identites, traceRepository.deferred(), confirmationService.storedByAnimateur());
         ValidationPrerequisService.ProgressionValidations relecture = prerequisService.progression();
         return new ApercuPublication(
                 jamaisPublie,
@@ -187,13 +229,58 @@ public class PlanPublicationService {
     }
 
     /**
+     * What each person was really told, seat by seat: their own schedule in
+     * the snapshot their marker names, and nothing for somebody who has never
+     * been told anything (issue #503).
+     *
+     * <p>One reference per person rather than one for everybody, because
+     * somebody can be deferred — and comparing a deferred person to a plan
+     * they never received is exactly how their écart disappeared without a
+     * word. Each distinct snapshot is loaded once: an ordinary publication
+     * leaves everybody on the same marker, so this is one read, and it grows
+     * only by the number of people actually carried over.</p>
+     *
+     * <p>An animateur whose fiche is gone is left out, as everywhere else in
+     * this service: there is nobody left to write to.</p>
+     */
+    private Map<String, List<Vacation>> vacationsNotifiees(Map<String, Long> marqueurs, Set<String> connus) {
+        List<Long> references = marqueurs.entrySet().stream()
+                .filter(marqueur -> connus.contains(marqueur.getKey()))
+                .map(Map.Entry::getValue)
+                .distinct()
+                .toList();
+        // Read in one go: each reference used to assemble a whole plan of its
+        // own, re-reading the animateurs, the créneaux, the stands and every
+        // horaire — once per distinct marker.
+        Map<Long, Optional<Map<String, List<Vacation>>>> parSnapshot =
+                planPublieService.vacationsBySnapshot(references);
+        Map<String, List<Vacation>> notifiees = new LinkedHashMap<>();
+        for (Map.Entry<String, Long> marqueur : marqueurs.entrySet()) {
+            if (!connus.contains(marqueur.getKey())) {
+                continue;
+            }
+            // A marker naming a snapshot that is gone leaves no entry at all:
+            // an empty list would claim this person was told they had nothing,
+            // where the truth is that nothing is left to compare against.
+            parSnapshot
+                    .getOrDefault(marqueur.getValue(), Optional.empty())
+                    .ifPresent(vacations ->
+                            notifiees.put(marqueur.getKey(), vacations.getOrDefault(marqueur.getKey(), List.of())));
+        }
+        return notifiees;
+    }
+
+    /**
      * Joins the schedule changes with the échange decisions still to announce.
      * A decision makes somebody a recipient on its own — a refusal changes
      * nothing in the plan, and staying silent about it would leave them
      * waiting for an answer that already exists.
      */
     private List<DestinatairePublication> assembler(
-            List<ChangementAnimateur> changements, Map<String, Identite> identites) {
+            List<ChangementAnimateur> changements,
+            Map<String, Identite> identites,
+            Set<String> differes,
+            Map<String, ConfirmationPlanningRepository.Confirmation> confirmations) {
         Map<String, List<String>> decisions = decisionsByAnimateur();
         Map<String, List<String>> enCours = pendingByAnimateur();
 
@@ -203,15 +290,15 @@ public class PlanPublicationService {
             lignesDemandes.addAll(enCours.getOrDefault(changement.animateurId(), List.of()));
             byAnimateur.put(
                     changement.animateurId(),
-                    new DestinatairePublication(
+                    destinataire(
                             changement.animateurId(),
                             changement.nomAffiche(),
                             changement.email(),
                             changement.premiereDiffusion(),
-                            changement.changements().stream()
-                                    .map(ChangementVacation::libelle)
-                                    .toList(),
-                            lignesDemandes));
+                            changement.changements(),
+                            lignesDemandes,
+                            differes,
+                            confirmations));
         }
         for (Map.Entry<String, List<String>> entree : decisions.entrySet()) {
             if (byAnimateur.containsKey(entree.getKey())) {
@@ -225,18 +312,69 @@ public class PlanPublicationService {
             lignesDemandes.addAll(enCours.getOrDefault(entree.getKey(), List.of()));
             byAnimateur.put(
                     entree.getKey(),
-                    new DestinatairePublication(
+                    destinataire(
                             entree.getKey(),
                             identite.nomAffiche(),
                             identite.email(),
                             false,
                             List.of(),
-                            lignesDemandes));
+                            lignesDemandes,
+                            differes,
+                            confirmations));
         }
         List<DestinatairePublication> destinataires = new ArrayList<>(byAnimateur.values());
         destinataires.sort(
                 (gauche, droite) -> String.CASE_INSENSITIVE_ORDER.compare(gauche.nomAffiche(), droite.nomAffiche()));
         return List.copyOf(destinataires);
+    }
+
+    /**
+     * One row of the review table: the sentences, plus everything the screen
+     * needs to sort and filter them without reading French (issue #503).
+     *
+     * <p>A recipient is « mineur » only when <b>every</b> one of their changes
+     * is one — one added seat among three slides is still a seat they do not
+     * know they hold — and only when nothing else is waiting to be announced:
+     * an échange decision is an answer somebody is waiting for, whatever moved
+     * in the plan.</p>
+     */
+    private DestinatairePublication destinataire(
+            String animateurId,
+            String nomAffiche,
+            String email,
+            boolean premiereDiffusion,
+            List<ChangementVacation> changements,
+            List<String> demandes,
+            Set<String> differes,
+            Map<String, ConfirmationPlanningRepository.Confirmation> confirmations) {
+        int ajouts = countOf(changements, PublicationDiffService.TypeChangement.AJOUT);
+        int retraits = countOf(changements, PublicationDiffService.TypeChangement.RETRAIT);
+        int deplacements = countOf(changements, PublicationDiffService.TypeChangement.DEPLACEMENT);
+        boolean mineur = !changements.isEmpty()
+                && demandes.isEmpty()
+                && !premiereDiffusion
+                && changements.stream().allMatch(PublicationDiffService::isMinor);
+        ConfirmationPlanningRepository.Confirmation confirmation = confirmations.get(animateurId);
+        return new DestinatairePublication(
+                animateurId,
+                nomAffiche,
+                email,
+                premiereDiffusion,
+                changements.stream().map(ChangementVacation::libelle).toList(),
+                demandes,
+                ajouts,
+                retraits,
+                deplacements,
+                mineur,
+                differes.contains(animateurId),
+                confirmation == null ? null : confirmation.statut().name(),
+                confirmation == null ? null : confirmation.confirmeLe());
+    }
+
+    private static int countOf(List<ChangementVacation> changements, PublicationDiffService.TypeChangement type) {
+        return (int) changements.stream()
+                .filter(changement -> changement.type() == type)
+                .count();
     }
 
     /* ------------------------------ Publication ---------------------------- */
@@ -250,12 +388,33 @@ public class PlanPublicationService {
      * fails mid-way leaves a coherent published plan and a trace naming who was
      * missed.</p>
      *
+     * <p><b>Excluding somebody defers their message, it does not drop it</b>
+     * (issue #503). The capture still happens for everybody — the espace
+     * follows the published plan, and leaving one person's espace behind would
+     * need a second published plan, which is exactly the thing ADR 0011
+     * removed. What stays behind is their <b>marker</b>: the plan they were
+     * told about does not move, so the next publication compares their
+     * schedule to what they really received and they come back in the count,
+     * with the écart accumulated since.</p>
+     *
+     * @param exclusions animateur ids the admin took out of this send; ids
+     *                   that are not recipients are ignored rather than
+     *                   refused — the screen may have been read before the
+     *                   last change
      * @throws BusinessError.Conflict while a solve is running, when there is
-     *         nothing persisted to publish, or when nobody is concerned — the
+     *         nothing persisted to publish, when nobody is concerned — that
      *         last one being the point of the feature, not an error to work
-     *         around
+     *         around — or when every single recipient was excluded
      */
     public RapportPublication publier() {
+        return publier(List.of());
+    }
+
+    /**
+     * Same, with the people the admin took out of this send — see the
+     * {@code exclusions} parameter below.
+     */
+    public RapportPublication publier(List<String> exclusions) {
         ApercuPublication apercu = apercu();
         if (apercu.solveEnCours()) {
             throw new BusinessError.Conflict(
@@ -267,10 +426,30 @@ public class PlanPublicationService {
         if (apercu.destinataires().isEmpty()) {
             throw new BusinessError.Conflict("Personne n'est concerné : le planning publié est déjà à jour.");
         }
+        Set<String> demandes = exclusions == null ? Set.of() : new LinkedHashSet<>(exclusions);
+        List<DestinatairePublication> differes = apercu.destinataires().stream()
+                .filter(destinataire -> demandes.contains(destinataire.animateurId()))
+                .toList();
+        List<DestinatairePublication> retenus = apercu.destinataires().stream()
+                .filter(destinataire -> !demandes.contains(destinataire.animateurId()))
+                .toList();
+        if (retenus.isEmpty()) {
+            throw new BusinessError.Conflict(
+                    "Tous les destinataires sont exclus : cette publication ne préviendrait personne.");
+        }
 
-        // The plan the diff was read against, kept before the capture makes
-        // the working plan the published one: a person the band emptied on a
-        // date holds a seat there only in this one, and still has to read why.
+        // The plan each person's diff was read against, kept before the
+        // capture makes the working plan the published one: somebody the band
+        // emptied on a date holds a seat there only in their reference, and
+        // still has to read why. Per person, not global (issue #503): a
+        // deferred recipient is compared to the snapshot they really received,
+        // and reading the global one here would drop the consigne sentence on
+        // exactly the dates only their own reference knows about.
+        Map<String, List<Vacation>> referencesParAnimateur = vacationsNotifiees(
+                notifiedPlans.byAnimateur(),
+                apercu.destinataires().stream()
+                        .map(DestinatairePublication::animateurId)
+                        .collect(Collectors.toSet()));
         PlanningEvenement reference = planPublieService.planPublie();
         PlanSnapshotService.SnapshotMeta meta =
                 snapshotService.capturePubliee("Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
@@ -284,8 +463,8 @@ public class PlanPublicationService {
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
         int envoyes = 0;
-        for (DestinatairePublication destinataire : apercu.destinataires()) {
-            StatutEnvoi statut = send(planning, reference, destinataire);
+        for (DestinatairePublication destinataire : retenus) {
+            StatutEnvoi statut = send(planning, reference, referencesParAnimateur, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
@@ -302,23 +481,57 @@ public class PlanPublicationService {
                     destinataire.demandes(),
                     destinataire.premiereDiffusion()));
         }
+        for (DestinatairePublication differe : differes) {
+            trace.add(new Destinataire(
+                    meta.id(),
+                    differe.animateurId(),
+                    differe.nomAffiche(),
+                    differe.email(),
+                    StatutEnvoi.EXCLU,
+                    envoyeLe,
+                    differe.changements(),
+                    differe.demandes(),
+                    differe.premiereDiffusion()));
+            journal.recordAdminAction("PUBLICATION_DIFFEREE", differe.animateurId());
+        }
         traceRepository.record(meta.id(), trace);
-        demandeEchangeService.markAsCommunicated(decisionsAnnoncees(), envoyeLe);
+        // The marker moves for the people this publication addressed, and for
+        // them only. Somebody it had nothing to say to was told nothing, so
+        // claiming they know this plan would turn their next message from
+        // « voici votre planning » into « votre planning a changé » — and
+        // somebody deferred keeps theirs, which is what brings them back in
+        // the next count with their own écart rather than with nothing.
+        notifiedPlans.mark(
+                retenus.stream().map(DestinatairePublication::animateurId).toList(), meta.id());
+        demandeEchangeService.markAsCommunicated(
+                decisionsAnnoncees(retenus.stream()
+                        .map(DestinatairePublication::animateurId)
+                        .collect(Collectors.toSet())),
+                envoyeLe);
         // Back to NON_VU for the people whose own schedule moved, and for
         // nobody else (issue #293): a recipient who is only being told that an
         // échange was decided reads the same days as before, and asking them to
         // re-confirm an unchanged planning is how a confirmation button becomes
         // a reflex instead of an answer.
-        confirmationService.reset(apercu.destinataires().stream()
+        confirmationService.reset(retenus.stream()
                 .filter(destinataire -> !destinataire.changements().isEmpty())
                 .map(DestinatairePublication::animateurId)
                 .toList());
 
-        return new RapportPublication(meta.id(), meta.publieLe(), envoyes, List.copyOf(sansEmail), List.copyOf(echecs));
+        return new RapportPublication(
+                meta.id(),
+                meta.publieLe(),
+                envoyes,
+                List.copyOf(sansEmail),
+                List.copyOf(echecs),
+                differes.stream().map(DestinatairePublication::nomAffiche).toList());
     }
 
     private StatutEnvoi send(
-            PlanningEvenement planning, PlanningEvenement reference, DestinatairePublication destinataire) {
+            PlanningEvenement planning,
+            PlanningEvenement reference,
+            Map<String, List<Vacation>> referencesParAnimateur,
+            DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
             return StatutEnvoi.SANS_EMAIL;
         }
@@ -334,8 +547,11 @@ public class PlanPublicationService {
                     destinataire.premiereDiffusion(),
                     destinataire.changements(),
                     destinataire.demandes(),
-                    consigneService.lignesJourneesModifiees(
-                            datesConcernees(planning, reference, destinataire.animateurId())));
+                    consigneService.lignesJourneesModifiees(datesConcernees(
+                            planning,
+                            reference,
+                            referencesParAnimateur.get(destinataire.animateurId()),
+                            destinataire.animateurId())));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
@@ -345,13 +561,24 @@ public class PlanPublicationService {
 
     /**
      * The dates {@code animateurId} holds a seat on in either plan — the one
-     * being published or the one it replaces. A consigne on a date the band
-     * emptied for them shows in the second only: they read a bare « vacation
-     * retirée » otherwise, with nothing saying an arrêté decided it.
+     * being published or the one they were last told about. A consigne on a
+     * date the band emptied for them shows in the second only: they read a
+     * bare « vacation retirée » otherwise, with nothing saying an arrêté
+     * decided it.
+     *
+     * @param notifiees the vacations this person was last sent, when a marker
+     *                  names the snapshot they received (issue #503). Their
+     *                  own reference, which a deferred recipient's differs
+     *                  from; {@code null} falls back on the global published
+     *                  plan, which is what the marker means when it is absent
      */
     static List<java.time.LocalDate> datesConcernees(
-            PlanningEvenement planning, PlanningEvenement reference, String animateurId) {
-        return Stream.concat(daysOf(planning, animateurId), daysOf(reference, animateurId))
+            PlanningEvenement planning, PlanningEvenement reference, List<Vacation> notifiees, String animateurId) {
+        Stream<java.time.LocalDate> lues = notifiees == null
+                ? daysOf(reference, animateurId)
+                : notifiees.stream().map(Vacation::date);
+        return Stream.concat(daysOf(planning, animateurId), lues)
+                .filter(java.util.Objects::nonNull)
                 .distinct()
                 .sorted()
                 .toList();
@@ -394,14 +621,17 @@ public class PlanPublicationService {
 
     /**
      * Ids of the decisions this publication is about to announce — only those
-     * it has a line for. An id marked communicated without a line ever having
+     * it has a line for, <b>and</b> only those belonging to somebody it is
+     * actually writing to. An id marked communicated without a line ever having
      * been written would be a decision nobody was told about, and nothing would
-     * ever bring it back.
+     * ever bring it back; a deferred person's decision is exactly that case
+     * (issue #503), so it waits for the publication that carries their
+     * message.
      */
-    private Set<String> decisionsAnnoncees() {
+    private Set<String> decisionsAnnoncees(Set<String> destinataires) {
         Set<String> ids = new LinkedHashSet<>();
         for (DemandeEchange demande : demandeEchangeService.decisionsNonCommuniquees()) {
-            if (libelleDecision(demande) != null) {
+            if (libelleDecision(demande) != null && destinataires.contains(demande.getDemandeurId())) {
                 ids.add(demande.getId());
             }
         }
@@ -494,5 +724,62 @@ public class PlanPublicationService {
                 .findFirst()
                 .map(stand -> stand.getNom())
                 .orElse(standId);
+    }
+
+    /* --------------------------------- CSV --------------------------------- */
+
+    /**
+     * The review table as a file, for the reading that happens away from the
+     * screen (issue #503): « on passe la liste en réunion, on décide qui on
+     * appelle avant d'envoyer ».
+     *
+     * <p>Headers are the field names of the API, not French labels: this file
+     * is read next to the JSON it comes from, and a column called
+     * {@code deplacements} is the same thing in both. The sentences travel in
+     * one cell, separated by {@code |}, because one line per person is what
+     * makes the file sortable in a spreadsheet — which is the whole point of
+     * exporting it.</p>
+     */
+    public static String generateCsv(ApercuPublication apercu) {
+        StringBuilder csv =
+                new StringBuilder("animateurId;nomAffiche;email;premiereDiffusion;reporte;ajouts;retraits;deplacements;"
+                        + "mineur;confirmation;changements;demandes\n");
+        for (DestinatairePublication destinataire : apercu.destinataires()) {
+            csv.append(escape(destinataire.animateurId()))
+                    .append(';')
+                    .append(escape(destinataire.nomAffiche()))
+                    .append(';')
+                    .append(escape(destinataire.email()))
+                    .append(';')
+                    .append(destinataire.premiereDiffusion())
+                    .append(';')
+                    .append(destinataire.reporte())
+                    .append(';')
+                    .append(destinataire.ajouts())
+                    .append(';')
+                    .append(destinataire.retraits())
+                    .append(';')
+                    .append(destinataire.deplacements())
+                    .append(';')
+                    .append(destinataire.mineur())
+                    .append(';')
+                    .append(escape(destinataire.confirmation()))
+                    .append(';')
+                    .append(escape(String.join(" | ", destinataire.changements())))
+                    .append(';')
+                    .append(escape(String.join(" | ", destinataire.demandes())))
+                    .append('\n');
+        }
+        return csv.toString();
+    }
+
+    private static String escape(String valeur) {
+        if (valeur == null) {
+            return "";
+        }
+        if (valeur.contains(";") || valeur.contains("\"") || valeur.contains("\n")) {
+            return "\"" + valeur.replace("\"", "\"\"") + "\"";
+        }
+        return valeur;
     }
 }

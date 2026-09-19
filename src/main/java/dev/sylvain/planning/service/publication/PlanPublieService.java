@@ -1,11 +1,22 @@
 package dev.sylvain.planning.service.publication;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.publication.PublicationDiffService.Vacation;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * The plan the animateurs were sent (issue #245), as opposed to the plan being
@@ -38,6 +49,9 @@ public class PlanPublieService {
     @Inject
     PlanningPersistenceService persistenceService;
 
+    @Inject
+    ReferenceDataService referenceDataService;
+
     /** The last published snapshot's metadata, {@code null} when nothing was ever published. */
     public PlanSnapshotService.SnapshotMeta lastPublication() {
         return snapshotService.lastPublication();
@@ -61,5 +75,100 @@ public class PlanPublieService {
         }
         return persistenceService.assemblerPlanning(
                 detail.affectations().stream().map(PlanSnapshotService::seat).toList());
+    }
+
+    /**
+     * The plan one given snapshot holds, read exactly as {@link #planPublie()}
+     * reads the last published one.
+     *
+     * <p>What the publication diff needs since somebody can be deferred
+     * (issue #503): « ce qu'on a annoncé » is then no longer one reference for
+     * everybody but one per person, and the people carried over from a
+     * previous publication are read against the snapshot they really
+     * received.</p>
+     *
+     * <p>Empty when the snapshot no longer exists — deleted, or purged by the
+     * retention sweep. Not an empty <b>plan</b>, which would claim that person
+     * was told they had nothing: the caller reads the absence as « jamais
+     * prévenu », the only truthful reading once there is nothing left to
+     * compare against.</p>
+     */
+    public Optional<PlanningEvenement> plan(long snapshotId) {
+        PlanSnapshotService.SnapshotDetail detail = snapshotService.load(snapshotId);
+        if (detail == null) {
+            return Optional.empty();
+        }
+        return Optional.of(persistenceService.assemblerPlanning(
+                detail.affectations().stream().map(PlanSnapshotService::seat).toList()));
+    }
+
+    /**
+     * The vacations of several published snapshots at once, keyed by snapshot
+     * then by animateur — what the per-person reference of issue #503 reads.
+     *
+     * <p>Built from the snapshot rows rather than through {@link #plan(long)}:
+     * that one assembles a whole {@link PlanningEvenement}, which re-reads the
+     * animateurs, the créneaux and the stands and resolves every horaire —
+     * once per snapshot. Markers diverge as people are deferred, so the
+     * preview was paying that price as many times as there are distinct
+     * references. The stand names are read once here, and nothing else of the
+     * referential is needed: a vacation is a day, hours and a stand.</p>
+     *
+     * <p>The day and the hours are the snapshot's own, not today's créneau —
+     * which is what « ce qu'on a annoncé » means, and what lets a snapshot
+     * outlive the créneaux it names (issue #576).</p>
+     *
+     * <p>A snapshot that no longer exists maps to {@link Optional#empty()},
+     * never to an empty map: the caller reads the absence as « jamais
+     * prévenu », where an empty plan would claim the person was told they had
+     * nothing.</p>
+     */
+    public Map<Long, Optional<Map<String, List<Vacation>>>> vacationsBySnapshot(Collection<Long> snapshotIds) {
+        Map<Long, Optional<Map<String, List<Vacation>>>> parSnapshot = new LinkedHashMap<>();
+        if (snapshotIds.isEmpty()) {
+            return parSnapshot;
+        }
+        Map<String, String> nomsDeStand = new HashMap<>();
+        for (Stand stand : referenceDataService.listStands()) {
+            nomsDeStand.put(stand.getId(), stand.getNom());
+        }
+        for (Long id : snapshotIds) {
+            if (id == null || parSnapshot.containsKey(id)) {
+                continue;
+            }
+            PlanSnapshotService.SnapshotDetail detail = snapshotService.load(id);
+            parSnapshot.put(id, detail == null ? Optional.empty() : Optional.of(vacations(detail, nomsDeStand)));
+        }
+        return parSnapshot;
+    }
+
+    private static Map<String, List<Vacation>> vacations(
+            PlanSnapshotService.SnapshotDetail detail, Map<String, String> nomsDeStand) {
+        Map<String, List<Vacation>> parAnimateur = new LinkedHashMap<>();
+        for (PlanSnapshotService.AffectationSnapshot affectation : detail.affectations()) {
+            if (affectation.animateurId() == null || affectation.standId() == null || affectation.date() == null) {
+                continue;
+            }
+            LocalTime debut = heure(affectation.heureDebutEffective(), affectation.heureDebut());
+            LocalTime fin = heure(affectation.heureFinEffective(), affectation.heureFin());
+            if (debut == null || fin == null) {
+                continue;
+            }
+            parAnimateur
+                    .computeIfAbsent(affectation.animateurId(), unused -> new ArrayList<>())
+                    .add(new Vacation(
+                            LocalDate.parse(affectation.date()),
+                            debut,
+                            fin,
+                            affectation.standId(),
+                            nomsDeStand.getOrDefault(affectation.standId(), affectation.standId())));
+        }
+        return parAnimateur;
+    }
+
+    /** The narrowed window when a stand closure recorded one, the vacation's own otherwise. */
+    private static LocalTime heure(String effective, String creneau) {
+        String lue = effective != null ? effective : creneau;
+        return lue == null ? null : LocalTime.parse(lue);
     }
 }

@@ -2298,6 +2298,17 @@
           }
         }
       },
+      "DemandePublication" : {
+        "type" : "object",
+        "properties" : {
+          "exclusions" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "DemandeRevelation" : {
         "type" : "object",
         "properties" : {
@@ -2385,7 +2396,7 @@
       },
       "DestinatairePublication" : {
         "type" : "object",
-        "required" : [ "premiereDiffusion" ],
+        "required" : [ "premiereDiffusion", "ajouts", "retraits", "deplacements", "mineur", "reporte" ],
         "properties" : {
           "animateurId" : {
             "type" : "string"
@@ -2410,6 +2421,30 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "ajouts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "retraits" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "deplacements" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mineur" : {
+            "type" : "boolean"
+          },
+          "reporte" : {
+            "type" : "boolean"
+          },
+          "confirmation" : {
+            "type" : "string"
+          },
+          "confirmeLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -5601,6 +5636,12 @@
             "items" : {
               "type" : "string"
             }
+          },
+          "differes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -6501,7 +6542,7 @@
       },
       "StatutEnvoi" : {
         "type" : "string",
-        "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC" ]
+        "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
       },
       "StatutMcp" : {
         "required" : [ "configuree" ],
@@ -11245,6 +11286,16 @@
     },
     "/api/planning/publication" : {
       "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/DemandePublication"
+              }
+            }
+          },
+          "required" : true
+        },
         "responses" : {
           "200" : {
             "description" : "OK",
@@ -11255,6 +11306,9 @@
                 }
               }
             }
+          },
+          "400" : {
+            "description" : "Bad Request"
           }
         },
         "summary" : "Publier",
@@ -11303,6 +11357,20 @@
           }
         },
         "summary" : "Destinataires",
+        "tags" : [ "Publication Resource" ]
+      }
+    },
+    "/api/planning/publication/export" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "text/csv" : { }
+            }
+          }
+        },
+        "summary" : "Export Csv",
         "tags" : [ "Publication Resource" ]
       }
     },

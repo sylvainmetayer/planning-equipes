@@ -9,12 +9,14 @@ import {
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
-import { ApercuPublication } from '../../core/models';
+import { ApercuPublication, DestinatairePublication } from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import {
   libelleDernierePublication,
@@ -23,7 +25,20 @@ import {
   resumePublication,
 } from '../../core/publication';
 import { SolverJobService } from '../../core/solver-job.service';
+import {
+  currentViewParams,
+  keepViewInQueryParams,
+  optionalParam,
+} from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import {
+  changeSummary,
+  confirmationLabel,
+  filterRecipients,
+  readRecipientSort,
+  sortRecipients,
+  RecipientSort,
+} from './publication-diff';
 
 /**
  * What leaves the application once the planning is good enough: the documents
@@ -38,7 +53,15 @@ import { ConfirmService } from '../../shared/confirm-dialog';
  */
 @Component({
   selector: 'app-publication-panel',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule, MatTooltipModule],
+  imports: [
+    MatButtonModule,
+    MatButtonToggleModule,
+    MatCardModule,
+    MatCheckboxModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+  ],
   templateUrl: './publication-panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -46,6 +69,7 @@ export class PublicationPanel {
   private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
+  private readonly params = currentViewParams();
 
   /** The line the page shows in its output panel: a sentence, a summary, or an error. */
   readonly reported = output<string>();
@@ -78,6 +102,38 @@ export class PublicationPanel {
    */
   protected readonly recipientsInFlight = signal(0);
   protected readonly listOpen = signal(false);
+
+  /**
+   * The order and the filter of the review table live in the URL (ADR 0012):
+   * « regarde cette liste, triée par ampleur » is a link, and a refresh in the
+   * middle of a review restores the screen it interrupted.
+   */
+  protected readonly sortOrder = signal<RecipientSort>(readRecipientSort(this.params.get('tri')));
+  protected readonly minorHidden = signal(this.params.get('mineurs') === 'masques');
+
+  /**
+   * Who the admin took out of this send. Not view state and deliberately not
+   * in the URL: it is a decision about to be carried out, not a way of looking
+   * at the list, and a shared link that silently carried somebody's exclusion
+   * would be the worst possible thing to paste into a chat.
+   */
+  private readonly excluded = signal<ReadonlySet<string>>(new Set());
+
+  protected readonly rows = computed(() =>
+    sortRecipients(
+      filterRecipients(this.preview()?.destinataires ?? [], this.minorHidden()),
+      this.sortOrder(),
+    ),
+  );
+
+  /** How many rows the filter is currently folding away — said, so nothing hides silently. */
+  protected readonly minorCount = computed(
+    () => (this.preview()?.destinataires ?? []).filter((each) => each.mineur).length,
+  );
+
+  protected readonly notifiedCount = computed(
+    () => (this.preview()?.nombreConcernes ?? 0) - this.excluded().size,
+  );
   protected readonly publishLabel = computed(() => libellePublier(this.preview()));
   protected readonly unavailableReason = computed(() => raisonIndisponible(this.preview()));
   protected readonly lastPublication = computed(() =>
@@ -99,11 +155,57 @@ export class PublicationPanel {
 
   protected readonly publishable = computed(() => {
     const preview = this.preview();
-    return !!preview && preview.nombreConcernes > 0 && !preview.solveEnCours && !preview.planVide;
+    return !!preview && this.notifiedCount() > 0 && !preview.solveEnCours && !preview.planVide;
   });
 
   constructor() {
+    keepViewInQueryParams(() => ({
+      tri: optionalParam(this.sortOrder() === 'nom' ? null : this.sortOrder()),
+      mineurs: this.minorHidden() ? 'masques' : null,
+    }));
     void this.reloadPreview();
+  }
+
+  protected isExcluded(animateurId: string): boolean {
+    return this.excluded().has(animateurId);
+  }
+
+  protected toggleExclusion(animateurId: string, prevenir: boolean): void {
+    const excluded = new Set(this.excluded());
+    if (prevenir) {
+      excluded.delete(animateurId);
+    } else {
+      excluded.add(animateurId);
+    }
+    this.excluded.set(excluded);
+  }
+
+  protected changeSummaryOf(destinataire: DestinatairePublication): string {
+    return changeSummary(destinataire);
+  }
+
+  protected confirmationOf(destinataire: DestinatairePublication): string {
+    return confirmationLabel(destinataire, intlLocale());
+  }
+
+  protected chooseSort(sort: RecipientSort): void {
+    this.sortOrder.set(sort);
+  }
+
+  protected toggleMinorFilter(masquer: boolean): void {
+    this.minorHidden.set(masquer);
+  }
+
+  /** The same table as a file, for the reading that happens away from the screen. */
+  protected async exportDiff(): Promise<void> {
+    this.setExportBusy(true);
+    try {
+      this.reported.emit(await this.planningApi.exportPublicationDiff());
+    } catch (error) {
+      this.reported.emit(errorPrefix(error));
+    } finally {
+      this.setExportBusy(false);
+    }
   }
 
   /**
@@ -156,8 +258,11 @@ export class PublicationPanel {
     if (this.busy() || !this.publishable()) {
       return;
     }
-    const preview = this.preview();
-    const count = preview ? preview.nombreConcernes : 0;
+    const excluded = [...this.excluded()];
+    const count = this.notifiedCount();
+    if (count <= 0) {
+      return;
+    }
     // Raised BEFORE the confirmation, not after it: the button drives it, and
     // leaving it live while the dialog is open lets a second click open a
     // second dialog — two confirmations, two POSTs, two waves of mail. On this
@@ -168,7 +273,10 @@ export class PublicationPanel {
     try {
       const confirmed = await this.confirm.ask({
         title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
-        message: $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`,
+        message:
+          excluded.length === 0
+            ? $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`
+            : $localize`:@@publication.confirmMessageExclusions:${count}:count: personne(s) recevront leur planning à jour. ${excluded.length}:exclus: personne(s) ne recevront rien et resteront à prévenir à la prochaine publication.`,
         confirmLabel: $localize`:@@publication.confirmAction:Publier`,
       });
       if (!confirmed) {
@@ -176,11 +284,12 @@ export class PublicationPanel {
       }
       this.reported.emit($localize`:@@publication.enCours:Publication du planning...`);
       try {
-        const report = await this.planningApi.publish();
+        const report = await this.planningApi.publish(excluded);
         const summary = resumePublication(report);
         this.reported.emit(
           summary.details ? `${summary.titre} — ${summary.details}` : summary.titre,
         );
+        this.excluded.set(new Set());
         this.listOpen.set(false);
       } catch (error) {
         this.reported.emit(errorPrefix(error));
@@ -199,7 +308,13 @@ export class PublicationPanel {
    */
   async reloadPreview(): Promise<void> {
     try {
-      this.preview.set(await this.planningApi.publicationPreview());
+      const apercu = await this.planningApi.publicationPreview();
+      // An exclusion only means something about somebody the list still names:
+      // a person whose change was undone between two reads must not stay
+      // silently ticked off for the next publication.
+      const recipients = new Set(apercu.destinataires.map((each) => each.animateurId));
+      this.excluded.set(new Set([...this.excluded()].filter((id) => recipients.has(id))));
+      this.preview.set(apercu);
     } catch {
       // The block stays silent rather than announcing a count it did not read.
       this.preview.set(null);
