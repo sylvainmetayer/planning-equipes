@@ -237,4 +237,54 @@ class PlanningServiceVerrouillageTest {
         assertThat(postes.get(0).getAnimateur()).isNull();
         assertThat(postes.get(0).isVerrouille()).isFalse();
     }
+
+    /**
+     * A locked day must not gain anybody. An empty renfort is the one empty
+     * seat a lock may freeze (issue #505): nobody owes it, so freezing it
+     * costs no seat, where leaving it free would let the next solve add a
+     * reinforcement to a day the lock declared settled.
+     */
+    @Test
+    void anEmptyRenfortOfALockedDayStaysEmptyAndPinned() {
+        PosteAffectation du = poste("poste-0", standA, matinJ1);
+        PosteAffectation renfortDuJourVerrouille = poste("poste-1", standA, matinJ1);
+        renfortDuJourVerrouille.setOptionnel(true);
+        PosteAffectation renfortLibre = poste("poste-2", standA, matinJ2);
+        renfortLibre.setOptionnel(true);
+        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.JOUR);
+        verrouillage.setJour(J1);
+
+        ProblemBuilder.applyVerrouillages(
+                List.of(du, renfortDuJourVerrouille, renfortLibre),
+                animateurs,
+                List.of(verrouillage),
+                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1")));
+
+        assertThat(du.isVerrouille()).isTrue();
+        assertThat(du.getAnimateur()).isEqualTo(alice);
+        assertThat(renfortDuJourVerrouille.isVerrouille()).isTrue();
+        assertThat(renfortDuJourVerrouille.getAnimateur()).isNull();
+        // A renfort of an unlocked day stays free, as any other seat there.
+        assertThat(renfortLibre.isVerrouille()).isFalse();
+    }
+
+    /**
+     * An ordinary empty seat is never pinned: it is owed, and pinning a hole
+     * would make it permanently unfillable.
+     */
+    @Test
+    void anEmptyOwedSeatOfALockedDayStaysFree() {
+        PosteAffectation vide = poste("poste-0", standB, matinJ1);
+        VerrouillagePlanning verrouillage = verrou(TypeVerrouillage.JOUR);
+        verrouillage.setJour(J1);
+
+        ProblemBuilder.applyVerrouillages(
+                List.of(vide),
+                animateurs,
+                List.of(verrouillage),
+                Map.of(PlanningPersistenceService.standCreneauKey("STAND-A", 1L), List.of("A1")));
+
+        assertThat(vide.isVerrouille()).isFalse();
+        assertThat(vide.getAnimateur()).isNull();
+    }
 }

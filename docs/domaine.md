@@ -191,6 +191,9 @@ Trois conséquences à connaître :
 - **la recherche de faisabilité ne les voit pas** — ni ses sélecteurs, ni le
   ruine-reconstruit, ni la chaîne de relogement. Sans cela le festival hivernal
   cessait d'atteindre zéro dur ;
+- **un verrouillage fige le renfort vide qu'il couvre** : un siège vide n'est
+  jamais épinglé, mais une journée verrouillée gagnerait sinon le renfort que
+  la résolution suivante y poserait ;
 - un renfort vide n'est un manque **pour aucun écran** : diagnostic, fragilité,
   besoin en animateurs, validation d'une journée, mode jour J et PDF global
   l'excluent tous.
