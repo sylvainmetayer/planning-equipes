@@ -102,7 +102,7 @@ describe('EspacePlanningPage — les trois onglets', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function textOf(): string {
     return racine().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -161,7 +161,7 @@ describe('EspacePlanningPage — les trois onglets', () => {
     expect(racine().querySelector('.espace-equipe')).toBeNull();
   });
 
-  /** Chaque puce est un vrai bouton, et son libellé complet se lit à la voix. */
+  /** Every chip is a real button, and its whole label is read out loud. */
   it("couvre tous les jours de l'édition, repos compris, et marque aujourd'hui", () => {
     expect(bande()).toHaveLength(4);
     expect(bande()[3].classList).toContain('espace-bande-jour-repos');
@@ -195,11 +195,11 @@ describe('EspacePlanningPage — les trois onglets', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('Kubb');
+    expect(textOf()).toContain('Kubb');
     expect(bande()[2].classList).toContain('espace-bande-jour-actif');
   });
 
-  /** Avant l'événement, il n'y a pas d'« aujourd'hui » : la bande ouvre au début. */
+  /** Before the event there is no today, so the day strip opens on the first day. */
   it("ouvre sur le premier jour avant l'événement", async () => {
     await rendre(troisJours, { quand: new Date(2026, 5, 1, 9, 0) });
 
@@ -221,7 +221,7 @@ describe('EspacePlanningPage — les trois onglets', () => {
     expect(racine().querySelector('.espace-journee')).not.toBeNull();
   });
 
-  /* ----------------------------- Aperçu ----------------------------- */
+  /* --------------------------- The « Aperçu » tab --------------------------- */
 
   it('résume le planning en quatre chiffres et une ligne par jour', async () => {
     await cliquerOnglet('Aperçu');
@@ -229,7 +229,7 @@ describe('EspacePlanningPage — les trois onglets', () => {
     const chiffres = Array.from(racine().querySelectorAll('.espace-stats dd')).map((each) =>
       each.textContent!.trim(),
     );
-    // 2 h + 2 h + 4 h, trois créneaux, trois stands, trois jours travaillés.
+    // 2 h + 2 h + 4 h, three timeslots, three stands, three worked days.
     expect(chiffres).toEqual(['8', '3', '3', '3']);
     expect(racine().querySelectorAll('.espace-frise-ligne')).toHaveLength(4);
   });
@@ -240,10 +240,10 @@ describe('EspacePlanningPage — les trois onglets', () => {
     const barres = Array.from(racine().querySelectorAll('.espace-frise-barre'));
     expect(barres[0].classList).toContain(typologieColorClass('CONSTRUCTION'));
     expect(barres[2].classList).toContain(typologieColorClass('EXTERIEUR'));
-    // Et la légende nomme ce que la couleur montre : la couleur seule n'est
-    // jamais une information (WCAG 1.4.1).
-    expect(texte()).toContain('Jeux de construction');
-    expect(texte()).toContain('Jeux extérieurs');
+    // And the legend names what the colour shows: colour alone is never an
+    // information carrier (WCAG 1.4.1).
+    expect(textOf()).toContain('Jeux de construction');
+    expect(textOf()).toContain('Jeux extérieurs');
   });
 
   it('ouvre la journée touchée dans l’onglet Jour', async () => {
@@ -253,10 +253,10 @@ describe('EspacePlanningPage — les trois onglets', () => {
     fixture.detectChanges();
 
     expect(racine().querySelector('.espace-journee')).not.toBeNull();
-    expect(texte()).toContain('Kubb');
+    expect(textOf()).toContain('Kubb');
   });
 
-  /* -------------------------- Coéquipiers --------------------------- */
+  /* ------------------------ The « Coéquipiers » tab ------------------------ */
 
   it('classe les coéquipiers par nombre de créneaux partagés', async () => {
     await rendre(
@@ -285,18 +285,18 @@ describe('EspacePlanningPage — les trois onglets', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('Zoé Durand');
-    expect(texte()).not.toContain('Alice Martin');
+    expect(textOf()).toContain('Zoé Durand');
+    expect(textOf()).not.toContain('Alice Martin');
 
     champ.value = 'Bernard';
     champ.dispatchEvent(new Event('input'));
     await fixture.whenStable();
     fixture.detectChanges();
 
-    expect(texte()).toContain('Personne avec ce nom dans votre planning');
+    expect(textOf()).toContain('Personne avec ce nom dans votre planning');
   });
 
-  /* ------------------ Ce qui ne devait pas disparaître ------------------ */
+  /* ------------------ What was not meant to disappear ------------------ */
 
   it('garde le bouton d’échange sous les trois onglets', async () => {
     for (const onglet of ['Jour', 'Aperçu', 'Coéquipiers']) {
@@ -308,13 +308,13 @@ describe('EspacePlanningPage — les trois onglets', () => {
   });
 
   /**
-   * S'abonner avant la publication est le bon geste : le flux se remplit tout
-   * seul. Un espace vide ne doit donc pas cacher la bande.
+   * Subscribing before the publication is the right move: the feed fills up on
+   * its own. An empty espace must therefore not hide the subscription band.
    */
   it("offre l'abonnement même quand rien n'est encore publié", async () => {
     await rendre(view({ publieLe: null, postes: [], joursRepos: [] }));
 
-    expect(texte()).toContain('Aucune affectation pour le moment');
+    expect(textOf()).toContain('Aucune affectation pour le moment');
 
     await cliquerOnglet('Aperçu');
     expect(racine().querySelector('.espace-agenda-abonnement')).not.toBeNull();

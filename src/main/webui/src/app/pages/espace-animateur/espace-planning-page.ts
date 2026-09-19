@@ -29,14 +29,8 @@ import { lienCarte } from './lien-carte';
 import { bandeLabel } from '../../core/consigne-wording';
 import { typologieColorClass } from '../../core/typologie-colors';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import {
-  axeFrise,
-  heuresDuJour,
-  legendeTypologies,
-  lignesFrise,
-  statsPlanning,
-} from './espace-apercu';
-import { filtrerCoequipiers, vueCoequipiers } from './espace-coequipiers';
+import { axeFrise, dayHours, legendeTypologies, lignesFrise, statsPlanning } from './espace-apercu';
+import { filterCoequipiers, coequipiersView } from './espace-coequipiers';
 import { OngletEspace, readOngletEspace } from './espace-onglets';
 
 /**
@@ -325,9 +319,7 @@ export class EspacePlanningPage {
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'jour' ? null : this.onglet(),
       jour:
-        this.jourAffiche()?.date === this.jourParDefaut()
-          ? null
-          : (this.jourAffiche()?.date ?? null),
+        this.jourAffiche()?.date === this.defaultDay() ? null : (this.jourAffiche()?.date ?? null),
     }));
   }
 
@@ -341,7 +333,7 @@ export class EspacePlanningPage {
    * left to name, and an empty strip would be the answer to a planning that
    * still exists.
    */
-  protected readonly jourParDefaut = computed(() => {
+  protected readonly defaultDay = computed(() => {
     const jours = this.jours();
     if (jours.length === 0) {
       return null;
@@ -358,7 +350,7 @@ export class EspacePlanningPage {
     const demande = this.jourChoisi();
     return (
       jours.find((jour) => jour.date === demande) ??
-      jours.find((jour) => jour.date === this.jourParDefaut()) ??
+      jours.find((jour) => jour.date === this.defaultDay()) ??
       null
     );
   });
@@ -368,7 +360,7 @@ export class EspacePlanningPage {
   }
 
   /** Opens a day in the « Jour » tab — what touching a row of the frieze does. */
-  protected ouvrirJour(date: string): void {
+  protected openDay(date: string): void {
     this.choisirJour(date);
     this.onglet.set('jour');
   }
@@ -387,7 +379,7 @@ export class EspacePlanningPage {
   protected readonly bandeJours = computed(() =>
     this.jours().map((jour) => ({
       date: jour.date,
-      heures: heuresDuJour(jour),
+      heures: dayHours(jour),
       repos: jour.repos || jour.postes.length === 0,
       aujourdhui: jour.date === this.repere()?.aujourdhui,
       consigne: this.datesSousConsigne().has(jour.date),
@@ -400,7 +392,7 @@ export class EspacePlanningPage {
   );
 
   /** The consigne of the day on screen, `null` when its hours are the usual ones. */
-  protected readonly consigneDuJour = computed(() => {
+  protected readonly consigneOfDay = computed(() => {
     const date = this.jourAffiche()?.date;
     return this.consignes().find((consigne) => consigne.date === date) ?? null;
   });
@@ -416,13 +408,13 @@ export class EspacePlanningPage {
    */
   private readonly postesTermines = computed(() => {
     const repere = this.repere();
-    const tous = this.jours().flatMap((jour) => jour.postes);
+    const all = this.jours().flatMap((jour) => jour.postes);
     if (!repere) {
       return new Set<PosteAnimateurView>();
     }
     const premierVivant = repere.enCours ?? repere.prochain;
-    const limite = premierVivant ? tous.indexOf(premierVivant) : tous.length;
-    return new Set(tous.slice(0, Math.max(limite, 0)));
+    const limite = premierVivant ? all.indexOf(premierVivant) : all.length;
+    return new Set(all.slice(0, Math.max(limite, 0)));
   });
 
   /** True for a seat already over — the card is faded, never dropped. */
@@ -430,7 +422,7 @@ export class EspacePlanningPage {
     return this.postesTermines().has(poste);
   }
 
-  protected isPosteEnCours(poste: PosteAnimateurView): boolean {
+  protected isPosteOngoing(poste: PosteAnimateurView): boolean {
     return poste === this.repere()?.enCours;
   }
 
@@ -467,19 +459,19 @@ export class EspacePlanningPage {
 
   protected readonly recherche = signal('');
 
-  private readonly vueEquipe = computed(() => vueCoequipiers(this.jours()));
+  private readonly teamView = computed(() => coequipiersView(this.jours()));
 
   protected readonly coequipiers = computed(() =>
-    filtrerCoequipiers(this.vueEquipe().coequipiers, this.recherche()),
+    filterCoequipiers(this.teamView().coequipiers, this.recherche()),
   );
 
-  protected readonly affluences = computed(() => this.vueEquipe().affluences);
+  protected readonly affluences = computed(() => this.teamView().affluences);
 
   /* ----------------------------- Shared helpers ----------------------------- */
 
   /** Hours worked on a day, as the day title and the frieze both print them. */
-  protected heuresDuJour(jour: JourPlanning): number {
-    return heuresDuJour(jour);
+  protected dayHours(jour: JourPlanning): number {
+    return dayHours(jour);
   }
 
   /**
@@ -507,8 +499,8 @@ export class EspacePlanningPage {
    * contains. They are read where they are taken — under the shift they cut
    * into — rather than gathered at the top of the day.
    */
-  protected pausesDansLePoste(jour: JourPlanning, poste: PosteAnimateurView): PauseAnimateurView[] {
-    return jour.pauses.filter((pause) => this.tombeDans(pause, poste));
+  protected pausesWithinPoste(jour: JourPlanning, poste: PosteAnimateurView): PauseAnimateurView[] {
+    return jour.pauses.filter((pause) => this.fallsWithin(pause, poste));
   }
 
   /**
@@ -521,11 +513,11 @@ export class EspacePlanningPage {
    */
   protected pausesOrphelines(jour: JourPlanning): PauseAnimateurView[] {
     return jour.pauses.filter(
-      (pause) => !jour.postes.some((poste) => this.tombeDans(pause, poste)),
+      (pause) => !jour.postes.some((poste) => this.fallsWithin(pause, poste)),
     );
   }
 
-  private tombeDans(pause: PauseAnimateurView, poste: PosteAnimateurView): boolean {
+  private fallsWithin(pause: PauseAnimateurView, poste: PosteAnimateurView): boolean {
     const debut = this.heure(poste.heureDebut);
     const fin = this.heure(poste.heureFin);
     return (

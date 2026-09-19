@@ -146,7 +146,7 @@
             @if (jour.repos || jour.postes.length === 0) {
               <ng-container i18n="@@espace.planning.jourRepos">Repos</ng-container>
             } @else {
-              <ng-container i18n="@@espace.planning.jourResume">{{ jour.postes.length }} créneau(x) · {{ heuresDuJour(jour) }} h</ng-container>
+              <ng-container i18n="@@espace.planning.jourResume">{{ jour.postes.length }} créneau(x) · {{ dayHours(jour) }} h</ng-container>
             }
           </span>
         </h2>
@@ -181,7 +181,7 @@
           }
         }
 
-        @if (consigneDuJour(); as consigne) {
+        @if (consigneOfDay(); as consigne) {
           <p class="espace-consigne" role="status">
             <mat-icon inline>gavel</mat-icon>
             <span i18n="@@espace.planning.consigneDuJour">Horaires modifiés : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
@@ -201,7 +201,7 @@
             <mat-card-content>
               <p class="espace-poste-entete">
                 <span class="espace-poste-horaire">{{ heure(poste.heureDebut) }} &rarr; {{ heure(poste.heureFin) }}</span>
-                @if (isPosteEnCours(poste)) {
+                @if (isPosteOngoing(poste)) {
                   <span class="espace-poste-badge espace-poste-badge-encours" i18n="@@espace.planning.badgeEnCours">En cours</span>
                 } @else if (isPosteTermine(poste)) {
                   <span class="espace-poste-badge" i18n="@@espace.planning.badgeTermine">Terminé</span>
@@ -235,7 +235,7 @@
             </mat-card-content>
           </mat-card>
 
-          @for (pause of pausesDansLePoste(jour, poste); track pause.standId + '-' + pause.heureLimite) {
+          @for (pause of pausesWithinPoste(jour, poste); track pause.standId + '-' + pause.heureLimite) {
             <p class="espace-pause">
               <mat-icon inline>free_breakfast</mat-icon>
               <span i18n="@@espace.planning.pause">Pause de {{ pause.debut.slice(0, 5) }} à {{ pause.fin.slice(0, 5) }}, sur {{ pause.standNom }}</span>
@@ -340,7 +340,7 @@
                 [class.espace-frise-aujourdhui]="ligne.aujourdhui">
               <button type="button" class="espace-frise-bouton"
                       [attr.aria-label]="libelleLigneFrise(ligne)"
-                      (click)="ouvrirJour(ligne.date)">
+                      (click)="openDay(ligne.date)">
                 <span class="espace-frise-date">{{ ligne.date | date: 'EEE d' }}</span>
                 <span class="espace-frise-piste">
                   @for (barre of ligne.barres; track barre.standNom + barre.heureDebut) {

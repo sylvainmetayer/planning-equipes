@@ -10,7 +10,7 @@
 import { JourPlanning } from './espace-maintenant';
 
 /** Minutes since midnight, from the `10:00:00` the API sends. `null` when unreadable. */
-export function minutesDeLHeure(heure: string | null | undefined): number | null {
+export function minutesSinceMidnight(heure: string | null | undefined): number | null {
   const lu = /^(\d{2}):(\d{2})/.exec(heure ?? '');
   return lu ? Number(lu[1]) * 60 + Number(lu[2]) : null;
 }
@@ -38,10 +38,10 @@ export interface AxeFrise {
 }
 
 /** The axis a planning with no readable hour falls back on: an ordinary event day. */
-const AXE_PAR_DEFAUT = { debut: 9 * 60, fin: 20 * 60 };
+const DEFAULT_AXE = { debut: 9 * 60, fin: 20 * 60 };
 
 /** Below this, a one-hour shift would fill the whole frieze and say nothing. */
-const AMPLITUDE_MINIMALE = 4 * 60;
+const MIN_AMPLITUDE = 4 * 60;
 
 /**
  * The axis the days are read on: the first start and the last end of the whole
@@ -56,8 +56,8 @@ export function axeFrise(jours: readonly JourPlanning[]): AxeFrise {
   let fin: number | null = null;
   for (const jour of jours) {
     for (const poste of jour.postes) {
-      const depart = minutesDeLHeure(poste.heureDebut);
-      const arrivee = minutesDeLHeure(poste.heureFin);
+      const depart = minutesSinceMidnight(poste.heureDebut);
+      const arrivee = minutesSinceMidnight(poste.heureFin);
       if (depart === null || arrivee === null) {
         continue;
       }
@@ -67,14 +67,14 @@ export function axeFrise(jours: readonly JourPlanning[]): AxeFrise {
   }
   if (debut === null || fin === null) {
     return {
-      ...AXE_PAR_DEFAUT,
-      graduations: graduations(AXE_PAR_DEFAUT.debut, AXE_PAR_DEFAUT.fin),
+      ...DEFAULT_AXE,
+      graduations: graduations(DEFAULT_AXE.debut, DEFAULT_AXE.fin),
     };
   }
   const gauche = Math.floor(debut / 60) * 60;
   let droite = Math.ceil(fin / 60) * 60;
-  if (droite - gauche < AMPLITUDE_MINIMALE) {
-    droite = gauche + AMPLITUDE_MINIMALE;
+  if (droite - gauche < MIN_AMPLITUDE) {
+    droite = gauche + MIN_AMPLITUDE;
   }
   return { debut: gauche, fin: droite, graduations: graduations(gauche, droite) };
 }
@@ -120,16 +120,16 @@ export interface LigneFrise {
 }
 
 /** Hours worked on a day, breaks included — the same reading the stat block prints. */
-export function heuresDuJour(jour: JourPlanning): number {
+export function dayHours(jour: JourPlanning): number {
   return jour.postes.reduce((total, poste) => {
-    const debut = minutesDeLHeure(poste.heureDebut);
-    const fin = minutesDeLHeure(poste.heureFin);
+    const debut = minutesSinceMidnight(poste.heureDebut);
+    const fin = minutesSinceMidnight(poste.heureFin);
     return debut === null || fin === null ? total : total + (finSurLAxe(debut, fin) - debut) / 60;
   }, 0);
 }
 
 /** True for a Monday, read through the calendar rather than through string arithmetic. */
-function estLundi(date: string): boolean {
+function isMonday(date: string): boolean {
   const [annee, mois, jour] = date.split('-').map(Number);
   return new Date(annee, mois - 1, jour).getDay() === 1;
 }
@@ -147,16 +147,16 @@ export function lignesFrise(
   const largeurAxe = axe.fin - axe.debut;
   return jours.map((jour, index) => ({
     date: jour.date,
-    heures: heuresDuJour(jour),
+    heures: dayHours(jour),
     repos: jour.repos || jour.postes.length === 0,
     consigne: datesSousConsigne.has(jour.date),
     aujourdhui: jour.date === aujourdhui,
     // Never on the first row: a separator above the first day separates it
     // from nothing.
-    debutDeSemaine: index > 0 && estLundi(jour.date),
+    debutDeSemaine: index > 0 && isMonday(jour.date),
     barres: jour.postes.flatMap((poste) => {
-      const debut = minutesDeLHeure(poste.heureDebut);
-      const fin = minutesDeLHeure(poste.heureFin);
+      const debut = minutesSinceMidnight(poste.heureDebut);
+      const fin = minutesSinceMidnight(poste.heureFin);
       if (debut === null || fin === null) {
         return [];
       }
@@ -192,34 +192,34 @@ export function statsPlanning(jours: readonly JourPlanning[]): StatsPlanning {
   const stands = new Set<string>();
   let creneaux = 0;
   let heures = 0;
-  let joursTravailles = 0;
+  let workedDays = 0;
   for (const jour of jours) {
     if (jour.postes.length === 0) {
       continue;
     }
-    joursTravailles += 1;
+    workedDays += 1;
     creneaux += jour.postes.length;
-    heures += heuresDuJour(jour);
+    heures += dayHours(jour);
     for (const poste of jour.postes) {
       stands.add(poste.standId);
     }
   }
-  return { heures, creneaux, stands: stands.size, jours: joursTravailles };
+  return { heures, creneaux, stands: stands.size, jours: workedDays };
 }
 
 /** The typologies of a planning, once each, in label order — the frieze's legend. */
 export function legendeTypologies(
   jours: readonly JourPlanning[],
 ): { id: string; libelle: string }[] {
-  const parId = new Map<string, string>();
+  const byId = new Map<string, string>();
   for (const jour of jours) {
     for (const poste of jour.postes) {
       if (poste.typologieId) {
-        parId.set(poste.typologieId, poste.typologieLibelle ?? poste.typologieId);
+        byId.set(poste.typologieId, poste.typologieLibelle ?? poste.typologieId);
       }
     }
   }
-  return [...parId.entries()]
+  return [...byId.entries()]
     .map(([id, libelle]) => ({ id, libelle }))
     .sort((left, right) => left.libelle.localeCompare(right.libelle));
 }
