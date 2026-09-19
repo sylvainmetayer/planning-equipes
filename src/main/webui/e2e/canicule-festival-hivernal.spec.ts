@@ -251,7 +251,10 @@ async function publicationPreview(): Promise<PublicationPreview> {
 
 /** Sends the mails for real: with a PDF per person, it takes tens of seconds. */
 async function publishByApi(): Promise<{ envoyes: number }> {
-  const response = await admin.post('/api/planning/publication', { timeout: 600_000 });
+  const response = await admin.post('/api/planning/publication', {
+    data: { exclusions: [] },
+    timeout: 600_000,
+  });
   expect(response.ok(), await response.text()).toBe(true);
   return (await response.json()) as { envoyes: number };
 }
