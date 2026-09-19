@@ -55,6 +55,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * it crosses midnight. Week-end and public holiday count the whole poste, on
  * the date of its créneau — the same French calendar
  * {@code travailInterditJourFerieMineur} reads.</p>
+ *
+ * <p><b>The hours are amplitude, not travail effectif</b>: a break declared
+ * taken on the post is <em>not</em> deducted here, where the legal caps of
+ * {@code LegalConstraints} do deduct it. What is being shared out fairly is
+ * presence asked for, not the payroll's effective minutes. See
+ * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
+ * l'amplitude ».</p>
  */
 @ApplicationScoped
 public class EquiteService {

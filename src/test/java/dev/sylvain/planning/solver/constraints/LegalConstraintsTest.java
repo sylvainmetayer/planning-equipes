@@ -499,6 +499,122 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- The weekly caps measure travail effectif too (issue #31) -----------
+
+    /** A 14:00-24:00 vacation: ten hours of amplitude in one unbroken stretch. */
+    private static Creneau dixHeures(String id, int jour, LocalDate date) {
+        return creneau(id, jour, date, LocalTime.of(14, 0), LocalTime.of(0, 0));
+    }
+
+    /** The five days D1..D5, all inside 2026-W28, each a ten-hour stretch. */
+    private java.util.List<Object> cinqJoursDixHeures(Animateur animateur) {
+        return java.util.List.of(
+                poste(standStrat, dixHeures("W-J1", 1, D1), animateur),
+                poste(standStrat, dixHeures("W-J2", 2, D2), animateur),
+                poste(standStrat, dixHeures("W-J3", 3, D3), animateur),
+                poste(standStrat, dixHeures("W-J4", 4, D4), animateur),
+                poste(standStrat, dixHeures("W-J5", 5, D5), animateur));
+    }
+
+    /**
+     * Five ten-hour days in one week, the break declared taken on the post:
+     * 50 h of amplitude, 48 h 20 of travail effectif once the five twenty-minute
+     * breaks come off — twenty minutes over the 48 h ceiling, not two hours.
+     *
+     * <p>This is the whole point of the change: the daily cap already read the
+     * day that way, so the two rules used to give contradictory readings of the
+     * same planning, and the weekly one refused plans the daily one allowed.
+     * Without the declaration, nothing is deducted and the full amplitude
+     * counts, which is the protective reading and stays unchanged.</p>
+     */
+    @Test
+    void lePlafondHebdomadaireDeduitLesPausesPrisesSurLePoste() {
+        Animateur majeur = referentMajeur("A1");
+
+        verify("dureeHebdomadaireMax")
+                .given(concat(cinqJoursDixHeures(majeur), pauseSurPoste()))
+                .penalizesBy(20);
+        verify("dureeHebdomadaireMax")
+                .given(concat(cinqJoursDixHeures(majeur), new ParametresLegaux()))
+                .penalizesBy(2 * 60);
+    }
+
+    /**
+     * The deduction is the edition's own break, not the legal floor: at thirty
+     * minutes the same five days count 47 h 30 of travail effectif and the week
+     * is clean.
+     */
+    @Test
+    void laDeductionHebdomadaireLitLaDureeDePauseDeLEdition() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux pauseDeTrente = pauseSurPoste();
+        pauseDeTrente.setDureePauseMajeurMinutes(30);
+
+        verify("dureeHebdomadaireMax")
+                .given(concat(cinqJoursDixHeures(majeur), pauseDeTrente))
+                .penalizesBy(0);
+    }
+
+    /**
+     * A real hole between two vacations is the break, so no stretch is over
+     * six hours and nothing is deducted — at the week exactly as at the day.
+     * Five days of 09:00-13:00 then 14:00-20:00 are ten worked hours each, and
+     * the declaration changes nothing.
+     */
+    @Test
+    void unTrouLegalNeFaitRienDeduireAuNiveauHebdomadaire() {
+        Animateur majeur = referentMajeur("A1");
+        java.util.List<Object> semaineCoupee = new java.util.ArrayList<>();
+        LocalDate[] jours = {D1, D2, D3, D4, D5};
+        for (int i = 0; i < jours.length; i++) {
+            semaineCoupee.add(poste(
+                    standStrat, creneau("WC-M" + i, i + 1, jours[i], LocalTime.of(9, 0), LocalTime.of(13, 0)), majeur));
+            semaineCoupee.add(poste(
+                    standStrat,
+                    creneau("WC-A" + i, i + 1, jours[i], LocalTime.of(14, 0), LocalTime.of(20, 0)),
+                    majeur));
+        }
+
+        verify("dureeHebdomadaireMax")
+                .given(concat(semaineCoupee, pauseSurPoste()))
+                .penalizesBy(2 * 60);
+        verify("dureeHebdomadaireMax")
+                .given(concat(semaineCoupee, new ParametresLegaux()))
+                .penalizesBy(2 * 60);
+    }
+
+    /**
+     * The minors' weekly ceiling reads the same way: four 9 h days are 36 h of
+     * amplitude, one hour over the 35 h of art. L3162-1 — and 34 h of travail
+     * effectif once the four thirty-minute breaks come off.
+     */
+    @Test
+    void lePlafondHebdomadaireDuMineurDeduitAussiLesPausesSurLePoste() {
+        Animateur mineur = mineurDebutant("M1");
+        java.util.List<Object> quatreLonguesJournees = java.util.List.of(
+                poste(standStrat, longDay("WM-J1", 1, D1), mineur),
+                poste(standStrat, longDay("WM-J2", 2, D2), mineur),
+                poste(standStrat, longDay("WM-J3", 3, D3), mineur),
+                poste(standStrat, longDay("WM-J4", 4, D4), mineur));
+
+        verify("dureeHebdomadaireMaxMineur")
+                .given(concat(quatreLonguesJournees, pauseSurPoste()))
+                .penalizesBy(0);
+        verify("dureeHebdomadaireMaxMineur")
+                .given(concat(quatreLonguesJournees, new ParametresLegaux()))
+                .penalizesBy(60);
+    }
+
+    /** The facts of a match, plus the parameters that go with them. */
+    private static Object[] concat(java.util.List<Object> postes, ParametresLegaux parametres) {
+        Object[] facts = new Object[postes.size() + 1];
+        for (int i = 0; i < postes.size(); i++) {
+            facts[i] = postes.get(i);
+        }
+        facts[postes.size()] = parametres;
+        return facts;
+    }
+
     // --- Two consecutive weeks at the cap (issue #593) ---------------------
 
     /**
@@ -570,6 +686,37 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         poste(standStrat, huitHeures("S3", DEUX_SEMAINES_PLUS_TARD), majeur),
                         plafondHuitHeures)
                 .penalizesBy(2);
+    }
+
+    /**
+     * A week is judged full in travail effectif, like the ceiling it borrows
+     * its threshold from. One eight-hour day under a 8 h ceiling is a full week
+     * on amplitude, but only 7 h 40 once the break taken on the post comes off
+     * — so the pair of weeks is no longer a pair. Half an hour more each week,
+     * and the effective load is back at the ceiling and the pair is charged.
+     */
+    @Test
+    void uneSemainePleineSeJugeEnTravailEffectif() {
+        Animateur majeur = referentMajeur("A1");
+        ParametresLegaux plafondSurLePoste = pauseSurPoste();
+        plafondSurLePoste.setDureeHebdomadaireMaxMinutes(8 * 60);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, huitHeures("E1", D1), majeur),
+                        poste(standStrat, huitHeures("E2", SEMAINE_SUIVANTE), majeur),
+                        plafondSurLePoste)
+                .penalizesBy(0);
+
+        verify("dureeHebdomadaireMaxDeuxSemaines")
+                .given(
+                        poste(standStrat, creneau("E3", 1, D1, LocalTime.of(9, 0), LocalTime.of(17, 30)), majeur),
+                        poste(
+                                standStrat,
+                                creneau("E4", 8, SEMAINE_SUIVANTE, LocalTime.of(9, 0), LocalTime.of(17, 30)),
+                                majeur),
+                        plafondSurLePoste)
+                .penalizesBy(1);
     }
 
     /** A minor has their own weekly ceiling (art. L3162-1); this rule is the adults'. */

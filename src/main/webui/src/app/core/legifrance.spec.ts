@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { segmenterArticles, urlLegifrance, URL_CCN_ECLAT } from './legifrance';
+import { segmenterArticles, urlLegifrance } from './legifrance';
 
 describe('urlLegifrance', () => {
   it('points at the article search, which always resolves to the version in force', () => {
@@ -10,10 +10,6 @@ describe('urlLegifrance', () => {
 
   it('normalises the spaced form used when the law is quoted verbatim', () => {
     expect(urlLegifrance('L. 3131-2')).toBe(urlLegifrance('L3131-2'));
-  });
-
-  it('links the convention collective to its ÉCLAT container, not to an article', () => {
-    expect(URL_CCN_ECLAT).toContain('conv_coll');
   });
 });
 

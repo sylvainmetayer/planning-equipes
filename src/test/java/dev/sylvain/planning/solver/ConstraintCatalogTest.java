@@ -94,6 +94,7 @@ class ConstraintCatalogTest {
                         "reposHebdomadaireMinimal",
                         "travailContinuMaxMajeur",
                         "pauseMinimaleEntreVacations",
+                        "pauseSurPosteSansRelais",
                         "coupureRepasObligatoire");
     }
 
@@ -127,7 +128,7 @@ class ConstraintCatalogTest {
                     assertThat(definition.niveau()).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
                     assertThat(definition.categorie()).isEqualTo(ConstraintCatalog.CATEGORIE_QUALITE);
                 })
-                .hasSize(15);
+                .hasSize(14);
 
         // Nothing protected is presented as a dial.
         assertThat(ConstraintCatalog.definitions())

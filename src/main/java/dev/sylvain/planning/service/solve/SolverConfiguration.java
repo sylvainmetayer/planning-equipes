@@ -138,7 +138,8 @@ final class SolverConfiguration {
                         defauts.heureServiceTardif(),
                         defauts.heureServiceMatinal(),
                         defauts.reposSouhaiteApresServiceTardifMinutes(),
-                        defauts.typologiesDistinctesMax());
+                        defauts.typologiesDistinctesMax(),
+                        defauts.joursConsecutifsMax());
     }
 
     /** A {@code HH:mm} property, {@code null} when unset or left blank. */

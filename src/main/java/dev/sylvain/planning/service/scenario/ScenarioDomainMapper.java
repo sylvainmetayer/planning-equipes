@@ -728,7 +728,8 @@ final class ScenarioDomainMapper {
                         : defauts.reposSouhaiteApresServiceTardifMinutes(),
                 dto.typologiesDistinctesMax() != null
                         ? dto.typologiesDistinctesMax()
-                        : defauts.typologiesDistinctesMax()));
+                        : defauts.typologiesDistinctesMax(),
+                dto.joursConsecutifsMax() != null ? dto.joursConsecutifsMax() : defauts.joursConsecutifsMax()));
     }
 
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {

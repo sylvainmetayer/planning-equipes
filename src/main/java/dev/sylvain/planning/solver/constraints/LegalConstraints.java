@@ -6,6 +6,8 @@ import ai.timefold.solver.core.api.score.stream.ConstraintCollectors;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
+import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintCollector;
+import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintStream;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -230,14 +232,7 @@ public final class LegalConstraints {
                     ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
                     ToIntBiFunction<Animateur, LocalDate> cap,
                     int forfait) {
-        return postes.filter(poste -> poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
-                .groupBy(
-                        PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.toList())
-                .join(ParametresLegaux.class)
+        return joursAvecParametres(postes, bracket)
                 .filter((animateur, date, jour, parametres) -> PastSeats.reproachable(jour)
                         && measure.applyAsInt(jour, parametres) > cap.applyAsInt(animateur, date))
                 .penalize(
@@ -327,8 +322,8 @@ public final class LegalConstraints {
      * travail effectif par salarié ne peut excéder dix heures, sauf : »</i>
      * (derogations by the labour inspectorate, emergency, art. L3121-19). None
      * of those derogations is data the application holds, so the cap is applied
-     * unconditionally. The CCN ÉCLAT also retains 10 h of travail effectif per
-     * day <b>[JUR-3 non vérifié — à faire valider sur le texte conventionnel]</b>.</p>
+     * unconditionally. Ten hours is also what the organisation set for its own
+     * editions, so the Code's ceiling and the house rule coincide.</p>
      *
      * <p>Until this constraint existed, the only daily cap in the referential
      * was the minors' one: on {@code scenario-complet.yaml} an adult could hold
@@ -899,9 +894,11 @@ public final class LegalConstraints {
      *
      * <p>Code du travail art. L3121-20 : <i>« Au cours d'une même semaine, la
      * durée maximale hebdomadaire de travail est de quarante-huit heures. »</i>
-     * — disposition d'ordre public. Convention collective ÉCLAT (IDCC 1518)
-     * art. 5.2 retains the same 48 h high-week ceiling
-     * <b>[JUR-6 non vérifié — à faire valider sur le texte conventionnel]</b>. The
+     * — disposition d'ordre public, and the only text this ceiling rests on:
+     * the organisation has confirmed it does not fall under the Convention
+     * collective de l'Animation (ÉCLAT, IDCC 1518), which used to be cited
+     * here at art. 5.2 — an article about rest days, not about hours (the
+     * high week is its art. 5.7.2.3). The
      * effective value is the admin-configurable
      * {@link ParametresLegaux#getDureeHebdomadaireMaxMinutes()}, which the
      * server refuses to set above 48 h.</p>
@@ -919,6 +916,7 @@ public final class LegalConstraints {
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMax"),
                         Animateur::isMajeurOn,
+                        LegalConstraints::effectiveWorkMajeurMinutes,
                         ParametresLegaux::getDureeHebdomadaireMaxMinutes)
                 .asConstraint("dureeHebdomadaireMax");
     }
@@ -942,6 +940,7 @@ public final class LegalConstraints {
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMaxMineur"),
                         Animateur::isMineurOn,
+                        LegalConstraints::effectiveWorkMineurMinutes,
                         ParametresLegaux::getDureeHebdomadaireMaxMineurMinutes)
                 .asConstraint("dureeHebdomadaireMaxMineur");
     }
@@ -976,16 +975,16 @@ public final class LegalConstraints {
      * lookup rather than a scan.</p>
      */
     private Constraint dureeHebdomadaireMaxDeuxSemaines(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMaxDeuxSemaines")
-                .filter(poste -> poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && poste.getCreneau().getDate() != null
-                        && poste.getAnimateur().isMajeurOn(poste.getCreneau().getDate()))
+        return joursAvecParametres(
+                        ConstraintToggleSupport.actif(
+                                constraintFactory.forEach(PosteAffectation.class), "dureeHebdomadaireMaxDeuxSemaines"),
+                        Animateur::isMajeurOn)
                 .groupBy(
-                        PosteAffectation::getAnimateur,
+                        (animateur, date, jour, parametres) -> animateur,
                         ConstraintCollectors.toMap(
-                                poste -> poste.getCreneau().lundiSemaineIso(), WeekLoad::of, WeekLoad::merge))
+                                (animateur, date, jour, parametres) -> Creneau.lundiSemaineIso(date),
+                                (animateur, date, jour, parametres) -> WeekLoad.of(jour, parametres),
+                                WeekLoad::merge))
                 .join(ParametresLegaux.class)
                 .filter((animateur, parSemaine, parametres) ->
                         semainesPleinesConsecutives(parSemaine, parametres.getDureeHebdomadaireMaxMinutes()) > 0)
@@ -1003,8 +1002,9 @@ public final class LegalConstraints {
      */
     record WeekLoad(int minutes, boolean reproachable) {
 
-        static WeekLoad of(PosteAffectation poste) {
-            return new WeekLoad(poste.getDureeEffectiveMinutes(), PastSeats.reproachable(poste));
+        /** One day of that week: its travail effectif, breaks on the post deducted. */
+        static WeekLoad of(List<PosteAffectation> jour, ParametresLegaux parametres) {
+            return new WeekLoad(effectiveWorkMajeurMinutes(jour, parametres), PastSeats.reproachable(jour));
         }
 
         static WeekLoad merge(WeekLoad a, WeekLoad b) {
@@ -1035,26 +1035,93 @@ public final class LegalConstraints {
     }
 
     /**
+     * The days of one animateur, each with its seats and the edition's legal
+     * parameters — the prefix {@link #dailyCap}, {@link #weeklyCap} and
+     * {@link #dureeHebdomadaireMaxDeuxSemaines} share.
+     *
+     * <p><b>Why a day level under the weekly rules.</b> A break taken on the
+     * post is due per <i>stretch</i>, and a stretch never crosses a day here
+     * (a chain over midnight is {@link #reposQuotidienMinimal}'s business), so
+     * the deduction is a daily computation. Summing the week straight off the
+     * flat stream of seats would make every weekly rule re-derive the stretches
+     * of seven days at each move; grouping by day first means a move re-measures
+     * one day and re-adds seven numbers.</p>
+     *
+     * <p>Built once per constraint rather than shared between them:
+     * {@code ConstraintToggleSupport.actif} differs rule by rule, so the
+     * upstream stream is not the same object — three extra group nodes on
+     * groups of a dozen seats. Measured against the same run without them, on
+     * the same machine, same seed: {@code gamme-25} 14 303 against 15 175 move
+     * evaluations per second (−5.7 %), {@code extreme-02} 24 988 against
+     * 25 985 (−3.8 %), {@code festival-hivernal} 5 313 against 5 540
+     * (−4.1 %). The first two end on the same score after the same number of
+     * steps, the third reaches zero hard either way. A few percent, for a
+     * weekly cap that stops contradicting the daily one.</p>
+     *
+     * <p>A seat whose créneau carries no date is dropped, as
+     * {@link #dureeHebdomadaireMaxDeuxSemaines} already did: a day is the
+     * grouping key here, and « no date » is not a day.</p>
+     */
+    private static QuadConstraintStream<Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux>
+            joursAvecParametres(
+                    UniConstraintStream<PosteAffectation> postes, BiPredicate<Animateur, LocalDate> bracket) {
+        return postes.filter(poste -> poste.getAnimateur() != null
+                        && poste.getCreneau() != null
+                        && poste.getCreneau().getDate() != null
+                        && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
+                .groupBy(
+                        PosteAffectation::getAnimateur,
+                        poste -> poste.getCreneau().getDate(),
+                        ConstraintCollectors.toList())
+                .join(ParametresLegaux.class);
+    }
+
+    /**
+     * A week's effective minutes, and how many of its days still hold a seat
+     * ahead of now (ADR 0044) — the aggregate {@link #weeklyCap} groups its
+     * days into. A week is charged as soon as one of its days is; the days
+     * already worked count towards the sum all the same.
+     */
+    private static QuadConstraintCollector<
+                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, ?, PastSeats.Ahead<Long>>
+            chargeSemaine(ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure) {
+        // Long, not int: at this arity `ConstraintCollectors.sum` only offers
+        // the long form — as does `penalize`, so nothing is cast on the way
+        // out either.
+        return ConstraintCollectors.compose(
+                ConstraintCollectors.sum((animateur, date, jour, parametres) -> measure.applyAsInt(jour, parametres)),
+                ConstraintCollectors.sum((animateur, date, jour, parametres) -> PastSeats.reproachable(jour) ? 1L : 0L),
+                PastSeats.Ahead::new);
+    }
+
+    /**
      * A week's effective minutes against the cap the edition sets for one age
      * bracket. Week attribution convention: a créneau is attributed in full to
      * the ISO week of its start date, see {@code Creneau.semaineIso()}.
+     *
+     * <p>The measure is {@code effectiveWork*Minutes}, the very one
+     * {@link #dailyCap} weighs — so a break the organiser declares taken on the
+     * post is deducted from the week exactly as it is from the day. Until this
+     * was so, the two rules read the same planning differently: five days of
+     * 10 h amplitude are 48 h 20 of travail effectif under a declared 30-minute
+     * break, and the weekly rule counted them 50 h and refused the plan. The
+     * over-count was protective, but it contradicted the daily rule's own
+     * arithmetic, and no organiser can act on two contradictory readings. See
+     * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
+     * l'amplitude ».</p>
      */
     private static QuadConstraintBuilder<
                     Animateur, String, PastSeats.Ahead<Long>, ParametresLegaux, HardMediumSoftScore>
             weeklyCap(
                     UniConstraintStream<PosteAffectation> postes,
                     BiPredicate<Animateur, LocalDate> bracket,
+                    ToIntBiFunction<List<PosteAffectation>, ParametresLegaux> measure,
                     ToIntFunction<ParametresLegaux> cap) {
-        return postes.filter(poste -> poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
-                // The hours already worked count; the week is charged only
-                // while one of its seats is still ahead (ADR 0044), folded
-                // next to the sum.
+        return joursAvecParametres(postes, bracket)
                 .groupBy(
-                        PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().semaineIso(),
-                        PastSeats.withAhead(ConstraintCollectors.sum(PosteAffectation::getDureeEffectiveMinutes)))
+                        (animateur, date, jour, parametres) -> animateur,
+                        (animateur, date, jour, parametres) -> Creneau.semaineIso(date),
+                        chargeSemaine(measure))
                 .join(ParametresLegaux.class)
                 .filter((animateur, semaine, duree, parametres) ->
                         duree.ahead() > 0 && duree.value() > cap.applyAsInt(parametres))

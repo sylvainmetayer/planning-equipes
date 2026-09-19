@@ -53,7 +53,8 @@ public class ParametresMcpTools {
 
     @Tool(
             description = "Modifie les paramètres légaux. Seuls les champs fournis sont modifiés. Les plafonds "
-                    + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés au-delà.",
+                    + "d'ordre public (48 h hebdomadaires pour un majeur, 35 h pour un mineur) sont refusés "
+                    + "au-delà, et les planchers de pause (20 min pour un majeur, 30 pour un mineur) en deçà.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -79,6 +80,17 @@ public class ParametresMcpTools {
                                     + "comme un trou entre deux vacations (L3121-16 / L3162-3)",
                             required = false)
                     Boolean pauseSurPoste,
+            @ToolArg(
+                            description = "Durée de la pause légale d'un majeur, en minutes : au moins 20 "
+                                    + "(L3121-16, d'ordre public). C'est elle qui est déduite des plafonds "
+                                    + "quotidien et hebdomadaire quand la pause est prise sur le poste",
+                            required = false)
+                    Integer dureePauseMajeurMinutes,
+            @ToolArg(
+                            description =
+                                    "Durée de la pause légale d'un mineur, en minutes : au moins 30 " + "(L3162-3)",
+                            required = false)
+                    Integer dureePauseMineurMinutes,
             @ToolArg(description = "Durée de la coupure repas, en minutes", required = false)
                     Integer coupureRepasMinutes,
             @ToolArg(description = "Début de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
@@ -113,6 +125,12 @@ public class ParametresMcpTools {
         }
         if (pauseSurPoste != null) {
             parametres.setPauseSurPoste(pauseSurPoste);
+        }
+        if (dureePauseMajeurMinutes != null) {
+            parametres.setDureePauseMajeurMinutes(dureePauseMajeurMinutes);
+        }
+        if (dureePauseMineurMinutes != null) {
+            parametres.setDureePauseMineurMinutes(dureePauseMineurMinutes);
         }
         if (coupureRepasMinutes != null) {
             parametres.setCoupureRepasMinutes(coupureRepasMinutes);
@@ -325,6 +343,8 @@ public class ParametresMcpTools {
                 parametres.getDureeVacationMaxMinutes(),
                 parametres.getReposQuotidienMinimalMinutes(),
                 parametres.isPauseSurPoste(),
+                parametres.getDureePauseMajeurMinutes(),
+                parametres.getDureePauseMineurMinutes(),
                 parametres.getCoupureRepasMinutes(),
                 parametres.getCoupureRepasMidiDebut(),
                 parametres.getCoupureRepasMidiFin(),
@@ -358,6 +378,8 @@ public class ParametresMcpTools {
             int dureeVacationMaxMinutes,
             int reposQuotidienMinimalMinutes,
             boolean pauseSurPoste,
+            int dureePauseMajeurMinutes,
+            int dureePauseMineurMinutes,
             int coupureRepasMinutes,
             LocalTime coupureRepasMidiDebut,
             LocalTime coupureRepasMidiFin,

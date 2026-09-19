@@ -152,6 +152,75 @@ reste donc **hors périmètre, assumé comme tel**.
 > construction. C'est la formulation demandée par l'organisateur, mot pour mot ;
 > un plan qui a besoin d'une minute la trouvera là plutôt qu'ailleurs.
 
+Une semaine se juge **pleine en travail effectif**, pas en amplitude : quand
+l'organisateur déclare la pause prise sur le poste, elle en est déduite, comme
+au plafond quotidien — voir « La durée des pauses » ci-dessous. Les créneaux
+étant toujours en heures entières, « strictement sous 48 h » vaut « 47 h au
+plus », et une marge paramétrable n'aurait de sens que le jour où des
+demi-heures apparaîtraient : il n'y en a pas.
+
+## Le niveau de la règle des jours d'affilée
+
+Deux règles dures garantissent le **jour libre par semaine civile** :
+`maxJoursTravaillesParSemaine` (L3132-1) et `reposHebdomadaireMinimal`
+(L3132-2, 35 h). Elles laissent pourtant passer mardi→dimanche puis
+lundi→samedi — **douze jours d'affilée à zéro écart dur**, chaque semaine
+civile ayant bien son jour libre.
+
+Le plafond de six jours **glissants** est donc une règle à part, et c'est une
+**politique de l'organisateur**, pas une obligation : L3132-1 se lit sur la
+semaine civile (L3121-35), et la Cour de cassation juge que le repos
+hebdomadaire n'a pas à tomber au plus tard après six jours consécutifs
+(Cass. soc. 13 nov. 2025, n° 24-10.733 ; même lecture CJUE C-306/16).
+
+Elle existe sous deux formes, parce qu'un poids ne change jamais le niveau
+d'une règle (`SolverConfiguration.constraintWeightOverrides` mappe sur le
+niveau du catalogue, et `ConstraintToggle` ne porte que `actif`) :
+
+| Règle | Niveau | Par défaut |
+|---|---|---|
+| `maxJoursConsecutifsTravailles` | MEDIUM, dosable | **active**, poids 1 |
+| `maxJoursConsecutifsTravaillesDur` | HARD | **éteinte** |
+
+Les deux partagent leur corps **et leur seuil**, donc ne peuvent pas diverger
+sur ce qu'elles comptent ni sur combien de jours elles laissent passer ; les
+deux peuvent être actives en même temps, ce qui dit « jamais plus de N, et de
+préférence moins ». La forme dure s'allume par l'écran Contraintes, par
+`activer_contrainte` ou par `contraintes.activees` d'un scénario — aucune
+migration, même mécanisme que
+[0041](decisions/0041-encadrement-des-mineurs-eteint-par-defaut.md).
+
+Le seuil lui-même se règle par édition : page Paramètres, carte « Qualité
+d'organisation », champ « Jours travaillés d'affilée »
+(`joursConsecutifsMax`, six par défaut). Il a quitté la constante du
+code parce qu'il ne décide pas du confort mais de la **faisabilité** : la règle
+exige un jour de repos dans *chaque* fenêtre de (seuil + 1) jours, donc un jour
+de plus ou de moins change le nombre de jours-repos à trouver dans la grille.
+Mesuré sur `festival-hivernal` avec la forme dure allumée, même graine :
+
+| Seuil | Résultat |
+|---|---|
+| 6 jours (défaut) | −22 écarts durs après 20 min, 22 sièges vides |
+| 7 jours | −10 après 5 min |
+| **8 jours** | **zéro écart dur en 294 s** |
+
+Autrement dit, sur cette grille la forme dure devient tenable à partir de huit
+jours, et le choix du seuil vaut mieux que le dosage du poids : le poids ne
+peut pas rendre atteignable ce que l'arithmétique interdit.
+
+Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
+`festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
+forme dure tient parfaitement sa promesse, personne au-delà de six jours, et
+laisse **23 sièges vides** : la règle est respectée, le festival ne l'est pas.
+Au dosage livré, la même grille pourvoit tout mais place **48 personnes
+au-delà de six jours, jusqu'à onze d'affilée** — ce n'est pas un défaut du
+solveur, c'est ce que l'événement demande à effectif constant, et l'écran
+Équité le montre colonne « plus longue série » avant la publication. Monter le
+poids à 100 en retire un tiers, sans rien coûter aux autres règles de qualité,
+et ne règle pas le fond. Le protocole complet, la fixture à l'aise (`festival-realiste-canicule`, où la
+forme dure ne coûte rien) et la décision sont dans
+[0045](decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md).
+
 ## La durée des pauses
 
 La pause qui coupe une période de travail continu se règle sur la page
@@ -171,6 +240,55 @@ qu'une application ne doit pas laisser prendre est l'autre.
 Les constantes `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` et
 `PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` restent : elles sont la valeur
 par défaut et la référence de l'article.
+
+Elles se règlent aussi depuis un assistant : `modifier_parametres_legaux`
+(MCP) porte `dureePauseMajeurMinutes` et `dureePauseMineurMinutes`, avec les
+mêmes planchers — voir `docs/mcp.md`.
+
+### Ce qui déduit la pause, et ce qui compte l'amplitude
+
+La pause est du **repos**, pas du travail effectif (art. L3121-1) : quand
+l'organisateur déclare `pauseSurPoste`, elle est **déduite** des plafonds,
+qu'elle soit payée ou non. « Déduite » vaut pour les quatre règles de durée :
+
+| Règle | Ce qu'elle mesure |
+|---|---|
+| `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | travail effectif : amplitude moins les pauses dues sur le poste |
+| `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur` | idem, sommé sur la semaine ISO |
+| `dureeHebdomadaireMaxDeuxSemaines` | idem : une semaine est pleine en effectif |
+
+Les trois règles hebdomadaires sommaient l'amplitude jusqu'à l'issue #31, alors
+que le plafond quotidien déduisait déjà. L'écart allait dans le sens
+protecteur, mais il refusait des plans licites — cinq jours de 10 h d'amplitude
+font 48 h 20 de travail effectif, qui étaient comptées 50 h — et surtout il
+donnait **deux lectures contradictoires du même planning**, dont aucun
+organisateur ne peut rien faire. Le calcul des pauses étant journalier, les
+règles hebdomadaires regroupent désormais les sièges par jour avant de
+regrouper les jours par semaine (`LegalConstraints.joursAvecParametres`).
+
+Un vrai trou entre deux vacations ne fait rien déduire, au niveau hebdomadaire
+comme au quotidien : aucune séquence n'y dépasse six heures, donc aucune pause
+n'y est due sur le poste. C'est le trou lui-même qui est la pause.
+
+**Ce que le niveau intermédiaire coûte**, mesuré contre la même résolution sans
+lui, même machine, même graine : `gamme-25` 14 303 contre 15 175 mouvements
+évalués par seconde (−5,7 %), `extreme-02` 24 988 contre 25 985 (−3,8 %),
+`festival-hivernal` 5 313 contre 5 540 (−4,1 %). Les deux premiers finissent
+sur le même score après le même nombre de pas, le troisième atteint zéro dur
+des deux côtés. Quelques pour cent, pour que le plafond hebdomadaire cesse de
+contredire le quotidien.
+
+**Ailleurs, on compte l'amplitude planifiée, et c'est voulu.** L'écran Heures
+(`PlanningHoursService`, outil `heures_travaillees`), le tableau d'équité
+(`EquiteService`), les KPI (`PlanningKpiService`) et l'analyse d'effectifs
+(`StaffingAnalyzer`) somment la durée des vacations sans retrancher les pauses
+sur le poste. Ce ne sont pas des plafonds légaux : ce sont des heures
+**planifiées**, ce que l'organisateur demande à quelqu'un d'être présent, et
+c'est la grandeur qu'on répartit équitablement et qu'on compare d'une édition à
+l'autre. Heures planifiées et travail effectif sont donc deux nombres
+différents, et il est normal que l'écran Heures affiche un peu plus que ce que
+`dureeHebdomadaireMax` mesure. `StaffingAnalyzer` borne par les heures : il est
+de ce fait pessimiste, donc sans danger.
 
 ## Les seuils de qualité
 
@@ -748,25 +866,69 @@ après-midi entier sur un stand à une place — sept heures seul, une pause due
 à 19 h que personne ne peut couvrir. L'écran Pauses et la page Problèmes le
 signalaient après coup ; le solveur ne l'évitait jamais.
 
-`pauseSurPosteSansRelais` (MEDIUM, « Qualité d'organisation ») coûte un point
-par pause due sans relais à son heure limite : le siège tenu à cet instant
-n'a, sur son stand, aucun autre animateur couvrant toute la pause. Dosée
-comme les autres règles d'organisation : la réponse la moins chère est le
-plus souvent de donner la relève à quelqu'un d'autre, pour que personne
-n'enchaîne sept heures seul, et le score la trouve. Les pauses dues sortent
-de `PauseSurPoste`, que l'écran Pauses lit aussi : les deux ne peuvent pas
-diverger sur ce qui est dû. Muette quand la pause n'est pas déclarée sur le
-poste : la règle légale exige alors un vrai trou, et le juge.
+`pauseSurPosteSansRelais` (**HARD**, « Légal (temps de travail) ») coûte un
+point par pause due sans relais à son heure limite : le siège tenu à cet
+instant n'a, sur son stand, aucun autre animateur couvrant toute la pause. Les
+pauses dues sortent de `PauseSurPoste`, que l'écran Pauses lit aussi : les deux
+ne peuvent pas diverger sur ce qui est dû. Muette quand la pause n'est pas
+déclarée sur le poste : la règle légale exige alors un vrai trou, et le juge.
+
+**Pourquoi en dur, et plus dosée.** Elle a été MEDIUM, et la réponse la moins
+chère — donner la relève à quelqu'un d'autre — était une réponse que le score
+trouvait souvent. Mais un relais qui n'existe pas n'est pas un confort perdu :
+sans personne pour tenir le stand, la personne ne peut pas le quitter, sa
+« pause » reste du travail effectif (art. L3121-1 et L3121-2, et rémunérer la
+pause ne change rien à sa qualification — Cass. soc. 22 mai 2019,
+n° 17-26.914), et les vingt minutes de l'art. L3121-16 ne sont tout simplement
+pas données. Pour un mineur, ce sont les trente minutes et les 4 h 30 de
+l'art. L3162-3, qui sont d'ordre public.
+
+Sous `pauseSurPoste`, cette règle est la **seule** qui les vérifie encore :
+`travailContinuMaxMajeur` et `travailContinuMaxMineur` se taisent, et les
+plafonds quotidien et hebdomadaires déduisent la pause de l'amplitude. La doser
+reviendrait à mettre un prix sur la déduction d'une pause que personne n'a
+prise. La déduction reste inconditionnelle — elle ne regarde pas si un relais
+existe — précisément parce que cette règle-ci garantit qu'il existe : les deux
+décisions ne tiennent qu'ensemble.
+
+Mesuré sur `festival-hivernal` (153 animateurs, 65 stands, `pauseSurPoste:
+true`) : la fixture atteint toujours **zéro écart dur** avec la règle en dur.
+Le durcissement ne rend donc pas infaisable l'édition réelle dont il vient.
+
+Là où il mord, c'est sur un **stand à une seule place tenu plus de six heures
+d'affilée** : personne ne peut relayer, et aucune affectation n'atteint zéro
+dur. C'est le barreau `gamme-30` de la gamme, et c'est le cas que
+l'organisation affirme ne jamais produire. La réponse est de retailler la
+grille ou d'ouvrir une place de plus — pas de baisser un poids, qui n'existe
+plus ici.
+
+**Une pause due dans une séquence déjà écoulée n'est reprochée à personne.**
+Le passé est figé ([0044](decisions/0044-le-passe-est-fige.md)) : ses sièges
+sont épinglés, donc un écart dur posé là ne serait réparable par aucun
+mouvement, et un calcul relancé en cours d'événement n'atteindrait plus jamais
+zéro. La règle regroupe par animateur **et par jour**, et le garde-fou de
+journée ne suffit pas — une journée dont la matinée est derrière nous et qui
+garde un siège le soir répond « oui, il reste quelque chose devant ». C'est
+donc le siège que le relais aurait dû couvrir qui décide.
+
+**Le poids qu'une édition avait posé sur cette règle est effacé** (migration
+V95). Il avait été réglé sur un confort dosable ; il s'appliquerait maintenant
+en `ofHard(poids)`, multipliant un écart dur par une valeur que l'écran
+Contraintes ne montre plus, la molette disparaissant avec le niveau MEDIUM.
+L'absence de ligne vaut « valeur par défaut », soit 1. Les désactivations, elles,
+sont conservées : éteindre la règle reste un geste valable, protégé désormais
+par la confirmation des règles légales.
 
 ### Le dosage et la faisabilité
 
 Un poids fort sur une règle MEDIUM se paie sur la phase de faisabilité, qui
-accepte ses mouvements sur le score entier. Mesuré sur `festival-hivernal` :
-`pauseSurPosteSansRelais` au poids 1, zéro écart dur en 67 s ; au poids 5, la
-même grille finit ses 900 s à **−67 dur**. Le poids 5 est pourtant celui qui
-efface tout relais manquant — mais depuis un plan déjà faisable, à chaud. La
-règle d'usage : atteindre zéro dur au dosage par défaut, puis doser et relancer
-à chaud ; jamais un poids fort dans un départ à froid.
+accepte ses mouvements sur le score entier. Mesuré sur `festival-hivernal`, du
+temps où `pauseSurPosteSansRelais` était dosable : au poids 1, zéro écart dur
+en 67 s ; au poids 5, la même grille finissait ses 900 s à **−67 dur**. Le
+poids 5 était pourtant celui qui effaçait tout relais manquant — mais depuis un
+plan déjà faisable, à chaud. La règle d'usage vaut pour toutes les règles
+MEDIUM : atteindre zéro dur au dosage par défaut, puis doser et relancer à
+chaud ; jamais un poids fort dans un départ à froid.
 
 `coupureRepasPlacementPrefere` départage ensuite 12-13 de 13-14 en pénalisant
 la distance au bout de la fenêtre vers lequel elle penche. **Le midi, c'est le
@@ -993,6 +1155,30 @@ précédent, pas au zéro, et l'aide de l'écran Solveur le dit. Le lever
 demanderait de ne mesurer l'équilibre que sur l'avenir, ce qui inverserait
 la règle — l'animateur déjà chargé hier redeviendrait « à charger » demain.
 
+## La convention collective de l'Animation (ÉCLAT, IDCC 1518)
+
+**Elle ne s'applique pas.** L'organisation a confirmé, lors du cadrage du cadre
+de temps de travail, qu'elle n'en relève pas. Tout ce que cette documentation
+et le code citent est donc le **Code du travail seul**, et la mention « CCN
+Animation ÉCLAT art. 5.2 » qui accompagnait le plafond de 48 h a été retirée :
+elle était fausse deux fois, l'art. 5.2 traitant des jours de repos et la
+semaine haute figurant à l'art. 5.7.2.3 (modulation). Elle subsiste dans le
+commentaire de `V7__parametres_legaux.sql`, et c'est délibéré : une migration
+appliquée ne se modifie pas, son empreinte est gelée
+(`FlywayMigrationsFrozenTest`).
+
+C'est un **fait déclaré, pas une vérification juridique**, et il porte à
+conséquence. Si la convention s'appliquait, deux de ses articles changeraient
+des décisions déjà prises : l'art. 5.3 impose 45 minutes de coupure à toute
+journée de travail quelle que soit sa durée (les 30 minutes retenues sont sous
+ce plancher) et plafonne l'amplitude à 12 h ; l'art. 5.2 donne deux jours de
+repos consécutifs à **tout** salarié, ce qui interdirait mécaniquement les douze
+jours d'affilée et donnerait une base textuelle à la règle ci-dessous. Une
+réserve reste à lever de toute façon : une page Légifrance rendait ces articles
+comme « non en vigueur » alors que les textes consolidés de 2024 les portent
+« en vigueur, étendu ». Le suivi de cette confirmation est tenu hors du dépôt
+public, avec le reste de ce qui touche à l'organisation elle-même.
+
 ## Hors périmètre assumé
 
 Ces obligations sont réelles et **volontairement non implémentées**. Elles sont
@@ -1041,9 +1227,9 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `travailInterditJourFerieMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas travailler un jour férié légal (Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire. |
 | `reposHebdomadaireMineur` | HARD | Légal (mineurs) | Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais ne forment la paire d'aucune des deux. Les dérogations conventionnelles supposent un accord étendu ou une autorisation de l'inspection du travail : elles ne sont pas présumées. |
 | `travailContinuMaxMineur` | HARD | Légal (mineurs) | Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause consécutive de la durée paramétrée est obligatoire, au minimum 30 minutes (Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause prise sur le poste, par relais. |
-| `dureeHebdomadaireMax` | HARD | Légal (temps de travail) | Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, d'ordre public / Convention collective de l'Animation art. 5.2). |
-| `dureeHebdomadaireMaxDeuxSemaines` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas atteindre la durée hebdomadaire maximale sur deux semaines ISO consécutives : 48 h une semaine puis 48 h la suivante est refusé, 47 h puis 48 h reste permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines (Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une seconde constante. |
-| `dureeHebdomadaireMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine (Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les vacances scolaires). |
+| `dureeHebdomadaireMax` | HARD | Légal (temps de travail) | Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, d'ordre public). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites, comme au plafond quotidien. |
+| `dureeHebdomadaireMaxDeuxSemaines` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas atteindre la durée hebdomadaire maximale sur deux semaines ISO consécutives : 48 h une semaine puis 48 h la suivante est refusé, 47 h puis 48 h reste permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines (Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une seconde constante. Une semaine se juge pleine en travail effectif : les pauses prises sur le poste, si l'organisateur les déclare, en sont déduites. |
+| `dureeHebdomadaireMaxMineur` | HARD | Légal (mineurs) | Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine (Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés pendant les vacances scolaires). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites, comme au plafond quotidien. |
 | `dureeQuotidienneMaxMajeur` | HARD | Légal (temps de travail) | Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée (Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur les déclare, sont déduites. |
 | `reposQuotidienMinimal` | HARD | Légal (temps de travail) | Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : 11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans (art. L3164-1). |
 | `maxJoursTravaillesParSemaine` | HARD | Légal (temps de travail) | Aucun animateur ne peut travailler plus de six jours dans la même semaine (Code du travail art. L3132-1). |
@@ -1071,8 +1257,9 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `appreciationIncompatible` | MEDIUM | Qualité d'organisation | L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand. |
 | `souhaitsIncompatibles` | MEDIUM | Qualité d'organisation | Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de l'animateur. |
 | `limiterTypologiesDistinctesParAnimateur` | MEDIUM | Qualité d'organisation | Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, 2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux typologies le même après-midi et deux à une semaine d'écart comptent pareil. |
-| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de six jours consécutifs sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. |
-| `pauseSurPosteSansRelais` | MEDIUM | Qualité d'organisation | Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent coûte : la personne est seule et personne ne peut la relayer. Le solveur préfère alors ne pas enchaîner sept heures seul, ou mettre un collègue là. Muette quand la pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et travailContinuMaxMineur exigent alors un vrai trou. |
+| `maxJoursConsecutifsTravailles` | MEDIUM | Qualité d'organisation | Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé sur la page Paramètres (six par défaut) sans au moins un jour de repos : moins est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733). |
+| `maxJoursConsecutifsTravaillesDur` | HARD | Qualité d'organisation | Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, réglable sur la page Paramètres : les deux formes le lisent au même endroit. Un poids ne change jamais le niveau d'une règle, d'où une contrainte séparée, qu'une édition allume depuis l'écran Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une politique de l'organisateur, pas une obligation du Code du travail. |
+| `pauseSurPosteSansRelais` | HARD | Légal (temps de travail) | Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent est un écart dur : sans relais, la personne ne peut pas quitter son poste, la pause reste du travail effectif (art. L3121-1 et L3121-2) et l'obligation de l'art. L3121-16 — L3162-3 pour un mineur — n'est pas remplie. C'est aussi ce qui autorise la déduction de la pause des plafonds quotidien et hebdomadaire : sans relais, on déduirait une pause que personne n'a prise. Muette quand la pause n'est pas déclarée sur le poste : travailContinuMaxMajeur et travailContinuMaxMineur exigent alors un vrai trou. |
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
 | `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
