@@ -215,7 +215,8 @@ public class PlanPublicationService {
                 identites,
                 jamaisPublie);
 
-        List<DestinatairePublication> destinataires = assembler(changements, identites, traceRepository.deferred());
+        List<DestinatairePublication> destinataires =
+                assembler(changements, identites, traceRepository.deferred(), confirmationService.storedByAnimateur());
         ValidationPrerequisService.ProgressionValidations relecture = prerequisService.progression();
         return new ApercuPublication(
                 jamaisPublie,
@@ -268,7 +269,10 @@ public class PlanPublicationService {
      * waiting for an answer that already exists.
      */
     private List<DestinatairePublication> assembler(
-            List<ChangementAnimateur> changements, Map<String, Identite> identites, Set<String> differes) {
+            List<ChangementAnimateur> changements,
+            Map<String, Identite> identites,
+            Set<String> differes,
+            Map<String, ConfirmationPlanningRepository.Confirmation> confirmations) {
         Map<String, List<String>> decisions = decisionsByAnimateur();
         Map<String, List<String>> enCours = pendingByAnimateur();
 
@@ -285,7 +289,8 @@ public class PlanPublicationService {
                             changement.premiereDiffusion(),
                             changement.changements(),
                             lignesDemandes,
-                            differes));
+                            differes,
+                            confirmations));
         }
         for (Map.Entry<String, List<String>> entree : decisions.entrySet()) {
             if (byAnimateur.containsKey(entree.getKey())) {
@@ -306,7 +311,8 @@ public class PlanPublicationService {
                             false,
                             List.of(),
                             lignesDemandes,
-                            differes));
+                            differes,
+                            confirmations));
         }
         List<DestinatairePublication> destinataires = new ArrayList<>(byAnimateur.values());
         destinataires.sort(
@@ -331,7 +337,8 @@ public class PlanPublicationService {
             boolean premiereDiffusion,
             List<ChangementVacation> changements,
             List<String> demandes,
-            Set<String> differes) {
+            Set<String> differes,
+            Map<String, ConfirmationPlanningRepository.Confirmation> confirmations) {
         int ajouts = countOf(changements, PublicationDiffService.TypeChangement.AJOUT);
         int retraits = countOf(changements, PublicationDiffService.TypeChangement.RETRAIT);
         int deplacements = countOf(changements, PublicationDiffService.TypeChangement.DEPLACEMENT);
@@ -339,8 +346,7 @@ public class PlanPublicationService {
                 && demandes.isEmpty()
                 && !premiereDiffusion
                 && changements.stream().allMatch(PublicationDiffService::isMinor);
-        ConfirmationPlanningRepository.Confirmation confirmation =
-                confirmationService.stored(animateurId).orElse(null);
+        ConfirmationPlanningRepository.Confirmation confirmation = confirmations.get(animateurId);
         return new DestinatairePublication(
                 animateurId,
                 nomAffiche,
