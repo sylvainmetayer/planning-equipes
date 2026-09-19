@@ -152,8 +152,15 @@ interface Seat {
   stand: { id: string } | null;
   creneau: { id: number; date: string | null; heureDebut: string; heureFin: string } | null;
   animateur: { id: string } | null;
+  /** Renfort generated above the staffing the window asks for (issue #505). */
+  optionnel?: boolean;
   heureDebutEffective?: string | null;
   heureFinEffective?: string | null;
+}
+
+/** A renfort may stay empty: what is owed is what must be staffed. */
+function owed(seats: Seat[]): Seat[] {
+  return seats.filter((seat) => !seat.optionnel);
 }
 
 async function persistedPlan(): Promise<Seat[]> {
@@ -342,7 +349,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const nominalSeatsDay3 = seatShapes(nominalPlan, DAY3);
   const nominalSpansDay3 = seatSpans(nominalPlan, DAY3);
   expect(nominalSeatsDay3.length).toBeGreaterThan(0);
-  expect(nominalPlan.every((seat) => seat.animateur !== null)).toBe(true);
+  expect(owed(nominalPlan).every((seat) => seat.animateur !== null)).toBe(true);
 
   const page = await pageAdmin(browser, admin);
   await page.goto('/publication');
@@ -538,7 +545,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   expect(seatShapes(planAfterLifting, DAY3)).toEqual(nominalSeatsDay3);
   expect(seatSpans(planAfterLifting, DAY3)).toEqual(nominalSpansDay3);
   expect(seatsDay3.some((seat) => effectiveSpan(seat) === '20:00:00-22:00:00')).toBe(false);
-  expect(seatsDay3.every((seat) => seat.animateur !== null)).toBe(true);
+  expect(owed(seatsDay3).every((seat) => seat.animateur !== null)).toBe(true);
   // The other two days still run under their consigne.
   expect(seatsOf(planAfterLifting, DAY1).some((seat) => !!seat.heureDebutEffective)).toBe(true);
 
