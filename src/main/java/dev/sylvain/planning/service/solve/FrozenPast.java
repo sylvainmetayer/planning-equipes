@@ -109,11 +109,16 @@ public final class FrozenPast {
      * How many seats already marked past hold nobody: worked by no one the
      * plan knows of — never staffed, or staffed by somebody the referential
      * has since forgotten. Reported as a warning, never charged.
+     *
+     * <p>Renforts are left out (issue #505): a seat nobody owed and nobody
+     * took is not a hole yesterday left behind, and a stand declaring a
+     * capacity it rarely fills would otherwise make this warning count in the
+     * hundreds and say nothing.</p>
      */
     public static int countEmptyPast(List<PosteAffectation> postes) {
         int vides = 0;
         for (PosteAffectation poste : postes) {
-            if (poste.isPasse() && poste.getAnimateur() == null) {
+            if (poste.isPasse() && !poste.isOptionnel() && poste.getAnimateur() == null) {
                 vides++;
             }
         }

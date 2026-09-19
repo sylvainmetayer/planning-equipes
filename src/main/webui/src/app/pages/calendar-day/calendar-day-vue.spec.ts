@@ -162,6 +162,25 @@ describe('buildDays — understaffing indicator', () => {
     expect(line.renforts).toBe(1);
   });
 
+  it('a staffed renfort never hides an empty owed seat', () => {
+    // Two people on the line, but one of them sits on the renfort: the stand
+    // owes two seats and only one is held. Reading the line's length as the
+    // owed staffing would silence the shortfall icon (issue #505).
+    const c1 = creneau({ id: 1 });
+    const s1 = stand('S1', 2);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 }),
+      poste({ id: 'p3', creneau: c1, stand: s1, animateur: animateur('B'), optionnel: true }),
+    ]);
+
+    const line = days[0].slots[0].stands[0];
+    expect(line.effectifRequis).toBe(2);
+    expect(line.pourvus).toBe(1);
+    expect(line.entries.length).toBe(2);
+    expect(days[0].understaffed).toBe(true);
+  });
+
   it('a fully-staffed stand is not understaffed', () => {
     const c1 = creneau({ id: 1 });
     const s1 = stand('S1', 2);

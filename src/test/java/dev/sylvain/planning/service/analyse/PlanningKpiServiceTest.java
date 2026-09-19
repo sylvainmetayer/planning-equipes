@@ -17,7 +17,32 @@ import org.junit.jupiter.api.Test;
 class PlanningKpiServiceTest {
 
     private static AffectationKpi seat(String stand, String creneau, String animateur, Integer minutes) {
-        return new AffectationKpi(stand, creneau, animateur, minutes);
+        return new AffectationKpi(stand, creneau, animateur, minutes, false);
+    }
+
+    /** A renfort (issue #505): out of the coverage, in the hours when somebody holds it. */
+    private static AffectationKpi renfort(String stand, String creneau, String animateur, Integer minutes) {
+        return new AffectationKpi(stand, creneau, animateur, minutes, true);
+    }
+
+    /**
+     * The coverage is what is staffed over what is owed, and a renfort belongs
+     * to neither side: counting it would lower the coverage of a perfectly
+     * staffed plan, and no historised row would compare with the ones recorded
+     * before the change. Its hours are real work all the same.
+     */
+    @Test
+    void aRenfortStaysOutOfTheCoverageAndInsideTheHours() {
+        List<AffectationKpi> affectations =
+                List.of(seat("S1", "1", "A1", 120), seat("S1", "2", null, null), renfort("S1", "1", "A2", 60));
+
+        PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null, null);
+
+        assertThat(kpi.postesTotal()).isEqualTo(2);
+        assertThat(kpi.postesPourvus()).isEqualTo(1);
+        // Both people worked, so both weigh on the hours and the dispersion.
+        assertThat(kpi.animateursAffectes()).isEqualTo(2);
+        assertThat(kpi.heuresTotal()).isEqualTo(3.0);
     }
 
     @Test

@@ -7,6 +7,7 @@ import {
 } from '../../core/models';
 import {
   anomaliesParStand,
+  bandeRenforts,
   classeCellule,
   dureeCourte,
   filtrerStands,
@@ -240,5 +241,27 @@ describe('iconeAnomalie', () => {
       ['STAND_JAMAIS_OUVERT', 'FENETRE_SANS_EFFET', 'SEGMENT_TROP_COURT'] as const
     ).map(iconeAnomalie);
     expect(new Set(icones).size).toBe(3);
+  });
+});
+
+describe('bandeRenforts', () => {
+  it('reads the band against the window, not against effectifMin', () => {
+    // effectifMin 1, effectifMax 3, but every window already asks for 3:
+    // the generation opens no renfort at all, and the badge must not claim 2.
+    expect(bandeRenforts(3, [3, 3])).toBe(0);
+    expect(bandeRenforts(3, [1, 2])).toBe(2);
+  });
+
+  it('gives the widest band of the row', () => {
+    expect(bandeRenforts(4, [4, 1, 3])).toBe(3);
+  });
+
+  it('skips a closed cell rather than reading it as an effectif of zero', () => {
+    expect(bandeRenforts(2, [null, 2])).toBe(0);
+    expect(bandeRenforts(2, [null])).toBe(0);
+  });
+
+  it('never goes negative when a window asks for more than the declared maximum', () => {
+    expect(bandeRenforts(2, [5])).toBe(0);
   });
 });

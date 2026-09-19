@@ -73,7 +73,9 @@ export class RenfortsPage {
     loader: () => this.analysesApi.renforts(),
   });
 
-  protected readonly filtre = signal('');
+  // Both read back from the URL, not only written to it: a shared link opens
+  // on the reading it names, and a refresh keeps it (ADR 0012).
+  protected readonly filtre = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   protected readonly tri = signal<TriRenforts>(
     readTri(this.route.snapshot.queryParamMap.get('tri')),
   );
@@ -125,6 +127,11 @@ export class RenfortsPage {
 
   protected jourCourt(date: string): string {
     return libelleJour(date);
+  }
+
+  /** What a day cell holds, spelled out for a reader who cannot see the two stacked figures. */
+  protected celluleInfobulle(cellule: { ouvertes: number; pourvues: number }): string {
+    return $localize`:@@renforts.celluleInfobulle:${cellule.pourvues}:pourvues: h pourvues sur ${cellule.ouvertes}:ouvertes: h ouvertes`;
   }
 
   protected changerTri(tri: TriRenforts): void {
