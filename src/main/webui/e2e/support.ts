@@ -381,6 +381,14 @@ export async function dialogueOuvert(page: Page): Promise<Locator> {
 }
 
 /**
+ * One tab of the espace animateur (issue #615): the label carries the icon
+ * ligature too, so the `button` role does not find it by its name.
+ */
+export function ongletEspace(page: Page, nom: string): Locator {
+  return page.locator('mat-button-toggle', { hasText: nom }).locator('button');
+}
+
+/**
  * A browser page carrying the admin session of {@code admin} (its cookies are
  * copied into a fresh context). The caller closes the page's context.
  */

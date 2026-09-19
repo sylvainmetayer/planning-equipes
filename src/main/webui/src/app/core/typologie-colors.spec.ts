@@ -42,6 +42,13 @@ describe('typologieColorClass', () => {
 });
 
 describe('typologiePrincipale', () => {
+  it("orders by code unit, the same way the server does, whatever the reader's locale", () => {
+    // `localeCompare` puts « apéro » before « Zoo »; a plain String sort, which
+    // is what the server runs, does the opposite. The two must agree, or the
+    // espace animateur and the admin views colour the same stand differently.
+    expect(typologiePrincipale(['Zoo', 'apéro'])).toBe('Zoo');
+  });
+
   it('picks the lowest id so the colour never depends on set iteration order', () => {
     expect(typologiePrincipale(['STRATEGIE', 'AMBIANCE'])).toBe('AMBIANCE');
     expect(typologiePrincipale(['AMBIANCE', 'STRATEGIE'])).toBe('AMBIANCE');

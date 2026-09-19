@@ -29,9 +29,19 @@ export function typologieColorClass(typologieId: string | null | undefined): str
 /**
  * The typologie a stand is coloured after. A stand may propose several; the
  * lowest id wins so the choice never depends on set iteration order.
+ *
+ * <p>Compared by code unit, not by `localeCompare`. Two readers of the same
+ * plan must see the same colour on the same stand, and a locale-aware
+ * collation makes that untrue twice over: it orders `Zoo` and `apéro`
+ * differently from one browser locale to the next, and differently again from
+ * the server, whose own choice — `EspaceAnimateurService#typologiePrincipale`,
+ * a plain `String` sort — feeds the espace animateur. A colour is not a
+ * reading order; it has no business varying with the reader's language.</p>
  */
 export function typologiePrincipale(typologies: readonly string[]): string | null {
-  return [...typologies].sort((left, right) => left.localeCompare(right))[0] ?? null;
+  return (
+    [...typologies].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))[0] ?? null
+  );
 }
 
 /** Referential label of a typologie, falling back to its raw id when unknown. */

@@ -2182,6 +2182,16 @@ export interface PosteAnimateurView {
   /** `null` unless the emplacement is geocoded — both coordinates, or no map link. */
   emplacementLatitude: number | null;
   emplacementLongitude: number | null;
+  /**
+   * The typologie this seat is coloured after (issue #615), `null` when the
+   * stand proposes none. A stand proposes a set of them and one colour cannot
+   * say two things, so the server picks the lowest id — the same rule
+   * `core/typologie-colors.ts` applies everywhere else, which is what keeps a
+   * typologie the same colour on the espace, on the admin views and on the PDF.
+   */
+  typologieId: string | null;
+  /** Its label, as the referential words it; the raw id when it no longer knows it. */
+  typologieLibelle: string | null;
 }
 
 /** A colleague an échange can target. */
