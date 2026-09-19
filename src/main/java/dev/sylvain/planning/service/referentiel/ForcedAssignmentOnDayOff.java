@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import java.time.LocalDate;
@@ -56,7 +57,11 @@ public final class ForcedAssignmentOnDayOff {
     }
 
     public static List<Conflit> detectAll(
-            List<ContrainteAdHoc> contraintes, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+            List<ContrainteAdHoc> contraintes,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
         if (contraintes == null || contraintes.isEmpty()) {
             return List.of();
         }
@@ -64,7 +69,7 @@ public final class ForcedAssignmentOnDayOff {
         Map<String, Stand> standsParId = index(stands, Stand::getId);
         List<Conflit> conflits = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
-            detect(contrainte, animateursParId, standsParId, creneaux).ifPresent(conflits::add);
+            detect(contrainte, animateursParId, standsParId, creneaux, horizon).ifPresent(conflits::add);
         }
         return List.copyOf(conflits);
     }
@@ -73,7 +78,8 @@ public final class ForcedAssignmentOnDayOff {
             ContrainteAdHoc contrainte,
             Map<String, Animateur> animateursParId,
             Map<String, Stand> standsParId,
-            List<Creneau> creneaux) {
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
         if (contrainte == null
                 || contrainte.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE
                 || contrainte.getAnimateursConcernes() == null
@@ -90,7 +96,9 @@ public final class ForcedAssignmentOnDayOff {
             nommes.add(animateur);
         }
         TreeSet<LocalDate> perimetre = dates(contrainte, standsParId, creneaux == null ? List.of() : creneaux);
-        if (perimetre.isEmpty()) {
+        // A scope entirely behind us is history, not a hole to fill:
+        // `affectationForcee` does not charge it either (ADR 0044).
+        if (perimetre.isEmpty() || perimetre.stream().noneMatch(jour -> ForcedAssignmentPast.aVenir(jour, horizon))) {
             return Optional.empty();
         }
         boolean intenable =

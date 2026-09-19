@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -10,6 +11,7 @@ import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter.Motif;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -87,7 +89,11 @@ public final class ForcedAssignmentOnExcludedSeats {
     }
 
     public static List<Conflit> detectAll(
-            List<ContrainteAdHoc> contraintes, List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux) {
+            List<ContrainteAdHoc> contraintes,
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
         if (contraintes == null || contraintes.isEmpty()) {
             return List.of();
         }
@@ -95,7 +101,7 @@ public final class ForcedAssignmentOnExcludedSeats {
         Map<String, Stand> standsParId = ForcedAssignmentScope.index(stands, Stand::getId);
         List<Conflit> conflits = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
-            detect(contrainte, animateursParId, standsParId, creneaux).ifPresent(conflits::add);
+            detect(contrainte, animateursParId, standsParId, creneaux, horizon).ifPresent(conflits::add);
         }
         return List.copyOf(conflits);
     }
@@ -104,7 +110,8 @@ public final class ForcedAssignmentOnExcludedSeats {
             ContrainteAdHoc contrainte,
             Map<String, Animateur> animateursParId,
             Map<String, Stand> standsParId,
-            List<Creneau> creneaux) {
+            List<Creneau> creneaux,
+            PastHorizon horizon) {
         if (contrainte == null
                 || contrainte.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE
                 || contrainte.getAnimateursConcernes() == null
@@ -114,7 +121,7 @@ public final class ForcedAssignmentOnExcludedSeats {
         // The day-off reading of the same impossibility, said in the terms of
         // the declaration rather than in those of the catalogue: it is the
         // more actionable of the two, so it keeps the case.
-        if (ForcedAssignmentOnDayOff.detect(contrainte, animateursParId, standsParId, creneaux)
+        if (ForcedAssignmentOnDayOff.detect(contrainte, animateursParId, standsParId, creneaux, horizon)
                 .isPresent()) {
             return Optional.empty();
         }
@@ -127,12 +134,15 @@ public final class ForcedAssignmentOnExcludedSeats {
             }
             nommes.add(animateur);
         }
-        List<PosteAffectation> portee = ForcedAssignmentScope.seats(contrainte, standsParId, creneaux);
-        if (portee.isEmpty()) {
-            return Optional.empty();
-        }
         TreeSet<String> cassees = new TreeSet<>();
-        for (PosteAffectation siege : portee) {
+        TreeSet<LocalDate> dates = new TreeSet<>();
+        boolean aVenir = false;
+        // One pass, and the dates collected on the way: the stream is walked
+        // once and abandoned at the first pair a solve could take.
+        for (Iterator<PosteAffectation> sieges = ForcedAssignmentScope.seats(contrainte, standsParId, creneaux)
+                        .iterator();
+                sieges.hasNext(); ) {
+            PosteAffectation siege = sieges.next();
             for (Animateur animateur : nommes) {
                 List<Motif> motifs = EligibleAnimateurMoveFilter.motifs(siege, animateur, PAUSE_SUR_POSTE);
                 if (motifs.isEmpty()) {
@@ -141,10 +151,15 @@ public final class ForcedAssignmentOnExcludedSeats {
                 }
                 motifs.stream().map(Motif::contrainte).forEach(cassees::add);
             }
+            LocalDate date = siege.getCreneau().getDate();
+            dates.add(date);
+            aVenir |= ForcedAssignmentPast.aVenir(date, horizon);
         }
-        TreeSet<LocalDate> dates = portee.stream()
-                .map(siege -> siege.getCreneau().getDate())
-                .collect(Collectors.toCollection(TreeSet::new));
+        if (dates.isEmpty() || !aVenir) {
+            // No seat at all, or a scope entirely behind us: `affectationForcee`
+            // charges neither (ADR 0044), so neither does this.
+            return Optional.empty();
+        }
         return Optional.of(new Conflit(contrainte, List.copyOf(cassees), List.copyOf(dates)));
     }
 }
