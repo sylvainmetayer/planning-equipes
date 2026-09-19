@@ -22,6 +22,7 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
@@ -154,8 +155,9 @@ class PublicationExclusionTest {
     @Test
     void excludingEverybodyIsRefusedRatherThanPublishingToNobody() {
         given().contentType(ContentType.JSON)
+                .body(Map.of("exclusions", List.of("EXC-A", "EXC-B")))
                 .when()
-                .post("/api/planning/publication?exclure=EXC-A&exclure=EXC-B")
+                .post("/api/planning/publication")
                 .then()
                 .statusCode(409)
                 .body("message", containsString("ne préviendrait personne"));
@@ -203,13 +205,10 @@ class PublicationExclusionTest {
     }
 
     private JsonPath publier(String... exclusions) {
-        StringBuilder chemin = new StringBuilder("/api/planning/publication");
-        for (int i = 0; i < exclusions.length; i++) {
-            chemin.append(i == 0 ? '?' : '&').append("exclure=").append(exclusions[i]);
-        }
         return given().contentType(ContentType.JSON)
+                .body(Map.of("exclusions", List.of(exclusions)))
                 .when()
-                .post(chemin.toString())
+                .post("/api/planning/publication")
                 .then()
                 .statusCode(200)
                 .extract()

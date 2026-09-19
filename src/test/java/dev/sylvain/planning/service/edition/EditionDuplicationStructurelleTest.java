@@ -42,21 +42,29 @@ class EditionDuplicationStructurelleTest {
      * row of a <b>new</b> edition: some columns must be reborn rather than
      * carried over.
      */
-    private static final Map<String, String> NON_COPIEES_AVEC_MOTIF = Map.of(
-            "typologie.modifie_le", "concurrency stamp: a copied row is a fresh write, so it defaults to now()",
-            "emplacement.modifie_le", "same",
-            "stand.modifie_le", "same",
-            "animateur.modifie_le", "same",
-            "journee_type.modifie_le", "same",
-            "prereglage_consigne.modifie_le", "same",
-            "animateur.access_token",
+    private static final Map<String, String> NON_COPIEES_AVEC_MOTIF = Map.ofEntries(
+            Map.entry(
+                    "typologie.modifie_le",
+                    "concurrency stamp: a copied row is a fresh write, so it defaults to now()"),
+            Map.entry("emplacement.modifie_le", "same"),
+            Map.entry("stand.modifie_le", "same"),
+            Map.entry("animateur.modifie_le", "same"),
+            Map.entry("journee_type.modifie_le", "same"),
+            Map.entry("prereglage_consigne.modifie_le", "same"),
+            Map.entry(
+                    "animateur.access_token",
                     "credential: the default mints a fresh one per edition, so one person's espace "
-                            + "link is never shared between two editions",
-            "animateur.abonnement_token", "same, for the ICS subscription",
-            "stand_indisponibilite.id",
+                            + "link is never shared between two editions"),
+            Map.entry("animateur.abonnement_token", "same, for the ICS subscription"),
+            Map.entry(
+                    "animateur.plan_notifie_id",
+                    "names a snapshot of the source edition: a new edition has published nothing, so "
+                            + "everybody in it is a first delivery, which is exactly what NULL says"),
+            Map.entry(
+                    "stand_indisponibilite.id",
                     "surrogate key on its own sequence — unlike stand_horaire, whose composite "
-                            + "(edition_id, id) primary key is why its id IS copied",
-            "stand_ouverture.id", "same");
+                            + "(edition_id, id) primary key is why its id IS copied"),
+            Map.entry("stand_ouverture.id", "same"));
 
     /** Columns every copy writes itself, outside the declared list. */
     private static final Set<String> ECRITES_PAR_LA_COPIE = Set.of("edition_id");
