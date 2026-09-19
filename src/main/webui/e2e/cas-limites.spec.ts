@@ -7,6 +7,7 @@ import {
   SEED,
   contexteAdmin,
   jetonDe,
+  ongletEspace,
   ouvrirSessionEspace,
   pageAdmin,
   seedPlanning,
@@ -200,8 +201,11 @@ test.describe('cas limites', () => {
     });
     expect(refus.status()).toBe(400);
 
-    // The planning stays consultable and downloadable (PDF + ICS).
+    // The planning stays consultable and downloadable (PDF + ICS). The files
+    // live one tab further since issue #615: « Mon planning » opens on the day,
+    // and « Aperçu » is where the whole event and its documents are.
     await page.getByRole('link', { name: 'Mon planning' }).click();
+    await ongletEspace(page, 'Aperçu').click();
     await expect(page.getByRole('link', { name: 'Télécharger en PDF' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Télécharger le fichier ICS' })).toBeVisible();
     const pdf = await page.request.get(`/api/espace-animateur/${jeton}/planning.pdf`);

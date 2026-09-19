@@ -12,6 +12,7 @@ import {
   contexteAdmin,
   dernierCodeMailpit,
   jetonDe,
+  ongletEspace,
   ouvrirSelect,
   ouvrirSessionEspace,
   pageAdmin,
@@ -37,11 +38,6 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 test.afterAll(async () => {
   await admin.dispose();
 });
-
-/** Un onglet de l'espace : le libellé porte aussi la ligature de l'icône. */
-function ongletEspace(page: import('@playwright/test').Page, nom: string) {
-  return page.locator('mat-button-toggle', { hasText: nom }).locator('button');
-}
 
 test.describe('espace animateur', () => {
   test('un jeton inconnu montre une impasse propre, sans chrome admin', async ({ page }) => {
@@ -330,7 +326,11 @@ test.describe('espace animateur', () => {
     await page.goto(`/animateur/${jeton}`);
 
     await expect(page.locator('.espace-bande-jour').first()).toBeVisible();
-    await expect(page.getByText('Stand E2E un')).toBeVisible();
+    // Le stand de la journée ouverte, sans le nommer : un échange accepté plus
+    // haut dans ce fichier déplace Alice d'un stand à l'autre — ces tests
+    // partagent un seul `beforeAll` — et la promesse de l'onglet est « où
+    // est-ce que je vais », pas « sur quel stand exactement ».
+    await expect(page.locator('.espace-poste-carte').first()).toContainText(/Stand E2E/);
 
     await ongletEspace(page, 'Aperçu').click();
     await expect(page.locator('.espace-frise-ligne').first()).toBeVisible();

@@ -384,6 +384,14 @@ export async function dialogueOuvert(page: Page): Promise<Locator> {
  * A browser page carrying the admin session of {@code admin} (its cookies are
  * copied into a fresh context). The caller closes the page's context.
  */
+/**
+ * Un onglet de l'espace animateur (issue #615) : le libellé porte aussi la
+ * ligature de l'icône, donc le rôle `button` ne le trouve pas par son nom.
+ */
+export function ongletEspace(page: Page, nom: string): Locator {
+  return page.locator('mat-button-toggle', { hasText: nom }).locator('button');
+}
+
 export async function pageAdmin(browser: Browser, admin: APIRequestContext): Promise<Page> {
   const contexte = await browser.newContext({ storageState: await admin.storageState() });
   // Same edition pinning as contexteAdmin, browser-side: the SPA reads its
