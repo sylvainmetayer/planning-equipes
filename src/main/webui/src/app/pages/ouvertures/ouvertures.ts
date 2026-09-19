@@ -141,3 +141,30 @@ export function iconeAnomalie(type: TypeAnomalieOuverture): string {
       return 'hourglass_bottom';
   }
 }
+
+/**
+ * The renfort band a row really opens, read from the cells it shows.
+ *
+ * <p>The seat generation opens renforts against the <b>window's</b> effectif,
+ * not against {@code effectifMin} (issue #505): a stand declaring a maximum of
+ * three whose window already asks for three opens none at all. Computing the
+ * badge as {@code effectifMax - effectifMin} announced a margin that does not
+ * exist. What the row can say honestly is its widest band — the cell where the
+ * declared capacity exceeds what the window asks for by the most.</p>
+ *
+ * <p>A closed cell asks for nobody and opens no renfort; it is skipped rather
+ * than read as a zero-effectif cell with a full band.</p>
+ */
+export function bandeRenforts(
+  effectifMax: number,
+  effectifsCellules: readonly (number | null)[],
+): number {
+  let bande = 0;
+  for (const effectif of effectifsCellules) {
+    if (effectif === null) {
+      continue;
+    }
+    bande = Math.max(bande, effectifMax - effectif);
+  }
+  return Math.max(0, bande);
+}

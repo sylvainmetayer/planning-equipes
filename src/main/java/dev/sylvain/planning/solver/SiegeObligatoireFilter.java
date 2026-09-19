@@ -22,6 +22,14 @@ import dev.sylvain.planning.domain.PosteAffectation;
  * <p>Phase 2 carries no such filter, and that is where a renfort is taken: by
  * then the plan is feasible, and employing the volant available is exactly the
  * kind of improvement that phase exists for.</p>
+ *
+ * <p><b>Its counterpart is that nothing may hand phase 1 an occupied
+ * renfort.</b> A seat this filter refuses is a seat the phase cannot empty
+ * either, so somebody seated on one before it starts is stuck there: a hard
+ * violation they cause would never be repaired, and a plan short of hands
+ * could not take them back. That is why {@code ProblemBuilder} never
+ * warm-starts a renfort. A locked one is safe by another route — it is pinned,
+ * so no selector sees it at all.</p>
  */
 public final class SiegeObligatoireFilter implements SelectionFilter<PlanningEvenement, PosteAffectation> {
 

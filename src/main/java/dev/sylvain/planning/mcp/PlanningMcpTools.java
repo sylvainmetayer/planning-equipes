@@ -200,7 +200,12 @@ public class PlanningMcpTools {
                             openWorldHint = false))
     SyntheseView synthese_affectations(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        List<PosteAffectation> postes = postesFiltres(null, null, null, null);
+        // Owed seats only: the synthesis counts what is filled against what
+        // has to be, and a renfort belongs to neither side of that ratio
+        // (issue #505, ADR 0046).
+        List<PosteAffectation> postes = postesFiltres(null, null, null, null).stream()
+                .filter(poste -> !poste.isOptionnel())
+                .toList();
         Map<String, LigneSynthese> parStand = new LinkedHashMap<>();
         Map<LocalDate, LigneSynthese> parJour = new TreeMap<>();
         Set<String> animateurs = new HashSet<>();
@@ -260,7 +265,12 @@ public class PlanningMcpTools {
                 .filter(poste -> animateurId == null
                         || (poste.getAnimateur() != null
                                 && animateurId.equals(poste.getAnimateur().getId())))
-                .filter(poste -> !Boolean.TRUE.equals(seulementNonPourvus) || poste.getAnimateur() == null)
+                // « Non pourvu » means a seat somebody is missing on: an empty
+                // renfort is a capacity nobody owed (issue #505), and listing
+                // one here would send an assistant hunting for a hole that is
+                // not there.
+                .filter(poste -> !Boolean.TRUE.equals(seulementNonPourvus)
+                        || (poste.getAnimateur() == null && !poste.isOptionnel()))
                 .toList();
     }
 

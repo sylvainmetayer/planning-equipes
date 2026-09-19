@@ -56,6 +56,7 @@ import {
 } from '../../core/models';
 import {
   anomaliesParStand,
+  bandeRenforts,
   classeCellule,
   dureeCourte,
   filtrerStands,
@@ -313,13 +314,16 @@ export class OuverturesPage {
       const nom = ligne.nom || ligne.standId;
       const typees = cellules.get(ligne.standId);
       const lues = reference.get(ligne.standId);
+      const effectifsCellules = colonnes.map((colonne) => typees?.get(colonne.colonneId) ?? null);
       return {
         standId: ligne.standId,
         nom,
         // The renfort band the stand declares above its cells (issue #505):
         // said once per row, never inside a cell — a cell is what a window
-        // asks for, and the band is a capacity on top of every one of them.
-        renforts: Math.max(0, ligne.effectifMax - ligne.effectifMin),
+        // asks for, and the band is a capacity on top of it. Read from the
+        // cells rather than from effectifMin, which is not what the seat
+        // generation compares the maximum against.
+        renforts: bandeRenforts(ligne.effectifMax, effectifsCellules),
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),
@@ -399,10 +403,14 @@ export class OuverturesPage {
     const first = this.standIdsAffiches()[0];
     return (this.rapport()?.stands ?? []).map((ligne) => {
       const nom = ligne.nom || ligne.standId;
+      const effectifsCellules = colonnesJT.map((colonne) => {
+        const valeur = valeurJourneeType(cellules, ligne.standId, colonne);
+        return typeof valeur === 'number' ? valeur : null;
+      });
       return {
         standId: ligne.standId,
         nom,
-        renforts: Math.max(0, ligne.effectifMax - ligne.effectifMin),
+        renforts: bandeRenforts(ligne.effectifMax, effectifsCellules),
         visible: visibles.has(ligne.standId),
         noLignePrecedente: !visibles.has(ligne.standId) || ligne.standId === first,
         modifiee: modifies.has(ligne.standId),

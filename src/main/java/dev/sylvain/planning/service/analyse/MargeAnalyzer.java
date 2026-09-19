@@ -339,10 +339,17 @@ public class MargeAnalyzer {
             int pauseMinimaleMinutes,
             boolean pauseSurPoste) {
         Creneau creneau = cellule.creneau;
-        int sieges = cellule.postes.size();
-        int pourvus = (int) cellule.postes.stream()
-                .filter(poste -> poste.getAnimateur() != null)
-                .count();
+        // Owed seats only (issue #505): a renfort is a capacity the stand
+        // declared, never a need. Counting one here would turn a margin the
+        // organiser put there on purpose into a shortfall this screen shouts
+        // about — the very false alarm ADR 0046 exists to avoid. Somebody
+        // holding a renfort is still out of `disponibles` below: they are
+        // working, whatever the seat is called.
+        List<PosteAffectation> dus =
+                cellule.postes.stream().filter(poste -> !poste.isOptionnel()).toList();
+        int sieges = dus.size();
+        int pourvus =
+                (int) dus.stream().filter(poste -> poste.getAnimateur() != null).count();
         int besoin = mode == Mode.AVANT ? sieges : sieges - pourvus;
         long debut = absolute(creneau.getDate(), creneau.getHeureDebut());
         long fin = debut + creneau.getDureeMinutes();

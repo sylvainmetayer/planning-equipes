@@ -319,6 +319,18 @@ public final class ProblemBuilder {
             if (poste.getStand() == null || poste.getCreneau() == null) {
                 continue;
             }
+            // A renfort is never warm-started (issue #505). Phase 1 of the
+            // local search cannot select an optional seat — that is what keeps
+            // it converging — so somebody seeded onto one would be stuck there
+            // for the whole feasibility phase: a hard violation they cause
+            // could never be repaired, and a plan short of hands could not
+            // take them back. Skipped before the position is consumed, so the
+            // tenants land on the owed seats of the key, which are generated
+            // first; phase 2 fills the renforts again, rewarded for it and
+            // held by the published plan's stability.
+            if (poste.isOptionnel()) {
+                continue;
+            }
             String key = PlanningPersistenceService.standCreneauKey(
                     poste.getStand().getId(), poste.getCreneau().getId());
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());

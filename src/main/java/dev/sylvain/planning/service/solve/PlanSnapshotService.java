@@ -621,8 +621,8 @@ public class PlanSnapshotService {
             }
             String insert = """
  INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
- heure_debut_effective, heure_fin_effective)
- VALUES (?, ?, ?, ?, ?, ?, ?)""";
+ heure_debut_effective, heure_fin_effective, optionnel)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
             try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
                 for (AffectationSnapshot affectation : detail.affectations()) {
                     ps.setString(2, affectation.posteId());
@@ -631,6 +631,12 @@ public class PlanSnapshotService {
                     ps.setString(5, affectation.animateurId());
                     ps.setObject(6, heure(affectation.heureDebutEffective()));
                     ps.setObject(7, heure(affectation.heureFinEffective()));
+                    // A snapshot taken before issue #505 carries no flag, and
+                    // reads as entirely owed — what was captured then was.
+                    // Dropping it here would do worse: it would turn every
+                    // renfort of a recent snapshot into a seat somebody is
+                    // missing on, on every screen, for good.
+                    ps.setBoolean(8, Boolean.TRUE.equals(affectation.optionnel()));
                     ps.addBatch();
                 }
                 ps.executeBatch();
