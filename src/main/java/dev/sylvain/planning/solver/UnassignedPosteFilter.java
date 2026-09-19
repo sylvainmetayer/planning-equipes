@@ -18,7 +18,12 @@ public final class UnassignedPosteFilter implements SelectionFilter<PlanningEven
     @Override
     public boolean accept(ScoreDirector<PlanningEvenement> scoreDirector, PosteAffectation poste) {
         // A pinned hole — a past seat nobody held (ADR 0044) — is not one the
-        // selectors can fill: attempts spent on it are attempts lost.
-        return poste.getAnimateur() == null && !poste.isVerrouille();
+        // selectors can fill: attempts spent on it are attempts lost. An empty
+        // renfort (issue #505) is not a hole at all: nobody is missing on it,
+        // and the whole point of this selector is to clear the last
+        // posteDoitEtrePourvu violations, which a renfort never produces. The
+        // ordinary Change and Swap selectors still reach it — that is how it
+        // gets taken once there is nothing better to do with somebody.
+        return poste.getAnimateur() == null && !poste.isVerrouille() && !poste.isOptionnel();
     }
 }

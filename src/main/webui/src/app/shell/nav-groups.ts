@@ -147,6 +147,11 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           icon: 'storefront',
         },
         {
+          path: '/renforts',
+          label: $localize`:@@nav.link.renforts:Renforts`,
+          icon: 'add_circle_outline',
+        },
+        {
           path: '/kpi',
           label: $localize`:@@nav.link.kpi:Autopsie du planning`,
           icon: 'query_stats',

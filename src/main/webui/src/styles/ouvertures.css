@@ -134,6 +134,19 @@
   vertical-align: middle;
 }
 
+/*
+ * The stand's renfort margin (issue #505). Quiet and neutral: it says « on
+ * peut en mettre de plus », never « il en manque ». Read as a second figure
+ * to fill, it would be exactly the invented need the seat generation refuses
+ * to produce.
+ */
+.ouvertures-grille .stand-renforts {
+  margin-left: 0.4rem;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+  white-space: nowrap;
+}
+
 .ouvertures-grille .row-problem-icon {
   font-size: 1rem;
   width: 1rem;

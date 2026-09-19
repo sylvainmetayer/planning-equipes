@@ -95,10 +95,19 @@ public class GlobalPlanningPdf {
                             poste.heureDebutEffectif(),
                             poste.heureFinEffectif(),
                             new ArrayList<>(),
+                            new int[] {0},
+                            new int[] {0},
                             new int[] {0}));
-            ligne.sieges()[0]++;
+            if (poste.isOptionnel()) {
+                ligne.renforts()[0]++;
+            } else {
+                ligne.sieges()[0]++;
+            }
             if (poste.getAnimateur() != null) {
                 ligne.animateurs().add(poste.getAnimateur().nomAffiche());
+                if (!poste.isOptionnel()) {
+                    ligne.pourvus()[0]++;
+                }
             }
         }
         List<LigneAffectation> lignes = new ArrayList<>(parCle.values());
@@ -115,12 +124,28 @@ public class GlobalPlanningPdf {
      *               the count can be incremented while grouping — never the
      *               stand's {@code effectifMin}, which a meal-pause coverage
      *               vacation deliberately halves
+     * @param renforts optional seats of the same line (issue #505), counted
+     *               apart: they are a capacity the organiser may leave unused,
+     *               so a line without them is complete
+     * @param pourvus owed seats somebody holds — counted apart from
+     *               {@link #animateurs}, which lists everybody printed on the
+     *               line, renfort holders included. Reading the list's size as
+     *               the owed staffing would let a staffed renfort hide a seat
+     *               nobody is on: « 2/2 +1 » where the truth is « 1/2 +1 »,
+     *               and without the alert font
      */
     private record LigneAffectation(
-            Stand stand, Creneau creneau, LocalTime debut, LocalTime fin, List<String> animateurs, int[] sieges) {
+            Stand stand,
+            Creneau creneau,
+            LocalTime debut,
+            LocalTime fin,
+            List<String> animateurs,
+            int[] sieges,
+            int[] renforts,
+            int[] pourvus) {
 
         boolean incomplete() {
-            return animateurs.size() < sieges[0];
+            return pourvus[0] < sieges[0];
         }
     }
 
@@ -282,9 +307,18 @@ public class GlobalPlanningPdf {
         return cell;
     }
 
+    /**
+     * « 2/3 » — owed seats held over owed seats — and « 2/3 +1 » when
+     * somebody also sits on a renfort: the organiser reads what is missing and
+     * what is a bonus on the same line, without the second ever making the
+     * first look met. An empty renfort prints nothing at all; nobody is on it,
+     * and it is not a hole.
+     */
     private PdfPCell effectifCell(LigneAffectation ligne) {
+        int renfortsTenus = ligne.animateurs().size() - ligne.pourvus()[0];
+        String renforts = renfortsTenus > 0 ? " +" + renfortsTenus : "";
         PdfPCell cell = new PdfPCell(new Phrase(
-                ligne.animateurs().size() + "/" + ligne.sieges()[0],
+                ligne.pourvus()[0] + "/" + ligne.sieges()[0] + renforts,
                 ligne.incomplete() ? theme.tableAlertFont() : theme.tableBodyFont()));
         cell.setBorderColor(theme.pill());
         cell.setHorizontalAlignment(Element.ALIGN_CENTER);

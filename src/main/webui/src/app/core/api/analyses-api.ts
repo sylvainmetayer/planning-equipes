@@ -13,9 +13,10 @@ import {
   KpiHistoriqueEntry,
   ModeMarge,
   RapportFragilite,
-  RapportMarge,
   RapportIntendance,
+  RapportMarge,
   RapportPauses,
+  RapportRenforts,
   StaffingSummary,
   TypologieItem,
 } from '../models';
@@ -59,6 +60,14 @@ export class AnalysesApi {
    */
   margin(mode: ModeMarge): Promise<RapportMarge> {
     return this.api.get<RapportMarge>(`/api/marge?mode=${mode === 'APRES' ? 'apres' : 'avant'}`);
+  }
+
+  /**
+   * Where the bonus hours sit: per stand and per day, the renfort hours the
+   * edition opens and the ones the persisted plan staffs (ADR 0046).
+   */
+  renforts(): Promise<RapportRenforts> {
+    return this.api.get<RapportRenforts>('/api/renforts');
   }
 
   /**

@@ -43,6 +43,30 @@ class PlanningServicePosteGenerationTest {
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
+    /**
+     * The persisted plan is read back with {@code ORDER BY id} on a
+     * {@code VARCHAR} column, and re-seeded positionally: a seat id that does
+     * not sort the way it was generated puts people back on a neighbouring
+     * seat — another effective window, on a day that may be locked.
+     */
+    @Test
+    void seatIdsSortInTheOrderTheyWereGenerated() {
+        List<Creneau> creneaux = new java.util.ArrayList<>();
+        for (int jour = 1; jour <= 120; jour++) {
+            creneaux.add(new Creneau(
+                    (long) jour,
+                    jour,
+                    LocalDate.of(2026, 8, 14).plusDays(jour),
+                    LocalTime.of(9, 0),
+                    LocalTime.of(13, 0)));
+        }
+
+        List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standA, standB), creneaux);
+
+        assertThat(postes).hasSize(240);
+        assertThat(postes).extracting(PosteAffectation::getId).isSortedAccordingTo(java.util.Comparator.naturalOrder());
+    }
+
     @Test
     void standFermeIntegralementNeGenereAucunPoste() {
         Stand standFerme = new Stand("STAND-B", "B", Set.of(), 1, 1, false);
@@ -74,19 +98,34 @@ class PlanningServicePosteGenerationTest {
         assertThat(postes).allSatisfy(poste -> assertThat(poste.getCreneau()).isSameAs(creneau));
     }
 
+    /** The seats {@code posteDoitEtrePourvu} will demand — renforts excluded. */
+    private static List<PosteAffectation> mandatory(List<PosteAffectation> postes) {
+        return postes.stream().filter(poste -> !poste.isOptionnel()).toList();
+    }
+
+    private static List<PosteAffectation> optional(List<PosteAffectation> postes) {
+        return postes.stream().filter(PosteAffectation::isOptionnel).toList();
+    }
+
     @Test
-    void genereEffectifMinSeatsPasEffectifMax() {
+    void effectifMaxGeneratesRenfortsAndNeverAMandatorySeat() {
         // effectifMin != effectifMax here on purpose: standA/standB above use
         // identical values and would silently pass even if this regressed back
         // to effectifMax, which is exactly the bug that made solving from
         // reference data generate 2736 mandatory seats instead of the 2088 the
         // scenario actually needs (effectifMax is the capacity ceiling, not the
-        // number of seats that must be staffed).
+        // number of seats that must be staffed). Since issue #505 the ceiling
+        // does generate seats — optional ones, which nobody is owed.
         Stand standMinMax = new Stand("STAND-C", "C", Set.of(), 2, 5, false);
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(standMinMax), List.of(creneauOuvert));
 
-        assertThat(postes).hasSize(2);
+        assertThat(mandatory(postes)).hasSize(2);
+        assertThat(optional(postes)).hasSize(3);
+        // And the renforts come last, which is what makes a re-seeding of the
+        // persisted plan land its people on the seats that are owed first.
+        assertThat(postes.subList(0, 2))
+                .allSatisfy(poste -> assertThat(poste.isOptionnel()).isFalse());
     }
 
     /**
@@ -97,7 +136,7 @@ class PlanningServicePosteGenerationTest {
      * planning cover a third fewer hours than its source workbook needed.
      */
     @Test
-    void effectifParFenetreGenereLeBonNombreDeSiegesSurChaqueSegment() {
+    void theWindowEffectifDrivesTheSeatCountOfEachSegment() {
         LocalDate jour = LocalDate.of(2026, 8, 14);
         Creneau apresMidi = new Creneau(4L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-D", "D", Set.of(), 1, 6, false);
@@ -107,14 +146,25 @@ class PlanningServicePosteGenerationTest {
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
-        assertThat(postes).hasSize(6);
-        assertThat(postes)
+        assertThat(mandatory(postes)).hasSize(6);
+        assertThat(mandatory(postes))
                 .extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
                 .containsExactly(
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
                         tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)));
+        // The renfort band is per segment too: the ceiling is 6, so the window
+        // needing 4 has room for 2 more and the one needing 2 for 4 more.
+        assertThat(optional(postes))
+                .extracting(PosteAffectation::getHeureDebutEffective, PosteAffectation::getHeureFinEffective)
+                .containsExactly(
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(14, 0), LocalTime.of(19, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)),
+                        tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)),
                         tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)),
                         tuple(LocalTime.of(19, 0), LocalTime.of(20, 0)));
     }
@@ -125,7 +175,7 @@ class PlanningServicePosteGenerationTest {
      * change the volume of every edition already in the database.
      */
     @Test
-    void uneFenetreSansEffectifGenereToujoursEffectifMinSieges() {
+    void aWindowNamingNoEffectifStillGeneratesEffectifMinSeats() {
         LocalDate jour = LocalDate.of(2026, 8, 14);
         Creneau apresMidi = new Creneau(5L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-E", "E", Set.of(), 3, 6, false);
@@ -133,7 +183,7 @@ class PlanningServicePosteGenerationTest {
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
-        assertThat(postes).hasSize(3);
+        assertThat(mandatory(postes)).hasSize(3);
         assertThat(postes)
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }

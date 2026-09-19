@@ -72,6 +72,26 @@ public class PosteAffectation {
      */
     private boolean passe;
 
+    /**
+     * Seat generated <b>above</b> the staffing the window declares, up to the
+     * stand's {@code effectifMax} (issue #505, ADR 0046) — « mieux à trois,
+     * tenable à deux ».
+     *
+     * <p>The difference with an ordinary seat is one thing only:
+     * {@code posteDoitEtrePourvu} ignores it, so leaving it empty is never a
+     * violation and never counts as an écart. Everything else treats it as the
+     * seat it is — somebody assigned to it really works that shift, so the
+     * legal rules, the fairness balance and the hours all count it.</p>
+     *
+     * <p>A plain fact of the problem, like {@link #passe}: set by
+     * {@code ProblemBuilder} from the stand's declared capacity, never by the
+     * solver. Serialized, unlike {@code passe}, because the screens have to
+     * tell a renfort from a seat somebody is missing on — an empty optional
+     * seat drawn as a hole would be exactly the false alarm this feature
+     * exists to avoid.</p>
+     */
+    private boolean optionnel;
+
     public PosteAffectation() {}
 
     public PosteAffectation(String id, Stand stand, Creneau creneau) {
@@ -129,6 +149,15 @@ public class PosteAffectation {
     @JsonIgnore
     public void setPasse(boolean passe) {
         this.passe = passe;
+    }
+
+    /** Whether this seat is a renfort: generated above the declared staffing, never owed. */
+    public boolean isOptionnel() {
+        return optionnel;
+    }
+
+    public void setOptionnel(boolean optionnel) {
+        this.optionnel = optionnel;
     }
 
     public LocalTime getHeureDebutEffective() {

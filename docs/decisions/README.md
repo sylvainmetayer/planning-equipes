@@ -68,6 +68,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0042](0042-quota-par-typologie-sur-la-typologie.md) | Le quota par typologie se pose sur la typologie, pas sur une contrainte ad hoc | Accepté |
 | [0043](0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md) | Une consigne d'édition ferme une bande horaire pour tous les stands, en quatrième couche du résolveur d'horaires, sans rien détruire de la grille | Accepté · révise 0001 § 6 bis, complète 0033 |
 | [0044](0044-le-passe-est-fige.md) | Le passé est figé : les places des créneaux déjà commencés sont reprises du plan enregistré et épinglées par toute résolution, comptées par les règles et reprochées par aucune | Accepté · prolonge 0003 et 0024, complète 0043 |
+| [0046](0046-sieges-optionnels-jusqu-a-l-effectif-max.md) | L'effectif maximum d'un stand ouvre des renforts : des sièges qu'une règle soft récompense, que rien ne reproche vides, et que la recherche de faisabilité ne voit pas | Accepté · complète 0044 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

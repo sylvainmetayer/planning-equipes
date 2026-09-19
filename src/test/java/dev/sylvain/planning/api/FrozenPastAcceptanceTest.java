@@ -151,7 +151,15 @@ class FrozenPastAcceptanceTest {
         freezeClock(J3, "13:30");
         String siegePasse = firstSeatOn(J1);
         String siegeAVenir = firstSeatOn(J4);
-        String remplacant = firstHolderOn(J4);
+        // Both gestures below hand a seat to somebody who is not already on
+        // it: « cette personne tient déjà ce siège » is a refusal of its own,
+        // and it would hide the refusal this test is about. Which animateur
+        // holds the first seat of a day depends on the solve, so the two are
+        // named by exclusion rather than by luck.
+        String tenantPasse = firstHolderOn(J1);
+        String tenantAVenir = firstHolderOn(J4);
+        String remplacant = firstHolderOn(J4, tenantPasse);
+        String venuDAilleurs = firstHolderOn(J1, tenantAVenir);
 
         given().when()
                 .post("/api/postes/" + siegePasse + "/deplacement?animateur=" + remplacant)
@@ -170,7 +178,7 @@ class FrozenPastAcceptanceTest {
                 .statusCode(400);
         // Thursday is still the operator's: scored, not refused.
         given().when()
-                .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + firstHolderOn(J1))
+                .post("/api/postes/" + siegeAVenir + "/deplacement/simulation?animateur=" + venuDAilleurs)
                 .then()
                 .statusCode(200);
     }
@@ -310,13 +318,21 @@ class FrozenPastAcceptanceTest {
 
     @SuppressWarnings("unchecked")
     private static String firstHolderOn(String date) {
+        return firstHolderOn(date, null);
+    }
+
+    /** The first animateur seated on that day, skipping {@code exclu} when given. */
+    private static String firstHolderOn(String date, String exclu) {
         for (Map<String, Object> poste : affectationsPersistees()) {
             Map<String, Object> animateur = (Map<String, Object>) poste.get("animateur");
             if (animateur != null && date.equals(String.valueOf(creneauOf(poste).get("date")))) {
-                return String.valueOf(animateur.get("id"));
+                String id = String.valueOf(animateur.get("id"));
+                if (!id.equals(exclu)) {
+                    return id;
+                }
             }
         }
-        throw new AssertionError("Nobody seated on " + date);
+        throw new AssertionError("Nobody seated on " + date + " other than " + exclu);
     }
 
     private static List<Map<String, Object>> affectationsPersistees() {

@@ -325,6 +325,11 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage),
   },
   {
+    path: 'renforts',
+    title: () => $localize`:@@route.renforts:Renforts`,
+    loadComponent: () => import('./pages/renforts/renforts-page').then((m) => m.RenfortsPage),
+  },
+  {
     path: 'marge',
     title: () => $localize`:@@route.marge:Marge disponible`,
     loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),

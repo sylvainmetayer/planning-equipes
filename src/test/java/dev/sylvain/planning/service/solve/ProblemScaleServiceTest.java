@@ -58,6 +58,25 @@ class ProblemScaleServiceTest {
     }
 
     @Test
+    void renfortsAreCountedApartAndNeverWeighOnTheHoursToFill() {
+        Creneau matin = creneau(1, LUNDI, 9, 12);
+        PosteAffectation du = new PosteAffectation("P1", STAND, matin);
+        PosteAffectation renfort = new PosteAffectation("P2", STAND, matin);
+        renfort.setOptionnel(true);
+
+        ProblemScale volumetrie = ProblemScale.of(planning(List.of(matin), List.of(), List.of(du, renfort)));
+
+        // The card says « postes à pourvoir » and its fill ratio warns near 1:
+        // a renfort belongs beside that figure, never inside it (ADR 0046).
+        assertThat(volumetrie.posteCount()).isEqualTo(1);
+        assertThat(volumetrie.posteOptionnelCount()).isEqualTo(1);
+        assertThat(volumetrie.hoursToFill()).isCloseTo(3.0, within(0.001));
+        // The bonus hours are reported, and reported apart: what the event
+        // owes and what it may spend on top are two budgets (issue #505).
+        assertThat(volumetrie.hoursOptionnelles()).isCloseTo(3.0, within(0.001));
+    }
+
+    @Test
     void hoursAvailableAreTheDailyCeilingOfEachDayTheAnimateurCanCome() {
         List<Creneau> troisJours = List.of(
                 creneau(1, LUNDI, 9, 12), creneau(2, LUNDI.plusDays(1), 9, 12), creneau(3, LUNDI.plusDays(2), 9, 12));

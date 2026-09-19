@@ -349,8 +349,8 @@ public class PlanningPersistenceService {
 
         String insert = """
  INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id,
- heure_debut_effective, heure_fin_effective)
- VALUES (?, ?, ?, ?, ?, ?, ?)""";
+ heure_debut_effective, heure_fin_effective, optionnel)
+ VALUES (?, ?, ?, ?, ?, ?, ?, ?)""";
         int count = 0;
         try (PreparedStatement ps = scope.prepareScoped(connection, insert)) {
             for (PosteAffectation poste : postes) {
@@ -364,6 +364,7 @@ public class PlanningPersistenceService {
                         5, poste.getAnimateur() != null ? poste.getAnimateur().getId() : null);
                 ps.setObject(6, poste.getHeureDebutEffective());
                 ps.setObject(7, poste.getHeureFinEffective());
+                ps.setBoolean(8, poste.isOptionnel());
                 ps.addBatch();
                 count++;
             }
@@ -576,6 +577,14 @@ public class PlanningPersistenceService {
      * stand shifts every subsequent id. Seats of the same stand and créneau are
      * interchangeable anyway, so re-seeding them positionally restores the same
      * plan without depending on ids surviving a reference-data change.</p>
+     *
+     * <p><b>"Interchangeable" holds only as far as the order does.</b> A
+     * partially closed stand gives the seats of one créneau different
+     * effective windows, so the rank inside a group decides the hours somebody
+     * comes back on. That is why {@code ProblemBuilder} zero-pads the counter
+     * in the seat id: the column is a {@code VARCHAR}, and the plain
+     * {@code poste-98, poste-99, poste-100} form sorted here in an order the
+     * generation never used.</p>
      */
     public Map<String, List<String>> loadAnimateursByStandCreneau() {
         Map<String, List<String>> parStandCreneau = new LinkedHashMap<>();
@@ -633,7 +642,8 @@ public class PlanningPersistenceService {
             String animateurId,
             LocalTime heureDebutEffective,
             LocalTime heureFinEffective,
-            VacationSnapshot vacation) {
+            VacationSnapshot vacation,
+            boolean optionnel) {
 
         /** A seat that has nothing but ids to say, and a référentiel to say it against. */
         public Siege(
@@ -643,7 +653,19 @@ public class PlanningPersistenceService {
                 String animateurId,
                 LocalTime heureDebutEffective,
                 LocalTime heureFinEffective) {
-            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null);
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, null, false);
+        }
+
+        /** Same, with the window a seat was written under — a renfort is not one by default. */
+        public Siege(
+                String posteId,
+                String standId,
+                long creneauId,
+                String animateurId,
+                LocalTime heureDebutEffective,
+                LocalTime heureFinEffective,
+                VacationSnapshot vacation) {
+            this(posteId, standId, creneauId, animateurId, heureDebutEffective, heureFinEffective, vacation, false);
         }
     }
 
@@ -700,6 +722,7 @@ public class PlanningPersistenceService {
                 continue;
             }
             PosteAffectation poste = new PosteAffectation(siege.posteId(), stand, creneau);
+            poste.setOptionnel(siege.optionnel());
             if (siege.animateurId() != null) {
                 poste.setAnimateur(animateursById.get(siege.animateurId()));
             }
@@ -758,7 +781,7 @@ public class PlanningPersistenceService {
     private List<Siege> readSieges() {
         List<Siege> sieges = new ArrayList<>();
         String sql = """
- SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective
+ SELECT id, stand_id, creneau_id, animateur_id, heure_debut_effective, heure_fin_effective, optionnel
  FROM poste_affectation
  WHERE edition_id = ?
  ORDER BY id""";
@@ -772,7 +795,9 @@ public class PlanningPersistenceService {
                         rs.getLong("creneau_id"),
                         rs.getString("animateur_id"),
                         rs.getObject("heure_debut_effective", LocalTime.class),
-                        rs.getObject("heure_fin_effective", LocalTime.class)));
+                        rs.getObject("heure_fin_effective", LocalTime.class),
+                        null,
+                        rs.getBoolean("optionnel")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to load persisted planning", e);

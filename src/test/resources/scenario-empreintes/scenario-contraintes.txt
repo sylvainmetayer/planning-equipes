@@ -13,7 +13,8 @@
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
 .planning.ponderationsScenario{equilibrerCharge} = 7
 .planning.ponderationsScenario{maxJoursConsecutifsTravailles} = 3
-.planning.postes[0]  557df03ad27e2e57
+.planning.postes[0]  8347c485d384d5f5
+.planning.postes[1]  aac7244ecfccccd5
 .planning.quotasTypologies = (vide)
 .planning.score = null
 .planning.verrouillages = (vide)

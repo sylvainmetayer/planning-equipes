@@ -122,7 +122,12 @@ public final class WeekRelocationMoveIteratorFactory
             this.solution = solution;
             this.pauseSurPoste = solution.pauseSurPosteActive();
             for (PosteAffectation poste : solution.getPostes()) {
-                if (poste.isVerrouille() || poste.getCreneau() == null) {
+                // A renfort is out of this factory altogether (issue #505).
+                // It plays a whole week-long chain to fill one hole, and this
+                // phase only chases feasibility: an empty renfort is not a
+                // hole, and moving somebody onto one costs a chain to gain a
+                // soft point the next phase can gain for free.
+                if (poste.isVerrouille() || poste.getCreneau() == null || poste.isOptionnel()) {
                     continue;
                 }
                 movable.add(poste);

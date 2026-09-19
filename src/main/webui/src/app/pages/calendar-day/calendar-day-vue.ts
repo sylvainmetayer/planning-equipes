@@ -75,6 +75,18 @@ interface StandLine {
    * when it was in fact exactly as staffed as intended.</p>
    */
   effectifRequis: number;
+  /**
+   * Renforts opened on this line (issue #505): seats above the declared
+   * staffing that nobody is owed. Shown as a bonus, never counted as a want.
+   */
+  renforts: number;
+  /**
+   * Owed seats somebody holds — counted apart from {@link entries}, which
+   * lists everybody on the line, renfort holders included. Reading the list's
+   * length as the owed staffing would let a staffed renfort hide an empty
+   * owed seat, and the understaffing icon would go quiet on a real shortfall.
+   */
+  pourvus: number;
   /** True when this line is a meal-pause coverage vacation: a deliberately reduced headcount, flagged as information, never as a shortfall. */
   couverturePause: boolean;
 }
@@ -323,8 +335,17 @@ export class CalendarDayView {
     return isStandLineUnderstaffed(stand);
   }
 
+  /**
+   * A renfort is a bonus, and the screen has to say so (issue #505): drawn as
+   * a seat like any other, an empty one reads as somebody missing — the false
+   * alarm the whole feature exists to avoid.
+   */
+  protected renfortTooltip(stand: StandLine): string {
+    return $localize`:@@calendarDay.renfort:${stand.effectifRequis}:requis: demandé(s), ${stand.renforts}:renforts: renfort(s) possible(s) en plus`;
+  }
+
   protected understaffedTooltip(stand: StandLine): string {
-    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.entries.length}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
+    return $localize`:@@calendarDay.understaffed:Sous-effectif : ${stand.pourvus}:count: / ${stand.effectifRequis}:min: animateur(s) affecté(s)`;
   }
 
   /** True for a meal-pause coverage line: reduced headcount on purpose, shown as an indication. */
@@ -371,7 +392,9 @@ export class CalendarDayView {
 
 /** True for a stand-line with some, but fewer than its generated seats, animateurs — fully unassigned (0) is already flagged separately. */
 function isStandLineUnderstaffed(stand: StandLine): boolean {
-  return stand.entries.length > 0 && stand.entries.length < stand.effectifRequis;
+  // Owed seats held, not people on the line: somebody on a renfort would
+  // otherwise make an empty owed seat look filled (issue #505).
+  return stand.entries.length > 0 && stand.pourvus < stand.effectifRequis;
 }
 
 /** True for a stand-line with at least one filled seat whose animateur has no appreciation on this stand's typologies. */
@@ -404,7 +427,9 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
         heureFin: string;
         entries: AssignedEntry[];
         postesLibres: PosteAffectation[];
+        renforts: number;
         sieges: number;
+        pourvus: number;
       }
     >
   >();
@@ -436,14 +461,32 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
     const key = `${stand.id}::${heureDebut}::${heureFin}`;
     let entry = standMap.get(key);
     if (!entry) {
-      entry = { stand, heureDebut, heureFin, entries: [], postesLibres: [], sieges: 0 };
+      entry = {
+        stand,
+        heureDebut,
+        heureFin,
+        entries: [],
+        postesLibres: [],
+        sieges: 0,
+        renforts: 0,
+        pourvus: 0,
+      };
       standMap.set(key, entry);
     }
-    // Every poste is one seat this line has to fill, whoever ends up on it.
-    entry.sieges += 1;
+    // Every poste is one seat this line has to fill, whoever ends up on it —
+    // except a renfort (issue #505), counted apart: it was opened above the
+    // staffing the window asks for, so a line without it is not short-handed.
+    if (poste.optionnel) {
+      entry.renforts += 1;
+    } else {
+      entry.sieges += 1;
+    }
     if (poste.animateur) {
       const label = `${poste.animateur.prenom ?? ''} ${poste.animateur.nom ?? ''}`.trim();
       entry.entries.push({ poste, label });
+      if (!poste.optionnel) {
+        entry.pourvus += 1;
+      }
     } else {
       entry.postesLibres.push(poste);
     }
@@ -467,6 +510,8 @@ export function buildDays(postes: PosteAffectation[]): DayCard[] {
               entries: entry.entries,
               postesLibres: entry.postesLibres,
               effectifRequis: entry.sieges,
+              renforts: entry.renforts,
+              pourvus: entry.pourvus,
               couverturePause: creneau.couverturePause === true,
             }))
             .sort(

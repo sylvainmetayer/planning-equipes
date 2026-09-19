@@ -1,0 +1,99 @@
+/*
+ * « Renforts » (issue #505). The reading is a budget one: what the edition
+ * opens above what it owes, and what the last solve actually took of it. The
+ * table is wide — one column per event day — so it scrolls sideways rather
+ * than wrapping, and the two figures of a cell are stacked instead of sitting
+ * in two columns per day, which would double an already wide grid.
+ */
+
+.renforts-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.renforts-formule {
+  margin: 0 0 1rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-medium);
+}
+
+.renforts-tri {
+  margin-bottom: 1rem;
+}
+
+.renforts-table-wrapper {
+  overflow-x: auto;
+}
+
+.renforts-table {
+  border-collapse: collapse;
+  width: 100%;
+  font: var(--mat-sys-body-medium);
+}
+
+.renforts-table th,
+.renforts-table td {
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+  white-space: nowrap;
+}
+
+.renforts-table thead th {
+  font: var(--mat-sys-title-small);
+  position: sticky;
+  top: 0;
+  background: var(--mat-sys-surface);
+}
+
+.renforts-table tbody th {
+  font-weight: 500;
+}
+
+.renforts-table tfoot th,
+.renforts-table tfoot td {
+  font: var(--mat-sys-title-small);
+  border-top: 2px solid var(--mat-sys-outline);
+  border-bottom: none;
+}
+
+.renforts-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The capacity: the figure a cut acts on, so it carries the emphasis. */
+.renforts-ouvertes {
+  font-weight: 600;
+}
+
+/* Hours opened and never taken: removing them costs nothing, hence the quiet tone. */
+.renforts-inutilisees {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.renforts-cellule-pourvues {
+  display: block;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+/* A day the stand opens no renfort on: a hole, never a zero. */
+.renforts-vide {
+  color: var(--mat-sys-outline);
+}
+
+.renforts-emplacement {
+  display: block;
+  font: var(--mat-sys-label-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+@media (max-width: 700px) {
+  .renforts-table th,
+  .renforts-table td {
+    padding: 0.3rem 0.4rem;
+  }
+}

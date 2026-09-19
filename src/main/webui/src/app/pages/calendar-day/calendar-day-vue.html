@@ -89,6 +89,11 @@
                         warning
                       </mat-icon>
                     }
+                    @if (stand.renforts > 0) {
+                      <mat-icon inline class="renfort-icon" [matTooltip]="renfortTooltip(stand)" [attr.aria-label]="renfortTooltip(stand)">
+                        add_circle_outline
+                      </mat-icon>
+                    }
                     @if (isCouverturePause(stand)) {
                       <mat-icon inline class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
                         restaurant
