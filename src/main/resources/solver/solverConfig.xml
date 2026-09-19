@@ -88,14 +88,28 @@
         <termination>
             <bestScoreFeasible>true</bestScoreFeasible>
         </termination>
+        <!--
+            Les renforts (issue #505) sont hors de cette phase : les laisser
+            vides n'est jamais une violation, donc chaque mouvement passe sur
+            l'un d'eux est un mouvement qui ne ferme pas un trou. Mesure sur
+            festival-hivernal : 900 s et 4 262 pas pour s'arreter a -9 dur avec
+            eux, 59 s et 360 pas sans. La phase 2 ne porte pas ce filtre, et
+            c'est la qu'un renfort se pourvoit.
+        -->
         <unionMoveSelector>
             <changeMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$ChangeMoveFilter</filterClass>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <filterClass>dev.sylvain.planning.solver.SiegeObligatoireFilter</filterClass>
+                </entitySelector>
             </changeMoveSelector>
             <swapMoveSelector>
                 <filterClass>dev.sylvain.planning.solver.EligibleAnimateurMoveFilter$SwapMoveFilter</filterClass>
                 <fixedProbabilityWeight>1.0</fixedProbabilityWeight>
+                <entitySelector>
+                    <filterClass>dev.sylvain.planning.solver.SiegeObligatoireFilter</filterClass>
+                </entitySelector>
             </swapMoveSelector>
             <!--
                 Uniform Change/Swap selection over ~2000+ postes samples the

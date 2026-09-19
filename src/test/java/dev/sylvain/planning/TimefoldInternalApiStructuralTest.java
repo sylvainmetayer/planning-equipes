@@ -49,18 +49,27 @@ class TimefoldInternalApiStructuralTest {
     private static final Path SOURCES = Path.of("src/main/java");
 
     /** File → the net that catches the next Timefold break there. */
-    private static final Map<String, String> DEPENDANTS_DOCUMENTES = Map.of(
-            "dev/sylvain/planning/service/diagnostic/ScoreDirectorConstraintDiagnosticService.java",
-            "ConstraintDiagnosticServiceContractTest compares it with Timefold's analyze() oracle",
-            "dev/sylvain/planning/solver/EligibleAnimateurMoveFilter.java",
-            "compile error on the SelectionFilter / SelectorBased*Move types; -Pscenario-tests for a filter bypassed",
-            "dev/sylvain/planning/solver/HoleNeighbourPosteFilter.java",
-            "compile error on SelectionFilter; HoleNeighbourPosteFilterTest and -Pscenario-tests for a filter bypassed",
-            "dev/sylvain/planning/solver/UnassignedPosteFilter.java",
-            "compile error on SelectionFilter; -Pscenario-tests for a filter bypassed",
-            "dev/sylvain/planning/solver/WeekRelocationMoveIteratorFactory.java",
-            "compile error on MoveIteratorFactory / ScoreDirector; WeekRelocationMoveIteratorFactoryTest, "
-                    + "and -Pscenario-tests for a move the solver stops drawing");
+    private static final Map<String, String> DEPENDANTS_DOCUMENTES = Map.ofEntries(
+            Map.entry(
+                    "dev/sylvain/planning/service/diagnostic/ScoreDirectorConstraintDiagnosticService.java",
+                    "ConstraintDiagnosticServiceContractTest compares it with Timefold's analyze() oracle"),
+            Map.entry(
+                    "dev/sylvain/planning/solver/EligibleAnimateurMoveFilter.java",
+                    "compile error on the SelectionFilter / SelectorBased*Move types; -Pscenario-tests for a filter bypassed"),
+            Map.entry(
+                    "dev/sylvain/planning/solver/HoleNeighbourPosteFilter.java",
+                    "compile error on SelectionFilter; HoleNeighbourPosteFilterTest and -Pscenario-tests for a filter bypassed"),
+            Map.entry(
+                    "dev/sylvain/planning/solver/UnassignedPosteFilter.java",
+                    "compile error on SelectionFilter; -Pscenario-tests for a filter bypassed"),
+            Map.entry(
+                    "dev/sylvain/planning/solver/SiegeObligatoireFilter.java",
+                    "compile error on SelectionFilter; -Pscenario-tests, where a filter bypassed shows as the "
+                            + "hivernal festival no longer converging"),
+            Map.entry(
+                    "dev/sylvain/planning/solver/WeekRelocationMoveIteratorFactory.java",
+                    "compile error on MoveIteratorFactory / ScoreDirector; WeekRelocationMoveIteratorFactoryTest, "
+                            + "and -Pscenario-tests for a move the solver stops drawing"));
 
     private static final Pattern MENTION_DE_CORE_IMPL = Pattern.compile("\\bai\\.timefold\\.solver\\.core\\.impl\\.");
 
