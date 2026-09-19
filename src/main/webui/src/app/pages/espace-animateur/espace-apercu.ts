@@ -27,6 +27,39 @@ export function finSurLAxe(debut: number, fin: number): number {
   return fin <= debut ? fin + 24 * 60 : fin;
 }
 
+/**
+ * Whether a break falls inside a seat: same stand, and a window the seat
+ * contains — read on the seat's own axis, so a shift running past midnight
+ * holds the breaks of the small hours.
+ *
+ * <p>A bare `HH:mm` comparison drops them: 00:30 is « before » 22:00 on the
+ * clock, and a legal break would leave the shift it cuts into to be listed
+ * apart, as if no seat carried it.</p>
+ */
+export function pauseInsidePoste(
+  pause: { standId: string | null; debut: string | null; fin: string | null },
+  poste: { standId: string | null; heureDebut: string | null; heureFin: string | null },
+): boolean {
+  if (pause.standId !== poste.standId) {
+    return false;
+  }
+  const debut = minutesSinceMidnight(poste.heureDebut);
+  const finBrute = minutesSinceMidnight(poste.heureFin);
+  const pauseDebut = minutesSinceMidnight(pause.debut);
+  const pauseFin = minutesSinceMidnight(pause.fin);
+  if (debut === null || finBrute === null || pauseDebut === null || pauseFin === null) {
+    return false;
+  }
+  const fin = finSurLAxe(debut, finBrute);
+  // Only a shift that really crosses midnight may pull an earlier clock time
+  // forward: without that guard, a morning break would be read as belonging
+  // to the following night's shift.
+  const traverseMinuit = fin > 24 * 60;
+  const debutPause = traverseMinuit && pauseDebut < debut ? pauseDebut + 24 * 60 : pauseDebut;
+  const finPause = pauseFin < debutPause ? pauseFin + 24 * 60 : pauseFin;
+  return debutPause >= debut && finPause <= fin;
+}
+
 /** The horizontal axis of the frieze: the span its bars are drawn on. */
 export interface AxeFrise {
   /** Minutes since midnight of the left edge, always on the hour. */
@@ -121,11 +154,25 @@ export interface LigneFrise {
 
 /** Hours worked on a day, breaks included — the same reading the stat block prints. */
 export function dayHours(jour: JourPlanning): number {
-  return jour.postes.reduce((total, poste) => {
+  const heures = jour.postes.reduce((total, poste) => {
     const debut = minutesSinceMidnight(poste.heureDebut);
     const fin = minutesSinceMidnight(poste.heureFin);
     return debut === null || fin === null ? total : total + (finSurLAxe(debut, fin) - debut) / 60;
   }, 0);
+  return arrondiHeures(heures);
+}
+
+/**
+ * Hours to one decimal, as every hour figure of this space is read.
+ *
+ * <p>Rounded here rather than by a pipe at each display: four of them print
+ * this number — the day strip, the day title, the Aperçu stat, the frieze —
+ * and two of those are aria-labels, where no pipe applies. A 09:00–09:50 seat
+ * is not rare in the scenarios of this repository, and it reads
+ * « 0.8333333333333334 h » without this.</p>
+ */
+export function arrondiHeures(heures: number): number {
+  return Math.round(heures * 10) / 10;
 }
 
 /** True for a Monday, read through the calendar rather than through string arithmetic. */
@@ -204,7 +251,7 @@ export function statsPlanning(jours: readonly JourPlanning[]): StatsPlanning {
       stands.add(poste.standId);
     }
   }
-  return { heures, creneaux, stands: stands.size, jours: workedDays };
+  return { heures: arrondiHeures(heures), creneaux, stands: stands.size, jours: workedDays };
 }
 
 /** The typologies of a planning, once each, in label order — the frieze's legend. */
