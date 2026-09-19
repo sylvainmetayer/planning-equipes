@@ -350,6 +350,11 @@ public class PlanningService {
         return whatIf.creneauAvailability(solved, creneauId, standId, posteId);
     }
 
+    /** @see PlanningWhatIf#persistedSuggererReparations */
+    public PlanningWhatIf.SuggestionsReparation persistedSuggererReparations(String posteId, Integer plafondDemande) {
+        return whatIf.persistedSuggererReparations(posteId, plafondDemande);
+    }
+
     /** @see PlanningWhatIf#persistedCreneauAvailability */
     public PlanningWhatIf.CreneauAvailability persistedCreneauAvailability(
             Long creneauId, String standId, String posteId) {

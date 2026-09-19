@@ -374,7 +374,7 @@ public class PlanningMcpTools {
                             required = false)
                     Integer plafond,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        SuggestionsReparation suggestions = planningService.suggererReparations(persistedPlanning(), posteId, plafond);
+        SuggestionsReparation suggestions = planningService.persistedSuggererReparations(posteId, plafond);
         return new SuggestionsView(
                 suggestions.posteId(),
                 suggestions.animateurActuelId(),
