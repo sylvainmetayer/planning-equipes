@@ -65,12 +65,12 @@
   margin: 0 0 0.5rem;
 }
 
-/* Le tableau de relecture avant envoi (issue #503).
+/* The review table read before sending (issue #503).
 
-   Une ligne par personne, et la case en tête de ligne : le geste est « je ne
-   préviens pas celle-là ce soir », pas « je supprime une ligne ». Une ligne
-   décochée s'estompe au lieu de disparaître — ce qu'on a décidé de ne pas
-   faire doit rester lisible jusqu'à l'envoi. */
+   One row per person, and the box at the head of the row: the gesture is « je
+   ne préviens pas celle-là ce soir », not « je supprime une ligne ». An
+   unticked row fades instead of disappearing — what one has decided not to do
+   must stay readable until the send. */
 
 .publication-outils {
   display: flex;

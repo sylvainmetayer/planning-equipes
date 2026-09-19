@@ -86,15 +86,15 @@
       </button>
       @if (listOpen()) {
         <div class="publication-outils">
-          <mat-button-toggle-group [value]="tri()" (change)="choisirTri($event.value)"
+          <mat-button-toggle-group [value]="sortOrder()" (change)="chooseSort($event.value)"
                                    i18n-aria-label="@@publication.tri.label" aria-label="Ordre de la liste">
             <mat-button-toggle value="nom" i18n="@@publication.tri.nom">Par nom</mat-button-toggle>
             <mat-button-toggle value="ampleur" i18n="@@publication.tri.ampleur">Par ampleur</mat-button-toggle>
           </mat-button-toggle-group>
-          @if (mineursCaches() > 0 || masquerMineurs()) {
-            <mat-checkbox [checked]="masquerMineurs()" (change)="basculerMineurs($event.checked)">
+          @if (minorCount() > 0 || minorHidden()) {
+            <mat-checkbox [checked]="minorHidden()" (change)="toggleMinorFilter($event.checked)">
               <ng-container i18n="@@publication.mineurs.masquer">
-                Masquer les changements mineurs ({{ mineursCaches() }})
+                Masquer les changements mineurs ({{ minorCount() }})
               </ng-container>
             </mat-checkbox>
           }
@@ -112,11 +112,11 @@
             </tr>
           </thead>
           <tbody>
-            @for (destinataire of lignes(); track destinataire.animateurId) {
-              <tr [class.publication-ligne-exclue]="estExclu(destinataire.animateurId)">
+            @for (destinataire of rows(); track destinataire.animateurId) {
+              <tr [class.publication-ligne-exclue]="isExcluded(destinataire.animateurId)">
                 <td>
-                  <mat-checkbox [checked]="!estExclu(destinataire.animateurId)"
-                                (change)="basculerExclusion(destinataire.animateurId, $event.checked)"
+                  <mat-checkbox [checked]="!isExcluded(destinataire.animateurId)"
+                                (change)="toggleExclusion(destinataire.animateurId, $event.checked)"
                                 [attr.aria-label]="destinataire.nomAffiche"></mat-checkbox>
                 </td>
                 <td>
@@ -130,7 +130,7 @@
                 </td>
                 <td>
                   <p class="publication-ampleur">
-                    {{ resumeChangements(destinataire) }}
+                    {{ changeSummaryOf(destinataire) }}
                     @if (destinataire.mineur) {
                       <span class="publication-mineur" i18n="@@publication.mineur">— changement mineur</span>
                     }
@@ -144,17 +144,17 @@
                     }
                   </ul>
                 </td>
-                <td class="publication-confirmation">{{ resumeConfirmation(destinataire) }}</td>
+                <td class="publication-confirmation">{{ confirmationOf(destinataire) }}</td>
               </tr>
             }
           </tbody>
         </table>
-        @if (lignes().length === 0) {
+        @if (rows().length === 0) {
           <p class="publication-note" i18n="@@publication.table.vide">
             Le filtre masque toutes les lignes : ces personnes seront prévenues quand même.
           </p>
         }
-        @if (preview()?.nombreConcernes !== nombrePrevenus()) {
+        @if (preview()?.nombreConcernes !== notifiedCount()) {
           <p class="publication-note" i18n="@@publication.exclusions.rappel">
             Les personnes décochées ne recevront rien et resteront à prévenir à la prochaine publication.
           </p>

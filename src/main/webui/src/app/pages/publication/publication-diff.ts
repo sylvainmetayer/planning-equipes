@@ -9,17 +9,17 @@
 import { DestinatairePublication } from '../../core/models';
 
 /** The two orders the table offers, and the values of the `tri` query param. */
-export type TriDestinataires = 'nom' | 'ampleur';
+export type RecipientSort = 'nom' | 'ampleur';
 
-const TRIS: readonly TriDestinataires[] = ['nom', 'ampleur'];
+const TRIS: readonly RecipientSort[] = ['nom', 'ampleur'];
 
 /**
  * Reads the `tri` query param. Anything unknown is the name order, the one
  * the server already sends and the only one that does not move between two
  * readings of an unchanged plan.
  */
-export function readTri(value: string | null): TriDestinataires {
-  return (TRIS as readonly string[]).includes(value ?? '') ? (value as TriDestinataires) : 'nom';
+export function readRecipientSort(value: string | null): RecipientSort {
+  return (TRIS as readonly string[]).includes(value ?? '') ? (value as RecipientSort) : 'nom';
 }
 
 /** How much moves for somebody: the number of sentences their mail would carry. */
@@ -34,7 +34,7 @@ export function changeCount(destinataire: DestinatairePublication): number {
  */
 export function sortRecipients(
   destinataires: readonly DestinatairePublication[],
-  tri: TriDestinataires,
+  tri: RecipientSort,
 ): DestinatairePublication[] {
   const rows = [...destinataires];
   if (tri === 'nom') {
@@ -53,9 +53,9 @@ export function sortRecipients(
  */
 export function filterRecipients(
   destinataires: readonly DestinatairePublication[],
-  masquerMineurs: boolean,
+  minorHidden: boolean,
 ): DestinatairePublication[] {
-  return masquerMineurs ? destinataires.filter((each) => !each.mineur) : [...destinataires];
+  return minorHidden ? destinataires.filter((each) => !each.mineur) : [...destinataires];
 }
 
 /**
