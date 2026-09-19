@@ -202,7 +202,10 @@ final class ScenarioDtoAssembler {
                         poste.getId(),
                         poste.getStand().getId(),
                         asString(poste.getCreneau().getId()),
-                        null))
+                        null,
+                        // Absent rather than false on an ordinary seat: the file
+                        // reads as it did before renforts existed.
+                        poste.isOptionnel() ? Boolean.TRUE : null))
                 .toList();
     }
 

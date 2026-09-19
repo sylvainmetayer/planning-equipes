@@ -39,8 +39,34 @@ public final class PreferenceConstraints {
         return new Constraint[] {
             favoriserMixiteDesNiveaux(constraintFactory),
             equilibrerCreneauxPenibles(constraintFactory),
-            preserverBufferPolyvalents(constraintFactory)
+            preserverBufferPolyvalents(constraintFactory),
+            pourvoirLesSiegesOptionnels(constraintFactory)
         };
+    }
+
+    /**
+     * Employ the volant available rather than leave it idle (issue #505,
+     * ADR 0046): a renfort that somebody takes is worth a point.
+     *
+     * <p>A <b>reward</b>, and soft, and that pairing is the whole design. A
+     * penalty on an empty renfort would make the capacity a stand declares
+     * read as a need nobody meets — the very thing
+     * {@code ProblemBuilder.buildPostes} refuses to do with {@code
+     * effectifMax}. Soft puts it under every medium rule, so a renfort never
+     * competes with a seat that is owed: the solver takes one only once it has
+     * nothing better to do with that person.</p>
+     *
+     * <p>Past seats are left out for the reason every other reward leaves them
+     * out (ADR 0044): a renfort already worked is a constant no move can act
+     * on, and counting it would only inflate the score the analyses
+     * compare.</p>
+     */
+    private Constraint pourvoirLesSiegesOptionnels(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "pourvoirLesSiegesOptionnels")
+                .filter(poste -> poste.isOptionnel() && poste.getAnimateur() != null && PastSeats.reproachable(poste))
+                .reward(HardMediumSoftScore.ONE_SOFT)
+                .asConstraint("pourvoirLesSiegesOptionnels");
     }
 
     private Constraint favoriserMixiteDesNiveaux(ConstraintFactory constraintFactory) {

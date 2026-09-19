@@ -643,6 +643,14 @@ public final class ProblemBuilder {
      * substantially bigger, harder problem than the one actually staffed
      * for — the real reason it kept stalling short of hard-feasibility.</p>
      *
+     * <p>What {@code effectifMax} <b>does</b> generate, since issue #505, is a
+     * band of <b>optional</b> seats above the window's own effectif (ADR 0046):
+     * seats {@code posteDoitEtrePourvu} ignores, so leaving them empty is never
+     * a violation and never an écart. The 31 % of mandatory seats measured
+     * below is exactly what they do not become — the capacity a stand declares
+     * now employs the volant available rather than reading as a need nobody
+     * meets.</p>
+     *
      * <p>Falling back to {@code effectifMin} on <i>every</i> slot was in turn
      * what made a real event's planning cover 7 155 h where its source workbook
      * needed 10 986: the minimum is what a stand needs at its quietest hour, and
@@ -667,23 +675,49 @@ public final class ProblemBuilder {
                 boolean creneauEntierOuvert = segments.size() == 1
                         && segments.get(0).debutMinutes() == 0
                         && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-                for (Creneau.SegmentOuvert segment : segments) {
-                    // At least one seat on an open stand, half on a
-                    // break-covering shift: the rule lives on the slot so the
-                    // analyses count exactly what is generated here.
-                    int seats = creneau.siegesSegment(segment.effectif());
-                    for (int seat = 0; seat < seats; seat++) {
-                        PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
-                        if (!creneauEntierOuvert) {
-                            poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
-                            poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
+                // Two passes over the same segments, and the order matters: the
+                // seats of one (stand, créneau) are re-seeded positionally from
+                // the persisted plan, which only knows how many people held it.
+                // Optional seats coming last is what makes those people land on
+                // the seats that are owed before they land on a renfort.
+                for (boolean optionnel : new boolean[] {false, true}) {
+                    for (Creneau.SegmentOuvert segment : segments) {
+                        int seats = optionnel
+                                ? siegesOptionnels(creneau, stand, segment)
+                                // At least one seat on an open stand, half on a
+                                // break-covering shift: the rule lives on the slot so
+                                // the analyses count exactly what is generated here.
+                                : creneau.siegesSegment(segment.effectif());
+                        for (int seat = 0; seat < seats; seat++) {
+                            PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
+                            poste.setOptionnel(optionnel);
+                            if (!creneauEntierOuvert) {
+                                poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
+                                poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
+                            }
+                            postes.add(poste);
                         }
-                        postes.add(poste);
                     }
                 }
             }
         }
         return postes;
+    }
+
+    /**
+     * The renforts of one open segment: what the stand says it could take
+     * ({@code effectifMax}) above what the window says it needs (issue #505,
+     * ADR 0046). Zero when the two meet, which is the case of two stands out
+     * of three.
+     *
+     * <p>Counted through {@link Creneau#siegesSegment(int)} on both sides
+     * rather than as a plain subtraction, so a break-covering shift — which
+     * staffs half a window — gets half the band too, instead of a renfort
+     * band computed on a rule the mandatory seats do not follow.</p>
+     */
+    private static int siegesOptionnels(Creneau creneau, Stand stand, Creneau.SegmentOuvert segment) {
+        int plafond = creneau.siegesSegment(Math.max(stand.getEffectifMax(), segment.effectif()));
+        return Math.max(0, plafond - creneau.siegesSegment(segment.effectif()));
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */

@@ -57,8 +57,11 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
         if (poste.getCreneau() == null || poste.isVerrouille()) {
             return false;
         }
+        // An empty renfort is not a hole (issue #505): ruining its neighbours
+        // to fill it would spend the ruin-and-recreate budget on a seat nobody
+        // is missing on.
         if (poste.getAnimateur() == null) {
-            return true;
+            return !poste.isOptionnel();
         }
         Map<LocalDate, List<long[]>> trous = trous(scoreDirector.getWorkingSolution());
         if (trous.isEmpty()) {
@@ -108,8 +111,13 @@ public final class HoleNeighbourPosteFilter implements SelectionFilter<PlanningE
             // A pinned hole is not a hole worth looking at: the past ones
             // (ADR 0044) would otherwise keep the memo from ever being empty,
             // and aim the ruin at hours where every neighbour is pinned too.
+            // An empty renfort (issue #505) is not a hole either, and it is
+            // the one that would keep the memo full for the whole solve: a
+            // stand declaring a capacity it cannot staff has empty renforts
+            // on every hour it opens.
             if (poste.getAnimateur() != null
                     || poste.isVerrouille()
+                    || poste.isOptionnel()
                     || poste.getCreneau() == null
                     || poste.getCreneau().getDate() == null) {
                 continue;

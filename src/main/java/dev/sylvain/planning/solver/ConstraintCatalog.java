@@ -586,7 +586,15 @@ public final class ConstraintCatalog {
                     Niveau.SOFT,
                     "Préférences",
                     "Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir "
-                            + "réparer le planning en cas d'absence de dernière minute."));
+                            + "réparer le planning en cas d'absence de dernière minute."),
+            new ConstraintDefinition(
+                    "pourvoirLesSiegesOptionnels",
+                    Niveau.SOFT,
+                    "Préférences",
+                    "Employer le volant disponible : au-dessus de l'effectif demandé, un stand déclare une capacité "
+                            + "(effectifMax) où le solveur peut poser un renfort. Chaque renfort pourvu rapporte. "
+                            + "Un renfort laissé vide ne coûte rien et n'est jamais un écart — c'est ce qui "
+                            + "distingue une capacité d'un besoin."));
 
     private ConstraintCatalog() {}
     /**

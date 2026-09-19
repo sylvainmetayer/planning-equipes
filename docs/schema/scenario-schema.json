@@ -530,6 +530,9 @@
           "type" : "string",
           "minLength" : 1
         },
+        "optionnel" : {
+          "type" : "boolean"
+        },
         "standId" : {
           "type" : "string",
           "minLength" : 1
