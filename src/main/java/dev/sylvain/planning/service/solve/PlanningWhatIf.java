@@ -621,6 +621,33 @@ public final class PlanningWhatIf {
     }
 
     /**
+     * The same search as {@link #suggererReparations}, on the <b>persisted</b>
+     * plan rather than on one the caller uploads — and prepared exactly as
+     * {@link #applyReparation} prepares it.
+     *
+     * <p>That symmetry is the whole point. A plan read back from the database
+     * carries seats, not rules: no typologie quota, no disabled constraint, no
+     * weight of this edition. Scored bare, the search offered candidates the
+     * write then refused with a 400 — it proposed somebody over a typologie cap
+     * and rejected them one click later. The two gestures now read the same
+     * rules, so what the assistant lists is what the assistant can apply.</p>
+     *
+     * @throws BusinessError.Conflict when no solve has been persisted yet:
+     *         there is no seat to repair, and « poste inconnu » would send the
+     *         reader looking for an id that is not the problem
+     */
+    public SuggestionsReparation persistedSuggererReparations(String posteId, Integer plafondDemande) {
+        PlanningEvenement persiste = persistence.loadPersistedPlanning();
+        if (persiste == null
+                || persiste.getPostes() == null
+                || persiste.getPostes().isEmpty()) {
+            throw new BusinessError.Conflict("Aucun planning persisté : lancez d'abord une résolution.");
+        }
+        preparation.accept(persiste);
+        return suggererReparations(persiste, posteId, plafondDemande);
+    }
+
+    /**
      * Applies one repair suggestion to the <b>persisted</b> plan (issue #71):
      * the seat changes hands and nothing else does, which is exactly the plan
      * {@link #suggererReparations} scored. A single surgical {@code UPDATE},
