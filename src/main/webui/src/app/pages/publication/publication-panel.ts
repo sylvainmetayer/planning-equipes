@@ -35,9 +35,9 @@ import {
   changeSummary,
   confirmationLabel,
   filterRecipients,
-  readTri,
+  readRecipientSort,
   sortRecipients,
-  TriDestinataires,
+  RecipientSort,
 } from './publication-diff';
 
 /**
@@ -108,8 +108,8 @@ export class PublicationPanel {
    * « regarde cette liste, triée par ampleur » is a link, and a refresh in the
    * middle of a review restores the screen it interrupted.
    */
-  protected readonly tri = signal<TriDestinataires>(readTri(this.params.get('tri')));
-  protected readonly masquerMineurs = signal(this.params.get('mineurs') === 'masques');
+  protected readonly sortOrder = signal<RecipientSort>(readRecipientSort(this.params.get('tri')));
+  protected readonly minorHidden = signal(this.params.get('mineurs') === 'masques');
 
   /**
    * Who the admin took out of this send. Not view state and deliberately not
@@ -117,22 +117,22 @@ export class PublicationPanel {
    * at the list, and a shared link that silently carried somebody's exclusion
    * would be the worst possible thing to paste into a chat.
    */
-  private readonly exclus = signal<ReadonlySet<string>>(new Set());
+  private readonly excluded = signal<ReadonlySet<string>>(new Set());
 
-  protected readonly lignes = computed(() =>
+  protected readonly rows = computed(() =>
     sortRecipients(
-      filterRecipients(this.preview()?.destinataires ?? [], this.masquerMineurs()),
-      this.tri(),
+      filterRecipients(this.preview()?.destinataires ?? [], this.minorHidden()),
+      this.sortOrder(),
     ),
   );
 
   /** How many rows the filter is currently folding away — said, so nothing hides silently. */
-  protected readonly mineursCaches = computed(
+  protected readonly minorCount = computed(
     () => (this.preview()?.destinataires ?? []).filter((each) => each.mineur).length,
   );
 
-  protected readonly nombrePrevenus = computed(
-    () => (this.preview()?.nombreConcernes ?? 0) - this.exclus().size,
+  protected readonly notifiedCount = computed(
+    () => (this.preview()?.nombreConcernes ?? 0) - this.excluded().size,
   );
   protected readonly publishLabel = computed(() => libellePublier(this.preview()));
   protected readonly unavailableReason = computed(() => raisonIndisponible(this.preview()));
@@ -155,45 +155,45 @@ export class PublicationPanel {
 
   protected readonly publishable = computed(() => {
     const preview = this.preview();
-    return !!preview && this.nombrePrevenus() > 0 && !preview.solveEnCours && !preview.planVide;
+    return !!preview && this.notifiedCount() > 0 && !preview.solveEnCours && !preview.planVide;
   });
 
   constructor() {
     keepViewInQueryParams(() => ({
-      tri: optionalParam(this.tri() === 'nom' ? null : this.tri()),
-      mineurs: this.masquerMineurs() ? 'masques' : null,
+      tri: optionalParam(this.sortOrder() === 'nom' ? null : this.sortOrder()),
+      mineurs: this.minorHidden() ? 'masques' : null,
     }));
     void this.reloadPreview();
   }
 
-  protected estExclu(animateurId: string): boolean {
-    return this.exclus().has(animateurId);
+  protected isExcluded(animateurId: string): boolean {
+    return this.excluded().has(animateurId);
   }
 
-  protected basculerExclusion(animateurId: string, prevenir: boolean): void {
-    const exclus = new Set(this.exclus());
+  protected toggleExclusion(animateurId: string, prevenir: boolean): void {
+    const excluded = new Set(this.excluded());
     if (prevenir) {
-      exclus.delete(animateurId);
+      excluded.delete(animateurId);
     } else {
-      exclus.add(animateurId);
+      excluded.add(animateurId);
     }
-    this.exclus.set(exclus);
+    this.excluded.set(excluded);
   }
 
-  protected resumeChangements(destinataire: DestinatairePublication): string {
+  protected changeSummaryOf(destinataire: DestinatairePublication): string {
     return changeSummary(destinataire);
   }
 
-  protected resumeConfirmation(destinataire: DestinatairePublication): string {
+  protected confirmationOf(destinataire: DestinatairePublication): string {
     return confirmationLabel(destinataire, intlLocale());
   }
 
-  protected choisirTri(tri: TriDestinataires): void {
-    this.tri.set(tri);
+  protected chooseSort(sort: RecipientSort): void {
+    this.sortOrder.set(sort);
   }
 
-  protected basculerMineurs(masquer: boolean): void {
-    this.masquerMineurs.set(masquer);
+  protected toggleMinorFilter(masquer: boolean): void {
+    this.minorHidden.set(masquer);
   }
 
   /** The same table as a file, for the reading that happens away from the screen. */
@@ -258,8 +258,8 @@ export class PublicationPanel {
     if (this.busy() || !this.publishable()) {
       return;
     }
-    const exclus = [...this.exclus()];
-    const count = this.nombrePrevenus();
+    const excluded = [...this.excluded()];
+    const count = this.notifiedCount();
     if (count <= 0) {
       return;
     }
@@ -274,9 +274,9 @@ export class PublicationPanel {
       const confirmed = await this.confirm.ask({
         title: $localize`:@@publication.confirmTitre:Publier le planning ?`,
         message:
-          exclus.length === 0
+          excluded.length === 0
             ? $localize`:@@publication.confirmMessage:${count}:count: personne(s) recevront leur planning à jour et le détail de ce qui change pour elles. Personne d'autre ne sera sollicité.`
-            : $localize`:@@publication.confirmMessageExclusions:${count}:count: personne(s) recevront leur planning à jour. ${exclus.length}:exclus: personne(s) ne recevront rien et resteront à prévenir à la prochaine publication.`,
+            : $localize`:@@publication.confirmMessageExclusions:${count}:count: personne(s) recevront leur planning à jour. ${excluded.length}:exclus: personne(s) ne recevront rien et resteront à prévenir à la prochaine publication.`,
         confirmLabel: $localize`:@@publication.confirmAction:Publier`,
       });
       if (!confirmed) {
@@ -284,12 +284,12 @@ export class PublicationPanel {
       }
       this.reported.emit($localize`:@@publication.enCours:Publication du planning...`);
       try {
-        const report = await this.planningApi.publish(exclus);
+        const report = await this.planningApi.publish(excluded);
         const summary = resumePublication(report);
         this.reported.emit(
           summary.details ? `${summary.titre} — ${summary.details}` : summary.titre,
         );
-        this.exclus.set(new Set());
+        this.excluded.set(new Set());
         this.listOpen.set(false);
       } catch (error) {
         this.reported.emit(errorPrefix(error));
@@ -312,8 +312,8 @@ export class PublicationPanel {
       // An exclusion only means something about somebody the list still names:
       // a person whose change was undone between two reads must not stay
       // silently ticked off for the next publication.
-      const concernes = new Set(apercu.destinataires.map((each) => each.animateurId));
-      this.exclus.set(new Set([...this.exclus()].filter((id) => concernes.has(id))));
+      const recipients = new Set(apercu.destinataires.map((each) => each.animateurId));
+      this.excluded.set(new Set([...this.excluded()].filter((id) => recipients.has(id))));
       this.preview.set(apercu);
     } catch {
       // The block stays silent rather than announcing a count it did not read.

@@ -22,14 +22,14 @@ type PanelInternals = {
   exportGlobalPdf: () => Promise<void>;
   exportBundle: () => Promise<void>;
   exportDiff: () => Promise<void>;
-  lignes: Signal<{ animateurId: string }[]>;
-  mineursCaches: Signal<number>;
-  nombrePrevenus: Signal<number>;
-  masquerMineurs: Signal<boolean>;
-  estExclu: (animateurId: string) => boolean;
-  basculerExclusion: (animateurId: string, prevenir: boolean) => void;
-  basculerMineurs: (masquer: boolean) => void;
-  choisirTri: (tri: 'nom' | 'ampleur') => void;
+  rows: Signal<{ animateurId: string }[]>;
+  minorCount: Signal<number>;
+  notifiedCount: Signal<number>;
+  minorHidden: Signal<boolean>;
+  isExcluded: (animateurId: string) => boolean;
+  toggleExclusion: (animateurId: string, prevenir: boolean) => void;
+  toggleMinorFilter: (masquer: boolean) => void;
+  chooseSort: (tri: 'nom' | 'ampleur') => void;
   reloadPreview: () => Promise<void>;
 };
 
@@ -249,7 +249,7 @@ describe('PublicationPanel', () => {
     });
   });
 
-  /* ------------------------ Le tableau de relecture ---------------------- */
+  /* -------------------------- The review table --------------------------- */
 
   describe('review table', () => {
     function destinataire(partiel: Record<string, unknown>): Record<string, unknown> {
@@ -271,14 +271,14 @@ describe('PublicationPanel', () => {
       };
     }
 
-    async function panelAvec(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
+    async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
       planningApi.publicationPreview.mockResolvedValue({
         ...apercuPret,
         nombreConcernes: destinataires.length,
         destinataires,
       });
       const panel = createPanel();
-      await vi.waitFor(() => expect(panel.lignes()).toHaveLength(destinataires.length));
+      await vi.waitFor(() => expect(panel.rows()).toHaveLength(destinataires.length));
       return panel;
     }
 
@@ -290,14 +290,14 @@ describe('PublicationPanel', () => {
         echecs: [],
         differes: ['Bruno Petit'],
       });
-      const panel = await panelAvec([
+      const panel = await panelWith([
         destinataire({}),
         destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
 
-      panel.basculerExclusion('a2', false);
-      expect(panel.estExclu('a2')).toBe(true);
-      expect(panel.nombrePrevenus()).toBe(1);
+      panel.toggleExclusion('a2', false);
+      expect(panel.isExcluded('a2')).toBe(true);
+      expect(panel.notifiedCount()).toBe(1);
 
       await panel.publish();
 
@@ -310,37 +310,37 @@ describe('PublicationPanel', () => {
      * be inert before the click, not refused by the server after it.
      */
     it('goes inert when every single person has been unticked', async () => {
-      const panel = await panelAvec([destinataire({})]);
+      const panel = await panelWith([destinataire({})]);
 
-      panel.basculerExclusion('a1', false);
+      panel.toggleExclusion('a1', false);
 
-      expect(panel.nombrePrevenus()).toBe(0);
+      expect(panel.notifiedCount()).toBe(0);
       expect(panel.publishable()).toBe(false);
     });
 
     it('folds the minor changes away without excluding them', async () => {
-      const panel = await panelAvec([
+      const panel = await panelWith([
         destinataire({}),
         destinataire({ animateurId: 'a2', mineur: true, ajouts: 0, deplacements: 1 }),
       ]);
 
-      expect(panel.mineursCaches()).toBe(1);
-      panel.basculerMineurs(true);
+      expect(panel.minorCount()).toBe(1);
+      panel.toggleMinorFilter(true);
 
-      expect(panel.lignes()).toHaveLength(1);
+      expect(panel.rows()).toHaveLength(1);
       // Hiding is looking, not deciding: both people are still to be notified.
-      expect(panel.nombrePrevenus()).toBe(2);
+      expect(panel.notifiedCount()).toBe(2);
     });
 
     it('puts the biggest change first when asked to', async () => {
-      const panel = await panelAvec([
+      const panel = await panelWith([
         destinataire({}),
         destinataire({ animateurId: 'a2', ajouts: 3, retraits: 1 }),
       ]);
 
-      panel.choisirTri('ampleur');
+      panel.chooseSort('ampleur');
 
-      expect(panel.lignes().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
+      expect(panel.rows().map((ligne) => ligne.animateurId)).toEqual(['a2', 'a1']);
     });
 
     /**
@@ -349,11 +349,11 @@ describe('PublicationPanel', () => {
      * off for the next publication.
      */
     it('drops an exclusion once its person leaves the list', async () => {
-      const panel = await panelAvec([
+      const panel = await panelWith([
         destinataire({}),
         destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
-      panel.basculerExclusion('a2', false);
+      panel.toggleExclusion('a2', false);
 
       planningApi.publicationPreview.mockResolvedValue({
         ...apercuPret,
@@ -362,13 +362,13 @@ describe('PublicationPanel', () => {
       });
       await panel.reloadPreview();
 
-      expect(panel.estExclu('a2')).toBe(false);
-      expect(panel.nombrePrevenus()).toBe(1);
+      expect(panel.isExcluded('a2')).toBe(false);
+      expect(panel.notifiedCount()).toBe(1);
     });
 
     it('downloads the review table without sending anything', async () => {
       planningApi.exportPublicationDiff.mockResolvedValue('Téléchargement démarré.');
-      const panel = await panelAvec([destinataire({})]);
+      const panel = await panelWith([destinataire({})]);
 
       await panel.exportDiff();
 
