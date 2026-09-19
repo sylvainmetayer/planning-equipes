@@ -281,8 +281,10 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 
 | Fonctionnalité | En une phrase |
 | --- | --- |
-| Export PDF global | Toutes les affectations dans un seul document pour l'organisateur, journée par journée puis stand par stand, places vides signalées |
-| Export PDF individuel | Le planning d'un animateur, ou de tous en une archive ; les journées sans affectation y figurent explicitement comme jours de repos |
+| Export PDF global | Toutes les affectations dans un seul document pour l'organisateur : un sommaire cliquable, la grille « qui tient quel stand chaque jour », puis les mêmes affectations journée par journée, stand par stand et animateur par animateur, places vides signalées |
+| Export PDF individuel | Le planning d'un animateur, ou de tous en une archive : une vue d'ensemble de ses journées sur une frise, le détail de chaque jour, puis ses coéquipiers et ses lieux rassemblés ; les journées sans affectation y figurent explicitement comme jours de repos |
+| Feuille recto-verso | Le même planning individuel plié sur une seule feuille A4 paysage — calendrier au recto, coéquipiers et lieux au verso : un tirage par personne au lieu de cinq. L'animateur choisit son format depuis son espace, l'organisation depuis l'écran de diffusion |
+| QR code vers l'espace | Les deux PDF portent un QR code vers l'espace personnel : on scanne le papier au lieu de recopier une adresse que personne ne recopie |
 | Export ICS | Le planning individuel importable dans Google Calendar, Apple Calendar ou Outlook |
 | Abonnement au calendrier | Une adresse d'abonnement permanente, donnée une fois à son agenda : il se remet à jour tout seul à chaque republication, au lieu de rester figé sur le fichier téléchargé la première fois. Elle est personnelle, et l'animateur la remplace lui-même en un clic si elle a fuité |
 | Publication | Envoyer leur planning et le lien de leur espace aux seules personnes dont l'emploi du temps a changé, en leur disant ce qui change — y compris quand une vacation disparaît de la grille après coup : elle se dit « retirée » au lieu de s'effacer en silence de leur espace |

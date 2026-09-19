@@ -10,6 +10,7 @@ import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
+import dev.sylvain.planning.service.export.FormatPlanning;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
@@ -241,16 +242,23 @@ public class EspaceAnimateurResource {
      * My planning as a PDF — same document as the admin's individual export,
      * downloadable by the animateur themself. Stays available when the foire
      * is closed: closing only stops the échanges, never the consultation.
+     *
+     * <p>{@code ?format=feuille} answers with the folded landscape sheet
+     * instead of the booklet; anything else, including nothing, is the
+     * booklet.</p>
      */
     @GET
     @Path("/{jeton}/planning.pdf")
     @EspaceSessionRequired
     @Produces("application/pdf")
-    public Response planningPdf() {
+    public Response planningPdf(@QueryParam("format") String format) {
         PlanningEvenement planning = planPublieService.planPublie();
-        byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant());
+        FormatPlanning layout = FormatPlanning.fromParameter(format);
+        byte[] contenu = planningExportService.exportAnimateurPdfPublie(planning, animateurCourant(), layout);
         return Response.ok(contenu)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + fileName(planning, "pdf") + "\"")
+                .header(
+                        HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename=\"" + fileName(planning, "pdf", layout) + "\"")
                 .build();
     }
 
@@ -374,6 +382,12 @@ public class EspaceAnimateurResource {
     private String fileName(PlanningEvenement planning, String extension) {
         return PlanningExportService.planningFileName(
                 planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
+    }
+
+    /** The same name, told apart by layout: two downloads must not be one file. */
+    private String fileName(PlanningEvenement planning, String extension, FormatPlanning format) {
+        return PlanningExportService.planningFileName(
+                planningExportService.resolveAnimateurName(planning, animateurCourant()), extension, format);
     }
 
     private static Response badRequest(IllegalArgumentException e) {

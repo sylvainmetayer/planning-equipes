@@ -155,7 +155,11 @@
     </h2>
     <div class="espace-agenda-actions">
       @if (lienWebcal(); as webcal) {
-        <a class="espace-agenda-abonnement" matButton="filled" [href]="webcal">
+        <a
+          class="espace-agenda-abonnement espace-agenda-large"
+          matButton="filled"
+          [href]="webcal"
+        >
           <mat-icon>event_repeat</mat-icon>
           <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
         </a>
@@ -163,17 +167,21 @@
       @if (telechargementsOfferts()) {
         <a matButton="outlined" [href]="lienPdf()" download>
           <mat-icon>picture_as_pdf</mat-icon>
-          <span i18n="@@espace.planning.telechargerPdf">Télécharger en PDF</span>
+          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
         </a>
-        <a matButton [href]="lienIcs()" download>
+        <a matButton="outlined" [href]="lienPdfFeuille()" download>
+          <mat-icon>description</mat-icon>
+          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
+        </a>
+        <a class="espace-agenda-large" matButton [href]="lienIcs()" download>
           <mat-icon>event</mat-icon>
-          <span i18n="@@espace.planning.telechargerIcs">Télécharger le fichier ICS</span>
+          <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
         </a>
       }
     </div>
     <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
-      L'abonnement suit chaque nouvelle publication ; le PDF et le fichier ICS sont une photo prise
-      aujourd'hui.
+      L'abonnement suit chaque nouvelle publication ; les PDF et le fichier ICS sont une photo prise
+      aujourd'hui. Le livret se lit page à page, la feuille tient dans une poche.
     </p>
     @if (urlAbonnement(); as url) {
       <button matButton type="button"

@@ -42,6 +42,7 @@ public class PlanningExportService {
 
     private final ApplicationLinks liens;
     private final AnimateurPlanningPdf pdfAnimateur;
+    private final AnimateurFeuillePdf feuilleAnimateur;
     private final GlobalPlanningPdf pdfGlobal;
     private final PlanningIcs ics;
     /** Plain arithmetic on the plan, no CDI needed: the same reading the espace and {@code /api/pauses} give. */
@@ -58,11 +59,13 @@ public class PlanningExportService {
     public PlanningExportService(
             ApplicationLinks liens,
             AnimateurPlanningPdf pdfAnimateur,
+            AnimateurFeuillePdf feuilleAnimateur,
             GlobalPlanningPdf pdfGlobal,
             PlanningIcs ics,
             ExportProvenance provenance) {
         this.liens = liens;
         this.pdfAnimateur = pdfAnimateur;
+        this.feuilleAnimateur = feuilleAnimateur;
         this.pdfGlobal = pdfGlobal;
         this.ics = ics;
         this.provenance = provenance;
@@ -73,10 +76,16 @@ public class PlanningExportService {
      * administration's own export, dated by the last solve.
      */
     public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId) {
+        return exportAnimateurPdf(planning, animateurId, FormatPlanning.DEFAUT);
+    }
+
+    /** The same, in the layout the caller asked for — see {@link FormatPlanning}. */
+    public byte[] exportAnimateurPdf(PlanningEvenement planning, String animateurId, FormatPlanning format) {
         // One reading for both lists: asking the analyzer twice walked every
         // seat of the plan twice per document.
         PauseAnalyzer.ExportBreaks lecture = pauses.breaksForExport(planning, animateurId);
-        return exportAnimateurPdf(planning, animateurId, provenance.courante(), lecture.pauses(), lecture.coupures());
+        return exportAnimateurPdf(
+                planning, animateurId, provenance.courante(), lecture.pauses(), lecture.coupures(), format);
     }
 
     /**
@@ -86,10 +95,16 @@ public class PlanningExportService {
      * (issue #245) — the document has not moved, so its date must not either.
      */
     public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId) {
+        return exportAnimateurPdfPublie(planning, animateurId, FormatPlanning.DEFAUT);
+    }
+
+    /** The published plan, in the layout the caller asked for. */
+    public byte[] exportAnimateurPdfPublie(PlanningEvenement planning, String animateurId, FormatPlanning format) {
         // Called once per recipient on a publication: the whole-plan map built
         // here and thrown away but for one entry doubled that walk.
         PauseAnalyzer.ExportBreaks lecture = pauses.breaksForExport(planning, animateurId);
-        return exportAnimateurPdf(planning, animateurId, provenance.publiee(), lecture.pauses(), lecture.coupures());
+        return exportAnimateurPdf(
+                planning, animateurId, provenance.publiee(), lecture.pauses(), lecture.coupures(), format);
     }
 
     private byte[] exportAnimateurPdf(
@@ -97,23 +112,31 @@ public class PlanningExportService {
             String animateurId,
             ExportProvenance.Provenance provenanceDuPlan,
             List<PauseAnalyzer.PauseAnimateurView> pausesDuJour,
-            List<PauseAnalyzer.CoupureAnimateurView> coupuresDuJour) {
+            List<PauseAnalyzer.CoupureAnimateurView> coupuresDuJour,
+            FormatPlanning format) {
         List<PosteAffectation> animateurPostes = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
                         && animateurId.equals(poste.getAnimateur().getId()))
                 .sorted(byCreneauThenStand())
                 .toList();
         List<JourRepos> joursRepos = daysOff(planning, animateurId);
-        return pdfAnimateur.construire(
-                resolveAnimateurName(planning, animateurId),
+        String nom = resolveAnimateurName(planning, animateurId);
+        Map<String, List<String>> coequipiers = teammatesByPoste(planning, animateurId);
+        String lien = lienEspaceAnimateur(planning, animateurId);
+        Map<LocalDate, String> notes = journeesModifiees(animateurPostes, joursRepos, consignesByDate());
+        // Two layouts of one content: the booklet an animateur reads from their
+        // espace, the folded sheet the organisation prints by the hundred.
+        DocumentAnimateur document = format == FormatPlanning.FEUILLE ? feuilleAnimateur : pdfAnimateur;
+        return document.render(
+                nom,
                 animateurPostes,
-                teammatesByPoste(planning, animateurId),
+                coequipiers,
                 joursRepos,
                 pausesDuJour,
                 coupuresDuJour,
-                lienEspaceAnimateur(planning, animateurId),
+                lien,
                 provenanceDuPlan,
-                journeesModifiees(animateurPostes, joursRepos, consignesByDate()));
+                notes);
     }
 
     /**
@@ -287,6 +310,14 @@ public class PlanningExportService {
      * global PDF: the planning is always handed out person by person.
      */
     public byte[] exportAllPdfZip(PlanningEvenement planning) {
+        return exportAllPdfZip(planning, FormatPlanning.DEFAUT);
+    }
+
+    /**
+     * The same ZIP in the asked-for layout: the folded sheet is what a mass
+     * print run wants, one page per person rather than five.
+     */
+    public byte[] exportAllPdfZip(PlanningEvenement planning, FormatPlanning format) {
         // One analysis for the whole roster: per animateur, it would walk every
         // seat of the plan again, once per person in the ZIP.
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
@@ -300,7 +331,8 @@ public class PlanningExportService {
                                 id,
                                 provenance.courante(),
                                 parAnimateur.getOrDefault(id, List.of()),
-                                coupures.getOrDefault(id, List.of())))));
+                                coupures.getOrDefault(id, List.of()),
+                                format))));
     }
 
     public byte[] exportAllIcsZip(PlanningEvenement planning) {
@@ -322,6 +354,11 @@ public class PlanningExportService {
      * the whole planning can be handed out through one download.
      */
     public byte[] exportAllBundleZip(PlanningEvenement planning) {
+        return exportAllBundleZip(planning, FormatPlanning.DEFAUT);
+    }
+
+    /** The same bundle, the PDFs in the asked-for layout. */
+    public byte[] exportAllBundleZip(PlanningEvenement planning, FormatPlanning format) {
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
         Map<String, List<PauseAnalyzer.CoupureAnimateurView>> coupures = pauses.coupuresByAnimateur(planning);
         return buildZip(
@@ -334,7 +371,8 @@ public class PlanningExportService {
                                         id,
                                         provenance.courante(),
                                         parAnimateur.getOrDefault(id, List.of()),
-                                        coupures.getOrDefault(id, List.of()))),
+                                        coupures.getOrDefault(id, List.of()),
+                                        format)),
                         new NamedFileBuilder(
                                 ".ics",
                                 id -> ics.exportAnimateurIcs(
@@ -376,6 +414,17 @@ public class PlanningExportService {
     @FunctionalInterface
     private interface AnimateurFileBuilder {
         byte[] build(String animateurId);
+    }
+
+    /**
+     * File name of an individual planning, one layout apart from the other:
+     * {@code planning-Prenom-Nom.pdf} and {@code planning-Prenom-Nom-feuille.pdf}.
+     * Somebody downloading both must end up with two files, not one overwriting
+     * the other.
+     */
+    public static String planningFileName(String nomAffiche, String extension, FormatPlanning format) {
+        String nom = planningFileName(nomAffiche, extension);
+        return format == FormatPlanning.FEUILLE ? nom.replaceFirst("\\.(?=[^.]*$)", "-feuille.") : nom;
     }
 
     /**

@@ -124,6 +124,26 @@ export class PublicationPanel {
   }
 
   /**
+   * The same plannings in the layout made for printing: one A4 landscape sheet
+   * per person, recto calendar and verso teams. The booklet stays the default
+   * everywhere else — this is the format the organisation folds and hands out.
+   */
+  protected async exportFeuilles(): Promise<void> {
+    this.setExportBusy(true);
+    this.reported.emit(
+      $localize`:@@solver.exportFeuillesBuilding:Construction des feuilles recto-verso...`,
+    );
+    try {
+      const planning = await this.planningState.require();
+      this.reported.emit(await this.planningApi.exportFeuilles(planning));
+    } catch (error) {
+      this.reported.emit(errorPrefix(error));
+    } finally {
+      this.setExportBusy(false);
+    }
+  }
+
+  /**
    * The organiser's own copy: one PDF holding every assignment, laid out by
    * day and by stand. A GET, unlike the per-animateur bundle above — the
    * server reads the persisted planning itself rather than having the browser

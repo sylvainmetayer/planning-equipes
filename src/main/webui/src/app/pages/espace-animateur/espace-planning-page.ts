@@ -79,6 +79,17 @@ export class EspacePlanningPage {
     const jeton = this.espace.jeton();
     return jeton ? espacePlanningPdfUrl(jeton) : null;
   });
+
+  /**
+   * The same planning folded onto one landscape sheet: a calendar on the
+   * front, team-mates and places on the back. Offered beside the booklet
+   * rather than instead of it — one is read page by page, the other fits in
+   * a pocket, and which one that person wants is theirs to say.
+   */
+  protected readonly lienPdfFeuille = computed(() => {
+    const jeton = this.espace.jeton();
+    return jeton ? espacePlanningPdfUrl(jeton, 'feuille') : null;
+  });
   protected readonly lienIcs = computed(() => {
     const jeton = this.espace.jeton();
     return jeton ? espacePlanningIcsUrl(jeton) : null;

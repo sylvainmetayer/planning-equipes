@@ -64,6 +64,21 @@ export class PlanningApi {
     );
   }
 
+  /**
+   * One folded A4 sheet per animateur, in one archive: the recto is a
+   * calendar, the verso the teams and the places. Same content as the booklet
+   * the espace hands out — one print per person instead of five, which is what
+   * a mass print run wants.
+   */
+  exportFeuilles(planning: PlanningEvenement): Promise<string> {
+    return this.api.downloadPost(
+      '/api/planning/export/pdf/all?format=feuille',
+      'planning-feuilles.zip',
+      planning,
+      'application/zip',
+    );
+  }
+
   /** One animateur's planning as PDF or ICS, from the planning the browser sends — what is exported is what is shown. */
   exportForAnimateur(
     format: 'pdf' | 'ics',

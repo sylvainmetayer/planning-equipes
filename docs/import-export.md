@@ -873,6 +873,119 @@ montre à l'animateur les heures qu'il couvre réellement, pas la plage fermée.
 Quand le stand a un emplacement géocodé, le PDF porte un lien OpenStreetMap et
 l'ICS les champs `LOCATION` et `GEO`.
 
+### Le planning individuel
+
+Le document remis à un animateur n'est pas une liste de créneaux : c'est un
+livret en **trois parties**, dans cet ordre, chaque page numérotée « n / N ».
+
+1. **Vue d'ensemble.** L'en-tête (nom, nom de l'édition, période, nombre de
+   jours dont ceux de repos), quatre chiffres — heures travaillées, créneaux, stands, jours
+   travaillés —, puis la frise « Vos N jours en un coup d'œil » : une ligne par
+   jour de l'édition, repos compris, sur un axe horaire commun, une barre par
+   poste et le total du jour à droite. En dessous, la légende des couleurs,
+   puis « Vos N stands, par lieu » : les stands regroupés par emplacement, avec
+   leur typologie et « créneaux × heures ». Le cartouche de l'espace en ligne
+   ferme la page.
+2. **Vos journées.** Un bloc par jour — date en toutes lettres, « Jour n »,
+   total —, puis une carte par créneau : heures effectives, stand, typologie,
+   lieu (cliquable quand l'emplacement est géocodé), coéquipiers et durée. Les
+   repas et les pauses restent sous la vacation qui les doit, dans les mêmes
+   mots que l'espace animateur. Un jour de repos garde sa ligne, un jour sous
+   consigne porte son bandeau (« Horaires modifiés — … »). **Un jour n'est
+   jamais coupé entre deux pages.**
+3. **Avec qui, et où.** Les coéquipiers rassemblés et comptés, les plus
+   fréquents d'abord ; les vacations en nombre (montage, démontage) avec leur
+   effectif ; les lieux avec les dates qui y sont passées.
+
+Deux règles de fond :
+
+- la **couleur** d'une barre porte la **typologie** du stand, jamais le stand
+  lui-même : douze stands sur six catégories donnent une légende lisible. Le
+  référentiel ne stocke pas de couleur (`TypologieItem`) : `TypologiePalette`
+  en attribue huit teintes dans l'ordre des identifiants, ce qui rend le
+  document reproductible d'une exécution à l'autre. Un stand à plusieurs
+  typologies prend la première ;
+- au-delà de **huit coéquipiers** sur la même ligne, le document écrit
+  l'effectif (« Avec 104 personnes ») et aucun nom : le montage rassemble une
+  centaine de personnes, dont la liste nominative n'apprend rien.
+
+Un animateur sans affectation garde l'état vide (« Aucune affectation pour cet
+événement. ») et le lien de son espace.
+
+Le cartouche « Votre espace en ligne » porte un **QR code** (`QrCodeEspace`,
+encodage `zxing-core`, modules dessinés en vectoriel plutôt qu'en image
+tramée) : le lien est la donnée d'authentification de l'espace, il est long, et
+personne ne le recopie depuis une feuille imprimée. L'adresse reste écrite en
+dessous — pour une photocopie trop pâle pour être scannée, et pour qui veut
+voir où mène le code avant de le suivre. Sur le livret, le cartouche ferme la
+vue d'ensemble quand elle lui laisse la place, et ferme le document sinon :
+une édition longue remplit la première page, et une bande seule sur sa propre
+page coûterait une feuille pour dire une phrase. Sur la feuille recto-verso, le
+QR est dans le bandeau d'en-tête, à côté du lien.
+
+#### Deux mises en page : `format=livret` ou `format=feuille`
+
+Le même contenu se demande sous deux formes, par le paramètre `format` :
+
+| `format` | Document | Pour qui |
+| --- | --- | --- |
+| `livret` (défaut) | A4 portrait, plusieurs pages, les trois parties ci-dessus | l'espace animateur, les mails de publication, l'export d'un animateur |
+| `feuille` | **une** feuille A4 paysage recto-verso : recto un calendrier semaine par ligne (lundi → dimanche) avec mini-frise et créneaux, verso les coéquipiers, les grandes équipes et les lieux | l'impression en masse par l'organisation — un tirage par personne au lieu de cinq |
+
+Les deux nomment leur **édition** sous le nom de l'animateur : le nom seul, les
+bornes étant déjà sur la ligne de période juste en dessous. Une personne revenue
+d'une année sur l'autre a deux documents à distinguer, et le pied de page ne se
+lit pas d'un coup d'œil.
+
+Les deux formats sont offerts **à l'animateur comme à l'organisation** :
+l'espace animateur propose « Télécharger le livret PDF » et « Télécharger la
+feuille recto-verso », l'écran *Diffusion du planning* les mêmes deux sorties
+pour toute l'édition.
+
+Le paramètre est accepté sur `GET /api/espace-animateur/{jeton}/planning.pdf`,
+`POST /api/planning/export/pdf/animateur/{id}`, `POST
+/api/planning/export/pdf/all` et `POST /api/planning/export/bundle/all`. Une
+valeur inconnue vaut `livret` : une faute de frappe sur un téléchargement ne
+mérite pas un 400.
+
+Les deux mises en page composent la **même** vue interne
+(`AnimateurPlanningView`), ce qui est ce qui les empêche de dire deux choses
+différentes ; c'est cette vue qui est testée, pas deux extractions de texte.
+
+### Le planning global
+
+Le PDF de l'organisation (`GlobalPlanningPdf`, A4 paysage) est un document à
+sommaire, et non deux tableaux : quatre questions du terrain, quatre parties.
+
+1. **Sommaire** — la période, cinq chiffres (jours, stands, sièges et ceux non
+   pourvus, animateurs, heures), puis les entrées des sections. Les pastilles
+   de jour, les noms de stand et les lettres de l'alphabet sont des **liens
+   internes** : un planning de soixante pages qu'il faut faire défiler est un
+   planning que personne ne lit jusqu'au bout.
+2. **Vue d'ensemble** — la grille stands × jours : le nombre d'animateurs
+   *différents* présents sur le stand ce jour-là, sur une échelle de couleur à
+   quatre paliers (1–2, 3–4, 5–8, 9 et +), les stands groupés par emplacement,
+   et une dernière ligne « Animateurs présents » par jour. Au-delà de
+   vingt-quatre jours, la grille est découpée en plusieurs pages plutôt que
+   réduite à rien.
+3. **Par journée** — un jour par page : les stands en lignes, les fenêtres
+   d'ouverture en colonnes, les noms dedans, « — » pour un stand fermé sur ce
+   créneau. Au-delà de huit fenêtres distinctes, la journée s'écrit une ligne
+   par créneau.
+4. **Par stand** — chaque stand, jour par jour, dans la même forme.
+5. **Animateurs de A à Z** — une ligne par personne : total d'heures, nombre de
+   créneaux, puis les heures de chaque jour, sur la même échelle de couleur.
+
+Les sièges que personne ne tient sont écrits en couleur d'accent (« Aucun
+animateur affecté », « 3 non pourvus ») : un stand non pourvu est exactement ce
+que l'organisateur ouvre ce document pour trouver.
+
+La marque blanche s'applique aux deux documents : logo, bandeau et palette
+viennent de `BRANDING_PDF_*` (`PdfTheme`), l'échelle de couleur du planning
+global est l'accent du déploiement dilué dans du blanc, et le pied de page de
+provenance — qui a généré le document, quand, depuis quelle édition et de quel
+plan — est le même partout.
+
 Le même document ICS se sert de deux façons, et la différence est de mode, pas
 de format : en **téléchargement** (une photo à l'instant du clic) ou en
 **abonnement**, sur une adresse permanente que l'agenda rappelle tout seul —

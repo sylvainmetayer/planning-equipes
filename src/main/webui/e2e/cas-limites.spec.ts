@@ -202,8 +202,9 @@ test.describe('cas limites', () => {
 
     // The planning stays consultable and downloadable (PDF + ICS).
     await page.getByRole('link', { name: 'Mon planning' }).click();
-    await expect(page.getByRole('link', { name: 'Télécharger en PDF' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Télécharger le fichier ICS' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Livret PDF' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Feuille A4' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeVisible();
     const pdf = await page.request.get(`/api/espace-animateur/${jeton}/planning.pdf`);
     expect(pdf.status()).toBe(200);
     expect((await pdf.body()).subarray(0, 5).toString()).toBe('%PDF-');

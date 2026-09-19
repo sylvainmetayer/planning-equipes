@@ -171,19 +171,24 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
       blocks: [
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.emporter.abonnement:En haut de « Mon planning », la bande « Emporter mon planning » propose trois sorties.`,
+          text: $localize`:@@espace.aide.emporter.abonnement:En haut de « Mon planning », la bande « Emporter mon planning » propose quatre sorties.`,
         },
         {
           kind: 'list',
           items: [
             $localize`:@@espace.aide.emporter.item0:« S'abonner dans mon agenda » — à privilégier : donnée une fois à votre agenda, l'adresse le tient à jour à chaque nouvelle publication. Rien à refaire ensuite.`,
-            $localize`:@@espace.aide.emporter.item1:« Télécharger en PDF » : votre planning sur une page, à imprimer ou à garder hors connexion.`,
-            $localize`:@@espace.aide.emporter.item2:« Télécharger le fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans votre agenda.`,
+            $localize`:@@espace.aide.emporter.item1:« Livret PDF » : une vue d'ensemble de vos journées, leur détail, puis vos coéquipiers et vos lieux.`,
+            $localize`:@@espace.aide.emporter.itemFeuille:« Feuille A4 » : le même planning sur une seule feuille, calendrier au recto, équipes et lieux au verso — celle qui tient dans une poche.`,
+            $localize`:@@espace.aide.emporter.item2:« Fichier ICS » : chaque créneau devient un rendez-vous, versé une seule fois dans votre agenda.`,
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@espace.aide.emporter.photo:Le PDF et l'ICS sont une photo prise au téléchargement : ils ne se mettent pas à jour tout seuls quand le planning change ou qu'un échange est accepté. Au moindre doute, fiez-vous à cette page.`,
+          text: $localize`:@@espace.aide.emporter.qr:Les deux PDF portent un QR code : scannez-le depuis le papier pour revenir ici, au lieu de recopier l'adresse.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.emporter.photo:Les PDF et l'ICS sont une photo prise au téléchargement : ils ne se mettent pas à jour tout seuls quand le planning change ou qu'un échange est accepté. Au moindre doute, fiez-vous à cette page.`,
         },
         {
           kind: 'paragraph',
