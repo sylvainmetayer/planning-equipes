@@ -113,7 +113,14 @@ public class PlanSnapshotService {
             String heureFin,
             String animateurId,
             String heureDebutEffective,
-            String heureFinEffective) {}
+            String heureFinEffective,
+            /**
+             * Renfort (issue #505): a seat generated above the staffing the
+             * window declares. Absent — and therefore {@code null}, read as
+             * false — on a snapshot captured before renforts existed, which is
+             * right: everything captured then was owed.
+             */
+            Boolean optionnel) {}
 
     /**
      * A snapshot without its content: what the management screen lists.
@@ -532,7 +539,8 @@ public class PlanSnapshotService {
                 affectation.animateurId(),
                 time(affectation.heureDebutEffective()),
                 time(affectation.heureFinEffective()),
-                vacation);
+                vacation,
+                Boolean.TRUE.equals(affectation.optionnel()));
     }
 
     private static LocalTime time(String text) {
@@ -660,7 +668,7 @@ public class PlanSnapshotService {
     private List<AffectationSnapshot> readPersistedAffectations() {
         String sql = """
  SELECT pa.id, pa.stand_id, pa.creneau_id, pa.animateur_id,
- pa.heure_debut_effective, pa.heure_fin_effective,
+ pa.heure_debut_effective, pa.heure_fin_effective, pa.optionnel,
  c.date_creneau, c.heure_debut, c.heure_fin
  FROM poste_affectation pa
  JOIN creneau c ON c.edition_id = pa.edition_id AND c.id = pa.creneau_id
@@ -680,7 +688,8 @@ public class PlanSnapshotService {
                         text(rs.getObject("heure_fin", LocalTime.class)),
                         rs.getString("animateur_id"),
                         text(rs.getObject("heure_debut_effective", LocalTime.class)),
-                        text(rs.getObject("heure_fin_effective", LocalTime.class))));
+                        text(rs.getObject("heure_fin_effective", LocalTime.class)),
+                        rs.getBoolean("optionnel")));
             }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the persisted plan", e);

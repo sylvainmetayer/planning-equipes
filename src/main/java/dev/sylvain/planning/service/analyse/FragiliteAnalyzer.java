@@ -33,8 +33,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * stand × timeslot × window — the very grouping seat generation uses, since
  * {@code ProblemBuilder.buildPostes} emits {@code max(1, effectifMin)} seats
  * per group (halved on a break-covering shift). The number of seats of a group
- * <em>is</em> its effectif floor, so a group drops below it as soon as one of
- * its filled seats is vacated. Reported per animateur, together with the
+ * <em>is</em> its effectif floor — <b>renforts excluded</b> (issue #505), which
+ * is what keeps that sentence true now that a group may also carry seats
+ * generated above its effectif — so a group drops below it as soon as one of
+ * its filled seats is vacated. Somebody seated on a renfort still counts as
+ * filling one: they are really there, and they really withdraw. Reported per animateur, together with the
  * qualifier that makes the figure discriminating: whether anybody else could
  * step in.</li>
  * <li><b>Where a single person is competent.</b> Every group whose stand has at
@@ -563,7 +566,9 @@ public class FragiliteAnalyzer {
             LocalTime fin = poste.heureFinEffectif();
             SeatGroupKey cle = new SeatGroupKey(stand.getId(), creneau.getId(), debut, fin);
             SeatGroup groupe = groupes.computeIfAbsent(cle, ignored -> new SeatGroup(stand, creneau, debut, fin));
-            groupe.sieges++;
+            if (!poste.isOptionnel()) {
+                groupe.sieges++;
+            }
             Animateur animateur = poste.getAnimateur();
             if (animateur != null) {
                 groupe.pourvus++;

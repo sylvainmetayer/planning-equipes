@@ -595,10 +595,14 @@ public class JourJService {
                 .toList();
     }
 
+    /** Seats the day-of screen asks somebody to fill — renforts excluded (issue #505). */
     private List<PosteAPourvoir> postesAPourvoir(List<PosteAffectation> postesRestants) {
         List<VerrouillagePlanning> verrouillages = referenceDataService.listVerrouillages();
         return postesRestants.stream()
-                .filter(poste -> poste.getAnimateur() == null)
+                // « À pourvoir » is a list of things to do on the day: a
+                // renfort nobody took is not one of them, and putting it there
+                // would drown the seats an absence really left open.
+                .filter(poste -> poste.getAnimateur() == null && !poste.isOptionnel())
                 .sorted(Comparator.comparing(
                                 (PosteAffectation poste) -> poste.getCreneau().getHeureDebut())
                         .thenComparing(PosteAffectation::getId))

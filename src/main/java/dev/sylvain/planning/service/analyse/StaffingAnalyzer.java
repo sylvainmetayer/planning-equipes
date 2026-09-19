@@ -1109,9 +1109,19 @@ public class StaffingAnalyzer {
         return Math.max(parLaGrille, Math.max(avant + pic(bloquantsApres, 0), apres + pic(bloquantsAvant, 0)));
     }
 
+    /**
+     * The seats the staffing need is read on — renforts excluded (issue #505).
+     * This analysis answers « combien de personnes faut-il », and a seat
+     * generated above the declared effectif is not somebody the organiser has
+     * to find: counting it would inflate the need by the very capacity margin
+     * that exists precisely because it may stay unused.
+     */
     private static List<Siege> sieges(List<PosteAffectation> postes) {
         List<Siege> sieges = new ArrayList<>();
         for (PosteAffectation poste : postes) {
+            if (poste.isOptionnel()) {
+                continue;
+            }
             Creneau creneau = poste.getCreneau();
             if (creneau == null || creneau.getDate() == null) {
                 continue;
