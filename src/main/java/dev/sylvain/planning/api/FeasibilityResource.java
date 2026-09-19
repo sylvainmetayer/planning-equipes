@@ -4,6 +4,7 @@ import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import dev.sylvain.planning.service.solve.PlanningService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -35,6 +36,14 @@ public class FeasibilityResource {
     PlanningPersistenceService persistence;
 
     /**
+     * For its {@code pastHorizon()} alone: the moment the frozen past is judged
+     * against (ADR 0044), which only the solver façade pairs with the
+     * {@code planning.solver.passe-fige} kill-switch. No solve is started here.
+     */
+    @Inject
+    PlanningService planningService;
+
+    /**
      * Créneaux are read from the <em>active</em> group only, like
      * {@code PlanningService} does when it builds a problem: créneaux of the
      * other groups are not part of the next solve, and counting them would
@@ -47,7 +56,9 @@ public class FeasibilityResource {
      * along for the same kind of deadlock: a forced assignment naming only
      * people whose schedule is frozen over its whole scope. The seats of the
      * persisted plan are read only when a lock exists —
-     * {@link FeasibilityAnalyzer.LockContext} carries them as a supplier.
+     * {@link FeasibilityAnalyzer.PlanContext} carries them as a supplier, and
+     * the horizon of the frozen past (ADR 0044) alongside them, so a forced
+     * assignment left on a day already worked is not reported as blocking.
      */
     @GET
     public FeasibilityReport analyze() {
@@ -57,7 +68,9 @@ public class FeasibilityResource {
                 referenceDataService.listCreneaux(),
                 referenceDataService.listContraintesAdHoc(),
                 FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
-                new FeasibilityAnalyzer.LockContext(
-                        referenceDataService.listVerrouillages(), persistence::loadPlacesTenues));
+                new FeasibilityAnalyzer.PlanContext(
+                        referenceDataService.listVerrouillages(),
+                        persistence::loadPlacesTenues,
+                        planningService.pastHorizon()));
     }
 }

@@ -115,6 +115,22 @@ Ce qui manquait n'était pas un refus mais une phrase, au moment du geste :
 sans elle, l'organisateur lance une résolution et lit un score dur négatif
 que ce clic explique, sans aucun chemin de retour vers les places en cause.
 
+### Ce que ces lectures taisent : le passé
+
+Les trois lectures sur affectation forcée se taisent sur une portée
+entièrement derrière l'horizon du passé figé
+([0044](0044-le-passe-est-fige.md)). Ces places-là sont réamorcées depuis le
+plan enregistré puis épinglées, et `affectationForcee` les compte sans les
+reprocher : les signaler reviendrait à demander à l'organisateur de défaire
+une journée déjà travaillée. Un seul jour encore à venir dans la portée suffit
+à garder la lecture. L'horizon voyage avec le reste de ce que l'appelant sait
+du plan, et un appelant qui ne peut pas le lire n'en invente pas : le gel est
+alors considéré éteint, ce qui est l'état du dépôt sous `%test` et la lecture
+la plus prudente.
+
+Un diagnostic, lui, lit l'horizon **du plan qu'on lui tend**, jamais l'horloge :
+il décrit la résolution qui a eu lieu, pas celle qu'on lancerait maintenant.
+
 ### Ce que la confirmation avant le calcul ne couvre pas
 
 Le **sous-effectif** ne demande rien, même classé CRITIQUE. Le solveur
@@ -155,3 +171,7 @@ prix du glisser-déposer, sur un geste cent fois moins fréquent.
 - Une organisation qui veut réellement poser un siège contre une règle dure
   passe par une contrainte ad hoc, qui est tracée avec sa raison — et
   avertie, elle, plutôt que refusée.
+- L'assistant de réparation lit désormais le plan enregistré **préparé**,
+  comme l'écriture qui le suit. Sans cela il proposait un candidat au-dessus
+  d'un quota de typologie que l'écriture refusait au clic suivant : les deux
+  gestes lisent maintenant les mêmes règles.

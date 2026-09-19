@@ -118,6 +118,24 @@ class VerrouillageSurViolationTest {
                 .isEmpty();
     }
 
+    /**
+     * A violation naming nobody points at an <b>empty</b> seat, which a lock
+     * leaves fillable: {@code ProblemBuilder} pins a covered seat only when it
+     * holds somebody. Counting it made « je fige cette journée relue » warn on
+     * a day whose only fault is seats still open.
+     */
+    @Test
+    void aViolationNamingNobodyIsNotFrozenByTheLock() {
+        VerrouillagePlanning surSamedi = verrou(TypeVerrouillage.JOUR);
+        surSamedi.setJour(SAMEDI);
+
+        assertThat(CoherenceAnalyzer.onVerrouillage(
+                        surSamedi,
+                        List.of(hardRule("posteDoitEtrePourvu", new ViolationReference("…", null, "PLATEAU", 1L))),
+                        grille))
+                .isEmpty();
+    }
+
     /** An incomplete lock — a body not validated yet — freezes nothing and says nothing. */
     @Test
     void aLockWithoutATargetSaysNothing() {

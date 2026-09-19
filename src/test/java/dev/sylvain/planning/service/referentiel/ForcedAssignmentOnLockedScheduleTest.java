@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.TypeVerrouillage;
@@ -51,7 +52,12 @@ class ForcedAssignmentOnLockedScheduleTest {
     private List<ForcedAssignmentOnLockedSchedule.Conflit> detect(
             ContrainteAdHoc contrainte, List<VerrouillagePlanning> verrouillages, Set<PlaceTenue> tenues) {
         return ForcedAssignmentOnLockedSchedule.detectAll(
-                List.of(contrainte), verrouillages, List.of(plateau), List.of(samediMatin, dimancheMatin), tenues);
+                List.of(contrainte),
+                verrouillages,
+                List.of(plateau),
+                List.of(samediMatin, dimancheMatin),
+                tenues,
+                null);
     }
 
     @Test
@@ -125,9 +131,31 @@ class ForcedAssignmentOnLockedScheduleTest {
                         List.of(plateau),
                         List.of(samediMatin, dimancheMatin),
                         List.of(surAnimateur("A1")),
-                        Set.of()))
+                        Set.of(),
+                        null))
                 .singleElement()
                 .satisfies(avertissement -> assertThat(avertissement.type())
                         .isEqualTo(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE));
+    }
+
+    /** Same silence on the past as its two siblings — see ADR 0044. */
+    @Test
+    void aScopeEntirelyInThePastIsNotReproached() {
+        assertThat(ForcedAssignmentOnLockedSchedule.detectAll(
+                        List.of(forced(ALICE)),
+                        List.of(surAnimateur("A1")),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        Set.of(),
+                        new PastHorizon(DIMANCHE.plusDays(1), LocalTime.of(8, 0))))
+                .isEmpty();
+        assertThat(ForcedAssignmentOnLockedSchedule.detectAll(
+                        List.of(forced(ALICE)),
+                        List.of(surAnimateur("A1")),
+                        List.of(plateau),
+                        List.of(samediMatin, dimancheMatin),
+                        Set.of(),
+                        new PastHorizon(DIMANCHE, LocalTime.of(8, 0))))
+                .hasSize(1);
     }
 }

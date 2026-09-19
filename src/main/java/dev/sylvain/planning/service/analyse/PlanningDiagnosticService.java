@@ -168,12 +168,14 @@ public final class PlanningDiagnosticService {
                 // describes the problem that was solved, and a solve launched
                 // with the rule on stays described with it on.
                 encadrementMineursActif(solved),
-                // Same doctrine for the locks and the seats: both are read off
-                // the plan handed here, never re-read from the database, so a
-                // diagnostic describes the plan it was given.
-                new FeasibilityAnalyzer.LockContext(
+                // Same doctrine for the locks, the seats and the horizon: all
+                // three are read off the plan handed here, never re-read from
+                // the database or the clock, so a diagnostic describes the plan
+                // it was given — including the moment its past was frozen at.
+                new FeasibilityAnalyzer.PlanContext(
                         solved.getVerrouillages() == null ? List.of() : solved.getVerrouillages(),
-                        () -> placesTenues(solved)));
+                        () -> placesTenues(solved),
+                        solved.getPastHorizon()));
         int hardScore = solved.getScore() == null
                 ? 0
                 : Math.toIntExact(solved.getScore().hardScore());

@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
@@ -10,6 +11,7 @@ import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -81,14 +83,15 @@ public final class ForcedAssignmentOnLockedSchedule {
             List<VerrouillagePlanning> verrouillages,
             List<Stand> stands,
             List<Creneau> creneaux,
-            Set<PlaceTenue> placesTenues) {
+            Set<PlaceTenue> placesTenues,
+            PastHorizon horizon) {
         if (contraintes == null || contraintes.isEmpty() || verrouillages == null || verrouillages.isEmpty()) {
             return List.of();
         }
         Map<String, Stand> standsParId = ForcedAssignmentScope.index(stands, Stand::getId);
         List<Conflit> conflits = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
-            detect(contrainte, verrouillages, standsParId, creneaux, placesTenues)
+            detect(contrainte, verrouillages, standsParId, creneaux, placesTenues, horizon)
                     .ifPresent(conflits::add);
         }
         return List.copyOf(conflits);
@@ -99,7 +102,8 @@ public final class ForcedAssignmentOnLockedSchedule {
             List<VerrouillagePlanning> verrouillages,
             Map<String, Stand> standsParId,
             List<Creneau> creneaux,
-            Set<PlaceTenue> placesTenues) {
+            Set<PlaceTenue> placesTenues,
+            PastHorizon horizon) {
         if (contrainte == null
                 || contrainte.getType() != TypeContrainteAdHoc.AFFECTATION_FORCEE
                 || contrainte.getAnimateursConcernes() == null
@@ -115,12 +119,15 @@ public final class ForcedAssignmentOnLockedSchedule {
             }
             nommes.add(reference.getId());
         }
-        List<PosteAffectation> portee = ForcedAssignmentScope.seats(contrainte, standsParId, creneaux);
-        if (portee.isEmpty()) {
-            return Optional.empty();
-        }
         Set<PlaceTenue> tenues = placesTenues == null ? Set.of() : placesTenues;
-        for (PosteAffectation siege : portee) {
+        TreeSet<LocalDate> dates = new TreeSet<>();
+        boolean aVenir = false;
+        // One pass, and the dates collected on the way: the stream is walked
+        // once and abandoned at the first seat somebody it names could take.
+        for (Iterator<PosteAffectation> sieges = ForcedAssignmentScope.seats(contrainte, standsParId, creneaux)
+                        .iterator();
+                sieges.hasNext(); ) {
+            PosteAffectation siege = sieges.next();
             for (String animateurId : nommes) {
                 // Already seated in the scope: the exception is satisfied by a
                 // seat the lock pins rather than blocks, and asks for nothing.
@@ -135,10 +142,15 @@ public final class ForcedAssignmentOnLockedSchedule {
                     return Optional.empty();
                 }
             }
+            LocalDate date = siege.getCreneau().getDate();
+            dates.add(date);
+            aVenir |= ForcedAssignmentPast.aVenir(date, horizon);
         }
-        TreeSet<LocalDate> dates = portee.stream()
-                .map(siege -> siege.getCreneau().getDate())
-                .collect(Collectors.toCollection(TreeSet::new));
+        if (dates.isEmpty() || !aVenir) {
+            // No seat at all, or a scope entirely behind us: `affectationForcee`
+            // charges neither (ADR 0044), so neither does this.
+            return Optional.empty();
+        }
         return Optional.of(new Conflit(contrainte, List.copyOf(dates)));
     }
 
