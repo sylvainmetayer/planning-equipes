@@ -3540,5 +3540,6 @@
   "espace.planning.equipeVide": " Nobody by that name in your planning. ",
   "espace.planning.equipeCompte": "{$INTERPOLATION}×",
   "espace.planning.equipeAffluence": " {$INTERPOLATION}, {$INTERPOLATION_1}: {$INTERPOLATION_2} people on site ",
-  "espace.planning.proposerEchange": "Propose a shift swap"
+  "espace.planning.proposerEchange": "Propose a shift swap",
+  "espace.planning.equipeAucune": "Nobody shares your shifts yet."
 }

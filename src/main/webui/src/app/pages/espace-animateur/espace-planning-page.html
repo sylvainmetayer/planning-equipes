@@ -496,9 +496,15 @@
       </mat-form-field>
 
       @if (coequipiers().length === 0) {
-        <p class="espace-equipe-vide" i18n="@@espace.planning.equipeVide">
-          Personne avec ce nom dans votre planning.
-        </p>
+        @if (recherche()) {
+          <p class="espace-equipe-vide" i18n="@@espace.planning.equipeVide">
+            Personne avec ce nom dans votre planning.
+          </p>
+        } @else {
+          <p class="espace-equipe-vide" i18n="@@espace.planning.equipeAucune">
+            Personne ne partage encore vos créneaux.
+          </p>
+        }
       }
       <ul class="espace-equipe-liste">
         @for (coequipier of coequipiers(); track coequipier.nom) {
@@ -526,7 +532,13 @@
       -->
       @if (affluences().length > 0) {
         <ul class="espace-equipe-affluences">
-          @for (affluence of affluences(); track affluence.date + affluence.standNom) {
+          <!-- The hours are part of the key: montage and démontage on the same
+               stand the same day are two lines, and sharing a key would have
+               Angular reconcile them as one. -->
+          @for (
+            affluence of affluences();
+            track affluence.date + affluence.standNom + affluence.heureDebut
+          ) {
             <li i18n="@@espace.planning.equipeAffluence">
               {{ affluence.standNom }}, {{ affluence.date | date: 'EEE d' }} : {{ affluence.effectif }} personnes présentes
             </li>
