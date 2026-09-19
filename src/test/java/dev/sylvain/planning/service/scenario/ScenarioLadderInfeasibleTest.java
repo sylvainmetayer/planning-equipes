@@ -106,6 +106,14 @@ class ScenarioLadderInfeasibleTest {
      * before that it cost medium points and this half of the test never saw
      * it. Filling the seat is what makes both fire, which is why switching off
      * the meal rule alone no longer reaches zero.</p>
+     *
+     * <p>Both are therefore allowed in the first assertion, and neither is
+     * required: leaving the seat empty costs one hard point and owes no break,
+     * holding it costs the meal rule and the relay rule, and which of the two
+     * the search settles on is not this rung's subject. Naming only the meal
+     * rule there passed by arithmetic rather than by design — the empty seat
+     * happened to be strictly cheaper — and would have turned any future
+     * re-balancing of those weights into a failure nobody could read.</p>
      */
     @Test
     void rung30AVacationSpanningTheWholeMealWindow() {
@@ -117,7 +125,7 @@ class ScenarioLadderInfeasibleTest {
         assertThat(solved.getScore().hardScore()).isNegative();
         assertThat(brokenHardConstraints(solved))
                 .isNotEmpty()
-                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire");
+                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire", "pauseSurPosteSansRelais");
 
         Loaded sansCoupure = load("gamme-30-infaisable-coupure-repas");
         sansCoupure
