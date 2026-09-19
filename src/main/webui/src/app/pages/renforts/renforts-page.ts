@@ -23,10 +23,10 @@ import { keepViewInQueryParams } from '../../core/view-query-params';
 import { TableFilter } from '../../shared/table-filter';
 import {
   TriRenforts,
-  celluleDuJour,
+  cellForDay,
   heuresInutilisees,
   lignesAffichees,
-  partDuBonus,
+  bonusShare,
   readTri,
   tauxEmploi,
 } from './renforts';
@@ -108,7 +108,7 @@ export class RenfortsPage {
 
   protected readonly tauxEmploi = computed(() => tauxEmploi(this.rapport.value()));
 
-  protected readonly partDuBonus = computed(() => partDuBonus(this.rapport.value()));
+  protected readonly bonusShare = computed(() => bonusShare(this.rapport.value()));
 
   protected readonly planEnregistre = computed(() => this.rapport.value()?.planEnregistre ?? false);
 
@@ -122,7 +122,7 @@ export class RenfortsPage {
     ligne: LigneRenfort,
     date: string,
   ): { ouvertes: number; pourvues: number } | null {
-    return celluleDuJour(ligne, date);
+    return cellForDay(ligne, date);
   }
 
   protected jourCourt(date: string): string {
@@ -136,9 +136,5 @@ export class RenfortsPage {
 
   protected changerTri(tri: TriRenforts): void {
     this.tri.set(tri);
-  }
-
-  protected filtrer(valeur: string): void {
-    this.filtre.set(valeur);
   }
 }

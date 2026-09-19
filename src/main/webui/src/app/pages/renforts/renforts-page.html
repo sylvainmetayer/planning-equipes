@@ -32,7 +32,7 @@
         </mat-card>
       </div>
 
-      @if (partDuBonus(); as part) {
+      @if (bonusShare(); as part) {
         <p class="renforts-formule" i18n="@@renforts.formule">
           Les renforts ajoutent {{ part | percent: '1.0-0' }} au-dessus de ce que l'édition doit.
           @if (tauxEmploi(); as taux) {
