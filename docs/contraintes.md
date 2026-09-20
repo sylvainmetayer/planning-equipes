@@ -311,6 +311,7 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans
 | Heure d'un service tardif | 22:00 | `eviterFermeturePuisOuverture` |
 | Heure d'un service matinal | 10:00 | `eviterFermeturePuisOuverture` |
 | Repos souhaité après un service tardif | 12 h | `eviterFermeturePuisOuverture` |
+| Jours travaillés d'affilée | 8 | `maxJoursConsecutifsTravailles` et sa forme dure |
 
 Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
 page Paramètres, carte « Qualité d'organisation » ; le bloc
@@ -327,6 +328,51 @@ La portée du plafond de typologies est l'**édition**, jamais la journée : le
 `groupBy` de la contrainte ne porte que l'animateur, sans clé de date, et un
 test le verrouille pour qu'un futur refactor ne le fasse pas glisser en
 silence.
+
+## L'écran dit à quoi la règle est réglée, et où le changer
+
+Une description répond au *pourquoi*, jamais au *combien*. « Pas plus de jours
+consécutifs que le plafond réglé sur la page Paramètres » laissait le lecteur
+ouvrir un autre écran, y chercher le bon onglet, et parier que le champ trouvé
+était bien celui que la phrase désignait.
+
+Chaque règle porte donc, sous sa description, les **réglages qu'elle lit** :
+le libellé du champ mot pour mot, la valeur de cette édition, et un lien vers
+le formulaire qui la change. Le libellé *est* le lien — cliquer « Jours
+travaillés d'affilée » ouvre le champ de ce nom.
+
+Une règle liste **tous** les réglages qu'elle lit, pas seulement son seuil
+vedette. `dureeHebdomadaireMax` est le cas qui le justifie : son plafond est
+hebdomadaire, mais ce en quoi la semaine se mesure dépend de la pause déclarée
+prise sur le poste et de sa durée. Un organisateur qui lit « 48 h » et se
+demande pourquoi cinq jours de 10 h d'amplitude passent a besoin des deux
+autres valeurs, pas d'une ligne plus propre.
+
+Trois choses n'y figurent pas, et aucune par oubli :
+
+- **le poids**, qui a son propre champ sur cet écran et arbitre entre règles
+  d'un même niveau plutôt que de dire ce qu'une règle mesure ;
+- **une constante du Code du travail** — les 10 h quotidiennes, les 11 h de
+  repos, les six jours de repos hebdomadaire. Aucun formulaire ne les change,
+  il n'y a donc nulle part où renvoyer, et la description est l'endroit où
+  elles sont nommées ;
+- **une donnée de référentiel** — le plafond d'une typologie, le caractère
+  premium d'un stand, les appréciations d'un animateur. Ce sont des lignes, pas
+  des réglages, et l'écran y renvoie déjà par le plancher quand leur absence
+  est ce qui aplatit une règle.
+
+L'inventaire est `ConstraintParameters`, à côté de `ConstraintCatalog` et pour
+la même raison : c'est une liste écrite à la main, donc une liste qui pourrit
+en silence dès qu'une contrainte se met à lire un paramètre de plus — l'écran
+continuerait d'afficher une liste plausible et incomplète.
+`ConstraintParametersStructuralTest` est le filet : il lit les sources des
+contraintes, résout ce que chaque règle lit **à travers ses méthodes d'appui**,
+et échoue sur toute lecture non déclarée. Il a d'ailleurs trouvé son premier
+oubli en naissant — `travailContinuMaxMajeur` lit `pauseSurPoste` et ne le
+déclarait pas. Deux formes lui échappent et sont nommées avec leur raison :
+un paramètre qui arrive en **fait du problème** (les fenêtres de repas, montées
+par `ReferenceDataService`) et un accesseur à argument lu hors du dossier
+balayé (`PauseSurPoste.dues`).
 
 ## Activer / désactiver
 

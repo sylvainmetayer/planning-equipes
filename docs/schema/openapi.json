@@ -1488,6 +1488,23 @@
           }
         }
       },
+      "ConstraintParameter" : {
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "valeur" : {
+            "type" : "string"
+          },
+          "lien" : {
+            "type" : "string"
+          },
+          "onglet" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConstraintPoidsUpdate" : {
         "type" : "object",
         "properties" : {
@@ -1579,6 +1596,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ViolationReference"
+            }
+          },
+          "parametres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ConstraintParameter"
             }
           }
         }

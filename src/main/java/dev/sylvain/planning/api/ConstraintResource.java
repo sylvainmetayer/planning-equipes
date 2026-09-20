@@ -1,5 +1,7 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.PivotEcarts;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
@@ -13,6 +15,8 @@ import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
+import dev.sylvain.planning.solver.ConstraintParameters;
+import dev.sylvain.planning.solver.ConstraintParameters.ConstraintParameter;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -85,8 +89,12 @@ public class ConstraintResource {
         Set<String> desactivees = referenceDataService.getContraintesDesactivees();
         Map<String, Integer> poids = planningService.effectiveConstraintWeights();
 
+        ParametresLegaux legaux = referenceDataService.getParametresLegaux();
+        ParametresQualite qualite = referenceDataService.getParametresQualite();
+
         List<ConstraintView> constraints = ConstraintCatalog.definitions().stream()
-                .map(definition -> toView(definition, byName.get(definition.name()), desactivees, poids))
+                .map(definition ->
+                        toView(definition, byName.get(definition.name()), desactivees, poids, legaux, qualite))
                 .toList();
 
         return new ConstraintsView(
@@ -153,7 +161,9 @@ public class ConstraintResource {
             ConstraintDefinition definition,
             ConstraintDiagnostic diagnostic,
             Set<String> desactivees,
-            Map<String, Integer> poids) {
+            Map<String, Integer> poids,
+            ParametresLegaux legaux,
+            ParametresQualite qualite) {
         return new ConstraintView(
                 definition.name(),
                 definition.niveau().name(),
@@ -171,7 +181,8 @@ public class ConstraintResource {
                 diagnostic == null ? List.of() : diagnostic.violations(),
                 diagnostic == null ? null : diagnostic.postesEvalues(),
                 diagnostic == null ? null : diagnostic.plancher(),
-                diagnostic == null ? List.of() : diagnostic.references());
+                diagnostic == null ? List.of() : diagnostic.references(),
+                ConstraintParameters.of(definition.name(), legaux, qualite));
     }
 
     /**
@@ -222,6 +233,14 @@ public class ConstraintResource {
      * @param references      the same lines with the ids they name (animateur,
      *                    stand, créneau), so the screen can open the fiche in
      *                    question instead of making the reader retype a name
+     * @param parametres  the settings this rule reads, each with the value
+     *                    this edition stored and the form that changes it, in
+     *                    reading order — the threshold the rule is named after
+     *                    first. Empty for the rules that read none, which is
+     *                    most of them: a rule measuring the plan against the
+     *                    referential or against an article of the Code du
+     *                    travail has no field to fill. Never the weight, which
+     *                    has its own field on that screen
      */
     @Schema(requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
@@ -241,7 +260,8 @@ public class ConstraintResource {
             List<String> violations,
             Integer postesEvalues,
             ConstraintFloor plancher,
-            List<ViolationFormatter.ViolationReference> references) {}
+            List<ViolationFormatter.ViolationReference> references,
+            List<ConstraintParameter> parametres) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve

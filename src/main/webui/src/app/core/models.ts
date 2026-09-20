@@ -1108,6 +1108,30 @@ export interface ConstraintView {
   plancher: PlancherContrainte | null;
   /** The same lines with the ids they name, so a screen can open the fiche in question. */
   references: ViolationReference[];
+  /**
+   * The settings this rule reads, each with the value the edition stored and
+   * the form that changes it, in reading order. Empty for most rules: one
+   * measuring the plan against the referential, or against an article of the
+   * Code du travail, has no field to fill. Absent on an older payload.
+   */
+  parametres?: ParametreContrainte[];
+}
+
+/**
+ * One setting a rule reads: what the settings form calls it, what it is set
+ * to, and where to change it. Never the weight — that has its own field on
+ * this screen and arbitrates between rules rather than saying what one
+ * measures.
+ */
+export interface ParametreContrainte {
+  /** The field's own label on the form, word for word. */
+  libelle: string;
+  /** The stored value, already formatted by the server (« 48 h », « oui », « 8 jours »). */
+  valeur: string;
+  /** Angular route of the form. */
+  lien: string;
+  /** Which tab of it, as the `onglet` query parameter spells it. */
+  onglet: string;
 }
 
 /**
