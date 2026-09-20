@@ -239,6 +239,18 @@
                          (change)="onPoidsChange(constraint, poids)" />
                 </mat-form-field>
               </div>
+              @if (constraint.parametres?.length) {
+                <p class="constraint-parametres">
+                  <span class="constraint-parametres-titre" i18n="@@constraints.parametres.titre">Réglages lus :</span>
+                  @for (parametre of constraint.parametres; track parametre.libelle) {
+                    <a class="constraint-parametre" [routerLink]="parametre.lien"
+                       [queryParams]="{ onglet: parametre.onglet }"
+                       [attr.aria-label]="parametreLabel(parametre)">
+                      {{ parametre.libelle }}<span class="constraint-parametre-valeur">{{ parametre.valeur }}</span>
+                    </a>
+                  }
+                </p>
+              }
               <p [class]="resultClass(constraint)">{{ resultLabel(constraint) }}</p>
               @if (constraint.plancher; as plancher) {
                 <p class="constraint-plancher">

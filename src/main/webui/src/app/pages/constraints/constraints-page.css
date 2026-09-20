@@ -316,3 +316,44 @@
   gap: 0.5rem;
   margin: 0.75rem 0;
 }
+
+/*
+ * The settings a rule reads. Each one is a link to the field that changes it,
+ * so the value and its label stay together: a chip whose label says what it is
+ * and whose tail says what it is set to.
+ */
+.constraint-parametres {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 0.5rem 0 0;
+}
+
+.constraint-parametres-titre {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+}
+
+.constraint-parametre {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 1rem;
+  color: var(--mat-sys-on-surface);
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.constraint-parametre:hover,
+.constraint-parametre:focus-visible {
+  border-color: var(--mat-sys-primary);
+  text-decoration: underline;
+}
+
+.constraint-parametre-valeur {
+  color: var(--mat-sys-primary);
+  font-weight: 600;
+}

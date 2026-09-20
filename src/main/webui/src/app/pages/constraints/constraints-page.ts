@@ -23,7 +23,13 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { protectionApplies } from '../../core/constraint-protection';
 import { intlLocale } from '../../core/locale';
-import { AxePivot, ConstraintView, ConstraintsView, NiveauContrainte } from '../../core/models';
+import {
+  AxePivot,
+  ConstraintView,
+  ConstraintsView,
+  NiveauContrainte,
+  ParametreContrainte,
+} from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -608,6 +614,18 @@ export class ConstraintsPage {
   protected ancreLabel(constraint: ConstraintView): string {
     const name = constraint.name;
     return $localize`:@@constraints.ancre.aria:Lien direct vers la règle ${name}:name:`;
+  }
+
+  /**
+   * The link is the parameter's own label, so a reader clicking « Jours
+   * travaillés d'affilée » lands on the field of that name. A screen reader
+   * reads links out of context, where « Jours travaillés d'affilée » alone
+   * says nothing about where it goes — hence the spelled-out name here.
+   */
+  protected parametreLabel(parametre: ParametreContrainte): string {
+    const libelle = parametre.libelle;
+    const valeur = parametre.valeur;
+    return $localize`:@@constraints.parametres.aria:Régler « ${libelle}:libelle: », actuellement ${valeur}:valeur:`;
   }
 
   protected resultLabel(constraint: ConstraintView): string {

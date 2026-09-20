@@ -15,7 +15,7 @@ import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConstraintsApi } from '../../core/api/constraints-api';
-import { ConstraintView, ConstraintsView } from '../../core/models';
+import { ConstraintView, ConstraintsView, ParametreContrainte } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
@@ -94,6 +94,7 @@ type PageInternals = {
   groups: () => { categorie: string; items: ConstraintView[]; ancre: string }[];
   scrollToAnchor: (id: string) => void;
   ancreLabel: (constraint: ConstraintView) => string;
+  parametreLabel: (parametre: ParametreContrainte) => string;
 };
 
 /** A rule that penalised every seat for lack of data (issue #495). */
@@ -493,6 +494,42 @@ describe('ConstraintsPage', () => {
 
       expect(constraintsApi.setWeight).not.toHaveBeenCalled();
       expect(field.value).toBe('4');
+    });
+  });
+  // A rule's threshold lives on a form the screen never showed, so the reader
+  // had to guess which field the description meant (issue #57).
+  describe('réglages lus par une règle', () => {
+    const CEILING: ParametreContrainte = {
+      libelle: "Jours travaillés d'affilée",
+      valeur: '8 jours',
+      lien: '/parametres',
+      onglet: 'edition',
+    };
+
+    it('names the field and its value so the link is readable out of context', async () => {
+      const page = await createPage([contrainte({ parametres: [CEILING] })]);
+
+      expect(page.parametreLabel(CEILING)).toBe(
+        "Régler « Jours travaillés d'affilée », actuellement 8 jours",
+      );
+    });
+
+    it('carries the parameters through to the view', async () => {
+      const page = await createPage([contrainte({ parametres: [CEILING] })]);
+
+      expect(page.view()?.contraintes[0].parametres).toEqual([CEILING]);
+    });
+
+    // Most rules read none, and an older payload carries no field at all:
+    // neither may break the screen.
+    it('accepts a rule with no parameter and an absent field alike', async () => {
+      const page = await createPage([
+        contrainte({ parametres: [] }),
+        contrainte({ name: 'posteDoitEtrePourvu' }),
+      ]);
+
+      expect(page.view()?.contraintes[0].parametres).toEqual([]);
+      expect(page.view()?.contraintes[1].parametres).toBeUndefined();
     });
   });
 });

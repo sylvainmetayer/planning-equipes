@@ -1503,6 +1503,8 @@
   "constraints.sortByPlancher": "Sort by floor",
   "constraints.summary.horsPlancher": "Net of floors: {$score} — {$count} rule(s) measure missing data.",
   "constraints.plancher.badge": "Measures missing data",
+  "constraints.parametres.titre": "Settings read:",
+  "constraints.parametres.aria": "Change “{$libelle}”, currently {$valeur}",
   "constraints.plancher.ratio": "{$pct}% of the {$count} items evaluated are in breach.",
   "constraints.plancher.lien": "Enter the data",
   "solver.locked.unknown": "The solver's state is not known yet: the actions unlock as soon as the server answers.",
