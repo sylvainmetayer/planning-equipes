@@ -14,9 +14,14 @@
 -- fenêtre de (seuil + 1) jours ; un jour de plus ou de moins change le nombre
 -- de jours-repos à trouver, et donc si un plan sans écart dur existe.
 --
--- DEFAULT 6 sur les lignes existantes : une édition qui avait déjà réglé ses
--- autres seuils garde exactement le comportement qu'elle avait, le six étant
--- la valeur que la constante portait.
+-- DEFAULT 8, et non le six que portait la constante : mesuré sur
+-- `festival-hivernal`, forme dure allumée, la règle laisse 22 sièges vides à
+-- six jours, sept à sept jours, et atteint zéro écart dur à huit. Les éditions
+-- existantes reçoivent donc le nouveau défaut, pas l'ancien seuil — un plafond
+-- que rien ne peut satisfaire vaut moins qu'un plafond plus large qui tient, et
+-- la règle étant dosée par défaut, ce que ce backfill change est le nombre de
+-- pénalités medium, jamais la validité d'un plan. Une édition qui veut six
+-- jours les règle sur la page Paramètres.
 
 ALTER TABLE parametres_qualite
-    ADD COLUMN IF NOT EXISTS jours_consecutifs_max INTEGER NOT NULL DEFAULT 6;
+    ADD COLUMN IF NOT EXISTS jours_consecutifs_max INTEGER NOT NULL DEFAULT 8;

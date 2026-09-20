@@ -1,4 +1,4 @@
-# 0045 — Les six jours d'affilée restent une règle dosée, avec une forme dure éteinte par défaut
+# 0045 — Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable
 
 - **Statut** : accepté, implémenté
 - **Date** : septembre 2026
@@ -71,18 +71,17 @@ Cinq règles :
    elles ne peuvent pas diverger sur ce que « jours d'affilée » compte, ni sur
    combien elles en laissent passer. Ce seuil a d'abord été la constante
    `JOURS_CONSECUTIFS_MAX = 6` ; il est depuis réglable par édition
-   (`ParametresQualite.joursConsecutifsMax`, six par défaut), les
-   deux formes le lisant au même endroit. Le niveau par défaut tranché ici ne
-   change pas : ce qui devient réglable, c'est le nombre de jours, pas le fait
-   que la forme dure soit éteinte.
+   (`ParametresQualite.joursConsecutifsMax`), les deux formes le lisant au même
+   endroit. Le niveau tranché ici ne change pas : ce qui devient réglable, c'est
+   le nombre de jours, pas le fait que la forme dure soit éteinte.
 2. **Les deux restent en « Qualité d'organisation »**, jamais en « Légal » :
    aucun article du Code ne les fonde, et la catégorie décide de ce que dit la
    confirmation de désactivation.
 3. **La dure ne se dose pas** — un écart dur n'a pas de prix — mais porte
    quand même sa ligne `planning.constraint-weights.…=1`, comme les autres.
-4. **Les deux peuvent être actives ensemble** : la dure bloque au-delà de six,
-   la medium continue de coûter en deçà. C'est une manière légitime de dire
-   « jamais plus de six, et de préférence moins ».
+4. **Les deux peuvent être actives ensemble** : la dure bloque au-delà du
+   seuil, la medium continue de coûter en deçà. C'est une manière légitime de
+   dire « jamais plus de N, et de préférence moins ».
 5. **La remédiation de la dure renvoie vers la souple** : « désactivez
    `maxJoursConsecutifsTravaillesDur`, `maxJoursConsecutifsTravailles` continue
    de la pénaliser sans bloquer ». Celle de la souple ne cite plus un « plafond
@@ -91,14 +90,32 @@ Cinq règles :
 **Le défaut retenu reste la forme medium, au poids 1**, sur la foi du banc
 ci-dessous.
 
+**Et le seuil par défaut est de huit jours, non de six.** Les six jours énoncés
+par l'organisation décrivent l'intention ; la grille, elle, ne les admet pas. La
+règle exige un jour de repos dans *chaque* fenêtre de (seuil + 1) jours, et sur
+`festival-hivernal` la forme dure laisse **22 sièges vides à six, sept à sept,
+et atteint zéro écart dur à huit** (294 s). Un plafond que rien ne satisfait ne
+protège personne : il se contente de rendre tout plan fautif, et la version
+dosée transforme la même impossibilité en pénalité permanente que nul
+réarrangement n'efface. Huit est donc le seuil le plus serré que cette grille
+tienne, et l'organisation le resserre par édition dès que l'effectif ou la
+grille le permettent.
+
+La mesure de ce qu'un resserrement demanderait est dans
+`docs/contraintes.md` : sur la fenêtre la plus tendue, six ne tolère que cinq
+personnes de plus que le minimum théorique les jours de pic, quand sept en
+tolère douze et qu'un plan réel en demande dix. L'écart se comble par la grille
+ou par l'effectif, jamais par le score.
+
 ## Conséquences
 
 - Une organisation qui veut le plafond bloquant l'allume par édition, sans
-  livraison ni migration — et choisit le nombre de jours qui va avec, ce qui
-  change tout sur une grille tendue : sur `festival-hivernal`, la forme dure
-  laisse 22 sièges vides à six jours, dix à sept, et **atteint zéro écart dur
-  en 294 s à huit**. Le seuil décide de la faisabilité là où le poids ne
-  pouvait rien.
+  livraison ni migration — et choisit le nombre de jours qui va avec. Le seuil
+  décide de la faisabilité là où le poids ne pouvait rien.
+- **Les éditions existantes passent à huit** : la colonne ajoutée par `V96`
+  porte ce défaut, elle ne rejoue pas l'ancien six. La règle étant dosée par
+  défaut, ce que ce backfill change est le nombre de pénalités medium, jamais
+  la validité d'un plan.
 - Le jour où la convention collective s'appliquerait, la bonne forme dure ne
   serait pas celle-ci mais « deux jours de repos consécutifs par semaine
   civile pour tous » — l'extension de `reposHebdomadaireMineur`. Cette ADR ne

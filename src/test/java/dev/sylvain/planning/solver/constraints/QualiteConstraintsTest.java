@@ -1,5 +1,7 @@
 package dev.sylvain.planning.solver.constraints;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import dev.sylvain.planning.domain.AffectationPubliee;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConstraintToggle;
@@ -699,9 +701,11 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     /**
      * The ceiling travels as a {@link ParametresQualite} problem fact since it
      * became an edition's to set, so every test of the two forms states the one
-     * it exercises. {@code SIX_DAY_CEILING} repeats the shipped default.
+     * it exercises. The tests below say « six » because six is the ceiling they
+     * describe, not because it is the shipped default — that one is eight, and
+     * {@link #leSeuilLivreEstDeHuitJours} is the single place pinning it.
      */
-    private static final ParametresQualite SIX_DAY_CEILING = new ParametresQualite();
+    private static final ParametresQualite SIX_DAY_CEILING = dayCeiling(6);
 
     private static ParametresQualite dayCeiling(int jours) {
         ParametresQualite defauts = new ParametresQualite();
@@ -829,9 +833,32 @@ class QualiteConstraintsTest extends ConstraintTestBase {
     }
 
     /**
+     * The shipped default, pinned once and here only.
+     *
+     * <p>Eight, not the six the organisation first stated: the value is a
+     * feasibility condition, not a comfort. On {@code festival-hivernal} the
+     * hard form leaves 22 seats unfilled at six and reaches zero hard at eight,
+     * and a ceiling nothing can satisfy protects nobody — dosed, it only turns
+     * the same impossibility into a penalty no rearrangement clears. See ADR
+     * 0045. An edition that can hold six sets six on the Paramètres screen.</p>
+     */
+    @Test
+    void leSeuilLivreEstDeHuitJours() {
+        assertThat(new ParametresQualite().joursConsecutifsMax()).isEqualTo(8);
+
+        Animateur a1 = referentMajeur("A1");
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(a1, 8, null, new ParametresQualite()))
+                .penalizesBy(0);
+        verify("maxJoursConsecutifsTravailles")
+                .given(joursConsecutifsToggled(a1, 9, null, new ParametresQualite()))
+                .penalizesBy(1);
+    }
+
+    /**
      * The ceiling is the edition's, not the code's. An organiser who sets seven
      * days pays nothing for a seventh — and one who sets five pays for the
-     * sixth, which the shipped default lets through. Both forms read the same
+     * sixth, which a looser ceiling lets through. Both forms read the same
      * value, so the pair is checked together: a ceiling that moved for one form
      * only would be a plan the screens describe two ways.
      */
