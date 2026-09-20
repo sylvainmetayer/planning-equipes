@@ -367,6 +367,32 @@ class PlanningPdfContenuTest {
     }
 
     /**
+     * A staffed renfort is a bonus and never fills an owed seat's place
+     * (issue #505): the day page has to say both, or the hole disappears
+     * behind somebody the plan never owed.
+     */
+    @Test
+    void aStaffedRenfortIsPrintedAsABonusAndStillLeavesTheOwedSeatUnfilled() throws IOException {
+        Stand stand = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 2, 3, false);
+        Creneau creneau = new Creneau(1L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(9, 0), LocalTime.of(13, 0));
+        Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);
+        Animateur alan = new Animateur("A-ALAN", "Alan", "Turing", LocalDate.of(1992, 2, 2), false);
+        PosteAffectation renfort = poste("p3", stand, creneau, alan);
+        renfort.setOptionnel(true);
+        PlanningEvenement planning = new PlanningEvenement(
+                LocalDate.of(2026, 8, 14),
+                new ArrayList<>(List.of(ada, alan)),
+                new ArrayList<>(List.of(
+                        poste("p1", stand, creneau, ada), new PosteAffectation("p2", stand, creneau), renfort)));
+
+        String journee = pageContaining(service.exportGlobalPdf(planning), "Jour 1 —");
+
+        assertThat(journee).contains("Ada Lovelace").contains("Alan Turing");
+        assertThat(journee).as("le siège dû vide reste un manque").contains("1 non pourvu");
+        assertThat(journee).as("le renfort tenu se lit comme un bonus").contains("+1 en renfort");
+    }
+
+    /**
      * The organiser's document is a summary and four sections: the overview
      * grid, then the same assignments by day, by stand and by person. The
      * seats nobody holds are written in plain sight.
