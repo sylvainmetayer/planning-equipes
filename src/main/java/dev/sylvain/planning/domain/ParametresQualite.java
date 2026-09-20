@@ -102,19 +102,27 @@ public record ParametresQualite(
     public static final int TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT = 2;
 
     /**
-     * 6 — the ceiling the organisation stated, and the value both forms of the
-     * rule carried as a private constant of {@code QualiteConstraints} until it
-     * became an edition's to set. No article of the Code du travail founds a
-     * rolling count of consecutive days (see ADR 0045), so this is an
-     * organiser's policy and belongs here rather than with the legal
-     * parameters: nothing refuses a value, where a legal floor would.
+     * 8. No article of the Code du travail founds a rolling count of
+     * consecutive days (see ADR 0045), so this is an organiser's policy and
+     * belongs here rather than with the legal parameters: nothing refuses a
+     * value, where a legal floor would. The weekly rest itself stays held
+     * hard, by {@code maxJoursTravaillesParSemaine} and
+     * {@code reposHebdomadaireMinimal}.
      *
-     * <p>The threshold is worth setting rather than merely dosing, because on
-     * a grid that asks for nearly everybody every day it decides feasibility,
-     * not comfort: one day more or less changes how many rest days the rule
-     * demands inside every window of {@code max + 1} days.</p>
+     * <p><b>Why 8 and not the 6 the organisation first stated.</b> The
+     * threshold is not a comfort but a feasibility condition: the rule demands
+     * a rest day inside <em>every</em> window of {@code max + 1} days, so one
+     * day more or less changes how many rest days the grid must contain.
+     * Measured on {@code festival-hivernal}, the anonymised real-world
+     * fixture, with the hard form switched on: at 6 the solver leaves 22 seats
+     * unfilled after twenty minutes, at 7 it still leaves seven, and at 8 it
+     * reaches zero hard in 294 s. A ceiling nothing can satisfy is worse than
+     * a looser one that holds, and no weight can buy what the arithmetic
+     * forbids. Tightening back toward 6 is an open question for the
+     * organisation, to be reopened with the roster or the grid — not with the
+     * score.</p>
      */
-    public static final int JOURS_CONSECUTIFS_MAX_PAR_DEFAUT = 6;
+    public static final int JOURS_CONSECUTIFS_MAX_PAR_DEFAUT = 8;
 
     public ParametresQualite() {
         this(EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT);

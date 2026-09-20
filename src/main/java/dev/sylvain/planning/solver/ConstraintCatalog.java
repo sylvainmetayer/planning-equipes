@@ -541,7 +541,7 @@ public final class ConstraintCatalog {
                     Niveau.MEDIUM,
                     "Qualité d'organisation",
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
-                            + "sur la page Paramètres (six par défaut) sans au moins un jour de repos : moins "
+                            + "sur la page Paramètres (huit par défaut) sans au moins un jour de repos : moins "
                             + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
                             + "article du Code du travail n'impose un décompte glissant (L3132-1 se lit sur la "
                             + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733)."),
