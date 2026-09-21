@@ -119,7 +119,7 @@ export class SnapshotsPage {
   });
 
   /** True on the plan on display, the one deletion refuses. */
-  protected estPlanPublie(snapshot: PlanSnapshot): boolean {
+  protected isPlanPublie(snapshot: PlanSnapshot): boolean {
     return snapshot.id === this.planPublieId();
   }
 
@@ -131,14 +131,14 @@ export class SnapshotsPage {
     const moment = snapshot.publieLe
       ? new Date(snapshot.publieLe).toLocaleString(intlLocale())
       : '';
-    return this.estPlanPublie(snapshot)
+    return this.isPlanPublie(snapshot)
       ? $localize`:@@snapshots.published.tooltipCourant:Publié le ${moment}:moment: : c'est le plan que les animateurs ont reçu et que leur espace affiche.`
       : $localize`:@@snapshots.published.tooltipRemplace:Publié le ${moment}:moment:, puis remplacé par une publication plus récente : plus personne ne le lit.`;
   }
 
   /** The delete button says why it is out on the plan on display. */
   protected suppressionTooltip(snapshot: PlanSnapshot): string {
-    return this.estPlanPublie(snapshot)
+    return this.isPlanPublie(snapshot)
       ? $localize`:@@snapshots.delete.publieTooltip:Le plan publié ne peut pas être supprimé : c'est celui que les animateurs ont reçu. La prochaine publication prendra sa place.`
       : $localize`:@@common.delete:Supprimer`;
   }
@@ -292,7 +292,7 @@ export class SnapshotsPage {
   }
 
   protected async remove(snapshot: PlanSnapshot): Promise<void> {
-    if (this.estPlanPublie(snapshot)) {
+    if (this.isPlanPublie(snapshot)) {
       return;
     }
     const confirme = await this.confirm.ask({

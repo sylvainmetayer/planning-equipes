@@ -42,7 +42,7 @@ type PageInternals = {
   restaurer: (snapshot: PlanSnapshot) => Promise<void>;
   remove: (snapshot: PlanSnapshot) => Promise<void>;
   fraicheurTooltip: (snapshot: PlanSnapshot) => string;
-  estPlanPublie: (snapshot: PlanSnapshot) => boolean;
+  isPlanPublie: (snapshot: PlanSnapshot) => boolean;
   publicationTooltip: (snapshot: PlanSnapshot) => string;
   suppressionTooltip: (snapshot: PlanSnapshot) => string;
   error: () => string;
@@ -158,9 +158,9 @@ describe('SnapshotsPage', () => {
     ];
     const page = createPage();
 
-    expect(page.estPlanPublie(liste[1])).toBe(true);
-    expect(page.estPlanPublie(liste[0])).toBe(false);
-    expect(page.estPlanPublie(liste[2])).toBe(false);
+    expect(page.isPlanPublie(liste[1])).toBe(true);
+    expect(page.isPlanPublie(liste[0])).toBe(false);
+    expect(page.isPlanPublie(liste[2])).toBe(false);
   });
 
   // Two publications within the same second are not a tie: the server orders
@@ -172,8 +172,8 @@ describe('SnapshotsPage', () => {
     ];
     const page = createPage();
 
-    expect(page.estPlanPublie(liste[1])).toBe(true);
-    expect(page.estPlanPublie(liste[0])).toBe(false);
+    expect(page.isPlanPublie(liste[1])).toBe(true);
+    expect(page.isPlanPublie(liste[0])).toBe(false);
   });
 
   it('deletes a publication another one has replaced, and refuses the current one', async () => {
