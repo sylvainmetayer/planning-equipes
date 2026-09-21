@@ -3,14 +3,11 @@
 # Juin 2027 : la semaine tient en une seule vacation 14 h-19 h ; le week-end
 # ouvre à 10 h et se lit en quatre vacations jointives, dont le relais de midi
 # 12 h-13 h marqué couverturePause (effectif divisé par deux, arrondi au
-# supérieur). Les vacations se touchent, la pause minimale est à 0. Cinquante
-# stands n'ouvrent que le week-end.
+# supérieur). Les vacations se touchent. Cinquante stands n'ouvrent que le
+# week-end.
 
 festival:
   dateDebut: 2027-06-01
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
 creneaux:
   - id: J1-V1

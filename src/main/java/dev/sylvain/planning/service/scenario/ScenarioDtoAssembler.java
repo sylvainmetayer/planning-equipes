@@ -378,12 +378,9 @@ final class ScenarioDtoAssembler {
                 ? null
                 : new ParametresLegauxDto(
                         parametres.getDureeHebdomadaireMaxMinutes(),
-                        parametres.getPauseMinimaleEntreVacationsMinutes(),
                         parametres.getDureeVacationMaxMinutes(),
                         parametres.getReposQuotidienMinimalMinutes(),
-                        parametres.isPauseSurPoste(),
-                        parametres.getDureePauseMajeurMinutes(),
-                        parametres.getDureePauseMineurMinutes(),
+                        parametres.getDureePauseMinutes(),
                         parametres.getCoupureRepasMinutes(),
                         parametres.getCoupureRepasMidiDebut(),
                         parametres.getCoupureRepasMidiFin(),

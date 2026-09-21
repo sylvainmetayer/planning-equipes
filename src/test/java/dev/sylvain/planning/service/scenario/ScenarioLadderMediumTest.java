@@ -91,8 +91,6 @@ class ScenarioLadderMediumTest {
                 .extracting(template -> template.getNom())
                 .containsExactly("Montage", "Jour normal", "Nocturne");
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-10");
-        assertThat(loaded.problem().getParametresLegaux().getFirst().isPauseSurPoste())
-                .isTrue();
         assertThat(loaded.problem().getPostes()).hasSize(127);
         // The nocturne is held by the three stands open past 18:00, on the last day only.
         assertThat(loaded.problem().getPostes())

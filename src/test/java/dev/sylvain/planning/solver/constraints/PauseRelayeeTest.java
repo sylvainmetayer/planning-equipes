@@ -9,11 +9,18 @@ import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 
 /**
- * The shape found on the 2026 edition: a meal-relief seat followed by a full
- * afternoon on a single-seat stand, seven hours alone, a break due at 19:00
- * that nobody can relay.
+ * The relay half of the single break rule (ADR 0048), on the shape found on the
+ * 2026 edition: a meal-relief seat followed by a full afternoon on a
+ * single-seat stand, seven hours alone, a break due at 19:00 that nobody can
+ * relay.
+ *
+ * <p>These cases used to belong to {@code pauseSurPosteSansRelais}, a rule of
+ * its own that only spoke when the organiser had ticked « pause prise sur le
+ * poste ». There is no tick and no second rule: {@code travailContinuMaxMajeur}
+ * asks for a hole <b>or</b> a relay, and charges one hard point per break that
+ * gets neither.</p>
  */
-class PauseSurPosteRelayTest extends ConstraintTestBase {
+class PauseRelayeeTest extends ConstraintTestBase {
 
     private final Stand seul = standWithStrategy("STAND-SEUL");
     private final Stand releve = standWithStrategy("STAND-RELEVE");
@@ -22,27 +29,39 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
     private final Creneau treizeQuatorze = creneau("13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
     private final Creneau apresMidi = creneau("14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
 
-    private static ParametresLegaux onPost(boolean actif) {
-        ParametresLegaux parametres = new ParametresLegaux();
-        parametres.setPauseSurPoste(actif);
-        return parametres;
+    private static ParametresLegaux parametres() {
+        return new ParametresLegaux();
     }
 
     @Test
     void septHeuresSeulSurSonStandCoutentLaPauseSansRelais() {
-        verify("pauseSurPosteSansRelais")
-                .given(onPost(true), poste(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
+        verify("travailContinuMaxMajeur")
+                .given(parametres(), poste(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
                 .penalizesBy(1);
     }
 
     @Test
     void unCollegueSurLeStandALaSixiemeHeureRelaie() {
-        verify("pauseSurPosteSansRelais")
+        verify("travailContinuMaxMajeur")
                 .given(
-                        onPost(true),
+                        parametres(),
                         poste(releve, treizeQuatorze, a1),
                         poste(seul, apresMidi, a1),
                         poste(seul, apresMidi, a2))
+                .penalizesBy(0);
+    }
+
+    /**
+     * The other way out of the same breach: a hole of at least the break splits
+     * the stretch, and neither half reaches the cap. Nobody has to relay
+     * anything.
+     */
+    @Test
+    void unTrouDeLaDureeDeLaPauseDispenseDeToutRelais() {
+        Creneau apresLeTrou = creneau("1430-2030", 1, D1, LocalTime.of(14, 30), LocalTime.of(20, 30));
+
+        verify("travailContinuMaxMajeur")
+                .given(parametres(), poste(releve, treizeQuatorze, a1), poste(seul, apresLeTrou, a1))
                 .penalizesBy(0);
     }
 
@@ -66,9 +85,9 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
     void unePauseDueDansUneSequencePasseeNEstReprocheeAPersonne() {
         Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
 
-        verify("pauseSurPosteSansRelais")
+        verify("travailContinuMaxMajeur")
                 .given(
-                        onPost(true),
+                        parametres(),
                         passe(poste(releve, treizeQuatorze, a1)),
                         passe(poste(seul, apresMidi, a1)),
                         poste(seul, soiree, a1))
@@ -80,9 +99,9 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
     void laMemeJourneeEntierementAVenirCouteSaPauseSansRelais() {
         Creneau soiree = creneau("21-23", 1, D1, LocalTime.of(21, 0), LocalTime.of(23, 0));
 
-        verify("pauseSurPosteSansRelais")
+        verify("travailContinuMaxMajeur")
                 .given(
-                        onPost(true),
+                        parametres(),
                         poste(releve, treizeQuatorze, a1),
                         poste(seul, apresMidi, a1),
                         poste(seul, soiree, a1))
@@ -91,9 +110,9 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
 
     @Test
     void unCollegueSurUnAutreStandNeRelaiePas() {
-        verify("pauseSurPosteSansRelais")
+        verify("travailContinuMaxMajeur")
                 .given(
-                        onPost(true),
+                        parametres(),
                         poste(releve, treizeQuatorze, a1),
                         poste(seul, apresMidi, a1),
                         poste(releve, apresMidi, a2))
@@ -102,24 +121,17 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
 
     @Test
     void sixHeuresExactementNeDoiventRien() {
-        verify("pauseSurPosteSansRelais")
-                .given(onPost(true), poste(seul, apresMidi, a1))
-                .penalizesBy(0);
-    }
-
-    @Test
-    void muetteQuandLaPauseNestPasDeclareeSurLePoste() {
-        verify("pauseSurPosteSansRelais")
-                .given(onPost(false), poste(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
+        verify("travailContinuMaxMajeur")
+                .given(parametres(), poste(seul, apresMidi, a1))
                 .penalizesBy(0);
     }
 
     @Test
     void deuxPersonnesSeulesCoutentDeuxFois() {
         Stand autreSeul = standWithStrategy("STAND-SEUL-2");
-        verify("pauseSurPosteSansRelais")
+        verify("travailContinuMaxMajeur")
                 .given(
-                        onPost(true),
+                        parametres(),
                         poste(releve, treizeQuatorze, a1),
                         poste(seul, apresMidi, a1),
                         poste(releve, treizeQuatorze, a2),
@@ -130,11 +142,11 @@ class PauseSurPosteRelayTest extends ConstraintTestBase {
     /** Counted, never reproached (ADR 0044): a day entirely worked owes nobody a relay any more. */
     @Test
     void aBreakWithoutRelayOnADayAlreadyWorkedIsHistory() {
-        verify("pauseSurPosteSansRelais")
-                .given(onPost(true), postePasse(releve, treizeQuatorze, a1), postePasse(seul, apresMidi, a1))
+        verify("travailContinuMaxMajeur")
+                .given(parametres(), postePasse(releve, treizeQuatorze, a1), postePasse(seul, apresMidi, a1))
                 .penalizesBy(0);
-        verify("pauseSurPosteSansRelais")
-                .given(onPost(true), postePasse(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
+        verify("travailContinuMaxMajeur")
+                .given(parametres(), postePasse(releve, treizeQuatorze, a1), poste(seul, apresMidi, a1))
                 .penalizesBy(1);
     }
 }

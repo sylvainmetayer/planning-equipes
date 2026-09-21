@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.referentiel;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
 
@@ -126,32 +127,42 @@ class ParametresValidatorTest {
     }
 
     /**
-     * The break lengths are floors of ordre public, the mirror image of the two
+     * The break length is a floor of ordre public, the mirror image of the two
      * weekly ceilings: more is the organiser's to give, less is not
-     * (issue #592).
+     * (issue #592). One duration now, floored at the adult's twenty minutes
+     * (ADR 0048).
      */
     @Test
     void aBreakShorterThanTheLegalFloorIsRefused() {
-        ParametresLegaux tropCourtMajeur = new ParametresLegaux();
-        tropCourtMajeur.setDureePauseMajeurMinutes(15);
+        ParametresLegaux tropCourt = new ParametresLegaux();
+        tropCourt.setDureePauseMinutes(15);
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkParametresLegaux(tropCourtMajeur))
+                .isThrownBy(() -> ParametresValidator.checkParametresLegaux(tropCourt))
                 .withMessageContaining("L3121-16");
-
-        ParametresLegaux tropCourtMineur = new ParametresLegaux();
-        tropCourtMineur.setDureePauseMineurMinutes(20);
-        assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkParametresLegaux(tropCourtMineur))
-                .withMessageContaining("L3162-3");
     }
 
     @Test
     void aBreakLongerThanTheLegalFloorIsFree() {
         ParametresLegaux genereux = new ParametresLegaux();
-        genereux.setDureePauseMajeurMinutes(45);
-        genereux.setDureePauseMineurMinutes(60);
+        genereux.setDureePauseMinutes(45);
         assertThatCode(() -> ParametresValidator.checkParametresLegaux(genereux))
                 .doesNotThrowAnyException();
+    }
+
+    /**
+     * Between the two floors, the edition's value stands for adults and the
+     * thirty minutes of art. L3162-3 are applied to minors at read time rather
+     * than refused: twenty-five is a lawful choice, and forcing it up to thirty
+     * for everybody would be the application legislating.
+     */
+    @Test
+    void aBreakBetweenTheTwoFloorsIsAcceptedAndRaisedForMinorsOnly() {
+        ParametresLegaux entreLesDeux = new ParametresLegaux();
+        entreLesDeux.setDureePauseMinutes(25);
+        assertThatCode(() -> ParametresValidator.checkParametresLegaux(entreLesDeux))
+                .doesNotThrowAnyException();
+        assertThat(entreLesDeux.dureePauseMinutes(false)).isEqualTo(25);
+        assertThat(entreLesDeux.dureePauseMinutes(true)).isEqualTo(30);
     }
 
     @Test

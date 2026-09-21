@@ -10,9 +10,6 @@
 festival:
   dateDebut: 2028-04-03
 
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-
 typologies:
   - id: JEUX_DE_SOCIETE
     label: "Jeux de société"

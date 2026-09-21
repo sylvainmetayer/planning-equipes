@@ -73,8 +73,7 @@ class ScenarioSchemaGeneratorTest {
                 .path("ParametresLegauxDto")
                 .path("properties");
 
-        assertThat(champs(legaux))
-                .contains("pauseMinimaleEntreVacationsMinutes", "dureeVacationMaxMinutes", "coupureRepasMinutes");
+        assertThat(champs(legaux)).contains("dureePauseMinutes", "dureeVacationMaxMinutes", "coupureRepasMinutes");
     }
 
     /** The découpage sections are gone from the DTO tree, so the schema must not name them. */

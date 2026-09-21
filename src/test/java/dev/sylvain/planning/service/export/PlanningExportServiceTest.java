@@ -340,7 +340,7 @@ class PlanningExportServiceTest {
 
         String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
 
-        assertThat(ics).contains("slot 1 - Pause de 19:00 à 19:20 (20 min)");
+        assertThat(ics).contains("slot 1 - Pause de 19:00 à 19:30 (30 min)");
         assertThat(ics).contains("slot 2\r\n");
         assertThat(ics).doesNotContain("slot 2 - Pause");
     }

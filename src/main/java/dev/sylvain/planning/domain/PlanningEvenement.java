@@ -28,6 +28,9 @@ public class PlanningEvenement {
     @ProblemFactCollectionProperty
     private List<ContrainteAdHoc> contraintesAdHoc = new ArrayList<>();
 
+    /** What {@link #parametresLegaux()} answers when the planning carries no fact: the defaults. */
+    private static final ParametresLegaux PARAMETRES_LEGAUX_PAR_DEFAUT = new ParametresLegaux();
+
     @ProblemFactCollectionProperty
     private List<ParametresLegaux> parametresLegaux = new ArrayList<>(List.of(new ParametresLegaux()));
 
@@ -169,16 +172,18 @@ public class PlanningEvenement {
     }
 
     /**
-     * Whether the organiser declared the legal break as taken on the post
-     * ({@link ParametresLegaux#isPauseSurPoste()}); false when the fact is
-     * absent, the protective default. Not a bean property on purpose: it is a
-     * shortcut for the move filter, not a serialised field.
+     * The single {@link ParametresLegaux} fact of this planning, or a default
+     * instance when it is absent — never {@code null}, so a caller on the
+     * solver's hot path reads a setting without three guards. Not a bean
+     * property on purpose: it is a shortcut for the move filter, not a
+     * serialised field, and {@link #getParametresLegaux()} stays the list the
+     * solver loads as a problem fact.
      */
-    public boolean pauseSurPosteActive() {
-        return parametresLegaux != null
-                && !parametresLegaux.isEmpty()
-                && parametresLegaux.get(0) != null
-                && parametresLegaux.get(0).isPauseSurPoste();
+    public ParametresLegaux parametresLegaux() {
+        if (parametresLegaux == null || parametresLegaux.isEmpty() || parametresLegaux.get(0) == null) {
+            return PARAMETRES_LEGAUX_PAR_DEFAUT;
+        }
+        return parametresLegaux.get(0);
     }
 
     public List<ParametresQualite> getParametresQualite() {

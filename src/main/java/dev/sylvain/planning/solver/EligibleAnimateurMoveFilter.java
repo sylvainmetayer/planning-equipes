@@ -7,6 +7,7 @@ import ai.timefold.solver.core.impl.score.director.ScoreDirector;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -51,9 +52,7 @@ public final class EligibleAnimateurMoveFilter {
         /** The créneau overlaps this minor's legal night window. */
         TRAVAIL_DE_NUIT_MINEUR("travailDeNuitInterditPourMineur"),
         /** This single créneau already exceeds the minor's daily cap. */
-        DUREE_QUOTIDIENNE_MINEUR("dureeQuotidienneMaxMineur"),
-        /** This single créneau already exceeds the minor's uninterrupted-work cap. */
-        TRAVAIL_CONTINU_MINEUR("travailContinuMaxMineur");
+        DUREE_QUOTIDIENNE_MINEUR("dureeQuotidienneMaxMineur");
 
         static final Motif[] VALUES = values();
 
@@ -91,7 +90,7 @@ public final class EligibleAnimateurMoveFilter {
      * knowing that lifting « mineur » still leaves « plafond » behind is the
      * difference between a fixable and an unfixable seat.</p>
      */
-    static int motifsMask(PosteAffectation poste, Animateur animateur, boolean pauseSurPoste) {
+    static int motifsMask(PosteAffectation poste, Animateur animateur, ParametresLegaux parametres) {
         if (animateur == null) {
             return 0;
         }
@@ -113,14 +112,16 @@ public final class EligibleAnimateurMoveFilter {
             mask |= Motif.TRAVAIL_DE_NUIT_MINEUR.bit();
         }
         int duree = creneau.getDureeMinutes();
-        // Breaks declared as taken on the post are rest, not work: the same
-        // deduction dureeQuotidienneMaxMineur applies, on this single créneau.
-        int effectif = pauseSurPoste ? duree - PlafondsLegauxMineurs.onPostBreakMinutes(duree) : duree;
+        // The breaks a stretch owes are rest, not work: the same deduction
+        // dureeQuotidienneMaxMineur applies, on this single créneau, and with
+        // the very duration the edition grants — read through
+        // ParametresLegaux.dureePauseMinutes so the filter can never be
+        // stricter than the rule (ADR 0048). It used to read the default 30,
+        // so an edition granting more had a filter refusing seats the score
+        // would have accepted.
+        int effectif = duree - PlafondsLegauxMineurs.onPostBreakMinutes(duree, parametres.dureePauseMinutes(true));
         if (effectif > dailyCap) {
             mask |= Motif.DUREE_QUOTIDIENNE_MINEUR.bit();
-        }
-        if (!pauseSurPoste && duree > PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES) {
-            mask |= Motif.TRAVAIL_CONTINU_MINEUR.bit();
         }
         return mask;
     }
@@ -134,8 +135,8 @@ public final class EligibleAnimateurMoveFilter {
      * shown to a user and a candidate refused by the solver can never be two
      * different judgements.</p>
      */
-    public static List<Motif> motifs(PosteAffectation poste, Animateur animateur, boolean pauseSurPoste) {
-        int mask = motifsMask(poste, animateur, pauseSurPoste);
+    public static List<Motif> motifs(PosteAffectation poste, Animateur animateur, ParametresLegaux parametres) {
+        int mask = motifsMask(poste, animateur, parametres);
         if (mask == 0) {
             return List.of();
         }
@@ -162,17 +163,22 @@ public final class EligibleAnimateurMoveFilter {
      *
      * <p>Mirrors, in order: {@code animateurDisponible},
      * {@code standReserveAuxMajeurs}, {@code travailInterditJourFerieMineur},
-     * {@code travailDeNuitInterditPourMineur}, {@code dureeQuotidienneMaxMineur}
-     * and {@code travailContinuMaxMineur} (the last two only in their
-     * single-créneau form, and read with the organiser's
-     * {@code pauseSurPoste} declaration exactly as the constraints do: a break
-     * taken on the post is deducted from the day, and no longer caps the
-     * stretch) — the list {@link Motif} now holds, each entry
-     * naming its constraint. A filter stricter than the constraints would hide
-     * feasible solutions, so the caps both sides check come from the single
+     * {@code travailDeNuitInterditPourMineur} and
+     * {@code dureeQuotidienneMaxMineur} (the last one only in its
+     * single-créneau form, breaks deducted exactly as the constraint deducts
+     * them) — the list {@link Motif} now holds, each entry naming its
+     * constraint. A filter stricter than the constraints would hide feasible
+     * solutions, so the caps both sides check come from the single
      * {@link PlafondsLegauxMineurs} declaration rather than from a copy kept
      * in sync by hand; keep {@link Motif} in step with {@code LegalConstraints}
      * the same way.</p>
+     *
+     * <p>{@code travailContinuMaxMineur} used to be mirrored here too, on a
+     * créneau longer than 4 h 30. It no longer can be: a long seat is
+     * compliant as soon as a colleague of the stand relays the break it owes
+     * (ADR 0048), which is a fact about the rest of the plan, not about the
+     * pair. The rule keeps its {@link dev.sylvain.planning.solver.constraints.ExclusionEligibilite#FORFAIT}
+     * all the same, per unrelayed break.</p>
      *
      * <p>Competence is deliberately <b>not</b> excluded here: the business now
      * treats it as an administrator's appreciation, enforced only as a medium
@@ -180,8 +186,8 @@ public final class EligibleAnimateurMoveFilter {
      * animateur without a matching appreciation is a valid — just penalised —
      * assignment, one this filter must let through.</p>
      */
-    public static boolean isEligible(PosteAffectation poste, Animateur animateur, boolean pauseSurPoste) {
-        return motifsMask(poste, animateur, pauseSurPoste) == 0;
+    public static boolean isEligible(PosteAffectation poste, Animateur animateur, ParametresLegaux parametres) {
+        return motifsMask(poste, animateur, parametres) == 0;
     }
 
     public static final class ChangeMoveFilter
@@ -192,7 +198,7 @@ public final class EligibleAnimateurMoveFilter {
             PosteAffectation poste = (PosteAffectation) move.getEntity();
             Animateur animateur = (Animateur) move.getToPlanningValue();
             return isEligible(
-                    poste, animateur, scoreDirector.getWorkingSolution().pauseSurPosteActive());
+                    poste, animateur, scoreDirector.getWorkingSolution().parametresLegaux());
         }
     }
 
@@ -203,9 +209,9 @@ public final class EligibleAnimateurMoveFilter {
                 ScoreDirector<PlanningEvenement> scoreDirector, SelectorBasedSwapMove<PlanningEvenement> move) {
             PosteAffectation left = (PosteAffectation) move.getLeftEntity();
             PosteAffectation right = (PosteAffectation) move.getRightEntity();
-            boolean pauseSurPoste = scoreDirector.getWorkingSolution().pauseSurPosteActive();
-            return isEligible(left, right.getAnimateur(), pauseSurPoste)
-                    && isEligible(right, left.getAnimateur(), pauseSurPoste);
+            ParametresLegaux parametres = scoreDirector.getWorkingSolution().parametresLegaux();
+            return isEligible(left, right.getAnimateur(), parametres)
+                    && isEligible(right, left.getAnimateur(), parametres);
         }
     }
 }

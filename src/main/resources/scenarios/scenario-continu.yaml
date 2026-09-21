@@ -3,12 +3,10 @@ festival:
   dateDebut: 2026-08-01
 
 # La grille est faite de vacations qui se touchent (10:00-12:05, 12:05-13:05,
-# 13:05-14:10 …). Laisser la pause minimale entre vacations à 30 min
-# interdirait de les enchaîner, et la relève de midi exigerait une équipe
-# entière de plus — c'est le réglage que l'aide en ligne recommande pour une
-# grille en blocs jointifs.
+# 13:05-14:10 …). Rien n'impose d'écart entre deux vacations : un trou plus
+# court que la pause légale compte comme travaillé, un trou plus long est une
+# pause, et c'est tout (ADR 0048).
 parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
   coupureRepasMinutes: 60
   coupureRepasMidiDebut: 12:00:00

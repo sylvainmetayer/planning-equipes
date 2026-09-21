@@ -248,9 +248,10 @@ public class DiagnosticMcpTools {
                     + "plus tard possible —, le stand tenu et les collègues présents pendant la pause, plus les trous déjà "
                     + "planifiés par la grille, et la coupure repas due par chaque journée à cheval sur une fenêtre "
                     + "repas — avec le plus grand trou libre que la journée y laisse, donc ce qui manque quand la règle "
-                    + "coupureRepasObligatoire mord. Lu sous les paramètres légaux et les fenêtres repas courants — "
-                    + "pauseSurPoste déclaré ou non — sans lancer de résolution. Filtrable par date, par stand, ou aux "
-                    + "seules pauses sans relais.",
+                    + "coupureRepasObligatoire mord. Lu sous les paramètres légaux et les fenêtres repas courants, "
+                    + "sans lancer de résolution. Une pause due est soit un trou dans la grille, soit relayée : une "
+                    + "pause sans relais est un écart dur. Filtrable par date, par stand, ou aux seules pauses sans "
+                    + "relais.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -325,7 +326,6 @@ public class DiagnosticMcpTools {
             }
         }
         return new PausesView(
-                rapport.pauseSurPoste(),
                 rapport.journeesAnalysees(),
                 pausesDues,
                 relaisManquants,
@@ -380,7 +380,6 @@ public class DiagnosticMcpTools {
      * @param message           the analyzer's own sentence, over the whole plan
      */
     public record PausesView(
-            boolean pauseSurPoste,
             int journeesAnalysees,
             int pausesDues,
             int relaisManquants,

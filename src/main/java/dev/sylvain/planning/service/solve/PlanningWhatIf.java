@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -313,7 +314,7 @@ public final class PlanningWhatIf {
         return solved.getAnimateurs().stream()
                 .filter(animateur -> !animateur.getId().equals(actuelId))
                 .filter(animateur ->
-                        EligibleAnimateurMoveFilter.isEligible(poste, animateur, solved.pauseSurPosteActive()))
+                        EligibleAnimateurMoveFilter.isEligible(poste, animateur, solved.parametresLegaux()))
                 .sorted(Comparator.comparing((Animateur animateur) -> occupes.contains(animateur.getId()))
                         .thenComparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
@@ -465,7 +466,7 @@ public final class PlanningWhatIf {
             AffectationHypothesis hypothese = hypotheses.get(animateur.getId());
             Set<String> contraintes = new LinkedHashSet<>();
             for (EligibleAnimateurMoveFilter.Motif motif :
-                    EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.pauseSurPosteActive())) {
+                    EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.parametresLegaux())) {
                 contraintes.add(motif.contrainte());
             }
             if (hypothese != null) {
@@ -1151,7 +1152,7 @@ public final class PlanningWhatIf {
         List<Animateur> collegues = solved.getAnimateurs().stream()
                 .filter(collegue -> !collegue.getId().equals(demandeur.getId()))
                 .filter(collegue ->
-                        EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue, solved.pauseSurPosteActive()))
+                        EligibleAnimateurMoveFilter.isEligible(posteDemandeur, collegue, solved.parametresLegaux()))
                 .sorted(Comparator.comparing(Animateur::getId, NaturalOrder.OF_IDS))
                 .toList();
         for (Animateur collegue : collegues) {
@@ -1163,11 +1164,10 @@ public final class PlanningWhatIf {
                     .orElse(null);
             if (memeCreneau == null) {
                 liberent.add(new OptionEchange(collegue, null, NatureEchange.LIBERE));
-            } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur, solved.pauseSurPosteActive())) {
+            } else if (EligibleAnimateurMoveFilter.isEligible(memeCreneau, demandeur, solved.parametresLegaux())) {
                 croises.add(new OptionEchange(collegue, memeCreneau, NatureEchange.CROISE));
             }
-            for (PosteAffectation ailleurs :
-                    siegesAilleurs(sieges, creneauId, demandeur, solved.pauseSurPosteActive())) {
+            for (PosteAffectation ailleurs : siegesAilleurs(sieges, creneauId, demandeur, solved.parametresLegaux())) {
                 diriges.add(new OptionEchange(collegue, ailleurs, NatureEchange.DIRIGE));
             }
         }
@@ -1183,10 +1183,10 @@ public final class PlanningWhatIf {
      * laisse mon lundi, je prends ton mardi » family.
      */
     private static List<PosteAffectation> siegesAilleurs(
-            List<PosteAffectation> sieges, long creneauId, Animateur demandeur, boolean pauseSurPoste) {
+            List<PosteAffectation> sieges, long creneauId, Animateur demandeur, ParametresLegaux parametres) {
         return sieges.stream()
                 .filter(poste -> poste.getCreneau().getId() != creneauId)
-                .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur, pauseSurPoste))
+                .filter(poste -> EligibleAnimateurMoveFilter.isEligible(poste, demandeur, parametres))
                 .sorted(Comparator.comparing(
                                 (PosteAffectation poste) -> poste.getCreneau().getDate(),
                                 Comparator.nullsLast(Comparator.naturalOrder()))

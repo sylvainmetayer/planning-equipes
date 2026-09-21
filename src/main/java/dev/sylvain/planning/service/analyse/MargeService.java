@@ -51,8 +51,7 @@ public class MargeService {
                     Mode.APRES,
                     persiste.getPostes(),
                     animateurs,
-                    parametres.getPauseMinimaleEntreVacationsMinutes(),
-                    parametres.isPauseSurPoste(),
+                    parametres,
                     // Seats alone cannot tell a missing stand from a missing
                     // timeslot, so only the roster is reported by name here —
                     // the empty grid is worded by the analyzer's message.
@@ -64,8 +63,7 @@ public class MargeService {
                 Mode.AVANT,
                 seats.postes(),
                 animateurs,
-                parametres.getPauseMinimaleEntreVacationsMinutes(),
-                parametres.isPauseSurPoste(),
+                parametres,
                 StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs));
     }
 }

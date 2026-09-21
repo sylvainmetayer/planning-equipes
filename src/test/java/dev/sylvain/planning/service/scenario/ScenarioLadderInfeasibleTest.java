@@ -109,7 +109,7 @@ class ScenarioLadderInfeasibleTest {
      *
      * <p>Both are therefore allowed in the first assertion, and neither is
      * required: leaving the seat empty costs one hard point and owes no break,
-     * holding it costs the meal rule and the relay rule, and which of the two
+     * holding it costs the meal rule and the break rule, and which of the two
      * the search settles on is not this rung's subject. Naming only the meal
      * rule there passed by arithmetic rather than by design — the empty seat
      * happened to be strictly cheaper — and would have turned any future
@@ -125,14 +125,14 @@ class ScenarioLadderInfeasibleTest {
         assertThat(solved.getScore().hardScore()).isNegative();
         assertThat(brokenHardConstraints(solved))
                 .isNotEmpty()
-                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire", "pauseSurPosteSansRelais");
+                .isSubsetOf("posteDoitEtrePourvu", "coupureRepasObligatoire", "travailContinuMaxMajeur");
 
         Loaded sansCoupure = load("gamme-30-infaisable-coupure-repas");
         sansCoupure
                 .problem()
                 .setConstraintsDesactivees(List.of(
                         new ConstraintToggle("coupureRepasObligatoire"),
-                        new ConstraintToggle("pauseSurPosteSansRelais")));
+                        new ConstraintToggle("travailContinuMaxMajeur")));
         assertThat(solveUntilFeasible(sansCoupure, 30L).getScore().hardScore()).isZero();
     }
 }

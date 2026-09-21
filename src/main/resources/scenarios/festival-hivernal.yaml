@@ -9,9 +9,7 @@ parametresSolveur:
   dureeResolutionSecondes: 1800
 parametresLegaux:
   dureeHebdomadaireMaxMinutes: 2880
-  pauseMinimaleEntreVacationsMinutes: 0
   reposQuotidienMinimalMinutes: 660
-  pauseSurPoste: true
   coupureRepasMinutes: 60
   coupureRepasMidiDebut: '12:00'
   coupureRepasMidiFin: '14:00'

@@ -129,10 +129,6 @@ public final class ConstraintCatalog {
                     "Le plan place des animateurs sur des typologies qu'ils n'apprécient pas : complétez "
                             + "les appréciations, ou acceptez l'écart en baissant le poids."),
             Map.entry(
-                    "pauseSurPosteSansRelais",
-                    "Personne ne peut relayer pendant la pause : ouvrez une place de plus sur le stand à "
-                            + "ce moment-là, ou décalez les créneaux voisins."),
-            Map.entry(
                     "coupureRepasObligatoire",
                     "La journée ne laisse pas la place au repas : coupez la journée en deux vacations, "
                             + "élargissez la fenêtre repas dans les paramètres légaux, ou raccourcissez le "
@@ -302,8 +298,8 @@ public final class ConstraintCatalog {
                     "Légal (mineurs)",
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
-                            + "(art. D4153-3). Les pauses prises sur le poste, si l'organisateur les déclare, "
-                            + "sont déduites."),
+                            + "(art. D4153-3). Les pauses dues sont déduites : une pause, relayée ou prise "
+                            + "comme un trou, est du repos et non du travail effectif."),
             new ConstraintDefinition(
                     "travailInterditJourFerieMineur",
                     Niveau.HARD,
@@ -325,18 +321,19 @@ public final class ConstraintCatalog {
                     "travailContinuMaxMineur",
                     Niveau.HARD,
                     "Légal (mineurs)",
-                    "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, une pause "
-                            + "consécutive de la durée paramétrée est obligatoire, au minimum 30 minutes "
-                            + "(Code du travail art. L3162-3). Inerte quand l'organisateur déclare la pause "
-                            + "prise sur le poste, par relais."),
+                    "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, chaque "
+                            + "pause due doit être prise, soit comme un trou dans la grille, soit relayée par un "
+                            + "collègue du même stand tenant une place pendant toute la pause. Une pause que "
+                            + "personne ne peut prendre est un écart dur (Code du travail art. L3162-3). La durée "
+                            + "est celle paramétrée, portée à 30 minutes au minimum pour un mineur : ce plancher "
+                            + "est d'ordre public."),
             new ConstraintDefinition(
                     "dureeHebdomadaireMax",
                     Niveau.HARD,
                     "Légal (temps de travail)",
                     "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
                             + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
-                            + "d'ordre public). Les pauses prises sur le poste, si l'organisateur les "
-                            + "déclare, sont déduites, comme au plafond quotidien."),
+                            + "d'ordre public). Les pauses dues sont déduites, comme au plafond quotidien."),
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxDeuxSemaines",
                     Niveau.HARD,
@@ -347,22 +344,22 @@ public final class ConstraintCatalog {
                             + "(Code du travail art. L3121-22) — la seule qui ait un sens sur un événement de quinze "
                             + "jours. Le seuil est celui du paramètre de durée hebdomadaire maximale, jamais une "
                             + "seconde constante. Une semaine se juge pleine en travail effectif : les pauses "
-                            + "prises sur le poste, si l'organisateur les déclare, en sont déduites."),
+                            + "dues en sont déduites."),
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxMineur",
                     Niveau.HARD,
                     "Légal (mineurs)",
                     "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
                             + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
-                            + "pendant les vacances scolaires). Les pauses prises sur le poste, si "
-                            + "l'organisateur les déclare, sont déduites, comme au plafond quotidien."),
+                            + "pendant les vacances scolaires). Les pauses dues sont déduites, comme au "
+                            + "plafond quotidien."),
             new ConstraintDefinition(
                     "dureeQuotidienneMaxMajeur",
                     Niveau.HARD,
                     "Légal (temps de travail)",
                     "Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée "
-                            + "(Code du travail art. L3121-18). Les pauses prises sur le poste, si l'organisateur "
-                            + "les déclare, sont déduites."),
+                            + "(Code du travail art. L3121-18). Les pauses dues sont déduites : une pause "
+                            + "relayée est du repos, pas du travail effectif (art. L3121-1)."),
             new ConstraintDefinition(
                     "reposQuotidienMinimal",
                     Niveau.HARD,
@@ -388,16 +385,13 @@ public final class ConstraintCatalog {
                     "travailContinuMaxMajeur",
                     Niveau.HARD,
                     "Légal (temps de travail)",
-                    "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, une pause "
-                            + "consécutive de la durée paramétrée est obligatoire, au minimum 20 minutes "
-                            + "(Code du travail art. L3121-16). Inerte quand l'organisateur déclare la pause "
-                            + "prise sur le poste, par relais."),
-            new ConstraintDefinition(
-                    "pauseMinimaleEntreVacations",
-                    Niveau.HARD,
-                    "Légal (temps de travail)",
-                    "Entre deux vacations d'un même animateur le même jour, l'écart doit être d'au moins la pause "
-                            + "minimale paramétrée (30 min par défaut)."),
+                    "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, chaque "
+                            + "pause due doit être prise, soit comme un trou dans la grille d'au moins la durée "
+                            + "paramétrée, soit relayée par un collègue du même stand tenant une place pendant "
+                            + "toute la pause. Une pause que personne ne peut prendre est un écart dur (Code du "
+                            + "travail art. L3121-16, au minimum 20 minutes). C'est aussi ce qui autorise la "
+                            + "déduction de la pause des plafonds quotidien et hebdomadaire : dans un plan sans "
+                            + "écart dur, toute pause déduite a bien été prise."),
             new ConstraintDefinition(
                     "coupureRepasObligatoire",
                     Niveau.HARD,
@@ -409,9 +403,10 @@ public final class ConstraintCatalog {
                             + "Une journée à cheval sur les deux fenêtres doit deux coupures. Ce n'est pas une "
                             + "obligation du Code du travail — la seule pause qu'il impose est celle de 20 minutes "
                             + "à la sixième heure (art. L3121-16), portée par travailContinuMaxMajeur — mais la "
-                            + "règle d'organisation de l'événement, tenue en dur par choix. Elle reste active "
-                            + "quand l'organisateur déclare la pause prise sur le poste : la pause légale par "
-                            + "relais et la coupure repas sont deux choses distinctes."),
+                            + "règle d'organisation de l'événement, tenue en dur par choix. La pause légale et "
+                            + "la coupure repas restent deux choses distinctes : la coupure d'une heure ne tient "
+                            + "pas lieu de relais, et un relais ne tient pas lieu de repas — même si un trou "
+                            + "d'une heure coupe bien la séquence de six heures au passage."),
             new ConstraintDefinition(
                     "coupureRepasPlacementPrefere",
                     Niveau.SOFT,
@@ -557,20 +552,6 @@ public final class ConstraintCatalog {
                             + "Contraintes, par activer_contrainte ou par contraintes.activees d'un scénario. "
                             + "Reste rangée en « Qualité d'organisation » et non en « Légal » : c'est une "
                             + "politique de l'organisateur, pas une obligation du Code du travail."),
-            new ConstraintDefinition(
-                    "pauseSurPosteSansRelais",
-                    Niveau.HARD,
-                    "Légal (temps de travail)",
-                    "Quand la pause légale est déclarée prise sur le poste, quelqu'un doit tenir le stand "
-                            + "pendant qu'elle est prise. Chaque pause due à la sixième heure (quatre heures et "
-                            + "demie pour un mineur) qui tombe sur un stand où personne d'autre n'est présent "
-                            + "est un écart dur : sans relais, la personne ne peut pas quitter son poste, la "
-                            + "pause reste du travail effectif (art. L3121-1 et L3121-2) et l'obligation de "
-                            + "l'art. L3121-16 — L3162-3 pour un mineur — n'est pas remplie. C'est aussi ce qui "
-                            + "autorise la déduction de la pause des plafonds quotidien et hebdomadaire : sans "
-                            + "relais, on déduirait une pause que personne n'a prise. Muette quand la pause "
-                            + "n'est pas déclarée sur le poste : travailContinuMaxMajeur et "
-                            + "travailContinuMaxMineur exigent alors un vrai trou."),
             new ConstraintDefinition(
                     "favoriserMixiteDesNiveaux",
                     Niveau.SOFT,

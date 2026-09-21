@@ -234,7 +234,7 @@ class ValidationPrerequisTest {
                 List.of(new SequenceView(LocalTime.of(9, 0), LocalTime.of(13, 0), 240, List.of(pause))),
                 List.of(),
                 List.of());
-        return new RapportPauses(false, 1, 1, relais ? 0 : 1, 0, 0, List.of(journee), null);
+        return new RapportPauses(1, 1, relais ? 0 : 1, 0, 0, List.of(journee), null);
     }
 
     /** One animateur holding one seat of {@link #JOUR}, irreplaceable or not. */

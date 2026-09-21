@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 # Barreau 7 : les horaires récurrents, sous toutes leurs portées.
-# Jeudi, vendredi, samedi ; trois vacations par jour dont deux jointives l'après-
-# midi (pause minimale à 0).
+# Jeudi, vendredi, samedi ; trois vacations par jour dont deux jointives
+# l'après-midi.
 # - Bourse : ouverte tous les jours, coupure 12 h 30-14 h, fin « jusqu'à la fermeture ».
 # - Podium : ouvert le vendredi et le samedi après-midi seulement (JOURS_SEMAINE) ;
 #   le jeudi, non énoncé, est fermé.
@@ -14,9 +14,6 @@
 
 festival:
   dateDebut: 2027-07-29
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
 creneaux:
   - id: J1-MATIN

@@ -47,7 +47,7 @@ public class StaffingService {
                 animateurs,
                 referenceDataService.listTypologies(),
                 parametres.getDureeHebdomadaireMaxMinutes(),
-                parametres.getPauseMinimaleEntreVacationsMinutes(),
+                StaffingAnalyzer.SANS_TAMPON,
                 StaffingAnalyzer.referentielsManquants(seats.stands(), seats.creneaux(), animateurs),
                 fenetresRepas());
     }

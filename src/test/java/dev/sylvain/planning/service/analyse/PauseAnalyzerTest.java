@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreRepas;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -45,9 +46,8 @@ class PauseAnalyzerTest {
         postes.add(poste("p2", stand, creneau(2, 14, 0, 20, 0), alice));
         postes.add(poste("p3", stand, creneau(2, 14, 0, 20, 0), bob));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(alice, bob), postes), parametres());
 
-        assertThat(rapport.pauseSurPoste()).isTrue();
         assertThat(rapport.pausesDues()).isEqualTo(1);
         assertThat(rapport.relaisManquants()).isZero();
         JourneeAnimateurView journee = journee(rapport, "alice");
@@ -79,7 +79,7 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses rapport = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 20, 0), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 20, 0), alice))), parametres());
 
         assertThat(rapport.pausesDues()).isZero();
         assertThat(rapport.journeesAnalysees()).isEqualTo(1);
@@ -92,7 +92,7 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses rapport = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 20, 1), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 20, 1), alice))), parametres());
 
         assertThat(rapport.pausesDues()).isEqualTo(1);
         assertThat(journee(rapport, "alice")
@@ -111,14 +111,14 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses rapport = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))), parametres());
 
         PauseDueView pause =
                 journee(rapport, "alice").sequences().getFirst().pausesDues().getFirst();
         assertThat(pause.relaisDisponible()).isFalse();
         assertThat(pause.relais()).isEmpty();
         assertThat(rapport.relaisManquants()).isEqualTo(1);
-        assertThat(rapport.message()).contains("1 pause à prendre sur le poste").contains("sans relais possible");
+        assertThat(rapport.message()).contains("1 pause due").contains("sans relais possible");
     }
 
     @Test
@@ -135,7 +135,7 @@ class PauseAnalyzerTest {
                 poste("p3", jeux, creneau(2, 13, 0, 18, 0), carol), // gone at 19:00
                 poste("p4", jeux, creneau(3, 19, 0, 20, 0), dan)); // arrives exactly at 19:00
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(alice, bob, carol, dan), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(alice, bob, carol, dan), postes), parametres());
 
         PauseDueView pause =
                 journee(rapport, "alice").sequences().getFirst().pausesDues().getFirst();
@@ -157,7 +157,7 @@ class PauseAnalyzerTest {
                 poste("p4", stand, creneau(1, 13, 0, 20, 0), bob));
 
         PauseDueView pause = journee(
-                        analyzer.analyze(planning(List.of(alice, zoe, bob), postes), surPoste(true)), "alice")
+                        analyzer.analyze(planning(List.of(alice, zoe, bob), postes), parametres()), "alice")
                 .sequences()
                 .getFirst()
                 .pausesDues()
@@ -179,7 +179,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(2, 13, 15, 17, 0), alice)); // 15 min: not a break
 
         JourneeAnimateurView journee =
-                journee(analyzer.analyze(planning(List.of(alice), postes), surPoste(true)), "alice");
+                journee(analyzer.analyze(planning(List.of(alice), postes), parametres()), "alice");
 
         assertThat(journee.sequences()).hasSize(1);
         assertThat(journee.sequences().getFirst().minutes()).isEqualTo(420);
@@ -197,7 +197,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(2, 14, 0, 20, 0), alice));
 
         JourneeAnimateurView journee =
-                journee(analyzer.analyze(planning(List.of(alice), postes), surPoste(true)), "alice");
+                journee(analyzer.analyze(planning(List.of(alice), postes), parametres()), "alice");
 
         assertThat(journee.sequences()).extracting(SequenceView::minutes).containsExactly(180, 360);
         assertThat(journee.sequences())
@@ -217,7 +217,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(2, 16, 20, 20, 0), alice));
 
         JourneeAnimateurView journee =
-                journee(analyzer.analyze(planning(List.of(alice), postes), surPoste(true)), "alice");
+                journee(analyzer.analyze(planning(List.of(alice), postes), parametres()), "alice");
 
         assertThat(journee.sequences()).hasSize(2);
         assertThat(journee.pausesPlanifiees().getFirst().minutes()).isEqualTo(20);
@@ -228,14 +228,14 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses dix = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 0, 0), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 14, 0, 0, 0), alice))), parametres());
         assertThat(journee(dix, "alice").sequences().getFirst().pausesDues())
                 .extracting(PauseDueView::heureLimite)
                 .containsExactly(LocalTime.of(20, 0));
 
         // 6 h, break, 6 h, break: the second one falls 6 h 20 after the first.
         RapportPauses treize = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p2", stand, creneau(2, 8, 0, 20, 30), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p2", stand, creneau(2, 8, 0, 20, 30), alice))), parametres());
         assertThat(journee(treize, "alice").sequences().getFirst().pausesDues())
                 .extracting(PauseDueView::heureLimite)
                 .containsExactly(LocalTime.of(14, 0), LocalTime.of(20, 20));
@@ -246,7 +246,7 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses rapport = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 19, 0, 2, 0), alice))), surPoste(true));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 19, 0, 2, 0), alice))), parametres());
 
         SequenceView sequence = journee(rapport, "alice").sequences().getFirst();
         assertThat(sequence.minutes()).isEqualTo(420);
@@ -263,7 +263,7 @@ class PauseAnalyzerTest {
                 poste("p1", matin, creneau(1, 13, 0, 17, 0), alice),
                 poste("p2", soir, creneau(2, 17, 0, 21, 0), alice));
 
-        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice), postes), surPoste(true)), "alice")
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice), postes), parametres()), "alice")
                 .sequences()
                 .getFirst()
                 .pausesDues()
@@ -282,7 +282,7 @@ class PauseAnalyzerTest {
         poste.setHeureDebutEffective(LocalTime.of(14, 0));
         poste.setHeureFinEffective(LocalTime.of(19, 0));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(alice), List.of(poste)), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(alice), List.of(poste)), parametres());
 
         assertThat(rapport.pausesDues()).isZero();
     }
@@ -298,7 +298,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(2, 13, 20, 16, 0), mineur)); // 20 min: a break for an adult only
 
         JourneeAnimateurView journee =
-                journee(analyzer.analyze(planning(List.of(mineur), postes), surPoste(true)), "mia");
+                journee(analyzer.analyze(planning(List.of(mineur), postes), parametres()), "mia");
 
         assertThat(journee.mineur()).isTrue();
         assertThat(journee.sequences()).hasSize(1);
@@ -313,7 +313,7 @@ class PauseAnalyzerTest {
         Animateur inconnu = new Animateur("x", "X", "X", null, false);
         RapportPauses rapport = analyzer.analyze(
                 planning(List.of(inconnu), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), inconnu))),
-                surPoste(true));
+                parametres());
 
         JourneeAnimateurView journee = journee(rapport, "x");
         assertThat(journee.mineur()).isFalse();
@@ -328,12 +328,14 @@ class PauseAnalyzerTest {
         Stand stand = stand("JEUX", 1);
         Animateur alice = adulte("alice");
         RapportPauses rapport = analyzer.analyze(
-                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))),
-                surPoste(false));
+                planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))), parametres());
 
-        assertThat(rapport.pauseSurPoste()).isFalse();
         assertThat(rapport.pausesDues()).isEqualTo(1);
-        assertThat(rapport.message()).contains("sans être déclarée").contains("Déclarez la pause");
+        assertThat(rapport.relaisManquants()).isEqualTo(1);
+        assertThat(rapport.message())
+                .contains("1 pause due")
+                .contains("1 sans relais possible")
+                .contains("Ouvrez une place de plus");
     }
 
     @Test
@@ -345,7 +347,7 @@ class PauseAnalyzerTest {
 
         Stand stand = stand("JEUX", 1);
         PosteAffectation vide = new PosteAffectation("p1", stand, creneau(1, 13, 0, 20, 0));
-        RapportPauses rapport = analyzer.analyze(planning(List.of(), List.of(vide)), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(), List.of(vide)), parametres());
         assertThat(rapport.journeesAnalysees()).isZero();
         assertThat(rapport.pausesDues()).isZero();
     }
@@ -363,7 +365,7 @@ class PauseAnalyzerTest {
                 poste("p3", stand, creneau(2, 14, 0, 18, 0), court),
                 poste("p4", stand, lendemain, court));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(zoe, bob, court), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(zoe, bob, court), postes), parametres());
 
         assertThat(rapport.journeesAnalysees()).isEqualTo(4);
         assertThat(rapport.journees())
@@ -382,10 +384,10 @@ class PauseAnalyzerTest {
         List<PosteAffectation> postes = List.of(
                 poste("p1", stand, creneau(1, 13, 0, 20, 0), alice), poste("p2", stand, creneau(1, 13, 0, 20, 0), bob));
 
-        assertThat(analyzer.journeesAnimateur(planning(List.of(alice, bob), postes), surPoste(true), "bob"))
+        assertThat(analyzer.journeesAnimateur(planning(List.of(alice, bob), postes), parametres(), "bob"))
                 .extracting(JourneeAnimateurView::animateurId)
                 .containsExactly("bob");
-        assertThat(analyzer.journeesAnimateur(planning(List.of(alice, bob), postes), surPoste(true), "nobody"))
+        assertThat(analyzer.journeesAnimateur(planning(List.of(alice, bob), postes), parametres(), "nobody"))
                 .isEmpty();
     }
 
@@ -398,7 +400,7 @@ class PauseAnalyzerTest {
         PauseDueView pause = journee(
                         analyzer.analyze(
                                 planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 13, 0, 20, 0), alice))),
-                                surPoste(true)),
+                                parametres()),
                         "alice")
                 .sequences()
                 .getFirst()
@@ -424,7 +426,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(1, 13, 0, 20, 0), b),
                 poste("p3", stand, creneau(1, 13, 0, 20, 0), c));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), parametres());
 
         assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(19, 0));
         assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(18, 40));
@@ -448,7 +450,7 @@ class PauseAnalyzerTest {
         List<PosteAffectation> postes =
                 List.of(poste("p1", stand, creneau(1, 14, 0, 0, 0), a), poste("p2", stand, creneau(1, 14, 0, 0, 0), b));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b), postes), parametres());
 
         assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(20, 0));
         assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(19, 40));
@@ -469,7 +471,7 @@ class PauseAnalyzerTest {
                 poste("p2", stand, creneau(1, 8, 0, 20, 0), b),
                 poste("p3", stand, creneau(1, 8, 0, 20, 0), c));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), parametres());
 
         assertThat(pause(rapport, "a").debut()).isEqualTo(LocalTime.of(14, 0));
         assertThat(pause(rapport, "b").debut()).isEqualTo(LocalTime.of(13, 40));
@@ -490,7 +492,7 @@ class PauseAnalyzerTest {
                 poste("p1", stand, creneau(1, 13, 0, 20, 0), alice),
                 poste("p2", stand, creneau(2, 15, 0, 19, 10), bob));
 
-        PauseDueView pause = pause(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice");
+        PauseDueView pause = pause(analyzer.analyze(planning(List.of(alice, bob), postes), parametres()), "alice");
 
         assertThat(pause.debut()).isEqualTo(LocalTime.of(19, 0));
         assertThat(pause.relaisDisponible()).isFalse();
@@ -509,7 +511,7 @@ class PauseAnalyzerTest {
                 poste("p2", autre, creneau(1, 13, 0, 20, 0), b),
                 poste("p3", jeux, lendemain, c));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c), postes), parametres());
 
         for (String id : List.of("a", "b", "c")) {
             assertThat(pause(rapport, id).debut()).as(id).isEqualTo(LocalTime.of(19, 0));
@@ -532,7 +534,7 @@ class PauseAnalyzerTest {
                 poste("p3", stand, creneau(1, 8, 0, 20, 0), c),
                 poste("p4", stand, creneau(1, 8, 0, 20, 0), d));
 
-        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c, d), postes), surPoste(true));
+        RapportPauses rapport = analyzer.analyze(planning(List.of(a, b, c, d), postes), parametres());
 
         // Every break kept apart is really apart: two breaks may share an instant
         // only when at least one of them says so.
@@ -594,7 +596,7 @@ class PauseAnalyzerTest {
                 poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
                 poste("p3", soir, creneau(2, 19, 5, 0, 0), bob));
 
-        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), parametres()), "alice")
                 .sequences()
                 .getFirst()
                 .pausesDues()
@@ -617,7 +619,7 @@ class PauseAnalyzerTest {
                 poste("p2", soir, creneau(2, 19, 5, 0, 0), alice),
                 poste("p3", soir, creneau(3, 18, 0, 0, 0), bob));
 
-        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), surPoste(true)), "alice")
+        PauseDueView pause = journee(analyzer.analyze(planning(List.of(alice, bob), postes), parametres()), "alice")
                 .sequences()
                 .getFirst()
                 .pausesDues()
@@ -655,17 +657,25 @@ class PauseAnalyzerTest {
                 .orElseThrow(() -> new AssertionError("no day for " + animateurId));
     }
 
-    private static ParametresLegaux surPoste(boolean declare) {
+    /**
+     * The edition's legal parameters. There is no mode to declare any more
+     * (ADR 0048) — a break due is relayed or it is a hard breach — only a
+     * duration, pinned here at the twenty minutes of art. L3121-16 rather than
+     * left at the product's own thirty: the cases below are about the
+     * arithmetic of {@code PauseSurPoste}, and an arithmetic fixture that moves
+     * when a default moves tests the default, not the arithmetic.
+     */
+    private static ParametresLegaux parametres() {
         ParametresLegaux parametres = new ParametresLegaux();
-        parametres.setPauseSurPoste(declare);
+        parametres.setDureePauseMinutes(PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES);
         return parametres;
     }
 
     /**
      * A plan carrying no {@code ParametresLegaux} at all — a harness, an
      * in-memory problem — reads with the domain's own defaults rather than
-     * throwing. `analyze` already guarded the null for `pauseSurPoste`; the day
-     * builder dereferenced it two statements later to read the break duration.
+     * throwing: the day builder used to dereference the null to read the break
+     * duration.
      */
     @Test
     void unPlanSansParametresSeLitAvecLesValeursParDefaut() {

@@ -688,19 +688,14 @@ final class ScenarioDomainMapper {
         }
         ParametresLegaux parametres = new ParametresLegaux();
         setInt(dto.dureeHebdomadaireMaxMinutes(), parametres::setDureeHebdomadaireMaxMinutes);
-        setInt(dto.pauseMinimaleEntreVacationsMinutes(), parametres::setPauseMinimaleEntreVacationsMinutes);
         setInt(dto.dureeVacationMaxMinutes(), parametres::setDureeVacationMaxMinutes);
         setInt(dto.reposQuotidienMinimalMinutes(), parametres::setReposQuotidienMinimalMinutes);
-        if (dto.pauseSurPoste() != null) {
-            parametres.setPauseSurPoste(dto.pauseSurPoste());
-        }
         setInt(dto.coupureRepasMinutes(), parametres::setCoupureRepasMinutes);
         set(dto.coupureRepasMidiDebut(), parametres::setCoupureRepasMidiDebut);
         set(dto.coupureRepasMidiFin(), parametres::setCoupureRepasMidiFin);
         set(dto.coupureRepasSoirDebut(), parametres::setCoupureRepasSoirDebut);
         set(dto.coupureRepasSoirFin(), parametres::setCoupureRepasSoirFin);
-        setInt(dto.dureePauseMajeurMinutes(), parametres::setDureePauseMajeurMinutes);
-        setInt(dto.dureePauseMineurMinutes(), parametres::setDureePauseMineurMinutes);
+        setInt(dto.dureePauseMinutes(), parametres::setDureePauseMinutes);
         set(dto.heureDebutSoiree(), parametres::setHeureDebutSoiree);
         return Optional.of(parametres);
     }

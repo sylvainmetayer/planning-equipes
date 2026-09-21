@@ -8,17 +8,19 @@ import java.util.Comparator;
 import java.util.List;
 
 /**
- * One legal break an animateur owes inside a working stretch, when the
- * organiser declares breaks taken on the post: the seat held when it falls
- * due, and the window it may start in.
+ * One legal break an animateur owes inside a working stretch: the seat held
+ * when it falls due, and the window it may start in.
  *
  * <p>Art. L3121-16 owes an adult twenty minutes after six hours of continuous
- * work (a minor thirty after four and a half, art. L3162-3). Declared « sur le
- * poste », the break is not a hole in the grid but a relay: a colleague holds
- * the stand while the person steps out. That relay is what {@code
- * pauseSurPosteSansRelais} verifies and what the Pauses screen shows; both
- * read the same arithmetic, here, so that the screen never describes a break
- * the solver did not owe.</p>
+ * work (a minor thirty after four and a half, art. L3162-3). A break is taken
+ * one of two ways, and the application knows no third: as a hole in the grid —
+ * which splits the stretch, so no break is owed here at all — or by relay, a
+ * colleague of the same stand holding a place while the person steps out. A
+ * break this class says is due and {@link #relayableBy} finds no relay for is
+ * a hard breach of {@code travailContinuMaxMajeur} /
+ * {@code travailContinuMaxMineur} (ADR 0048). The Pauses screen, the
+ * animateur's PDF and the ICS feed read the same arithmetic, here, so that no
+ * screen describes a break the solver did not owe.</p>
  *
  * <p>The arithmetic: a stretch is a run of seats separated by less than the
  * minimum break; a stretch of {@code L} minutes owes

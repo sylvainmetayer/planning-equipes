@@ -72,17 +72,27 @@ public final class ScenarioBinder {
     }
 
     /**
-     * The two sections the découpage owned, refused by name rather than as
-     * "champ inconnu". A grid is made of vacations now — the event knows its
-     * opening hours and projects them through its journées types — so
-     * {@code parametresDecoupage:} configures nothing and
-     * {@code decoupageAuto:} slices nothing. Ignoring them would be worse than
-     * refusing: a file of 14-hour amplitudes would import as 14-hour
-     * vacations, and the author would find out from the solver.
+     * The keys of settings that no longer exist, refused by name rather than as
+     * "champ unknown", each with what replaces it (ADR 0037, then ADR 0048).
+     *
+     * <p>The two sections the découpage owned first. A grid is made of
+     * vacations now — the event knows its opening hours and projects them
+     * through its journées types — so {@code parametresDecoupage:} configures
+     * nothing and {@code decoupageAuto:} slices nothing. Ignoring them would be
+     * worse than refusing: a file of 14-hour amplitudes would import as 14-hour
+     * vacations, and the author would find out from the solver.</p>
+     *
+     * <p>Then the four pause keys of {@code parametresLegaux:}. Same reason,
+     * and sharper: a file declaring {@code pauseSurPoste: false} was verified
+     * under a mode where the legal break had to be a hole in the grid, and
+     * importing it silently would now judge it under the single rule, which
+     * accepts a relay. A file setting {@code pauseMinimaleEntreVacationsMinutes}
+     * was tuning a rule that no longer exists.</p>
      */
     @SuppressWarnings("unchecked")
     private static void refuseRetiredSections(Object document) {
         Map<String, Object> racine = (Map<String, Object>) document;
+        refuseRetiredLegalKeys(racine.get("parametresLegaux"));
         if (racine.containsKey("parametresDecoupage")) {
             throw new ScenarioFormatException("La section « parametresDecoupage » n'existe plus : le découpage"
                     + " automatique a été retiré, une grille est toujours faite de vacations. Déclarez les"
@@ -95,6 +105,36 @@ public final class ScenarioBinder {
                     + " d'amplitudes à découper à l'import. Remplacez les amplitudes de « creneaux » par les"
                     + " vacations attendues — un relais repas se marque « couverturePause: true » — ou passez"
                     + " par « journeesTypes ».");
+        }
+    }
+
+    /** What each retired key of {@code parametresLegaux:} is replaced by. */
+    private static final Map<String, String> CLES_LEGALES_RETIREES = Map.of(
+            "pauseSurPoste",
+                    "il n'y a plus de mode : une pause due est soit un trou d'au moins « dureePauseMinutes »"
+                            + " dans la grille, soit relayée par un collègue du même stand, sinon c'est un écart"
+                            + " dur. Retirez la clé.",
+            "pauseMinimaleEntreVacationsMinutes",
+                    "la règle « pauseMinimaleEntreVacations » a été retirée : un trou plus court que la pause"
+                            + " compte comme travaillé, un trou plus long est une pause. Retirez la clé.",
+            "dureePauseMajeurMinutes",
+                    "une seule durée pour l'édition : renommez la clé en « dureePauseMinutes » (plancher 20 min,"
+                            + " portée à 30 pour un mineur).",
+            "dureePauseMineurMinutes",
+                    "la durée des mineurs n'est plus réglable : « dureePauseMinutes » vaut pour tous, et le"
+                            + " plancher de 30 min de l'art. L3162-3 s'applique tout seul. Retirez la clé.");
+
+    @SuppressWarnings("unchecked")
+    private static void refuseRetiredLegalKeys(Object parametresLegaux) {
+        if (!(parametresLegaux instanceof Map)) {
+            return;
+        }
+        Map<String, Object> legaux = (Map<String, Object>) parametresLegaux;
+        for (Map.Entry<String, String> retiree : CLES_LEGALES_RETIREES.entrySet()) {
+            if (legaux.containsKey(retiree.getKey())) {
+                throw new ScenarioFormatException(
+                        "La clé « parametresLegaux." + retiree.getKey() + " » n'existe plus : " + retiree.getValue());
+            }
         }
     }
 

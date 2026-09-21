@@ -21,19 +21,19 @@ import java.time.LocalTime;
  * removed: it used to bound what the slicing produced, and now says from when
  * the grid check warns that a vacation needs an internal break.</p>
  *
- * <p>The two break lengths (issue #592) travel for the same reason as the rest:
- * a file verified with a thirty-minute relay for adults must not be re-imported
- * as a twenty-minute one. A value under the legal floor is refused on import
- * exactly as it is on the screen.</p>
+ * <p>The break length travels for the same reason as the rest: a file verified
+ * with a thirty-minute relay must not be re-imported as a twenty-minute one. A
+ * value under the legal floor is refused on import exactly as it is on the
+ * screen. It used to be two fields, one per age bracket, beside a
+ * {@code pauseSurPoste} switch and a minimum gap between vacations; all three
+ * are gone (ADR 0048) and {@code ScenarioBinder} refuses a file still carrying
+ * one of them by name.</p>
  */
 public record ParametresLegauxDto(
         @Positive Integer dureeHebdomadaireMaxMinutes,
-        @PositiveOrZero Integer pauseMinimaleEntreVacationsMinutes,
         @Positive Integer dureeVacationMaxMinutes,
         @PositiveOrZero Integer reposQuotidienMinimalMinutes,
-        Boolean pauseSurPoste,
-        @Positive Integer dureePauseMajeurMinutes,
-        @Positive Integer dureePauseMineurMinutes,
+        @Positive Integer dureePauseMinutes,
         @PositiveOrZero Integer coupureRepasMinutes,
         LocalTime coupureRepasMidiDebut,
         LocalTime coupureRepasMidiFin,

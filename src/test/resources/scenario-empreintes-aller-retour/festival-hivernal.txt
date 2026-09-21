@@ -157,7 +157,7 @@
 .planning.dateDebutFestival = 2027-02-01
 .planning.fenetresRepas[0]  9d6a93879a382e73
 .planning.fenetresRepas[1]  85c54c6119702d6a
-.planning.parametresLegaux[0]  16b5e8d86139921c
+.planning.parametresLegaux[0]  49c8d4302d724166
 .planning.parametresQualite[0]  472ccc481a0aa692
 .planning.pastHorizon = null
 .planning.ponderationsContraintes.constraintWeightMap = (vide)
@@ -3614,12 +3614,9 @@
 .sections.parametresLegaux.coupureRepasSoirFin = 21:00
 .sections.parametresLegaux.dureeHebdomadaireMaxMineurMinutes = 2100
 .sections.parametresLegaux.dureeHebdomadaireMaxMinutes = 2880
-.sections.parametresLegaux.dureePauseMajeurMinutes = 20
-.sections.parametresLegaux.dureePauseMineurMinutes = 30
+.sections.parametresLegaux.dureePauseMinutes = 30
 .sections.parametresLegaux.dureeVacationMaxMinutes = 360
 .sections.parametresLegaux.heureDebutSoiree = 20:00
-.sections.parametresLegaux.pauseMinimaleEntreVacationsMinutes = 0
-.sections.parametresLegaux.pauseSurPoste = true
 .sections.parametresLegaux.reposQuotidienMinimalMinutes = 660
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 1800

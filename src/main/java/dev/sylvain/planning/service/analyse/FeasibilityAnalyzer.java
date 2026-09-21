@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.analyse;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -104,6 +105,15 @@ public class FeasibilityAnalyzer {
      * shortfall of animateurs takes recruiting or reopening a stand. Not the
      * enum's own order — that one is on the wire and is only ever appended to.
      */
+    /**
+     * The legal parameters this estimate reads break lengths from: the domain's
+     * defaults, because none of its callers holds the edition's. The only
+     * eligibility motif that reads one is the minor's daily cap on a single
+     * créneau, and the default is the floor of art. L3162-3, so the reading is
+     * the strictest an edition can produce.
+     */
+    private static final ParametresLegaux PAUSES_PAR_DEFAUT = new ParametresLegaux();
+
     private static int rank(CauseInfaisabilite cause) {
         return cause.type() == TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF ? 1 : 0;
     }
@@ -417,9 +427,13 @@ public class FeasibilityAnalyzer {
      *
      * <p>A minor counts only where nothing on the seat itself excludes them —
      * night, a public holiday, a timeslot past their daily cap, an adults-only
-     * stand, the checks of {@link EligibleAnimateurMoveFilter}, read with the
-     * break declared on the post so as never to exclude more than a solve
-     * would. When {@code encadrementMineursActif}, a minor also counts only
+     * stand, the checks of {@link EligibleAnimateurMoveFilter}, read under
+     * {@link #PAUSES_PAR_DEFAUT}: this estimate does not hold the edition's
+     * parameters, and the default break is the legal floor, so what it deducts
+     * from a long créneau is the least any edition deducts. An edition granting
+     * a longer break opens a créneau or two more to a minor than this counts —
+     * a shortfall reported here is one the solver would meet, which is the
+     * direction an estimate must err in. When {@code encadrementMineursActif}, a minor also counts only
      * beside an adult: each adult placed on a stand of {@code s} seats opens
      * {@code s − 1} seats to minors, adults going first to the largest stands,
      * and a team of minors only therefore holds nothing — where counting heads
@@ -443,7 +457,7 @@ public class FeasibilityAnalyzer {
             }
             if (!animateur.isMineurOn(creneau.getDate())) {
                 majeurs++;
-            } else if (EligibleAnimateurMoveFilter.motifs(siegeOrdinaire, animateur, true)
+            } else if (EligibleAnimateurMoveFilter.motifs(siegeOrdinaire, animateur, PAUSES_PAR_DEFAUT)
                     .isEmpty()) {
                 mineurs++;
             }

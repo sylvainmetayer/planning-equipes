@@ -223,7 +223,7 @@ class ScenarioYamlWriterTest {
     void exportedYamlCarriesTheCurrentSettings() {
         ParametresLegaux legaux = new ParametresLegaux();
         legaux.setDureeHebdomadaireMaxMinutes(40 * 60);
-        legaux.setPauseMinimaleEntreVacationsMinutes(45);
+        legaux.setDureePauseMinutes(45);
         legaux.setDureeVacationMaxMinutes(5 * 60);
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
@@ -245,7 +245,7 @@ class ScenarioYamlWriterTest {
                 .containsEntry("dureeResolutionSecondes", 1800);
         assertThat((Map<String, Object>) parsed.get("parametresLegaux"))
                 .containsEntry("dureeHebdomadaireMaxMinutes", 40 * 60)
-                .containsEntry("pauseMinimaleEntreVacationsMinutes", 45)
+                .containsEntry("dureePauseMinutes", 45)
                 // The meal break travels with the legal parameters; times stay
                 // strings, like everywhere else in the file.
                 .containsEntry("coupureRepasMinutes", 60)

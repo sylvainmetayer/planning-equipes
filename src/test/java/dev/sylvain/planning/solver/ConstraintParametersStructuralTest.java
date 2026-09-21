@@ -83,6 +83,17 @@ class ConstraintParametersStructuralTest {
     private static final Pattern APPEL = Pattern.compile("(?<![.\\w])(\\w+)\\s*\\(");
 
     /**
+     * Why the seven rules that read a break length name none: they all go
+     * through {@code ParametresLegaux.dureePauseMinutes(mineur)}, an accessor
+     * with an argument that the scan does not count as a getter, and the ones
+     * that spell out the breaks do it from {@code PauseSurPoste}, in
+     * {@code domain/}, a folder the scan does not read.
+     */
+    private static final String LECTURE_PAR_PAUSE_SUR_POSTE =
+            "la durée de pause est lue par dureePauseMinutes(mineur) — un accesseur à argument, que le "
+                    + "balayage ne compte pas — et par PauseSurPoste.dues, dans domain/, un dossier qu'il ne lit pas";
+
+    /**
      * Rules whose settings never appear in their own source, because the value
      * reaches them as a problem fact assembled outside the solver. Each entry
      * carries why, and the list can only shrink: a rule that reads its
@@ -95,10 +106,13 @@ class ConstraintParametersStructuralTest {
             "coupureRepasPlacementPrefere",
                     "même chose : FenetreRepas est un fait du problème, la contrainte n'ouvre jamais "
                             + "ParametresLegaux",
-            "pauseSurPosteSansRelais",
-                    "les deux durées de pause sont lues par PauseSurPoste.dues, dans domain/, à travers "
-                            + "dureePauseMinutes(mineur) — un accesseur à argument, que le balayage ne "
-                            + "compte pas, dans un dossier qu'il ne lit pas");
+            "travailContinuMaxMajeur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "travailContinuMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeQuotidienneMaxMajeur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeQuotidienneMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeHebdomadaireMax", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeHebdomadaireMaxMineur", LECTURE_PAR_PAUSE_SUR_POSTE,
+            "dureeHebdomadaireMaxDeuxSemaines", LECTURE_PAR_PAUSE_SUR_POSTE);
 
     /**
      * Accessors that compute rather than store. {@code penaliseFermeturePuisOuverture}

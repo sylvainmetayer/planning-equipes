@@ -12,9 +12,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.NiveauEffort;
-import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
-import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import java.math.BigDecimal;
@@ -30,8 +28,7 @@ import java.util.Set;
  * Organisational quality rules: referent coverage on complex stands, balanced
  * workload, avoiding a majority of minors on a single slot, and capping
  * consecutive worked days. Medium — strongly penalised but non-blocking — with
- * two exceptions that are hard and say why in their own javadoc:
- * {@code pauseSurPosteSansRelais}, and the default-off
+ * one exception that is hard and says why in its own javadoc: the default-off
  * {@code maxJoursConsecutifsTravaillesDur}.
  */
 public final class QualiteConstraints {
@@ -59,7 +56,6 @@ public final class QualiteConstraints {
             limiterTypologiesDistinctesParAnimateur(constraintFactory),
             maxJoursConsecutifsTravailles(constraintFactory),
             maxJoursConsecutifsTravaillesDur(constraintFactory),
-            pauseSurPosteSansRelais(constraintFactory),
             stabiliteDuPlanPublie(constraintFactory)
         };
     }
@@ -577,8 +573,7 @@ public final class QualiteConstraints {
      *
      * <p><b>The scope is the edition, not the day.</b> The {@code groupBy} below
      * carries the animateur and nothing else — no date key, unlike
-     * {@code maxJoursConsecutifsTravailles} or {@code pauseSurPosteSansRelais}
-     * — so two typologies held on one afternoon and two held a week apart cost
+     * {@code maxJoursConsecutifsTravailles} — so two typologies held on one afternoon and two held a week apart cost
      * exactly the same. That is the rule the organisers asked for: what is
      * being limited is how many different games one person has to learn, and
      * learning them on separate days makes it no easier.</p>
@@ -629,78 +624,6 @@ public final class QualiteConstraints {
      * set of distinct worked {@code jour} values is exactly a longest run of
      * consecutive calendar days, without any date arithmetic.</p>
      */
-    /**
-     * A break declared taken on the post needs somebody to hold the post.
-     *
-     * <p>Under {@code pauseSurPoste} the six-hour rule of art. L3121-16
-     * ({@code travailContinuMax*}) goes quiet: the twenty minutes are taken by
-     * relay, a colleague on the same stand covering while the person steps
-     * out. Nothing checked that the colleague exists. On the 2026 edition, a
-     * plan at zero hard carried 18 breaks due on single-seat stands with nobody
-     * else there — seven-hour stretches made of a meal-relief seat followed by
-     * a full afternoon alone. The Pauses screen and the Problèmes page showed
-     * them after the fact; the solver never avoided them.</p>
-     *
-     * <p>One point per break due with no relay at its latest start: the seat
-     * held then, on that stand, has no other animateur covering the whole
-     * break. The breaks come from {@link PauseSurPoste}, which the Pauses
-     * screen reads too, so the two never disagree on what is due. Quiet when
-     * the break is not declared on the post: the legal rule then requires a
-     * real hole, and judges it.</p>
-     *
-     * <p><b>Hard, not dosed.</b> It was a medium rule, and the cheapest answer
-     * to it — give the relief seat to somebody else — is one the score used to
-     * find often enough. But a relay that does not exist is not a comfort lost:
-     * without somebody to hold the stand, the person cannot leave it, so the
-     * break is still travail effectif (art. L3121-1, L3121-2) and the twenty
-     * minutes of art. L3121-16 — thirty, and 4 h 30, for a minor under art.
-     * L3162-3, which is d'ordre public — are simply not given. Under
-     * {@code pauseSurPoste} this rule is the only thing left checking them:
-     * {@code travailContinuMax*} goes quiet, and {@code dailyCap} /
-     * {@code weeklyCap} deduct the break from the caps. Dosing it would mean
-     * pricing the deduction of a break nobody took. See
-     * {@code docs/contraintes.md}, « La pause sur le poste demande un
-     * relais ».</p>
-     */
-    private Constraint pauseSurPosteSansRelais(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEach(PosteAffectation.class), "pauseSurPosteSansRelais")
-                .filter(poste -> poste.getAnimateur() != null
-                        && poste.getCreneau() != null
-                        && poste.getCreneau().getDate() != null
-                        && poste.getStand() != null
-                        && poste.heureDebutEffectif() != null)
-                .groupBy(
-                        PosteAffectation::getAnimateur,
-                        poste -> poste.getCreneau().getDate(),
-                        ConstraintCollectors.toList())
-                .join(ParametresLegaux.class)
-                // A day entirely worked owes nobody a relay any more (ADR 0044),
-                // and computing its breaks would be work for nothing.
-                .filter((animateur, date, postes, parametres) ->
-                        parametres.isPauseSurPoste() && PastSeats.reproachable(postes))
-                .map((animateur, date, postes, parametres) -> PauseSurPoste.dues(postes, parametres))
-                .flattenLast(dues -> dues)
-                // And the break itself must still be ahead. The day-level guard
-                // above is not enough: a day that already worked its morning and
-                // still holds an evening seat would have its morning's missing
-                // relay charged, on a stretch whose every seat is pinned — an
-                // écart dur no move can repair, so no re-solve started mid-event
-                // could ever reach zero again. The seat a relay would have to
-                // cover is the one that decides.
-                .filter(due -> PastSeats.reproachable(due.tenu()))
-                .ifNotExists(
-                        PosteAffectation.class,
-                        Joiners.equal(
-                                due -> due.stand().getId(),
-                                poste -> poste.getStand() == null
-                                        ? null
-                                        : poste.getStand().getId()),
-                        Joiners.filtering(PauseSurPoste::relayableBy))
-                .penalize(HardMediumSoftScore.ONE_HARD)
-                .asConstraint("pauseSurPosteSansRelais");
-    }
-
     private Constraint maxJoursConsecutifsTravailles(ConstraintFactory constraintFactory) {
         return sequencesTropLongues(ConstraintToggleSupport.actif(
                         constraintFactory.forEach(PosteAffectation.class), "maxJoursConsecutifsTravailles"))

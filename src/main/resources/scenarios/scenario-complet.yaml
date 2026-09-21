@@ -1,10 +1,11 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
-# Chaque jour porte 3 créneaux (MATIN/APREM/SOIREE) espacés d'au moins 30 min
-# (pauseMinimaleEntreVacations) et avec au moins 11 h entre la SOIREE d'un
-# jour et le MATIN du lendemain (reposQuotidienMinimal, art. L3131-1) —
-# sinon un animateur enchaînant deux créneaux du même jour ou consécutifs
-# viole systématiquement l'une de ces contraintes dures, ce qui a fait
-# exploser le temps de résolution (voir PlanningServiceScenarioCompletTest).
+# Chaque jour porte 3 créneaux (MATIN/APREM/SOIREE) espacés d'au moins la pause
+# légale — un trou plus court compterait comme travaillé et allongerait la
+# séquence — et avec au moins 11 h entre la SOIREE d'un jour et le MATIN du
+# lendemain (reposQuotidienMinimal, art. L3131-1) : sinon un animateur
+# enchaînant deux créneaux du même jour ou consécutifs viole systématiquement
+# l'une de ces contraintes dures, ce qui a fait exploser le temps de résolution
+# (voir PlanningServiceScenarioCompletTest).
 festival:
   dateDebut: 2026-07-08
 
@@ -41,15 +42,11 @@ contraintes:
     maxJoursConsecutifsTravailles: 5
 
 # Les blocs de cette grille se touchent : le matin s'arrête à midi, le service
-# de relève enchaîne, l'après-midi reprend à 14 h. Laisser la pause minimale
-# entre vacations à sa valeur par défaut (30 min) interdirait d'enchaîner
-# 10 h-12 h puis 12 h-13 h, et la relève du midi exigerait alors une seconde
-# équipe entière : le pic passe de 59 à 92 personnes pour un effectif de 152,
-# et le solveur laisse des sièges vides. C'est le réglage que l'aide en ligne
-# recommande pour une grille en blocs jointifs.
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-
+# de relève enchaîne, l'après-midi reprend à 14 h. Rien n'impose d'écart entre
+# deux vacations : un trou plus court que la pause légale compte comme
+# travaillé, un trou plus long est une pause (ADR 0048). Exiger trente minutes
+# entre 10 h-12 h et 12 h-13 h aurait demandé une seconde équipe entière pour la
+# relève du midi — le pic passait de 59 à 92 personnes pour un effectif de 152.
 creneaux:
   - id: J1-MATIN
     jour: 1
