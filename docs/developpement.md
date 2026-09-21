@@ -414,11 +414,14 @@ Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 **Une spec `@lourd` ne tourne pas sur chaque poussée.** La semaine canicule sur
 `festival-hivernal` (`canicule-festival-hivernal.spec.ts`) importe la fixture
 réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
-par personne : treize minutes sur un runner GitHub, les vingt-neuf autres
-specs en prennent sept. `e2e.yml` la laisse de côté (`--grep-invert @lourd`)
-et `e2e-lourd.yml` la joue (`--grep @lourd`) sur les changements du solveur,
-des consignes, de la publication et de ses propres fichiers — sa liste
-`paths`, à tenir à jour comme celle des scénarios — et chaque nuit sur `main`.
+par personne : treize minutes sur un runner GitHub, les quarante-deux autres
+specs — cent quatre-vingt-quinze tests — en prennent sept. `e2e.yml` la laisse
+de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
+sur les changements du solveur, des consignes, de la publication, du `pom.xml`
+et de ses propres fichiers — sa liste `paths`, à tenir à jour comme celle des
+scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour la
+même raison, une PR Renovate ne l'exerce que sous le label `timefold` ou
+`quarkus`.
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
 c'est dire qu'elle résout une fixture réelle ; ce n'est pas l'endroit où
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
@@ -714,26 +717,35 @@ points qui ne s'y voient pas :
   `e2e.yml` ignorent une poussée qui ne touche que `docs/` et le Markdown
   (moins les fichiers qu'un test relit ou que le job compare à son build,
   réinclus nommément) ; les specs Playwright `@lourd` ont leur workflow, comme
-  les scénarios ; et une PR Renovate ne joue les scénarios que sous le label
-  `timefold` ou `quarkus`. Sur une PR, GitHub évalue un filtre `paths` sur
-  **l'ensemble des fichiers de la PR**, pas sur la dernière poussée : une PR
-  mixte code + documentation rejoue tout à chaque poussée, et c'est voulu — un
-  check « skipped » sur la dernière poussée masquerait le rouge de la
-  précédente ;
+  les scénarios ; et une PR Renovate ne joue ni les scénarios ni la spec
+  `@lourd` — les deux seuls workflows qui ont `pom.xml` dans leurs chemins —
+  hors du label `timefold` ou `quarkus`. Sur une PR, GitHub évalue un filtre
+  `paths` sur **l'ensemble des fichiers de la PR**, pas sur la dernière
+  poussée : une PR mixte code + documentation rejoue tout à chaque poussée, et
+  c'est voulu — un check « skipped » sur la dernière poussée masquerait le
+  rouge de la précédente ;
 - **sur une PR Renovate, `licences-renovate.yml` régénère
   `docs/licences-tierces.md`** et le commite sur la branche, puisqu'un bump
   fait échouer le contrôle par construction (le job `test` le joue d'ailleurs
   en premier, avant les treize minutes de tests). Une poussée faite avec
   `GITHUB_TOKEN` ne déclenche aucun workflow : le job relance lui-même Tests,
-  E2E et Sécurité par `workflow_dispatch` sur la branche, après avoir annulé
-  ce qui tournait encore sur le commit remplacé. `gitIgnoredAuthors` dans
-  `renovate.json` évite que Renovate tienne la branche pour « modifiée » et
-  cesse de la rebaser ; une rebase la recrée sans ce commit, que le job repose
-  aussitôt ;
+  E2E et Sécurité par `workflow_dispatch` sur la branche — et les deux
+  workflows lourds sous le même label qui les gouverne ailleurs —, après avoir
+  annulé ce qui tournait encore sur le commit remplacé. Deux jobs séparés, et
+  c'est délibéré : la régénération lance des plugins Maven dont la version
+  sort du `pom.xml` non relu de la PR, elle n'a donc que `contents: read` ;
+  le jeton qui écrit sur la branche vit dans le second job, qui ne voit aucun
+  build. La poussée n'est jamais forcée : si Renovate a rebasé entre-temps,
+  elle est refusée, le run s'arrête en le disant, et celui que la rebase vient
+  de déclencher repose le commit. `gitIgnoredAuthors` dans `renovate.json`
+  évite que Renovate tienne la branche pour « modifiée » et cesse de la
+  rebaser ; une rebase la recrée sans ce commit, que le job repose aussitôt ;
 - **sur `main`, une fusion annule les runs de la précédente**
   (`cancel-in-progress`) : seule la dernière fusion d'une rafale est vérifiée
   là, la PR l'ayant déjà été. Les minutes annulées sont perdues, un run
-  complet par fusion en coûterait davantage ;
+  complet par fusion en coûterait davantage. L'E2E lourd range son groupe par
+  type d'événement : une fusion n'annule donc pas le rattrapage nocturne, qui
+  serait parti sans bruit — un run annulé n'est pas rouge ;
 - **l'image publiée porte un SBOM et une signature cosign en mode keyless**. Les
   attestations GitHub natives attendent l'ouverture du dépôt ;
 - **tous les workflows tournent sur des runners GitHub** (`ubuntu-latest`).
