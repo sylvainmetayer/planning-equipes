@@ -48,6 +48,14 @@ services:
       # Adresses dont les en-têtes X-Forwarded-* sont acceptés. À renseigner
       # dès que l'origine est joignable autrement que par le proxy.
       QUARKUS_HTTP_PROXY_TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      # Adresses des proxys inverses, telles que l'application les voit, pour
+      # les deux plafonds qui comptent par adresse (connexion admin, /mcp).
+      # Réglage DISTINCT du précédent, qui ne peut pas le remplacer : celui-ci
+      # décide quelle entrée de X-Forwarded-For est retenue, l'autre seulement
+      # si l'en-tête est lu. Vide, tous les appels passant par le proxy
+      # partagent un compteur — et sur /mcp, qui compte chaque requête, le
+      # premier venu y tient le client légitime en 429. Voir docs/securite.md.
+      CONNEXION_PROXYS_FIABLES: ${CONNEXION_PROXYS_FIABLES:-}
       # Serveur MCP : vide = inutilisable, ce qui est le bon défaut tant que
       # personne ne s'en sert. Voir docs/mcp.md.
       PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
@@ -55,6 +63,9 @@ services:
       # comptent, clé ou pas, et au-delà la réponse est 429. Voir docs/mcp.md.
       PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
       PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
+      # Vide, /mcp compte sur la liste ci-dessus ; à ne renseigner que pour
+      # lui donner une liste de proxys à lui.
+      PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
       # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
