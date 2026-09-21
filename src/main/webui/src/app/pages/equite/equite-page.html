@@ -99,7 +99,8 @@
                   <th scope="row">
                     {{ indicateur.libelle }}
                     @if (measuredBySolver(indicateur.colonne)) {
-                      <mat-icon inline class="equite-solveur-icon" [matTooltip]="tooltipColonne(indicateur.colonne)">tune</mat-icon>
+                      <mat-icon inline aria-hidden="false" class="equite-solveur-icon" [matTooltip]="tooltipColonne(indicateur.colonne)"
+                                [attr.aria-label]="tooltipColonne(indicateur.colonne)">tune</mat-icon>
                     }
                   </th>
                   <td class="equite-cell">

@@ -83,17 +83,17 @@
             <div class="calendar-day-number">
               {{ cell.dayNumber }}
               @if (cell.understaffed) {
-                <mat-icon inline class="understaffed-icon" [matTooltip]="cellUnderstaffedTooltip" [attr.aria-label]="cellUnderstaffedTooltip">
+                <mat-icon inline aria-hidden="false" class="understaffed-icon" [matTooltip]="cellUnderstaffedTooltip" [attr.aria-label]="cellUnderstaffedTooltip">
                   warning
                 </mat-icon>
               }
               @if (cell.appreciationMismatch) {
-                <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="cellAppreciationMismatchTooltip" [attr.aria-label]="cellAppreciationMismatchTooltip">
+                <mat-icon inline aria-hidden="false" class="appreciation-mismatch-icon" [matTooltip]="cellAppreciationMismatchTooltip" [attr.aria-label]="cellAppreciationMismatchTooltip">
                   psychology
                 </mat-icon>
               }
               @if (estJourVerrouille(cell.dateKey)) {
-                <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
                   lock
                 </mat-icon>
               }
@@ -133,22 +133,22 @@
                   </span>
                 }
                 @if (isUnderstaffed(stand)) {
-                  <mat-icon inline class="understaffed-icon" [matTooltip]="understaffedTooltip(stand)" [attr.aria-label]="understaffedTooltip(stand)">
+                  <mat-icon inline aria-hidden="false" class="understaffed-icon" [matTooltip]="understaffedTooltip(stand)" [attr.aria-label]="understaffedTooltip(stand)">
                     warning
                   </mat-icon>
                 }
                 @if (isCouverturePause(stand)) {
-                  <mat-icon inline class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
+                  <mat-icon inline aria-hidden="false" class="couverture-pause-icon" [matTooltip]="couverturePauseTooltip" [attr.aria-label]="couverturePauseTooltip">
                     restaurant
                   </mat-icon>
                 }
                 @if (hasAppreciationMismatch(stand)) {
-                  <mat-icon inline class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
+                  <mat-icon inline aria-hidden="false" class="appreciation-mismatch-icon" [matTooltip]="appreciationMismatchTooltip" [attr.aria-label]="appreciationMismatchTooltip">
                     psychology
                   </mat-icon>
                 }
                 @if (estLigneVerrouillee(slot, stand)) {
-                  <mat-icon inline class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
+                  <mat-icon inline aria-hidden="false" class="verrouille-icon" [matTooltip]="verrouilleTooltip" [attr.aria-label]="verrouilleTooltip">
                     lock
                   </mat-icon>
                 }

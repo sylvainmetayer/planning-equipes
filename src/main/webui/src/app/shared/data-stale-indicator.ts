@@ -17,6 +17,7 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
   template: `
     @if (resolution.dataStale()) {
       <mat-icon
+        aria-hidden="false"
         class="data-stale-indicator"
         [matTooltip]="tooltip()"
         matTooltipPosition="below"

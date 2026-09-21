@@ -36,7 +36,7 @@
                   <span class="vacation-chip" [class.vacation-chip-relais]="vacation.couverturePause">
                     {{ libelleVacation(vacation) }}
                     @if (vacation.couverturePause) {
-                      <mat-icon inline i18n-aria-label="@@creneaux.field.couverturePause" aria-label="Relais repas (effectif divisé par deux)">restaurant</mat-icon>
+                      <mat-icon inline aria-hidden="false" i18n-aria-label="@@creneaux.field.couverturePause" aria-label="Relais repas (effectif divisé par deux)">restaurant</mat-icon>
                     }
                   </span>
                 }

@@ -92,7 +92,7 @@
         <td mat-cell *matCellDef="let animateur">
           {{ animateur.joursIndisponibles.length }}
           @if (alerteParAnimateurId().get(animateur.id); as alerte) {
-            <mat-icon class="row-problem-icon" [matTooltip]="alerte" [attr.aria-label]="alerte">warning</mat-icon>
+            <mat-icon aria-hidden="false" class="row-problem-icon" [matTooltip]="alerte" [attr.aria-label]="alerte">warning</mat-icon>
           }
         </td>
       </ng-container>

@@ -288,6 +288,13 @@ jobs:
       - name: Read-only stores check
         run: npm run stores-check
 
+      # MatIcon hides its host from assistive tech unless a *static*
+      # aria-hidden is in the template, so an icon whose only label is a
+      # binding or a tooltip is an icon nobody hears (issue #39). This refuses
+      # a new one.
+      - name: Icon labels check
+        run: npm run icon-labels-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

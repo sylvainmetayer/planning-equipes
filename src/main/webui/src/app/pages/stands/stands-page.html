@@ -59,7 +59,7 @@
         <td mat-cell *matCellDef="let stand">
           {{ stand.nom }}
           @if (problemes.causeParStandId().get(stand.id); as cause) {
-            <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">
+            <mat-icon aria-hidden="false" class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">
               warning
             </mat-icon>
           }

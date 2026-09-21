@@ -106,7 +106,7 @@
               <li [class.repos-ligne-sans-repos]="tendue.ligne.sansRepos">
                 <span class="repos-tendue-nom">{{ tendue.ligne.nom }}</span>
                 @if (tendue.ligne.sansRepos) {
-                  <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                  <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel" aria-hidden="false"
                             [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
                 }
                 <span class="repos-tendue-detail">{{ tendue.detail }}</span>
@@ -150,7 +150,7 @@
                 <span class="repos-frise-nom">
                   {{ ligne.nom }}
                   @if (ligne.sansRepos) {
-                    <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                    <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel" aria-hidden="false"
                               [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
                   }
                 </span>
@@ -209,7 +209,7 @@
                   <th class="repos-row-header" scope="row" [attr.aria-label]="ligne.resume">
                     <span class="repos-row-label repos-row-texte">{{ ligne.nom }}</span>
                     @if (ligne.sansRepos) {
-                      <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel"
+                      <mat-icon inline class="repos-alerte-icon" [matTooltip]="sansReposLabel" aria-hidden="false"
                                 [attr.aria-label]="sansReposLabel">priority_high</mat-icon>
                     }
                   </th>
@@ -235,7 +235,7 @@
                         {{ cellule.label }}
                       }
                       @if (cellule.conflit) {
-                        <mat-icon inline class="repos-alerte-icon" [attr.aria-label]="conflitLabel">warning</mat-icon>
+                        <mat-icon inline aria-hidden="false" class="repos-alerte-icon" [attr.aria-label]="conflitLabel">warning</mat-icon>
                       }
                     </td>
                   }

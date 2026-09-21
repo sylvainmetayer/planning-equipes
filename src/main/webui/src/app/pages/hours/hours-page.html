@@ -67,7 +67,7 @@
                   [attr.title]="libelleHeures(row.heuresParSemaine[col] ?? 0) || null">
                 {{ (row.heuresParSemaine[col] ?? 0) | number: '1.1-1' }} h
                 @if (niveauHeures(row.heuresParSemaine[col] ?? 0) !== 'normal') {
-                  <mat-icon inline class="hours-alerte-icon"
+                  <mat-icon inline class="hours-alerte-icon" aria-hidden="false"
                             [attr.aria-label]="libelleHeures(row.heuresParSemaine[col] ?? 0)">priority_high</mat-icon>
                 }
               </td>
