@@ -332,6 +332,45 @@ test.describe('espace animateur', () => {
    * ainsi que le menu de la barre du haut devenait inatteignable. On mesure
    * donc au plus étroit qui se vende, et sur les trois onglets.
    */
+  /*
+   * Le jeu amorcé ici tient sur une journée, et c'est précisément ce qui a
+   * laissé passer le défaut : la bande de jours ne débordait pas. Une édition
+   * réelle en compte quinze, et `.espace-page` — dimensionné sur son contenu
+   * parce que ses marges automatiques annulaient l'étirement — s'élargissait
+   * alors jusqu'à son `max-width` de 56 rem au lieu de laisser la bande
+   * défiler. Toute la page était coupée à droite, menu de la barre compris.
+   */
+  test('une bande de quinze journées défile sans élargir la page', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.route(`**/api/espace-animateur/${jeton}`, async (route) => {
+      const reponse = await route.fetch();
+      const corps = await reponse.json();
+      const modele = (corps.postes ?? [])[0];
+      if (modele) {
+        corps.postes = Array.from({ length: 15 }, (_, index) => ({
+          ...modele,
+          creneauId: `bande-${index}`,
+          date: `2026-07-${String(index + 1).padStart(2, '0')}`,
+        }));
+      }
+      await route.fulfill({ response: reponse, json: corps });
+    });
+    await page.setViewportSize({ width: 360, height: 760 });
+    await page.goto(`/animateur/${jeton}`);
+    await expect(page.locator('.espace-bande')).toBeVisible();
+
+    const debord = await page.evaluate(
+      () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+    );
+    expect(debord, 'la page ne doit pas défiler de côté').toBeLessThanOrEqual(0);
+    // La bande, elle, défile : c'est la seule à qui on l'accorde.
+    const bandeDefile = await page.evaluate(() => {
+      const bande = document.querySelector('.espace-bande')!;
+      return bande.scrollWidth > bande.clientWidth;
+    });
+    expect(bandeDefile, 'la bande de jours doit défiler en elle-même').toBe(true);
+  });
+
   test('aucun onglet ne déborde latéralement, même sur un écran étroit', async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     for (const largeur of [320, 360]) {

@@ -86,6 +86,14 @@ app-espace-animateur-shell {
 
 .espace-page {
   max-width: 56rem;
+  /* `width: 100%` and not the default `auto`: auto margins disable the stretch
+     a column flex container would otherwise apply, which left this element
+     sized by its own content and capped at `max-width` — 56 rem, on a 360 px
+     phone. The day strip's sixteen chips then widened the page to 920 px
+     instead of scrolling inside it, and everything else was cut off on the
+     right: the tab bar, the navigation, and the menu of the top bar. */
+  width: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
   padding: 0.75rem;
   display: flex;
