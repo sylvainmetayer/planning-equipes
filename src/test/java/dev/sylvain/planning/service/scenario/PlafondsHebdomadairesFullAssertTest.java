@@ -18,11 +18,11 @@ import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 
 /**
- * The whole constraint set under {@code FULL_ASSERT} on a rung whose edition
- * declares the legal break taken on the post — the tenth, four days, eight
- * stands, twenty animateurs, {@code pauseSurPoste: true}.
+ * The whole constraint set under {@code FULL_ASSERT} on the tenth rung — four
+ * days, eight stands, twenty animateurs, a grid of touching blocks whose
+ * afternoons owe a break.
  *
- * <p>That declaration is what makes this rung the right one for the weekly
+ * <p>Those breaks are what make this rung the right one for the weekly
  * caps of issue #31. They no longer sum a flat stream of seats: they group the
  * seats by day, join the legal parameters, deduct the breaks that day owes,
  * then group the days by ISO week. Two levels of {@code groupBy} with a
@@ -35,20 +35,21 @@ import org.junit.jupiter.api.Test;
  *
  * <p>The seats already worked are pinned, so what the rules see is a real
  * mid-event problem rather than a blank one. That pairing is the point:
- * neither FULL_ASSERT test covered it — {@code gamme-13} carries a past but
- * declares no break on the post, this rung declared the break but had no past
- * — and the two rules read the past at two different grains. The weekly caps
- * fold « is any day of this week still ahead » into their collector;
- * {@code pauseSurPosteSansRelais} asks it of the single seat a relay would
- * have had to cover. A fold that answers one grain with the other stays
- * invisible until a mid-event re-solve stops reaching zero.</p>
+ * neither FULL_ASSERT test covered it — {@code gamme-13} carries a past but no
+ * long stretch, this rung had the stretches and no past — and the rules read
+ * the past at two different grains. The weekly caps fold « is any day of this
+ * week still ahead » into their collector; {@code travailContinuMax*} asks it
+ * of the single seat a relay would have had to cover. A fold that answers one
+ * grain with the other stays invisible until a mid-event re-solve stops
+ * reaching zero.</p>
  *
  * <p>Three seconds is not a convergence budget and is not meant to be: what is
  * being exercised is every move the search tries in that time, each one
  * verified. The same run was played by hand on {@code festival-hivernal} — the
- * organiser's own grid, 153 animateurs, {@code pauseSurPoste: true} — without
- * corruption; it is not committed because a fixture that size under
- * FULL_ASSERT is minutes, not seconds.</p>
+ * organiser's own grid, 153 animateurs — for twenty seconds without
+ * corruption, when the single break rule replaced the two modes (ADR 0048); it
+ * is not committed because a fixture that size under FULL_ASSERT is minutes,
+ * not seconds.</p>
  */
 class PlafondsHebdomadairesFullAssertTest {
 

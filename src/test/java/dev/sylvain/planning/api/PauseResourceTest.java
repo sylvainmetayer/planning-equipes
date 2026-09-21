@@ -10,7 +10,6 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.test.junit.QuarkusTest;
-import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -34,7 +33,6 @@ class PauseResourceTest {
     @BeforeEach
     void seed() {
         persistence.clearDatabase();
-        declarerPauseSurPoste(true);
     }
 
     @Test
@@ -48,8 +46,14 @@ class PauseResourceTest {
                 .body("journees.size()", equalTo(0));
     }
 
+    /**
+     * Two colleagues on a seven-hour stand relay each other: each owes a break
+     * at 19:00, and the other is there to cover it. There is no mode to declare
+     * any more (ADR 0048) — the report reads the current parameters and says
+     * who can relay whom.
+     */
     @Test
-    void leRapportSitueLaPauseSonStandEtSonRelaisSousLaDeclarationCourante() {
+    void leRapportSitueLaPauseSonStandEtSonRelais() {
         Animateur alice = new Animateur("PAUSE-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PAUSE-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("PAUSE-S1", "Stand des pauses", Set.of(), 2, 2, false);
@@ -64,7 +68,6 @@ class PauseResourceTest {
                 .get("/api/pauses")
                 .then()
                 .statusCode(200)
-                .body("pauseSurPoste", equalTo(true))
                 .body("journeesAnalysees", equalTo(2))
                 .body("pausesDues", equalTo(2))
                 .body("relaisManquants", equalTo(0))
@@ -75,30 +78,25 @@ class PauseResourceTest {
                 .body("journees[0].sequences[0].pausesDues[0].heureLimite", equalTo("19:00:00"))
                 .body("journees[0].sequences[0].pausesDues[0].standId", equalTo("PAUSE-S1"))
                 .body("journees[0].sequences[0].pausesDues[0].relais[0].animateurId", equalTo("PAUSE-B"));
+    }
 
-        // The declaration withdrawn: the same breaks, flagged as not covered.
-        declarerPauseSurPoste(false);
+    /** Alone on the stand, the same seven hours owe a break nobody can take. */
+    @Test
+    void uneJourneeSeulSurSonStandCompteSaPauseSansRelais() {
+        Animateur alice = new Animateur("PAUSE-SEUL", "Alice", "Seule", LocalDate.of(1990, 1, 1), false);
+        Stand stand = new Stand("PAUSE-S2", "Stand à une place", Set.of(), 1, 1, false);
+        Creneau longue = new Creneau(9502L, 1, JOUR, LocalTime.of(13, 0), LocalTime.of(20, 0));
+        PosteAffectation poste = new PosteAffectation("PAUSE-P3", stand, longue);
+        poste.setAnimateur(alice);
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice), List.of(poste)));
+
         given().when()
                 .get("/api/pauses")
                 .then()
                 .statusCode(200)
-                .body("pauseSurPoste", equalTo(false))
-                .body("pausesDues", equalTo(2));
-    }
-
-    private static void declarerPauseSurPoste(boolean declare) {
-        String courant = given().when()
-                .get("/api/parametres-legaux")
-                .then()
-                .statusCode(200)
-                .extract()
-                .asString();
-        String modifie = courant.replaceAll("\"pauseSurPoste\":(true|false)", "\"pauseSurPoste\":" + declare);
-        given().contentType(ContentType.JSON)
-                .body(modifie)
-                .when()
-                .put("/api/parametres-legaux")
-                .then()
-                .statusCode(200);
+                .body("pausesDues", equalTo(1))
+                .body("relaisManquants", equalTo(1))
+                .body("journees[0].sequences[0].pausesDues[0].relaisDisponible", equalTo(false))
+                .body("message", org.hamcrest.Matchers.containsString("sans relais possible"));
     }
 }
