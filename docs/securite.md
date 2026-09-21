@@ -212,6 +212,41 @@ frappe. C'est le seul resserrement qui s'attaquerait à l'**agrégat** lui-même
 une session pouvant, dans les limites du plafond, reconstituer une part du
 planning nominatif de l'événement, mineurs compris.
 
+### Débit du serveur MCP
+
+`/mcp` est la seule surface authentifiée dont l'identifiant est une **clé
+partagée à longue durée de vie**, dans un en-tête, sans session ni second
+facteur. Rien ne bornait le rythme auquel on pouvait l'essayer, ni celui auquel
+son porteur pouvait appeler — et les outils MCP lancent une résolution,
+réécrivent les référentiels et lisent le planning de chacun.
+
+`McpRateLimiter` compte **toutes** les requêtes sous `/mcp`, authentifiées ou
+non, par adresse. Au-delà du plafond : `429` + `Retry-After`, **y compris avec
+la bonne clé**. Ne compter que les échecs laisserait une clé volée appeler au
+rythme du réseau, et une clé collée dans un assistant hébergé voyage plus loin
+qu'un mot de passe.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `PLANNING_MCP_MAX_REQUESTS` | `120` | Requêtes tolérées par adresse et par fenêtre ; `0` ou moins désactive le plafond |
+| `PLANNING_MCP_RATE_WINDOW` | `PT1M` | Durée de la fenêtre |
+| `PLANNING_MCP_TRUSTED_PROXIES` | *(la valeur de `CONNEXION_PROXYS_FIABLES`)* | Proxys inverses dont `X-Forwarded-For` est cru |
+
+La fenêtre est **fixe, ouverte à la première requête** : passé le plafond, elle
+se referme quand même à l'heure — une requête refusée ne la repousse pas. C'est
+l'inverse du verrou de connexion ci-dessous, dont la fenêtre court depuis le
+dernier échec, et la différence tient à ce que chacun garde : un verrou veut
+qu'une tentative de plus ne rapporte rien, un plafond de débit veut qu'un client
+légitime qui l'a touché sache quand revenir.
+
+L'adresse retenue est celle que décrit le verrou de connexion, au mot près, et
+c'est le même code (`ClientAddress`) qui la calcule : lecture de
+`X-Forwarded-For` **par la droite**, et seulement si la connexion elle-même vient
+d'un proxy déclaré. `PLANNING_MCP_TRUSTED_PROXIES` reprend par défaut la valeur
+de `CONNEXION_PROXYS_FIABLES` — les proxys sont un fait du déploiement, pas d'un
+endpoint. Voir [`mcp.md`](mcp.md#limitation-de-débit) pour le réglage du
+plafond selon l'usage.
+
 ### Verrouillage du form login admin
 
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire
@@ -352,9 +387,10 @@ reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
 
 ### Pas de limiteur de débit ici, et pourquoi
 
-`AdminLoginLimiter` et `CodeRequestLimiter` bornent deux choses précises : des
-tentatives d'authentification, et un envoi de mail. Cette route ne fait ni
-l'un ni l'autre — elle lit, sans effet de bord.
+`AdminLoginLimiter`, `CodeRequestLimiter` et `McpRateLimiter` bornent trois
+choses précises : des tentatives d'authentification, un envoi de mail, et l'usage
+d'une clé partagée qui ouvre tout. Cette route ne fait rien de tout cela — elle
+lit, sans effet de bord, sur un jeton qui n'ouvre qu'un document.
 
 Un plafond par animateur y serait **contre-productif** : un abonnement se
 resynchronise tout seul, depuis un téléphone, un ordinateur et une tablette à
@@ -456,7 +492,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
 | **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, le verrouillage de connexion ignore `X-Forwarded-For` et compte tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
-| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace) ; le reste — exports, résolution, API — n'en a pas |
+| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
 | Ne pas réintroduire le site dans un index (page d'accueil du proxy, sitemap, annuaire interne) | L'application dit trois fois qu'elle ne veut pas être référencée (voir ci-dessus) ; un lien depuis une page publique, lui, se remarque |
 

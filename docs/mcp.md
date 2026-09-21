@@ -26,11 +26,52 @@ seule l'identité construite à partir de la clé porte. Une politique
 formulaire lit son cookie sur tous les chemins, et un navigateur connecté
 atteignait `/mcp` sans clé. Il reçoit désormais `403`.
 
-> **Un filtre Vert.x ne suffit pas.** Les routes de `quarkus-mcp-server-http`
-> sont enregistrées **en amont** de la chaîne de filtres standard : un bean
-> `Filter` ne voit jamais ces requêtes. D'où le passage par le moteur de
-> politiques `quarkus.http.auth.permission.*`, qui s'applique à tout chemin
-> quelle que soit l'extension qui l'a monté.
+> **Pourquoi une politique plutôt qu'un filtre.** Un filtre Vert.x n'a aucun
+> moyen de dire « ce chemin exige le rôle `mcp` » : il devrait refaire le
+> contrôle, puis répondre son propre défi. Le moteur
+> `quarkus.http.auth.permission.*` le dit une fois, pour tout chemin, quelle
+> que soit l'extension qui l'a monté. Ce document affirmait auparavant qu'un
+> filtre *ne voit pas* ces routes ; c'est faux, et l'arbre le contredisait
+> déjà — les en-têtes de `SecurityHeadersFilter` sont sur toutes les réponses
+> `/mcp`. Le plafond de débit ci-dessous est précisément un filtre.
+
+## Limitation de débit
+
+`/mcp` est la seule surface authentifiée dont l'identifiant est une **clé
+partagée à longue durée de vie**, portée par un en-tête, sans session ni second
+facteur. Rien ne bornait le rythme auquel on pouvait l'essayer, ni celui auquel
+son porteur pouvait appeler — alors que les outils ouvrent une résolution,
+réécrivent les référentiels et lisent le planning de chacun.
+
+`McpRateLimiter` compte **toutes** les requêtes sous `/mcp`, authentifiées ou
+non, par adresse source, dans une fenêtre fixe ouverte à la première requête —
+passé le plafond elle se referme quand même à l'heure, une requête refusée ne la
+repousse pas. Au-delà, la réponse est `429` avec un `Retry-After`, **y compris
+avec la bonne clé** : un plafond qui ne compterait que les échecs laisserait une
+clé volée appeler au rythme du réseau, et une clé collée dans un assistant
+hébergé voyage plus loin qu'un mot de passe.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `PLANNING_MCP_MAX_REQUESTS` | `120` | Requêtes tolérées par adresse et par fenêtre ; `0` ou moins désactive le plafond |
+| `PLANNING_MCP_RATE_WINDOW` | `PT1M` | Durée de la fenêtre, au format ISO-8601 (`PT30S`, `PT5M`…) |
+| `PLANNING_MCP_TRUSTED_PROXIES` | *(la valeur de `CONNEXION_PROXYS_FIABLES`)* | Proxys inverses dont `X-Forwarded-For` est cru, adresses littérales ou blocs CIDR séparés par des virgules |
+
+Le défaut — 120 requêtes par minute — est large pour un assistant piloté par un
+humain : une session MCP enchaîne une poignée d'appels par question. Un script
+qui dépouille le référentiel, lui, le dépasse. **Relevez-le** si vous pilotez
+l'application par lots (`PLANNING_MCP_MAX_REQUESTS=600`), et ne le mettez à `0`
+que si `/mcp` n'est joignable que depuis la machine elle-même.
+
+`PLANNING_MCP_TRUSTED_PROXIES` reprend par défaut la liste du verrou de
+connexion : les proxys sont un fait du déploiement, pas d'un endpoint, et deux
+listes à garder en phase en font une de trop. Ce qu'elle change, et pourquoi
+l'en-tête se lit **par la droite**, est détaillé dans
+[`securite.md`](securite.md#débit-du-serveur-mcp) — sans elle, tous les appels
+arrivant par le proxy partagent un seul compteur.
+
+Ce plafond ne remplace pas la limitation par IP du reverse proxy, qui reste la
+première ligne pour tout le reste de l'application.
 
 ## Derrière un proxy d'accès
 

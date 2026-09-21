@@ -27,11 +27,20 @@ import java.util.Set;
  * <p>Implemented as a Quarkus {@link HttpAuthenticationMechanism} — paired
  * with {@code quarkus.http.auth.permission.mcp.paths=/mcp/*} in
  * application.properties and {@link McpApiKeyIdentityProvider} — rather than
- * a global HTTP {@code Filter} bean, because {@code quarkus-mcp-server-http}
- * registers its routes ahead of the ordinary Vert.x filter chain: a
- * {@code Filter} bean simply never sees requests it handles. The
- * {@code quarkus.http.auth.permission.*} policy engine, by contrast, gates
+ * a global HTTP {@code Filter} bean, because a filter has no way to say
+ * "this path needs the {@code mcp} role": it would have to re-implement the
+ * check, and then answer its own challenge. The
+ * {@code quarkus.http.auth.permission.*} policy engine says it once, and gates
  * every path uniformly regardless of which extension mounted it.
+ *
+ * <p>The reason this javadoc used to give — that
+ * {@code quarkus-mcp-server-http} registers its routes ahead of the Vert.x
+ * filter chain, so a filter never sees them — does not hold, and was already
+ * contradicted by the tree it was written in: the headers
+ * {@code SecurityHeadersFilter} writes are on every {@code /mcp} response.
+ * {@code McpRateLimiter} is a filter on these very routes, and it refuses
+ * before this mechanism is ever consulted. What is written above is the reason
+ * that does hold.
  *
  * <p>Secure by default: with no {@code planning.mcp.api-key} configured,
  * {@link #authenticate} can never succeed, so every request under

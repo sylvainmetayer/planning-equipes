@@ -322,9 +322,12 @@ Single Quarkus service, no separate solver microservice. Package root:
   an animateur whose espace opens without the e-mail code. It refuses to boot
   without a shared secret — a header is a claim, not a proof. Hardening for an
   Internet-facing deployment — browser security headers
-  (`SecurityHeadersFilter`), HTTP limits, the two rate limiters
+  (`SecurityHeadersFilter`), HTTP limits, the three rate limiters
   (`AdminLoginLimiter` on `/j_security_check`,
-  `CodeRequestLimiter` on the espace access codes), the production compose
+  `CodeRequestLimiter` on the espace access codes, `McpRateLimiter` on the
+  `/mcp` transport — the two address-keyed ones share `ClientAddress`, which
+  reads `X-Forwarded-For` from the right and is the half that makes either of
+  them count anything), the production compose
   stack and what is left to the reverse proxy — lives in `docs/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so

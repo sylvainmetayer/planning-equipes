@@ -42,6 +42,7 @@ api.HistoriqueResource$CompteEntiteView = entite, nombre
 api.HistoriqueResource$EntreeHistoriqueView = acteur, acteurId, acteurNom, action, champs, entite, entiteId, entiteNom, id, libelle, resultat, statut, survenuLe
 api.JourJResource$AnnulationAbsence = supprimees
 api.JourJResource$DemandeAbsence = animateurId, raison
+api.McpRateLimiter$Fenetre = debut, nombre
 api.McpResource$DemandeRevelation = motDePasse
 api.McpResource$McpKey = cle, pangolinAccessToken, pangolinAccessTokenId
 api.McpResource$StatutMcp = configuree, header

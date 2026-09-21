@@ -24,6 +24,14 @@ services:
       # Extra headers to require alongside the key, e.g. behind Pangolin:
       # "P-Access-Token-Id=<id>,P-Access-Token=<token>". See docs/mcp.md.
       PLANNING_MCP_REQUIRED_HEADERS: ${PLANNING_MCP_REQUIRED_HEADERS:-}
+      # Rate limit on /mcp, per source address: every request is counted, key
+      # or no key, and the answer past the ceiling is 429. Raise it for a
+      # batch client, 0 disables it. See docs/mcp.md.
+      PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
+      PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
+      # Defaults to CONNEXION_PROXYS_FIABLES; set it only to count /mcp callers
+      # on a different proxy list than the login lock does.
+      PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
       # Same Pangolin token, so the MCP page can reveal it (admin-password
       # gated, like the API key) instead of pasting it in by hand. See docs/mcp.md.
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}

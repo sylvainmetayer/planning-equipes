@@ -106,11 +106,11 @@
             <artifactId>quarkus-scheduler</artifactId>
         </dependency>
         <!-- Backs the MCP API-key check (dev.sylvain.planning.mcp):
-             quarkus.http.auth.permission.* policies are the only mechanism that
-             gates a path regardless of which extension mounted it (a plain
-             io.quarkus.vertx.http.runtime.filters.Filter bean does not see
-             requests routed by quarkus-mcp-server-http, which registers its
-             own routes ahead of the global filter chain). -->
+             quarkus.http.auth.permission.* policies are what expresses "this
+             path needs the mcp role" once, for every extension that mounted a
+             path. A Vert.x filter does see the quarkus-mcp-server-http routes
+             (McpRateLimiter is one), but it can only re-implement a check the
+             policy engine already owns. -->
         <dependency>
             <groupId>io.quarkus</groupId>
             <artifactId>quarkus-security</artifactId>
