@@ -138,8 +138,15 @@ test('une contradiction déjà en base est signalée avant toute résolution', a
 
   // And the rows themselves are badged, on the screen that owns them.
   await page.goto('/ad-hoc-constraints');
-  await expect(
-    page.getByRole('row', { name: new RegExp(FORCEE) }).getByText('warning'),
-  ).toBeVisible();
+  // Anchored on the Id column, not a substring of the row's accessible name:
+  // since issue #39 the badge is exposed to assistive tech, and its name is the
+  // contradiction sentence — which names *both* exceptions. A bare
+  // `new RegExp(FORCEE)` therefore matches the INDISPO row too, and would match
+  // `E2E-ADHOC-FORCEE-2` as well; `(?!\S)` closes both.
+  const ligneForcee = page.getByRole('row', { name: new RegExp(`^${FORCEE}(?!\\S)`) });
+  await expect(ligneForcee).toHaveCount(1);
+  await expect(ligneForcee.getByText('warning')).toBeVisible();
+  // The badge says what it means, rather than only showing a tooltip on hover.
+  await expect(ligneForcee.getByRole('img', { name: new RegExp(INDISPO) })).toBeVisible();
   await page.context().close();
 });
