@@ -141,7 +141,6 @@ describe('ProblemesStore', () => {
         '/api/feasibility': report([]),
         '/api/constraints': { ...constraintsView(), contraintes: [] },
         '/api/pauses': {
-          pauseSurPoste: true,
           journeesAnalysees: 1,
           pausesDues: 1,
           relaisManquants: 1,
@@ -193,7 +192,6 @@ describe('ProblemesStore', () => {
         '/api/constraints': { ...constraintsView(), contraintes: [] },
         '/api/pauses': {
           ...{
-            pauseSurPoste: true,
             journeesAnalysees: 1,
             pausesDues: 1,
             relaisManquants: 1,

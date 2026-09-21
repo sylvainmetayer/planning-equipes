@@ -487,8 +487,6 @@ export interface RapportMarge {
   cellulesDeficitaires: number;
   /** The tightest cell of the whole event; `null` when the grid holds none. */
   pireCellule: CelluleMarge | null;
-  /** The legal break the `APRES` mode keeps either side of a cell, in minutes. */
-  pauseMinimaleMinutes: number;
   referentielsManquants: ReferentielManquant[];
   message: string;
 }
@@ -1221,23 +1219,18 @@ export interface ParametresLegaux {
   dureeHebdomadaireMaxMinutes: number;
   dureeHebdomadaireMaxMineurMinutes: number;
   /** Minimum gap (minutes) between two same-day vacations of one animateur. Default 30. */
-  pauseMinimaleEntreVacationsMinutes: number;
   /** Minimum daily rest (minutes) between two calendar days, all animateurs. Default 660 (11h, art. L3131-1). */
   reposQuotidienMinimalMinutes: number;
   /**
-   * Legal break (20 min at 6 h for an adult, 30 min at 4 h 30 for a minor) taken on
-   * the post by relay between colleagues, rather than as a gap between two
-   * vacations. Default false: the organiser declares it.
+   * How long the legal break lasts — one duration for the whole edition
+   * (ADR 0048). The twenty minutes of art. L3121-16 are a floor of ordre
+   * public, refused below by the server; a minor's thirty (art. L3162-3) are
+   * applied when the break is read rather than stored, so an edition granting
+   * twenty-five gives twenty-five to its adults and thirty to its minors.
+   * Above the floor the organiser is free: a thirty-minute relay is easier to
+   * organise than a twenty-minute one (issue #592).
    */
-  pauseSurPoste: boolean;
-  /**
-   * How long that break lasts. Floors of ordre public — 20 min for an adult
-   * (art. L3121-16), 30 for a minor (art. L3162-3) — refused below by the
-   * server; above them the organiser is free, a thirty-minute relay being
-   * easier to organise than a twenty-minute one (issue #592).
-   */
-  dureePauseMajeurMinutes: number;
-  dureePauseMineurMinutes: number;
+  dureePauseMinutes: number;
   /**
    * The meal break: how long it lasts, and the midday and evening windows it
    * must fall in — the rule `coupureRepasObligatoire` judges (issue #438).
@@ -1469,7 +1462,7 @@ export const DUREE_HEBDOMADAIRE_MAX_HEURES = 48;
 export const DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES = 35;
 
 /** Ordre public floor for an adult's break, in minutes (Code du travail art. L3121-16). */
-export const DUREE_PAUSE_MAJEUR_MIN_MINUTES = 20;
+export const DUREE_PAUSE_MIN_MINUTES = 20;
 
 /** Ordre public floor for a minor's break, in minutes (Code du travail art. L3162-3). */
 export const DUREE_PAUSE_MINEUR_MIN_MINUTES = 30;
@@ -1709,7 +1702,6 @@ export interface StaffingSummary {
   indisponibilitesDeclarees: boolean;
   minimumMajeurs: number;
   minimumMineurs: number;
-  pauseMinimaleMinutes: number;
   dureeHebdomadaireMaxMinutes: number;
   /** Art. L3121-18: 10 h. Not configurable — the bounds read it, they do not set it. */
   dureeQuotidienneMaxMinutes: number;
@@ -2333,8 +2325,6 @@ export interface JourneeAnimateurPauses {
  * which days owe a meal break.
  */
 export interface RapportPauses {
-  /** The organiser's declaration that breaks are taken on the post, as it stands today. */
-  pauseSurPoste: boolean;
   journeesAnalysees: number;
   pausesDues: number;
   relaisManquants: number;

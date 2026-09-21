@@ -52,7 +52,6 @@ function rapport(mode: ModeMarge): RapportMarge {
     animateursTotal: 3,
     cellulesDeficitaires: 1,
     pireCellule: SOIR,
-    pauseMinimaleMinutes: 30,
     referentielsManquants: [],
     message: '1 tranche(s) en déficit, la plus tendue J1 20:00-23:00 à -2.',
   };
@@ -65,7 +64,6 @@ const VIDE: RapportMarge = {
   animateursTotal: 0,
   cellulesDeficitaires: 0,
   pireCellule: null,
-  pauseMinimaleMinutes: 30,
   referentielsManquants: ['CRENEAUX'],
   message: 'Aucun siège à couvrir : vérifiez les horaires des stands et la grille de créneaux.',
 };

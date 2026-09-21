@@ -44,9 +44,7 @@ type PageInternals = {
 const LEGAUX = {
   dureeHebdomadaireMaxMinutes: 48 * 60,
   dureeHebdomadaireMaxMineurMinutes: 35 * 60,
-  pauseMinimaleEntreVacationsMinutes: 30,
   reposQuotidienMinimalMinutes: 660,
-  pauseSurPoste: false,
   coupureRepasMinutes: 60,
   coupureRepasMidiDebut: '12:00:00',
   coupureRepasMidiFin: '14:00:00',

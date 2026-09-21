@@ -13,8 +13,7 @@ import { urlLegifrance } from '../../core/legifrance';
 import {
   DUREE_HEBDOMADAIRE_MAX_HEURES,
   DUREE_HEBDOMADAIRE_MAX_MINEUR_HEURES,
-  DUREE_PAUSE_MAJEUR_MIN_MINUTES,
-  DUREE_PAUSE_MINEUR_MIN_MINUTES,
+  DUREE_PAUSE_MIN_MINUTES,
   ParametresLegaux,
 } from '../../core/models';
 
@@ -47,19 +46,19 @@ export class ParametresLegauxCard {
   protected readonly parametresError = signal('');
   protected readonly parametresSaved = signal(false);
   protected readonly dureeHebdomadaireMaxHeures = signal<number | null>(null);
-  protected readonly pauseSurPoste = signal(false);
-  /** Minimum gap between two same-day vacations, in minutes (no legal floor: 0 lets blocks chain). */
-  protected readonly gapBetweenVacationsMinutes = signal<number | null>(null);
   /** Minimum daily rest, in hours (art. L3131-1: 11 h; a lower value needs a collective agreement). */
   protected readonly reposQuotidienHeures = signal<number | null>(null);
   protected readonly articleReposQuotidien = urlLegifrance('L3131-1');
   protected readonly articlePause = urlLegifrance('L3121-16');
   protected readonly dureeHebdomadaireMaxMineurHeures = signal<number | null>(null);
-  /** How long the legal break lasts, in minutes: a floor, never a ceiling (issue #592). */
-  protected readonly dureePauseMajeurMinutes = signal<number | null>(null);
-  protected readonly dureePauseMineurMinutes = signal<number | null>(null);
-  protected readonly floorPauseMajeurMinutes = DUREE_PAUSE_MAJEUR_MIN_MINUTES;
-  protected readonly floorPauseMineurMinutes = DUREE_PAUSE_MINEUR_MIN_MINUTES;
+  /**
+   * How long the legal break lasts, in minutes — one duration for the whole
+   * edition (ADR 0048). A floor, never a ceiling (issue #592): the twenty
+   * minutes of art. L3121-16, raised to the minors' thirty when the break is
+   * read, not when it is saved.
+   */
+  protected readonly dureePauseMinutes = signal<number | null>(null);
+  protected readonly floorPauseMinutes = DUREE_PAUSE_MIN_MINUTES;
   protected readonly articlePauseMineur = urlLegifrance('L3162-3');
   /** The meal break the organisation sets itself (issue #438): its length, and the two windows as HH:MM. */
   protected readonly coupureRepasMinutes = signal<number | null>(null);
@@ -106,11 +105,8 @@ export class ParametresLegauxCard {
   private read(parametres: ParametresLegaux): void {
     this.dureeHebdomadaireMaxHeures.set(parametres.dureeHebdomadaireMaxMinutes / 60);
     this.dureeHebdomadaireMaxMineurHeures.set(parametres.dureeHebdomadaireMaxMineurMinutes / 60);
-    this.gapBetweenVacationsMinutes.set(parametres.pauseMinimaleEntreVacationsMinutes);
     this.reposQuotidienHeures.set(parametres.reposQuotidienMinimalMinutes / 60);
-    this.pauseSurPoste.set(parametres.pauseSurPoste);
-    this.dureePauseMajeurMinutes.set(parametres.dureePauseMajeurMinutes);
-    this.dureePauseMineurMinutes.set(parametres.dureePauseMineurMinutes);
+    this.dureePauseMinutes.set(parametres.dureePauseMinutes);
     this.coupureRepasMinutes.set(parametres.coupureRepasMinutes);
     this.coupureRepasMidiDebut.set(parametres.coupureRepasMidiDebut ?? '');
     this.coupureRepasMidiFin.set(parametres.coupureRepasMidiFin ?? '');
@@ -122,7 +118,7 @@ export class ParametresLegauxCard {
 
   /**
    * Saves every legal parameter the card holds — the two weekly ceilings, the
-   * gap between vacations, the daily rest, the on-post break, the meal break
+   * daily rest, the legal break, the meal break
    * and the vacation ceiling — so that a save never silently resets a field the card did not
    * show: the server replaces the whole record. The bounds mirror the
    * server-side check (`ReferenceDataService.updateParametresLegaux`): a value
@@ -133,42 +129,33 @@ export class ParametresLegauxCard {
   protected async saveParametresLegaux(): Promise<void> {
     const heures = this.dureeHebdomadaireMaxHeures();
     const heuresMineur = this.dureeHebdomadaireMaxMineurHeures();
-    const pauseMinutes = this.gapBetweenVacationsMinutes();
     const reposHeures = this.reposQuotidienHeures();
     const coupureMinutes = this.coupureRepasMinutes();
     const vacationMaxHeures = this.dureeVacationMaxHeures();
-    const pauseMajeur = this.dureePauseMajeurMinutes();
-    const pauseMineur = this.dureePauseMineurMinutes();
+    const pause = this.dureePauseMinutes();
     if (
       heures === null ||
       heures <= 0 ||
       heuresMineur === null ||
       heuresMineur <= 0 ||
-      pauseMinutes === null ||
-      pauseMinutes < 0 ||
       reposHeures === null ||
       reposHeures < 0 ||
       coupureMinutes === null ||
       coupureMinutes < 0 ||
       vacationMaxHeures === null ||
       vacationMaxHeures <= 0 ||
-      pauseMajeur === null ||
-      pauseMineur === null ||
+      pause === null ||
       this.heureDebutSoiree() === ''
     ) {
       return;
     }
-    // Floors, mirrored from the server so the administrator reads an
-    // explanation rather than an HTTP 400.
-    if (pauseMajeur < this.floorPauseMajeurMinutes) {
+    // A floor, mirrored from the server so the administrator reads an
+    // explanation rather than an HTTP 400. The minors' thirty minutes are not
+    // checked here: the server raises a shorter value for them when it reads
+    // the break, rather than refuse the edition (ADR 0048).
+    if (pause < this.floorPauseMinutes) {
       this.parametresError.set(
-        $localize`:@@constraints.legal.error.pauseMajeur:La durée de pause des majeurs ne peut pas être inférieure à ${this.floorPauseMajeurMinutes}:minutes: minutes (Code du travail art. L3121-16, disposition d'ordre public).`,
-      );
-      return;
-    }
-    if (pauseMineur < this.floorPauseMineurMinutes) {
-      this.parametresError.set(
-        $localize`:@@constraints.legal.error.pauseMineur:La durée de pause des mineurs ne peut pas être inférieure à ${this.floorPauseMineurMinutes}:minutes: minutes (Code du travail art. L3162-3).`,
+        $localize`:@@constraints.legal.error.pause:La durée de pause ne peut pas être inférieure à ${this.floorPauseMinutes}:minutes: minutes (Code du travail art. L3121-16, disposition d'ordre public).`,
       );
       return;
     }
@@ -192,11 +179,8 @@ export class ParametresLegauxCard {
         await this.constraintsApi.saveLegalParameters({
           dureeHebdomadaireMaxMinutes: Math.round(heures * 60),
           dureeHebdomadaireMaxMineurMinutes: Math.round(heuresMineur * 60),
-          pauseMinimaleEntreVacationsMinutes: Math.round(pauseMinutes),
           reposQuotidienMinimalMinutes: Math.round(reposHeures * 60),
-          pauseSurPoste: this.pauseSurPoste(),
-          dureePauseMajeurMinutes: Math.round(pauseMajeur),
-          dureePauseMineurMinutes: Math.round(pauseMineur),
+          dureePauseMinutes: Math.round(pause),
           coupureRepasMinutes: Math.round(coupureMinutes),
           coupureRepasMidiDebut: this.coupureRepasMidiDebut(),
           coupureRepasMidiFin: this.coupureRepasMidiFin(),

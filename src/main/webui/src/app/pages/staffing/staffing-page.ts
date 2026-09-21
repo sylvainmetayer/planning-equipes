@@ -227,10 +227,6 @@ export class StaffingPage {
     return this.summary()?.borneRetenue === borne;
   }
 
-  protected pauseMinutes(): number {
-    return this.summary()?.pauseMinimaleMinutes ?? 0;
-  }
-
   /** Days one animateur may work in an ISO week — six, art. L3132-1. */
   protected joursTravaillesMax(): number {
     return this.summary()?.joursTravaillesMaxParSemaine ?? 0;

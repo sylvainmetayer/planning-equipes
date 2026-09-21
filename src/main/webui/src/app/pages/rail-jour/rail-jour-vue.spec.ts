@@ -312,7 +312,6 @@ describe('RailJourView', () => {
 
   describe('pauses', () => {
     const rapport: RapportPauses = {
-      pauseSurPoste: true,
       journeesAnalysees: 1,
       pausesDues: 1,
       coupuresRepasDues: 0,

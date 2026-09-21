@@ -135,7 +135,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.creneaux.enchainement:Deux créneaux qui se touchent ne s'enchaînent pas forcément pour une même personne : c'est la pause minimale entre vacations, réglée dans les paramètres légaux, qui décide.`,
+          text: $localize`:@@aide.creneaux.enchainement:Deux créneaux qui se touchent s'enchaînent pour une même personne : rien n'impose d'écart entre deux vacations. Ce qui décide, c'est la longueur de la séquence ainsi formée — au-delà de six heures, elle doit une pause, prise comme un trou ou relayée par un collègue du stand.`,
         },
       ],
       links: [

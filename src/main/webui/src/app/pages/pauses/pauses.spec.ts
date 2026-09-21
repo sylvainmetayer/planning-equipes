@@ -45,7 +45,6 @@ function rapport(
   overrides: Partial<RapportPauses> = {},
 ): RapportPauses {
   return {
-    pauseSurPoste: true,
     journeesAnalysees: journees.length,
     pausesDues: journees.flatMap((j) => j.sequences).flatMap((s) => s.pausesDues).length,
     relaisManquants: 0,

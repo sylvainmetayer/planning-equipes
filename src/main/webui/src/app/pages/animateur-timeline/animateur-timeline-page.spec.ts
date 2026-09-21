@@ -726,7 +726,6 @@ describe('AnimateurTimelinePage', () => {
   it('draws the breaks of the shown days on their track and lists them, the relay-less one flagged', async () => {
     const evenement = planningDeDeux();
     const rapport = {
-      pauseSurPoste: true,
       journeesAnalysees: 1,
       pausesDues: 1,
       relaisManquants: 1,
@@ -793,7 +792,6 @@ describe('AnimateurTimelinePage', () => {
       {
         breaks: () => ({
           journees: [],
-          pauseSurPoste: true,
           journeesAnalysees: 0,
           pausesDues: 0,
           relaisManquants: 0,
