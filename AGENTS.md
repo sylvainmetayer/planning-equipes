@@ -903,7 +903,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   unchanged by a re-solve, an accepted échange surviving regeneration),
   **contradictory ad hoc exceptions** (refused at entry, and — seeded straight
   through `/api/database/import`, the only way in left — reported by the
-  pre-solve diagnostic) and
+  pre-solve diagnostic), **the placements nobody can hold** (a forced
+  assignment warned about and written anyway, reported by the feasibility
+  endpoint and confirmed for before the solve; a seat written by hand refused,
+  and freeing one never refused — on a fixture built there, since no shipped
+  scenario carries a minor, a night and an adults-only stand) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
   with `E2E_FUZZ_SEED`). CI runs them on every pull request (`e2e.yml`, on a
   stack the job starts and throws away). Locally they **erase the database
