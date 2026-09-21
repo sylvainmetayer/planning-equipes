@@ -16,7 +16,7 @@ import org.junit.jupiter.api.Test;
  * {@code festival-realiste-canicule.yaml} but described the way the organiser
  * actually enters it — a grid written in vacations, with the midday rotation
  * (12-13 / 13-14) and the evening reliefs carried by the stands' opening
- * windows — and with the on-post breaks declared.
+ * windows.
  *
  * <h2>What it adds</h2>
  * <p>{@code festival-realiste-canicule} is sliced by the découpage; this one is not,
@@ -27,12 +27,23 @@ import org.junit.jupiter.api.Test;
  * move, this grid ended 1800 s at −33 hard, 26 of them on the Tuesday
  * montage; with it, zero hard in 67 s here.</p>
  *
- * <p>The file pins no constraint weight, on purpose: with
- * {@code pauseSurPosteSansRelais} at 5 — the dose that clears every missing
- * relay once the plan is feasible — the same grid ended 900 s at −67 hard.
- * The feasibility phase accepts moves on the whole score, and a heavy medium
- * rule pulls it away from the hard-repairing chains. Dose after feasibility,
- * from a warm start, never in a cold solve.</p>
+ * <p><b>The measure issue #32 asks for before the mode could be retired.</b>
+ * With the single hard rule — every break due owed a hole or a relay, no
+ * checkbox, no medium rule to dose — this grid reaches <b>zero hard in 210 s</b>
+ * from a cold start, well inside the 900 s ceiling below: construction
+ * heuristic out at −117 hard after 55 s, local search to zero 155 s later,
+ * ending 0hard/−7019medium/−17869soft (seed 0, this container; the
+ * development machine reached 67 s under the old mode, so read the two
+ * numbers as machines, not as rules). The grid needed no retailoring: the
+ * relay places are already there, which is what the organisation said when it
+ * settled the framework. Consigné dans {@code docs/contraintes.md}.</p>
+ *
+ * <p>The file pins no constraint weight, on purpose. Under the previous
+ * design the relay was a separate rule that could be dosed, and dosing it to
+ * 5 in a cold solve ended 900 s at −67 hard: the feasibility phase accepts
+ * moves on the whole score, and a heavy rule pulls it away from the
+ * hard-repairing chains. The rule is hard and undosable now, so that trap is
+ * closed rather than documented.</p>
  *
  * <h2>Why it can be committed</h2>
  * <p>Names, mails, birth dates, places and game categories are fictitious;

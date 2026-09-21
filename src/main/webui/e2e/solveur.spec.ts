@@ -23,8 +23,8 @@ import {
 import { repartirDeLaReference } from './reference';
 
 // Problem shape, learnt the hard way:
-// - one créneau per day — the hard `pauseMinimaleEntreVacations` forbids two
-//   same-day vacations separated by less than the legal break;
+// - one créneau per day. No rule forces that any more — two vacations may
+//   touch (ADR 0048) — but it is the shape this fixture was measured on;
 // - a REAL search space (12 seats, 8 animateurs, 4 days) — on a toy 4-seat
 //   problem the deterministic solve (fixed seed, Late-Acceptance settings
 //   tuned for ~3500 postes) can cycle on a local optimum and never repair the

@@ -180,7 +180,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.pauses:Pauses`,
-              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois, et qui relaie. Le solveur ne planifie pas la pause de vingt minutes due à la sixième heure ; quand elle est déclarée prise sur le poste, l'écran la pose au plus tard possible. Une seconde section liste les coupures repas et combien de minutes manquent quand la grille ne laisse pas de place — les journées en rouge sont celles que le solveur refuse.`,
+              text: $localize`:@@aide.views.def.pauses:La rotation des pauses légales, jour par jour et stand par stand : qui sort de quelle heure à quelle heure, une personne à la fois, et qui relaie. Le solveur exige qu'une pause due soit prenable — un trou, ou un collègue sur le stand — sans dire à quelle minute elle est prise ; l'écran la pose au plus tard possible. Une seconde section liste les coupures repas et combien de minutes manquent quand la grille ne laisse pas de place — les journées en rouge sont celles que le solveur refuse.`,
             },
             {
               term: $localize`:@@aide.views.term.heatmap:Heatmap de charge`,

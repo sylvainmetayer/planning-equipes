@@ -4560,10 +4560,6 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "pauseMinimaleEntreVacationsMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "dureeVacationMaxMinutes" : {
             "type" : "integer",
             "format" : "int32"
@@ -4572,14 +4568,7 @@
             "type" : "integer",
             "format" : "int32"
           },
-          "pauseSurPoste" : {
-            "type" : "boolean"
-          },
-          "dureePauseMajeurMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "dureePauseMineurMinutes" : {
+          "dureePauseMinutes" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -5529,7 +5518,7 @@
         }
       },
       "RapportMarge" : {
-        "required" : [ "animateursTotal", "cellulesDeficitaires", "jours", "message", "mode", "pauseMinimaleMinutes", "referentielsManquants", "tranches" ],
+        "required" : [ "animateursTotal", "cellulesDeficitaires", "jours", "message", "mode", "referentielsManquants", "tranches" ],
         "type" : "object",
         "properties" : {
           "mode" : {
@@ -5557,10 +5546,6 @@
           },
           "pireCellule" : {
             "$ref" : "#/components/schemas/CelluleMarge"
-          },
-          "pauseMinimaleMinutes" : {
-            "type" : "integer",
-            "format" : "int32"
           },
           "referentielsManquants" : {
             "type" : "array",
@@ -5606,12 +5591,9 @@
         }
       },
       "RapportPauses" : {
-        "required" : [ "coupuresRepasDues", "coupuresRepasManquantes", "journeesAnalysees", "pauseSurPoste", "pausesDues", "relaisManquants" ],
+        "required" : [ "coupuresRepasDues", "coupuresRepasManquantes", "journeesAnalysees", "pausesDues", "relaisManquants" ],
         "type" : "object",
         "properties" : {
-          "pauseSurPoste" : {
-            "type" : "boolean"
-          },
           "journeesAnalysees" : {
             "type" : "integer",
             "format" : "int32"
@@ -6349,7 +6331,7 @@
         "enum" : [ "DEFAUT", "REGLE", "EXCEPTION" ]
       },
       "StaffingSummary" : {
-        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "pauseMinimaleMinutes", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
+        "required" : [ "capaciteHeuresParAnimateur", "chargeTotal", "dureeHebdomadaireMaxMinutes", "dureeQuotidienneMaxMinutes", "indisponibilitesDeclarees", "joursTravaillesMaxParSemaine", "minimumAvecIndisponibilites", "minimumMajeurs", "minimumMineurs", "minimumTotal", "nombreSemaines", "picAvecPause", "picRepas", "picSimultane", "referentielsManquants", "rotationTotal", "totalDemandeHeures" ],
         "type" : "object",
         "properties" : {
           "parJour" : {
@@ -6421,10 +6403,6 @@
             "format" : "int32"
           },
           "minimumMineurs" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "pauseMinimaleMinutes" : {
             "type" : "integer",
             "format" : "int32"
           },

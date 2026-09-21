@@ -9,12 +9,12 @@
     } @else {
       <p class="pauses-message">{{ rapport()!.message }}</p>
 
-      @if (!rapport()!.pauseSurPoste && rapport()!.pausesDues > 0) {
+      @if (rapport()!.relaisManquants > 0) {
         <p class="pauses-alerte" role="status">
           <mat-icon inline>warning</mat-icon>
-          <span i18n="@@pauses.nonDeclare">
-            La pause sur le poste n'est pas déclarée : ces séquences dépassent la durée légale de travail continu.
-            Déclarez-la (<a routerLink="/parametres">paramètres légaux</a>) ou espacez les vacations.
+          <span i18n="@@pauses.sansRelais">
+            Des pauses dues n'ont personne pour relayer : autant d'écarts durs. Ouvrez une place de plus sur le stand
+            à ce moment-là, ou coupez la séquence par un trou.
           </span>
         </p>
       }

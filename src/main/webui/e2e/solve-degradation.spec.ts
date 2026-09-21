@@ -18,9 +18,12 @@ import {
 } from './support';
 import { repartirDeLaReference } from './reference';
 
-// Same problem shape as solveur.spec.ts, and for the same reasons: one créneau
-// per day (the hard pauseMinimaleEntreVacations forbids two same-day
-// vacations), and a real search space rather than a toy one.
+// Same problem shape as solveur.spec.ts, and for the same reason: a real
+// search space rather than a toy one. One créneau per day is no longer forced
+// by any rule — `pauseMinimaleEntreVacations` is retired (ADR 0048), and two
+// same-day vacations may now touch — but the shape is kept because it is what
+// the fixture was measured on, and a solver e2e reshaped for nothing is a
+// flake waiting to happen.
 const C1 = 987301;
 const C2 = 987302;
 const C3 = 987303;

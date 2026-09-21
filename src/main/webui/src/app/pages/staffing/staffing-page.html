@@ -41,9 +41,9 @@
         <p [class.staffing-binding]="estBorneRetenue('PIC_AVEC_PAUSE')">
           <mat-icon inline aria-hidden="true">groups</mat-icon>
           <strong i18n="@@staffing.pauseBound.label">Pic avec pause légale : {{ resume.picAvecPause }}</strong>
-          <ng-container i18n="@@staffing.pauseBound.description"> — même pic, chaque vacation prolongée des
-          {{ resume.pauseMinimaleMinutes }} minutes de pause obligatoire entre deux vacations : le nombre
-          d'animateurs distincts qu'exige la journée la plus chargée.</ng-container>
+          <ng-container i18n="@@staffing.pauseBound.description"> — le nombre d'animateurs distincts qu'exige la
+          journée la plus chargée. Deux vacations qui se touchent peuvent être tenues par la même personne, donc
+          cette borne rejoint le pic simultané.</ng-container>
           @if (resume.jourCritique; as critique) {
             {{ jourCritiqueLabel(critique) }}
           }

@@ -361,8 +361,7 @@ describe('parametrer-pour-un-planning-complet', () => {
   it('names the three levers and the order to check them in', () => {
     const text = section.blocks.flatMap(helpBlockText).join('\n');
     expect(text).toContain('effectif par fenêtre');
-    expect(text).toContain('pause minimale entre vacations');
-    expect(text).toContain('Pause légale prise sur le poste');
+    expect(text).toContain('La pause légale : un trou, ou un relais');
     expect(text).toContain("lu d'un tenant");
     // A real ordered list: the numbering is the browser's, not the text's,
     // and a screen reader announces it as such.
@@ -399,7 +398,8 @@ describe('parametrer-pour-un-planning-complet', () => {
   it('is found by the words an organiser would type', () => {
     for (const mot of [
       'effectif par fenêtre',
-      'pause sur le poste',
+      'pause légale',
+      'relais',
       'relève de midi',
       'le moindre écart',
     ]) {
@@ -420,8 +420,8 @@ describe('parametrer-pour-un-planning-complet', () => {
     const legaux = config.blocks
       .flatMap((b) => (b.kind === 'definitions' ? b.items : []))
       .find((d) => d.term === 'Paramètres légaux')!;
-    expect(legaux.text).toContain('pause légale prise sur le poste');
-    expect(legaux.text).toContain('pause minimale entre deux vacations');
+    expect(legaux.text).toContain('la durée de la pause légale');
+    expect(legaux.text).toContain("Rien n'impose d'écart entre deux vacations");
     // The measured figure lives in the guide only.
     expect(legaux.text).not.toContain('quarante-quatre');
   });

@@ -99,7 +99,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.config.term.legaux:Paramètres légaux`,
-              text: $localize`:@@aide.config.def.legaux:Sur la page Paramètres. Les plafonds hebdomadaires (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) et la pause minimale entre deux vacations (30 min par défaut, sans base légale) se règlent au même endroit. Enfin, la pause légale prise sur le poste déclare que la pause due à la sixième heure — dont la durée se règle juste au-dessus, au moins 20 min pour un majeur et 30 pour un mineur — se prend par relais entre collègues plutôt que comme un trou entre deux vacations : les plafonds quotidien et hebdomadaires la déduisent alors, et le solveur refuse en dur une pause due sur un stand où personne ne peut relayer.`,
+              text: $localize`:@@aide.config.def.legaux:Sur la page Paramètres. Les plafonds hebdomadaires (48 h pour les majeurs, 35 h pour les mineurs) sont d'ordre public : une valeur supérieure est refusée, une valeur inférieure reste libre. Le repos quotidien minimal (11 h, 9 h par accord collectif) se règle au même endroit, ainsi que la durée de la pause légale : au moins 20 minutes (art. L3121-16), portée à 30 pour un mineur (art. L3162-3), 30 par défaut. Rien n'impose d'écart entre deux vacations.`,
             },
             {
               term: $localize`:@@aide.config.term.contraintes:Activation des contraintes`,
@@ -154,15 +154,15 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.creneaux:Des blocs, et ce que coûte une coupe`,
-              text: $localize`:@@aide.setup.def.creneaux:Le solveur affecte une personne par créneau et par siège. Chaque coupe dans la journée est une relève : si la pause minimale entre vacations vaut 30 minutes, l'équipe sortante est encore en pause quand l'équipe entrante prend le poste, et la coupe double le besoin en personnes distinctes à cet instant. Préférez des blocs — matin, midi, après-midi, nocturne — et gardez la relève de midi comme trou planifié : c'est la pause déjeuner. Découper un après-midi en deux sessions ne réduit jamais le besoin, il l'augmente.`,
+              text: $localize`:@@aide.setup.def.creneaux:Le solveur affecte une personne par créneau et par siège. Des vacations qui se touchent s'enchaînent librement : rien n'impose d'écart entre deux d'entre elles, et un trou plus court que la pause légale compte comme du travail. Préférez tout de même des blocs — matin, midi, après-midi, nocturne — et gardez la relève de midi comme trou planifié : c'est la pause déjeuner. Découper un après-midi en deux sessions ne réduit jamais le besoin en personnes.`,
             },
             {
-              term: $localize`:@@aide.setup.term.pause:La pause entre vacations est un réglage, pas la loi`,
-              text: $localize`:@@aide.setup.def.pause:La seule pause que le Code du travail impose est celle de vingt minutes dès six heures d'affilée. La pause minimale entre vacations, 30 minutes par défaut, est un confort d'organisation : mettez-la à 0 si vos créneaux forment des blocs qui se touchent, sinon la relève de midi impose une seconde équipe.`,
+              term: $localize`:@@aide.setup.term.pause:La pause légale : un trou, ou un relais`,
+              text: $localize`:@@aide.setup.def.pause:Le Code du travail impose une pause dès six heures d'affilée (quatre heures et demie pour un mineur). L'outil la reconnaît de deux manières, et pas d'une troisième : un trou d'au moins la durée réglée dans la grille — il coupe la séquence, plus rien n'est dû — ou un relais, un collègue du même stand qui tient une place pendant toute la pause. Une pause que personne ne peut prendre est un écart dur.`,
             },
             {
-              term: $localize`:@@aide.setup.term.surPoste:Déclarer la pause prise sur le poste`,
-              text: $localize`:@@aide.setup.def.surPoste:Par défaut, l'outil ne sait exprimer une pause que comme un trou entre deux vacations ; une relève de 13 h à 20 h est alors refusée, alors qu'elle est légale si les vingt minutes se prennent par relais sur le stand. Cochez « Pause légale prise sur le poste » dans les paramètres légaux si c'est ainsi que vous fonctionnez : la règle des six heures continues lit alors la séquence comme contenant sa pause, et les plafonds quotidiens la déduisent. L'écran Pauses pose ensuite la rotation, une personne à la fois par stand.`,
+              term: $localize`:@@aide.setup.term.surPoste:Une relève enchaînée à l'après-midi reste possible`,
+              text: $localize`:@@aide.setup.def.surPoste:Une relève de 13 h à 20 h est sept heures d'affilée : elle doit une pause vers la sixième heure, et il suffit qu'un collègue tienne le stand à ce moment-là pour qu'elle soit légale. Rien à déclarer : ouvrez la place, le solveur s'en sert. L'écran Pauses pose ensuite la rotation, une personne à la fois par stand, et nomme les journées où le relais manque. La pause est du repos, donc déduite des plafonds et de tous les compteurs d'heures.`,
             },
             {
               term: $localize`:@@aide.setup.term.repos:Le repos hebdomadaire, lu d'un tenant`,
@@ -174,7 +174,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.setup.term.coupureRepas:La coupure repas, une règle à part`,
-              text: $localize`:@@aide.setup.def.coupureRepas:Elle ne se confond pas avec la pause légale de vingt minutes, et déclarer celle-ci prise sur le poste ne la lève pas. Toute personne qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette fenêtre, d'un trou libre de la durée demandée. Commencer son service à l'ouverture de la fenêtre ou le terminer à sa fermeture ne doit rien. À savoir avant de découper : si un seul créneau couvre toute la fenêtre, son titulaire ne peut pas s'absenter, et aucune résolution n'atteindra zéro écart dur tant que la grille n'est pas recoupée.`,
+              text: $localize`:@@aide.setup.def.coupureRepas:Elle ne se confond pas avec la pause légale, et un relais ne la lève pas. Toute personne qui travaille de part et d'autre d'une fenêtre repas doit disposer, entièrement dans cette fenêtre, d'un trou libre de la durée demandée. Commencer son service à l'ouverture de la fenêtre ou le terminer à sa fermeture ne doit rien. À savoir avant de découper : si un seul créneau couvre toute la fenêtre, son titulaire ne peut pas s'absenter, et aucune résolution n'atteindra zéro écart dur tant que la grille n'est pas recoupée.`,
             },
           ],
         },
@@ -323,7 +323,7 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.tuning.term.legal:Les écarts portent sur le temps de travail`,
-              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez la grille plutôt que les plafonds légaux. Deux réglages disent souvent plus que la loi : la pause minimale entre vacations à 30 minutes interdit d'enchaîner deux blocs qui se touchent, et sans la pause prise sur le poste aucune séquence ne peut dépasser six heures.`,
+              text: $localize`:@@aide.tuning.def.legal:Les plafonds hebdomadaires et le repos entre journées se heurtent au découpage. Revoyez la grille plutôt que les plafonds légaux. Quand une séquence de plus de six heures bloque, la réponse est presque toujours une place de plus sur le stand à l'heure de la pause, ou un trou dans la grille — pas un plafond relevé.`,
             },
             {
               term: $localize`:@@aide.tuning.term.mineurs:Les écarts concernent les mineurs`,

@@ -11,7 +11,6 @@ import { PausesView } from './pauses-vue';
 
 function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
   return {
-    pauseSurPoste: true,
     journeesAnalysees: 3,
     pausesDues: 2,
     relaisManquants: 1,
@@ -159,12 +158,19 @@ describe('PausesView', () => {
     expect(text(await mount(rapport(), { recherche: 'alice' }))).toContain('Alice Martin');
   });
 
-  it('warns when the on-post break is not declared, with a link to the legal parameters', async () => {
-    const fixture = await mount(rapport({ pauseSurPoste: false }));
+  /**
+   * A break with nobody to relay it is a hard breach, not a mode to declare
+   * (ADR 0048): the banner names it, and says the two ways out. A plan where
+   * every break is relayed shows nothing.
+   */
+  it('warns about the breaks nobody can relay, and stays quiet when there are none', async () => {
+    const alerte = async (relaisManquants: number) =>
+      ((await mount(rapport({ relaisManquants }))).nativeElement as HTMLElement).querySelector(
+        '.pauses-alerte',
+      );
 
-    const alerte = (fixture.nativeElement as HTMLElement).querySelector('.pauses-alerte');
-    expect(alerte?.textContent).toContain("n'est pas déclarée");
-    expect(alerte?.querySelector('a')?.getAttribute('href')).toBe('/parametres');
+    expect((await alerte(2))?.textContent).toContain('personne pour relayer');
+    expect(await alerte(0)).toBeNull();
   });
 
   it('says so when nothing is persisted, and when nothing is to organise', async () => {

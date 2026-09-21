@@ -57,7 +57,6 @@ function journee(overrides: Partial<JourneeAnimateurPauses> = {}): JourneeAnimat
 
 function rapport(journees: JourneeAnimateurPauses[]): RapportPauses {
   return {
-    pauseSurPoste: true,
     journeesAnalysees: journees.length,
     pausesDues: 0,
     relaisManquants: 0,

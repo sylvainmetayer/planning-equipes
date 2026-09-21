@@ -116,7 +116,6 @@ function summary(overrides: Partial<StaffingSummary> = {}): StaffingSummary {
     indisponibilitesDeclarees: false,
     minimumMajeurs: 15,
     minimumMineurs: 7,
-    pauseMinimaleMinutes: 30,
     dureeHebdomadaireMaxMinutes: 2880,
     dureeQuotidienneMaxMinutes: 600,
     joursTravaillesMaxParSemaine: 6,
@@ -310,14 +309,13 @@ describe('StaffingPage', () => {
       expect(page.competence()!.animateursTotal).toBe(0);
     });
 
-    it('reports no hours per week and no break while nothing is loaded', () => {
+    it('reports no hours per week while nothing is loaded', () => {
       analysesApi.staffing.mockReturnValue(deferred<StaffingSummary>().promise);
 
       const page = createPage();
 
       expect(page.heuresParSemaine()).toBe(0);
       expect(page.projectionLabel()).toBe('');
-      expect(page.pauseMinutes()).toBe(0);
       expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
     });
   });
@@ -422,15 +420,6 @@ describe('StaffingPage', () => {
       expect(page.estBorneRetenue('CHARGE_HORAIRE')).toBe(true);
       expect(page.estBorneRetenue('PIC_AVEC_PAUSE')).toBe(false);
       expect(page.estBorneRetenue('PIC_SIMULTANE')).toBe(false);
-    });
-
-    it('reports the legal break the peak-with-break bound is built on', async () => {
-      analysesApi.staffing.mockResolvedValue(summary({ pauseMinimaleMinutes: 45 }));
-
-      const page = createPage();
-      await vi.waitFor(() => expect(page.summary()).not.toBeNull());
-
-      expect(page.pauseMinutes()).toBe(45);
     });
 
     it('names the busiest day by its number, date and open stands', () => {

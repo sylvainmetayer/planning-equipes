@@ -133,7 +133,6 @@ describe('construireProblemes', () => {
 
   it('adds a warning for the relay-less breaks, after the constraints of its tier, linking to the breaks screen', () => {
     const pauses = {
-      pauseSurPoste: true,
       journeesAnalysees: 2,
       pausesDues: 2,
       relaisManquants: 1,

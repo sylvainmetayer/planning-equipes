@@ -48,7 +48,6 @@ function rapport(overrides: Partial<RapportMarge> = {}): RapportMarge {
     animateursTotal: 3,
     cellulesDeficitaires: 0,
     pireCellule: cellule(),
-    pauseMinimaleMinutes: 30,
     referentielsManquants: [],
     message: 'Aucune tranche en déficit.',
     ...overrides,

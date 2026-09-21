@@ -45,9 +45,7 @@ describe('ConstraintsApi', () => {
     const parametres = {
       dureeHebdomadaireMaxMinutes: 2880,
       dureeHebdomadaireMaxMineurMinutes: 2100,
-      pauseMinimaleEntreVacationsMinutes: 30,
       reposQuotidienMinimalMinutes: 660,
-      pauseSurPoste: false,
     } as ParametresLegaux;
 
     await constraints.saveLegalParameters(parametres);

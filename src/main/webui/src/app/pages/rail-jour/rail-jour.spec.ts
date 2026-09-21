@@ -489,7 +489,6 @@ describe('buildRailJours', () => {
         }),
       ];
       const pauses = {
-        pauseSurPoste: true,
         journeesAnalysees: 1,
         pausesDues: 1,
         relaisManquants: 1,
