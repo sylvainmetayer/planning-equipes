@@ -381,107 +381,6 @@
       </section>
     }
 
-  <!--
-    Au-dessus des cartes de journée, et non plus tout en bas de page : sur le
-    téléphone d'un animateur qui a trois jours de vacations, le pied de page ne se
-    lit jamais, et l'abonnement — la seule des trois sorties qui suive les
-    republications — n'était donc jamais découvert.
-    La bande reste courte à dessein (un titre, les actions, un dépliant) pour que
-    la première journée du planning, ce que la personne vient lire, reste visible
-    sans défiler. L'adresse elle-même, sa copie et son remplacement sont derrière
-    le dépliant : ils se règlent une fois et ne se relisent plus.
-    La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
-    l'abonnement, contour pour le PDF, texte pour l'ICS ponctuel — le fichier est
-    une photo qui périme à la republication, quand l'abonnement, lui, suit.
-  -->
-  @if (urlAbonnement() || telechargementsOfferts()) {
-    <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
-      <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
-        Emporter mon planning
-      </h2>
-      <div class="espace-agenda-actions">
-        @if (lienWebcal(); as webcal) {
-          <a class="espace-agenda-abonnement espace-agenda-large" matButton="filled" [href]="webcal">
-            <mat-icon>event_repeat</mat-icon>
-            <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
-          </a>
-        }
-        @if (telechargementsOfferts()) {
-          <a matButton="outlined" [href]="lienPdf()" download>
-            <mat-icon>picture_as_pdf</mat-icon>
-            <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
-          </a>
-          <a matButton="outlined" [href]="lienPdfFeuille()" download>
-            <mat-icon>description</mat-icon>
-            <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
-          </a>
-          <a class="espace-agenda-large" matButton [href]="lienIcs()" download>
-            <mat-icon>event</mat-icon>
-            <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
-          </a>
-        }
-      </div>
-      <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
-        L'abonnement suit chaque nouvelle publication ; les PDF et le fichier ICS sont une photo prise
-        aujourd'hui. Le livret se lit page à page, la feuille tient dans une poche.
-      </p>
-      @if (urlAbonnement(); as url) {
-        <button matButton type="button"
-                [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
-                (click)="basculerDetailsAbonnement()">
-          <mat-icon>{{ abonnementDeplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
-          <span i18n="@@espace.planning.abonnementDetails">Copier l'adresse, ou la remplacer</span>
-        </button>
-        <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que
-             désigne l'`aria-controls` du bouton ci-dessus. -->
-        <div id="espace-abonnement-details" class="espace-abonnement-details">
-          @if (abonnementDeplie()) {
-            <div class="espace-abonnement">
-              <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
-                Certaines applications, Google Agenda en premier, demandent de coller cette adresse
-                plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
-                planning.
-              </p>
-              <code class="espace-abonnement-url">{{ url }}</code>
-              <button matButton="outlined" type="button" (click)="copierAbonnement()">
-                <mat-icon>content_copy</mat-icon>
-                <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
-              </button>
-              @if (abonnementCopie()) {
-                <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
-                  Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
-                </p>
-              }
-              @if (rotationADemander()) {
-                <div class="espace-abonnement-revocation">
-                  <p i18n="@@espace.planning.abonnementRevoquerAide">
-                    L'ancienne adresse cessera immédiatement de fonctionner : les agendas déjà abonnés
-                    devront l'être à nouveau avec la nouvelle.
-                  </p>
-                  <button matButton="filled" type="button" [disabled]="rotationEnCours()"
-                          (click)="regenererAbonnement()">
-                    <span i18n="@@espace.planning.abonnementRevoquerConfirmer">Créer une nouvelle adresse</span>
-                  </button>
-                  <button matButton type="button" [disabled]="rotationEnCours()"
-                          (click)="rotationADemander.set(false)">
-                    <span i18n="@@espace.planning.abonnementRevoquerAnnuler">Annuler</span>
-                  </button>
-                </div>
-              } @else {
-                <button matButton type="button" (click)="rotationADemander.set(true)">
-                  <mat-icon>link_off</mat-icon>
-                  <span i18n="@@espace.planning.abonnementRevoquer">Cette adresse a fuité, la remplacer</span>
-                </button>
-              }
-              @if (erreurAbonnement(); as erreur) {
-                <p class="espace-abonnement-erreur">{{ erreur }}</p>
-              }
-            </div>
-          }
-        </div>
-      }
-    </section>
-  }
   }
   @case ('coequipiers') {
     <section class="espace-equipe" aria-labelledby="espace-equipe-titre">
@@ -547,6 +446,115 @@
       }
     </section>
   }
+}
+
+<!--
+  Sous les trois onglets, et non dans le seul « Aperçu » : emporter son
+  planning est un geste bref qu'on fait d'où l'on est, et le chercher
+  derrière un onglet, c'est l'abandonner. Sous le contenu plutôt qu'au-dessus,
+  pour que la journée — ce que la personne vient lire — reste la première
+  chose à l'écran.
+  La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
+  l'abonnement, contour pour les deux PDF. Le fichier ICS n'est plus une
+  action de premier rang : il vit dans le dépliant de l'abonnement, parce
+  qu'il ne suit pas les republications et n'est donc qu'un recours.
+-->
+@if (urlAbonnement() || telechargementsOfferts()) {
+  <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
+    <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
+      Emporter mon planning
+    </h2>
+    <div class="espace-agenda-actions">
+      @if (lienWebcal(); as webcal) {
+        <a class="espace-agenda-abonnement espace-agenda-large" matButton="filled" [href]="webcal">
+          <mat-icon>event_repeat</mat-icon>
+          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
+        </a>
+      }
+      @if (telechargementsOfferts()) {
+        <a matButton="outlined" [href]="lienPdf()" download>
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
+        </a>
+        <a matButton="outlined" [href]="lienPdfFeuille()" download>
+          <mat-icon>description</mat-icon>
+          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
+        </a>
+      }
+    </div>
+    <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
+      L'abonnement suit chaque nouvelle publication ; les PDF sont une photo prise aujourd'hui. Le
+      livret se lit page à page, la feuille tient dans une poche.
+    </p>
+    @if (urlAbonnement(); as url) {
+      <button matButton type="button"
+              [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
+              (click)="basculerDetailsAbonnement()">
+        <mat-icon>{{ abonnementDeplie() ? 'expand_less' : 'expand_more' }}</mat-icon>
+        <span i18n="@@espace.planning.abonnementDetails">Copier l'adresse, ou la remplacer</span>
+      </button>
+      <!-- Le conteneur reste dans le DOM une fois replié : c'est lui que
+           désigne l'`aria-controls` du bouton ci-dessus. -->
+      <div id="espace-abonnement-details" class="espace-abonnement-details">
+        @if (abonnementDeplie()) {
+          <div class="espace-abonnement">
+            <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
+              Certaines applications, Google Agenda en premier, demandent de coller cette adresse
+              plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
+              planning.
+            </p>
+            <code class="espace-abonnement-url">{{ url }}</code>
+            <button matButton="outlined" type="button" (click)="copierAbonnement()">
+              <mat-icon>content_copy</mat-icon>
+              <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
+            </button>
+            @if (abonnementCopie()) {
+              <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
+                Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
+              </p>
+            }
+            @if (rotationADemander()) {
+              <div class="espace-abonnement-revocation">
+                <p i18n="@@espace.planning.abonnementRevoquerAide">
+                  L'ancienne adresse cessera immédiatement de fonctionner : les agendas déjà abonnés
+                  devront l'être à nouveau avec la nouvelle.
+                </p>
+                <button matButton="filled" type="button" [disabled]="rotationEnCours()"
+                        (click)="regenererAbonnement()">
+                  <span i18n="@@espace.planning.abonnementRevoquerConfirmer">Créer une nouvelle adresse</span>
+                </button>
+                <button matButton type="button" [disabled]="rotationEnCours()"
+                        (click)="rotationADemander.set(false)">
+                  <span i18n="@@espace.planning.abonnementRevoquerAnnuler">Annuler</span>
+                </button>
+              </div>
+            } @else {
+              <button matButton type="button" (click)="rotationADemander.set(true)">
+                <mat-icon>link_off</mat-icon>
+                <span i18n="@@espace.planning.abonnementRevoquer">Cette adresse a fuité, la remplacer</span>
+              </button>
+            }
+            <!-- En dernier, et c'est tout le propos : le fichier est le
+                 recours de l'application qui ne sait pas s'abonner. Il fige le
+                 planning du jour où on le prend, là où l'adresse au-dessus
+                 suit chaque republication. -->
+            @if (telechargementsOfferts()) {
+              <p class="espace-abonnement-recours">
+                <a matButton [href]="lienIcs()" download>
+                  <mat-icon>event</mat-icon>
+                  <span i18n="@@espace.planning.telechargerIcs">Fichier ICS</span>
+                </a>
+                <span class="espace-abonnement-recours-aide" i18n="@@espace.planning.icsRecours">Si votre application refuse l'abonnement : ce fichier fige le planning d'aujourd'hui et ne suivra aucune republication.</span>
+              </p>
+            }
+            @if (erreurAbonnement(); as erreur) {
+              <p class="espace-abonnement-erreur">{{ erreur }}</p>
+            }
+          </div>
+        }
+      </div>
+    }
+  </section>
 }
 
 <!--

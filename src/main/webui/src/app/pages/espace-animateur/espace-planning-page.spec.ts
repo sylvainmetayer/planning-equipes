@@ -117,8 +117,8 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     });
     fixture = TestBed.createComponent(EspacePlanningPage);
     await fixture.whenStable();
-    // « Emporter mon planning » lives under « Aperçu » since issue #615.
-    await openTab('Aperçu');
+    // No tab to open: the band is carried under all three since issue #615,
+    // so these tests read it where a visitor lands — « Jour ».
   }
 
   /** Clicks a tab of the toggle group, as a reader does. */
@@ -194,18 +194,23 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     expect(url).not.toContain('jeton-1');
   });
 
-  it('puts the band under the overview, and the subscription first in it', async () => {
+  it('carries the band under every tab, with the subscription first in it', async () => {
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
-    // One tab away rather than one scroll away: the band is the whole of what
-    // « Aperçu » ends on, and the day tab is not cluttered with it.
+    // Under the three tabs and not behind one of them: taking one's planning
+    // away is a brief gesture, made from wherever one stands. The day itself
+    // still comes first on screen — the band sits below the tab's content.
     expect(racine().querySelector('.espace-agenda')).not.toBeNull();
-    expect(racine().querySelector('.espace-poste-carte')).toBeNull();
+    expect(racine().querySelector('.espace-poste-carte')).not.toBeNull();
+    const contenu = racine().querySelector('.espace-journee')!;
+    const bande = racine().querySelector('.espace-agenda')!;
+    expect(contenu.compareDocumentPosition(bande) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     // Reading order inside the band, and Material's own action hierarchy:
-    // filled for the subscription, outlined for the two PDF layouts, plain
-    // text for the one-shot ICS. Nothing invented, no hard-coded colour.
+    // filled for the subscription, outlined for the two PDF layouts. The ICS
+    // file is no longer one of them — it is a fallback, and it lives in the
+    // subscription's own panel.
     const actions = Array.from(
       racine().querySelectorAll<HTMLAnchorElement>('.espace-agenda-actions a'),
     );
@@ -213,11 +218,10 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     // target) all carry a class, and the icon is a `mat-icon` element.
     expect(
       actions.map((each) => each.querySelector('span:not([class])')!.textContent!.trim()),
-    ).toEqual(["S'abonner dans mon agenda", 'Livret PDF', 'Feuille A4', 'Fichier ICS']);
+    ).toEqual(["S'abonner dans mon agenda", 'Livret PDF', 'Feuille A4']);
     expect(actions[0].classList).toContain('mat-mdc-unelevated-button');
     expect(actions[1].classList).toContain('mat-mdc-outlined-button');
     expect(actions[2].classList).toContain('mat-mdc-outlined-button');
-    expect(actions[3].classList).toContain('mat-mdc-button');
 
     // The two layouts are one route and a parameter: the booklet is what the
     // address alone answers, the folded sheet is asked for by name.
@@ -271,8 +275,30 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     espaceView.set(view({ postes: [poste()] }));
     await rendre();
 
-    // The subscription, the two PDF layouts, the one-shot ICS.
-    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(4);
+    // The subscription and the two PDF layouts; the ICS file is a fallback of
+    // the panel below, not a fourth way out.
+    expect(racine().querySelectorAll('.espace-agenda-actions a').length).toBe(3);
+  });
+
+  it('keeps the ICS file in the panel, last, and says it will not follow', async () => {
+    espaceView.set(view({ postes: [poste()] }));
+    await rendre();
+
+    // Folded away, the fallback is not offered at all: the subscription is
+    // what this screen wants people to take.
+    expect(racine().querySelector('.espace-abonnement-recours')).toBeNull();
+
+    await deplier();
+
+    const recours = racine().querySelector('.espace-abonnement-recours')!;
+    expect(recours.querySelector('a')!.getAttribute('href')).toBe(
+      '/api/espace-animateur/jeton-1/planning.ics',
+    );
+    // The caveat travels with the file, not somewhere else on the screen.
+    expect(recours.textContent).toContain('ne suivra aucune republication');
+    // Last in the panel: the address and its replacement are read first.
+    const remplacer = racine().querySelector('.espace-abonnement button:last-of-type');
+    expect(remplacer).not.toBeNull();
   });
 
   it('hides the whole block while the espace is not loaded yet', async () => {
