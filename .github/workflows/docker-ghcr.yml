@@ -11,7 +11,7 @@ on:
 # to the repository's attestation store, the provenance and the SBOM of the
 # image it just pushed — see the two attest steps at the end of the job.
 permissions:
-  contents: read
+  contents: write
   packages: write
   id-token: write
   attestations: write
@@ -130,7 +130,7 @@ jobs:
           output-file: sbom.cyclonedx.json
           upload-artifact: true
           artifact-name: sbom.cyclonedx.json
-          upload-release-assets: false
+          upload-release-assets: true
 
       # Signature and SBOM attached to the image itself, in GHCR. This is the
       # path that works today: GitHub's own attestation store (the two steps
