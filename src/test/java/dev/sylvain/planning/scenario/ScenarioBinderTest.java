@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -251,5 +252,37 @@ class ScenarioBinderTest {
                 .isInstanceOf(ScenarioFormatException.class)
                 .hasMessageContaining("parametresDecoupage")
                 .hasMessageContaining("dureeVacationMaxMinutes");
+    }
+
+    /**
+     * Criterion 8 of issue #32, and the same reason as the découpage: the four
+     * pause keys ADR 0048 retires are refused <b>by name</b>, with what
+     * replaces them. A file verified under a mode where the break had to be a
+     * hole would otherwise be judged in silence under a rule that accepts a
+     * relay, and its author would find out from the solver.
+     */
+    @Test
+    void lesClesDePauseRetireesSontRefuseesParLeurNomAvecLeurRemplacement() throws IOException {
+        String scenario = Files.readString(Path.of("src/main/resources/scenarios/scenario.yml"));
+        assertThat(scenario).doesNotContain("pauseSurPoste").doesNotContain("pauseMinimaleEntreVacations");
+
+        for (Map.Entry<String, String> cle : Map.of(
+                        "pauseSurPoste: true", "dureePauseMinutes",
+                        "pauseMinimaleEntreVacationsMinutes: 0", "pauseMinimaleEntreVacations",
+                        "dureePauseMajeurMinutes: 30", "dureePauseMinutes",
+                        "dureePauseMineurMinutes: 30", "L3162-3")
+                .entrySet()) {
+            assertThatThrownBy(() -> ScenarioBinder.bind(scenario + "\nparametresLegaux:\n  " + cle.getKey() + "\n"))
+                    .as(cle.getKey())
+                    .isInstanceOf(ScenarioFormatException.class)
+                    .hasMessageContaining(cle.getKey().substring(0, cle.getKey().indexOf(':')))
+                    .hasMessageContaining(cle.getValue());
+        }
+
+        // The key that stays is read, not refused.
+        assertThat(ScenarioBinder.bind(scenario + "\nparametresLegaux:\n  dureePauseMinutes: 45\n")
+                        .parametresLegaux()
+                        .dureePauseMinutes())
+                .isEqualTo(45);
     }
 }
