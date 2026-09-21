@@ -21,8 +21,16 @@
 :root {
   --app-accent: var(--mat-sys-primary);
   /* The brand bar of both shells and of the public pages: the one colour that
-     stays the same in light and dark, since the logo sits on it. */
-  --app-toolbar-background: #0098d7;
+     stays the same in light and dark, since the logo sits on it.
+
+     #007eb2 rather than the #0098d7 this bar wore until the RGAA audit
+     (issue #40) measured it: white on #0098d7 reads 3,24:1, under the 4,5:1
+     of criterion 3.2, and this bar carries real text — the product name, the
+     signed-in animateur's own name in the espace, the language button, the
+     "Retour" of the legal pages. Same hue to the eye, 4,54:1 measured. A
+     deployment that overrides these two values owes itself the same
+     measurement: see docs/developpement.md § Accessibilité. */
+  --app-toolbar-background: #007eb2;
   --app-toolbar-foreground: #fff;
 }
 

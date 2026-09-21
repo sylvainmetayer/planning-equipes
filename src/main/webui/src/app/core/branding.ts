@@ -75,15 +75,36 @@ const ACCENT_DARK_LIGHTNESS = 0.78;
 const ACCENT_DARK_CHROMA = 0.14;
 
 /**
- * The accent as a `light-dark()` pair: the configured colour untouched on the
- * light scheme, a lightened twin of it on the dark one.
+ * Lightness ceiling of the light half, the mirror of the floor above.
+ *
+ * <p>0.53 is the highest lightness that keeps *every* hue and chroma at or
+ * above 4.5:1 on the light surface (`--mat-sys-surface` is `#faf9fd` there);
+ * the worst case is a saturated green around h=143, which still reads 4.69:1.
+ * 0.55 was measured too and rejected: it bottoms out at 4.30:1.</p>
+ */
+const ACCENT_LIGHT_LIGHTNESS = 0.53;
+
+/**
+ * The accent as a `light-dark()` pair, each half held to a contrast floor: a
+ * darkened twin of the configured colour on the light scheme, a lightened one
+ * on the dark scheme.
  *
  * <p>`--app-accent` is a *text* colour on `--mat-sys-surface` in a dozen
- * partials (help titles, detail labels, the active drawer link). An operator
- * picks `BRANDING_ACCENT_COLOR` by looking at the light surface, so a deep
- * brand ink — `#8b1e3f` reads 8.5:1 on `#faf9fd` — collapses to 2.1:1 once the
- * dark scheme paints `#121316` under it. Raising the lightness in OKLCH keeps
- * the hue, and therefore the identity, while restoring the contrast.</p>
+ * partials (help titles, detail labels, the active drawer link), and the focus
+ * ring of five grids. An operator picks `BRANDING_ACCENT_COLOR` by looking at
+ * the light surface, so a deep brand ink — `#8b1e3f` reads 8.5:1 on `#faf9fd`
+ * — collapses to 2.1:1 once the dark scheme paints `#121316` under it. Raising
+ * the lightness in OKLCH keeps the hue, and therefore the identity, while
+ * restoring the contrast.</p>
+ *
+ * <p>The light half used to be passed through untouched, on the reasoning that
+ * an operator picks the colour by looking at that very surface. True in
+ * general, false the moment they do not: a pastel brand — a yellow, a light
+ * pink — went under 4.5:1 everywhere `--app-accent` inks text, and under the
+ * 3:1 of criterion 3.3 as a focus ring, where falling through makes keyboard
+ * navigation of the grids invisible. The RGAA audit (issue #40) measured it;
+ * the ceiling below is the mirror of the floor above, so neither scheme is the
+ * one nobody checked.</p>
  *
  * <p>The pair is only kept if the browser can parse it: relative colour syntax
  * shipped in Firefox 128 while `light-dark()` shipped in 120, so a handful of
@@ -92,8 +113,9 @@ const ACCENT_DARK_CHROMA = 0.14;
  * malformed `BRANDING_ACCENT_COLOR` falls back the same way.</p>
  */
 export function accentForBothSchemes(accent: string): string {
+  const light = `oklch(from ${accent} min(l, ${ACCENT_LIGHT_LIGHTNESS}) c h)`;
   const dark = `oklch(from ${accent} max(l, ${ACCENT_DARK_LIGHTNESS}) min(c, ${ACCENT_DARK_CHROMA}) h)`;
-  const pair = `light-dark(${accent}, ${dark})`;
+  const pair = `light-dark(${light}, ${dark})`;
   const supports = typeof CSS !== 'undefined' && typeof CSS.supports === 'function';
   return supports && CSS.supports('color', pair) ? pair : accent;
 }

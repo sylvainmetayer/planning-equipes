@@ -40,9 +40,16 @@ function fondDeLaPage(page: Page): Promise<string> {
  * renseigne BRANDING_ACCENT_COLOR. Recopiée ici parce que la valeur est
  * injectée hors d'Angular : `branding.spec.ts` épingle la même chaîne, donc
  * une dérive côté source rend d'abord le test unitaire rouge.
+ *
+ * Les deux moitiés sont bornées depuis l'issue #40 : la claire plafonnée en
+ * clarté, la sombre plancherée. `#8b1e3f` est une encre profonde (l ≈ 0,43),
+ * donc le plafond de 0,53 ne la touche pas — c'est précisément ce que le test
+ * ci-dessous vérifie.
  */
 const ACCENT_MARQUE = '#8b1e3f';
-const ACCENT_PAIRE = `light-dark(${ACCENT_MARQUE}, oklch(from ${ACCENT_MARQUE} max(l, 0.78) min(c, 0.14) h))`;
+const ACCENT_CLAIR = `oklch(from ${ACCENT_MARQUE} min(l, 0.53) c h)`;
+const ACCENT_SOMBRE = `oklch(from ${ACCENT_MARQUE} max(l, 0.78) min(c, 0.14) h)`;
+const ACCENT_PAIRE = `light-dark(${ACCENT_CLAIR}, ${ACCENT_SOMBRE})`;
 
 type Srgb = [number, number, number];
 
@@ -184,11 +191,20 @@ test("l'accent de marque reste lisible sur les deux fonds", async ({ browser }) 
     document.documentElement.style.setProperty('--app-accent', paire);
   }, ACCENT_PAIRE);
 
-  // Thème clair : la couleur configurée, à l'octet près.
+  // Thème clair : la couleur configurée. Plus à l'octet près depuis #40 — la
+  // moitié claire passe désormais par OKLCH pour y être plafonnée, et un
+  // aller-retour peut décaler un canal d'une unité. Ce qui est vérifié est
+  // donc ce qui compte : cette encre profonde n'est pas touchée par le
+  // plafond, un pastel le serait.
   await boutonTheme(page).click();
   await expect(boutonTheme(page)).toHaveAttribute('data-theme-preference', 'light');
   const accentClair = await couleurPeinte(page, 'var(--app-accent)');
-  expect(accentClair, 'la moitié claire doit rester la couleur configurée').toEqual([139, 30, 63]);
+  for (const [canal, attendu] of [139, 30, 63].entries()) {
+    expect(
+      Math.abs(accentClair[canal] - attendu),
+      `la moitié claire doit rester la couleur configurée (canal ${canal})`,
+    ).toBeLessThanOrEqual(1);
+  }
   const fondClair = await couleurPeinte(page, await fondDeLaPage(page));
   expect(
     contraste(accentClair, fondClair),
