@@ -11,7 +11,7 @@
 
 <mat-card class="page-card" appearance="outlined">
   <mat-card-header>
-    <mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</mat-card-title>
+    <h2 mat-card-title i18n="@@importCsv.fichier.titre">1. Le fichier</h2>
     <mat-card-subtitle i18n="@@importCsv.fichier.aide">
       Format CSV uniquement. Ne rouvrez pas le CSV dans un tableur : il réécrit les années sur deux
       chiffres (« 12/09/26 ») et l'aperçu dit alors comment une telle date a été lue.
@@ -69,7 +69,7 @@
 @if (fichierCharge()) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title i18n="@@importCsv.mapping.titre">2. Les colonnes</mat-card-title>
+      <h2 mat-card-title i18n="@@importCsv.mapping.titre">2. Les colonnes</h2>
       <mat-card-subtitle i18n="@@importCsv.mapping.aide">
         Correspondance proposée d'après les en-têtes, à corriger librement. Un champ laissé sur
         « — » ne touchera pas les fiches déjà en base.
@@ -98,7 +98,7 @@
 
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title i18n="@@importCsv.options.titre">3. Ce que l'import remplace</mat-card-title>
+      <h2 mat-card-title i18n="@@importCsv.options.titre">3. Ce que l'import remplace</h2>
     </mat-card-header>
     <mat-card-content>
       <mat-checkbox
@@ -140,13 +140,13 @@
 @if (rapport(); as vue) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title>
+      <h2 mat-card-title>
         @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.titreApplique">4. Ce qui a été importé</ng-container>
         } @else {
           <ng-container i18n="@@importCsv.rapport.titrePreview">4. Ce que l'import ferait</ng-container>
         }
-      </mat-card-title>
+      </h2>
       <mat-card-subtitle>
         @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.sousTitreApplique"

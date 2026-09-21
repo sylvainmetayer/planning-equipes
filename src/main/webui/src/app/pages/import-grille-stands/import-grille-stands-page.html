@@ -10,7 +10,7 @@
 
 <mat-card class="page-card" appearance="outlined">
   <mat-card-header>
-    <mat-card-title i18n="@@importGrille.fichier.titre">1. Le fichier</mat-card-title>
+    <h2 mat-card-title i18n="@@importGrille.fichier.titre">1. Le fichier</h2>
     <mat-card-subtitle i18n="@@importGrille.fichier.aide">
       CSV (virgule, point-virgule ou tabulation) : une première colonne avec l'identifiant ou le nom exact du stand, puis une colonne par créneau « 2026-07-08 10h00-12h00 ».
     </mat-card-subtitle>
@@ -66,7 +66,7 @@
 @if (rapport(); as vue) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</mat-card-title>
+      <h2 mat-card-title i18n="@@importGrille.colonnes.titre">2. Les colonnes</h2>
       <mat-card-subtitle i18n="@@importGrille.colonnes.aide">
         Où chaque colonne du fichier se pose dans la grille de l'édition ; une colonne ignorée ne change rien.
       </mat-card-subtitle>
@@ -92,13 +92,13 @@
 
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title>
+      <h2 mat-card-title>
         @if (vue.applied) {
           <ng-container i18n="@@importGrille.rapport.titreApplique">3. Ce qui a été importé</ng-container>
         } @else {
           <ng-container i18n="@@importGrille.rapport.titrePreview">3. Ce que l'import ferait</ng-container>
         }
-      </mat-card-title>
+      </h2>
       <mat-card-subtitle>
         @if (vue.applied) {
           <ng-container i18n="@@importCsv.rapport.sousTitreApplique">Import effectué en une seule transaction : ces chiffres sont ceux de la base.</ng-container>

@@ -295,6 +295,12 @@ jobs:
       - name: Icon labels check
         run: npm run icon-labels-check
 
+      # One <h1> per screen, and `mat-card-title` as an attribute rather than
+      # an element — the two conventions of docs/developpement.md § a11y that
+      # the audit found broken 19 times (issue #43).
+      - name: Headings check
+        run: npm run headings-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

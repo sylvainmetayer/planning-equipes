@@ -1,6 +1,6 @@
 <mat-card class="page-card" appearance="outlined">
   <mat-card-header>
-    <mat-card-title i18n="@@importRef.fichier.titre">1. Le fichier</mat-card-title>
+    <h2 mat-card-title i18n="@@importRef.fichier.titre">1. Le fichier</h2>
     <mat-card-subtitle>{{ colonnes() }}</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
@@ -44,7 +44,7 @@
 @if (rapport(); as vue) {
   <mat-card class="page-card" appearance="outlined">
     <mat-card-header>
-      <mat-card-title i18n="@@importRef.apercu.titre">2. Ce que l'import ferait</mat-card-title>
+      <h2 mat-card-title i18n="@@importRef.apercu.titre">2. Ce que l'import ferait</h2>
       <mat-card-subtitle i18n="@@importRef.apercu.bilan">
         {{ vue.total }} ligne(s) : {{ vue.created }} création(s), {{ vue.updated }} mise(s) à jour, {{ vue.rejected }} refusée(s).
       </mat-card-subtitle>

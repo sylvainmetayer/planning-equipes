@@ -13,7 +13,7 @@
 @if (configuration(); as config) {
   <mat-card class="dispo-admin-declaration" appearance="outlined">
     <mat-card-header>
-      <mat-card-title i18n="@@dispo.fenetre.titre">Fenêtre de collecte</mat-card-title>
+      <h2 mat-card-title i18n="@@dispo.fenetre.titre">Fenêtre de collecte</h2>
       <mat-card-subtitle>
         @if (config.collecteOuverte) {
           <ng-container i18n="@@dispo.fenetre.ouverte"
@@ -74,7 +74,7 @@
 @for (declaration of enAttente(); track declaration.id) {
   <mat-card class="dispo-admin-declaration" appearance="outlined">
     <mat-card-header>
-      <mat-card-title>{{ declaration.animateurNom }}</mat-card-title>
+      <h3 mat-card-title>{{ declaration.animateurNom }}</h3>
       <mat-card-subtitle>{{ declaration.creeLe | date: 'short' }}</mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
