@@ -609,9 +609,9 @@ longer asked only shows in the scenarios.
   the glossary and the test that enforces it are in *Language of the code*
   below.
 - **Commit messages are short.** Subject under 72 characters, conventional
-  prefix, no trailing period. Subjects become CHANGELOG lines (git-cliff,
-  `cliff.toml`), so write them for the operator who will read the release
-  notes; two things file an entry under « ⚠️ Attention » — a `!` after the
+  prefix, no trailing period. Subjects become the body of the GitHub release
+  (git-cliff, `cliff.toml`, written by `release.yml`), so write them for the
+  operator who will read those notes; two things file an entry under « ⚠️ Attention » — a `!` after the
   prefix, which means a MAJOR rupture, and the reserved
   `contraintes-legales` scope, which warns without bumping the major. See
   `docs/versioning.md`. A body only when it carries what the diff

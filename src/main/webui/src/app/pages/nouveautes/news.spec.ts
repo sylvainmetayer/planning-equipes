@@ -84,7 +84,7 @@ describe('releases', () => {
     expect(decoupage[1].date).toBe('2026-09-10');
   });
 
-  it('groups a release by heading, in the order of the CHANGELOG', () => {
+  it('groups a release by heading, in the order of the release notes', () => {
     const [release] = releases([
       commit('docs: une note'),
       commit('fix: une correction'),

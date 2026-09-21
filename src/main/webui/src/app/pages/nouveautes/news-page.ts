@@ -37,9 +37,9 @@ import {
  * build — the alternative, a page an operator updates by hand, is the one that
  * goes stale without anybody noticing.</p>
  *
- * <p>The headings are those of the CHANGELOG (`cliff.toml`, see `news.ts`), so
- * an operator reading « À surveiller » here reads the same warning a release
- * note gives them.</p>
+ * <p>The headings are those of the release notes (`cliff.toml`, see
+ * `news.ts`), so an operator reading « À surveiller » here reads the same
+ * warning a release note gives them.</p>
  */
 @Component({
   selector: 'app-news-page',

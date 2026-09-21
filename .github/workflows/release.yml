@@ -1,0 +1,198 @@
+name: Notes de release
+
+# Une release créée depuis l'interface web de GitHub pose le tag et publie la
+# page ; ce workflow écrit ce qu'il reste à écrire — le corps, section fraîche
+# du changelog rendue par git-cliff à partir des messages de commit
+# (`cliff.toml`, mêmes intertitres que l'écran « Nouveautés »). Il ne pose ni
+# ne déplace aucun tag : c'est le geste humain qui décide du numéro, et
+# `docker-ghcr.yml` écoute ce même push de tag de son côté, sans lien avec ici.
+#
+# `published` et pas `created` : un brouillon ne porte pas encore de tag, donc
+# rien à raconter. La republication d'un brouillon passe bien par `published`.
+# Une édition manuelle ultérieure ne redéclenche rien — un texte retouché à la
+# main sur la page reste tel quel.
+on:
+  release:
+    types: [published]
+  # Pour regénérer les notes d'une release déjà publiée (ou en rattraper une
+  # d'avant ce workflow) sans la republier.
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag de la release à (re)documenter, ex. v1.2.0'
+        required: true
+        type: string
+
+# `contents: write` pour le seul `gh release edit`. Rien n'est poussé sur une
+# branche : il n'y a plus de CHANGELOG.md à tenir, la page de release est la
+# sortie (voir docs/versioning.md § 3).
+permissions:
+  contents: write
+
+concurrency:
+  group: release-notes-${{ github.event.release.tag_name || inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  notes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      TAG: ${{ github.event.release.tag_name || inputs.tag }}
+      GH_TOKEN: ${{ github.token }}
+      # Ce que le workflow réécrit commence ici ; tout ce qui le précède dans
+      # le corps est du texte humain et lui survit (voir l'étape de rédaction).
+      MARKER: '<!-- git-cliff -->'
+
+    steps:
+      # `fetch-depth: 0` : git-cliff lit l'historique et les tags, et la garde
+      # de cohérence plus bas compare le tag à celui qui le précède.
+      - name: Checkout the released tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.release.tag_name || inputs.tag }}
+          fetch-depth: 0
+
+      # Même forme que la garde de `docker-ghcr.yml` et que `tag_pattern` dans
+      # `cliff.toml` : les trois doivent dire la même chose d'un tag de
+      # release, sans quoi l'image, les notes et le changelog divergeraient.
+      # Bloquant, et avant tout le reste : sur un tag hors forme il n'y a pas
+      # de section à rendre.
+      - name: Check the tag is a release tag
+        run: |
+          if ! printf '%s' "$TAG" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::$TAG n'est pas un tag de release vX.Y.Z"
+            exit 1
+          fi
+
+      - name: Render the changelog section
+        id: cliff
+        uses: orhun/git-cliff-action@a9a95522b26fe6403f7bb24031f21fb573d0f5ff # v4.9.1
+        with:
+          # `--current` : les commits du tag extrait, et rien d'autre — sur une
+          # ligne de maintenance il remonte au tag parent de CETTE ligne, pas
+          # au plus récent du dépôt. `--strip all` retire l'en-tête et le pied
+          # du fichier, qui n'ont pas de sens dans un corps de release.
+          args: --current --strip all --output notes-brutes.md
+
+      - name: Write the release body
+        # La sortie de l'étape passe par l'environnement, jamais par une
+        # interpolation `${{ }}` dans le corps du script : c'est la forme que
+        # `securite.yml` cherche, et la règle vaut d'être tenue même quand la
+        # valeur vient d'une action et non d'un contenu reçu.
+        env:
+          NOTES: ${{ steps.cliff.outputs.changelog }}
+        run: |
+          set -euo pipefail
+
+          # La première ligne rendue est « ## [1.2.0] - 2026-09-21 » : la page
+          # de release porte déjà le numéro et la date, la répéter n'apprend
+          # rien. Le titre part, les lignes vides de tête avec lui.
+          sed '1{/^## \[/d}' "$NOTES" | sed '/./,$!d' > section.md
+
+          if [ ! -s section.md ]; then
+            echo "::error::Aucun sujet à raconter entre ce tag et le précédent : rien n'est écrit sur la release"
+            exit 1
+          fi
+
+          # Ce que tu as écrit à la main dans le corps au moment de créer la
+          # release — le résumé que portait le message du tag annoté — est
+          # gardé en tête. Seule la partie sous le marqueur est réécrite, ce
+          # qui rend l'exécution rejouable : un `workflow_dispatch` de
+          # rattrapage n'empile pas une seconde section.
+          gh release view "$TAG" --json body --jq '.body // ""' > corps-actuel.md
+          awk -v m="$MARKER" 'index($0, m) { exit } { print }' corps-actuel.md > preambule.md
+
+          # Ce qui reste en queue du préambule, c'est le blanc et le trait de
+          # séparation que ce workflow avait posés la fois d'avant ; une ligne
+          # `---` écrite par un humain plus haut dans son texte n'est pas
+          # touchée.
+          while [ -s preambule.md ]; do
+            case "$(tail -n 1 preambule.md | tr -d '[:space:]')" in
+              '' | '---') sed -i '$d' preambule.md ;;
+              *) break ;;
+            esac
+          done
+
+          {
+            if [ -s preambule.md ]; then
+              cat preambule.md
+              printf '\n---\n\n'
+            fi
+            printf '%s\n\n' "$MARKER"
+            cat section.md
+          } > corps.md
+
+          gh release edit "$TAG" --notes-file corps.md
+          echo "::notice::Notes écrites sur la release $TAG"
+
+          {
+            printf '## Notes écrites sur `%s`\n\n' "$TAG"
+            cat corps.md
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # En dernier, et délibérément : la release est déjà publiée quand ce
+      # workflow démarre, donc rien ici ne peut l'empêcher — un échec est le
+      # seul canal qui prévienne (l'onglet Actions, et la notification d'échec
+      # que GitHub envoie à l'auteur du run). Le placer avant priverait la
+      # release de ses notes pour un avertissement qui, lui, est réparable à la
+      # main : supprimer la release et son tag, puis recommencer au bon numéro.
+      - name: Check the version and the branch the tag sits on
+        run: |
+          set -uo pipefail
+          faute=0
+
+          # Le tag qui précède CELUI-CI par l'historique, pas le plus récent du
+          # dépôt : sur `release/1.2`, un v1.2.1 suit v1.2.0 et non v1.3.0.
+          # Même lecture que `--current` ci-dessus, les deux resteront d'accord.
+          precedent="$(git describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*' "$TAG^" 2>/dev/null || true)"
+
+          if [ -z "$precedent" ]; then
+            echo "::notice::$TAG est la première release de sa ligne : pas de montée à vérifier"
+          else
+            sujets="$(git log --format='%s' "$precedent..$TAG")"
+            demande=1  # 1 PATCH, 2 MINOR, 3 MAJOR — cf. docs/versioning.md § 2
+            if printf '%s\n' "$sujets" | grep -qE '^[a-z]+(\([^)]*\))?!:'; then
+              demande=3
+            elif printf '%s\n' "$sujets" | grep -qE '^feat'; then
+              demande=2
+            fi
+
+            IFS=. read -r pa pb pc <<< "${precedent#v}"
+            IFS=. read -r na nb nc <<< "${TAG#v}"
+            if   [ "$na" -gt "$pa" ]; then pose=3
+            elif [ "$na" -eq "$pa" ] && [ "$nb" -gt "$pb" ]; then pose=2
+            elif [ "$na" -eq "$pa" ] && [ "$nb" -eq "$pb" ] && [ "$nc" -gt "$pc" ]; then pose=1
+            else pose=0
+            fi
+
+            noms=(aucune PATCH MINOR MAJOR)
+            if [ "$pose" -eq 0 ]; then
+              echo "::error::$TAG n'est pas supérieur à $precedent"
+              faute=1
+            elif [ "$pose" -lt "$demande" ]; then
+              echo "::error::${noms[$pose]} posée entre $precedent et $TAG, mais les sujets demandaient ${noms[$demande]} (docs/versioning.md § 2)"
+              faute=1
+            fi
+          fi
+
+          # Un tag de release vit sur `main` ou sur une branche de maintenance
+          # (§ 5). Ailleurs, c'est une release faite depuis une branche de
+          # travail : l'image publiée ne correspond à rien de fusionné.
+          #
+          # Les têtes distantes sont récupérées ici plutôt que laissées au
+          # `fetch-depth` du checkout : `--contains` ne répond que sur les
+          # références présentes, et une réponse tronquée serait un rouge
+          # inventé sur une release parfaitement saine. Même raison que la
+          # récupération des tags dans `docker-ghcr.yml`.
+          git fetch --quiet --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+          if ! git branch -r --contains "$TAG" \
+               | sed 's/^[* ]*//' \
+               | grep -qE '^origin/(main|release/[0-9]+\.[0-9]+)$'; then
+            echo "::error::$TAG n'est sur ni main ni une branche release/X.Y (docs/versioning.md § 5)"
+            faute=1
+          fi
+
+          exit "$faute"
