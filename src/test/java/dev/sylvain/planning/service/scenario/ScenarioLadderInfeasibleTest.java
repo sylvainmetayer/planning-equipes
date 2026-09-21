@@ -99,13 +99,14 @@ class ScenarioLadderInfeasibleTest {
      * it through the meal, so either of the first two rules may be the one left
      * broken.
      *
-     * <p>{@code pauseSurPosteSansRelais} is the second rule, and it is there
+     * <p>{@code travailContinuMaxMajeur} is the second rule, and it is there
      * for the same reason as the first: a single-seat stand held from 10:00 to
      * 20:00 owes a break at the sixth hour with nobody on the stand to take
-     * over. It became a hard rule with the fortnight framework (issue #31);
-     * before that it cost medium points and this half of the test never saw
-     * it. Filling the seat is what makes both fire, which is why switching off
-     * the meal rule alone no longer reaches zero.</p>
+     * over, and no hole in the grid either. The relay used to be a rule of its
+     * own, dosable, and this half of the test never saw it; it is the hard
+     * break rule itself since ADR 0048. Filling the seat is what makes both
+     * fire, which is why switching off the meal rule alone no longer reaches
+     * zero.</p>
      *
      * <p>Both are therefore allowed in the first assertion, and neither is
      * required: leaving the seat empty costs one hard point and owes no break,

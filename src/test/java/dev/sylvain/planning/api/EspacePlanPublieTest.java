@@ -11,6 +11,7 @@ import dev.sylvain.planning.config.DevMode;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -18,6 +19,7 @@ import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
+import dev.sylvain.planning.service.referentiel.ParametresService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkus.mailer.MockMailbox;
@@ -74,6 +76,9 @@ class EspacePlanPublieTest {
 
     @Inject
     JourJClock clock;
+
+    @Inject
+    ParametresService parametres;
 
     /** A server launched with {@code quarkus:dev}, as far as the guard can tell. */
     private static final class DevModeActif extends DevMode {
@@ -643,6 +648,13 @@ class EspacePlanPublieTest {
 
     @Test
     void lEspaceAnnonceLaPauseQueLaJourneePubliseDoit() {
+        // Pinned rather than assumed: parametres_legaux survives
+        // clearDatabase(), so a sibling class that wrote another break length
+        // would otherwise decide what this test reads.
+        ParametresLegaux legaux = parametres.getLegaux();
+        legaux.setDureePauseMinutes(30);
+        parametres.updateLegaux(legaux);
+
         Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("PUBESP-S1", "Stand espace un", Set.of(), 2, 2, false);
@@ -663,8 +675,8 @@ class EspacePlanPublieTest {
                 .body("pauses[0].date", equalTo(JOUR.toString()))
                 .body("pauses[0].heureLimite", equalTo("19:00:00"))
                 .body("pauses[0].debut", equalTo("19:00:00"))
-                .body("pauses[0].fin", equalTo("19:20:00"))
-                .body("pauses[0].dureeMinutes", equalTo(20))
+                .body("pauses[0].fin", equalTo("19:30:00"))
+                .body("pauses[0].dureeMinutes", equalTo(30))
                 .body("pauses[0].standNom", equalTo("Stand espace un"))
                 .body("pauses[0].relaisDisponible", equalTo(true));
     }

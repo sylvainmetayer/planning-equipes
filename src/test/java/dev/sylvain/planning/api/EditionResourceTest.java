@@ -359,8 +359,8 @@ class EditionResourceTest {
         given().header(HEADER, "SOURCE-REGLAGES")
                 .contentType("application/json")
                 .body("{\"dureeHebdomadaireMaxMinutes\":2400,\"dureeHebdomadaireMaxMineurMinutes\":1800,"
-                        + "\"pauseMinimaleEntreVacationsMinutes\":45,\"reposQuotidienMinimalMinutes\":720,"
-                        + "\"pauseSurPoste\":true,\"coupureRepasMinutes\":50,"
+                        + "\"dureePauseMinutes\":45,\"reposQuotidienMinimalMinutes\":720,"
+                        + "\"coupureRepasMinutes\":50,"
                         + "\"coupureRepasMidiDebut\":\"11:30:00\",\"coupureRepasMidiFin\":\"13:30:00\","
                         + "\"coupureRepasSoirDebut\":\"18:30:00\",\"coupureRepasSoirFin\":\"20:30:00\","
                         + "\"heureDebutSoiree\":\"22:00:00\",\"dureeVacationMaxMinutes\":300}")
@@ -397,6 +397,7 @@ class EditionResourceTest {
                 .statusCode(200)
                 .body("heureDebutSoiree", org.hamcrest.Matchers.equalTo("22:00:00"))
                 .body("dureeVacationMaxMinutes", org.hamcrest.Matchers.equalTo(300))
+                .body("dureePauseMinutes", org.hamcrest.Matchers.equalTo(45))
                 .body("coupureRepasMinutes", org.hamcrest.Matchers.equalTo(50));
         given().header(HEADER, "COPIE-REGLAGES")
                 .when()

@@ -111,7 +111,7 @@ class DatabaseResourceTest {
 
         given().contentType(ContentType.JSON)
                 .body("{\"dureeHebdomadaireMaxMinutes\":2760,\"dureeHebdomadaireMaxMineurMinutes\":2100,"
-                        + "\"pauseMinimaleEntreVacationsMinutes\":45,\"reposQuotidienMinimalMinutes\":660}")
+                        + "\"dureePauseMinutes\":45,\"reposQuotidienMinimalMinutes\":660}")
                 .when()
                 .put("/api/parametres-legaux")
                 .then()
