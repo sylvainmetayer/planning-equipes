@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -157,8 +158,9 @@ class StaffingAnalyzerTest {
 
     @Test
     void aWeekTheEventBarelyTouchesCannotOfferAFullWeeklyCeiling() {
-        // Two event days in that ISO week: 2 x 10 h of work per person, not the
-        // 48 h the weekly ceiling would allow on a full week.
+        // Two event days in that ISO week: 2 × 10 h 20 of amplitude per person —
+        // ten hours of travail effectif plus the break each day owes (ADR 0048)
+        // — not the 48 h the weekly ceiling would allow on a full week.
         List<PosteAffectation> postes = new ArrayList<>();
         for (int jour = 0; jour < 2; jour++) {
             Creneau creneau = new Creneau(
@@ -175,7 +177,7 @@ class StaffingAnalyzerTest {
         assertThat(summary.parSemaine()).hasSize(1);
         assertThat(summary.parSemaine().get(0).jours()).isEqualTo(2);
         assertThat(summary.parSemaine().get(0).joursTravaillables()).isEqualTo(2);
-        assertThat(summary.parSemaine().get(0).capaciteHeuresParAnimateur()).isEqualTo(20.0);
+        assertThat(summary.parSemaine().get(0).capaciteHeuresParAnimateur()).isCloseTo(20.667, within(0.001));
         assertThat(summary.parSemaine().get(0).debut()).isEqualTo(LocalDate.of(2026, 7, 20));
     }
 

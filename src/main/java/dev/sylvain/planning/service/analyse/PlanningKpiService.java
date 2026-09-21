@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
@@ -155,7 +156,8 @@ public class PlanningKpiService {
                 indicateurs.stream()
                                 .mapToInt(ConsigneService.Indicateur::minutesFermees)
                                 .sum()
-                        / 60.0);
+                        / 60.0,
+                EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux()));
     }
 
     /**
@@ -251,6 +253,36 @@ public class PlanningKpiService {
             Integer plancherMedium,
             Integer journeesSousConsigne,
             Double heuresFermeesParConsigne) {
+        return compute(
+                affectations,
+                score,
+                violationsParContrainte,
+                modificationsManuelles,
+                dureeSolveSecondes,
+                plancherMedium,
+                journeesSousConsigne,
+                heuresFermeesParConsigne,
+                Map.of());
+    }
+
+    /**
+     * @param breakMinutesPerAnimateur minutes of legal break each
+     *        animateur's days owe, deducted from their hours so this report
+     *        counts travail effectif like every other hour read-out (ADR 0048).
+     *        Empty when the caller cannot know — the degraded recomputation of
+     *        an old snapshot, whose seats carry no start time: those rows stay
+     *        at amplitude, and the KPI page says so.
+     */
+    public static PlanningKpi compute(
+            List<AffectationKpi> affectations,
+            String score,
+            Map<String, Integer> violationsParContrainte,
+            Integer modificationsManuelles,
+            Long dureeSolveSecondes,
+            Integer plancherMedium,
+            Integer journeesSousConsigne,
+            Double heuresFermeesParConsigne,
+            Map<String, Integer> breakMinutesPerAnimateur) {
         Set<String> stands = new LinkedHashSet<>();
         Set<String> creneaux = new LinkedHashSet<>();
         Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
@@ -269,6 +301,8 @@ public class PlanningKpiService {
                 heuresParAnimateur.merge(affectation.animateurId(), affectation.dureeMinutes() / 60.0, Double::sum);
             }
         }
+        breakMinutesPerAnimateur.forEach((animateurId, minutes) ->
+                heuresParAnimateur.computeIfPresent(animateurId, (id, heures) -> heures - minutes / 60.0));
         Dispersion dispersion = dispersion(heuresParAnimateur.values());
         int[] niveaux = parseScore(score);
         int total = affectations.size();

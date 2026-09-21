@@ -82,7 +82,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * peak. The parameter stays because the proof is written on it, and because a
  * caller exploring a hypothetical buffer is one assertion away.</li>
  * <li><b>Charge horaire</b> — the hours of the <em>busiest ISO week</em>,
- * divided by what one animateur may legally work during that week.</li>
+ * divided by the amplitude one animateur may legally cover during that week.
+ * The legal ceilings bound <em>travail effectif</em>, and what a grid asks for
+ * is amplitude, so the ceilings are raised here by the breaks a person takes
+ * under them (ADR 0048) — see {@link #maxDailyAmplitude()}. Dividing an
+ * amplitude by a travail-effectif ceiling claimed people the plan does not
+ * need, which for a bound announced as a proof is the one error that
+ * matters.</li>
  * <li><b>Rotation sur les jours</b> — the person-days of the busiest ISO week,
  * divided by the number of days one animateur may work in it (art. L3132-1:
  * six).</li>
@@ -201,6 +207,37 @@ public class StaffingAnalyzer {
      */
     public static final int SANS_TAMPON = 0;
 
+    /**
+     * The legal break a day of an adult owes, read here at its floor of
+     * twenty minutes (art. L3121-16) rather than at the edition's own value.
+     *
+     * <p>It is what turns a ceiling on <b>travail effectif</b> into a ceiling
+     * on the <b>amplitude</b> this class measures — see
+     * {@link #maxDailyAmplitude()}. The floor is the prudent end: a longer
+     * break lets one person cover more amplitude, so an edition granting
+     * thirty minutes has a real capacity above what this assumes, and the
+     * bound stays a bound. Reading the edition's value would sharpen it by a
+     * few minutes a day and would have to travel through six signatures to get
+     * here; reading none at all, as this class did before the breaks became
+     * unconditional, made the bound claim more people than the plan needs.</p>
+     */
+    private static final int DEDUCTED_BREAK_MINUTES = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
+
+    /**
+     * The largest <b>amplitude</b> one adult may hold on one day: the ten hours
+     * of travail effectif art. L3121-18 allows, plus the break that day owes
+     * (ADR 0048). A 10 h 20 stretch is 10 h of work once its twenty minutes
+     * come off, so dividing a day's amplitude by 600 min counted people who are
+     * not needed.
+     *
+     * <p>One break, not more: a stretch long enough to owe a second one is well
+     * past ten hours of work whatever is deducted, so no day of an adult can
+     * carry two.</p>
+     */
+    private static int maxDailyAmplitude() {
+        return PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES + DEDUCTED_BREAK_MINUTES;
+    }
+
     /** Which of the bounds ended up setting {@link StaffingSummary#minimumTotal()}. */
     public enum BorneRetenue {
         PIC_SIMULTANE,
@@ -264,9 +301,12 @@ public class StaffingAnalyzer {
      * @param joursTravaillables how many of them one animateur may work
      *                      (art. L3132-1: six)
      * @param heures        person-hours to cover during the week
-     * @param capaciteHeuresParAnimateur what one animateur may work that week:
-     *                      the weekly ceiling, capped by
-     *                      {@code joursTravaillables × durée quotidienne max}
+     * @param capaciteHeuresParAnimateur the amplitude one animateur may cover
+     *                      that week: the weekly ceiling, capped by
+     *                      {@code joursTravaillables × durée quotidienne max},
+     *                      each raised by the break a day owes so a ceiling on
+     *                      travail effectif is compared with the amplitude a
+     *                      grid asks for (ADR 0048)
      * @param chargeTotal   {@code heures / capaciteHeuresParAnimateur}
      * @param joursPersonne sum of the days' {@code minimumJour}: the
      *                      (animateur, jour travaillé) pairs the week requires
@@ -789,7 +829,7 @@ public class StaffingAnalyzer {
             // A day is also bounded by its sheer volume: nobody works more than
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
-            int parLesHeures = (int) Math.ceil(heures * 60 / PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES);
+            int parLesHeures = (int) Math.ceil(heures * 60 / maxDailyAmplitude());
             int picRepas = 0;
             for (FenetreRepas fenetre : fenetres) {
                 if (fenetre.appliesTo(entree.getKey())) {
@@ -839,8 +879,8 @@ public class StaffingAnalyzer {
             // Two ceilings at once: the weekly one, and the days the event
             // really occupies in that week — six at most, of ten hours at most.
             double capacite = Math.min(
-                            dureeHebdomadaireMaxMinutes,
-                            (long) joursTravaillables * PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES)
+                            dureeHebdomadaireMaxMinutes + joursTravaillables * (long) DEDUCTED_BREAK_MINUTES,
+                            joursTravaillables * (long) maxDailyAmplitude())
                     / 60.0;
             int joursPersonne = jours.stream().mapToInt(BesoinJour::minimum).sum();
             parSemaine.add(new SemaineStaffing(

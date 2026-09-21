@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
@@ -57,7 +58,9 @@ public class ProblemScaleService {
      * @param animateurCount       Timefold's value count
      * @param posteCount           Timefold's entity count, one per seat to fill
      * @param contrainteAdHocCount the ad hoc rules layered on top
-     * @param hoursToFill          sum of the effective duration of every seat
+     * @param hoursToFill          person-hours of travail effectif the grid asks
+     *                             for: the span of every seat, less the legal
+     *                             breaks the days of each holder owe
      * @param hoursAvailable       legal ceiling of what the animateurs may work
      */
     @Schema(
@@ -99,7 +102,7 @@ public class ProblemScaleService {
                     animateurs.size(),
                     postes.size(),
                     contrainteAdHocCount,
-                    hoursToFill(postes),
+                    hoursToFill(postes, legaux),
                     hoursAvailable(animateurs, jours, legaux));
         }
 
@@ -108,11 +111,24 @@ public class ProblemScaleService {
             return parametres == null || parametres.isEmpty() ? new ParametresLegaux() : parametres.get(0);
         }
 
-        static double hoursToFill(List<PosteAffectation> postes) {
-            return postes.stream()
-                            .mapToLong(PosteAffectation::getDureeEffectiveMinutes)
-                            .sum()
-                    / 60.0;
+        /**
+         * Person-hours the grid asks for, in travail effectif: the amplitude
+         * of the seats less the legal breaks the days they make up owe
+         * (ADR 0048), so this compares like for like with
+         * {@link #hoursAvailable}, which is a sum of legal ceilings — and those
+         * ceilings are ceilings on travail effectif.
+         *
+         * <p>An empty seat owes no break to anybody, so it contributes its
+         * whole span: the demand is what has to be covered, and what it will
+         * cost its holder in breaks is not known until somebody holds it.</p>
+         */
+        static double hoursToFill(List<PosteAffectation> postes, ParametresLegaux legaux) {
+            long tenus = EffectiveWork.minutes(postes, legaux);
+            long vides = postes.stream()
+                    .filter(poste -> poste.getAnimateur() == null)
+                    .mapToLong(PosteAffectation::getDureeEffectiveMinutes)
+                    .sum();
+            return (tenus + vides) / 60.0;
         }
 
         static double hoursAvailable(List<Animateur> animateurs, JoursEvenement jours, ParametresLegaux legaux) {
