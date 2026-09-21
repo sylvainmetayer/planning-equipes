@@ -68,7 +68,7 @@ public class ParametresMcpTools {
                     Integer dureeHebdomadaireMaxMineurMinutes,
             @ToolArg(
                             description = "Durée maximale d'une vacation, en minutes : au-delà, le contrôle de "
-                                    + "grille avertit qu'une coupure interne devient obligatoire (L3121-16)",
+                                    + "grille avertit que la vacation contiendra une pause à relayer (L3121-16)",
                             required = false)
                     Integer dureeVacationMaxMinutes,
             @ToolArg(description = "Repos quotidien minimal, en minutes", required = false)

@@ -176,12 +176,25 @@ class CreneauGridServiceTest {
     /**
      * The 6 h ceiling (art. L3121-16) now lives with the other legal rules, and
      * the warning reads it from there: an organiser who raises it is heard.
+     *
+     * <p>It is an <b>avertissement</b>, not a refusal, and says why: the
+     * vacation will contain a break somebody has to relay (ADR 0048). It used
+     * to say « déclarer la pause sur poste », which named a checkbox that no
+     * longer exists.
      */
     @Test
     void uneVacationDepassantLePlafondLegalEstUnAvertissementReglable() {
         List<Creneau> longue = List.of(creneau("2026-07-06", "09:00", "16:30"));
 
         assertThat(typesDetectes(longue)).contains(GridAnomalyType.VACATION_TROP_LONGUE);
+        assertThat(validate(longue, List.of(), List.of(), new ParametresLegaux(), List.of())
+                        .anomalies())
+                .filteredOn(anomalie -> anomalie.type() == GridAnomalyType.VACATION_TROP_LONGUE)
+                .singleElement()
+                .satisfies(anomalie -> {
+                    assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
+                    assertThat(anomalie.message()).contains("contiendra une pause à relayer");
+                });
 
         ParametresLegaux permissifs = new ParametresLegaux();
         permissifs.setDureeVacationMaxMinutes(8 * 60);
