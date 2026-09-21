@@ -34,7 +34,7 @@
         <mat-label i18n="@@constraints.legal.field.dureeVacationMax">Durée maximale d'une vacation (heures)</mat-label>
         <input matInput type="number" min="0.5" step="0.5" name="dureeVacationMaxHeures"
                [ngModel]="dureeVacationMaxHeures()" (ngModelChange)="dureeVacationMaxHeures.set($event)" />
-        <mat-hint i18n="@@constraints.legal.hint.dureeVacationMax">Au-delà, le contrôle de la grille avertit : une coupure interne devient obligatoire (art. <a class="legal-article-link" [href]="articlePause" target="_blank" rel="noopener">L3121-16</a>). Par défaut 6 h.</mat-hint>
+        <mat-hint i18n="@@constraints.legal.hint.dureeVacationMax">Au-delà, le contrôle de la grille avertit : cette vacation contiendra une pause à relayer (art. <a class="legal-article-link" [href]="articlePause" target="_blank" rel="noopener">L3121-16</a>). Par défaut 6 h.</mat-hint>
       </mat-form-field>
       <mat-form-field appearance="outline" subscriptSizing="dynamic">
         <mat-label i18n="@@constraints.legal.field.heureDebutSoiree">Début de la soirée (tableau d'équité)</mat-label>

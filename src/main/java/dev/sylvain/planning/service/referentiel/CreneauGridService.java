@@ -322,8 +322,9 @@ public class CreneauGridService {
                         creneau.getDate(),
                         libelle(creneau) + " : vacation de " + duree + " min, au-delà du maximum de "
                                 + legaux.getDureeVacationMaxMinutes()
-                                + " min. Au-delà, une coupure interne devient légalement obligatoire :"
-                                + " couper la journée en deux vacations, ou déclarer la pause sur poste."));
+                                + " min. Cette vacation contiendra une pause à relayer : vérifiez qu'un"
+                                + " collègue tient une place sur le stand à ce moment-là, ou coupez la"
+                                + " journée en deux vacations."));
             }
             if (duree > amplitudeMaximaleLegale) {
                 anomalies.add(new GridAnomaly(
