@@ -15,20 +15,23 @@
 
 .espace-onglets {
   width: 100%;
-  margin-bottom: 0.75rem;
+  /* Tight on purpose: what the tab bar and the export row take at the top of
+     the screen is taken from the day, and on a 667 px phone the day has to
+     stay visible above the pinned bar without scrolling. */
+  margin-bottom: 0.4rem;
 }
 
 .espace-onglets .mat-button-toggle {
   flex: 1 1 0;
-  /* Sans cela, `min-width: auto` prend la largeur du contenu pour plancher, et
-     trois libellés insécables tiennent le groupe à 340 px : il dépassait alors
-     de tout téléphone de 360 px ou moins, et c'est la page entière qui
-     défilait de côté — un doigt visant la barre du haut tombait à côté. */
+  /* Without this, `min-width: auto` floors each toggle at its content width,
+     and three unbreakable labels hold the group at 340 px: it then stuck out
+     of any phone 360 px or narrower, and the whole page scrolled sideways —
+     a finger aiming at the top bar landed beside it. */
   min-width: 0;
 }
 
-/* Le libellé se coupe plutôt que de pousser : « Coéquipiers » revient à la
-   ligne sous son icône avant d'élargir quoi que ce soit. */
+/* The label wraps rather than pushes: « Coéquipiers » goes under its icon
+   before widening anything. */
 .espace-onglets .mat-button-toggle-label-content {
   padding: 0 0.5rem;
   white-space: normal;
@@ -39,10 +42,10 @@
   margin-right: 0.25rem;
 }
 
-/* Sous 23 rem, l'icône seule : trois libellés et trois icônes ne tiennent pas
-   côte à côte, et c'est le libellé qui porte le sens pour un lecteur d'écran —
-   l'icône, elle, est décorative. */
-@media (max-width: 23rem) {
+/* Under 26 rem, the label alone: three labels and three icons do not fit side
+   by side, and it is the label a screen reader announces — the icon is
+   decorative. */
+@media (max-width: 26rem) {
   .espace-onglets .mat-icon {
     display: none;
   }
@@ -190,6 +193,17 @@
   margin: 0.2rem 0 0;
   font-size: 0.85rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+/* A flex item floors at its min-content width unless told otherwise, and a
+   stand name or a list of names then widens the page rather than wrapping.
+   The whole screen paid for it: the tab bar and the navigation were cut off
+   on the right, and a finger aiming at the top bar landed beside it. */
+.espace-poste-typologie > *,
+.espace-poste-lieu > *,
+.espace-poste-equipe > * {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .espace-journee-nav {
@@ -411,9 +425,9 @@
   }
 }
 
-/* Le recours ICS, dans le dépliant de l'abonnement : le bouton puis sa
-   réserve, l'une sous l'autre pour qu'on ne prenne pas le fichier sans lire
-   qu'il ne bouge plus. */
+/* The ICS fallback, inside the subscription's panel: the button then its
+   caveat, one under the other so nobody takes the file without reading that
+   it stops moving. */
 .espace-abonnement-recours {
   display: flex;
   flex-direction: column;
@@ -425,4 +439,34 @@
 .espace-abonnement-recours-aide {
   font-size: 0.8rem;
   color: var(--mat-sys-on-surface-variant);
+}
+
+/* The heading of the two « Emporter mon planning » regions: announced to a
+   screen reader listing the page's regions, never drawn. A row that fits a
+   667 px screen has no line to spare for it, and the three buttons say what
+   they do. */
+.espace-agenda-titre-invisible {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* The row at the top of the screen: actions, nothing else. Not a card —
+   the padding and the filled background of `.espace-agenda` would cost some
+   thirty pixels, and on a 667 px screen those pixels are the day. */
+.espace-agenda-rangee {
+  margin: 0 0 0.4rem;
+  padding: 0;
+  background: none;
+  gap: 0.4rem;
+}
+
+/* The detail at the foot: read once, never again. */
+.espace-agenda-detail {
+  margin-top: 1rem;
 }

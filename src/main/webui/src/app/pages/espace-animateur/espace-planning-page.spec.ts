@@ -199,13 +199,13 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
     await rendre();
 
     // Under the three tabs and not behind one of them: taking one's planning
-    // away is a brief gesture, made from wherever one stands. The day itself
-    // still comes first on screen — the band sits below the tab's content.
+    // away is a brief gesture, made from wherever one stands — and at the top
+    // of the screen, so it costs no scrolling through a fortnight of days.
     expect(racine().querySelector('.espace-agenda')).not.toBeNull();
     expect(racine().querySelector('.espace-poste-carte')).not.toBeNull();
     const contenu = racine().querySelector('.espace-journee')!;
     const bande = racine().querySelector('.espace-agenda')!;
-    expect(contenu.compareDocumentPosition(bande) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(bande.compareDocumentPosition(contenu) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
 
     // Reading order inside the band, and Material's own action hierarchy:
     // filled for the subscription, outlined for the two PDF layouts. The ICS

@@ -43,7 +43,7 @@ import {
   pauseInsidePoste,
   statsPlanning,
 } from './espace-apercu';
-import { filterCoequipiers, coequipiersView } from './espace-coequipiers';
+import { EQUIPE_NOMBREUSE, filterCoequipiers, coequipiersView } from './espace-coequipiers';
 import { OngletEspace, readOngletEspace } from './espace-onglets';
 
 /**
@@ -574,6 +574,16 @@ export class EspacePlanningPage {
    * glance has no use for them — the break line already trimmed them, the
    * shift line did not.
    */
+  /**
+   * A seat held by a crowd is named by its headcount, never by its roster —
+   * the same rule the « Coéquipiers » tab applies, read from the same
+   * threshold. Listing a hundred names answered nothing, and the string was
+   * wide enough to push the whole page sideways on a phone.
+   */
+  protected equipeNombreuse(poste: { coequipiers: string[] }): boolean {
+    return poste.coequipiers.length > EQUIPE_NOMBREUSE;
+  }
+
   protected heure(valeur: string | null): string {
     return valeur ? valeur.slice(0, 5) : '';
   }

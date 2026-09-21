@@ -21,6 +21,44 @@
   </mat-button-toggle>
 </mat-button-toggle-group>
 
+<!--
+  Une rangée, en tête d'écran et sous les trois onglets : emporter son planning
+  est un geste bref, qu'on ne veut pas payer d'un déroulé de quinze journées.
+  Le titre reste, pour un lecteur d'écran qui liste les régions, mais il ne
+  prend pas de ligne : chaque ligne prise ici est une ligne de planning en
+  moins, et sur un écran de 667 px la journée doit rester visible sans défiler.
+  La hiérarchie est celle de Material : rempli pour l'abonnement, contour pour
+  les deux PDF.
+-->
+@if (urlAbonnement() || telechargementsOfferts()) {
+  <section class="espace-agenda espace-agenda-rangee" aria-labelledby="espace-agenda-titre">
+    <h2 id="espace-agenda-titre" class="espace-agenda-titre-invisible" i18n="@@espace.planning.agendaTitre">
+      Emporter mon planning
+    </h2>
+    <div class="espace-agenda-actions">
+      @if (lienWebcal(); as webcal) {
+        <a class="espace-agenda-abonnement" matButton="filled" [href]="webcal">
+          <mat-icon>event_repeat</mat-icon>
+          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
+        </a>
+      }
+      @if (telechargementsOfferts()) {
+        <a matButton="outlined" [href]="lienPdf()" download>
+          <mat-icon>picture_as_pdf</mat-icon>
+          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
+        </a>
+        <a matButton="outlined" [href]="lienPdfFeuille()" download>
+          <mat-icon>description</mat-icon>
+          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
+        </a>
+      }
+    </div>
+  </section>
+}
+
+
+
+
 @switch (onglet()) {
   @case ('jour') {
     @if (jours().length === 0) {
@@ -227,9 +265,17 @@
                 </p>
               }
               @if (poste.coequipiers.length > 0) {
+                <!-- Au-delà du seuil, l'effectif et non les noms : le montage
+                     met la moitié du festival sur un stand, et cent trente
+                     noms ne répondent à rien — c'est déjà la règle de l'onglet
+                     Coéquipiers, et les deux lectures doivent la partager. -->
                 <p class="espace-poste-equipe">
                   <mat-icon inline>group</mat-icon>
-                  <span>{{ poste.coequipiers.join(', ') }}</span>
+                  @if (equipeNombreuse(poste)) {
+                    <span i18n="@@espace.planning.equipeFoule">{{ poste.coequipiers.length + 1 }} personnes sur ce stand</span>
+                  } @else {
+                    <span>{{ poste.coequipiers.join(', ') }}</span>
+                  }
                 </p>
               }
             </mat-card-content>
@@ -449,43 +495,15 @@
 }
 
 <!--
-  Sous les trois onglets, et non dans le seul « Aperçu » : emporter son
-  planning est un geste bref qu'on fait d'où l'on est, et le chercher
-  derrière un onglet, c'est l'abandonner. Sous le contenu plutôt qu'au-dessus,
-  pour que la journée — ce que la personne vient lire — reste la première
-  chose à l'écran.
-  La hiérarchie est celle de Material, pas une couleur inventée : rempli pour
-  l'abonnement, contour pour les deux PDF. Le fichier ICS n'est plus une
-  action de premier rang : il vit dans le dépliant de l'abonnement, parce
-  qu'il ne suit pas les republications et n'est donc qu'un recours.
+  Le détail de l'abonnement — l'adresse, sa copie, son remplacement, et le
+  fichier ICS de recours — en pied de page : il se règle une fois et ne se
+  relit plus, quand la rangée du haut sert à chaque visite.
 -->
-@if (urlAbonnement() || telechargementsOfferts()) {
-  <section class="espace-agenda" aria-labelledby="espace-agenda-titre">
-    <h2 id="espace-agenda-titre" class="espace-agenda-titre" i18n="@@espace.planning.agendaTitre">
-      Emporter mon planning
+@if (urlAbonnement()) {
+  <section class="espace-agenda espace-agenda-detail" aria-labelledby="espace-agenda-detail-titre">
+    <h2 id="espace-agenda-detail-titre" class="espace-agenda-titre-invisible" i18n="@@espace.planning.abonnementSectionTitre">
+      Mon abonnement
     </h2>
-    <div class="espace-agenda-actions">
-      @if (lienWebcal(); as webcal) {
-        <a class="espace-agenda-abonnement espace-agenda-large" matButton="filled" [href]="webcal">
-          <mat-icon>event_repeat</mat-icon>
-          <span i18n="@@espace.planning.abonnementSouscrire">S'abonner dans mon agenda</span>
-        </a>
-      }
-      @if (telechargementsOfferts()) {
-        <a matButton="outlined" [href]="lienPdf()" download>
-          <mat-icon>picture_as_pdf</mat-icon>
-          <span i18n="@@espace.planning.telechargerPdf">Livret PDF</span>
-        </a>
-        <a matButton="outlined" [href]="lienPdfFeuille()" download>
-          <mat-icon>description</mat-icon>
-          <span i18n="@@espace.planning.telechargerFeuille">Feuille A4</span>
-        </a>
-      }
-    </div>
-    <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
-      L'abonnement suit chaque nouvelle publication ; les PDF sont une photo prise aujourd'hui. Le
-      livret se lit page à page, la feuille tient dans une poche.
-    </p>
     @if (urlAbonnement(); as url) {
       <button matButton type="button"
               [attr.aria-expanded]="abonnementDeplie()" aria-controls="espace-abonnement-details"
@@ -498,6 +516,9 @@
       <div id="espace-abonnement-details" class="espace-abonnement-details">
         @if (abonnementDeplie()) {
           <div class="espace-abonnement">
+            <p class="espace-agenda-aide" i18n="@@espace.planning.agendaAide">
+              L'abonnement suit les republications ; les PDF sont une photo d'aujourd'hui.
+            </p>
             <p class="espace-abonnement-aide" i18n="@@espace.planning.abonnementAide">
               Certaines applications, Google Agenda en premier, demandent de coller cette adresse
               plutôt que de cliquer sur le bouton. Elle est personnelle : qui l'obtient voit votre
