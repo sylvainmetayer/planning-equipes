@@ -2,7 +2,9 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.JoursFeries;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -28,17 +30,21 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * place, and a poste narrowed by a partial stand closure (issue #60) counts
  * only the time actually staffed, not its créneau's full span.
  *
- * <p><b>These are planned hours — amplitude — not travail effectif.</b> When
- * the edition declares the legal break taken on the post
- * ({@code ParametresLegaux.pauseSurPoste}), the daily and weekly caps of
- * {@code LegalConstraints} deduct that break; this screen does not, and neither
- * do {@code EquiteService}, {@code PlanningKpiService} or
- * {@code StaffingAnalyzer}. It is not an oversight: what an organiser reads
- * here is what they are asking somebody to be present for, which is the
- * quantity to share out fairly and to compare from one edition to the next. So
- * a week may show a little more here than {@code dureeHebdomadaireMax}
- * measures against its ceiling — thirty minutes a day at most — and the two
- * numbers are both right, of two different things. See
+ * <p><b>The weekly columns and the total are travail effectif</b>: the
+ * amplitude less the legal breaks each day owes, computed by
+ * {@link dev.sylvain.planning.domain.EffectiveWork} — the same quantity the
+ * daily and weekly caps of {@code LegalConstraints} measure, the Équité screen
+ * shares out, the Besoin floor divides by and the KPI report (ADR 0048). They
+ * used to be amplitude, so a week showed half an hour a day more here than
+ * {@code dureeHebdomadaireMax} measured against its ceiling, and an organiser
+ * had two numbers for one thing with nothing to tell them apart.</p>
+ *
+ * <p><b>The three premium counters are not.</b> Sunday hours, public-holiday
+ * hours and hours past 22:00 stay at amplitude, prorated over the seat's own
+ * window: they answer « how long was somebody there, on this kind of hour »,
+ * which is what a premium is paid on, and a break cannot be assigned to one
+ * side of midnight or to one of two windows without inventing where it was
+ * taken. So the three columns do not add up to the total, and never did. See
  * {@code docs/contraintes.md}, « Ce qui déduit la pause, et ce qui compte
  * l'amplitude ».</p>
  */
@@ -67,6 +73,7 @@ public class PlanningHoursService {
     private static final int SECONDES_PAR_JOUR = 24 * 3600;
 
     public HeuresRapport compute(PlanningEvenement planning) {
+        ParametresLegaux parametres = planning.parametresLegaux();
         Map<String, Map<String, Double>> heuresParAnimateurEtSemaine = new LinkedHashMap<>();
         Map<String, Double> totalParAnimateur = new LinkedHashMap<>();
         Map<String, Double> dimancheParAnimateur = new LinkedHashMap<>();
@@ -81,13 +88,10 @@ public class PlanningHoursService {
             }
             String animateurId = poste.getAnimateur().getId();
             String semaine = poste.getCreneau().semaineIso();
+            // Amplitude, for the premium counters only: the week and the total
+            // are travail effectif, added up day by day below.
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
-
             semaines.add(semaine);
-            heuresParAnimateurEtSemaine
-                    .computeIfAbsent(animateurId, id -> new LinkedHashMap<>())
-                    .merge(semaine, heures, Double::sum);
-            totalParAnimateur.merge(animateurId, heures, Double::sum);
 
             LocalDate date = poste.getCreneau().getDate();
             if (date == null) {
@@ -114,6 +118,20 @@ public class PlanningHoursService {
             nuitParAnimateur.merge(animateurId, nightMinutes(poste) / 60.0, Double::sum);
         }
 
+        // Day by day, then added into the weeks: a break is owed per stretch,
+        // and a stretch lives inside one day (see EffectiveWork).
+        for (Map.Entry<LocalDate, List<PosteAffectation>> jour :
+                byDate(planning.getPostes()).entrySet()) {
+            String semaine = Creneau.semaineIso(jour.getKey());
+            EffectiveWork.minutesPerAnimateur(jour.getValue(), parametres).forEach((animateurId, minutes) -> {
+                double heures = minutes / 60.0;
+                heuresParAnimateurEtSemaine
+                        .computeIfAbsent(animateurId, id -> new LinkedHashMap<>())
+                        .merge(semaine, heures, Double::sum);
+                totalParAnimateur.merge(animateurId, heures, Double::sum);
+            });
+        }
+
         List<String> semainesTriees = new ArrayList<>(semaines);
         List<HeuresAnimateur> lignes = new ArrayList<>();
         for (Animateur animateur : planning.getAnimateurs()) {
@@ -130,6 +148,21 @@ public class PlanningHoursService {
                     nuitParAnimateur.getOrDefault(id, 0.0)));
         }
         return new HeuresRapport(semainesTriees, lignes);
+    }
+
+    /** The staffed seats of one planning, grouped by the day they fall on. */
+    private static Map<LocalDate, List<PosteAffectation>> byDate(List<PosteAffectation> postes) {
+        Map<LocalDate, List<PosteAffectation>> byDate = new LinkedHashMap<>();
+        for (PosteAffectation poste : postes) {
+            if (poste.getAnimateur() == null
+                    || poste.getCreneau() == null
+                    || poste.getCreneau().getDate() == null) {
+                continue;
+            }
+            byDate.computeIfAbsent(poste.getCreneau().getDate(), date -> new ArrayList<>())
+                    .add(poste);
+        }
+        return byDate;
     }
 
     /**

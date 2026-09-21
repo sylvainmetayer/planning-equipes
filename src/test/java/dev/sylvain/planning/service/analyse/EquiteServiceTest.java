@@ -298,14 +298,40 @@ class EquiteServiceTest {
         assertThat(EquiteService.compute(null, null, null).lignes()).isEmpty();
     }
 
+    /**
+     * Hours shared out here are travail effectif, like the caps, the Heures
+     * screen and the KPI (ADR 0048): a nine-hour day owes one break past the
+     * sixth hour, so it counts 8 h 30. Sharing out amplitude credited somebody
+     * with half an hour they spent resting, and made the Équité screen and the
+     * Heures screen disagree on one person's total.
+     */
+    @Test
+    void lesHeuresPartageesSontDuTravailEffectif() {
+        Stand stand = stand("S1");
+        Animateur longue = animateur("A-LONGUE", "P1", "N1");
+        Animateur courte = animateur("A-COURTE", "P2", "N2");
+        List<PosteAffectation> postes =
+                List.of(poste(stand, creneau(MERCREDI, 8, 17), longue), poste(stand, creneau(MERCREDI, 8, 13), courte));
+
+        RapportEquite rapport = compute(List.of(longue, courte), postes);
+
+        assertThat(ligne(rapport, "A-LONGUE").heuresTotal()).isCloseTo(8.5, within(0.001));
+        assertThat(ligne(rapport, "A-COURTE").heuresTotal()).isCloseTo(5.0, within(0.001));
+        assertThat(ligne(rapport, "A-LONGUE").heuresParSemaine().values())
+                .singleElement(org.assertj.core.api.InstanceOfAssertFactories.DOUBLE)
+                .isCloseTo(8.5, within(0.001));
+    }
+
     @Test
     void synthesisGivesMedianMinMaxAndStandardDeviationPerColumn() {
         Stand stand = stand("S1");
         List<Animateur> animateurs = new ArrayList<>();
         List<PosteAffectation> postes = new ArrayList<>();
-        // Hours per animateur: 1, 2, 4, 9 — an even count, so the median is
-        // the mean of the two middle values.
-        int[] heures = {1, 2, 4, 9};
+        // Hours per animateur: 1, 2, 4, 6 — an even count, so the median is
+        // the mean of the two middle values. None of them reaches past the
+        // sixth hour, so no break is owed and the figures below are the
+        // statistics alone; the deduction has a test of its own.
+        int[] heures = {1, 2, 4, 6};
         for (int i = 0; i < heures.length; i++) {
             Animateur animateur = animateur("A-" + i, "P" + i, "N" + i);
             animateurs.add(animateur);
@@ -317,8 +343,8 @@ class EquiteServiceTest {
         SyntheseColonne total = rapport.syntheses().get("heuresTotal");
         assertThat(total.mediane()).isCloseTo(3.0, within(0.001));
         assertThat(total.min()).isCloseTo(1.0, within(0.001));
-        assertThat(total.max()).isCloseTo(9.0, within(0.001));
-        assertThat(total.ecartType()).isCloseTo(3.082, within(0.001));
+        assertThat(total.max()).isCloseTo(6.0, within(0.001));
+        assertThat(total.ecartType()).isCloseTo(1.920, within(0.001));
         assertThat(rapport.syntheses().get("2026-W29").mediane()).isCloseTo(3.0, within(0.001));
         assertThat(rapport.syntheses().get("postes").mediane()).isEqualTo(1.0);
         assertThat(rapport.syntheses()).containsKeys("heuresSoiree", "joursRepos", "plusLongueSerie");

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.EffectiveWork;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -122,6 +123,34 @@ public class EquiteService {
      * plan gives no line and no synthesis; an animateur without a seat gives
      * no line either, the table being about what people were given.
      */
+    /**
+     * Hours per animateur and per week, in travail effectif: the seats of one
+     * day are read together so the breaks that day owes come off exactly once,
+     * the way {@code LegalConstraints} and the Heures screen read them
+     * (ADR 0048). Sharing out amplitude, as this screen used to, credited
+     * somebody with half an hour a day they were resting.
+     */
+    private static void deductBreaksDue(
+            Map<String, Tally> tallies, List<PosteAffectation> postes, ParametresLegaux parametres) {
+        ParametresLegaux lus = parametres == null ? new ParametresLegaux() : parametres;
+        Map<LocalDate, List<PosteAffectation>> byDate = new LinkedHashMap<>();
+        for (PosteAffectation poste : postes) {
+            if (poste.getAnimateur() != null && poste.getCreneau().getDate() != null) {
+                byDate.computeIfAbsent(poste.getCreneau().getDate(), date -> new ArrayList<>())
+                        .add(poste);
+            }
+        }
+        for (Map.Entry<LocalDate, List<PosteAffectation>> jour : byDate.entrySet()) {
+            String semaine = Creneau.semaineIso(jour.getKey());
+            EffectiveWork.minutesPerAnimateur(jour.getValue(), lus).forEach((animateurId, minutes) -> {
+                Tally tally = tallies.get(animateurId);
+                if (tally != null) {
+                    tally.creditEffectiveWork(semaine, minutes / 60.0);
+                }
+            });
+        }
+    }
+
     public static RapportEquite compute(
             PlanningEvenement planning, ParametresLegaux parametres, Set<String> contraintesDesactivees) {
         LocalTime debutSoiree = parametres == null || parametres.getHeureDebutSoiree() == null
@@ -156,6 +185,7 @@ public class EquiteService {
             tally.add(poste, debutSoiree);
             semaines.add(poste.getCreneau().semaineIso());
         }
+        deductBreaksDue(tallies, postes, parametres);
 
         List<LocalDate> jours = new ArrayList<>(joursEvenement);
         List<LigneEquite> lignes = new ArrayList<>();
@@ -433,13 +463,22 @@ public class EquiteService {
             this.animateur = animateur;
         }
 
+        /** One day's travail effectif, credited to its week and to the total. */
+        void creditEffectiveWork(String semaine, double heures) {
+            heuresTotal += heures;
+            heuresParSemaine.merge(semaine, heures, Double::sum);
+        }
+
         void add(PosteAffectation poste, LocalTime debutSoiree) {
             Creneau creneau = poste.getCreneau();
             Stand stand = poste.getStand();
+            // Amplitude: what the week-end and public-holiday columns count,
+            // as the Heures screen's premium counters do. The total and the
+            // weekly columns are travail effectif, added day by day in
+            // `deductBreaksDue` — a break belongs to a stretch, and a
+            // stretch to one day.
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
             postes++;
-            heuresTotal += heures;
-            heuresParSemaine.merge(creneau.semaineIso(), heures, Double::sum);
             heuresSoiree += eveningMinutes(poste, debutSoiree) / 60.0;
             LocalDate date = creneau.getDate();
             if (date != null) {
