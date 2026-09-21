@@ -478,20 +478,24 @@ quelle heure, dans la rotation du stand —, sur quel stand, et qui peut relayer
 collègues, l'outil ne rend que des **ids** — `relaisAnimateurIds` — comme tout
 ce qui traverse MCP. Les trous déjà planifiés par la grille ne sont donnés
 qu'en l'absence de filtre par stand ou par relais : ils appartiennent à la
-journée, pas à un stand. La déclaration `pauseSurPoste` se lit et se règle par
-`consulter_parametres_legaux` / `modifier_parametres_legaux`.
+journée, pas à un stand. Une pause que personne ne peut relayer est un écart
+dur : le filtre `sansRelais` ne rend que celles-là.
 
-La **durée** de cette pause se règle par les mêmes outils :
-`dureePauseMajeurMinutes` et `dureePauseMineurMinutes`. Elles se refusent en
-dessous de leur plancher d'ordre public — 20 minutes pour un majeur (L3121-16),
-30 pour un mineur (L3162-3) — et rien ne les plafonne : donner plus de repos
-que le Code n'en doit reste la décision de l'organisateur. Ce sont elles que
-les plafonds quotidien **et hebdomadaires** déduisent quand la pause est
-déclarée prise sur le poste, et c'est aussi la longueur du trou qui sépare deux
-vacations au lieu de les souder en une seule séquence. Elles sortent dans la
-vue de `consulter_parametres_legaux`. Jusqu'ici les trente minutes que
-l'organisation a retenues ne se posaient que depuis l'écran Paramètres, le REST
-ou un YAML : un assistant ne pouvait pas les régler.
+La **durée** de cette pause se règle par `consulter_parametres_legaux` /
+`modifier_parametres_legaux` : une seule, `dureePauseMinutes`, 30 minutes par
+défaut. Elle se refuse en dessous de son plancher d'ordre public — 20 minutes,
+art. L3121-16 — et rien ne la plafonne : donner plus de repos que le Code n'en
+doit reste la décision de l'organisateur. Les 30 minutes que l'art. L3162-3
+doit à un mineur s'appliquent à la lecture, pas au réglage : une édition à 25
+donne 25 à ses majeurs et 30 à ses mineurs.
+
+C'est cette durée que les plafonds quotidien **et hebdomadaires** déduisent, et
+que déduisent aussi l'écran Heures, `heures_travaillees`, l'équité et les KPI :
+il n'y a plus qu'une grandeur (ADR 0048). C'est aussi la longueur du trou qui
+sépare deux vacations au lieu de les souder en une seule séquence. Elle sort
+dans la vue de `consulter_parametres_legaux`. Trois clés ont disparu de ces
+outils avec le mode qu'elles portaient — `pauseSurPoste`,
+`pauseMinimaleEntreVacationsMinutes` et la durée par tranche d'âge.
 
 ## L'équité se lit par id
 

@@ -152,9 +152,9 @@ reste donc **hors périmètre, assumé comme tel**.
 > construction. C'est la formulation demandée par l'organisateur, mot pour mot ;
 > un plan qui a besoin d'une minute la trouvera là plutôt qu'ailleurs.
 
-Une semaine se juge **pleine en travail effectif**, pas en amplitude : quand
-l'organisateur déclare la pause prise sur le poste, elle en est déduite, comme
-au plafond quotidien — voir « La durée des pauses » ci-dessous. Les créneaux
+Une semaine se juge **pleine en travail effectif**, pas en amplitude : les
+pauses dues en sont déduites, comme au plafond quotidien — voir « La pause
+légale, trou ou relais » ci-dessous. Les créneaux
 étant toujours en heures entières, « strictement sous 48 h » vaut « 47 h au
 plus », et une marge paramétrable n'aurait de sens que le jour où des
 demi-heures apparaîtraient : il n'y en a pas.
@@ -233,38 +233,59 @@ forme dure ne coûte rien) et la décision sont dans
 ## La durée des pauses
 
 La pause qui coupe une période de travail continu se règle sur la page
-Paramètres, carte « Paramètres légaux » : `dureePauseMajeurMinutes` et
-`dureePauseMineurMinutes` (issue #592). Elles sont lues par
-`travailContinuMaxMajeur`, `travailContinuMaxMineur`, `PauseSurPoste` et
+Paramètres, carte « Paramètres légaux » : **une seule durée pour l'édition**,
+`dureePauseMinutes` (issue #592, fusionnée par l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md)).
+Elle est lue par `travailContinuMaxMajeur`, `travailContinuMaxMineur`,
+`PauseSurPoste`, le filtre d'éligibilité, tous les compteurs d'heures et
 l'analyse des pauses — donc par l'écran Pauses et par la carte
-« Pause de 18:20 à 18:40 » du PDF animateur.
+« Pause de 18:20 à 18:40 » du PDF animateur. Tous passent par
+`ParametresLegaux.dureePauseMinutes(mineur)`, ce qui est la seule façon de
+garantir qu'aucun ne soit plus strict qu'un autre.
 
 C'est un **plancher**, à l'inverse des deux durées hebdomadaires qui sont des
-plafonds : 20 minutes pour un majeur (art. L3121-16), 30 pour un mineur
-(art. L3162-3), refusées en dessous par le service, libres au-dessus. Donner
-plus que ce que le Code doit est un choix d'organisation — une relève de 30
-minutes s'organise plus simplement qu'une de 20 — et la seule direction
-qu'une application ne doit pas laisser prendre est l'autre.
+plafonds : 20 minutes (art. L3121-16), refusées en dessous par le service,
+libres au-dessus. Le défaut est de **30 minutes**, le cadre arrêté par
+l'organisation (issue #31) : donner plus que ce que le Code doit est un choix
+d'organisation — une relève de 30 minutes s'organise plus simplement qu'une de
+20 — et la seule direction qu'une application ne doit pas laisser prendre est
+l'autre.
+
+**Le plancher du mineur ne se stocke pas, il s'applique à la lecture.** Les 30
+minutes de l'art. L3162-3 sont d'ordre public, mais une édition qui accorde 25
+minutes n'est pas illégale : elle donne 25 à ses majeurs et 30 à ses mineurs.
+`dureePauseMinutes(true)` rend donc `max(valeur, 30)` plutôt que de refuser le
+réglage — refuser aurait forcé l'édition à donner 30 à tout le monde, ce que
+l'article ne demande pas. Deux champs par tranche d'âge existaient avant, ce
+qui laissait régler l'un et oublier l'autre, et laissait le filtre
+d'éligibilité lire une constante quand les règles lisaient l'édition.
 
 Les constantes `PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES` et
-`PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` restent : elles sont la valeur
-par défaut et la référence de l'article.
+`PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES` restent : elles sont les deux
+planchers et la référence de l'article.
 
-Elles se règlent aussi depuis un assistant : `modifier_parametres_legaux`
-(MCP) porte `dureePauseMajeurMinutes` et `dureePauseMineurMinutes`, avec les
-mêmes planchers — voir `docs/mcp.md`.
+Elle se règle aussi depuis un assistant : `modifier_parametres_legaux`
+(MCP) porte `dureePauseMinutes`, avec le même plancher — voir `docs/mcp.md`.
 
 ### Ce qui déduit la pause, et ce qui compte l'amplitude
 
-La pause est du **repos**, pas du travail effectif (art. L3121-1) : quand
-l'organisateur déclare `pauseSurPoste`, elle est **déduite** des plafonds,
-qu'elle soit payée ou non. « Déduite » vaut pour les quatre règles de durée :
+La pause est du **repos**, pas du travail effectif (art. L3121-1) : elle est
+**déduite**, qu'elle soit payée ou non, et sans rien à déclarer. Dans un plan
+sans écart dur, toute pause déduite a bien été prise — c'est exactement ce que
+`travailContinuMax*` garantit. « Déduite » vaut partout :
 
-| Règle | Ce qu'elle mesure |
+| Où | Ce qui est mesuré |
 |---|---|
-| `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | travail effectif : amplitude moins les pauses dues sur le poste |
+| `dureeQuotidienneMaxMajeur`, `dureeQuotidienneMaxMineur` | travail effectif : amplitude moins les pauses dues |
 | `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur` | idem, sommé sur la semaine ISO |
 | `dureeHebdomadaireMaxDeuxSemaines` | idem : une semaine est pleine en effectif |
+| écran Heures (`PlanningHoursService`), outil `heures_travaillees` | idem : total et colonnes hebdomadaires |
+| tableau d'équité (`EquiteService`) | idem : c'est cette grandeur qu'on répartit |
+| KPI (`PlanningKpiService`) | idem, sauf les instantanés anciens (voir plus bas) |
+| volumétrie (`ProblemScaleService`) | idem pour les sièges tenus ; un siège vide compte son amplitude |
+
+`EffectiveWork` est l'unique endroit où ce calcul vit. Une pause est due **par
+journée et par animateur** — une séquence ne traverse pas minuit —, donc tout
+lecteur hebdomadaire groupe par jour avant de sommer, jamais l'inverse.
 
 Les trois règles hebdomadaires sommaient l'amplitude jusqu'à l'issue #31, alors
 que le plafond quotidien déduisait déjà. L'écart allait dans le sens
@@ -277,7 +298,7 @@ regrouper les jours par semaine (`LegalConstraints.joursAvecParametres`).
 
 Un vrai trou entre deux vacations ne fait rien déduire, au niveau hebdomadaire
 comme au quotidien : aucune séquence n'y dépasse six heures, donc aucune pause
-n'y est due sur le poste. C'est le trou lui-même qui est la pause.
+n'y est due. C'est le trou lui-même qui est la pause.
 
 **Ce que le niveau intermédiaire coûte**, mesuré contre la même résolution sans
 lui, même machine, même graine : `gamme-25` 14 303 contre 15 175 mouvements
@@ -287,17 +308,31 @@ sur le même score après le même nombre de pas, le troisième atteint zéro du
 des deux côtés. Quelques pour cent, pour que le plafond hebdomadaire cesse de
 contredire le quotidien.
 
-**Ailleurs, on compte l'amplitude planifiée, et c'est voulu.** L'écran Heures
-(`PlanningHoursService`, outil `heures_travaillees`), le tableau d'équité
-(`EquiteService`), les KPI (`PlanningKpiService`) et l'analyse d'effectifs
-(`StaffingAnalyzer`) somment la durée des vacations sans retrancher les pauses
-sur le poste. Ce ne sont pas des plafonds légaux : ce sont des heures
-**planifiées**, ce que l'organisateur demande à quelqu'un d'être présent, et
-c'est la grandeur qu'on répartit équitablement et qu'on compare d'une édition à
-l'autre. Heures planifiées et travail effectif sont donc deux nombres
-différents, et il est normal que l'écran Heures affiche un peu plus que ce que
-`dureeHebdomadaireMax` mesure. `StaffingAnalyzer` borne par les heures : il est
-de ce fait pessimiste, donc sans danger.
+**Ce qui compte encore l'amplitude, et pourquoi.** Trois cas, tous nommés :
+
+- **les trois compteurs de prime** de l'écran Heures — dimanche, jour férié,
+  heures après 22 h — et leurs équivalents du tableau d'équité. Une prime se
+  paie sur la présence, et une pause ne se range pas d'un côté de minuit ni
+  dans l'une de deux fenêtres sans inventer quand elle a été prise. Les trois
+  colonnes ne s'additionnent donc pas au total, et ne l'ont jamais fait ;
+- **un siège vide**, dans la volumétrie (`hoursToFill`) : ce qu'il coûtera en
+  pauses à son titulaire n'est pas connu tant que personne ne le tient ;
+- **les KPI d'un instantané ancien**, recalculés en mode dégradé : leurs
+  sièges ne portent pas d'horaire, donc aucune séquence ne s'en déduit. La
+  page le dit.
+
+Ailleurs, il n'y a plus qu'une grandeur. C'est le fond du changement :
+l'application tenait les deux lectures à la fois sans jamais les réconcilier,
+une demi-heure par jour d'écart, assez petit pour passer pour un arrondi et
+assez grand pour qu'un organisateur se méfie des quatre écrans.
+`HeuresCoherentesTest` verrouille l'égalité.
+
+**La borne « charge horaire » de l'écran Besoin** divisait une amplitude par un
+plafond de travail effectif, ce qui réclamait des gens dont le plan n'a pas
+besoin — pour une borne annoncée comme une preuve, c'est la seule erreur qui
+compte. Les deux plafonds y sont relevés de la pause qu'on prend dessous
+(`maxDailyAmplitude`) : une journée de 10 h 20 d'amplitude est 10 h de travail,
+donc une personne peut la couvrir.
 
 ## Les seuils de qualité
 
@@ -343,10 +378,10 @@ travaillés d'affilée » ouvre le champ de ce nom.
 
 Une règle liste **tous** les réglages qu'elle lit, pas seulement son seuil
 vedette. `dureeHebdomadaireMax` est le cas qui le justifie : son plafond est
-hebdomadaire, mais ce en quoi la semaine se mesure dépend de la pause déclarée
-prise sur le poste et de sa durée. Un organisateur qui lit « 48 h » et se
-demande pourquoi cinq jours de 10 h d'amplitude passent a besoin des deux
-autres valeurs, pas d'une ligne plus propre.
+hebdomadaire, mais ce en quoi la semaine se mesure dépend de la durée de la
+pause. Un organisateur qui lit « 48 h » et se demande pourquoi cinq jours de
+10 h d'amplitude passent a besoin de cette valeur-là, pas d'une ligne plus
+propre.
 
 Trois choses n'y figurent pas, et aucune par oubli :
 
@@ -368,11 +403,12 @@ continuerait d'afficher une liste plausible et incomplète.
 `ConstraintParametersStructuralTest` est le filet : il lit les sources des
 contraintes, résout ce que chaque règle lit **à travers ses méthodes d'appui**,
 et échoue sur toute lecture non déclarée. Il a d'ailleurs trouvé son premier
-oubli en naissant — `travailContinuMaxMajeur` lit `pauseSurPoste` et ne le
+oubli en naissant — `travailContinuMaxMajeur` lisait un paramètre qu'il ne
 déclarait pas. Deux formes lui échappent et sont nommées avec leur raison :
 un paramètre qui arrive en **fait du problème** (les fenêtres de repas, montées
 par `ReferenceDataService`) et un accesseur à argument lu hors du dossier
-balayé (`PauseSurPoste.dues`).
+balayé — `dureePauseMinutes(mineur)` et `PauseSurPoste.dues`, que les sept
+règles de durée déclarent toutes.
 
 ## Activer / désactiver
 
@@ -907,10 +943,10 @@ valeur n'est pas touchée.
 **Une coupure repas est une pause au sens de [L3121-16]** : elle rompt la
 séquence de travail continu, donc le compteur des six heures repart de zéro.
 Ce n'est pas une règle ajoutée, c'est une conséquence du modèle —
-`longestSequenceMinutes` rompt une séquence sur tout trou d'au moins vingt
-minutes, et une coupure d'une heure en est un. Douze heures d'un bloc coûtent
-six heures de dépassement ; les mêmes coupées de 13 h à 14 h n'en coûtent
-aucune. `RepasConstraintsTest` le verrouille, parce que rien dans le code ne
+`PauseSurPoste.sequences` rompt une séquence sur tout trou d'au moins la pause
+légale, et une coupure d'une heure en est un. Douze heures d'un bloc doivent
+une pause que quelqu'un doit relayer ; les mêmes coupées de 13 h à 14 h n'en
+doivent aucune. `RepasConstraintsTest` le verrouille, parce que rien dans le code ne
 l'écrivait et que les deux règles pourraient dériver l'une de l'autre sans
 qu'on le voie.
 
@@ -925,63 +961,88 @@ créneau, ou sur la vacation d'une journée type qui le projette ; le format de
 scénario sait le lire (issue #438). Sans lui, une rotation réclame deux
 équipages complets.
 
-Deux réglages conditionnent qu'une telle grille tienne, et ils se mesurent :
+Une grille en blocs jointifs ne demande aucun réglage : rien n'impose d'écart
+entre deux vacations, donc 11 h-12 h puis 12 h-13 h s'enchaînent. Il y avait un
+réglage pour cela — la « pause minimale entre vacations », que quatorze des
+quinze scénarios livrés mettaient à zéro —, il est retiré
+([ADR 0048](decisions/0048-une-seule-regle-de-pause.md)).
 
-- la **pause minimale entre vacations** doit être à 0 quand les blocs se
-  touchent, sinon on ne peut pas enchaîner 11 h-12 h puis 12 h-13 h et la
-  relève de midi impose une seconde équipe entière ;
+Un point reste à mesurer :
+
 - le **repos quotidien** de 11 h reste dû entre la fin de soirée et le matin
   suivant. Le plancher de l'écran Besoin **ne le voit pas** — ses bornes
   l'ignorent, sa javadoc le dit — donc il peut annoncer une marge
   confortable pendant qu'une partie de l'effectif est en réalité
   inutilisable.
 
-### La pause sur le poste demande un relais
+### La pause légale, trou ou relais
 
-Déclarer la pause légale « prise sur le poste » éteint `travailContinuMax*` :
-les vingt minutes se prennent par relais, un collègue du même stand tenant
-le poste pendant ce temps. Rien ne vérifiait que ce collègue existe. Sur
-l'édition 2026, un plan à zéro écart dur portait **18 pauses dues sans
-personne pour relayer** : une relève de midi ou de soir enchaînée à un
-après-midi entier sur un stand à une place — sept heures seul, une pause due
-à 19 h que personne ne peut couvrir. L'écran Pauses et la page Problèmes le
-signalaient après coup ; le solveur ne l'évitait jamais.
+Une pause due se prend de deux manières, et l'outil n'en connaît pas de
+troisième :
 
-`pauseSurPosteSansRelais` (**HARD**, « Légal (temps de travail) ») coûte un
-point par pause due sans relais à son heure limite : le siège tenu à cet
-instant n'a, sur son stand, aucun autre animateur couvrant toute la pause. Les
-pauses dues sortent de `PauseSurPoste`, que l'écran Pauses lit aussi : les deux
-ne peuvent pas diverger sur ce qui est dû. Muette quand la pause n'est pas
-déclarée sur le poste : la règle légale exige alors un vrai trou, et le juge.
+- **un trou** d'au moins `dureePauseMinutes` dans la grille. Il rompt la
+  séquence, donc plus rien n'est dû de part et d'autre ;
+- **un relais** : un collègue du **même stand** tenant une place pendant toute
+  la pause, à son heure limite.
 
-**Pourquoi en dur, et plus dosée.** Elle a été MEDIUM, et la réponse la moins
-chère — donner la relève à quelqu'un d'autre — était une réponse que le score
-trouvait souvent. Mais un relais qui n'existe pas n'est pas un confort perdu :
-sans personne pour tenir le stand, la personne ne peut pas le quitter, sa
-« pause » reste du travail effectif (art. L3121-1 et L3121-2, et rémunérer la
-pause ne change rien à sa qualification — Cass. soc. 22 mai 2019,
+Sans l'un ni l'autre, c'est un **écart dur** : un point par pause non
+relayable, porté par `travailContinuMaxMajeur` et `travailContinuMaxMineur`,
+plus le forfait d'exclusion d'éligibilité pour un mineur. Les pauses dues
+sortent de `PauseSurPoste`, que l'écran Pauses, le PDF animateur et le flux ICS
+lisent aussi : aucun des quatre ne peut diverger sur ce qui est dû ni sur
+quand.
+
+**Pourquoi une seule règle.** Il y en avait quatre notions et deux modes. Le
+modèle d'origine ne savait exprimer une pause que comme un trou entre deux
+vacations ; une case « pause prise sur le poste » a été ajoutée pour accepter
+la relève de midi enchaînée à l'après-midi, et cette case **éteignait**
+`travailContinuMax*` ; une règle séparée, `pauseSurPosteSansRelais`, vérifiait
+alors le relais. Résultat : deux lectures du même planning, une case qui
+éteignait la règle des mineurs — alors que les 4 h 30 de l'art. L3162-3 sont
+d'ordre public —, et un écart minimal entre vacations qui coûtait 10 dur pour
+un trou de 20 minutes que la règle légale acceptait comme pause. La fusion est
+l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md).
+
+**Ce qui l'a rendue nécessaire.** Sur l'édition 2026, un plan à zéro écart dur
+portait **18 pauses dues sans personne pour relayer** : une relève de midi ou
+de soir enchaînée à un après-midi entier sur un stand à une place — sept heures
+seul, une pause due à 19 h que personne ne peut couvrir. L'écran Pauses et la
+page Problèmes le signalaient après coup ; le solveur ne l'évitait jamais tant
+que le relais n'était qu'une règle dosable.
+
+**Pourquoi en dur, et non dosée.** Un relais qui n'existe pas n'est pas un
+confort perdu : sans personne pour tenir le stand, la personne ne peut pas le
+quitter, sa « pause » reste du travail effectif (art. L3121-1 et L3121-2, et
+rémunérer la pause ne change rien à sa qualification — Cass. soc. 22 mai 2019,
 n° 17-26.914), et les vingt minutes de l'art. L3121-16 ne sont tout simplement
-pas données. Pour un mineur, ce sont les trente minutes et les 4 h 30 de
-l'art. L3162-3, qui sont d'ordre public.
+pas données. C'est aussi ce qui **autorise la déduction** : la pause est
+déduite des plafonds et de tous les compteurs d'heures sans condition, parce
+que dans un plan sans écart dur elle a bien été prise. Les deux décisions ne
+tiennent qu'ensemble.
 
-Sous `pauseSurPoste`, cette règle est la **seule** qui les vérifie encore :
-`travailContinuMaxMajeur` et `travailContinuMaxMineur` se taisent, et les
-plafonds quotidien et hebdomadaires déduisent la pause de l'amplitude. La doser
-reviendrait à mettre un prix sur la déduction d'une pause que personne n'a
-prise. La déduction reste inconditionnelle — elle ne regarde pas si un relais
-existe — précisément parce que cette règle-ci garantit qu'il existe : les deux
-décisions ne tiennent qu'ensemble.
+#### La mesure faite avant de retirer la case
 
-Mesuré sur `festival-hivernal` (153 animateurs, 65 stands, `pauseSurPoste:
-true`) : la fixture atteint toujours **zéro écart dur** avec la règle en dur.
-Le durcissement ne rend donc pas infaisable l'édition réelle dont il vient.
+`festival-hivernal` est l'édition réelle anonymisée : 153 animateurs, 65
+stands, une grille écrite en vacations avec la rotation de midi et les relèves
+du soir. Sous la règle unique, départ à froid, graine 0 :
 
-Là où il mord, c'est sur un **stand à une seule place tenu plus de six heures
-d'affilée** : personne ne peut relayer, et aucune affectation n'atteint zéro
-dur. C'est le barreau `gamme-30` de la gamme, et c'est le cas que
+| Étape | Temps | Score |
+|---|---|---|
+| Heuristique de construction | 55 s | −117 dur |
+| Recherche locale, zéro dur atteint | **210 s** | 0 dur |
+| Fin (plafond de sécurité : 900 s) | 210 s | 0hard / −7019medium / −17869soft |
+
+La grille n'a pas eu besoin d'être retaillée : les places de relais y sont
+déjà, ce que l'organisation affirmait en arrêtant son cadre. Une passe
+`FULL_ASSERT` de 20 s sur la même fixture ne trouve aucune corruption de score,
+et `PlafondsHebdomadairesFullAssertTest` fait la même passe sur `gamme-10`.
+
+Là où la règle mord, c'est sur un **stand à une seule place tenu plus de six
+heures d'affilée** : personne ne peut relayer, et aucune affectation n'atteint
+zéro dur. C'est le barreau `gamme-30` de la gamme, et c'est le cas que
 l'organisation affirme ne jamais produire. La réponse est de retailler la
 grille ou d'ouvrir une place de plus — pas de baisser un poids, qui n'existe
-plus ici.
+pas ici.
 
 **Une pause due dans une séquence déjà écoulée n'est reprochée à personne.**
 Le passé est figé ([0044](decisions/0044-le-passe-est-fige.md)) : ses sièges
@@ -992,24 +1053,24 @@ journée ne suffit pas — une journée dont la matinée est derrière nous et q
 garde un siège le soir répond « oui, il reste quelque chose devant ». C'est
 donc le siège que le relais aurait dû couvrir qui décide.
 
-**Le poids qu'une édition avait posé sur cette règle est effacé** (migration
-V95). Il avait été réglé sur un confort dosable ; il s'appliquerait maintenant
-en `ofHard(poids)`, multipliant un écart dur par une valeur que l'écran
-Contraintes ne montre plus, la molette disparaissant avec le niveau MEDIUM.
-L'absence de ligne vaut « valeur par défaut », soit 1. Les désactivations, elles,
-sont conservées : éteindre la règle reste un geste valable, protégé désormais
-par la confirmation des règles légales.
+**Les lignes de toggle et de poids des deux règles retirées sont effacées**
+(migration V98, précédent V95). Une ligne qui ne nomme plus aucune règle n'est
+pas inerte : elle réapparaîtrait sous ce nom s'il revenait un jour, avec une
+intention vieille de plusieurs éditions. `travailContinuMaxMajeur` et
+`travailContinuMaxMineur`, eux, gardent leur nom et leur catégorie, donc leurs
+lignes : une édition qui avait désactivé l'une la retrouve désactivée.
 
 ### Le dosage et la faisabilité
 
 Un poids fort sur une règle MEDIUM se paie sur la phase de faisabilité, qui
 accepte ses mouvements sur le score entier. Mesuré sur `festival-hivernal`, du
-temps où `pauseSurPosteSansRelais` était dosable : au poids 1, zéro écart dur
+temps où le relais était une règle MEDIUM dosable : au poids 1, zéro écart dur
 en 67 s ; au poids 5, la même grille finissait ses 900 s à **−67 dur**. Le
 poids 5 était pourtant celui qui effaçait tout relais manquant — mais depuis un
-plan déjà faisable, à chaud. La règle d'usage vaut pour toutes les règles
-MEDIUM : atteindre zéro dur au dosage par défaut, puis doser et relancer à
-chaud ; jamais un poids fort dans un départ à froid.
+plan déjà faisable, à chaud. Le relais est dur et indosable depuis l'ADR 0048,
+donc ce piège-là est fermé plutôt que documenté ; la règle d'usage vaut pour
+toutes les règles MEDIUM qui restent : atteindre zéro dur au dosage par défaut,
+puis doser et relancer à chaud ; jamais un poids fort dans un départ à froid.
 
 `coupureRepasPlacementPrefere` départage ensuite 12-13 de 13-14 en pénalisant
 la distance au bout de la fenêtre vers lequel elle penche. **Le midi, c'est le
@@ -1028,11 +1089,13 @@ répartit la rotation.
 
 ### Deux indépendances, qui sont le fond du sujet
 
-**Indépendante de `pauseSurPoste`.** Déclarer la pause légale prise sur le
-poste, par relais entre collègues, dit que les vingt minutes ont lieu à
-l'intérieur de la vacation. Cela ne dit rien du déjeuner. Le paramètre qui
-neutralise `travailContinuMaxMajeur` ne doit pas emporter la coupure repas —
-c'est exactement ainsi qu'une journée 10 h-20 h passait inaperçue.
+**Indépendante de la pause légale.** Un relais dit que les vingt minutes de
+l'art. L3121-16 ont bien lieu. Cela ne dit rien du déjeuner : satisfaire l'une
+ne dispense jamais de l'autre. Une case qui neutralisait `travailContinuMaxMajeur`
+a existé, et c'est exactement ainsi qu'une journée 10 h-20 h passait inaperçue ;
+elle est retirée, mais l'indépendance reste ce qu'il faut vérifier — un trou
+d'une heure, lui, coupe bien la séquence de six heures au passage, et c'est la
+seule chose que les deux règles ont en commun.
 
 **Indépendante du `modeGrille`.** Les fenêtres repas n'étaient lues que
 lorsqu'une grille AMPLITUDES était découpée en vacations ; une grille saisie

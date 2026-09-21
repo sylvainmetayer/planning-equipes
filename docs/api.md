@@ -1594,15 +1594,14 @@ ils ne peuvent pas être un point de défaillance.
 
 `GET /api/pauses` répond à la question que la règle des six heures ne pose
 qu'en creux : **où tombent les pauses**, pour qui, de quelle heure à quelle
-heure, sur quel stand, et qui est là pour relayer. Le solveur décide qui tient quel siège ; il ne planifie jamais la
-pause de vingt minutes que l'art. L3121-16 doit dès que le travail atteint six
-heures (trente minutes à 4 h 30 pour un mineur, art. L3162-3). Quand
-l'organisateur déclare la pause **prise sur le poste** (`pauseSurPoste` des
-paramètres légaux), une séquence peut dépasser ce seuil, et quelqu'un doit
-organiser le relais : c'est ce que ce rapport donne. Sans la déclaration, une
-telle séquence est un écart que les contraintes refusent ; un plan
-persisté peut encore en porter une, et elle est rapportée de la même façon,
-signalée comme non couverte.
+heure, sur quel stand, et qui est là pour relayer. Le solveur décide qui tient
+quel siège ; il exige qu'une pause due soit **prenable** — un trou dans la
+grille, ou un collègue du même stand — sans dire à quelle minute elle est prise
+(art. L3121-16, six heures et la durée réglée ; art. L3162-3, 4 h 30 et trente
+minutes au minimum pour un mineur). Poser la rotation, c'est ce que ce rapport
+fait. Une pause que personne ne peut relayer est un écart dur que les
+contraintes refusent ; un plan persisté peut encore en porter une, et elle est
+rapportée de la même façon, `relaisDisponible` à faux.
 
 Une lecture du plan persisté, jamais une résolution ; sous les paramètres
 légaux **courants**, pas ceux du dernier solve — la question est « avec ce que
@@ -1619,7 +1618,8 @@ rapport vide, `journeesAnalysees` à zéro, pas d'erreur.
   pause). Chaque séquence porte `pausesDues[]` : `debut` et `fin` (la pause
   telle que la rotation la pose), `heureLimite` (au plus tard, la séquence
   atteint le seuil à cet instant ; `debut` ne le dépasse jamais), `dureeMinutes`
-  (20 ou 30), `standId`/`standNom` (le stand tenu pendant la pause), `relais[]`
+  (celle de l'édition, au moins 30 pour un mineur), `standId`/`standNom` (le
+  stand tenu pendant la pause), `relais[]`
   (les collègues qui y tiennent un siège pendant toute la pause),
   `relaisDisponible` et `simultanee`. Une séquence de douze heures et demie en
   doit deux : la seconde tombe six heures vingt après la première.
@@ -1634,15 +1634,16 @@ rapport vide, `journeesAnalysees` à zéro, pas d'erreur.
   sortent en même temps, le plan n'est pas modifié.
 - `pausesPlanifiees[]` — les trous d'au moins la pause légale entre deux
   séquences, typiquement la relève de midi : ce que la grille donne déjà.
-- `journeesAnalysees`, `pausesDues`, `relaisManquants`, `pauseSurPoste`,
-  `message` — les compteurs de l'écran et la phrase qui les résume.
+- `journeesAnalysees`, `pausesDues`, `relaisManquants`, `message` — les
+  compteurs de l'écran et la phrase qui les résume. `pauseSurPoste` a disparu
+  du rapport avec le mode qu'il déclarait (ADR 0048).
 
 Une date de naissance inconnue est lue au barème adulte : les contraintes
 l'ignorent des deux côtés, et la pause adulte est celle qui est toujours due.
 
 La même lecture sert le planning individuel : l'espace de l'animateur
 (`pauses[]` de `GET /api/espace-animateur/{jeton}`, sur le plan **publié**),
-son PDF (« Pause de 18:20 à 18:40 (20 min) », sous la vacation qui la doit) et
+son PDF (« Pause de 18:20 à 18:50 (30 min) », sous la vacation qui la doit) et
 son flux de calendrier (dans la description de l'événement).
 
 **Le PDF porte aussi la coupure repas** (issue #598), qui n'est pas la pause
