@@ -130,6 +130,7 @@ jobs:
           output-file: sbom.cyclonedx.json
           upload-artifact: true
           artifact-name: sbom.cyclonedx.json
+          upload-release-assets: false
 
       # Signature and SBOM attached to the image itself, in GHCR. This is the
       # path that works today: GitHub's own attestation store (the two steps
