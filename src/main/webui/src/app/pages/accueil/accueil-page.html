@@ -51,7 +51,7 @@
         @for (ligne of lignes(); track ligne.id) {
           <li class="accueil-ligne" [class]="'accueil-ligne accueil-ligne-' + ligne.statut.toLowerCase()"
               [attr.data-ligne]="ligne.id">
-            <mat-icon class="accueil-icone" [attr.aria-label]="statutLabel(ligne.statut)" role="img">
+            <mat-icon aria-hidden="false" class="accueil-icone" [attr.aria-label]="statutLabel(ligne.statut)" role="img">
               {{ statutIcon(ligne.statut) }}
             </mat-icon>
             <div class="accueil-corps">

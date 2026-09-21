@@ -85,7 +85,7 @@
           <td mat-cell *matCellDef="let creneau">
             {{ creneau.heureDebut }}–{{ creneau.heureFin }}
             @if (creneau.couverturePause) {
-              <mat-icon inline class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
+              <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
             }
             @if (consignes.creneauxAjoutes().has(creneau.id)) {
               <span class="creneau-ajoute-consigne" i18n="@@creneaux.badge.ajouteParConsigne">ajouté par consigne</span>

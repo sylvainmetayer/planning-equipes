@@ -225,9 +225,11 @@
                     {{ actifLabel(constraint.actif) }}
                   </mat-slide-toggle>
                   @if (protectionApplies(constraint)) {
-                    <mat-icon class="constraint-protegee-icon"
+                    <mat-icon class="constraint-protegee-icon" aria-hidden="false"
                               matTooltip="Règle légale ou de sécurité : la désactiver demande une confirmation."
-                              i18n-matTooltip="@@constraints.protegee.tooltip">gavel</mat-icon>
+                              i18n-matTooltip="@@constraints.protegee.tooltip"
+                              aria-label="Règle légale ou de sécurité : la désactiver demande une confirmation."
+                              i18n-aria-label="@@constraints.protegee.tooltip">gavel</mat-icon>
                   }
                 </div>
                 <mat-form-field appearance="outline" subscriptSizing="dynamic" class="constraint-poids-field">

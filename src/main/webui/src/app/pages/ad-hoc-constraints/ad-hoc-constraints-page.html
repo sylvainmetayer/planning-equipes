@@ -24,7 +24,7 @@
         <td mat-cell *matCellDef="let contrainte">
           {{ contrainte.id }}
           @if (problemes.causeParContrainteAdHocId().get(contrainte.id); as cause) {
-            <mat-icon class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">
+            <mat-icon aria-hidden="false" class="row-problem-icon" [matTooltip]="cause.message" [attr.aria-label]="cause.message">
               warning
             </mat-icon>
           }
