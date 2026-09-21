@@ -27,6 +27,12 @@ on:
       - 'src/main/resources/solver/**'
       - 'src/main/resources/application.properties'
       - 'src/main/resources/scenarios/festival-hivernal.yaml'
+      # La spec résout trois fois pour de vrai sous un budget fixe de
+      # 240 s : une montée de version Timefold ou Quarkus est précisément
+      # ce qui peut la faire déborder. Comme scenario-tests.yml — et avec
+      # la même garde de label côté job, pour ne pas payer une heure sur
+      # un bump de jackson.
+      - 'pom.xml'
       - 'src/main/webui/src/app/pages/consignes/**'
       - 'src/main/webui/src/app/pages/publication/**'
       - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
@@ -49,6 +55,12 @@ on:
       - 'src/main/resources/solver/**'
       - 'src/main/resources/application.properties'
       - 'src/main/resources/scenarios/festival-hivernal.yaml'
+      # La spec résout trois fois pour de vrai sous un budget fixe de
+      # 240 s : une montée de version Timefold ou Quarkus est précisément
+      # ce qui peut la faire déborder. Comme scenario-tests.yml — et avec
+      # la même garde de label côté job, pour ne pas payer une heure sur
+      # un bump de jackson.
+      - 'pom.xml'
       - 'src/main/webui/src/app/pages/consignes/**'
       - 'src/main/webui/src/app/pages/publication/**'
       - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
@@ -67,13 +79,28 @@ permissions:
   contents: read
 
 concurrency:
-  group: e2e-lourd-${{ github.ref }}
+  # `github.event_name` dans la clé : sur main, la poussée et le cron nocturne
+  # tombaient sinon dans le même groupe, et un merge annulait le run de
+  # rattrapage (ou l'inverse). Un run annulé n'est pas rouge : le filet
+  # sautait sans que personne ne le voie. Deux poussées successives sur la
+  # même référence continuent, elles, de s'annuler.
+  group: e2e-lourd-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
   e2e-lourd:
-    # Même garde de fork que tests.yml, conservée pour la même raison.
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    # Même garde de fork que tests.yml, conservée pour la même raison. Et,
+    # parce que `pom.xml` est désormais dans la liste des chemins, une PR
+    # Renovate n'y passe que sous le label `timefold` ou `quarkus` — la règle
+    # de scenario-tests.yml, pour la même raison : un bump de sentry ne change
+    # rien à ce que cette spec traverse, et coûterait une heure pour le dire.
+    if: >-
+      (github.event_name != 'pull_request'
+        || github.event.pull_request.head.repo.full_name == github.repository)
+      && (github.event_name != 'pull_request'
+        || github.event.pull_request.user.login != 'renovate[bot]'
+        || contains(github.event.pull_request.labels.*.name, 'timefold')
+        || contains(github.event.pull_request.labels.*.name, 'quarkus'))
     uses: ./.github/workflows/e2e-suite.yml
     with:
       playwright-args: --grep @lourd
