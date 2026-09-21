@@ -14,8 +14,15 @@
   gap: 0.5rem;
 }
 
+/* An `h1`, not a `span`: this bar carries the *page's* name — « Mentions
+   légales », not the product's — and these three pages had no heading at all,
+   so their hierarchy started at `h2`, announcing a level under a level that
+   did not exist (issue #43). The element changes, the rendering does not: the
+   font below was already the one on screen, and `margin: 0` drops what a
+   browser gives an `h1` by default. */
 .mentions-page-toolbar .app-title {
   font: var(--mat-sys-title-medium);
+  margin: 0;
   /* The title gives way before anything else: it is already in the tab. */
   flex: 1 1 auto;
   min-width: 0;

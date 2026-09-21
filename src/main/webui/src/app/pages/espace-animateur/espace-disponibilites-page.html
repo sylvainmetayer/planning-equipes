@@ -44,7 +44,7 @@
   @if (declaration.enAttente; as attente) {
     <mat-card class="espace-dispo-attente" appearance="outlined">
       <mat-card-header>
-        <mat-card-title i18n="@@espace.dispo.attente.titre">Votre déclaration en attente</mat-card-title>
+        <h2 mat-card-title i18n="@@espace.dispo.attente.titre">Votre déclaration en attente</h2>
         <mat-card-subtitle i18n="@@espace.dispo.attente.sousTitre">
           Envoyée le {{ attente.creeLe | date: 'short' }} — l'organisation ne l'a pas encore traitée.
         </mat-card-subtitle>

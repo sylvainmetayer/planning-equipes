@@ -175,6 +175,28 @@ les rattraper coûte cher.
 - **Un `<h1>` par écran, et un seul.** `mat-card-title` rend une `<div>` :
   écrire `<h1 mat-card-title>` sur le titre principal, `<h2>` sur les cartes
   suivantes. Naviguer par titres est le premier réflexe au lecteur d'écran.
+  `npm run headings-check` (joué en CI) refuse un écran routé qui n'a pas
+  exactement un `<h1>`, et tout `<mat-card-title>` écrit comme élément. Il ne
+  regarde que les composants que `app.routes.ts` charge : les quatre onglets de
+  `/diagnostic` et les cinq rendus de `/journee` sont les composants d'une page
+  qui porte déjà le sien.
+- **Une `<mat-icon>` porteuse d'information écrit `aria-hidden="false"` en
+  dur.** Sans lui, `MatIcon` la masque et son `aria-label` n'est jamais lu :
+  l'attribut est relu par `inject(new HostAttributeToken('aria-hidden'))`, qui
+  ne voit pas une liaison Angular, et un élément `aria-hidden="true"` quitte
+  l'arbre d'accessibilité avec tout ce qu'il porte — son `aria-label`, et
+  l'`aria-describedby` que `MatTooltip` lui ajoute. Une icône qui ne fait que
+  répéter le texte voisin reste décorative : elle perd alors son `aria-label`
+  *et* son `matTooltip`, faute de quoi elle redevient une information que
+  personne n'entend.
+  **Et une infobulle n'est pas un nom** : `MatIcon` impose `role="img"`, un
+  rôle qui ne prend pas son nom de son contenu, donc une icône à seule
+  infobulle est annoncée comme un graphique anonyme — le `matTooltip` en est
+  la description, l'`aria-label` le nom, et les deux se posent ensemble.
+  `npm run icon-labels-check` (joué en CI) refuse une icône portant
+  `aria-label`, `aria-labelledby` ou `matTooltip` sans `aria-hidden="false"`
+  statique, et une icône ainsi exposée sans `aria-label` ni
+  `aria-labelledby`.
 - **Le résultat d'une action s'annonce** par `app-status-message`, jamais par un
   `<p>` inerte : `tone="error"` produit un `role="alert"`, les autres un
   `role="status"`.
@@ -191,6 +213,24 @@ les rattraper coûte cher.
   `role="grid"` que si la structure lignes/cellules existe réellement.
 - **La couleur n'est jamais seule** : doubler d'un texte, d'une icône ou d'une
   initiale. Et une infobulle n'existe pas au tactile.
+- **Toute couleur écrite par ce dépôt est mesurée avant d'être commise** —
+  hors jetons `--mat-sys-*`, qui viennent de `mat.theme()` et sont réputés
+  conformes par construction. Le seuil est 4,5:1 pour du texte, 3:1 pour un
+  composant ou un anneau de focus, et la mesure se fait sur les **deux**
+  surfaces, claire et sombre, puisque le thème compile les deux. Le mesureur
+  est `core/testing/contrast.ts` : un chiffre qu'un test peut rejouer vaut
+  mieux qu'un chiffre relevé une fois. C'est ce qui a manqué deux fois
+  (audit #36) — la barre de marque à 3,24:1 sur tous les écrans, et une
+  cellule de grille à 2,2:1 parce qu'une `opacity: 0.5` divisait une encre
+  déjà atténuée. Une opacité sur du texte est une mesure à refaire, pas un
+  détail de style.
+- **Un accent de marque est borné dans les deux schémas.**
+  `BRANDING_ACCENT_COLOR` est choisi par un exploitant qui regarde une surface,
+  souvent la claire — `core/branding.ts` plafonne donc sa clarté OKLCH en
+  clair et la plancher en sombre, et `branding.spec.ts` le mesure sur des
+  accents pastel volontairement mauvais. Relever l'une des deux bornes sans
+  refaire la mesure fait tomber l'anneau de focus des grilles sous 3:1, où la
+  navigation au clavier devient invisible.
 
 ## Tests
 

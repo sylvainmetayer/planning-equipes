@@ -1,7 +1,11 @@
+<!-- The `h1` of this screen is the one on the notifications card below, not
+     this one: that card is always rendered, this one only when an alert is
+     pending. Making the conditional card carry it would leave the screen with
+     no `h1` at all on the ordinary day (issue #43). -->
 @if (alertes().length > 0) {
   <mat-card appearance="outlined" class="page-card">
     <mat-card-header>
-      <h1 mat-card-title i18n="@@notifications.alertes.title">Alertes de l'organisation ({{ alertes().length }})</h1>
+      <h2 mat-card-title i18n="@@notifications.alertes.title">Alertes de l'organisation ({{ alertes().length }})</h2>
       <mat-card-subtitle i18n="@@notifications.alertes.description">
         Ce que les envois automatiques de nuit n'ont pas pu régler — un rappel sans adresse, une demande
         d'échange en attente ; chaque alerte se referme en traitant ce qu'elle signale.
