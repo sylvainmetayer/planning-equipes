@@ -144,10 +144,27 @@ sur un produit stands × créneaux :
 | Clé | Ce qu'elle compte |
 | --- | --- |
 | `animateurCount` | les valeurs possibles d'un poste, au sens Timefold |
-| `posteCount` | les entités : un poste par siège à pourvoir |
+| `posteCount` | un poste par siège **dû** |
+| `posteOptionnelCount` | les renforts ouverts au-dessus de l'effectif demandé, jusqu'à l'`effectifMax` du stand ([ADR 0046](decisions/0046-sieges-optionnels-jusqu-a-l-effectif-max.md)) |
 | `contrainteAdHocCount` | les ajustements manuels appliqués par-dessus |
-| `hoursToFill` | la somme des durées effectives des postes, fermetures de stands déduites — la base de l'écran Heures |
+| `hoursToFill` | la somme des durées effectives des postes **dus**, fermetures de stands déduites — la base de l'écran Heures |
 | `hoursAvailable` | le plafond légal de ce que les animateurs peuvent travailler sur les jours de l'événement : par animateur et par semaine ISO, les jours où il n'est pas indisponible (six au plus), chacun au plafond quotidien de son âge ce jour-là, le tout borné par le plafond hebdomadaire des paramètres légaux |
+
+**Un renfort est compté à côté, jamais dedans.** Le nombre d'entités que
+Timefold reçoit est la somme des deux premières lignes de postes ; mais la
+carte annonce des « postes à pourvoir » et le taux ci-dessous alerte dès qu'il
+approche de 1 : y verser une marge que l'organisateur a déclarée exprès
+crierait au loup. Un client qui veut la taille du problème additionne
+`posteCount` et `posteOptionnelCount`.
+
+`GET /api/renforts` reprend la même séparation à une autre échelle, stand par
+stand et jour par jour, et **lit ses deux chiffres à deux endroits** : les
+heures ouvertes viennent des sièges qu'une résolution construirait maintenant —
+ce qu'abaisser un `effectifMax` retire —, les heures pourvues du plan
+enregistré — ce que le bonus a réellement coûté. Une grille modifiée depuis la
+dernière résolution peut donc faire dépasser la seconde sur un stand : c'est un
+plan périmé qui le dit, pas une erreur, et le rapport montre les deux plutôt que
+de les réconcilier dans le dos du lecteur.
 
 Le rapport des deux dernières est un taux de remplissage. C'est un plafond,
 pas une prévision : compétences, repos entre vacations et règle de pause en

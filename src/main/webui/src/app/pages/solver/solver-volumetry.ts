@@ -23,12 +23,20 @@ export class SolverVolumetry {
 
   protected readonly animateurCount = computed(() => this.referenceData.scale().animateurCount);
   protected readonly posteCount = computed(() => this.referenceData.scale().posteCount);
+  /** Renforts above the declared staffing: a bonus beside the need, never inside it. */
+  protected readonly posteOptionnelCount = computed(
+    () => this.referenceData.scale().posteOptionnelCount,
+  );
   protected readonly adHocConstraintCount = computed(
     () => this.referenceData.scale().contrainteAdHocCount,
   );
   protected readonly creneauCount = computed(() => this.referenceData.creneaux().length);
   /** Hours the seats add up to, stand closures deducted — the same basis as the Heures page. */
   protected readonly hoursToFill = computed(() => this.referenceData.scale().hoursToFill);
+  /** Bonus hours the renforts open: a capacity the edition may spend, never owes. */
+  protected readonly hoursOptionnelles = computed(
+    () => this.referenceData.scale().hoursOptionnelles,
+  );
   /** Legal ceiling of what the animateurs may work over the event, unavailable days deducted. */
   protected readonly hoursAvailable = computed(() => this.referenceData.scale().hoursAvailable);
 
@@ -58,7 +66,9 @@ export class SolverVolumetry {
    */
   protected readonly problemScale = computed(() => {
     const animateurs = this.animateurCount();
-    const postes = this.posteCount();
+    // Timefold's real entity count: the renforts are entities too, they are
+    // only kept out of the figures labelled « à pourvoir » (ADR 0046).
+    const postes = this.posteCount() + this.posteOptionnelCount();
     return animateurs > 1 && postes > 0 ? Math.round(postes * Math.log10(animateurs)) : 0;
   });
 }

@@ -74,7 +74,7 @@ class ConsigneResolverTest {
     }
 
     @Test
-    void uneOuvertureProlongeLaJourneeAvecLEffectifPerduDansLaBande() {
+    void anOpeningExtendsTheDayWithTheStaffingLostInTheBand() {
         Stand bourse = standWithRule("BOURSE", 3);
         ConsigneEdition consigne = consigne(
                         LocalTime.of(12, 0),
@@ -86,8 +86,11 @@ class ConsigneResolverTest {
 
         assertThat(segments(APRES_MIDI, bourse)).containsExactly(new SegmentOuvert(240, 360, 3));
         assertThat(segments(SOIR_AJOUTE, bourse)).containsExactly(new SegmentOuvert(0, 120, 3));
+        // The seats that are owed: the renforts of issue #505 ride on the
+        // same effectif, and counting them here would say the consigne
+        // staffed more than it did.
         assertThat(ProblemBuilder.buildPostes(List.of(bourse), GRILLE))
-                .filteredOn(poste -> poste.getCreneau() == SOIR_AJOUTE)
+                .filteredOn(poste -> poste.getCreneau() == SOIR_AJOUTE && !poste.isOptionnel())
                 .hasSize(3);
     }
 

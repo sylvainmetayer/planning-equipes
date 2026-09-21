@@ -128,6 +128,9 @@
           },
           "heureFinEffective" : {
             "type" : "string"
+          },
+          "optionnel" : {
+            "type" : "boolean"
           }
         }
       },
@@ -966,6 +969,23 @@
           "marge" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }
+      },
+      "CelluleRenfort" : {
+        "required" : [ "date", "heuresOuvertes", "heuresPourvues" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heuresOuvertes" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresPourvues" : {
+            "type" : "number",
+            "format" : "double"
           }
         }
       },
@@ -4178,8 +4198,37 @@
           }
         }
       },
+      "LigneRenfort" : {
+        "required" : [ "heuresOuvertes", "heuresPourvues", "jours", "nom", "standId" ],
+        "type" : "object",
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "heuresOuvertes" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresPourvues" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CelluleRenfort"
+            }
+          }
+        }
+      },
       "LigneStand" : {
-        "required" : [ "effectifMin", "minutesOuvertes", "postes" ],
+        "required" : [ "effectifMax", "effectifMin", "minutesOuvertes", "postes" ],
         "type" : "object",
         "properties" : {
           "standId" : {
@@ -4189,6 +4238,10 @@
             "type" : "string"
           },
           "effectifMin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectifMax" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -5004,6 +5057,9 @@
           "verrouille" : {
             "type" : "boolean"
           },
+          "optionnel" : {
+            "type" : "boolean"
+          },
           "dureeEffectiveMinutes" : {
             "type" : "integer",
             "format" : "int32"
@@ -5220,7 +5276,7 @@
         }
       },
       "ProblemScale" : {
-        "required" : [ "animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursToFill", "posteCount" ],
+        "required" : [ "animateurCount", "contrainteAdHocCount", "hoursAvailable", "hoursOptionnelles", "hoursToFill", "posteCount", "posteOptionnelCount" ],
         "type" : "object",
         "properties" : {
           "animateurCount" : {
@@ -5231,11 +5287,19 @@
             "type" : "integer",
             "format" : "int32"
           },
+          "posteOptionnelCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
           "contrainteAdHocCount" : {
             "type" : "integer",
             "format" : "int32"
           },
           "hoursToFill" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "hoursOptionnelles" : {
             "type" : "number",
             "format" : "double"
           },
@@ -5736,6 +5800,44 @@
             "items" : {
               "type" : "string"
             }
+          }
+        }
+      },
+      "RapportRenforts" : {
+        "required" : [ "heuresDues", "heuresOuvertes", "heuresPourvues", "jours", "planEnregistre", "stands" ],
+        "type" : "object",
+        "properties" : {
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LigneRenfort"
+            }
+          },
+          "heuresOuvertes" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresPourvues" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "heuresDues" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "planEnregistre" : {
+            "type" : "boolean"
+          },
+          "message" : {
+            "type" : "string"
           }
         }
       },
@@ -12207,6 +12309,24 @@
         },
         "summary" : "Validate Scenario File",
         "tags" : [ "Reference Data Resource" ]
+      }
+    },
+    "/api/renforts" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportRenforts"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Analyze",
+        "tags" : [ "Renfort Resource" ]
       }
     },
     "/api/solve" : {

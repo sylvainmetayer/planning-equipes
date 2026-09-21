@@ -68,13 +68,20 @@ class PlanningServiceScenarioFestivalHivernalTest {
         // The file lists its seats: built as written, judged on the meal
         // windows, legal parameters and weights the file declares.
         PlanningEvenement problem = planningService.buildExample("festival-hivernal.yaml");
-        assertThat(problem.getPostes()).hasSize(3438);
+        assertThat(problem.getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .hasSize(3438);
         assertThat(problem.getAnimateurs()).hasSize(153);
 
         PlanningEvenement solved = planningService.solveUntilFeasible(problem, SECONDS_LIMITE_SECURITE);
 
         assertThat(solved.getScore()).isNotNull();
         assertThat(solved.getScore().hardScore()).isZero();
-        assertThat(solved.getPostes()).noneMatch(poste -> poste.getAnimateur() == null);
+        // A renfort may stay empty (issue #505): the fixture declares a
+        // capacity above the staffing its windows ask for, and feasibility is
+        // about what is owed, not about exhausting that capacity.
+        assertThat(solved.getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .noneMatch(poste -> poste.getAnimateur() == null);
     }
 }

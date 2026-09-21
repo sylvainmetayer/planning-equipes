@@ -170,6 +170,7 @@ final class ScenarioDomainMapper {
             Creneau creneau = reference.creneauxParId().get(posteDto.creneauId());
 
             PosteAffectation poste = new PosteAffectation(posteDto.id(), stand, creneau);
+            poste.setOptionnel(Boolean.TRUE.equals(posteDto.optionnel()));
             // Mirrors buildPostes(): a hand-authored poste can still name a
             // créneau the stand is only partially open for (IndisponibiliteStand /
             // OuvertureStand), so narrow its effective window the same way instead

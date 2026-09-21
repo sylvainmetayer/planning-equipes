@@ -93,7 +93,9 @@ class ScenarioLadderMediumTest {
         assertThat(loaded.sections().edition().orElseThrow().id()).isEqualTo("GAMME-10");
         assertThat(loaded.problem().getParametresLegaux().getFirst().isPauseSurPoste())
                 .isTrue();
-        assertThat(loaded.problem().getPostes()).hasSize(127);
+        assertThat(loaded.problem().getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .hasSize(127);
         // The nocturne is held by the three stands open past 18:00, on the last day only.
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> poste.getCreneau().getHeureDebut().equals(LocalTime.of(20, 0)))
@@ -195,7 +197,7 @@ class ScenarioLadderMediumTest {
         assertThat(matchCounts(solved))
                 .doesNotContainKeys("experienceRequisePourStandsPremium", "eviterEnchainementStandsEpuisants");
         assertThat(solved.getPostes())
-                .filteredOn(poste -> poste.getStand().isPremium())
+                .filteredOn(poste -> poste.getStand().isPremium() && poste.getAnimateur() != null)
                 .noneMatch(poste -> poste.getAnimateur().isDebutantFor(poste.getStand()));
     }
 

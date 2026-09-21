@@ -118,8 +118,21 @@ public class PlanningKpiService {
             Integer journeesSousConsigne,
             Double heuresFermeesParConsigne) {}
 
-    /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
-    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
+    /**
+     * One staffed-or-empty seat reduced to what the KPI need: who, for how
+     * long, and whether the seat was owed at all.
+     *
+     * <p>The flag splits the two readings a renfort needs (issue #505). The
+     * <b>coverage</b> — {@code postesTotal} and {@code postesPourvus} — counts
+     * owed seats only: a stand declaring a capacity it rarely fills would
+     * otherwise lower the coverage of a perfectly staffed plan, and no
+     * historised row would compare with the ones recorded before. The
+     * <b>hours</b> count every seat somebody holds, renfort included:
+     * whoever sits there really worked, and the dispersion is about people,
+     * not about what their seat was called.</p>
+     */
+    record AffectationKpi(
+            String standId, String creneauId, String animateurId, Integer dureeMinutes, boolean optionnel) {}
 
     /**
      * KPI of the currently persisted plan. Score and violations come from the
@@ -137,7 +150,8 @@ public class PlanningKpiService {
                     poste.getStand().getId(),
                     String.valueOf(poste.getCreneau().getId()),
                     poste.getAnimateur() == null ? null : poste.getAnimateur().getId(),
-                    poste.getDureeEffectiveMinutes()));
+                    poste.getDureeEffectiveMinutes(),
+                    poste.isOptionnel()));
         }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
@@ -179,7 +193,8 @@ public class PlanningKpiService {
                     affectation.standId(),
                     affectation.creneauId(),
                     affectation.animateurId(),
-                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId()))));
+                    dureeMinutes(affectation, creneauxParId.get(affectation.creneauId())),
+                    Boolean.TRUE.equals(affectation.optionnel())));
         }
         return compute(reduites, score, Map.of(), null, null, null);
     }
@@ -255,14 +270,20 @@ public class PlanningKpiService {
         Set<String> creneaux = new LinkedHashSet<>();
         Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
         int pourvus = 0;
+        int total = 0;
         boolean heuresIncompletes = false;
         for (AffectationKpi affectation : affectations) {
             stands.add(affectation.standId());
             creneaux.add(affectation.creneauId());
+            if (!affectation.optionnel()) {
+                total++;
+            }
             if (affectation.animateurId() == null) {
                 continue;
             }
-            pourvus++;
+            if (!affectation.optionnel()) {
+                pourvus++;
+            }
             if (affectation.dureeMinutes() == null) {
                 heuresIncompletes = true;
             } else {
@@ -271,7 +292,6 @@ public class PlanningKpiService {
         }
         Dispersion dispersion = dispersion(heuresParAnimateur.values());
         int[] niveaux = parseScore(score);
-        int total = affectations.size();
         Double taux = modificationsManuelles == null || total == 0 ? null : modificationsManuelles / (double) total;
         return new PlanningKpi(
                 score,

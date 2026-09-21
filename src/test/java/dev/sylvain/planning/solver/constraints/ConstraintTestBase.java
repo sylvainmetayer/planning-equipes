@@ -196,6 +196,17 @@ abstract class ConstraintTestBase {
     }
 
     /**
+     * A renfort (issue #505): a seat generated above the staffing the window
+     * declares, which nobody is owed. Filled or empty, it is a seat like any
+     * other for every rule but {@code posteDoitEtrePourvu}.
+     */
+    protected PosteAffectation posteOptionnel(Stand stand, Creneau creneau, Animateur animateur) {
+        PosteAffectation p = poste(stand, creneau, animateur);
+        p.setOptionnel(true);
+        return p;
+    }
+
+    /**
      * A seat of a timeslot already started when the problem was built (ADR
      * 0044): counted by every rule, reproached by none. Marked, not pinned —
      * the analyses of the persisted plan mark without pinning, and the rule

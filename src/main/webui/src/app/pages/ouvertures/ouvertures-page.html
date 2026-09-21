@@ -170,6 +170,12 @@
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>
+                    @if (ligne.renforts > 0) {
+                      <span class="stand-renforts"
+                            i18n-matTooltip="@@ouvertures.renfort.tooltip"
+                            matTooltip="Au-dessus de l'effectif demandé, le solveur peut poser ce nombre de renforts. Les laisser vides ne manque à personne."
+                            i18n="@@ouvertures.renfort">+ {{ ligne.renforts }} optionnel(s)</span>
+                    }
                     <button matIconButton type="button" class="recopier-ligne" [disabled]="editingLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
                             i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"

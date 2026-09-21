@@ -16,6 +16,17 @@ import java.util.Map;
  * nobody left to assign — the main cause of leftover hard-constraint
  * violations (unfilled postes, double-bookings) FIRST_FIT was producing.
  *
+ * <p><b>A renfort is placed last, whatever its rarity</b> (issue #505,
+ * ADR 0048). The heuristic walks the entities in decreasing difficulty and
+ * seats somebody on each in turn: an optional seat taken early is a person
+ * spent before the seats that are owed have been served, and the plan ends
+ * short of feasibility with its capacity comfortably filled. Measured on
+ * {@code festival-hivernal.yaml}, which has 846 renforts: interleaved by
+ * rarity alone, the solve ran the whole 900 s safety ceiling and stopped at
+ * -6 hard where it reaches zero in 89 s. The optional band therefore sorts
+ * below every mandatory seat, and the rarity order applies within each of the
+ * two groups.</p>
+ *
  * <p>Eligibility depends only on the poste's stand and its créneau's date, not
  * on the poste itself, and neither changes during a solve — so the count is
  * computed once per (stand, date) pair and reused. Sorting n postes costs
@@ -31,9 +42,13 @@ public final class PosteAffectationDifficultyComparatorFactory
         // Confined to the comparator returned here, which Timefold uses from a
         // single thread while sorting the entities of that one solution.
         Map<EligibilityKey, Long> cache = new HashMap<>();
-        return Comparator.comparingLong((PosteAffectation poste) ->
+        Comparator<PosteAffectation> parRarete = Comparator.comparingLong((PosteAffectation poste) ->
                         cache.computeIfAbsent(EligibilityKey.of(poste), key -> eligibleAnimateurCount(solution, poste)))
                 .reversed();
+        // Mandatory first: the heuristic takes the entities from the greatest
+        // down, so a seat that is owed must compare above every renfort.
+        return Comparator.comparingInt((PosteAffectation poste) -> poste.isOptionnel() ? 0 : 1)
+                .thenComparing(parRarete);
     }
 
     private static long eligibleAnimateurCount(PlanningEvenement solution, PosteAffectation poste) {

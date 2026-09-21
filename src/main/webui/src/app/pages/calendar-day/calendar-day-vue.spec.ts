@@ -128,6 +128,59 @@ describe('buildDays — understaffing indicator', () => {
     expect(line.entries.length).toBeLessThan(line.effectifRequis);
   });
 
+  /**
+   * Issue #505: a renfort is opened above the declared staffing. Counted with
+   * the others it would make a fully-staffed line read as short-handed for
+   * ever — the false alarm the feature exists to avoid.
+   */
+  it('counts a renfort apart, so a fully-staffed line is not short-handed', () => {
+    const c1 = creneau({ id: 1 });
+    const s1 = stand('S1', 2);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B') }),
+      poste({ id: 'p3', creneau: c1, stand: s1, optionnel: true }),
+    ]);
+
+    const line = days[0].slots[0].stands[0];
+    expect(line.effectifRequis).toBe(2);
+    expect(line.renforts).toBe(1);
+    expect(line.entries.length).toBeGreaterThanOrEqual(line.effectifRequis);
+  });
+
+  it('a renfort somebody took is still a person on the line', () => {
+    const c1 = creneau({ id: 1 });
+    const s1 = stand('S1', 1);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: s1, animateur: animateur('B'), optionnel: true }),
+    ]);
+
+    const line = days[0].slots[0].stands[0];
+    expect(labels(line)).toEqual(['A', 'B']);
+    expect(line.effectifRequis).toBe(1);
+    expect(line.renforts).toBe(1);
+  });
+
+  it('a staffed renfort never hides an empty owed seat', () => {
+    // Two people on the line, but one of them sits on the renfort: the stand
+    // owes two seats and only one is held. Reading the line's length as the
+    // owed staffing would silence the shortfall icon (issue #505).
+    const c1 = creneau({ id: 1 });
+    const s1 = stand('S1', 2);
+    const days = buildDays([
+      poste({ id: 'p1', creneau: c1, stand: s1, animateur: animateur('A') }),
+      poste({ id: 'p2', creneau: c1, stand: s1 }),
+      poste({ id: 'p3', creneau: c1, stand: s1, animateur: animateur('B'), optionnel: true }),
+    ]);
+
+    const line = days[0].slots[0].stands[0];
+    expect(line.effectifRequis).toBe(2);
+    expect(line.pourvus).toBe(1);
+    expect(line.entries.length).toBe(2);
+    expect(days[0].understaffed).toBe(true);
+  });
+
   it('a fully-staffed stand is not understaffed', () => {
     const c1 = creneau({ id: 1 });
     const s1 = stand('S1', 2);

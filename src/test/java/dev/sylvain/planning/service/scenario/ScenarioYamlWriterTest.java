@@ -126,7 +126,9 @@ class ScenarioYamlWriterTest {
         assertThat((List<String>) animateurs.get(0).get("joursIndisponibles")).containsExactly("2026-08-15");
 
         List<Map<String, Object>> postesYaml = (List<Map<String, Object>>) parsed.get("postes");
-        assertThat(postesYaml).hasSize(1);
+        // The stand declares a capacity of 2 above its 1: one seat that is
+        // owed, one renfort (issue #505).
+        assertThat(postesYaml).hasSize(2);
         // A string, not a number: the published schema declares the id
         // `string`, and this assertion used to pin down the very gap that made
         // every exported file impossible to import back.
@@ -137,7 +139,13 @@ class ScenarioYamlWriterTest {
                 // seat list says which seats exist, the solve says who fills
                 // them — and writing the key out only made that look like a
                 // decision somebody had taken.
-                .doesNotContainKey("animateurId");
+                .doesNotContainKey("animateurId")
+                // Absent on an ordinary seat, for the same reason: the file
+                // reads as it did before renforts existed.
+                .doesNotContainKey("optionnel");
+        // And written on the renfort, because a file that lost the flag would
+        // turn it into a seat the solver must fill.
+        assertThat(postesYaml.get(1)).containsEntry("optionnel", true);
     }
 
     /**

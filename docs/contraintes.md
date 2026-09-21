@@ -1192,6 +1192,37 @@ continuité descend le poids de celle-ci ; une édition tendue peut la mettre à
 zéro sans toucher au catalogue, ou vider un des deux seuils dans la
 configuration.
 
+## Récompensé, jamais dû : le renfort
+
+Entre l'effectif que la fenêtre déclare et l'`effectifMax` du stand, la
+génération ouvre des sièges **optionnels** — des renforts, mécanique dans
+[`domaine.md`](domaine.md#au-dessus-de-leffectif-demandé--les-renforts) et
+décision dans
+[ADR 0046](decisions/0046-sieges-optionnels-jusqu-a-l-effectif-max.md). Une
+seule règle les concerne, `pourvoirLesSiegesOptionnels`, et elle **récompense**
+au lieu de pénaliser : un renfort pourvu rapporte, un renfort vide ne coûte
+rien.
+
+L'inverse — facturer le renfort vide — a déjà été essayé, sous la forme d'une
+génération qui rendait obligatoires tous les sièges jusqu'au maximum : 2 736
+sièges dus là où `scenario-complet.yaml` en demande 2 088, 31 % de besoin
+inventé, et des résolutions qui n'atteignaient plus la faisabilité. La
+récompense dit la même chose sans le mensonge : l'organisateur a déclaré une
+marge, pas un manque.
+
+**Elle est SOFT, et c'est ce qui la rend inoffensive.** Sous tout le medium,
+elle ne peut jamais faire préférer un renfort à un siège dû ni à la stabilité
+du plan publié : le solveur en prend un quand il n'a rien de mieux à faire de
+la personne. Ce qui n'était *pas* inoffensif, et que la mesure a révélé, c'est
+la place des renforts dans la recherche de faisabilité elle-même — d'où les
+filtres qui rendent sa phase 1 entièrement aveugle à eux. Le tableau des quatre
+mesures est dans l'ADR.
+
+Un renfort pourvu est un siège comme un autre pour toutes les autres règles :
+qui s'y assied travaille vraiment, donc le repos, les plafonds, les règles
+mineurs, `equilibrerCharge` et `equilibrerCreneauxPenibles` le comptent. Seul
+`posteDoitEtrePourvu` l'ignore.
+
 ## Compté, non reproché : le passé
 
 Pendant l'événement, une résolution reçoit les places des créneaux déjà
@@ -1344,6 +1375,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `favoriserMixiteDesNiveaux` | SOFT | Préférences | Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence. |
 | `equilibrerCreneauxPenibles` | SOFT | Préférences | Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium). |
 | `preserverBufferPolyvalents` | SOFT | Préférences | Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir réparer le planning en cas d'absence de dernière minute. |
+| `pourvoirLesSiegesOptionnels` | SOFT | Préférences | Employer le volant disponible : au-dessus de l'effectif demandé, un stand déclare une capacité (effectifMax) où le solveur peut poser un renfort. Chaque renfort pourvu rapporte. Un renfort laissé vide ne coûte rien et n'est jamais un écart — c'est ce qui distingue une capacité d'un besoin. |
 <!-- catalogue:fin -->
 
 ## Ajouter une contrainte

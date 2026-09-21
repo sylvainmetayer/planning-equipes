@@ -98,10 +98,29 @@ class ScenarioLadderLargeTest {
     @Test
     void rung18HeadcountsCarriedByTheOpeningWindows() {
         Loaded loaded = load("gamme-18-14j-35stands-132animateurs-effectifs-par-fenetre");
-        assertThat(loaded.problem().getPostes()).hasSize(1687);
+        // Owed seats only: this rung's stands declare an effectifMax above
+        // what their windows ask for, so the generation adds renforts on top
+        // (issue #505). The figure the ladder pins is the need, not the
+        // capacity — pinning the sum would move it on any capacity edit.
+        assertThat(loaded.problem().getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .hasSize(1687);
+        assertThat(loaded.problem().getPostes())
+                .filteredOn(PosteAffectation::isOptionnel)
+                .isNotEmpty();
+        // STAND-02 declares effectifMax 2 over windows asking 1 then 2: the
+        // renfort is the one seat the morning is short of its capacity, and
+        // there is none where the window already asks for the maximum. Read
+        // per vacation rather than as one global figure — a count of the whole
+        // rung would move on any capacity edit without saying which.
+        assertThat(renfortsByVacation(loaded, "STAND-02", LocalDate.of(2027, 6, 14)))
+                .containsOnly(Map.entry(LocalTime.of(10, 0), 1L));
         Map<LocalTime, Long> chevauchementParVacation = seatsOnStand(
                         loaded.problem().getPostes(), "STAND-02")
                 .stream()
+                // Owed seats: what this rung reads is the window's effectif
+                // driving the seat count, not the stand's capacity on top.
+                .filter(poste -> !poste.isOptionnel())
                 .filter(poste -> poste.getCreneau().getDate().equals(LocalDate.of(2027, 6, 14)))
                 .collect(Collectors.groupingBy(poste -> poste.getCreneau().getHeureDebut(), Collectors.counting()));
         assertThat(chevauchementParVacation)
@@ -221,7 +240,16 @@ class ScenarioLadderLargeTest {
         assertThat(loaded.dayTemplatesPlan().isEmpty()).isTrue();
         assertThat(loaded.stands()).filteredOn(Stand::isPremium).hasSize(30);
         assertThat(loaded.problem().getContraintesAdHoc()).hasSize(32);
-        assertThat(loaded.problem().getPostes()).hasSize(5013);
+        // Owed seats only: this rung's stands declare an effectifMax above
+        // what their windows ask for, so the generation adds renforts on top
+        // (issue #505). The figure the ladder pins is the need, not the
+        // capacity — pinning the sum would move it on any capacity edit.
+        assertThat(loaded.problem().getPostes())
+                .filteredOn(poste -> !poste.isOptionnel())
+                .hasSize(5013);
+        assertThat(loaded.problem().getPostes())
+                .filteredOn(PosteAffectation::isOptionnel)
+                .hasSize(80);
         assertThat(loaded.problem().getPostes())
                 .filteredOn(poste -> standNumber(poste) >= 41 && standNumber(poste) <= 60)
                 .isNotEmpty()
@@ -229,5 +257,13 @@ class ScenarioLadderLargeTest {
                         .isBetween(LocalDate.of(2027, 7, 10), LocalDate.of(2027, 7, 25)));
 
         assertFeasible(solveUntilFeasible(loaded, CEILING_SECONDS));
+    }
+
+    /** Renforts of one stand on one day, by the start time of their vacation. */
+    private static Map<LocalTime, Long> renfortsByVacation(Loaded loaded, String standId, LocalDate date) {
+        return seatsOnStand(loaded.problem().getPostes(), standId).stream()
+                .filter(PosteAffectation::isOptionnel)
+                .filter(poste -> poste.getCreneau().getDate().equals(date))
+                .collect(Collectors.groupingBy(poste -> poste.getCreneau().getHeureDebut(), Collectors.counting()));
     }
 }

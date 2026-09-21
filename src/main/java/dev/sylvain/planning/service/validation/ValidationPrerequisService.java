@@ -200,11 +200,16 @@ public class ValidationPrerequisService {
         return new Prerequis(ECARTS_DURS, true, ecarts == 0, ecarts);
     }
 
-    /** Seats of the day nobody holds — the « sièges vides » of the issue. */
+    /**
+     * Seats of the day nobody holds — the « sièges vides » of the issue. A
+     * renfort left empty is not one (issue #505): a day is reviewable when
+     * everything it owes is staffed, and holding up its validation over an
+     * unused capacity would make the prerequisite one nobody can ever satisfy.
+     */
     private static Prerequis siegesVides(LocalDate jour, PlanningEvenement plan) {
         int vides = 0;
         for (PosteAffectation poste : seatsOfDay(plan, jour)) {
-            if (poste.getAnimateur() == null) {
+            if (poste.getAnimateur() == null && !poste.isOptionnel()) {
                 vides++;
             }
         }

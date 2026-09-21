@@ -156,8 +156,13 @@ public final class PlanningDiagnosticService {
         String scoreHorsPlancher = solved.getScore() == null
                 ? null
                 : solved.getScore().subtract(floorScore).toString();
+        // Seats nobody fills that somebody is owed. A renfort is not one
+        // (issue #505): it was generated above the staffing the window
+        // declares, so counting it here would report a sous-effectif exactly
+        // where the organiser declared a capacity they know they cannot
+        // always staff.
         int unassigned = (int) solved.getPostes().stream()
-                .filter(p -> p.getAnimateur() == null)
+                .filter(p -> p.getAnimateur() == null && !p.isOptionnel())
                 .count();
         FeasibilityAnalyzer.FeasibilityReport faisabilite = feasibilityAnalyzer.analyze(
                 solved.getAnimateurs(),

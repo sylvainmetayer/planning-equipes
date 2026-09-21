@@ -55,6 +55,29 @@ class PlanningServiceReamorcageTest {
         assertThat(bilan).containsExactly(3, 0);
     }
 
+    /**
+     * Phase 1 of the local search cannot select an optional seat, so it cannot
+     * empty one either: somebody warm-started onto a renfort would be stuck
+     * there for the whole feasibility phase (issue #505).
+     */
+    @Test
+    void aRenfortIsNeverWarmStartedAndDoesNotConsumeATenant() {
+        PosteAffectation du = poste("p0", standA, matin);
+        PosteAffectation renfort = poste("p1", standA, matin);
+        renfort.setOptionnel(true);
+        PosteAffectation autreDu = poste("p2", standA, matin);
+
+        int[] bilan = ProblemBuilder.reamorcerDepuisAffectations(
+                List.of(du, renfort, autreDu), animateurs, Map.of(key("STAND-A", 1L), List.of("A1", "A2")), List.of());
+
+        assertThat(du.getAnimateur()).isEqualTo(alice);
+        assertThat(renfort.getAnimateur()).isNull();
+        // The renfort consumed no position: the second tenant lands on the
+        // owed seat behind it, not one seat further along.
+        assertThat(autreDu.getAnimateur()).isEqualTo(bob);
+        assertThat(bilan).containsExactly(2, 0);
+    }
+
     @Test
     void leavesAPinnedSeatAsTheLocksLeftItAndKeepsCountingPositions() {
         List<PosteAffectation> postes = List.of(poste("p0", standA, matin), poste("p1", standA, matin));

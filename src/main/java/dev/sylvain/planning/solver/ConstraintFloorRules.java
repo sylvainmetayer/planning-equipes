@@ -216,7 +216,10 @@ public final class ConstraintFloorRules {
             rule("affiniteAdHoc", Denominator.NONE, null),
             rule("favoriserMixiteDesNiveaux", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
             rule("equilibrerCreneauxPenibles", Denominator.NONE, null),
-            rule("preserverBufferPolyvalents", Denominator.NONE, null));
+            rule("preserverBufferPolyvalents", Denominator.NONE, null),
+            // A reward, so NONE by the rule above: what it counts is points
+            // gained, never a floor of points nothing can move.
+            rule("pourvoirLesSiegesOptionnels", Denominator.NONE, null));
 
     private ConstraintFloorRules() {}
 

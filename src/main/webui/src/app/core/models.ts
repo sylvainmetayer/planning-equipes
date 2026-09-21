@@ -297,6 +297,12 @@ export interface LigneStandOuverture {
   standId: string;
   nom: string;
   effectifMin: number;
+  /**
+   * The capacity the stand declares above its cells (issue #505). The grid
+   * reads the band as « 2 + 1 » : what a window asks for, and the renforts the
+   * solver may add on top — a bonus, never a second number to staff.
+   */
+  effectifMax: number;
   jours: CelluleJourOuverture[];
   minutesOuvertes: number;
   postes: number;
@@ -493,6 +499,49 @@ export interface RapportMarge {
   message: string;
 }
 
+/** Renfort hours of one stand on one day (`GET /api/renforts`). */
+export interface CelluleRenfort {
+  date: string;
+  /** Bonus hours the stand opens that day — the capacity declared. */
+  heuresOuvertes: number;
+  /** Bonus hours somebody holds in the persisted plan — what it really cost. */
+  heuresPourvues: number;
+}
+
+/** One stand's bonus hours over the event, the lever a budget cut acts on. */
+export interface LigneRenfort {
+  standId: string;
+  nom: string;
+  /** The location the stand sits on; `null` when it has none. */
+  emplacementNom: string | null;
+  heuresOuvertes: number;
+  heuresPourvues: number;
+  jours: CelluleRenfort[];
+}
+
+/**
+ * What `GET /api/renforts` returns — computed without any solve (ADR 0046).
+ *
+ * The two hour figures come from two different things on purpose: `heuresOuvertes`
+ * from the seats a solve would build right now, which is what lowering a stand's
+ * `effectifMax` removes, and `heuresPourvues` from the plan already persisted,
+ * which is what the bonus actually cost. The gap between them says whether a cut
+ * is free or whether somebody will feel it.
+ */
+export interface RapportRenforts {
+  /** Every day at least one stand has something to say about, earliest first. */
+  jours: string[];
+  /** The rows, the stand opening the most bonus hours first. */
+  stands: LigneRenfort[];
+  heuresOuvertes: number;
+  heuresPourvues: number;
+  /** Hours the edition owes, renforts excluded — what the bonus is weighed against. */
+  heuresDues: number;
+  /** Without a persisted plan every `heuresPourvues` is zero because nothing was solved. */
+  planEnregistre: boolean;
+  message: string | null;
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;
@@ -644,6 +693,12 @@ export interface PosteAffectation {
    */
   heureDebutEffective?: string | null;
   heureFinEffective?: string | null;
+  /**
+   * Renfort (issue #505): a seat opened above the staffing the window declares,
+   * up to the stand's `effectifMax`. Nobody is owed it, so an empty one is
+   * never a shortfall — drawn as a hole it would be a false alarm.
+   */
+  optionnel?: boolean;
 }
 
 export interface ContrainteAdHoc {
@@ -750,16 +805,25 @@ export interface VerrouillagePlanning {
 /**
  * Real scale of the problem the next solve will build, from `/api/planning/volumetrie`
  * (mirrors what Timefold's own "Problem scale" log line reports): `posteCount` is one
- * entry per required seat, not per stand, and `contrainteAdHocCount` are the extra
+ * entry per seat that is owed, not per stand, and `contrainteAdHocCount` are the extra
  * ad hoc rules layered on top. `hoursToFill` sums the effective duration of every
- * seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what the
- * animateurs may work over the event's days, unavailable days deducted.
+ * owed seat (stand closures deducted); `hoursAvailable` is the legal ceiling of what
+ * the animateurs may work over the event's days, unavailable days deducted.
+ *
+ * `posteOptionnelCount` are the renforts generated above the declared staffing
+ * (ADR 0046): counted beside the figures above, never inside them — the card is
+ * labelled « postes à pourvoir » and its fill ratio warns near 1, so folding a
+ * margin the organiser declared into it would cry wolf. Timefold's real entity
+ * count is the two added back together.
  */
 export interface Scale {
   animateurCount: number;
   posteCount: number;
+  posteOptionnelCount: number;
   contrainteAdHocCount: number;
   hoursToFill: number;
+  /** Bonus hours the renforts open — a capacity, never a need. */
+  hoursOptionnelles: number;
   hoursAvailable: number;
 }
 

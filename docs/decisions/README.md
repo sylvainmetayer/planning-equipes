@@ -71,6 +71,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) | Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable | Accepté · prolonge 0006 et 0041 |
 | [0046](0046-un-placement-intenable-est-dit-avant-le-calcul.md) | Un placement intenable est dit au moment du geste et reporté avant le calcul ; seule l'écriture directe d'un siège, qui n'attend plus rien, est refusée | Accepté · complète 0003 |
 | [0047](0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
+| [0048](0048-sieges-optionnels-jusqu-a-l-effectif-max.md) | L'effectif maximum d'un stand ouvre des renforts : des sièges qu'une règle soft récompense, que rien ne reproche vides, et que la recherche de faisabilité ne voit pas | Accepté · complète 0044 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
