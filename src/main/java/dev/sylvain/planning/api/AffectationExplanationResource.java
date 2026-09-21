@@ -136,7 +136,7 @@ public class AffectationExplanationResource {
      * separate, explicit call rather than a flag on the simulation.
      *
      * <p>The seating is scored before it is written and refused when it would
-     * break a hard rule, naming it (ADR 0045). The repair screen never offers
+     * break a hard rule, naming it (ADR 0046). The repair screen never offers
      * such a candidate, so it never meets the refusal; this endpoint takes any
      * animateur its caller names, and used to seat a minor on a night slot
      * without a word. Emptying the seat is never refused.</p>
