@@ -122,6 +122,7 @@ dev/sylvain/planning/service/referentiel/ReferentielCsvImportServiceTest.java
 dev/sylvain/planning/service/scenario/ScenarioLadderImportTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotFraicheurTest.java
 dev/sylvain/planning/service/solve/PlanSnapshotServiceSolveGuardTest.java
+dev/sylvain/planning/service/solve/PlanSnapshotSuppressionPublieeTest.java
 dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java

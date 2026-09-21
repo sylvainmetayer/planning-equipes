@@ -44,6 +44,20 @@
                 >auto</mat-chip
               >
             }
+            <!-- Only this table can show it: a publication is never automatique. -->
+            @if (snapshot.publieLe) {
+              <mat-chip
+                class="snapshot-publie-chip"
+                [class.snapshot-publie-courant-chip]="estPlanPublie(snapshot)"
+                [matTooltip]="publicationTooltip(snapshot)"
+              >
+                @if (estPlanPublie(snapshot)) {
+                  <ng-container i18n="@@snapshots.published.badge">plan publié</ng-container>
+                } @else {
+                  <ng-container i18n="@@snapshots.published.badgeRemplace">publié, remplacé</ng-container>
+                }
+              </mat-chip>
+            }
           </td>
         </ng-container>
         <ng-container matColumnDef="score">
@@ -93,14 +107,18 @@
             >
               <mat-icon>restore</mat-icon>
             </button>
+            <!--
+              The plan on display is the one deletion refuses (issue #34); the
+              publications it replaced are ordinary snapshots. The tooltip says
+              which, so the refusal is read before the click and not as a 409.
+            -->
             <button
               matIconButton
               class="danger-action"
-              i18n-matTooltip="@@common.delete"
-              matTooltip="Supprimer"
+              [matTooltip]="suppressionTooltip(snapshot)"
               i18n-aria-label="@@common.delete"
               aria-label="Supprimer"
-              [disabled]="enCours() !== null"
+              [disabled]="enCours() !== null || estPlanPublie(snapshot)"
               (click)="remove(snapshot)"
             >
               <mat-icon>delete</mat-icon>

@@ -78,8 +78,10 @@ le harcèlement.
 
 ## Conséquences
 
-- Un instantané publié sort de la purge de rétention et refuse d'être supprimé
-  (`409`) : c'est la référence que lit l'espace animateur.
+- Un instantané publié sort de la purge de rétention, et la **dernière**
+  publication refuse d'être supprimée (`409`) : c'est la référence que lit
+  l'espace animateur. Voir *Ce qui était dit de travers : « un instantané
+  publié »* en fin de page.
 - Une trace nominative (`publication_destinataire`) dit qui a été prévenu de
   quoi et quand, y compris les injoignables. Utile côté RGPD : on n'écrit
   qu'aux personnes concernées, et la trace disparaît avec l'édition qu'elle
@@ -143,3 +145,28 @@ Quatre conséquences, assumées :
 Ce que cette décision ne prétend toujours pas faire : un siège dont le **stand**
 a disparu reste écarté. Le trou est de même nature, sa source de vérité est
 autre — l'instantané ne porte pas le nom du stand — et il n'est pas traité ici.
+
+## Ce qui était dit de travers : « un instantané publié »
+
+Cette conséquence a longtemps été écrite au singulier indéfini — *un instantané
+publié refuse d'être supprimé* — et le code disait la même chose, en refusant
+tout instantané portant `publie_le`. Or une édition publie autant de fois
+qu'elle en a besoin : chaque publication laisse sa capture, et le garde-fou les
+protégeait toutes. À la deuxième publication, l'écran Instantanés n'avait plus
+qu'un bouton *Supprimer* qui répondait « Cet instantané est le plan publié »
+sur des plans que plus personne ne lisait (issue #34).
+
+La référence que lit l'espace est **la dernière** publication, une seule
+(`loadLastPublication`). Celles qu'elle a remplacées sont de l'histoire, et se
+suppriment comme n'importe quel instantané. Le refus vaut donc pour une ligne,
+pas pour un état, et il est écrit dans l'ordre même de `lastPublication` — la
+suppression ne passe que s'il existe une publication plus récente, ce qui
+interdit aussi à deux suppressions concurrentes de se croire toutes deux
+remplacées.
+
+Une conséquence assumée : le repère de comparaison d'une personne différée
+(`plan_notifie_id`, ADR 0047) peut désigner une de ces anciennes publications.
+La supprimer la fait relire comme « jamais prévenue » — elle recevra son
+planning entier plutôt que ses écarts. C'est exactement ce que la V97 avait
+prévu en refusant la clé étrangère : une référence disparue retombe sur « rien
+à comparer » plutôt que d'inventer un plan.

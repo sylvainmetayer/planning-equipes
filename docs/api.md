@@ -454,8 +454,24 @@ traverse les éditions.
 
 **Un instantané peut porter l'état « publié »** (`publieLe`). C'est le plan que
 les animateurs ont reçu, et celui que leur espace affiche — voir *Publication*
-ci-dessous. Un instantané publié sort de la purge de rétention et refuse d'être
-supprimé (`409`) : ce serait reprendre sans un mot ce qui a été annoncé.
+ci-dessous. Un instantané publié sort de la purge de rétention.
+
+**Seule la *dernière* publication refuse d'être supprimée** (`409`) : c'est elle
+que l'espace lit, et la supprimer reprendrait sans un mot ce qui a été annoncé.
+Une édition publie autant de fois qu'elle en a besoin, et les publications
+qu'une autre a remplacées ne sont plus lues par personne : elles se suppriment
+comme n'importe quel instantané. Les protéger toutes — ce que faisait le
+prédicat `publie_le IS NULL` — rendait l'écran inutilisable dès la deuxième
+publication (issue #34). L'écran Instantanés le dit avant le clic : badge
+« plan publié » sur celle en cours, bouton *Supprimer* désactivé avec le motif,
+badge « publié, remplacé » sur les précédentes.
+
+Le repère de comparaison d'une personne différée (`plan_notifie_id`, issue #503)
+peut désigner une de ces publications : la supprimer la fait relire comme
+« jamais prévenue », et sa prochaine publication lui annoncera son planning
+entier au lieu de ses seuls écarts. C'est le comportement assumé depuis la V97 —
+une référence disparue retombe sur « rien à comparer » plutôt que d'inventer un
+plan.
 
 La comparaison A/B **ne déclenche aucune résolution** : elle lit des KPI
 mesurés à la capture, jamais un score recalculé. `editionsDifferentes` n'est

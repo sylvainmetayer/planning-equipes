@@ -439,17 +439,38 @@ public class PlanSnapshotService {
     }
 
     /**
+     * Deletes anything but the edition's <b>last</b> publication (issue #34).
+     *
+     * <p>The guard used to read {@code publie_le IS NULL}, which spared every
+     * publication the edition had ever made: an event publishing each evening
+     * accumulated snapshots nobody could ever remove, each of them refused with
+     * the sentence meant for the one plan on display. The {@code EXISTS}
+     * mirrors the ordering of {@link #lastPublication()} — the same row, by
+     * construction — and lives in the statement rather than in a read before
+     * it, so two deletions racing each other cannot both believe themselves
+     * replaced and leave the edition with no published plan at all.</p>
+     */
+    private static final String SUPPRIMER_SAUF_PUBLICATION_COURANTE = """
+ DELETE FROM plan_snapshot s
+ WHERE s.edition_id = ? AND s.id = ?
+   AND (s.publie_le IS NULL
+        OR EXISTS (SELECT 1 FROM plan_snapshot p
+                    WHERE p.edition_id = s.edition_id
+                      AND p.publie_le IS NOT NULL
+                      AND (p.publie_le, p.id) > (s.publie_le, s.id)))""";
+
+    /**
      * @return true when a row was actually deleted.
-     * @throws BusinessError.Conflict on a published snapshot: it is the plan
-     *         the animateurs were sent and the one their espace reads
+     * @throws BusinessError.Conflict on the edition's last publication: it is
+     *         the plan the animateurs were sent and the one their espace reads
      *         (issue #245), so deleting it would take back what was said
-     *         without telling anyone
+     *         without telling anyone. The publications it replaced go like any
+     *         other snapshot (issue #34) — nothing reads them any more, and
+     *         keeping them out of reach only made the screen unusable
      */
     public boolean delete(long id) {
         try (Connection connection = dataSource.getConnection();
-                PreparedStatement ps = scope.prepareScoped(
-                        connection,
-                        "DELETE FROM plan_snapshot WHERE edition_id = ? AND id = ? AND publie_le IS NULL")) {
+                PreparedStatement ps = scope.prepareScoped(connection, SUPPRIMER_SAUF_PUBLICATION_COURANTE)) {
             ps.setLong(2, id);
             if (ps.executeUpdate() > 0) {
                 return true;
@@ -459,7 +480,8 @@ public class PlanSnapshotService {
         }
         SnapshotMeta reste = meta(id);
         if (reste != null && reste.publieLe() != null) {
-            throw new BusinessError.Conflict("Cet instantané est le plan publié : il ne peut pas être supprimé.");
+            throw new BusinessError.Conflict("Cet instantané est le plan publié : il ne peut pas être supprimé. "
+                    + "Il le restera jusqu'à la prochaine publication, qui prendra sa place.");
         }
         return false;
     }

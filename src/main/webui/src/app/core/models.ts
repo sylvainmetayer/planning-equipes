@@ -1984,6 +1984,14 @@ export interface PlanSnapshot {
    * guard and the MCP tool cannot disagree.
    */
   perime: boolean;
+  /**
+   * When this snapshot was communicated to the animateurs (issue #245), null
+   * on a working snapshot — which every snapshot is until someone publishes.
+   * Several snapshots of an edition carry it: an edition publishes as often as
+   * it needs to. Only the **last** of them is the plan on display, and the only
+   * one the server refuses to delete (issue #34).
+   */
+  publieLe: string | null;
 }
 
 /**
