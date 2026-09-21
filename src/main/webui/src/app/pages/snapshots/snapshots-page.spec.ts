@@ -32,6 +32,7 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
     kpi: null,
     referenceModifieLe: null,
     perime: false,
+    publieLe: null,
     ...overrides,
   };
 }
@@ -39,14 +40,19 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
 /** Reaches the protected members the template binds to. */
 type PageInternals = {
   restaurer: (snapshot: PlanSnapshot) => Promise<void>;
+  remove: (snapshot: PlanSnapshot) => Promise<void>;
   fraicheurTooltip: (snapshot: PlanSnapshot) => string;
+  estPlanPublie: (snapshot: PlanSnapshot) => boolean;
+  publicationTooltip: (snapshot: PlanSnapshot) => string;
+  suppressionTooltip: (snapshot: PlanSnapshot) => string;
   error: () => string;
   message: () => string;
 };
 
 describe('SnapshotsPage', () => {
+  let liste: PlanSnapshot[] = [];
   const store = {
-    snapshots: () => [] as PlanSnapshot[],
+    snapshots: () => liste,
     chargement: () => false,
     reload: vi.fn(),
     restaurer: vi.fn(),
@@ -59,7 +65,9 @@ describe('SnapshotsPage', () => {
   const jobs = { editingLocked: () => false };
 
   beforeEach(() => {
+    liste = [];
     store.reload.mockReset().mockResolvedValue(undefined);
+    store.supprimer.mockReset().mockResolvedValue(undefined);
     store.restaurer.mockReset();
     confirm.ask.mockReset().mockResolvedValue(true);
     planningApi.persistedCount.mockReset().mockResolvedValue({ assignments: 12 });
@@ -136,6 +144,65 @@ describe('SnapshotsPage', () => {
     expect(confirm.ask).toHaveBeenCalledOnce();
     expect(store.restaurer).toHaveBeenCalledExactlyOnceWith(7);
     expect(page.error()).toContain('Instantané introuvable.');
+  });
+
+  // Issue #34: an edition publishes as often as it needs to, and only the last
+  // of those publications is the plan the animateurs hold. Reading the guard
+  // as « publié » rather than « publié en dernier » is what made every
+  // publication but the current one impossible to remove.
+  it('marks only the last publication as the plan on display', () => {
+    liste = [
+      snapshot({ id: 1, publieLe: '2026-08-18T18:00:00Z' }),
+      snapshot({ id: 2, publieLe: '2026-08-19T18:00:00Z' }),
+      snapshot({ id: 3 }),
+    ];
+    const page = createPage();
+
+    expect(page.estPlanPublie(liste[1])).toBe(true);
+    expect(page.estPlanPublie(liste[0])).toBe(false);
+    expect(page.estPlanPublie(liste[2])).toBe(false);
+  });
+
+  // Two publications within the same second are not a tie: the server orders
+  // on the id next, and the screen has to name the same row it does.
+  it('breaks a tie on the id, as the server does', () => {
+    liste = [
+      snapshot({ id: 8, publieLe: '2026-08-19T18:00:00Z' }),
+      snapshot({ id: 9, publieLe: '2026-08-19T18:00:00Z' }),
+    ];
+    const page = createPage();
+
+    expect(page.estPlanPublie(liste[1])).toBe(true);
+    expect(page.estPlanPublie(liste[0])).toBe(false);
+  });
+
+  it('deletes a publication another one has replaced, and refuses the current one', async () => {
+    liste = [
+      snapshot({ id: 1, publieLe: '2026-08-18T18:00:00Z' }),
+      snapshot({ id: 2, publieLe: '2026-08-19T18:00:00Z' }),
+    ];
+    const page = createPage();
+
+    await page.remove(liste[0]);
+    expect(store.supprimer).toHaveBeenCalledExactlyOnceWith(1);
+
+    await page.remove(liste[1]);
+    expect(store.supprimer).toHaveBeenCalledOnce();
+    expect(confirm.ask).toHaveBeenCalledOnce();
+  });
+
+  it('says why the plan on display cannot go, and stays plain elsewhere', () => {
+    liste = [
+      snapshot({ id: 1, publieLe: '2026-08-18T18:00:00Z' }),
+      snapshot({ id: 2, publieLe: '2026-08-19T18:00:00Z' }),
+    ];
+    const page = createPage();
+
+    expect(page.suppressionTooltip(liste[1])).toContain('ne peut pas être supprimé');
+    expect(page.suppressionTooltip(liste[0])).toBe('Supprimer');
+    expect(page.publicationTooltip(liste[1])).toContain('espace affiche');
+    expect(page.publicationTooltip(liste[0])).toContain('remplacé');
+    expect(page.publicationTooltip(liste[0])).not.toContain('Invalid Date');
   });
 
   it('says since when a snapshot is stale, and stays silent about a fresh one', () => {

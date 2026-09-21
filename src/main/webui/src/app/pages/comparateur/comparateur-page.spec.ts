@@ -72,6 +72,7 @@ function snapshot(overrides: Partial<PlanSnapshot> = {}): PlanSnapshot {
     kpi: kpi(),
     referenceModifieLe: null,
     perime: false,
+    publieLe: null,
     ...overrides,
   };
 }

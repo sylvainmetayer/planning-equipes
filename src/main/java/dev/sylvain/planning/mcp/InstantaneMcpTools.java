@@ -176,7 +176,9 @@ public class InstantaneMcpTools {
     }
 
     @Tool(
-            description = "Supprime un instantané. Le planning courant n'est pas touché.",
+            description = "Supprime un instantané. Le planning courant n'est pas touché. La dernière"
+                    + " publication est refusée : c'est le plan que les animateurs ont reçu. Les"
+                    + " publications qu'elle a remplacées se suppriment normalement.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

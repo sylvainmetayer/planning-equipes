@@ -90,6 +90,60 @@ export class SnapshotsPage {
   protected readonly affectationsCourantes = signal<number | null>(null);
 
   /**
+   * The edition's **last** publication — the plan the animateurs hold and the
+   * one their espace reads (issue #245). The ordering mirrors the server's
+   * (`publie_le` then `id`), because it names the same row: this is the only
+   * snapshot the server refuses to delete, and the screen has to say so before
+   * the click rather than turn a 409 into a red banner afterwards (issue #34).
+   * The publications it replaced are ordinary snapshots again.
+   */
+  protected readonly planPublieId = computed(() => {
+    // Parsed, never compared as text: the server writes an instant, and the
+    // fractional seconds it carries vary in length — « …:00Z » would then sort
+    // *after* « …:00.5Z », naming the wrong row on the very screen that has to
+    // name the server's. An unparseable date drops out rather than poisoning
+    // the comparison with NaN.
+    const publiees = this.store
+      .snapshots()
+      .map((snapshot) => ({ snapshot, moment: Date.parse(snapshot.publieLe ?? '') }))
+      .filter((candidate) => !Number.isNaN(candidate.moment));
+    if (publiees.length === 0) {
+      return null;
+    }
+    return publiees.reduce((derniere, candidate) =>
+      candidate.moment > derniere.moment ||
+      (candidate.moment === derniere.moment && candidate.snapshot.id > derniere.snapshot.id)
+        ? candidate
+        : derniere,
+    ).snapshot.id;
+  });
+
+  /** True on the plan on display, the one deletion refuses. */
+  protected estPlanPublie(snapshot: PlanSnapshot): boolean {
+    return snapshot.id === this.planPublieId();
+  }
+
+  /**
+   * Why a snapshot carries the « publié » badge. The two sentences are the
+   * whole rule: one plan is on display, the ones before it are history.
+   */
+  protected publicationTooltip(snapshot: PlanSnapshot): string {
+    const moment = snapshot.publieLe
+      ? new Date(snapshot.publieLe).toLocaleString(intlLocale())
+      : '';
+    return this.estPlanPublie(snapshot)
+      ? $localize`:@@snapshots.published.tooltipCourant:Publié le ${moment}:moment: : c'est le plan que les animateurs ont reçu et que leur espace affiche.`
+      : $localize`:@@snapshots.published.tooltipRemplace:Publié le ${moment}:moment:, puis remplacé par une publication plus récente : plus personne ne le lit.`;
+  }
+
+  /** The delete button says why it is out on the plan on display. */
+  protected suppressionTooltip(snapshot: PlanSnapshot): string {
+    return this.estPlanPublie(snapshot)
+      ? $localize`:@@snapshots.delete.publieTooltip:Le plan publié ne peut pas être supprimé : c'est celui que les animateurs ont reçu. La prochaine publication prendra sa place.`
+      : $localize`:@@common.delete:Supprimer`;
+  }
+
+  /**
    * How a snapshot differs from the plan in place — restoring blind is exactly
    * what the screen should spare the user.
    */
@@ -238,6 +292,9 @@ export class SnapshotsPage {
   }
 
   protected async remove(snapshot: PlanSnapshot): Promise<void> {
+    if (this.estPlanPublie(snapshot)) {
+      return;
+    }
     const confirme = await this.confirm.ask({
       title: $localize`:@@snapshots.delete.title:Supprimer cet instantané ?`,
       message: $localize`:@@snapshots.delete.message:« ${snapshot.libelle}:libelle: » sera définitivement perdu.`,

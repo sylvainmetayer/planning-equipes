@@ -20,3 +20,20 @@
   --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
   --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
 }
+
+/*
+ * Publication badge (issue #34). The plan on display carries the theme's
+ * "this one matters" colour — it is the one the animateurs hold, and the one
+ * the Delete button is out on. A publication another one has replaced keeps
+ * the neutral surface: it is history, and it deletes like any other snapshot.
+ */
+.snapshot-publie-chip {
+  margin-left: 0.5rem;
+  --mat-chip-elevated-container-color: var(--mat-sys-surface-container-high);
+  --mat-chip-label-text-color: var(--mat-sys-on-surface-variant);
+}
+
+.snapshot-publie-courant-chip {
+  --mat-chip-elevated-container-color: var(--mat-sys-primary-container);
+  --mat-chip-label-text-color: var(--mat-sys-on-primary-container);
+}

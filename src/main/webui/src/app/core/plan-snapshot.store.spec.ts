@@ -23,6 +23,7 @@ function snapshot(id: number, libelle = 'S' + id): PlanSnapshot {
     kpi: null,
     referenceModifieLe: null,
     perime: false,
+    publieLe: null,
   };
 }
 
