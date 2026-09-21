@@ -16,6 +16,14 @@
 #     touchée : `gitIgnoredAuthors` de renovate.json lui dit d'ignorer cet
 #     auteur-ci, et une rebase de sa part recrée la branche sans ce commit,
 #     que ce job repose alors.
+#
+# Deux jobs plutôt qu'un, et c'est le point de sécurité du fichier : la
+# régénération lance `./mvnw license:add-third-party`, donc des plugins Maven
+# dont la version vient du `pom.xml` non relu de la PR — que le groupe
+# « maven build plugins » de Renovate peut justement faire bouger. Ce job-là
+# n'a que `contents: read`. Le jeton capable d'écrire sur la branche et de
+# piloter les workflows reste dans le second, qui ne fait tourner que git et
+# gh sur un fichier déjà produit.
 name: Licences tierces
 
 on:
@@ -25,8 +33,7 @@ on:
       - 'src/main/webui/package-lock.json'
 
 permissions:
-  contents: write
-  actions: write
+  contents: read
 
 concurrency:
   group: licences-${{ github.head_ref }}
@@ -39,6 +46,11 @@ jobs:
     if: github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login == 'renovate[bot]'
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Le build tourne sans jeton d'écriture : voir l'en-tête.
+    permissions:
+      contents: read
+    outputs:
+      change: ${{ steps.diff.outputs.change }}
 
     steps:
       - name: Checkout the branch of the pull request
@@ -63,6 +75,50 @@ jobs:
           ./mvnw -B --no-transfer-progress license:add-third-party
           node src/main/webui/scripts/licences-tierces.js
 
+      # Le plus souvent l'inventaire ne bouge pas : le dire ici évite
+      # d'allumer le job privilégié pour rien.
+      - name: Note whether the inventory moved
+        id: diff
+        run: |
+          if git diff --quiet -- docs/licences-tierces.md; then
+            echo "L'inventaire est déjà celui de ces dépendances."
+            echo 'change=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'change=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Hand the inventory to the committing job
+        if: steps.diff.outputs.change == 'true'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: licences-tierces
+          path: docs/licences-tierces.md
+
+  commiter:
+    needs: regenerer
+    if: needs.regenerer.outputs.change == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Les seuls droits d'écriture du workflow, et ils ne voient aucun build :
+    # `contents` pour la poussée, `actions` pour l'annulation et la relance.
+    permissions:
+      contents: write
+      actions: write
+
+    steps:
+      - name: Checkout the branch of the pull request
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.head_ref }}
+
+      # `gh run download` plutôt que download-artifact : le job a déjà le
+      # jeton et les droits `actions`, et l'artefact du run courant s'y
+      # récupère tel quel. Le fichier atterrit à sa place dans `docs/`.
+      - name: Retrieve the regenerated inventory
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh run download "$GITHUB_RUN_ID" --name licences-tierces --dir docs
+
       - name: Commit the inventory and replay the checks on it
         env:
           GH_TOKEN: ${{ github.token }}
@@ -70,6 +126,9 @@ jobs:
           SUPERSEDED_SHA: ${{ github.event.pull_request.head.sha }}
           SOLVER_BUMP: ${{ contains(github.event.pull_request.labels.*.name, 'timefold') || contains(github.event.pull_request.labels.*.name, 'quarkus') }}
         run: |
+          # Le job précédent a vu le fichier bouger, mais il a extrait la
+          # branche avant lui : si Renovate l'a rebasée entre-temps, la tête
+          # d'ici porte peut-être déjà le bon inventaire.
           if git diff --quiet -- docs/licences-tierces.md; then
             echo "L'inventaire est déjà celui de ces dépendances."
             exit 0
@@ -77,10 +136,20 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m "chore(deps): régénérer l'inventaire des licences tierces" -- docs/licences-tierces.md
-          git push origin "HEAD:$BRANCH"
+
+          # Une poussée simple, jamais forcée : si Renovate a rebasé la branche
+          # pendant la régénération, le refus est la bonne issue — forcer
+          # écraserait sa rebase. Ce run s'arrête alors proprement, et celui
+          # que la rebase vient de déclencher reposera ce commit sur la
+          # nouvelle tête. Sans ce garde-fou, `bash -e` tuait le script ici :
+          # ni l'annulation ni la relance ci-dessous ne tournaient.
+          if ! git push origin "HEAD:$BRANCH"; then
+            echo "::warning::Poussée refusée : $BRANCH a bougé pendant la régénération (rebase Renovate ?). Le run déclenché par cette nouvelle tête reprendra l'inventaire."
+            exit 0
+          fi
 
           # Ce qui tournait encore sur le commit remplacé ne prouve plus rien.
-          for wf in tests.yml e2e.yml securite.yml scenario-tests.yml; do
+          for wf in tests.yml e2e.yml e2e-lourd.yml securite.yml scenario-tests.yml; do
             for status in in_progress queued; do
               gh run list --workflow "$wf" --commit "$SUPERSEDED_SHA" --status "$status" \
                 --json databaseId --jq '.[].databaseId' \
@@ -91,6 +160,10 @@ jobs:
           for wf in tests.yml e2e.yml securite.yml; do
             gh workflow run "$wf" --ref "$BRANCH"
           done
+          # Les deux workflows lourds ont `pom.xml` dans leurs chemins et la
+          # même garde de label : on ne les relance que là où ils auraient
+          # tourné d'eux-mêmes.
           if [ "$SOLVER_BUMP" = "true" ]; then
             gh workflow run scenario-tests.yml --ref "$BRANCH"
+            gh workflow run e2e-lourd.yml --ref "$BRANCH"
           fi
