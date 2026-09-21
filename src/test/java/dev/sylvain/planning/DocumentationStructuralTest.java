@@ -35,7 +35,7 @@ import org.junit.jupiter.api.Test;
 class DocumentationStructuralTest {
 
     private static final Path API_MD = Path.of("docs/api.md");
-    private static final Path AGENTS_MD = Path.of("AGENTS.md");
+    private static final Path AGENTS_MD = Path.of("src/main/webui/AGENTS.md");
     private static final Path CONTRAINTES_MD = Path.of("docs/contraintes.md");
     private static final Path RESOURCES = Path.of("src/main/java/dev/sylvain/planning/api");
     private static final Path ROUTES_TS = Path.of("src/main/webui/src/app/app.routes.ts");
@@ -223,9 +223,11 @@ class DocumentationStructuralTest {
     /* ------------------------------ AGENTS.md ----------------------------- */
 
     /**
-     * "One route = one page = one block", and AGENTS.md lists the routes — all
-     * of them, since the list is what a reader uses to find the page behind a
-     * screen. Seventeen were missing when #392 counted.
+     * "One route = one page = one block", and the frontend's directory-scoped
+     * memory file ({@code src/main/webui/AGENTS.md}, where the Frontend section
+     * of the root file moved) lists the routes — all of them, since the list
+     * is what a reader uses to find the page behind a screen. Seventeen were
+     * missing when #392 counted.
      */
     @Test
     void everyFrontendRouteIsListedInAgentsMd() throws IOException {
@@ -237,7 +239,7 @@ class DocumentationStructuralTest {
             }
         }
         assertThat(absentes)
-                .as("routes of app.routes.ts that AGENTS.md does not list as `/route`")
+                .as("routes of app.routes.ts that src/main/webui/AGENTS.md does not list as `/route`")
                 .isEmpty();
     }
 

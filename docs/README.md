@@ -23,4 +23,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`rgpd.md`](rgpd.md) | **Ce qu'un hébergeur d'instance doit écrire et tenir** : convention de sous-traitance (art. 28), registre des traitements (art. 30), journal des purges, limites connues |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans
-un fichier unique à la racine : [`../AGENTS.md`](../AGENTS.md).
+un fichier à la racine, [`../AGENTS.md`](../AGENTS.md), complété d'un seul
+fichier de répertoire, [`../src/main/webui/AGENTS.md`](../src/main/webui/AGENTS.md),
+qui porte les conventions du frontend et n'est chargé que lorsqu'un agent y
+travaille.
