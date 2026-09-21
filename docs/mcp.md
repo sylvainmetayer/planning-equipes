@@ -67,8 +67,13 @@ que si `/mcp` n'est joignable que depuis la machine elle-même.
 connexion : les proxys sont un fait du déploiement, pas d'un endpoint, et deux
 listes à garder en phase en font une de trop. Ce qu'elle change, et pourquoi
 l'en-tête se lit **par la droite**, est détaillé dans
-[`securite.md`](securite.md#débit-du-serveur-mcp) — sans elle, tous les appels
-arrivant par le proxy partagent un seul compteur.
+[`securite.md`](securite.md#débit-du-serveur-mcp).
+
+> **Derrière un proxy, renseignez `CONNEXION_PROXYS_FIABLES` en même temps que
+> la clé.** Sans elle, tous les appels arrivant par le proxy tombent sur un
+> seul compteur : un appelant anonyme — le filtre passe avant
+> l'authentification — y tient votre client MCP en `429` à deux requêtes par
+> seconde.
 
 Ce plafond ne remplace pas la limitation par IP du reverse proxy, qui reste la
 première ligne pour tout le reste de l'application.

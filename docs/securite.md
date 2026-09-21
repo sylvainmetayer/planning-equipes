@@ -247,6 +247,15 @@ de `CONNEXION_PROXYS_FIABLES` — les proxys sont un fait du déploiement, pas d
 endpoint. Voir [`mcp.md`](mcp.md#limitation-de-débit) pour le réglage du
 plafond selon l'usage.
 
+> **Derrière un proxy, cette liste n'est pas facultative ici.** Le verrou de
+> connexion ne compte que des échecs, et un déploiement qui n'a rien déclaré
+> reste utilisable : il faut cinq mauvais mots de passe pour gêner quelqu'un.
+> Ce plafond-ci compte **chaque requête**, alors sans la liste tous les appels
+> arrivant par le proxy tombent sur un seul compteur, et un appelant anonyme y
+> tient le client MCP légitime en `429` à deux requêtes par seconde — sans clé,
+> puisque le filtre passe avant l'authentification. Renseignez
+> `CONNEXION_PROXYS_FIABLES` en même temps que `PLANNING_MCP_API_KEY`.
+
 ### Verrouillage du form login admin
 
 L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire
@@ -490,7 +499,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | À faire | Pourquoi |
 | --- | --- |
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
-| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, le verrouillage de connexion ignore `X-Forwarded-For` et compte tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
+| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, les deux plafonds par adresse ignorent `X-Forwarded-For` et comptent tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. **Obligatoire dès que `/mcp` sert** : ce plafond-là compte chaque requête, pas les seuls échecs. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
@@ -505,7 +514,8 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 - [ ] `DB_PASSWORD` changé ;
 - [ ] `PUBLIC_URL` en `https://` ;
 - [ ] `PLANNING_MCP_API_KEY` laissée vide tant que le serveur MCP ne sert à
-      personne — vide, `/mcp` répond `401` à tout ;
+      personne — vide, `/mcp` répond `401` à tout ; renseignée, elle appelle
+      `CONNEXION_PROXYS_FIABLES` avec elle (voir ci-dessus) ;
 - [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
       proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
       démarrage échoue sans lui) ;
