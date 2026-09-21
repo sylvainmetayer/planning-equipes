@@ -48,10 +48,10 @@
             @if (snapshot.publieLe) {
               <mat-chip
                 class="snapshot-publie-chip"
-                [class.snapshot-publie-courant-chip]="estPlanPublie(snapshot)"
+                [class.snapshot-publie-courant-chip]="isPlanPublie(snapshot)"
                 [matTooltip]="publicationTooltip(snapshot)"
               >
-                @if (estPlanPublie(snapshot)) {
+                @if (isPlanPublie(snapshot)) {
                   <ng-container i18n="@@snapshots.published.badge">plan publié</ng-container>
                 } @else {
                   <ng-container i18n="@@snapshots.published.badgeRemplace">publié, remplacé</ng-container>
@@ -118,7 +118,7 @@
               [matTooltip]="suppressionTooltip(snapshot)"
               i18n-aria-label="@@common.delete"
               aria-label="Supprimer"
-              [disabled]="enCours() !== null || estPlanPublie(snapshot)"
+              [disabled]="enCours() !== null || isPlanPublie(snapshot)"
               (click)="remove(snapshot)"
             >
               <mat-icon>delete</mat-icon>
