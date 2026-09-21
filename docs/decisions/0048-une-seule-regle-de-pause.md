@@ -122,6 +122,13 @@ qu'elles sont dans la même ADR.
 `HeuresCoherentesTest` verrouille l'égalité des quatre lectures pour un
 animateur.
 
+Les planchers de l'écran Besoin déduisent la pause **de l'édition**, jamais une
+constante. Le sens de la prudence est fixé par ce qu'ils annoncent : un
+plancher peut être lâche, il ne doit jamais dépasser la vérité. Supposer une
+pause plus courte que celle accordée rétrécit ce qu'une personne couvre et
+gonfle donc le plancher — sur le défaut de 30 minutes, une constante à 20
+réclamait 120 personnes là où 119 suffisent.
+
 Trois exceptions, toutes nommées dans `docs/contraintes.md` : les **compteurs
 de prime** (dimanche, férié, après 22 h) restent à l'amplitude, parce qu'une
 prime se paie sur la présence et qu'une pause ne se range pas d'un côté de
@@ -185,8 +192,11 @@ baisser un poids, qui n'existe pas ici.
   scénarios livrés bougent en conséquence, et leurs empreintes avec.
 - **Ce qui reste à faire** : la borne « pic avec tampon » de l'écran Besoin
   prolongeait chaque vacation de l'écart minimal ; sans écart, elle rejoint le
-  pic simultané. Elle est conservée et le dit, mais deux bornes qui donnent
-  toujours le même nombre sont une ligne d'écran de trop — à retirer quand le
+  pic simultané, jour pour jour. Elle est conservée et le dit — la
+  démonstration du plancher est écrite sur elle —, mais elle n'est plus la
+  borne *retenue* : à égalité, `BorneRetenue` crédite le pic simultané, sans
+  quoi l'écran nommerait une contrainte qui ne contraint plus rien. Deux lignes
+  qui donnent toujours le même nombre restent une de trop, à retirer quand le
   contrat de `BorneRetenue` pourra changer.
 - **Ce que cette ADR ne tranche pas** : la convention collective de l'Animation
   (IDCC 1518), qui imposerait 45 minutes quelle que soit la durée de la journée

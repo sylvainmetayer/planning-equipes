@@ -28,9 +28,6 @@ public class PlanningEvenement {
     @ProblemFactCollectionProperty
     private List<ContrainteAdHoc> contraintesAdHoc = new ArrayList<>();
 
-    /** What {@link #parametresLegaux()} answers when the planning carries no fact: the defaults. */
-    private static final ParametresLegaux PARAMETRES_LEGAUX_PAR_DEFAUT = new ParametresLegaux();
-
     @ProblemFactCollectionProperty
     private List<ParametresLegaux> parametresLegaux = new ArrayList<>(List.of(new ParametresLegaux()));
 
@@ -178,10 +175,17 @@ public class PlanningEvenement {
      * property on purpose: it is a shortcut for the move filter, not a
      * serialised field, and {@link #getParametresLegaux()} stays the list the
      * solver loads as a problem fact.
+     *
+     * <p>The fallback builds a fresh instance rather than handing out a shared
+     * one. {@link ParametresLegaux} is a mutable bean with public setters, and
+     * a single caller writing to a static default would have rewritten the
+     * fallback of every planning in the JVM. The allocation costs nothing on
+     * the hot path: the field is initialised with one instance, so a planning
+     * only reaches this branch if somebody cleared the list on purpose.</p>
      */
     public ParametresLegaux parametresLegaux() {
         if (parametresLegaux == null || parametresLegaux.isEmpty() || parametresLegaux.get(0) == null) {
-            return PARAMETRES_LEGAUX_PAR_DEFAUT;
+            return new ParametresLegaux();
         }
         return parametresLegaux.get(0);
     }

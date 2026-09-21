@@ -160,8 +160,10 @@ describe('PausesView', () => {
 
   /**
    * A break with nobody to relay it is a hard breach, not a mode to declare
-   * (ADR 0048): the banner names it, and says the two ways out. A plan where
-   * every break is relayed shows nothing.
+   * (ADR 0048). The count and the two ways out are already in the server's
+   * message one line above, so the banner adds the one thing it lacks — how
+   * much it costs — and nothing else. A plan where every break is relayed
+   * shows nothing.
    */
   it('warns about the breaks nobody can relay, and stays quiet when there are none', async () => {
     const alerte = async (relaisManquants: number) =>
@@ -169,7 +171,7 @@ describe('PausesView', () => {
         '.pauses-alerte',
       );
 
-    expect((await alerte(2))?.textContent).toContain('personne pour relayer');
+    expect((await alerte(2))?.textContent).toContain('écart dur');
     expect(await alerte(0)).toBeNull();
   });
 
