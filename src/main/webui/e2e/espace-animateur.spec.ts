@@ -266,23 +266,25 @@ test.describe('espace animateur', () => {
 
   test("l'espace propose l'abonnement, et le téléchargement en second", async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
-    // La bande vit sous l'onglet « Aperçu » depuis #615 : c'est là que se
-    // range ce qui concerne le planning entier.
-    await page.goto(`/animateur/${jeton}?onglet=apercu`);
-    await expect(page.getByRole('heading', { name: 'Tout mon planning' })).toBeVisible();
+    // La bande est portée sous les trois onglets : on la trouve là où l'on
+    // arrive, sans changer d'onglet pour emporter son planning.
+    await page.goto(`/animateur/${jeton}`);
     await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
     await expect(page.getByRole('link', { name: "S'abonner dans mon agenda" })).toBeVisible();
-    // En complément, pas à la place : les fichiers ponctuels restent là — le
-    // PDF sous ses deux mises en page, et l'ICS.
+    // En complément, pas à la place : le PDF sous ses deux mises en page.
     await expect(page.getByRole('link', { name: 'Livret PDF' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Feuille A4' })).toBeVisible();
-    await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeVisible();
+    // Le fichier ICS n'est pas une quatrième sortie : il attend dans le
+    // dépliant, avec ce qu'il faut savoir avant de le prendre.
+    await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeHidden();
 
     // L'adresse elle-même est repliée : elle se règle une fois et occuperait,
     // dépliée, la place que le planning doit garder.
     await expect(page.getByText('/api/abonnements/')).toBeHidden();
     await page.getByRole('button', { name: "Copier l'adresse, ou la remplacer" }).click();
     await expect(page.getByText('/api/abonnements/')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Fichier ICS' })).toBeVisible();
+    await expect(page.getByText('ne suivra aucune republication')).toBeVisible();
   });
 
   /**
@@ -320,6 +322,30 @@ test.describe('espace animateur', () => {
     const bande = await abonnement.boundingBox();
     expect(bande, "le bouton d'abonnement n'a pas de boîte").not.toBeNull();
     expect(bande!.y + bande!.height).toBeLessThanOrEqual(hauteur);
+  });
+
+  /*
+   * Le gabarit de ce projet est un Pixel 7, soit 412 px : la barre d'onglets y
+   * tenait alors qu'elle imposait 340 px de large quoi qu'il arrive, et la
+   * page débordait de côté sur tout téléphone de 360 px ou moins. Une page
+   * décalée latéralement fait tomber le doigt à côté de ce qu'il vise — c'est
+   * ainsi que le menu de la barre du haut devenait inatteignable. On mesure
+   * donc au plus étroit qui se vende, et sur les trois onglets.
+   */
+  test('aucun onglet ne déborde latéralement, même sur un écran étroit', async ({ page }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    for (const largeur of [320, 360]) {
+      await page.setViewportSize({ width: largeur, height: 780 });
+      await page.goto(`/animateur/${jeton}`);
+      for (const onglet of ['Jour', 'Aperçu', 'Coéquipiers']) {
+        await ongletEspace(page, onglet).click();
+        await expect(page.getByRole('heading', { name: 'Emporter mon planning' })).toBeVisible();
+        const debord = await page.evaluate(
+          () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+        );
+        expect(debord, `onglet ${onglet} à ${largeur} px`).toBeLessThanOrEqual(0);
+      }
+    }
   });
 
   /** Les trois onglets, et l'action de l'espace sous les trois. */

@@ -20,10 +20,32 @@
 
 .espace-onglets .mat-button-toggle {
   flex: 1 1 0;
+  /* Sans cela, `min-width: auto` prend la largeur du contenu pour plancher, et
+     trois libellés insécables tiennent le groupe à 340 px : il dépassait alors
+     de tout téléphone de 360 px ou moins, et c'est la page entière qui
+     défilait de côté — un doigt visant la barre du haut tombait à côté. */
+  min-width: 0;
+}
+
+/* Le libellé se coupe plutôt que de pousser : « Coéquipiers » revient à la
+   ligne sous son icône avant d'élargir quoi que ce soit. */
+.espace-onglets .mat-button-toggle-label-content {
+  padding: 0 0.5rem;
+  white-space: normal;
+  line-height: 1.2;
 }
 
 .espace-onglets .mat-icon {
   margin-right: 0.25rem;
+}
+
+/* Sous 23 rem, l'icône seule : trois libellés et trois icônes ne tiennent pas
+   côte à côte, et c'est le libellé qui porte le sens pour un lecteur d'écran —
+   l'icône, elle, est décorative. */
+@media (max-width: 23rem) {
+  .espace-onglets .mat-icon {
+    display: none;
+  }
 }
 
 /* The day strip: it scrolls, the page does not. */
@@ -387,4 +409,20 @@
   .espace-stats {
     max-width: 30rem;
   }
+}
+
+/* Le recours ICS, dans le dépliant de l'abonnement : le bouton puis sa
+   réserve, l'une sous l'autre pour qu'on ne prenne pas le fichier sans lire
+   qu'il ne bouge plus. */
+.espace-abonnement-recours {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.25rem;
+  margin: 0.75rem 0 0;
+}
+
+.espace-abonnement-recours-aide {
+  font-size: 0.8rem;
+  color: var(--mat-sys-on-surface-variant);
 }
