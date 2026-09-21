@@ -5,7 +5,6 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
-import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.service.BusinessError;
 
 /**
@@ -51,9 +50,6 @@ final class ParametresValidator {
                 "dureeHebdomadaireMaxMineurMinutes",
                 "la durée hebdomadaire maximale des mineurs ne peut pas dépasser 35 h "
                         + "(Code du travail art. L3162-1)");
-        if (parametres.getPauseMinimaleEntreVacationsMinutes() < 0) {
-            throw new BusinessError.Invalid("pauseMinimaleEntreVacationsMinutes must not be negative");
-        }
         if (parametres.getReposQuotidienMinimalMinutes() < 0) {
             throw new BusinessError.Invalid("reposQuotidienMinimalMinutes must not be negative");
         }
@@ -68,16 +64,16 @@ final class ParametresValidator {
         // A floor, not a ceiling — the mirror image of the two weekly caps
         // above. Giving more rest than the Code owes is the organiser's to
         // decide; giving less is not (issue #592).
+        // One duration for the edition, floored at the adult's twenty minutes.
+        // A minor's thirty are floored higher still, by
+        // ParametresLegaux.dureePauseMinutes(true) rather than here: refusing
+        // an edition that grants twenty-five would force it to give thirty to
+        // everybody, which is not what art. L3162-3 asks for (ADR 0048).
         checkPlancher(
-                parametres.getDureePauseMajeurMinutes(),
+                parametres.getDureePauseMinutes(),
                 PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES,
-                "la durée de pause des majeurs ne peut pas être inférieure à 20 minutes "
+                "la durée de pause ne peut pas être inférieure à 20 minutes "
                         + "(Code du travail art. L3121-16, disposition d'ordre public)");
-        checkPlancher(
-                parametres.getDureePauseMineurMinutes(),
-                PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES,
-                "la durée de pause des mineurs ne peut pas être inférieure à 30 minutes "
-                        + "(Code du travail art. L3162-3)");
         checkFenetre(parametres.getCoupureRepasMidiDebut(), parametres.getCoupureRepasMidiFin(), "coupureRepasMidi");
         checkFenetre(parametres.getCoupureRepasSoirDebut(), parametres.getCoupureRepasSoirFin(), "coupureRepasSoir");
         // Required, not defaulted: an evening that starts « never » would empty

@@ -87,11 +87,10 @@ public class EditionRepository {
             new TableToCopy(
                     "parametres_legaux",
                     "duree_hebdomadaire_max_minutes, duree_hebdomadaire_max_mineur_minutes, "
-                            + "pause_minimale_entre_vacations_minutes, repos_quotidien_minimal_minutes, "
-                            + "pause_sur_poste, coupure_repas_minutes, coupure_repas_midi_debut, "
-                            + "coupure_repas_midi_fin, coupure_repas_soir_debut, coupure_repas_soir_fin, "
-                            + "duree_vacation_max_minutes, heure_debut_soiree, "
-                            + "duree_pause_majeur_minutes, duree_pause_mineur_minutes"),
+                            + "repos_quotidien_minimal_minutes, coupure_repas_minutes, "
+                            + "coupure_repas_midi_debut, coupure_repas_midi_fin, coupure_repas_soir_debut, "
+                            + "coupure_repas_soir_fin, duree_vacation_max_minutes, heure_debut_soiree, "
+                            + "duree_pause_minutes"),
             new TableToCopy(
                     "parametres_qualite",
                     "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "

@@ -17,9 +17,6 @@ edition:
 festival:
   dateDebut: 2027-07-01
 
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-
 parametresSolveur:
   dureeResolutionSecondes: 1800
 

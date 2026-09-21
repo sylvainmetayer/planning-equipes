@@ -48,15 +48,6 @@ public class ParametresLegaux {
     public static final int DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT = 35 * 60;
 
     /**
-     * Minimum gap required between the end of one vacation ({@code Creneau})
-     * and the start of another one, same day, for the same animateur — so a
-     * day cut into several vacations for one seat-track never reconstitutes an
-     * unbroken working day just by chaining vacations back to back.
-     * Default: 30 min.
-     */
-    public static final int PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT = 30;
-
-    /**
      * How long one vacation may run before the grid check says so. Default 6 h,
      * the art. L3121-16 threshold at which a break becomes legally mandatory:
      * a vacation staying strictly under it never needs an internal break, and
@@ -81,41 +72,29 @@ public class ParametresLegaux {
     public static final int REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT = 11 * 60;
 
     /**
-     * Whether the legal break — 20 consecutive minutes once an adult's working
-     * time reaches 6 h (art. L3121-16), 30 minutes at 4 h 30 for a minor (art.
-     * L3162-3) — is taken <b>on the post</b>, by relay between the colleagues
-     * of the stand, rather than as a gap between two vacations. The Code
-     * requires the break to be real, not to be scheduled: an organiser that
-     * relieves each animateur for twenty minutes inside a 13:00-20:00 vacation
-     * complies. When true, the continuous-work constraints treat the break as
-     * organised inside the vacation, and the daily caps deduct it from the
-     * amplitude (art. L3121-18 and L3162-1 count <i>travail effectif</i>).
-     * Default false: the application never presumes an organisational fact it
-     * does not hold; the organiser declares it.
+     * How long the break that ends a working stretch lasts — <b>one duration
+     * for the whole edition</b>, adult and young worker alike (ADR 0048).
+     *
+     * <p>Default: the thirty minutes the organisation settled on (issue #31).
+     * Art. <b>L3121-16</b> owes an adult twenty at the sixth hour and that
+     * twenty is the floor {@code ParametresValidator} refuses to go under; the
+     * organisation gives more, because a thirty-minute relay is easier to
+     * organise than a twenty-minute one and nothing in the Code forbids it.</p>
+     *
+     * <p>For a young worker the thirty minutes of art. <b>L3162-3</b> are
+     * themselves a floor of ordre public, so {@link #dureePauseMinutes(boolean)}
+     * raises a shorter edition value rather than apply it — see there. Two
+     * separate fields used to carry the two brackets, which let an edition set
+     * the adult one and leave the minors' one at its default, and let the
+     * eligibility filter read one while the rules read the other.</p>
      */
-    public static final boolean PAUSE_SUR_POSTE_PAR_DEFAUT = false;
+    public static final int DUREE_PAUSE_MINUTES_PAR_DEFAUT = 30;
 
     /**
      * How long the meal break lasts, uninterrupted: one hour, so that a
      * two-hour window splits into two whole slots — 12-13 or 13-14 — that the
      * organiser can plan rather than endure (issue #438).
      */
-    /**
-     * How long the break that ends an adult's working stretch lasts. Default:
-     * the twenty minutes art. <b>L3121-16</b> owes at the sixth hour, which is
-     * a floor of ordre public — a lower value is refused. Above it, the
-     * organiser is free: a thirty-minute relay is easier to organise than a
-     * twenty-minute one, and nothing in the Code forbids giving more
-     * (issue #592).
-     */
-    public static final int DUREE_PAUSE_MAJEUR_MINUTES_PAR_DEFAUT = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
-
-    /**
-     * The same, for a young worker: thirty minutes at four hours and a half
-     * (art. <b>L3162-3</b>), floor of ordre public, free above.
-     */
-    public static final int DUREE_PAUSE_MINEUR_MINUTES_PAR_DEFAUT = PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES;
-
     public static final int COUPURE_REPAS_MINUTES_PAR_DEFAUT = 60;
 
     public static final LocalTime COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT = LocalTime.of(12, 0);
@@ -136,13 +115,10 @@ public class ParametresLegaux {
 
     private int dureeHebdomadaireMaxMinutes = DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT;
     private int dureeHebdomadaireMaxMineurMinutes = DUREE_HEBDOMADAIRE_MAX_MINEUR_MINUTES_PAR_DEFAUT;
-    private int pauseMinimaleEntreVacationsMinutes = PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT;
     private int dureeVacationMaxMinutes = DUREE_VACATION_MAX_MINUTES_PAR_DEFAUT;
     private int reposQuotidienMinimalMinutes = REPOS_QUOTIDIEN_MINIMAL_MINUTES_PAR_DEFAUT;
-    private boolean pauseSurPoste = PAUSE_SUR_POSTE_PAR_DEFAUT;
 
-    private int dureePauseMajeurMinutes = DUREE_PAUSE_MAJEUR_MINUTES_PAR_DEFAUT;
-    private int dureePauseMineurMinutes = DUREE_PAUSE_MINEUR_MINUTES_PAR_DEFAUT;
+    private int dureePauseMinutes = DUREE_PAUSE_MINUTES_PAR_DEFAUT;
     private int coupureRepasMinutes = COUPURE_REPAS_MINUTES_PAR_DEFAUT;
     private LocalTime coupureRepasMidiDebut = COUPURE_REPAS_MIDI_DEBUT_PAR_DEFAUT;
     private LocalTime coupureRepasMidiFin = COUPURE_REPAS_MIDI_FIN_PAR_DEFAUT;
@@ -161,13 +137,6 @@ public class ParametresLegaux {
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
     }
 
-    public ParametresLegaux(
-            int dureeHebdomadaireMaxMinutes, int pauseMinimaleEntreVacationsMinutes, int reposQuotidienMinimalMinutes) {
-        this.dureeHebdomadaireMaxMinutes = dureeHebdomadaireMaxMinutes;
-        this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
-        this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;
-    }
-
     public int getDureeHebdomadaireMaxMinutes() {
         return dureeHebdomadaireMaxMinutes;
     }
@@ -182,14 +151,6 @@ public class ParametresLegaux {
 
     public void setDureeHebdomadaireMaxMineurMinutes(int dureeHebdomadaireMaxMineurMinutes) {
         this.dureeHebdomadaireMaxMineurMinutes = dureeHebdomadaireMaxMineurMinutes;
-    }
-
-    public int getPauseMinimaleEntreVacationsMinutes() {
-        return pauseMinimaleEntreVacationsMinutes;
-    }
-
-    public void setPauseMinimaleEntreVacationsMinutes(int pauseMinimaleEntreVacationsMinutes) {
-        this.pauseMinimaleEntreVacationsMinutes = pauseMinimaleEntreVacationsMinutes;
     }
 
     public int getDureeVacationMaxMinutes() {
@@ -208,33 +169,25 @@ public class ParametresLegaux {
         this.reposQuotidienMinimalMinutes = reposQuotidienMinimalMinutes;
     }
 
-    public boolean isPauseSurPoste() {
-        return pauseSurPoste;
+    public int getDureePauseMinutes() {
+        return dureePauseMinutes;
     }
 
-    public void setPauseSurPoste(boolean pauseSurPoste) {
-        this.pauseSurPoste = pauseSurPoste;
+    public void setDureePauseMinutes(int dureePauseMinutes) {
+        this.dureePauseMinutes = dureePauseMinutes;
     }
 
-    public int getDureePauseMajeurMinutes() {
-        return dureePauseMajeurMinutes;
-    }
-
-    public void setDureePauseMajeurMinutes(int dureePauseMajeurMinutes) {
-        this.dureePauseMajeurMinutes = dureePauseMajeurMinutes;
-    }
-
-    public int getDureePauseMineurMinutes() {
-        return dureePauseMineurMinutes;
-    }
-
-    public void setDureePauseMineurMinutes(int dureePauseMineurMinutes) {
-        this.dureePauseMineurMinutes = dureePauseMineurMinutes;
-    }
-
-    /** The break owed to this animateur on that date, adult or young worker. */
+    /**
+     * The break owed to this animateur on that date: the edition's own
+     * duration, raised to the thirty minutes of art. <b>L3162-3</b> for a young
+     * worker. That floor is d'ordre public, so an edition that sets twenty-five
+     * gives twenty-five to its adults and thirty to its minors rather than be
+     * refused outright — and every reader of a break length, rules, eligibility
+     * filter, Pauses screen and hours alike, goes through here, so none of them
+     * can be stricter or laxer than the others (ADR 0048).
+     */
     public int dureePauseMinutes(boolean mineur) {
-        return mineur ? dureePauseMineurMinutes : dureePauseMajeurMinutes;
+        return mineur ? Math.max(dureePauseMinutes, PlafondsLegauxMineurs.PAUSE_MINIMALE_MINUTES) : dureePauseMinutes;
     }
 
     public int getCoupureRepasMinutes() {

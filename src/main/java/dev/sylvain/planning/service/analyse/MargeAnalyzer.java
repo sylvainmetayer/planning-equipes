@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.ReferentielManquant;
 import dev.sylvain.planning.solver.EligibleAnimateurMoveFilter;
@@ -150,10 +151,6 @@ public class MargeAnalyzer {
      * @param cellulesDeficitaires cells whose margin is negative
      * @param pireCellule          the tightest cell of the whole event, or
      *                             {@code null} when there is no cell at all
-     * @param pauseMinimaleMinutes the legal break between two shifts, which is
-     *                             the buffer {@link Mode#APRES} keeps either
-     *                             side of a cell. Carried so the screen can say
-     *                             what « rested » meant
      * @param referentielsManquants what the edition has not filled in yet, named
      *                             rather than shown as a zero (issue #416)
      */
@@ -164,7 +161,6 @@ public class MargeAnalyzer {
                 "jours",
                 "message",
                 "mode",
-                "pauseMinimaleMinutes",
                 "referentielsManquants",
                 "tranches"
             })
@@ -175,7 +171,6 @@ public class MargeAnalyzer {
             int animateursTotal,
             int cellulesDeficitaires,
             CelluleMarge pireCellule,
-            int pauseMinimaleMinutes,
             List<ReferentielManquant> referentielsManquants,
             String message) {}
 
@@ -221,18 +216,16 @@ public class MargeAnalyzer {
      * @param animateurs            the roster; an empty one still yields the
      *                              grid, with every margin equal to minus the
      *                              need
-     * @param pauseMinimaleMinutes  the legal break between two shifts
-     * @param pauseSurPoste         the organiser's « la pause se prend sur le
-     *                              poste » declaration, read by the eligibility
-     *                              filter exactly as the constraints read it
+     * @param parametres            the edition's legal parameters, read by the
+     *                              eligibility filter exactly as the
+     *                              constraints read them
      * @param referentielsManquants what the edition has not filled in yet
      */
     public RapportMarge analyze(
             Mode mode,
             List<PosteAffectation> postes,
             List<Animateur> animateurs,
-            int pauseMinimaleMinutes,
-            boolean pauseSurPoste,
+            ParametresLegaux parametres,
             List<ReferentielManquant> referentielsManquants) {
         Mode retenu = mode == null ? Mode.AVANT : mode;
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
@@ -247,8 +240,7 @@ public class MargeAnalyzer {
 
         Map<LocalDate, List<CelluleMarge>> parJour = new TreeMap<>();
         for (Map.Entry<CelluleKey, Cellule> entree : cellules.entrySet()) {
-            CelluleMarge cellule =
-                    evaluate(retenu, entree.getValue(), connus, occupation, pauseMinimaleMinutes, pauseSurPoste);
+            CelluleMarge cellule = evaluate(retenu, entree.getValue(), connus, occupation, parametres);
             parJour.computeIfAbsent(entree.getKey().date(), date -> new ArrayList<>())
                     .add(cellule);
         }
@@ -279,7 +271,6 @@ public class MargeAnalyzer {
                 connus.size(),
                 deficitaires,
                 pire,
-                pauseMinimaleMinutes,
                 referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants),
                 message(retenu, jours, connus, deficitaires, pire));
     }
@@ -336,8 +327,7 @@ public class MargeAnalyzer {
             Cellule cellule,
             List<Animateur> animateurs,
             Map<String, List<Interval>> occupation,
-            int pauseMinimaleMinutes,
-            boolean pauseSurPoste) {
+            ParametresLegaux parametres) {
         Creneau creneau = cellule.creneau;
         int sieges = cellule.postes.size();
         int pourvus = (int) cellule.postes.stream()
@@ -348,7 +338,7 @@ public class MargeAnalyzer {
         long fin = debut + creneau.getDureeMinutes();
         int disponibles = 0;
         for (Animateur animateur : animateurs) {
-            if (isAvailable(mode, animateur, cellule, occupation, debut, fin, pauseMinimaleMinutes, pauseSurPoste)) {
+            if (isAvailable(mode, animateur, cellule, occupation, debut, fin, parametres)) {
                 disponibles++;
             }
         }
@@ -372,25 +362,26 @@ public class MargeAnalyzer {
             Map<String, List<Interval>> occupation,
             long debut,
             long fin,
-            int pauseMinimaleMinutes,
-            boolean pauseSurPoste) {
+            ParametresLegaux parametres) {
         if (animateur.isIndisponibleOn(cellule.creneau.getDate())) {
             return false;
         }
         if (mode == Mode.AVANT) {
             return true;
         }
-        // The buffer is what « rested » means here: a shift ending minutes
-        // before this cell leaves nobody free to take it, however empty the
-        // hours look side by side.
-        long marge = Math.max(pauseMinimaleMinutes, 0);
+        // Busy means busy, with no buffer either side. There used to be one,
+        // the « pause minimale entre vacations » a rule of its own enforced; a
+        // gap shorter than the legal break is worked time now, not a forbidden
+        // one (ADR 0048), so a shift ending exactly when this cell starts
+        // leaves its holder free to take it — which is what the solver thinks
+        // too, and this screen exists to predict the solver.
         for (Interval occupe : occupation.getOrDefault(animateur.getId(), List.of())) {
-            if (occupe.overlaps(debut - marge, fin + marge)) {
+            if (occupe.overlaps(debut, fin)) {
                 return false;
             }
         }
         return cellule.postes.stream()
-                .anyMatch(poste -> EligibleAnimateurMoveFilter.isEligible(poste, animateur, pauseSurPoste));
+                .anyMatch(poste -> EligibleAnimateurMoveFilter.isEligible(poste, animateur, parametres));
     }
 
     private static long absolute(LocalDate date, LocalTime heure) {

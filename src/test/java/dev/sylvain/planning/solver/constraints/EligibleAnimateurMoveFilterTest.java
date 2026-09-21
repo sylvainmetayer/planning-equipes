@@ -30,14 +30,18 @@ import org.junit.jupiter.api.Test;
  */
 class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
 
-    /** The six constraints the filter claims to mirror, in the order of its javadoc. */
+    /**
+     * The five constraints the filter claims to mirror, in the order of its
+     * javadoc. {@code travailContinuMaxMineur} left the list with ADR 0048: a
+     * long seat is compliant as soon as a colleague relays the break it owes,
+     * which the pair alone cannot tell.
+     */
     private static final List<String> CONTRAINTES_REFLETEES = List.of(
             "animateurDisponible",
             "standReserveAuxMajeurs",
             "travailInterditJourFerieMineur",
             "travailDeNuitInterditPourMineur",
-            "dureeQuotidienneMaxMineur",
-            "travailContinuMaxMineur");
+            "dureeQuotidienneMaxMineur");
 
     /** 14 July 2026 — a public holiday, and in the same ISO week as D1..D5. */
     private static final LocalDate FERIE = LocalDate.of(2026, 7, 14);
@@ -60,11 +64,19 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         return CONTRAINTES_REFLETEES.stream().anyMatch(contrainte -> penalise(contrainte, poste, parametres));
     }
 
-    private static ParametresLegaux parametres(boolean pauseSurPoste) {
+    private static ParametresLegaux parametres(int dureePauseMinutes) {
         ParametresLegaux parametres = new ParametresLegaux();
-        parametres.setPauseSurPoste(pauseSurPoste);
+        parametres.setDureePauseMinutes(dureePauseMinutes);
         return parametres;
     }
+
+    /**
+     * The floor, the default, and a duration no default ever produces — the
+     * third is what makes this a property rather than a coincidence: a filter
+     * reading a constant while the rules read the edition would pass on 20 and
+     * 30 and fail here (issue #32, critère 6).
+     */
+    private static final int[] DUREES_DE_PAUSE = {20, 30, 45};
 
     /** Every (animateur × stand × timeslot) combination the filter tells apart. */
     private List<PosteAffectation> situation() {
@@ -97,24 +109,26 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
 
     /**
      * The property: the filter never hides an assignment the score would
-     * accept — under both readings of the legal break, since the organiser's
-     * {@code pauseSurPoste} declaration changes what the constraints accept.
+     * accept — at every break duration an edition may grant, since the filter
+     * and the rules both deduct it from a minor's day and a filter reading a
+     * different number from the rules would reject seats the score accepts.
      */
     @Test
     void leFiltreNeRejetteJamaisUneAffectationQueLesContraintesAcceptent() {
         List<String> rejetsInjustifies = new ArrayList<>();
-        for (boolean pauseSurPoste : new boolean[] {false, true}) {
+        for (int dureePause : DUREES_DE_PAUSE) {
+            ParametresLegaux parametres = parametres(dureePause);
             for (PosteAffectation cas : situation()) {
-                if (EligibleAnimateurMoveFilter.isEligible(cas, cas.getAnimateur(), pauseSurPoste)) {
+                if (EligibleAnimateurMoveFilter.isEligible(cas, cas.getAnimateur(), parametres)) {
                     continue;
                 }
-                if (!atLeastOneConstraintPenalizes(cas, parametres(pauseSurPoste))) {
+                if (!atLeastOneConstraintPenalizes(cas, parametres)) {
                     rejetsInjustifies.add(cas.getAnimateur().getId() + " sur "
                             + cas.getStand().getId()
                             + " au créneau " + cas.getCreneau().getHeureDebut() + "–"
                             + cas.getCreneau().getHeureFin() + " le "
                             + cas.getCreneau().getDate()
-                            + (pauseSurPoste ? " (pause sur poste)" : ""));
+                            + " (pause de " + dureePause + " min)");
                 }
             }
         }
@@ -129,7 +143,7 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
     @Test
     void unPosteNonPourvuResteToujoursProposable() {
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(standWithStrategy("S"), matin("C", 1, D1), null), null, false))
+                        poste(standWithStrategy("S"), matin("C", 1, D1), null), null, parametres(30)))
                 .isTrue();
     }
 
@@ -146,19 +160,19 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         indisponible.setJoursIndisponibles(java.util.Set.of(D1));
 
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible, false))
+                        poste(standWithStrategy("S"), matin("C1", 1, D1), indisponible), indisponible, parametres(30)))
                 .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur, false))
+                        poste(stand("S-MAJ", true, "STRATEGIE"), matin("C2", 1, D1), mineur), mineur, parametres(30)))
                 .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur, false))
+                        poste(standWithStrategy("S"), nuit("C3", 1, D1), mineur), mineur, parametres(30)))
                 .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur, false))
+                        poste(standWithStrategy("S"), longDay("C4", 1, D1), mineur), mineur, parametres(30)))
                 .isFalse();
         assertThat(EligibleAnimateurMoveFilter.isEligible(
-                        poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur, false))
+                        poste(standWithStrategy("S"), matin("C5", 7, FERIE), mineur), mineur, parametres(30)))
                 .isFalse();
     }
 }

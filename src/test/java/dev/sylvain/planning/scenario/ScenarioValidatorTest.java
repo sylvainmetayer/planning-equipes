@@ -120,15 +120,14 @@ class ScenarioValidatorTest {
         String withLegaux = MINIMAL + """
                 parametresLegaux:
                   dureeVacationMaxMinutes: 0
-                  pauseMinimaleEntreVacationsMinutes: -5
+                  reposQuotidienMinimalMinutes: -5
                 """;
 
         List<String> erreurs = ScenarioValidator.validate(withLegaux);
 
         assertThat(erreurs)
                 .anySatisfy(erreur -> assertThat(erreur).contains("parametresLegaux.dureeVacationMaxMinutes"))
-                .anySatisfy(
-                        erreur -> assertThat(erreur).contains("parametresLegaux.pauseMinimaleEntreVacationsMinutes"));
+                .anySatisfy(erreur -> assertThat(erreur).contains("parametresLegaux.reposQuotidienMinimalMinutes"));
     }
 
     /**

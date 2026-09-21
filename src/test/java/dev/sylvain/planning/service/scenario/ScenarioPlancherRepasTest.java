@@ -62,7 +62,7 @@ class ScenarioPlancherRepasTest {
                 loaded.problem().getAnimateurs(),
                 List.of(),
                 parametres(loaded).getDureeHebdomadaireMaxMinutes(),
-                parametres(loaded).getPauseMinimaleEntreVacationsMinutes(),
+                StaffingAnalyzer.SANS_TAMPON,
                 List.of(),
                 fenetres(loaded));
 

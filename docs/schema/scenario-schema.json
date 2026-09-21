@@ -442,12 +442,7 @@
           "format" : "int32",
           "exclusiveMinimum" : 0
         },
-        "dureePauseMajeurMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "exclusiveMinimum" : 0
-        },
-        "dureePauseMineurMinutes" : {
+        "dureePauseMinutes" : {
           "type" : "integer",
           "format" : "int32",
           "exclusiveMinimum" : 0
@@ -459,14 +454,6 @@
         },
         "heureDebutSoiree" : {
           "$ref" : "#/$defs/LocalTime"
-        },
-        "pauseMinimaleEntreVacationsMinutes" : {
-          "type" : "integer",
-          "format" : "int32",
-          "minimum" : 0
-        },
-        "pauseSurPoste" : {
-          "type" : "boolean"
         },
         "reposQuotidienMinimalMinutes" : {
           "type" : "integer",

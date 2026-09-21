@@ -9,9 +9,6 @@
 festival:
   dateDebut: 2027-07-07
 
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-
 parametresSolveur:
   dureeResolutionSecondes: 900
 

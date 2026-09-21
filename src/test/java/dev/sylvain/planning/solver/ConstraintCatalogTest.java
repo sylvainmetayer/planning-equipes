@@ -93,8 +93,6 @@ class ConstraintCatalogTest {
                         "maxJoursTravaillesParSemaine",
                         "reposHebdomadaireMinimal",
                         "travailContinuMaxMajeur",
-                        "pauseMinimaleEntreVacations",
-                        "pauseSurPosteSansRelais",
                         "coupureRepasObligatoire");
     }
 

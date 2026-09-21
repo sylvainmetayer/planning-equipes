@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -55,13 +56,14 @@ public final class ForcedAssignmentOnExcludedSeats {
     private ForcedAssignmentOnExcludedSeats() {}
 
     /**
-     * Breaks declared as taken on the post, as
-     * {@code FeasibilityAnalyzer.capacite} reads them, and for the same
-     * reason: it is the most permissive reading of the duration caps, so a
-     * conflict reported here is one the solver would meet whatever the
-     * edition declares.
+     * The legal parameters the eligibility motifs are read under: the domain's
+     * defaults, as {@code FeasibilityAnalyzer.capacite} reads them and for the
+     * same reason — this check does not hold the edition's, and the default
+     * break is the legal floor, so an edition granting more only opens seats
+     * this reading closed. A conflict reported here is one the solver would
+     * meet whatever the edition declares.
      */
-    private static final boolean PAUSE_SUR_POSTE = true;
+    private static final ParametresLegaux PAUSES_PAR_DEFAUT = new ParametresLegaux();
 
     /**
      * @param contraintes the rules of the catalogue every (seat, animateur)
@@ -144,7 +146,7 @@ public final class ForcedAssignmentOnExcludedSeats {
                 sieges.hasNext(); ) {
             PosteAffectation siege = sieges.next();
             for (Animateur animateur : nommes) {
-                List<Motif> motifs = EligibleAnimateurMoveFilter.motifs(siege, animateur, PAUSE_SUR_POSTE);
+                List<Motif> motifs = EligibleAnimateurMoveFilter.motifs(siege, animateur, PAUSES_PAR_DEFAUT);
                 if (motifs.isEmpty()) {
                     // One pair the solver could take: the exception is tenable.
                     return Optional.empty();

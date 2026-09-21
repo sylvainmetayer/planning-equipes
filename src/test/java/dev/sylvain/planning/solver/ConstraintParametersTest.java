@@ -50,10 +50,7 @@ class ConstraintParametersTest {
         // 10 h amplitude pass.
         assertThat(parametres)
                 .extracting(ConstraintParameter::libelle)
-                .containsExactly(
-                        "Durée hebdomadaire maximale, majeurs",
-                        "Pause prise sur le poste",
-                        "Durée de la pause, majeurs");
+                .containsExactly("Durée hebdomadaire maximale, majeurs", "Durée de la pause légale");
         assertThat(parametres).first().extracting(ConstraintParameter::valeur).isEqualTo("48 h");
     }
 
@@ -69,24 +66,26 @@ class ConstraintParametersTest {
     void aDurationIsReadAsAHumanWritesIt() {
         ParametresLegaux legaux = new ParametresLegaux();
         legaux.setDureeHebdomadaireMaxMinutes(44 * 60 + 30);
-        legaux.setPauseMinimaleEntreVacationsMinutes(45);
+        legaux.setDureePauseMinutes(45);
 
         assertThat(valeur(ConstraintParameters.of("dureeHebdomadaireMax", legaux, new ParametresQualite()), 0))
                 .isEqualTo("44 h 30");
-        assertThat(valeur(ConstraintParameters.of("pauseMinimaleEntreVacations", legaux, new ParametresQualite()), 0))
+        assertThat(valeur(ConstraintParameters.of("travailContinuMaxMajeur", legaux, new ParametresQualite()), 0))
                 .isEqualTo("45 min");
     }
 
+    /**
+     * The break the daily cap deducts is the one the Contraintes screen shows
+     * beside it. It used to be shown as a « oui / non » — whether the organiser
+     * had declared the break taken on the post — beside the duration; there is
+     * no mode left to declare (ADR 0048), so the duration is the whole answer.
+     */
     @Test
-    void aBreakDeclaredOnThePostReadsAsYesOrNo() {
+    void theDailyCapShowsTheBreakItDeducts() {
         ParametresLegaux legaux = new ParametresLegaux();
-        legaux.setPauseSurPoste(true);
+        legaux.setDureePauseMinutes(30);
         assertThat(valeur(ConstraintParameters.of("dureeQuotidienneMaxMajeur", legaux, new ParametresQualite()), 0))
-                .isEqualTo("oui");
-
-        legaux.setPauseSurPoste(false);
-        assertThat(valeur(ConstraintParameters.of("dureeQuotidienneMaxMajeur", legaux, new ParametresQualite()), 0))
-                .isEqualTo("non");
+                .isEqualTo("30 min");
     }
 
     @Test

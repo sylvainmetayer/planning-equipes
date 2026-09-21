@@ -60,8 +60,7 @@ class PlanningServiceParametresScenarioTest {
         // of the database (absent here).
         assertThat(legaux.getDureeHebdomadaireMaxMinutes())
                 .isEqualTo(ParametresLegaux.DUREE_HEBDOMADAIRE_MAX_MINUTES_PAR_DEFAUT);
-        assertThat(legaux.getPauseMinimaleEntreVacationsMinutes())
-                .isEqualTo(ParametresLegaux.PAUSE_MINIMALE_ENTRE_VACATIONS_MINUTES_PAR_DEFAUT);
+        assertThat(legaux.getDureePauseMinutes()).isEqualTo(ParametresLegaux.DUREE_PAUSE_MINUTES_PAR_DEFAUT);
         // A scenario can pin the evening: left out of the DTO, the field was not
         // « not overridable » but silently reset to 20:00 on every import, and
         // every evening hour of the equity table moved with it.

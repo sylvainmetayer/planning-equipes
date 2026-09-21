@@ -132,17 +132,18 @@ class RepasConstraintsTest extends ConstraintTestBase {
     }
 
     /**
-     * The heart of the issue: the twenty-minute legal break taken on the post,
-     * by relay, and the meal break are two distinct objects. The parameter that
-     * neutralises {@code travailContinuMaxMajeur} must not carry away this one.
+     * The heart of the issue: the legal break, taken by relay or as a hole, and
+     * the meal break are two distinct objects. A long break granted by the
+     * edition satisfies art. L3121-16 and still owes the hour of the meal
+     * window.
      */
     @Test
-    void laPauseSurPosteNeNeutralisePasLaCoupureRepas() {
-        ParametresLegaux pauseSurPoste = new ParametresLegaux();
-        pauseSurPoste.setPauseSurPoste(true);
+    void laPauseLegaleNeNeutralisePasLaCoupureRepas() {
+        ParametresLegaux pauseGenereuse = new ParametresLegaux();
+        pauseGenereuse.setDureePauseMinutes(45);
 
         verify("coupureRepasObligatoire")
-                .given(MIDI, pauseSurPoste, poste(standA, vacation("10-20", 10, 20), a84))
+                .given(MIDI, pauseGenereuse, poste(standA, vacation("10-20", 10, 20), a84))
                 .penalizesBy(60);
     }
 
@@ -170,19 +171,20 @@ class RepasConstraintsTest extends ConstraintTestBase {
      * A meal break <b>is</b> a break: an hour off resets the six-hour counter
      * of art. L3121-16, so a day the rule would otherwise refuse becomes legal
      * once the break is taken. Nothing in the code says so explicitly — it
-     * falls out of {@code longestSequenceMinutes} splitting a stretch on any
-     * gap of twenty minutes or more — which is exactly why it is locked here:
-     * a change to that threshold, or to how the meal break is modelled, must
-     * not silently make the two rules disagree.
+     * falls out of {@code PauseSurPoste.sequences} splitting a stretch on any
+     * gap of at least the legal break — which is exactly why it is locked here
+     * (critère 4 de l'issue #32): a change to that threshold, or to how the
+     * meal break is modelled, must not silently make the two rules disagree.
      */
     @Test
     void laCoupureRepasRemetLeCompteurDesSixHeuresAZero() {
         Creneau journeeEntiere = creneau("07-19", 1, D1, LocalTime.of(7, 0), LocalTime.of(19, 0));
 
-        // Twelve hours in one go: six hours over the uninterrupted maximum.
+        // Twelve hours in one go, on a stand this animateur holds alone: one
+        // break due past the sixth hour, and nobody to relay it.
         verify("travailContinuMaxMajeur")
                 .given(new ParametresLegaux(), poste(standA, journeeEntiere, a84))
-                .penalizesBy(6 * 60);
+                .penalizesBy(1);
 
         // The same twelve hours cut by the midday break: two stretches of five
         // and six hours, neither of them over.

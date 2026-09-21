@@ -3,10 +3,9 @@
 # Montage le mercredi (un après-midi), jour normal le jeudi et le vendredi,
 # nocturne le samedi — le dernier jour, pour que personne n'enchaîne une
 # fermeture à 23 h 30 avec une ouverture à 10 h. Les journées types et la grille
-# disent la même chose : les appliquer après l'import ne change rien. La pause
-# légale est prise sur le poste ; la section edition fait atterrir l'import dans
-# son édition, créée au besoin. Trois stands d'une place ferment sur le temps du
-# midi, trois stands tiennent la nocturne.
+# disent la même chose : les appliquer après l'import ne change rien. La section
+# edition fait atterrir l'import dans son édition, créée au besoin. Trois stands
+# d'une place ferment sur le temps du midi, trois stands tiennent la nocturne.
 
 edition:
   id: GAMME-10
@@ -14,10 +13,6 @@ edition:
 
 festival:
   dateDebut: 2027-09-01
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-  pauseSurPoste: true
 
 creneaux:
   - id: J1-MONTAGE

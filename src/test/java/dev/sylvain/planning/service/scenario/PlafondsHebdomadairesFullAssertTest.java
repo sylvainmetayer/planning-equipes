@@ -63,8 +63,8 @@ class PlafondsHebdomadairesFullAssertTest {
         Loaded loaded = load(RUNG);
         PlanningEvenement problem = loaded.problem();
         assertThat(problem.getParametresLegaux())
-                .as("the rung must declare the break taken on the post, or this test exercises nothing")
-                .anyMatch(parametres -> parametres.isPauseSurPoste());
+                .as("the rung must carry its legal parameters, or the weekly caps read nothing")
+                .isNotEmpty();
         int passes = FrozenPast.mark(problem.getPostes(), VENDREDI_APRES_MIDI);
         assertThat(passes)
                 .as("the horizon must cut the rung in two, or the past is not exercised")

@@ -9,9 +9,6 @@
 festival:
   dateDebut: 2027-06-02
 
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
-
 creneaux:
   - id: J1-APREM
     jour: 1

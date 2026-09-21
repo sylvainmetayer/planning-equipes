@@ -59,7 +59,7 @@ public final class ConstraintParameters {
      *                — a reader who clicks the link must recognise what they
      *                land on
      * @param valeur  the stored value, already formatted for a human (« 48 h »,
-     *                « 20 min », « oui », « 8 jours »)
+     *                « 20 min », « 8 jours »)
      * @param lien    Angular route of the form
      * @param onglet  which tab of that form, as the {@code onglet} query
      *                parameter of the Paramètres page spells it
@@ -89,29 +89,11 @@ public final class ConstraintParameters {
                             ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureeHebdomadaireMaxMineurMinutes()))),
             Map.entry(
-                    "pauseMinimaleEntreVacationsMinutes",
+                    "dureePauseMinutes",
                     new Reference(
-                            "Pause minimale entre deux vacations",
+                            "Durée de la pause légale",
                             ONGLET_LEGAUX,
-                            contexte -> duree(contexte.legaux().getPauseMinimaleEntreVacationsMinutes()))),
-            Map.entry(
-                    "pauseSurPoste",
-                    new Reference(
-                            "Pause prise sur le poste",
-                            ONGLET_LEGAUX,
-                            contexte -> oui(contexte.legaux().isPauseSurPoste()))),
-            Map.entry(
-                    "dureePauseMajeurMinutes",
-                    new Reference(
-                            "Durée de la pause, majeurs",
-                            ONGLET_LEGAUX,
-                            contexte -> duree(contexte.legaux().getDureePauseMajeurMinutes()))),
-            Map.entry(
-                    "dureePauseMineurMinutes",
-                    new Reference(
-                            "Durée de la pause, mineurs",
-                            ONGLET_LEGAUX,
-                            contexte -> duree(contexte.legaux().getDureePauseMineurMinutes()))),
+                            contexte -> duree(contexte.legaux().getDureePauseMinutes()))),
             Map.entry(
                     "coupureRepasMinutes",
                     new Reference(
@@ -185,23 +167,13 @@ public final class ConstraintParameters {
             // The daily caps themselves are the Code du travail's (10 h, and the
             // minors' own), never a field — what an organiser sets is how much
             // of the day is not work.
-            Map.entry("dureeQuotidienneMaxMajeur", List.of("pauseSurPoste", "dureePauseMajeurMinutes")),
-            Map.entry("dureeQuotidienneMaxMineur", List.of("pauseSurPoste", "dureePauseMineurMinutes")),
-            Map.entry(
-                    "dureeHebdomadaireMax",
-                    List.of("dureeHebdomadaireMaxMinutes", "pauseSurPoste", "dureePauseMajeurMinutes")),
-            Map.entry(
-                    "dureeHebdomadaireMaxDeuxSemaines",
-                    List.of("dureeHebdomadaireMaxMinutes", "pauseSurPoste", "dureePauseMajeurMinutes")),
-            Map.entry(
-                    "dureeHebdomadaireMaxMineur",
-                    List.of("dureeHebdomadaireMaxMineurMinutes", "pauseSurPoste", "dureePauseMineurMinutes")),
-            Map.entry("travailContinuMaxMajeur", List.of("dureePauseMajeurMinutes", "pauseSurPoste")),
-            Map.entry("travailContinuMaxMineur", List.of("dureePauseMineurMinutes", "pauseSurPoste")),
-            Map.entry("pauseMinimaleEntreVacations", List.of("pauseMinimaleEntreVacationsMinutes")),
-            Map.entry(
-                    "pauseSurPosteSansRelais",
-                    List.of("pauseSurPoste", "dureePauseMajeurMinutes", "dureePauseMineurMinutes")),
+            Map.entry("dureeQuotidienneMaxMajeur", List.of("dureePauseMinutes")),
+            Map.entry("dureeQuotidienneMaxMineur", List.of("dureePauseMinutes")),
+            Map.entry("dureeHebdomadaireMax", List.of("dureeHebdomadaireMaxMinutes", "dureePauseMinutes")),
+            Map.entry("dureeHebdomadaireMaxDeuxSemaines", List.of("dureeHebdomadaireMaxMinutes", "dureePauseMinutes")),
+            Map.entry("dureeHebdomadaireMaxMineur", List.of("dureeHebdomadaireMaxMineurMinutes", "dureePauseMinutes")),
+            Map.entry("travailContinuMaxMajeur", List.of("dureePauseMinutes")),
+            Map.entry("travailContinuMaxMineur", List.of("dureePauseMinutes")),
             Map.entry(
                     "coupureRepasObligatoire", List.of("coupureRepasMinutes", "coupureRepasMidi", "coupureRepasSoir")),
             Map.entry(
@@ -258,10 +230,6 @@ public final class ConstraintParameters {
 
     private static String plage(LocalTime debut, LocalTime fin) {
         return debut == null || fin == null ? "non réglée" : debut + " – " + fin;
-    }
-
-    private static String oui(boolean valeur) {
-        return valeur ? "oui" : "non";
     }
 
     private static String count(int valeur) {

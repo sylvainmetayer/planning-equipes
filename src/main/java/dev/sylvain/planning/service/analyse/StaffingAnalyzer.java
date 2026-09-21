@@ -71,12 +71,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * <li><b>Pic simultané</b> — the largest number of seats open at the same
  * instant. A floor by definition: nobody holds two seats at once.</li>
  * <li><b>Pic avec tampon de pause</b> — the same peak, over intervals each
- * extended by the legally-required break between two vacations
- * ({@code ParametresLegaux#getPauseMinimaleEntreVacationsMinutes()}). Two
- * vacations can be held by the same person only if their extended intervals
- * don't overlap, so this maximum overlap is <em>exactly</em> the minimum number
- * of distinct animateurs a day requires — the chromatic number of an interval
- * graph is its maximum clique.</li>
+ * extended by a buffer between two vacations. Two vacations can be held by the
+ * same person only if their extended intervals don't overlap, so this maximum
+ * overlap is <em>exactly</em> the minimum number of distinct animateurs a day
+ * requires — the chromatic number of an interval graph is its maximum clique.
+ * The buffer used to be the « pause minimale entre vacations », a rule of its
+ * own; that rule is retired (ADR 0048) — a gap shorter than the legal break is
+ * worked time, not a forbidden one — so production passes
+ * {@link #SANS_TAMPON} and this bound now coincides with the simultaneous
+ * peak. The parameter stays because the proof is written on it, and because a
+ * caller exploring a hypothetical buffer is one assertion away.</li>
  * <li><b>Charge horaire</b> — the hours of the <em>busiest ISO week</em>,
  * divided by what one animateur may legally work during that week.</li>
  * <li><b>Rotation sur les jours</b> — the person-days of the busiest ISO week,
@@ -190,6 +194,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  */
 @ApplicationScoped
 public class StaffingAnalyzer {
+
+    /**
+     * The buffer the « pic avec tampon » bound extends each vacation by, now
+     * that no rule requires a gap between two of them (ADR 0048): none.
+     */
+    public static final int SANS_TAMPON = 0;
 
     /** Which of the bounds ended up setting {@link StaffingSummary#minimumTotal()}. */
     public enum BorneRetenue {

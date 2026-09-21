@@ -6,13 +6,9 @@
 # travaillent de part et d'autre de la fenêtre 12 h-14 h, et chacun doit tenir
 # exactement une des deux relèves pour garder son heure de repas. Le problème est
 # tendu à dessein — une seule famille de solutions.
-# La pause minimale est à 0 : les blocs se touchent, comme dans le classeur.
 
 festival:
   dateDebut: 2027-07-04
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
 creneaux:
   - id: J1-MATIN

@@ -247,11 +247,7 @@ class DiagnosticMcpToolsTest {
         PosteAffectation p3 = new PosteAffectation("PAUSE-MCP-P3", solo, longue);
         p3.setAnimateur(seul);
         persistence.persist(new PlanningEvenement(jour, List.of(alice, bruno, seul), List.of(p1, p2, p3)));
-        parametresTools.modifier_parametres_legaux(
-                null, null, null, null, null, true, null, null, null, null, null, null, null, null, null);
-
         PausesView tout = diagnosticTools.analyser_pauses(null, null, null, null);
-        assertThat(tout.pauseSurPoste()).isTrue();
         assertThat(tout.journeesAnalysees()).isEqualTo(3);
         assertThat(tout.pausesDues()).isEqualTo(3);
         assertThat(tout.relaisManquants()).isEqualTo(1);
@@ -278,38 +274,30 @@ class DiagnosticMcpToolsTest {
                         .analyser_pauses("2026-07-12", null, null, null)
                         .journees())
                 .isEmpty();
-
-        parametresTools.modifier_parametres_legaux(
-                null, null, null, null, null, false, null, null, null, null, null, null, null, null, null);
-        assertThat(diagnosticTools.analyser_pauses(null, null, null, null).pauseSurPoste())
-                .isFalse();
     }
 
     /**
-     * The thirty minutes the organisation retained have to be settable from an
-     * assistant, not only from the Paramètres screen, the REST route or a YAML
-     * (issue #31) — and the ordre public floors have to hold on that path too:
-     * 20 minutes for an adult (L3121-16), 30 for a minor (L3162-3).
+     * The break the organisation retained has to be settable from an assistant,
+     * not only from the Paramètres screen, the REST route or a YAML (issue #31)
+     * — and the ordre public floor has to hold on that path too: 20 minutes
+     * (L3121-16). There is one duration now, not one per age bracket
+     * (ADR 0048); the minors' thirty are applied when the break is read, not
+     * stored.
      */
     @Test
-    void lesDureesDePauseSeReglentParMcpEtGardentLeursPlanchers() {
+    void laDureeDePauseSeRegleParMcpEtGardeSonPlancher() {
         loadScenario();
 
         ParametresMcpTools.ParametresLegauxView ecrit = parametresTools.modifier_parametres_legaux(
-                null, null, null, null, null, null, 30, 45, null, null, null, null, null, null, null);
+                null, null, null, null, 45, null, null, null, null, null, null, null);
 
-        assertThat(ecrit.dureePauseMajeurMinutes()).isEqualTo(30);
-        assertThat(ecrit.dureePauseMineurMinutes()).isEqualTo(45);
-        assertThat(parametresTools.consulter_parametres_legaux(null).dureePauseMajeurMinutes())
-                .isEqualTo(30);
+        assertThat(ecrit.dureePauseMinutes()).isEqualTo(45);
+        assertThat(parametresTools.consulter_parametres_legaux(null).dureePauseMinutes())
+                .isEqualTo(45);
 
         assertThatThrownBy(() -> parametresTools.modifier_parametres_legaux(
-                        null, null, null, null, null, null, 19, null, null, null, null, null, null, null, null))
+                        null, null, null, null, 19, null, null, null, null, null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("L3121-16");
-        assertThatThrownBy(() -> parametresTools.modifier_parametres_legaux(
-                        null, null, null, null, null, null, null, 29, null, null, null, null, null, null, null))
-                .isInstanceOf(ToolCallException.class)
-                .hasMessageContaining("L3162-3");
     }
 }

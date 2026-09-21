@@ -149,7 +149,6 @@ public class PauseAnalyzer {
     /**
      * The whole read-out.
      *
-     * @param pauseSurPoste     the organiser's declaration, as it stands
      * @param journeesAnalysees animateur-days holding at least one seat
      * @param pausesDues        breaks owed inside a stretch, over the plan
      * @param relaisManquants   those with nobody else on the stand
@@ -168,12 +167,10 @@ public class PauseAnalyzer {
                 "coupuresRepasDues",
                 "coupuresRepasManquantes",
                 "journeesAnalysees",
-                "pauseSurPoste",
                 "pausesDues",
                 "relaisManquants"
             })
     public record RapportPauses(
-            boolean pauseSurPoste,
             int journeesAnalysees,
             int pausesDues,
             int relaisManquants,
@@ -210,12 +207,9 @@ public class PauseAnalyzer {
      *                 what is there to organise ».
      */
     public RapportPauses analyze(PlanningEvenement planning, ParametresLegaux parametres, List<FenetreRepas> fenetres) {
-        boolean pauseSurPoste = parametres != null && parametres.isPauseSurPoste();
         // The declarations the day builder reads durations from. A caller with
         // none — a harness, a plan carrying no ParametresLegaux — gets the
-        // domain's own defaults rather than an NPE deep inside `journee`;
-        // `pauseSurPoste` above deliberately stays false in that case, since
-        // nobody asked for breaks held on the stand.
+        // domain's own defaults rather than an NPE deep inside `journee`.
         ParametresLegaux declarations = parametres == null ? new ParametresLegaux() : parametres;
         List<FenetreRepas> fenetresRepas = fenetres == null ? List.of() : fenetres;
         List<PosteAffectation> postes =
@@ -283,14 +277,13 @@ public class PauseAnalyzer {
                 .thenComparing(JourneeAnimateurView::nomComplet, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(JourneeAnimateurView::animateurId));
         return new RapportPauses(
-                pauseSurPoste,
                 parJournee.size(),
                 pausesDues,
                 relaisManquants,
                 coupuresRepasDues,
                 coupuresRepasManquantes,
                 List.copyOf(vues),
-                buildMessage(pauseSurPoste, pausesDues, relaisManquants, coupuresRepasManquantes));
+                buildMessage(pausesDues, relaisManquants, coupuresRepasManquantes));
     }
 
     /** The days of one animateur only — what their own planning shows. */
@@ -537,7 +530,7 @@ public class PauseAnalyzer {
         int pauseMinimale = parametres.dureePauseMinutes(mineur);
 
         // The stretches and the breaks they owe come from the domain: the
-        // solver's pauseSurPosteSansRelais reads the very same ones, so the
+        // solver's travailContinuMax* read the very same ones, so the
         // screen and the score never disagree on what is due.
         List<SequenceDemandes> sequences = new ArrayList<>();
         for (PauseSurPoste.Sequence sequence : PauseSurPoste.sequences(postesDuJour, pauseMinimale)) {
@@ -677,8 +670,7 @@ public class PauseAnalyzer {
                 .toList();
     }
 
-    private static String buildMessage(
-            boolean pauseSurPoste, int pausesDues, int relaisManquants, int coupuresRepasManquantes) {
+    private static String buildMessage(int pausesDues, int relaisManquants, int coupuresRepasManquantes) {
         String repas = coupuresRepasManquantes == 0
                 ? ""
                 : " " + coupuresRepasManquantes
@@ -687,16 +679,18 @@ public class PauseAnalyzer {
         if (pausesDues == 0) {
             return "Aucune séquence ne dépasse la durée légale de travail continu : rien à organiser." + repas;
         }
-        String base = pausesDues + (pausesDues > 1 ? " pauses" : " pause")
-                + (pauseSurPoste ? " à prendre sur le poste" : " due sans être déclarée sur le poste")
+        // No mode to name any more (ADR 0048): a break due is relayed or it is
+        // a hard breach, so the only thing worth saying is how many lack a
+        // relay and what to do about it.
+        String base = pausesDues + (pausesDues > 1 ? " pauses dues" : " pause due")
                 + (relaisManquants > 0
                         ? ", dont " + relaisManquants + " sans relais possible sur le stand"
                         : ", chacune avec un relais possible sur le stand")
                 + ".";
-        return (pauseSurPoste
+        return (relaisManquants > 0
                         ? base
-                        : base
-                                + " Déclarez la pause prise sur le poste dans les paramètres légaux, ou planifiez un trou.")
+                                + " Ouvrez une place de plus sur le stand à ce moment-là, ou coupez la séquence par un trou."
+                        : base)
                 + repas;
     }
 

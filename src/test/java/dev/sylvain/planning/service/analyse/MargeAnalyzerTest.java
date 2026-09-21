@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.NiveauCompetence;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.CelluleMarge;
@@ -28,7 +29,6 @@ class MargeAnalyzerTest {
 
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 10);
     private static final LocalDate LENDEMAIN = JOUR.plusDays(1);
-    private static final int PAUSE_MINIMALE = 30;
 
     private final MargeAnalyzer analyzer = new MargeAnalyzer();
 
@@ -180,10 +180,18 @@ class MargeAnalyzerTest {
         assertThat(cellule(rapport, JOUR, LocalTime.of(9, 0)).disponibles()).isEqualTo(1);
     }
 
+    /**
+     * Busy means busy, with no buffer either side (ADR 0048). Bob finishes at
+     * 08:45 and the cell starts at 09:00: he is free to take it, and so is
+     * somebody whose shift ends exactly at 09:00. This screen predicts the
+     * solver, and the solver says the same — the fifteen minutes count as
+     * worked if he takes the cell, which the caps judge, not this count.
+     *
+     * <p>It used to hold a buffer of « pause minimale entre vacations », a rule
+     * of its own; that rule is retired, so the buffer with it.</p>
+     */
     @Test
-    void afterSolvingSomebodyWhoseShiftEndsInsideTheLegalBreakIsNotRestedYet() {
-        // Bob finishes at 08:45 and the cell starts at 09:00: fifteen minutes,
-        // where the parameters demand thirty. Side by side the hours look free.
+    void afterSolvingAShiftEndingJustBeforeTheCellLeavesItsHolderFree() {
         Creneau matin = creneau(1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0));
         Creneau veille = creneau(2, JOUR, LocalTime.of(6, 0), LocalTime.of(8, 45));
         Animateur alice = animateur("alice");
@@ -193,7 +201,7 @@ class MargeAnalyzerTest {
 
         RapportMarge rapport = afterSolve(postes, List.of(alice, bob));
 
-        assertThat(cellule(rapport, JOUR, LocalTime.of(9, 0)).disponibles()).isEqualTo(1);
+        assertThat(cellule(rapport, JOUR, LocalTime.of(9, 0)).disponibles()).isEqualTo(2);
     }
 
     @Test
@@ -255,21 +263,19 @@ class MargeAnalyzerTest {
                 Mode.AVANT,
                 seats(stand("A", 1), matin, (Animateur) null),
                 List.of(animateur("alice")),
-                PAUSE_MINIMALE,
-                false,
+                new ParametresLegaux(),
                 List.of(ReferentielManquant.CRENEAUX));
 
         assertThat(rapport.referentielsManquants()).containsExactly(ReferentielManquant.CRENEAUX);
-        assertThat(rapport.pauseMinimaleMinutes()).isEqualTo(PAUSE_MINIMALE);
         assertThat(rapport.mode()).isEqualTo(Mode.AVANT);
     }
 
     private RapportMarge beforeSolve(List<PosteAffectation> postes, List<Animateur> animateurs) {
-        return analyzer.analyze(Mode.AVANT, postes, animateurs, PAUSE_MINIMALE, false, List.of());
+        return analyzer.analyze(Mode.AVANT, postes, animateurs, new ParametresLegaux(), List.of());
     }
 
     private RapportMarge afterSolve(List<PosteAffectation> postes, List<Animateur> animateurs) {
-        return analyzer.analyze(Mode.APRES, postes, animateurs, PAUSE_MINIMALE, false, List.of());
+        return analyzer.analyze(Mode.APRES, postes, animateurs, new ParametresLegaux(), List.of());
     }
 
     private static CelluleMarge cellule(RapportMarge rapport, LocalDate date, LocalTime debut) {

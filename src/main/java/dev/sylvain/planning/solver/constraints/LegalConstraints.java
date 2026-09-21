@@ -8,11 +8,13 @@ import ai.timefold.solver.core.api.score.stream.Joiners;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintBuilder;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintCollector;
 import ai.timefold.solver.core.api.score.stream.quad.QuadConstraintStream;
+import ai.timefold.solver.core.api.score.stream.uni.UniConstraintBuilder;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.PauseSurPoste;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PosteAffectation;
@@ -80,8 +82,7 @@ public final class LegalConstraints {
             maxJoursTravaillesParSemaine(constraintFactory),
             reposHebdomadaireMinimal(constraintFactory),
             reposHebdomadaireMineur(constraintFactory),
-            travailInterditJourFerieMineur(constraintFactory),
-            pauseMinimaleEntreVacations(constraintFactory)
+            travailInterditJourFerieMineur(constraintFactory)
         };
     }
 
@@ -341,33 +342,37 @@ public final class LegalConstraints {
     }
 
     /**
-     * An adult's uninterrupted working stretch may not exceed 6 h without a
-     * 20-minute break.
+     * An adult's uninterrupted working stretch may not exceed 6 h without the
+     * break of art. L3121-16 — a hole in the grid, or a colleague relaying.
      *
      * <p>Code du travail art. <b>L3121-16</b>: <i>« Dès que le temps de travail
      * quotidien atteint six heures, le salarié bénéficie d'un temps de pause
      * d'une durée minimale de vingt minutes consécutives. »</i></p>
      *
-     * <p><b>Interpretation choice</b>: the break is treated as due <i>at the
-     * latest</i> at the sixth hour, so a stretch may <i>reach</i> 6 h but not
-     * exceed it. A stricter reading — any day reaching 6 h of work requires a
-     * 20-minute break to exist, which would make a lone 6 h créneau
-     * non-compliant — is defensible and <b>[JUR-4 à faire valider par un juriste]</b>.
-     * Switching to it means comparing with {@code >=} here.</p>
+     * <p><b>Interpretation choice</b>: the break is due <i>at the latest</i> at
+     * the sixth hour, so a stretch may <i>reach</i> 6 h but not exceed it. A
+     * stricter reading — any day reaching 6 h of work requires a 20-minute
+     * break to exist, which would make a lone 6 h créneau non-compliant — is
+     * defensible and <b>[JUR-4 à faire valider par un juriste]</b>.</p>
      *
-     * <p>By default the model has no break inside a créneau (see
-     * {@code docs/domaine.md}): a break is the <i>gap between two créneaux of
-     * the same animateur</i>. Consecutive créneaux separated by less than 20
-     * minutes are therefore merged into a single stretch, whose length is
-     * measured from the first start to the last end — counting the sub-legal
-     * gaps as worked time, which is the protective reading.</p>
+     * <p><b>The two ways a break is taken are one rule</b> (ADR 0048). A hole
+     * of at least {@link ParametresLegaux#dureePauseMinutes(boolean)} splits
+     * the stretch, so a day cut by a real gap owes nothing here: the stretches
+     * either side stay under the cap. A stretch that runs past the cap owes
+     * {@code ceil((L − cap) / (cap + pause))} breaks — the arithmetic of
+     * {@link PauseSurPoste} — and each of them must be relayed: another
+     * animateur of the same stand holding a seat over the whole break at its
+     * latest start. One hard point per break with nobody to take it. The Code
+     * requires the break to be real, not to be scheduled; a relay makes it
+     * real, and nothing else in the model does.</p>
      *
-     * <p>The Code requires the break to be real, not to be scheduled. When the
-     * organiser declares {@link ParametresLegaux#isPauseSurPoste()} — the
-     * break is taken on the post, by relay between colleagues — the stretch is
-     * read as containing its break at the latest at the sixth hour, and this
-     * constraint no longer fires; the daily cap then deducts that break from
-     * the amplitude, see {@link #effectiveWorkMajeurMinutes(List, ParametresLegaux)}.</p>
+     * <p>Until this rule was written that way, an organiser had a checkbox —
+     * « pause prise sur le poste » — which silenced this constraint and moved
+     * the relay check to a second rule. Four notions called « pause », two
+     * modes, one of which switched the other's rules off. The relay is now the
+     * rule itself, and a stretch with no relay is a hard breach whatever the
+     * organiser declares. See {@code docs/contraintes.md}, « La pause légale,
+     * trou ou relais ».</p>
      *
      * <p>Grouped per animateur <i>and date</i> so each group holds a handful of
      * postes. A stretch chained across midnight is caught by
@@ -375,19 +380,17 @@ public final class LegalConstraints {
      * between day J and day J+1.</p>
      */
     private Constraint travailContinuMaxMajeur(ConstraintFactory constraintFactory) {
-        return continuousWorkCap(
+        return unrelayedBreaks(
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMajeur"),
                         Animateur::isMajeurOn,
-                        ParametresLegaux::getDureePauseMajeurMinutes,
-                        PlafondsLegauxMajeurs.TRAVAIL_CONTINU_MAX_MINUTES,
                         0)
                 .asConstraint("travailContinuMaxMajeur");
     }
 
     /**
      * A young worker's uninterrupted working stretch may not exceed 4 h 30
-     * without a 30-minute break.
+     * without a 30-minute break, hole or relay.
      *
      * <p>Code du travail art. <b>L3162-3</b>: <i>« Aucune période de travail
      * effectif ininterrompue ne peut excéder, pour les jeunes travailleurs, une
@@ -396,59 +399,67 @@ public final class LegalConstraints {
      * bénéficient d'un temps de pause d'au moins trente minutes
      * consécutives. »</i></p>
      *
-     * <p>Both halves of the article collapse into a single rule once breaks are
-     * modelled as gaps between créneaux: gaps shorter than 30 minutes are not
-     * breaks, so the surrounding créneaux form one stretch, and that stretch
-     * must not exceed 4 h 30. On {@code scenario-complet.yaml} the 14:00-20:00
-     * slot is 6 h of continuous work — a minor assigned to it exceeded the
-     * maximum by 1 h 30, with nothing to stop it.</p>
-     *
-     * <p>Same grouping and merging rationale as
-     * {@link #travailContinuMaxMajeur}.</p>
+     * <p>Same rule as {@link #travailContinuMaxMajeur}, at 4 h 30 and with a
+     * break of at least thirty minutes whatever the edition sets — the floor of
+     * this article is d'ordre public, so
+     * {@link ParametresLegaux#dureePauseMinutes(boolean)} raises a shorter
+     * edition value for a minor rather than apply it. Each unrelayed break
+     * carries {@link ExclusionEligibilite#FORFAIT} on top of its point: the
+     * minors' rules are the ones a plan short of people must never buy its way
+     * out of.</p>
      */
     private Constraint travailContinuMaxMineur(ConstraintFactory constraintFactory) {
-        return continuousWorkCap(
+        return unrelayedBreaks(
                         ConstraintToggleSupport.actif(
                                 constraintFactory.forEach(PosteAffectation.class), "travailContinuMaxMineur"),
                         Animateur::isMineurOn,
-                        ParametresLegaux::getDureePauseMineurMinutes,
-                        PlafondsLegauxMineurs.TRAVAIL_CONTINU_MAX_MINUTES,
                         ExclusionEligibilite.FORFAIT)
                 .asConstraint("travailContinuMaxMineur");
     }
 
     /**
-     * The longest stretch of a day against its cap, for one age bracket and
-     * the break that ends a stretch in that bracket — see {@link #dailyCap}
-     * for why the measure stays in the filter and the weight both. Silent
-     * when the organiser declares the break taken on the post
-     * ({@link ParametresLegaux#isPauseSurPoste()}): the daily cap then
-     * deducts it instead.
+     * The breaks one age bracket owes over a day with nobody to relay them —
+     * the shape {@link #travailContinuMaxMajeur} and
+     * {@link #travailContinuMaxMineur} share, written once.
+     *
+     * <p>The breaks come from {@link PauseSurPoste#dues(List, ParametresLegaux)},
+     * which the Pauses screen, the animateur's PDF and the ICS feed read too,
+     * so no two of them can disagree on what is due or when. The relay is the
+     * {@code ifNotExists} it also answers: a seat of the same stand, held by
+     * somebody else, covering the whole break at its latest start.</p>
+     *
+     * <p>A day entirely worked owes nobody a relay any more (ADR 0044), and
+     * computing its breaks would be work for nothing. The break itself must
+     * still be ahead too: a day that already worked its morning and still holds
+     * an evening seat would otherwise have its morning's missing relay charged,
+     * on a stretch whose every seat is pinned — an écart dur no move can
+     * repair, so no re-solve started mid-event could ever reach zero again. The
+     * seat a relay would have to cover is the one that decides.</p>
      */
-    private static QuadConstraintBuilder<
-                    Animateur, LocalDate, List<PosteAffectation>, ParametresLegaux, HardMediumSoftScore>
-            continuousWorkCap(
-                    UniConstraintStream<PosteAffectation> postes,
-                    BiPredicate<Animateur, LocalDate> bracket,
-                    ToIntFunction<ParametresLegaux> breakMinutes,
-                    int capMinutes,
-                    int forfait) {
+    private static UniConstraintBuilder<PauseSurPoste, HardMediumSoftScore> unrelayedBreaks(
+            UniConstraintStream<PosteAffectation> postes, BiPredicate<Animateur, LocalDate> bracket, int forfait) {
         return postes.filter(poste -> poste.getAnimateur() != null
                         && horaireConnu(poste)
+                        && poste.getStand() != null
                         && bracket.test(poste.getAnimateur(), poste.getCreneau().getDate()))
                 .groupBy(
                         PosteAffectation::getAnimateur,
                         poste -> poste.getCreneau().getDate(),
                         ConstraintCollectors.toList())
                 .join(ParametresLegaux.class)
-                .filter((animateur, date, jour, parametres) -> !parametres.isPauseSurPoste()
-                        && PastSeats.reproachable(jour)
-                        && longestSequenceMinutes(jour, breakMinutes.applyAsInt(parametres)) > capMinutes)
-                .penalize(
-                        HardMediumSoftScore.ONE_HARD,
-                        (animateur, date, jour, parametres) -> forfait
-                                + longestSequenceMinutes(jour, breakMinutes.applyAsInt(parametres))
-                                - capMinutes);
+                .filter((animateur, date, jour, parametres) -> PastSeats.reproachable(jour))
+                .map((animateur, date, jour, parametres) -> PauseSurPoste.dues(jour, parametres))
+                .flattenLast(dues -> dues)
+                .filter(due -> PastSeats.reproachable(due.tenu()))
+                .ifNotExists(
+                        PosteAffectation.class,
+                        Joiners.equal(
+                                due -> due.stand().getId(),
+                                poste -> poste.getStand() == null
+                                        ? null
+                                        : poste.getStand().getId()),
+                        Joiners.filtering(PauseSurPoste::relayableBy))
+                .penalize(HardMediumSoftScore.ONE_HARD, due -> forfait + 1);
     }
 
     /**
@@ -792,47 +803,44 @@ public final class LegalConstraints {
     private static int effectiveWorkMajeurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
         return effectiveWorkMinutes(
                 postes,
-                parametres,
-                parametres.getDureePauseMajeurMinutes(),
-                stretch -> PlafondsLegauxMajeurs.onPostBreakMinutes(stretch, parametres.getDureePauseMajeurMinutes()));
+                parametres.dureePauseMinutes(false),
+                stretch -> PlafondsLegauxMajeurs.onPostBreakMinutes(stretch, parametres.dureePauseMinutes(false)));
     }
 
     /** Effective working minutes of a minor's day, see {@link #effectiveWorkMinutes}. */
     private static int effectiveWorkMineurMinutes(List<PosteAffectation> postes, ParametresLegaux parametres) {
         return effectiveWorkMinutes(
                 postes,
-                parametres,
-                parametres.getDureePauseMineurMinutes(),
-                stretch -> PlafondsLegauxMineurs.onPostBreakMinutes(stretch, parametres.getDureePauseMineurMinutes()));
+                parametres.dureePauseMinutes(true),
+                stretch -> PlafondsLegauxMineurs.onPostBreakMinutes(stretch, parametres.dureePauseMinutes(true)));
     }
 
     /**
      * Effective working minutes of one animateur's day: the sum of the effective
-     * durations of their postes, minus the legal breaks taken on the post when
-     * the organiser declares them ({@link ParametresLegaux#isPauseSurPoste()}).
+     * durations of their postes, minus the legal breaks the day owes.
      *
      * <p>Each uninterrupted stretch — créneaux closer than
      * {@code pauseMinimaleMinutes} form one — contributes the breaks
      * {@code onPostBreak} says it needs ({@code PlafondsLegauxMajeurs} /
-     * {@code PlafondsLegauxMineurs#onPostBreakMinutes}). Those breaks are real
-     * rest, not <i>travail effectif</i> (art. L3121-1), hence deducted: an
-     * adult's 14:00-24:00 amplitude is 9 h 40 of work, a 13:00-24:00 one 10 h 40
-     * — still over the 10 h cap.</p>
+     * {@code PlafondsLegauxMineurs#onPostBreakMinutes}, the very arithmetic
+     * {@link PauseSurPoste#dues(List, ParametresLegaux)} spells out seat by
+     * seat). Those breaks are real rest, not <i>travail effectif</i> (art.
+     * L3121-1), hence deducted: an adult's 14:00-24:00 amplitude is 9 h 40 of
+     * work, a 13:00-24:00 one 10 h 40 — still over the 10 h cap.</p>
      *
-     * <p>Without the declaration nothing is deducted: an amplitude is then read
-     * as worked in full, the protective reading.</p>
+     * <p><b>Deducted unconditionally</b>, with no declaration to make (ADR
+     * 0048). A break due is either relayed — and then really taken — or it is
+     * already a hard breach of {@link #travailContinuMaxMajeur} /
+     * {@link #travailContinuMaxMineur}, so deducting it hides nothing: a plan
+     * at zero hard has taken every break it deducts. The organiser used to
+     * carry that decision on a checkbox, which meant a day of the same shape
+     * was 10 h of work for one edition and 9 h 40 for another.</p>
      */
     private static int effectiveWorkMinutes(
-            List<PosteAffectation> postes,
-            ParametresLegaux parametres,
-            int pauseMinimaleMinutes,
-            java.util.function.IntUnaryOperator onPostBreak) {
+            List<PosteAffectation> postes, int pauseMinimaleMinutes, java.util.function.IntUnaryOperator onPostBreak) {
         int total = postes.stream()
                 .mapToInt(PosteAffectation::getDureeEffectiveMinutes)
                 .sum();
-        if (!parametres.isPauseSurPoste()) {
-            return total;
-        }
         int pauses = 0;
         for (int sequence : sequencesMinutes(postes, pauseMinimaleMinutes)) {
             pauses += onPostBreak.applyAsInt(sequence);
@@ -841,24 +849,10 @@ public final class LegalConstraints {
     }
 
     /**
-     * Longest uninterrupted working stretch, in minutes, once créneaux separated
-     * by less than {@code pauseMinimaleMinutes} are merged (a gap shorter than
-     * the legal break is not a break, so the work either side of it is one
-     * stretch). A merged stretch is measured from its first start to its last
-     * end, i.e. the sub-legal gaps count as worked time.
-     */
-    private static int longestSequenceMinutes(List<PosteAffectation> postes, int pauseMinimaleMinutes) {
-        int longest = 0;
-        for (int sequence : sequencesMinutes(postes, pauseMinimaleMinutes)) {
-            longest = Math.max(longest, sequence);
-        }
-        return longest;
-    }
-
-    /**
      * Lengths, in minutes, of the uninterrupted working stretches of the given
-     * postes, in chronological order — the decomposition behind
-     * {@link #longestSequenceMinutes(List, int)}.
+     * postes, in chronological order — the decomposition
+     * {@link #effectiveWorkMinutes} deducts its breaks from, mirroring
+     * {@link PauseSurPoste#sequences(List, int)} on lengths alone.
      */
     private static List<Integer> sequencesMinutes(List<PosteAffectation> postes, int pauseMinimaleMinutes) {
         // Sorted once into an array: this runs on every change of a group in
@@ -1128,51 +1122,5 @@ public final class LegalConstraints {
                 .penalize(
                         HardMediumSoftScore.ONE_HARD,
                         (animateur, semaine, duree, parametres) -> duree.value() - cap.applyAsInt(parametres));
-    }
-
-    /**
-     * Hard, all animateurs: with découpage automatic, one animateur can hold
-     * several postes the same day (rotating seat-tracks, or a deliberate split
-     * shift). Whatever the gap between two same-day, non-overlapping vacations,
-     * it must be at least {@link ParametresLegaux#getPauseMinimaleEntreVacationsMinutes()}
-     * — otherwise chaining vacations back to back would silently reconstitute
-     * an unbroken working day, defeating the whole point of the découpage.
-     *
-     * <p>Joined on {@code animateur} AND {@code date} (a real double hash-equal
-     * join, not a Java filter) — see {@link AffectationConstraints#pasDeChevauchementHoraire}
-     * for why a cheap join matters here: an unindexed same-animateur scan
-     * across every poste measurably slowed convergence on
-     * {@code scenario-complet.yaml}.</p>
-     */
-    private Constraint pauseMinimaleEntreVacations(ConstraintFactory constraintFactory) {
-        return ConstraintToggleSupport.actif(
-                        constraintFactory.forEachUniquePair(
-                                PosteAffectation.class,
-                                Joiners.equal(PosteAffectation::getAnimateur),
-                                Joiners.equal(poste -> poste.getCreneau().getDate())),
-                        "pauseMinimaleEntreVacations")
-                .filter((posteA, posteB) -> posteA.getAnimateur() != null && PastSeats.reproachable(posteA, posteB))
-                .join(ParametresLegaux.class)
-                .filter((posteA, posteB, parametres) ->
-                        symmetricGapMinutes(posteA, posteB) < parametres.getPauseMinimaleEntreVacationsMinutes())
-                .penalize(
-                        HardMediumSoftScore.ONE_HARD,
-                        (posteA, posteB, parametres) -> parametres.getPauseMinimaleEntreVacationsMinutes()
-                                - symmetricGapMinutes(posteA, posteB))
-                .asConstraint("pauseMinimaleEntreVacations");
-    }
-
-    /**
-     * Gap in minutes between the effective windows of the two postes,
-     * whichever comes first — i.e. {@code max(end(a) -> start(b), end(b) ->
-     * start(a))}, exactly one of which is meaningful for a non-overlapping
-     * pair (the other is negative). Unlike {@link #gapMinutes(PosteAffectation,
-     * PosteAffectation)}, the pair here is unordered ({@code forEachUniquePair}),
-     * hence the symmetric max instead of a fixed veille→lendemain direction.
-     */
-    private static int symmetricGapMinutes(PosteAffectation a, PosteAffectation b) {
-        long gapAfterA = Duration.between(fin(a), debut(b)).toMinutes();
-        long gapAfterB = Duration.between(fin(b), debut(a)).toMinutes();
-        return (int) Math.max(gapAfterA, gapAfterB);
     }
 }

@@ -4,13 +4,10 @@
 # relais de midi 12 h-13 h, 13 h-14 h puis 14 h-19 h. Le relais porte
 # couverturePause, donc chaque stand y tient à la moitié de son effectif
 # (arrondie au supérieur) pendant que l'autre moitié déjeune, dans la fenêtre
-# repas 12 h-14 h. Les vacations se touchent : la pause minimale est à 0.
+# repas 12 h-14 h. Les vacations se touchent.
 
 festival:
   dateDebut: 2027-08-18
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
 creneaux:
   - id: J1-V1

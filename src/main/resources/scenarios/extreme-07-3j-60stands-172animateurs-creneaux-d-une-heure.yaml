@@ -1,15 +1,13 @@
 # yaml-language-server: $schema=../../../../docs/schema/scenario-schema.json
 # Scénario extrême 7 : une grille au pas d'une heure.
-# Douze vacations d'une heure par jour, de 9 h à 21 h, jointives (pause minimale à
-# 0). Une journée de travail est une chaîne de sièges : le travail continu de six
+# Douze vacations d'une heure par jour, de 9 h à 21 h, jointives — rien n'impose
+# d'écart entre deux d'entre elles. Une journée de travail est une chaîne de
+# sièges : le travail continu de six
 # heures, la coupure repas et la durée quotidienne se lisent sur des dizaines de
 # petits sièges plutôt que sur deux gros.
 
 festival:
   dateDebut: 2028-06-23
-
-parametresLegaux:
-  pauseMinimaleEntreVacationsMinutes: 0
 
 creneaux:
   - id: J1-H09

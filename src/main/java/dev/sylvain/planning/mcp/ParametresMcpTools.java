@@ -66,8 +66,6 @@ public class ParametresMcpTools {
                     Integer dureeHebdomadaireMaxMinutes,
             @ToolArg(description = "Durée hebdomadaire maximale d'un mineur, en minutes", required = false)
                     Integer dureeHebdomadaireMaxMineurMinutes,
-            @ToolArg(description = "Pause minimale entre deux vacations, en minutes", required = false)
-                    Integer pauseMinimaleEntreVacationsMinutes,
             @ToolArg(
                             description = "Durée maximale d'une vacation, en minutes : au-delà, le contrôle de "
                                     + "grille avertit qu'une coupure interne devient obligatoire (L3121-16)",
@@ -76,21 +74,13 @@ public class ParametresMcpTools {
             @ToolArg(description = "Repos quotidien minimal, en minutes", required = false)
                     Integer reposQuotidienMinimalMinutes,
             @ToolArg(
-                            description = "Pause légale prise sur le poste, par relais entre collègues, plutôt que "
-                                    + "comme un trou entre deux vacations (L3121-16 / L3162-3)",
+                            description = "Durée de la pause légale, en minutes : au moins 20 (L3121-16, d'ordre "
+                                    + "public), portée à 30 pour un mineur (L3162-3). Une pause due est soit un "
+                                    + "trou d'au moins cette durée dans la grille, soit relayée par un collègue "
+                                    + "du même stand ; elle est déduite des plafonds quotidien et hebdomadaire "
+                                    + "et de tous les compteurs d'heures",
                             required = false)
-                    Boolean pauseSurPoste,
-            @ToolArg(
-                            description = "Durée de la pause légale d'un majeur, en minutes : au moins 20 "
-                                    + "(L3121-16, d'ordre public). C'est elle qui est déduite des plafonds "
-                                    + "quotidien et hebdomadaire quand la pause est prise sur le poste",
-                            required = false)
-                    Integer dureePauseMajeurMinutes,
-            @ToolArg(
-                            description =
-                                    "Durée de la pause légale d'un mineur, en minutes : au moins 30 " + "(L3162-3)",
-                            required = false)
-                    Integer dureePauseMineurMinutes,
+                    Integer dureePauseMinutes,
             @ToolArg(description = "Durée de la coupure repas, en minutes", required = false)
                     Integer coupureRepasMinutes,
             @ToolArg(description = "Début de la fenêtre de la coupure repas du midi (HH:MM)", required = false)
@@ -114,23 +104,14 @@ public class ParametresMcpTools {
         if (dureeHebdomadaireMaxMineurMinutes != null) {
             parametres.setDureeHebdomadaireMaxMineurMinutes(dureeHebdomadaireMaxMineurMinutes);
         }
-        if (pauseMinimaleEntreVacationsMinutes != null) {
-            parametres.setPauseMinimaleEntreVacationsMinutes(pauseMinimaleEntreVacationsMinutes);
-        }
         if (dureeVacationMaxMinutes != null) {
             parametres.setDureeVacationMaxMinutes(dureeVacationMaxMinutes);
         }
         if (reposQuotidienMinimalMinutes != null) {
             parametres.setReposQuotidienMinimalMinutes(reposQuotidienMinimalMinutes);
         }
-        if (pauseSurPoste != null) {
-            parametres.setPauseSurPoste(pauseSurPoste);
-        }
-        if (dureePauseMajeurMinutes != null) {
-            parametres.setDureePauseMajeurMinutes(dureePauseMajeurMinutes);
-        }
-        if (dureePauseMineurMinutes != null) {
-            parametres.setDureePauseMineurMinutes(dureePauseMineurMinutes);
+        if (dureePauseMinutes != null) {
+            parametres.setDureePauseMinutes(dureePauseMinutes);
         }
         if (coupureRepasMinutes != null) {
             parametres.setCoupureRepasMinutes(coupureRepasMinutes);
@@ -339,12 +320,9 @@ public class ParametresMcpTools {
         return new ParametresLegauxView(
                 parametres.getDureeHebdomadaireMaxMinutes(),
                 parametres.getDureeHebdomadaireMaxMineurMinutes(),
-                parametres.getPauseMinimaleEntreVacationsMinutes(),
                 parametres.getDureeVacationMaxMinutes(),
                 parametres.getReposQuotidienMinimalMinutes(),
-                parametres.isPauseSurPoste(),
-                parametres.getDureePauseMajeurMinutes(),
-                parametres.getDureePauseMineurMinutes(),
+                parametres.getDureePauseMinutes(),
                 parametres.getCoupureRepasMinutes(),
                 parametres.getCoupureRepasMidiDebut(),
                 parametres.getCoupureRepasMidiFin(),
@@ -374,12 +352,9 @@ public class ParametresMcpTools {
     public record ParametresLegauxView(
             int dureeHebdomadaireMaxMinutes,
             int dureeHebdomadaireMaxMineurMinutes,
-            int pauseMinimaleEntreVacationsMinutes,
             int dureeVacationMaxMinutes,
             int reposQuotidienMinimalMinutes,
-            boolean pauseSurPoste,
-            int dureePauseMajeurMinutes,
-            int dureePauseMineurMinutes,
+            int dureePauseMinutes,
             int coupureRepasMinutes,
             LocalTime coupureRepasMidiDebut,
             LocalTime coupureRepasMidiFin,

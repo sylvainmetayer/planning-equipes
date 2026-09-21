@@ -7,6 +7,7 @@ import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningVariableMeta
 import ai.timefold.solver.core.preview.api.move.Move;
 import ai.timefold.solver.core.preview.api.move.builtin.Moves;
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
@@ -116,11 +117,11 @@ public final class WeekRelocationMoveIteratorFactory
         private final List<PosteAffectation> holes = new ArrayList<>();
         private final List<PosteAffectation> movable = new ArrayList<>();
         private final Map<Animateur, Map<LocalDate, List<PosteAffectation>>> seats = new HashMap<>();
-        private final boolean pauseSurPoste;
+        private final ParametresLegaux parametresLegaux;
 
         Index(PlanningEvenement solution) {
             this.solution = solution;
-            this.pauseSurPoste = solution.pauseSurPosteActive();
+            this.parametresLegaux = solution.parametresLegaux();
             for (PosteAffectation poste : solution.getPostes()) {
                 if (poste.isVerrouille() || poste.getCreneau() == null) {
                     continue;
@@ -143,7 +144,8 @@ public final class WeekRelocationMoveIteratorFactory
             PosteAffectation hole = holes.get(random.nextInt(holes.size()));
             List<Animateur> candidates = new ArrayList<>();
             for (Animateur animateur : solution.getAnimateurs()) {
-                if (EligibleAnimateurMoveFilter.isEligible(hole, animateur, pauseSurPoste) && free(animateur, hole)) {
+                if (EligibleAnimateurMoveFilter.isEligible(hole, animateur, parametresLegaux)
+                        && free(animateur, hole)) {
                     candidates.add(animateur);
                 }
             }
@@ -216,7 +218,8 @@ public final class WeekRelocationMoveIteratorFactory
                 if (animateur.equals(leaving) || taken.contains(animateur)) {
                     continue;
                 }
-                if (!EligibleAnimateurMoveFilter.isEligible(seat, animateur, pauseSurPoste) || !free(animateur, seat)) {
+                if (!EligibleAnimateurMoveFilter.isEligible(seat, animateur, parametresLegaux)
+                        || !free(animateur, seat)) {
                     continue;
                 }
                 if (seats.getOrDefault(animateur, Map.of())

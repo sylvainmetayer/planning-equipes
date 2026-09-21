@@ -127,11 +127,12 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDepassantHuitHeuresParJourEstPenalise() {
-        // A 9 h timeslot (540 min) exceeds the 8 h ceiling (480 min) by 60 min.
+        // A 9 h timeslot is 510 min of travail effectif once the break it owes
+        // comes off, 30 min above the 8 h ceiling (480 min).
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, mineurDebutant("M1")), new ParametresLegaux())
-                .penalizesBy(ExclusionEligibilite.FORFAIT + 60);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 30);
     }
 
     @Test
@@ -143,12 +144,13 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     @Test
     void mineurDeMoinsDe16AnsDepassantSeptHeuresParJourEstPenalise() {
-        // Art. D4153-3: 7 h a day under 16. A 9 h timeslot exceeds it by 120 min,
-        // where a 16-18 would only exceed by 60 min (8 h ceiling, L3162-1).
+        // Art. D4153-3: 7 h a day under 16. A 9 h timeslot is 8 h 30 of travail
+        // effectif, 90 min over — where a 16-18 only exceeds by 30 min (8 h
+        // ceiling, L3162-1).
         Creneau journee = longDay("J1-LONG", 1, D1);
         verify("dureeQuotidienneMaxMineur")
                 .given(poste(standStrat, journee, under16DebutantMineur("M15")), new ParametresLegaux())
-                .penalizesBy(ExclusionEligibilite.FORFAIT + 120);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 90);
     }
 
     @Test
@@ -225,7 +227,9 @@ class LegalConstraintsTest extends ConstraintTestBase {
     @Test
     void majeurDepassantDixHeuresParJourEstPenalise() {
         // B2 of the audit: the three timeslots of one day of scenario-complet
-        // add up to 14 h (4 + 6 + 4), that is 240 min above the ceiling.
+        // add up to 14 h of amplitude (4 + 6 + 4). The afternoon and the evening
+        // are one ten-hour stretch owing one break, so 13 h 30 are worked —
+        // 210 min above the ceiling.
         Animateur majeur = referentMajeur("A1");
         Creneau matin = creneau("J1-8-12", 1, D1, LocalTime.of(8, 0), LocalTime.of(12, 0));
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
@@ -236,7 +240,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         poste(standStrat, aprem, majeur),
                         poste(standStrat, soiree, majeur),
                         new ParametresLegaux())
-                .penalizesBy(4 * 60);
+                .penalizesBy(3 * 60 + 30);
     }
 
     @Test
@@ -274,168 +278,249 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    // --- Art. L3121-16: 6 h of continuous work / a 20 min break ------------
+    // --- Art. L3121-16 / L3162-3: one rule, a hole or a relay (ADR 0048) ---
+    //
+    // A stretch over the cap owes breaks; each of them is taken as a hole in
+    // the grid — which splits the stretch, so nothing is owed — or relayed by a
+    // colleague of the same stand. One hard point per break nobody can take,
+    // plus ExclusionEligibilite.FORFAIT for a minor. The edition's break is
+    // thirty minutes by default (issue #31).
 
     @Test
-    void majeurEnchainantDeuxCreneauxSansPauseSuffisanteEstPenalise() {
-        // B6: 14:00 → 20:00 then 20:00 → 00:00, no interruption: 10 h in one
-        // stretch, that is 240 min above the 6 h maximum.
+    void dixHeuresDAffileeSansTrouNiRelaisDoiventUnePause() {
+        // 14:00 → 20:00 then 20:00 → 00:00, no interruption: 10 h in one
+        // stretch, which owes one break past the sixth hour. A1 holds the stand
+        // alone, so nobody takes it.
         Animateur majeur = referentMajeur("A1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), new ParametresLegaux())
-                .penalizesBy(4 * 60);
+                .penalizesBy(1);
     }
 
     @Test
-    void unePauseDeVingtMinutesCoupeLaSequenceDuMajeur() {
-        // Same day, but with a 20 minute interruption: two sequences of 5 h 40
-        // and 4 h, both under the 6 h maximum.
+    void unTrouDeLaDureeDeLaPauseCoupeLaSequenceDuMajeur() {
+        // Same day with a thirty-minute interruption: two stretches of 5 h 30
+        // and 4 h, both under the cap, so nothing is owed and nothing needs a
+        // relay.
+        Animateur majeur = referentMajeur("A1");
+        Creneau aprem = creneau("J1-14-1930", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 30));
+        Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    @Test
+    void unTrouPlusCourtQueLaPauseNeCoupePasLaSequenceDuMajeur() {
+        // A twenty-minute interruption, under the thirty the edition grants:
+        // the stretch stays continuous, measured 14:00 → 00:00, and owes its
+        // break as if the gap were worked — which it is.
         Animateur majeur = referentMajeur("A1");
         Creneau aprem = creneau("J1-14-1940", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 40));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), new ParametresLegaux())
-                .penalizesBy(0);
-    }
-
-    @Test
-    void unePauseTropCourteNeCoupePasLaSequenceDuMajeur() {
-        // A 10 minute interruption: the law requires 20 consecutive minutes, so
-        // the sequence stays continuous (6 h 10 measured edge to edge).
-        Animateur majeur = referentMajeur("A1");
-        Creneau debut = creneau("J1-14-17", 1, D1, LocalTime.of(14, 0), LocalTime.of(17, 0));
-        Creneau suite = creneau("J1-1710-2010", 1, D1, LocalTime.of(17, 10), LocalTime.of(20, 10));
-        verify("travailContinuMaxMajeur")
-                .given(poste(standStrat, debut, majeur), poste(standStrat, suite, majeur), new ParametresLegaux())
-                .penalizesBy(10);
+                .penalizesBy(1);
     }
 
     /**
-     * The break that cuts a stretch is the one the edition grants, not the
-     * legal floor (issue #592). The same twenty-minute gap that cut the stretch
-     * above no longer does once the organiser gives thirty minutes: the two
-     * créneaux are read as one stretch again, measured edge to edge from 14:00
-     * to midnight — ten hours, four above the cap, exactly what the uncut
-     * version costs.
+     * The hole that cuts a stretch is the break the edition grants, not the
+     * legal floor (issue #592): the same twenty-minute gap cuts it at twenty
+     * and does not at thirty.
      */
     @Test
-    void laDureeDePauseDuMajeurEstUnParametre() {
+    void laDureeDuTrouQuiCoupeEstCelleQueLEditionAccorde() {
         Animateur majeur = referentMajeur("A1");
         Creneau aprem = creneau("J1-14-1940-P", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 40));
         Creneau soiree = creneau("J1-20-00-P", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
-        ParametresLegaux pauseDeTrente = new ParametresLegaux();
-        pauseDeTrente.setDureePauseMajeurMinutes(30);
+        ParametresLegaux pauseDeVingt = new ParametresLegaux();
+        pauseDeVingt.setDureePauseMinutes(20);
 
         verify("travailContinuMaxMajeur")
-                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), pauseDeTrente)
-                .penalizesBy(4 * 60);
-    }
-
-    // --- Break declared as taken on the post (L3121-16 read as the Code does: real, not scheduled)
-
-    private static ParametresLegaux pauseSurPoste() {
-        ParametresLegaux parametres = new ParametresLegaux();
-        parametres.setPauseSurPoste(true);
-        return parametres;
-    }
-
-    @Test
-    void laPauseDeclareeSurLePosteRendLaReleveDeSeptHeuresLegale() {
-        // The festival's 13:00-14:00 relay followed by 14:00-20:00: seven hours in one
-        // stretch. Without the declaration, one hour over; with it, the twenty
-        // minutes are taken on the post and the stretch is compliant.
-        Animateur majeur = referentMajeur("A1");
-        Creneau releve = creneau("J1-13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
-        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
-        verify("travailContinuMaxMajeur")
-                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
-                .penalizesBy(60);
-        verify("travailContinuMaxMajeur")
-                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur), pauseSurPoste())
+                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), pauseDeVingt)
                 .penalizesBy(0);
     }
 
+    /**
+     * Criterion 1 of issue #32, and the shape found on the 2026 edition: the
+     * 13:00-14:00 meal relief followed by a full afternoon, seven hours in one
+     * stretch, a break due at 19:00. Alone on the stand it costs a hard point;
+     * with a colleague holding a place from before 19:00 to after 19:30 it
+     * costs nothing.
+     */
     @Test
-    void lePlafondQuotidienDeduitLaPausePriseSurLePoste() {
-        // 14:00-20:00 then 20:00-24:00: a 10 h amplitude, one break of 20 min
-        // taken on the post — 9 h 40 of travail effectif, under the 10 h cap.
+    void unCollegueDuMemeStandPendantTouteLaPauseLaRelaie() {
+        Animateur majeur = referentMajeur("A1");
+        Animateur collegue = referentMajeur("A2");
+        Creneau releve = creneau("J1-13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, releve, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
+                .penalizesBy(1);
+        verify("travailContinuMaxMajeur")
+                .given(
+                        poste(standStrat, releve, majeur),
+                        poste(standStrat, aprem, majeur),
+                        poste(standStrat, aprem, collegue),
+                        new ParametresLegaux())
+                .penalizesBy(0);
+    }
+
+    /** A colleague gone before the break is over has not relayed it. */
+    @Test
+    void unCollegueQuiPartAvantLaFinDeLaPauseNeLaRelaiePas() {
+        Animateur majeur = referentMajeur("A1");
+        Animateur collegue = referentMajeur("A2");
+        Creneau releve = creneau("J1-13-14-B", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = creneau("J1-14-20-B", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        Creneau partiTot = creneau("J1-14-1915", 1, D1, LocalTime.of(14, 0), LocalTime.of(19, 15));
+
+        verify("travailContinuMaxMajeur")
+                .given(
+                        poste(standStrat, releve, majeur),
+                        poste(standStrat, aprem, majeur),
+                        poste(standStrat, partiTot, collegue),
+                        new ParametresLegaux())
+                .penalizesBy(1);
+    }
+
+    /** A colleague on another stand is not a relay: the stand must stay held. */
+    @Test
+    void unCollegueSurUnAutreStandNeRelaiePas() {
+        Animateur majeur = referentMajeur("A1");
+        Animateur collegue = referentMajeur("A2");
+        Creneau releve = creneau("J1-13-14-C", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
+        Creneau aprem = creneau("J1-14-20-C", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+
+        verify("travailContinuMaxMajeur")
+                .given(
+                        poste(standStrat, releve, majeur),
+                        poste(standStrat, aprem, majeur),
+                        poste(standWithStrategy("STAND-AILLEURS"), aprem, collegue),
+                        new ParametresLegaux())
+                .penalizesBy(1);
+    }
+
+    /**
+     * The penalty counts breaks, so it grows with the breach rather than
+     * flattening at one: thirteen hours on end owe two.
+     */
+    @Test
+    void treizeHeuresDAffileeDoiventDeuxPauses() {
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin = creneau("J1-9-15", 1, D1, LocalTime.of(9, 0), LocalTime.of(15, 0));
+        Creneau suite = creneau("J1-15-22", 1, D1, LocalTime.of(15, 0), LocalTime.of(22, 0));
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, matin, majeur), poste(standStrat, suite, majeur), new ParametresLegaux())
+                .penalizesBy(2);
+    }
+
+    // --- The caps measure travail effectif: a break due is rest ------------
+
+    @Test
+    void lePlafondQuotidienDeduitLaPauseDue() {
+        // 14:00-24:00: a 10 h amplitude owing one break of 30 min — 9 h 30 of
+        // travail effectif, under the 10 h cap.
         Animateur majeur = referentMajeur("A1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
         verify("dureeQuotidienneMaxMajeur")
-                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), pauseSurPoste())
+                .given(poste(standStrat, aprem, majeur), poste(standStrat, soiree, majeur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
     @Test
     void lePlafondQuotidienResteDepasseQuandLaPauseDeduiteNeSuffitPas() {
-        // 13:00-14:00, 14:00-20:00, 20:00-24:00: 11 h of amplitude. One break of
-        // 20 min is enough for a stretch under 12 h 20, so 10 h 40 of travail
-        // effectif remain — 40 min over the cap. Without the declaration, the
-        // whole amplitude counts: 60 min over.
+        // 13:00-24:00: 11 h of amplitude. One break is enough for a stretch
+        // under 12 h 30, so 10 h 30 of travail effectif remain — 30 min over.
         Animateur majeur = referentMajeur("A1");
         Creneau releve = creneau("J1-13-14", 1, D1, LocalTime.of(13, 0), LocalTime.of(14, 0));
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Creneau soiree = creneau("J1-20-00", 1, D1, LocalTime.of(20, 0), LocalTime.of(0, 0));
-        verify("dureeQuotidienneMaxMajeur")
-                .given(
-                        poste(standStrat, releve, majeur),
-                        poste(standStrat, aprem, majeur),
-                        poste(standStrat, soiree, majeur),
-                        pauseSurPoste())
-                .penalizesBy(40);
         verify("dureeQuotidienneMaxMajeur")
                 .given(
                         poste(standStrat, releve, majeur),
                         poste(standStrat, aprem, majeur),
                         poste(standStrat, soiree, majeur),
                         new ParametresLegaux())
-                .penalizesBy(60);
+                .penalizesBy(30);
     }
 
     @Test
-    void unTrouLegalEntreDeuxVacationsNeFaitDeduireAucunePauseSurLePoste() {
+    void unTrouLegalEntreDeuxVacationsNeFaitDeduireAucunePause() {
         // 09:00-13:00 then 14:00-20:00: the hour off is the break, no stretch
-        // exceeds 6 h, nothing is deducted — 10 h of travail effectif, at the cap.
+        // exceeds 6 h, nothing is owed and nothing is deducted — 10 h of
+        // travail effectif, at the cap.
         Animateur majeur = referentMajeur("A1");
         Creneau matin = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("dureeQuotidienneMaxMajeur")
-                .given(poste(standStrat, matin, majeur), poste(standStrat, aprem, majeur), pauseSurPoste())
+                .given(poste(standStrat, matin, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
                 .penalizesBy(0);
         verify("travailContinuMaxMajeur")
                 .given(poste(standStrat, matin, majeur), poste(standStrat, aprem, majeur), new ParametresLegaux())
                 .penalizesBy(0);
     }
 
+    /**
+     * Criterion 3 of issue #32: a twenty-minute gap between two vacations of an
+     * adult is penalised by nothing at all, and neither are two vacations that
+     * touch. It used to cost ten hard points to {@code pauseMinimaleEntreVacations},
+     * which contradicted the very break that ends a stretch — fourteen of the
+     * fifteen shipped scenarios set that rule to zero to be rid of it.
+     */
     @Test
-    void laPauseDeclareeSurLePosteVautAussiPourUnMineur() {
-        // 14:00-20:00 held by a minor: 1 h 30 over the 4 h 30 stretch without the
-        // declaration; with it the 30-minute break is taken on the post, and the
-        // day counts 5 h 30 of travail effectif, under the 8 h cap.
-        Animateur mineur = mineurDebutant("M1");
-        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
-        verify("travailContinuMaxMineur")
-                .given(poste(standStrat, aprem, mineur), pauseSurPoste())
+    void unTrouDeVingtMinutesEntreDeuxVacationsNEstPenaliseParRien() {
+        Animateur majeur = referentMajeur("A1");
+        Creneau matin = creneau("J1-9-12", 1, D1, LocalTime.of(9, 0), LocalTime.of(12, 0));
+        Creneau apres = creneau("J1-1220-14", 1, D1, LocalTime.of(12, 20), LocalTime.of(14, 0));
+        Creneau colle = creneau("J1-14-15", 1, D1, LocalTime.of(14, 0), LocalTime.of(15, 0));
+
+        verify("travailContinuMaxMajeur")
+                .given(
+                        poste(standStrat, matin, majeur),
+                        poste(standStrat, apres, majeur),
+                        poste(standStrat, colle, majeur),
+                        new ParametresLegaux())
                 .penalizesBy(0);
-        verify("dureeQuotidienneMaxMineur")
-                .given(poste(standStrat, aprem, mineur), pauseSurPoste())
+        verify("dureeQuotidienneMaxMajeur")
+                .given(
+                        poste(standStrat, matin, majeur),
+                        poste(standStrat, apres, majeur),
+                        poste(standStrat, colle, majeur),
+                        new ParametresLegaux())
                 .penalizesBy(0);
     }
 
-    // --- Art. L3162-3: 4 h 30 of continuous work / a 30 min break ----------
+    // --- Art. L3162-3: 4 h 30 of continuous work, at least 30 min ----------
 
     @Test
-    void mineurSurUnCreneauDeSixHeuresEstPenalise() {
+    void mineurSurUnCreneauDeSixHeuresSansRelaisEstPenalise() {
         // B7: the 14:00 → 20:00 timeslot of scenario-complet.yaml, held by a
-        // minor, exceeds the maximum continuous working time by 1 h 30.
+        // minor alone: 6 h past a 4 h 30 cap, one break due and nobody to take
+        // it. The flat cost of the minors' rules is kept (criterion 2).
         Animateur mineur = mineurDebutant("M1");
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, aprem, mineur), new ParametresLegaux())
-                .penalizesBy(ExclusionEligibilite.FORFAIT + 90);
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 1);
+    }
+
+    @Test
+    void unCollegueRelaieAussiLaPauseDUnMineur() {
+        Animateur mineur = mineurDebutant("M1");
+        Animateur collegue = referentMajeur("A2");
+        Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
+        verify("travailContinuMaxMineur")
+                .given(poste(standStrat, aprem, mineur), poste(standStrat, aprem, collegue), new ParametresLegaux())
+                .penalizesBy(0);
+        // And the day counts 5 h 30 of travail effectif, under the 8 h cap.
+        verify("dureeQuotidienneMaxMineur")
+                .given(poste(standStrat, aprem, mineur), poste(standStrat, aprem, collegue), new ParametresLegaux())
+                .penalizesBy(0);
     }
 
     @Test
@@ -448,7 +533,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
     }
 
     @Test
-    void unePauseDeTrenteMinutesCoupeLaSequenceDuMineur() {
+    void unTrouDeTrenteMinutesCoupeLaSequenceDuMineur() {
         Animateur mineur = mineurDebutant("M1");
         Creneau debut = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-1330-1700", 1, D1, LocalTime.of(13, 30), LocalTime.of(17, 0));
@@ -457,17 +542,28 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    /**
+     * Criterion 2 of issue #32: whatever the edition sets, a minor's break is
+     * at least the thirty minutes of art. L3162-3, which is d'ordre public. An
+     * edition granting twenty gives twenty to its adults — and a twenty-minute
+     * hole cuts their stretch — while a minor's stretch runs on: 9:00 to 16:20
+     * unbroken, one break due, nobody to relay it.
+     */
     @Test
-    void unePauseDeVingtMinutesNeSuffitPasAUnMineur() {
-        // 20 minutes are enough for an adult, not for a minor (30 min, L3162-3):
-        // the sequence runs from 9:00 to 16:20, that is 7 h 20, hence 170 min too
-        // many.
+    void lePlancherDeTrenteMinutesDuMineurTientQuelleQueSoitLaDureeReglee() {
         Animateur mineur = mineurDebutant("M1");
+        Animateur majeur = referentMajeur("A1");
         Creneau debut = creneau("J1-9-13", 1, D1, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Creneau suite = creneau("J1-1320-1620", 1, D1, LocalTime.of(13, 20), LocalTime.of(16, 20));
+        ParametresLegaux pauseDeVingt = new ParametresLegaux();
+        pauseDeVingt.setDureePauseMinutes(20);
+
         verify("travailContinuMaxMineur")
-                .given(poste(standStrat, debut, mineur), poste(standStrat, suite, mineur), new ParametresLegaux())
-                .penalizesBy(ExclusionEligibilite.FORFAIT + 170);
+                .given(poste(standStrat, debut, mineur), poste(standStrat, suite, mineur), pauseDeVingt)
+                .penalizesBy(ExclusionEligibilite.FORFAIT + 1);
+        verify("travailContinuMaxMajeur")
+                .given(poste(standStrat, debut, majeur), poste(standStrat, suite, majeur), pauseDeVingt)
+                .penalizesBy(0);
     }
 
     @Test
@@ -476,26 +572,6 @@ class LegalConstraintsTest extends ConstraintTestBase {
         Creneau aprem = creneau("J1-14-20", 1, D1, LocalTime.of(14, 0), LocalTime.of(20, 0));
         verify("travailContinuMaxMineur")
                 .given(poste(standStrat, aprem, majeur), new ParametresLegaux())
-                .penalizesBy(0);
-    }
-
-    @Test
-    void depassementDureeHebdomadaireMaxEstPenalise() {
-        // Same ISO week as D1/D2 (2026-07-08/09): two 4h slots (matin + aprem)
-        // total 480 min, 80 min over a 400 min cap.
-        Animateur majeur = referentMajeur("A1");
-        ParametresLegaux parametres = new ParametresLegaux(400);
-        verify("dureeHebdomadaireMax")
-                .given(poste(standStrat, creneauMatin, majeur), poste(standStrat, apremJ2, majeur), parametres)
-                .penalizesBy(80);
-    }
-
-    @Test
-    void sousLaDureeHebdomadaireMaxNEstPasPenalise() {
-        Animateur majeur = referentMajeur("A1");
-        ParametresLegaux parametres = new ParametresLegaux(500);
-        verify("dureeHebdomadaireMax")
-                .given(poste(standStrat, creneauMatin, majeur), poste(standStrat, apremJ2, majeur), parametres)
                 .penalizesBy(0);
     }
 
@@ -517,49 +593,44 @@ class LegalConstraintsTest extends ConstraintTestBase {
     }
 
     /**
-     * Five ten-hour days in one week, the break declared taken on the post:
-     * 50 h of amplitude, 48 h 20 of travail effectif once the five twenty-minute
-     * breaks come off — twenty minutes over the 48 h ceiling, not two hours.
+     * Five ten-hour days in one week: 50 h of amplitude, 47 h 30 of travail
+     * effectif once the five thirty-minute breaks come off — under the 48 h
+     * ceiling, where the amplitude is two hours over.
      *
      * <p>This is the whole point of the change: the daily cap already read the
      * day that way, so the two rules used to give contradictory readings of the
-     * same planning, and the weekly one refused plans the daily one allowed.
-     * Without the declaration, nothing is deducted and the full amplitude
-     * counts, which is the protective reading and stays unchanged.</p>
+     * same planning, and the weekly one refused plans the daily one allowed.</p>
      */
     @Test
-    void lePlafondHebdomadaireDeduitLesPausesPrisesSurLePoste() {
+    void lePlafondHebdomadaireDeduitLesPausesDues() {
         Animateur majeur = referentMajeur("A1");
 
         verify("dureeHebdomadaireMax")
-                .given(concat(cinqJoursDixHeures(majeur), pauseSurPoste()))
-                .penalizesBy(20);
-        verify("dureeHebdomadaireMax")
                 .given(concat(cinqJoursDixHeures(majeur), new ParametresLegaux()))
-                .penalizesBy(2 * 60);
+                .penalizesBy(0);
     }
 
     /**
-     * The deduction is the edition's own break, not the legal floor: at thirty
-     * minutes the same five days count 47 h 30 of travail effectif and the week
-     * is clean.
+     * The deduction is the edition's own break, not the legal floor: at twenty
+     * minutes the same five days count 48 h 20 of travail effectif, twenty
+     * minutes over.
      */
     @Test
     void laDeductionHebdomadaireLitLaDureeDePauseDeLEdition() {
         Animateur majeur = referentMajeur("A1");
-        ParametresLegaux pauseDeTrente = pauseSurPoste();
-        pauseDeTrente.setDureePauseMajeurMinutes(30);
+        ParametresLegaux pauseDeVingt = new ParametresLegaux();
+        pauseDeVingt.setDureePauseMinutes(20);
 
         verify("dureeHebdomadaireMax")
-                .given(concat(cinqJoursDixHeures(majeur), pauseDeTrente))
-                .penalizesBy(0);
+                .given(concat(cinqJoursDixHeures(majeur), pauseDeVingt))
+                .penalizesBy(20);
     }
 
     /**
      * A real hole between two vacations is the break, so no stretch is over
      * six hours and nothing is deducted — at the week exactly as at the day.
-     * Five days of 09:00-13:00 then 14:00-20:00 are ten worked hours each, and
-     * the declaration changes nothing.
+     * Five days of 09:00-13:00 then 14:00-20:00 are ten worked hours each, two
+     * hours over the ceiling.
      */
     @Test
     void unTrouLegalNeFaitRienDeduireAuNiveauHebdomadaire() {
@@ -576,9 +647,6 @@ class LegalConstraintsTest extends ConstraintTestBase {
         }
 
         verify("dureeHebdomadaireMax")
-                .given(concat(semaineCoupee, pauseSurPoste()))
-                .penalizesBy(2 * 60);
-        verify("dureeHebdomadaireMax")
                 .given(concat(semaineCoupee, new ParametresLegaux()))
                 .penalizesBy(2 * 60);
     }
@@ -589,7 +657,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
      * effectif once the four thirty-minute breaks come off.
      */
     @Test
-    void lePlafondHebdomadaireDuMineurDeduitAussiLesPausesSurLePoste() {
+    void lePlafondHebdomadaireDuMineurDeduitAussiLesPausesDues() {
         Animateur mineur = mineurDebutant("M1");
         java.util.List<Object> quatreLonguesJournees = java.util.List.of(
                 poste(standStrat, longDay("WM-J1", 1, D1), mineur),
@@ -598,11 +666,8 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 poste(standStrat, longDay("WM-J4", 4, D4), mineur));
 
         verify("dureeHebdomadaireMaxMineur")
-                .given(concat(quatreLonguesJournees, pauseSurPoste()))
-                .penalizesBy(0);
-        verify("dureeHebdomadaireMaxMineur")
                 .given(concat(quatreLonguesJournees, new ParametresLegaux()))
-                .penalizesBy(60);
+                .penalizesBy(0);
     }
 
     /** The facts of a match, plus the parameters that go with them. */
@@ -619,19 +684,27 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     /**
      * 2026-07-08 is a Wednesday, so D1 and D1+7 sit in two consecutive ISO
-     * weeks. A cap of 480 min makes one 8 h day a full week, which keeps the
-     * fixtures readable.
+     * weeks. A cap of 480 min makes one full working day a full week, which
+     * keeps the fixtures readable.
      */
     private static final LocalDate SEMAINE_SUIVANTE = D1.plusWeeks(1);
 
     private static final LocalDate DEUX_SEMAINES_PLUS_TARD = D1.plusWeeks(2);
 
+    /**
+     * Eight hours of <b>travail effectif</b>: 09:00-17:30 is 8 h 30 of
+     * amplitude, one break due past the sixth hour, 8 h worked. The weeks are
+     * judged on what is worked, so that is what the fixture has to carry — the
+     * helper used to be a plain 09:00-17:00, which is a full week on amplitude
+     * and 7 h 30 once the break comes off.
+     */
     private static Creneau huitHeures(String id, LocalDate date) {
-        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(17, 0));
+        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(17, 30));
     }
 
+    /** Seven hours of travail effectif: 09:00-16:30 less its thirty-minute break. */
     private static Creneau septHeures(String id, LocalDate date) {
-        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(16, 0));
+        return creneau(id, 1, date, LocalTime.of(9, 0), LocalTime.of(16, 30));
     }
 
     @Test
@@ -690,32 +763,31 @@ class LegalConstraintsTest extends ConstraintTestBase {
 
     /**
      * A week is judged full in travail effectif, like the ceiling it borrows
-     * its threshold from. One eight-hour day under a 8 h ceiling is a full week
-     * on amplitude, but only 7 h 40 once the break taken on the post comes off
-     * — so the pair of weeks is no longer a pair. Half an hour more each week,
-     * and the effective load is back at the ceiling and the pair is charged.
+     * its threshold from. A plain 09:00-17:00 day is a full week under an 8 h
+     * ceiling on amplitude, but only 7 h 30 once the break it owes comes off —
+     * so two of them are not a pair. Half an hour more each week, and the
+     * effective load is back at the ceiling and the pair is charged.
      */
     @Test
     void uneSemainePleineSeJugeEnTravailEffectif() {
         Animateur majeur = referentMajeur("A1");
-        ParametresLegaux plafondSurLePoste = pauseSurPoste();
-        plafondSurLePoste.setDureeHebdomadaireMaxMinutes(8 * 60);
+        ParametresLegaux plafondHuitHeures = new ParametresLegaux(8 * 60);
 
         verify("dureeHebdomadaireMaxDeuxSemaines")
                 .given(
-                        poste(standStrat, huitHeures("E1", D1), majeur),
-                        poste(standStrat, huitHeures("E2", SEMAINE_SUIVANTE), majeur),
-                        plafondSurLePoste)
+                        poste(standStrat, creneau("E1", 1, D1, LocalTime.of(9, 0), LocalTime.of(17, 0)), majeur),
+                        poste(
+                                standStrat,
+                                creneau("E2", 8, SEMAINE_SUIVANTE, LocalTime.of(9, 0), LocalTime.of(17, 0)),
+                                majeur),
+                        plafondHuitHeures)
                 .penalizesBy(0);
 
         verify("dureeHebdomadaireMaxDeuxSemaines")
                 .given(
-                        poste(standStrat, creneau("E3", 1, D1, LocalTime.of(9, 0), LocalTime.of(17, 30)), majeur),
-                        poste(
-                                standStrat,
-                                creneau("E4", 8, SEMAINE_SUIVANTE, LocalTime.of(9, 0), LocalTime.of(17, 30)),
-                                majeur),
-                        plafondSurLePoste)
+                        poste(standStrat, huitHeures("E3", D1), majeur),
+                        poste(standStrat, huitHeures("E4", SEMAINE_SUIVANTE), majeur),
+                        plafondHuitHeures)
                 .penalizesBy(1);
     }
 
@@ -746,8 +818,9 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         poste(standStrat, longDay("J2-LONG", 2, D2), mineur),
                         poste(standStrat, longDay("J3-LONG", 3, D3), mineur),
                         poste(standStrat, longDay("J4-LONG", 4, D4), mineur),
+                        poste(standStrat, creneau("J5-9-13", 5, D5, LocalTime.of(9, 0), LocalTime.of(13, 0)), mineur),
                         new ParametresLegaux())
-                .penalizesBy(60);
+                .penalizesBy(180);
     }
 
     @Test
@@ -1010,34 +1083,6 @@ class LegalConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
-    @Test
-    void pauseEntreDeuxVacationsLeMemeJourTropCourteEstPenalisee() {
-        // creneauMatin ends at 13:00; this shift starts at 13:15, that is only
-        // 15 min of break — under the default floor of 30 min.
-        Animateur majeur = referentMajeur("A1");
-        Creneau vacationProche =
-                creneau("J1-PROCHE", 1, D1, java.time.LocalTime.of(13, 15), java.time.LocalTime.of(17, 15));
-        verify("pauseMinimaleEntreVacations")
-                .given(
-                        poste(standStrat, creneauMatin, majeur),
-                        poste(standStrat, vacationProche, majeur),
-                        new ParametresLegaux())
-                .penalizesBy(15);
-    }
-
-    @Test
-    void pauseEntreDeuxVacationsLeMemeJourSuffisanteNEstPasPenalisee() {
-        Animateur majeur = referentMajeur("A1");
-        Creneau vacationEloignee =
-                creneau("J1-LOIN", 1, D1, java.time.LocalTime.of(13, 30), java.time.LocalTime.of(17, 30));
-        verify("pauseMinimaleEntreVacations")
-                .given(
-                        poste(standStrat, creneauMatin, majeur),
-                        poste(standStrat, vacationEloignee, majeur),
-                        new ParametresLegaux())
-                .penalizesBy(0);
-    }
-
     /* ------------------- counted, never reproached (ADR 0044) ------------------- */
 
     @Test
@@ -1097,7 +1142,7 @@ class LegalConstraintsTest extends ConstraintTestBase {
                         postePasse(standStrat, aprem, majeur),
                         poste(standStrat, soir, majeur),
                         new ParametresLegaux())
-                .penalizesBy(4 * 60);
+                .penalizesBy(3 * 60 + 30);
     }
 
     @Test
