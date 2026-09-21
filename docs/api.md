@@ -637,7 +637,7 @@ quoi : la liste est de longueur libre, et un id d'animateur est fourni par le
 client, donc ni un séparateur ni une URL n'est un endroit sûr pour la porter.
 Un corps vide suffit à dire « je n'exclus personne ».
 
-Ce que l'exclusion fait, et ce qu'elle ne fait pas (ADR 0045) : elle **diffère**
+Ce que l'exclusion fait, et ce qu'elle ne fait pas (ADR 0047) : elle **diffère**
 le message, elle ne le supprime pas. La capture a lieu pour tout le monde —
 l'espace suit le plan publié —, mais le **repère de comparaison de la personne**
 (`animateur.plan_notifie_id`) ne bouge pas. La publication suivante la nomme à

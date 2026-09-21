@@ -71,7 +71,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 <<<<<<< HEAD
 | [0045](0045-le-niveau-de-la-regle-des-jours-d-affilee.md) | Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable | Accepté · prolonge 0006 et 0041 |
 =======
-| [0045](0045-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
+| [0047](0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
 >>>>>>> e8734cf (feat(publication): relire le diff nominatif et différer un message)
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du

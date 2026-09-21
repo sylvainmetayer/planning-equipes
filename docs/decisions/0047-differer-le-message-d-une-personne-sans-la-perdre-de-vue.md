@@ -1,4 +1,4 @@
-# 0045 — Différer le message d'une personne sans la perdre de vue
+# 0047 — Différer le message d'une personne sans la perdre de vue
 
 - **Statut** : accepté, implémenté
 - **Date** : septembre 2026
