@@ -222,6 +222,16 @@ d'amplitudes s'importerait comme des vacations de quatorze heures sans un mot.
 Le seul réglage qui survit, `dureeVacationMaxMinutes`, a rejoint
 `parametresLegaux`.
 
+Quatre **clés de `parametresLegaux`** sont refusées de la même façon depuis
+l'[ADR 0048](decisions/0048-une-seule-regle-de-pause.md) : `pauseSurPoste`,
+`pauseMinimaleEntreVacationsMinutes`, `dureePauseMajeurMinutes` et
+`dureePauseMineurMinutes`. Il n'y a plus de mode — une pause due est un trou
+dans la grille ou un relais d'un collègue du même stand, sinon un écart dur —
+plus d'écart minimal entre vacations, et une seule durée, `dureePauseMinutes`.
+La raison est la même qu'au découpage : un fichier vérifié sous un mode où la
+pause devait être un trou serait jugé sous une règle qui accepte le relais, et
+son auteur l'apprendrait du solveur.
+
 La section `journeesTypes` (optionnelle) porte les journées types de
 l'édition — nom, vacations avec `couverturePause` pour un relais repas, et
 les dates que chacune gouverne. Elle est appliquée **après** les créneaux et
@@ -751,10 +761,11 @@ Trois détails avant de les régénérer :
 Troisième fixture dérivée du réel, exportée depuis une édition saisie **en
 vacations** — la grille telle que l'organisateur l'écrit : rotation de midi
 12-13 / 13-14, relèves du soir portées par les fenêtres d'ouverture des
-stands, pauses déclarées sur le poste. Jouée par
-`PlanningServiceScenarioFestivalHivernalTest`. Elle n'épingle aucun poids de
-contrainte, à dessein : voir « Le dosage et la faisabilité » dans
-[`contraintes.md`](contraintes.md).
+stands. Jouée par `PlanningServiceScenarioFestivalHivernalTest`, qui est aussi
+la mesure sur laquelle la règle unique de pause a été retirée du mode :
+zéro écart dur en 210 s, voir « La pause légale, trou ou relais » dans
+[`contraintes.md`](contraintes.md). Elle n'épingle aucun poids de contrainte, à
+dessein : voir « Le dosage et la faisabilité » au même endroit.
 
 Son anonymisation va plus loin que celle des deux autres, à dessein :
 

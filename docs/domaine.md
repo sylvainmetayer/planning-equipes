@@ -638,14 +638,15 @@ sur la grille que l'organisateur a, quelle que soit la façon dont elle a été
 
 Tant qu'une vacation reste sous `dureeVacationMaxMinutes` (6 h par défaut, seuil
 de l'art. [L3121-16]) **et** ne recouvre pas entièrement une fenêtre repas, elle
-n'a besoin d'aucune pause interne : **la pause est le trou entre deux
-vacations**, pas un attribut de créneau — sauf si l'organisateur déclare
-`pauseSurPoste` (voir plus bas).
+ne doit aucune pause : une pause n'est jamais un attribut de créneau, c'est soit
+le trou entre deux vacations, soit un relais (voir « La pause légale » plus
+bas).
 
 Au-delà, le contrôle de la grille (`CreneauGridService`) pose un avertissement
-`VACATION_TROP_LONGUE` : une coupure interne devient légalement obligatoire, et
-la réponse est de couper la journée en deux vacations ou de déclarer la pause
-sur poste. Le seuil vit avec les autres règles de l'évènement, dans
+`VACATION_TROP_LONGUE` : **cette vacation contiendra une pause à relayer.** Ce
+n'est pas un refus — la vacation est parfaitement légale si un collègue du stand
+tient une place pendant la pause — c'est le moment de vérifier que cette place
+existe. L'autre réponse est de couper la journée en deux vacations. Le seuil vit avec les autres règles de l'évènement, dans
 `ParametresLegaux` — il bornait ce que le découpage produisait, il dit
 maintenant à partir de quand la grille est signalée.
 
@@ -772,14 +773,18 @@ Les deux contraintes regroupent les `PosteAffectation` par animateur et par
 **jour**, puis les jours par semaine ISO (`Creneau.semaineIso(LocalDate)`), et
 pénalisent le dépassement au prorata des minutes excédentaires (gradient, pas
 simple booléen). Le niveau intermédiaire n'est pas de la décoration : c'est là
-que se déduisent les pauses prises sur le poste, dont le calcul est journalier
-(voir « Pause prise sur le poste » ci-dessous).
+que se déduisent les pauses dues, dont le calcul est journalier (voir « La
+pause légale » ci-dessous).
 
-Les autres seuils légaux (repos quotidien, durée quotidienne, pauses, repos
-hebdomadaire, jours fériés) sont **des constantes du code**, pas des paramètres :
-ce sont des minima/maxima d'ordre public qu'un administrateur n'a aucune raison
-légitime d'assouplir. Ils sont déclarés dans `LegalConstraints`, chacun avec son
-article.
+Les autres **seuils** légaux (repos quotidien, durée quotidienne, travail
+continu, repos hebdomadaire, jours fériés) sont des constantes du code, pas des
+paramètres : ce sont des minima/maxima d'ordre public qu'un administrateur n'a
+aucune raison légitime d'assouplir. Ils sont déclarés dans `LegalConstraints`,
+chacun avec son article.
+
+La **durée de la pause**, elle, est un paramètre depuis l'issue #592 :
+`dureePauseMinutes`, un plancher et non un plafond, donc un réglage qui ne peut
+qu'aller dans le sens protecteur — voir « La pause légale » ci-dessous.
 
 
 ### Convention de rattachement à la semaine
@@ -808,38 +813,48 @@ règle `eviterRoulementStandsPremium` lisent tous cette même méthode : ce que 
 solveur doit remplir et ce que les écrans annoncent ne peuvent pas être deux
 nombres différents, et un effectif porté par une fenêtre est vu partout.
 
-### Pause prise sur le poste
+### La pause légale
 
 Le Code exige que la pause soit **réelle**, pas qu'elle soit planifiée : un
-organisateur qui relève chaque animateur vingt minutes à l'intérieur d'une
-vacation 13 h-20 h est en règle avec l'art. [L3121-16]. Le paramètre légal
-`pauseSurPoste` (faux par défaut, `PUT /api/parametres-legaux`, section
-`parametresLegaux` d'un scénario) déclare cette organisation. Quand il est vrai :
+organisateur qui relève chaque animateur trente minutes à l'intérieur d'une
+vacation 13 h-20 h est en règle avec l'art. [L3121-16]. L'application connaît
+donc deux manières de prendre une pause, et pas de troisième
+([ADR 0048](decisions/0048-une-seule-regle-de-pause.md)) :
 
-- `travailContinuMaxMajeur` et `travailContinuMaxMineur` considèrent la pause
-  comme prise à la sixième heure (à 4 h 30 pour un mineur) et ne pénalisent plus
-  une séquence longue ;
-- `dureeQuotidienneMaxMajeur` et `dureeQuotidienneMaxMineur` déduisent de
-  l'amplitude les pauses ainsi organisées — la durée réglée par tranche de 6 h
-  entamée au-delà de la première (par 4 h 30 pour un mineur) — pour ne compter
-  que le travail effectif, comme les art. L3121-18 et L3162-1 ;
-- `dureeHebdomadaireMax`, `dureeHebdomadaireMaxMineur` et
-  `dureeHebdomadaireMaxDeuxSemaines` déduisent **les mêmes** pauses, jour par
-  jour, avant de sommer la semaine. Elles sommaient l'amplitude jusqu'à l'issue
-  #31, ce qui donnait deux lectures contradictoires du même planning ;
-- `pauseSurPosteSansRelais` (dure) exige que quelqu'un d'autre tienne le stand
-  pendant chaque pause due : c'est ce qui fait que la déduction ci-dessus porte
-  sur une pause réellement prise.
+- **un trou** d'au moins `dureePauseMinutes` entre deux vacations. Il rompt la
+  séquence (`PauseSurPoste.sequences`), donc plus rien n'est dû de part et
+  d'autre ;
+- **un relais** : un autre animateur du **même stand** tenant une place pendant
+  toute la pause, à son heure limite (`PauseSurPoste.relayableBy`).
 
-Une journée 14 h-minuit vaut ainsi 9 h 40 de travail effectif ; 13 h-minuit en
-vaut 10 h 40 et reste refusée. Le paramètre reste **déclaratif** quant au
-principe — c'est l'organisateur qui affirme que la pause se prend par relais —
-mais l'existence du relais, elle, est vérifiée siège par siège depuis que
-`pauseSurPosteSansRelais` est dure.
+Une pause due qui n'a ni l'un ni l'autre est un **écart dur**, un point par
+pause, porté par `travailContinuMaxMajeur` et `travailContinuMaxMineur` — plus
+le forfait d'exclusion d'éligibilité pour un mineur. Il n'y a rien à déclarer :
+un paramètre `pauseSurPoste` a existé, il éteignait ces deux règles et déplaçait
+la vérification du relais dans une troisième, il est retiré.
 
-Les compteurs d'heures (écran Heures, équité, KPI) ne déduisent **rien** : ils
-comptent l'amplitude planifiée, et c'est voulu — voir
-[`contraintes.md`](contraintes.md#ce-qui-déduit-la-pause-et-ce-qui-compte-lamplitude).
+**La durée est un paramètre**, `dureePauseMinutes` (`PUT /api/parametres-legaux`,
+section `parametresLegaux` d'un scénario) : 30 minutes par défaut, plancher de
+20 (art. L3121-16), portée à 30 au minimum pour un mineur (art. L3162-3) par
+`ParametresLegaux.dureePauseMinutes(mineur)`. Ce n'est plus une constante du
+code, et ce n'est plus deux champs par tranche d'âge.
+
+**Le calcul, une seule fois.** `PauseSurPoste.dues(postes, parametres)` rend les
+pauses d'un couple (animateur, jour) : une séquence de `L` minutes au-delà du
+plafond en doit `ceil((L − cap) / (cap + pause))`, la k-ième au plus tard quand
+la séquence atteint son k-ième plafond. Le solveur, l'écran Pauses, le PDF
+animateur et le flux ICS lisent tous cette méthode, donc aucun ne peut décrire
+une pause qu'un autre ne doit pas.
+
+**La déduction est inconditionnelle.** Une pause due est du repos, pas du
+travail effectif (art. L3121-1), donc elle est retranchée de l'amplitude —
+plafonds quotidien et hebdomadaires, écran Heures, équité, Besoin, KPI. Rien
+n'est caché par là : dans un plan sans écart dur, toute pause déduite a bien
+été prise, et c'est exactement ce que les deux règles dures garantissent. Une
+journée 14 h-minuit vaut ainsi 9 h 30 de travail effectif ; 13 h-minuit en vaut
+10 h 30 et reste refusée. Le calcul vit dans `EffectiveWork`, et
+[`contraintes.md`](contraintes.md#ce-qui-déduit-la-pause-et-ce-qui-compte-lamplitude)
+dit les trois endroits qui comptent encore l'amplitude, et pourquoi.
 
 ## Fenêtres repas
 
