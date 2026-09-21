@@ -1,11 +1,13 @@
 # git-cliff configuration (https://git-cliff.org) — see docs/versioning.md.
 #
-# The CHANGELOG is GENERATED, never hand-edited. First generation happens
-# after the history rewrite planned for the public opening (the old commit
-# messages get normalised there); until then this file is ready but unused.
+# What this renders is the BODY OF A GITHUB RELEASE, written by
+# `.github/workflows/release.yml` when one is published. There is no
+# CHANGELOG.md in the repository: a file regenerated at tag time is committed
+# after the tag and never inside it, where a release page is dated by the very
+# tag it documents.
 #
-#   git cliff --tag vX.Y.Z -o CHANGELOG.md   # full file, at release time
-#   git cliff --unreleased --tag vX.Y.Z      # preview the next section
+#   git cliff --current --strip all          # what the workflow writes, on a tag
+#   git cliff --unreleased --tag vX.Y.Z      # preview the next release's body
 
 [changelog]
 header = """

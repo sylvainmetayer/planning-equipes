@@ -2,7 +2,7 @@
 // (`scripts/generate-news.js`). No Angular here beyond the labels, so the
 // classification is unit-tested without rendering anything.
 //
-// THE RULES BELOW MIRROR `cliff.toml`, AND THAT IS THE POINT: the CHANGELOG a
+// THE RULES BELOW MIRROR `cliff.toml`, AND THAT IS THE POINT: the notes a
 // release publishes and this screen answer the same question, so they may not
 // sort a commit under two different headings. A parser added there needs its
 // line here — `newsHeadings` and its spec are what make that visible.
@@ -21,7 +21,7 @@ export interface NewsCommit {
 
 /**
  * The headings of `cliff.toml`, in the order it sorts them. `attention` is what
- * the CHANGELOG files under « ⚠️ Attention »: a breaking change, or a legal
+ * a release files under « ⚠️ Attention »: a breaking change, or a legal
  * constraint that can turn a solvable planning infeasible.
  */
 export type NewsHeading = 'attention' | 'feature' | 'fix' | 'perf' | 'refactor' | 'deps' | 'docs';
@@ -91,7 +91,7 @@ export function classify(subject: string): NewsHeading | null {
 
 /**
  * The line a reader gets from a commit subject: prefix off, first letter up —
- * the same shape `cliff.toml`'s body template produces for the CHANGELOG.
+ * the same shape `cliff.toml`'s body template produces for a release.
  */
 export function toEntry(commit: NewsCommit): NewsEntry | null {
   const heading = classify(commit.subject);

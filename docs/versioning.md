@@ -5,18 +5,18 @@ Un numéro de version n'a d'intérêt que s'il permet à un exploitant de répon
 est-il ? ». Ce document fixe ce que promettent les numéros, comment une release
 se fabrique, et comment corriger une version antérieure sans rien perdre.
 
-## 1. La source de vérité : un tag git annoté
+## 1. La source de vérité : un tag git
 
-La version d'un déploiement est le **tag git annoté** `vX.Y.Z` posé sur `main` :
+La version d'un déploiement est le **tag git** `vX.Y.Z` posé sur `main`. Il
+naît du formulaire de release de GitHub (§ 3), qui le crée et le pousse ;
+aucune commande n'est à taper.
 
-```bash
-git tag -a v1.2.0 -m "Résumé de la version"
-git push origin v1.2.0
-```
-
-Annoté, jamais léger : `git describe --tags --exact-match` accepterait un tag
-léger, mais un tag de release porte un message — c'est le seul endroit où
-attacher un résumé signé et daté à un commit précis.
+Annoté ou léger, c'est sans conséquence, et le dépôt porte les deux :
+`git describe --tags --exact-match` — la seule lecture qui compte, celle de
+`generate-version.js` et du `-Drevision` du `Dockerfile` — les traite
+identiquement. Ce qu'un tag annoté apportait, un résumé daté attaché à un
+commit précis, vit désormais dans la **release** elle-même, à un endroit qui
+se lit sans cloner.
 
 Tout le reste **dérive** du tag, sans intervention :
 
@@ -27,7 +27,7 @@ Tout le reste **dérive** du tag, sans intervention :
 | Backend (`quarkus.application.version`, ligne de démarrage Quarkus) | Le `Dockerfile` passe `-Drevision=1.2.0` dérivé du même `git describe`, le `v` retiré ; hors release, le SHA court. En build local, `999-SNAPSHOT` — une valeur qui ne ressemble volontairement à aucune version publiée |
 | Sentry, **côté frontend seulement** | `release: APP_VERSION` : les erreurs du navigateur se regroupent par version, pas par commit. Les événements du backend ne portent pas encore de `release` — `SentryInitializer` ne pose que le DSN et l'environnement |
 | Image Docker | `docker-ghcr.yml` publie `ghcr.io/…:1.2.0` et `ghcr.io/…:1.2` sur le push du tag |
-| Release GitHub | Une par tag, corps = section du CHANGELOG (§4) |
+| Release GitHub | Une par tag, corps écrit par `release.yml` à partir des messages de commit (§ 3) |
 
 Le `pom.xml` ne porte donc **plus de numéro en dur** : sa version est
 `${revision}`, et un workflow qui bâtit une release échoue avant de construire
@@ -72,7 +72,7 @@ migration destructive, aucune variable retirée.
 **Le cas de la contrainte légale nouvelle ou durcie** : elle peut rendre
 insatisfiable un planning qui passait avant. Techniquement additive,
 pratiquement une rupture d'exploitation. Verdict : **MINOR, avec une entrée
-« ⚠️ Attention » obligatoire au CHANGELOG.** Pas MAJOR : sinon on change de
+« ⚠️ Attention » obligatoire aux notes de release.** Pas MAJOR : sinon on change de
 majeure chaque fois que le Code du travail bouge.
 
 Le marqueur est le **scope réservé `contraintes-legales`**
@@ -85,20 +85,35 @@ même section « ⚠️ Attention » (`cliff.toml`), sans que le même caractèr
 ## 3. Fabriquer une release
 
 Rien ne change au quotidien : `main` reste la seule branche de développement,
-une PR par sujet, pas de `develop`. Une release, c'est :
+une PR par sujet, pas de `develop`. Une release, c'est **un formulaire** —
+*Releases* → *Draft a new release* sur GitHub : choisir le numéro `vX.Y.Z`
+(§ 2 dit lequel), viser `main`, publier. Le corps peut rester vide.
 
-```bash
-git switch main && git pull
-git cliff --unreleased --tag v1.2.0        # relire ce que dira le CHANGELOG
-git cliff --tag v1.2.0 -o CHANGELOG.md     # régénérer, committer
-git tag -a v1.2.0 -m "…"
-git push origin main v1.2.0
-```
+Tout le reste dérive de ce geste, sans commande ni clone :
 
-Le push du tag déclenche `docker-ghcr.yml` : build `linux/amd64`, tags d'image
-`1.2.0` et `1.2`, SBOM, signature cosign — rien de tout cela ne demande de
-geste. Reste à créer la **release GitHub** sur le tag, corps = la section
-fraîche du CHANGELOG : c'est ce que lira quelqu'un qui découvre le dépôt.
+| Ce qui part | Sur quoi | Ce qu'il fait |
+| --- | --- | --- |
+| `docker-ghcr.yml` | le push du tag | build `linux/amd64`, images `1.2.0` et `1.2`, SBOM, signature cosign, et `:latest` si le tag est le plus récent |
+| `release.yml` | la publication de la release | écrit le corps de la release : la section rendue par `git cliff --current` |
+
+Les deux sont indépendants et tournent de front ; aucun ne pose ni ne déplace
+de tag, le numéro reste une décision humaine.
+
+**Si tu écris quelque chose dans le corps** au moment de créer la release — le
+résumé que portait le message d'un tag annoté —, il est conservé : `release.yml`
+le laisse en tête et n'écrit la section générée qu'en dessous, après un trait de
+séparation et le marqueur `<!-- git-cliff -->`. Tout ce qui suit ce marqueur lui
+appartient et est réécrit à chaque exécution ; le relancer à la main
+(*Actions* → *Notes de release* → *Run workflow*, avec le tag) est donc sans
+risque, et c'est aussi ce qui permet de rattraper une release plus ancienne.
+
+Deux contrôles tournent ensuite, et ils échouent **après** avoir écrit les
+notes : la release est déjà publiée quand le workflow démarre, rien ne peut
+plus l'empêcher, et un job rouge est le seul canal qui prévienne. Ils disent
+qu'un numéro ment — un `!` fusionné sous une montée PATCH, un `feat` sous un
+PATCH (§ 2) — ou que le tag n'est ni sur `main` ni sur une branche
+`release/X.Y` (§ 5). Dans les deux cas la réparation est la même : supprimer
+la release et son tag, recommencer au bon numéro.
 
 ### `:latest` ne bouge jamais implicitement
 
@@ -109,16 +124,20 @@ workflow force donc `latest=false`, et une étape séparée ne pose `:latest`
 que si le tag poussé est le plus grand `vX.Y.Z` de tout le dépôt. `:latest`
 n'avance que vers l'avant, ou pas du tout.
 
-### Le CHANGELOG est généré, pas écrit
+### Les notes sont générées, pas écrites — et il n'y a pas de `CHANGELOG.md`
 
 `cliff.toml` à la racine transforme les messages conventionnels (`feat:`,
 `fix:`, … — la convention est dans [`AGENTS.md`](../AGENTS.md)) en sections
-datées. On ne retouche jamais `CHANGELOG.md` à la main : une entrée mal
-libellée se corrige en reformulant le commit *avant* fusion, pas après.
+datées. C'est le **corps des releases** qu'il alimente, et rien d'autre : aucun
+`CHANGELOG.md` n'est tenu dans le dépôt.
 
-> La première génération attend la **réécriture d'historique prévue pour
-> l'ouverture publique**, qui normalise les anciens messages : générer avant,
-> c'est figer les messages fautifs dans le fichier.
+> Un fichier aurait dit la même chose que la page *Releases*, avec un défaut
+> qu'elle n'a pas : régénéré au moment du tag, son commit arrive forcément
+> *après* lui, si bien que l'arbre taggué ne contient jamais sa propre entrée.
+> La page de release, elle, est datée du tag qu'elle documente.
+
+On ne retouche donc pas la section générée à la main : une entrée mal libellée
+se corrige en reformulant le commit *avant* fusion, pas après.
 
 Les mêmes sujets alimentent l'écran **Nouveautés** de l'application
 (`/nouveautes`), construit à partir de l'historique git au moment du build et
@@ -185,10 +204,14 @@ git switch -c release/1.2 v1.2.0
 # 3. Rapatrier le correctif déjà fusionné sur main
 git cherry-pick -x <sha>               # -x note l'origine dans le message
 
-# 4. Tag + publication — le workflow Docker écoute `v*` sur toutes les branches
-git tag -a v1.2.1 -m "Correctif …"
-git push origin release/1.2 v1.2.1
+# 4. Publier la branche ; le tag, lui, naît de la release (§ 3) — viser
+#    `release/1.2` dans le formulaire, pas `main`
+git push origin release/1.2
 ```
+
+`release.yml` remonte au tag précédent de **cette ligne-là** pour composer les
+notes et vérifier la montée : sur `release/1.2`, un `v1.2.1` se lit après
+`v1.2.0`, jamais après le `v1.3.0` de `main`.
 
 Les règles qui rendent ça sûr :
 

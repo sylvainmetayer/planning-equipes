@@ -761,6 +761,15 @@ points qui ne s'y voient pas :
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
   release — est dans [`versioning.md`](versioning.md).
+- **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
+  messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
+  ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur
+  `release: published`, donc de front avec `docker-ghcr.yml` que le push du
+  même tag déclenche, sans lien entre les deux. Ses deux gardes de cohérence
+  — la montée que les sujets demandaient, la branche où vit le tag — tournent
+  **après** l'écriture : la release est déjà publiée quand le workflow
+  démarre, rien ne peut plus l'empêcher, et un job rouge est le seul canal qui
+  prévienne. Le détail est dans [`versioning.md`](versioning.md) § 3.
 
 ## Contexte de construction de l'image
 
