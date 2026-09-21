@@ -2,6 +2,7 @@ package dev.sylvain.planning.config;
 
 import io.smallrye.config.ConfigMapping;
 import io.smallrye.config.WithDefault;
+import java.time.Duration;
 import java.util.List;
 import java.util.Optional;
 
@@ -26,7 +27,36 @@ public interface ConfigMcp {
      */
     Optional<List<String>> requiredHeaders();
 
+    /** Per-address rate limit on the {@code /mcp} transport, see {@code McpRateLimiter}. */
+    RateLimit rateLimit();
+
     Pangolin pangolin();
+
+    /** How fast one address may call {@code /mcp}, and how to tell one address from another. */
+    interface RateLimit {
+
+        /**
+         * Requests tolerated per address and per {@link #window()}. Zero or less
+         * switches the limit off entirely — a deployment driving the MCP tools
+         * from a script on the same machine may want that, and saying so in
+         * configuration beats commenting a filter out.
+         */
+        @WithDefault("120")
+        int maxRequests();
+
+        @WithDefault("PT1M")
+        Duration window();
+
+        /**
+         * The reverse proxies in front of this deployment, as literal addresses
+         * or CIDR blocks. Defaults to the list the login lock already reads
+         * ({@code CONNEXION_PROXYS_FIABLES}): the proxies are a fact about the
+         * deployment, not about one endpoint, and two lists to keep in step is
+         * one list too many. See {@link TrustedProxies} for what declaring a
+         * block means, and {@code ClientAddress} for what is done with it.
+         */
+        Optional<List<String>> trustedProxies();
+    }
 
     /** Credentials of the Pangolin access proxy, when one fronts this instance. */
     interface Pangolin {

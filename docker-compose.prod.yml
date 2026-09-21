@@ -51,6 +51,10 @@ services:
       # Serveur MCP : vide = inutilisable, ce qui est le bon défaut tant que
       # personne ne s'en sert. Voir docs/mcp.md.
       PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
+      # Plafond de débit sur /mcp, par adresse source : toutes les requêtes
+      # comptent, clé ou pas, et au-delà la réponse est 429. Voir docs/mcp.md.
+      PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
+      PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
       # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}

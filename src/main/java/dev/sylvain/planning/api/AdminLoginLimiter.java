@@ -6,14 +6,12 @@ import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpHeaders;
 import io.vertx.core.http.HttpServerResponse;
-import io.vertx.core.net.SocketAddress;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -208,80 +206,13 @@ public class AdminLoginLimiter {
     }
 
     /**
-     * The address the lock counts against.
-     *
-     * <p>Two steps, and the first is the one that matters. <b>The peer must be a
-     * declared proxy</b> — read from {@code connection().remoteAddress()}, not
-     * {@code request().remoteAddress()}, which {@code proxy-address-forwarding}
-     * has already rewritten with the client's own forged value. If the machine
-     * actually connecting is not in
-     * {@code planning.auth.connexion.proxys-fiables} — as a literal address or
-     * within one of its CIDR blocks — {@code X-Forwarded-For} is whatever that
-     * machine chose to write, so it is ignored entirely and the connection
-     * address is counted. Left empty — the default — no header is
-     * ever trusted, which is right for a deployment with no proxy and safe for
-     * one whose proxies have not been declared.</p>
-     *
-     * <p>When the peer <em>is</em> a declared proxy, the header is walked from
-     * the <b>right</b>, skipping further declared proxies, and the first
-     * remaining entry wins: that is the address the last trusted hop actually
-     * observed, appended by it. Everything to its left is client-supplied text.</p>
-     *
-     * <p>Reading from the left is what made the lock useless. A proxy
-     * <em>appends</em> its entry rather than replacing the header, so the
-     * leftmost element is the client's own. Both the previous version of this
-     * method and {@code remoteAddress()} under {@code proxy-address-forwarding}
-     * take exactly that one — Quarkus's {@code ForwardedParser} calls
-     * {@code getFirstElement(forHeader)} — so one forged header per attempt
-     * bought a fresh counter. {@code quarkus.http.proxy.trusted-proxies} does
-     * not help: it decides whether the header is read at all, never which
-     * element is kept.</p>
+     * The address the lock counts against, which {@link ClientAddress} answers
+     * for both this lock and the MCP rate limiter — reading
+     * {@code X-Forwarded-For} from the right, and only when the peer is a
+     * declared proxy. That method's javadoc carries the reasoning, including
+     * why reading it from the left made this very lock useless.
      */
     private String address(RoutingContext contexte) {
-        // connection(), not request(): proxy-address-forwarding has already
-        // rewritten remoteAddress() with the client's own forged value. Only the
-        // TCP peer says who is really speaking.
-        String pair = hostOf(contexte.request().connection().remoteAddress());
-        TrustedProxies fiables = proxysFiables;
-        if (!fiables.contains(pair)) {
-            return pair;
-        }
-        List<String> transmises = forwardedFor(contexte);
-        for (int i = transmises.size() - 1; i >= 0; i--) {
-            String candidat = transmises.get(i);
-            if (!fiables.contains(candidat)) {
-                return candidat;
-            }
-        }
-        return pair;
-    }
-
-    /** {@code X-Forwarded-For} split into its entries, empty when absent. */
-    private static List<String> forwardedFor(RoutingContext contexte) {
-        String entete = contexte.request().getHeader("X-Forwarded-For");
-        if (entete == null || entete.isBlank()) {
-            return List.of();
-        }
-        return Arrays.stream(entete.split(","))
-                .map(String::trim)
-                .filter(valeur -> !valeur.isEmpty())
-                .toList();
-    }
-
-    /**
-     * Vert.x renders a non-IP host as a {@code null} {@code hostAddress()} — a
-     * proxy emitting {@code unknown}, which Squid does, used to reach the
-     * counter map as a null key and answer 500 on {@code /j_security_check}.
-     */
-    private static String hostOf(SocketAddress adresse) {
-        if (adresse == null) {
-            return "inconnue";
-        }
-        String ip = adresse.hostAddress();
-        if (ip != null && !ip.isBlank()) {
-            return ip;
-        }
-        String hote = adresse.host();
-        return hote == null || hote.isBlank() ? "inconnue" : hote;
+        return ClientAddress.of(contexte, proxysFiables);
     }
 }
