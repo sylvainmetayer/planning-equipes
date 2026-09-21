@@ -36,7 +36,7 @@
              transitively (see quarkus-flyway), so the YAML/JSR-310 modules
              used by the scenario DTOs (dev.sylvain.planning.scenario) stay
              on the same Jackson release as the rest of the classpath. -->
-        <jackson-yaml.version>2.22.0</jackson-yaml.version>
+        <jackson-yaml.version>2.22.2</jackson-yaml.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>1.13.2</mcp-server.version>
         <skipITs>true</skipITs>
