@@ -6,9 +6,11 @@ import {
   loadBranding,
   slugMarque,
 } from './branding';
+import { DARK_SURFACE, LIGHT_SURFACE, hexToOklch, oklchContrast } from './testing/contrast';
 
-/** Ce que `core/branding.ts` doit produire pour `#8b1e3f`, moitié claire intacte. */
-const PAIR_8B1E3F = 'light-dark(#8b1e3f, oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
+/** What `core/branding.ts` must produce for `#8b1e3f`: one clamped half per scheme. */
+const PAIR_8B1E3F =
+  'light-dark(oklch(from #8b1e3f min(l, 0.53) c h), oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
 
 /**
  * La marque est lue avant le bootstrap : ce qui est vérifié ici, c'est qu'un
@@ -117,9 +119,20 @@ describe('branding', () => {
   });
 
   describe('accentForBothSchemes', () => {
-    // La moitié claire reste la couleur configurée au caractère près : le
-    // thème clair ne doit pas bouger d'un pixel, seule la moitié sombre naît.
-    it("garde la couleur configurée en clair et l'éclaircit en sombre", () => {
+    /**
+     * The two clamps the pair declares, read back out of the string the code
+     * produces rather than copied here: what is measured below is the policy
+     * actually served to the browser, not a twin constant somebody would one
+     * day forget to keep in step.
+     */
+    function clamps(pair: string): { light: number; dark: number; chroma: number } {
+      const light = /min\(l, ([\d.]+)\)/.exec(pair);
+      const dark = /max\(l, ([\d.]+)\) min\(c, ([\d.]+)\)/.exec(pair);
+      if (!light || !dark) throw new Error(`pair cannot be read: ${pair}`);
+      return { light: +light[1], dark: +dark[1], chroma: +dark[2] };
+    }
+
+    it('borne la couleur configurée dans chaque schéma', () => {
       navigateurSachantDeriver(true);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe(PAIR_8B1E3F);
@@ -129,8 +142,65 @@ describe('branding', () => {
       navigateurSachantDeriver(true);
 
       expect(accentForBothSchemes('rebeccapurple')).toBe(
-        'light-dark(rebeccapurple, oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))',
+        'light-dark(oklch(from rebeccapurple min(l, 0.53) c h), oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))',
       );
+    });
+
+    // The heart of issue #40: the light half used to be passed through as it
+    // was, on the reasoning that an operator picks the accent while looking at
+    // the light surface. A brand yellow or a pale pink therefore went under
+    // 4.5:1 everywhere `--app-accent` inks text, and under 3:1 as a focus
+    // ring, where the keyboard of the grids becomes invisible.
+    describe('bornes de contraste', () => {
+      /** Deliberately bad pastel accents, of the kind an operator configures. */
+      const PASTELS = ['#ffe066', '#f8b3c5', '#b8e986', '#9ad5ff', '#fff2a8'];
+
+      it.each(PASTELS)('tient 4,5:1 sur la surface claire pour %s', (accent) => {
+        navigateurSachantDeriver(true);
+        const { light } = clamps(accentForBothSchemes(accent));
+        const configured = hexToOklch(accent);
+
+        const measured = oklchContrast(
+          { ...configured, l: Math.min(configured.l, light) },
+          LIGHT_SURFACE,
+        );
+
+        expect(measured).toBeGreaterThanOrEqual(4.5);
+      });
+
+      it.each(PASTELS)('tient 4,5:1 sur la surface sombre pour %s', (accent) => {
+        navigateurSachantDeriver(true);
+        const { dark, chroma } = clamps(accentForBothSchemes(accent));
+        const configured = hexToOklch(accent);
+
+        const measured = oklchContrast(
+          {
+            l: Math.max(configured.l, dark),
+            c: Math.min(configured.c, chroma),
+            h: configured.h,
+          },
+          DARK_SURFACE,
+        );
+
+        expect(measured).toBeGreaterThanOrEqual(4.5);
+      });
+
+      // A pastel is only one case: the clamp has to hold for every hue and
+      // every saturation, otherwise the next brand falls back into the hole.
+      // The worst case measured is a saturated green around h=143.
+      it('tient 4,5:1 sur la surface claire pour toute teinte', () => {
+        navigateurSachantDeriver(true);
+        const { light } = clamps(accentForBothSchemes('#8b1e3f'));
+
+        let worst = Infinity;
+        for (let h = 0; h < 360; h += 3) {
+          for (let c = 0; c <= 0.4; c += 0.02) {
+            worst = Math.min(worst, oklchContrast({ l: light, c, h }, LIGHT_SURFACE));
+          }
+        }
+
+        expect(worst).toBeGreaterThanOrEqual(4.5);
+      });
     });
 
     // Firefox 120 à 127 connaît `light-dark()` mais pas la syntaxe relative :

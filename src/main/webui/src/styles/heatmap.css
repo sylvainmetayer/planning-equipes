@@ -84,9 +84,21 @@
   border-bottom: 1px solid var(--mat-sys-outline-variant);
 }
 
+/* No `opacity` here: halving an already muted ink dropped the dash these cells
+   carry to roughly 2,2:1 (issue #40). "This cell does not count" is said by the
+   *absence* of a background — the ok/warning/critical cells are the ones that
+   paint one — so dimming the ink a second time only cost the reading. */
 .heatmap-cell-none {
   color: var(--mat-sys-on-surface-variant);
-  opacity: 0.5;
+}
+
+/* The legend is the one place where the absence of a background says nothing:
+   `--mat-sys-surface-container-low` reads 1,05:1 on the card, so the « 1 poste »
+   swatch and the « Pas de créneau » one were the same outlined square once the
+   `opacity` above was dropped. A dashed outline carries « does not count »
+   without dimming anything. */
+.heatmap-swatch.heatmap-cell-none {
+  border-style: dashed;
 }
 
 .heatmap-cell-ok {

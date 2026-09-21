@@ -262,19 +262,26 @@ Deux couleurs échappent à `mat.theme()` et portent donc leurs propres paires
 - la palette catégorielle des typologies, `styles/typologie-colors.css` — huit
   teintes qu'aucun `--mat-sys-*` ne fournit ;
 - `--app-accent`, quand `BRANDING_ACCENT_COLOR` la renseigne. Elle vaut sinon
-  `--mat-sys-primary`, déjà une paire ; renseignée, c'est une couleur unique
-  choisie sur fond blanc, et elle sert de couleur de texte sur
-  `--mat-sys-surface` dans une douzaine de partials. `core/branding.ts` la pose
-  donc en paire : la couleur configurée telle quelle en clair, une jumelle
-  éclaircie en OKLCH (plancher de clarté, plafond de chroma) en sombre, qui
-  garde la teinte de la marque. Un navigateur qui ne sait pas parser la paire
-  garde la couleur brute.
+  `--mat-sys-primary`, déjà une paire ; renseignée, c'est une couleur unique,
+  et elle sert de couleur de texte sur `--mat-sys-surface` dans une douzaine de
+  partials et d'anneau de focus sur cinq grilles. `core/branding.ts` la pose
+  donc en paire, chaque moitié bornée en OKLCH à teinte constante : clarté
+  **plafonnée** en clair, **plancherée** en sombre (avec un plafond de chroma).
+  Les deux bornes, et non la seule sombre : un exploitant choisit sa couleur en
+  regardant une surface, et l'autre est alors celle que personne n'a vérifiée —
+  un accent pastel tombait sous 4,5:1 en clair (issue #40). Un navigateur qui
+  ne sait pas parser la paire garde la couleur brute.
 
 Trois surfaces restent volontairement en dehors :
 
 - la **barre d'outils de marque** (administration et espace animateur) garde sa
   couleur d'enseigne dans les deux thèmes : une identité qui change de couleur
-  selon l'heure n'est plus une identité ;
+  selon l'heure n'est plus une identité. Hors du thème, mais pas hors des
+  seuils : cette barre porte du texte — le nom du produit, celui de l'animateur
+  connecté, le sélecteur de langue — et la paire
+  `--app-toolbar-foreground` / `--app-toolbar-background` se mesure comme toute
+  couleur écrite par ce dépôt (4,54:1 aujourd'hui, contre 3,24:1 avant
+  l'issue #40) ;
 - les **cartes** (saisie d'un emplacement, carte de la journée) affichent des
   tuiles OpenStreetMap, c'est-à-dire du contenu et non du chrome ; les
   assombrir demanderait un autre fournisseur de tuiles, pas une variable. Ce
