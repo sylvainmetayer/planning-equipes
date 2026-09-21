@@ -61,20 +61,21 @@ still current before citing them — see "How you review"):
 - Durée quotidienne maximale d'un mineur, 8h (`dureeQuotidienneMaxMineur`).
 - Repos quotidien d'un mineur après un créneau de nuit
   (`reposQuotidienMineur`).
-- Durée hebdomadaire maximale absolue, 48h, pour tout animateur
+- Durée hebdomadaire maximale absolue, 48h, pour tout animateur majeur
   (`dureeHebdomadaireMax`), déjà motivée dans `ParametresLegaux` par l'art.
-  L3121-20 du Code du travail et l'art. 5.2 de la Convention collective
-  nationale de l'Animation (ÉCLAT, IDCC 1518).
+  L3121-20 du Code du travail — **et par lui seul**. La Convention collective
+  de l'Animation était citée à côté, à son art. 5.2 : cette mention a été
+  retirée, elle était fausse deux fois (l'art. 5.2 traite des jours de repos,
+  la semaine haute figure à l'art. 5.7.2.3) et la convention ne s'applique
+  pas — voir *La convention collective* ci-dessous. Ne la réintroduis pas.
 
 **Provisions worth actively checking for gaps** — these are classic
 festival/événementiel staffing failure points, not a guess to state as fact
-without verifying against the current law and the applicable convention
-collective:
+without verifying against the current law:
 - Repos quotidien pour les majeurs (11h consécutives entre deux journées de
   travail) — there is currently a minor-only daily-rest constraint; check
-  whether adults need one too, and whether the CCN ÉCLAT's dispositions
-  spécifiques (secteur de l'animation, séjours/accueils) create a lawful
-  derogation your default should reflect rather than contradict.
+  whether adults need one too. No convention collective is in play to carry a
+  derogation here, so the *Code du travail* default stands on its own.
 - Repos hebdomadaire (35h consécutives, un jour de repos par semaine).
 - Pause obligatoire après 6h de travail continu.
 - Durée hebdomadaire moyenne sur 12 semaines (distincte du plafond absolu déjà
@@ -86,9 +87,39 @@ collective:
 - Autorisations administratives / limites de durée du travail des mineurs
   pendant les vacances scolaires (le contexte festival est probablement
   concerné).
-- Toute disposition propre à la Convention collective ÉCLAT qui serait plus
-  protectrice que le Code du travail — en droit du travail français, la
-  norme la plus favorable au salarié prime.
+
+## La convention collective
+
+**Elle ne s'applique pas, et ce n'est plus une question ouverte.** While
+settling its working-time framework, the organisation confirmed it does not
+fall under the Convention collective de l'Animation (ÉCLAT, IDCC 1518).
+Everything this repository cites is therefore the *Code du travail* alone.
+`docs/contraintes.md`, section *La convention collective de l'Animation*,
+holds the statement and its consequences.
+
+Three things follow, and you are expected to hold all three at once:
+
+- **Do not reopen it, and do not re-derive the 48 h ceiling from art. 5.2.**
+  Raising "the CCN might be more protective" as a finding is re-litigating a
+  decision the organisation has made; it costs a reviewer's credit and moves
+  nothing.
+- **It is a declared fact, not a legal verification**, so say so when it
+  matters. If it ever applied, two articles would reverse decisions already
+  taken: art. 5.3 requires 45 minutes of break on *any* working day whatever
+  its length (the 30 minutes in force are below that floor) and caps the
+  amplitude at 12 h; art. 5.2 grants two consecutive rest days to every
+  employee, which would forbid the twelve-day runs outright and give the hard
+  consecutive-days rule a textual basis it does not have today — see
+  `docs/decisions/0045-le-niveau-de-la-regle-des-jours-d-affilee.md`.
+- **One reserve is still standing**: a Légifrance page rendered those two
+  articles as *non en vigueur* while the 2024 consolidated texts carry them
+  *en vigueur, étendu*. It is unresolved, and tracked outside the public
+  repository.
+
+The general principle — in French labour law the norm most favourable to the
+employee prevails — remains true and remains worth applying the day a
+convention, an accord d'entreprise or a usage enters the picture. It has no
+purchase today.
 
 ## How you review
 
