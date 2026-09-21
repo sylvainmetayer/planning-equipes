@@ -77,15 +77,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * requires — the chromatic number of an interval graph is its maximum clique.
  * The buffer used to be the « pause minimale entre vacations », a rule of its
  * own; that rule is retired (ADR 0048) — a gap shorter than the legal break is
- * worked time, not a forbidden one — so production passes
- * {@link #SANS_TAMPON} and this bound now coincides with the simultaneous
- * peak. The parameter stays because the proof is written on it, and because a
- * caller exploring a hypothetical buffer is one assertion away.</li>
+ * worked time, not a forbidden one — so the buffer is zero and this bound now
+ * coincides with the simultaneous peak, day for day. It is still computed and
+ * still shown, because the proof above is written on it; what it can no longer
+ * be is the bound <em>credited</em> in {@link BorneRetenue}, which would name a
+ * constraint that no longer constrains.</li>
  * <li><b>Charge horaire</b> — the hours of the <em>busiest ISO week</em>,
  * divided by the amplitude one animateur may legally cover during that week.
  * The legal ceilings bound <em>travail effectif</em>, and what a grid asks for
  * is amplitude, so the ceilings are raised here by the breaks a person takes
- * under them (ADR 0048) — see {@link #maxDailyAmplitude()}. Dividing an
+ * under them (ADR 0048) — see {@link #maxDailyAmplitude(int)}. Dividing an
  * amplitude by a travail-effectif ceiling claimed people the plan does not
  * need, which for a bound announced as a proof is the one error that
  * matters.</li>
@@ -202,40 +203,26 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class StaffingAnalyzer {
 
     /**
-     * The buffer the « pic avec tampon » bound extends each vacation by, now
-     * that no rule requires a gap between two of them (ADR 0048): none.
-     */
-    public static final int SANS_TAMPON = 0;
-
-    /**
-     * The legal break a day of an adult owes, read here at its floor of
-     * twenty minutes (art. L3121-16) rather than at the edition's own value.
-     *
-     * <p>It is what turns a ceiling on <b>travail effectif</b> into a ceiling
-     * on the <b>amplitude</b> this class measures — see
-     * {@link #maxDailyAmplitude()}. The floor is the prudent end: a longer
-     * break lets one person cover more amplitude, so an edition granting
-     * thirty minutes has a real capacity above what this assumes, and the
-     * bound stays a bound. Reading the edition's value would sharpen it by a
-     * few minutes a day and would have to travel through six signatures to get
-     * here; reading none at all, as this class did before the breaks became
-     * unconditional, made the bound claim more people than the plan needs.</p>
-     */
-    private static final int DEDUCTED_BREAK_MINUTES = PlafondsLegauxMajeurs.PAUSE_MINIMALE_MINUTES;
-
-    /**
      * The largest <b>amplitude</b> one adult may hold on one day: the ten hours
      * of travail effectif art. L3121-18 allows, plus the break that day owes
-     * (ADR 0048). A 10 h 20 stretch is 10 h of work once its twenty minutes
+     * (ADR 0048). A 10 h 30 stretch is 10 h of work once its thirty minutes
      * come off, so dividing a day's amplitude by 600 min counted people who are
      * not needed.
+     *
+     * <p>The edition's own break length, never a constant. Every bound here is
+     * announced as a <b>floor</b> — « il en faut au moins tant » — so it may be
+     * loose but must never exceed the truth, and that fixes the direction:
+     * assuming a break shorter than the edition grants under-states what one
+     * person covers and therefore over-states the floor. A class constant at
+     * the legal minimum of twenty minutes did exactly that on the default
+     * thirty, and claimed 120 people on a day 119 can staff.</p>
      *
      * <p>One break, not more: a stretch long enough to owe a second one is well
      * past ten hours of work whatever is deducted, so no day of an adult can
      * carry two.</p>
      */
-    private static int maxDailyAmplitude() {
-        return PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES + DEDUCTED_BREAK_MINUTES;
+    private static int maxDailyAmplitude(int dureePauseMinutes) {
+        return PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES + dureePauseMinutes;
     }
 
     /** Which of the bounds ended up setting {@link StaffingSummary#minimumTotal()}. */
@@ -503,13 +490,13 @@ public class StaffingAnalyzer {
             List<Animateur> animateurs,
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes) {
+            int dureePauseMinutes) {
         return analyze(
                 postes,
                 animateurs,
                 typologies,
                 dureeHebdomadaireMaxMinutes,
-                pauseMinimaleMinutes,
+                dureePauseMinutes,
                 animateurs == null || animateurs.isEmpty() ? List.of(ReferentielManquant.ANIMATEURS) : List.of(),
                 List.of());
     }
@@ -520,14 +507,14 @@ public class StaffingAnalyzer {
             List<Animateur> animateurs,
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes,
+            int dureePauseMinutes,
             List<ReferentielManquant> referentielsManquants) {
         return analyze(
                 postes,
                 animateurs,
                 typologies,
                 dureeHebdomadaireMaxMinutes,
-                pauseMinimaleMinutes,
+                dureePauseMinutes,
                 referentielsManquants,
                 List.of());
     }
@@ -558,13 +545,13 @@ public class StaffingAnalyzer {
             List<Animateur> animateurs,
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes,
+            int dureePauseMinutes,
             List<ReferentielManquant> referentielsManquants,
             List<FenetreRepas> fenetresRepas) {
         List<FenetreRepas> fenetres = fenetresRepas == null ? List.of() : fenetresRepas;
         List<Siege> sieges = sieges(postes);
-        Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, pauseMinimaleMinutes, fenetres);
-        Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes);
+        Map<LocalDate, BesoinJour> besoins = besoinsByDate(sieges, dureePauseMinutes, fenetres);
+        Bornes bornes = bornes(besoins, dureeHebdomadaireMaxMinutes, dureePauseMinutes);
 
         Map<LocalDate, Integer> dayByDate = dayByDate(postes);
         Map<LocalDate, Set<String>> standsByDate = new TreeMap<>();
@@ -626,7 +613,7 @@ public class StaffingAnalyzer {
                 PlafondsLegauxMajeurs.DUREE_QUOTIDIENNE_MAX_MINUTES,
                 PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE,
                 bottleneckPerCategory(
-                        sieges, connus, typologies, dureeHebdomadaireMaxMinutes, pauseMinimaleMinutes, fenetres),
+                        sieges, connus, typologies, dureeHebdomadaireMaxMinutes, dureePauseMinutes, fenetres),
                 referentielsManquants == null ? List.of() : List.copyOf(referentielsManquants));
     }
 
@@ -681,7 +668,7 @@ public class StaffingAnalyzer {
             List<Animateur> animateurs,
             List<TypologieItem> typologies,
             int dureeHebdomadaireMaxMinutes,
-            int pauseMinimaleMinutes,
+            int dureePauseMinutes,
             List<FenetreRepas> fenetres) {
         List<Animateur> connus = animateurs == null ? List.of() : animateurs;
         List<TypologieItem> referentiel = typologies == null ? List.of() : typologies;
@@ -735,7 +722,9 @@ public class StaffingAnalyzer {
         for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
             String id = entree.getKey();
             Bornes bornes = bornes(
-                    besoinsByDate(entree.getValue(), pauseMinimaleMinutes, fenetres), dureeHebdomadaireMaxMinutes);
+                    besoinsByDate(entree.getValue(), dureePauseMinutes, fenetres),
+                    dureeHebdomadaireMaxMinutes,
+                    dureePauseMinutes);
             int disponibles = specialistes.getOrDefault(id, 0);
             int manque = connus.isEmpty() ? 0 : Math.max(0, bornes.minimumTotal() - disponibles);
             lignes.add(new TypologieStaffing(
@@ -811,7 +800,7 @@ public class StaffingAnalyzer {
      * different dates never overlap.
      */
     private static Map<LocalDate, BesoinJour> besoinsByDate(
-            Collection<Siege> sieges, int pauseMinimaleMinutes, List<FenetreRepas> fenetres) {
+            Collection<Siege> sieges, int dureePauseMinutes, List<FenetreRepas> fenetres) {
         Map<LocalDate, List<Siege>> byDate = new TreeMap<>();
         for (Siege siege : sieges) {
             byDate.computeIfAbsent(siege.date(), date -> new ArrayList<>()).add(siege);
@@ -822,11 +811,13 @@ public class StaffingAnalyzer {
             for (Siege siege : entree.getValue()) {
                 heures += (siege.fin() - siege.debut()) / 60.0;
             }
-            int picAvecPause = pic(entree.getValue(), pauseMinimaleMinutes);
+            // No buffer: since ADR 0048 no rule requires a gap between two
+            // vacations, so this bound coincides with the simultaneous peak.
+            int picAvecPause = pic(entree.getValue(), 0);
             // A day is also bounded by its sheer volume: nobody works more than
             // the daily legal ceiling, so 600 person-hours need 60 people
             // whatever the shape of the day.
-            int parLesHeures = (int) Math.ceil(heures * 60 / maxDailyAmplitude());
+            int parLesHeures = (int) Math.ceil(heures * 60 / maxDailyAmplitude(dureePauseMinutes));
             int picRepas = 0;
             for (FenetreRepas fenetre : fenetres) {
                 if (fenetre.appliesTo(entree.getKey())) {
@@ -846,7 +837,8 @@ public class StaffingAnalyzer {
         return besoins;
     }
 
-    private static Bornes bornes(Map<LocalDate, BesoinJour> besoins, int dureeHebdomadaireMaxMinutes) {
+    private static Bornes bornes(
+            Map<LocalDate, BesoinJour> besoins, int dureeHebdomadaireMaxMinutes, int dureePauseMinutes) {
         int picSimultane = besoins.values().stream()
                 .mapToInt(BesoinJour::picSimultane)
                 .max()
@@ -876,8 +868,8 @@ public class StaffingAnalyzer {
             // Two ceilings at once: the weekly one, and the days the event
             // really occupies in that week — six at most, of ten hours at most.
             double capacite = Math.min(
-                            dureeHebdomadaireMaxMinutes + joursTravaillables * (long) DEDUCTED_BREAK_MINUTES,
-                            joursTravaillables * (long) maxDailyAmplitude())
+                            dureeHebdomadaireMaxMinutes + joursTravaillables * (long) dureePauseMinutes,
+                            joursTravaillables * (long) maxDailyAmplitude(dureePauseMinutes))
                     / 60.0;
             int joursPersonne = jours.stream().mapToInt(BesoinJour::minimum).sum();
             parSemaine.add(new SemaineStaffing(
@@ -947,7 +939,10 @@ public class StaffingAnalyzer {
         if (chargeTotal >= picAvecPause && chargeTotal >= picSimultane) {
             return BorneRetenue.CHARGE_HORAIRE;
         }
-        return picAvecPause >= picSimultane ? BorneRetenue.PIC_AVEC_PAUSE : BorneRetenue.PIC_SIMULTANE;
+        // Strictly greater, not « at least »: with no buffer left the two are
+        // equal on every day, and crediting « pic avec tampon » would name a
+        // bound that no longer constrains anything.
+        return picAvecPause > picSimultane ? BorneRetenue.PIC_AVEC_PAUSE : BorneRetenue.PIC_SIMULTANE;
     }
 
     /**

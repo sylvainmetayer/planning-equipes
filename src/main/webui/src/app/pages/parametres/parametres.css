@@ -100,19 +100,19 @@
 /* Paramètres légaux and Coupure repas: every field carries a hint, and most
    of them wrap on two lines, so the rows need the vertical air the generic
    form-grid does not give (row-gap 0, one subscript line reserved). The guide
-   link and the on-post switch span the whole width instead of sitting in a
-   grid cell next to a field. */
+   link and the notes under the fields span the whole width instead of sitting
+   in a grid cell next to a field, which would halve them. */
 .parametres-legaux-form {
   row-gap: 1rem;
 }
 
-.parametres-legaux-form .legal-guide,
-.parametres-legaux-form .legal-toggle {
+.parametres-legaux-form .legal-guide {
   grid-column: 1 / -1;
   margin: 0;
 }
 
-.parametres-legaux-form .legal-toggle-hint {
+.parametres-legaux-form .legal-note {
+  grid-column: 1 / -1;
   margin: 0.25rem 0 0;
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);

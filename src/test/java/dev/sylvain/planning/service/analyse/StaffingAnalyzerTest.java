@@ -82,21 +82,27 @@ class StaffingAnalyzerTest {
     }
 
     @Test
-    void breakBetweenVacationsRaisesThePeakToTheExactHeadcount() {
-        // Two vacations of the same stand, back to back with no overlap: one
-        // seat at a time, but the 30-minute legal break between two vacations
-        // of the same person means the relay needs two distinct people.
-        Stand stand = stand("A", 1);
+    void withNoBufferTheTwoPeaksCoincideAndTheSimultaneousOneIsCredited() {
+        // Two vacations of the same stand, back to back with no overlap. The
+        // « pic avec tampon » used to extend each of them by the pause minimale
+        // entre vacations and answer 2; that rule is retired (ADR 0048), the
+        // buffer is zero, and the two peaks are equal on every day.
+        //
+        // Equal is what the tie-break turns on: crediting « pic avec tampon »
+        // would name a constraint that no longer constrains, so the bound
+        // announced is the simultaneous peak.
+        // Three seats, so the peak strictly beats the workload bound and the
+        // tie-break between the two peaks is the one actually exercised.
+        Stand stand = stand("A", 3);
         List<PosteAffectation> postes = new ArrayList<>();
-        postes.addAll(postes(stand, creneau(1, LocalTime.of(10, 0), LocalTime.of(15, 0)), 1));
-        postes.addAll(postes(stand, creneau(2, LocalTime.of(15, 0), LocalTime.of(20, 0)), 1));
+        postes.addAll(postes(stand, creneau(1, LocalTime.of(9, 0), LocalTime.of(12, 0)), 3));
+        postes.addAll(postes(stand, creneau(2, LocalTime.of(12, 0), LocalTime.of(15, 0)), 3));
 
         StaffingSummary summary = analyzer.analyze(postes, List.of(), TYPOLOGIES, 48 * 60, 30);
 
-        assertThat(summary.picSimultane()).isEqualTo(1);
-        assertThat(summary.picAvecPause()).isEqualTo(2);
-        assertThat(summary.minimumTotal()).isEqualTo(2);
-        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.PIC_AVEC_PAUSE);
+        assertThat(summary.picSimultane()).isEqualTo(3);
+        assertThat(summary.picAvecPause()).isEqualTo(summary.picSimultane());
+        assertThat(summary.borneRetenue()).isEqualTo(BorneRetenue.PIC_SIMULTANE);
     }
 
     @Test
@@ -158,9 +164,10 @@ class StaffingAnalyzerTest {
 
     @Test
     void aWeekTheEventBarelyTouchesCannotOfferAFullWeeklyCeiling() {
-        // Two event days in that ISO week: 2 × 10 h 20 of amplitude per person —
-        // ten hours of travail effectif plus the break each day owes (ADR 0048)
-        // — not the 48 h the weekly ceiling would allow on a full week.
+        // Two event days in that ISO week: 2 × 10 h 30 of amplitude per person —
+        // ten hours of travail effectif plus the thirty-minute break each day
+        // owes (ADR 0048) — not the 48 h the weekly ceiling would allow on a
+        // full week.
         List<PosteAffectation> postes = new ArrayList<>();
         for (int jour = 0; jour < 2; jour++) {
             Creneau creneau = new Creneau(
@@ -177,7 +184,7 @@ class StaffingAnalyzerTest {
         assertThat(summary.parSemaine()).hasSize(1);
         assertThat(summary.parSemaine().get(0).jours()).isEqualTo(2);
         assertThat(summary.parSemaine().get(0).joursTravaillables()).isEqualTo(2);
-        assertThat(summary.parSemaine().get(0).capaciteHeuresParAnimateur()).isCloseTo(20.667, within(0.001));
+        assertThat(summary.parSemaine().get(0).capaciteHeuresParAnimateur()).isCloseTo(21.0, within(0.001));
         assertThat(summary.parSemaine().get(0).debut()).isEqualTo(LocalDate.of(2026, 7, 20));
     }
 

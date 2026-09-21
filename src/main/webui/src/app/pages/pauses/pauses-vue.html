@@ -12,10 +12,7 @@
       @if (rapport()!.relaisManquants > 0) {
         <p class="pauses-alerte" role="status">
           <mat-icon inline>warning</mat-icon>
-          <span i18n="@@pauses.sansRelais">
-            Des pauses dues n'ont personne pour relayer : autant d'écarts durs. Ouvrez une place de plus sur le stand
-            à ce moment-là, ou coupez la séquence par un trou.
-          </span>
+          <span i18n="@@pauses.sansRelais">Chacune est un écart dur.</span>
         </p>
       }
 

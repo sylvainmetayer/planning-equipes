@@ -3544,5 +3544,5 @@
   "constraints.legal.hint.pauseTrouOuRelais": "A break that is owed is taken one of two ways: a gap of at least that length in the grid, or a relay by a colleague of the same stand. With neither, it is a hard breach.",
   "constraints.legal.hint.pauseDeduite": "A break is rest: the caps and every hours counter deduct it.",
   "constraints.legal.error.pause": "The break length cannot be under {$minutes} minutes (Code du travail art. L3121-16, ordre public).",
-  "pauses.sansRelais": "Some breaks that are owed have nobody to relay them: that many hard breaches. Open one more place on the stand at that moment, or split the stretch with a gap."
+  "pauses.sansRelais": "Each one is a hard breach."
 }
