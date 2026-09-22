@@ -158,16 +158,17 @@ jobs:
       # `verify` ci-dessus a déjà packagé l'application, Quinoa compris, et
       # `e2e-suite.yml` s'en contentait si peu qu'il refaisait un
       # `./mvnw package` — troisième construction du bundle Angular par poussée
-      # (audit #392, C9). Deux minutes d'artefact contre cinq de build, et les
-      # specs s'exécutent désormais contre le binaire que la suite backend vient
-      # de vérifier.
+      # (audit #392, C9). Cinquante mégaoctets déposés puis repris, quelques
+      # dizaines de secondes, contre les minutes d'un build ; et les specs
+      # s'exécutent désormais contre le binaire que la suite backend vient de
+      # vérifier, non contre un homonyme reconstruit à côté.
       #
       # Un jour de rétention : rien ne relit cet artefact après le run qui
       # l'a produit — le journal d'un échec, lui, est gardé sept jours.
       - name: Upload the packaged application for the E2E stack
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: application-packagee
+          name: quarkus-app
           path: target/quarkus-app
           if-no-files-found: error
           retention-days: 1
@@ -373,4 +374,4 @@ jobs:
       # pile compris ; un runner lent a de la marge, un blocage n'en a pas. Le
       # build de l'application n'y est plus, son téléchargement l'a remplacé.
       timeout-minutes: 25
-      app-artifact: application-packagee
+      app-artifact: quarkus-app

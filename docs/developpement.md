@@ -789,8 +789,9 @@ points qui ne s'y voient pas :
   `docs/licences-tierces.md`** et le commite sur la branche, puisqu'un bump
   fait échouer le contrôle par construction (le job `test` le joue d'ailleurs
   en premier, avant les treize minutes de tests). Une poussée faite avec
-  `GITHUB_TOKEN` ne déclenche aucun workflow : le job relance lui-même Tests,
-  E2E et Sécurité par `workflow_dispatch` sur la branche — et les deux
+  `GITHUB_TOKEN` ne déclenche aucun workflow : le job relance lui-même Tests
+  — donc les specs E2E, qui en sont un job — et Sécurité par
+  `workflow_dispatch` sur la branche — et les deux
   workflows lourds sous le même label qui les gouverne ailleurs —, après avoir
   annulé ce qui tournait encore sur le commit remplacé. Deux jobs séparés, et
   c'est délibéré : la régénération lance des plugins Maven dont la version
@@ -847,6 +848,17 @@ dossiers pèsent environ 1 Mo — mais deux raisons demeurent : le
 des **données réelles**, qui n'ont rien à faire dans un contexte d'image.
 
 Ajouter un dossier volumineux à la racine, c'est donc penser à l'exclure ici.
+
+**Les dépendances Maven vivent dans une couche, pas dans un montage de cache.**
+`RUN --mount=type=cache,target=/root/.m2` est plus rapide sur une machine qui
+garde son *builder*, mais `cache-to: type=gha` n'exporte que des couches :
+chaque construction d'image en CI retéléchargeait les 400 Mio du `.m2`
+(audit #392, C9). Le `RUN` qui résout les dépendances les écrit donc
+maintenant dans la couche, que le cache GitHub ramène tant que `pom.xml` n'a
+pas bougé — c'est-à-dire tant qu'elles sont encore les bonnes. Et
+`quarkus:go-offline` y tourne à côté de `dependency:go-offline` : sans lui, les
+`*-deployment` que l'augmentation résout — l'essentiel du volume — restaient
+hors de la couche et repartaient en téléchargement à chaque build.
 
 ## Renovate
 

@@ -7,13 +7,16 @@ COPY pom.xml .
 # `cache-to: type=gha` — which exports layers and nothing else — so every CI
 # image build re-downloaded the whole `.m2` (audit #392, C9). Baked into this
 # layer, it is exported with it and restored as long as `pom.xml` is unchanged,
-# which is exactly when it is still valid.
+# which is exactly when it is still valid. The price is paid where it is
+# cheapest: a `pom.xml` that moves now re-downloads everything rather than the
+# delta, on the rare local `docker compose --profile app up --build`.
 #
-# `quarkus:go-offline` beside `dependency:go-offline`, because the second one
-# does not know about the first one's world: the `*-deployment` jars that
-# `quarkus:build` resolves at augmentation time are the bulk of those 400 Mo,
-# and without this goal they would be re-fetched by the `package` below on
-# every single build — the very download this layer exists to avoid.
+# `quarkus:go-offline` beside `dependency:go-offline`, which does not see the
+# same world: the `*-deployment` jars that `quarkus:build` resolves at
+# augmentation time are the bulk of those 400 MB, and without this goal they
+# would be re-fetched by the `package` below on every single build — the very
+# download this layer exists to avoid. With it, that `package` fetches some ten
+# more megabytes and nothing else.
 RUN mvn -q -DskipTests dependency:go-offline quarkus:go-offline
 COPY src ./src
 COPY .git ./.git
