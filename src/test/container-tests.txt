@@ -105,6 +105,7 @@ dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
 dev/sylvain/planning/mcp/SolveurMcpToolsQueueTest.java
 dev/sylvain/planning/service/ConcurrentModificationGuardTest.java
 dev/sylvain/planning/service/EditionContextFailClosedTest.java
+dev/sylvain/planning/service/PorteursDIdentifiantStructurelleTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
 dev/sylvain/planning/service/edition/EditionDuplicationStructurelleTest.java
 dev/sylvain/planning/service/export/DatabaseDumpCoverageTest.java
