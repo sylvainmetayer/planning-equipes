@@ -493,7 +493,17 @@ export interface RapportMarge {
 
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
-  id: string;
+  /**
+   * Minted by the database, never typed (ADR 0049). Absent on a creation: it
+   * is the server that decides it.
+   */
+  id: number;
+  /**
+   * Optional business code, unique within the edition and case-insensitive.
+   * This is what the CSV export writes and what a scenario file reconciles on
+   * — an emplacement without one cannot be named by a file.
+   */
+  code?: string | null;
   nom: string;
   /**
    * When the row was last written server-side (issue #362). Sent back as is on
@@ -673,7 +683,8 @@ export interface ContrainteAdHoc {
  * break spans.
  */
 export interface LigneEmplacementIntendance {
-  emplacementId: string;
+  /** `null` for the row gathering the stands that name no emplacement. */
+  emplacementId: number | null;
   emplacementNom: string;
   personnes: number[];
   mineurs: number[];

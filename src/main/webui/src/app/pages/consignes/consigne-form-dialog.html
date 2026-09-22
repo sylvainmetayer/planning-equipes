@@ -114,7 +114,7 @@
             <mat-select name="emplacement" [ngModel]="filtres().emplacement" (ngModelChange)="patchFiltres({ emplacement: $event })">
               <mat-option value="" i18n="@@consignes.form.filtre.tous">Tous</mat-option>
               @for (emplacement of data.emplacements; track emplacement.id) {
-                <mat-option [value]="emplacement.id">{{ emplacement.nom }}</mat-option>
+                <mat-option [value]="emplacement.id + ''">{{ emplacement.nom }}</mat-option>
               }
             </mat-select>
           </mat-form-field>

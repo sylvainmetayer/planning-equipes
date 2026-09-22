@@ -546,12 +546,12 @@ describe('the stands list', () => {
     stand({
       id: 'B',
       typologiesProposees: ['ADRESSE'],
-      emplacement: { id: 'HALL', nom: 'Hall', latitude: null, longitude: null },
+      emplacement: { id: 1, code: 'HALL', nom: 'Hall', latitude: null, longitude: null },
     }),
     stand({
       id: 'C',
       typologiesProposees: ['STRATEGIE'],
-      emplacement: { id: 'HALL', nom: 'Hall', latitude: null, longitude: null },
+      emplacement: { id: 1, code: 'HALL', nom: 'Hall', latitude: null, longitude: null },
     }),
   ];
 
@@ -563,7 +563,7 @@ describe('the stands list', () => {
     expect(ids('echecs')).toEqual(['A']);
     expect(ids('arc tir')).toEqual(['B']);
     expect(ids('', { typologie: 'STRATEGIE' })).toEqual(['A', 'C']);
-    expect(ids('', { emplacement: 'HALL' })).toEqual(['B', 'C']);
+    expect(ids('', { emplacement: '1' })).toEqual(['B', 'C']);
     expect(ids('', { premium: 'PREMIUM' })).toEqual(['A']);
     // A stand the referential no longer knows is neither premium nor anything else, but stays by name.
     expect(ids('', { premium: 'STANDARD' })).toEqual(['B', 'C', 'X']);

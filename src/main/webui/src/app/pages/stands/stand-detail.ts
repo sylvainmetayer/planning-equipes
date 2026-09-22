@@ -210,7 +210,7 @@ function libelleJourSemaine(jour: JourSemaine): string {
 
 function emplacementLabel(stand: Stand): string {
   const emplacement = stand.emplacement!;
-  const nom = emplacement.nom || emplacement.id;
+  const nom = emplacement.nom || emplacement.code || String(emplacement.id);
   if (emplacement.latitude == null || emplacement.longitude == null) {
     return nom;
   }

@@ -44,7 +44,7 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
-  protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'voisin', 'actions'];
+  protected readonly columns = ['select', 'code', 'nom', 'coordonnees', 'voisin', 'actions'];
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly emplacementsFiltres = this.lignesFiltrees;
@@ -52,16 +52,18 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   constructor() {
     super({
       rows: (store) => store.emplacements(),
-      id: (emplacement) => emplacement.id,
+      // The shared table indexes by string — it is URL state (`?edit=…`) as
+      // much as a key — and the id is now a number (ADR 0049).
+      id: (emplacement) => String(emplacement.id),
       champsFiltre: (emplacement) => [
-        emplacement.id,
+        emplacement.code,
         emplacement.nom,
         emplacement.latitude,
         emplacement.longitude,
       ],
       detail: (emplacement, store) => ({
-        title: emplacement.nom || emplacement.id,
-        subtitle: emplacement.id,
+        title: emplacement.nom || String(emplacement.id),
+        subtitle: emplacement.code ?? '',
         sections: buildEmplacementDetail(emplacement, store.stands()),
       }),
       formulaire: (emplacement, dialog: MatDialog) => {
@@ -94,7 +96,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
    * penalised, and a day spread over too many of them too. Nobody can judge
    * that from two pairs of decimal coordinates, so the table says it.
    */
-  private readonly voisins = computed<Map<string, string>>(() => {
+  private readonly voisins = computed<Map<number, string>>(() => {
     const emplacements = this.store.emplacements();
     return new Map(
       emplacements.map((emplacement) => [
@@ -116,7 +118,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
         data: {
           emplacements: this.store
             .emplacements()
-            .filter((emplacement) => selectionnes.has(emplacement.id)),
+            .filter((emplacement) => selectionnes.has(String(emplacement.id))),
         },
         width: '44rem',
         maxWidth: '95vw',
@@ -140,7 +142,7 @@ function voisinLePlusProche(
       continue;
     }
     if (!plusProche || metres < plusProche.metres) {
-      plusProche = { nom: autre.nom || autre.id, metres };
+      plusProche = { nom: autre.nom || autre.code || String(autre.id), metres };
     }
   }
   if (!plusProche) {

@@ -135,8 +135,11 @@ abstract class ConstraintTestBase {
         return stand;
     }
 
-    protected static Emplacement emplacement(String id, double latitude, double longitude) {
-        return new Emplacement(id, id, latitude, longitude);
+    /** The code doubles as the name: a constraint reads the coordinates, never the label. */
+    protected static Emplacement emplacement(String code, double latitude, double longitude) {
+        Emplacement emplacement = Emplacement.ofCode(code, code, latitude, longitude);
+        emplacement.setId(Math.abs((long) code.hashCode()) + 1);
+        return emplacement;
     }
 
     // --- Animateur factories ----------------------------------------------

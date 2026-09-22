@@ -20,7 +20,8 @@ function stand(id: string, emplacement: Emplacement | null): Stand {
 }
 
 const place: Emplacement = {
-  id: 'PLACE',
+  id: 1,
+  code: 'PLACE',
   nom: 'Place du Drapeau',
   latitude: 46.6487,
   longitude: 2.2503,
@@ -28,7 +29,13 @@ const place: Emplacement = {
 
 describe('buildEmplacementDetail', () => {
   it('lists the stands tied to this place, and only those', () => {
-    const autre: Emplacement = { id: 'AUTRE', nom: 'Ailleurs', latitude: null, longitude: null };
+    const autre: Emplacement = {
+      id: 2,
+      code: 'AUTRE',
+      nom: 'Ailleurs',
+      latitude: null,
+      longitude: null,
+    };
     const sections = buildEmplacementDetail(place, [
       stand('S1', place),
       stand('S2', autre),
@@ -43,7 +50,8 @@ describe('buildEmplacementDetail', () => {
 
   it('warns that a place without coordinates does not constrain travel', () => {
     const sections = buildEmplacementDetail({
-      id: 'X',
+      id: 3,
+      code: 'X',
       nom: 'Sans GPS',
       latitude: null,
       longitude: null,

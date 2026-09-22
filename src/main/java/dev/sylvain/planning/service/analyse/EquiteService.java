@@ -448,7 +448,7 @@ public class EquiteService {
         private final Map<String, Double> heuresParSemaine = new LinkedHashMap<>();
         private final Set<String> stands = new HashSet<>();
         private final Set<String> typologies = new HashSet<>();
-        private final Map<Integer, Set<String>> emplacementsParJour = new HashMap<>();
+        private final Map<Integer, Set<Long>> emplacementsParJour = new HashMap<>();
         private final Set<LocalDate> joursTravailles = new HashSet<>();
         private double heuresTotal;
         private double heuresSoiree;

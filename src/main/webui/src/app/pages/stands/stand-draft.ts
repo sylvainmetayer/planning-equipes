@@ -43,7 +43,7 @@ export interface StandDraft {
   niveauEffort: NiveauEffort;
   /** Relay family, `null` = let the server pick the least populated one. */
   typologiesProposees: string[];
-  emplacementId: string | null;
+  emplacementId: number | null;
   indisponibilites: IndisponibiliteStand[];
   ouvertures: OuvertureStand[];
   horaires: HoraireDraft[];

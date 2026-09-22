@@ -158,11 +158,15 @@ public class ReferentielCsvExportService {
 
     private String csvEmplacements() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "nom", "latitude", "longitude");
+        // The code, never the id: this file is meant to be read, edited and
+        // imported back, and the id is a number the database minted (decision
+        // 0049, D2). An emplacement without a code exports an empty cell, and
+        // the import refuses that line rather than guessing which row it meant.
+        ligne(csv, "code", "nom", "latitude", "longitude");
         for (Emplacement emplacement : emplacements.list()) {
             ligne(
                     csv,
-                    emplacement.getId(),
+                    emplacement.getCode() == null ? "" : emplacement.getCode(),
                     emplacement.getNom(),
                     decimal(emplacement.getLatitude()),
                     decimal(emplacement.getLongitude()));

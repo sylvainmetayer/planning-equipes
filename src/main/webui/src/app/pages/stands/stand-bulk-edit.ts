@@ -45,7 +45,7 @@ export interface PatchHoraires {
 }
 
 export interface StandBulkPatch {
-  emplacement: { mode: ModeEmplacement; emplacementId: string | null };
+  emplacement: { mode: ModeEmplacement; emplacementId: number | null };
   typologies: { mode: ModeListe; typologies: string[] };
   /** `null` leaves each stand's own bound alone. */
   effectifMin: number | null;

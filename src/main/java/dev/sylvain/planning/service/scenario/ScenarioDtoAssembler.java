@@ -159,9 +159,7 @@ final class ScenarioDtoAssembler {
                 .map(stand -> new StandDto(
                         stand.getId(),
                         stand.getNom(),
-                        stand.getEmplacement() == null
-                                ? null
-                                : stand.getEmplacement().getId(),
+                        stand.getEmplacement() == null ? null : referenceLocale(stand.getEmplacement()),
                         new ArrayList<>(stand.getTypologiesProposees()),
                         stand.getEffectifMin(),
                         stand.getEffectifMax(),
@@ -265,11 +263,25 @@ final class ScenarioDtoAssembler {
     private static List<EmplacementDto> emplacements(List<Emplacement> emplacements) {
         return emplacements.stream()
                 .map(emplacement -> new EmplacementDto(
-                        emplacement.getId(),
+                        referenceLocale(emplacement),
+                        emplacement.getCode(),
                         emplacement.getNom(),
                         emplacement.getLatitude(),
                         emplacement.getLongitude()))
                 .toList();
+    }
+
+    /**
+     * What the stands of the written file cite. The code when there is one — it
+     * reads, and it is what the import reconciles on; otherwise the database id
+     * prefixed, which is a reference inside this file and nothing more
+     * (decision 0049, D3).
+     */
+    private static String referenceLocale(Emplacement emplacement) {
+        if (emplacement.getCode() != null && !emplacement.getCode().isBlank()) {
+            return emplacement.getCode();
+        }
+        return "emplacement-" + emplacement.getId();
     }
 
     private static List<TypologieDto> typologies(List<TypologieItem> typologies) {

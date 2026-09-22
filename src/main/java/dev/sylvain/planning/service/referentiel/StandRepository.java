@@ -62,7 +62,8 @@ public class StandRepository {
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
-                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
+                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.code AS emplacement_code,
+                    e.nom AS emplacement_nom,
                     e.latitude AS emplacement_latitude, e.longitude AS emplacement_longitude
                     FROM stand s
                     LEFT JOIN emplacement e ON e.edition_id = s.edition_id AND e.id = s.emplacement_id
@@ -80,13 +81,15 @@ public class StandRepository {
                     stand.setNiveauEffort(NiveauEffort.valueOf(rs.getString("niveau_effort")));
                     stand.setModifieLe(
                             rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
-                    String emplacementId = rs.getString("emplacement_id");
-                    if (emplacementId != null) {
-                        stand.setEmplacement(new Emplacement(
+                    long emplacementId = rs.getLong("emplacement_id");
+                    if (!rs.wasNull()) {
+                        Emplacement emplacement = new Emplacement(
                                 emplacementId,
                                 rs.getString("emplacement_nom"),
                                 (Double) rs.getObject("emplacement_latitude"),
-                                (Double) rs.getObject("emplacement_longitude")));
+                                (Double) rs.getObject("emplacement_longitude"));
+                        emplacement.setCode(rs.getString("emplacement_code"));
+                        stand.setEmplacement(emplacement);
                     }
                     byId.put(stand.getId(), stand);
                 }
@@ -339,8 +342,8 @@ public class StandRepository {
             ps.setInt(5, stand.getEffectifMax());
             ps.setBoolean(6, stand.isReserveMajeurs());
             ps.setBoolean(7, stand.isPremium());
-            ps.setString(
-                    8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
+            ps.setObject(
+                    8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null, java.sql.Types.BIGINT);
             ps.setString(9, stand.getNiveauEffort().name());
             WriteStamp.bindPrecondition(ps, 10, !failIfPresent, stand.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);

@@ -202,6 +202,9 @@
     "EmplacementDto" : {
       "type" : "object",
       "properties" : {
+        "code" : {
+          "type" : "string"
+        },
         "id" : {
           "type" : "string",
           "minLength" : 1

@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -108,7 +109,10 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(
+                            description = "Emplacement géographique : son code (ex. « PAVILLON ») ou son id numérique",
+                            required = false)
+                    String emplacement,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = new Stand();
         stand.setId(id);
@@ -123,7 +127,7 @@ public class StandMcpTools {
                 niveauEffort == null
                         ? NiveauEffort.NORMAL
                         : McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
-        stand.setEmplacement(emplacementId == null ? null : findEmplacement(emplacementId));
+        stand.setEmplacement(emplacement == null ? null : findEmplacement(emplacement));
         return written(referenceDataService.writeStand(stand));
     }
 
@@ -158,7 +162,10 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(
+                            description = "Emplacement géographique : son code (ex. « PAVILLON ») ou son id numérique",
+                            required = false)
+                    String emplacement,
             @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false)
                     String emplacementNom,
             @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
@@ -181,7 +188,7 @@ public class StandMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         List<TypologieItem> typologiesACreer =
                 missingTypologies(typologiesProposees, Boolean.TRUE.equals(creerTypologiesManquantes));
-        Emplacement emplacementACreer = missingEmplacement(emplacementId, emplacementNom, latitude, longitude);
+        Emplacement emplacementACreer = missingEmplacement(emplacement, emplacementNom, latitude, longitude);
 
         Stand stand = new Stand();
         stand.setId(id);
@@ -199,7 +206,7 @@ public class StandMcpTools {
         stand.setEmplacement(
                 emplacementACreer != null
                         ? emplacementACreer
-                        : emplacementId == null ? null : findEmplacement(emplacementId));
+                        : emplacement == null ? null : findEmplacement(emplacement));
         if (horaires != null && !horaires.isBlank()) {
             stand.getHoraires()
                     .add(horaireOuverture(
@@ -216,7 +223,7 @@ public class StandMcpTools {
         WrittenStand ecrit = referenceDataService.writeStand(stand, typologiesACreer, emplacementACreer);
         return new CreationStandComplet(
                 toView(ecrit.stand()),
-                emplacementACreer == null ? null : emplacementACreer.getId(),
+                emplacementACreer == null ? null : emplacementACreer.getCode(),
                 typologiesACreer.stream().map(TypologieItem::id).toList(),
                 WarningCodes.of(ecrit.avertissements()));
     }
@@ -244,14 +251,29 @@ public class StandMcpTools {
         return manquantes;
     }
 
-    /** @return the emplacement to write with the stand, or {@code null} when it exists or was not named. */
-    private Emplacement missingEmplacement(String emplacementId, String nom, Double latitude, Double longitude) {
-        if (emplacementId == null || emplacementId.isBlank() || nom == null || nom.isBlank()) {
+    /**
+     * The emplacement to write with the stand, or {@code null} when it exists
+     * or was not named.
+     *
+     * <p>An emplacement to create is named by its <b>code</b> and never by an
+     * id: the id is minted by the database (decision 0049, D1), so a
+     * designation that is only a number can name an existing row but can never
+     * describe one to create.</p>
+     */
+    private Emplacement missingEmplacement(String designation, String nom, Double latitude, Double longitude) {
+        if (designation == null || designation.isBlank() || nom == null || nom.isBlank()) {
             return null;
         }
-        boolean exists = referenceDataService.listEmplacements().stream()
-                .anyMatch(emplacement -> emplacementId.equals(emplacement.getId()));
-        return exists ? null : new Emplacement(emplacementId, nom, latitude, longitude);
+        if (findEmplacementOrNull(designation) != null) {
+            return null;
+        }
+        if (isNumeric(designation)) {
+            throw new NoSuchElementException("Emplacement introuvable : " + designation
+                    + ". Un emplacement à créer se nomme par son code, pas par un id.");
+        }
+        Emplacement emplacement = new Emplacement(null, nom, latitude, longitude);
+        emplacement.setCode(designation.trim());
+        return emplacement;
     }
 
     private static HoraireStand horaireOuverture(
@@ -276,7 +298,7 @@ public class StandMcpTools {
     }
 
     /**
-     * @param emplacementCree  id of the emplacement created along the way, {@code null} if none
+     * @param emplacementCree  code of the emplacement created along the way, {@code null} if none
      * @param typologiesCreees ids of the typologies created along the way, empty if none
      */
     public record CreationStandComplet(
@@ -301,7 +323,10 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(
+                            description = "Emplacement géographique : son code (ex. « PAVILLON ») ou son id numérique",
+                            required = false)
+                    String emplacement,
             @ToolArg(
                             description =
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
@@ -333,8 +358,8 @@ public class StandMcpTools {
         if (niveauEffort != null) {
             stand.setNiveauEffort(McpArgs.enumeration(NiveauEffort.class, niveauEffort, "niveauEffort"));
         }
-        if (emplacementId != null) {
-            stand.setEmplacement(findEmplacement(emplacementId));
+        if (emplacement != null) {
+            stand.setEmplacement(findEmplacement(emplacement));
         }
         return written(referenceDataService.writeStand(id, stand));
     }
@@ -566,12 +591,19 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     EmplacementView creer_emplacement(
-            @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
+            @ToolArg(
+                            description =
+                                    "Code métier, unique dans l'édition (ex. « PAVILLON ») : c'est lui que portent les "
+                                            + "fichiers CSV et les scénarios. Facultatif ; l'id, lui, est attribué par la base.",
+                            required = false)
+                    String code,
             @ToolArg(description = "Latitude (-90 à 90)", required = false) Double latitude,
             @ToolArg(description = "Longitude (-180 à 180)", required = false) Double longitude,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(referenceDataService.createEmplacement(new Emplacement(id, nom, latitude, longitude)));
+        Emplacement emplacement = new Emplacement(null, nom, latitude, longitude);
+        emplacement.setCode(code);
+        return toView(referenceDataService.createEmplacement(emplacement));
     }
 
     @Tool(
@@ -583,8 +615,10 @@ public class StandMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     EmplacementView modifier_emplacement(
-            @ToolArg(description = "Id de l'emplacement") String id,
+            @ToolArg(description = "Emplacement géographique : son code (ex. « PAVILLON ») ou son id numérique")
+                    String emplacement,
             @ToolArg(description = "Nom affiché", required = false) String nom,
+            @ToolArg(description = "Code métier, unique dans l'édition ; « » l'efface", required = false) String code,
             @ToolArg(description = "Latitude", required = false) Double latitude,
             @ToolArg(description = "Longitude", required = false) Double longitude,
             @ToolArg(
@@ -593,20 +627,23 @@ public class StandMcpTools {
                             required = false)
                     String modifieLe,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        Emplacement emplacement = findEmplacement(id);
+        Emplacement ecrit = findEmplacement(emplacement);
         if (modifieLe != null) {
-            emplacement.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
+            ecrit.setModifieLe(McpArgs.instant(modifieLe, "modifieLe"));
         }
         if (nom != null) {
-            emplacement.setNom(nom);
+            ecrit.setNom(nom);
+        }
+        if (code != null) {
+            ecrit.setCode(code);
         }
         if (latitude != null) {
-            emplacement.setLatitude(latitude);
+            ecrit.setLatitude(latitude);
         }
         if (longitude != null) {
-            emplacement.setLongitude(longitude);
+            ecrit.setLongitude(longitude);
         }
-        return toView(referenceDataService.updateEmplacement(id, emplacement));
+        return toView(referenceDataService.updateEmplacement(ecrit.getId(), ecrit));
     }
 
     @Tool(
@@ -618,10 +655,12 @@ public class StandMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     SuppressionResult supprimer_emplacement(
-            @ToolArg(description = "Id de l'emplacement") String id,
+            @ToolArg(description = "Emplacement géographique : son code (ex. « PAVILLON ») ou son id numérique")
+                    String emplacement,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        referenceDataService.deleteEmplacement(id);
-        return new SuppressionResult(id, true);
+        Emplacement cible = findEmplacement(emplacement);
+        referenceDataService.deleteEmplacement(cible.getId());
+        return new SuppressionResult(String.valueOf(cible.getId()), true);
     }
 
     /* ------------------------------ Typologies ----------------------------- */
@@ -719,11 +758,56 @@ public class StandMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Stand introuvable : " + id));
     }
 
-    private Emplacement findEmplacement(String id) {
-        return referenceDataService.listEmplacements().stream()
-                .filter(emplacement -> emplacement.getId().equals(id))
+    /**
+     * The emplacement a designation names: <b>its code first, its numeric id
+     * second</b>, and an ambiguity refused rather than arbitrated (decision
+     * 0049, D5). An assistant knows « PAVILLON »; the id is a number the
+     * database minted, and a code that happens to read as one must not be
+     * silently overtaken by it.
+     */
+    private Emplacement findEmplacement(String designation) {
+        Emplacement trouve = findEmplacementOrNull(designation);
+        if (trouve == null) {
+            throw new NoSuchElementException("Emplacement introuvable : " + designation);
+        }
+        return trouve;
+    }
+
+    private Emplacement findEmplacementOrNull(String designation) {
+        if (designation == null || designation.isBlank()) {
+            return null;
+        }
+        String cherche = designation.trim();
+        List<Emplacement> emplacements = referenceDataService.listEmplacements();
+        Emplacement parCode = emplacements.stream()
+                .filter(emplacement ->
+                        emplacement.getCode() != null && emplacement.getCode().equalsIgnoreCase(cherche))
                 .findFirst()
-                .orElseThrow(() -> new NoSuchElementException("Emplacement introuvable : " + id));
+                .orElse(null);
+        Emplacement parId = isNumeric(cherche)
+                ? emplacements.stream()
+                        .filter(emplacement ->
+                                emplacement.getId() != null && emplacement.getId() == Long.parseLong(cherche))
+                        .findFirst()
+                        .orElse(null)
+                : null;
+        if (parCode != null && parId != null && !parCode.equals(parId)) {
+            throw new BusinessError.Invalid("« " + cherche
+                    + " » est à la fois le code d'un emplacement et l'id d'un autre : nommez-en un sans ambiguïté.");
+        }
+        return parCode != null ? parCode : parId;
+    }
+
+    private static boolean isNumeric(String valeur) {
+        if (valeur.isEmpty() || valeur.length() > 18) {
+            return false;
+        }
+        for (int i = 0; i < valeur.length(); i++) {
+            if (!Character.isDigit(valeur.charAt(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private static WrittenStandView written(WrittenStand ecrit) {
@@ -767,6 +851,7 @@ public class StandMcpTools {
                 stand.isPremium(),
                 stand.getNiveauEffort(),
                 stand.getEmplacement() == null ? null : stand.getEmplacement().getId(),
+                stand.getEmplacement() == null ? null : stand.getEmplacement().getCode(),
                 fermetures,
                 ouvertures,
                 horaires,
@@ -776,6 +861,7 @@ public class StandMcpTools {
     static EmplacementView toView(Emplacement emplacement) {
         return new EmplacementView(
                 emplacement.getId(),
+                emplacement.getCode(),
                 emplacement.getNom(),
                 emplacement.getLatitude(),
                 emplacement.getLongitude(),
@@ -797,7 +883,8 @@ public class StandMcpTools {
             boolean reserveMajeurs,
             boolean premium,
             NiveauEffort niveauEffort,
-            String emplacementId,
+            Long emplacementId,
+            String emplacementCode,
             List<PlageView> fermetures,
             List<PlageView> ouvertures,
             List<HoraireView> horaires,
@@ -827,5 +914,6 @@ public class StandMcpTools {
      */
     public record FenetreView(LocalTime heureDebut, LocalTime heureFin, Integer effectif) {}
 
-    public record EmplacementView(String id, String nom, Double latitude, Double longitude, Instant modifieLe) {}
+    public record EmplacementView(
+            Long id, String code, String nom, Double latitude, Double longitude, Instant modifieLe) {}
 }

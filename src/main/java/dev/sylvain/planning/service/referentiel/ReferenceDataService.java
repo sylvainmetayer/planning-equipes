@@ -289,12 +289,17 @@ public class ReferenceDataService implements ReferenceData {
         return emplacements.create(emplacement);
     }
 
-    public Emplacement updateEmplacement(String id, Emplacement emplacement) {
+    public Emplacement updateEmplacement(long id, Emplacement emplacement) {
         return emplacements.update(id, emplacement);
     }
 
-    public void deleteEmplacement(String id) {
+    public void deleteEmplacement(long id) {
         emplacements.delete(id);
+    }
+
+    /** The id a file's emplacement code names in this edition (decision 0049, D2). */
+    public long emplacementIdOfCode(String code) {
+        return emplacements.idOfCode(code);
     }
 
     /* ------------------------------ Timeslots ------------------------------ */

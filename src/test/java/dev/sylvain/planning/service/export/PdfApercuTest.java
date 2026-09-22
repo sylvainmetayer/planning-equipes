@@ -136,9 +136,9 @@ class PdfApercuTest {
     /** Sixteen days, six typologies, rest days, a consigne, a hundred-strong set-up. */
     static PlanningEvenement festival() {
         LocalDate debut = LocalDate.of(2026, 9, 14);
-        Emplacement enfants = new Emplacement("EMP-1", "Place du 11 Novembre – Village des Enfants", 46.65, -0.25);
-        Emplacement jeux = new Emplacement("EMP-2", "Place du Drapeau – Village des Jeux", 46.651, -0.251);
-        Emplacement parc = new Emplacement("EMP-3", "Parc de la Meilleraye", null, null);
+        Emplacement enfants = Emplacement.ofCode("EMP-1", "Place du 11 Novembre – Village des Enfants", 46.65, -0.25);
+        Emplacement jeux = Emplacement.ofCode("EMP-2", "Place du Drapeau – Village des Jeux", 46.651, -0.251);
+        Emplacement parc = Emplacement.ofCode("EMP-3", "Parc de la Meilleraye", null, null);
 
         Stand construction = stand("S-1", "Construction", "ENFANCE", enfants);
         Stand crea = stand("S-2", "Créa", "ENFANCE", enfants);

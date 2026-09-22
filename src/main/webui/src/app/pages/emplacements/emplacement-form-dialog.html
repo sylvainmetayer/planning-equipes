@@ -6,9 +6,9 @@
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
 }
 <mat-form-field appearance="outline">
-  <mat-label i18n="@@stands.field.id">Identifiant</mat-label>
-  <input matInput name="id" required [readonly]="!!editingId()"
-         [ngModel]="draft().id" (ngModelChange)="patch({ id: $event })" />
+  <mat-label i18n="@@emplacements.field.code">Code</mat-label>
+  <input matInput name="code" [ngModel]="draft().code" (ngModelChange)="patch({ code: $event })" />
+  <mat-hint i18n="@@emplacements.field.codeHint">Facultatif, unique dans l'édition : c'est par lui que les imports CSV et les scénarios désignent cet emplacement.</mat-hint>
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.nom">Nom</mat-label>

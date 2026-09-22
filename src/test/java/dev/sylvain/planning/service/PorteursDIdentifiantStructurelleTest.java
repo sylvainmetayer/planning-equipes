@@ -95,8 +95,9 @@ class PorteursDIdentifiantStructurelleTest {
                         + "the pending declarations");
         SANS_CLE_ETRANGERE.put(
                 "emplacement.id",
-                "business id, lot 1: one incoming foreign key only, which is why it "
-                        + "opens the chantier and validates the pattern");
+                "generated identity, lot 1 done (V99): no longer typed by anyone. What names "
+                        + "an emplacement outside the database is emplacement.code, a bounded "
+                        + "VARCHAR(64) this scan does not have to classify");
         SANS_CLE_ETRANGERE.put(
                 "contrainte_ad_hoc.id", "business id, lot 2: cited by contrainte_animateur and by the journal");
 

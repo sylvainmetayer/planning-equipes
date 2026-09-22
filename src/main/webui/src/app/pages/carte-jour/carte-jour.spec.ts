@@ -13,8 +13,28 @@ function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return { jour: 1, date: '2026-08-01', heureDebut: '10:00', heureFin: '12:00', ...overrides };
 }
 
-function emplacement(id: string, overrides: Partial<Emplacement> = {}): Emplacement {
-  return { id, nom: id, latitude: 46.65, longitude: -0.25, ...overrides };
+/** Stable per code: the same code always names the same row, as the database does. */
+const idsParCode = new Map<string, number>();
+
+function idDe(code: string): number {
+  const connu = idsParCode.get(code);
+  if (connu !== undefined) {
+    return connu;
+  }
+  const id = idsParCode.size + 1;
+  idsParCode.set(code, id);
+  return id;
+}
+
+function emplacement(code: string, overrides: Partial<Emplacement> = {}): Emplacement {
+  return {
+    id: idDe(code),
+    code,
+    nom: code,
+    latitude: 46.65,
+    longitude: -0.25,
+    ...overrides,
+  };
 }
 
 function stand(id: string, lieu: Emplacement | null = null): Stand {
@@ -275,7 +295,7 @@ describe('instantCarte', () => {
     ])[0];
 
     const instant = instantCarte(journee, 11 * 60, [place, mairie]);
-    const vide = instant.marqueurs.find((marqueur) => marqueur.emplacementId === 'MAIRIE');
+    const vide = instant.marqueurs.find((marqueur) => marqueur.emplacementId === String(mairie.id));
     expect(vide?.etat).toBe('sansStand');
     expect(instant.compteurs.emplacementsSansStand).toBe(1);
   });

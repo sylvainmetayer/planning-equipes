@@ -28,7 +28,7 @@ const CRENEAUX: Creneau[] = [
 ];
 
 const EMPLACEMENTS: Emplacement[] = [
-  { id: 'hall', nom: 'Hall A', latitude: null, longitude: null },
+  { id: 1, code: 'hall', nom: 'Hall A', latitude: null, longitude: null },
 ];
 
 const TYPOLOGIES = [

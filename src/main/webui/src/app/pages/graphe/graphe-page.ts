@@ -105,7 +105,9 @@ export class GraphePage {
   private readonly standsParEmplacement = computed(() => {
     const index = new Map<string, Stand[]>();
     for (const stand of this.reference.stands()) {
-      const key = stand.emplacement?.id ?? NO_EMPLACEMENT;
+      // The graph keys its nodes by string — it is URL state as much as an
+      // index — and an emplacement id is now a number (ADR 0049).
+      const key = stand.emplacement ? String(stand.emplacement.id) : NO_EMPLACEMENT;
       index.set(key, [...(index.get(key) ?? []), stand]);
     }
     return index;
@@ -116,10 +118,10 @@ export class GraphePage {
   protected readonly emplacements = computed<NoeudGraphe[]>(() => {
     const parEmplacement = this.standsParEmplacement();
     const noeuds = this.reference.emplacements().map((emplacement) => ({
-      id: emplacement.id,
+      id: String(emplacement.id),
       libelle: emplacement.nom,
       detail: this.coordonnees(emplacement),
-      descendants: parEmplacement.get(emplacement.id)?.length ?? 0,
+      descendants: parEmplacement.get(String(emplacement.id))?.length ?? 0,
     }));
     const orphelins = parEmplacement.get(NO_EMPLACEMENT)?.length ?? 0;
     if (orphelins > 0) {
@@ -270,7 +272,7 @@ export class GraphePage {
   protected readonly emplacementCourant = computed<Emplacement | null>(() => {
     const id = this.emplacementSelectionne();
     return id
-      ? (this.reference.emplacements().find((candidat) => candidat.id === id) ?? null)
+      ? (this.reference.emplacements().find((candidat) => String(candidat.id) === id) ?? null)
       : null;
   });
 

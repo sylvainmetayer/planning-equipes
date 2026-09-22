@@ -354,7 +354,7 @@ describe('toDraft', () => {
 describe('versStand', () => {
   it('sends the relay family as a number, and null to let the server pick', () => {});
 
-  const emplacements = [{ id: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
+  const emplacements = [{ id: 1, code: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
 
   it('trims the identifier and the name', () => {
     const stand = versStand(draft({ id: '  S1  ', nom: '  Stand 1  ' }), emplacements);
@@ -364,12 +364,12 @@ describe('versStand', () => {
   });
 
   it('resolves the emplacement against the store, and stays null when none is picked', () => {
-    expect(versStand(draft({ emplacementId: 'salle-1' }), emplacements).emplacement).toEqual(
+    expect(versStand(draft({ emplacementId: 1 }), emplacements).emplacement).toEqual(
       emplacements[0],
     );
     expect(versStand(draft({ emplacementId: null }), emplacements).emplacement).toBeNull();
     // Picked then deleted elsewhere: null rather than a dangling reference.
-    expect(versStand(draft({ emplacementId: 'disparue' }), emplacements).emplacement).toBeNull();
+    expect(versStand(draft({ emplacementId: 99 }), emplacements).emplacement).toBeNull();
   });
 
   it('turns an emptied time field back into "until closing time"', () => {

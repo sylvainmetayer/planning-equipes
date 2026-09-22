@@ -17,8 +17,8 @@ import { MapPicker } from '../../shared/map-picker';
 import { EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 
 const EMPLACEMENTS: Emplacement[] = [
-  { id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 },
-  { id: 'salle', nom: 'Salle B', latitude: null, longitude: null },
+  { id: 1, code: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 },
+  { id: 2, code: 'salle', nom: 'Salle B', latitude: null, longitude: null },
 ];
 
 function monter(
@@ -142,8 +142,8 @@ describe('EmplacementBulkEditDialog', () => {
     const [resource, payloads] = saveMany.mock.calls[0] as unknown as [string, Emplacement[]];
     expect(resource).toBe('emplacements');
     expect(payloads.map((each) => [each.id, each.latitude, each.longitude])).toEqual([
-      ['hall', 47.2, -1.55],
-      ['salle', 47.2, -1.55],
+      [1, 47.2, -1.55],
+      [2, 47.2, -1.55],
     ]);
     // Names are per-place and must survive a coordinate batch.
     expect(payloads.map((each) => each.nom)).toEqual(['Hall A', 'Salle B']);

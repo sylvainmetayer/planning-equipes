@@ -300,7 +300,7 @@ class ReferentielMcpToolsTest {
                 .extracting(TypologieItem::id)
                 .doesNotContain("TYPO-ATOMIQUE");
         assertThat(referenceDataService.listEmplacements())
-                .extracting(Emplacement::getId)
+                .extracting(Emplacement::getCode)
                 .doesNotContain("EMP-ATOMIQUE");
         // And nothing in memory either: a rolled-back write used to mark the
         // referential modified, and the Solveur screen then warned about

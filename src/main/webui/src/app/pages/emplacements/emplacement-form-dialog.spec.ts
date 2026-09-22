@@ -76,7 +76,7 @@ function cliquerSurLaCarte(
   picker.positionChange.emit({ latitude, longitude });
 }
 
-const HALL: Emplacement = { id: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 };
+const HALL: Emplacement = { id: 1, code: 'hall', nom: 'Hall A', latitude: 47.2, longitude: -1.55 };
 
 describe('EmplacementFormDialog', () => {
   let erreursConsole: unknown[][];
@@ -93,7 +93,7 @@ describe('EmplacementFormDialog', () => {
     await fixture.whenStable();
 
     const ngForm = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
-    expect(Object.keys(ngForm.controls).sort()).toEqual(['id', 'latitude', 'longitude', 'nom']);
+    expect(Object.keys(ngForm.controls).sort()).toEqual(['code', 'latitude', 'longitude', 'nom']);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
   });
 
@@ -101,23 +101,25 @@ describe('EmplacementFormDialog', () => {
     const { fixture } = monter(HALL);
     await fixture.whenStable();
 
-    expect(champ(fixture, 'id').value).toBe('hall');
+    expect(champ(fixture, 'code').value).toBe('hall');
     expect(champ(fixture, 'nom').value).toBe('Hall A');
     expect(champ(fixture, 'latitude').value).toBe('47.2');
     expect(champ(fixture, 'longitude').value).toBe('-1.55');
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
-      "Modifier l'emplacement hall",
+      "Modifier l'emplacement Hall A",
     );
   });
 
-  it('locks the identifier of an existing emplacement but not of a new one', async () => {
+  it('offers no identifier field at all: the database mints the id (ADR 0049)', async () => {
     const { fixture } = monter(HALL);
     await fixture.whenStable();
-    expect(champ(fixture, 'id').readOnly).toBe(true);
+    expect(champ(fixture, 'id')).toBeNull();
 
     const { fixture: nouveau } = monter(null);
     await nouveau.whenStable();
-    expect(champ(nouveau, 'id').readOnly).toBe(false);
+    expect(champ(nouveau, 'id')).toBeNull();
+    // The code stays free on an edit: it is a business label, not an identity.
+    expect(champ(nouveau, 'code').readOnly).toBe(false);
   });
 
   it('writes a map click into the two coordinate fields and says so out loud', async () => {
@@ -141,7 +143,7 @@ describe('EmplacementFormDialog', () => {
     const { fixture, save, close } = monter(null);
     await fixture.whenStable();
 
-    saisir(fixture, 'id', '  hall  ');
+    saisir(fixture, 'code', '  hall  ');
     saisir(fixture, 'nom', '  Hall A  ');
     await fixture.whenStable();
     cliquerSurLaCarte(fixture, 47.2, -1.55);
@@ -150,7 +152,9 @@ describe('EmplacementFormDialog', () => {
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({
-      id: 'hall',
+      // The creation carries no id: the server decides it (ADR 0049, D1).
+      id: null,
+      code: 'hall',
       nom: 'Hall A',
       latitude: 47.2,
       longitude: -1.55,
@@ -161,7 +165,8 @@ describe('EmplacementFormDialog', () => {
 
   it('saves an emplacement with no coordinates as null, never as an empty string', async () => {
     const { fixture, save } = monter({
-      id: 'hall',
+      id: 1,
+      code: 'hall',
       nom: 'Hall A',
       latitude: null,
       longitude: null,

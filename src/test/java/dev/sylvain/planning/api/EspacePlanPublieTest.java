@@ -413,7 +413,7 @@ class EspacePlanPublieTest {
      */
     @Test
     void chaquePosteNommeLEmplacementDeSonStand() {
-        referenceData.createEmplacement(new Emplacement("PUBESP-E1", "Hall B", 47.2184, -1.5536));
+        referenceData.createEmplacement(Emplacement.ofCode("PUBESP-E1", "Hall B", 47.2184, -1.5536));
         rattacherEmplacement("PUBESP-S1", "PUBESP-E1");
         publication.publier();
 
@@ -426,11 +426,11 @@ class EspacePlanPublieTest {
                 .body("postes[0].emplacementLongitude", equalTo(-1.5536f));
 
         Emplacement hall = referenceData.listEmplacements().stream()
-                .filter(candidat -> candidat.getId().equals("PUBESP-E1"))
+                .filter(candidat -> "PUBESP-E1".equals(candidat.getCode()))
                 .findFirst()
                 .orElseThrow();
         hall.setNom("Hall C");
-        referenceData.updateEmplacement("PUBESP-E1", hall);
+        referenceData.updateEmplacement(hall.getId(), hall);
 
         // The published plan is resolved against today's referential: what is
         // read is the label of now, not a copy frozen at publication time.
@@ -449,7 +449,7 @@ class EspacePlanPublieTest {
      */
     @Test
     void unEmplacementSansCoordonneesCompletesNEnSortAucune() {
-        referenceData.createEmplacement(new Emplacement("PUBESP-E2", "Chapiteau", 47.2184, null));
+        referenceData.createEmplacement(Emplacement.ofCode("PUBESP-E2", "Chapiteau", 47.2184, null));
         rattacherEmplacement("PUBESP-S1", "PUBESP-E2");
         publication.publier();
 
@@ -488,7 +488,7 @@ class EspacePlanPublieTest {
         PosteAffectation posteBruno = new PosteAffectation("PUBESP-P2", stand, longue);
         posteBruno.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
-        referenceData.createEmplacement(new Emplacement("PUBESP-E1", "Hall B", 47.2184, -1.5536));
+        referenceData.createEmplacement(Emplacement.ofCode("PUBESP-E1", "Hall B", 47.2184, -1.5536));
         rattacherEmplacement("PUBESP-S1", "PUBESP-E1");
         publication.publier();
 

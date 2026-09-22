@@ -6,7 +6,13 @@ import {
   patchEmplacementVide,
 } from './emplacement-bulk-edit';
 
-const kiosque: Emplacement = { id: 'kiosque', nom: 'Kiosque', latitude: 47.2, longitude: -1.55 };
+const kiosque: Emplacement = {
+  id: 1,
+  code: 'kiosque',
+  nom: 'Kiosque',
+  latitude: 47.2,
+  longitude: -1.55,
+};
 
 describe('patchEmplacementEstVide', () => {
   it('considère le formulaire neutre comme vide', () => {

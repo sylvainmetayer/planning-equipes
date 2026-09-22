@@ -44,13 +44,13 @@ public class EmplacementResource {
 
     @PUT
     @Path("/{id}")
-    public Emplacement updateEmplacement(@PathParam("id") String id, Emplacement emplacement) {
+    public Emplacement updateEmplacement(@PathParam("id") long id, Emplacement emplacement) {
         return referenceDataService.updateEmplacement(id, emplacement);
     }
 
     @DELETE
     @Path("/{id}")
-    public Response deleteEmplacement(@PathParam("id") String id) {
+    public Response deleteEmplacement(@PathParam("id") long id) {
         referenceDataService.deleteEmplacement(id);
         return Response.noContent().build();
     }

@@ -218,8 +218,16 @@ final class ScenarioDomainMapper {
 
         Map<String, Emplacement> emplacementsParId = new HashMap<>();
         if (scenario.emplacements() != null) {
+            // The file's id is a local reference and nothing more (decision
+            // 0049, D3): it is replaced by a counter, exactly as a créneau's
+            // is, and what survives the import is the code — the key the
+            // reconciliation runs on.
+            long compteurEmplacementId = 1;
             for (EmplacementDto dto : scenario.emplacements()) {
-                emplacementsParId.put(dto.id(), new Emplacement(dto.id(), dto.nom(), dto.latitude(), dto.longitude()));
+                Emplacement emplacement =
+                        new Emplacement(compteurEmplacementId++, dto.nom(), dto.latitude(), dto.longitude());
+                emplacement.setCode(dto.codeOrId());
+                emplacementsParId.put(dto.id(), emplacement);
             }
         }
 

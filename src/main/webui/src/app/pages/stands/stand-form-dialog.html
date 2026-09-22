@@ -48,7 +48,7 @@
               [ngModel]="draft().emplacementId" (ngModelChange)="patch({ emplacementId: $event })">
     <mat-option [value]="null" i18n="@@stands.field.noEmplacement">Aucun</mat-option>
     @for (emplacement of store.emplacements(); track emplacement.id) {
-      <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.id }}</mat-option>
+      <mat-option [value]="emplacement.id">{{ emplacement.nom || emplacement.code || emplacement.id }}</mat-option>
     }
   </mat-select>
 </mat-form-field>

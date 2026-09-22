@@ -223,9 +223,9 @@ class EquiteServiceTest {
     void locationsPerDayKeepTheBusiestDayAndIgnoreSeatsWithoutALocation() {
         Animateur ada = animateur("A-ADA", "Ada", "Lovelace");
         Stand kiosque = stand("S1");
-        kiosque.setEmplacement(new Emplacement("E1", "Kiosque", null, null));
+        kiosque.setEmplacement(new Emplacement(1L, "Kiosque", null, null));
         Stand mairie = stand("S2");
-        mairie.setEmplacement(new Emplacement("E2", "Mairie", null, null));
+        mairie.setEmplacement(new Emplacement(2L, "Mairie", null, null));
         Stand sansLieu = stand("S3");
         RapportEquite rapport = compute(
                 List.of(ada),

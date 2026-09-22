@@ -41,7 +41,8 @@ class CarteJourMapStub {
 }
 
 const PLACE: Emplacement = {
-  id: 'PLACE',
+  id: 1,
+  code: 'PLACE',
   nom: 'Place du Drapeau',
   latitude: 46.65,
   longitude: -0.25,

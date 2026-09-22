@@ -27,8 +27,33 @@ import { seedStore } from '../../core/testing/seed-store';
 
 // A degree of latitude is ~111 km, so 0.001° ≈ 111 m: near enough to place a
 // neighbour deliberately on either side of the 300 m threshold.
-function emplacement(id: string, overrides: Partial<Emplacement> = {}): Emplacement {
-  return { id, nom: id, latitude: null, longitude: null, ...overrides };
+/** Stable per code: the same code always names the same row, as the database does. */
+const idsParCode = new Map<string, number>();
+
+function idDe(code: string): number {
+  const connu = idsParCode.get(code);
+  if (connu !== undefined) {
+    return connu;
+  }
+  const id = idsParCode.size + 1;
+  idsParCode.set(code, id);
+  return id;
+}
+
+/** The row key the page hands the shared table: its id, as a string. */
+function ref(code: string): string {
+  return String(idDe(code));
+}
+
+function emplacement(code: string, overrides: Partial<Emplacement> = {}): Emplacement {
+  return {
+    id: idDe(code),
+    code,
+    nom: code,
+    latitude: null,
+    longitude: null,
+    ...overrides,
+  };
 }
 
 /** Reaches the protected members the template binds to. */
@@ -41,7 +66,7 @@ type PageInternals = {
   coordonneesLabel: (emplacement: Emplacement) => string;
   voisinLePlusProche: (emplacement: Emplacement) => string;
   /** Private to the component; reachable here because `private` is compile-time only. */
-  voisins: Signal<Map<string, string>>;
+  voisins: Signal<Map<number, string>>;
   remove: (emplacement: Emplacement) => Promise<void>;
   removeSelection: () => Promise<void>;
   editSelection: () => void;
@@ -91,20 +116,20 @@ describe('EmplacementsPage', () => {
     it('shows every emplacement while the filter is empty', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie', 'halle']);
+      expect(page.emplacementsFiltres().map((row) => row.code)).toEqual(['prairie', 'halle']);
     });
 
-    it('matches on the id and on the name', () => {
+    it('matches on the code and on the name', () => {
       const page = createPage([
         emplacement('prairie', { nom: 'Grande prairie' }),
         emplacement('halle', { nom: 'Halle couverte' }),
       ]);
 
       page.filtre.set('couverte');
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['halle']);
+      expect(page.emplacementsFiltres().map((row) => row.code)).toEqual(['halle']);
 
       page.filtre.set('prairie');
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie']);
+      expect(page.emplacementsFiltres().map((row) => row.code)).toEqual(['prairie']);
     });
 
     it('matches on the coordinates, which is how a misplaced point is found', () => {
@@ -115,7 +140,7 @@ describe('EmplacementsPage', () => {
 
       page.filtre.set('47.123');
 
-      expect(page.emplacementsFiltres().map((row) => row.id)).toEqual(['prairie']);
+      expect(page.emplacementsFiltres().map((row) => row.code)).toEqual(['prairie']);
     });
 
     it('shows nothing rather than everything when nothing matches', () => {
@@ -135,13 +160,13 @@ describe('EmplacementsPage', () => {
         emplacement('chapiteau'),
       ]);
 
-      page.selection.toggle('prairie');
-      page.selection.toggle('chapiteau');
+      page.selection.toggle(ref('prairie'));
+      page.selection.toggle(ref('chapiteau'));
       await page.removeSelection();
 
       expect(crud.removeMany).toHaveBeenCalledWith(
         'emplacements',
-        ['prairie', 'chapiteau'],
+        [ref('prairie'), ref('chapiteau')],
         expect.anything(),
       );
     });
@@ -152,7 +177,7 @@ describe('EmplacementsPage', () => {
 
       seedStore(referenceData, 'emplacements', [emplacement('halle')]);
 
-      expect(page.selection.selectedIds()).toEqual(['halle']);
+      expect(page.selection.selectedIds()).toEqual([ref('halle')]);
     });
 
     it('narrows select-all to the filtered rows', () => {
@@ -161,19 +186,19 @@ describe('EmplacementsPage', () => {
       page.filtre.set('prairie');
       page.selection.toggleAll();
 
-      expect(page.selection.selectedIds()).toEqual(['prairie']);
+      expect(page.selection.selectedIds()).toEqual([ref('prairie')]);
     });
 
     it('hands the bulk-edit dialog exactly the selected emplacements', () => {
       const page = createPage([emplacement('prairie'), emplacement('halle')]);
 
-      page.selection.toggle('halle');
+      page.selection.toggle(ref('halle'));
       page.editSelection();
 
       expect(dialog.open).toHaveBeenCalledWith(
         expect.anything(),
         expect.objectContaining({
-          data: { emplacements: [expect.objectContaining({ id: 'halle' })] },
+          data: { emplacements: [expect.objectContaining({ code: 'halle' })] },
         }),
       );
     });
@@ -183,7 +208,7 @@ describe('EmplacementsPage', () => {
 
       await page.remove(emplacement('prairie'));
 
-      expect(crud.remove).toHaveBeenCalledWith('emplacements', 'prairie', expect.anything());
+      expect(crud.remove).toHaveBeenCalledWith('emplacements', ref('prairie'), expect.anything());
       expect(crud.removeMany).not.toHaveBeenCalled();
     });
   });
@@ -234,8 +259,8 @@ describe('EmplacementsPage', () => {
       page.voisinLePlusProche(emplacement('halle', { latitude: 47.102, longitude: 1.5 }));
 
       expect(page.voisins()).toBe(voisins);
-      expect(voisins.get('prairie')).toContain('halle');
-      expect(voisins.get('halle')).toContain('prairie');
+      expect(voisins.get(idDe('prairie'))).toContain('halle');
+      expect(voisins.get(idDe('halle'))).toContain('prairie');
     });
 
     it('says nothing when there is no other located place to measure against', () => {
@@ -327,7 +352,7 @@ describe('EmplacementsPage', () => {
       expect(label).toContain('m');
     });
 
-    it('falls back to the neighbour id when it has no name', () => {
+    it('falls back to the neighbour code when it has no name', () => {
       const page = createPage([
         emplacement('prairie', { latitude: 47.1, longitude: 1.5 }),
         emplacement('halle', { nom: '', latitude: 47.102, longitude: 1.5 }),
@@ -468,6 +493,6 @@ describe('EmplacementsPage table', () => {
 
     expect(dialog.open.mock.calls[0][0]).toBe(DetailDialog);
     expect(dialog.open.mock.calls[1][0]).toBe(EmplacementFormDialog);
-    expect(dialog.open.mock.calls[1][1].data.emplacement.id).toBe('hall');
+    expect(dialog.open.mock.calls[1][1].data.emplacement.code).toBe('hall');
   });
 });

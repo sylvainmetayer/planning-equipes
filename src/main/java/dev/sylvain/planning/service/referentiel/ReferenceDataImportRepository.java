@@ -111,14 +111,43 @@ public class ReferenceDataImportRepository {
                 Long nouvelId = creneauRepository.insertCreneauTx(connection, creneau);
                 idsRemap.put(ancienId, nouvelId);
             }
-            Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
+            // The emplacements the file names, reconciled by their code and not
+            // by the id the file carries: that id is a local reference (decision
+            // 0049, D3), and the row it must land on is the one already carrying
+            // that code in this edition. A code naming nothing is a new row, and
+            // the generated id is written back onto the object the stands point
+            // at — so the upsert below stores the id the database just minted,
+            // never the file's.
+            Map<String, Emplacement> emplacementsByCode = new LinkedHashMap<>();
             for (Stand stand : standsById.values()) {
-                if (stand.getEmplacement() != null) {
-                    emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
+                Emplacement emplacement = stand.getEmplacement();
+                if (emplacement != null && emplacement.getCode() != null) {
+                    emplacementsByCode.putIfAbsent(emplacement.getCode(), emplacement);
                 }
             }
-            for (Emplacement emplacement : emplacementsById.values()) {
-                emplacementRepository.upsertEmplacementTx(connection, emplacement);
+            for (Emplacement emplacement : emplacementsByCode.values()) {
+                Long existant = emplacementRepository.idOfCode(connection, emplacement.getCode());
+                if (existant == null) {
+                    emplacement.setId(null);
+                    emplacementRepository.insertEmplacementTx(connection, emplacement);
+                } else {
+                    emplacement.setId(existant);
+                    // No precondition: an import deliberately overwrites what it
+                    // finds, like every other row it replaces here.
+                    emplacement.setModifieLe(null);
+                    emplacementRepository.updateEmplacementTx(connection, emplacement);
+                }
+            }
+            // Every stand shares the object its code resolved to, so a stand
+            // whose emplacement was named by a second stand points at the same
+            // row rather than at the file's reference.
+            for (Stand stand : standsById.values()) {
+                Emplacement emplacement = stand.getEmplacement();
+                if (emplacement != null && emplacement.getCode() != null) {
+                    stand.setEmplacement(emplacementsByCode.get(emplacement.getCode()));
+                } else if (emplacement != null) {
+                    stand.setEmplacement(null);
+                }
             }
             for (TypologieItem typologie : typologieRepository.derivedTypologies(standsById.values(), animateurs)) {
                 typologieRepository.upsertTypologieDerivee(connection, typologie);

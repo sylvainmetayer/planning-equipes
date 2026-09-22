@@ -25,7 +25,7 @@ describe('tableauxIntendance', () => {
             totalMineurs: 1,
             emplacements: [
               {
-                emplacementId: 'HALL',
+                emplacementId: 1,
                 emplacementNom: 'Hall Rouge',
                 personnes: [0, 2],
                 mineurs: [0, 1],
@@ -33,7 +33,7 @@ describe('tableauxIntendance', () => {
                 totalMineurs: 1,
               },
               {
-                emplacementId: 'PAV',
+                emplacementId: 2,
                 emplacementNom: 'Pavillon Bleu',
                 personnes: [3, 0],
                 mineurs: [0, 0],

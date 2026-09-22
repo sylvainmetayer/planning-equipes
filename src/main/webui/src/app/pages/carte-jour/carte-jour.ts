@@ -238,7 +238,9 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
     // `nom || id`, never `?? null`: an emplacement saved with an empty name
     // would otherwise read as no emplacement at all, and `resumeNonSitue` would
     // tell the operator to attach one instead of filling in the coordinates.
-    emplacementNom: stand.emplacement ? stand.emplacement.nom || stand.emplacement.id : null,
+    emplacementNom: stand.emplacement
+      ? stand.emplacement.nom || stand.emplacement.code || String(stand.emplacement.id)
+      : null,
     resume: resumeStand(stand.nom, etat, sieges, pourvus, horaire),
   };
 }
@@ -328,7 +330,10 @@ export function instantCarte(
     };
   }
 
-  const referentiel = new Map(emplacements.map((emplacement) => [emplacement.id, emplacement]));
+  // Keyed by string: a marker's id is read back from the URL (ADR 0049).
+  const referentiel = new Map(
+    emplacements.map((emplacement) => [String(emplacement.id), emplacement] as const),
+  );
   const groupes = new Map<string, { point: PointEmplacement; stands: StandInstant[] }>();
   const nonSitues: StandInstant[] = [];
   const all: StandInstant[] = [];
@@ -355,12 +360,13 @@ export function instantCarte(
   // omitted, so the site keeps its shape as the cursor moves.
   let emplacementsSansStand = 0;
   emplacements.forEach((emplacement) => {
-    const { id, nom, latitude, longitude } = emplacement;
+    const { nom, code, latitude, longitude } = emplacement;
+    const id = String(emplacement.id);
     if (groupes.has(id) || latitude == null || longitude == null) {
       return;
     }
     emplacementsSansStand += 1;
-    marqueurs.push(marqueur({ id, nom: nom || id, latitude, longitude }, []));
+    marqueurs.push(marqueur({ id, nom: nom || code || id, latitude, longitude }, []));
   });
   marqueurs.sort(parSeverite);
   nonSitues.sort(parSeverite);
@@ -424,12 +430,17 @@ function pointDe(stand: StandJour, referentiel: Map<string, Emplacement>): Point
   // The referential wins when it is there — it is the editable truth — and the
   // copy the plan carries takes over when it is not, so a failed
   // `/api/emplacements` degrades the names, never the map.
-  const emplacement = referentiel.get(porte.id) ?? porte;
+  const emplacement = referentiel.get(String(porte.id)) ?? porte;
   const { latitude, longitude } = emplacement;
   if (latitude == null || longitude == null) {
     return null;
   }
-  return { id: emplacement.id, nom: emplacement.nom || emplacement.id, latitude, longitude };
+  return {
+    id: String(emplacement.id),
+    nom: emplacement.nom || emplacement.code || String(emplacement.id),
+    latitude,
+    longitude,
+  };
 }
 
 function marqueur(point: PointEmplacement, stands: StandInstant[]): MarqueurJour {

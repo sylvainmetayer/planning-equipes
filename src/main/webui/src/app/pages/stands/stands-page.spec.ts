@@ -46,8 +46,21 @@ function stand(overrides: Partial<Stand> & { id: string }): Stand {
   };
 }
 
-function emplacement(id: string, nom: string): Emplacement {
-  return { id, nom, latitude: null, longitude: null };
+/** Stable per code: the same code always names the same row, as the database does. */
+const idsParCode = new Map<string, number>();
+
+function idDe(code: string): number {
+  const connu = idsParCode.get(code);
+  if (connu !== undefined) {
+    return connu;
+  }
+  const id = idsParCode.size + 1;
+  idsParCode.set(code, id);
+  return id;
+}
+
+function emplacement(code: string, nom: string): Emplacement {
+  return { id: idDe(code), code, nom, latitude: null, longitude: null };
 }
 
 /** One recurring rule holding `fenetres` windows — a rule is one row, not `fenetres` rows. */

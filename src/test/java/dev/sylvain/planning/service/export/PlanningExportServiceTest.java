@@ -381,7 +381,7 @@ class PlanningExportServiceTest {
     private PlanningEvenement fakePlanning() {
         Stand standWithStrategy = new Stand("STAND-1", "Stratèges Associés", typologies("STRATEGIE"), 1, 2, false);
         Stand standPremium = new Stand("STAND-2", "Éditeur Vedette", typologies("AMBIANCE"), 1, 2, false, true);
-        standPremium.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
+        standPremium.setEmplacement(Emplacement.ofCode("EMP-1", "Kiosque Central", 48.8566, 2.3522));
         Stand standAdultes = new Stand("STAND-3", "Loup-Garou Nocturne", typologies("ROLE"), 1, 1, true);
         Stand standEnfant = new Stand("STAND-4", "Coin des Petits", typologies("ENFANT"), 1, 2, false);
 

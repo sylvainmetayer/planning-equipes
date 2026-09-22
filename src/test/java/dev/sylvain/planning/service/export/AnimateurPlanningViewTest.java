@@ -177,7 +177,7 @@ class AnimateurPlanningViewTest {
     /** Three event days, one of them Ada's rest day, two stands, one place named. */
     private static PlanningEvenement planning() {
         Stand accueil = new Stand("STAND-A", "Accueil", Set.of("ACCUEIL"), 1, 4, false);
-        accueil.setEmplacement(new Emplacement("EMP-1", "Kiosque Central", 48.8566, 2.3522));
+        accueil.setEmplacement(Emplacement.ofCode("EMP-1", "Kiosque Central", 48.8566, 2.3522));
         Stand enfance = new Stand("STAND-E", "Construction", Set.of("ENFANCE"), 1, 4, false);
 
         Animateur ada = new Animateur("A-ADA", "Ada", "Lovelace", LocalDate.of(1990, 1, 1), false);

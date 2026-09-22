@@ -154,17 +154,19 @@ class ConcurrentModificationGuardTest {
 
     @Test
     void staleEmplacementWriteIsRefused() {
-        Emplacement emplacement = referenceData.createEmplacement(new Emplacement("CM-E1", "Place", null, null));
+        Emplacement emplacement = referenceData.createEmplacement(Emplacement.ofCode("CM-E1", "Place", null, null));
         try {
-            Emplacement perime = new Emplacement("CM-E1", "Autre place", null, null);
+            Emplacement perime = Emplacement.ofCode("CM-E1", "Autre place", null, null);
             perime.setModifieLe(PERIME);
-            assertThatThrownBy(() -> referenceData.updateEmplacement("CM-E1", perime))
+            assertThatThrownBy(() -> referenceData.updateEmplacement(emplacement.getId(), perime))
                     .isInstanceOf(BusinessError.Stale.class);
             perime.setModifieLe(emplacement.getModifieLe());
-            assertThat(referenceData.updateEmplacement("CM-E1", perime).getNom())
+            assertThat(referenceData
+                            .updateEmplacement(emplacement.getId(), perime)
+                            .getNom())
                     .isEqualTo("Autre place");
         } finally {
-            referenceData.deleteEmplacement("CM-E1");
+            referenceData.deleteEmplacement(emplacement.getId());
         }
     }
 

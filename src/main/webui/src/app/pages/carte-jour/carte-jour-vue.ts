@@ -91,10 +91,12 @@ export class CarteJourView {
     if (!stand) {
       return null;
     }
-    return (
-      this.jourCourant()?.stands.find((candidat) => candidat.standId === stand)?.emplacement?.id ??
-      null
-    );
+    // A marker's id is a string here — it is URL state — and an emplacement's
+    // own id is a number (ADR 0049).
+    const emplacement = this.jourCourant()?.stands.find(
+      (candidat) => candidat.standId === stand,
+    )?.emplacement;
+    return emplacement ? String(emplacement.id) : null;
   });
 
   /**

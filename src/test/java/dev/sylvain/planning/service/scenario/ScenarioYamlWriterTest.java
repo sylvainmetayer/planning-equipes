@@ -232,7 +232,7 @@ class ScenarioYamlWriterTest {
                 List.of(creneau),
                 List.of(),
                 List.of(new TypologieItem("STRATEGIE", "Stratégie", true)),
-                List.of(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
+                List.of(Emplacement.ofCode("PLACE", "Place du Drapeau", 46.6487, 2.2503)),
                 legaux,
                 null,
                 new ParametresSolveur(1800),
@@ -402,7 +402,7 @@ class ScenarioYamlWriterTest {
     @Test
     @SuppressWarnings("unchecked")
     void aStandExportsItsEmplacementId() {
-        stand.setEmplacement(new Emplacement("PLACE", "Place du Drapeau", 46.6487, 2.2503));
+        stand.setEmplacement(Emplacement.ofCode("PLACE", "Place du Drapeau", 46.6487, 2.2503));
 
         String yaml =
                 ScenarioYamlWriter.buildScenarioYaml(List.of(animateur), List.of(stand), List.of(creneau), List.of());

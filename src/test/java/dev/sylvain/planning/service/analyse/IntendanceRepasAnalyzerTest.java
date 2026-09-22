@@ -38,7 +38,7 @@ class IntendanceRepasAnalyzerTest {
 
     @Test
     void comptelesPersonnesEnCoupureHeureParHeureEtParEmplacement() {
-        Emplacement pavillon = emplacement("PAV", "Pavillon Bleu");
+        Emplacement pavillon = emplacement(1, "Pavillon Bleu");
         Stand stand = stand("JEUX", pavillon);
         Animateur alice = adulte("alice");
         Animateur bob = adulte("bob");
@@ -82,7 +82,7 @@ class IntendanceRepasAnalyzerTest {
     void lesBandesSontCaleesSurLHeureMemeQuandLaFenetreNeLEstPas() {
         List<FenetreRepas> fenetre =
                 List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 15), LocalTime.of(13, 45), 60, true));
-        Stand stand = stand("JEUX", emplacement("PAV", "Pavillon Bleu"));
+        Stand stand = stand("JEUX", emplacement(1, "Pavillon Bleu"));
         Animateur alice = adulte("alice");
         List<PosteAffectation> postes = List.of(
                 poste("p1", stand, creneau(1, 9, 0, 12, 0), alice),
@@ -96,8 +96,8 @@ class IntendanceRepasAnalyzerTest {
 
     @Test
     void separeLesEmplacementsEtCompteLesMineursSansLesNommer() {
-        Stand bleu = stand("BLEU", emplacement("PAV", "Pavillon Bleu"));
-        Stand rouge = stand("ROUGE", emplacement("HALL", "Hall Rouge"));
+        Stand bleu = stand("BLEU", emplacement(1, "Pavillon Bleu"));
+        Stand rouge = stand("ROUGE", emplacement(2, "Hall Rouge"));
         Animateur majeur = adulte("alice");
         Animateur mineur = mineur("chloe");
         List<PosteAffectation> postes = List.of(
@@ -130,7 +130,7 @@ class IntendanceRepasAnalyzerTest {
     void ditPourquoiIlNyARienPlutotQueDeMontrerZero() {
         assertThat(analyzer.analyze(null, new ParametresLegaux(), MIDI).message())
                 .contains("Aucun planning résolu");
-        Stand stand = stand("JEUX", emplacement("PAV", "Pavillon Bleu"));
+        Stand stand = stand("JEUX", emplacement(1, "Pavillon Bleu"));
         Animateur alice = adulte("alice");
         PlanningEvenement planning =
                 planning(List.of(alice), List.of(poste("p1", stand, creneau(1, 9, 0, 12, 0), alice)));
@@ -145,7 +145,7 @@ class IntendanceRepasAnalyzerTest {
         return new PlanningEvenement(JOUR, animateurs, postes);
     }
 
-    private static Emplacement emplacement(String id, String nom) {
+    private static Emplacement emplacement(long id, String nom) {
         Emplacement emplacement = new Emplacement();
         emplacement.setId(id);
         emplacement.setNom(nom);

@@ -48,7 +48,13 @@ describe('buildStandDetail', () => {
   it('shows the emplacement with its coordinates when it is geocoded', () => {
     const sections = buildStandDetail(
       stand({
-        emplacement: { id: 'PLACE', nom: 'Place du Drapeau', latitude: 46.6487, longitude: 2.2503 },
+        emplacement: {
+          id: 1,
+          code: 'PLACE',
+          nom: 'Place du Drapeau',
+          latitude: 46.6487,
+          longitude: 2.2503,
+        },
       }),
     );
 

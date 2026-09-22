@@ -23,7 +23,11 @@ export function buildEmplacementDetail(
     {
       title: $localize`:@@detail.section.identity:Identité`,
       rows: [
-        { label: $localize`:@@common.id:Id`, value: emplacement.id },
+        {
+          label: $localize`:@@common.code:Code`,
+          value: emplacement.code ?? $localize`:@@detail.none:Aucun`,
+          muted: !emplacement.code,
+        },
         { label: $localize`:@@common.nom:Nom`, value: emplacement.nom },
       ],
     },

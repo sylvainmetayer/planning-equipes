@@ -12,7 +12,8 @@ import { MapPicker, MapPosition } from '../../shared/map-picker';
 import { StatusMessage } from '../../shared/status-message';
 
 interface EmplacementDraft {
-  id: string;
+  /** Optional business code, the only handle a CSV or a scenario has on this row (ADR 0049). */
+  code: string;
   nom: string;
   latitude: number | null;
   longitude: number | null;
@@ -49,12 +50,12 @@ export class EmplacementFormDialog {
   private readonly data = inject<EmplacementFormData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
-  protected readonly editingId = signal<string | null>(this.data.emplacement?.id ?? null);
+  protected readonly editingId = signal<number | null>(this.data.emplacement?.id ?? null);
   protected readonly draft = signal<EmplacementDraft>(toDraft(this.data.emplacement));
   protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${id}:id:`
+    const nom = this.data.emplacement?.nom;
+    return this.editingId()
+      ? $localize`:@@emplacements.form.editTitle:Modifier l'emplacement ${nom ?? ''}:nom:`
       : $localize`:@@emplacements.form.newTitle:Nouvel emplacement`;
   });
   protected readonly submitLabel = computed(() =>
@@ -79,8 +80,12 @@ export class EmplacementFormDialog {
 
   protected async save(): Promise<void> {
     const draft = this.draft();
+    const code = draft.code.trim();
     const emplacement: Emplacement = {
-      id: draft.id.trim(),
+      // The server mints the id on a creation and keeps it on an edit; nothing
+      // here ever decides it (ADR 0049, D1).
+      id: this.editingId() as number,
+      code: code === '' ? null : code,
       nom: draft.nom.trim(),
       latitude:
         draft.latitude === null || draft.latitude === undefined || `${draft.latitude}` === ''
@@ -98,6 +103,7 @@ export class EmplacementFormDialog {
         emplacement,
         this.editingId(),
         $localize`:@@emplacements.entityLabel:Emplacement`,
+        { requireId: false },
       )
     ) {
       this.dialogRef.close(true);
@@ -107,10 +113,10 @@ export class EmplacementFormDialog {
 
 function toDraft(emplacement: Emplacement | null): EmplacementDraft {
   if (!emplacement) {
-    return { id: '', nom: '', latitude: null, longitude: null, modifieLe: null };
+    return { code: '', nom: '', latitude: null, longitude: null, modifieLe: null };
   }
   return {
-    id: emplacement.id,
+    code: emplacement.code ?? '',
     nom: emplacement.nom ?? '',
     latitude: emplacement.latitude,
     longitude: emplacement.longitude,

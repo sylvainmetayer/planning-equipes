@@ -9,8 +9,20 @@ import {
   standsWithWindowBeyondMaximum,
 } from './stand-bulk-edit';
 
-const kiosque: Emplacement = { id: 'kiosque', nom: 'Kiosque', latitude: 47.2, longitude: -1.55 };
-const mairie: Emplacement = { id: 'mairie', nom: 'Mairie', latitude: 47.21, longitude: -1.56 };
+const kiosque: Emplacement = {
+  id: 1,
+  code: 'kiosque',
+  nom: 'Kiosque',
+  latitude: 47.2,
+  longitude: -1.55,
+};
+const mairie: Emplacement = {
+  id: 2,
+  code: 'mairie',
+  nom: 'Mairie',
+  latitude: 47.21,
+  longitude: -1.56,
+};
 
 function stand(overrides: Partial<Stand> = {}): Stand {
   return {
@@ -88,7 +100,7 @@ describe('appliquerPatchStand', () => {
   it('affecte le même emplacement à tous les stands', () => {
     const resultat = appliquerPatchStand(
       stand(),
-      patch({ emplacement: { mode: 'DEFINIR', emplacementId: 'mairie' } }),
+      patch({ emplacement: { mode: 'DEFINIR', emplacementId: 2 } }),
       emplacements,
     );
 

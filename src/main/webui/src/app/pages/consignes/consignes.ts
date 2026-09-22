@@ -587,7 +587,7 @@ export function filterStands(
     if (filtres.typologie && !(stand?.typologiesProposees ?? []).includes(filtres.typologie)) {
       return false;
     }
-    if (filtres.emplacement && stand?.emplacement?.id !== filtres.emplacement) {
+    if (filtres.emplacement && String(stand?.emplacement?.id ?? '') !== filtres.emplacement) {
       return false;
     }
     if (filtres.premium === 'PREMIUM' && !stand?.premium) {

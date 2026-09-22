@@ -22,7 +22,7 @@ import { StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { StandBulkPatch } from './stand-bulk-edit';
 
 const EMPLACEMENTS: Emplacement[] = [
-  { id: 'hall', nom: 'Hall A', latitude: null, longitude: null },
+  { id: 1, code: 'hall', nom: 'Hall A', latitude: null, longitude: null },
 ];
 
 const TYPOLOGIES = [
@@ -235,7 +235,7 @@ describe('StandBulkEditDialog', () => {
     await fill(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: null } });
     expect(submit(fixture).disabled).toBe(true);
 
-    await fill(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: 'hall' } });
+    await fill(fixture, { emplacement: { mode: 'DEFINIR', emplacementId: 1 } });
     expect(submit(fixture).disabled).toBe(false);
   });
 

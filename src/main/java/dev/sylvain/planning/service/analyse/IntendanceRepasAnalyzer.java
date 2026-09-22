@@ -61,9 +61,16 @@ public class IntendanceRepasAnalyzer {
     /** Shown when a stand names no emplacement — a row that must still be carried food. */
     private static final Emplacement EMPLACEMENT_INCONNU = emplacementInconnu();
 
+    /**
+     * The id this placeholder carries, and which nothing else can: identities
+     * start at 1 (decision 0049, D1), so zero names no row. It never reaches
+     * the wire — {@link LigneEmplacement} reports it as a null id.
+     */
+    private static final long ID_INCONNU = 0L;
+
     private static Emplacement emplacementInconnu() {
         Emplacement emplacement = new Emplacement();
-        emplacement.setId("");
+        emplacement.setId(ID_INCONNU);
         emplacement.setNom("Emplacement non renseigné");
         return emplacement;
     }
@@ -85,7 +92,7 @@ public class IntendanceRepasAnalyzer {
      */
     @Schema(requiredProperties = {"total", "totalMineurs"})
     public record LigneEmplacement(
-            String emplacementId,
+            Long emplacementId,
             String emplacementNom,
             List<Integer> personnes,
             List<Integer> mineurs,
@@ -143,7 +150,7 @@ public class IntendanceRepasAnalyzer {
         Map<String, List<PosteAffectation>> parJournee = postesByAnimateurAndDay(planning);
 
         // date -> window label -> emplacement id -> tally
-        Map<LocalDate, Map<String, Map<String, Compte>>> comptes = new LinkedHashMap<>();
+        Map<LocalDate, Map<String, Map<Long, Compte>>> comptes = new LinkedHashMap<>();
         for (JourneeAnimateurView journee :
                 pauseAnalyzer.analyze(planning, parametres, fenetresRepas).journees()) {
             for (CoupureRepasView coupure : journee.coupuresRepas()) {
@@ -165,7 +172,7 @@ public class IntendanceRepasAnalyzer {
         for (LocalDate date : comptes.keySet().stream().sorted().toList()) {
             List<FenetreIntendance> vues = new ArrayList<>();
             for (FenetreRepas fenetre : fenetresRepas) {
-                Map<String, Compte> parEmplacement = comptes.get(date).get(fenetre.libelle());
+                Map<Long, Compte> parEmplacement = comptes.get(date).get(fenetre.libelle());
                 if (!fenetre.appliesTo(date) || parEmplacement == null || parEmplacement.isEmpty()) {
                     continue;
                 }
@@ -184,7 +191,7 @@ public class IntendanceRepasAnalyzer {
         return new RapportIntendance(PAS_MINUTES, List.copyOf(journees), "");
     }
 
-    private static FenetreIntendance fenetreView(FenetreRepas fenetre, Map<String, Compte> parEmplacement) {
+    private static FenetreIntendance fenetreView(FenetreRepas fenetre, Map<Long, Compte> parEmplacement) {
         List<LocalTime> tranches = tranches(fenetre);
         List<LigneEmplacement> lignes = new ArrayList<>();
         int total = 0;
@@ -374,8 +381,8 @@ public class IntendanceRepasAnalyzer {
                 personnes.add(cellule == null ? 0 : cellule[0]);
                 mineurs.add(cellule == null ? 0 : cellule[1]);
             }
-            return new LigneEmplacement(
-                    emplacement.getId(), emplacement.getNom(), personnes, mineurs, total, totalMineurs);
+            Long id = ID_INCONNU == emplacement.getId() ? null : emplacement.getId();
+            return new LigneEmplacement(id, emplacement.getNom(), personnes, mineurs, total, totalMineurs);
         }
     }
 }
