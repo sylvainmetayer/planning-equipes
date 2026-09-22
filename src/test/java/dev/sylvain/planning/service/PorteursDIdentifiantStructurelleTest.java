@@ -46,6 +46,18 @@ import org.junit.jupiter.api.Test;
  * {@code animateur_souhait.typologie} hold a typologie id under a name that
  * ends in nothing. They are covered here by their foreign key, which is the
  * only reading that cannot drift. The name scan exists for what has none.</p>
+ *
+ * <p><b>What this test does not see.</b> Two scans, and no more: the columns
+ * <i>named</i> as an id, and the columns that can hold a value of any length —
+ * {@code JSON}, {@code JSONB}, {@code TEXT}, unbounded {@code VARCHAR} — which
+ * is the shape a payload takes. A {@code VARCHAR(n)} is read as a named field
+ * and is not asked to classify itself; today two of them hold a list all the
+ * same ({@code stand_horaire.dates} and {@code stand_horaire.jours_semaine},
+ * dates and weekdays, neither an id), so a future payload that carries ids
+ * under a bounded type would pass. Write one as {@code TEXT} or {@code JSONB}
+ * and the net closes over it; write it as {@code VARCHAR(n)} and only a reader
+ * will catch it. Nothing here reads a <i>value</i> either: a classification
+ * says what a column is meant to hold, not what somebody put in it.</p>
  */
 @QuarkusTest
 class PorteursDIdentifiantStructurelleTest {
@@ -162,33 +174,83 @@ class PorteursDIdentifiantStructurelleTest {
      * scan can find them: a migration rewrites these by parsing, or not at
      * all.
      */
-    private static final Map<String, String> PORTEURS_ENFOUIS = Map.of(
-            "plan_snapshot.contenu",
-            "JSONB: standId, animateurId and creneauId of every seat. Left alone, the published "
-                    + "plan matches nothing — the stability rule sees the whole grid as changed — and "
-                    + "no older snapshot can be restored, since a restore requires every id it names "
-                    + "to still exist",
-            "solver_job.perimetre",
-            "JSONB: animateurIds and standIds of a scoped solve, replayed at startup — a job that "
-                    + "outlives the migration would aim at an empty or wrong perimeter",
-            "notification_planifiee.cle",
-            "text: « animateurId|date » and « animateurId|publieLe », the deduplication key. Left "
-                    + "alone it matches nothing, and the day-before reminders and the relances go out "
-                    + "a second time",
-            "declaration_disponibilite.souhaits",
-            "text: one typologie id per line. A declaration still pending when the migration runs "
-                    + "would cite typologies nobody knows");
+    private static final Map<String, String> PORTEURS_ENFOUIS = new LinkedHashMap<>();
+
+    static {
+        PORTEURS_ENFOUIS.put(
+                "plan_snapshot.contenu",
+                "JSONB: standId, animateurId and creneauId of every seat. Left alone, the published "
+                        + "plan matches nothing — the stability rule sees the whole grid as changed — and "
+                        + "no older snapshot can be restored, since a restore requires every id it names "
+                        + "to still exist");
+        PORTEURS_ENFOUIS.put(
+                "solver_job.perimetre",
+                "JSONB: animateurIds and standIds of a scoped solve, replayed at startup — a job that "
+                        + "outlives the migration would aim at an empty or wrong perimeter");
+        PORTEURS_ENFOUIS.put(
+                "notification_planifiee.cle",
+                "text: « animateurId|date » and « animateurId|publieLe », the deduplication key. Left "
+                        + "alone it matches nothing, and the day-before reminders and the relances go out "
+                        + "a second time");
+        PORTEURS_ENFOUIS.put(
+                "declaration_disponibilite.souhaits",
+                "text: one typologie id per line. A declaration still pending when the migration runs "
+                        + "would cite typologies nobody knows");
+    }
 
     /**
      * The other payloads, and why nothing has to be rewritten in them. Listed
-     * so that a new JSONB column cannot join them by default.
+     * so that a new one cannot join them by default.
      */
-    private static final Map<String, String> CHARGES_SANS_ID = Map.of(
-            "plan_snapshot.consignes", "dates, hours and a motif — a consigne is not named by an id",
-            "plan_snapshot.kpi", "aggregates, plus constraint names as keys",
-            "kpi_historique.kpi", "same",
-            "publication_destinataire.changements", "sentences written for the reader",
-            "publication_destinataire.demandes", "same");
+    private static final Map<String, String> CHARGES_SANS_ID = new LinkedHashMap<>();
+
+    static {
+        // JSONB.
+        CHARGES_SANS_ID.put("plan_snapshot.consignes", "dates, hours and a motif — a consigne is not named by an id");
+        CHARGES_SANS_ID.put("plan_snapshot.kpi", "aggregates, plus constraint names as keys");
+        CHARGES_SANS_ID.put("kpi_historique.kpi", "same");
+        CHARGES_SANS_ID.put("publication_destinataire.changements", "sentences written for the reader");
+        CHARGES_SANS_ID.put("publication_destinataire.demandes", "same");
+
+        // Lists stored as text: the shape a buried carrier takes, so each one
+        // says what it holds.
+        CHARGES_SANS_ID.put(
+                "declaration_disponibilite.jours_indisponibles", "one ISO date per line — dates, never ids");
+        CHARGES_SANS_ID.put(
+                "demande_echange.contraintes_violees", "one constraint name per line, as ConstraintCatalog names them");
+        CHARGES_SANS_ID.put("journal_action.champs", "the names of the fields an edit changed, never their values");
+
+        // Codes and enum names: a fixed vocabulary, not a row of a referential.
+        CHARGES_SANS_ID.put("journal_action.action", "the code of the action, as CatalogueActions names it");
+        CHARGES_SANS_ID.put("journal_action.acteur", "the name of the Acteur enum constant");
+        CHARGES_SANS_ID.put("journal_action.entite", "the kind of entity, which is what makes entite_id readable");
+        CHARGES_SANS_ID.put("journal_action.resultat", "the outcome of the action: a fixed vocabulary");
+        CHARGES_SANS_ID.put("confirmation_planning.statut", "the name of the status enum constant");
+        CHARGES_SANS_ID.put("notification_planifiee.type", "same");
+        CHARGES_SANS_ID.put("notification_planifiee.severite", "same");
+
+        // Sentences: written for a human, read by no code.
+        CHARGES_SANS_ID.put(
+                "notification_planifiee.libelle", "a sentence written for an organiser, and never nominative");
+        CHARGES_SANS_ID.put("solver_job.erreur", "the failure of a solve, as it is shown");
+        CHARGES_SANS_ID.put("backup_settings.dernier_message", "the failure of the last dump, as it is shown");
+        CHARGES_SANS_ID.put("backup_settings.dernier_fichier", "the name of the last dump written: a file, not a row");
+
+        // Free text typed by a human: an id that lands in one is a word, not a
+        // reference — nothing resolves it, so nothing has to rewrite it.
+        CHARGES_SANS_ID.put("contrainte_ad_hoc.raison", "free text: why the exception was written");
+        CHARGES_SANS_ID.put("verrouillage_planning.raison", "free text: why the lock was laid down");
+        CHARGES_SANS_ID.put("consigne_edition.motif", "free text: the order the consigne relays");
+        CHARGES_SANS_ID.put("consigne_edition.repas_justification", "free text: why that compensation was chosen");
+        CHARGES_SANS_ID.put("prereglage_consigne.motif", "free text, same, on the preset");
+        CHARGES_SANS_ID.put("prereglage_consigne.repas_justification", "same");
+        CHARGES_SANS_ID.put("demande_echange.motif", "free text: why the swap is asked for");
+        CHARGES_SANS_ID.put("demande_echange.commentaire_admin", "free text: the answer given to it");
+        CHARGES_SANS_ID.put("declaration_disponibilite.commentaire", "free text written by the animateur");
+        CHARGES_SANS_ID.put("declaration_disponibilite.commentaire_admin", "free text written when reading it");
+        CHARGES_SANS_ID.put("validation_journee.commentaire", "free text written when a day is read and accepted");
+        CHARGES_SANS_ID.put("typologie.description", "free text: what the game category covers");
+    }
 
     @Inject
     DataSource dataSource;
@@ -217,14 +279,19 @@ class PorteursDIdentifiantStructurelleTest {
     }
 
     /**
-     * The same for what a scan cannot read: a new JSONB column says whether it
-     * carries ids, rather than being assumed not to.
+     * The same for what a scan cannot read: a payload column says whether it
+     * carries ids, rather than being assumed not to. A column the id scan
+     * already covers — held by a foreign key, or classified above — has been
+     * examined and is not asked twice.
      */
     @Test
-    void everyJsonPayloadSaysWhetherItCarriesIds() throws SQLException {
+    void everyPayloadSaysWhetherItCarriesIds() throws SQLException {
         List<String> nonClassees = new ArrayList<>();
         for (Colonne colonne : colonnes()) {
-            if (colonne.isJson()
+            if (colonne.porteeParUneCleEtrangere() || SANS_CLE_ETRANGERE.containsKey(colonne.cle())) {
+                continue;
+            }
+            if (colonne.isPayload()
                     && !PORTEURS_ENFOUIS.containsKey(colonne.cle())
                     && !CHARGES_SANS_ID.containsKey(colonne.cle())) {
                 nonClassees.add(colonne.cle());
@@ -232,10 +299,10 @@ class PorteursDIdentifiantStructurelleTest {
         }
 
         assertThat(nonClassees).as("""
-                        charges utiles JSONB non classées : une migration ne peut pas réécrire ce \
-                        qu'elle ne sait pas lire. Ajoutez chacune à PORTEURS_ENFOUIS avec les ids \
-                        qu'elle contient, ou à CHARGES_SANS_ID avec la raison qu'elle n'en \
-                        contient pas.""").isEmpty();
+                        charges utiles non classées — JSONB, TEXT ou VARCHAR sans borne : une \
+                        migration ne peut pas réécrire ce qu'elle ne sait pas lire. Ajoutez \
+                        chacune à PORTEURS_ENFOUIS avec les ids qu'elle contient, ou à \
+                        CHARGES_SANS_ID avec la raison qu'elle n'en contient pas.""").isEmpty();
     }
 
     /** A line that survives what it described hides the next real gap. */
@@ -288,7 +355,7 @@ class PorteursDIdentifiantStructurelleTest {
     }
 
     /** One column of one business table, as the schema describes it. */
-    private record Colonne(String table, String nom, String type, boolean porteeParUneCleEtrangere) {
+    private record Colonne(String table, String nom, String type, Long longueurMax, boolean porteeParUneCleEtrangere) {
 
         String cle() {
             return table + "." + nom;
@@ -304,8 +371,18 @@ class PorteursDIdentifiantStructurelleTest {
             return "id".equals(nom) || nom.endsWith("_id");
         }
 
-        boolean isJson() {
-            return "jsonb".equals(type) || "json".equals(type);
+        /**
+         * A column that can hold a value of any length, which is what a
+         * payload needs: {@code JSON}, {@code JSONB}, {@code TEXT} and the
+         * unbounded {@code VARCHAR}. A {@code VARCHAR(n)} is a named field,
+         * and the scan stops there on purpose — see the class javadoc for the
+         * two bounded columns that hold a list all the same.
+         */
+        boolean isPayload() {
+            return "jsonb".equals(type)
+                    || "json".equals(type)
+                    || "text".equals(type)
+                    || ("character varying".equals(type) && longueurMax == null);
         }
     }
 
@@ -314,12 +391,19 @@ class PorteursDIdentifiantStructurelleTest {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement();
                 ResultSet rs = statement.executeQuery("""
+                        -- The join on table_constraints carries table_name as well as
+                        -- constraint_name: PostgreSQL makes a constraint name unique per table,
+                        -- not per schema, so a primary key sharing its name with another
+                        -- table's foreign key would otherwise report its columns as held.
                         SELECT c.table_name, c.column_name, c.data_type,
+                               c.character_maximum_length,
                                EXISTS (SELECT 1
                                        FROM information_schema.key_column_usage k
                                        JOIN information_schema.table_constraints tc
                                          ON tc.constraint_name = k.constraint_name
                                         AND tc.constraint_schema = k.constraint_schema
+                                        AND tc.table_schema = k.table_schema
+                                        AND tc.table_name = k.table_name
                                         AND tc.constraint_type = 'FOREIGN KEY'
                                        WHERE k.table_schema = c.table_schema
                                          AND k.table_name = c.table_name
@@ -334,8 +418,14 @@ class PorteursDIdentifiantStructurelleTest {
             while (rs.next()) {
                 String table = rs.getString("table_name");
                 if (!FLYWAY_HISTORY.equals(table)) {
+                    long lue = rs.getLong("character_maximum_length");
+                    Long longueurMax = rs.wasNull() ? null : lue;
                     colonnes.add(new Colonne(
-                            table, rs.getString("column_name"), rs.getString("data_type"), rs.getBoolean("portee")));
+                            table,
+                            rs.getString("column_name"),
+                            rs.getString("data_type"),
+                            longueurMax,
+                            rs.getBoolean("portee")));
                 }
             }
         }
