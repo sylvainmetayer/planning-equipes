@@ -5,6 +5,12 @@
 - **Date** : septembre 2026
 - **Portée** : schéma, duplication d'édition, fichiers d'import et d'export,
   fichier scénario, MCP, REST, front, solveur
+- **Prolonge** : [0001](0001-cloisonnement-par-edition.md)
+- **Révise** : [0022](0022-import-de-la-grille-des-stands.md) § 2 — le code
+  prend la place de l'identifiant du stand
+- **Précise** : [0021](0021-import-tabulaire-partiel-et-previsualise.md) § 3 et
+  [0030](0030-grille-competences-import-additif.md) § 2 — leurs clés de
+  rapprochement ne changent pas de règle, elles changent de ce qu'elles valent
 
 ## Contexte
 
@@ -37,10 +43,10 @@ la duplication d'édition a appris à renuméroter ce qu'elle copie
 (`creneau_remap`). Ce qui change d'échelle, ce n'est pas le patron, c'est le
 nombre de colonnes qui citent un id sans que rien ne le signale.
 
-Ce document arrête les cinq décisions dont dépend tout le reste. Il ne décrit
-pas la migration : elle se fera par lots, dans l'ordre des dépendances
-(emplacement, contrainte ad hoc, typologie, stand, animateur, édition), chacun
-livrable seul.
+Ce document arrête les cinq décisions dont dépend tout le reste, et le patron
+que suivra chaque migration (« Ce qu'un lot migre »). Il ne décrit pas les lots
+un par un : ils se feront dans l'ordre des dépendances (emplacement, contrainte
+ad hoc, typologie, stand, animateur, édition), chacun livrable seul.
 
 ## D1 — Une séquence globale, et la duplication renumérote
 
@@ -86,14 +92,14 @@ entre en collision avec ce qui vient d'être restauré.
 **Décision.** Les stands, les typologies et les emplacements gagnent un **code**
 facultatif, unique par édition à la casse près, modifiable, et qui n'est clé
 étrangère de rien : `JEU`, `S1`, `HALL-A`. C'est lui que les fichiers citent —
-import des référentiels, colonne `typologies` de l'import des stands, grille
-des compétences, grille des ouvertures — et lui que les écrans affichent dans
-la colonne « Identifiant » et dans le champ de recherche. La base, elle,
-continue de nommer les lignes par leur id.
+import des référentiels, colonne `typologies` de l'import des stands, grille des
+ouvertures — et lui que les écrans affichent dans la colonne « Identifiant » et
+dans le champ de recherche. La base, elle, continue de nommer les lignes par
+leur id.
 
 Sans code, ces fichiers deviendraient des colonnes de numéros sans
 signification, impossibles à relire et impossibles à préparer à l'avance : la
-personne qui prépare la grille des compétences dans un tableur n'a pas la base
+personne qui prépare la grille des ouvertures dans un tableur n'a pas la base
 sous les yeux.
 
 **Les animateurs n'en ont pas.** Leur rapprochement reste celui que l'import
@@ -103,6 +109,36 @@ candidats. Un code saisi à la main sur la fiche d'une personne, c'est
 veut le sortir.
 
 **Les contraintes ad hoc n'en ont pas** : aucun fichier ne les désigne.
+
+**La grille des compétences est ce que ce refus coûte.** Ses colonnes sont des
+typologies, qui gagnent un code ; ses lignes sont des animateurs, qui n'en ont
+pas. Sa première colonne devient donc un numéro, et comme
+[0030](0030-grille-competences-import-additif.md) a décidé que ce fichier ne
+nomme personne — ni nom ni prénom à l'export, pour qu'il circule sans la
+précaution qu'un trombinoscope demande —, plus rien n'y désigne quelqu'un de
+lisible. La grille cesse d'être un fichier qu'on prépare et devient un
+aller-retour : exporté, complété, réimporté. La règle de 0030 §2 tient mot pour
+mot — l'identité d'une ligne est l'identifiant de l'animateur, et seulement lui
+— c'est sa lisibilité qui disparaît, et l'export devient le seul point de départ
+praticable.
+
+Écarté : **ajouter le nom et le prénom à l'export** pour la rendre relisible.
+Ce serait remettre sur un fichier l'identité que ce chantier retire de l'id, et
+rouvrir en sens inverse ce que 0030 avait tranché. Écarté aussi : **rapprocher
+ses lignes par e-mail**, comme D3 le fait pour le fichier scénario. Le scénario
+vient de l'extérieur et doit se rapprocher de ce qui existe ; la grille, elle,
+fait l'aller-retour entre l'écran et le tableur, et lui ajouter une colonne
+d'adresses serait une donnée personnelle de plus sur un fichier qui n'en portait
+aucune.
+
+**Ce que les autres imports tabulaires deviennent.** La grille des stands
+rapproche ses lignes « par l'identifiant du stand, sinon son nom exact »
+([0022](0022-import-de-la-grille-des-stands.md) §2) : le code prend la place de
+l'identifiant, le nom exact reste le second recours. L'import CSV des animateurs
+garde l'ordre de
+[0021](0021-import-tabulaire-partiel-et-previsualise.md) §3 — identifiant,
+e-mail, prénom + nom — où l'identifiant n'est plus qu'un numéro d'aller-retour,
+et où ce sont donc les deux autres clés qui servent.
 
 **Conséquence sur l'import des stands.** Une typologie inconnue citée par un
 stand est aujourd'hui créée « son libellé reprenant son identifiant ». Elle sera
@@ -133,6 +169,11 @@ dans cet ordre :
 - animateur : par l'**e-mail**, puis par le couple nom + prénom exact ;
 - rien ne correspond : la ligne est créée.
 
+C'est l'ordre de [0021](0021-import-tabulaire-partiel-et-previsualise.md) §3
+privé de son premier terme : un identifiant qui n'est plus qu'une référence
+locale au fichier ne désigne rien en base, et les deux clés suivantes sont
+exactement celles que cet import pratique déjà.
+
 Ce que le fichier ne nomme pas continue d'être supprimé. Une ligne rapprochée
 est mise à jour en place, et garde tout ce qui pend à elle.
 
@@ -150,7 +191,18 @@ demande, et un numéro séquentiel y révèle le volume et facilite le sondage ;
 `verrouillage_planning` porte en outre une clé **globale**, jamais composite,
 qu'une séquence partagée exposerait entre éditions.
 
-Que deux d'entre eux n'aient pas été vus par l'analyse est précisément ce qui
+**Mais « UUID serveur » décrit la frappe, pas la porte.** Quatre de ces six ids
+sont tirés sans condition, et ce que l'appelant a envoyé est écrasé. Les deux
+autres **acceptent un id de l'appelant** et le conservent, l'UUID n'étant tiré
+qu'à défaut : la création d'un préréglage de consigne
+(`POST /api/consignes/prereglages`) et la pose d'un verrouillage. Ces deux
+portes-là sont à fermer avec le reste — un id encore saisissable, c'est
+exactement la surface que ce chantier existe pour supprimer, et D4 ne dit pas
+qu'il n'y a rien à y faire, il dit que la **forme** de ces ids ne change pas.
+Elles n'ont pas de lot à elles : chacune se ferme dans le lot qui touche déjà
+son écran.
+
+Que deux de ces tables n'aient pas été vues par l'analyse est précisément ce qui
 justifie le filet ci-dessous : un inventaire tenu à la main se périme.
 
 ## D5 — L'édition aussi, et l'ambiguïté nom/id est refusée, jamais arbitrée
@@ -194,11 +246,69 @@ signale un oubli : la migration passe, et c'est la contrainte de stabilité du
 plan publié, ou un rappel de veille renvoyé à qui l'a déjà reçu, qui le dit
 trois semaines plus tard.
 
-`PorteursDIdentifiantStructurelleTest` lit le schéma et refuse toute colonne
-porteuse d'un id qui ne soit ni couverte par une clé étrangère ni classée avec
-son motif, ainsi que toute charge utile JSONB non classée. Il a déjà rendu deux
+`PorteursDIdentifiantStructurelleTest` lit le schéma et refuse, d'un côté,
+toute colonne **nommée** comme un id (`id`, `…_id`) que ne tient aucune clé
+étrangère et que personne n'a classée avec son motif ; de l'autre, toute
+**charge utile** non classée — `JSON`, `JSONB`, `TEXT`, `VARCHAR` sans borne,
+c'est-à-dire tout ce qui peut contenir une valeur de longueur quelconque, qui
+est la forme que prend un porteur enfoui. Une charge utile dit alors si elle
+contient des ids, ou pourquoi elle n'en contient pas. Il a déjà rendu deux
 lignes que l'analyse à la main avait manquées (D4). Il ne décide de rien : il
 oblige à examiner.
+
+**Ce qu'il ne voit pas, et il le dit.** Un `VARCHAR(n)` borné est lu comme un
+champ nommé, pas comme une charge utile, et n'est pas interrogé — deux en
+portent pourtant une liste aujourd'hui (`stand_horaire.dates` et
+`stand_horaire.jours_semaine`, des dates et des jours de semaine, aucun id).
+Une charge utile écrite en `TEXT` ou en `JSONB` tombe donc dans le filet ; la
+même écrite en `VARCHAR(n)` n'y tombe pas, et seul un relecteur l'arrêtera. Et
+rien ici ne lit une **valeur** : le classement dit ce qu'une colonne est censée
+contenir, pas ce qu'on y a mis.
+
+## Ce qu'un lot migre
+
+Le chantier n'est pas commencé : **aucune migration ne renumérote encore quoi
+que ce soit**, et `V1` à `V98` ne touchent aux ids métier que pour en faire des
+clés composites (`V34__cles_primaires_composites.sql`). Ce que ce document
+fixe, c'est ce que chacun des six lots devra faire, dans cet ordre, en une
+seule migration versionnée — Flyway l'exécute dans une transaction, donc soit
+tout est renuméroté, soit rien ne l'est :
+
+1. **La nouvelle colonne, et la renumérotation avec elle.**
+   `ALTER TABLE <table> ADD COLUMN id_nouveau BIGINT GENERATED BY DEFAULT AS
+   IDENTITY` numérote sur place chaque ligne existante depuis la séquence
+   neuve. C'est là que se joue la **cohérence par édition** : les ids de
+   l'ancien régime n'étaient uniques qu'au sein d'une édition, si bien que le
+   `A1` de 2025 et celui de 2026 sont deux lignes distinctes — et reçoivent
+   bien deux numéros distincts. Rien à écrire pour cela, mais tout à écrire
+   pour ne pas les confondre ensuite.
+2. **La table de correspondance**, temporaire et `ON COMMIT DROP`, remplie
+   depuis la table elle-même : `(edition_id, ancien_id, nouvel_id)`. Sa clé est
+   le **couple**, jamais l'ancien id seul, et c'est sur ce couple que tout le
+   reste de la migration se joint — une jointure sur le seul `ancien_id`
+   rendrait deux lignes pour chaque `A1` et mélangerait les deux éditions. Même
+   patron que le `creneau_remap` de la duplication, avec la colonne d'édition
+   en plus, parce que le créneau, lui, était déjà unique à lui seul.
+3. **Les clés étrangères entrantes**, chacune réécrite au travers de cette
+   correspondance, dans l'ordre des dépendances.
+4. **Les porteurs sans clé étrangère et les porteurs enfouis**, un par un : ce
+   sont les lignes du référentiel concerné dans
+   `PorteursDIdentifiantStructurelleTest`, et cet inventaire est la liste de
+   courses de la migration. Chacune y est déjà classée « rien à réécrire » ou
+   « à réécrire » ; ce qui est à réécrire l'est ici, dans la même transaction
+   que le reste, ou ne le sera jamais.
+5. **La bascule** : la clé primaire déposée, l'ancienne colonne supprimée, la
+   nouvelle renommée en `id`, la clé primaire `(edition_id, id)` reposée, et la
+   table inscrite dans `IDENTITY_TABLES` du service de sauvegarde. La séquence
+   suit le renommage et garde son nom de naissance
+   (`<table>_id_nouveau_seq`) : sans conséquence, puisque la duplication comme
+   la resynchronisation d'après restauration la retrouvent par
+   `pg_get_serial_sequence(table, colonne)` et non par son nom.
+
+Une migration qui s'arrête après l'étape 3 s'applique sans erreur et laisse
+derrière elle des ids qui ne désignent plus rien : c'est le scénario que
+l'étape 4, et le test qui l'alimente, existent pour rendre impossible à
+oublier.
 
 ## Conséquences
 
@@ -218,6 +328,9 @@ oblige à examiner.
 - **L'UID des événements ICS de repos porte un id d'animateur** : le changer
   fait réapparaître les événements en double dans les agendas abonnés. À
   anticiper dans le lot correspondant.
-- Les fichiers que les organisateurs gardent — une grille des compétences
-  exportée avant la migration — ne se réimportent plus par leur ancienne clé :
-  c'est ce que le code de D2 limite, sans l'annuler.
+- Les fichiers que les organisateurs gardent ne se réimportent plus par leur
+  ancienne clé : le code de D2 limite la perte partout où il existe — stands,
+  typologies, emplacements — et **ne la limite pas sur la grille des
+  compétences**, dont les lignes sont des animateurs. Une grille exportée avant
+  la migration se réimporte alors ligne rejetée après ligne rejetée ; la
+  réexporter est le seul chemin, et la note de version doit le dire.
