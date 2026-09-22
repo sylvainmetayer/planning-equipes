@@ -30,6 +30,9 @@ public interface ConfigMcp {
     /** Per-address rate limit on the {@code /mcp} transport, see {@code McpRateLimiter}. */
     RateLimit rateLimit();
 
+    /** Per-address lockout on repeated wrong API keys, see {@code McpRateLimiter}. */
+    Lockout lockout();
+
     Pangolin pangolin();
 
     /** How fast one address may call {@code /mcp}, and how to tell one address from another. */
@@ -56,6 +59,33 @@ public interface ConfigMcp {
          * block means, and {@code ClientAddress} for what is done with it.
          */
         Optional<List<String>> trustedProxies();
+    }
+
+    /**
+     * How many wrong keys one address may present before {@code /mcp} stops
+     * answering it, and for how long.
+     *
+     * <p>Distinct from {@link RateLimit}, which counts <em>every</em> request:
+     * that one bounds a stolen key, this one bounds guessing at one. The rate
+     * ceiling alone still allows thousands of tries an hour from a single
+     * address.</p>
+     */
+    interface Lockout {
+
+        /**
+         * Consecutive wrong keys tolerated per address. Zero or less switches
+         * the lockout off, leaving the rate ceiling as the only guard.
+         *
+         * <p>Only a request that <b>presented</b> a key can fail this way, and
+         * one that authenticates clears the run — so a client still being
+         * configured never locks itself out.</p>
+         */
+        @WithDefault("5")
+        int maxFailures();
+
+        /** Counted from the last failure, so trying again while blocked gains nothing. */
+        @WithDefault("PT10M")
+        Duration duration();
     }
 
     /** Credentials of the Pangolin access proxy, when one fronts this instance. */

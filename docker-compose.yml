@@ -32,6 +32,11 @@ services:
       # Defaults to CONNEXION_PROXYS_FIABLES; set it only to count /mcp callers
       # on a different proxy list than the login lock does.
       PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
+      # Lockout on a run of WRONG keys, distinct from the ceiling above: it is
+      # what makes guessing at the key cost time. A request carrying no key
+      # counts for nothing, and one that authenticates clears the run.
+      PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
+      PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
       # Same Pangolin token, so the MCP page can reveal it (admin-password
       # gated, like the API key) instead of pasting it in by hand. See docs/mcp.md.
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}
