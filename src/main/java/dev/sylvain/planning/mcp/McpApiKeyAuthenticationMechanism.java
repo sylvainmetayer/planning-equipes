@@ -135,7 +135,22 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
     }
 
     private String presentedKey(RoutingContext context) {
-        String header = context.request().getHeader(config.apiKeyHeader());
+        return presentedKey(context, config.apiKeyHeader());
+    }
+
+    /**
+     * The key a request presents, or {@code null} when it carries none — the
+     * dedicated header first, then {@code Authorization: Bearer}.
+     *
+     * <p>Public for {@code McpRateLimiter}, which has to tell a request that
+     * <em>guessed</em> a key from one that carried none: only the first is an
+     * attempt worth counting against its lockout, and a client not yet
+     * configured would otherwise lock itself out by probing. Reading the two
+     * headers a second time over there is the copy that would drift the day
+     * this mechanism learns a third form.</p>
+     */
+    public static String presentedKey(RoutingContext context, String headerName) {
+        String header = context.request().getHeader(headerName);
         if (header != null) {
             return header;
         }

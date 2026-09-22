@@ -66,6 +66,11 @@ services:
       # Vide, /mcp compte sur la liste ci-dessus ; à ne renseigner que pour
       # lui donner une liste de proxys à lui.
       PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
+      # Verrou sur une série de clés REFUSÉES, distinct du plafond ci-dessus :
+      # c'est lui qui fait qu'essayer des clés coûte du temps. Une requête sans
+      # clé ne compte pas, une requête qui s'authentifie efface la série.
+      PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
+      PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
       # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}

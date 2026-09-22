@@ -102,6 +102,8 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_MAX_REQUESTS` | `120` | Requêtes tolérées sous `/mcp` par adresse et par fenêtre ; `0` ou moins désactive le plafond — voir [`mcp.md`](docs/mcp.md#limitation-de-débit) |
 | `PLANNING_MCP_RATE_WINDOW` | `PT1M` | Durée de la fenêtre du plafond MCP, au format ISO-8601 |
 | `PLANNING_MCP_TRUSTED_PROXIES` | *(valeur de `CONNEXION_PROXYS_FIABLES`)* | Proxys inverses dont `X-Forwarded-For` est cru pour compter les appels `/mcp` |
+| `PLANNING_MCP_MAX_FAILURES` | `5` | Clés refusées consécutives tolérées par adresse avant blocage de `/mcp` ; `0` ou moins désactive le verrou |
+| `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée de ce blocage, comptée depuis le dernier échec |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (menu avancé ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
 | `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |

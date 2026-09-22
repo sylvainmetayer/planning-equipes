@@ -325,9 +325,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   (`SecurityHeadersFilter`), HTTP limits, the three rate limiters
   (`AdminLoginLimiter` on `/j_security_check`,
   `CodeRequestLimiter` on the espace access codes, `McpRateLimiter` on the
-  `/mcp` transport — the two address-keyed ones share `ClientAddress`, which
-  reads `X-Forwarded-For` from the right and is the half that makes either of
-  them count anything), the production compose
+  `/mcp` transport, which carries two guards of its own — a rate ceiling on
+  every request and a lockout on a run of refused keys; the two address-keyed
+  classes share `ClientAddress`, which reads `X-Forwarded-For` from the right
+  and is the half that makes any of them count anything), the production compose
   stack and what is left to the reverse proxy — lives in `docs/securite.md`;
   a change to any of them belongs there. The `%test`
   profile opens the API (`permit`) so

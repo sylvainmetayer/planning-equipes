@@ -234,10 +234,44 @@ qu'un mot de passe.
 
 La fenêtre est **fixe, ouverte à la première requête** : passé le plafond, elle
 se referme quand même à l'heure — une requête refusée ne la repousse pas. C'est
-l'inverse du verrou de connexion ci-dessous, dont la fenêtre court depuis le
-dernier échec, et la différence tient à ce que chacun garde : un verrou veut
-qu'une tentative de plus ne rapporte rien, un plafond de débit veut qu'un client
-légitime qui l'a touché sache quand revenir.
+l'inverse des deux verrous (celui-ci dessous, et celui de la connexion), dont la
+fenêtre court depuis le dernier échec, et la différence tient à ce que chacun
+garde : un verrou veut qu'une tentative de plus ne rapporte rien, un plafond de
+débit veut qu'un client légitime qui l'a touché sache quand revenir.
+
+#### Le verrou sur les clés refusées
+
+Le plafond ci-dessus **ne rend pas la clé difficile à deviner** : à 120 requêtes
+par minute, une adresse dispose de plus de sept mille essais par heure. Ce qui
+rend une clé impraticable à deviner, c'est son entropie ; ce second garde fait
+qu'une **série d'essais coûte du temps** plutôt que rien.
+
+`McpRateLimiter` compte donc aussi les **clés refusées**, séparément du débit :
+au-delà de `PLANNING_MCP_MAX_FAILURES` échecs consécutifs, l'adresse reçoit
+`429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, **y compris avec la bonne clé** —
+sans quoi il suffirait d'attendre son tour.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `PLANNING_MCP_MAX_FAILURES` | `5` | Clés refusées consécutives tolérées par adresse ; `0` ou moins désactive le verrou |
+| `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée du blocage, comptée depuis le **dernier** échec |
+
+Deux garde-fous qui évitent qu'il se retourne contre un client légitime :
+
+- **une requête sans clé ne compte pas.** Elle reçoit son `401` et rien d'autre :
+  un client pas encore configuré sonde avant d'être réglé, et le verrouiller
+  pour ça punirait le seul cas qui n'est pas une attaque ;
+- **une requête qui s'authentifie efface la série.** Un en-tête corrigé à
+  l'essai suivant ne coûte donc rien.
+
+Un `403` — la session admin d'un navigateur, qui ne porte pas le rôle `mcp` — ne
+compte ni n'efface : aucune clé n'y a été essayée.
+
+> **Le succès se lit sur le statut, jamais sur `context.user()`.** Quarkus pose
+> une identité sur le contexte de routage même pour une requête qu'il s'apprête
+> à refuser, donc `user() != null` est vrai sur les `401` aussi. La première
+> version de ce verrou s'en servait comme test de succès : elle effaçait la série
+> à chaque tentative et ne comptait rien du tout.
 
 L'adresse retenue est celle que décrit le verrou de connexion, au mot près, et
 c'est le même code (`ClientAddress`) qui la calcule : lecture de
@@ -396,9 +430,10 @@ reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
 
 ### Pas de limiteur de débit ici, et pourquoi
 
-`AdminLoginLimiter`, `CodeRequestLimiter` et `McpRateLimiter` bornent trois
-choses précises : des tentatives d'authentification, un envoi de mail, et l'usage
-d'une clé partagée qui ouvre tout. Cette route ne fait rien de tout cela — elle
+`AdminLoginLimiter`, `CodeRequestLimiter` et `McpRateLimiter` bornent des choses
+précises : des tentatives d'authentification, un envoi de mail, et — pour le
+dernier — l'usage d'une clé partagée qui ouvre tout, plus les essais pour la
+deviner. Cette route ne fait rien de tout cela — elle
 lit, sans effet de bord, sur un jeton qui n'ouvre qu'un document.
 
 Un plafond par animateur y serait **contre-productif** : un abonnement se

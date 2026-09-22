@@ -78,6 +78,30 @@ l'en-tête se lit **par la droite**, est détaillé dans
 Ce plafond ne remplace pas la limitation par IP du reverse proxy, qui reste la
 première ligne pour tout le reste de l'application.
 
+### Verrou sur les clés refusées
+
+Le plafond ci-dessus borne le **rythme**, pas le devinage : 120 requêtes par
+minute laissent plus de sept mille essais par heure à une adresse. Ce qui rend
+une clé impraticable à deviner reste son entropie — ce second garde fait
+seulement qu'une série d'essais coûte du temps.
+
+Au-delà de `PLANNING_MCP_MAX_FAILURES` clés refusées consécutives, l'adresse
+reçoit `429` pendant `PLANNING_MCP_LOCKOUT_DURATION`, **y compris avec la bonne
+clé** : sinon il suffirait d'attendre son tour. La fenêtre court depuis le
+**dernier** échec, donc réessayer pendant le blocage ne rapporte rien.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `PLANNING_MCP_MAX_FAILURES` | `5` | Clés refusées consécutives tolérées par adresse ; `0` ou moins désactive le verrou |
+| `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée du blocage, comptée depuis le dernier échec |
+
+**Configurer un client ne verrouille pas** : une requête qui ne présente
+**aucune** clé reçoit son `401` sans rien compter, et une requête qui
+s'authentifie efface la série. Seule une clé *présentée et refusée* compte — ce
+qui inclut la bonne clé privée d'un en-tête exigé par
+`PLANNING_MCP_REQUIRED_HEADERS`, à garder en tête en déployant derrière un proxy
+d'accès.
+
 ## Derrière un proxy d'accès
 
 `PLANNING_MCP_REQUIRED_HEADERS` exige des paires `Nom=valeur` **en plus** de la
