@@ -172,6 +172,10 @@ jobs:
           path: target/quarkus-app
           if-no-files-found: error
           retention-days: 1
+          # Un artefact appartient au run, non à la tentative : sans cela, une
+          # relance complète d'un run de moins d'un jour échouerait sur un
+          # artefact déjà présent, après les vingt minutes de tests.
+          overwrite: true
 
       - name: Upload the backend coverage report
         if: always() && github.event_name == 'push'

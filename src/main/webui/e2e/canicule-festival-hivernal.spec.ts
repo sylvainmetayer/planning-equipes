@@ -303,8 +303,8 @@ async function newestMailText(email: string, before: number): Promise<string> {
 /* ---------------------------------- the week ---------------------------------- */
 
 // @lourd in the title is a Playwright tag: thirteen minutes on the CI runner,
-// so e2e.yml leaves it out (--grep-invert) and e2e-lourd.yml plays it on the
-// changes that can break it, and every night.
+// so the e2e job of tests.yml leaves it out (--grep-invert) and e2e-lourd.yml
+// plays it on the changes that can break it, and every night.
 test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis levée sur un jour @lourd', async ({
   browser,
 }) => {

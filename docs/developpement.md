@@ -777,7 +777,7 @@ points qui ne s'y voient pas :
   respecter les budgets d'`angular.json`, et un gabarit cassé y échoue dans le
   job frontend plutôt qu'au milieu du backend. Le troisième était le
   `./mvnw package` que la pile E2E refaisait pour elle : le job `e2e` reprend
-  désormais l'artefact `application-packagee` déposé par le job `test`, ce qui
+  désormais l'artefact `quarkus-app` déposé par le job `test`, ce qui
   suppose d'être dans le même run que lui — un artefact ne se passe pas d'un
   run à l'autre — et c'est pourquoi les specs ordinaires sont un **job de
   `tests.yml`** et non plus un workflow à part. Trois conséquences, toutes

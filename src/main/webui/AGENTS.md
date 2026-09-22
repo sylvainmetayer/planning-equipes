@@ -358,14 +358,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   and freeing one never refused — on a fixture built there, since no shipped
   scenario carries a minor, a night and an adults-only stand) and
   **seeded invariant fuzzing** (random referentials solved for real, replayed
-  with `E2E_FUZZ_SEED`). CI runs them on every pull request (`e2e.yml`, on a
-  stack `e2e-suite.yml` starts and throws away) — **except the specs tagged
+  with `E2E_FUZZ_SEED`). CI runs them on every pull request (the `e2e` job of
+  `tests.yml`, on a stack `e2e-suite.yml` starts and throws away, from the
+  application the `test` job has already packaged) — **except the specs tagged
   `@lourd`**: the organiser's heatwave week on `festival-hivernal` solves three
   times for real and weighed 13 of the suite's 20 minutes, so `e2e-lourd.yml`
   plays those on the changes that can break them (its `paths` list, kept in
   step like the scenario one) and every night, the way `scenario-tests.yml`
   does. Tag a spec that way when it solves a real-world fixture, never to
-  hide a slow test. `tests.yml` and `e2e.yml` also skip a push that touches
+  hide a slow test. `tests.yml` also skips a push that touches
   only `docs/` and Markdown — minus the files a backend test reads or the
   `test` job compares to its build, which are re-included by name. Locally
   they **erase the database

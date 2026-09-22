@@ -34,8 +34,8 @@ secret:
     - name: "compose de développement, compte admin (#405)"
       match: d65d287eda9c1c0cc28e259ad8e69a8946cefde36729727b746b005ae2867549
 
-    # .github/workflows/e2e.yml — conteneurs éphémères du job e2e, détruits
-    # avec le runner.
+    # .github/workflows/e2e-suite.yml — conteneurs éphémères du job e2e,
+    # détruits avec le runner.
     - name: "job e2e, Postgres éphémère (#405)"
       match: 643a01e0abb88f1ff40b0ff5802e71189dc027dc5ccec396c575951bbe882f05
     - name: "job e2e, compte admin (#405)"

@@ -74,7 +74,7 @@ un message qui ne dit pas comment sortir se lit comme une impasse.
   sont, des instances qui ne sont pas en service. Le drapeau leur va mieux que
   cinq variables légales fictives, qui diraient le contraire de la vérité. Ils
   posaient déjà un vrai `ADMIN_PASSWORD` pour la garde voisine ; le drapeau se
-  range au même endroit (`e2e.yml`, `maven-failsafe-plugin`).
+  range au même endroit (`e2e-suite.yml`, `maven-failsafe-plugin`).
 - Il vérifie qu'un texte **existe**, jamais qu'il est exact. Un éditeur
   fantaisiste passe. C'est la limite de tout contrôle automatique ici, et la
   raison pour laquelle `exploitation.md` garde sa vérification par `curl` après

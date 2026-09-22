@@ -93,6 +93,9 @@ jobs:
           # restaurer un `.m2` de plusieurs centaines de mégaoctets pour lancer un
           # `java -jar` coûterait une part de ce que cette réutilisation économise.
           cache: ${{ inputs.app-artifact == '' && 'maven' || '' }}
+          # `cache-jdk` suit `cache` par défaut : sans cette ligne, vider le
+          # second ferait aussi retélécharger le JDK à chaque exécution.
+          cache-jdk: true
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
