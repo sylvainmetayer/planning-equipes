@@ -455,8 +455,9 @@ Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 `festival-hivernal` (`canicule-festival-hivernal.spec.ts`) importe la fixture
 réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
 par personne : treize minutes sur un runner GitHub, les quarante-deux autres
-specs — cent quatre-vingt-quinze tests — en prennent sept. `e2e.yml` la laisse
-de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la joue (`--grep @lourd`)
+specs — cent quatre-vingt-quinze tests — en prennent sept. Le job `e2e` de
+`tests.yml` la laisse de côté (`--grep-invert @lourd`) et `e2e-lourd.yml` la
+joue (`--grep @lourd`)
 sur les changements du solveur, des consignes, de la publication, du `pom.xml`
 et de ses propres fichiers — sa liste `paths`, à tenir à jour comme celle des
 scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour la
@@ -465,6 +466,12 @@ même raison, une PR Renovate ne l'exerce que sous le label `timefold` ou
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
 c'est dire qu'elle résout une fixture réelle ; ce n'est pas l'endroit où
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
+
+Les deux appelants ne diffèrent que par un troisième point : **d'où vient
+l'application packagée**. Le job `e2e` la reprend en artefact du job `test`,
+qui vient de la construire (entrée `app-artifact`) ; `e2e-lourd.yml`, dont le
+cron nocturne ne suit aucun job `test`, n'a rien à reprendre et la construit
+lui-même. L'entrée vide est ce second chemin, et c'est le défaut.
 
 Une suite mérite un mot : `e2e/icones.spec.ts` vérifie que la police des icônes
 arrive et se dessine. Un `<mat-icon>delete</mat-icon>` dont la police manque
@@ -752,9 +759,9 @@ Les workflows vivent sous `.github/workflows/`, lisibles tels quels. Quelques
 points qui ne s'y voient pas :
 
 - **une poussée coûte une quarantaine de minutes de runner**, quel que soit
-  son contenu : Tests (≈ 13 + 3), E2E (≈ 10), scénarios (≈ 8 dès que la PR a
-  touché le solveur), Sécurité (≈ 1). D'où trois filtres : `tests.yml` et
-  `e2e.yml` ignorent une poussée qui ne touche que `docs/` et le Markdown
+  son contenu : Tests (≈ 13 + 3, plus ≈ 10 d'E2E), scénarios (≈ 8 dès que la PR
+  a touché le solveur), Sécurité (≈ 1). D'où trois filtres : `tests.yml`
+  ignore une poussée qui ne touche que `docs/` et le Markdown
   (moins les fichiers qu'un test relit ou que le job compare à son build,
   réinclus nommément) ; les specs Playwright `@lourd` ont leur workflow, comme
   les scénarios ; et une PR Renovate ne joue ni les scénarios ni la spec
@@ -764,6 +771,20 @@ points qui ne s'y voient pas :
   poussée : une PR mixte code + documentation rejoue tout à chaque poussée, et
   c'est voulu — un check « skipped » sur la dernière poussée masquerait le
   rouge de la précédente ;
+- **le bundle Angular est construit deux fois par poussée, pas trois**
+  (audit #392, C9). Une fois par Quinoa dans le `./mvnw verify` du job `test`,
+  une fois par le `npm run build` du job `frontend` — celui-là seul fait
+  respecter les budgets d'`angular.json`, et un gabarit cassé y échoue dans le
+  job frontend plutôt qu'au milieu du backend. Le troisième était le
+  `./mvnw package` que la pile E2E refaisait pour elle : le job `e2e` reprend
+  désormais l'artefact `application-packagee` déposé par le job `test`, ce qui
+  suppose d'être dans le même run que lui — un artefact ne se passe pas d'un
+  run à l'autre — et c'est pourquoi les specs ordinaires sont un **job de
+  `tests.yml`** et non plus un workflow à part. Trois conséquences, toutes
+  assumées : elles démarrent après la suite backend et non de front, une suite
+  backend rouge les laisse `skipped`, et une poussée qui ne touche qu'un des
+  fichiers de documentation réinclus nommément (`AGENTS.md`, `docs/api.md`…)
+  les joue désormais aussi ;
 - **sur une PR Renovate, `licences-renovate.yml` régénère
   `docs/licences-tierces.md`** et le commite sur la branche, puisqu'un bump
   fait échouer le contrôle par construction (le job `test` le joue d'ailleurs

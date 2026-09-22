@@ -2,15 +2,26 @@ FROM maven:3.9-eclipse-temurin-25 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends git && rm -rf /var/lib/apt/lists/*
 WORKDIR /workspace
 COPY pom.xml .
-RUN --mount=type=cache,target=/root/.m2 mvn -q -DskipTests dependency:go-offline
+# Dependencies in a LAYER, not in a cache mount. `--mount=type=cache` is the
+# faster of the two on a machine that keeps its builder, but it is invisible to
+# `cache-to: type=gha` — which exports layers and nothing else — so every CI
+# image build re-downloaded the whole `.m2` (audit #392, C9). Baked into this
+# layer, it is exported with it and restored as long as `pom.xml` is unchanged,
+# which is exactly when it is still valid.
+#
+# `quarkus:go-offline` beside `dependency:go-offline`, because the second one
+# does not know about the first one's world: the `*-deployment` jars that
+# `quarkus:build` resolves at augmentation time are the bulk of those 400 Mo,
+# and without this goal they would be re-fetched by the `package` below on
+# every single build — the very download this layer exists to avoid.
+RUN mvn -q -DskipTests dependency:go-offline quarkus:go-offline
 COPY src ./src
 COPY .git ./.git
 # The Maven revision comes from the git tag being built (docs/versioning.md):
 # an exact `v*` tag becomes the version (v1.2.0 → 1.2.0), any other commit
 # keeps its short SHA so the startup line never claims a version that was
 # not released.
-RUN --mount=type=cache,target=/root/.m2 \
-    REVISION="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)" && \
+RUN REVISION="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)" && \
     mvn -q -DskipTests -Drevision="${REVISION#v}" package
 
 FROM eclipse-temurin:25-jre

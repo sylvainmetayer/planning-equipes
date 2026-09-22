@@ -154,6 +154,24 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+      # Ce que le job `e2e` ci-dessous lance, au lieu de le reconstruire : le
+      # `verify` ci-dessus a déjà packagé l'application, Quinoa compris, et
+      # `e2e-suite.yml` s'en contentait si peu qu'il refaisait un
+      # `./mvnw package` — troisième construction du bundle Angular par poussée
+      # (audit #392, C9). Deux minutes d'artefact contre cinq de build, et les
+      # specs s'exécutent désormais contre le binaire que la suite backend vient
+      # de vérifier.
+      #
+      # Un jour de rétention : rien ne relit cet artefact après le run qui
+      # l'a produit — le journal d'un échec, lui, est gardé sept jours.
+      - name: Upload the packaged application for the E2E stack
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: application-packagee
+          path: target/quarkus-app
+          if-no-files-found: error
+          retention-days: 1
+
       - name: Upload the backend coverage report
         if: always() && github.event_name == 'push'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
@@ -325,3 +343,34 @@ jobs:
           path: src/main/webui/coverage/**
           if-no-files-found: ignore
           retention-days: 7
+
+  # Les specs Playwright, hors @lourd. Elles avaient leur workflow ; il les
+  # faisait attendre son propre `./mvnw package`, c'est-à-dire une troisième
+  # construction du bundle Angular par poussée (audit #392, C9). Un artefact ne
+  # se passe pas d'un run à l'autre : reprendre celui du job `test` suppose
+  # d'être dans le même run que lui, donc dans ce workflow-ci.
+  #
+  # Deux conséquences, assumées. Les specs ne démarrent plus en parallèle du
+  # backend mais après lui : le retour E2E arrive une vingtaine de minutes plus
+  # tard qu'avant, ce qui ne coûte rien là où les jobs font la queue et ce que
+  # le build économisé paie ailleurs. Et une suite backend rouge les laisse
+  # `skipped` — un `needs` non satisfait —, là où elles auraient pu révéler une
+  # panne d'interface sans rapport ; c'est un cycle de retard sur un signal
+  # qu'on n'obtient de toute façon qu'après avoir réparé le premier.
+  #
+  # `e2e-lourd.yml` garde son workflow : son cron nocturne ne suit aucun job
+  # `test`, il n'a donc rien à reprendre et construit toujours sa pile.
+  e2e:
+    # La garde de fork est celle du job `test` : un `needs` insatisfait suffit,
+    # puisqu'un job sauté saute tout ce qui en dépend.
+    needs: test
+    uses: ./.github/workflows/e2e-suite.yml
+    with:
+      # Tout sauf les specs @lourd — la semaine canicule sur festival-hivernal
+      # pesait 13 des 20 minutes de la suite ; elle tourne dans e2e-lourd.yml.
+      playwright-args: --grep-invert @lourd
+      # Le dernier passage complet sans @lourd tient en ~10 min, montage de la
+      # pile compris ; un runner lent a de la marge, un blocage n'en a pas. Le
+      # build de l'application n'y est plus, son téléchargement l'a remplacé.
+      timeout-minutes: 25
+      app-artifact: application-packagee

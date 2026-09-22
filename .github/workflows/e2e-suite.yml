@@ -1,9 +1,11 @@
 # La pile E2E — application packagée, PostgreSQL, Mailpit, Chromium — montée
 # pour une exécution et jetée. Appelée par deux workflows qui ne diffèrent que
-# par la sélection Playwright et le plafond : `e2e.yml` (chaque poussée, tout
-# sauf les specs @lourd) et `e2e-lourd.yml` (les specs @lourd, sur les seuls
-# changements qui peuvent les casser, et chaque nuit). Une seule description
-# de la pile, ou les deux dérivent.
+# par la sélection Playwright, le plafond et la provenance de l'application :
+# le job `e2e` de `tests.yml` (chaque poussée, tout sauf les specs @lourd,
+# l'application reprise en artefact du job `test`) et `e2e-lourd.yml` (les
+# specs @lourd, sur les seuls changements qui peuvent les casser et chaque
+# nuit, où rien n'a packagé avant lui). Une seule description de la pile, ou
+# les deux dérivent.
 name: Pile E2E
 
 on:
@@ -17,6 +19,13 @@ on:
         description: 'Plafond du job, en minutes.'
         type: number
         required: true
+      app-artifact:
+        description: >-
+          Nom de l'artefact portant un `target/quarkus-app` déjà construit par
+          un job du même run. Vide : la pile le construit elle-même.
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: read
@@ -79,7 +88,11 @@ jobs:
         with:
           distribution: temurin
           java-version: '25'
-          cache: maven
+          # Le cache Maven n'a d'objet que pour l'appelant qui construit lui-même :
+          # quand l'application arrive en artefact, aucun `mvn` ne tourne ici, et
+          # restaurer un `.m2` de plusieurs centaines de mégaoctets pour lancer un
+          # `java -jar` coûterait une part de ce que cette réutilisation économise.
+          cache: ${{ inputs.app-artifact == '' && 'maven' || '' }}
 
       - name: Set up Node
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
@@ -88,9 +101,25 @@ jobs:
           cache: npm
           cache-dependency-path: src/main/webui/package-lock.json
 
+      # L'application packagée vient du job qui l'a déjà construite dans ce même
+      # run — le job `test` de tests.yml, dont `./mvnw verify` produit exactement
+      # ce `target/quarkus-app`. La reprendre supprime le troisième build du
+      # bundle Angular par poussée (audit #392, C9), et donne mieux que ce
+      # qu'elle économise : les specs s'exécutent contre le binaire que la suite
+      # backend vient de vérifier, non contre un homonyme reconstruit à côté.
+      - name: Download the packaged application
+        if: inputs.app-artifact != ''
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
+        with:
+          name: ${{ inputs.app-artifact }}
+          path: target/quarkus-app
+
       # Quinoa construit le frontend pendant le package : l'application servie
       # est donc exactement celle qu'un déploiement sert, pas un `ng serve`.
+      # Ce chemin reste celui des appelants qui n'ont pas d'artefact sous la
+      # main — `e2e-lourd.yml`, dont le cron nocturne ne suit aucun job `test`.
       - name: Build the application
+        if: inputs.app-artifact == ''
         run: ./mvnw -B --no-transfer-progress package -DskipTests
 
       - name: Install frontend dependencies

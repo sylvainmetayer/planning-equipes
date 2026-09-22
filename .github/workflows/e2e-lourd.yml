@@ -9,7 +9,10 @@
 # traverse (le solveur, les consignes, la publication, ses propres fichiers),
 # et chaque nuit sur main pour que rien ne dorme longtemps.
 #
-# Le reste de la suite reste sur chaque poussée, dans e2e.yml.
+# Le reste de la suite reste sur chaque poussée, dans le job `e2e` de
+# tests.yml — là où l'artefact du job `test` lui évite de repackager
+# l'application. Ce workflow-ci, lui, part aussi d'un cron nocturne que ne
+# précède aucun job `test` : il construit donc toujours sa propre pile.
 name: Tests E2E lourds
 
 on:
