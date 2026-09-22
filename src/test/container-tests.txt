@@ -95,6 +95,7 @@ dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java
 dev/sylvain/planning/mcp/McpApiKeyAuthenticationMechanismTest.java
+dev/sylvain/planning/mcp/McpKeyLockoutTest.java
 dev/sylvain/planning/mcp/McpPromptsResourcesTest.java
 dev/sylvain/planning/mcp/McpRateLimitProxyTest.java
 dev/sylvain/planning/mcp/McpRateLimitTest.java
