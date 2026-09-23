@@ -33,6 +33,7 @@ import {
   nomAnimateur,
   suggestionsTronquees,
 } from './affectation-explanation-rules';
+import { StatusMessage } from './status-message';
 
 export interface AffectationExplanationDialogData {
   poste: PosteAffectation;
@@ -41,7 +42,14 @@ export interface AffectationExplanationDialogData {
 
 @Component({
   selector: 'app-affectation-explanation-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, LegalText],
+  imports: [
+    StatusMessage,
+    MatDialogModule,
+    MatButtonModule,
+    MatIconModule,
+    MatProgressSpinnerModule,
+    LegalText,
+  ],
   template: `
     <h2 mat-dialog-title>
       {{ data.poste.stand?.nom }}
@@ -53,7 +61,7 @@ export interface AffectationExplanationDialogData {
       @if (loading()) {
         <mat-spinner diameter="32" />
       } @else if (error()) {
-        <p class="affectation-explanation-error">{{ error() }}</p>
+        <app-status-message [text]="error()" tone="error" />
       } @else if (explanation(); as explication) {
         <p class="affectation-explanation-score" i18n="@@affectationExplanation.score">
           Score global :
@@ -116,7 +124,7 @@ export interface AffectationExplanationDialogData {
         @if (suggestionsLoading()) {
           <mat-spinner diameter="24" />
         } @else if (suggestionsError()) {
-          <p class="affectation-explanation-error">{{ suggestionsError() }}</p>
+          <app-status-message [text]="suggestionsError()" tone="error" />
         } @else if (suggestions(); as reparations) {
           <p
             class="affectation-explanation-respected-count"

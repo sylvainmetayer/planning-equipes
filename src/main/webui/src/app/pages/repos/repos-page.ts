@@ -32,6 +32,7 @@ import {
   lignesTendues,
   totauxParJour,
 } from './repos';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * How the event is drawn. `grille` is one column per day, the detail; `frise`
@@ -65,6 +66,7 @@ export type DensiteRepos = 'compact' | 'confort';
 @Component({
   selector: 'app-repos-page',
   imports: [
+    StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,

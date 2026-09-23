@@ -49,6 +49,7 @@ import {
 import { SelectionRecherche } from '../../shared/selection-recherche';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { StatusMessage } from '../../shared/status-message';
 
 export interface AnimateurOption {
   id: string;
@@ -131,6 +132,7 @@ export interface TimelineDay {
 @Component({
   selector: 'app-animateur-timeline-page',
   imports: [
+    StatusMessage,
     MatCardModule,
     MatButtonModule,
     RouterLink,

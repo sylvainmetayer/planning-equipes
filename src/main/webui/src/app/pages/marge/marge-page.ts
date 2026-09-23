@@ -20,6 +20,7 @@ import { ModeMarge, RapportMarge } from '../../core/models';
 import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { SyntheseMarge, TableMarge, buildSynthese, buildTable, lienCellule, signe } from './marge';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Marge disponible » (issue #499): the day × timeslot grid of what is left —
@@ -40,6 +41,7 @@ import { SyntheseMarge, TableMarge, buildSynthese, buildTable, lienCellule, sign
 @Component({
   selector: 'app-marge-page',
   imports: [
+    StatusMessage,
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,

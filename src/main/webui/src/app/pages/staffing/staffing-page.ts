@@ -22,6 +22,7 @@ import {
   TypologieStaffing,
 } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * Staffing-need calculator: how many animateurs the stands and créneaux
@@ -49,6 +50,7 @@ import { errorText, retainedValue } from '../../core/resource-state';
 @Component({
   selector: 'app-staffing-page',
   imports: [
+    StatusMessage,
     RouterLink,
     MatCardModule,
     MatIconModule,

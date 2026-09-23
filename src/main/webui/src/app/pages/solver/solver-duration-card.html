@@ -43,8 +43,6 @@
         <ng-container i18n="@@common.save">Enregistrer</ng-container>
       </button>
     </div>
-    @if (error()) {
-      <p class="calendar-empty">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
   </mat-card-content>
 </mat-card>

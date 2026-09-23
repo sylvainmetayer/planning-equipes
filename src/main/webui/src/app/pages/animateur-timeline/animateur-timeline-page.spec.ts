@@ -680,7 +680,7 @@ describe('AnimateurTimelinePage', () => {
     bouton('Actualiser').click();
     await fixture.whenStable();
 
-    expect(racine().querySelector('.empty-hint')!.textContent!).toContain('boom');
+    expect(racine().querySelector('[role="alert"]')!.textContent!).toContain('boom');
   });
 
   it('exports the displayed animateur, and only them', async () => {

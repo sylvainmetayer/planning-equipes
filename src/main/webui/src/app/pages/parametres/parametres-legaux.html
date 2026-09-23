@@ -63,9 +63,7 @@
         }
       </div>
     </form>
-    @if (parametresError()) {
-      <p class="calendar-empty">{{ parametresError() }}</p>
-    }
+    <app-status-message [text]="parametresError()" tone="error" />
   </mat-card-content>
 </mat-card>
 
@@ -117,8 +115,6 @@
         }
       </div>
     </form>
-    @if (parametresError()) {
-      <p class="calendar-empty">{{ parametresError() }}</p>
-    }
+    <app-status-message [text]="parametresError()" tone="error" />
   </mat-card-content>
 </mat-card>

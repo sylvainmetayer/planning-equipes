@@ -28,6 +28,7 @@ import {
   referenceParam,
   typeSiegeLabel,
 } from './changements';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Changements » : what moved on the day on screen since a reference — the
@@ -48,6 +49,7 @@ import {
 @Component({
   selector: 'app-changements-vue',
   imports: [
+    StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,

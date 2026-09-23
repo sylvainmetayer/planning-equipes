@@ -40,6 +40,7 @@ import {
   rappelPublication,
   resumeDuJour,
 } from './jour-j-wording';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * Mode « jour J » — the first screen of this application written for the day of
@@ -59,6 +60,7 @@ import {
 @Component({
   selector: 'app-jour-j-page',
   imports: [
+    StatusMessage,
     FormsModule,
     RouterLink,
     MatButtonModule,

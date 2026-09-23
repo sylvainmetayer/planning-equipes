@@ -13,6 +13,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ScenarioValidationResult } from '../../core/models';
 import { errorPrefix } from '../../core/error-message';
+import { StatusMessage } from '../../shared/status-message';
 
 /** Body of `POST /api/reference-data/valider-scenario-fichier` — see docs/api.md. */
 /**
@@ -25,7 +26,7 @@ import { errorPrefix } from '../../core/error-message';
  */
 @Component({
   selector: 'app-yaml-validator',
-  imports: [MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
+  imports: [StatusMessage, MatCardModule, MatButtonModule, MatIconModule, MatProgressBarModule],
   templateUrl: './yaml-validator.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

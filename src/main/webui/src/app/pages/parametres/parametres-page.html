@@ -163,12 +163,12 @@
 
             @if (etat.lastRun.attemptedAt) {
               @if (etat.lastRun.succeeded) {
-                <p class="calendar-meta" i18n="@@parametres.sauvegarde.derniereOk">
+                <p class="calendar-meta" role="status" i18n="@@parametres.sauvegarde.derniereOk">
                   Dernière sauvegarde réussie le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
                   {{ etat.lastRun.file }}
                 </p>
               } @else {
-                <p class="locked-hint" i18n="@@parametres.sauvegarde.derniereEchec">
+                <p class="locked-hint" role="alert" i18n="@@parametres.sauvegarde.derniereEchec">
                   La dernière sauvegarde a échoué le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
                   {{ etat.lastRun.message }}
                 </p>

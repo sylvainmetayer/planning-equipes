@@ -36,9 +36,7 @@
       </mat-button-toggle-group>
     </div>
 
-    @if (error()) {
-      <p class="empty-hint">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
 
     @if (changes(); as changes) {
       @if (!changes.referenceDisponible) {

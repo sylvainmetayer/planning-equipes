@@ -13,6 +13,7 @@ import { EntreeHistorique } from '../../core/models';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { surQuoi } from '../historique/historique';
 import { resumeLisible } from './changements';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * What moved since the solve whose result the screen shows — the summary under
@@ -29,11 +30,9 @@ import { resumeLisible } from './changements';
  */
 @Component({
   selector: 'app-changements-donnees',
-  imports: [RouterLink],
+  imports: [StatusMessage, RouterLink],
   template: `
-    @if (erreur()) {
-      <p class="calendar-meta data-stale-detail">{{ erreur() }}</p>
-    }
+    <app-status-message [text]="erreur()" tone="error" />
     @if (vue(); as bilan) {
       @if (bilan.total > 0) {
         <p class="calendar-meta data-stale-detail">

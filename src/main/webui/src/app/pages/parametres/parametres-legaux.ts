@@ -16,6 +16,7 @@ import {
   DUREE_PAUSE_MIN_MINUTES,
   ParametresLegaux,
 } from '../../core/models';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * The legal parameters of the edition — the two weekly ceilings, the daily
@@ -29,6 +30,7 @@ import {
 @Component({
   selector: 'app-parametres-legaux',
   imports: [
+    StatusMessage,
     FormsModule,
     MatCardModule,
     MatButtonModule,

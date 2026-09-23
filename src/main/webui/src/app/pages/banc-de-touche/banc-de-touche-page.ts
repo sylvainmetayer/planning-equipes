@@ -35,6 +35,7 @@ import {
   libelleStand,
   lignes,
 } from './banc-de-touche';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Banc de touche » (issue #303): for one créneau, who is not on duty, and
@@ -49,6 +50,7 @@ import {
 @Component({
   selector: 'app-banc-de-touche-page',
   imports: [
+    StatusMessage,
     FormsModule,
     MatButtonModule,
     MatCardModule,

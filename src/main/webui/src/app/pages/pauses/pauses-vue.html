@@ -7,7 +7,7 @@
         Aucun planning persisté : lancez une résolution, puis revenez ici pour savoir où tombent les pauses.
       </p>
     } @else {
-      <p class="pauses-message">{{ rapport()!.message }}</p>
+      <p class="pauses-message" role="status">{{ rapport()!.message }}</p>
 
       @if (rapport()!.relaisManquants > 0) {
         <p class="pauses-alerte" role="status">

@@ -175,6 +175,16 @@ describe('MargePage', () => {
     );
   });
 
+  // RGAA 7.5: the verdict is what the screen exists to give, so it is spoken
+  // politely once the analysis lands — a status, not an interrupting alert.
+  it('announces the verdict as a polite status', async () => {
+    await monter();
+
+    expect(racine().querySelector('[data-testid="marge-message"]')!.getAttribute('role')).toBe(
+      'status',
+    );
+  });
+
   it('lists the worst timeslot of each day under the grid', async () => {
     await monter();
 

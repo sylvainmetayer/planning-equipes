@@ -40,6 +40,7 @@ import {
   synthese,
   VueFragilite,
 } from './fragilite';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Fragilité du planning » : who is a single point of failure, and which stand
@@ -54,6 +55,7 @@ import {
 @Component({
   selector: 'app-fragilite-page',
   imports: [
+    StatusMessage,
     FormsModule,
     MatButtonModule,
     RouterLink,
