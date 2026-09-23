@@ -38,11 +38,34 @@ public interface ConfigMentionsLegales {
 
     Data donnees();
 
+    Accessibilite accessibilite();
+
     /** What the privacy notice says about the personal data held here. */
     interface Data {
 
         Optional<String> baseLegale();
 
         Optional<String> conservation();
+    }
+
+    /**
+     * The accessibility statement (article 47 of loi n° 2005-102). The
+     * obligation lies on the organisation that deploys this application, not
+     * on the repository: it alone knows how far its instance was audited, when,
+     * and where users report a barrier.
+     */
+    interface Accessibilite {
+
+        /** {@code totale}, {@code partielle} or {@code non}; anything else reads as "not stated". */
+        Optional<String> etat();
+
+        /** Date of the audit the state rests on, as the deployment writes it. */
+        Optional<String> dateAudit();
+
+        /** The contents known not to be accessible, and why. */
+        Optional<String> contenusNonAccessibles();
+
+        /** Where to report a barrier; blank falls back to the general contact. */
+        Optional<String> signalement();
     }
 }

@@ -9,12 +9,15 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { APP_VERSION, REPO_URL } from '../version';
 import { VersionFooter } from './version-footer';
 
 function rendre() {
-  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), provideRouter([])],
+  });
   const fixture = TestBed.createComponent(VersionFooter);
   fixture.detectChanges();
   return fixture;
@@ -60,5 +63,15 @@ describe('VersionFooter', () => {
     const pied = fixture.nativeElement.querySelector('footer') as HTMLElement;
     expect(pied).not.toBeNull();
     expect(pied.classList.contains('app-version-footer')).toBe(true);
+  });
+
+  // Every screen carries the way to the accessibility statement (RGAA 13).
+  it('links to the accessibility statement', () => {
+    const fixture = rendre();
+
+    const lien = fixture.nativeElement.querySelector(
+      'a[href="/declaration-accessibilite"]',
+    ) as HTMLAnchorElement;
+    expect(lien.textContent).toContain('Accessibilité');
   });
 });

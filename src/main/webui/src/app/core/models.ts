@@ -1453,6 +1453,19 @@ export interface MentionsLegales {
    */
   mesureAudience: boolean;
   suiviErreurs: boolean;
+  /** The accessibility statement of this deployment — empty strings for what it did not state. */
+  accessibilite: DeclarationAccessibilite;
+}
+
+/** The three states of the RGAA statement; empty when the deployment states none. */
+export type EtatAccessibilite = 'totale' | 'partielle' | 'non' | '';
+
+export interface DeclarationAccessibilite {
+  etat: EtatAccessibilite;
+  dateAudit: string;
+  contenusNonAccessibles: string;
+  /** Where to report a barrier: the general contact when not stated apart. */
+  signalement: string;
 }
 
 /** Ordre public ceiling for adults, in hours (Code du travail art. L3121-20). */

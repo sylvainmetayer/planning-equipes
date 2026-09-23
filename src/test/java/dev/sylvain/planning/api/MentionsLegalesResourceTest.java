@@ -52,4 +52,21 @@ class MentionsLegalesResourceTest {
                 .body("mesureAudience", equalTo(false))
                 .body("suiviErreurs", equalTo(false));
     }
+
+    /**
+     * The accessibility statement is the deploying organisation's to fill: an
+     * unconfigured one yields empty fields, and the page then says it is not
+     * filled in rather than claiming a compliance nobody measured.
+     */
+    @Test
+    void servesAnEmptyAccessibilityStatementWhenTheDeploymentStatesNone() {
+        given().when()
+                .get("/api/mentions-legales")
+                .then()
+                .statusCode(200)
+                .body("accessibilite.etat", equalTo(""))
+                .body("accessibilite.dateAudit", equalTo(""))
+                .body("accessibilite.contenusNonAccessibles", equalTo(""))
+                .body("accessibilite.signalement", equalTo(""));
+    }
 }

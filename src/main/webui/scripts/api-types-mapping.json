@@ -27,6 +27,7 @@
     "CoupureDerivation": "Coupure",
     "Branding": "BrandingView",
     "MentionsLegales": "MentionsLegalesView",
+    "DeclarationAccessibilite": "AccessibiliteView",
     "AnimateurBanc": "AnimateurAvailability",
     "BancDeTouche": "CreneauAvailability",
     "CibleImport": "ImportTargetView",

@@ -126,7 +126,13 @@ test.describe('espace animateur', () => {
     await page.goto('/animateur/jeton-invente');
     const pied = page.locator('.app-version-footer');
     await expect(pied).toContainText('Version');
-    await expect(pied.getByRole('link')).toHaveText(/\S/);
+    // The version link is the one opening a new window: the footer also leads
+    // to the accessibility statement.
+    await expect(pied.locator('a[target="_blank"]')).toHaveText(/\S/);
+    await expect(pied.getByRole('link', { name: 'Accessibilité' })).toHaveAttribute(
+      'href',
+      '/declaration-accessibilite',
+    );
   });
 
   /**

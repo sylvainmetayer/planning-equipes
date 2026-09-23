@@ -82,7 +82,7 @@ function extraire(webui = WEBUI) {
  */
 const PLAFOND = 200;
 const HORS_PLAFOND =
-  /^(aide|espace\.aide|mentions|cgu|confidentialite|legalText|constraints\.legalDisable)\./;
+  /^(aide|espace\.aide|mentions|cgu|confidentialite|accessibilite|legalText|constraints\.legalDisable)\./;
 const CITE_UN_ARTICLE = /\b(art(?:icle|\.)\s*[LRD]\.?\s?\d|[LRD]\d{4}-\d)/i;
 
 function messagesTropLongs(source) {

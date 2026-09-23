@@ -16,6 +16,7 @@ const VIDE: MentionsLegales = {
   conservation: '',
   mesureAudience: false,
   suiviErreurs: false,
+  accessibilite: { etat: '', dateAudit: '', contenusNonAccessibles: '', signalement: '' },
 };
 
 function monter() {

@@ -139,8 +139,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted
   under the headings of `cliff.toml`: no endpoint, no stored page, and
   nothing to keep up to date by hand), the
-  three public legal pages `/mentions-legales`, `/conditions-utilisation`,
-  `/politique-confidentialite`, and `/aide` (`/solver` redirects to
+  four public legal pages `/mentions-legales`, `/conditions-utilisation`,
+  `/politique-confidentialite` and `/declaration-accessibilite` (the
+  accessibility statement, filled from `planning.legal.accessibilite.*` by the
+  deployment it describes), and `/aide` (`/solver` redirects to
   `/solveur` and `/export-csv` to `/exports`;
   `/data-transfer`, `/data-setup` and `/validateur-yaml` are
   legacy redirects too, `/decoupage` now landing on `/creneaux` since the
@@ -325,7 +327,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `@defer`; the tile
   layer, the attribution and the bundled icon paths are shared by
   `shared/leaflet-base.ts`).
-  Dev-only: `@playwright/test`, `vitest`, `@vitest/coverage-v8`
+  Dev-only: `@playwright/test`, `@axe-core/playwright` (the axe-core sweep of
+  `e2e/accessibilite.spec.ts`, against a frozen per-screen baseline — see
+  `docs/accessibilite.md`), `vitest`, `@vitest/coverage-v8`
   (`npm run test:coverage`, run in CI — the report is published as an artifact
   and nothing consumes it: no threshold, no external service), `jsdom`,
   `prettier` (`npm run format` / `format-check`, the latter run in CI — the

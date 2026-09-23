@@ -1,0 +1,78 @@
+<mat-toolbar class="mentions-page-toolbar">
+  <app-brand-logo />
+  <h1 class="app-title" i18n="@@accessibilite.title">Déclaration d'accessibilité</h1>
+  <span class="app-toolbar-spacer"></span>
+  @if (peutRevenir()) {
+    <button matButton (click)="revenir()">
+      <mat-icon>arrow_back</mat-icon>
+      <ng-container i18n="@@common.retour">Retour</ng-container>
+    </button>
+  }
+</mat-toolbar>
+
+<main class="mentions-page">
+  <app-status-message [text]="erreur()" tone="error" />
+
+  @if (mentions(); as infos) {
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@accessibilite.etat.title">État de conformité</h2>
+      </mat-card-header>
+      <mat-card-content>
+        @if (phraseEtat()) {
+          <p>{{ phraseEtat() }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@accessibilite.etat.manquant">
+            Non renseigné par l'organisation qui exploite ce déploiement : aucun audit n'est déclaré.
+          </p>
+        }
+        @if (infos.accessibilite.dateAudit) {
+          <p i18n="@@accessibilite.dateAudit">Audit réalisé le : {{ infos.accessibilite.dateAudit }}</p>
+        }
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@accessibilite.contenus.title">Contenus non accessibles</h2>
+      </mat-card-header>
+      <mat-card-content>
+        @if (infos.accessibilite.contenusNonAccessibles) {
+          <p class="mentions-texte-libre">{{ infos.accessibilite.contenusNonAccessibles }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</p>
+        }
+        <p i18n="@@accessibilite.contenus.pdf">
+          Les plannings téléchargés en PDF portent un titre, une langue et une structure, mais ne sont pas
+          garantis accessibles : l'espace personnel de chaque animateur en est la version accessible, et c'est
+          lui qui suit chaque nouvelle publication.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@accessibilite.signalement.title">Signaler un défaut d'accessibilité</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <p i18n="@@accessibilite.signalement.texte">
+          Si vous ne parvenez pas à accéder à un contenu ou à un service, écrivez à l'organisation pour être orienté
+          vers une alternative accessible ou obtenir le contenu sous une autre forme.
+        </p>
+        @if (infos.accessibilite.signalement) {
+          <p>{{ infos.accessibilite.signalement }}</p>
+        } @else {
+          <p class="mentions-manquant" i18n="@@mentions.manquant">Non renseigné</p>
+        }
+        <p i18n="@@accessibilite.recours">
+          Sans réponse satisfaisante, vous pouvez saisir le
+          <a href="https://formulaire.defenseurdesdroits.fr/" target="_blank" rel="noopener noreferrer">Défenseur des droits</a>.
+        </p>
+      </mat-card-content>
+    </mat-card>
+
+    <p>
+      <a routerLink="/mentions-legales" i18n="@@cgu.versMentions">Voir les mentions légales</a>
+    </p>
+  }
+</main>

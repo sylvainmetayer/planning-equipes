@@ -43,6 +43,10 @@
       <mat-icon>handshake</mat-icon>
       <span i18n="@@nav.link.cgu">Conditions d'utilisation</span>
     </a>
+    <a mat-menu-item routerLink="/declaration-accessibilite" rel="noopener noreferrer">
+      <mat-icon>accessibility_new</mat-icon>
+      <span i18n="@@nav.link.accessibilite">Accessibilité</span>
+    </a>
   </mat-menu>
   <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
     {{ locale === 'fr' ? 'EN' : 'FR' }}
