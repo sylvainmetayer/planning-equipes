@@ -27,10 +27,12 @@ import org.openpdf.text.Rectangle;
 import org.openpdf.text.pdf.BaseFont;
 import org.openpdf.text.pdf.ColumnText;
 import org.openpdf.text.pdf.PdfContentByte;
+import org.openpdf.text.pdf.PdfName;
 import org.openpdf.text.pdf.PdfPCell;
 import org.openpdf.text.pdf.PdfPCellEvent;
 import org.openpdf.text.pdf.PdfPTable;
 import org.openpdf.text.pdf.PdfPageEventHelper;
+import org.openpdf.text.pdf.PdfString;
 import org.openpdf.text.pdf.PdfTemplate;
 import org.openpdf.text.pdf.PdfWriter;
 
@@ -393,6 +395,24 @@ public class PdfTheme {
     }
 
     /** {@code part} of {@code couleur} over {@code fond} — no alpha in a PDF fill, so the blend is computed. */
+    /**
+     * What a reader's software needs to announce the document rather than a
+     * stream of text (RGAA 13.3): a title shown in place of the file name, the
+     * language it is written in, and a structure tree over its paragraphs and
+     * tables. Called before {@code document.open()}, which is when OpenPDF
+     * writes the first two and starts recording the third.
+     *
+     * <p>Not a compliance claim — the espace animateur is the accessible
+     * version of the same planning — but it costs three calls and helps the
+     * printout and the archive as much as the screen reader.</p>
+     */
+    static void describe(Document document, PdfWriter writer, String title) {
+        document.addTitle(title);
+        writer.getExtraCatalog().put(PdfName.LANG, new PdfString("fr-FR"));
+        writer.setViewerPreferences(PdfWriter.DisplayDocTitle);
+        writer.setTagged();
+    }
+
     static Color melange(Color couleur, Color fond, float part) {
         float reste = 1f - part;
         return new Color(

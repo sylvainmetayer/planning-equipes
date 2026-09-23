@@ -83,6 +83,8 @@ public class GlobalPlanningPdf {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 34, 34, 34, 50);
         PdfWriter writer = PdfWriter.getInstance(document, output);
+        PdfTheme.describe(
+                document, writer, "Planning global — " + provenance.edition().nom());
         writer.setPageEvent(theme.footerEvent("planning global", Instant.now(), provenance));
         document.open();
 
