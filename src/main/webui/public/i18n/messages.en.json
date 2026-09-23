@@ -3568,5 +3568,19 @@
   "calendarDay.deplacer.titre": "Move {$nom}",
   "calendarDay.deplacer.cible": "To which seat?",
   "railJour.deplacer.titre": "Move a shift of {$nom}",
-  "railJour.deplacer.cible": "To whom? They take the shift, or swap theirs"
+  "railJour.deplacer.cible": "To whom? They take the shift, or swap theirs",
+  "accessibilite.title": "Accessibility statement",
+  "route.declarationAccessibilite": "Accessibility statement",
+  "nav.link.accessibilite": "Accessibility",
+  "accessibilite.etat.totale": "{$produit} is fully compliant with the French accessibility standard (RGAA), version 4.1.",
+  "accessibilite.etat.partielle": "{$produit} is partially compliant with the French accessibility standard (RGAA), version 4.1.",
+  "accessibilite.etat.non": "{$produit} is not compliant with the French accessibility standard (RGAA), version 4.1.",
+  "accessibilite.etat.title": "Compliance status",
+  "accessibilite.etat.manquant": "Not stated by the organisation running this deployment: no audit is declared.",
+  "accessibilite.dateAudit": "Audit carried out on: {$INTERPOLATION}",
+  "accessibilite.contenus.title": "Non-accessible content",
+  "accessibilite.contenus.pdf": "The schedules downloaded as PDF carry a title, a language and a structure, but are not guaranteed accessible: each animateur's personal space is their accessible version, and it is the one that follows every new publication.",
+  "accessibilite.signalement.title": "Report an accessibility barrier",
+  "accessibilite.signalement.texte": "If you cannot reach a content or a service, write to the organisation to be directed to an accessible alternative or to obtain the content in another form.",
+  "accessibilite.recours": "Without a satisfactory answer, you can refer the matter to the {$START_LINK}Défenseur des droits{$CLOSE_LINK}."
 }

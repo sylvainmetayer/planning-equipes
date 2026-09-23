@@ -219,6 +219,10 @@ function buildDefinitionsRoutes(): Map<string, DefinitionRoute> {
       '/conditions-utilisation',
       { label: $localize`:@@nav.link.cgu:Conditions d'utilisation`, icon: 'handshake' },
     ],
+    [
+      '/declaration-accessibilite',
+      { label: $localize`:@@nav.link.accessibilite:Accessibilité`, icon: 'accessibility_new' },
+    ],
   ]);
 }
 

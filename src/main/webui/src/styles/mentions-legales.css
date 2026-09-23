@@ -67,3 +67,8 @@
   color: var(--mat-sys-error);
   font-style: italic;
 }
+
+/* A statement the deployment wrote in one variable: its line breaks are its paragraphs. */
+.mentions-texte-libre {
+  white-space: pre-line;
+}

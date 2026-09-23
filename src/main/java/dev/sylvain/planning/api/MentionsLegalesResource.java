@@ -59,7 +59,30 @@ public class MentionsLegalesResource {
                 text(mentions.donnees().baseLegale()),
                 text(mentions.donnees().conservation()),
                 configured(observabilite.cloudflare().webAnalyticsToken()),
-                configured(observabilite.sentry().dsn()));
+                configured(observabilite.sentry().dsn()),
+                accessibilite());
+    }
+
+    private AccessibiliteView accessibilite() {
+        ConfigMentionsLegales.Accessibilite declaration = mentions.accessibilite();
+        String signalement = text(declaration.signalement());
+        return new AccessibiliteView(
+                etat(declaration.etat()),
+                text(declaration.dateAudit()),
+                text(declaration.contenusNonAccessibles()),
+                signalement.isEmpty() ? text(mentions.contact()) : signalement);
+    }
+
+    /**
+     * The three states of the RGAA statement, or empty: a value nobody
+     * recognises would otherwise print as a compliance claim.
+     */
+    private static String etat(Optional<String> valeur) {
+        String etat = text(valeur).toLowerCase(java.util.Locale.ROOT);
+        return switch (etat) {
+            case "totale", "partielle", "non" -> etat;
+            default -> "";
+        };
     }
 
     /** Trimmed, and empty rather than blank: the UI has one single "not filled in" case to handle. */
@@ -96,8 +119,9 @@ public class MentionsLegalesResource {
      * @param conservation         how long personal data is kept
      * @param mesureAudience       whether Cloudflare Web Analytics runs on this deployment
      * @param suiviErreurs         whether error reports are sent to a Sentry-protocol endpoint
+     * @param accessibilite        the accessibility statement of this deployment
      */
-    @Schema(requiredProperties = {"mesureAudience", "suiviErreurs"})
+    @Schema(requiredProperties = {"mesureAudience", "suiviErreurs", "accessibilite"})
     public record MentionsLegalesView(
             String editeur,
             String directeurPublication,
@@ -107,5 +131,18 @@ public class MentionsLegalesResource {
             String baseLegale,
             String conservation,
             boolean mesureAudience,
-            boolean suiviErreurs) {}
+            boolean suiviErreurs,
+            AccessibiliteView accessibilite) {}
+
+    /**
+     * The accessibility statement, empty strings for what the deployment did not
+     * state — the page then says the statement is not filled in rather than
+     * claiming a compliance nobody measured.
+     *
+     * @param etat                   {@code totale}, {@code partielle}, {@code non}, or empty
+     * @param dateAudit              date of the audit the state rests on
+     * @param contenusNonAccessibles contents known not to be accessible
+     * @param signalement            where to report a barrier (the general contact by default)
+     */
+    public record AccessibiliteView(String etat, String dateAudit, String contenusNonAccessibles, String signalement) {}
 }

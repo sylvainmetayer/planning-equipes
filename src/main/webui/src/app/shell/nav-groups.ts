@@ -310,6 +310,11 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           label: $localize`:@@nav.link.cgu:Conditions d'utilisation`,
           icon: 'handshake',
         },
+        {
+          path: '/declaration-accessibilite',
+          label: $localize`:@@nav.link.accessibilite:Accessibilité`,
+          icon: 'accessibility_new',
+        },
         // Dev mode only: in a packaged application the Dev UI does not exist,
         // and the entry would lead nowhere.
         ...(devMode

@@ -50,6 +50,23 @@
           }
         }
       },
+      "AccessibiliteView" : {
+        "type" : "object",
+        "properties" : {
+          "etat" : {
+            "type" : "string"
+          },
+          "dateAudit" : {
+            "type" : "string"
+          },
+          "contenusNonAccessibles" : {
+            "type" : "string"
+          },
+          "signalement" : {
+            "type" : "string"
+          }
+        }
+      },
       "AccuseReception" : {
         "type" : "object",
         "properties" : {
@@ -4362,7 +4379,7 @@
         }
       },
       "MentionsLegalesView" : {
-        "required" : [ "mesureAudience", "suiviErreurs" ],
+        "required" : [ "mesureAudience", "suiviErreurs", "accessibilite" ],
         "type" : "object",
         "properties" : {
           "editeur" : {
@@ -4391,6 +4408,9 @@
           },
           "suiviErreurs" : {
             "type" : "boolean"
+          },
+          "accessibilite" : {
+            "$ref" : "#/components/schemas/AccessibiliteView"
           }
         }
       },

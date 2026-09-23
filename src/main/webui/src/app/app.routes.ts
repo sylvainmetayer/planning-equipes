@@ -375,6 +375,14 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'declaration-accessibilite',
+    title: () => $localize`:@@route.declarationAccessibilite:Déclaration d'accessibilité`,
+    loadComponent: () =>
+      import('./pages/mentions-legales/declaration-accessibilite-page').then(
+        (m) => m.DeclarationAccessibilitePage,
+      ),
+  },
+  {
     path: 'animateur/:jeton',
     loadComponent: () =>
       import('./pages/espace-animateur/espace-animateur-shell').then((m) => m.EspaceAnimateurShell),

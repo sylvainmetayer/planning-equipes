@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 
+import { RouterLink } from '@angular/router';
 import { versionUrl } from '../core/version-link';
 import { APP_VERSION } from '../version';
 import { NewWindowLink } from './new-window-link';
@@ -22,11 +23,13 @@ import { NewWindowLink } from './new-window-link';
  */
 @Component({
   selector: 'app-version-footer',
-  imports: [NewWindowLink],
+  imports: [NewWindowLink, RouterLink],
   template: `
     <footer class="app-version-footer">
       <span i18n="@@footer.version">Version</span>
       <a [href]="url" target="_blank" rel="noopener noreferrer">{{ version }}</a>
+      <span aria-hidden="true">·</span>
+      <a routerLink="/declaration-accessibilite" i18n="@@nav.link.accessibilite">Accessibilité</a>
     </footer>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
