@@ -33,6 +33,8 @@ import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { cibleDepot, resumeDeplacement } from '../../shared/deplacement';
+import { openMoveDialog } from '../../shared/deplacement-dialog';
+import { OptionSelection } from '../../shared/selection-recherche';
 import { VerrouillageStore } from '../../core/verrouillage.store';
 import { Creneau, PlanningEvenement, PosteAffectation, Stand } from '../../core/models';
 import {
@@ -270,6 +272,67 @@ export class CalendarDayView {
       return;
     }
     await this.deplacer(source.id, target, source.animateur?.id ?? null);
+  }
+
+  protected moveLabel(nom: string): string {
+    return $localize`:@@calendarDay.deplacer:Déplacer ${nom}:nom: vers un autre siège…`;
+  }
+
+  /**
+   * The drop's twin, for the keyboard and for a single click: every other line
+   * of the day, as a searchable list — its free seats to
+   * move into, its people to swap with — and the answer goes through the very
+   * {@link deplacer} the drop calls.
+   */
+  protected openMove(
+    day: DayCard,
+    slotSource: SlotCard,
+    ligneSource: StandLine,
+    poste: PosteAffectation,
+    nom: string,
+  ): void {
+    if (
+      this.editingLocked() ||
+      this.estLigneVerrouillee(slotSource, ligneSource) ||
+      this.estJourVerrouille(day)
+    ) {
+      return;
+    }
+    // The whole day, not only the lines the filters leave on screen: the
+    // destination is typed into the dialog, it need not be visible first.
+    const cibles: OptionSelection[] = [];
+    for (const slot of (this.journee() ?? day).slots) {
+      const heures = `${slot.heureDebut.slice(0, 5)}–${slot.heureFin.slice(0, 5)}`;
+      for (const ligne of slot.stands) {
+        if (ligne === ligneSource) {
+          continue;
+        }
+        for (const libre of ligne.postesLibres) {
+          cibles.push({
+            id: libre.id,
+            label: $localize`:@@calendarDay.deplacer.libre:${heures}:heures: · ${ligne.standNom}:stand: — siège libre`,
+          });
+        }
+        for (const entry of ligne.entries) {
+          cibles.push({
+            id: entry.poste.id,
+            label: $localize`:@@calendarDay.deplacer.echange:${heures}:heures: · ${ligne.standNom}:stand: — échanger avec ${entry.label}:nom:`,
+          });
+        }
+      }
+    }
+    openMoveDialog(this.dialog, {
+      title: $localize`:@@calendarDay.deplacer.titre:Déplacer ${nom}:nom:`,
+      targets: cibles,
+      targetLabel: $localize`:@@calendarDay.deplacer.cible:Vers quel siège ?`,
+    })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((choix) => {
+        if (choix) {
+          void this.deplacer(poste.id, choix.target, poste.animateur?.id ?? null);
+        }
+      });
   }
 
   private async deplacer(

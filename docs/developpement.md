@@ -239,6 +239,19 @@ coûte peu à l'écriture, les rattraper coûte cher.
   de partir dans le `Referer`. Et avant d'annoncer une nouvelle fenêtre, se
   demander si elle est utile : les pages légales s'ouvrent depuis l'espace dans
   le même onglet, « Retour » y ramène.
+- **Tout geste de glisser-déposer a un jumeau atteignable au clavier, et c'est
+  le jumeau qui appelle le service.** `@angular/cdk/drag-drop` n'écoute que le
+  pointeur : déplacer une affectation passe aussi par `shared/deplacement-dialog.ts`
+  (« Déplacer … vers »), ouvert par la poignée — un bouton nommé, qu'un clic
+  simple suffit à activer (WCAG 2.5.7) — sur la vue calendrier, et par Entrée
+  sur la ligne du rail. Le choix fait dans le dialogue appelle la même méthode
+  que le dépôt. Une cellule qui ouvre un détail est un arrêt clavier (le
+  tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
+  `(click)` sur un `<td>` seul.
+- **Les raccourcis à une touche se coupent** (WCAG 2.1.4) : une case dans le
+  dialogue « ? » et dans Paramètres, onglet Globaux, réglage du navigateur
+  (`core/single-key-shortcuts.ts`). Un nouveau raccourci à une touche passe par
+  `KeyboardShortcutsService`, qui respecte ce réglage.
 - **Une longue liste se filtre, elle ne se déroule pas** :
   `app-selection-recherche` au-delà de quelques dizaines d'entrées. 153
   animateurs au clavier, c'est 153 flèches.

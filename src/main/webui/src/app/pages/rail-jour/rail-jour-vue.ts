@@ -8,6 +8,7 @@ import {
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   inject,
@@ -17,7 +18,9 @@ import {
   output,
   ViewEncapsulation,
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MatButtonModule } from '@angular/material/button';
+import { MatDialog } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -26,6 +29,8 @@ import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { resumeDeplacement } from '../../shared/deplacement';
+import { openMoveDialog } from '../../shared/deplacement-dialog';
+import { OptionSelection } from '../../shared/selection-recherche';
 import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
@@ -90,6 +95,8 @@ export class RailJourView {
   readonly rechargement = output<void>();
 
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly dialog = inject(MatDialog);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly jours = computed<RailJour[]>(() => {
     const planning = this.planning();
@@ -233,15 +240,21 @@ export class RailJourView {
     if (event.previousContainer === event.container) {
       return;
     }
-    const bloc = event.item.data;
-    const receveur = event.container.data;
-    const porteur = event.previousContainer.data;
+    await this.transferer(
+      event.item.data,
+      event.previousContainer.data,
+      event.container.data.animateurId,
+    );
+  }
+
+  /** The move itself, whichever way it was asked for: a drop or the dialog. */
+  private async transferer(bloc: RailBloc, porteur: RailLigne, receveurId: string): Promise<void> {
     try {
       // The line the block was dragged from is who this view believes holds
       // the seat: the server refuses (409) if somebody else does now.
       const simulation = await this.explications.deplacer(
         bloc.posteId,
-        { animateurId: receveur.animateurId },
+        { animateurId: receveurId },
         porteur.animateurId,
       );
       this.notifications.notify({
@@ -258,6 +271,35 @@ export class RailJourView {
       // The refusal may be « this seat moved under you »: re-read the day.
       this.rechargement.emit();
     }
+  }
+
+  /**
+   * The drop's twin, for the keyboard and for a single click: which of the
+   * person's shifts, and to whom — every other line the drop would accept —
+   * then the very {@link transferer} the drop calls.
+   */
+  protected openMove(porteur: RailLigne, bloc?: RailBloc): void {
+    if (this.editingLocked()) {
+      return;
+    }
+    const cibles: OptionSelection[] = this.lignes()
+      .filter((ligne) => ligne !== porteur && ligne.statut !== 'indisponible')
+      .map((ligne) => ({ id: ligne.animateurId, label: ligne.nom }));
+    const blocs = bloc ? [bloc] : porteur.blocs;
+    openMoveDialog(this.dialog, {
+      title: $localize`:@@railJour.deplacer.titre:Déplacer une vacation de ${porteur.nom}:nom:`,
+      sources: blocs.map((candidat) => ({ id: candidat.posteId, label: candidat.label })),
+      targets: cibles,
+      targetLabel: $localize`:@@railJour.deplacer.cible:Vers qui ? Elle prend la vacation, ou échange la sienne`,
+    })
+      .afterClosed()
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((choix) => {
+        const choisi = blocs.find((candidat) => candidat.posteId === choix?.source);
+        if (choix && choisi) {
+          void this.transferer(choisi, porteur, choix.target);
+        }
+      });
   }
 
   private nomDe(animateurId: string): string {
@@ -278,6 +320,16 @@ export class RailJourView {
   }
 
   protected naviguer(event: KeyboardEvent, index: number): void {
+    // Enter on a line is the keyboard twin of dragging one of its shifts
+    // (RGAA 7.3): the drag has no key of its own.
+    if (event.key === 'Enter') {
+      const ligne = this.lignesAffichees()[index];
+      if (ligne && ligne.blocs.length > 0) {
+        event.preventDefault();
+        this.openMove(ligne);
+      }
+      return;
+    }
     const last = this.lignesAffichees().length - 1;
     let target: number;
     switch (event.key) {

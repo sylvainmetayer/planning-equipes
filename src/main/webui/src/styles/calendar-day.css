@@ -199,6 +199,13 @@
 }
 
 .affectation-poignee {
+  /* A button, for the keyboard twin of the drag: its chrome is reset so the
+     handle still reads as the grip it was. */
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
   cursor: grab;
   opacity: 0.35;
   font-size: 0.85em;
@@ -211,6 +218,12 @@
 .day-stand:hover .affectation-poignee,
 .affectation-glissable:focus-within .affectation-poignee {
   opacity: 0.9;
+}
+
+.affectation-poignee:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--app-accent);
+  outline-offset: 1px;
 }
 
 .cdk-drag-disabled .affectation-poignee {
