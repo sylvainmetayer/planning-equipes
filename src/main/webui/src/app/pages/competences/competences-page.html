@@ -86,6 +86,9 @@
                     <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
                   }
                   <span>{{ typologie.label || typologie.id }}</span>
+                  @if (typologie.label) {
+                    <span class="visually-hidden"> ({{ typologie.id }})</span>
+                  }
                   <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
                           i18n-matTooltip="@@competences.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
                           i18n-aria-label="@@competences.appliquerColonne" aria-label="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"

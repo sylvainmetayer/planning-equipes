@@ -29,6 +29,7 @@
     "icon-labels-check": "node scripts/check-icon-labels.js",
     "headings-check": "node scripts/check-headings.js",
     "status-messages-check": "node scripts/check-status-messages.js",
+    "table-headers-check": "node scripts/check-table-headers.js",
     "stores-check": "node scripts/check-readonly-stores.js",
     "api-schema": "node scripts/refresh-api-schema.js",
     "licences": "node scripts/licences-tierces.js",

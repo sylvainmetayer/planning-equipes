@@ -41,7 +41,7 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content class="table-wrapper">
-      <table class="heatmap-table intendance-table" role="grid">
+      <table class="heatmap-table intendance-table">
         <caption class="visually-hidden" i18n="@@intendance.caption">
           Personnes en coupure repas, par emplacement et par heure
         </caption>
@@ -61,6 +61,9 @@
               @for (cellule of ligne.cellules; track $index) {
                 <td class="heatmap-cell" [class.heatmap-cell-none]="cellule.personnes === 0"
                     [matTooltip]="cellule.detail">
+                  <!-- The tooltip does not exist on the keyboard or on touch: its
+                       text is also in the cell, for a screen reader. -->
+                  <span class="visually-hidden">{{ cellule.detail }}</span>
                   @if (cellule.personnes > 0) {
                     <span>{{ cellule.personnes }}</span>
                     @if (cellule.mineurs > 0) {

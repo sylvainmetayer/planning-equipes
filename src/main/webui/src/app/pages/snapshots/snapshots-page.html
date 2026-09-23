@@ -32,7 +32,7 @@
       <table mat-table [dataSource]="instantanesManuels()">
         <caption class="visually-hidden" i18n="@@snapshots.table.caption">Instantanés de plan enregistrés : libellé, score, taille, date et fraîcheur vis-à-vis du référentiel</caption>
         <ng-container matColumnDef="libelle">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
           <td mat-cell *matCellDef="let snapshot">
             {{ snapshot.libelle }}
             @if (snapshot.automatique) {
@@ -61,15 +61,15 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="score">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
           <td mat-cell *matCellDef="let snapshot">{{ snapshot.score || '—' }}</td>
         </ng-container>
         <ng-container matColumnDef="affectations">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
           <td mat-cell *matCellDef="let snapshot">{{ snapshot.nombreAffectations }}</td>
         </ng-container>
         <ng-container matColumnDef="creeLe">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
           <td mat-cell *matCellDef="let snapshot">
             {{ dateLabel(snapshot) }}
             @if (ecart(snapshot); as ecartLabel) {
@@ -78,7 +78,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="fraicheur">
-          <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.fraicheur">Fraîcheur</th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.fraicheur">Fraîcheur</th>
           <td mat-cell *matCellDef="let snapshot">
             <mat-chip
               [class.snapshot-perime-chip]="snapshot.perime"
@@ -94,7 +94,7 @@
           </td>
         </ng-container>
         <ng-container matColumnDef="actions" stickyEnd>
-          <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+          <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
           <td mat-cell *matCellDef="let snapshot" class="row-actions">
             <button
               matIconButton
@@ -143,17 +143,17 @@
             Instantanés pris automatiquement avant chaque résolution, les plus anciens étant purgés, avec leur fraîcheur vis-à-vis du référentiel
           </caption>
           <ng-container matColumnDef="libelleAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.libelle">Instantané</th>
             <td mat-cell *matCellDef="let snapshot">
               {{ snapshot.libelle }}
             </td>
           </ng-container>
             <ng-container matColumnDef="scoreAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.score">Score</th>
             <td mat-cell *matCellDef="let snapshot">{{ snapshot.score || '—' }}</td>
           </ng-container>
           <ng-container matColumnDef="affectationsAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.affectations">Affectations</th>
             <td mat-cell *matCellDef="let snapshot">
               {{ snapshot.nombreAffectations }}
               @if (ecart(snapshot); as ecartLabel) {
@@ -162,11 +162,11 @@
             </td>
           </ng-container>
           <ng-container matColumnDef="creeLeAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.creeLe">Enregistré le</th>
             <td mat-cell *matCellDef="let snapshot">{{ dateLabel(snapshot) }}</td>
           </ng-container>
           <ng-container matColumnDef="fraicheurAuto">
-            <th mat-header-cell *matHeaderCellDef i18n="@@snapshots.column.fraicheur">Fraîcheur</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@snapshots.column.fraicheur">Fraîcheur</th>
             <td mat-cell *matCellDef="let snapshot">
               <mat-chip
                 [class.snapshot-perime-chip]="snapshot.perime"
@@ -182,7 +182,7 @@
             </td>
           </ng-container>
           <ng-container matColumnDef="actionsAuto" stickyEnd>
-            <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
             <td mat-cell *matCellDef="let snapshot" class="row-actions">
               <button matIconButton i18n-matTooltip="@@snapshots.restore.tooltip" matTooltip="Restaurer ce plan"
                       i18n-aria-label="@@snapshots.restore.tooltip" aria-label="Restaurer ce plan"

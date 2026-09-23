@@ -121,7 +121,7 @@
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
                     @if (consigneByDate().get(jour.date); as consigne) {
-                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
+                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
                     <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur tous les autres jours, pour les stands affichés"
@@ -342,7 +342,7 @@
             <p class="empty-hint" i18n="@@ouvertures.journee.aucunStand">Aucun stand ne correspond au filtre pour cette journée.</p>
           } @else {
             <div class="axe-scroll">
-              <table class="axe-table" role="grid">
+              <table class="axe-table">
                 <caption class="visually-hidden" i18n="@@ouvertures.journee.caption">Une journée sur l'axe du temps : une ligne par stand, les créneaux en bandes, chaque ouverture en bloc avec son effectif</caption>
                 <thead>
                   <tr>
@@ -411,8 +411,9 @@
                       [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    <span class="visually-hidden"> · {{ heure(jour.heureDebut) }}→{{ heure(jour.heureFin) }} · {{ duree(jour.minutes) }}</span>
                     @if (consigneByDate().get(jour.date); as consigne) {
-                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span>
+                      <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
                     <button matIconButton type="button" class="voir-journee" (click)="voirJournee(jour.date)"
                             i18n-matTooltip="@@ouvertures.journee.voir" matTooltip="Voir cette journée sur l'axe du temps"

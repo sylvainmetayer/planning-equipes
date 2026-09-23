@@ -196,6 +196,7 @@
                   <td [class]="classeSeverite(ligne.severite)" [matTooltip]="explicationCompetence(ligne)">
                     <mat-icon aria-hidden="true">{{ iconeSeverite(ligne.severite) }}</mat-icon>
                     <span>{{ libelleSeverite(ligne.severite) }}</span>
+                    <span class="visually-hidden"> — {{ explicationCompetence(ligne) }}</span>
                   </td>
                 </tr>
               } @empty {

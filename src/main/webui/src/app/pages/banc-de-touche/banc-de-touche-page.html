@@ -70,6 +70,9 @@
       } @else {
         <div class="table-wrapper">
           <table class="banc-table">
+            <caption class="visually-hidden" i18n="@@bancDeTouche.caption">
+              Une ligne par animateur de l'édition : s'il peut tenir ce siège, et sinon pourquoi
+            </caption>
           <thead>
             <tr>
               <th scope="col" i18n="@@bancDeTouche.column.animateur">Animateur</th>
@@ -98,6 +101,9 @@
                         [matTooltip]="motifInfobulle(motif.categorie, motif.description)"
                       >
                         {{ motif.contrainte }}
+                      </span>
+                      <span class="visually-hidden">
+                        — {{ motifInfobulle(motif.categorie, motif.description) }}
                       </span>
                     }
                   }

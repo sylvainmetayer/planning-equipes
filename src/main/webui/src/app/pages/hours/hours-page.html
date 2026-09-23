@@ -40,27 +40,27 @@
         @for (col of columns(); track col) {
           <ng-container [matColumnDef]="col">
             @if (col === 'animateur') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.animateur">Animateur</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@hours.column.animateur">Animateur</th>
               <td mat-cell *matCellDef="let row">{{ row.nom }}</td>
               <td mat-footer-cell *matFooterCellDef i18n="@@hours.total.label">Tous les animateurs ({{ totaux().animateurCount }})</td>
             } @else if (col === 'total') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.total">Total</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@hours.column.total">Total</th>
               <td mat-cell *matCellDef="let row"><strong>{{ row.total | number: '1.1-1' }} h</strong></td>
               <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().total | number: '1.1-1' }} h</strong></td>
             } @else if (col === 'dimanche') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.dimanche">Dimanche</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@hours.column.dimanche">Dimanche</th>
               <td mat-cell *matCellDef="let row">{{ row.heuresDimanche | number: '1.1-1' }} h</td>
               <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().dimanche | number: '1.1-1' }} h</strong></td>
             } @else if (col === 'jourFerie') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.jourFerie">Jours fériés</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@hours.column.jourFerie">Jours fériés</th>
               <td mat-cell *matCellDef="let row">{{ row.heuresJourFerie | number: '1.1-1' }} h</td>
               <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().jourFerie | number: '1.1-1' }} h</strong></td>
             } @else if (col === 'nuit') {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@hours.column.nuit">Après 22 h</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@hours.column.nuit">Après 22 h</th>
               <td mat-cell *matCellDef="let row">{{ row.heuresNuit | number: '1.1-1' }} h</td>
               <td mat-footer-cell *matFooterCellDef><strong>{{ totaux().nuit | number: '1.1-1' }} h</strong></td>
             } @else {
-              <th mat-header-cell *matHeaderCellDef mat-sort-header>{{ col }}</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header>{{ col }}</th>
               <td mat-cell *matCellDef="let row"
                   [class.hours-depassement]="niveauHeures(row.heuresParSemaine[col] ?? 0) === 'depassement'"
                   [class.hours-verifier]="niveauHeures(row.heuresParSemaine[col] ?? 0) === 'verifier'"

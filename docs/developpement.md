@@ -223,14 +223,24 @@ coûte peu à l'écriture, les rattraper coûte cher.
 - **Le focus survit à la suppression d'une ligne** :
   `focusApresSuppression(...)` le rend au bouton « Ajouter ».
 - **Un tableau porte une `<caption>` masquée** disant ce qu'il compte et sur
-  quel périmètre, et ses en-têtes leur `scope`.
+  quel périmètre, et ses en-têtes leur `scope` — y compris un
+  `<th mat-header-cell>`, dont Material n'écrit jamais le `scope`.
+  `npm run table-headers-check` (joué en CI) refuse un `<th>` qui n'en porte
+  pas.
 - **Une longue liste se filtre, elle ne se déroule pas** :
   `app-selection-recherche` au-delà de quelques dizaines d'entrées. 153
   animateurs au clavier, c'est 153 flèches.
 - **Une grille se parcourt aux flèches** (roving tabindex). N'écrire
-  `role="grid"` que si la structure lignes/cellules existe réellement.
+  `role="grid"` que si la structure lignes/cellules existe réellement **et**
+  que les flèches la parcourent : l'attribut fait basculer le lecteur d'écran
+  en mode application, et une grille qui ne bouge pas aux flèches est alors
+  moins lisible qu'un tableau ordinaire. Une table en lecture seule reste un
+  `<table>` natif.
 - **La couleur n'est jamais seule** : doubler d'un texte, d'une icône ou d'une
-  initiale. Et une infobulle n'existe pas au tactile.
+  initiale. Et une infobulle n'existe pas au tactile — ni au clavier sur un
+  élément qui ne prend pas le focus (`<span>`, `<td>`) : son texte s'y double
+  d'un `<span class="visually-hidden">`, un `aria-label` sur un élément sans
+  rôle n'étant pas lu de façon fiable.
 - **Toute couleur écrite par ce dépôt est mesurée avant d'être commise** —
   hors jetons `--mat-sys-*`, qui viennent de `mat.theme()` et sont réputés
   conformes par construction. Le seuil est 4,5:1 pour du texte, 3:1 pour un
