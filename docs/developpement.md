@@ -266,6 +266,15 @@ coûte peu à l'écriture, les rattraper coûte cher.
   élément qui ne prend pas le focus (`<span>`, `<td>`) : son texte s'y double
   d'un `<span class="visually-hidden">`, un `aria-label` sur un élément sans
   rôle n'étant pas lu de façon fiable.
+- **Les sept contrôles qui tiennent ces conventions** sont recensés dans
+  [`accessibilite.md`](accessibilite.md#ce-qui-empêche-les-écarts-de-revenir) :
+  les douze règles a11y d'`angular-eslint` en `error` (les trois désactivations
+  sont commentées à leur ligne), cinq scripts du job `frontend`, et
+  `e2e/accessibilite.spec.ts`, qui passe axe-core sur les écrans représentatifs
+  — les quatre de l'espace animateur rejoués dans le projet `mobile` — contre
+  une ligne de base gelée qui ne peut que décroître. Un écran qui y entre avec
+  une violation *serious* ou *critical* la corrige, ou l'inscrit dans
+  `LIGNE_DE_BASE` avec sa raison.
 - **Toute couleur écrite par ce dépôt est mesurée avant d'être commise** —
   hors jetons `--mat-sys-*`, qui viennent de `mat.theme()` et sont réputés
   conformes par construction. Le seuil est 4,5:1 pour du texte, 3:1 pour un

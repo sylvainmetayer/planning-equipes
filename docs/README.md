@@ -20,6 +20,7 @@ fonctionnalités métier) : **tout ajout de documentation technique se fait ici*
 | [`securite.md`](securite.md) | Durcissement pour une exposition sur Internet : en-têtes de sécurité navigateur, plafonds de taille des requêtes, limitation de débit, déploiement de production |
 | [`observabilite.md`](observabilite.md) | Suivi d'erreurs (Bugsink) et analytics d'usage (Cloudflare Web Analytics) en production : choix, intégration, variables d'environnement |
 | [`licences-tierces.md`](licences-tierces.md) | **Inventaire généré des licences tierces** : ce que l'image redistribue (dépendances Java, paquets npm) et sous quelle licence. Régénéré par `./mvnw license:add-third-party` puis `npm run licences` |
+| [`accessibilite.md`](accessibilite.md) | **Accessibilité (RGAA 4.1)** : ce que l'audit a mesuré, les contrôles qui empêchent les écarts de revenir, ce qui reste ouvert, et la déclaration d'accessibilité qu'un exploitant renseigne |
 | [`rgpd.md`](rgpd.md) | **Ce qu'un hébergeur d'instance doit écrire et tenir** : convention de sous-traitance (art. 28), registre des traitements (art. 30), journal des purges, limites connues |
 
 La mémoire destinée aux agents IA (Copilot, Claude Code, …) est centralisée dans

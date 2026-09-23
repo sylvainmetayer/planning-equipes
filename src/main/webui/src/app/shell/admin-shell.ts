@@ -138,6 +138,13 @@ export class AdminShell {
       ? $localize`:@@nav.notificationsBadge.alert:Alerte non lue`
       : $localize`:@@nav.notificationsBadge.count:${this.notifications.unreadCount()}:count: notification(s) non lue(s)`,
   );
+  /** The link's name: « Notifications », and what the badge shows when it shows anything. */
+  protected readonly notificationsLabel = computed(() => {
+    const nom = $localize`:@@shell.notifications:Notifications`;
+    return this.notifications.unreadCount() === 0
+      ? nom
+      : `${nom} — ${this.notificationBadgeDescription()}`;
+  });
 
   private readonly handset = toSignal(
     inject(BreakpointObserver)
