@@ -64,9 +64,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.fasterxml.jackson.core:jackson-annotations` | 2.22 | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-core` | 2.22.0 | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-databind` | 2.22.0 | Apache-2.0 |
-| `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.0 | Apache-2.0 |
+| `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.0 | Apache-2.0 |
-| `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.0 | Apache-2.0 |
+| `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.0 | Apache-2.0 |
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.5 | LGPL-2.1 ou MPL-2.0 |
