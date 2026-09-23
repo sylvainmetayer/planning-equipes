@@ -50,6 +50,14 @@
         "#\\s*renovate:\\s*datasource=(?<datasource>\\S+)\\s+depName=(?<depName>\\S+)[\\s\\S]*?package-manager-install\\.node-version\\s*=\\s*(?<currentValue>\\S+)"
       ],
       "versioningTemplate": "node"
+    },
+    {
+      "customType": "regex",
+      "description": "Maven in mise.toml: the mise manager extracts it but finds no version to propose, so the wrapper moved alone and ToolchainPinsStructuralTest failed the PR. Read here as the Maven Central artifact the wrapper uses, it joins the « maven » group",
+      "managerFilePatterns": ["mise.toml"],
+      "matchStrings": ["\\bmaven\\s*=\\s*\"(?<currentValue>[^\"]+)\""],
+      "datasourceTemplate": "maven",
+      "depNameTemplate": "org.apache.maven:apache-maven"
     }
   ],
   "packageRules": [
@@ -62,13 +70,6 @@
       "description": "Maven depName is groupId:artifactId, and the default topic « dependency {{depName}} » pushed the subject past the 71 characters check-commits.sh allows (« io.quarkiverse.mcp:quarkus-mcp-server-http » made 77, « ai.timefold.solver:timefold-solver-core » 78): the artifactId alone names the dependency, and the noun is dropped for the same reason",
       "matchManagers": ["maven"],
       "commitMessageTopic": "{{{replace '^.*:' '' depName}}}"
-    },
-    {
-      "description": "Quarkus platform and extensions move together",
-      "matchManagers": ["maven"],
-      "matchPackageNames": ["io.quarkus{/,}**", "io.quarkus.platform{/,}**"],
-      "groupName": "quarkus",
-      "addLabels": ["quarkus"]
     },
     {
       "description": "Timefold solver artifacts move together",
@@ -92,6 +93,13 @@
       "groupName": "maven build plugins"
     },
     {
+      "description": "Quarkus platform and extensions move together. After the build plugins rule, which would otherwise take quarkus-maven-plugin into its own PR: the plugin and the BOM share quarkus.platform.version, so two PRs bumped the same property",
+      "matchManagers": ["maven"],
+      "matchPackageNames": ["io.quarkus{/,}**", "io.quarkus.platform{/,}**"],
+      "groupName": "quarkus",
+      "addLabels": ["quarkus"]
+    },
+    {
       "description": "Angular frontend (src/main/webui): Angular packages move together",
       "matchManagers": ["npm"],
       "matchPackageNames": ["@angular{/,}**", "zone.js", "rxjs"],
@@ -112,6 +120,11 @@
       "addLabels": ["frontend"]
     },
     {
+      "description": "Renovate reads no release timestamp for the Playwright image on mcr.microsoft.com, so the seven-day wait above held it back for good and the group shipped the npm package alone — a browser the CI image does not tool. The package it follows has already waited",
+      "matchPackageNames": ["mcr.microsoft.com/playwright"],
+      "minimumReleaseAge": null
+    },
+    {
       "description": "GitHub Actions: one grouped PR for minor and patch",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["minor", "patch", "digest"],
@@ -125,13 +138,19 @@
     },
     {
       "description": "Maven is pinned twice — mise.toml and the wrapper: one PR, or the two drift apart",
-      "matchManagers": ["mise", "maven-wrapper"],
+      "matchManagers": ["mise", "maven-wrapper", "custom.regex"],
       "matchPackageNames": [
         "maven",
         "org.apache.maven:apache-maven",
         "org.apache.maven.wrapper:maven-wrapper"
       ],
       "groupName": "maven"
+    },
+    {
+      "description": "The mise manager's own entry for Maven proposes nothing and would only shadow the custom manager above",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["maven"],
+      "enabled": false
     },
     {
       "description": "Java major upgrades touch Dockerfiles, mise.toml, the pom and the workflows: handle them manually",

@@ -839,7 +839,14 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
   `@angular/*` dans une seule PR : une montée partielle casse le build ;
 - ce qui est **épinglé deux fois est groupé** : Maven (`mise.toml` et le
   wrapper), Playwright (le paquet `@playwright/test` et l'image du conteneur
-  e2e) — deux PR séparées laisseraient les deux dériver ;
+  e2e) — deux PR séparées laisseraient les deux dériver. Deux réglages tiennent
+  ces groupes : le Maven de `mise.toml` est lu par un gestionnaire
+  `custom.regex` (celui de `mise` n'y trouvait aucune version à proposer, et le
+  wrapper montait seul), et l'image Playwright échappe au délai de sept jours
+  (Renovate ne lit pas sa date de publication sur `mcr.microsoft.com`, le délai
+  la retenait indéfiniment et le groupe partait sans elle). De même, la règle
+  Quarkus vient après celle des plugins de build : `quarkus-maven-plugin` et le
+  BOM partagent `quarkus.platform.version`, que deux PR montaient sinon chacune ;
 - les **majeures** de Java, PostgreSQL et victools passent par le tableau de
   bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue de tableau
   de bord existe.

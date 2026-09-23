@@ -113,11 +113,15 @@ jobs:
 
       # `gh run download` plutôt que download-artifact : le job a déjà le
       # jeton et les droits `actions`, et l'artefact du run courant s'y
-      # récupère tel quel. Le fichier atterrit à sa place dans `docs/`.
+      # récupère tel quel. Il passe par un dossier temporaire : `gh run
+      # download` refuse d'écraser un fichier existant (« file exists »), et
+      # l'extraction porte toujours l'ancien inventaire à cet endroit.
       - name: Retrieve the regenerated inventory
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh run download "$GITHUB_RUN_ID" --name licences-tierces --dir docs
+        run: |
+          gh run download "$GITHUB_RUN_ID" --name licences-tierces --dir "$RUNNER_TEMP/licences"
+          mv "$RUNNER_TEMP/licences/licences-tierces.md" docs/licences-tierces.md
 
       - name: Commit the inventory and replay the checks on it
         env:
