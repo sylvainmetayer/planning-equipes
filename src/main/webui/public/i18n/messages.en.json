@@ -1268,7 +1268,7 @@
   "aide.views.term.calendar": "Assignment calendar",
   "aide.views.def.calendar": "A monthly view with filters by staff member and by stand, details on clicking a day. To find your bearings across the whole event.",
   "aide.views.term.day": "Daily calendar",
-  "aide.views.def.day": "One day, stand by stand and timeslot by timeslot. This is where you fix things by hand: drag a name, by the handle on its left, onto another stand of the day — on a free seat the person moves, on a person the two swap. The server simulates the gesture and refuses it, naming the rule, if it would break a hard rule; a locked seat does not move. From the keyboard, clicking a name opens “Why them?” and its repair assistant. Drag and drop is being trialled: check the schedule after a move.",
+  "aide.views.def.day": "One day, stand by stand and timeslot by timeslot. This is where you fix things by hand: drag a name, by the handle on its left, onto another stand of the day — on a free seat the person moves, on a person the two swap. The server simulates the gesture and refuses it, naming the rule, if it would break a hard rule; a locked seat does not move. From the keyboard, or with a single click, the handle opens “Move … to”: pick the free seat or the person to swap with; on the rail, Enter on a line does the same. Clicking a name opens “Why them?” and its repair assistant. Drag and drop is being trialled: check the schedule after a move.",
   "aide.views.term.heatmap": "Load heatmap",
   "aide.views.def.heatmap": "Day crossed with the stand (seats filled out of seats required: coverage gaps) or with the staff member (seats per day: overloads). To spot an imbalance at a glance.",
   "aide.views.term.timeline": "Staff timeline",

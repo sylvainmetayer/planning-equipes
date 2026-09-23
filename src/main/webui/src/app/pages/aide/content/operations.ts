@@ -168,7 +168,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.day:Calendrier journalier`,
-              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. C'est là qu'on corrige à la main : glissez un nom, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure ; un siège verrouillé ne bouge pas. Au clavier, le clic sur un nom ouvre « Pourquoi lui ? » et son assistant de réparation. Le glisser-déposer est en cours de test : vérifiez le planning après un déplacement.`,
+              text: $localize`:@@aide.views.def.day:Une journée, stand par stand et créneau par créneau. C'est là qu'on corrige à la main : glissez un nom, par la poignée à sa gauche, vers un autre stand de la journée — sur un siège libre la personne est déplacée, sur une personne les deux échangent. Le serveur simule le geste et le refuse, en nommant la règle, s'il cassait une règle dure ; un siège verrouillé ne bouge pas. Au clavier, ou d'un simple clic, la poignée ouvre « Déplacer … vers » : choisissez le siège libre ou la personne avec qui échanger ; sur le rail, Entrée sur une ligne fait de même. Le clic sur un nom ouvre « Pourquoi lui ? » et son assistant de réparation. Le glisser-déposer est en cours de test : vérifiez le planning après un déplacement.`,
             },
             {
               term: $localize`:@@aide.views.term.railJour:Rail de la journée`,
