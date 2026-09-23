@@ -165,6 +165,9 @@
                 <span class="consigne-stand-meta" i18n="@@consignes.form.stand.effectifHerite">effectif hérité {{ stand.effectifHerite }}</span>
                 @if (stand.exceptionDatee) {
                   <span class="consigne-chip consigne-chip-exception" [matTooltip]="stand.motif ?? ''" i18n="@@consignes.form.stand.exception">horaires posés à la main ce jour-là</span>
+                  @if (stand.motif) {
+                    <span class="visually-hidden"> — {{ stand.motif }}</span>
+                  }
                 }
               </div>
               @if (stand.coche) {

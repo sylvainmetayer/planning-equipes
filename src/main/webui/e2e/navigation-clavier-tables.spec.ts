@@ -322,4 +322,46 @@ test.describe('navigation clavier des tables de référence', () => {
 
     await page.context().close();
   });
+
+  /*
+   * The pivot of /constraints (RGAA 7.1): a table carrying `role="grid"` must
+   * keep that promise — one tab stop, arrows inside, Enter opens the cell. The
+   * breaches are grafted onto the real catalogue: the seeded plan breaks
+   * nothing, and what is under test is the grid, not the analysis.
+   */
+  test('parcourt le tableau croisé des contraintes au clavier', async ({ browser }) => {
+    const page = await pageAdmin(browser, admin);
+    await page.route('**/api/constraints', async (route) => {
+      const reponse = await route.fetch();
+      const vue = await reponse.json();
+      const [premiere, seconde] = vue.contraintes as { name: string }[];
+      vue.pivotEcarts = [
+        { contrainte: premiere.name, axe: 'JOUR', cle: '2026-07-10', ecarts: 3 },
+        { contrainte: premiere.name, axe: 'JOUR', cle: '2026-07-11', ecarts: 1 },
+        { contrainte: seconde.name, axe: 'JOUR', cle: '2026-07-11', ecarts: 2 },
+      ];
+      await route.fulfill({ response: reponse, json: vue });
+    });
+    await page.goto('/constraints');
+    await page.getByText('Où se concentrent les écarts').click();
+    const cellules = page.locator('td[data-ligne]');
+    await expect(cellules).toHaveCount(4);
+    await expect(page.locator('td[data-ligne][tabindex="0"]')).toHaveCount(1);
+
+    // From the summary: the axis chips, then the grid — one stop each.
+    await page.locator('.constraint-pivot-summary').focus();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    const premiere = page.locator('td[data-ligne="0"][data-colonne="0"]');
+    await expect(premiere, await elementFocalise(page)).toBeFocused();
+    await expect(premiere).toHaveAccessibleName(/écart/);
+
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('td[data-ligne="0"][data-colonne="1"]')).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(page.locator('td[data-ligne="1"][data-colonne="1"]')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.constraint-pivot-detail')).toBeVisible();
+    await page.context().close();
+  });
 });

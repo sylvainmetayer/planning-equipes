@@ -532,4 +532,50 @@ describe('ConstraintsPage', () => {
       expect(page.view()?.contraintes[1].parametres).toBeUndefined();
     });
   });
+  // RGAA 7.1 / 7.3: the pivot's cells open the detail this table exists to
+  // give, so the keyboard reaches them — one tab stop, arrows inside, Enter.
+  describe('the pivot as a keyboard grid', () => {
+    async function renderPivot(): Promise<HTMLElement> {
+      constraintsApi.catalogue.mockResolvedValue({
+        ...view([contrainte({ name: 'repos' }), contrainte({ name: 'pause' })]),
+        pivotEcarts: [
+          { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-01', ecarts: 3 },
+          { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-02', ecarts: 1 },
+          { contrainte: 'pause', axe: 'JOUR', cle: '2026-07-02', ecarts: 2 },
+        ],
+      });
+      const fixture = TestBed.createComponent(ConstraintsPage);
+      const root = fixture.nativeElement as HTMLElement;
+      document.body.appendChild(root);
+      await vi.waitFor(() => {
+        fixture.detectChanges();
+        expect(root.querySelectorAll('td[data-ligne]').length).toBe(4);
+      });
+      return root;
+    }
+
+    it('holds exactly one tab stop, on a cell named by its rule and its column', async () => {
+      const root = await renderPivot();
+
+      const stops = root.querySelectorAll('td[data-ligne][tabindex="0"]');
+      expect(stops).toHaveLength(1);
+      expect(stops[0].getAttribute('aria-label')).toMatch(/écart/);
+      expect(stops[0].getAttribute('aria-label')).toContain('2026-07-01');
+      root.remove();
+    });
+
+    it('moves with the arrows and opens the cell on Enter', async () => {
+      const root = await renderPivot();
+      const first = root.querySelector<HTMLElement>('td[data-ligne="0"][data-colonne="0"]')!;
+      first.focus();
+
+      first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+      const second = root.querySelector<HTMLElement>('td[data-ligne="0"][data-colonne="1"]')!;
+      expect(document.activeElement).toBe(second);
+
+      second.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+      await vi.waitFor(() => expect(root.querySelector('.constraint-pivot-detail')).not.toBeNull());
+      root.remove();
+    });
+  });
 });

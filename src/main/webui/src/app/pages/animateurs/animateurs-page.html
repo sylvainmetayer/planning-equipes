@@ -60,7 +60,7 @@
     <table mat-table [dataSource]="sortedAnimateurs()" matSort [matSortActive]="sort().active" [matSortDirection]="sort().direction" (matSortChange)="sort.set($event)">
       <caption class="visually-hidden" i18n="@@animateurs.table.caption">Animateurs du référentiel : identité, statut, indisponibilités, accusé de réception et actions</caption>
       <ng-container matColumnDef="select">
-        <th mat-header-cell *matHeaderCellDef>
+        <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
                         [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
                         (change)="selection.toggleAll()"></mat-checkbox>
@@ -72,23 +72,23 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@common.id">Id</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.id }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let animateur">{{ animateur.prenom }} {{ animateur.nom }}</td>
       </ng-container>
       <ng-container matColumnDef="majorite">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.majorite">Majeur</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.majorite">Majeur</th>
         <td mat-cell *matCellDef="let animateur">{{ majoriteLabel(animateur) }}</td>
       </ng-container>
       <ng-container matColumnDef="manager">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.manager">Manager</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.manager">Manager</th>
         <td mat-cell *matCellDef="let animateur">{{ ouiNon(animateur.manager) }}</td>
       </ng-container>
       <ng-container matColumnDef="indisponibilites">
-        <th mat-header-cell *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header i18n="@@animateurs.column.indisponibilites">Indisponibilités</th>
         <td mat-cell *matCellDef="let animateur">
           {{ animateur.joursIndisponibles.length }}
           @if (alerteParAnimateurId().get(animateur.id); as alerte) {
@@ -102,7 +102,7 @@
              d'aide prête son `aria-label` — six lignes — au bouton de tri que
              Material génère, et un lecteur d'écran les relit à chaque passage
              du focus sur l'en-tête. -->
-        <th mat-header-cell *matHeaderCellDef mat-sort-header [appSortHeaderName]="titreConfirmation">
+        <th mat-header-cell scope="col" *matHeaderCellDef mat-sort-header [appSortHeaderName]="titreConfirmation">
           <span #titreConfirmation i18n="@@animateurs.column.confirmation">Accusé de réception</span>
           <!-- Un bouton, pas une icône nue : une infobulle posée sur un
                `mat-icon aria-hidden` n'est atteignable ni au clavier ni au
@@ -127,14 +127,14 @@
         </th>
         <td mat-cell *matCellDef="let animateur">
           @if (confirmationLabel(animateur); as libelle) {
-            <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span>
+            <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span><span class="visually-hidden"> — {{ confirmationDate(animateur) ?? '' }}</span>
           } @else {
             —
           }
         </td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
-        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let animateur" class="row-actions">
           <button matIconButton i18n-matTooltip="@@common.consult" matTooltip="Consulter le détail" i18n-aria-label="@@common.consult" aria-label="Consulter le détail" (click)="consult(animateur)">
             <mat-icon>visibility</mat-icon>

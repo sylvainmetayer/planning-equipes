@@ -105,23 +105,24 @@
     <table mat-table [dataSource]="rows()">
       <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, état, période et actions</caption>
       <ng-container matColumnDef="type">
-        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@verrouillages.field.type">Type</th>
         <td mat-cell *matCellDef="let row">
           <mat-icon inline>lock</mat-icon>
           {{ row.typeLabel }}
         </td>
       </ng-container>
       <ng-container matColumnDef="cible">
-        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.cible">Cible</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@verrouillages.field.cible">Cible</th>
         <td mat-cell *matCellDef="let row">{{ row.cibleLabel }}</td>
       </ng-container>
       <ng-container matColumnDef="etat">
-        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.etat">État</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@verrouillages.field.etat">État</th>
         <td mat-cell *matCellDef="let row">
           @if (row.attenteLabel) {
             <span [matTooltip]="row.attenteLabel">
               <mat-icon inline>hourglass_empty</mat-icon>
               <ng-container i18n="@@verrouillages.etat.attente">En attente</ng-container>
+              <span class="visually-hidden"> — {{ row.attenteLabel }}</span>
             </span>
           } @else {
             <span i18n="@@verrouillages.etat.actif">Actif</span>
@@ -129,11 +130,11 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="raison">
-        <th mat-header-cell *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@verrouillages.field.raison">Raison (optionnel)</th>
         <td mat-cell *matCellDef="let row">{{ row.raison || '—' }}</td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
-        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let row" class="row-actions">
           <button
             matIconButton

@@ -96,31 +96,31 @@
           <table mat-table [dataSource]="resume.parJour">
             <caption class="visually-hidden" i18n="@@staffing.table.caption">Besoin en animateurs journée par journée, pour la grille de créneaux active</caption>
             <ng-container matColumnDef="jour">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.jour">Journée</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.jour">Journée</th>
               <td mat-cell *matCellDef="let row">J{{ row.jour }} · {{ row.date }}</td>
             </ng-container>
             <ng-container matColumnDef="standsOuverts">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.standsOuverts">Stands ouverts</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.standsOuverts">Stands ouverts</th>
               <td mat-cell *matCellDef="let row">{{ row.standsOuverts }}</td>
             </ng-container>
             <ng-container matColumnDef="sieges">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.sieges">Sièges</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.sieges">Sièges</th>
               <td mat-cell *matCellDef="let row">{{ row.sieges }}</td>
             </ng-container>
             <ng-container matColumnDef="heures">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.heures">Heures-personne</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.heures">Heures-personne</th>
               <td mat-cell *matCellDef="let row">{{ row.heures | number: '1.0-0' }}</td>
             </ng-container>
             <ng-container matColumnDef="picSimultane">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.picSimultane">Pic simultané</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.picSimultane">Pic simultané</th>
               <td mat-cell *matCellDef="let row">{{ row.picSimultane }}</td>
             </ng-container>
             <ng-container matColumnDef="picAvecPause">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.picAvecPause">Pic avec pause</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.picAvecPause">Pic avec pause</th>
               <td mat-cell *matCellDef="let row">{{ row.picAvecPause }}</td>
             </ng-container>
             <ng-container matColumnDef="minimumJour">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.column.minimumJour">Minimum de la journée</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.column.minimumJour">Minimum de la journée</th>
               <td mat-cell *matCellDef="let row">
                 <strong [class.staffing-critical]="row.minimumJour === resume.jourCritique?.minimumJour">{{ row.minimumJour }}</strong>
               </td>
@@ -169,7 +169,7 @@
               Borne minimale et vivier d'animateurs compétents, typologie par typologie
             </caption>
             <ng-container matColumnDef="typologie">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.typologie">Typologie</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.typologie">Typologie</th>
               <td mat-cell *matCellDef="let row">
                 {{ row.label }}
                 @if (row.ninja) {
@@ -189,25 +189,25 @@
               </td>
             </ng-container>
             <ng-container matColumnDef="sieges">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.siegesExclusifs">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.siegesExclusifs">
                 Sièges exclusifs
               </th>
               <td mat-cell *matCellDef="let row">{{ row.sieges }}</td>
             </ng-container>
             <ng-container matColumnDef="minimumTotal">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.minimum">Minimum requis</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.minimum">Minimum requis</th>
               <td mat-cell *matCellDef="let row">
                 <strong>{{ row.minimumTotal }}</strong>
               </td>
             </ng-container>
             <ng-container matColumnDef="specialistes">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.specialistes">
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.specialistes">
                 Spécialistes
               </th>
               <td mat-cell *matCellDef="let row">{{ row.specialistes }}</td>
             </ng-container>
             <ng-container matColumnDef="manque">
-              <th mat-header-cell *matHeaderCellDef i18n="@@staffing.competence.column.manque">Manque</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@staffing.competence.column.manque">Manque</th>
               <td mat-cell *matCellDef="let row">
                 @if (estGoulot(row)) {
                   <strong class="staffing-critical">

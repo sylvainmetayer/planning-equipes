@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  ElementRef,
   Injector,
   afterNextRender,
   computed,
@@ -133,6 +134,7 @@ const POIDS_MAX = 100;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ConstraintsPage {
+  private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly view = signal<ConstraintsView | null>(null);
@@ -188,6 +190,77 @@ export class ConstraintsPage {
 
   protected classeCellule(ecarts: number, maximum: number): string {
     return classeCellule(ecarts, maximum);
+  }
+
+  /** « 4 » alone says neither which rule nor where: the cell names both. */
+  protected cellLabel(contrainte: string, colonne: ColonnePivot, ecarts: number): string {
+    return $localize`:@@constraints.pivot.cellLabel:${contrainte}:contrainte: — ${colonne.libelle}:colonne: : ${ecarts}:ecarts: écart(s)`;
+  }
+
+  /**
+   * The cell the pivot hands the focus to (roving tabindex): one stop for the
+   * whole table on Tab, then the arrows move inside it — the marge grid's
+   * pattern. Clamped to the table on screen, since a change of axis reshapes it
+   * and a position past the last row would take the grid out of the tab order.
+   */
+  protected readonly focusedCell = signal({ ligne: 0, colonne: 0 });
+
+  private readonly focusedPosition = computed(() => {
+    const { lignes, colonnes } = this.pivot();
+    const { ligne, colonne } = this.focusedCell();
+    return {
+      ligne: Math.min(Math.max(ligne, 0), Math.max(lignes.length - 1, 0)),
+      colonne: Math.min(Math.max(colonne, 0), Math.max(colonnes.length - 1, 0)),
+    };
+  });
+
+  protected isFocusedCell(ligne: number, colonne: number): boolean {
+    const courante = this.focusedPosition();
+    return courante.ligne === ligne && courante.colonne === colonne;
+  }
+
+  protected onCellKeydown(event: KeyboardEvent, ligne: number, colonne: number): void {
+    const { lignes, colonnes } = this.pivot();
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      const row = lignes[ligne];
+      if (row) {
+        this.openCell(row.contrainte, colonnes[colonne], row.ecarts[colonne] ?? 0);
+      }
+      return;
+    }
+    const lastRow = lignes.length - 1;
+    const lastColumn = colonnes.length - 1;
+    let target: { ligne: number; colonne: number };
+    switch (event.key) {
+      case 'ArrowRight':
+        target = { ligne, colonne: Math.min(colonne + 1, lastColumn) };
+        break;
+      case 'ArrowLeft':
+        target = { ligne, colonne: Math.max(colonne - 1, 0) };
+        break;
+      case 'ArrowDown':
+        target = { ligne: Math.min(ligne + 1, lastRow), colonne };
+        break;
+      case 'ArrowUp':
+        target = { ligne: Math.max(ligne - 1, 0), colonne };
+        break;
+      case 'Home':
+        target = { ligne, colonne: 0 };
+        break;
+      case 'End':
+        target = { ligne, colonne: lastColumn };
+        break;
+      default:
+        return;
+    }
+    event.preventDefault();
+    this.focusedCell.set(target);
+    this.host.nativeElement
+      .querySelector<HTMLElement>(
+        `[data-ligne="${target.ligne}"][data-colonne="${target.colonne}"]`,
+      )
+      ?.focus();
   }
 
   /** Whether this rule wears the badge — the same set the confirmation covers. */

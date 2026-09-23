@@ -20,7 +20,7 @@
     <table mat-table [dataSource]="store.contraintes()">
       <caption class="visually-hidden" i18n="@@adHoc.table.caption">Ajustements manuels actifs : type, animateurs concernés, raison et actions</caption>
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let contrainte">
           {{ contrainte.id }}
           @if (problemes.causeParContrainteAdHocId().get(contrainte.id); as cause) {
@@ -31,23 +31,23 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="type">
-        <th mat-header-cell *matHeaderCellDef i18n="@@adHoc.field.type">Type</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@adHoc.field.type">Type</th>
         <td mat-cell *matCellDef="let contrainte">{{ typeLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="animateurs">
-        <th mat-header-cell *matHeaderCellDef i18n="@@adHoc.column.animateurs">Animateurs</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@adHoc.column.animateurs">Animateurs</th>
         <td mat-cell *matCellDef="let contrainte">{{ animateursLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="portee">
-        <th mat-header-cell *matHeaderCellDef i18n="@@adHoc.column.portee">Périmètre</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@adHoc.column.portee">Périmètre</th>
         <td mat-cell *matCellDef="let contrainte">{{ porteeLabel(contrainte) }}</td>
       </ng-container>
       <ng-container matColumnDef="raison">
-        <th mat-header-cell *matHeaderCellDef i18n="@@adHoc.field.raison">Raison</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@adHoc.field.raison">Raison</th>
         <td mat-cell *matCellDef="let contrainte">{{ contrainte.raison }}</td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
-        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let contrainte" class="row-actions">
           <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(contrainte)">
             <mat-icon>edit</mat-icon>

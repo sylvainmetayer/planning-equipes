@@ -3548,5 +3548,9 @@
   "espace.planning.titrePage": "My schedule",
   "espace.echanges.titrePage": "My swaps",
   "espace.dispo.titrePage": "My availability",
-  "espace.aide.titrePage": "Help"
+  "espace.aide.titrePage": "Help",
+  "bancDeTouche.caption": "One row per animateur of the edition: whether they can hold this seat, and if not why",
+  "importCsv.rapport.caption": "One row per line of the file: its number, the animateur it names, what the import would do with it, and why",
+  "importGrille.rapport.caption": "One row per line of the file: its number, the stand it names, what the import would do with it, and why",
+  "constraints.pivot.cellLabel": "{$contrainte} — {$colonne}: {$ecarts} breach(es)"
 }

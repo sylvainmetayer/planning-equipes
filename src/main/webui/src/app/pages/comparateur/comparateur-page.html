@@ -104,20 +104,20 @@
               Métriques des deux plans côte à côte, avec le sens de chaque écart
             </caption>
             <ng-container matColumnDef="metrique">
-              <th mat-header-cell *matHeaderCellDef i18n="@@comparateur.column.metrique">Métrique</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@comparateur.column.metrique">Métrique</th>
               <td mat-cell *matCellDef="let ligne">{{ ligne.label }}</td>
             </ng-container>
             <ng-container matColumnDef="base">
-              <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
               <td mat-cell *matCellDef="let ligne">{{ ligne.base }}</td>
             </ng-container>
             <ng-container matColumnDef="variante">
-              <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+              <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
               <td mat-cell *matCellDef="let ligne">{{ ligne.variante }}</td>
             </ng-container>
             <ng-container matColumnDef="delta">
               <th
-                mat-header-cell
+                mat-header-cell scope="col"
                 *matHeaderCellDef
                 i18n-matTooltip="@@comparateur.delta.tooltip"
                 matTooltip="Les scores sont des pénalités négatives : se rapprocher de zéro est une amélioration."
@@ -142,15 +142,15 @@
                 Nombre d'écarts par contrainte, pour chacun des deux plans
               </caption>
               <ng-container matColumnDef="contrainte">
-                <th mat-header-cell *matHeaderCellDef i18n="@@comparateur.column.contrainte">Contrainte</th>
+                <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@comparateur.column.contrainte">Contrainte</th>
                 <td mat-cell *matCellDef="let diff">{{ diff.contrainte }}</td>
               </ng-container>
               <ng-container matColumnDef="baseViolations">
-                <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
+                <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.base) }}</th>
                 <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.base) }}</td>
               </ng-container>
               <ng-container matColumnDef="varianteViolations">
-                <th mat-header-cell *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
+                <th mat-header-cell scope="col" *matHeaderCellDef>{{ libelleCote(resultat.variante) }}</th>
                 <td mat-cell *matCellDef="let diff">{{ violationsLabel(diff.variante) }}</td>
               </ng-container>
               <tr mat-header-row *matHeaderRowDef="columnsViolations"></tr>

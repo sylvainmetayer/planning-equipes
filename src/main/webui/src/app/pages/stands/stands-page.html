@@ -39,7 +39,7 @@
     <table mat-table [dataSource]="standsFiltres()">
       <caption class="visually-hidden" i18n="@@stands.table.caption">Stands du référentiel : nom, effectifs, typologies, emplacement et actions</caption>
       <ng-container matColumnDef="select">
-        <th mat-header-cell *matHeaderCellDef>
+        <th mat-header-cell scope="col" *matHeaderCellDef>
           <mat-checkbox i18n-aria-label="@@bulk.selectAll" aria-label="Tout sélectionner"
                         [checked]="selection.allSelected()" [indeterminate]="selection.partiallySelected()"
                         (change)="selection.toggleAll()"></mat-checkbox>
@@ -51,11 +51,11 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="id">
-        <th mat-header-cell *matHeaderCellDef i18n="@@common.id">Id</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>
         <td mat-cell *matCellDef="let stand">{{ stand.id }}</td>
       </ng-container>
       <ng-container matColumnDef="nom">
-        <th mat-header-cell *matHeaderCellDef i18n="@@common.nom">Nom</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.nom">Nom</th>
         <td mat-cell *matCellDef="let stand">
           {{ stand.nom }}
           @if (problemes.causeParStandId().get(stand.id); as cause) {
@@ -66,25 +66,25 @@
         </td>
       </ng-container>
       <ng-container matColumnDef="effectif">
-        <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.effectif">Effectif</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@stands.column.effectif">Effectif</th>
         <td mat-cell *matCellDef="let stand">
           {{ stand.effectifMin }}–{{ stand.effectifMax }}{{ effectifSuffix(stand) }}
         </td>
       </ng-container>
       <ng-container matColumnDef="typologies">
-        <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.typologies">Typologies</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@stands.column.typologies">Typologies</th>
         <td mat-cell *matCellDef="let stand">{{ typologiesLabel(stand) }}</td>
       </ng-container>
       <ng-container matColumnDef="emplacement">
-        <th mat-header-cell *matHeaderCellDef i18n="@@stands.field.emplacement">Emplacement</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@stands.field.emplacement">Emplacement</th>
         <td mat-cell *matCellDef="let stand">{{ emplacementLabel(stand) }}</td>
       </ng-container>
       <ng-container matColumnDef="horaires">
-        <th mat-header-cell *matHeaderCellDef i18n="@@stands.column.horaires">Horaires</th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@stands.column.horaires">Horaires</th>
         <td mat-cell *matCellDef="let stand">{{ horairesLabel(stand) }}</td>
       </ng-container>
       <ng-container matColumnDef="actions" stickyEnd>
-        <th mat-header-cell *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
+        <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let stand" class="row-actions">
           <button matIconButton i18n-matTooltip="@@common.consult" matTooltip="Consulter le détail" i18n-aria-label="@@common.consult" aria-label="Consulter le détail" (click)="consult(stand)">
             <mat-icon>visibility</mat-icon>

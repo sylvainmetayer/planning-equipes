@@ -46,19 +46,19 @@
             Équipes modifiées par la replanification, par stand et par créneau
           </caption>
           <ng-container matColumnDef="quand">
-            <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.quand">Créneau</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@solver.incremental.column.quand">Créneau</th>
             <td mat-cell *matCellDef="let changement">{{ whenLabel(changement) }}</td>
           </ng-container>
           <ng-container matColumnDef="stand">
-            <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.stand">Stand</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@solver.incremental.column.stand">Stand</th>
             <td mat-cell *matCellDef="let changement">{{ changement.standNom }}</td>
           </ng-container>
           <ng-container matColumnDef="avant">
-            <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.avant">Avant</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@solver.incremental.column.avant">Avant</th>
             <td mat-cell *matCellDef="let changement">{{ crewLabel(changement.avant) }}</td>
           </ng-container>
           <ng-container matColumnDef="apres">
-            <th mat-header-cell *matHeaderCellDef i18n="@@solver.incremental.column.apres">Après</th>
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@solver.incremental.column.apres">Après</th>
             <td mat-cell *matCellDef="let changement">{{ crewLabel(changement.apres) }}</td>
           </ng-container>
           <tr mat-header-row *matHeaderRowDef="columns"></tr>

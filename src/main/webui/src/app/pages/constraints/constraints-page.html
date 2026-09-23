@@ -87,12 +87,21 @@
             </tr>
           </thead>
           <tbody>
-            @for (ligne of pivot().lignes; track ligne.contrainte) {
+            @for (ligne of pivot().lignes; track ligne.contrainte; let indexLigne = $index) {
               <tr>
                 <th scope="row" class="heatmap-row-header">{{ ligne.contrainte }}</th>
-                @for (ecarts of ligne.ecarts; track $index) {
+                <!-- A grid in earnest (RGAA 7.1): one tab stop, the arrows move
+                     inside, Enter or Space opens the cell — the information
+                     this table exists to give, reachable by no other path. -->
+                @for (ecarts of ligne.ecarts; track $index; let indexColonne = $index) {
                   <td [class]="classeCellule(ecarts, pivot().maximum)"
-                      (click)="openCell(ligne.contrainte, pivot().colonnes[$index], ecarts)">
+                      [attr.data-ligne]="indexLigne"
+                      [attr.data-colonne]="indexColonne"
+                      [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                      [attr.aria-label]="cellLabel(ligne.contrainte, pivot().colonnes[indexColonne], ecarts)"
+                      (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                      (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                      (click)="openCell(ligne.contrainte, pivot().colonnes[indexColonne], ecarts)">
                     {{ ecarts > 0 ? ecarts : '—' }}
                   </td>
                 }
