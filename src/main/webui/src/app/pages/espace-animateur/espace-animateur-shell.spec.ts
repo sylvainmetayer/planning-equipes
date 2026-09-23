@@ -136,3 +136,78 @@ describe('EspaceAnimateurShell — quelle édition', () => {
     expect((fixture.nativeElement as HTMLElement).querySelector('.espace-edition')).toBeNull();
   });
 });
+
+// The accessibility groundwork the admin shell had and the espace never
+// received (RGAA 12.7 and 7.5): a skip link to a focusable <main>, and an
+// access-code failure that is announced instead of silently printed.
+describe('EspaceAnimateurShell — accessibility groundwork', () => {
+  let fixture: ComponentFixture<EspaceAnimateurShell>;
+  const validateCode = vi.fn();
+
+  beforeEach(async () => {
+    validateCode.mockReset();
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: LOCALE_ID, useValue: 'fr' },
+        {
+          provide: EspaceAnimateurService,
+          useValue: {
+            view: signal(null),
+            jeton: signal('jeton-1'),
+            chargement: signal(false),
+            erreur: signal(null),
+            authRequise: signal(true),
+            charger: vi.fn(async () => undefined),
+            demanderCode: vi.fn(async () => 'a***@example.org'),
+            validerCode: validateCode,
+          },
+        },
+        {
+          provide: ActivatedRoute,
+          useValue: {
+            snapshot: { paramMap: convertToParamMap({ jeton: 'jeton-1' }) },
+            paramMap: of(convertToParamMap({ jeton: 'jeton-1' })),
+          },
+        },
+      ],
+    });
+    fixture = TestBed.createComponent(EspaceAnimateurShell);
+    await fixture.whenStable();
+  });
+
+  function root(): HTMLElement {
+    return fixture.nativeElement as HTMLElement;
+  }
+
+  it('moves the focus to <main> from the skip link', () => {
+    const skip = root().querySelector<HTMLAnchorElement>('a.skip-link')!;
+    const main = root().querySelector<HTMLElement>('main#contenu')!;
+    document.body.appendChild(root());
+
+    expect(skip).not.toBeNull();
+    expect(main.getAttribute('tabindex')).toBe('-1');
+    skip.click();
+    expect(document.activeElement).toBe(main);
+    root().remove();
+  });
+
+  it('announces a wrong access code as an alert', async () => {
+    validateCode.mockRejectedValue(new Error('Code incorrect'));
+    (root().querySelector('.espace-code button[matButton="filled"]') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    const input = root().querySelector<HTMLInputElement>('input[name="code"]')!;
+    input.value = '000000';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+    root()
+      .querySelector('form.espace-code-form')!
+      .dispatchEvent(new Event('submit', { cancelable: true }));
+    await fixture.whenStable();
+
+    const alert = root().querySelector('[role="alert"]');
+    expect(alert).not.toBeNull();
+    expect(alert!.textContent).toContain('Code incorrect');
+  });
+});

@@ -73,6 +73,43 @@ test.describe('espace animateur', () => {
     await expect(page.getByText('Stand E2E un')).toBeVisible();
   });
 
+  /*
+   * Le socle d'accessibilité de l'espace (RGAA 7.5, 12.7, 9.1). Joué aussi dans
+   * le projet `mobile` : c'est le viewport réel de ceux qui ouvrent ce lien.
+   */
+  test('un code faux est annoncé, pas seulement affiché', async ({ page }) => {
+    // The request is answered here: what is under test is the failure of the
+    // second step, and a real request would spend the address's rate limit.
+    await page.route(`**/api/espace-animateur/${jeton}/code`, (route) =>
+      route.fulfill({ json: { emailMasque: 'E•••@example.org' } }),
+    );
+    await page.goto(`/animateur/${jeton}`);
+    await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
+    await page.getByLabel('Code reçu').fill('000000');
+    await page.getByRole('button', { name: 'Ouvrir mon espace' }).click();
+    await expect(page.getByRole('alert')).toBeVisible();
+    await expect(page.getByRole('alert')).not.toHaveText('');
+  });
+
+  test("le lien d'évitement est le premier arrêt, et chaque onglet rend le focus à la page", async ({
+    page,
+  }) => {
+    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await page.goto(`/animateur/${jeton}`);
+    await expect(page.getByText('Alice E2E')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mon planning' })).toHaveCount(1);
+
+    await page.keyboard.press('Tab');
+    const evitement = page.getByRole('link', { name: 'Aller au contenu' });
+    await expect(evitement).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('main#contenu')).toBeFocused();
+
+    await page.getByRole('link', { name: 'Mes échanges' }).click();
+    await expect(page.getByRole('heading', { level: 1, name: 'Mes échanges' })).toBeVisible();
+    await expect(page.locator('main#contenu')).toBeFocused();
+  });
+
   test('le jeton ouvre le planning personnel, sans navigation admin', async ({ page }) => {
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);

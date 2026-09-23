@@ -1,3 +1,5 @@
+<a class="skip-link" href="#contenu" (click)="focusContenu($event)" i18n="@@shell.skipToContent">Aller au contenu</a>
+
 <mat-toolbar class="espace-toolbar">
   <app-brand-logo />
   <span class="app-title" i18n="@@espace.title">Espace animateur</span>
@@ -44,7 +46,7 @@
   </button>
 </mat-toolbar>
 
-<main class="espace-page">
+<main id="contenu" class="espace-page" tabindex="-1" #contenu>
   @if (espace.chargement()) {
     <mat-progress-bar mode="indeterminate" />
   } @else if (espace.authRequise()) {
@@ -82,16 +84,13 @@
             <span i18n="@@espace.code.demander">Recevoir mon code par e-mail</span>
           </button>
         }
-        @if (erreurAuth(); as message) {
-          <p class="espace-code-erreur">
-            <mat-icon inline>error</mat-icon>
-            {{ message }}
-          </p>
-        }
+        <!-- Annoncé : un code faux laissait le champ rempli et le bouton actif,
+             sans rien dire, sur le premier écran de tout le parcours. -->
+        <app-status-message [text]="erreurAuth() ?? ''" tone="error" />
       </mat-card-content>
     </mat-card>
   } @else if (espace.erreur()) {
-    <div class="espace-erreur">
+    <div class="espace-erreur" role="alert">
       <mat-icon>link_off</mat-icon>
       <p i18n="@@espace.lienInvalide">
         Ce lien n'est pas (ou plus) valide. Rapprochez-vous de l'organisation pour recevoir un

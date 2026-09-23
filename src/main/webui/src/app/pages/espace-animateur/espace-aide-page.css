@@ -26,6 +26,12 @@
    un écran étroit, une question de huit mots se retrouvait tronquée. Le
    gabarit passe `collapsedHeight`/`expandedHeight` à « auto », il reste à
    rendre le texte pliable. */
+/* The <h2> wrapping each question's header only carries the semantics. */
+.espace-aide-question {
+  margin: 0;
+  font: inherit;
+}
+
 .espace-aide-accordeon .mat-expansion-panel-header {
   padding-block: 0.75rem;
 }

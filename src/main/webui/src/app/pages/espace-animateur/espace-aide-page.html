@@ -1,3 +1,5 @@
+<h1 class="espace-page-titre" i18n="@@espace.aide.titrePage">Aide</h1>
+
 <mat-card class="espace-aide-intro" appearance="outlined">
   <mat-card-header>
     <h2 mat-card-title i18n="@@espace.aide.titre">Comment ça marche ?</h2>
@@ -22,13 +24,19 @@
 <mat-accordion class="espace-aide-accordeon" multi>
   @for (section of sections; track section.id) {
     <mat-expansion-panel [id]="section.id" [expanded]="toutDeplie()">
-      <mat-expansion-panel-header collapsedHeight="auto" expandedHeight="auto">
-        <mat-panel-title>
-          <mat-icon class="espace-aide-icone">{{ section.icon }}</mat-icon>
-          <span>{{ section.question }}</span>
-        </mat-panel-title>
-        <mat-panel-description>{{ section.resume }}</mat-panel-description>
-      </mat-expansion-panel-header>
+      <!-- The heading wraps the header rather than sitting inside it: the header
+           is a button, whose children are presentational, so an <h2> inside
+           would never be listed as a heading. `ngProjectAs` keeps the header
+           in the panel's slot. -->
+      <h2 class="espace-aide-question" ngProjectAs="mat-expansion-panel-header">
+        <mat-expansion-panel-header collapsedHeight="auto" expandedHeight="auto">
+          <mat-panel-title>
+            <mat-icon class="espace-aide-icone">{{ section.icon }}</mat-icon>
+            <span>{{ section.question }}</span>
+          </mat-panel-title>
+          <mat-panel-description>{{ section.resume }}</mat-panel-description>
+        </mat-expansion-panel-header>
+      </h2>
 
       <app-help-blocks [blocks]="section.blocks" />
 

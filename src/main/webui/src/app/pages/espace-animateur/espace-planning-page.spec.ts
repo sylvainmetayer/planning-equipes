@@ -160,7 +160,8 @@ describe('EspacePlanningPage — « Emporter mon planning »', () => {
   }
 
   function erreur(): Element | null {
-    return racine().querySelector('.espace-abonnement-erreur');
+    // The failure is announced, not merely printed (RGAA 7.5).
+    return racine().querySelector('app-status-message [role="alert"]');
   }
 
   beforeEach(() => {

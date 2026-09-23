@@ -13,7 +13,6 @@
 .espace-dispo-fenetre,
 .espace-dispo-fermee,
 .espace-dispo-envoye,
-.espace-dispo-erreur,
 .espace-dispo-reponse {
   display: flex;
   align-items: center;
@@ -23,10 +22,6 @@
 
 .espace-dispo-fermee {
   color: var(--mat-sys-on-surface-variant);
-}
-
-.espace-dispo-erreur {
-  color: var(--mat-sys-error);
 }
 
 .espace-dispo-envoye {
