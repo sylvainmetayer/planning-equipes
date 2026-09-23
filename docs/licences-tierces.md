@@ -160,7 +160,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-vertx-http` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-vertx-latebound-mdc-provider` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-virtual-threads` | 3.38.3 | Apache-2.0 |
-| `io.sentry:sentry` | 8.53.0 | MIT |
+| `io.sentry:sentry` | 8.57.0 | MIT |
 | `io.smallrye.certs:smallrye-private-key-pem-parser` | 0.9.3 | Apache-2.0 |
 | `io.smallrye.classfile:jdk-classfile-backport` | 26 | GPL-2.0-with-classpath-exception |
 | `io.smallrye.common:smallrye-common-annotation` | 2.19.0 | Apache-2.0 |
