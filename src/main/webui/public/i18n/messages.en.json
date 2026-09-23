@@ -3557,5 +3557,16 @@
   "shortcuts.singleKey.disable": "Turn off single-key shortcuts (g, /, ?) on this browser",
   "parametres.raccourcis.title": "Keyboard shortcuts",
   "parametres.raccourcis.subtitle": "A setting of this browser. The Ctrl+K palette stays active.",
-  "aide.shortcuts.disable": "If you dictate by voice, or a key slips, turn the single-key shortcuts off: a checkbox in the list of shortcuts (“?”) and in Settings, Global tab. The setting holds for this browser; Ctrl+K, the menu and the addresses remain."
+  "aide.shortcuts.disable": "If you dictate by voice, or a key slips, turn the single-key shortcuts off: a checkbox in the list of shortcuts (“?”) and in Settings, Global tab. The setting holds for this browser; Ctrl+K, the menu and the addresses remain.",
+  "deplacement.dialog.source": "Shift to move",
+  "deplacement.dialog.aucuneCible": "No possible destination that day: no free seat, and nobody to swap with.",
+  "deplacement.dialog.aide": "Refused if a hard rule would break; the rule at stake is then named.",
+  "deplacement.dialog.valider": "Move",
+  "calendarDay.deplacer": "Move {$nom} to another seat…",
+  "calendarDay.deplacer.libre": "{$heures} · {$stand} — free seat",
+  "calendarDay.deplacer.echange": "{$heures} · {$stand} — swap with {$nom}",
+  "calendarDay.deplacer.titre": "Move {$nom}",
+  "calendarDay.deplacer.cible": "To which seat?",
+  "railJour.deplacer.titre": "Move a shift of {$nom}",
+  "railJour.deplacer.cible": "To whom? They take the shift, or swap theirs"
 }

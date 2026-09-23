@@ -19,6 +19,7 @@ import {
   PosteAffectation,
   Stand,
 } from '../../core/models';
+import { MatDialog } from '@angular/material/dialog';
 import { RailJourView } from './rail-jour-vue';
 
 function stand(id: string): Stand {
@@ -214,6 +215,28 @@ describe('RailJourView', () => {
 
     await basculerVue('Affectés');
     expect(noms()).toEqual(['Alice']);
+  });
+
+  // RGAA 7.3: the drag has no key of its own, so Enter on a line asks where
+  // to move one of its shifts — only the lines a drop would accept.
+  it('opens the move of a shift on Enter, offering the lines a drop would accept', async () => {
+    await rendre(planningDeuxJours());
+    const dialog = TestBed.inject(MatDialog);
+    const open = vi.spyOn(dialog, 'open');
+    const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+      (each) => each.getAttribute('aria-label')!.includes('Alice'),
+    )!;
+
+    ligneAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(open).toHaveBeenCalledTimes(1);
+    const { data } = open.mock.calls[0][1] as {
+      data: { sources: { id: string }[]; targets: { label: string }[] };
+    };
+    expect(data.sources.map((source) => source.id)).toEqual(['p1']);
+    // Bob is free and can take it; Chloé declared the day off, as the drop refuses.
+    expect(data.targets.map((cible) => cible.label)).toEqual(['Bob']);
+    dialog.closeAll();
   });
 
   it('exposes exactly one tab stop for the whole rail', async () => {

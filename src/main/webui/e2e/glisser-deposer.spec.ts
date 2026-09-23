@@ -260,6 +260,79 @@ test.describe('glisser-déposer', () => {
   });
 });
 
+/*
+ * The keyboard twin of the drag (RGAA 7.3, WCAG 2.1.1 and 2.5.7): the same
+ * moves, without ever calling `page.mouse`, `click` or `dragTo` — a focus, keys,
+ * and nothing else. The day is named in the URL rather than picked in the
+ * select, which would take a click.
+ */
+test.describe('déplacer au clavier', () => {
+  test.beforeEach(async () => {
+    await seedPlan();
+  });
+
+  test('sur le calendrier, la poignée ouvre le déplacement et échange deux personnes', async ({
+    browser,
+  }) => {
+    const avant = await occupants();
+    const page = await pageAdmin(browser, admin);
+    try {
+      await page.goto('/journee?vue=calendrier&date=2026-07-22');
+      const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
+      const poignee = ligneUn.getByRole('button', { name: /^Déplacer Anna/ });
+      await poignee.focus();
+      await page.keyboard.press('Enter');
+
+      const dialogue = page.getByRole('dialog', { name: 'Déplacer Anna Glisse' });
+      // The dialog hands the focus to its search field: keys typed before
+      // that lands would still reach the page underneath.
+      await expect(dialogue.getByRole('combobox')).toBeFocused();
+      await page.keyboard.type('Boris');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      await dialogue.getByRole('button', { name: 'Déplacer' }).focus();
+      await page.keyboard.press('Enter');
+
+      await expect(page.locator('mat-snack-bar-container')).toContainText(
+        'ont échangé leurs sièges',
+      );
+      await expect.poll(async () => (await occupants())['SOLV-DD-S1']).toBe(avant['SOLV-DD-S2']);
+      expect((await occupants())['SOLV-DD-S2']).toBe(avant['SOLV-DD-S1']);
+    } finally {
+      await page.context().close();
+    }
+  });
+
+  test('sur le rail, Entrée sur une ligne confie une vacation à une autre personne', async ({
+    browser,
+  }) => {
+    const avant = await occupants();
+    const page = await pageAdmin(browser, admin);
+    try {
+      await page.goto('/journee?vue=rail&date=2026-07-22');
+      const ligneA = page.locator('.rail-ligne', { hasText: 'Anna Glisse' }).locator('.rail-cell');
+      await ligneA.focus();
+      await page.keyboard.press('Enter');
+
+      const dialogue = page.getByRole('dialog');
+      await expect(dialogue).toContainText('Déplacer une vacation de Anna Glisse');
+      await expect(dialogue.getByRole('combobox')).toBeFocused();
+      await page.keyboard.type('Cléo');
+      await page.keyboard.press('ArrowDown');
+      await page.keyboard.press('Enter');
+      await dialogue.getByRole('button', { name: 'Déplacer' }).focus();
+      await page.keyboard.press('Enter');
+
+      await expect(page.locator('mat-snack-bar-container')).toContainText(
+        'ont échangé leurs sièges',
+      );
+      await expect.poll(async () => (await occupants())['SOLV-DD-S1']).toBe(avant['SOLV-DD-S3']);
+    } finally {
+      await page.context().close();
+    }
+  });
+});
+
 /** The page opens on the event's first day, which other specs' créneaux may own: pick this spec's date. */
 async function ouvrirLaJournee(page: Page, vue: 'calendrier' | 'rail'): Promise<void> {
   await page.goto(`/journee?vue=${vue}`);

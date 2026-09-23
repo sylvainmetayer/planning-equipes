@@ -325,6 +325,12 @@
 
 /* Same handle as the calendar: the block's label stays selectable. */
 .rail-bloc-poignee {
+  /* A button for the single-click twin of the drag, its chrome reset. */
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
   cursor: grab;
   opacity: 0.5;
   margin-right: 0.15rem;

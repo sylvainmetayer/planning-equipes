@@ -120,7 +120,10 @@
                         cdkDrag
                         [cdkDragData]="bloc"
                         [cdkDragDisabled]="editingLocked()"
-                      ><span class="rail-bloc-poignee" cdkDragHandle aria-hidden="true">⠿</span
+                      ><!-- A button for a single click (WCAG 2.5.7), out of the
+                           tab order: the keyboard way in is Enter on the line. -->
+                        <button type="button" class="rail-bloc-poignee" cdkDragHandle tabindex="-1"
+                                (click)="openMove(ligne, bloc)">⠿</button
                         ><span class="rail-bloc-label">{{ bloc.standNom }}</span></span>
                     }
                     @for (pause of ligne.pauses; track pause.heureDebut) {

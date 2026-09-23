@@ -119,13 +119,18 @@
                             <!-- The handle is the only draggable surface: without
                                  it the CDK sets touch-action: none and user-select:
                                  none on the whole name, so a swipe no longer scrolls
-                                 the day and the name can no longer be selected. -->
-                            <span
+                                 the day and the name can no longer be selected.
+                                 A button too (RGAA 7.3, WCAG 2.5.7): a click or
+                                 Enter opens the same move as a dialog, for the
+                                 keyboard and for whoever cannot hold a drag. -->
+                            <button
+                              type="button"
                               class="affectation-poignee"
                               cdkDragHandle
-                              aria-hidden="true"
+                              [attr.aria-label]="moveLabel(entry.label)"
                               [title]="glisserTooltip"
-                            >⠿</span
+                              (click)="openMove(day, slot, stand, entry.poste, entry.label)"
+                            >⠿</button
                             ><button
                               type="button"
                               class="affectation-link"

@@ -519,4 +519,60 @@ describe('CalendarDayView rendering', () => {
       'lock',
     ]);
   });
+
+  // RGAA 7.3 / WCAG 2.5.7: the drag has a twin a keyboard and a single click
+  // reach — the handle is a named button opening the move as a dialog, and the
+  // answer goes through the same call as a drop.
+  describe('the keyboard twin of the drag', () => {
+    const DEUX = stand('Dixit');
+    const alice = animateur('a1', 'Alice');
+    const bob = animateur('b1', 'Bob');
+    const plan = planning([
+      poste('P1', AMBIANCE, C1, alice),
+      poste('P2', DEUX, C1, bob),
+      poste('P3', DEUX, C1, null),
+    ]);
+
+    it('names the handle and opens the move with every other seat of the day', async () => {
+      const { fixture, open } = mount({ planning: plan });
+      await fixture.whenStable();
+
+      const poignee = root(fixture).querySelector<HTMLButtonElement>(
+        'button.affectation-poignee[aria-label*="Alice"]',
+      )!;
+      expect(poignee).not.toBeNull();
+      poignee.click();
+
+      expect(open).toHaveBeenCalledTimes(1);
+      const data = (open.mock.calls[0] as unknown[])[1] as {
+        data: { targets: { id: string; label: string }[] };
+      };
+      const cibles = data.data.targets;
+      expect(cibles.map((cible) => cible.id).sort()).toEqual(['P2', 'P3']);
+      expect(cibles.find((cible) => cible.id === 'P3')!.label).toContain('siège libre');
+      expect(cibles.find((cible) => cible.id === 'P2')!.label).toContain('Bob');
+    });
+
+    it('moves through the same call as a drop', async () => {
+      const { fixture, open } = mount({ planning: plan });
+      open.mockReturnValueOnce({ afterClosed: () => of<unknown>({ source: null, target: 'P3' }) });
+      const move = TestBed.inject(AffectationExplanationService).deplacer as ReturnType<
+        typeof vi.fn
+      >;
+      move.mockResolvedValue({
+        animateurSourceId: 'a1',
+        animateurCibleId: null,
+        posteCibleId: 'P3',
+        scoreAvant: { hardScore: 0, mediumScore: 0, softScore: 0 },
+        scoreApres: { hardScore: 0, mediumScore: 0, softScore: 0 },
+      });
+      await fixture.whenStable();
+
+      root(fixture)
+        .querySelector<HTMLButtonElement>('button.affectation-poignee[aria-label*="Alice"]')!
+        .click();
+
+      await vi.waitFor(() => expect(move).toHaveBeenCalledWith('P1', { posteId: 'P3' }, 'a1'));
+    });
+  });
 });
