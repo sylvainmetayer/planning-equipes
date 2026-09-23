@@ -136,6 +136,7 @@
                 @for (colonne of colonnes(); track colonne.colonneId) {
                   <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
                     @if (scissionActive() === colonne.colonneId) {
+                      <!-- eslint-disable-next-line @angular-eslint/template/no-autofocus -- revealed on demand by the « couper » button: the field the user just asked for takes the focus, nothing is stolen on page load -->
                       <input type="time" class="scission-heure" autofocus
                              i18n-aria-label="@@ouvertures.saisie.scissionHeure" aria-label="Heure de coupe"
                              (change)="scinder(colonne, $any($event.target).value)"
@@ -164,6 +165,7 @@
                 }
               </tr>
             </thead>
+            <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- delegation: the listeners serve the <input>s of the cells, which are the focusable elements; the <tbody> itself is never a target -->
             <tbody (input)="onInput($event)" (focusin)="onFocus($event)" (focusout)="onBlur($event)"
                    (keydown)="onKeydownBody($event)" (paste)="onPasteBody($event)">
               @for (ligne of rowViews(); track ligne.standId) {
@@ -268,6 +270,7 @@
                 }
               </tr>
             </thead>
+            <!-- eslint-disable-next-line @angular-eslint/template/interactive-supports-focus -- delegation: the listeners serve the <input>s of the cells, which are the focusable elements; the <tbody> itself is never a target -->
             <tbody (input)="onInput($event)" (focusin)="onFocus($event)" (focusout)="onBlur($event)"
                    (keydown)="onKeydownBody($event)" (paste)="onPasteBody($event)">
               @for (ligne of rowViewsJourneesTypes(); track ligne.standId) {

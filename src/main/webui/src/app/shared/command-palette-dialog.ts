@@ -61,6 +61,7 @@ import { ReferenceDataStore } from '../core/reference-data.store';
           [attr.aria-label]="listeLabel"
         >
           @for (commande of resultats(); track commande.id; let index = $index) {
+            <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- the combobox pattern: the keyboard stays in the <input>, which moves aria-activedescendant over these options; an option is never focused itself -->
             <li
               class="palette-item"
               role="option"
