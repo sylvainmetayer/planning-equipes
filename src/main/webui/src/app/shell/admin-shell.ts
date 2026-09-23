@@ -53,6 +53,7 @@ import { VersionFooter } from '../shared/version-footer';
 import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
 import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
+import { NewWindowLink } from '../shared/new-window-link';
 
 /**
  * Admin shell: Material toolbar, navigation drawer listing every admin page,
@@ -64,6 +65,7 @@ import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
 @Component({
   selector: 'app-admin-shell',
   imports: [
+    NewWindowLink,
     RouterOutlet,
     RouterLink,
     RouterLinkActive,

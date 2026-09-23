@@ -431,3 +431,19 @@ app-version-footer {
 .skip-link:focus-visible {
   transform: translateY(0);
 }
+
+/*
+ * A text link opening a new window shows it (RGAA 13.2): the arrow the eye
+ * recognises. Silent for assistive technology — the `/ ''` alternative text —
+ * since `NewWindowLink` already appends the words. Buttons, list and menu items
+ * carry their own icon and are left alone.
+ */
+a[target='_blank']:not(.mat-mdc-button-base):not(.mat-mdc-list-item):not(
+    .mat-mdc-menu-item
+  )::after {
+  content: '\2197' / '';
+  display: inline-block;
+  margin-left: 0.1em;
+  font-size: 0.85em;
+  text-decoration: none;
+}

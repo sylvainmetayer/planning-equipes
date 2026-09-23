@@ -42,6 +42,7 @@ import { OngletDebug, readOngletDebug } from './debug';
 import { ScenarioPreenregistre } from './scenario-preenregistre';
 import { YamlValidator } from './yaml-validator';
 import { errorMessage, errorPrefix } from '../../core/error-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * Typed back instead of the edition name when no edition is loaded. Left
@@ -76,6 +77,7 @@ export const CLEAR_KEYWORD = 'VIDER';
 @Component({
   selector: 'app-debug-page',
   imports: [
+    NewWindowLink,
     FormsModule,
     MatCardModule,
     MatButtonModule,

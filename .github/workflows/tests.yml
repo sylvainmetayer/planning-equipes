@@ -312,6 +312,11 @@ jobs:
       - name: Table headers check
         run: npm run table-headers-check
 
+      # A link opening a new window says so (issue #45): its component imports
+      # `NewWindowLink`, or its `aria-label` goes through `newWindowLabel`.
+      - name: New window links check
+        run: npm run new-window-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

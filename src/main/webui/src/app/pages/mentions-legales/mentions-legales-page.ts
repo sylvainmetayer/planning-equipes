@@ -16,6 +16,7 @@ import { MentionsLegales } from '../../core/models';
 import { BrandLogo } from '../../shared/brand-logo';
 import { StatusMessage } from '../../shared/status-message';
 import { REPO_URL } from '../../version';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * Legal notice, shared by both sides of the application and reachable without
@@ -32,6 +33,7 @@ import { REPO_URL } from '../../version';
 @Component({
   selector: 'app-mentions-legales-page',
   imports: [
+    NewWindowLink,
     BrandLogo,
     MatButtonModule,
     MatCardModule,

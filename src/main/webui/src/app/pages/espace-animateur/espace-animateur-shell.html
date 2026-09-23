@@ -21,22 +21,25 @@
   }
   <!-- Repliés dans un menu : sur un téléphone, trois libellés de plus dans la
        barre repoussaient l'identité et le sélecteur de langue hors de l'écran.
-       `noreferrer` et pas seulement `noopener` : l'URL de cet espace porte le
-       jeton d'accès, elle ne doit pas partir dans le Referer. -->
+       Une navigation ordinaire, pas un nouvel onglet dont on ne sait pas
+       revenir sur un téléphone : « Retour » de la page légale est un
+       `history.back()`, et la session de l'espace survit. `noreferrer` reste
+       pour l'ouverture en onglet à la main : l'URL de cet espace porte le jeton
+       d'accès, elle ne doit pas partir dans le Referer. -->
   <button matIconButton [matMenuTriggerFor]="menuLegal"
           i18n-aria-label="@@espace.menuLegal" aria-label="Informations légales">
     <mat-icon>more_vert</mat-icon>
   </button>
   <mat-menu #menuLegal="matMenu">
-    <a mat-menu-item href="/mentions-legales" target="_blank" rel="noopener noreferrer">
+    <a mat-menu-item routerLink="/mentions-legales" rel="noopener noreferrer">
       <mat-icon>gavel</mat-icon>
       <span i18n="@@nav.link.mentionsLegales">Mentions légales</span>
     </a>
-    <a mat-menu-item href="/politique-confidentialite" target="_blank" rel="noopener noreferrer">
+    <a mat-menu-item routerLink="/politique-confidentialite" rel="noopener noreferrer">
       <mat-icon>privacy_tip</mat-icon>
       <span i18n="@@nav.link.confidentialite">Politique de confidentialité</span>
     </a>
-    <a mat-menu-item href="/conditions-utilisation" target="_blank" rel="noopener noreferrer">
+    <a mat-menu-item routerLink="/conditions-utilisation" rel="noopener noreferrer">
       <mat-icon>handshake</mat-icon>
       <span i18n="@@nav.link.cgu">Conditions d'utilisation</span>
     </a>

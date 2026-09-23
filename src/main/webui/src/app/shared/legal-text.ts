@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { segmenterArticles } from '../core/legifrance';
+import { newWindowLabel } from './new-window-link';
 
 /**
  * French legal prose, with every article of the Code du travail it cites
@@ -52,6 +53,8 @@ export class LegalText {
    * where the link goes; the surrounding sentence is a separate node.
    */
   protected ariaLabel(article: string): string {
-    return $localize`:@@legalText.article.aria:Consulter l'article ${article}:article: sur Légifrance`;
+    return newWindowLabel(
+      $localize`:@@legalText.article.aria:Consulter l'article ${article}:article: sur Légifrance`,
+    );
   }
 }

@@ -39,6 +39,7 @@ import { firstValueFrom } from 'rxjs';
 import { protectionApplies } from '../../core/constraint-protection';
 import { ConstraintView } from '../../core/models';
 import { LegalText } from '../../shared/legal-text';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 export interface LegalDisableData {
   /** Technical name of the rule, as shown on its card. */
@@ -52,7 +53,7 @@ export interface LegalDisableData {
 
 @Component({
   selector: 'app-legal-disable-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatIconModule, RouterLink, LegalText],
+  imports: [NewWindowLink, MatDialogModule, MatButtonModule, MatIconModule, RouterLink, LegalText],
   templateUrl: './legal-disable-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

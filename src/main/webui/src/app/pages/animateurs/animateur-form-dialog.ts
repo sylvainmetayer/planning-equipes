@@ -14,6 +14,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
 import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
@@ -49,6 +50,7 @@ export interface AnimateurFormData {
 @Component({
   selector: 'app-animateur-form-dialog',
   imports: [
+    NewWindowLink,
     FormsModule,
     MatDialogModule,
     MatCheckboxModule,
