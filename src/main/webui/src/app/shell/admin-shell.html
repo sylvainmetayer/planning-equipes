@@ -11,17 +11,16 @@
   <app-solver-running-indicator />
   <app-data-stale-indicator />
   <app-update-available-indicator />
-  <!-- aria-hidden="false" on the icon: the badge carries real information
-       (matBadgeDescription); hidden, assistive tech would never see the unread
-       count and the CDK logs a warning. -->
+  <!-- The unread count is in the link's name, where it is read once with
+       « Notifications ». Carried by the icon as a badge description, it made
+       the icon an image without a name (axe: role-img-alt), announced apart. -->
   <a matIconButton routerLink="/notifications" routerLinkActive="active-link" class="notifications-toggle"
-     i18n-aria-label="@@shell.notifications" aria-label="Notifications">
+     [attr.aria-label]="notificationsLabel()">
     <mat-icon
-      aria-hidden="false"
+      aria-hidden="true"
       [matBadge]="notificationBadgeContent()"
       [matBadgeHidden]="notifications.unreadCount() === 0"
       [matBadgeColor]="hasUnreadAlert() ? 'warn' : 'accent'"
-      [matBadgeDescription]="notificationBadgeDescription()"
     >notifications</mat-icon>
   </a>
   <button matIconButton class="theme-toggle" (click)="toggleTheme()" [attr.aria-label]="themeLabel()"

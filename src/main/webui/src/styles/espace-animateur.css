@@ -14,6 +14,12 @@
   gap: 0.25rem;
   background: var(--app-toolbar-background);
   color: var(--app-toolbar-foreground);
+  /* Material's own `.mat-toolbar` rule has the same specificity and is
+     injected later: without its tokens, the bar was painted in the surface
+     colour whatever `background` said, and the ink of a text button — which
+     reads this token, not `color` — followed the theme (axe, issue #46). */
+  --mat-toolbar-container-background-color: var(--app-toolbar-background);
+  --mat-toolbar-container-text-color: var(--app-toolbar-foreground);
   /* Les cibles de frappe de Material débordent de quelques pixels sur les
      écrans étroits ; sans cela, la page entière gagne une barre de défilement
      horizontale pour 9 px. */

@@ -72,11 +72,12 @@ export default defineConfig({
       /*
        * L'espace animateur sur un téléphone : c'est ainsi que la majorité des
        * animateurs l'ouvrent, le lien leur arrivant par e-mail. Ce projet ne
-       * rejoue que cette suite-là — l'interface d'administration assume, elle,
-       * d'être une interface de bureau.
+       * rejoue que cette suite-là, et le balayage axe de ses quatre écrans —
+       * l'interface d'administration assume, elle, d'être une interface de
+       * bureau.
        */
       name: 'mobile',
-      testMatch: /espace-animateur\.spec\.ts/,
+      testMatch: /(espace-animateur|accessibilite)\.spec\.ts/,
       use: {
         ...devices['Pixel 7'],
         ...chromiumInstalle,

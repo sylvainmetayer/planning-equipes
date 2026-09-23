@@ -46,6 +46,10 @@
   gap: 0.5rem;
   background: var(--app-toolbar-background);
   color: var(--app-toolbar-foreground);
+  /* A text button inside a toolbar takes its ink from this token, not from
+     `color`: without it the language button was the theme's dark on-surface on
+     the brand blue, at 3.79:1 (axe, issue #46). */
+  --mat-toolbar-container-text-color: var(--app-toolbar-foreground);
 }
 
 .app-logo {
