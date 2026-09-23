@@ -108,6 +108,25 @@ app-espace-animateur-shell {
   }
 }
 
+/* <main> is focused on every change of page; the ring would otherwise draw a
+   box around the whole espace. */
+.espace-page:focus {
+  outline: none;
+}
+
+.espace-page:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: -2px;
+}
+
+/* The title of each page of the espace (RGAA 9.1). Compact: the active tab
+   already says it, and on a phone every line spent here is a line of content
+   pushed below the fold. */
+.espace-page-titre {
+  margin: 0;
+  font: var(--mat-sys-title-large);
+}
+
 .espace-identite {
   margin-right: 0.25rem;
   font-size: 0.95rem;
@@ -224,16 +243,6 @@ app-espace-animateur-shell {
 }
 
 .espace-code-envoye,
-.espace-code-erreur {
-  display: flex;
-  align-items: baseline;
-  gap: 0.4rem;
-}
-
-.espace-code-erreur {
-  color: var(--mat-sys-error);
-}
-
 /* Étiquette du groupe de créneaux du planning affiché (issue #165). */
 .espace-groupe {
   display: flex;
@@ -263,11 +272,6 @@ app-espace-animateur-shell {
   margin: 0;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9em;
-}
-
-.espace-confirmation-erreur {
-  margin: 0;
-  color: var(--mat-sys-error);
 }
 
 /* Une fois confirmé, la même information redevient une ligne d'état discrète. */
@@ -803,9 +807,4 @@ app-espace-animateur-shell {
   flex-basis: 100%;
   color: var(--mat-sys-on-surface-variant);
   font-size: 0.9em;
-}
-
-.espace-abonnement-erreur {
-  margin: 0;
-  color: var(--mat-sys-error);
 }

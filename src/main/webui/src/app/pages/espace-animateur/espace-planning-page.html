@@ -5,6 +5,12 @@
   quelqu'un ? ». Une seule colonne de cartes de la première journée à la
   dernière ne répondait qu'à la première, et encore, au prix d'un défilement.
 -->
+<!--
+  Masqué à l'œil et pas seulement absent : l'onglet actif de la barre dit déjà
+  « Mon planning », et chaque ligne prise en tête est une ligne de planning en
+  moins sur un téléphone. Le lecteur d'écran, lui, trouve le point d'entrée.
+-->
+<h1 class="visually-hidden" i18n="@@espace.planning.titrePage">Mon planning</h1>
 <mat-button-toggle-group class="espace-onglets" [value]="onglet()" (change)="changerOnglet($event.value)"
                          aria-label="Onglet de mon planning" i18n-aria-label="@@espace.planning.onglet.label">
   <mat-button-toggle value="jour">
@@ -138,7 +144,7 @@
           Un clic suffit : l'organisation saura que vous avez pris connaissance de ce planning.
         </p>
         @if (erreurConfirmation(); as erreur) {
-          <p class="espace-confirmation-erreur">{{ erreur }}</p>
+          <app-status-message [text]="erreur" tone="error" />
         }
       </div>
     } @else if (espace.view()?.confirmeLe; as confirme) {
@@ -530,7 +536,7 @@
               <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
             </button>
             @if (abonnementCopie()) {
-              <p class="espace-abonnement-copie" i18n="@@espace.planning.abonnementCopie">
+              <p class="espace-abonnement-copie" role="status" i18n="@@espace.planning.abonnementCopie">
                 Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
               </p>
             }
@@ -569,7 +575,7 @@
               </p>
             }
             @if (erreurAbonnement(); as erreur) {
-              <p class="espace-abonnement-erreur">{{ erreur }}</p>
+              <app-status-message [text]="erreur" tone="error" />
             }
           </div>
         }

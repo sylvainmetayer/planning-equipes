@@ -408,3 +408,26 @@ app-version-footer {
 .app-version-footer a {
   color: inherit;
 }
+
+/*
+ * Visible only once focused: the first Tab of the page jumps straight past the
+ * chrome — the admin drawer's links, the espace animateur's toolbar and tabs —
+ * instead of walking through it on every navigation. Shared by both shells.
+ */
+.skip-link {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 10;
+  transform: translateY(-150%);
+  padding: 0.6rem 1rem;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  border-radius: 0 0 var(--mat-sys-corner-small) 0;
+  font: var(--mat-sys-label-large);
+  text-decoration: none;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}

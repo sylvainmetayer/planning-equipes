@@ -1,12 +1,15 @@
 import { DatePipe } from '@angular/common';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   inject,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -17,12 +20,21 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { map } from 'rxjs';
+import { Title } from '@angular/platform-browser';
+import {
+  ActivatedRoute,
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+  RouterOutlet,
+} from '@angular/router';
+import { filter, map } from 'rxjs';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
 import { errorMessage } from '../../core/error-message';
 import { BrandLogo } from '../../shared/brand-logo';
+import { StatusMessage } from '../../shared/status-message';
 import { VersionFooter } from '../../shared/version-footer';
 
 /**
@@ -40,6 +52,7 @@ import { VersionFooter } from '../../shared/version-footer';
     RouterLink,
     RouterLinkActive,
     BrandLogo,
+    StatusMessage,
     VersionFooter,
     FormsModule,
     MatToolbarModule,
@@ -70,11 +83,50 @@ export class EspaceAnimateurShell {
     },
   );
 
+  private readonly router = inject(Router);
+  private readonly title = inject(Title);
+  private readonly announcer = inject(LiveAnnouncer);
+  private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
+
   constructor() {
     const jeton = this.route.snapshot.paramMap.get('jeton');
     if (jeton) {
       void this.espace.charger(jeton);
     }
+    // Same contract as the admin shell: moving to another tab of the espace
+    // hands the focus to <main> and speaks the new page's title, instead of
+    // leaving it on the link just clicked with the whole toolbar to cross
+    // again. Only a change of *page*: the planning's `?onglet=` and `?jour=`
+    // are views of one page, and yanking the focus off the day strip on every
+    // day picked would make it unusable.
+    let cheminPrecedent: string | null = null;
+    this.router.events
+      .pipe(
+        filter((event): event is NavigationEnd => event instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((event) => {
+        const chemin = event.urlAfterRedirects.split(/[?#]/)[0];
+        const changement = cheminPrecedent !== null && chemin !== cheminPrecedent;
+        cheminPrecedent = chemin;
+        if (changement) {
+          queueMicrotask(() => this.announceNavigation());
+        }
+      });
+  }
+
+  private announceNavigation(): void {
+    this.contenu()?.nativeElement.focus({ preventScroll: true });
+    const titre = this.title.getTitle().split('—')[0].trim();
+    if (titre) {
+      this.announcer.announce(titre, 'polite');
+    }
+  }
+
+  /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
+  protected focusContenu(event: Event): void {
+    event.preventDefault();
+    this.contenu()?.nativeElement.focus();
   }
 
   protected infobulleHorloge(date: string, heure: string): string {

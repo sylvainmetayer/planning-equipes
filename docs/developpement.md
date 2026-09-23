@@ -169,8 +169,18 @@ même id : c'est le cliquet `i18n-check-modifies` décrit plus haut.
 
 ## Accessibilité
 
-Ces conventions valent sur les 26 écrans : les tenir coûte peu à l'écriture,
-les rattraper coûte cher.
+Ces conventions valent sur tous les écrans — ceux de l'administration **et**
+les quatre de l'espace animateur, le seul périmètre lu hors de l'organisation,
+sur un téléphone, par des personnes dont une partie est mineure. Les tenir
+coûte peu à l'écriture, les rattraper coûte cher.
+
+- **Chaque coque porte un lien d'évitement et rend le focus à la page.** La
+  coque d'administration et celle de l'espace animateur commencent par
+  `<a class="skip-link" href="#contenu">` (style partagé dans `pages.css`) et
+  enveloppent l'écran dans `<main id="contenu" tabindex="-1">`, refocalisé à
+  chaque changement de page — dans l'espace, à chaque changement d'onglet de la
+  barre, pas à chaque jour choisi dans la bande, qui n'est qu'une vue de la même
+  page.
 
 - **Un `<h1>` par écran, et un seul.** `mat-card-title` rend une `<div>` :
   écrire `<h1 mat-card-title>` sur le titre principal, `<h2>` sur les cartes

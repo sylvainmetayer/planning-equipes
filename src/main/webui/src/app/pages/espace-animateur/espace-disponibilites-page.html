@@ -1,3 +1,5 @@
+<h1 class="espace-page-titre" i18n="@@espace.dispo.titrePage">Mes disponibilités</h1>
+
 @if (chargement()) {
   <mat-progress-bar mode="indeterminate" />
 } @else if (view(); as declaration) {
@@ -173,15 +175,7 @@
     </section>
   }
 
-  @if (erreur(); as message) {
-    <p class="espace-dispo-erreur">
-      <mat-icon inline>error</mat-icon>
-      {{ message }}
-    </p>
-  }
-} @else if (erreur(); as message) {
-  <p class="espace-dispo-erreur">
-    <mat-icon inline>error</mat-icon>
-    {{ message }}
-  </p>
+  <app-status-message [text]="erreur() ?? ''" tone="error" />
+} @else {
+  <app-status-message [text]="erreur() ?? ''" tone="error" />
 }

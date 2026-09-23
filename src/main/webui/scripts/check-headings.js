@@ -32,20 +32,13 @@ const APP = join(__dirname, '..', 'src', 'app');
 const ROUTES = join(APP, 'app.routes.ts');
 
 /**
- * Screens this check accepts without exactly one `<h1>`, each with the reason.
- * The espace animateur is the accessibility groundwork of issue #38 — its four
- * screens carry `<h2>`s under no `<h1>` at all, and deciding what their `<h1>`
- * says belongs to that issue, not to this one. Removing these four entries is
- * part of closing it — and an entry whose screen has since grown its single
- * `<h1>` is reported below, so the list cannot outlive the debt it records.
+ * Screens this check accepts without exactly one `<h1>`, each with the reason,
+ * as `'<path>': '<why>'`. Empty on purpose: every routed screen, the espace
+ * animateur's four included, carries its own — and an entry whose screen has
+ * since grown its single `<h1>` is reported below, so the list cannot outlive
+ * the debt it records.
  */
-const EXCEPTIONS_ASSUMEES = {
-  'pages/espace-animateur/espace-planning-page.html': 'socle a11y de l’espace animateur — #38',
-  'pages/espace-animateur/espace-echanges-page.html': 'socle a11y de l’espace animateur — #38',
-  'pages/espace-animateur/espace-disponibilites-page.html':
-    'socle a11y de l’espace animateur — #38',
-  'pages/espace-animateur/espace-aide-page.html': 'socle a11y de l’espace animateur — #38',
-};
+const EXCEPTIONS_ASSUMEES = {};
 
 /** Every `.html` and `.ts` under `app/`, for the `mat-card-title` sweep. */
 function walk(dir, out) {
