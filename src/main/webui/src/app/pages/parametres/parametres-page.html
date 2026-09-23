@@ -126,6 +126,18 @@
   @case ('globaux') {
     <mat-card appearance="outlined" class="page-card">
       <mat-card-header>
+        <h2 mat-card-title i18n="@@parametres.raccourcis.title">Raccourcis clavier</h2>
+        <mat-card-subtitle i18n="@@parametres.raccourcis.subtitle">
+          Un réglage de ce navigateur. La palette Ctrl+K reste active.
+        </mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <app-single-key-shortcuts-toggle />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
         <h2 mat-card-title i18n="@@parametres.sauvegarde.title">Sauvegarde automatique</h2>
         <mat-card-subtitle i18n="@@parametres.sauvegarde.subtitle">
           Chaque nuit, toute la base est copiée dans un fichier de sauvegarde ; la restauration se fait sur la

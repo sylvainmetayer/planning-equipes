@@ -3553,5 +3553,9 @@
   "importCsv.rapport.caption": "One row per line of the file: its number, the animateur it names, what the import would do with it, and why",
   "importGrille.rapport.caption": "One row per line of the file: its number, the stand it names, what the import would do with it, and why",
   "constraints.pivot.cellLabel": "{$contrainte} — {$colonne}: {$ecarts} breach(es)",
-  "lien.nouvelleFenetre": "(new window)"
+  "lien.nouvelleFenetre": "(new window)",
+  "shortcuts.singleKey.disable": "Turn off single-key shortcuts (g, /, ?) on this browser",
+  "parametres.raccourcis.title": "Keyboard shortcuts",
+  "parametres.raccourcis.subtitle": "A setting of this browser. The Ctrl+K palette stays active.",
+  "aide.shortcuts.disable": "If you dictate by voice, or a key slips, turn the single-key shortcuts off: a checkbox in the list of shortcuts (“?”) and in Settings, Global tab. The setting holds for this browser; Ctrl+K, the menu and the addresses remain."
 }
