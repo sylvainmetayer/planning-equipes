@@ -369,6 +369,10 @@ export function buildOperationsSections(): HelpSection[] {
           kind: 'paragraph',
           text: $localize`:@@aide.shortcuts.guard:Aucun raccourci à une touche ne se déclenche pendant que vous saisissez du texte : tant que le curseur est dans un champ, « g », « / » et « ? » restent des caractères ordinaires.`,
         },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.shortcuts.disable:Si vous dictez à la voix, ou qu'une touche vous échappe, désactivez les raccourcis à une touche : une case dans la liste des raccourcis (« ? ») et dans Paramètres, onglet Globaux. Le réglage vaut pour ce navigateur ; Ctrl+K, le menu et les adresses restent.`,
+        },
       ],
       links: [
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },

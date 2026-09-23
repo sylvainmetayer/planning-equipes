@@ -10,6 +10,7 @@ import { MatButtonModule } from '@angular/material/button';
 import { MatDialogModule } from '@angular/material/dialog';
 import { RouterLink } from '@angular/router';
 import { RaccourciNavigation, buildRaccourcisNavigation } from '../core/keyboard-shortcuts';
+import { SingleKeyShortcutsToggle } from './single-key-shortcuts-toggle';
 
 /** One general shortcut: the keys, and what pressing them does. */
 interface RaccourciGeneral {
@@ -19,13 +20,16 @@ interface RaccourciGeneral {
 
 @Component({
   selector: 'app-keyboard-shortcuts-dialog',
-  imports: [MatButtonModule, MatDialogModule, RouterLink],
+  imports: [MatButtonModule, MatDialogModule, RouterLink, SingleKeyShortcutsToggle],
   template: `
     <h2 mat-dialog-title i18n="@@shortcuts.title">Raccourcis clavier</h2>
     <mat-dialog-content>
       <p class="raccourcis-intro" i18n="@@shortcuts.intro">
         Les raccourcis à une touche sont inactifs pendant la saisie d'un texte.
       </p>
+      <!-- Where the shortcuts are learnt is where they can be switched off:
+           dictation or a tremor turns them into unwanted navigations. -->
+      <app-single-key-shortcuts-toggle class="raccourcis-interrupteur" />
 
       <h3 class="raccourcis-titre" i18n="@@shortcuts.general.title">Général</h3>
       <dl class="raccourcis-liste">
@@ -94,6 +98,11 @@ interface RaccourciGeneral {
     .raccourcis-note {
       margin: 0 0 1rem;
       color: var(--mat-sys-on-surface-variant);
+    }
+
+    .raccourcis-interrupteur {
+      display: block;
+      margin: -0.5rem 0 0.5rem;
     }
 
     .raccourcis-titre {

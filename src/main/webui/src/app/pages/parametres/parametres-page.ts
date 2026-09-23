@@ -41,6 +41,7 @@ import { ParametresNotificationsPanel } from './parametres-notifications';
 import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { OngletParametres, readOngletParametres } from './parametres';
+import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -80,6 +81,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
 @Component({
   selector: 'app-parametres-page',
   imports: [
+    SingleKeyShortcutsToggle,
     DatePipe,
     FormsModule,
     MatCardModule,

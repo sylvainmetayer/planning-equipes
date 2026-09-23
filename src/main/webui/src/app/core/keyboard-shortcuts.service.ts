@@ -19,6 +19,7 @@ import { Router } from '@angular/router';
 import { CommandPaletteDialog } from '../shared/command-palette-dialog';
 import { KeyboardShortcutsDialog } from '../shared/keyboard-shortcuts-dialog';
 import { CommandePalette, isInputField, routePourTouche } from './keyboard-shortcuts';
+import { SingleKeyShortcutsService } from './single-key-shortcuts';
 
 /**
  * How long the `g` prefix stays armed. Long enough to type two keys without
@@ -39,6 +40,7 @@ export class KeyboardShortcutsService {
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly singleKey = inject(SingleKeyShortcutsService);
 
   private listener: ((event: KeyboardEvent) => void) | null = null;
   private palette: MatDialogRef<CommandPaletteDialog, CommandePalette | null> | null = null;
@@ -83,7 +85,14 @@ export class KeyboardShortcutsService {
     if (this.gererCombinaison(event)) {
       return;
     }
-    if (event.ctrlKey || event.metaKey || event.altKey || isInputField(event.target)) {
+    // Turned off on this browser (WCAG 2.1.4): the combinations above stay.
+    if (
+      !this.singleKey.enabled() ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.altKey ||
+      isInputField(event.target)
+    ) {
       this.prefixeArmeJusqua = 0;
       return;
     }

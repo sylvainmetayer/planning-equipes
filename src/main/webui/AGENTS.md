@@ -215,7 +215,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   destinations are derived from `app.routes.ts`, so a new route is reachable
   by keyboard without being registered anywhere. Single-key shortcuts are
   suppressed while the focus is in a text entry — modifier combinations are
-  not, since Ctrl+Enter is meant to be pressed from inside a field. Escape is
+  not, since Ctrl+Enter is meant to be pressed from inside a field — and can
+  be turned off on a browser (WCAG 2.1.4: dictation fires one per word said
+  outside a field), a chrome preference in `core/single-key-shortcuts.ts`
+  offered by the `?` dialog and by Paramètres. Escape is
   deliberately not implemented: no dialog sets `disableClose`, so `MatDialog`
   already closes the topmost one. Do not add a second `document`-level
   `keydown`; the Konami easter egg of the shell is the one accepted exception.

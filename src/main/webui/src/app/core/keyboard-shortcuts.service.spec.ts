@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CommandPaletteDialog } from '../shared/command-palette-dialog';
 import { KeyboardShortcutsDialog } from '../shared/keyboard-shortcuts-dialog';
 import { KeyboardShortcutsService } from './keyboard-shortcuts.service';
+import { SingleKeyShortcutsService } from './single-key-shortcuts';
 
 /** The two things this service asks of `MatDialog`: opening one, and knowing whether one is open. */
 function fakeDialog() {
@@ -249,5 +250,41 @@ describe('KeyboardShortcutsService', () => {
     frapper('g');
     frapper('a');
     expect(router.navigateByUrl).toHaveBeenCalledOnce();
+  });
+
+  // WCAG 2.1.4: single-key shortcuts can be turned off on this browser.
+  describe('with the single-key shortcuts turned off', () => {
+    afterEach(() => localStorage.clear());
+
+    it('ignores g, / and ? but keeps the modifier combinations', () => {
+      const { dialog, router } = start();
+      TestBed.inject(SingleKeyShortcutsService).set(false);
+      const filtre = document.createElement('input');
+      filtre.setAttribute('data-page-filter', '');
+      document.body.append(filtre);
+
+      frapper('g');
+      frapper('l');
+      frapper('?');
+      frapper('/');
+
+      expect(router.navigateByUrl).not.toHaveBeenCalled();
+      expect(dialog.open).not.toHaveBeenCalled();
+      expect(document.activeElement).not.toBe(filtre);
+
+      frapper('k', { ctrlKey: true });
+      expect(dialog.open).toHaveBeenCalledWith(CommandPaletteDialog, expect.anything());
+    });
+
+    it('arms them again once turned back on', () => {
+      const { dialog } = start();
+      const preference = TestBed.inject(SingleKeyShortcutsService);
+      preference.set(false);
+      preference.set(true);
+
+      frapper('?');
+
+      expect(dialog.open).toHaveBeenCalledWith(KeyboardShortcutsDialog, expect.anything());
+    });
   });
 });
