@@ -18,6 +18,7 @@ import { NiveauProbleme, niveauProblemeLabel } from '../../core/problemes';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { LegalText } from '../../shared/legal-text';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * Every known problem of the current dataset, most blocking first: the
@@ -30,6 +31,7 @@ import { LegalText } from '../../shared/legal-text';
 @Component({
   selector: 'app-problemes-page',
   imports: [
+    StatusMessage,
     RouterLink,
     MatCardModule,
     MatButtonModule,

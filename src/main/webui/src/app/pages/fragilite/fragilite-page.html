@@ -27,7 +27,7 @@
       <mat-progress-bar mode="indeterminate" />
       <p class="empty-hint" i18n="@@fragilite.loading">Analyse de la fragilité du planning…</p>
     } @else if (erreur()) {
-      <p class="empty-hint">{{ erreur() }}</p>
+      <app-status-message [text]="erreur()" tone="error" />
     } @else if (rapport()?.aucunAnimateur) {
       <p class="empty-hint" i18n="@@fragilite.aucunAnimateur">
         Aucun animateur saisi : la fragilité du planning ne peut pas être mesurée. Renseignez la liste des animateurs
@@ -38,7 +38,7 @@
         Aucun planning persisté : lancez une résolution, puis revenez ici pour savoir qui est irremplaçable.
       </p>
     } @else {
-      <p class="fragilite-message">{{ rapport()!.message }}</p>
+      <p class="fragilite-message" role="status">{{ rapport()!.message }}</p>
 
       @if (synthese(); as bilan) {
         <div class="fragilite-synthese">

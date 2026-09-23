@@ -16,6 +16,7 @@ import {
   secondsToValue,
   valueToSeconds,
 } from './solver-duration';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * The solve budget, edited in the unit the operator thinks in and stored
@@ -27,6 +28,7 @@ import {
 @Component({
   selector: 'app-solver-duration-card',
   imports: [
+    StatusMessage,
     FormsModule,
     MatCardModule,
     MatButtonModule,

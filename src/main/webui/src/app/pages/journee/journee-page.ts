@@ -42,6 +42,7 @@ import {
   planningDays,
   readView,
 } from './journee';
+import { StatusMessage } from '../../shared/status-message';
 
 /** A stand or an animateur of the plan, as the two filter selectors list them. */
 interface Option {
@@ -64,6 +65,7 @@ interface Option {
 @Component({
   selector: 'app-journee-page',
   imports: [
+    StatusMessage,
     MatButtonModule,
     MatButtonToggleModule,
     MatCardModule,

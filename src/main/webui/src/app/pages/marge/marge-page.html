@@ -47,11 +47,9 @@
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (error()) {
-      <p class="empty-hint">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
     @if (!error() && !loading() && rapport()) {
-      <p class="marge-message" data-testid="marge-message">{{ rapport()!.message }}</p>
+      <p class="marge-message" role="status" data-testid="marge-message">{{ rapport()!.message }}</p>
     }
   </mat-card-content>
 </mat-card>

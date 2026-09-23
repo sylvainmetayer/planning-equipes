@@ -48,9 +48,7 @@
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (erreur()) {
-      <p class="calendar-empty">{{ erreur() }}</p>
-    }
+    <app-status-message [text]="erreur()" tone="error" />
 
     @if (banc(); as resultat) {
       @if (resultat.posteCibleId) {

@@ -179,6 +179,18 @@ describe('EquitePage', () => {
       expect(text()).toContain('Serveur indisponible.');
     });
 
+    // RGAA 7.5: a failed load interrupts the screen reader, it is not a plain
+    // paragraph only a sighted reader would notice.
+    it('announces the failure as an alert', async () => {
+      planningApi.equityReport.mockRejectedValue(new Error('Serveur indisponible.'));
+      const page = createPage();
+      await vi.waitFor(() => expect(page.erreur()).toContain('Serveur indisponible.'));
+      fixture.detectChanges();
+
+      const alert = (fixture.nativeElement as HTMLElement).querySelector('[role="alert"]');
+      expect(alert?.textContent).toContain('Serveur indisponible.');
+    });
+
     it('shows the failure of a refresh in place of the report, keeping the last table', async () => {
       planningApi.equityReport.mockResolvedValueOnce(rapport());
       const page = createPage();

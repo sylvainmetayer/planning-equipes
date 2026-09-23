@@ -51,6 +51,7 @@ import {
   suggestions,
   valeurColonne,
 } from './equite';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Équité » : one line per assigned animateur of the persisted plan, and for
@@ -76,6 +77,7 @@ import {
 @Component({
   selector: 'app-equite-page',
   imports: [
+    StatusMessage,
     DecimalPipe,
     PercentPipe,
     FormsModule,

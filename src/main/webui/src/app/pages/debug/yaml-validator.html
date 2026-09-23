@@ -23,9 +23,7 @@
     @if (validating()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (error()) {
-      <p class="calendar-empty">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
     @if (!validating() && result(); as validationResult) {
       @if (validationResult.valide) {
         <p class="yaml-validator-result is-valid">

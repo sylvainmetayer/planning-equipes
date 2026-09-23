@@ -29,6 +29,7 @@ import {
 } from '../../core/typologie-colors';
 import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
+import { StatusMessage } from '../../shared/status-message';
 
 export type HeatmapView = 'stand' | 'animateur';
 
@@ -88,6 +89,7 @@ export interface HeatmapTable {
 @Component({
   selector: 'app-heatmap-page',
   imports: [
+    StatusMessage,
     MatCardModule,
     MatButtonModule,
     MatButtonToggleModule,

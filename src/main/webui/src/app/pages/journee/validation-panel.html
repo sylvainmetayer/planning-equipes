@@ -16,9 +16,7 @@
         La relecture porte sur la journée entière, pas seulement sur ce que le filtre affiche.
       </p>
     }
-    @if (erreur()) {
-      <p class="empty-hint">{{ erreur() }}</p>
-    }
+    <app-status-message [text]="erreur()" tone="error" />
 
     @if (prerequis(); as lu) {
       @if (lu.validee) {

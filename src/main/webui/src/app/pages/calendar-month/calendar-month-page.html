@@ -63,7 +63,7 @@
     </div>
 
     @if (error()) {
-      <p class="calendar-empty">{{ error() }}</p>
+      <app-status-message [text]="error()" tone="error" />
     } @else if (!hasData() && loaded()) {
       <p class="calendar-empty" i18n="@@calendarMonth.noData">Aucune donnée de planning disponible pour le moment.</p>
     } @else {

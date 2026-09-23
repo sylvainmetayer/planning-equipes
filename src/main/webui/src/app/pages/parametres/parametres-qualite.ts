@@ -8,6 +8,7 @@ import { MatInputModule } from '@angular/material/input';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { errorPrefix } from '../../core/error-message';
 import { ParametresQualite } from '../../core/models';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * The organisational-quality thresholds of the edition: how many emplacements
@@ -28,6 +29,7 @@ import { ParametresQualite } from '../../core/models';
 @Component({
   selector: 'app-parametres-qualite',
   imports: [
+    StatusMessage,
     FormsModule,
     MatCardModule,
     MatButtonModule,

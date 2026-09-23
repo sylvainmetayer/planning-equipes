@@ -51,9 +51,7 @@
     @if (chargement() && !rapport()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (erreur()) {
-      <p class="empty-hint">{{ erreur() }}</p>
-    }
+    <app-status-message [text]="erreur()" tone="error" />
 
     @if (rapport(); as report) {
       <p class="empty-hint" i18n="@@equite.legend">

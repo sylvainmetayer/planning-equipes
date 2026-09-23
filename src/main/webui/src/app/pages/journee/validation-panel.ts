@@ -21,6 +21,7 @@ import { intlLocale } from '../../core/locale';
 import { PrerequisJournee, PrerequisValidation } from '../../core/models';
 import { ValidationsStore } from '../../core/validations.store';
 import { libellePrerequis } from './validation-prerequis';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * « Relu et accepté » on the day on screen: what to check before accepting it,
@@ -39,6 +40,7 @@ import { libellePrerequis } from './validation-prerequis';
 @Component({
   selector: 'app-validation-panel',
   imports: [
+    StatusMessage,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,

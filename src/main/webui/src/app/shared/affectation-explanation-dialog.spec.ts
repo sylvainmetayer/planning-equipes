@@ -283,7 +283,7 @@ describe('AffectationExplanationDialog', () => {
     });
     await fixture.whenStable();
 
-    expect(root(fixture).querySelector('.affectation-explanation-error')!.textContent).toContain(
+    expect(root(fixture).querySelector('[role="alert"]')!.textContent).toContain(
       'poste introuvable',
     );
     expect(root(fixture).querySelector('mat-spinner')).toBeNull();

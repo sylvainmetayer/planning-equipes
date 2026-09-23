@@ -209,7 +209,15 @@ coûte peu à l'écriture, les rattraper coûte cher.
   `aria-labelledby`.
 - **Le résultat d'une action s'annonce** par `app-status-message`, jamais par un
   `<p>` inerte : `tone="error"` produit un `role="alert"`, les autres un
-  `role="status"`.
+  `role="status"`. Le composant ne rend rien sur un texte vide, donc pas de
+  `@if` autour : c'est sa création avec le texte qui fait annoncer la région.
+  Un verdict dont la mise en page tient à sa classe (`marge-message`,
+  `pauses-message`…) garde son élément et porte `role="status"`.
+  `npm run status-messages-check` (joué en CI) refuse un élément dont tout le
+  contenu est l'interpolation d'une erreur, d'un message ou d'un verdict
+  (`error()`, `erreur()`, `rapport()!.message`…) sans `role` ni `aria-live` ;
+  ses exceptions — contenu d'un dialogue, lu à l'ouverture, ligne d'une liste,
+  bandeau présent dès le rendu — sont écrites une par une avec leur raison.
 - **Une erreur de formulaire est reliée à son champ** — `mat-error` dans le
   `mat-form-field` ; `role="alert"` quand elle porte sur plusieurs champs.
 - **Le focus survit à la suppression d'une ligne** :

@@ -301,6 +301,12 @@ jobs:
       - name: Headings check
         run: npm run headings-check
 
+      # An error or a verdict is announced, never merely printed: the ~30
+      # silent `<p>{{ error() }}</p>` of issue #42 went through
+      # `app-status-message`, and this refuses a new one.
+      - name: Status messages check
+        run: npm run status-messages-check
+
       # Un cliquet, pas une barrière : la règle s'applique aux **lignes** que la
       # branche écrit, pas au dépôt entier. Le solde — 589 noms et 240 blocs de
       # commentaire, chiffré dans #425 — se paie au fil des passages, sans

@@ -43,6 +43,7 @@ import {
   uniqueById,
 } from '../../core/date-utils';
 import { errorPrefix } from '../../core/error-message';
+import { StatusMessage } from '../../shared/status-message';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -122,6 +123,7 @@ const ALL = 'ALL';
 @Component({
   selector: 'app-calendar-month-page',
   imports: [
+    StatusMessage,
     MatCardModule,
     MatButtonModule,
     MatIconModule,

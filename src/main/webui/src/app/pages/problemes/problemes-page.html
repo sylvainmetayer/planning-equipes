@@ -20,9 +20,7 @@
     @if (store.loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (store.error()) {
-      <p class="calendar-empty">{{ store.error() }}</p>
-    }
+    <app-status-message [text]="store.error()" tone="error" />
   </mat-card-content>
 </mat-card>
 

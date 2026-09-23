@@ -67,9 +67,7 @@
     @if (loading()) {
       <mat-progress-bar mode="indeterminate" />
     }
-    @if (error()) {
-      <p class="empty-hint">{{ error() }}</p>
-    }
+    <app-status-message [text]="error()" tone="error" />
   </mat-card-content>
 </mat-card>
 
