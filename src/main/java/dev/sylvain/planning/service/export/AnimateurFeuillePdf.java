@@ -91,6 +91,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         Document document = new Document(PageSize.A4.rotate(), 30, 30, 26, 46);
         PdfWriter writer = PdfWriter.getInstance(document, output);
+        PdfTheme.describe(document, writer, "Planning individuel — " + view.nom());
         writer.setPageEvent(theme.footerEvent("planning individuel", Instant.now(), provenance));
         document.open();
 
