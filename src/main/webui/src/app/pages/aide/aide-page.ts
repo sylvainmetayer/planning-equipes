@@ -18,6 +18,7 @@ import { buildHelpSections, filterHelpSections } from './aide-content';
 import { BRANDING } from '../../core/branding';
 import { HelpBlocks } from '../../shared/help-blocks';
 import { StatusMessage } from '../../shared/status-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * In-app user guide: what each screen is for, how the solver is configured,
@@ -31,6 +32,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-aide-page',
   imports: [
+    NewWindowLink,
     FormsModule,
     RouterLink,
     MatButtonModule,

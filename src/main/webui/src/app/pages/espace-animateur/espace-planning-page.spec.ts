@@ -546,7 +546,8 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     const lieu = racine().querySelector('.espace-poste-lieu')!;
     expect(lieu.textContent).toContain('Hall B');
     const lien = lieu.querySelector('a')!;
-    expect(lien.textContent!.trim()).toBe('Itinéraire');
+    // The map opens in a new window, and the link says so (RGAA 13.2).
+    expect(lien.textContent!.trim()).toBe('Itinéraire (nouvelle fenêtre)');
     expect(lien.getAttribute('href')).toBe(
       'https://www.openstreetmap.org/?mlat=47.2184&mlon=-1.5536#map=18/47.2184/-1.5536',
     );
@@ -588,7 +589,7 @@ describe("EspacePlanningPage — la page pendant l'événement", () => {
     );
 
     expect(racine().querySelector('.espace-pause .espace-poste-lieu a')!.textContent!.trim()).toBe(
-      'Hall B',
+      'Hall B (nouvelle fenêtre)',
     );
   });
 

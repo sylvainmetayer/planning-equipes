@@ -17,6 +17,7 @@ import { McpApi } from '../../core/api/mcp-api';
 import { PromptMcp, StatutMcp } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { StatusMessage } from '../../shared/status-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * How to plug an AI assistant into the application's MCP server (see
@@ -43,6 +44,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-mcp-page',
   imports: [
+    NewWindowLink,
     FormsModule,
     MatButtonModule,
     MatCardModule,

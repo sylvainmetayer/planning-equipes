@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component } from '@angular/core';
 
 import { versionUrl } from '../core/version-link';
 import { APP_VERSION } from '../version';
+import { NewWindowLink } from './new-window-link';
 
 /**
  * The version actually running, at the foot of every screen.
@@ -21,6 +22,7 @@ import { APP_VERSION } from '../version';
  */
 @Component({
   selector: 'app-version-footer',
+  imports: [NewWindowLink],
   template: `
     <footer class="app-version-footer">
       <span i18n="@@footer.version">Version</span>

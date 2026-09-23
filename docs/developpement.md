@@ -227,6 +227,18 @@ coûte peu à l'écriture, les rattraper coûte cher.
   `<th mat-header-cell>`, dont Material n'écrit jamais le `scope`.
   `npm run table-headers-check` (joué en CI) refuse un `<th>` qui n'en porte
   pas.
+- **Un lien qui ouvre une nouvelle fenêtre le dit.** La directive
+  `NewWindowLink` (`shared/new-window-link.ts`, sélecteur `a[target="_blank"]`)
+  ajoute « (nouvelle fenêtre) » en texte masqué à la fin du lien, et `pages.css`
+  dessine une flèche après un lien texte. Un lien nommé par un `aria-label`
+  — qui masque son contenu — porte la mention dans ce libellé, par
+  `newWindowLabel(…)`. `npm run new-window-check` (joué en CI) refuse un
+  composant qui ouvre une nouvelle fenêtre sans importer la directive, et un
+  `aria-label` qui ne passe pas par `newWindowLabel`. Ne pas toucher au `rel` :
+  le `noreferrer` des liens de l'espace animateur empêche le jeton de son URL
+  de partir dans le `Referer`. Et avant d'annoncer une nouvelle fenêtre, se
+  demander si elle est utile : les pages légales s'ouvrent depuis l'espace dans
+  le même onglet, « Retour » y ramène.
 - **Une longue liste se filtre, elle ne se déroule pas** :
   `app-selection-recherche` au-delà de quelques dizaines d'entrées. 153
   animateurs au clavier, c'est 153 flèches.

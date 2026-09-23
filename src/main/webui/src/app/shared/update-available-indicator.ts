@@ -4,6 +4,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 
 import { UpdateCheckService } from '../core/update-check.service';
+import { newWindowLabel } from './new-window-link';
 
 /**
  * Toolbar hint that a newer release than the running one has been published,
@@ -28,7 +29,7 @@ import { UpdateCheckService } from '../core/update-check.service';
         rel="noopener noreferrer"
         [matTooltip]="tooltip()"
         matTooltipPosition="below"
-        [attr.aria-label]="tooltip()"
+        [attr.aria-label]="label()"
       >
         <mat-icon>new_releases</mat-icon>
       </a>
@@ -48,6 +49,9 @@ export class UpdateAvailableIndicator {
     const version = this.updates.available()?.version ?? '';
     return $localize`:@@updateAvailable.tooltip:Nouvelle version disponible : ${version}:version:`;
   });
+
+  /** The tooltip, plus the new-window notice its `aria-label` would otherwise hide. */
+  protected readonly label = computed(() => newWindowLabel(this.tooltip()));
 
   constructor() {
     this.updates.check();

@@ -17,6 +17,7 @@ import {
   ParametresLegaux,
 } from '../../core/models';
 import { StatusMessage } from '../../shared/status-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * The legal parameters of the edition — the two weekly ceilings, the daily
@@ -30,6 +31,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-parametres-legaux',
   imports: [
+    NewWindowLink,
     StatusMessage,
     FormsModule,
     MatCardModule,

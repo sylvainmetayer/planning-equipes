@@ -46,6 +46,7 @@ import {
 import { EQUIPE_NOMBREUSE, filterCoequipiers, coequipiersView } from './espace-coequipiers';
 import { OngletEspace, readOngletEspace } from './espace-onglets';
 import { StatusMessage } from '../../shared/status-message';
+import { NewWindowLink } from '../../shared/new-window-link';
 
 /**
  * The animateur's own planning (issue #165): their seats from the last
@@ -68,6 +69,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-espace-planning-page',
   imports: [
+    NewWindowLink,
     StatusMessage,
     DatePipe,
     FormsModule,

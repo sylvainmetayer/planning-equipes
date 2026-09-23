@@ -30,6 +30,7 @@
     "headings-check": "node scripts/check-headings.js",
     "status-messages-check": "node scripts/check-status-messages.js",
     "table-headers-check": "node scripts/check-table-headers.js",
+    "new-window-check": "node scripts/check-new-window-links.js",
     "stores-check": "node scripts/check-readonly-stores.js",
     "api-schema": "node scripts/refresh-api-schema.js",
     "licences": "node scripts/licences-tierces.js",
