@@ -847,9 +847,10 @@ Couvre Maven, le wrapper Maven, Docker, les actions GitHub, npm et
   la retenait indéfiniment et le groupe partait sans elle). De même, la règle
   Quarkus vient après celle des plugins de build : `quarkus-maven-plugin` et le
   BOM partagent `quarkus.platform.version`, que deux PR montaient sinon chacune ;
-- les **majeures** de Java, PostgreSQL et victools passent par le tableau de
-  bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue de tableau
-  de bord existe.
+- les **majeures** de Java, PostgreSQL, victools et TypeScript passent par le
+  tableau de bord (`dependencyDashboardApproval`) — ce qui suppose que l'issue
+  de tableau de bord existe. TypeScript attend qu'Angular accepte la majeure :
+  `@angular/compiler-cli` en borne la plage.
 
 Les PR Renovate passent par le même `check-commits.sh` que les autres, sujet
 sous 72 caractères compris. Pour Maven, où `depName` vaut

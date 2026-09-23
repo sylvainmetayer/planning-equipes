@@ -173,6 +173,13 @@
       "dependencyDashboardApproval": true
     },
     {
+      "description": "TypeScript majors wait for Angular: @angular/compiler-cli and typescript-eslint pin a TypeScript range, and a major outside it leaves a PR whose lockfile cannot even be written. Approve it from the dashboard once Angular accepts it",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["typescript"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
       "description": "jsonschema-generator major upgrades can break quarkus-mcp-server-http, which bundles its own victools-based generator built against an older major (mismatched majors crash MCP startup with NoSuchMethodError): handle them manually",
       "matchManagers": ["maven"],
       "matchPackageNames": ["com.github.victools{/,}**"],
