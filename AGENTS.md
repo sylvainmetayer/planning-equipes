@@ -86,16 +86,14 @@ are the `heavy-tests` skill. Four rules hold without it:
   completion instead of blocking the turn or sleep-polling.
 
 - Formatting is decided by tools, not in review (issue #392, C10). Java:
-  `spotless-maven-plugin` runs palantir-java-format, removes unused imports and
-  orders the rest; `spotless:check` is bound to `validate`, so every
+  `spotless:check` is bound to `validate`, so every
   `./mvnw test|package|verify` refuses an unformatted file — run
   `./mvnw spotless:apply`. Frontend: `npm run format` (prettier, the
   repository's `.prettierrc`) on the TypeScript, CSS and scripts, checked by
   `npm run format-check` in CI; the HTML templates are excluded — the
   `.html` files by `.prettierignore`, the inline `template:` literals by
   `embeddedLanguageFormatting: off` — since a blank between two inline
-  elements is rendering there. The two initial reformatting commits are
-  listed in `.git-blame-ignore-revs`.
+  elements is rendering there.
 - Frontend commands run from `src/main/webui` (the `package.json` scripts;
   `proxy.conf.json` forwards `/api/*` to `:8080`). `quarkus:dev` already
   starts and proxies the dev server — but a direct navigation (curl, F5, deep
@@ -103,13 +101,10 @@ are the `heavy-tests` skill. Four rules hold without it:
   doesn't affect production); test deep links against `:4200` directly
   instead — see `docs/developpement.md`.
 - `docs/licences-tierces.md` (the third-party licence inventory the AGPL image
-  owes whoever deploys it) is **generated, never hand-edited**:
-  `./mvnw license:add-third-party` from the root, then `npm run licences` from
-  `src/main/webui`. The `test` job of the Tests workflow re-runs both and fails
-  on a stale file, the same ratchet as the committed OpenAPI contract. Java
-  side: the compile + runtime closure. npm side: read straight from
-  `package-lock.json`, so it needs no `node_modules`. The *why* and the two
-  known limits are in `docs/developpement.md`.
+  owes whoever deploys it) is **generated, never hand-edited**: the
+  `dependency-update` skill regenerates it, and the `test` job of the Tests
+  workflow fails on a stale file, the same ratchet as the committed OpenAPI
+  contract.
 - **A sandbox without `mise` and without Docker still runs the whole suite**
   (Claude Code on the web, a fresh container): JDK 25 from apt, PostgreSQL from
   apt in place of the dev-services container. The recipe, the `%test.` prefix
@@ -138,10 +133,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   reads it through — `PAR_NOM` and `NOMS_DURS` — so nothing outside `solver/`
   rebuilds them.
 - `service/` — one subpackage per capability (issue #392, A4), and a root that
-  only holds what they all share: `BusinessError`, `Ids`, `NaturalOrder`,
-  `WriteStamp`, `ProductName`, `JdbcEditionScope`, `EditionContext`,
-  `EditionRequestScope`, `TokenOwner`, `ConcurrentModificationGuard`,
-  `ReferenceDataChangeTracker`. A class lives with the question it answers; a
+  only holds what they all share. A class lives with the question it answers; a
   member another package needs is public, and its name is then English (the
   language policy reads public names only). The packages:
   - `service/solve/` — `PlanningService` (a façade over the classes next to
@@ -168,11 +160,7 @@ Single Quarkus service, no separate solver microservice. Package root:
     away**; in memory, so the first read after a restart re-derives it from that
     plan instead of answering "never analysed"), `PlanningPersistenceService`,
     `PlanSnapshotService`, `SnapshotComparisonService`, `DeplacementService`.
-  - `service/analyse/` — what is read from a plan without solving it:
-    `PlanningDiagnosticService` (score, unfilled seats, per-constraint
-    breakdown), the analyzers (feasibility, fragilité, ouvertures, pauses,
-    staffing), `PlanningKpiService` / `KpiHistoriqueService`,
-    `PlanningHoursService`, `AlerteService`.
+  - `service/analyse/` — what is read from a plan without solving it.
   - `service/referentiel/` — `ReferenceDataService` (facade over one service
     per referential family — `StandService`, `AnimateurService`,
     `CreneauService`, … — over one repository per family, plus
@@ -453,12 +441,11 @@ Single Quarkus service, no separate solver microservice. Package root:
 
 ### Frontend
 
-Angular 22 application in `src/main/webui`, built during `mvn package` and
-served by Quarkus through the **Quinoa** extension — single deployment, no Node
-server in production. Its conventions (components and state, Material theme,
-the shell and every route, the `core/` layout, keyboard handling, URL view
-state, the solver stream, CSS loading, tests) are `src/main/webui/AGENTS.md`,
-loaded when a session works under that directory. Three rules hold everywhere:
+The frontend's conventions (components and state, Material theme, the shell
+and every route, the `core/` layout, keyboard handling, URL view state, the
+solver stream, CSS loading, tests) are `src/main/webui/AGENTS.md`, loaded when
+a session works under that directory. Two rules hold everywhere, next to the
+i18n rule at the top of this file:
 
 - **No additional frontend dependency** — UI kit, state library, CSS
   framework, i18n library, charting library, runtime or dev — without explicit
@@ -468,10 +455,6 @@ loaded when a session works under that directory. Three rules hold everywhere:
   a route and an `app/pages/<block>/` folder, never a new section inside an
   existing page. Every route is listed in that file, and
   `DocumentationStructuralTest` fails on one that is not.
-- **Every user-visible string needs both halves** — the French source in the
-  template and its English string in `public/i18n/messages.en.json` — and a
-  `$localize` call never runs at module scope (the rule at the top of this
-  file).
 
 ## Domain invariants (never break these)
 
@@ -589,23 +572,11 @@ The doc layout is intentional — respect it when adding or updating docs.
 
 ## Dependency updates
 
-Renovate (`renovate.json` at the repo root) tracks Maven dependencies (including
-the `quarkus.platform.version` / `timefold.solver.version` properties), the npm
-dependencies of `src/main/webui`, Docker images, GitHub Actions and the
-`mise.toml` toolchain. Keep the config in that
-single file; document behaviour changes in `docs/developpement.md`. On a
-Renovate PR, `licences-renovate.yml` regenerates `docs/licences-tierces.md`,
-commits it on the branch and re-dispatches the checks itself (a push made with
-`GITHUB_TOKEN` triggers nothing) — `gitIgnoredAuthors` in `renovate.json` is
-what lets Renovate keep rebasing a branch that commit sits on. The scenario
-workflow runs on a Renovate PR only when it carries the `timefold` or
-`quarkus` label, which `renovate.json` puts on those two groups. Quarkus and
-Timefold bumps must be validated with `./mvnw verify -DskipITs=false` **and**
-`./mvnw test -Pscenario-tests`: the five files that depend on
-`ai.timefold.solver.core.impl` (listed by `TimefoldInternalApiStructuralTest`)
-are covered by a compile error for the filters and the move factory and by the
-contract test for the diagnostic, but a filter that still compiles and is no
-longer asked only shows in the scenarios.
+Renovate manages them (`renovate.json`, one file — keep the config there, and
+document behaviour changes in `docs/developpement.md`). What a Quarkus or
+Timefold bump must be validated with, how a Renovate PR regenerates the licence
+inventory and re-dispatches its own checks, and which labels trigger the
+scenario workflow are the `dependency-update` skill.
 
 ## Working conventions
 
@@ -648,12 +619,6 @@ longer asked only shows in the scenarios.
 - **Inject `ObjectMapper`, never `new ObjectMapper()`** — a bare one lacks the
   modules Quarkus registers (JSR-310), which forces records to flatten
   `LocalDate`/`Instant` fields to `String` and only fails at write time.
-- Write/extend a test proving no hard constraint is violated before considering a
-  step done.
-- No additional frontend dependency (UI kit, state library, CSS framework, i18n
-  library) without explicit sign-off — plain Angular served by Quinoa is a
-  deliberate choice. The dependencies that *are* present, and the reason for
-  each, are listed in the Frontend section above.
 
 ## Language of the code
 
