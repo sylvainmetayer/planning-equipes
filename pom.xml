@@ -31,7 +31,7 @@
         <quarkus.platform.version>3.38.3</quarkus.platform.version>
         <timefold.solver.version>2.5.0</timefold.solver.version>
         <quinoa.version>2.9.0</quinoa.version>
-        <sentry.version>8.53.0</sentry.version>
+        <sentry.version>8.57.0</sentry.version>
         <!-- Kept aligned with the jackson-databind version Flyway pulls in
              transitively (see quarkus-flyway), so the YAML/JSR-310 modules
              used by the scenario DTOs (dev.sylvain.planning.scenario) stay
