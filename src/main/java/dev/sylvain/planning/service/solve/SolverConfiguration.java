@@ -46,6 +46,9 @@ final class SolverConfiguration {
      */
     private final SolutionManager<PlanningEvenement, ?> solutionManager;
 
+    /** The factory of an edition held to a hard run of days, at the default budget; built on first use. */
+    private volatile SolverFactory<PlanningEvenement> hardRunCapSolverFactory;
+
     private final ConstraintDiagnosticService constraintDiagnosticService;
     private final ReferenceData referenceDataService;
     private final long defaultSecondsLimit;
@@ -278,8 +281,10 @@ final class SolverConfiguration {
      * {@link #resolveSolverFactory(Long)}, for one problem: a problem large
      * enough for {@link LargeProblemConstruction}, or held to a hard run of days
      * ({@link HardRunCapSearch}), gets a factory of its own, built from the same
-     * XML with its construction sampled or its ruin-and-recreate made rare, and
-     * the same termination as the shared one would have had.
+     * XML adapted by {@link #adaptToProblem} and with the same termination as the
+     * shared one would have had. The hard-run factory at the default budget
+     * depends on nothing else about the problem, so it is built once and kept,
+     * like the shared one: an edition that holds the rule solves again and again.
      */
     SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride, PlanningEvenement problem) {
         boolean large = LargeProblemConstruction.applies(problem);
@@ -287,6 +292,20 @@ final class SolverConfiguration {
         if (!large && !hardRunCap) {
             return resolveSolverFactory(secondsLimitOverride);
         }
+        boolean defaultBudget = secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit);
+        if (!large && defaultBudget) {
+            SolverFactory<PlanningEvenement> cached = hardRunCapSolverFactory;
+            if (cached == null) {
+                cached = adaptedSolverFactory(secondsLimitOverride, problem);
+                hardRunCapSolverFactory = cached;
+            }
+            return cached;
+        }
+        return adaptedSolverFactory(secondsLimitOverride, problem);
+    }
+
+    private SolverFactory<PlanningEvenement> adaptedSolverFactory(
+            Long secondsLimitOverride, PlanningEvenement problem) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
@@ -295,13 +314,23 @@ final class SolverConfiguration {
         } else {
             applyTermination(solverConfig, secondsLimitOverride, 0L);
         }
-        if (large) {
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    /**
+     * Every adaptation of {@code solverConfig.xml} to one problem, in one place:
+     * the production solve and {@code SolveRunner.solveUntilFeasible} — what the
+     * scenario tests run — must search the same way, and a tuning added to one
+     * of the two alone would have them validate a search production does not run.
+     */
+    static void adaptToProblem(SolverConfig solverConfig, PlanningEvenement problem) {
+        if (LargeProblemConstruction.applies(problem)) {
             LargeProblemConstruction.adapt(solverConfig);
         }
-        if (hardRunCap) {
+        if (HardRunCapSearch.applies(problem)) {
             HardRunCapSearch.adapt(solverConfig);
         }
-        return SolverFactory.create(solverConfig);
     }
 
     SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride) {

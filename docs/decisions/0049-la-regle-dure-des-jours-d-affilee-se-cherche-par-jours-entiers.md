@@ -79,17 +79,21 @@ pour l'édition. Le seuil lu est `joursConsecutifsMax`, celui de la règle.
 1. **La chaîne libère un jour de la série.** Quand le trou ferait dépasser le
    seuil au candidat, le jour rendu est choisi parmi ceux dont le retrait
    ramène à la fois la série et la semaine sous leurs plafonds — dans la même
-   semaine ISO ou non. Le candidat est cherché parmi *tous* les animateurs
-   libres à cette heure, et non une douzaine : construire une chaîne ne coûte
-   aucun calcul de score, seulement l'index des journées.
+   semaine ISO ou non ; quand aucun jour ne répare à lui seul ce que le trou
+   casse, la chaîne n'est pas proposée et le candidat suivant est essayé. Le
+   plafond de la semaine est de six jours, cinq pour un mineur (ses deux jours
+   de repos). Les candidats essayés passent d'une douzaine à trois : une chaîne
+   ne coûte aucun calcul de score, mais chaque essai parcourt les collègues de
+   chaque jour qu'il pourrait rendre, sur le fil du solveur.
 2. **Un jour rendu ne va qu'à des gens déjà là ce jour-là.** Donner un siège à
    quelqu'un qui ne travaillait pas ce jour lui ajoute un jour, c'est-à-dire
    déplace le problème de série sur lui. Sous la règle, le jour est repris par
    des collègues déjà présents et libres à ces heures, ou la chaîne n'est pas
-   proposée.
+   proposée ; un même collègue peut en reprendre plusieurs sièges, s'ils ne se
+   chevauchent pas.
 3. **Deux mouvements nouveaux, dans la même fabrique.** Une série déjà trop
    longue, sans trou à remplir, voit un de ses jours rendu aux collègues
-   présents. Et une journée quelconque peut être *regroupée* : ses sièges
+   présents — un jour *de cette série*, un autre la laisserait aussi longue. Et une journée quelconque peut être *regroupée* : ses sièges
    repris par des collègues présents ce jour-là, ce qui couvre la journée avec
    une personne de moins et libère le jour-personne qu'une chaîne dépensera
    plus tard. Le score juge le reste — heures, repos, coupures.
@@ -101,9 +105,18 @@ pour l'édition. Le seuil lu est `joursConsecutifsMax`, celui de la règle.
    Le retirer tout à fait atteignait la faisabilité plus vite encore sur
    l'édition mesurée ; 0,02 garde le mouvement de 0025 à portée.
 
-Rien de cela ne joue quand la règle dure est éteinte — le défaut livré : la
-fabrique rend alors, tirage pour tirage, les mêmes mouvements qu'avant, et la
-configuration du solveur est celle du XML.
+5. **Les sièges épinglés comptent.** Le passé figé ([0044](0044-le-passe-est-fige.md))
+   et les verrous ne sont jamais rendus, mais la règle les compte dans une
+   série : l'index des journées les compte donc aussi, et les tient pour
+   occupés. Une journée qui en porte un ne peut être ni rendue ni regroupée —
+   elle reste travaillée quoi qu'on déplace.
+
+Rien des règles 1 à 4 ne joue quand la règle dure est éteinte — le défaut livré :
+la configuration du solveur est alors celle du XML, et sur un plan sans siège
+épinglé la fabrique rend, tirage pour tirage, les mêmes mouvements qu'avant. La
+règle 5 vaut pour toutes les éditions : un collègue qui tient un siège verrouillé
+à cette heure n'est plus proposé pour un siège rendu, ce que le score refusait
+de toute façon.
 
 ## Mesures
 

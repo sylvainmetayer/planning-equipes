@@ -7,10 +7,10 @@ import ai.timefold.solver.core.preview.api.domain.metamodel.PlanningVariableMeta
 import ai.timefold.solver.core.preview.api.move.Move;
 import ai.timefold.solver.core.preview.api.move.builtin.Moves;
 import dev.sylvain.planning.domain.Animateur;
-import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
+import dev.sylvain.planning.domain.PlafondsLegauxMineurs;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import java.time.LocalDate;
@@ -64,8 +64,10 @@ import java.util.random.RandomGenerator;
  * short of person-days rather than hours, so a day is only ever handed to
  * people already working it, and a day held in pieces can be regrouped onto
  * them — the person-day it frees is what a later chain spends on a hole
- * (ADR 0049). With the rule off — the default — the factory yields the moves it
- * always did, draw for draw.</p>
+ * (ADR 0049). With the rule off — the default — and no pinned seat, the factory
+ * yields the moves it always did, draw for draw. Pinned seats (the frozen past,
+ * the locks) are never handed over, but they occupy their hour and count in a
+ * run exactly as the rules count them.</p>
  *
  * <p>{@code MoveIteratorFactory} lives in {@code core.impl}; the moves it
  * yields are the public preview {@link Move}s, composed from built-in change
@@ -77,6 +79,8 @@ public final class WeekRelocationMoveIteratorFactory
 
     /** Candidates tried for the hole before giving up on a chain and falling back to a plain change. */
     private static final int CANDIDATE_TRIES = 12;
+    /** The same bound under the run rule, where a chain whose day only goes to people already there is rarer. */
+    private static final int CANDIDATE_TRIES_UNDER_RUN_CAP = 3 * CANDIDATE_TRIES;
     /** Days drawn before giving up on a regrouping: most full days have nobody free to absorb them. */
     private static final int CONSOLIDATION_TRIES = 50;
     /** The hard form of the run rule, the only one the move reads (ADR 0045). */
@@ -138,13 +142,12 @@ public final class WeekRelocationMoveIteratorFactory
     /**
      * The run cap the move works towards: the edition's
      * {@code joursConsecutifsMax} when {@code maxJoursConsecutifsTravaillesDur}
-     * is switched on, {@code 0} otherwise — the rule ships off (ADR 0045), and
+     * is active — read as the score reads it, toggle first, catalogue default
+     * otherwise — and {@code 0} when it is not: the rule ships off (ADR 0045), and
      * an edition that leaves it off keeps the move it had.
      */
     public static int hardRunCap(PlanningEvenement solution) {
-        List<ConstraintToggle> toggles = solution.getConstraintsDesactivees();
-        boolean on = toggles != null
-                && toggles.stream().anyMatch(toggle -> HARD_RUN_RULE.equals(toggle.getNom()) && toggle.isActif());
+        boolean on = ConstraintCatalog.isActive(solution.getConstraintsDesactivees(), HARD_RUN_RULE);
         List<ParametresQualite> qualite = solution.getParametresQualite();
         if (!on || qualite == null || qualite.isEmpty() || qualite.get(0) == null) {
             return 0;
@@ -157,7 +160,19 @@ public final class WeekRelocationMoveIteratorFactory
         private final PlanningEvenement solution;
         private final List<PosteAffectation> holes = new ArrayList<>();
         private final List<PosteAffectation> movable = new ArrayList<>();
+        /** The seats the move may reassign, per animateur and day. */
         private final Map<Animateur, Map<LocalDate, List<PosteAffectation>>> seats = new HashMap<>();
+        /**
+         * Every seat held, pinned ones included — the frozen past, the locks.
+         * The move never reassigns those, but they occupy their hour and count
+         * in a run exactly as the rules count them.
+         */
+        private final Map<Animateur, Map<LocalDate, List<PosteAffectation>>> held = new HashMap<>();
+        /** Days on which an animateur holds a pinned seat: such a day cannot be freed. */
+        private final Map<Animateur, Set<LocalDate>> pinnedDays = new HashMap<>();
+        /** Who works each day, pinned seats included. */
+        private final Map<LocalDate, List<Animateur>> workingOn = new HashMap<>();
+
         private final ParametresLegaux parametresLegaux;
         /** The run cap when the hard form of the rule is on, else {@code 0}: runs are then not the move's business. */
         private final int runCap;
@@ -169,21 +184,41 @@ public final class WeekRelocationMoveIteratorFactory
             this.parametresLegaux = solution.parametresLegaux();
             this.runCap = hardRunCap(solution);
             for (PosteAffectation poste : solution.getPostes()) {
-                if (poste.isVerrouille() || poste.getCreneau() == null) {
+                if (poste.getCreneau() == null) {
+                    continue;
+                }
+                Animateur animateur = poste.getAnimateur();
+                LocalDate date = poste.getCreneau().getDate();
+                if (animateur != null) {
+                    List<PosteAffectation> day = held.computeIfAbsent(animateur, a -> new HashMap<>())
+                            .computeIfAbsent(date, d -> {
+                                workingOn
+                                        .computeIfAbsent(d, x -> new ArrayList<>())
+                                        .add(animateur);
+                                return new ArrayList<>();
+                            });
+                    day.add(poste);
+                }
+                if (poste.isVerrouille()) {
+                    if (animateur != null) {
+                        pinnedDays
+                                .computeIfAbsent(animateur, a -> new HashSet<>())
+                                .add(date);
+                    }
                     continue;
                 }
                 movable.add(poste);
-                if (poste.getAnimateur() == null) {
+                if (animateur == null) {
                     holes.add(poste);
                 } else {
-                    seats.computeIfAbsent(poste.getAnimateur(), a -> new HashMap<>())
-                            .computeIfAbsent(poste.getCreneau().getDate(), d -> new ArrayList<>())
+                    seats.computeIfAbsent(animateur, a -> new HashMap<>())
+                            .computeIfAbsent(date, d -> new ArrayList<>())
                             .add(poste);
                 }
             }
             if (runCap > 0) {
-                seats.forEach((animateur, days) -> {
-                    if (longestRun(days.keySet(), null) > runCap) {
+                held.forEach((animateur, days) -> {
+                    if (seats.containsKey(animateur) && longestRun(sorted(days.keySet()), null, null) > runCap) {
                         overlongRuns.add(animateur);
                     }
                 });
@@ -219,10 +254,10 @@ public final class WeekRelocationMoveIteratorFactory
             }
             Collections.shuffle(candidates, new java.util.Random(random.nextLong()));
             // Under the run rule a chain that hands its day only to people already
-            // there is rare, and a candidate without one ends in a plain fill the
-            // score refuses: the index looks among every candidate rather than a
-            // dozen, which costs no score calculation, only the day maps.
-            int tries = runCap > 0 ? candidates.size() : Math.min(CANDIDATE_TRIES, candidates.size());
+            // there is rarer: the index looks a little further than a dozen
+            // candidates. Bounded all the same — each try scans the colleagues of
+            // every day it could release, on the solver thread.
+            int tries = Math.min(runCap > 0 ? CANDIDATE_TRIES_UNDER_RUN_CAP : CANDIDATE_TRIES, candidates.size());
             for (Animateur candidate : candidates.subList(0, tries)) {
                 Move<PlanningEvenement> chain = chain(hole, candidate, random);
                 if (chain != null) {
@@ -236,25 +271,30 @@ public final class WeekRelocationMoveIteratorFactory
 
         /**
          * The seat to the candidate, and one of the candidate's other days of
-         * the same week to colleagues; {@code null} when no day can be handed over.
+         * the same week — or, under the run rule, of the run the seat would
+         * lengthen — to colleagues; {@code null} when no day can be handed over.
          */
         private Move<PlanningEvenement> chain(PosteAffectation hole, Animateur candidate, RandomGenerator random) {
             LocalDate date = hole.getCreneau().getDate();
             Map<LocalDate, List<PosteAffectation>> days = seats.getOrDefault(candidate, Map.of());
-            List<LocalDate> sameWeek = new ArrayList<>();
-            for (LocalDate other : days.keySet()) {
-                if (!other.equals(date) && sameWeek(other, date)) {
-                    sameWeek.add(other);
+            List<LocalDate> released;
+            if (runCap > 0) {
+                released = releasedUnderRunCap(candidate, date);
+                if (released == null) {
+                    // Neither the week nor the run goes over: the plain fill is the whole chain.
+                    return Moves.change(ANIMATEUR, hole, candidate);
                 }
-            }
-            boolean runTooLong = runCap > 0 && longestRun(days.keySet(), date) > runCap;
-            if (sameWeek.isEmpty() && !runTooLong) {
-                // Not at the cap for this week: the plain fill is the whole chain.
-                return Moves.change(ANIMATEUR, hole, candidate);
-            }
-            List<LocalDate> released = runTooLong ? releasable(days.keySet(), date) : sameWeek;
-            if (released.isEmpty()) {
-                released = sameWeek;
+            } else {
+                released = new ArrayList<>();
+                for (LocalDate other : days.keySet()) {
+                    if (!other.equals(date) && sameWeek(other, date)) {
+                        released.add(other);
+                    }
+                }
+                if (released.isEmpty()) {
+                    // Not at the cap for this week: the plain fill is the whole chain.
+                    return Moves.change(ANIMATEUR, hole, candidate);
+                }
             }
             Collections.shuffle(released, new java.util.Random(random.nextLong()));
             for (LocalDate day : released) {
@@ -268,27 +308,45 @@ public final class WeekRelocationMoveIteratorFactory
         }
 
         /**
-         * The days of the candidate's run whose release leaves both the run and,
-         * when the week of {@code added} is concerned, that week under their caps;
-         * {@code added} is the day the candidate takes on, {@code null} when none.
+         * Under the run rule, the days the candidate could give up so that
+         * taking {@code date} keeps both the week and the run under their caps;
+         * {@code null} when taking it breaks neither, an empty list when no single
+         * day repairs what it breaks — the chain is then not proposed at all,
+         * rather than a release that leaves the run as long as it was.
          */
-        private List<LocalDate> releasable(Set<LocalDate> worked, LocalDate added) {
+        private List<LocalDate> releasedUnderRunCap(Animateur candidate, LocalDate date) {
+            List<LocalDate> worked =
+                    sorted(held.getOrDefault(candidate, Map.of()).keySet());
+            if (worked.contains(date)) {
+                return null;
+            }
+            long week = worked.stream().filter(day -> sameWeek(day, date)).count() + 1;
+            boolean weekOver = week > weekCap(candidate, date);
+            boolean runOver = longestRun(worked, null, date) > runCap;
+            if (!weekOver && !runOver) {
+                return null;
+            }
+            return releasable(candidate, worked, date, freeable(candidate));
+        }
+
+        /**
+         * Among {@code choices}, the days whose release leaves the run under the
+         * cap and, when a day {@code added} is taken on, its week under the
+         * weekly cap; {@code worked} is every day worked, pinned ones included.
+         */
+        private List<LocalDate> releasable(
+                Animateur animateur, List<LocalDate> worked, LocalDate added, List<LocalDate> choices) {
             List<LocalDate> fits = new ArrayList<>();
-            for (LocalDate day : worked) {
-                if (day.equals(added)) {
+            for (LocalDate day : choices) {
+                if (day.equals(added) || longestRun(worked, day, added) > runCap) {
                     continue;
                 }
-                Set<LocalDate> after = new HashSet<>(worked);
-                after.remove(day);
                 if (added != null) {
-                    after.add(added);
-                }
-                if (longestRun(after, null) > runCap) {
-                    continue;
-                }
-                if (added != null && !sameWeek(day, added)) {
-                    long week = after.stream().filter(d -> sameWeek(d, added)).count();
-                    if (week > PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE) {
+                    long week = worked.stream()
+                                    .filter(d -> !d.equals(day) && sameWeek(d, added))
+                                    .count()
+                            + 1;
+                    if (week > weekCap(animateur, added)) {
                         continue;
                     }
                 }
@@ -297,19 +355,52 @@ public final class WeekRelocationMoveIteratorFactory
             return fits;
         }
 
+        /** The days an animateur holds only movable seats on: the ones that can be freed entirely. */
+        private List<LocalDate> freeable(Animateur animateur) {
+            Set<LocalDate> pinned = pinnedDays.getOrDefault(animateur, Set.of());
+            List<LocalDate> days = new ArrayList<>();
+            for (LocalDate day : seats.getOrDefault(animateur, Map.of()).keySet()) {
+                if (!pinned.contains(day)) {
+                    days.add(day);
+                }
+            }
+            Collections.sort(days);
+            return days;
+        }
+
+        /**
+         * Six days a week (L3132-1); five for a minor, whose two rest days in the
+         * week (L3164-2) leave no more.
+         */
+        private static int weekCap(Animateur animateur, LocalDate date) {
+            return animateur.isMineurOn(date)
+                    ? 7 - PlafondsLegauxMineurs.JOURS_REPOS_CONSECUTIFS_PAR_SEMAINE
+                    : PlafondsLegauxMajeurs.JOURS_TRAVAILLES_MAX_PAR_SEMAINE;
+        }
+
         /**
          * A run already over the cap, no hole involved: one of its days handed
-         * to colleagues free at those hours. {@code null} when none can be.
+         * to colleagues free at those hours. Only a day of the over-long run is
+         * released — a day elsewhere would leave it as long as it was. {@code
+         * null} when none can be.
          */
         private Move<PlanningEvenement> releaseFromRun(RandomGenerator random) {
             Animateur animateur = overlongRuns.get(random.nextInt(overlongRuns.size()));
-            Map<LocalDate, List<PosteAffectation>> days = seats.get(animateur);
-            List<LocalDate> released = releasable(days.keySet(), null);
+            List<LocalDate> worked = sorted(held.get(animateur).keySet());
+            Set<LocalDate> inOverlongRuns = new HashSet<>(daysOfRunsLongerThan(worked, runCap));
+            List<LocalDate> choices = new ArrayList<>();
+            for (LocalDate day : freeable(animateur)) {
+                if (inOverlongRuns.contains(day)) {
+                    choices.add(day);
+                }
+            }
+            List<LocalDate> released = releasable(animateur, worked, null, choices);
             if (released.isEmpty()) {
                 // No single day brings the run under the cap: any day of it shortens it.
-                released = new ArrayList<>(days.keySet());
+                released = choices;
             }
             Collections.shuffle(released, new java.util.Random(random.nextLong()));
+            Map<LocalDate, List<PosteAffectation>> days = seats.get(animateur);
             for (LocalDate day : released) {
                 List<Move<PlanningEvenement>> links = new ArrayList<>();
                 if (handOver(days.get(day), animateur, links, random)) {
@@ -325,39 +416,44 @@ public final class WeekRelocationMoveIteratorFactory
          * fewer. Under a run cap the event is short of person-days rather than
          * of hours — a montage day held by two people in half-days costs two of
          * them — and a day freed here is what a later chain spends on a hole.
+         * A day with a pinned seat is not drawn: it stays worked whatever moves.
          * {@code null} when no day drawn can be regrouped.
          */
         private Move<PlanningEvenement> consolidate(RandomGenerator random) {
             List<Animateur> animateurs = solution.getAnimateurs();
             for (int attempt = 0; attempt < CONSOLIDATION_TRIES; attempt++) {
                 Animateur animateur = animateurs.get(random.nextInt(animateurs.size()));
-                Map<LocalDate, List<PosteAffectation>> days = seats.get(animateur);
-                if (days == null || days.isEmpty()) {
+                List<LocalDate> dates = freeable(animateur);
+                if (dates.isEmpty()) {
                     continue;
                 }
-                List<LocalDate> dates = new ArrayList<>(days.keySet());
                 LocalDate day = dates.get(random.nextInt(dates.size()));
                 List<Move<PlanningEvenement>> links = new ArrayList<>();
-                if (handOver(days.get(day), animateur, links, random)) {
+                if (handOver(seats.get(animateur).get(day), animateur, links, random)) {
                     return Moves.compose(links);
                 }
             }
             return null;
         }
 
-        /** Every seat of a released day to a colleague; {@code false} when one of them finds nobody. */
+        /**
+         * Every seat of a released day to a colleague; {@code false} when one of
+         * them finds nobody. Under the run rule one colleague may take several
+         * of the day's seats, as long as they do not overlap — that is how a day
+         * held in pieces is regrouped onto one person.
+         */
         private boolean handOver(
                 List<PosteAffectation> daySeats,
                 Animateur leaving,
                 List<Move<PlanningEvenement>> links,
                 RandomGenerator random) {
-            List<Animateur> taken = new ArrayList<>();
+            Map<Animateur, List<PosteAffectation>> given = new HashMap<>();
             for (PosteAffectation seat : daySeats) {
-                Animateur taker = taker(seat, leaving, taken, random);
+                Animateur taker = taker(seat, leaving, given, random);
                 if (taker == null) {
                     return false;
                 }
-                taken.add(taker);
+                given.computeIfAbsent(taker, a -> new ArrayList<>()).add(seat);
                 links.add(Moves.change(ANIMATEUR, seat, taker));
             }
             return true;
@@ -367,50 +463,63 @@ public final class WeekRelocationMoveIteratorFactory
          * A colleague for a released seat: eligible, free at its hour, and by
          * preference already working that day — a new day for them would only
          * move the cap problem, though the score is the judge of that too. Under
-         * the hard run rule the preference is a requirement.
+         * the hard run rule the preference is a requirement, so only the people
+         * working that day are scanned.
          */
         private Animateur taker(
-                PosteAffectation seat, Animateur leaving, List<Animateur> taken, RandomGenerator random) {
-            List<Animateur> animateurs = solution.getAnimateurs();
+                PosteAffectation seat,
+                Animateur leaving,
+                Map<Animateur, List<PosteAffectation>> given,
+                RandomGenerator random) {
+            LocalDate date = seat.getCreneau().getDate();
+            List<Animateur> animateurs =
+                    runCap > 0 ? workingOn.getOrDefault(date, List.of()) : solution.getAnimateurs();
+            if (animateurs.isEmpty()) {
+                return null;
+            }
             int start = random.nextInt(animateurs.size());
             Animateur fallback = null;
             for (int i = 0; i < animateurs.size(); i++) {
                 Animateur animateur = animateurs.get((start + i) % animateurs.size());
-                if (animateur.equals(leaving) || taken.contains(animateur)) {
+                if (animateur.equals(leaving)) {
+                    continue;
+                }
+                List<PosteAffectation> already = given.get(animateur);
+                if (already != null && (runCap == 0 || overlapsAny(seat, already))) {
                     continue;
                 }
                 if (!EligibleAnimateurMoveFilter.isEligible(seat, animateur, parametresLegaux)
                         || !free(animateur, seat)) {
                     continue;
                 }
-                if (seats.getOrDefault(animateur, Map.of())
-                        .containsKey(seat.getCreneau().getDate())) {
+                if (held.getOrDefault(animateur, Map.of()).containsKey(date)) {
                     return animateur;
                 }
                 if (fallback == null && runCap == 0) {
-                    // Under the run rule a new day for the taker only moves the
-                    // run problem onto them: the day is handed to people already
-                    // there, or not at all.
                     fallback = animateur;
                 }
             }
             return fallback;
         }
 
-        /** Not holding a seat that overlaps this one in time, on its day. */
+        /** Not holding a seat — pinned or not — that overlaps this one in time, on its day. */
         private boolean free(Animateur animateur, PosteAffectation seat) {
-            List<PosteAffectation> held = seats.getOrDefault(animateur, Map.of())
+            List<PosteAffectation> day = held.getOrDefault(animateur, Map.of())
                     .getOrDefault(seat.getCreneau().getDate(), List.of());
+            return !overlapsAny(seat, day);
+        }
+
+        private static boolean overlapsAny(PosteAffectation seat, List<PosteAffectation> others) {
             int debut = minutes(seat.heureDebutEffectif());
             int fin = debut + seat.getDureeEffectiveMinutes();
-            for (PosteAffectation other : held) {
+            for (PosteAffectation other : others) {
                 int otherDebut = minutes(other.heureDebutEffectif());
                 int otherFin = otherDebut + other.getDureeEffectiveMinutes();
                 if (debut < otherFin && otherDebut < fin) {
-                    return false;
+                    return true;
                 }
             }
-            return true;
+            return false;
         }
 
         private Move<PlanningEvenement> plainChange(RandomGenerator random) {
@@ -419,22 +528,64 @@ public final class WeekRelocationMoveIteratorFactory
             return Moves.change(ANIMATEUR, poste, animateurs.get(random.nextInt(animateurs.size())));
         }
 
-        /** Longest run of consecutive dates among {@code worked}, counting {@code added} as worked too. */
-        static int longestRun(Set<LocalDate> worked, LocalDate added) {
-            List<LocalDate> sorted = new ArrayList<>(worked);
-            if (added != null && !worked.contains(added)) {
-                sorted.add(added);
-            }
-            Collections.sort(sorted);
+        /**
+         * Longest run of consecutive dates in {@code worked} (sorted), with
+         * {@code removed} taken out and {@code added} put in; either may be
+         * {@code null}.
+         */
+        static int longestRun(List<LocalDate> worked, LocalDate removed, LocalDate added) {
             int longest = 0;
-            int current = 0;
-            LocalDate previous = null;
-            for (LocalDate day : sorted) {
-                current = previous != null && ChronoUnit.DAYS.between(previous, day) == 1 ? current + 1 : 1;
-                longest = Math.max(longest, current);
-                previous = day;
+            for (List<LocalDate> run : runs(worked, removed, added)) {
+                longest = Math.max(longest, run.size());
             }
             return longest;
+        }
+
+        /** The days of the runs longer than {@code cap} in {@code worked} (sorted). */
+        static List<LocalDate> daysOfRunsLongerThan(List<LocalDate> worked, int cap) {
+            List<LocalDate> days = new ArrayList<>();
+            for (List<LocalDate> run : runs(worked, null, null)) {
+                if (run.size() > cap) {
+                    days.addAll(run);
+                }
+            }
+            return days;
+        }
+
+        private static List<List<LocalDate>> runs(List<LocalDate> worked, LocalDate removed, LocalDate added) {
+            List<LocalDate> days = new ArrayList<>(worked.size() + 1);
+            boolean addedPlaced = added == null || worked.contains(added);
+            for (LocalDate day : worked) {
+                if (!addedPlaced && added.isBefore(day)) {
+                    days.add(added);
+                    addedPlaced = true;
+                }
+                if (!day.equals(removed)) {
+                    days.add(day);
+                }
+            }
+            if (!addedPlaced) {
+                days.add(added);
+            }
+            List<List<LocalDate>> runs = new ArrayList<>();
+            List<LocalDate> current = new ArrayList<>();
+            for (LocalDate day : days) {
+                if (!current.isEmpty() && ChronoUnit.DAYS.between(current.getLast(), day) != 1) {
+                    runs.add(current);
+                    current = new ArrayList<>();
+                }
+                current.add(day);
+            }
+            if (!current.isEmpty()) {
+                runs.add(current);
+            }
+            return runs;
+        }
+
+        private static List<LocalDate> sorted(Set<LocalDate> days) {
+            List<LocalDate> list = new ArrayList<>(days);
+            Collections.sort(list);
+            return list;
         }
 
         private static boolean sameWeek(LocalDate a, LocalDate b) {
