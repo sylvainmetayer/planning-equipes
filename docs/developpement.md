@@ -62,9 +62,38 @@ Un `quarkus:dev` déjà lancé ne relit pas l'environnement : le relancer.
   et les tests unitaires (`MailServiceTest`, `NotificationWriterTest`,
   `MailTemplatesTest`) verrouillent le texte.
 
-Compte local : `admin` / `admin`. Le profil `%test` désactive la policy pour que
-les tests appellent l'API sans session — `AuthentificationAdminTest` la restaure
-via `@TestProfile` pour couvrir le flux réel.
+Compte local : `admin` / `admin`. C'est le **compte de secours**, que le profil
+`%dev` ouvre et laisse Keycloak éteint (`OIDC_ENABLED=false`) : `quarkus:dev`
+démarre sans fournisseur d'identité. Le profil `%test` désactive la policy pour
+que les tests appellent l'API sans session — `AuthentificationAdminTest` la
+restaure via `@TestProfile` pour couvrir le flux réel.
+
+**Travailler avec Keycloak.** En production, toute connexion passe par lui
+([`keycloak.md`](keycloak.md)). Le `docker-compose.yml` porte un Keycloak et sa
+base, le realm `planning` importé depuis
+[`docker/keycloak/realm-planning.json`](../docker/keycloak/realm-planning.json)
+avec des comptes de démonstration :
+
+```bash
+echo '127.0.0.1 keycloak' | sudo tee -a /etc/hosts   # une fois : une seule URL pour le navigateur et l'application
+docker compose up keycloak mailpit                   # Keycloak sur http://keycloak:8081, console admin / dev-keycloak-Wq2fT7xM
+OIDC_ENABLED=true ./mvnw quarkus:dev                 # admin@planning.local / dev-admin-Zc6qL1yV + TOTP
+docker compose --profile app up --build              # ou : l'image de l'application, OIDC allumé comme en production
+```
+
+Le conteneur Keycloak est construit depuis
+[`docker/keycloak/Dockerfile`](../docker/keycloak/Dockerfile) (l'image
+officielle, plus l'extension `keycloak/code-email/` et le thème) : quelques
+minutes au premier `up`, `--build` après une retouche de l'un ou de l'autre.
+Le realm n'est importé que sur une base vide — `docker compose down -v` le
+rejoue après une modification du fichier. Les secrets de développement des
+clients sont les mêmes dans le realm, dans `application.properties` (`%dev`) et
+dans `docker-compose.yml`, et `RealmPlanningStructuralTest` refuse qu'ils
+divergent. Le module `keycloak/code-email/` n'est **pas** dans le build Maven de
+l'application (JDK 21, SPI de Keycloak) : il ne se construit que dans l'image,
+ou à part avec `mvn -f keycloak/code-email/pom.xml package` sous un JDK 21 —
+depuis une copie hors du dépôt, faute de quoi le `.mvn/jvm.config` de la racine,
+écrit pour le JDK 25, empêche Maven de démarrer.
 
 Les variables d'environnement sont documentées dans le
 [`README.md`](../README.md#configuration) et
@@ -375,6 +404,16 @@ c'est elle qu'il faut avoir vue verte avant de pousser.
 Cinq : le prédicat `edition_id` sur toute requête métier, l'alignement des trois
 écritures du nom d'une contrainte, l'absence de fuite de nom d'animateur par
 MCP, l'obligation d'y nommer son édition, et la politique de langue.
+
+Quatre autres tiennent la configuration d'un **autre programme** — Keycloak —
+face à celle-ci, en ne lisant que des fichiers (ils tournent sous `-Punit`) :
+`RealmPlanningStructuralTest` (le realm de développement face à
+`application.properties` et `docker-compose.yml` : rôles, PKCE, secrets,
+audience MCP, second facteur), `TerraformKeycloakStructuralTest` (le realm de
+production décrit par Terraform face au realm JSON, arbre du flow compris),
+`PlaybookKeycloakStructuralTest` (le playbook Ansible réduit aux personnes) et
+`KeycloakThemeStructuralTest` (le thème, l'image, l'extension). Voir
+[`keycloak.md`](keycloak.md) § *Tests*.
 
 Chacun porte une liste d'exceptions justifiées **une par une**, et un test qui
 vérifie que le scan trouve bien quelque chose — sans quoi il passerait au vert
@@ -922,6 +961,15 @@ points qui ne s'y voient pas :
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
   release — est dans [`versioning.md`](versioning.md).
+- **`docker-keycloak-ghcr.yml` publie de la même façon l'image Keycloak du
+  dépôt** (`planning-equipes-keycloak` : l'officielle, plus l'extension « code
+  par e-mail » et le thème, voir [`keycloak.md`](keycloak.md)) — mêmes tags,
+  même SBOM, même signature cosign. Sur `main`, seulement si
+  `docker/keycloak/**`, `keycloak/**` ou le workflow lui-même a changé ; sur un
+  tag, toujours, GitHub n'évaluant pas `paths` sur un tag : les deux images
+  portent les mêmes numéros, et `docker-compose.prod.yml` les tire sous la même
+  `APP_VERSION`. Son cache GHA a son propre `scope`, pour ne pas évincer celui
+  de l'application.
 - **`release.yml` écrit le corps d'une release publiée** (git-cliff sur les
   messages de commit du tag) et ne touche à rien d'autre : ni tag, ni branche,
   ni fichier du dépôt — il n'y a pas de `CHANGELOG.md` à tenir. Il part sur

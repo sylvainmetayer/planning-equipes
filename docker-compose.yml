@@ -45,11 +45,39 @@ services:
       # gated, like the API key) instead of pasting it in by hand. See docs/mcp.md.
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID:-}
       PLANNING_MCP_PANGOLIN_ACCESS_TOKEN: ${PLANNING_MCP_PANGOLIN_ACCESS_TOKEN:-}
-      # Admin login (issue #165): username is "admin", change the password for
-      # anything beyond local testing. Set SESSION_ENCRYPTION_KEY (>= 16 chars)
-      # so admin sessions survive a restart.
-      # Pas la valeur d'exemple : DefaultSecrets refuse le boot dessus, ce
-      # profil lançant l'image en production. Redéfinissable par l'environnement.
+      # Sign-in goes through the Keycloak service below (docs/keycloak.md):
+      # admins, the espace animateur and the MCP OAuth2 tenant alike. This
+      # profile runs the image in production mode, where OIDC is on by
+      # default; the values below are the ones the versioned realm
+      # (docker/keycloak/realm-planning.json) imports, and
+      # RealmPlanningStructuralTest holds the two files together.
+      #
+      # The URL is the SAME from this container and from the browser, because
+      # it is what the token issuer is checked against: hence port 8081 inside
+      # and outside the Keycloak container, and the `127.0.0.1 keycloak` line
+      # to add to /etc/hosts (docs/keycloak.md § Amorçage local).
+      OIDC_ENABLED: ${OIDC_ENABLED:-true}
+      OIDC_AUTH_SERVER_URL: ${OIDC_AUTH_SERVER_URL:-http://keycloak:8081/realms/planning}
+      OIDC_CLIENT_ID: ${OIDC_CLIENT_ID:-planning-app}
+      OIDC_CLIENT_SECRET: ${OIDC_CLIENT_SECRET:-dev-planning-app-oJ4kQ2vT-8fW6nB3q}
+      OIDC_MCP_AUDIENCE: ${OIDC_MCP_AUDIENCE:-planning-mcp}
+      # Plain http on a laptop: forcing https would announce redirect URLs
+      # nothing listens on.
+      OIDC_FORCE_HTTPS: ${OIDC_FORCE_HTTPS:-false}
+      # Account provisioning: creating an animateur fiche creates the Keycloak
+      # account that opens its espace. The service account can only manage
+      # users — it cannot read tokens or touch clients.
+      OIDC_PROVISIONING_ENABLED: ${OIDC_PROVISIONING_ENABLED:-true}
+      OIDC_PROVISIONING_SERVER_URL: ${OIDC_PROVISIONING_SERVER_URL:-http://keycloak:8081}
+      OIDC_PROVISIONING_REALM: ${OIDC_PROVISIONING_REALM:-planning}
+      OIDC_PROVISIONING_CLIENT_ID: ${OIDC_PROVISIONING_CLIENT_ID:-planning-provisioning}
+      OIDC_PROVISIONING_CLIENT_SECRET: ${OIDC_PROVISIONING_CLIENT_SECRET:-dev-planning-provisioning-yH5mL8sK}
+      # Break-glass admin account ("admin" / ADMIN_PASSWORD), CLOSED by
+      # default as in production: set ADMIN_SECOURS_ENABLED=true to try it.
+      # Not the example value: DefaultSecrets refuses to boot on it, this
+      # profile running the image in production mode. Set SESSION_ENCRYPTION_KEY
+      # (>= 16 chars) so its sessions survive a restart.
+      ADMIN_SECOURS_ENABLED: ${ADMIN_SECOURS_ENABLED:-false}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-dev-admin-Zc6qL1yV}
       QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:-}
       # Échange notification mails (issue #165), delivered to Mailpit below
@@ -102,6 +130,8 @@ services:
         condition: service_healthy
       mailpit:
         condition: service_started
+      keycloak:
+        condition: service_healthy
 
   postgres:
     image: postgres:18
@@ -128,6 +158,95 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  # Identity provider (docs/keycloak.md): realm « planning » imported at
+  # startup with its roles (admin / mcp / animateur / user), its clients, its
+  # identity-first login flow with a mandatory second factor for admins, and
+  # demonstration accounts. The realm is a versioned file: `docker compose
+  # down -v` then `up` replays it as is, so the IdP's state is reproducible
+  # rather than the residue of yesterday's clicks. It is only imported into an
+  # EMPTY database — after editing the file, `down -v` is what replays it.
+  #
+  # Port 8081 INSIDE as well as outside, and the host is called « keycloak »
+  # on both sides. Not a convenience: a token carries the issuer that signed
+  # it, and Quarkus refuses a token whose issuer differs from the authority it
+  # discovered. Publishing on a port other than the one the container listens
+  # on would give one server two URLs, hence tokens rejected every time.
+  keycloak:
+    # Not the official image: the repository's (docker/keycloak/Dockerfile),
+    # which adds the e-mail code authenticator and the « planning » theme. The
+    # first `up` builds it (a few minutes, one Maven module) and later ones
+    # reuse it; `--build` redoes it after touching the theme or the extension.
+    # Same image the CI exercises and production pulls from GHCR.
+    build:
+      context: .
+      dockerfile: docker/keycloak/Dockerfile
+    image: planning-equipes-keycloak:local
+    command:
+      - start-dev
+      - --import-realm
+      - --http-port=8081
+    environment:
+      # Local-only console credentials, overridable; never reuse them on a
+      # shared or staging host.
+      KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:-admin}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-dev-keycloak-Wq2fT7xM}
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://keycloak-db:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-dev-kcdb-Hs9jR4zN}
+      KC_HOSTNAME: http://keycloak:8081
+      KC_HOSTNAME_STRICT: "false"
+      KC_HTTP_ENABLED: "true"
+      # /health/ready, which the healthcheck below polls.
+      KC_HEALTH_ENABLED: "true"
+      # Theme accent colour, for the login page and the e-mails alike. Blank:
+      # the product's. See docs/keycloak.md § Le thème.
+      KEYCLOAK_BRAND_ACCENT: ${KEYCLOAK_BRAND_ACCENT:-}
+    volumes:
+      - ./docker/keycloak/realm-planning.json:/opt/keycloak/data/import/realm-planning.json:ro
+      # The visuals folder, mounted from the repository: touching a logo or
+      # brand.css shows on reload, without rebuilding the image. In
+      # production the client's folder takes this place (KEYCLOAK_BRAND_DIR).
+      - ./docker/keycloak/themes/planning/brand:/opt/keycloak/themes/planning/brand:ro
+    ports:
+      - "8081:8081"
+    healthcheck:
+      # The image carries neither curl nor wget: Keycloak serves its probes on
+      # the management port (9000), and bash can open a TCP socket.
+      test:
+        [
+          "CMD-SHELL",
+          "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && grep -q '\"UP\"' <&3",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 40
+      start_period: 20s
+    depends_on:
+      keycloak-db:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+
+  # Keycloak's own database, separate from the application's: an identity
+  # provider and a planning share neither a backup cycle nor a migration
+  # pace, and sharing `postgres` would have needed an init script that the
+  # volume already created on existing machines would never replay.
+  keycloak-db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD:-dev-kcdb-Hs9jR4zN}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+    volumes:
+      - keycloak_data:/var/lib/postgresql
+
   pgadmin:
     image: dpage/pgadmin4:9
     environment:
@@ -146,4 +265,5 @@ services:
 volumes:
   postgres_data:
     name: postgres_data_pg18
+  keycloak_data:
   pgadmin_data:

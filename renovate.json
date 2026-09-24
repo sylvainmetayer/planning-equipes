@@ -21,6 +21,8 @@
     "maven-wrapper",
     "mise",
     "npm",
+    "terraform",
+    "ansible-galaxy",
     "custom.regex"
   ],
   "customManagers": [
@@ -185,6 +187,12 @@
       "matchPackageNames": ["com.github.victools{/,}**"],
       "matchUpdateTypes": ["major"],
       "dependencyDashboardApproval": true
+    },
+    {
+      "description": "The Keycloak image and the SPIs the code-email extension is compiled against move together — last, so the container-images and maven groups above do not take them: an extension built for another server version fails at realm import, and KeycloakThemeStructuralTest refuses the two versions apart",
+      "matchPackageNames": ["quay.io/keycloak/keycloak", "org.keycloak{/,}**"],
+      "groupName": "keycloak",
+      "addLabels": ["keycloak"]
     }
   ],
   "vulnerabilityAlerts": {
