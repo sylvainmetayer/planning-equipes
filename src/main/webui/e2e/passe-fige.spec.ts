@@ -17,7 +17,7 @@
 // stands up the stack allowing it.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin } from './support';
+import { awaitJob, contexteAdmin, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
 /**
@@ -63,10 +63,17 @@ test.beforeAll(async ({ playwright }, testInfo) => {
 test.afterAll(async () => {
   // The clock lives outside the tables the reference restores
   // (`horloge_jour_j`): handed back explicitly, or every later spec would
-  // read July 2027 as today.
-  await admin.put('/api/debug/date-du-jour', { data: { dateDuJour: null } });
-  await repartirDeLaReference(admin);
-  await admin.dispose();
+  // read July 2027 as today — and a failure to hand it back must be loud, since
+  // every spec dated by `shiftDate` would then find its days already begun.
+  try {
+    const horlogeRendue = await admin.put('/api/debug/date-du-jour', {
+      data: { dateDuJour: null },
+    });
+    expect(horlogeRendue.ok(), await horlogeRendue.text()).toBe(true);
+  } finally {
+    await repartirDeLaReference(admin);
+    await admin.dispose();
+  }
 });
 
 /** Sets the server's clock from the Débogage page, the way a tester would. */
@@ -155,15 +162,14 @@ async function rendreIndisponible(animateurId: string, jour: string): Promise<vo
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }
 
-async function nomComplet(animateurId: string): Promise<string> {
+/** « Prénom Nom » by animateur id, read once for every name the step needs. */
+async function nomsComplets(): Promise<Map<string, string>> {
   const fiches = (await (await admin.get('/api/animateurs')).json()) as {
     id: string;
     prenom: string;
     nom: string;
   }[];
-  const fiche = fiches.find((candidat) => candidat.id === animateurId);
-  expect(fiche, `animateur ${animateurId}`).toBeTruthy();
-  return `${fiche!.prenom} ${fiche!.nom}`;
+  return new Map(fiches.map((fiche) => [fiche.id, `${fiche.prenom} ${fiche.nom}`]));
 }
 
 // @lourd in the title is a Playwright tag: e2e.yml leaves it out, e2e-lourd.yml
@@ -178,6 +184,8 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     // 1. Before the event: the whole week ahead, nothing frozen, zero hard.
     await figerHorloge(page, AVANT_L_EVENEMENT);
     await calculerDepuisLEcran(page);
+    // The recap first, or the absence below would hold before it is drawn.
+    await expect(page.locator('#contenu')).toContainText('Point de départ');
     await expect(page.locator('#contenu')).not.toContainText('postes déjà commencés');
     expect(await scoreDurPersiste()).toBe(0);
     const passeAttendu = await siegesPasses();
@@ -190,9 +198,11 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     // 2. Wednesday 13:30, and a holder of the Monday declares that day off
     //    after the fact: they were there all the same.
     await figerHorloge(page, J3, '13:30');
-    const temoin = (await sieges()).find((siege) => siege.creneau?.date === J1 && siege.animateur)!
-      .animateur!.id;
-    await rendreIndisponible(temoin, J1);
+    const siegeTemoin = (await sieges()).find(
+      (siege) => siege.creneau?.date === J1 && siege.animateur,
+    );
+    expect(siegeTemoin, 'the nominal plan seats somebody on the Monday').toBeTruthy();
+    await rendreIndisponible(siegeTemoin!.animateur!.id, J1);
 
     // 3. A full solve from the button: the recap names the frozen seats, the
     //    past is identical, and it costs nothing.
@@ -209,19 +219,9 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     });
     expect(incremental.status(), await incremental.text()).toBe(202);
     const { id } = (await incremental.json()) as { id: string };
-    await expect
-      .poll(
-        async () =>
-          ((await (await admin.get(`/api/jobs/${id}`)).json()) as { status: string }).status,
-        { timeout: (DUREE_SECONDES + 80) * 1000 },
-      )
-      .toMatch(/COMPLETED|FAILED|CANCELLED/);
-    const job = (await (await admin.get(`/api/jobs/${id}`)).json()) as {
-      status: string;
-      error: string | null;
+    const job = await awaitJob<{
       result: { statistiques: { postesPasses: number }; changements: unknown[] };
-    };
-    expect(job.status, job.error ?? '').toBe('COMPLETED');
+    }>(admin, id, DUREE_SECONDES);
     expect(job.result.statistiques.postesPasses).toBe(postesPasses);
     expect(job.result.changements).toEqual([]);
     expect(await siegesPasses()).toEqual(passeAttendu);
@@ -230,9 +230,22 @@ test('les journées déjà travaillées sortent de chaque résolution telles qu�
     //    with the rule's sentence, and the plan does not move. The move handle
     //    exists because the e2e stack turns GLISSER_DEPOSER_ACTIF on.
     const lundi = (await sieges()).filter((siege) => siege.creneau?.date === J1 && siege.animateur);
-    const titulaire = await nomComplet(lundi[0].animateur!.id);
-    const autre = lundi.find((siege) => siege.animateur!.id !== lundi[0].animateur!.id)!;
-    const remplacant = await nomComplet(autre.animateur!.id);
+    expect(lundi.length, 'Monday seats somebody').toBeGreaterThan(0);
+    const titulaireId = lundi[0].animateur!.id;
+    // The dialog offers every line of the day but the handle's own: the
+    // replacement must hold a seat on a line none of the holder's seats is on,
+    // or a two-person stand would leave the search with nothing to find.
+    const ligne = (siege: Siege) => `${siege.stand?.id}@${siege.creneau?.heureDebut}`;
+    const lignesDuTitulaire = new Set(
+      lundi.filter((siege) => siege.animateur!.id === titulaireId).map(ligne),
+    );
+    const autre = lundi.find(
+      (siege) => siege.animateur!.id !== titulaireId && !lignesDuTitulaire.has(ligne(siege)),
+    );
+    expect(autre, 'a Monday holder on another line').toBeTruthy();
+    const noms = await nomsComplets();
+    const titulaire = noms.get(titulaireId)!;
+    const remplacant = noms.get(autre!.animateur!.id)!;
 
     await page.goto(`/journee?vue=calendrier&date=${J1}`);
     const poignee = page

@@ -9,7 +9,7 @@
 // give the three states the screen exists to tell apart.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, decaler, pageAdmin } from './support';
+import { contexteAdmin, shiftDate, pageAdmin } from './support';
 import { repartirDeLaReference } from './reference';
 
 const SEED = {
@@ -24,7 +24,7 @@ const SEED = {
   creneauSoir: 987501,
   lieuMatin: 'CJ-L-MATIN',
   lieuSoir: 'CJ-L-SOIR',
-  jour: decaler('2026-07-20'),
+  jour: shiftDate('2026-07-20'),
 } as const;
 
 let admin: APIRequestContext;

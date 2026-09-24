@@ -11,8 +11,9 @@ import { APIRequestContext, expect, test } from '@playwright/test';
 import {
   SEED,
   contexteAdmin,
+  daysFromToday,
   dialogueOuvert,
-  libelleJour,
+  dayLabel,
   ouvrirSelect,
   pageAdmin,
   seedPlanning,
@@ -27,19 +28,8 @@ const CRENEAU_A_VENIR = 987020;
 const CRENEAU_PASSE = 987021;
 const MOTIF = 'Arrêté canicule E2E';
 
-/** `jours` days from the real clock, as `AAAA-MM-JJ` — the seeded day lies weeks beyond thirty. */
-function dansJours(jours: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + jours);
-  return [
-    date.getFullYear(),
-    String(date.getMonth() + 1).padStart(2, '0'),
-    String(date.getDate()).padStart(2, '0'),
-  ].join('-');
-}
-
-const DATE = dansJours(30);
-const DATE_PASSEE = dansJours(-30);
+const DATE = daysFromToday(30);
+const DATE_PASSEE = daysFromToday(-30);
 
 async function sql(script: string): Promise<void> {
   const reponse = await admin.post('/api/database/import', {
@@ -102,8 +92,8 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
 
   // Only the days ahead are offered: the one a month behind has begun long ago.
   await ouvrirSelect(page, 'Dates');
-  await expect(page.getByRole('option', { name: libelleJour(DATE_PASSEE) })).toHaveCount(0);
-  await page.getByRole('option', { name: libelleJour(DATE) }).click();
+  await expect(page.getByRole('option', { name: dayLabel(DATE_PASSEE) })).toHaveCount(0);
+  await page.getByRole('option', { name: dayLabel(DATE) }).click();
   await page.keyboard.press('Escape');
 
   await dialog.getByLabel('Motif').fill(MOTIF);
@@ -166,7 +156,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   await page.locator(`tr[data-date="${DATE}"]`).getByRole('button', { name: 'Lever' }).click();
   const levee = await dialogueOuvert(page);
   await levee.getByRole('button', { name: 'Aperçu' }).click();
-  await expect(levee).toContainText(libelleJour(DATE));
+  await expect(levee).toContainText(dayLabel(DATE));
   await levee.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();
   await expect(page.locator(`tr[data-date="${DATE}"]`)).toHaveCount(0);
@@ -214,7 +204,7 @@ test('le lien profond de la Journée ouvre le formulaire sur la date demandée',
 
   const dialog = await dialogueOuvert(page);
   await expect(dialog).toContainText('Poser une consigne');
-  await expect(dialog.locator('mat-select[name="dates"]')).toContainText(libelleJour(DATE));
+  await expect(dialog.locator('mat-select[name="dates"]')).toContainText(dayLabel(DATE));
   // Obeyed once: the address no longer asks for a new consigne.
   await expect(page).not.toHaveURL(/nouvelle=/);
   await expect(page).toHaveURL(new RegExp(`date=${DATE}`));

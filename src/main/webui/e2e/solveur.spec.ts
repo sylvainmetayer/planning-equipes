@@ -10,7 +10,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
-  decaler,
+  shiftDate,
   jetonDe,
   lancerSolve,
   occupantDe,
@@ -51,10 +51,10 @@ const STANDS: StandSeed[] = [
   { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
-  { id: C1, date: decaler('2026-07-12'), debut: '10:00', fin: '12:00' },
-  { id: C2, date: decaler('2026-07-13'), debut: '10:00', fin: '12:00' },
-  { id: C3, date: decaler('2026-07-14'), debut: '10:00', fin: '12:00' },
-  { id: C4, date: decaler('2026-07-15'), debut: '10:00', fin: '12:00' },
+  { id: C1, date: shiftDate('2026-07-12'), debut: '10:00', fin: '12:00' },
+  { id: C2, date: shiftDate('2026-07-13'), debut: '10:00', fin: '12:00' },
+  { id: C3, date: shiftDate('2026-07-14'), debut: '10:00', fin: '12:00' },
+  { id: C4, date: shiftDate('2026-07-15'), debut: '10:00', fin: '12:00' },
 ];
 
 let admin: APIRequestContext;

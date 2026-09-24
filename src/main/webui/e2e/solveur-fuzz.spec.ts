@@ -12,7 +12,7 @@ import {
   PlanningPersiste,
   StandSeed,
   contexteAdmin,
-  decaler,
+  shiftDate,
   lancerSolve,
   planningPersiste,
   seedReferentielSolveur,
@@ -49,7 +49,7 @@ interface Genere {
  */
 function genererProbleme(alea: () => number, iteration: number): Genere {
   const entier = (max: number) => Math.floor(alea() * max);
-  const jours = ['2026-07-15', '2026-07-16'].map(decaler);
+  const jours = ['2026-07-15', '2026-07-16'].map(shiftDate);
   const base = 987400 + iteration * 100;
 
   const creneaux: CreneauSeed[] = jours.flatMap((date, indexJour) => [
@@ -82,7 +82,7 @@ function genererProbleme(alea: () => number, iteration: number): Genere {
       prenom: `Mineur${index}`,
       nom: 'Fuzz',
       // Sixteen on the seeded days, whichever year the suite runs in.
-      dateNaissance: decaler('2010-06-15'),
+      dateNaissance: shiftDate('2010-06-15'),
       joursIndisponibles: [],
     })),
   ];

@@ -522,7 +522,7 @@ passé est figé » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) allumé,
 comme la production, et l'application empaquetée ne fige aucune date : un
 créneau derrière l'horloge serait repris du plan enregistré par chaque
 résolution et refuserait tout geste. Une spec écrit donc ses dates comme si
-l'événement tombait à l'été 2026 et les passe par `decaler()`
+l'événement tombait à l'été 2026 et les passe par `shiftDate()`
 (`e2e/support.ts`), qui les avance du plus petit nombre de semaines entières
 plaçant le lundi 6 juillet 2026 au moins huit semaines après aujourd'hui. Les
 jours de semaine sont gardés. La date de naissance d'un **mineur** passe par la
@@ -543,7 +543,8 @@ scénarios — et chaque nuit sur `main`. Comme les tests de scénario, et pour 
 même raison, une PR Renovate ne l'exerce que sous le label `timefold` ou
 `quarkus`.
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
-c'est dire qu'elle résout une fixture réelle ; ce n'est pas l'endroit où
+c'est dire qu'elle résout une fixture réelle, ou qu'il lui faut la pile de
+`e2e-lourd.yml` (l'horloge simulée, ci-dessous) ; ce n'est pas l'endroit où
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
 
 `passe-fige.spec.ts` est l'autre spec `@lourd`, pour une autre raison : elle
@@ -554,7 +555,9 @@ passée — et il lui faut une pile qui accepte l'horloge simulée. `e2e-lourd.y
 passe `horloge-simulee: true` à `e2e-suite.yml`, qui monte alors l'application
 avec `HORLOGE_SIMULEE_AUTORISEE=true` ; `e2e.yml` ne le fait pas, et
 `jour-j.spec.ts` y vérifie que figer la date est refusé. En local, lancez
-l'application avec cette variable pour la jouer. La spec rend l'horloge
+l'application avec cette variable et jouez la spec seule
+(`npm run e2e -- passe-fige.spec.ts`) : sur cette pile, le refus que vérifie
+`jour-j.spec.ts` n'a plus lieu et la suite entière échouerait. La spec rend l'horloge
 réelle en partant : la table qui la porte survit à la restauration de la
 référence.
 

@@ -11,7 +11,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
-  decaler,
+  shiftDate,
   lancerSolve,
   pageAdmin,
   seedReferentielSolveur,
@@ -36,9 +36,9 @@ const STANDS: StandSeed[] = [
   { id: 'SOLV-S2', nom: 'Stand Plancher deux', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
-  { id: 987301, date: decaler('2026-07-12'), debut: '10:00', fin: '12:00' },
-  { id: 987302, date: decaler('2026-07-13'), debut: '10:00', fin: '12:00' },
-  { id: 987303, date: decaler('2026-07-14'), debut: '10:00', fin: '12:00' },
+  { id: 987301, date: shiftDate('2026-07-12'), debut: '10:00', fin: '12:00' },
+  { id: 987302, date: shiftDate('2026-07-13'), debut: '10:00', fin: '12:00' },
+  { id: 987303, date: shiftDate('2026-07-14'), debut: '10:00', fin: '12:00' },
 ];
 
 let admin: APIRequestContext;

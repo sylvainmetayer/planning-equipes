@@ -12,7 +12,7 @@
 // pour la plus haute des deux bandes d'en-tête.
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, decaler, pageAdmin, seedReferentielSolveur } from './support';
+import { contexteAdmin, shiftDate, pageAdmin, seedReferentielSolveur } from './support';
 import { repartirDeLaReference } from './reference';
 
 /** De quoi déborder la boîte (70 vh, plafonnée à 42 rem) sur l'écran de la CI. */
@@ -20,7 +20,7 @@ const LIGNES = 30;
 /** La ligne d'où l'on remonte au clavier, et le nombre de remontées. */
 const LIGNE_DEPART = 15;
 const REMONTEES = 12;
-const JOUR = decaler('2026-07-10');
+const JOUR = shiftDate('2026-07-10');
 /** Tolérance des mesures : une bordure fusionnée vaut un demi-pixel de part et d'autre. */
 const TOLERANCE = 1;
 

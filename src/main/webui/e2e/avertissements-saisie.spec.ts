@@ -4,13 +4,23 @@
 // serait un refus déguisé, et cette suite est ce qui l'interdit.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, dialogueOuvert, pageAdmin, seedReferentielSolveur } from './support';
+import {
+  contexteAdmin,
+  shiftDate,
+  dialogueOuvert,
+  pageAdmin,
+  seedReferentielSolveur,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
 
 /** Un jour très éloigné des autres fixtures : les bornes de l'édition sont les siennes. */
-const JOUR = '2027-06-10';
+const JOUR = shiftDate('2027-06-10');
+/** An off day two months after it: outside the edition's bounds. */
+const JOUR_HORS_BORNES = shiftDate('2027-08-15');
+/** A minor on JOUR, whichever year the suite runs in. */
+const NAISSANCE_MINEURE = shiftDate('2015-06-11');
 const STAND = 'E2E-AVERT-S';
 const STAND_MATIN = 'E2E-AVERT-M';
 const ANIMATEUR = 'E2E-AVERT';
@@ -177,8 +187,8 @@ test.describe('avertissements de saisie', () => {
     await dialog.getByLabel('Identifiant').fill(ANIMATEUR);
     await dialog.getByLabel('Prénom').fill('Camille');
     await dialog.getByLabel('Nom', { exact: true }).fill('Avert');
-    await dialog.getByLabel('Date de naissance').fill('2015-06-11');
-    await dialog.getByLabel('Jour').fill('2027-08-15');
+    await dialog.getByLabel('Date de naissance').fill(NAISSANCE_MINEURE);
+    await dialog.getByLabel('Jour').fill(JOUR_HORS_BORNES);
     await dialog.getByRole('button', { name: 'Ajouter', exact: true }).click();
     await dialog.getByRole('button', { name: "Créer l'animateur" }).click();
     await expect(dialog).toBeHidden();
@@ -188,12 +198,12 @@ test.describe('avertissements de saisie', () => {
     // date de naissance qu'on vient de saisir.
     const bulle = page.locator('mat-snack-bar-container');
     await expect(bulle).toContainText(/mineur pendant tout l'événement/);
-    await expect(bulle).toContainText('2027-08-15');
+    await expect(bulle).toContainText(JOUR_HORS_BORNES);
     // Le message dit qui par son identifiant, jamais par son identité ni par sa
     // date de naissance : il finit dans un journal de navigateur.
     await expect(bulle).toContainText('E2E-AVERT');
     await expect(bulle).not.toContainText('Camille');
-    await expect(bulle).not.toContainText('2015-06-11');
+    await expect(bulle).not.toContainText(NAISSANCE_MINEURE);
 
     // La fiche existe, et l'indisponibilité hors bornes a bien été écrite.
     await page.getByRole('button', { name: 'Fermer' }).click();
@@ -201,7 +211,7 @@ test.describe('avertissements de saisie', () => {
     const ligne = page.getByRole('row', { name: new RegExp(ANIMATEUR) });
     await expect(ligne).toBeVisible();
     await ligne.getByRole('button', { name: 'Consulter le détail' }).click();
-    await expect(page.getByRole('dialog')).toContainText('2027-08-15');
+    await expect(page.getByRole('dialog')).toContainText(JOUR_HORS_BORNES);
 
     // Le journal du navigateur survit à la déconnexion et se relit depuis la
     // page Notifications : la phrase qui dit qu'une personne est mineure n'y
@@ -250,7 +260,7 @@ test.describe('avertissements de saisie', () => {
     await ligne.getByRole('button', { name: 'Modifier' }).click();
     const dialog = await dialogueOuvert(page);
     await dialog.getByLabel('Date de naissance').fill('1990-01-01');
-    await dialog.getByRole('button', { name: 'Retirer 2027-08-15' }).click();
+    await dialog.getByRole('button', { name: `Retirer ${JOUR_HORS_BORNES}` }).click();
     await dialog.getByRole('button', { name: "Modifier l'animateur" }).click();
     await expect(dialog).toBeHidden();
 

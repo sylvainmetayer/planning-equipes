@@ -12,6 +12,7 @@ import { APIRequestContext, expect, test } from '@playwright/test';
 import {
   SEED,
   contexteAdmin,
+  daysFromToday,
   jetonDe,
   ouvrirSessionEspace,
   pageAdmin,
@@ -20,13 +21,6 @@ import {
 import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
-
-/** ISO date `decalage` days from today — les bornes se raisonnent en relatif. */
-function jour(decalage: number): string {
-  const date = new Date();
-  date.setDate(date.getDate() + decalage);
-  return date.toISOString().slice(0, 10);
-}
 
 async function configurerFoire(
   admin: APIRequestContext,
@@ -105,7 +99,11 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
 
 test.describe('Foire au planning : bornes datées', () => {
   test('hors fenêtre, le serveur refuse la soumission et ne fait pas que masquer', async () => {
-    await configurerFoire(admin, { foireOuverte: true, debut: jour(3), fin: jour(10) });
+    await configurerFoire(admin, {
+      foireOuverte: true,
+      debut: daysFromToday(3),
+      fin: daysFromToday(10),
+    });
 
     const configuration = await (await admin.get('/api/echanges/configuration')).json();
     expect(configuration.foireOuverte).toBe(true);
@@ -124,7 +122,7 @@ test.describe('Foire au planning : bornes datées', () => {
   test("avant la date d'ouverture, l'espace dit « pas encore ouverte » et non « fermée »", async ({
     page,
   }) => {
-    const debut = jour(5);
+    const debut = daysFromToday(5);
     await configurerFoire(admin, { foireOuverte: true, debut, fin: null });
 
     const jeton = await jetonDe(admin, SEED.demandeur);
@@ -140,7 +138,11 @@ test.describe('Foire au planning : bornes datées', () => {
   });
 
   test("une fois la fenêtre passée, l'espace dit bien « fermée »", async ({ page }) => {
-    await configurerFoire(admin, { foireOuverte: true, debut: jour(-10), fin: jour(-3) });
+    await configurerFoire(admin, {
+      foireOuverte: true,
+      debut: daysFromToday(-10),
+      fin: daysFromToday(-3),
+    });
 
     const jeton = await jetonDe(admin, SEED.demandeur);
     await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
@@ -153,7 +155,11 @@ test.describe('Foire au planning : bornes datées', () => {
   });
 
   test("l'écran admin distingue « ouverte » de « ouverte hors période »", async ({ browser }) => {
-    await configurerFoire(admin, { foireOuverte: true, debut: jour(3), fin: jour(10) });
+    await configurerFoire(admin, {
+      foireOuverte: true,
+      debut: daysFromToday(3),
+      fin: daysFromToday(10),
+    });
 
     const page = await pageAdmin(browser, admin);
     await page.goto('/echanges');
