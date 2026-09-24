@@ -8,8 +8,12 @@ describe('locale', () => {
     localStorage.clear();
   });
 
+  // The stored locale outlives the file: a test that leaves English behind
+  // turns every date of the next spec file sharing the environment into
+  // month/day.
   afterEach(() => {
     vi.restoreAllMocks();
+    localStorage.clear();
   });
 
   describe('getStoredLocale', () => {
