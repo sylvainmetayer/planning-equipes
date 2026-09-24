@@ -19,6 +19,14 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Animateur } from '../../core/models';
 import { AnimateurFormDialog } from './animateur-form-dialog';
+import { noDraftStorage, fakeDialogRef, memoryStorage } from '../../core/testing/brouillon';
+import {
+  LOCAL_DRAFT_STORAGE,
+  SESSION_DRAFT_STORAGE,
+  DraftStorage,
+  draftKey,
+  writeDraft,
+} from '../../core/brouillon-formulaire';
 
 const TYPOLOGIES = [
   { id: 'ambiance', label: 'Ambiance' },
@@ -42,7 +50,11 @@ function animateur(overrides: Partial<Animateur> = {}): Animateur {
 
 function monter(
   donnee: Animateur | null,
-  options: { editingLocked?: boolean; saveOk?: boolean } = {},
+  options: {
+    editingLocked?: boolean;
+    saveOk?: boolean;
+    storages?: { local: DraftStorage; session: DraftStorage };
+  } = {},
 ) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
@@ -56,7 +68,13 @@ function monter(
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
       { provide: ReferenceCrudService, useValue: { save } },
-      { provide: MatDialogRef, useValue: { close } },
+      { provide: MatDialogRef, useValue: fakeDialogRef(close) },
+      ...(options.storages
+        ? [
+            { provide: LOCAL_DRAFT_STORAGE, useValue: options.storages.local },
+            { provide: SESSION_DRAFT_STORAGE, useValue: options.storages.session },
+          ]
+        : noDraftStorage()),
       { provide: MAT_DIALOG_DATA, useValue: { animateur: donnee } },
     ],
   });
@@ -371,5 +389,77 @@ describe('AnimateurFormDialog', () => {
       bouton.textContent?.includes('Ajouter une appréciation'),
     ) as HTMLButtonElement;
     expect(add.disabled).toBe(true);
+  });
+  describe('draft', () => {
+    // The acceptance criterion of the whole feature for this form: an
+    // identity, a birth date and an e-mail never land in localStorage.
+    it('writes the draft to sessionStorage, never to localStorage', async () => {
+      const storages = { local: memoryStorage(), session: memoryStorage() };
+      const { fixture } = monter(animateur(), { storages });
+      await fixture.whenStable();
+
+      saisir(fixture, 'nom', 'Nothomb-Martin');
+      await fixture.whenStable();
+      // Destroyed with the write pending, as a navigation would: it goes out now.
+      fixture.destroy();
+
+      expect(storages.local.length).toBe(0);
+      expect(storages.session.length).toBe(1);
+      const written = JSON.parse(storages.session.getItem(storages.session.key(0)!)!);
+      expect(written.draft.nom).toBe('Nothomb-Martin');
+    });
+
+    it('offers the interrupted entry back, and takes it on « Reprendre »', async () => {
+      const session = memoryStorage();
+      writeDraft(
+        session,
+        draftKey('animateur', 'a1'),
+        {
+          ...animateur(),
+          nom: 'Interrompue',
+          email: '',
+          competences: [],
+          modifieLe: null,
+        },
+        null,
+      );
+      const { fixture, save } = monter(animateur(), {
+        storages: { local: memoryStorage(), session },
+      });
+      await fixture.whenStable();
+
+      expect(racine(fixture).querySelector('app-draft-banner')).not.toBeNull();
+      expect(champ(fixture, 'nom').value).toBe('Nothomb');
+
+      cliquer(fixture, 'Reprendre');
+      await fixture.whenStable();
+      expect(racine(fixture).querySelector('app-draft-banner')).toBeNull();
+
+      submit(fixture);
+      await fixture.whenStable();
+      expect(payload(save).nom).toBe('Interrompue');
+      expect(session.length).toBe(0);
+    });
+
+    it('offers nothing to another fiche', async () => {
+      const session = memoryStorage();
+      writeDraft(session, draftKey('animateur', 'a2'), { id: 'a2' }, null);
+      const { fixture } = monter(animateur(), {
+        storages: { local: memoryStorage(), session },
+      });
+      await fixture.whenStable();
+
+      expect(racine(fixture).querySelector('app-draft-banner')).toBeNull();
+    });
+
+    it('closes an untouched fiche without a question', async () => {
+      const { fixture, close } = monter(animateur());
+      await fixture.whenStable();
+
+      cliquer(fixture, 'Annuler');
+      await fixture.whenStable();
+
+      expect(close).toHaveBeenCalledWith(false);
+    });
   });
 });

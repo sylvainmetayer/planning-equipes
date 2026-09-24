@@ -20,6 +20,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau, Emplacement, HoraireStand, Stand } from '../../core/models';
 import { StandFormDialog } from './stand-form-dialog';
+import { noDraftStorage, fakeDialogRef } from '../../core/testing/brouillon';
 
 const CRENEAUX: Creneau[] = [
   { id: 1, jour: 1, date: '2026-07-14', heureDebut: '10:00', heureFin: '12:00' },
@@ -101,7 +102,8 @@ function mount(donnee: Stand | null, options: { editingLocked?: boolean; stands?
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
       { provide: ReferenceCrudService, useValue: { save } },
-      { provide: MatDialogRef, useValue: { close } },
+      { provide: MatDialogRef, useValue: fakeDialogRef(close) },
+      ...noDraftStorage(),
       { provide: MAT_DIALOG_DATA, useValue: { stand: donnee } },
     ],
   });
@@ -877,7 +879,8 @@ describe('StandFormDialog', () => {
         },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
         { provide: ReferenceCrudService, useValue: { save } },
-        { provide: MatDialogRef, useValue: { close } },
+        { provide: MatDialogRef, useValue: fakeDialogRef(close) },
+        ...noDraftStorage(),
         { provide: MAT_DIALOG_DATA, useValue: { stand: stand() } },
       ],
     });

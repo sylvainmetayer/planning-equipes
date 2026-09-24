@@ -112,6 +112,10 @@ export class StandsPage extends ReferenceTablePage<Stand> {
           this.ouvertures()?.anomalies.filter((anomalie) => anomalie.standId === stand.id) ?? null,
         ),
       }),
+      drafts: {
+        type: 'stand',
+        describe: (ids) => $localize`:@@stands.brouillon.orphelin:Le stand ${ids}:ids:`,
+      },
       formulaire: (stand, dialog: MatDialog) => {
         dialog
           .open<StandFormDialog, StandFormData, boolean>(StandFormDialog, {

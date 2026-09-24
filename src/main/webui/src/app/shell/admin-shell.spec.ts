@@ -25,6 +25,14 @@ import { NotificationService } from '../core/notification.service';
 import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { SolverJobService } from '../core/solver-job.service';
 import { UpdateCheckService } from '../core/update-check.service';
+import {
+  DRAFT_LIFETIME_MS,
+  LOCAL_DRAFT_STORAGE,
+  SESSION_DRAFT_STORAGE,
+  writeDraft,
+} from '../core/brouillon-formulaire';
+import { memoryStorage } from '../core/testing/brouillon';
+import { SESSION_END_BUS, SessionEndBus } from '../core/session-end';
 import { AdminShell } from './admin-shell';
 
 const NAV_STORAGE_KEY = 'planning-equipes.nav.collapsedGroups';
@@ -79,6 +87,12 @@ describe('AdminShell', () => {
   const snackBar = { dismiss: vi.fn() };
   const api = { get: vi.fn() };
   const adminApi = { logout: vi.fn() };
+  /** The drafts' storages, the spec's own: the shell purges them. */
+  let draftLocal: ReturnType<typeof memoryStorage>;
+  let draftSession: ReturnType<typeof memoryStorage>;
+  /** The logout bus between tabs, the spec's own: `elsewhere` plays another tab. */
+  let busTarget: EventTarget;
+  let announced: unknown[];
   const updates = { available: signal(null), check: vi.fn() };
   /**
    * Handlers the shell registers, by job type. Keyed rather than collapsed into
@@ -137,9 +151,25 @@ describe('AdminShell', () => {
     });
     adminApi.logout.mockResolvedValue(undefined);
     api.get.mockResolvedValue({});
+    draftLocal = memoryStorage({ 'planning-equipes.editionId': 'ed-1' });
+    draftSession = memoryStorage();
+    busTarget = new EventTarget();
+    announced = [];
+    const bus: SessionEndBus = {
+      channel: () =>
+        Object.assign(busTarget, {
+          postMessage: (data: unknown) => void announced.push(data),
+          close: () => undefined,
+        }),
+      storage: null,
+      window: null,
+    };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        { provide: LOCAL_DRAFT_STORAGE, useValue: draftLocal },
+        { provide: SESSION_DRAFT_STORAGE, useValue: draftSession },
+        { provide: SESSION_END_BUS, useValue: bus },
         provideRouter([]),
         { provide: BreakpointObserver, useValue: breakpoints },
         { provide: SolverJobService, useValue: jobs },
@@ -850,6 +880,59 @@ describe('AdminShell', () => {
 
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
       vi.restoreAllMocks();
+    });
+  });
+  describe('the drafts of the long forms', () => {
+    function storages() {
+      return { local: draftLocal, session: draftSession };
+    }
+
+    it('drops the expired ones when the shell starts, and keeps the others', () => {
+      const { local, session } = storages();
+      const old = new Date(Date.now() - DRAFT_LIFETIME_MS - 60_000);
+      writeDraft(local, 'planning-equipes.brouillon.stand.ed-1#s1', {}, null, old);
+      writeDraft(local, 'planning-equipes.brouillon.stand.ed-1#s2', {}, null);
+      writeDraft(session, 'planning-equipes.brouillon.animateur.ed-1#a1', {}, null, old);
+
+      createShell();
+
+      expect([...local.entries.keys()].sort()).toEqual([
+        'planning-equipes.brouillon.stand.ed-1#s2',
+        'planning-equipes.editionId',
+      ]);
+      expect(session.length).toBe(0);
+    });
+
+    // A shared régie computer: the next person must not be offered the
+    // previous one's entries — nor, for a fiche animateur, read them.
+    it('drops every one of them at logout, whatever the edition', async () => {
+      const assign = vi.fn();
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      const { local, session } = storages();
+      const shell = createShell();
+      writeDraft(local, 'planning-equipes.brouillon.consigne.ed-2#nouveau', {}, null);
+      writeDraft(session, 'planning-equipes.brouillon.animateur.ed-1#a1', {}, null);
+
+      await shell.logout();
+
+      expect([...local.entries.keys()]).toEqual(['planning-equipes.editionId']);
+      expect(session.length).toBe(0);
+      expect(announced).toEqual(['logout']);
+      vi.restoreAllMocks();
+    });
+
+    // The other tab's sessionStorage is out of the logging-out tab's reach:
+    // the fiche animateur draft there goes when the announcement arrives.
+    it('drops the session drafts of this tab when another tab logs out', () => {
+      const { local, session } = storages();
+      createShell();
+      writeDraft(session, 'planning-equipes.brouillon.animateur.ed-1#a1', {}, null);
+      writeDraft(local, 'planning-equipes.brouillon.stand.ed-1#s1', {}, null);
+
+      busTarget.dispatchEvent(new MessageEvent('message', { data: 'logout' }));
+
+      expect(session.length).toBe(0);
+      expect(local.entries.has('planning-equipes.brouillon.stand.ed-1#s1')).toBe(true);
     });
   });
 });

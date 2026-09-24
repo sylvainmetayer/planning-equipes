@@ -385,6 +385,38 @@ complètes. Quatre points sont connus et se consignent :
   autre message de l'application d'y écrire un nom. La consigne d'exploitation
   qui va avec est celle d'un poste partagé : vider le journal, ou fermer la
   session du navigateur, en quittant le poste ;
+- **les formulaires longs gardent un brouillon de la saisie en cours dans le
+  navigateur**, et c'est un autre lieu de stockage hors de la base : la fiche
+  animateur, la fiche stand et la consigne enregistrent, une seconde après la
+  dernière frappe, ce qui n'a pas encore été enregistré, pour le proposer à la
+  réouverture après un rechargement, une session expirée ou un onglet fermé.
+  Les bornes posées se consignent telles quelles : le brouillon d'une **fiche
+  animateur** — identité, date de naissance, donc statut de mineur, adresse
+  électronique — n'est écrit que dans le **`sessionStorage`**, qui meurt avec
+  l'onglet, jamais dans le `localStorage` ; ceux du stand et de la consigne,
+  qui ne portent aucune donnée personnelle, vont dans le `localStorage`. Chaque
+  brouillon est cloisonné par édition et par fiche (un au plus), **effacé** à
+  l'enregistrement, à « Ignorer », à l'abandon confirmé du formulaire et au
+  bouton *Se déconnecter* (tous les brouillons, toutes éditions), et purgé
+  **au-delà de 24 h** à l'ouverture de l'interface ; celui d'une fiche
+  supprimée entre-temps est effacé sans être reproposé, avec un message qui
+  la désigne par son identifiant. Le `sessionStorage` d'un onglet n'étant
+  lisible que par lui, la déconnexion est **annoncée aux autres onglets** du
+  navigateur (canal de diffusion, ou à défaut un événement de stockage sur une
+  clé qui ne porte aucune donnée) : chacun efface alors ses brouillons de
+  fiche animateur. La purge fait foi : un formulaire ouvert avant elle
+  n'écrit plus aucun brouillon, pas même la sauvegarde en attente que la
+  navigation vers la page de connexion déclencherait en le fermant. Une
+  session **expirée** ne les efface pas, et c'est voulu : reprendre une saisie
+  après l'expiration est la raison d'être du brouillon, et celui d'une fiche
+  animateur reste dans le `sessionStorage` de l'onglet, que nul autre ne lit.
+  Aucun brouillon n'est envoyé au serveur, journalisé, exporté ni exposé au
+  MCP. Ce qui ne le borne pas : un onglet fermé sans déconnexion emporte son
+  `sessionStorage`, mais un onglet resté ouvert — session expirée comprise —
+  garde la fiche en cours jusqu'à la prochaine déconnexion ou purge des
+  24 h ; et un
+  navigateur qui refuse les deux mécanismes de diffusion ne purge que l'onglet
+  qui se déconnecte ;
 - **l'effacement demandé par un animateur sur une édition encore active** n'a
   pas de procédure outillée : c'est une suppression manuelle de sa fiche. Une
   demande d'effacement ne se refuse pas au motif que l'événement n'est pas

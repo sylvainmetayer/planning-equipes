@@ -79,6 +79,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.data.brouillon:La fiche animateur, la fiche stand et le formulaire de consigne gardent un brouillon de la saisie en cours. Après un rechargement, une session expirée ou un onglet fermé, rouvrir le même formulaire propose « Reprendre » ou « Ignorer » ; si la fiche a changé entre-temps, le bandeau le dit et l'enregistrement vous fera choisir entre recharger et écraser. Fermer un formulaire modifié — Échap, clic à côté, « Annuler » — demande confirmation. Le brouillon s'efface à l'enregistrement, à l'abandon, à la déconnexion et au bout de 24 h ; celui d'une fiche animateur ne survit pas à la fermeture de l'onglet, et celui d'une fiche supprimée entre-temps est effacé avec un message.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.data.avertissements:Certaines saisies sont enregistrées avec un avertissement à lire. Les plus fréquentes : une indisponibilité posée hors des dates de l'événement ou sur un jour sans créneau, une date de naissance qui rend l'animateur mineur pendant l'événement, un créneau qu'aucun stand n'est ouvert à couvrir, une fenêtre horaire qui ne recoupe aucun créneau. Une modification ne signale que ce qu'elle change, et tant que l'édition n'a aucun créneau ces avertissements se taisent.`,
         },
       ],

@@ -222,8 +222,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   be turned off on a browser (WCAG 2.1.4: dictation fires one per word said
   outside a field), a chrome preference in `core/single-key-shortcuts.ts`
   offered by the `?` dialog and by Paramètres. Escape is
-  deliberately not implemented: no dialog sets `disableClose`, so `MatDialog`
-  already closes the topmost one. Do not add a second `document`-level
+  deliberately not implemented: `MatDialog` already closes the topmost dialog.
+  The three forms that keep an auto-saved draft (fiche animateur, stand,
+  consigne) are the one exception, and it stays inside the dialog: they set
+  `disableClose` and route Escape and the backdrop through
+  `shared/brouillon-dialog.ts`, which asks before throwing a modified form
+  away — through the dialog's own `keydownEvents()`, never a `document`
+  listener. Do not add a second `document`-level
   `keydown`; the Konami easter egg of the shell is the one accepted exception.
   Arrow navigation inside a widget — the calendars, the heatmap, the reference
   tables through `core/table-navigation.ts` — is *not* an exception: it is
@@ -256,7 +261,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   has to survive. Those go to localStorage, through `core/nav-collapse` (the
   drawer's folded groups), `core/nav-mode` (simple / avancé) or
   `core/panel-collapse` (a page panel, e.g. the
-  solver's score curve). The default of a control is
+  solver's score curve). An unsaved entry is neither, and has its own module:
+  `core/brouillon-formulaire.ts` keeps the draft of the three long forms,
+  scoped by edition, 24 h at most, sessionStorage for the fiche animateur and
+  never localStorage — its bounds are `docs/rgpd.md` §7. The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
   to the default rather than failing the page), writing replaces the history
   entry through `Location.replaceState` and **never navigates** — a router

@@ -37,7 +37,10 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { consumeQueryParam } from '../../core/view-query-params';
+import { LOCAL_DRAFT_STORAGE } from '../../core/brouillon-formulaire';
+import { reportOrphanDrafts } from '../../shared/brouillon-dialog';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { consigneDateOf } from './consigne-brouillon';
 import { ConsigneFormData, ConsigneFormDialog, ModeConsigne } from './consigne-form-dialog';
 import { ConsigneLeveeData, ConsigneLeveeDialog } from './consigne-levee-dialog';
 import { datesCandidates, isPast, openedStandsCount } from './consignes';
@@ -95,6 +98,7 @@ export class ConsignesPage {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly route = inject(ActivatedRoute);
+  private readonly draftStorage = inject(LOCAL_DRAFT_STORAGE);
   /** Editing is disabled while a solve runs, like every referential screen. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
@@ -152,7 +156,7 @@ export class ConsignesPage {
   );
 
   constructor() {
-    void this.recharger();
+    void this.recharger().then(() => this.dropOrphanDrafts());
     const referentiel = this.crud.reload();
     // `?date=…&nouvelle=1`: a link from the Journée lands here with the form
     // open on that date. Obeyed once, then dropped — see `view-query-params.ts`.
@@ -172,6 +176,24 @@ export class ConsignesPage {
 
   protected async recharger(): Promise<void> {
     await this.store.reload();
+  }
+
+  /**
+   * The drafts of a consigne lifted meanwhile are dropped, with a word. Only
+   * on a successful read: a failed one leaves no consigne to compare with.
+   */
+  private dropOrphanDrafts(): void {
+    if (this.store.error() !== '' || this.store.etat() === null) {
+      return;
+    }
+    reportOrphanDrafts(
+      this.notifications,
+      this.draftStorage,
+      'consigne',
+      (recordId) => this.store.consigneOf(consigneDateOf(recordId)) !== null,
+      (ids) =>
+        $localize`:@@consignes.brouillon.orphelin:La consigne du ${ids.split(', ').map(consigneDateOf).join(', ')}:dates:`,
+    );
   }
 
   protected bandOf(prereglage: PrereglageConsigne): string {

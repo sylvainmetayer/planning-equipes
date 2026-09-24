@@ -1,6 +1,12 @@
 <h2 mat-dialog-title>{{ formTitle() }}</h2>
 <form (ngSubmit)="save()">
 <mat-dialog-content class="form-grid">
+@if (formDraft.found(); as found) {
+  @if (!editingLocked()) {
+    <app-draft-banner class="span-2" [savedAt]="found.savedAt" [conflict]="formDraft.conflict()"
+                          (resumeDraft)="formDraft.resume()" (ignoreDraft)="formDraft.ignore()" />
+  }
+}
 <fieldset class="form-fieldset" [disabled]="editingLocked()">
 @if (editingLocked()) {
   <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
@@ -137,7 +143,7 @@
 </fieldset>
 </mat-dialog-content>
 <mat-dialog-actions align="end">
-  <button matButton type="button" (click)="dialogRef.close(false)" i18n="@@common.cancel">Annuler</button>
+  <button matButton type="button" (click)="formDraft.close()" i18n="@@common.cancel">Annuler</button>
   <button matButton="filled" type="submit" [disabled]="editingLocked() || !identityComplete()">
     <mat-icon>save</mat-icon>
     {{ submitLabel() }}

@@ -57,6 +57,14 @@ import {
   repasSaisie,
 } from './consignes';
 import { ConsigneRepasFields, repasErrorLabel } from './consigne-repas-fields';
+import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
+import {
+  ConsigneDraft,
+  toConsigneDraft,
+  isConsigneModified,
+  consigneRecordId,
+  readConsigneDraft,
+} from './consigne-brouillon';
 
 /** Poser a new consigne, modifier the one a row carries, or prolonger it on other dates. */
 export type ModeConsigne = 'poser' | 'modifier' | 'prolonger';
@@ -102,6 +110,7 @@ export interface ConsigneFormData {
     MatSelectModule,
     MatTooltipModule,
     ConsigneRepasFields,
+    DraftBanner,
   ],
   templateUrl: './consigne-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -224,6 +233,33 @@ export class ConsigneFormDialog {
     stands: this.stands(),
     repas: this.repas(),
   }));
+  /**
+   * A gesture chose among the stand rows — ticked, retyped, bulk-applied.
+   * Until then the rows are the server's proposal, which a draft need not
+   * keep: restoring the dates and the band is enough to get it again.
+   */
+  private readonly standsTouched = signal(false);
+  private readonly initial = toConsigneDraft(untracked(this.form), false);
+
+  /** The interrupted entry, in localStorage: a consigne carries no personal data. */
+  protected readonly formDraft = new FormDraft<ConsigneDraft>({
+    type: 'consigne',
+    recordId: consigneRecordId(this.mode, this.data.consigne),
+    modifieLe: this.data.consigne?.modifieLe ?? null,
+    state: () => toConsigneDraft(this.form(), this.standsTouched()),
+    modified: () =>
+      isConsigneModified(this.initial, toConsigneDraft(this.form(), this.standsTouched())),
+    read: (raw) => readConsigneDraft(raw),
+    apply: (draft) => this.applyDraft(draft),
+    dialogRef: this.dialogRef,
+    cancelResult: null,
+  });
+
+  protected readonly draftConflictMessage = computed(
+    () =>
+      $localize`:@@consignes.brouillon.conflit:La consigne a été modifiée depuis : l'enregistrer remplacera cette nouvelle version.`,
+  );
+
   protected readonly erreurs = computed(() =>
     erreursForm(
       this.form(),
@@ -330,11 +366,13 @@ export class ConsigneFormDialog {
   }
 
   protected toutCocher(coche: boolean): void {
+    this.standsTouched.set(true);
     this.stands.update((rows) => cocherAffiches(rows, this.idsAffiches(), coche));
     this.apercu.set(null);
   }
 
   protected patchStand(standId: string, patch: Partial<StandForm>): void {
+    this.standsTouched.set(true);
     this.stands.update((rows) =>
       rows.map((row) => (row.standId === standId ? { ...row, ...patch } : row)),
     );
@@ -385,6 +423,7 @@ export class ConsigneFormDialog {
       return;
     }
     const effectifSaisi = this.bulkEffectif().trim();
+    this.standsTouched.set(true);
     this.stands.update((rows) =>
       applyToSelection(rows, this.idsAffiches(), {
         fenetres: this.bulkWindows().trim() === '' ? undefined : fenetres,
@@ -416,7 +455,9 @@ export class ConsigneFormDialog {
     }
     this.enregistrement.set(true);
     try {
-      this.dialogRef.close(await this.api.poser(buildDemande(this.form())));
+      const apercu = await this.api.poser(buildDemande(this.form()));
+      this.formDraft.complete();
+      this.dialogRef.close(apercu);
     } catch (error) {
       this.crud.reportError(error);
     } finally {
@@ -426,6 +467,27 @@ export class ConsigneFormDialog {
 
   protected libelleDate(date: string): string {
     return libelleDate(date);
+  }
+
+  /**
+   * Pours a draft back: the typed fields, then the rows when the draft kept
+   * them. Set after the dates and the band, so the re-read those start merges
+   * its proposal over the restored rows instead of replacing them.
+   */
+  private applyDraft(draft: ConsigneDraft): void {
+    const offertes = new Set(this.datesOffertes().map((option) => option.date));
+    this.dates.set(draft.dates.filter((date) => offertes.has(date)));
+    this.fermetureDebut.set(draft.fermetureDebut);
+    this.fermetureFin.set(draft.fermetureFin);
+    this.motif.set(draft.motif);
+    this.prereglage.set(draft.prereglage);
+    this.fenetres.set(draft.fenetres);
+    this.repas.set(draft.repas);
+    if (draft.stands !== null) {
+      this.stands.set(draft.stands);
+      this.standsTouched.set(true);
+    }
+    this.apercu.set(null);
   }
 
   protected vacations(refs: VacationRef[]): string {

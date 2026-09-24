@@ -2,7 +2,10 @@ import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ElementRef, Signal, computed, inject, signal } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
 import { firstValueFrom } from 'rxjs';
+import { reportOrphanDrafts } from '../shared/brouillon-dialog';
 import { DetailData, DetailDialog } from '../shared/detail-dialog';
+import { LOCAL_DRAFT_STORAGE, DraftFormType } from './brouillon-formulaire';
+import { NotificationService } from './notification.service';
 import { ReferenceCrudService } from './reference-crud.service';
 import { ReferenceDataStore } from './reference-data.store';
 import { SolverJobService } from './solver-job.service';
@@ -53,6 +56,13 @@ export interface ReferenceTableConfig<T> {
    * references it. Absent when nothing can.
    */
   usages?: (row: T, store: ReferenceDataStore) => string;
+
+  /**
+   * The page's form keeps an auto-saved draft (`core/brouillon-formulaire.ts`):
+   * once the rows are loaded, the drafts of rows deleted meanwhile are dropped
+   * and `describe` names them in the notice.
+   */
+  drafts?: { type: DraftFormType; describe: (ids: string) => string };
 }
 
 /**
@@ -131,6 +141,22 @@ export abstract class ReferenceTablePage<T> {
       announcer: inject(LiveAnnouncer),
     });
     const chargement = this.crud.reload();
+    const drafts = config.drafts;
+    if (drafts) {
+      const notifications = inject(NotificationService);
+      const storage = inject(LOCAL_DRAFT_STORAGE);
+      void chargement.then((loaded) => {
+        if (loaded) {
+          reportOrphanDrafts(
+            notifications,
+            storage,
+            drafts.type,
+            (id) => config.rows(this.store).some((row) => config.id(row) === id),
+            drafts.describe,
+          );
+        }
+      });
+    }
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link very
     // often points at the screen already displayed, where nothing is

@@ -24,6 +24,8 @@ import { JourResolu, joursEdition, resoudreHoraires } from '../../core/horaire-s
 import { libelleJour } from '../../core/horaire-stand';
 import { datesEvenement, decrireJour, premiereErreurHoraire } from './stand-horaires';
 import { HoraireReglesEditor } from './horaire-regles-editor';
+import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
+import { readStandDraft, isStandModified } from './stand-brouillon';
 import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import {
   StandDraft,
@@ -82,6 +84,7 @@ export interface StandFormData {
     MatIconModule,
     MatTooltipModule,
     HoraireReglesEditor,
+    DraftBanner,
   ],
   templateUrl: './stand-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -104,7 +107,22 @@ export class StandFormDialog {
   }
 
   protected readonly editingId = signal<string | null>(this.data.stand?.id ?? null);
-  protected readonly draft = signal<StandDraft>(toDraft(this.data.stand));
+  private readonly initial = toDraft(this.data.stand);
+  protected readonly draft = signal<StandDraft>(this.initial);
+
+  /** The interrupted entry, in localStorage: a stand carries no personal data. */
+  protected readonly formDraft = new FormDraft<StandDraft>({
+    type: 'stand',
+    recordId: this.data.stand?.id ?? null,
+    modifieLe: this.initial.modifieLe,
+    state: () => this.draft(),
+    modified: () => isStandModified(this.initial, this.draft()),
+    read: (raw) => readStandDraft(raw, this.data.stand?.id ?? null),
+    precondition: (draft) => draft.modifieLe,
+    apply: (draft) => this.draft.set(draft),
+    dialogRef: this.dialogRef,
+    cancelResult: false,
+  });
 
   protected readonly effectifInvalid = computed(() => effectifInvalide(this.draft()));
   protected readonly typologiesInvalides = computed(() => typologiesVides(this.draft()));
@@ -276,6 +294,7 @@ export class StandFormDialog {
         $localize`:@@stands.entityLabel:Stand`,
       )
     ) {
+      this.formDraft.complete();
       this.dialogRef.close(true);
     }
   }

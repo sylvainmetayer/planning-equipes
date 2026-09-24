@@ -14,6 +14,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConsigneFormData, ConsigneFormDialog } from './consigne-form-dialog';
 import { StandForm } from './consignes';
+import { noDraftStorage, fakeDialogRef } from '../../core/testing/brouillon';
 
 /** What the spec drives on the component, without the template's Material controls. */
 interface DialogInternals {
@@ -80,7 +81,8 @@ describe('ConsigneFormDialog — the stands list', () => {
         { provide: ConsignesApi, useValue: api },
         { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
         { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
-        { provide: MatDialogRef, useValue: { close: vi.fn() } },
+        { provide: MatDialogRef, useValue: fakeDialogRef(vi.fn()) },
+        ...noDraftStorage(),
         { provide: MAT_DIALOG_DATA, useValue: data },
       ],
     });

@@ -49,6 +49,8 @@ import {
   readSort,
   sortQueryParams,
 } from '../../core/view-query-params';
+import { SESSION_DRAFT_STORAGE } from '../../core/brouillon-formulaire';
+import { reportOrphanDrafts } from '../../shared/brouillon-dialog';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailData, DetailDialog } from '../../shared/detail-dialog';
@@ -264,6 +266,7 @@ export class AnimateursPage {
   private readonly dialog = inject(MatDialog);
   private readonly animateursApi = inject(AnimateursApi);
   private readonly notifications = inject(NotificationService);
+  private readonly draftStorage = inject(SESSION_DRAFT_STORAGE);
   private readonly confirmDialog = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
 
@@ -350,6 +353,17 @@ export class AnimateursPage {
     this.neverReminded.set(readNeverReminded(params.get('relance')));
     this.typologie.set(params.get('typologie') ?? '');
     const chargement = this.crud.reload();
+    void chargement.then((loaded) => {
+      if (loaded) {
+        reportOrphanDrafts(
+          this.notifications,
+          this.draftStorage,
+          'animateur',
+          (id) => this.store.animateurs().some((animateur) => animateur.id === id),
+          (ids) => $localize`:@@animateurs.brouillon.orphelin:L'animateur ${ids}:ids:`,
+        );
+      }
+    });
     void this.problemes.reloadFeasibility();
     void this.chargerConfirmations();
     keepViewInQueryParams(() => ({

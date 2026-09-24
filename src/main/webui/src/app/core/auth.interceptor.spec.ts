@@ -5,6 +5,8 @@ import { Router } from '@angular/router';
 import { throwError, of, firstValueFrom, type Observable } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { authInterceptor } from './auth.interceptor';
+import { SESSION_DRAFT_STORAGE, draftKey, writeDraft } from './brouillon-formulaire';
+import { memoryStorage } from './testing/brouillon';
 
 class FakeRouter {
   navigateByUrl = vi.fn(async () => true);
@@ -12,12 +14,29 @@ class FakeRouter {
 
 describe('authInterceptor', () => {
   let router: FakeRouter;
+  let sessionDrafts: ReturnType<typeof memoryStorage>;
 
   beforeEach(() => {
     router = new FakeRouter();
+    sessionDrafts = memoryStorage();
     TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), { provide: Router, useValue: router }],
+      providers: [
+        provideZonelessChangeDetection(),
+        { provide: Router, useValue: router },
+        { provide: SESSION_DRAFT_STORAGE, useValue: sessionDrafts },
+      ],
     });
+  });
+
+  // Recovering an entry after the session expired is what the drafts are
+  // for: the 401 keeps them, only the explicit logout purges (docs/rgpd.md §7).
+  it('keeps the session drafts on the 401 that sends to /login', async () => {
+    writeDraft(sessionDrafts, draftKey('animateur', 'a1'), {}, null);
+
+    await expect(firstValueFrom(interceptEnErreur('/api/stands', 401))).rejects.toBeTruthy();
+
+    expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
+    expect(sessionDrafts.length).toBe(1);
   });
 
   /** Runs the interceptor on `url` with a next handler answering `status`. */
