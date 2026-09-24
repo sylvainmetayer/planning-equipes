@@ -467,6 +467,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   instance — logins, failures, lockouts, with time and address, the same
   whatever edition is selected —, `pages/historique/connexions-admin`, paged
   the same way),
+  `/comptes` (« Comptes et droits » — the named accounts and the RH /
+  responsable de stand rights delegated to them, per edition and with an
+  expiry, ADR 0049: an account is deactivated and a right withdrawn, never
+  deleted; the credentials, the second factor and the `admin` realm role stay
+  Keycloak's; the stands of a right in another edition are read with an
+  explicit `X-Edition-Id`, `StandsApi.listInEdition`),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from
   the repository's commit subjects collected at build time by
   `scripts/generate-news.js` into a gitignored `news-data.ts`, and sorted
