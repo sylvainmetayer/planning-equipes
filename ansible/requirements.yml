@@ -1,0 +1,16 @@
+# Collections dont le playbook dépend.
+#   ansible-galaxy collection install -r ansible/requirements.yml
+collections:
+  # La collection Keycloak du projet Ansible Middleware. Ses modules keycloak_*
+  # sont idempotents et savent dire « changed: false » — ce qu'une suite
+  # d'appels curl ne sait pas faire, et c'est toute la différence entre un
+  # script de création et un playbook qu'on rejoue sans réfléchir.
+  #
+  # Préférée à community.general, qui couvre les comptes et leurs rôles mais
+  # pas l'envoi d'une invitation (keycloak_user_execute_actions_email) : sans
+  # lui, cette étape repasserait par des appels `uri` bruts, avec leur jeton
+  # d'administration à gérer à la main.
+  #
+  # https://galaxy.ansible.com/ui/repo/published/middleware_automation/keycloak/
+  - name: middleware_automation.keycloak
+    version: ">=2.0.0"
