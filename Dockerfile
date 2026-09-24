@@ -38,7 +38,7 @@ RUN apt-get update \
 # tout le conteneur.
 #
 # L'uid est 1000 parce que c'est celui du premier compte d'une machine Linux :
-# un répertoire de l'hôte monté sur `/backups` lui appartient alors déjà, et
+# un répertoire de l'hôte monté sur `/backup` lui appartient alors déjà, et
 # l'exploitant n'a pas de `chown` à faire pour que la sauvegarde puisse écrire.
 # L'image de base est une Ubuntu, qui livre son propre compte `ubuntu` sur ce
 # même 1000 : il faut le retirer d'abord, sinon `useradd` échoue sur un uid
@@ -50,7 +50,14 @@ RUN userdel --remove ubuntu \
 # monté sur un chemin qui existe dans l'image en reprend les droits. Sans cela
 # il arriverait en `root:root` et la première sauvegarde échouerait sur un
 # refus d'écriture.
-RUN install -d -o 1000 -g 1000 /backups
+#
+# `/backups` est l'ancien chemin, celui qu'un `.env.prod` d'avant ce changement
+# écrit encore (BACKUP_DIR=/backups) : un lien vers `/backup` le garde valide,
+# faute de quoi la sauvegarde de nuit échouerait sans que personne n'ait rien
+# touché. Voir docs/exploitation.md § La sauvegarde automatique.
+RUN install -d -o 1000 -g 1000 /backup \
+    && ln -s /backup /backups \
+    && chown -h 1000:1000 /backups
 COPY --from=build --chown=1000:1000 /workspace/target/quarkus-app/ /app/
 USER 1000
 EXPOSE 8080

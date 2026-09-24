@@ -81,7 +81,10 @@ done
 # The database and its owner are fixed by the compose file, not by .env.prod.
 DB=festival
 DB_USER=festival
-BACKUPS=/backups
+# The backup directory as the application sees it: read from the container's
+# own environment (BACKUP_DIR, which docker-compose.prod.yml sets to /backup
+# unless .env.prod empties it), never assumed.
+BACKUPS=""
 
 etape() { echo; echo "▸ $*"; }
 ok() { echo "  ✔ $*"; }
@@ -92,10 +95,21 @@ dc() { docker compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" "$@"; }
 # mounted exactly as the compose file mounts it — its entrypoint replaced, so
 # it works even when the application itself no longer starts.
 volume() { dc run --rm --no-deps -T --entrypoint bash app -c "$1"; }
+# Read from the container itself: whatever BACKUP_DIR the stack gives the
+# application is where its dumps are — empty or unset meaning none, as for
+# the application, whose own default is empty.
+# shellcheck disable=SC2016  # expanded inside the container, on purpose
+backups_dir() { volume 'printf %s "${BACKUP_DIR-}"'; }
 
 [[ -f "$COMPOSE_FILE" ]] || ko "$COMPOSE_FILE introuvable : lancez le script depuis le répertoire de la pile"
 [[ -f "$ENV_FILE" ]] || ko "$ENV_FILE introuvable (--env-file)"
 command -v docker >/dev/null || ko "docker est introuvable"
+if [[ -z "$FICHIER" || "$ESSAI" == false ]]; then
+  BACKUPS="$(backups_dir)" || ko "impossible de lire BACKUP_DIR dans le conteneur applicatif"
+  # Without it there are no dumps to list, and nowhere to write the safety
+  # dump either: only --essai --fichier gets by without.
+  [[ -n "$BACKUPS" ]] || ko "BACKUP_DIR est vide : la sauvegarde automatique est désactivée sur cette pile, et le dump de précaution n'a nulle part où aller — renseignez BACKUP_DIR=/backup dans $ENV_FILE (seul --essai --fichier s'en passe)"
+fi
 
 TRAVAIL="$(mktemp -d)"
 APP_ARRETEE=false

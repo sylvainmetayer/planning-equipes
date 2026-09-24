@@ -85,6 +85,9 @@ jobs:
           MAIL_FROM=ci@localhost
           LEGAL_DEMO_INSTANCE=true
           EOF
+          # ./backup is a host directory, as on the reference deployment: it
+          # must belong to the container's uid before the first start.
+          mkdir -p backup && sudo chown 1000:1000 backup
           $COMPOSE up -d --wait --wait-timeout 300 || { $COMPOSE logs app; exit 1; }
 
       - name: Put a backup in the volume, then change the database
@@ -92,7 +95,7 @@ jobs:
           psql() { $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$1"; }
           psql "CREATE TABLE restauration_ci (etat text); INSERT INTO restauration_ci VALUES ('avant')"
           $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom \
-            | $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'cat > /backups/planning-20260101-040000.dump'
+            | $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'cat > "$BACKUP_DIR/planning-20260101-040000.dump"'
           psql "DELETE FROM restauration_ci; INSERT INTO restauration_ci VALUES ('apres')"
 
       - name: A file that is not a dump is refused before anything stops
@@ -159,7 +162,7 @@ jobs:
       - name: Check the restored state
         run: |
           test "$($COMPOSE exec -T postgres psql -U festival -d festival -tAc 'SELECT etat FROM restauration_ci')" = avant
-          $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'ls /backups' | tee sauvegardes.txt
+          $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'ls "$BACKUP_DIR"' | tee sauvegardes.txt
           grep -q '^planning-avant-restauration-.*\.dump$' sauvegardes.txt
           test "$(docker inspect --format '{{.State.Health.Status}}' "$($COMPOSE ps -q app)")" = healthy
 

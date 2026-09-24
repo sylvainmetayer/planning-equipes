@@ -520,7 +520,7 @@ Ce qu'elle change :
   `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et
   `MAIL_FROM` font échouer le démarrage si l'environnement ne les fournit pas,
   plutôt que de laisser passer un identifiant de développement ;
-- **un volume de sauvegarde** monté sur `BACKUP_DIR`, où la tâche de nuit écrit
+- **un répertoire de sauvegarde** de l'hôte (`./backup`) monté sur `BACKUP_DIR`, où la tâche de nuit écrit
   ses `pg_dump`. C'est le seul endroit où l'application écrit sur le disque, et
   ces fichiers sont le jeu de données complet en clair — noms, dates de
   naissance et adresses des animateurs, mineurs compris. Ils se traitent comme

@@ -159,7 +159,7 @@ jobs:
       # The artefact that will be deployed, pulled by digest, started with the
       # minimal production environment: what only the image can break — the
       # JRE layer, uid 1000, the PGDG postgresql-client, the rights on
-      # /backups, the ENTRYPOINT, the startup guards (DefaultSecrets,
+      # /backup, the ENTRYPOINT, the startup guards (DefaultSecrets,
       # RequiredMentionsLegales, BACKUP_RETENTION bounds) — breaks here,
       # before anything is tagged, signed or attested.
       - name: Smoke test the pushed image
@@ -180,7 +180,7 @@ jobs:
             -e MAIL_MOCK=false -e MAIL_HOST=localhost -e MAIL_PORT=1025 \
             -e MAIL_FROM=smoke@localhost -e MAIL_START_TLS=DISABLED \
             -e LEGAL_DEMO_INSTANCE=true \
-            -e BACKUP_DIR=/backups -e BACKUP_RETENTION=3 \
+            -e BACKUP_DIR=/backup -e BACKUP_RETENTION=3 \
             "$IMAGE"
 
           # The version the image must report: the Dockerfile's own
@@ -209,10 +209,16 @@ jobs:
             echo "✘ pg_dump $client_major, docker-compose.prod.yml sert postgres:${server_major:-?}"; failed=1
           fi
 
-          if docker exec smoke bash -c 'touch /backups/.smoke && rm /backups/.smoke'; then
-            echo "✔ /backups inscriptible"
+          if docker exec smoke bash -c 'touch /backup/.smoke && rm /backup/.smoke'; then
+            echo "✔ /backup inscriptible"
           else
-            echo "✘ /backups n'est pas inscriptible par l'utilisateur de l'image"; failed=1
+            echo "✘ /backup n'est pas inscriptible par l'utilisateur de l'image"; failed=1
+          fi
+          # The old path, still written by an .env.prod from before the rename.
+          if docker exec smoke bash -c 'touch /backups/.smoke && test -e /backup/.smoke && rm /backups/.smoke'; then
+            echo "✔ /backups mène à /backup"
+          else
+            echo "✘ /backups, l'ancien chemin, ne mène plus à /backup"; failed=1
           fi
 
           if [ "$failed" != 0 ]; then

@@ -17,26 +17,29 @@ services:
   app:
     # Une version NOMMÉE (APP_VERSION=1.2.0), jamais `main` ni `latest` : un
     # déploiement doit être nommable dans un rapport d'incident. Sans défaut,
-    # comme les mots de passe : un défaut `main` déploierait en silence
-    # l'image de recette, c'est-à-dire exactement ce que docs/versioning.md
-    # § Déployer interdit. Tant qu'aucune v1.0.0 n'est publiée, on écrit
-    # `APP_VERSION=main` à la main — le choix est alors assumé, pas subi.
+    # comme les mots de passe. Voir docs/versioning.md § Déployer.
     image: ghcr.io/sylvainmetayer/planning-equipes:${APP_VERSION:?APP_VERSION est obligatoire — une version nommée, ex. 1.2.0, voir docs/versioning.md}
     restart: unless-stopped
+    mem_limit: 1g
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
     # c'est ce qui rend dignes de confiance les en-têtes X-Forwarded-*.
     ports:
       - "127.0.0.1:8080:8080"
+    # Tout le fichier d'environnement est transmis tel quel, comme sur le
+    # déploiement de référence : marque blanche, mentions légales, MCP, suivi
+    # d'erreurs, sauvegarde, notifications de nuit… Chaque variable y est
+    # décrite dans .env.prod.example.
+    env_file:
+      - .env.prod
+    # Ne restent ici que les valeurs que la pile FIXE, celles dont le nom
+    # change en chemin, les défauts qui diffèrent de ceux de l'application, et
+    # les variables OBLIGATOIRES : un `?` fait échouer le démarrage plutôt que
+    # de laisser passer un mot de passe de développement en production.
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/festival
       DB_USER: festival
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
-      # Réparation de l'historique Flyway au démarrage : `true` le temps de
-      # débloquer une migration interrompue, puis retour à `false`. Voir
-      # docs/exploitation.md.
-      FLYWAY_REPAIR_AT_START: ${FLYWAY_REPAIR_AT_START:-false}
-      # Compte admin unique : un mot de passe long et propre à ce déploiement.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:?ADMIN_PASSWORD est obligatoire}
       # Sans clé fixe, les sessions admin sont invalidées à chaque redémarrage.
       QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY: ${SESSION_ENCRYPTION_KEY:?SESSION_ENCRYPTION_KEY est obligatoire (>= 16 caractères)}
@@ -45,96 +48,28 @@ services:
       # Le proxy termine le TLS : sans cela, la redirection de connexion repart
       # en http et le cookie de session perd son flag Secure.
       PROXY_ADDRESS_FORWARDING: "true"
-      # Adresses dont les en-têtes X-Forwarded-* sont acceptés. À renseigner
-      # dès que l'origine est joignable autrement que par le proxy.
       QUARKUS_HTTP_PROXY_TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
-      # Adresses des proxys inverses, telles que l'application les voit, pour
-      # les deux plafonds qui comptent par adresse (connexion admin, /mcp).
-      # Réglage DISTINCT du précédent, qui ne peut pas le remplacer : celui-ci
-      # décide quelle entrée de X-Forwarded-For est retenue, l'autre seulement
-      # si l'en-tête est lu. Vide, tous les appels passant par le proxy
-      # partagent un compteur — et sur /mcp, qui compte chaque requête, le
-      # premier venu y tient le client légitime en 429. Voir docs/securite.md.
-      CONNEXION_PROXYS_FIABLES: ${CONNEXION_PROXYS_FIABLES:-}
-      # Serveur MCP : vide = inutilisable, ce qui est le bon défaut tant que
-      # personne ne s'en sert. Voir docs/mcp.md.
-      PLANNING_MCP_API_KEY: ${PLANNING_MCP_API_KEY:-}
-      # Plafond de débit sur /mcp, par adresse source : toutes les requêtes
-      # comptent, clé ou pas, et au-delà la réponse est 429. Voir docs/mcp.md.
-      PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
-      PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
-      # Vide, /mcp compte sur la liste ci-dessus ; à ne renseigner que pour
-      # lui donner une liste de proxys à lui.
-      PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
-      # Verrou sur une série de clés REFUSÉES, distinct du plafond ci-dessus :
-      # c'est lui qui fait qu'essayer des clés coûte du temps. Une requête sans
-      # clé ne compte pas, une requête qui s'authentifie efface la série.
-      PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
-      PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
-      # Glisser-déposer des affectations dans les vues Journée et Rail : coupé
-      # par défaut tant que le geste n'est pas assez fiable. `true` pour l'offrir.
-      GLISSER_DEPOSER_ACTIF: ${GLISSER_DEPOSER_ACTIF:-false}
-      # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
-      SENTRY_DSN: ${SENTRY_DSN:-}
-      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
-      # Marque blanche : une instance par client, réglée par déploiement. Sans
-      # ces variables l'application s'appelle « Planning Équipes », n'affiche
-      # aucun logo plutôt que celui d'un autre, et imprime ses PDF dans une
-      # palette neutre. Voir README.md § Marque blanche.
-      BRANDING_PRODUCT_NAME: ${BRANDING_PRODUCT_NAME:-Planning Équipes}
-      BRANDING_ORGANISATION: ${BRANDING_ORGANISATION:-}
-      BRANDING_LOGO_URL: ${BRANDING_LOGO_URL:-}
-      BRANDING_ACCENT_COLOR: ${BRANDING_ACCENT_COLOR:-}
-      BRANDING_PDF_LOGO: ${BRANDING_PDF_LOGO:-}
-      BRANDING_PDF_STRIP: ${BRANDING_PDF_STRIP:-}
-      # Mascotte : la grande pour l'easter egg, la petite pour l'indicateur de
-      # résolution. Vides = pas d'easter egg et une icône Material.
-      BRANDING_MASCOT_URL: ${BRANDING_MASCOT_URL:-}
-      BRANDING_MASCOT_ICON_URL: ${BRANDING_MASCOT_ICON_URL:-}
-      # Mentions légales, servies publiquement sur /mentions-legales : vides,
-      # la page existe mais n'annonce rien — ce qui est précisément ce qu'un
-      # site accessible au public ne peut pas se permettre. Cinq d'entre elles
-      # sont donc EXIGÉES AU DÉMARRAGE (éditeur, hébergeur, contact, base
-      # légale, conservation) ; une instance qui n'est pas en service le
-      # déclare par LEGAL_DEMO_INSTANCE plutôt que de les laisser vides.
-      LEGAL_DEMO_INSTANCE: ${LEGAL_DEMO_INSTANCE:-false}
-      LEGAL_EDITEUR: ${LEGAL_EDITEUR:-}
-      LEGAL_DIRECTEUR_PUBLICATION: ${LEGAL_DIRECTEUR_PUBLICATION:-}
-      LEGAL_HEBERGEUR: ${LEGAL_HEBERGEUR:-}
-      LEGAL_CONTACT: ${LEGAL_CONTACT:-}
-      LEGAL_RESPONSABLE_TRAITEMENT: ${LEGAL_RESPONSABLE_TRAITEMENT:-}
-      LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
-      LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
       # SMTP réel : c'est par là que partent les codes d'accès de l'espace
-      # animateur, donc l'espace ne s'ouvre pas sans lui.
+      # animateur. Relais authentifié en STARTTLS par défaut — l'application,
+      # elle, part sur un Mailpit local (1025, sans TLS).
       MAIL_MOCK: "false"
       MAIL_HOST: ${MAIL_HOST:?MAIL_HOST est obligatoire}
-      MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_FROM: ${MAIL_FROM:?MAIL_FROM est obligatoire}
-      MAIL_ADMIN: ${MAIL_ADMIN:-}
-      # Relais authentifié : un serveur de production n'accepte pas un envoi
-      # anonyme. Vides = pas d'authentification, ce qu'attend un Mailpit local.
-      # SPF, DKIM et DMARC restent à régler sur le domaine — voir
-      # docs/exploitation.md § Faire arriver les e-mails.
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
       MAIL_START_TLS: ${MAIL_START_TLS:-REQUIRED}
-      # Sauvegarde automatique de nuit : un pg_dump complet écrit dans le
-      # volume monté ci-dessous. Vider BACKUP_DIR désactive la fonctionnalité.
-      # BACKUP_RETENTION est borné à [1, 30] et refuse le démarrage hors de ces
-      # valeurs. Voir docs/exploitation.md § Sauvegarde et restauration.
-      BACKUP_DIR: ${BACKUP_DIR:-/backups}
-      BACKUP_RETENTION: ${BACKUP_RETENTION:-10}
-      BACKUP_TIMEZONE: ${BACKUP_TIMEZONE:-Europe/Paris}
+      SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}
+      # Sauvegarde de nuit : le répertoire monté ci-dessous. Vider BACKUP_DIR
+      # désactive la fonctionnalité. Voir docs/exploitation.md § Sauvegarde.
+      BACKUP_DIR: ${BACKUP_DIR-/backup}
+      TZ: ${TZ:-Europe/Paris}
     volumes:
-      # Un volume nommé suffit à survivre au conteneur, pas à la machine : ces
-      # fichiers portent des données personnelles de mineurs et doivent être
-      # recopiés hors de l'hôte, chiffrés. Un montage de répertoire hôte
-      # (`- /srv/sauvegardes:/backups`) est le montage attendu dès qu'une
-      # externalisation existe — il faut alors que le répertoire appartienne à
-      # l'uid 1000, celui du conteneur, qui est aussi celui du premier compte
-      # de l'hôte : le montage tombe juste sans `chown`.
-      - backups:/backups
+      # Un répertoire de l'hôte, à côté de ce fichier, comme sur le déploiement
+      # de référence : c'est là que l'exploitant le recopie hors machine,
+      # chiffré (ces fichiers portent des données personnelles de mineurs). Il
+      # doit appartenir à l'uid 1000, celui du conteneur :
+      #   mkdir -p backup && sudo chown 1000:1000 backup
+      # Sinon Docker le crée en root et la première sauvegarde échoue.
+      - ./backup:/backup
     # Prête = base joignable et migrations à jour (/q/health/ready). L'image
     # ne contient pas `curl` (retiré après l'installation de pg_dump) : la
     # requête est écrite à la main par bash sur /dev/tcp, sans rien ajouter
@@ -152,12 +87,15 @@ services:
   postgres:
     image: postgres:18
     restart: unless-stopped
+    mem_limit: 512m
+    mem_reservation: 128m
     # Aucun `ports:` : la base n'est jamais publiée sur l'hôte, seul le réseau
     # interne de la pile la voit.
     environment:
       POSTGRES_DB: festival
       POSTGRES_USER: festival
       POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD est obligatoire}
+      TZ: ${TZ:-Europe/Paris}
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U festival -d festival"]
       interval: 5s
@@ -170,5 +108,3 @@ services:
 volumes:
   postgres_data:
     name: postgres_data_pg18
-  backups:
-    name: planning_backups
