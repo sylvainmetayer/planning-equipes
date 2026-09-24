@@ -1,0 +1,40 @@
+@startuml
+' L'abonnement ICS : un second jeton, qui ne sert qu'à lire son propre plan
+' publié depuis un agenda, sans session ni code. Le changer est la seule
+' révocation. Voir docs/securite.md et docs/decisions/0019.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Animateur" as animateur
+boundary "Agenda\n(Google, Apple, Thunderbird…)" as agenda
+participant EspaceAnimateurResource as espace
+participant ReferenceDataService as referentiel
+participant AnimateurRepository as depot
+participant AbonnementTokenFilter as filtre
+participant AbonnementIcsResource as ics
+participant PlanPublieService as publie
+participant PlanningIcs as calendrier
+
+animateur -> agenda : colle l'adresse d'abonnement de son espace
+loop à la fréquence choisie par l'agenda
+  agenda -> filtre : GET /api/abonnements/{token}/planning.ics
+  filtre -> referentiel : resolveAbonnementToken(token)
+  alt jeton inconnu ou révoqué (fiche supprimée comprise)
+    filtre --> agenda : 404 « Abonnement inconnu ou révoqué »
+  else
+    filtre -> ics : planningIcs()
+    ics -> publie : plan publié
+    ics -> calendrier : exportAnimateurIcs(plan, animateurId)
+    ics --> agenda : 200 text/calendar, Cache-Control: private, no-cache\n(calendrier vide tant que rien n'est publié)
+  end
+end
+
+== Révocation : l'animateur change son adresse ==
+animateur -> espace : POST /api/espace-animateur/{jeton}/abonnement (session requise)
+espace -> referentiel : regenerateAbonnementToken(id)
+referentiel -> depot : regenerateAbonnementToken(id)
+note right of depot : SET abonnement_token = gen_random_uuid() ;\nle jeton d'espace ne change pas
+espace --> animateur : nouvelle adresse ; l'ancienne répond 404
+@enduml

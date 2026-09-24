@@ -15,6 +15,10 @@ L'application n'a pas de modèle utilisateur, donc pas d'OAuth2 — il supposera
 un consentement qui n'existe pas ici. La clé se présente dans un en-tête
 configurable (`X-MCP-Api-Key` par défaut) ou en `Authorization: Bearer`.
 
+![Un appel d'outil MCP, de la clé au service](diagrammes/mcp.svg)
+
+<sub>Source : [`diagrammes/mcp.puml`](diagrammes/mcp.puml).</sub>
+
 **Sécurisé par défaut** : tant que `PLANNING_MCP_API_KEY` n'est pas positionnée,
 `/mcp` répond 401 systématiquement. Le serveur MCP peut vider la base, modifier
 les référentiels et lancer une résolution : une exposition non authentifiée

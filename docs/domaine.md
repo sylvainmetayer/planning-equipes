@@ -5,6 +5,10 @@ compatible avec `HardMediumSoftScore`. Les noms de classes et de champs restent
 en **vocabulaire métier français** ; commentaires et identifiants non métier en
 anglais (glossaire dans [`AGENTS.md`](../AGENTS.md)).
 
+![Le modèle Timefold : solution, entité, variable](diagrammes/domaine.svg)
+
+<sub>Source : [`diagrammes/domaine.puml`](diagrammes/domaine.puml).</sub>
+
 Les classes et leurs champs se lisent dans `domain/`. Ce document porte les
 règles de calcul et les arbitrages.
 

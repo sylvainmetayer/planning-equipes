@@ -1,0 +1,43 @@
+@startuml
+' Prévisualiser puis écrire, en deux appels portant le même corps. Aucun jeton
+' ne relie les deux : l'écriture relit le fichier et refait chaque contrôle,
+' si bien qu'elle ne peut pas écrire autre chose que ce qu'elle a vérifié.
+' Voir docs/import-export.md et docs/decisions/0021.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur" as admin
+participant AnimateurResource as resource
+participant AnimateurCsvImportService as import
+participant SolverJobService as jobs
+participant AnimateurRepository as depot
+participant JdbcEditionScope as scope
+database PostgreSQL as db
+
+admin -> resource : POST /api/animateurs/import-csv/analyse\n{fileName, content, mapping, replaceAnimateurs, …}
+resource -> import : preview(requête)
+import -> import : analyse(requête)
+note right of import
+  tout le fichier avant la première ligne :
+  tableur refusé, encodage, 1 000 000 caractères,
+  5 000 lignes, édition sans créneau (409) ;
+  mapping proposé s'il manque ; puis ligne par ligne
+end note
+import --> admin : rapport (lignes acceptées, rejetées, avertissements)\naucune transaction ouverte
+
+admin -> resource : POST /api/animateurs/import-csv\n(le même corps, renvoyé en entier)
+resource -> import : apply(requête)
+import -> jobs : refuseIfSolving()
+import -> import : analyse(requête)
+alt le mapping ne nomme personne,\nou remplacement complet demandé avec des lignes rejetées
+  import --> admin : 400
+else
+  import -> depot : importAnimateurs(àÉcrire, àSupprimer)
+  depot -> scope : write(échec, connexion -> …)
+  scope -> db : upsert des lignes acceptées ;\nsuppression des absents seulement si replaceAnimateurs
+  scope -> db : commit (ou rollback : tout ou rien)
+  import --> admin : rapport, applied = true
+end
+@enduml

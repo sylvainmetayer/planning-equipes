@@ -1,0 +1,61 @@
+@startuml
+' Publier : l'aperçu ne fait rien partir ; la publication photographie le plan
+' pour tout le monde, puis écrit à chaque personne retenue. Un envoi qui échoue
+' est compté, pas rejoué, et n'arrête pas les autres. Une personne différée
+' garde son ancien repère : la prochaine publication lui dira tout.
+' Voir docs/api.md, « Publication », et docs/decisions/0011, 0025, 0047.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur" as admin
+participant PublicationResource as resource
+participant PlanPublicationService as publication
+participant PlanSnapshotService as snapshots
+participant PlanningExportService as exports
+participant MailService as mails
+participant PublicationTraceRepository as traces
+participant NotifiedPlanRepository as reperes
+participant DemandeEchangeService as echanges
+participant ConfirmationPlanningService as confirmations
+boundary "SMTP" as smtp
+
+admin -> resource : GET /api/planning/publication
+resource -> publication : apercu()
+note right of publication : plan de travail comparé, personne par personne,\nau dernier plan qu'elle a reçu (plan_notifie_id)
+publication --> admin : ApercuPublication (destinataires, changements, journées non validées)
+
+admin -> resource : POST /api/planning/publication {exclusions}
+resource -> publication : publier(exclusions)
+publication -> publication : apercu()
+alt solve en cours, plan vide, personne de concerné, ou tout le monde exclu
+  publication --> admin : 409
+end
+publication -> snapshots : capturePubliee("Publication du …")
+note right of snapshots : cet instantané EST le plan publié,\nexclus compris ; la purge ne le touche jamais
+loop chaque personne retenue
+  alt pas d'e-mail
+    publication -> publication : SANS_EMAIL
+  else
+    publication -> exports : exportAnimateurPdfPublie(plan, animateurId)
+    publication -> mails : sendPlanningPublie(...)
+    mails -> smtp : planning + PDF
+    alt l'envoi lève
+      mails --> publication : exception, attrapée pour cette personne : ECHEC
+    else
+      mails --> publication : ENVOYE
+    end
+  end
+end
+loop chaque personne exclue
+  publication -> publication : EXCLU, action PUBLICATION_DIFFEREE au journal
+end
+publication -> traces : record(snapshotId, destinataires)
+publication -> reperes : mark(retenus, snapshotId)
+note right of reperes : seuls les retenus avancent leur repère ;\nun différé le garde (décision 0047)
+publication -> echanges : markAsCommunicated(demandes, maintenant)
+note right of echanges : les décisions d'échange partent avec\nla publication, pas au moment de la décision
+publication -> confirmations : reset(retenus dont le planning a changé)
+publication --> admin : RapportPublication (envoyés, sans e-mail, échecs, différés)
+@enduml

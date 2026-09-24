@@ -112,7 +112,7 @@ class DocumentationStructuralTest {
      * Verb + path of every JAX-RS method, read off the sources: the class
      * {@code @Path} joined to the method's, placeholders neutralised.
      */
-    private static Set<String> declaredRoutes() throws IOException {
+    static Set<String> declaredRoutes() throws IOException {
         Set<String> routes = new TreeSet<>();
         try (Stream<Path> files = Files.list(RESOURCES)) {
             for (Path file : files.filter(f -> f.toString().endsWith(".java")).toList()) {
@@ -186,7 +186,7 @@ class DocumentationStructuralTest {
     }
 
     /** Placeholders neutralised, slashes collapsed, no trailing slash: what makes two spellings the same route. */
-    private static String normalise(String path) {
+    static String normalise(String path) {
         String normalised = path.replaceAll("\\{[^}]*\\}", "{}").replaceAll("/+", "/");
         return normalised.length() > 1 && normalised.endsWith("/")
                 ? normalised.substring(0, normalised.length() - 1)

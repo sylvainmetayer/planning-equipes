@@ -376,6 +376,10 @@ abonné ne porte aucun cookie et ne sait pas répondre à un défi
 d'authentification : sans elle, l'abonnement serait un `401` à la première
 resynchronisation.
 
+![Lecture d'un abonnement ICS et révocation](diagrammes/abonnement-ics.svg)
+
+<sub>Source : [`diagrammes/abonnement-ics.puml`](diagrammes/abonnement-ics.puml).</sub>
+
 ### Pourquoi un jeton de plus plutôt que le jeton d'espace
 
 Le jeton d'espace ne suffit à rien seul aujourd'hui : il permet de *demander*

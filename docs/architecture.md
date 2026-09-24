@@ -22,6 +22,10 @@ porte les invariants qui ne s'y voient pas.
 Toutes les tables métier portent `edition_id` (migrations V32–V36), avec une clé
 primaire composite `(edition_id, id)`.
 
+![Une écriture du référentiel, de l'en-tête X-Edition-Id au commit](diagrammes/edition-requete.svg)
+
+<sub>Source : [`diagrammes/edition-requete.puml`](diagrammes/edition-requete.puml).</sub>
+
 `JdbcEditionScope` lie l'édition courante au premier paramètre de chaque
 requête et porte la transaction. Ce n'est pas le seul endroit qui emprunte une
 connexion — vingt classes le font encore directement — et ce n'est pas lui
@@ -52,6 +56,10 @@ d'exister.
 passent toutes. Deux coutures seulement : comment le problème est construit, et
 qui doit tenir le solveur pour pouvoir l'arrêter. Voir
 [`api.md`](api.md#résolution) pour ce que ça a corrigé.
+
+![Séquence d'un solve lancé depuis le référentiel](diagrammes/solve.svg)
+
+<sub>Source : [`diagrammes/solve.puml`](diagrammes/solve.puml).</sub>
 
 Cette seconde couture — « qui tient le solveur » — en porte deux usages, pas
 un : l'arrêter, et **le suivre**. `SolverScoreTrace` s'abonne au même

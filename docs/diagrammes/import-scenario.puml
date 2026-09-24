@@ -1,0 +1,56 @@
+@startuml
+' L'import d'un scénario YAML. L'écran interroge d'abord, sans rien écrire :
+' ce que l'import va remplacer, l'édition visée, la validité du fichier.
+' L'écriture relit le YAML en entier. Seul le référentiel tient en une
+' transaction ; paramètres, typologies, journées types, contraintes et
+' consignes s'écrivent à part. Voir docs/import-export.md.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur" as admin
+participant ReferenceDataResource as resource
+participant ScenarioValidator as validateur
+participant ScenarioImportService as import
+participant ScenarioYamlReader as lecteur
+participant EditionService as editions
+participant EditionContext as contexte
+participant ReferenceDataService as referentiel
+participant ReferenceDataImportRepository as depot
+database PostgreSQL as db
+
+== Avant de confirmer : trois lectures ==
+admin -> resource : GET /api/reference-data/impact-import
+resource -> referentiel : countImportImpact()
+resource --> admin : ce qui sera remplacé (postes, verrous, validations…)
+admin -> resource : POST /api/reference-data/cible-scenario-fichier (YAML)
+resource --> admin : édition visée, créée ou non
+admin -> resource : POST /api/reference-data/valider-scenario-fichier (YAML)
+resource -> validateur : validate(yaml)
+resource --> admin : 200, liste d'erreurs (vide si valide) ; rien d'importé
+
+== Écrire ==
+admin -> resource : POST /api/reference-data/import-scenario-fichier (YAML)
+resource -> import : importYaml(yaml)
+import -> lecteur : buildFromScenarioText(...)
+note right of lecteur : YAML vide, malformé, clé inconnue :\nBusinessError.Invalid, 400
+opt section edition: présente
+  import -> editions : resolveForImport(...)
+  import -> contexte : executeIn(édition visée, import)
+end
+import -> referentiel : paramètres légaux, qualité, solveur
+import -> referentiel : importFromPlanning(planning)
+referentiel -> referentiel : refuse si un solve tourne,\ncontradictions des contraintes ad hoc
+referentiel -> depot : importFromPlanning(planning)
+depot -> db : une transaction (scope.write)
+note right of db
+  supprime pour l'édition : contraintes, verrous,
+  validations, postes, résolution, créneaux ;
+  réinsère les créneaux (nouveaux ids), upsert
+  stands et animateurs (access_token gardé),
+  supprime ceux absents du fichier
+end note
+import -> referentiel : typologies, journées types, contraintes, consignes
+import --> admin : ImportScenarioResult {editionId, editionNom, editionCreee}
+@enduml

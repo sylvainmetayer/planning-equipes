@@ -556,6 +556,12 @@ The doc layout is intentional — respect it when adding or updating docs.
    - new business capability → README section 2; new command/CI/tooling →
      `docs/developpement.md`; anything touching the version contract, the
      release flow or the Docker image tags → `docs/versioning.md`.
+   - a flow, a lifecycle or the model drawn in `docs/diagrammes/` → its
+     `.puml` (PlantUML), then `./mvnw validate -Pgenerate-diagrams` and commit
+     the regenerated `.svg` with it. `DiagramsStructuralTest` fails on a
+     stale SVG, a participant or method that no longer exists, a cited route
+     that does not, and a state diagram that drifted from its enum — the
+     conventions it relies on are in `docs/developpement.md` (« Diagrammes »).
 6. **Architecture decisions go to `docs/decisions/`**, one file per decision,
    named `NNNN-short-title.md` and listed in `docs/decisions/README.md`. A
    decision record answers *why*, where the rest of `docs/` answers *what*.

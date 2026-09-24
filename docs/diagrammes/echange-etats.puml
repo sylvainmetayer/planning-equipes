@@ -1,0 +1,25 @@
+@startuml
+' enum: StatutDemandeEchange
+' Le cycle de vie d'une demande d'échange. Voir docs/api.md, « Échanges ».
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+hide empty description
+
+[*] --> EN_ATTENTE_CIBLE : le demandeur soumet\n(foire ouverte)
+EN_ATTENTE_CIBLE --> PROPOSEE : le collègue donne son accord
+EN_ATTENTE_CIBLE --> REFUSEE_CIBLE : le collègue refuse
+EN_ATTENTE_CIBLE --> ANNULEE : le demandeur annule
+EN_ATTENTE_CIBLE --> REFUSEE : le coordinateur refuse
+PROPOSEE --> ACCEPTEE : le coordinateur accepte\n(échange appliqué et verrouillé)
+PROPOSEE --> REFUSEE : le coordinateur refuse
+PROPOSEE --> ANNULEE : le demandeur annule
+ACCEPTEE --> [*]
+REFUSEE --> [*]
+REFUSEE_CIBLE --> [*]
+ANNULEE --> [*]
+
+note right of PROPOSEE
+  au-delà de ancienneteEchangeJours,
+  l'envoi horaire alerte le coordinateur
+end note
+@enduml

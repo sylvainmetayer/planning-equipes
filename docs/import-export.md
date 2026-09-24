@@ -86,6 +86,10 @@ Trois gestes, trois écrans, parce qu'ils ne s'adressent pas aux mêmes personne
   la section correspondante (`consignes`, `prereglagesConsigne`), et laissés
   tels quels sinon.
 
+![Import d'un scénario YAML](diagrammes/import-scenario.svg)
+
+<sub>Source : [`diagrammes/import-scenario.puml`](diagrammes/import-scenario.puml).</sub>
+
 Une section `edition: { id, nom? }` route l'import vers une autre édition, créée
 vide au besoin. La réponse dit toujours où les données ont atterri : l'opérateur
 peut consulter une édition différente de celle qui vient d'être écrite.
@@ -634,6 +638,10 @@ L'analyse et l'écriture sont deux endpoints, et **le second reçoit le fichier,
 pas le rapport**. Il le relit et rejoue toutes les vérifications avant
 d'écrire : un rechargement de page, un rejeu de requête ou un corps fabriqué à
 la main ne peut pas faire passer une ligne devant un contrôle.
+
+![Import CSV des animateurs : prévisualiser puis écrire](diagrammes/import-csv.svg)
+
+<sub>Source : [`diagrammes/import-csv.puml`](diagrammes/import-csv.puml).</sub>
 
 L'écriture est **atomique** : les lignes acceptées et les suppressions
 éventuelles partent dans une seule transaction. Un échec en cours de route

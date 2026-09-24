@@ -1,0 +1,61 @@
+@startuml
+' Une écriture du référentiel, de l'en-tête X-Edition-Id jusqu'au commit.
+' Le cloisonnement ne tient pas à la discipline des appelants : chaque requête
+' lie l'édition au premier paramètre (prepareScoped), et
+' IsolationEditionStructurelleTest refuse le SQL qui l'oublie.
+' Voir docs/architecture.md et docs/decisions/0001, 0023.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+boundary "Navigateur\n(session planning-session)" as front
+participant EditionHeaderFilter as filtre
+participant EditionRequestScope as portee
+participant StandResource as resource
+participant ReferenceDataService as referentiel
+participant StandService as service
+participant SolverJobService as jobs
+participant StandRepository as depot
+participant JdbcEditionScope as scope
+participant EditionContext as contexte
+participant ConcurrentModificationGuard as garde
+participant BusinessErrorMapper as mapper
+database PostgreSQL as db
+
+front -> filtre : PUT /api/stands/{id}\nX-Edition-Id: 42, corps avec modifieLe
+note right of filtre : @PreMatching : avant l'authentification.\nNe valide rien, ne refuse jamais.
+filtre -> portee : setEditionIdDemande("42")
+filtre -> resource : requête authentifiée (rôle admin)
+resource -> referentiel : writeStand(id, stand)
+referentiel -> service : update(id, stand)
+service -> jobs : refuseIfSolving()
+alt un solve tourne sur cette édition
+  jobs --> resource : SolverBusyException
+  resource --> front : 409
+end
+service -> depot : saveStand(stand, false)
+depot -> scope : write(échec, connexion -> upsertStand)
+scope -> db : setAutoCommit(false)
+depot -> scope : prepareScoped(connexion, sql)
+scope -> contexte : editionIdCourant()
+note right of contexte
+  1. édition forcée (executeIn, jobs du solveur)
+  2. édition du jeton d'espace animateur
+  3. en-tête, s'il désigne une édition connue
+  4. sinon l'édition par défaut (jamais d'erreur)
+end note
+contexte --> scope : "42"
+scope -> db : INSERT … ON CONFLICT (edition_id, id) DO UPDATE\nWHERE modifie_le = celui lu par le client\nRETURNING modifie_le
+alt une ligne revient
+  scope -> db : commit
+  service --> referentiel : stand écrit
+  referentiel --> front : 200 WrittenStand (avertissements de cohérence)
+else aucune ligne : quelqu'un a écrit entre-temps
+  depot -> garde : refuseStale("stand", id)
+  garde --> scope : BusinessError.Stale
+  scope -> db : rollback
+  scope --> mapper : exception propagée
+  mapper --> front : 409 MODIFICATION_CONCURRENTE (modifieLe actuel)
+end
+@enduml

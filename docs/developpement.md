@@ -1019,6 +1019,50 @@ les paquets du système de base de l'image — JRE, client PostgreSQL,
 distribution — n'y sont pas, ils relèvent du SBOM attaché à chaque image
 publiée.
 
+## Diagrammes
+
+Les diagrammes de séquence, d'états et de classes vivent dans
+[`diagrammes/`](diagrammes/), en PlantUML : un `.puml` écrit à la main, et à
+côté le `.svg` qu'il produit, commité lui aussi pour que GitHub l'affiche sans
+rien installer. Chacun est montré par le document qui possède son sujet, juste
+sous le paragraphe qu'il illustre, avec un lien vers sa source :
+
+```markdown
+![Séquence d'un solve lancé depuis le référentiel](diagrammes/solve.svg)
+
+<sub>Source : [`diagrammes/solve.puml`](diagrammes/solve.puml).</sub>
+```
+
+Après avoir modifié ou ajouté un `.puml`, régénérer les SVG et commiter les
+deux :
+
+```bash
+./mvnw validate -Pgenerate-diagrams
+```
+
+Le profil n'appelle que PlantUML (build MIT, dépendance de test : ni l'image
+ni l'inventaire des licences ne le voient). Les diagrammes d'états et de
+classes déclarent `!pragma layout smetana`, le portage Java de Graphviz : il
+n'y a rien à installer à côté de la JVM.
+
+`DiagramsStructuralTest` tient les diagrammes au code, dans le même sens que
+`DocumentationStructuralTest` pour la prose — ce qu'un diagramme nomme doit
+exister :
+
+| Règle | Ce qui la fait échouer |
+| --- | --- |
+| Le SVG est le rendu de son `.puml` | Un `.puml` modifié sans régénération. PlantUML embarque sa source dans le SVG : le test la décode et la compare, sans rien redessiner, donc sans dépendre des polices de la machine |
+| Chaque diagramme est montré par un document de `docs/`, chaque image montrée existe | Un diagramme orphelin, un lien vers un SVG absent |
+| Un `participant` ou une `class` nommé comme un type Java en est un | Une classe renommée. Les rôles qui ne sont pas du code s'écrivent `actor`, `boundary`, `control` ou `database`, ou portent un espace ou un point dans leur nom : ils ne sont pas vérifiés |
+| Un message `méthode(…)` envoyé à un tel participant est déclaré dans son fichier source | Une méthode renommée. Un libellé qui n'est pas un appel ne commence pas par `identifiant(` |
+| Une route `VERBE /api/…` citée existe | Comme pour `api.md` |
+| Un diagramme d'états qui porte `' enum: Nom` dessine exactement les constantes de cette enum | Une constante ajoutée et oubliée, un état qui n'existe plus |
+| Un champ `nom : Type` dessiné dans une classe existe dans son fichier | Un champ renommé du modèle |
+
+Ce que le test ne voit pas, c'est l'ordre des appels et le sens d'un
+libellé : un diagramme reste de la prose, à relire quand le flux qu'il dessine
+change.
+
 ## Feuilles de style
 
 Deux sortes, et pas de troisième : `src/styles.css` importe les partials que

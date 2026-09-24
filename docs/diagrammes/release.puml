@@ -1,0 +1,46 @@
+@startuml
+' Une release : un humain crée la release dans GitHub et choisit vX.Y.Z ;
+' deux workflows indépendants suivent, et aucun ne crée ni ne déplace de tag.
+' Les contrôles de version tournent après coup : un échec se corrige en
+' supprimant release et tag, puis en recommençant. Voir docs/versioning.md.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Mainteneur" as humain
+boundary "GitHub\n(Releases)" as github
+control "docker-ghcr.yml\njob docker" as docker
+control "release.yml\njob notes" as notes
+database "GHCR\nghcr.io" as ghcr
+
+humain -> github : Draft a new release : tag vX.Y.Z,\ncible main (ou release/X.Y), Publish
+github -> github : crée et pousse le tag
+
+par image
+  github -> docker : push du tag v*
+  docker -> docker : le tag est visible par le build\net de la forme ^v\\d+\\.\\d+\\.\\d+$
+  docker -> docker : build (-Drevision=X.Y.Z tiré de git describe)
+  docker -> ghcr : push X.Y.Z, X.Y, sha-…
+  docker -> ghcr : SBOM (syft), signature cosign sans clé,\nattestations de provenance et de SBOM
+  alt ce tag est la plus haute version stable (sort -V)
+    docker -> ghcr : :latest pointe sur ce digest
+  else patch d'une ligne plus ancienne
+    docker -> docker : :latest ne bouge pas
+  end
+else notes
+  github -> notes : release: published
+  notes -> notes : git-cliff --current (depuis le tag précédent de la ligne)
+  notes -> github : gh release edit --notes-file\n(le préambule humain au-dessus de <!-- git-cliff --> est gardé)
+  notes -> notes : contrôle : le bond de version suffit\n(! → MAJOR, feat → MINOR, sinon PATCH)\net le tag est sur main ou release/X.Y
+  alt contrôle en échec
+    notes --> humain : job rouge : supprimer release et tag,\nrecommencer avec le bon numéro
+  end
+end
+
+== Patch d'une version antérieure ==
+humain -> humain : corriger d'abord sur main (PR normale)
+humain -> github : git switch -c release/1.2 v1.2.0 ; cherry-pick -x ;\ngit push origin release/1.2
+humain -> github : release v1.2.1, cible release/1.2
+note over github : release/X.Y n'est jamais fusionnée dans main ;\npas de migration Flyway non additive dans un patch
+@enduml

@@ -39,6 +39,11 @@
         <jackson-yaml.version>2.22.2</jackson-yaml.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
         <mcp-server.version>1.13.2</mcp-server.version>
+        <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
+             generate-diagrams) and lets DiagramsStructuralTest decode the
+             source each SVG embeds. Test scope, so it stays out of the image
+             and of docs/licences-tierces.md. -->
+        <plantuml.version>1.2026.8</plantuml.version>
         <skipITs>true</skipITs>
         <!-- Mot de passe admin des tests d'intégration : ils lancent
              l'application packagée en %prod, où la valeur d'exemple est
@@ -281,6 +286,12 @@
             <version>3.27.7</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>net.sourceforge.plantuml</groupId>
+            <artifactId>plantuml-mit</artifactId>
+            <version>${plantuml.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <build>
@@ -507,6 +518,48 @@
                                     <!-- The victools jars are `provided`, which
                                          the default `runtime` scope leaves out. -->
                                     <classpathScope>compile</classpathScope>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <!-- Opt-in: renders every docs/diagrammes/*.puml into the .svg next
+             to it (docs/developpement.md, « Diagrammes »). Not run by the
+             default build — use ./mvnw validate -Pgenerate-diagrams after
+             editing a diagram, and commit both files: the SVG embeds its
+             source, and DiagramsStructuralTest fails when the two differ.
+             The layouts use Smetana, PlantUML's Java port of Graphviz, so
+             nothing but a JVM is needed. -->
+        <profile>
+            <id>generate-diagrams</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>exec-maven-plugin</artifactId>
+                        <version>3.6.3</version>
+                        <executions>
+                            <execution>
+                                <id>generate-diagrams</id>
+                                <phase>validate</phase>
+                                <goals>
+                                    <goal>java</goal>
+                                </goals>
+                                <configuration>
+                                    <mainClass>net.sourceforge.plantuml.Run</mainClass>
+                                    <!-- PlantUML is a test dependency. -->
+                                    <classpathScope>test</classpathScope>
+                                    <!-- PlantUML ends with System.exit. -->
+                                    <blockSystemExit>true</blockSystemExit>
+                                    <arguments>
+                                        <argument>-tsvg</argument>
+                                        <argument>-charset</argument>
+                                        <argument>UTF-8</argument>
+                                        <argument>-failfast2</argument>
+                                        <argument>${project.basedir}/docs/diagrammes</argument>
+                                    </arguments>
                                 </configuration>
                             </execution>
                         </executions>

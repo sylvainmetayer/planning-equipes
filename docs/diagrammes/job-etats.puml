@@ -1,0 +1,41 @@
+@startuml
+' enum: JobStatus
+' Le cycle de vie d'un job de résolution. Un seul job actif (PENDING ou
+' RUNNING) à la fois ; les autres attendent en file, et la file survit au
+' redémarrage. Voir docs/api.md, « File d'attente ».
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+hide empty description
+
+state "Actif" as actif {
+  state PENDING
+  state RUNNING
+}
+
+[*] --> PENDING : soumis, aucun job actif
+[*] --> QUEUED : soumis avec enFile,\nun job est actif
+QUEUED --> PENDING : startNext()\nà la fin du job actif
+PENDING --> RUNNING : run() sur l'exécuteur
+QUEUED --> CANCELLED : annulé
+PENDING --> CANCELLED : annulé
+RUNNING --> COMPLETED : fin normale
+RUNNING --> CANCELLED : terminateEarly() demandé,\nle plan est gardé
+RUNNING --> FAILED : exception\n(BusinessError : journalisée seulement)
+RUNNING --> INTERROMPU : arrêt du serveur (8 s de grâce),\nou trouvé actif au redémarrage
+PENDING --> INTERROMPU : trouvé actif au redémarrage
+QUEUED --> INTERROMPU : au redémarrage,\nsa tâche ne se reconstruit pas
+COMPLETED --> [*]
+CANCELLED --> [*]
+FAILED --> [*]
+INTERROMPU --> [*]
+
+note right of QUEUED
+  au redémarrage, un job rejouable
+  (depuis le référentiel, incrémental)
+  reste QUEUED et reprend
+end note
+note bottom of COMPLETED
+  les jobs terminés sont oubliés
+  au bout d'une heure
+end note
+@enduml
