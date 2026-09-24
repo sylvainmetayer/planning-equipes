@@ -15,7 +15,39 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    <mat-button-toggle-group class="ajustements-vues" [value]="view()" (change)="changeView($event.value)"
+                             aria-label="Lecture des ajustements" i18n-aria-label="@@adHoc.vue.label">
+      <mat-button-toggle value="liste">
+        <mat-icon>table_rows</mat-icon>
+        <ng-container i18n="@@adHoc.vue.liste">Liste</ng-container>
+      </mat-button-toggle>
+      <mat-button-toggle value="reseau">
+        <mat-icon>hub</mat-icon>
+        <ng-container i18n="@@adHoc.vue.reseau">Réseau</ng-container>
+      </mat-button-toggle>
+    </mat-button-toggle-group>
+    @if (view() === 'reseau' && (filtreReseau().trim() !== '' || typesReseau() !== 'toutes')) {
+      <button matButton type="button" (click)="resetReseau()">
+        <mat-icon>filter_alt_off</mat-icon>
+        <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+      </button>
+    }
   </mat-card-actions>
+  @if (view() === 'reseau') {
+    <mat-card-content>
+      <app-reseau-paires-vue
+        [contraintes]="store.contraintes()"
+        [animateurs]="store.animateurs()"
+        [creneaux]="store.creneaux()"
+        [stands]="store.stands()"
+        [editingLocked]="editingLocked()"
+        [(filtre)]="filtreReseau"
+        [(types)]="typesReseau"
+        (editer)="edit($event)"
+        (create)="openCreate()"
+      />
+    </mat-card-content>
+  } @else {
   @if (onlyIds().length > 0) {
     <mat-card-content>
       <p class="calendar-meta">
@@ -73,4 +105,5 @@
       <p class="empty-hint" i18n="@@adHoc.empty">Aucun ajustement manuel pour le moment.</p>
     }
   </mat-card-content>
+  }
 </mat-card>
