@@ -65,7 +65,14 @@ class EtatEditionResourceTest {
                 .body("resolution.statut", equalTo("A_FAIRE"))
                 .body("problemes.bloquants", notNullValue())
                 .body("publication.jamaisPublie", equalTo(true))
-                .body("foire.ouverte", notNullValue());
+                .body("foire.ouverte", notNullValue())
+                // « À traiter aujourd'hui »: nothing solved nor published yet, so no day to
+                // read, nobody silent, nobody to tell — and the horizon it would look over.
+                .body("aTraiter.aujourdhui", notNullValue())
+                .body("aTraiter.horizonJours", equalTo(7))
+                .body("aTraiter.journeesNonRelues", hasSize(0))
+                .body("aTraiter.silencieuxARelancer", equalTo(0))
+                .body("aTraiter.personnesAPrevenir", equalTo(0));
     }
 
     /**

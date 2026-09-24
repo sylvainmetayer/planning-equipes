@@ -37,6 +37,20 @@
         </div>
       </div>
     }
+    @if (today().length > 0) {
+      <section class="accueil-a-traiter" aria-labelledby="accueil-a-traiter-titre">
+        <h2 id="accueil-a-traiter-titre" class="accueil-a-traiter-titre" i18n="@@accueil.aTraiter.titre">À traiter aujourd'hui</h2>
+        <ul class="accueil-a-traiter-liste">
+          @for (item of today(); track item.id) {
+            <li [class.accueil-a-traiter-alerte]="item.alerte" [attr.data-sujet]="item.id">
+              <mat-icon aria-hidden="true">{{ item.alerte ? 'error_outline' : 'schedule' }}</mat-icon>
+              <span class="accueil-a-traiter-texte">@if (item.alerte) {<span class="visually-hidden" i18n="@@accueil.aTraiter.alerte">Alerte : </span>}{{ item.sentence }}</span>
+              <a class="accueil-a-traiter-lien" [routerLink]="item.lien.route" [queryParams]="item.lien.queryParams ?? null">{{ item.lien.libelle }}</a>
+            </li>
+          }
+        </ul>
+      </section>
+    }
     @if (etatEdition()) {
       @if (bilan(); as bilan) {
         <p class="accueil-bilan">

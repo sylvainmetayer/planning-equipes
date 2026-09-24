@@ -52,6 +52,10 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.start.aTraiter:Au-dessus de la checklist, un encadré « À traiter aujourd'hui » apparaît quand quelque chose attend une décision : déclarations de disponibilité à appliquer, demandes d'échange à arbitrer — en alerte au-delà de l'ancienneté réglée dans les paramètres de notifications —, journées pas encore relues dans la semaine qui vient, personnes silencieuses depuis la publication et jamais relancées, données modifiées depuis la dernière résolution, personnes à prévenir. Chaque ligne ouvre son écran avec le filtre déjà appliqué. Sans rien à traiter, l'encadré ne s'affiche pas. « Aujourd'hui » est celui du serveur, la date simulée de recette quand elle est posée.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.start.coherence:Un avertissement fermé n'est pas perdu : la ligne « Cohérence du référentiel » de l'accueil rejoue tous les contrôles sur l'ensemble de ce qui est saisi — animateurs, créneaux, stands et ouvertures, ajustements manuels, besoin en animateurs — et en donne le compte. « Voir le détail » déplie la liste, une anomalie par ligne avec sa gravité et le lien vers la fiche qui la corrige. Un créneau devenu hors ouverture parce qu'un stand a changé ensuite s'y voit, alors qu'aucun message ne l'a signalé à l'enregistrement du stand.`,
         },
         {

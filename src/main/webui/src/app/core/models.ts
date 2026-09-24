@@ -3493,6 +3493,32 @@ export interface EtatEdition {
   publication: EtatPublication;
   confirmations: EtatConfirmations;
   foire: EtatFoire;
+  aTraiter: EtatATraiter;
+}
+
+/**
+ * « À traiter aujourd'hui »: what waits on a decision of the organiser, judged
+ * on the server's today (the recette clock when frozen). Counts and dates only;
+ * every subject is hidden at zero.
+ */
+export interface EtatATraiter {
+  aujourdhui: string;
+  declarationsEnAttente: number;
+  plusAncienneDeclaration: string | null;
+  /** Swap requests the colleague agreed to, waiting on the organisation. */
+  echangesAArbitrer: number;
+  /** Among them, those waiting longer than `seuilAncienneteJours`. */
+  echangesEnAlerte: number;
+  seuilAncienneteJours: number;
+  plusAncienEchange: string | null;
+  horizonJours: number;
+  /** Days within the horizon, today included, not yet accepted — once there is a plan. */
+  journeesNonRelues: string[];
+  /** Seated, never answered, never reminded, told more than `silenceJours` days ago. */
+  silencieuxARelancer: number;
+  silenceJours: number;
+  donneesModifiees: boolean;
+  personnesAPrevenir: number;
 }
 
 /** The families the coherence checklist is grouped by, in reading order. */

@@ -17,12 +17,15 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { ActivatedRoute } from '@angular/router';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
 import { ConfigurationCollecte, DeclarationAdminView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
+import { keepViewInQueryParams } from '../../core/view-query-params';
+import { PENDING, oldestFirst, readPendingOnly } from './declarations-filter';
 
 /**
  * Admin review of the self-service declarations (issue #291): the collection
@@ -77,14 +80,29 @@ export class DisponibilitesPage {
    */
   protected readonly prevenir = signal(false);
 
-  protected readonly enAttente = computed(() =>
-    this.declarations().filter((declaration) => declaration.statut === 'EN_ATTENTE'),
-  );
+  /**
+   * « En attente seulement »: the declarations waiting for a decision — the
+   * ones « À traiter aujourd'hui » counts — the oldest first, and the ones
+   * already decided out of sight. `?statut=en-attente`, which is what the
+   * home screen links to; unticking it is the reset.
+   */
+  protected readonly pendingOnly = signal(false);
+
+  protected readonly pending = computed(() => {
+    const pending = this.declarations().filter(
+      (declaration) => declaration.statut === 'EN_ATTENTE',
+    );
+    return this.pendingOnly() ? oldestFirst(pending) : pending;
+  });
   protected readonly decidees = computed(() =>
     this.declarations().filter((declaration) => declaration.statut !== 'EN_ATTENTE'),
   );
 
   constructor() {
+    this.pendingOnly.set(
+      readPendingOnly(inject(ActivatedRoute).snapshot.queryParamMap.get('statut')),
+    );
+    keepViewInQueryParams(() => ({ statut: this.pendingOnly() ? PENDING : null }));
     void this.reload();
   }
 

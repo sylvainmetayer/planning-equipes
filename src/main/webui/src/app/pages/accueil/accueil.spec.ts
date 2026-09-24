@@ -6,7 +6,7 @@ import { Route } from '@angular/router';
 import { describe, expect, it } from 'vitest';
 import { routes } from '../../app.routes';
 import { EtatEdition } from '../../core/models';
-import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
+import { buildLignes, buildToday, statutIcon, statutLabel, summarizeLignes } from './accueil';
 
 /** The routes of the application, children included. */
 function allRoutes(liste: Route[]): Route[] {
@@ -55,6 +55,21 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
     },
     confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
+    aTraiter: {
+      aujourdhui: '2026-07-10',
+      declarationsEnAttente: 0,
+      plusAncienneDeclaration: null,
+      echangesAArbitrer: 0,
+      echangesEnAlerte: 0,
+      seuilAncienneteJours: 7,
+      plusAncienEchange: null,
+      horizonJours: 7,
+      journeesNonRelues: [],
+      silencieuxARelancer: 0,
+      silenceJours: 3,
+      donneesModifiees: false,
+      personnesAPrevenir: 0,
+    },
     ...partial,
   };
 }
@@ -380,5 +395,101 @@ describe('statut rendering', () => {
     const withoutIssue = buildLignes(etatComplet()).find((each) => each.id === 'coherence')!;
     expect(withoutIssue.detail).toBe('Aucune anomalie dans ce qui est saisi');
     expect(withoutIssue.panneau).toBeUndefined();
+  });
+});
+
+describe('buildToday', () => {
+  const vide = etatComplet().aTraiter;
+
+  it('says nothing when nothing waits, so the box is not drawn', () => {
+    expect(buildToday(etatComplet())).toEqual([]);
+  });
+
+  it('lists each subject with a count, in a fixed order, each linking to its screen', () => {
+    const items = buildToday(
+      etatComplet({
+        aTraiter: {
+          ...vide,
+          declarationsEnAttente: 2,
+          plusAncienneDeclaration: '2026-07-01T08:00:00Z',
+          echangesAArbitrer: 3,
+          echangesEnAlerte: 1,
+          journeesNonRelues: ['2026-07-10', '2026-07-13'],
+          silencieuxARelancer: 4,
+          donneesModifiees: true,
+          personnesAPrevenir: 5,
+        },
+      }),
+    );
+
+    expect(items.map((item) => item.id)).toEqual([
+      'declarations',
+      'echanges',
+      'relecture',
+      'silencieux',
+      'donnees',
+      'prevenir',
+    ]);
+    const byId = new Map(items.map((item) => [item.id, item]));
+    expect(byId.get('echanges')!.alerte).toBe(true);
+    expect(byId.get('echanges')!.sentence).toBe(
+      "3 demande(s) d'échange à arbitrer, dont 1 en attente depuis plus de 7 jour(s)",
+    );
+    expect(byId.get('declarations')!.alerte).toBe(false);
+    expect(byId.get('relecture')!.sentence).toBe(
+      '2 journée(s) à relire dans les 7 prochains jours : 10/07, 13/07',
+    );
+    // Each link opens its screen with the filter already applied.
+    expect(byId.get('relecture')!.lien).toMatchObject({
+      route: '/journee',
+      queryParams: { date: '2026-07-10' },
+    });
+    // The never reminded only: the people the line counts, a reminded one left out.
+    expect(byId.get('silencieux')!.lien).toMatchObject({
+      route: '/animateurs',
+      queryParams: { silence: '3', relance: 'jamais' },
+    });
+    expect(byId.get('donnees')!.lien.route).toBe('/solveur');
+    expect(byId.get('prevenir')!.lien.route).toBe('/publication');
+    expect(byId.get('declarations')!.lien).toMatchObject({
+      route: '/disponibilites',
+      queryParams: { statut: 'en-attente' },
+    });
+    expect(byId.get('echanges')!.lien).toMatchObject({
+      route: '/echanges',
+      queryParams: { statut: 'a-arbitrer' },
+    });
+  });
+
+  it('keeps recent swap requests as information', () => {
+    const [item] = buildToday(
+      etatComplet({ aTraiter: { ...vide, echangesAArbitrer: 2, echangesEnAlerte: 0 } }),
+    );
+    expect(item.alerte).toBe(false);
+    expect(item.sentence).toBe("2 demande(s) d'échange à arbitrer");
+  });
+
+  it('links every subject to a route the application declares', () => {
+    const declarees = new Set(
+      allRoutes(routes)
+        .map((route) => route.path)
+        .filter((path): path is string => path !== undefined),
+    );
+    const items = buildToday(
+      etatComplet({
+        aTraiter: {
+          ...vide,
+          declarationsEnAttente: 1,
+          echangesAArbitrer: 1,
+          journeesNonRelues: ['2026-07-10'],
+          silencieuxARelancer: 1,
+          donneesModifiees: true,
+          personnesAPrevenir: 1,
+        },
+      }),
+    );
+    for (const item of items) {
+      expect(declarees, item.lien.route).toContain(item.lien.route.slice(1));
+    }
   });
 });

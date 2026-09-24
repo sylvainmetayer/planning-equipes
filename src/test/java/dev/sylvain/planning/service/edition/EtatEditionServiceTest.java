@@ -21,6 +21,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDi
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.edition.EtatEditionService.Facts;
+import dev.sylvain.planning.service.edition.EtatEditionService.TodayFacts;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
@@ -31,6 +32,7 @@ import dev.sylvain.planning.service.validation.ValidationPrerequisService.Progre
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -44,6 +46,10 @@ class EtatEditionServiceTest {
     private static final Edition EDITION = new Edition("2026", "Année 2026", true, null);
     private static final Instant RESOLU_LE = Instant.parse("2026-05-01T10:00:00Z");
     private static final LocalDate JOUR = LocalDate.of(2026, 7, 10);
+
+    /** A day where nothing waits: no declaration, no swap request, no day of the edition ahead. */
+    private static final TodayFacts NOTHING_TODAY =
+            new TodayFacts(JOUR, JOUR.atTime(9, 0).toInstant(ZoneOffset.UTC), List.of(), List.of(), 7, List.of());
 
     /** A referential with nothing to say about itself. */
     private static final CoherenceReport NO_ISSUE = new CoherenceReport(0, 0, 0, List.of(), List.of());
@@ -126,7 +132,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -167,7 +174,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -201,7 +209,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -232,7 +241,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 2,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -287,7 +297,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -328,7 +339,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -362,7 +374,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
         Facts enAttente = new Facts(
                 f.edition(),
                 0,
@@ -383,7 +396,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
         Facts fermee = new Facts(
                 f.edition(),
                 0,
@@ -404,7 +418,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         assertThat(EtatEditionService.assemble(ouverte).collecte().statut()).isEqualTo(Statut.ATTENTION);
         assertThat(EtatEditionService.assemble(enAttente).collecte().statut()).isEqualTo(Statut.ATTENTION);
@@ -447,7 +462,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView etat = EtatEditionService.assemble(facts);
 
@@ -488,7 +504,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView.EtatOuvertures ouvertures =
                 EtatEditionService.assemble(facts).ouvertures();
@@ -530,7 +547,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
 
         EtatEditionView.EtatOuvertures ouvertures =
                 EtatEditionService.assemble(facts).ouvertures();
@@ -538,6 +556,215 @@ class EtatEditionServiceTest {
         assertThat(ouvertures.anomalies()).isEqualTo(1);
         assertThat(ouvertures.informations()).isEqualTo(1);
         assertThat(ouvertures.statut()).isEqualTo(Statut.INFO);
+    }
+
+    /* ------------------------ « À traiter aujourd'hui » ------------------------ */
+
+    private static final Instant MAINTENANT = JOUR.atTime(9, 0).toInstant(ZoneOffset.UTC);
+
+    /** The filled edition, judged on {@code today}, with the given publication and confirmations. */
+    private static EtatEditionView.EtatATraiter aTraiter(
+            TodayFacts today,
+            ApercuPublication publication,
+            SyntheseConfirmations confirmations,
+            ProgressionValidations relecture,
+            boolean solveEnCours,
+            Instant lastDataChange) {
+        Facts f = filledFacts();
+        return EtatEditionService.assemble(new Facts(
+                        f.edition(),
+                        f.stands(),
+                        f.animateurs(),
+                        f.creneaux(),
+                        f.collecteOuverte(),
+                        today.declarations().size(),
+                        f.declarationsTraitees(),
+                        f.ouvertures(),
+                        f.staffing(),
+                        f.resolution(),
+                        f.diagnostic(),
+                        lastDataChange,
+                        solveEnCours,
+                        f.faisabilite(),
+                        publication,
+                        confirmations,
+                        f.foireOuverte(),
+                        today.echanges().size(),
+                        relecture,
+                        NO_ISSUE,
+                        today))
+                .aTraiter();
+    }
+
+    private static EtatEditionView.EtatATraiter aTraiter(TodayFacts today) {
+        Facts f = filledFacts();
+        return aTraiter(today, f.publication(), f.confirmations(), f.relecture(), false, f.lastDataChange());
+    }
+
+    private static TodayFacts today(List<Instant> declarations, List<Instant> echanges, List<LocalDate> jours) {
+        return new TodayFacts(JOUR, MAINTENANT, declarations, echanges, 7, jours);
+    }
+
+    @Test
+    void aSolvedPublishedAnsweredEditionHasNothingToDoToday() {
+        EtatEditionView.EtatATraiter bloc =
+                EtatEditionService.assemble(filledFacts()).aTraiter();
+
+        assertThat(bloc.declarationsEnAttente()).isZero();
+        assertThat(bloc.echangesAArbitrer()).isZero();
+        assertThat(bloc.journeesNonRelues()).isEmpty();
+        assertThat(bloc.silencieuxARelancer()).isZero();
+        assertThat(bloc.donneesModifiees()).isFalse();
+        assertThat(bloc.personnesAPrevenir()).isZero();
+        assertThat(bloc.aujourdhui()).isEqualTo(JOUR);
+    }
+
+    @Test
+    void pendingDeclarationsAreCountedWithTheOldestSubmission() {
+        Instant ancienne = MAINTENANT.minus(java.time.Duration.ofDays(5));
+        EtatEditionView.EtatATraiter bloc =
+                aTraiter(today(List.of(MAINTENANT.minusSeconds(60), ancienne), List.of(), List.of()));
+
+        assertThat(bloc.declarationsEnAttente()).isEqualTo(2);
+        assertThat(bloc.plusAncienneDeclaration()).isEqualTo(ancienne);
+    }
+
+    /** Older than the notification setting: an alert; younger: information. */
+    @Test
+    void aSwapRequestOlderThanTheSettingIsAnAlertTheOthersAreInformation() {
+        EtatEditionView.EtatATraiter bloc = aTraiter(today(
+                List.of(),
+                List.of(MAINTENANT.minus(java.time.Duration.ofDays(8)), MAINTENANT.minus(java.time.Duration.ofDays(2))),
+                List.of()));
+
+        assertThat(bloc.echangesAArbitrer()).isEqualTo(2);
+        assertThat(bloc.echangesEnAlerte()).isEqualTo(1);
+        assertThat(bloc.seuilAncienneteJours()).isEqualTo(7);
+        assertThat(bloc.plusAncienEchange()).isEqualTo(MAINTENANT.minus(java.time.Duration.ofDays(8)));
+    }
+
+    /** Seven days in all, today included: J+6 is the last one, J+7 is not close, yesterday is history. */
+    @Test
+    void theHorizonIsSevenDaysTodayIncluded() {
+        EtatEditionView.EtatATraiter bloc = aTraiter(today(
+                List.of(),
+                List.of(),
+                List.of(
+                        JOUR.minusDays(1),
+                        JOUR,
+                        JOUR.plusDays(3),
+                        JOUR.plusDays(6),
+                        JOUR.plusDays(7),
+                        JOUR.plusDays(10))));
+
+        assertThat(bloc.journeesNonRelues()).containsExactly(JOUR, JOUR.plusDays(3), JOUR.plusDays(6));
+        assertThat(bloc.horizonJours()).isEqualTo(EtatEditionService.UPCOMING_DAYS_HORIZON);
+    }
+
+    @Test
+    void aDayAlreadyAcceptedIsNotToRead() {
+        Facts f = filledFacts();
+        EtatEditionView.EtatATraiter bloc = aTraiter(
+                today(List.of(), List.of(), List.of(JOUR, JOUR.plusDays(1))),
+                f.publication(),
+                f.confirmations(),
+                new ProgressionValidations(2, 1, List.of(JOUR)),
+                false,
+                f.lastDataChange());
+
+        assertThat(bloc.journeesNonRelues()).containsExactly(JOUR.plusDays(1));
+    }
+
+    /** « Aujourd'hui » is the recette clock's: frozen after the event, no day is close any more. */
+    @Test
+    void theDayJudgedOnIsTheOneTheClockGives() {
+        TodayFacts apres = new TodayFacts(
+                JOUR.plusDays(30),
+                MAINTENANT.plus(java.time.Duration.ofDays(30)),
+                List.of(),
+                List.of(),
+                7,
+                List.of(JOUR, JOUR.plusDays(3)));
+
+        EtatEditionView.EtatATraiter bloc = aTraiter(apres);
+
+        assertThat(bloc.aujourdhui()).isEqualTo(JOUR.plusDays(30));
+        assertThat(bloc.journeesNonRelues()).isEmpty();
+    }
+
+    /** Somebody reminded for this publication is RELANCE, not NON_VU: only the never-reminded are counted. */
+    @Test
+    void theSilentAreToRemindOnlyOnceTheSilenceIsLongEnoughAndNeverTheAlreadyReminded() {
+        Facts f = filledFacts();
+        Instant ilYaCinqJours = MAINTENANT.minus(java.time.Duration.ofDays(5));
+        Instant hier = MAINTENANT.minus(java.time.Duration.ofDays(1));
+
+        EtatEditionView.EtatATraiter ancien = aTraiter(
+                NOTHING_TODAY,
+                f.publication(),
+                new SyntheseConfirmations(10, 4, 6, ilYaCinqJours, false),
+                f.relecture(),
+                false,
+                f.lastDataChange());
+        EtatEditionView.EtatATraiter recent = aTraiter(
+                NOTHING_TODAY,
+                f.publication(),
+                new SyntheseConfirmations(10, 4, 6, hier, false),
+                f.relecture(),
+                false,
+                f.lastDataChange());
+
+        assertThat(ancien.silencieuxARelancer()).isEqualTo(6);
+        assertThat(ancien.silenceJours()).isEqualTo(EtatEditionService.SILENCE_DAYS);
+        assertThat(recent.silencieuxARelancer()).isZero();
+    }
+
+    @Test
+    void beforeAnyPublicationNobodyIsSilentNorToTell() {
+        EtatEditionView.EtatATraiter bloc = aTraiter(
+                NOTHING_TODAY,
+                new ApercuPublication(true, false, false, null, 12, 0, List.of()),
+                new SyntheseConfirmations(0, 0, 0, null, true),
+                filledFacts().relecture(),
+                false,
+                filledFacts().lastDataChange());
+
+        assertThat(bloc.silencieuxARelancer()).isZero();
+        assertThat(bloc.personnesAPrevenir()).isZero();
+    }
+
+    @Test
+    void peopleToTellAfterAFirstPublicationAreCounted() {
+        Facts f = filledFacts();
+        EtatEditionView.EtatATraiter bloc = aTraiter(
+                NOTHING_TODAY,
+                new ApercuPublication(false, false, false, RESOLU_LE, 4, 0, List.of()),
+                f.confirmations(),
+                f.relecture(),
+                false,
+                f.lastDataChange());
+
+        assertThat(bloc.personnesAPrevenir()).isEqualTo(4);
+    }
+
+    /** Stale data is said, except while a solve runs: it is reading the new data. */
+    @Test
+    void staleDataIsSaidExceptWhileASolveRuns() {
+        Facts f = filledFacts();
+        Instant apresResolution = RESOLU_LE.plusSeconds(3600);
+
+        assertThat(aTraiter(NOTHING_TODAY, f.publication(), f.confirmations(), f.relecture(), false, apresResolution)
+                        .donneesModifiees())
+                .isTrue();
+        EtatEditionView.EtatATraiter enCours = aTraiter(
+                NOTHING_TODAY,
+                new ApercuPublication(false, false, true, RESOLU_LE, 4, 0, List.of()),
+                f.confirmations(),
+                f.relecture(),
+                true,
+                apresResolution);
+        assertThat(enCours.donneesModifiees()).isFalse();
+        assertThat(enCours.personnesAPrevenir()).isZero();
     }
 
     /* --------------------------- The coherence line -------------------------- */
@@ -589,7 +816,8 @@ class EtatEditionServiceTest {
                         f.foireOuverte(),
                         f.demandesEnAttente(),
                         f.relecture(),
-                        rapport))
+                        rapport,
+                        NOTHING_TODAY))
                 .coherence();
     }
 
@@ -652,7 +880,8 @@ class EtatEditionServiceTest {
                 f.foireOuverte(),
                 f.demandesEnAttente(),
                 relecture,
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
     }
 
     private static Facts emptyFacts() {
@@ -683,7 +912,8 @@ class EtatEditionServiceTest {
                 true,
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
     }
 
     /** One stand of one seat, one timeslot, two animateurs: solved, published, everybody answered. */
@@ -712,7 +942,8 @@ class EtatEditionServiceTest {
                 true,
                 0,
                 new ProgressionValidations(0, 0, List.of()),
-                NO_ISSUE);
+                NO_ISSUE,
+                NOTHING_TODAY);
     }
 
     private static PlanningDiagnostic diagnostic(String score, int hardScore, List<ConstraintDiagnostic> contraintes) {

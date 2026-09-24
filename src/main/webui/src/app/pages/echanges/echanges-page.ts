@@ -9,12 +9,14 @@ import {
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatDialog } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { ActivatedRoute } from '@angular/router';
 import { EchangesApi } from '../../core/api/echanges-api';
 import {
   decisionNonCommuniquee,
@@ -32,6 +34,8 @@ import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
+import { keepViewInQueryParams } from '../../core/view-query-params';
+import { TO_ARBITRATE, oldestWaitingFirst, readToArbitrate } from './echanges-filter';
 
 interface DemandeRow extends DemandeEchangeView {
   statutLabel: string;
@@ -60,6 +64,7 @@ interface DemandeRow extends DemandeEchangeView {
     DatePipe,
     MatButtonModule,
     MatCardModule,
+    MatCheckboxModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -103,6 +108,14 @@ export class EchangesPage {
   protected readonly horsFenetre = signal(false);
   protected readonly foireEnCours = signal(false);
 
+  /**
+   * « À arbitrer seulement »: the requests only the admin's word is missing
+   * from — the ones « À traiter aujourd'hui » counts — the longest waiting
+   * first, and nothing else on screen. `?statut=a-arbitrer`, which is what
+   * the home screen links to; unticking it is the reset.
+   */
+  protected readonly toArbitrateOnly = signal(false);
+
   protected readonly rows = computed<DemandeRow[]>(() =>
     this.demandes().map((demande) => ({
       ...demande,
@@ -113,9 +126,10 @@ export class EchangesPage {
   );
 
   /** Actionable queue: the colleague already agreed, only the admin's word is missing. */
-  protected readonly enAttente = computed(() =>
-    this.rows().filter((row) => row.statut === 'PROPOSEE'),
-  );
+  protected readonly awaitingDecision = computed(() => {
+    const proposed = this.rows().filter((row) => row.statut === 'PROPOSEE');
+    return this.toArbitrateOnly() ? oldestWaitingFirst(proposed) : proposed;
+  });
   /** Still waiting for the targeted colleague: informative — refusable, but not acceptable yet. */
   protected readonly enAttenteCible = computed(() =>
     this.rows().filter((row) => row.statut === 'EN_ATTENTE_CIBLE'),
@@ -125,6 +139,10 @@ export class EchangesPage {
   );
 
   constructor() {
+    this.toArbitrateOnly.set(
+      readToArbitrate(inject(ActivatedRoute).snapshot.queryParamMap.get('statut')),
+    );
+    keepViewInQueryParams(() => ({ statut: this.toArbitrateOnly() ? TO_ARBITRATE : null }));
     void this.reload();
   }
 

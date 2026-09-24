@@ -179,6 +179,62 @@
   }
 }
 
+/* « À traiter aujourd'hui »: above the checklist, drawn only when something
+   waits on a decision. An alert — a swap request older than the notification
+   setting — borrows the error colour; the rest stays plain. */
+.accueil-a-traiter {
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+  background: var(--mat-sys-surface-container);
+}
+
+.accueil-a-traiter-titre {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.accueil-a-traiter-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.accueil-a-traiter-liste li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.accueil-a-traiter-liste mat-icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.accueil-a-traiter-alerte mat-icon,
+.accueil-a-traiter-alerte .accueil-a-traiter-texte {
+  color: var(--mat-sys-error);
+}
+
+.accueil-a-traiter-lien {
+  white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .accueil-a-traiter-liste li {
+    grid-template-columns: auto 1fr;
+  }
+
+  .accueil-a-traiter-lien {
+    grid-column: 2;
+  }
+}
+
 /* The consignes to come (issue #4): said above the checklist, since every
    line below reads a plan whose hours are not the usual ones. */
 .accueil-consignes {

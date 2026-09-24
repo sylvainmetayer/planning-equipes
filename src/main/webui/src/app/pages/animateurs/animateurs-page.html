@@ -31,6 +31,10 @@
                (blur)="restoreSilenceJours(champJours)" />
       </mat-form-field>
     }
+    @if (accuses() !== 'tous') {
+      <mat-checkbox class="accuses-jamais-relances" [checked]="neverReminded()" (change)="neverReminded.set($event.checked)"
+                    i18n="@@animateurs.accuses.jamaisRelances">Jamais relancés</mat-checkbox>
+    }
     <app-table-filter [(value)]="filtre" [matches]="animateursFiltres().length" [total]="store.animateurs().length"
                       (enterTable)="navigation.focusCurrent()" />
     @if (typologiesFiltrees().length > 0) {

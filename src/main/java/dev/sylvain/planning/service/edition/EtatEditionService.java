@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.edition;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
+import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDeclaration;
@@ -16,6 +17,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.edition.EtatEditionView.EtatATraiter;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatBesoin;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCoherence;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCollecte;
@@ -30,6 +32,8 @@ import dev.sylvain.planning.service.edition.EtatEditionView.EtatResolution;
 import dev.sylvain.planning.service.edition.EtatEditionView.Statut;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
+import dev.sylvain.planning.service.espace.JourJClock;
+import dev.sylvain.planning.service.notification.AlerteEchangeJob;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
@@ -48,9 +52,16 @@ import dev.sylvain.planning.service.validation.ValidationPrerequisService.Progre
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Where the current edition stands in its cycle — the one aggregation the
@@ -125,6 +136,40 @@ public class EtatEditionService {
     @Inject
     CoherenceReferentielService coherenceService;
 
+    @Inject
+    JourJClock jourJClock;
+
+    /**
+     * How far ahead « journées proches » looks, in days, today included —
+     * today and the six days after it: a week is the time left to read a day
+     * before it is worked. A constant rather than a
+     * setting, until somebody asks for another horizon.
+     */
+    public static final int UPCOMING_DAYS_HORIZON = 7;
+
+    /**
+     * After how many days without an answer since the publication somebody is
+     * worth a reminder — the default of the « silencieux depuis » filter of the
+     * Animateurs page ({@code SILENCE_JOURS_DEFAUT}), which the link opens on.
+     */
+    public static final int SILENCE_DAYS = 3;
+
+    /**
+     * What « À traiter aujourd'hui » reads besides the other blocks' facts.
+     *
+     * @param maintenant         now, on the recette clock when it is frozen
+     * @param declarations       when each pending availability declaration was submitted
+     * @param echanges           since when each swap request has waited on the organisation
+     * @param joursEvenement     the days carrying a timeslot
+     */
+    public record TodayFacts(
+            LocalDate aujourdhui,
+            Instant maintenant,
+            List<Instant> declarations,
+            List<Instant> echanges,
+            int ancienneteEchangeJours,
+            List<LocalDate> joursEvenement) {}
+
     /**
      * Everything {@link #assemble} decides on, read once per call.
      *
@@ -138,6 +183,7 @@ public class EtatEditionService {
      * @param publication       what the next publication would announce
      * @param confirmations     the acknowledgements of the published plan
      * @param coherence         the coherence checklist of the referential
+     * @param today             what « À traiter aujourd'hui » reads on top of the rest
      */
     public record Facts(
             Edition edition,
@@ -159,7 +205,8 @@ public class EtatEditionService {
             boolean foireOuverte,
             int demandesEnAttente,
             ProgressionValidations relecture,
-            CoherenceReport coherence) {}
+            CoherenceReport coherence,
+            TodayFacts today) {}
 
     /** The state of the current edition. */
     public EtatEditionView etat() {
@@ -169,9 +216,12 @@ public class EtatEditionService {
     private Facts facts() {
         Edition edition = editionService.editionCourante();
         List<DeclarationDisponibilite> declarations = declarationService.list();
-        int enAttente = (int) declarations.stream()
+        List<Instant> declarationsEnAttente = declarations.stream()
                 .filter(declaration -> declaration.getStatut() == StatutDeclaration.EN_ATTENTE)
-                .count();
+                .map(DeclarationDisponibilite::getCreeLe)
+                .toList();
+        int enAttente = declarationsEnAttente.size();
+        List<DemandeEchange> demandes = demandeEchangeService.pendingDemandes();
         StoredAnalysis analysis = analysisStore.latest();
         // Read once and handed to every reader below: the stands, resolved,
         // and the timeslots feed the counts, the opening report, the
@@ -179,6 +229,9 @@ public class EtatEditionService {
         List<Stand> stands = referenceDataService.listSolvedStands();
         List<Creneau> creneaux = referenceDataService.listCreneaux();
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        // One reading of the clock: today's date and the instant ages are
+        // measured to can then never straddle midnight.
+        LocalDateTime moment = jourJClock.dateTime();
         // Computed once and read twice: by their own lines, and by the
         // coherence checklist that lists their anomalies.
         RapportOuvertures ouvertures = OuvertureStandsAnalyzer.analyze(stands, creneaux);
@@ -214,9 +267,28 @@ public class EtatEditionService {
                 publicationService.apercu(),
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
-                demandeEchangeService.pendingDemandes().size(),
+                demandes.size(),
                 prerequisService.progression(),
-                coherenceService.report(stands, creneaux, ouvertures, staffing));
+                coherenceService.report(stands, creneaux, ouvertures, staffing),
+                new TodayFacts(
+                        moment.toLocalDate(),
+                        // The real clock's reading is the machine's local time,
+                        // so the system zone turns it back into the very instant
+                        // the nightly swap alert compares against — that job's
+                        // own zone only decides when it runs, never an age.
+                        moment.atZone(ZoneId.systemDefault()).toInstant(),
+                        declarationsEnAttente,
+                        demandes.stream()
+                                .map(AlerteEchangeJob::waitingSince)
+                                .filter(Objects::nonNull)
+                                .toList(),
+                        referenceDataService.getParametresNotifications().ancienneteEchangeJours(),
+                        creneaux.stream()
+                                .map(Creneau::getDate)
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .sorted()
+                                .toList()));
     }
 
     /**
@@ -246,7 +318,8 @@ public class EtatEditionService {
                 relecture(facts),
                 publication(facts),
                 confirmations(facts),
-                foire(facts));
+                foire(facts),
+                aTraiter(facts));
     }
 
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {
@@ -509,5 +582,66 @@ public class EtatEditionService {
             statut = Statut.FAIT;
         }
         return new EtatFoire(facts.foireOuverte(), facts.demandesEnAttente(), statut);
+    }
+
+    /**
+     * « À traiter aujourd'hui », decided on the facts alone. Every subject is
+     * a count the screen hides at zero; the block as a whole says nothing when
+     * all of them are.
+     *
+     * <p>Two subjects wait for a first publication — nobody is silent and
+     * nobody is to be told before anything was sent — and two go quiet while a
+     * solve runs: the data it reads is the new one, and the people to tell
+     * are read off a plan about to be rewritten. The days to read wait for a
+     * plan too: there is nothing to accept on an edition never solved.</p>
+     */
+    static EtatATraiter aTraiter(Facts facts) {
+        TodayFacts today = facts.today();
+        LocalDate aujourdhui = today.aujourdhui();
+
+        Duration threshold = Duration.ofDays(today.ancienneteEchangeJours());
+        int enAlerte = (int) today.echanges().stream()
+                .filter(depuis -> Duration.between(depuis, today.maintenant()).compareTo(threshold) >= 0)
+                .count();
+
+        List<LocalDate> unread = List.of();
+        if (facts.resolution() != null) {
+            Set<LocalDate> relues = new HashSet<>(facts.relecture().joursValides());
+            // Today counts as the first of the horizon's days.
+            LocalDate last = aujourdhui.plusDays(UPCOMING_DAYS_HORIZON - 1L);
+            unread = today.joursEvenement().stream()
+                    .filter(jour -> !jour.isBefore(aujourdhui) && !jour.isAfter(last))
+                    .filter(jour -> !relues.contains(jour))
+                    .sorted()
+                    .toList();
+        }
+
+        SyntheseConfirmations confirmations = facts.confirmations();
+        boolean silenceEcoule = !confirmations.jamaisPublie()
+                && confirmations.dernierePublicationLe() != null
+                && Duration.between(confirmations.dernierePublicationLe(), today.maintenant())
+                                .compareTo(Duration.ofDays(SILENCE_DAYS))
+                        > 0;
+
+        ApercuPublication publication = facts.publication();
+        int aPrevenir = publication.jamaisPublie() || facts.solveEnCours() ? 0 : publication.nombreConcernes();
+
+        return new EtatATraiter(
+                aujourdhui,
+                today.declarations().size(),
+                today.declarations().stream()
+                        .filter(Objects::nonNull)
+                        .min(Instant::compareTo)
+                        .orElse(null),
+                today.echanges().size(),
+                enAlerte,
+                today.ancienneteEchangeJours(),
+                today.echanges().stream().min(Instant::compareTo).orElse(null),
+                UPCOMING_DAYS_HORIZON,
+                unread,
+                silenceEcoule ? confirmations.silencieux() : 0,
+                SILENCE_DAYS,
+                !facts.solveEnCours() && resolution(facts).dataStale(),
+                aPrevenir);
     }
 }

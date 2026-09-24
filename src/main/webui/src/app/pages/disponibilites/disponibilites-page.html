@@ -68,10 +68,12 @@
 }
 
 <h2 i18n="@@dispo.enAttenteTitre">En attente de votre décision</h2>
-@if (enAttente().length === 0) {
+<mat-checkbox [checked]="pendingOnly()" (change)="pendingOnly.set($event.checked)"
+              i18n="@@dispo.filtreEnAttente">En attente seulement, la plus ancienne d'abord</mat-checkbox>
+@if (pending().length === 0) {
   <p class="espace-vide" i18n="@@dispo.aucuneEnAttente">Aucune déclaration en attente.</p>
 }
-@for (declaration of enAttente(); track declaration.id) {
+@for (declaration of pending(); track declaration.id) {
   <mat-card class="dispo-admin-declaration" appearance="outlined">
     <mat-card-header>
       <h3 mat-card-title>{{ declaration.animateurNom }}</h3>
@@ -140,7 +142,7 @@
   </mat-card>
 }
 
-@if (decidees().length > 0) {
+@if (!pendingOnly() && decidees().length > 0) {
   <h2 i18n="@@dispo.decideesTitre">Déjà traitées</h2>
   @for (declaration of decidees(); track declaration.id) {
     <mat-card class="dispo-admin-declaration" appearance="outlined">

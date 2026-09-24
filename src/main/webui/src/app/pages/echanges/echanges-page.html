@@ -63,10 +63,12 @@
 <p class="echanges-section-hint" i18n="@@echanges.enAttenteHint">
   Le collègue concerné a déjà donné son accord : il ne manque que le vôtre.
 </p>
-@if (enAttente().length === 0) {
+<mat-checkbox [checked]="toArbitrateOnly()" (change)="toArbitrateOnly.set($event.checked)"
+              i18n="@@echanges.filtreAArbitrer">À arbitrer seulement, la plus ancienne d'abord</mat-checkbox>
+@if (awaitingDecision().length === 0) {
   <p class="espace-vide" i18n="@@echanges.aucuneEnAttente">Aucune demande en attente.</p>
 }
-@for (demande of enAttente(); track demande.id) {
+@for (demande of awaitingDecision(); track demande.id) {
   <mat-card class="echanges-demande" appearance="outlined">
     <mat-card-content>
       <div class="echanges-demande-entete">
@@ -139,7 +141,7 @@
   </mat-card>
 }
 
-@if (enAttenteCible().length > 0) {
+@if (!toArbitrateOnly() && enAttenteCible().length > 0) {
   <h2 i18n="@@echanges.attenteCibleTitre">En attente de l'accord du collègue</h2>
   <p class="echanges-section-hint" i18n="@@echanges.attenteCibleHint">
     Pas encore acceptées par le collègue concerné : rien à faire pour le moment, sauf refuser pour
@@ -182,42 +184,44 @@
   }
 }
 
-<h2 i18n="@@echanges.decideesTitre">Décidées</h2>
-@if (decidees().length === 0) {
-  <p class="espace-vide" i18n="@@echanges.aucuneDecidee">Aucune demande décidée pour le moment.</p>
-}
-@for (demande of decidees(); track demande.id) {
-  <mat-card class="echanges-demande echanges-demande-decidee" appearance="outlined">
-    <mat-card-content>
-      <div class="echanges-demande-entete">
-        <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
-        <strong>{{ demande.demandeurNom }}</strong>
-        <mat-icon inline>swap_horiz</mat-icon>
-        <strong>{{ demande.cibleNom }}</strong>
-        <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
-        @if (demande.creneauCibleId) {
-          <span class="espace-brouillon-contre">
-            <ng-container i18n="@@echanges.contre">contre son créneau</ng-container>
-            {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
-          </span>
+@if (!toArbitrateOnly()) {
+  <h2 i18n="@@echanges.decideesTitre">Décidées</h2>
+  @if (decidees().length === 0) {
+    <p class="espace-vide" i18n="@@echanges.aucuneDecidee">Aucune demande décidée pour le moment.</p>
+  }
+  @for (demande of decidees(); track demande.id) {
+    <mat-card class="echanges-demande echanges-demande-decidee" appearance="outlined">
+      <mat-card-content>
+        <div class="echanges-demande-entete">
+          <span class="espace-statut espace-statut-{{ demande.statutClasse }}">{{ demande.statutLabel }}</span>
+          <strong>{{ demande.demandeurNom }}</strong>
+          <mat-icon inline>swap_horiz</mat-icon>
+          <strong>{{ demande.cibleNom }}</strong>
+          <span>{{ demande.date | date: 'EEE d MMM' }} {{ demande.heureDebut }}–{{ demande.heureFin }} · {{ demande.standNom }}</span>
+          @if (demande.creneauCibleId) {
+            <span class="espace-brouillon-contre">
+              <ng-container i18n="@@echanges.contre">contre son créneau</ng-container>
+              {{ demande.dateCible | date: 'EEE d MMM' }} {{ demande.heureDebutCible }}–{{ demande.heureFinCible }} · {{ demande.standCibleNom }}
+            </span>
+          }
+          @if (demande.decideLe) {
+            <span class="echanges-demande-date" i18n="@@echanges.decideeLe">décidée le {{ demande.decideLe | date: 'short' }}</span>
+          }
+          <!--
+            Ce qui reste à publier : tant que la publication n'est pas partie,
+            l'espace de l'animateur montre le plan d'avant la décision (#531).
+          -->
+          @if (demande.nonCommuniquee) {
+            <span class="echanges-demande-attente">
+              <mat-icon inline>schedule_send</mat-icon>
+              <ng-container i18n="@@echanges.nonCommuniquee">pas encore communiquée — la prochaine publication l'annonce</ng-container>
+            </span>
+          }
+        </div>
+        @if (demande.commentaireAdmin) {
+          <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>
         }
-        @if (demande.decideLe) {
-          <span class="echanges-demande-date" i18n="@@echanges.decideeLe">décidée le {{ demande.decideLe | date: 'short' }}</span>
-        }
-        <!--
-          Ce qui reste à publier : tant que la publication n'est pas partie,
-          l'espace de l'animateur montre le plan d'avant la décision (#531).
-        -->
-        @if (demande.nonCommuniquee) {
-          <span class="echanges-demande-attente">
-            <mat-icon inline>schedule_send</mat-icon>
-            <ng-container i18n="@@echanges.nonCommuniquee">pas encore communiquée — la prochaine publication l'annonce</ng-container>
-          </span>
-        }
-      </div>
-      @if (demande.commentaireAdmin) {
-        <p class="espace-demande-commentaire">{{ demande.commentaireAdmin }}</p>
-      }
-    </mat-card-content>
-  </mat-card>
+      </mat-card-content>
+    </mat-card>
+  }
 }

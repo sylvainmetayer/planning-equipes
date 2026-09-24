@@ -53,6 +53,21 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
     },
     confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
+    aTraiter: {
+      aujourdhui: '2026-07-10',
+      declarationsEnAttente: 0,
+      plusAncienneDeclaration: null,
+      echangesAArbitrer: 0,
+      echangesEnAlerte: 0,
+      seuilAncienneteJours: 7,
+      plusAncienEchange: null,
+      horizonJours: 7,
+      journeesNonRelues: [],
+      silencieuxARelancer: 0,
+      silenceJours: 3,
+      donneesModifiees: false,
+      personnesAPrevenir: 0,
+    },
     ...partial,
   };
 }
@@ -342,5 +357,24 @@ describe('AccueilPage', () => {
     expect(panneau.querySelector('h3')!.textContent).toContain('Créneaux');
     expect(panneau.querySelector('h2')).toBeNull();
     expect(panneau.querySelector('a')!.getAttribute('href')).toBe('/creneaux?edit=7');
+  });
+
+  it("draws « À traiter aujourd'hui » above the checklist only when something waits", async () => {
+    editionsApi.etat.mockResolvedValueOnce(etat());
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    expect(element().querySelector('.accueil-a-traiter')).toBeNull();
+
+    editionsApi.etat.mockResolvedValueOnce(
+      etat({ aTraiter: { ...etat().aTraiter, echangesAArbitrer: 2, echangesEnAlerte: 1 } }),
+    );
+    page.recharger();
+    await vi.waitFor(() => expect(element().querySelector('.accueil-a-traiter')).not.toBeNull());
+    const sujet = element().querySelector<HTMLElement>('li[data-sujet="echanges"]')!;
+    expect(sujet.classList.contains('accueil-a-traiter-alerte')).toBe(true);
+    // Said, not only coloured: the icon is decorative.
+    expect(sujet.querySelector('.visually-hidden')!.textContent).toBe('Alerte : ');
+    expect(sujet.querySelector('a')!.getAttribute('href')).toBe('/echanges?statut=a-arbitrer');
+    expect(text()).toContain("À traiter aujourd'hui");
   });
 });
