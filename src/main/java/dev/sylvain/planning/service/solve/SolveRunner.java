@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
+import ai.timefold.solver.core.api.domain.solution.ConstraintWeightOverrides;
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.Solver;
 import ai.timefold.solver.core.api.solver.SolverFactory;
 import ai.timefold.solver.core.config.score.director.ScoreDirectorFactoryConfig;
@@ -22,6 +24,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.jboss.logging.Logger;
 
 /**
  * Runs a solve, and fills the problem with the server-side facts first.
@@ -37,6 +40,8 @@ import java.util.function.Supplier;
  * points as a façade.</p>
  */
 final class SolveRunner {
+
+    private static final Logger LOG = Logger.getLogger(SolveRunner.class);
 
     private final SolverConfiguration configuration;
     private final ReferenceData referenceDataService;
@@ -82,15 +87,95 @@ final class SolveRunner {
      */
     public PlanningEvenement solve(
             PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveReporting(problem, secondsLimitOverride, onSolverReady).planning();
+    }
+
+    /**
+     * The same solve, telling whether it ran in two stages
+     * ({@link FeasibilityFirstSolve}) and what each did. {@code onSolverReady}
+     * then receives one solver per stage, in order: a caller holding the solver
+     * to stop it must hold the latest, and one following the score must keep
+     * one curve across both.
+     */
+    Solved solveReporting(
+            PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
         prepareProblem(problem);
         FrozenPast.pin(problem.getPostes());
+        if (FeasibilityFirstSolve.applies(problem)) {
+            return solveFeasibilityFirst(problem, secondsLimitOverride, onSolverReady);
+        }
         Solver<PlanningEvenement> solver = configuration
                 .resolveSolverFactory(secondsLimitOverride, problem)
                 .buildSolver();
         if (onSolverReady != null) {
             onSolverReady.accept(solver);
         }
-        return solver.solve(problem);
+        return new Solved(solver.solve(problem), null);
+    }
+
+    /** A solved plan, and the report of its two stages when it had two; {@code null} otherwise. */
+    record Solved(PlanningEvenement planning, FeasibilityFirstReport feasibilityFirst) {}
+
+    /**
+     * The two stages of {@link FeasibilityFirstSolve}, on a prepared problem:
+     * the stability rule weighed at zero until feasibility (or two thirds of the
+     * budget), then its own weight again, from the plan the first stage reached,
+     * on what is left. The second stage runs even when the first fell short —
+     * it starts from the best plan found, and Timefold keeps the best one.
+     */
+    private Solved solveFeasibilityFirst(
+            PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        long budget = secondsLimitOverride != null ? secondsLimitOverride : configuration.defaultSecondsLimit();
+        boolean defaultBudget =
+                secondsLimitOverride == null || secondsLimitOverride.equals(configuration.defaultSecondsLimit());
+        ConstraintWeightOverrides<HardMediumSoftScore> weights = problem.getPonderationsContraintes();
+        problem.setPonderationsContraintes(configuration.constraintWeightOverridesSuspending(
+                problem.getPonderationsScenario(), FeasibilityFirstSolve.STABILITY_RULE));
+        LOG.infof(
+                "Two-stage solve: a plan is published and the hard consecutive-days rule is on;"
+                        + " stage 1, feasibility with the published plan's stability suspended, at most %d s",
+                FeasibilityFirstSolve.feasibilitySeconds(budget));
+
+        long start = System.nanoTime();
+        Solver<PlanningEvenement> feasibility = configuration
+                .feasibilityStageFactory(problem, FeasibilityFirstSolve.feasibilitySeconds(budget))
+                .buildSolver();
+        if (onSolverReady != null) {
+            onSolverReady.accept(feasibility);
+        }
+        PlanningEvenement feasible = feasibility.solve(problem);
+        long feasibilitySeconds = secondsSince(start);
+        boolean reached = feasible.getScore() != null && feasible.getScore().isFeasible();
+        int changedAfterFeasibility = FeasibilityFirstSolve.publishedSeatsChanged(feasible);
+        LOG.infof(
+                "Two-stage solve: stage 1 ended in %d s, %s, %d published seats changed;"
+                        + " stage 2, polishing with stability restored",
+                feasibilitySeconds, reached ? "feasible" : "not feasible", changedAfterFeasibility);
+
+        // The solved clone carries the first stage's weights: the second stage
+        // judges with the edition's own again.
+        feasible.setPonderationsContraintes(weights);
+        long polishingStart = System.nanoTime();
+        Solver<PlanningEvenement> polishing = configuration
+                .polishingStageFactory(feasible, Math.max(1, budget - feasibilitySeconds), defaultBudget)
+                .buildSolver();
+        if (onSolverReady != null) {
+            onSolverReady.accept(polishing);
+        }
+        PlanningEvenement polished = polishing.solve(feasible);
+        long polishingSeconds = secondsSince(polishingStart);
+        int changed = FeasibilityFirstSolve.publishedSeatsChanged(polished);
+        LOG.infof(
+                "Two-stage solve: stage 2 ended in %d s, %s, %d published seats changed",
+                polishingSeconds, polished.getScore(), changed);
+        return new Solved(
+                polished,
+                new FeasibilityFirstReport(
+                        reached, feasibilitySeconds, polishingSeconds, changedAfterFeasibility, changed));
+    }
+
+    private static long secondsSince(long nanoStart) {
+        return (System.nanoTime() - nanoStart) / 1_000_000_000L;
     }
 
     /**

@@ -420,6 +420,12 @@ public class PlanningService {
         return solveRunner.solve(problem, secondsLimitOverride, onSolverReady);
     }
 
+    /** @see SolveRunner#solveReporting */
+    SolveRunner.Solved solveReporting(
+            PlanningEvenement problem, Long secondsLimitOverride, Consumer<Solver<PlanningEvenement>> onSolverReady) {
+        return solveRunner.solveReporting(problem, secondsLimitOverride, onSolverReady);
+    }
+
     /** @see SolveRunner#solveUntilFeasible */
     public PlanningEvenement solveUntilFeasible(PlanningEvenement problem, long secondsLimitSecurite) {
         return solveRunner.solveUntilFeasible(problem, secondsLimitSecurite);

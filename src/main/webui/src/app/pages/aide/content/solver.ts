@@ -284,6 +284,10 @@ export function buildSolverSections(): HelpSection[] {
               text: $localize`:@@aide.results.def.stabilite:Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait coûte un point medium : un calcul relancé après un changement tardif ne bouscule les gens déjà prévenus que si le gain vaut le dérangement. La règle se dose comme les autres et reste muette tant que rien n'a été publié. Ce n'est pas un gel : pour figer, il y a les verrouillages.`,
             },
             {
+              term: $localize`:@@aide.results.term.resserrerApresPublication:Resserrer une règle après publication`,
+              text: $localize`:@@aide.results.def.resserrerApresPublication:Allumer la règle dure des jours d'affilée, ou baisser son seuil, sur un planning déjà publié déplace forcément beaucoup de monde : chaque personne qui dépasse le nouveau plafond doit perdre un jour, et quelqu'un doit le reprendre. La prochaine publication les préviendra tous. Le calcul se fait alors en deux étapes dans le même job : d'abord la faisabilité, sans tenir compte de la stabilité, puis un polissage qui ramène sur leur siège publié tous ceux que les règles dures laissent revenir. Le récapitulatif compte les sièges publiés qui ont changé après chaque étape. Pour déplacer moins de monde, resserrez avant la première publication, ou verrouillez les journées qui ne doivent plus bouger.`,
+            },
+            {
               term: $localize`:@@aide.results.term.pourquoiLui:« Pourquoi lui ? »`,
               text: $localize`:@@aide.results.def.pourquoiLui:Un clic sur un animateur affecté explique cette affectation précise : les règles respectées ou non pour ce poste. À la demande, l'écran cherche aussi qui pourrait le remplacer, et ne propose que les remplacements qui n'introduisent aucun écart dur, chacun avec son effet sur le score. La recherche est bornée et annonce combien de candidats elle a évalués : une liste courte ne prouve pas qu'il n'existe rien d'autre.`,
             },

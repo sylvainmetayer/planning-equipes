@@ -73,6 +73,7 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0047](0047-differer-le-message-d-une-personne-sans-la-perdre-de-vue.md) | Exclure quelqu'un d'une publication diffère son message sans l'oublier : la référence de comparaison devient une propriété de la personne, la capture reste commune | Accepté · complète 0011 |
 | [0048](0048-une-seule-regle-de-pause.md) | Une seule règle de pause : toute pause due est un trou dans la grille ou un relais du même stand, sinon un écart dur ; une seule durée, déduite partout | Accepté · révise 0006 et 0034, prolonge 0037 |
 | [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md) | Sous la forme dure des jours d'affilée, la chaîne libère un jour de la série, les jours se regroupent et le *ruin and recreate* de la phase de faisabilité devient rare | Accepté · prolonge 0045, complète 0025 |
+| [0050](0050-la-faisabilite-avant-la-stabilite-apres-publication.md) | Après publication, sous la forme dure des jours d'affilée, une résolution cherche d'abord la faisabilité sans la stabilité du plan publié, puis polit avec elle | Accepté · prolonge 0049, complète 0025 |
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,

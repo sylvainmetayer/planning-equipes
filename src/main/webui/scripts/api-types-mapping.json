@@ -98,6 +98,7 @@
     "ImpactPublication": "Assemblé côté front à partir de l'aperçu de publication.",
     "ResultatSolve": "Enveloppe de présentation autour du plan et du diagnostic.",
     "ResultatSolveIncremental": "Idem ResultatSolve.",
+    "FeasibilityFirstReport": "Porté par ResultatSolve, hors contrat comme lui.",
     "Interruption": "Détail d'un job, réemballé par la resource.",
     "RestaurationSnapshot": "Vue d'écran, pas une réponse serveur.",
     "CleMcp": "Clé MCP telle que l'écran l'affiche ; le serveur ne renvoie jamais la valeur.",

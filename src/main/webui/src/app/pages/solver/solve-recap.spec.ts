@@ -18,6 +18,7 @@ type RecapInternals = {
   reamorcageLabel: Signal<string>;
   passesVidesLabel: Signal<string>;
   impactLabel: Signal<string>;
+  feasibilityFirstLabel: Signal<string>;
   comparison: Signal<{ avant: string; apres: string } | null>;
   horsPlancherLabel: Signal<string>;
   restoring: Signal<boolean>;
@@ -161,6 +162,32 @@ describe('SolveRecap', () => {
 
     fixture.componentRef.setInput('impact', null);
     expect(recap.impactLabel()).toBe('');
+  });
+
+  it('says a solve ran in two stages, what the second gave back, and nothing otherwise', () => {
+    const recap = createRecap({
+      feasibilityFirst: {
+        feasibilityReached: true,
+        feasibilitySeconds: 1,
+        polishingSeconds: 299,
+        publishedSeatsChangedAfterFeasibility: 55,
+        publishedSeatsChanged: 20,
+      },
+    });
+    expect(recap.feasibilityFirstLabel()).toContain('Deux étapes');
+    expect(recap.feasibilityFirstLabel()).toContain('rendu 35 place(s)');
+
+    fixture.componentRef.setInput('feasibilityFirst', {
+      feasibilityReached: false,
+      feasibilitySeconds: 200,
+      polishingSeconds: 100,
+      publishedSeatsChangedAfterFeasibility: 900,
+      publishedSeatsChanged: 700,
+    });
+    expect(recap.feasibilityFirstLabel()).toContain("n'a pas été atteinte");
+
+    fixture.componentRef.setInput('feasibilityFirst', null);
+    expect(recap.feasibilityFirstLabel()).toBe('');
   });
 
   it('shows the run only once one has finished', () => {

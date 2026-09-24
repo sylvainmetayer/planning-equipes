@@ -10,6 +10,9 @@
     @if (impactLabel()) {
       <p class="calendar-meta solver-impact-publication">{{ impactLabel() }}</p>
     }
+    @if (feasibilityFirstLabel()) {
+      <p class="calendar-meta solver-feasibility-first">{{ feasibilityFirstLabel() }}</p>
+    }
     @if (validationsLabel()) {
       <p class="calendar-meta solver-impact-validations">{{ validationsLabel() }}</p>
     }

@@ -237,6 +237,20 @@ mieux, pas faisable, et aucun plan ne prouve que cette grille le soit. Sur une �
 le besoin tient, le solveur atteint zéro écart dur. Le détail et les mesures
 sont dans [0049](decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md).
 
+**Resserrer après publication.** Un plan publié donne un prix medium à chaque
+siège quitté (`stabiliteDuPlanPublie`), et le regroupement d'une journée,
+neutre en dur, cesse alors d'être accepté : sans lui, les chaînes ne trouvent
+plus de collègue pour reprendre le jour rendu, et la recherche cale sur des
+sièges vides — une règle medium qui décide de la faisabilité. Quand la forme
+dure est allumée et qu'un plan est publié, la résolution se fait donc en
+**deux étapes dans le même job** : la faisabilité d'abord, stabilité suspendue,
+au plus deux tiers du budget ; puis le polissage, stabilité rétablie, qui rend
+leurs sièges publiés à tous ceux que les règles dures laissent revenir. Le
+récapitulatif de la page Solveur le dit. Resserrer après publication déplace
+quand même beaucoup de monde : chaque personne au-delà du nouveau plafond doit
+perdre un jour. Le détail et les mesures sont dans
+[0050](decisions/0050-la-faisabilite-avant-la-stabilite-apres-publication.md).
+
 Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
 `festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
 forme dure tient parfaitement sa promesse, personne au-delà de six jours, et

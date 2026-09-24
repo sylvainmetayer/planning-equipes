@@ -13,7 +13,9 @@ in the root `AGENTS.md`; this file carries the detail.
 `PlanningServiceScenarioCompletTest`, `PlanningServiceScenarioContinuTest`,
 `PlanningServiceScenarioFestivalRealisteTest` and
 `PlanningServiceScenarioFestivalHivernalTest` solve large scenarios to
-hard-feasibility — the first two take ~25s/~75s on hand-built problems, the
+hard-feasibility; `PlanningServiceScenarioPublishedRunCapTest` solves the
+canicule fixture, publishes it and solves it again under the hard run-of-days
+rule tightened to six — the two-stage solve of ADR 0050 — the first two take ~25s/~75s on hand-built problems, the
 last two run the **anonymised real-world fixtures**
 (`festival-realiste-canicule.yaml`, the heatwave variant, and
 `festival-hivernal.yaml`, the same event on the organiser's own grid: 153

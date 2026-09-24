@@ -23,6 +23,7 @@ import {
   ChangementAffectation,
   FeasibilityReport,
   ImpactPublication,
+  FeasibilityFirstReport,
   ImpactValidations,
   PerimetreReplanification,
   PlanningDiagnostic,
@@ -41,6 +42,7 @@ import {
   JobResults,
   SolverJobService,
   extraireDiagnostic,
+  extraireFeasibilityFirst,
   extraireImpactPublication,
   extraireImpactValidations,
   extrairePlanPrecedent,
@@ -241,6 +243,7 @@ export class SolverPage {
 
   /** The readings the last finished solve withdrew, when it withdrew any. */
   protected readonly impactValidations = signal<ImpactValidations | null>(null);
+  protected readonly feasibilityFirst = signal<FeasibilityFirstReport | null>(null);
 
   /**
    * "Fin estimée" of the run in progress: its start time plus the duration it
@@ -306,6 +309,7 @@ export class SolverPage {
       this.reamorcageEffectue.set(extraireReamorcage(result));
       this.impactPublication.set(extraireImpactPublication(result));
       this.impactValidations.set(extraireImpactValidations(result));
+      this.feasibilityFirst.set(extraireFeasibilityFirst(result));
       // The banner comments on the plan the solve just rewrote, and that solve
       // may have withdrawn readings: re-read rather than leave a stale count.
       void this.validations.reload();

@@ -24,6 +24,7 @@ import { ApiService, toError } from './api.service';
 import { EditionStore } from './edition.store';
 import { NotificationService } from './notification.service';
 import {
+  FeasibilityFirstReport,
   JobType,
   JobView,
   PerimetreReplanification,
@@ -836,6 +837,14 @@ export function extraireImpactValidations(result: unknown): ImpactValidations | 
     return null;
   }
   return (result as Partial<ResultatSolve>).impactValidations ?? null;
+}
+
+/** The two stages of a solve that had two (ADR 0050), or `null` for a single-stage one. */
+export function extraireFeasibilityFirst(result: unknown): FeasibilityFirstReport | null {
+  if (!result || typeof result !== 'object') {
+    return null;
+  }
+  return (result as Partial<ResultatSolve>).feasibilityFirst ?? null;
 }
 
 /**

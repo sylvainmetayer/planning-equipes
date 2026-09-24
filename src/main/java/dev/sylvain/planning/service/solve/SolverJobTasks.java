@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.solve.SolverJobService.ResultatSolveIncremen
 import dev.sylvain.planning.service.solve.SolverJobService.SolverJob;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 
@@ -84,7 +85,8 @@ public class SolverJobTasks {
                             probleme.postesPassesVides()),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
-                    resolution.interruption());
+                    resolution.interruption(),
+                    resolution.feasibilityFirst());
         };
     }
 
@@ -105,7 +107,8 @@ public class SolverJobTasks {
                     resolution.previousPlan(),
                     resolution.impactPublication(),
                     resolution.impactValidations(),
-                    resolution.interruption());
+                    resolution.interruption(),
+                    resolution.feasibilityFirst());
         };
     }
 
@@ -116,10 +119,14 @@ public class SolverJobTasks {
                 null,
                 resolution.impactPublication(),
                 resolution.impactValidations(),
-                resolution.interruption());
+                resolution.interruption(),
+                resolution.feasibilityFirst());
     }
 
     private Consumer<Solver<PlanningEvenement>> onSolverReady(SolverJob job) {
+        // A solve may hand over two solvers, one per stage (FeasibilityFirstSolve):
+        // the job holds the latest, the curve goes on from the first.
+        AtomicBoolean followed = new AtomicBoolean();
         return solver -> {
             // Holding it first: attachSolver honours a cancel that arrived
             // while the problem was being built, by terminating the solver
@@ -132,7 +139,11 @@ public class SolverJobTasks {
                 // solve that finished minutes ago.
                 return;
             }
-            scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+            if (followed.compareAndSet(false, true)) {
+                scoreTrace.follow(job.getId(), job.getEditionId(), solver);
+            } else {
+                scoreTrace.followNext(job.getId(), solver);
+            }
         };
     }
 }

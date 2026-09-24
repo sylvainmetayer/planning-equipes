@@ -13,6 +13,9 @@
 # coupure méridienne, matrice de compétences irrégulière — et c'est là que la
 # convergence a historiquement cassé sans qu'aucun scénario fabriqué ne le
 # voie. Il pèse l'essentiel de la durée du job.
+# PlanningServiceScenarioPublishedRunCapTest résout la fixture canicule, la
+# publie, puis la résout de nouveau sous la règle dure des jours d'affilée
+# resserrée à six : la résolution en deux étapes de l'ADR 0050.
 #
 # Ils sont pourtant le seul filet contre une régression de convergence, et
 # rien ne les déclenchait : un réglage du solveur pouvait partir en production

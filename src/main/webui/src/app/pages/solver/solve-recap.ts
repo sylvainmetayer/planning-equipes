@@ -12,6 +12,7 @@ import { MatCardModule } from '@angular/material/card';
 import { errorPrefix } from '../../core/error-message';
 import { intlLocale } from '../../core/locale';
 import {
+  FeasibilityFirstReport,
   ImpactPublication,
   ImpactValidations,
   PreviousPlan,
@@ -54,6 +55,8 @@ export class SolveRecap {
   readonly impact = input<ImpactPublication | null>(null);
   /** The readings that solve withdrew; null when it withdrew none. */
   readonly impactValidations = input<ImpactValidations | null>(null);
+  /** The two stages of the last solve, when it had two (ADR 0050). */
+  readonly feasibilityFirst = input<FeasibilityFirstReport | null>(null);
   /** What the last solve replaced; null when there is nothing to compare against. */
   readonly previousPlan = input<PreviousPlan | null>(null);
   /** Full score of the last solve, the other half of the comparison. */
@@ -140,6 +143,26 @@ export class SolveRecap {
       return '';
     }
     return $localize`:@@solver.impact.validations:${impact.journees}:count: journée(s) validée(s) ont bougé : leur relecture a été retirée.`;
+  });
+
+  /**
+   * « Résolu en deux étapes… » — why the published plan moved more than the
+   * stability rule would suggest: the hard run-of-days rule could only be
+   * reached with that rule suspended, and the second stage brought back what
+   * it could. Silent for a single-stage solve, which is nearly every one.
+   */
+  protected readonly feasibilityFirstLabel = computed(() => {
+    const etapes = this.feasibilityFirst();
+    if (!etapes) {
+      return '';
+    }
+    const retour = Math.max(
+      0,
+      etapes.publishedSeatsChangedAfterFeasibility - etapes.publishedSeatsChanged,
+    );
+    return etapes.feasibilityReached
+      ? $localize`:@@solver.feasibilityFirst.reached:Deux étapes (plan publié, jours d'affilée en dur) : faisabilité sans la stabilité en ${etapes.feasibilitySeconds}:first: s, puis polissage en ${etapes.polishingSeconds}:second: s, qui a rendu ${retour}:back: place(s) publiée(s) à leur titulaire.`
+      : $localize`:@@solver.feasibilityFirst.notReached:Deux étapes (plan publié, jours d'affilée en dur) : la faisabilité, cherchée sans la stabilité en ${etapes.feasibilitySeconds}:first: s, n'a pas été atteinte ; le polissage (${etapes.polishingSeconds}:second: s) est parti du meilleur plan trouvé.`;
   });
 
   /**

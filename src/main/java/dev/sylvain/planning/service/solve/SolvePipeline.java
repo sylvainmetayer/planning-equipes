@@ -95,6 +95,8 @@ public class SolvePipeline {
      * @param interruption how the run was cut short by the server going
      *                     down; {@code null} for a solve that reached its own
      *                     end — its budget, feasibility, or a cancel
+     * @param feasibilityFirst the two stages of a solve that had two
+     *                     ({@link FeasibilityFirstSolve}); {@code null} otherwise
      */
     public record Resolution<P>(
             P probleme,
@@ -103,7 +105,8 @@ public class SolvePipeline {
             PreviousPlan previousPlan,
             ImpactPublication impactPublication,
             ImpactValidations impactValidations,
-            Interruption interruption) {}
+            Interruption interruption,
+            FeasibilityFirstReport feasibilityFirst) {}
 
     /**
      * A solve the server stopped under — a graceful shutdown, or the CDI
@@ -206,14 +209,16 @@ public class SolvePipeline {
         String scoreBefore = scoreOfReplacedPlan(replaced);
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
-        PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
+        SolveRunner.Solved solved =
+                planningService.solveReporting(planningOf.apply(probleme), secondsLimit, attacheSolveur);
+        PlanningEvenement resolu = solved.planning();
         long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
         // Timefold also stops when its thread is interrupted — a pool being
         // shut down does that — and returns as if the budget were spent.
         // Either signal means the run was cut short by the server, not by the
         // problem, and its plan must not overwrite a better one.
         if (shutdownRequested.getAsBoolean() || Thread.currentThread().isInterrupted()) {
-            return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes);
+            return interrupted(probleme, solved, replaced, scoreBefore, dureeSolveSecondes);
         }
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
@@ -233,7 +238,8 @@ public class SolvePipeline {
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 impactPublication(resolu),
                 impactValidations(avant, resolu),
-                null);
+                null,
+                solved.feasibilityFirst());
     }
 
     /**
@@ -244,10 +250,11 @@ public class SolvePipeline {
      */
     private <P> Resolution<P> interrupted(
             P probleme,
-            PlanningEvenement resolu,
+            SolveRunner.Solved solved,
             PlanSnapshotService.SnapshotMeta replaced,
             String scoreBefore,
             long dureeSolveSecondes) {
+        PlanningEvenement resolu = solved.planning();
         // Cleared before touching the database: a connection pool refuses an
         // interrupted thread, and a plan worth keeping must be writable.
         Thread.interrupted();
@@ -276,7 +283,8 @@ public class SolvePipeline {
                 // the readings of the days it moved are as stale as after a
                 // solve that finished, and nothing else would ever withdraw them.
                 impactValidations(avant, resolu),
-                new Interruption(kept, diagnostic.score(), scoreBefore));
+                new Interruption(kept, diagnostic.score(), scoreBefore),
+                solved.feasibilityFirst());
     }
 
     /**

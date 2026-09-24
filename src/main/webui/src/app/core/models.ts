@@ -2138,6 +2138,21 @@ export interface ImpactValidations {
   journees: number;
 }
 
+/**
+ * A solve run in two stages (ADR 0050): the published plan exists and the hard
+ * run-of-days rule is on, so feasibility was sought first with the stability
+ * rule suspended, then the plan was polished with it restored.
+ */
+export interface FeasibilityFirstReport {
+  feasibilityReached: boolean;
+  feasibilitySeconds: number;
+  polishingSeconds: number;
+  /** Published seats the first stage's plan had moved. */
+  publishedSeatsChangedAfterFeasibility: number;
+  /** The same count on the final plan. */
+  publishedSeatsChanged: number;
+}
+
 /** Payload of a finished full SOLVE job: a diagnostic plus the plan it replaced. */
 export interface ResultatSolve {
   diagnostic: PlanningDiagnostic;
@@ -2150,6 +2165,8 @@ export interface ResultatSolve {
   impactValidations?: ImpactValidations | null;
   /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
   interruption?: Interruption | null;
+  /** Set when the solve ran in two stages; absent otherwise. */
+  feasibilityFirst?: FeasibilityFirstReport | null;
 }
 
 /** Payload of a finished incremental SOLVE job: a diagnostic plus what moved. */
@@ -2163,6 +2180,8 @@ export interface ResultatSolveIncremental {
   impactValidations?: ImpactValidations | null;
   /** Set on an `INTERROMPU` job the server stopped under; absent on a finished solve. */
   interruption?: Interruption | null;
+  /** Set when the solve ran in two stages; absent otherwise. */
+  feasibilityFirst?: FeasibilityFirstReport | null;
 }
 
 /**

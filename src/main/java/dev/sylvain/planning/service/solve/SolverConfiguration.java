@@ -227,8 +227,25 @@ final class SolverConfiguration {
 
     /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */
     ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverrides(Map<String, Integer> scenario) {
+        return overridesOf(effectiveConstraintWeights(scenario));
+    }
+
+    /**
+     * The same, with one rule weighed at zero for this solve only — the first
+     * stage of {@link FeasibilityFirstSolve}. Zero is what no screen, file or
+     * tool may store (a rule nobody wants is switched off, not dosed to
+     * nothing); here it lives for one stage of one job, and the rule's toggle
+     * is left as the edition set it.
+     */
+    ConstraintWeightOverrides<HardMediumSoftScore> constraintWeightOverridesSuspending(
+            Map<String, Integer> scenario, String suspended) {
+        Map<String, Integer> poids = new HashMap<>(effectiveConstraintWeights(scenario));
+        poids.put(suspended, 0);
+        return overridesOf(poids);
+    }
+
+    private static ConstraintWeightOverrides<HardMediumSoftScore> overridesOf(Map<String, Integer> poids) {
         Map<String, HardMediumSoftScore> overrides = new HashMap<>();
-        Map<String, Integer> poids = effectiveConstraintWeights(scenario);
         for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
             int weight = poids.getOrDefault(definition.name(), 1);
             if (weight == 1) {
@@ -316,6 +333,44 @@ final class SolverConfiguration {
         }
         adaptToProblem(solverConfig, problem);
         return SolverFactory.create(solverConfig);
+    }
+
+    long defaultSecondsLimit() {
+        return defaultSecondsLimit;
+    }
+
+    /**
+     * The first stage of {@link FeasibilityFirstSolve}: the problem's own
+     * search, stopped on feasibility or after {@code seconds}, whichever comes
+     * first. Built per solve: the two-stage path is rare enough that a cache
+     * would only keep a factory alive for nothing.
+     */
+    SolverFactory<PlanningEvenement> feasibilityStageFactory(PlanningEvenement problem, long seconds) {
+        SolverConfig solverConfig = baseConfig();
+        solverConfig.setTerminationConfig(
+                new TerminationConfig().withSecondsSpentLimit(seconds).withBestScoreFeasible(true));
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    /**
+     * The second stage: the problem's own search on the rest of the budget,
+     * with the plateau bailout of a default-budget solve when the job asked
+     * for the default budget — as a single-stage solve would have had.
+     */
+    SolverFactory<PlanningEvenement> polishingStageFactory(
+            PlanningEvenement problem, long seconds, boolean defaultBudget) {
+        SolverConfig solverConfig = baseConfig();
+        applyTermination(solverConfig, seconds, defaultBudget ? defaultUnimprovedSecondsLimit : 0L);
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    private static SolverConfig baseConfig() {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        solverConfig.setScoreDirectorFactoryConfig(
+                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
+        return solverConfig;
     }
 
     /**

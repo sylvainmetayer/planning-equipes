@@ -47,6 +47,25 @@ class SolverScoreTraceTest {
         assertThat(points()).containsExactly(new Point(0, -40, -10, -1000), new Point(1000, -20, -6, -800));
     }
 
+    /**
+     * A solve in two stages hands over a second solver whose clock starts at
+     * zero again (ADR 0050): its points go on the same curve, after the first
+     * stage's, instead of restarting it.
+     */
+    @Test
+    void theSecondStageOfASolveGoesOnTheSameCurve() {
+        trace.start("job-1", "edition-1");
+        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.record("job-1", event(4000, 0, -12, -1000));
+
+        trace.record("job-1", event(0, 0, -11, -1000), 5000);
+        trace.record("job-1", event(2000, 0, -9, -1000), 5000);
+
+        assertThat(points()).extracting(Point::tempsMs).containsExactly(0L, 4000L, 5000L, 7000L);
+        assertThat(trace.offsetFor("job-1")).isNotNegative();
+        assertThat(trace.offsetFor("another-job")).isZero();
+    }
+
     @Test
     void aSolutionNotInitializedYetIsNotPlotted() {
         trace.start("job-1", "edition-1");
