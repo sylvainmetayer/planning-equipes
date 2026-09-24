@@ -43,6 +43,7 @@ const VERBES = {
   get: 'get',
   getPreservingHttpError: 'get',
   getResponse: 'get',
+  getDansEdition: 'get',
   downloadGet: 'get',
   downloadGetNamedByServer: 'get',
   post: 'post',
