@@ -233,8 +233,9 @@ rendu, sur l'écran Solveur et dans la vue MCP du job.
 jeux de données de la suite sont datés dans le passé, et sans le commutateur
 chaque test de résolution recevrait un problème entièrement épinglé. Les
 tests de la règle l'allument par un `@TestProfile` et posent la date par
-`PUT /api/debug/date-du-jour`. La CI de bout en bout le coupe aussi, pour
-la même raison, tant que ses amorces ne sont pas datées dans l'avenir. En
+`PUT /api/debug/date-du-jour`. La CI de bout en bout le coupait aussi, pour
+la même raison, tant que ses amorces n'étaient pas datées dans l'avenir (voir
+la mise à jour sous *Conséquences*). En
 exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
 édition ancienne.
 
@@ -268,6 +269,12 @@ exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
   l'application empaquetée refuse l'horloge simulée. Les redater dans
   l'avenir en gardant les âges des mineurs est un chantier à part ; la règle
   est couverte par `FrozenPastAcceptanceTest` sur l'horloge figée.
+  *Mise à jour* : les amorces sont désormais datées depuis l'horloge réelle,
+  les naissances des mineurs avec elles (`decaler`, voir
+  [`developpement.md`](../developpement.md#tests-de-bout-en-bout-playwright)) ;
+  la CI de bout en bout laisse le commutateur allumé, et `passe-fige.spec.ts`
+  rejoue le scénario de `FrozenPastAcceptanceTest` depuis l'écran, sur la pile
+  `@lourd` qui accepte l'horloge simulée.
 - `PosteAffectation` porte un drapeau de plus, jamais sérialisé : le contrat
   JSON ne bouge pas. `StatistiquesIncremental` et `ReamorcageEffectue`
   portent `postesPasses` et `postesPassesVides`.

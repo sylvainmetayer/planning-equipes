@@ -8,7 +8,7 @@
 // steps.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, pageAdmin, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -16,7 +16,8 @@ let admin: APIRequestContext;
 /** Ids the file hands out itself, so the cleanup is deterministic. */
 const IDS = ['E2E-CSV-1', 'E2E-CSV-2', 'E2E-CSV-3'] as const;
 
-const JOUR_EVENEMENT = '10/07/2026';
+/** The seeded day, as a French spreadsheet writes it. */
+const JOUR_EVENEMENT = SEED.jour.split('-').reverse().join('/');
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
@@ -125,7 +126,7 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
   await expect(page.locator('#contenu')).toContainText("Aucune écriture n'a eu lieu");
   await expect(ligne(page, 2)).toContainText('Amélie Duranteau');
   await expect(ligne(page, 2)).toContainText('Création');
-  await expect(ligne(page, 2)).toContainText('2026-07-10');
+  await expect(ligne(page, 2)).toContainText(SEED.jour);
   await expect(ligne(page, 3)).toContainText('Création');
   const avantImport = await admin.get('/api/animateurs');
   expect(await avantImport.text()).not.toContain('Duranteau');
@@ -145,7 +146,7 @@ test('un fichier propre : aperçu, validation, rapport, et les fiches en base', 
   }[];
   const amelie = roster.find((animateur) => animateur.id === IDS[0]);
   expect(amelie?.nom).toBe('Duranteau');
-  expect(amelie?.joursIndisponibles).toEqual(['2026-07-10']);
+  expect(amelie?.joursIndisponibles).toEqual([SEED.jour]);
   expect(roster.some((animateur) => animateur.id === IDS[1])).toBe(true);
 
   await page.context().close();

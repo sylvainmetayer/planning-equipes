@@ -13,14 +13,14 @@
 // show it.
 
 import { APIRequestContext, expect, Page, test } from '@playwright/test';
-import { contexteAdmin, ouvrirSelect, pageAdmin, SEED, seedPlanning } from './support';
+import { contexteAdmin, decaler, ouvrirSelect, pageAdmin, SEED, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 /** A créneau of the referential that no seat of the saved plan points at. */
 const CRENEAU_SANS_SIEGE = 987003;
 
 /** Its date, the one the selector must never offer. */
-const DATE_SANS_SIEGE = '2026-07-12';
+const DATE_SANS_SIEGE = decaler('2026-07-12');
 
 let admin: APIRequestContext;
 

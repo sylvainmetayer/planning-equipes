@@ -9,6 +9,10 @@
 # traverse (le solveur, les consignes, la publication, ses propres fichiers),
 # et chaque nuit sur main pour que rien ne dorme longtemps.
 #
+# Le passé figé vu de l'écran (ADR 0044, passe-fige.spec.ts) l'a rejointe :
+# il fige la date du serveur, ce que la pile d'e2e.yml refuse comme la
+# production — celle-ci est donc montée avec HORLOGE_SIMULEE_AUTORISEE=true.
+#
 # Le reste de la suite reste sur chaque poussée, dans e2e.yml.
 name: Tests E2E lourds
 
@@ -36,6 +40,9 @@ on:
       - 'src/main/webui/src/app/pages/consignes/**'
       - 'src/main/webui/src/app/pages/publication/**'
       - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
+      - 'src/main/webui/e2e/passe-fige.spec.ts'
+      - 'src/main/java/dev/sylvain/planning/service/espace/JourJClock.java'
+      - 'src/main/webui/src/app/pages/solver/**'
       - 'src/main/webui/e2e/support.ts'
       - 'src/main/webui/e2e/reference.ts'
       - 'src/main/webui/playwright.config.ts'
@@ -64,6 +71,9 @@ on:
       - 'src/main/webui/src/app/pages/consignes/**'
       - 'src/main/webui/src/app/pages/publication/**'
       - 'src/main/webui/e2e/canicule-festival-hivernal.spec.ts'
+      - 'src/main/webui/e2e/passe-fige.spec.ts'
+      - 'src/main/java/dev/sylvain/planning/service/espace/JourJClock.java'
+      - 'src/main/webui/src/app/pages/solver/**'
       - 'src/main/webui/e2e/support.ts'
       - 'src/main/webui/e2e/reference.ts'
       - 'src/main/webui/playwright.config.ts'
@@ -107,3 +117,6 @@ jobs:
       # Trois résolutions réelles et trois publications : la spec s'accorde
       # vingt minutes à elle seule, et un runner lent en prend plus.
       timeout-minutes: 60
+      # passe-fige.spec.ts fige la date du serveur depuis la page Débogage :
+      # la pile de ce workflow l'autorise, celle d'e2e.yml non.
+      horloge-simulee: true

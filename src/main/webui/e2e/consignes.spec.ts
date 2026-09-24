@@ -12,6 +12,7 @@ import {
   SEED,
   contexteAdmin,
   dialogueOuvert,
+  libelleJour,
   ouvrirSelect,
   pageAdmin,
   seedPlanning,
@@ -22,12 +23,14 @@ let admin: APIRequestContext;
 
 /** A créneau of the reserved 987xxx range, on a day strictly ahead of the real clock. */
 const CRENEAU_A_VENIR = 987020;
+/** And one on a day behind it: the form must not offer that day. */
+const CRENEAU_PASSE = 987021;
 const MOTIF = 'Arrêté canicule E2E';
 
-/** Thirty days ahead of the real clock, as `AAAA-MM-JJ` — the seeded 2026-07-10 is behind it. */
-function dateAVenir(): string {
+/** `jours` days from the real clock, as `AAAA-MM-JJ` — the seeded day lies weeks beyond thirty. */
+function dansJours(jours: number): string {
   const date = new Date();
-  date.setDate(date.getDate() + 30);
+  date.setDate(date.getDate() + jours);
   return [
     date.getFullYear(),
     String(date.getMonth() + 1).padStart(2, '0'),
@@ -35,14 +38,8 @@ function dateAVenir(): string {
   ].join('-');
 }
 
-/** `Vendredi 10/07`: the date as the page's selectors and table say it. */
-function libelleDate(date: string): string {
-  const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  const [annee, mois, jour] = date.split('-').map(Number);
-  return `${jours[new Date(annee, mois - 1, jour).getDay()]} ${String(jour).padStart(2, '0')}/${String(mois).padStart(2, '0')}`;
-}
-
-const DATE = dateAVenir();
+const DATE = dansJours(30);
+const DATE_PASSEE = dansJours(-30);
 
 async function sql(script: string): Promise<void> {
   const reponse = await admin.post('/api/database/import', {
@@ -71,13 +68,15 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
   await seedPlanning(admin);
-  // The seeded grid lives in 2026-07, behind the real clock: a day ahead of it
-  // is added, open all day on both seeded stands (no schedule = open on every créneau).
+  // A day thirty days ahead, open all day on both seeded stands (no schedule =
+  // open on every créneau), and one thirty days behind, already begun.
   await sql(
-    `delete from poste_affectation where creneau_id = ${CRENEAU_A_VENIR};\n` +
-      `delete from creneau where id = ${CRENEAU_A_VENIR};\n` +
+    `delete from poste_affectation where creneau_id in (${CRENEAU_A_VENIR}, ${CRENEAU_PASSE});\n` +
+      `delete from creneau where id in (${CRENEAU_A_VENIR}, ${CRENEAU_PASSE});\n` +
       `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
-      `values ('DEFAUT', ${CRENEAU_A_VENIR}, '${DATE}', '10:00', '20:00');`,
+      `values ('DEFAUT', ${CRENEAU_A_VENIR}, '${DATE}', '10:00', '20:00');\n` +
+      `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) ` +
+      `values ('DEFAUT', ${CRENEAU_PASSE}, '${DATE_PASSEE}', '10:00', '20:00');`,
   );
 });
 
@@ -101,10 +100,10 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   const dialog = await dialogueOuvert(page);
   await expect(dialog).toContainText('Poser une consigne');
 
-  // Only the day ahead is offered: the seeded 2026-07-10 has begun long ago.
+  // Only the days ahead are offered: the one a month behind has begun long ago.
   await ouvrirSelect(page, 'Dates');
-  await expect(page.getByRole('option', { name: /10\/07/ })).toHaveCount(0);
-  await page.getByRole('option', { name: libelleDate(DATE) }).click();
+  await expect(page.getByRole('option', { name: libelleJour(DATE_PASSEE) })).toHaveCount(0);
+  await page.getByRole('option', { name: libelleJour(DATE) }).click();
   await page.keyboard.press('Escape');
 
   await dialog.getByLabel('Motif').fill(MOTIF);
@@ -167,7 +166,7 @@ test('poser une consigne sur un jour à venir, la voir sur la grille, la lever',
   await page.locator(`tr[data-date="${DATE}"]`).getByRole('button', { name: 'Lever' }).click();
   const levee = await dialogueOuvert(page);
   await levee.getByRole('button', { name: 'Aperçu' }).click();
-  await expect(levee).toContainText(libelleDate(DATE));
+  await expect(levee).toContainText(libelleJour(DATE));
   await levee.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();
   await expect(page.locator(`tr[data-date="${DATE}"]`)).toHaveCount(0);
@@ -215,7 +214,7 @@ test('le lien profond de la Journée ouvre le formulaire sur la date demandée',
 
   const dialog = await dialogueOuvert(page);
   await expect(dialog).toContainText('Poser une consigne');
-  await expect(dialog.locator('mat-select[name="dates"]')).toContainText(libelleDate(DATE));
+  await expect(dialog.locator('mat-select[name="dates"]')).toContainText(libelleJour(DATE));
   // Obeyed once: the address no longer asks for a new consigne.
   await expect(page).not.toHaveURL(/nouvelle=/);
   await expect(page).toHaveURL(new RegExp(`date=${DATE}`));

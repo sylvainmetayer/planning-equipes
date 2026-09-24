@@ -13,25 +13,28 @@
 // days alone, and that the publication says so.
 //
 // A consigne only accepts a date strictly ahead of the REAL clock (the
-// packaged application freezes no date), so the fixture is shifted at test
-// time by a whole number of weeks, far into the future: weekdays are kept,
-// and so are the ages of the animateurs, since every date of the file moves
-// by the same amount.
+// packaged application freezes no date), and « le passé est figé » pins every
+// timeslot behind it, so the fixture is shifted at test time by the suite's
+// whole number of weeks (`decaler`): weekdays are kept, and so are the ages of
+// the animateurs, since every date of the file moves by the same amount.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { JobTermine, contexteAdmin, dialogueOuvert, ouvrirSelect, pageAdmin } from './support';
+import {
+  JobTermine,
+  contexteAdmin,
+  decaler,
+  dialogueOuvert,
+  jourMois,
+  libelleJour,
+  ouvrirSelect,
+  pageAdmin,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 /** The bundled fixture, read from the sources: `npm run e2e` runs from `src/main/webui`. */
 const FIXTURE = join(process.cwd(), '..', 'resources', 'scenarios', 'festival-hivernal.yaml');
-
-/**
- * 1 722 weeks: the fixture's Monday 2027-02-01 lands on Monday 2060-02-02.
- * A multiple of seven, so every date keeps its weekday.
- */
-const SHIFT_DAYS = 1722 * 7;
 
 const MOTIF = 'Arrêté préfectoral canicule';
 
@@ -46,29 +49,8 @@ const FULL_SOLVE_SECONDS = 240;
 /** Where the e2e stack's Mailpit serves its REST API (docker, port 8025). */
 const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
 
-/** `2027-02-03` → `2060-02-04`: one date of the fixture, moved by the shift. */
-function shiftDate(date: string): string {
-  const [year, month, day] = date.split('-').map(Number);
-  const shifted = new Date(Date.UTC(year, month - 1, day + SHIFT_DAYS));
-  return shifted.toISOString().slice(0, 10);
-}
-
-/** The three opening days of the real event — Wednesday to Friday — once shifted. */
-const DAYS = ['2027-02-03', '2027-02-04', '2027-02-05'].map(shiftDate);
+const DAYS = ['2027-02-03', '2027-02-04', '2027-02-05'].map(decaler);
 const [DAY1, DAY2, DAY3] = DAYS as [string, string, string];
-
-/** `Mercredi 04/02`: the date as the page's selectors and table say it. */
-function dateLabel(date: string): string {
-  const weekdays = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  const [year, month, day] = date.split('-').map(Number);
-  return `${weekdays[new Date(year, month - 1, day).getDay()]} ${dayMonth(date)}`;
-}
-
-/** `2060-02-04` → `04/02`: how the publication names a day. */
-function dayMonth(date: string): string {
-  const [, month, day] = date.split('-');
-  return `${day}/${month}`;
-}
 
 let admin: APIRequestContext;
 
@@ -316,7 +298,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   // 1. The real-world edition, shifted into the future and imported as a file
   //    — the same route the Imports screen's « Importer un fichier » uses.
   const yaml = readFileSync(FIXTURE, 'utf8').replace(/\b\d{4}-\d{2}-\d{2}\b/g, (date: string) =>
-    shiftDate(date),
+    decaler(date),
   );
   const importation = await admin.post('/api/reference-data/import-scenario-fichier', {
     headers: { 'Content-Type': 'application/x-yaml' },
@@ -385,7 +367,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
 
   await ouvrirSelect(page, 'Dates');
   for (const day of DAYS) {
-    await page.getByRole('option', { name: dateLabel(day) }).click();
+    await page.getByRole('option', { name: libelleJour(day) }).click();
   }
   await page.keyboard.press('Escape');
   // The band is the form's default, 12h–18h: the résumé says so.
@@ -472,7 +454,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const daysUnderConsigne = changedDays(previewUnderConsigne);
   expect(daysUnderConsigne.size).toBeGreaterThan(0);
   for (const day of daysUnderConsigne) {
-    expect(DAYS.map(dayMonth), `a change dated ${day} is outside the consigne`).toContain(day);
+    expect(DAYS.map(jourMois), `a change dated ${day} is outside the consigne`).toContain(day);
   }
 
   // The witness' mail names the modified days — read through somebody who is
@@ -501,7 +483,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const lifting = await dialogueOuvert(page);
   await expect(lifting).toContainText('Lever une consigne');
   await lifting.getByRole('button', { name: 'Aperçu' }).click();
-  await expect(lifting).toContainText(dateLabel(DAY3));
+  await expect(lifting).toContainText(libelleJour(DAY3));
   await lifting.getByRole('button', { name: 'Lever', exact: true }).click();
   await expect(page.getByText('Consigne levée.')).toBeVisible();
   await expect(page.locator(`tr[data-date="${DAY3}"]`)).toHaveCount(0);
@@ -552,7 +534,7 @@ test('la semaine de l’organisateur : canicule posée, résolue, publiée, puis
   const previewAfterLifting = await publicationPreview();
   expect(previewAfterLifting.nombreConcernes).toBeGreaterThan(0);
   const daysAfterLifting = changedDays(previewAfterLifting);
-  expect([...daysAfterLifting]).toEqual([dayMonth(DAY3)]);
+  expect([...daysAfterLifting]).toEqual([jourMois(DAY3)]);
   const thirdPublication = await publishByApi();
   expect(thirdPublication.envoyes).toBeGreaterThan(0);
   expect((await publicationPreview()).nombreConcernes).toBe(0);

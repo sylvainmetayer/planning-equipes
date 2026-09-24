@@ -9,6 +9,7 @@ import {
   SEED,
   contexteAdmin,
   dialogueOuvert,
+  jourMois,
   ouvrirSelect,
   pageAdmin,
   seedPlanning,
@@ -326,7 +327,7 @@ test.describe('horaires de stand', () => {
       .filter({ hasText: `Modifier le stand ${SEED.standCible}` });
     await expect(formulaire).toBeVisible();
     // The preview cell of the seeded day — open all day so far: no rule, no exception.
-    const jourSeme = formulaire.locator('.apercu-jour').filter({ hasText: '10/07' });
+    const jourSeme = formulaire.locator('.apercu-jour').filter({ hasText: jourMois(SEED.jour) });
     await expect(jourSeme).toContainText('Ouvert toute la journée');
 
     await ouvrirSelect(page, 'Copier les horaires de');

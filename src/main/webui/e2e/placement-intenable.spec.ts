@@ -14,9 +14,9 @@
 // aucun des scénarios du dépôt n'en porte.
 //
 // Deux choses restent délibérément hors de cette suite :
-// - le passé figé, que la pile e2e éteint (`PASSE_FIGE: 'false'`) pour que les
-//   fixtures datées puissent solver ; son silence est tenu par les trois
-//   ForcedAssignmentOn*Test ;
+// - le passé figé : les fixtures sont datées dans l'avenir (`decaler`), donc
+//   aucun de leurs créneaux n'est commencé ; son silence sur une exception
+//   passée est tenu par les trois ForcedAssignmentOn*Test ;
 // - la phrase du verrou posé sur une violation dure, qui se lit dans la
 //   dernière analyse : elle demanderait une résolution dont l'écart soit
 //   certain, là où VerrouillageSurViolationTest la couvre en sept cas. Ce qui
@@ -33,6 +33,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
+  decaler,
   dialogueOuvert,
   pageAdmin,
   seedReferentielSolveur,
@@ -50,14 +51,14 @@ const STAND_MAJEURS = 'E2E-INTEN-S2';
 
 const NUIT = 987401;
 const JOURNEE = 987402;
-const JOUR_NUIT = '2026-07-20';
-const JOUR_JOURNEE = '2026-07-21';
+const JOUR_NUIT = decaler('2026-07-20');
+const JOUR_JOURNEE = decaler('2026-07-21');
 
 /** Le siège de nuit, écrit en base : c'est lui que l'écriture directe vise. */
 const SIEGE_NUIT = 'E2E-INTEN-POSTE-NUIT';
 
 const ANIMATEURS: AnimateurSeed[] = [
-  { id: MINEUR, prenom: 'Mina', nom: 'Intenable', dateNaissance: '2012-01-01' },
+  { id: MINEUR, prenom: 'Mina', nom: 'Intenable', dateNaissance: decaler('2012-01-01') },
   { id: MAJEUR, prenom: 'Marc', nom: 'Intenable', dateNaissance: '1990-01-01' },
   {
     id: ABSENT,

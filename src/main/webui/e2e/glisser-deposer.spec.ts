@@ -7,10 +7,12 @@
 // per-gesture rules are covered by DeplacementResourceTest, far more cheaply.
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, planningPersiste } from './support';
+import { contexteAdmin, decaler, pageAdmin, planningPersiste } from './support';
 import { repartirDeLaReference } from './reference';
 
 const C1 = 987401;
+/** C1's day: ahead of the real clock, where a drop is still the operator's to make. */
+const JOUR = decaler('2026-07-22');
 const ANIMATEURS = [
   { id: 'SOLV-DD-A', prenom: 'Anna', nom: 'Glisse', dateNaissance: '1990-01-01' },
   { id: 'SOLV-DD-B', prenom: 'Boris', nom: 'Glisse', dateNaissance: '1991-02-02' },
@@ -55,9 +57,9 @@ async function seedPlan(options: SeedOptions = {}): Promise<void> {
     ),
     ...ANIMATEURS.map(
       (animateur) =>
-        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? '2012-01-01' : animateur.dateNaissance}', false);`,
+        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? decaler('2012-01-01') : animateur.dateNaissance}', false);`,
     ),
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${C1}, '2026-07-22', '10:00', '12:00');`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${C1}, '${JOUR}', '10:00', '12:00');`,
     ...STANDS.map((stand, index) =>
       index === 2 && options.cleoMineureEtLibre
         ? `insert into poste_affectation (edition_id, id, stand_id, creneau_id) values ('DEFAUT', 'SOLV-DD-P3', '${stand.id}', ${C1});`
@@ -284,7 +286,7 @@ test.describe('déplacer au clavier', () => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
-      await page.goto('/journee?vue=calendrier&date=2026-07-22');
+      await page.goto(`/journee?vue=calendrier&date=${JOUR}`);
       const ligneUn = page.locator('.day-stand', { hasText: 'Stand Glisse un' });
       const poignee = ligneUn.getByRole('button', { name: /^Déplacer Anna/ });
       await poignee.focus();
@@ -321,7 +323,7 @@ test.describe('déplacer au clavier', () => {
     const avant = await occupants();
     const page = await pageAdmin(browser, admin);
     try {
-      await page.goto('/journee?vue=rail&date=2026-07-22');
+      await page.goto(`/journee?vue=rail&date=${JOUR}`);
       const ligneA = page.locator('.rail-ligne', { hasText: 'Anna Glisse' }).locator('.rail-cell');
       await ligneA.focus();
       await page.keyboard.press('Enter');
@@ -354,7 +356,7 @@ test.describe('déplacer au clavier', () => {
 async function ouvrirLaJournee(page: Page, vue: 'calendrier' | 'rail'): Promise<void> {
   await page.goto(`/journee?vue=${vue}`);
   await page.getByRole('combobox', { name: 'Journée' }).click();
-  await page.getByRole('option', { name: /2026-07-22/ }).click();
+  await page.getByRole('option', { name: new RegExp(JOUR) }).click();
   // The select's backdrop outlives the click by an animation frame, and a
   // mousedown landing on it would start no drag at all.
   await expect(page.locator('.cdk-overlay-backdrop')).toHaveCount(0);

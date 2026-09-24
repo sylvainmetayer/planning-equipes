@@ -517,6 +517,20 @@ Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`
 (défaut `http://localhost:8025`), `E2E_CHROMIUM`.
 
+**Les amorces sont datées depuis l'horloge réelle.** La pile e2e laisse « le
+passé est figé » ([ADR 0044](decisions/0044-le-passe-est-fige.md)) allumé,
+comme la production, et l'application empaquetée ne fige aucune date : un
+créneau derrière l'horloge serait repris du plan enregistré par chaque
+résolution et refuserait tout geste. Une spec écrit donc ses dates comme si
+l'événement tombait à l'été 2026 et les passe par `decaler()`
+(`e2e/support.ts`), qui les avance du plus petit nombre de semaines entières
+plaçant le lundi 6 juillet 2026 au moins huit semaines après aujourd'hui. Les
+jours de semaine sont gardés. La date de naissance d'un **mineur** passe par la
+même fonction : son âge au créneau reste celui que l'assertion suppose, quelle
+que soit l'année où la suite tourne. Une date écrite en dur dans une amorce est
+une spec qui cessera de tester quoi que ce soit le jour où l'horloge la
+dépassera.
+
 **Une spec `@lourd` ne tourne pas sur chaque poussée.** La semaine canicule sur
 `festival-hivernal` (`canicule-festival-hivernal.spec.ts`) importe la fixture
 réelle, la résout trois fois pour de vrai et la publie trois fois avec un PDF
@@ -531,6 +545,18 @@ même raison, une PR Renovate ne l'exerce que sous le label `timefold` ou
 Les deux appellent la même pile, `e2e-suite.yml`. Marquer une spec `@lourd`,
 c'est dire qu'elle résout une fixture réelle ; ce n'est pas l'endroit où
 ranger un test lent. En local, `npm run e2e -- --grep @lourd` la joue seule.
+
+`passe-fige.spec.ts` est l'autre spec `@lourd`, pour une autre raison : elle
+rejoue `FrozenPastAcceptanceTest` depuis l'écran — la date posée sur la page
+Débogage, trois résolutions, les journées passées identiques, le compte rendu
+« N postes déjà commencés » et le refus d'un déplacement sur une journée
+passée — et il lui faut une pile qui accepte l'horloge simulée. `e2e-lourd.yml`
+passe `horloge-simulee: true` à `e2e-suite.yml`, qui monte alors l'application
+avec `HORLOGE_SIMULEE_AUTORISEE=true` ; `e2e.yml` ne le fait pas, et
+`jour-j.spec.ts` y vérifie que figer la date est refusé. En local, lancez
+l'application avec cette variable pour la jouer. La spec rend l'horloge
+réelle en partant : la table qui la porte survit à la restauration de la
+référence.
 
 Une suite mérite un mot : `e2e/icones.spec.ts` vérifie que la police des icônes
 arrive et se dessine. Un `<mat-icon>delete</mat-icon>` dont la police manque
