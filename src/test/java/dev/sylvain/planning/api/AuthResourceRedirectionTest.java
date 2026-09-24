@@ -106,4 +106,20 @@ class AuthResourceRedirectionTest {
         assertThat(AuthResource.localPath(null)).isEqualTo("/");
         assertThat(AuthResource.localPath("   ")).isEqualTo("/");
     }
+
+    /** A backslash, a control character or a space anywhere, not only at the start, sends to the root. */
+    @ParameterizedTest
+    @ValueSource(strings = {"/ok/\\ailleurs.example", "/ok\tailleurs", "/ok\r\nLocation: https://ailleurs", "/a b"})
+    void unCaractereHorsDUnCheminRenvoieALaRacine(String proposition) {
+        assertThat(AuthResource.localPath(proposition)).isEqualTo("/");
+    }
+
+    /** Whatever the parser makes of it, the target keeps the scheme and host of the request. */
+    @Test
+    void laCibleResteSurLHoteDeLaRequete() {
+        URI base = URI.create("https://planning.example/api/");
+        assertThat(AuthResource.target(base, "/animateurs?filtre=a")).hasHost("planning.example");
+        assertThat(AuthResource.target(base, "//ailleurs.example/x"))
+                .isEqualTo(URI.create("https://planning.example/"));
+    }
 }
