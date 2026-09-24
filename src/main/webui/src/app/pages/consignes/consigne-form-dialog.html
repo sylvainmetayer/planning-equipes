@@ -8,7 +8,11 @@
     }
   }
   @if (editingLocked()) {
-    <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+    @if (formDraft.lockNotice(); as notice) {
+      <app-status-message [text]="notice" tone="warning" />
+    } @else {
+      <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+    }
   }
   <fieldset class="form-fieldset" [disabled]="editingLocked()">
     <section class="consigne-form-bande" aria-labelledby="consigne-form-bande-titre">

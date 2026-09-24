@@ -25,6 +25,7 @@ import { libelleJour } from '../../core/horaire-stand';
 import { datesEvenement, decrireJour, premiereErreurHoraire } from './stand-horaires';
 import { HoraireReglesEditor } from './horaire-regles-editor';
 import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
+import { StatusMessage } from '../../shared/status-message';
 import { readStandDraft, isStandModified } from './stand-brouillon';
 import { IndisponibiliteStand, OuvertureStand, Stand } from '../../core/models';
 import {
@@ -85,6 +86,7 @@ export interface StandFormData {
     MatTooltipModule,
     HoraireReglesEditor,
     DraftBanner,
+    StatusMessage,
   ],
   templateUrl: './stand-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

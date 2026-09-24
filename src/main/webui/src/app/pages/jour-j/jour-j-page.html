@@ -37,6 +37,9 @@
       <mat-progress-bar mode="indeterminate" />
     }
     <app-status-message [text]="erreur()" tone="error" />
+    @if (editingLocked()) {
+      <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+    }
   </mat-card-content>
 </mat-card>
 
@@ -116,7 +119,7 @@
                   matButton="filled"
                   type="button"
                   class="jour-j-cible"
-                  [disabled]="enCoursDAbsence()"
+                  [disabled]="editingLocked() || enCoursDAbsence()"
                   (click)="marquerAbsent(animateur.animateurId)"
                 >
                   <mat-icon>person_off</mat-icon>
@@ -206,7 +209,7 @@
                     matButton="filled"
                     type="button"
                     class="jour-j-cible"
-                    [disabled]="affectationEnCours() === poste.posteId"
+                    [disabled]="editingLocked() || affectationEnCours() === poste.posteId"
                     (click)="affecter(poste.posteId, candidat.animateurId)"
                   >
                     <mat-icon>how_to_reg</mat-icon>

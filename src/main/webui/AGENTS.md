@@ -264,7 +264,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   solver's score curve). An unsaved entry is neither, and has its own module:
   `core/brouillon-formulaire.ts` keeps the draft of the three long forms,
   scoped by edition, 24 h at most, sessionStorage for the fiche animateur and
-  never localStorage — its bounds are `docs/rgpd.md` §7. The default of a control is
+  never localStorage — its bounds are `docs/rgpd.md` §7. What is typed and not
+  saved is asked of one place, `core/formulaires-modifies.ts`, which those
+  forms register with and the Solveur page reads before « Calculer ». The default of a control is
   the *absence* of its param, reading is tolerant (an unknown value falls back
   to the default rather than failing the page), writing replaces the history
   entry through `Location.replaceState` and **never navigates** — a router

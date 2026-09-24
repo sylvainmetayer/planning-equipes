@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -73,6 +74,7 @@ public class ContrainteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     ToggleResult activer_contrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -88,6 +90,7 @@ public class ContrainteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     ToggleResult desactiver_contrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -115,6 +118,7 @@ public class ContrainteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     PoidsResult modifier_poids_contrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
@@ -143,10 +147,39 @@ public class ContrainteMcpTools {
         }
     }
 
-    public record ToggleResult(String nom, boolean actif) {}
+    public record ToggleResult(
+            String nom,
+            boolean actif,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ToggleResult> {
+
+        ToggleResult(String nom, boolean actif) {
+            this(nom, actif, List.of());
+        }
+
+        @Override
+        public ToggleResult withWarning(String code) {
+            return new ToggleResult(nom, actif, WarningCodes.with(avertissements, code));
+        }
+    }
 
     /** @param parDefaut true when the edition carries no override any more */
-    public record PoidsResult(String nom, int poids, boolean parDefaut) {}
+    public record PoidsResult(
+            String nom,
+            int poids,
+            boolean parDefaut,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<PoidsResult> {
+
+        PoidsResult(String nom, int poids, boolean parDefaut) {
+            this(nom, poids, parDefaut, List.of());
+        }
+
+        @Override
+        public PoidsResult withWarning(String code) {
+            return new PoidsResult(nom, poids, parDefaut, WarningCodes.with(avertissements, code));
+        }
+    }
 
     static ContrainteView toView(
             ConstraintDefinition definition,

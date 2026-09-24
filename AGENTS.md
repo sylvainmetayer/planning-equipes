@@ -327,7 +327,7 @@ Single Quarkus service, no separate solver microservice. Package root:
   resource**: MCP and REST are two callers of the same rules, and a tool that
   injects a resource can only read a business outcome through a JAX-RS
   `Response` it never actually received over HTTP
-  (`LayeringStructuralTest`). Four hard rules, all enforced over every tool so
+  (`LayeringStructuralTest`). Five hard rules, all enforced over every tool so
   a new one cannot opt out by omission:
   1. animateur nom/prénom/dateNaissance never leave over MCP (issue #107) —
      return dedicated view records, never domain objects, and run violation
@@ -353,6 +353,16 @@ Single Quarkus service, no separate solver microservice. Package root:
      The message travels as-is, so **no `BusinessError` may name a person**:
      designate an animateur by id, never by nom/prénom
      (`McpRefusMetierStructurelleTest` holds both halves).
+  5. a write tool says what happens while a solve holds its edition: refused
+     in 409 by `refuseIfSolving` — every write the landing would undo: the
+     stand, animateur and créneau edits and deletes, the seat writes
+     (`reaffecterPoste`, `applyEchange`, moves, restores), consignes, imports
+     and reset; the test reads the guard back in the service methods it
+     names — or accepted and annotated
+     `@WarnsWhileSolving` — its answer, a `WarningCarrier`, then carries
+     `RESOLUTION_EN_COURS` (`mcp/WarningCodes`) — or excluded with its reason
+     (`McpWarnsWhileSolvingStructuralTest`). Never turn a refused write into
+     a warned one: the refusal protects against the landing resurrecting data.
 
   See `docs/mcp.md`.
 - **`service/backup/` is the only place the application writes to disk**: a

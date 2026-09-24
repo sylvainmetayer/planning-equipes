@@ -22,6 +22,7 @@ import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
 import { ConfigurationCollecte, DeclarationAdminView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { keepViewInQueryParams } from '../../core/view-query-params';
@@ -62,6 +63,12 @@ export class DisponibilitesPage {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
+  /**
+   * « Appliquer » writes the fiche through the same service as the CRUD
+   * screen, which a solve holding the edition refuses in 409: the buttons wait
+   * for the solve instead of letting the confirmation find out afterwards.
+   */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly chargement = signal(false);
   protected readonly declarations = signal<DeclarationAdminView[]>([]);
@@ -171,7 +178,7 @@ export class DisponibilitesPage {
       message: $localize`:@@dispo.appliquerMessage:${declaration.joursIndisponibles.length}:jours: jour(s) d'indisponibilité et ${declaration.souhaitsLabels.length}:souhaits: souhait(s) remplaceront le contenu de sa fiche. Le planning enregistré devra être régénéré.`,
       confirmLabel: $localize`:@@dispo.appliquerConfirm:Appliquer`,
     });
-    if (!confirmed) {
+    if (!confirmed || this.solveStartedMeanwhile()) {
       return;
     }
     await this.decider(
@@ -188,7 +195,7 @@ export class DisponibilitesPage {
       label: $localize`:@@dispo.refuserLabel:Motif du refus (lu par l'animateur dans son espace)`,
       confirmLabel: $localize`:@@dispo.refuserConfirm:Refuser`,
     });
-    if (commentaire === null) {
+    if (commentaire === null || this.solveStartedMeanwhile()) {
       return;
     }
     await this.decider(
@@ -215,6 +222,23 @@ export class DisponibilitesPage {
     } finally {
       this.decisionEnCours.set(null);
     }
+  }
+
+  /**
+   * A solve took the edition while the confirmation was open: said before
+   * anything is sent, rather than by the 409 that would follow. A solve that
+   * ended meanwhile lets the decision go through as usual.
+   */
+  private solveStartedMeanwhile(): boolean {
+    if (!this.editingLocked()) {
+      return false;
+    }
+    this.notifications.notify({
+      title: $localize`:@@dispo.verrouDemarre:Une résolution vient de démarrer : rien n'a été envoyé. Décidez à la fin du calcul.`,
+      variant: 'warning',
+      timeout: 8000,
+    });
+    return true;
   }
 
   protected statutLabel(declaration: DeclarationAdminView): string {

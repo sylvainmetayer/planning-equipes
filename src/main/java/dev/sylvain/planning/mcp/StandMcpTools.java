@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
@@ -98,6 +99,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     WrittenStandView creer_stand(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -146,6 +148,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     CreationStandComplet creer_stand_complet(
             @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -280,7 +283,15 @@ public class StandMcpTools {
      * @param typologiesCreees ids of the typologies created along the way, empty if none
      */
     public record CreationStandComplet(
-            StandView stand, String emplacementCree, List<String> typologiesCreees, List<String> avertissements) {}
+            StandView stand, String emplacementCree, List<String> typologiesCreees, List<String> avertissements)
+            implements WarningCarrier<CreationStandComplet> {
+
+        @Override
+        public CreationStandComplet withWarning(String code) {
+            return new CreationStandComplet(
+                    stand, emplacementCree, typologiesCreees, WarningCodes.with(avertissements, code));
+        }
+    }
 
     @Tool(
             description = "Modifie un stand. Seuls les champs fournis sont modifiés ; les fermetures et ouvertures "
@@ -565,6 +576,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     EmplacementView creer_emplacement(
             @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
@@ -582,6 +594,7 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     EmplacementView modifier_emplacement(
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
@@ -617,6 +630,7 @@ public class StandMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     SuppressionResult supprimer_emplacement(
             @ToolArg(description = "Id de l'emplacement") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -648,11 +662,12 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    TypologieItem creer_typologie(
+    @WarnsWhileSolving
+    TypologieView creer_typologie(
             @ToolArg(description = "Id de la typologie (unique)") String id,
             @ToolArg(description = "Libellé affiché", required = false) String label,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.createTypologie(new TypologieItem(id, label));
+        return TypologieView.of(referenceDataService.createTypologie(new TypologieItem(id, label)));
     }
 
     @Tool(
@@ -663,7 +678,8 @@ public class StandMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    TypologieItem modifier_typologie(
+    @WarnsWhileSolving
+    TypologieView modifier_typologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = "Nouveau libellé") String label,
             @ToolArg(
@@ -683,7 +699,7 @@ public class StandMcpTools {
                 .findFirst()
                 .orElse(null);
         Instant precondition = modifieLe == null ? null : McpArgs.instant(modifieLe, "modifieLe");
-        return referenceDataService.updateTypologie(
+        return TypologieView.of(referenceDataService.updateTypologie(
                 id,
                 new TypologieItem(
                         id,
@@ -691,7 +707,7 @@ public class StandMcpTools {
                         ninja,
                         actuelle == null ? null : actuelle.maxCreneauxParAnimateur(),
                         actuelle == null ? null : actuelle.description(),
-                        precondition));
+                        precondition)));
     }
 
     @Tool(
@@ -703,6 +719,7 @@ public class StandMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     SuppressionResult supprimer_typologie(
             @ToolArg(description = "Id de la typologie") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -786,7 +803,14 @@ public class StandMcpTools {
     public record StandsView(int total, List<StandView> stands) {}
 
     /** A write and its warnings as codes — the REST {@code WrittenStand}, seen from MCP. */
-    public record WrittenStandView(StandView stand, List<String> avertissements) {}
+    public record WrittenStandView(StandView stand, List<String> avertissements)
+            implements WarningCarrier<WrittenStandView> {
+
+        @Override
+        public WrittenStandView withWarning(String code) {
+            return new WrittenStandView(stand, WarningCodes.with(avertissements, code));
+        }
+    }
 
     public record StandView(
             String id,
@@ -827,5 +851,62 @@ public class StandMcpTools {
      */
     public record FenetreView(LocalTime heureDebut, LocalTime heureFin, Integer effectif) {}
 
-    public record EmplacementView(String id, String nom, Double latitude, Double longitude, Instant modifieLe) {}
+    public record EmplacementView(
+            String id,
+            String nom,
+            Double latitude,
+            Double longitude,
+            Instant modifieLe,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<EmplacementView> {
+
+        EmplacementView(String id, String nom, Double latitude, Double longitude, Instant modifieLe) {
+            this(id, nom, latitude, longitude, modifieLe, List.of());
+        }
+
+        @Override
+        public EmplacementView withWarning(String code) {
+            return new EmplacementView(
+                    id, nom, latitude, longitude, modifieLe, WarningCodes.with(avertissements, code));
+        }
+    }
+
+    /**
+     * A typologie as the write tools answer it: the fields of {@code
+     * TypologieItem}, under the same keys, plus the warnings a write accepted
+     * during a solve carries — the service type cannot take them.
+     */
+    public record TypologieView(
+            String id,
+            String label,
+            boolean ninja,
+            Integer maxCreneauxParAnimateur,
+            String description,
+            Instant modifieLe,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<TypologieView> {
+
+        static TypologieView of(TypologieItem typologie) {
+            return new TypologieView(
+                    typologie.id(),
+                    typologie.label(),
+                    typologie.ninja(),
+                    typologie.maxCreneauxParAnimateur(),
+                    typologie.description(),
+                    typologie.modifieLe(),
+                    List.of());
+        }
+
+        @Override
+        public TypologieView withWarning(String code) {
+            return new TypologieView(
+                    id,
+                    label,
+                    ninja,
+                    maxCreneauxParAnimateur,
+                    description,
+                    modifieLe,
+                    WarningCodes.with(avertissements, code));
+        }
+    }
 }

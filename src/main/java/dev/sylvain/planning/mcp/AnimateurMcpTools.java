@@ -93,6 +93,7 @@ public class AnimateurMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     WrittenAnimateurView creer_animateur(
             @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(
@@ -240,7 +241,14 @@ public class AnimateurMcpTools {
      * REST {@code WrittenAnimateur}, with the warnings as codes (see
      * {@link WarningCodes}).
      */
-    public record WrittenAnimateurView(AnimateurView animateur, List<String> avertissements) {}
+    public record WrittenAnimateurView(AnimateurView animateur, List<String> avertissements)
+            implements WarningCarrier<WrittenAnimateurView> {
+
+        @Override
+        public WrittenAnimateurView withWarning(String code) {
+            return new WrittenAnimateurView(animateur, WarningCodes.with(avertissements, code));
+        }
+    }
 
     public record AnimateurView(
             String id,

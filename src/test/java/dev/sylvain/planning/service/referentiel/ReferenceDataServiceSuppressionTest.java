@@ -242,7 +242,7 @@ class ReferenceDataServiceSuppressionTest {
      * though the assertions then run with the context moved to B.</p>
      */
     @Test
-    void supprimerDansUneAutreEditionEstAccepteePendantUnSolve() {
+    void deletingInAnotherEditionIsAcceptedDuringASolve() {
         Creneau creneau = creneau(9506L);
         Stand stand = stand("SUP-S9");
         Animateur animateur = animateur("SUP-A9");
@@ -268,6 +268,15 @@ class ReferenceDataServiceSuppressionTest {
             assertThat(solverJobs.findActive()).isPresent();
             assertThat(solverJobs.findActive().orElseThrow().getEditionId())
                     .isEqualTo(editionContext.editionIdCourant());
+
+            // The read the MCP warning is built on answers the same: A is held,
+            // B is not — a solve of another edition warns nobody there.
+            assertThat(solverJobs.activeJobForCurrentEdition())
+                    .map(SolverJobService.SolverJob::getId)
+                    .contains(jobEnCours);
+            editionContext.executeIn(
+                    EDITION_VOISINE,
+                    () -> assertThat(solverJobs.activeJobForCurrentEdition()).isEmpty());
 
             // In B, nothing is at risk: the deletes go through.
             editionContext.executeIn(EDITION_VOISINE, () -> {

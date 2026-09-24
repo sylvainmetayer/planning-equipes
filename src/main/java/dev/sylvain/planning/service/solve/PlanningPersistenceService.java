@@ -61,6 +61,15 @@ public class PlanningPersistenceService {
     @Inject
     SolverJobService solverJobs;
 
+    /**
+     * The guard {@link #reaffecterPoste} holds, asked on its own: by a write
+     * over several seats that checks everything before its first
+     * {@code UPDATE}, and must not score a gesture a running solve would undo.
+     */
+    public void refuseIfSolving() {
+        solverJobs.refuseIfSolving();
+    }
+
     /** Edition every statement below reads and writes. */
     private String editionId() {
         return scope.editionId();
@@ -383,11 +392,17 @@ public class PlanningPersistenceService {
      * holds at most one seat per stand × créneau (hard overlap constraint), so
      * matching on {@code animateur_id} designates a single row.
      *
+     * <p>Refused while a solve holds the edition, like every seat write: the
+     * landing rewrites {@code poste_affectation} wholesale from the plan the
+     * solve started on, and the swap would vanish from under its locks. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
+     *
      * @param standCibleId {@code null} for a simple takeover (the target was
      *                     free on the créneau)
      */
     public void applyEchange(
             long creneauId, String standDemandeurId, String demandeurId, String cibleId, String standCibleId) {
+        solverJobs.refuseIfSolving();
         scope.writeAndReturn("Failed to apply the échange to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -415,6 +430,7 @@ public class PlanningPersistenceService {
             String cibleId,
             long creneauCibleId,
             String standCibleId) {
+        solverJobs.refuseIfSolving();
         scope.writeAndReturn("Failed to apply the échange dirigé to the persisted planning", connection -> {
             int updated = reaffecterSiege(connection, creneauId, standDemandeurId, demandeurId, cibleId);
             if (updated == 0) {
@@ -438,11 +454,18 @@ public class PlanningPersistenceService {
      * <em>empty</em> seat (a poste the last solve left unstaffed is precisely
      * what needs repairing), and there is no occupant to match on there.</p>
      *
+     * <p>Refused while a solve holds the edition: its landing deletes and
+     * reinserts every seat from the plan it started on, so the reassignment
+     * would be undone without a word — the repair assistant, the Jour J screen
+     * and {@code affecter_poste} alike. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
+     *
      * @param animateurId {@code null} empties the seat
      * @return true when a seat was actually reassigned, false when this edition
      *         holds no such seat
      */
     public boolean reaffecterPoste(String posteId, String animateurId) {
+        solverJobs.refuseIfSolving();
         return scope.writeAndReturn("Failed to reassign the poste", connection -> {
                     // Not prepareScoped: the SET clause claims placeholder 1, so the
                     // edition_id predicate is bound explicitly here.

@@ -7,7 +7,7 @@
 //   - applying a replacement reuses the repair assistant's own write, so no
 //     solve is ever started from this page.
 
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,6 +16,7 @@ import { JourJService } from '../../core/jour-j.service';
 import { NotificationService } from '../../core/notification.service';
 import type { AbsenceMarquee, EtatJourJ, SuggestionsReparation } from '../../core/models';
 import { JourJPage } from './jour-j-page';
+import { SolverJobService } from '../../core/solver-job.service';
 
 function etat(overrides: Partial<EtatJourJ> = {}): EtatJourJ {
   return {
@@ -131,6 +132,7 @@ describe('JourJPage', () => {
         { provide: JourJService, useValue: jourJ },
         { provide: AffectationExplanationService, useValue: reparations },
         { provide: NotificationService, useValue: { notify } },
+        { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       ],
     });
     fixture = TestBed.createComponent(JourJPage);

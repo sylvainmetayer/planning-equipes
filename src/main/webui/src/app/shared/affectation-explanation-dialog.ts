@@ -15,6 +15,7 @@ import {
 } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { SolverJobService } from '../core/solver-job.service';
 import { AffectationExplanationService } from '../core/affectation-explanation.service';
 import { formatDeltaScore } from '../core/score-format';
 import { LegalText } from './legal-text';
@@ -173,7 +174,7 @@ export interface AffectationExplanationDialogData {
                       }
                     </ul>
                   }
-                  <button matButton [disabled]="applicationEnCours()" (click)="apply(suggestion)">
+                  <button matButton [disabled]="editingLocked() || applicationEnCours()" (click)="apply(suggestion)">
                     <mat-icon>check</mat-icon>
                     <ng-container i18n="@@affectationExplanation.repairApply"
                       >Appliquer</ng-container
@@ -234,6 +235,11 @@ export class AffectationExplanationDialog {
   protected readonly dialogRef = inject<MatDialogRef<AffectationExplanationDialog>>(MatDialogRef);
   protected readonly data = inject<AffectationExplanationDialogData>(MAT_DIALOG_DATA);
   private readonly explanationService = inject(AffectationExplanationService);
+  /**
+   * A solve holding the edition refuses this write in 409 — its landing
+   * rewrites every seat from the plan it started on: the buttons wait for it.
+   */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly loading = signal(true);
   protected readonly error = signal('');

@@ -70,6 +70,9 @@
 <h2 i18n="@@dispo.enAttenteTitre">En attente de votre décision</h2>
 <mat-checkbox [checked]="pendingOnly()" (change)="pendingOnly.set($event.checked)"
               i18n="@@dispo.filtreEnAttente">En attente seulement, la plus ancienne d'abord</mat-checkbox>
+@if (editingLocked()) {
+  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+}
 @if (pending().length === 0) {
   <p class="espace-vide" i18n="@@dispo.aucuneEnAttente">Aucune déclaration en attente.</p>
 }
@@ -127,13 +130,13 @@
       <div class="dispo-admin-actions">
         <button
           matButton="filled"
-          [disabled]="decisionEnCours() === declaration.id"
+          [disabled]="editingLocked() || decisionEnCours() === declaration.id"
           (click)="apply(declaration)"
         >
           <mat-icon>check</mat-icon>
           <span i18n="@@dispo.appliquer">Appliquer</span>
         </button>
-        <button matButton [disabled]="decisionEnCours() === declaration.id" (click)="refuser(declaration)">
+        <button matButton [disabled]="editingLocked() || decisionEnCours() === declaration.id" (click)="refuser(declaration)">
           <mat-icon>close</mat-icon>
           <span i18n="@@dispo.refuser">Refuser</span>
         </button>

@@ -102,6 +102,8 @@ dev/sylvain/planning/mcp/McpPromptsResourcesTest.java
 dev/sylvain/planning/mcp/McpRateLimitProxyTest.java
 dev/sylvain/planning/mcp/McpRateLimitTest.java
 dev/sylvain/planning/mcp/McpRequiredHeadersTest.java
+dev/sylvain/planning/mcp/McpRunningSolveEditionTest.java
+dev/sylvain/planning/mcp/McpWarnsWhileSolvingTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java

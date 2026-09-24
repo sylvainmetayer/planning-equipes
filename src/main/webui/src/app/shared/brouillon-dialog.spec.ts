@@ -12,7 +12,9 @@ import {
   purgeAllDrafts,
   writeDraft,
 } from '../core/brouillon-formulaire';
+import { ModifiedFormsRegistry } from '../core/formulaires-modifies';
 import { NotificationService } from '../core/notification.service';
+import { SolverJobService } from '../core/solver-job.service';
 import {
   asDialogRef,
   fakeDialogRef,
@@ -34,12 +36,15 @@ function mount(
     type?: 'stand' | 'animateur';
     modifieLe?: string | null;
     confirmed?: boolean;
+    locked?: boolean;
+    estimatedEndMs?: number | null;
   } = {},
 ) {
   const storage = options.storage === undefined ? memoryStorage() : options.storage;
   const ask = vi.fn(async () => options.confirmed ?? true);
   const close = vi.fn();
   const ref = fakeDialogRef(close);
+  const locked = signal(options.locked ?? false);
   const type = options.type ?? 'stand';
   const other = memoryStorage();
   TestBed.resetTestingModule();
@@ -47,6 +52,13 @@ function mount(
     providers: [
       provideZonelessChangeDetection(),
       { provide: ConfirmService, useValue: { ask } },
+      {
+        provide: SolverJobService,
+        useValue: {
+          editingLocked: locked,
+          estimatedEndMs: signal(options.estimatedEndMs ?? null),
+        },
+      },
       // The storage under test sits where the form type sends it; the other
       // one is a storage of its own, so a draft written there shows.
       { provide: LOCAL_DRAFT_STORAGE, useValue: type === 'stand' ? storage : other },
@@ -69,7 +81,7 @@ function mount(
       }),
   );
   TestBed.tick();
-  return { formDraft, entry, storage, other, ask, close, ref };
+  return { formDraft, entry, storage, other, ask, close, ref, locked };
 }
 
 const KEY = draftKey('stand', 's1');
@@ -346,6 +358,49 @@ describe('FormDraft', () => {
       vi.advanceTimersByTime(1000);
 
       expect(storage!.getItem(KEY)).toBeNull();
+    });
+  });
+
+  describe('a solve starting while the form is modified', () => {
+    it('says so, with the end at the latest, and keeps the entry', () => {
+      const end = new Date(2026, 6, 14, 18, 32).getTime();
+      const { formDraft, entry, locked } = mount({ estimatedEndMs: end });
+      entry.set({ nom: 'Saisie en cours' });
+      TestBed.tick();
+
+      locked.set(true);
+
+      expect(formDraft.lockNotice()).toContain('Une résolution vient de démarrer');
+      expect(formDraft.lockNotice()).toContain('18:32');
+      expect(entry()).toEqual({ nom: 'Saisie en cours' });
+    });
+
+    it('says it without an end when the server gave none', () => {
+      const { formDraft, entry } = mount({ locked: true });
+      entry.set({ nom: 'Saisie en cours' });
+
+      expect(formDraft.lockNotice()).toContain("vous pourrez l'enregistrer");
+      expect(formDraft.lockNotice()).not.toContain('au plus tard');
+    });
+
+    it('leaves the usual lock line to an untouched form', () => {
+      const { formDraft } = mount({ locked: true });
+
+      expect(formDraft.lockNotice()).toBeNull();
+    });
+  });
+
+  describe('the registry of unsaved entries', () => {
+    it('lists the form while it is modified, and forgets it with the form', () => {
+      const { entry } = mount();
+      const registry = TestBed.inject(ModifiedFormsRegistry);
+      expect(registry.modified()).toEqual([]);
+
+      entry.set({ nom: 'Autre' });
+      expect(registry.modified().map((form) => form.label)).toEqual(['la fiche du stand s1']);
+
+      TestBed.resetTestingModule();
+      expect(registry.modified()).toEqual([]);
     });
   });
 

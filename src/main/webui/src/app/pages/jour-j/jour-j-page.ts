@@ -25,6 +25,7 @@ import {
   SuggestionsReparation,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { SolverJobService } from '../../core/solver-job.service';
 import { compareDelta } from '../../shared/affectation-explanation-rules';
 import { bandeLabel } from '../../core/consigne-wording';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
@@ -81,6 +82,11 @@ export class JourJPage {
   private readonly jourJ = inject(JourJService);
   private readonly reparations = inject(AffectationExplanationService);
   private readonly notifications = inject(NotificationService);
+  /**
+   * A solve holding the edition refuses this write in 409 — its landing
+   * rewrites every seat from the plan it started on: the buttons wait for it.
+   */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly etat = signal<EtatJourJ | null>(null);
   protected readonly apercu = signal<ApercuPublication | null>(null);

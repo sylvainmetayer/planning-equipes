@@ -72,6 +72,7 @@ public class VerrouillageMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     WrittenVerrouillageView verrouiller(
             @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
             @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false)
@@ -94,7 +95,14 @@ public class VerrouillageMcpTools {
     }
 
     /** The lock written, and the codes of what it raised — the sentence stays on the screen. */
-    public record WrittenVerrouillageView(VerrouillageView verrouillage, List<String> avertissements) {}
+    public record WrittenVerrouillageView(VerrouillageView verrouillage, List<String> avertissements)
+            implements WarningCarrier<WrittenVerrouillageView> {
+
+        @Override
+        public WrittenVerrouillageView withWarning(String code) {
+            return new WrittenVerrouillageView(verrouillage, WarningCodes.with(avertissements, code));
+        }
+    }
 
     /**
      * Unlike {@code DELETE /api/verrouillages/{id}}, which answers 204 whatever
@@ -111,6 +119,7 @@ public class VerrouillageMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     SuppressionResult deverrouiller(
             @ToolArg(description = "Id du verrouillage") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {

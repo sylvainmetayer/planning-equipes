@@ -9,7 +9,11 @@
 }
 <fieldset class="form-fieldset" [disabled]="editingLocked()">
 @if (editingLocked()) {
-  <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  @if (formDraft.lockNotice(); as notice) {
+    <app-status-message class="span-2" [text]="notice" tone="warning" />
+  } @else {
+    <p class="locked-hint span-2" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  }
 }
 <mat-form-field appearance="outline">
   <mat-label i18n="@@stands.field.id">Identifiant</mat-label>

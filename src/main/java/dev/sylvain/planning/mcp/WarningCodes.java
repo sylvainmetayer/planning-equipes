@@ -1,6 +1,7 @@
 package dev.sylvain.planning.mcp;
 
 import dev.sylvain.planning.service.referentiel.Avertissement;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -25,7 +26,28 @@ import java.util.List;
  */
 final class WarningCodes {
 
+    /**
+     * The write was accepted while a solve holds its edition: the solve works
+     * on the referential — and the plan — it read at its start, so its result
+     * will not reflect this write, and a solve launched afterwards will.
+     *
+     * <p>MCP only, and on purpose: the screens lock these writes for the length
+     * of a solve, so the REST side never needs to say it. Added by
+     * {@link WarnsWhileSolvingInterceptor}, never by a service; the job
+     * holding the edition is what {@code statut_solveur} reads.</p>
+     */
+    static final String RESOLUTION_EN_COURS = "RESOLUTION_EN_COURS";
+
     private WarningCodes() {}
+
+    /** {@code codes} with {@code code} added at the end, once — a new list, the records stay immutable. */
+    static List<String> with(List<String> codes, String code) {
+        List<String> all = new ArrayList<>(codes == null ? List.of() : codes);
+        if (!all.contains(code)) {
+            all.add(code);
+        }
+        return List.copyOf(all);
+    }
 
     static List<String> of(List<Avertissement> avertissements) {
         return avertissements.stream()

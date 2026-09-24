@@ -2326,8 +2326,13 @@ suppression étant sa propre transaction.
 
 **Écrire le référentiel est refusé (`409`) tant qu'une résolution tient le
 solveur** : supprimer **et modifier** un stand ou un animateur, supprimer un
-créneau, compacter les horaires, réinitialiser l'édition
-(`POST /api/planning/reset`) et importer un scénario. La modification est
+créneau et **modifier** un créneau, compacter les horaires, réinitialiser
+l'édition (`POST /api/planning/reset`) et importer un scénario — et, côté plan,
+réaffecter un poste (assistant de réparation, mode jour J, `affecter_poste`) et
+accepter un échange. L'atterrissage supprime et réinsère tous les sièges
+depuis le plan de départ, et réécrit date et heures des créneaux : un siège
+réaffecté pendant reviendrait à son ancien occupant, un échange accepté
+disparaîtrait du plan en laissant la demande ACCEPTEE et ses verrous. La modification est
 concernée pour la même raison que la suppression — l'atterrissage réécrit `nom`,
 les effectifs et `reserveMajeurs` d'un stand, `prenom`, `nom`, `dateNaissance`,
 `manager`, compétences et jours d'indisponibilité d'un animateur, depuis les
@@ -2356,6 +2361,23 @@ l'édition qu'on prépare à côté, puisqu'il n'écrit que dans la sienne. C'es
 comparaison sur l'édition **du job**, pas sur celle qui l'a soumis — une
 résolution lancée sur A reste donc bloquante pour A même si l'onglet est passé
 sur B.
+
+**Les autres écritures passent pendant une résolution, et l'assistant en est
+averti.** Typologies, emplacements, contraintes ad hoc, paramètres légaux et
+durée du solveur, verrouillages, activation et poids des contraintes, création
+d'un stand, d'un animateur ou d'un créneau ne sont pas refusées : l'atterrissage
+ne les défait pas. Mais
+la résolution en cours a lu le référentiel et le plan à son démarrage, et son
+résultat ne les reflétera pas. Les écrans verrouillent ces saisies le temps du
+calcul (`editingLocked`) ; un assistant MCP n'a pas d'écran, et c'est donc la
+réponse de l'outil qui le dit : elle porte le code **`RESOLUTION_EN_COURS`**
+dans `avertissements`, à côté des avertissements de cohérence de l'écriture
+([ADR 0020](decisions/0020-avertir-dans-la-reponse-d-ecriture.md) : avertir
+dans la réponse plutôt que refuser). Même périmètre que le refus : une
+résolution d'une **autre** édition ou seulement **en file** ne déclenche
+rien, et une écriture refusée garde son `409` — l'avertissement ne s'ajoute
+qu'à ce qui a été écrit. Côté REST, rien ne change : l'IHM ne laisse pas
+envoyer ces écritures pendant un calcul. Voir [`mcp.md`](mcp.md).
 
 Contraintes ad hoc et verrouillages sont des **états** : on ne les met pas à
 jour, on les supprime et on les recrée. Une même paire d'animateurs ne peut pas

@@ -58,6 +58,7 @@ import {
 } from './consignes';
 import { ConsigneRepasFields, repasErrorLabel } from './consigne-repas-fields';
 import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
+import { StatusMessage } from '../../shared/status-message';
 import {
   ConsigneDraft,
   toConsigneDraft,
@@ -111,6 +112,7 @@ export interface ConsigneFormData {
     MatTooltipModule,
     ConsigneRepasFields,
     DraftBanner,
+    StatusMessage,
   ],
   templateUrl: './consigne-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,

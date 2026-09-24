@@ -628,10 +628,27 @@ public class SolverJobService {
         // which are never purgeable, so purging would be a DELETE and a monitor
         // hold per call — 200 of them behind a 200-row bulk delete, serialising
         // the referential screen against job submission for nothing.
-        String editionId = editionContext.editionIdCourant();
-        findActive().filter(job -> job.getEditionId().equals(editionId)).ifPresent(job -> {
+        activeJobForCurrentEdition().ifPresent(job -> {
             throw new SolverBusyException(job);
         });
+    }
+
+    /**
+     * The job holding the solver <b>for the current edition</b> — RUNNING or
+     * PENDING, never QUEUED — read without
+     * refusing anything — the half of {@link #refuseIfSolving} a write that is
+     * accepted during a solve needs, to say in its answer that the running
+     * solve will not see it (the {@code RESOLUTION_EN_COURS} warning of the MCP
+     * tools).
+     *
+     * <p>Same scope as the guard, on purpose: a job of another edition holds
+     * nothing here, and a {@link JobStatus#QUEUED} one has not read the
+     * referential yet — it will read it, write included, when its turn comes
+     * (see {@link #findActive}).</p>
+     */
+    public Optional<SolverJob> activeJobForCurrentEdition() {
+        String editionId = editionContext.editionIdCourant();
+        return findActive().filter(job -> job.getEditionId().equals(editionId));
     }
 
     /** Newest job first, so the UI can show a readable history. */
