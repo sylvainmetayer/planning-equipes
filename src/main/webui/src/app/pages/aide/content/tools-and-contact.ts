@@ -75,13 +75,13 @@ export function buildToolsAndContactSections(supportEmail: string): HelpSection[
             },
             {
               term: $localize`:@@aide.historique.term.portee:Ce que la page charge`,
-              text: $localize`:@@aide.historique.def.portee:Les deux cents dernières actions de l'édition consultée, et les filtres travaillent sur elles : une recherche qui ne rend rien ne prouve donc pas que l'action n'a pas eu lieu, seulement qu'elle est sortie de cette fenêtre. Au-delà, une rétention borne la table — quatre-vingt-dix jours par défaut, réglée par l'exploitant. Un journal qu'on peut modifier n'est pas un journal : aucun bouton de cet écran n'efface quoi que ce soit.`,
+              text: $localize`:@@aide.historique.def.portee:Les deux cents dernières actions de l'édition consultée, et les filtres travaillent sur elles : une recherche qui ne rend rien ne prouve donc pas que l'action n'a pas eu lieu, seulement qu'elle est sortie de cette fenêtre. « Exports » fait exception : le serveur cherche alors les deux cents derniers fichiers sortis sur toute la durée conservée, quel que soit le nombre de modifications survenues depuis. Au-delà, une rétention borne la table — quatre-vingt-dix jours par défaut, réglée par l'exploitant. Un journal qu'on peut modifier n'est pas un journal : aucun bouton de cet écran n'efface quoi que ce soit.`,
             },
           ],
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.historique.filtres:Quatre filtres se combinent : la recherche libre, l'objet, l'auteur et le résultat. Ils restent dans l'adresse de la page, donc dans un lien que vous envoyez. Un cas courant : une fiche animateur qui n'est plus celle qu'on croyait — filtrez sur l'objet « ANIMATEUR » et tapez son identifiant, la ligne dit quand, par qui, et quels champs ont changé.`,
+          text: $localize`:@@aide.historique.filtres:Cinq filtres se combinent : la recherche libre, l'objet, l'auteur, le résultat et « Exports ». Ils restent dans l'adresse de la page, donc dans un lien que vous envoyez. Un cas courant : une fiche animateur qui n'est plus celle qu'on croyait — filtrez sur l'objet « ANIMATEUR » et tapez son identifiant, la ligne dit quand, par qui, et quels champs ont changé. « Exports » ne garde que les fichiers sortis de l'application — exports de l'administration, dump de la base, plannings téléchargés depuis un espace : c'est la réponse à « qui a sorti la liste des animateurs, et quand ? », et à « a-t-il bien récupéré son planning ? ».`,
         },
       ],
       links: [

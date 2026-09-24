@@ -354,6 +354,8 @@ public class EspaceAnimateurResource {
     public Response openSession(CodeSession codeSession, @Context UriInfo uriInfo) {
         String session =
                 espaceAccesService.openSession(animateurCourant(), codeSession == null ? null : codeSession.code());
+        // The code was right: from here on the caller is the animateur.
+        editionRequestScope.markIdentityProven();
         NewCookie cookie = new NewCookie.Builder(COOKIE_SESSION)
                 .value(session)
                 .path("/api/espace-animateur")

@@ -16,8 +16,12 @@ package dev.sylvain.planning.service.journal;
  *                already-persisted plan out of date, and the ones the solver
  *                screen lists under « des données ont été modifiées » ; a
  *                send, an export, a snapshot or a solve does not qualify.
+ * @param export  whether it is a file leaving the application — an export
+ *                from the administration or a download from an espace. The
+ *                history's « Exports » filter reads this flag, server-side,
+ *                rather than guessing from the code's spelling.
  */
-public record ActionJournalisee(String code, String libelle, Entite entite, boolean changesData) {
+public record ActionJournalisee(String code, String libelle, Entite entite, boolean changesData, boolean export) {
 
     /** What an action can bear upon. Names the referential family, not the table. */
     public enum Entite {

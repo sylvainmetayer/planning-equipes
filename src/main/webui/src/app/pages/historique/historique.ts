@@ -1,7 +1,7 @@
 // Pure logic of the history screen: what the filters keep, and how a line
 // reads. No Angular here, so it is unit-tested without rendering anything.
 
-import { EntreeHistorique } from '../../core/models';
+import { ActionHistorique, EntreeHistorique } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 
 /** Which actors the list keeps. `TOUS` is the default: the history is read whole. */
@@ -10,20 +10,46 @@ export type FiltreActeur = 'TOUS' | 'ADMIN' | 'ANIMATEUR' | 'ANONYME' | 'ASSISTA
 /** Which outcomes the list keeps. A refusal is often the line being looked for. */
 export type FiltreResultat = 'TOUS' | 'SUCCES' | 'REFUS';
 
+/**
+ * Which kinds of action the list keeps. `EXPORTS` answers « qui a sorti quoi,
+ * et quand » : every file that left the application, from the admin screens
+ * as from an animateur's espace.
+ */
+export type FiltreNature = 'TOUTES' | 'EXPORTS';
+
 const ACTEURS: FiltreActeur[] = ['TOUS', 'ADMIN', 'ANIMATEUR', 'ANONYME', 'ASSISTANT', 'SYSTEME'];
 const RESULTATS: FiltreResultat[] = ['TOUS', 'SUCCES', 'REFUS'];
+const NATURES: FiltreNature[] = ['TOUTES', 'EXPORTS'];
+
+/**
+ * What `GET /api/historique` is asked for: the « Exports » filter is applied by
+ * the server, over the whole retention, never over the page already loaded.
+ */
+export function natureQuery(nature: FiltreNature): 'exports' | null {
+  return nature === 'EXPORTS' ? 'exports' : null;
+}
+
+/** The codes the server's catalogue flags as a file leaving the application. */
+export function exportCodes(actions: ActionHistorique[]): ReadonlySet<string> {
+  return new Set(actions.filter((action) => action.export).map((action) => action.code));
+}
 
 /** Reads a filter off the URL, falling back to its default on anything unknown. */
-export function lireFiltreActeur(valeur: string | null): FiltreActeur {
+export function readActorFilter(valeur: string | null): FiltreActeur {
   return ACTEURS.includes(valeur as FiltreActeur) ? (valeur as FiltreActeur) : 'TOUS';
 }
 
-export function lireFiltreResultat(valeur: string | null): FiltreResultat {
+export function readOutcomeFilter(valeur: string | null): FiltreResultat {
   return RESULTATS.includes(valeur as FiltreResultat) ? (valeur as FiltreResultat) : 'TOUS';
 }
 
+export function readNatureFilter(valeur: string | null): FiltreNature {
+  return NATURES.includes(valeur as FiltreNature) ? (valeur as FiltreNature) : 'TOUTES';
+}
+
 /**
- * The lines a reader asked for. The free-text search covers what is on screen —
+ * The lines a reader asked for, among those loaded — the nature was already
+ * chosen by the server. The free-text search covers what is on screen —
  * the sentence, the actor, the entity and its id — and nothing else: searching
  * a name that the table does not store would silently return nothing.
  */

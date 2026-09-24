@@ -417,7 +417,18 @@ public class ReferenceDataService implements ReferenceData {
         return referentielCsvExport.counts();
     }
 
+    /**
+     * The archive of the chosen referentials. The history line says which
+     * ones left — their names, in the archive's own order, never a row of
+     * what they held.
+     */
     public byte[] exportCsvReferentiels(java.util.Set<ReferentielCsvExportService.ExportTarget> cibles) {
+        if (cibles != null) {
+            currentAction.champsModifies(java.util.Arrays.stream(ReferentielCsvExportService.ExportTarget.values())
+                    .filter(cibles::contains)
+                    .map(ReferentielCsvExportService.ExportTarget::journalName)
+                    .toList());
+        }
         return referentielCsvExport.zip(cibles);
     }
 

@@ -19,6 +19,7 @@ import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -195,6 +196,139 @@ class EspaceAccesTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("nouveau code"));
+    }
+
+    /**
+     * A download refused for want of the e-mail code writes nothing: it is a
+     * free read anyone holding — or guessing at — a link can repeat, and a
+     * line per attempt would hand the table to them.
+     */
+    @Test
+    void aDownloadRefusedWithoutSessionWritesNothing() throws Exception {
+        String token = tokenOf("ACCES-A");
+        clearJournal("TELECHARGEMENT_ESPACE_PDF");
+
+        given().when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
+                .then()
+                .statusCode(401);
+
+        assertThat(journalLines("TELECHARGEMENT_ESPACE_PDF")).isEmpty();
+    }
+
+    /** Behind a live session the download is the animateur's own, and says so. */
+    @Test
+    void aDownloadWithAValidSessionIsRecordedUnderTheAnimateur() throws Exception {
+        String token = tokenOf("ACCES-A");
+        String session = EspaceSessions.open(mailbox, token, EMAIL_ALICE);
+        clearJournal("TELECHARGEMENT_ESPACE_PDF");
+
+        given().cookie("planning-espace", session)
+                .when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
+                .then()
+                .statusCode(200);
+
+        assertThat(journalLines("TELECHARGEMENT_ESPACE_PDF"))
+                .singleElement()
+                .isEqualTo(new JournalLine("ANIMATEUR", "ACCES-A", "ACCES-A", 200));
+    }
+
+    /**
+     * Holding the link is not proof of being its animateur, whatever status
+     * the refusal carries: a wrong code is a 400, not a 401, and is filed as
+     * ANONYME all the same — the animateur named as the target only.
+     */
+    @Test
+    void aWrongCodeIsNotPinnedOnTheAnimateur() throws Exception {
+        String token = tokenOf("ACCES-A");
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + token + "/code")
+                .then()
+                .statusCode(200);
+        clearJournal("SESSION_ESPACE_OUVERTE");
+
+        given().contentType(ContentType.JSON)
+                .body("{\"code\":\"000000\"}")
+                .when()
+                .post("/api/espace-animateur/" + token + "/session")
+                .then()
+                .statusCode(400);
+
+        assertThat(journalLines("SESSION_ESPACE_OUVERTE"))
+                .singleElement()
+                .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 400));
+    }
+
+    /** The right code is the proof: the session it opens is the animateur's act. */
+    @Test
+    void theRightCodeOpensASessionUnderTheAnimateur() throws Exception {
+        clearJournal("SESSION_ESPACE_OUVERTE");
+        EspaceSessions.open(mailbox, tokenOf("ACCES-A"), EMAIL_ALICE);
+
+        assertThat(journalLines("SESSION_ESPACE_OUVERTE"))
+                .singleElement()
+                .isEqualTo(new JournalLine("ANIMATEUR", "ACCES-A", "ACCES-A", 204));
+    }
+
+    /**
+     * Asking for a code proves nothing — anybody with the link can — and a
+     * write refused without a session neither: both are ANONYME.
+     */
+    @Test
+    void withoutASessionNobodyIsNamed() throws Exception {
+        String token = tokenOf("ACCES-A");
+        clearJournal("CODE_ESPACE_DEMANDE");
+        clearJournal("PLANNING_CONFIRME");
+
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + token + "/code")
+                .then()
+                .statusCode(200);
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + token + "/confirmation")
+                .then()
+                .statusCode(401);
+
+        assertThat(journalLines("CODE_ESPACE_DEMANDE"))
+                .singleElement()
+                .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 200));
+        assertThat(journalLines("PLANNING_CONFIRME"))
+                .singleElement()
+                .isEqualTo(new JournalLine("ANONYME", null, "ACCES-A", 401));
+    }
+
+    /** One line of the history, as far as these tests read it. */
+    private record JournalLine(String acteur, String acteurId, String entiteId, int statut) {}
+
+    private void clearJournal(String action) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement("DELETE FROM journal_action WHERE action = ?")) {
+            ps.setString(1, action);
+            ps.executeUpdate();
+        }
+    }
+
+    private List<JournalLine> journalLines(String action) throws Exception {
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(
+                        "SELECT acteur, acteur_id, entite_id, statut FROM journal_action WHERE action = ?")) {
+            ps.setString(1, action);
+            try (ResultSet rows = ps.executeQuery()) {
+                List<JournalLine> lignes = new java.util.ArrayList<>();
+                while (rows.next()) {
+                    lignes.add(new JournalLine(
+                            rows.getString("acteur"),
+                            rows.getString("acteur_id"),
+                            rows.getString("entite_id"),
+                            rows.getInt("statut")));
+                }
+                return lignes;
+            }
+        }
     }
 
     @Test

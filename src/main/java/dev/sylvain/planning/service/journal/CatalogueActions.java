@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.journal;
 
 import dev.sylvain.planning.service.journal.ActionJournalisee.Entite;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -33,7 +34,7 @@ public final class CatalogueActions {
     private static final Map<String, ActionJournalisee> ACTIONS = new LinkedHashMap<>();
 
     private static void action(String code, String libelle, Entite entite) {
-        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, false));
+        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, false, false));
     }
 
     /**
@@ -47,7 +48,17 @@ public final class CatalogueActions {
      * it does not move the problem.
      */
     private static void changesData(String code, String libelle, Entite entite) {
-        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, true));
+        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, true, false));
+    }
+
+    /**
+     * Same, for a file leaving the application: an export from the
+     * administration, a download from an espace. Never {@code changesData}
+     * — leaving with a copy moves no problem — and flagged {@code export},
+     * which is what the history's « Exports » filter selects on.
+     */
+    private static void export(String code, String libelle, Entite entite) {
+        ACTIONS.put(code, new ActionJournalisee(code, libelle, entite, false, true));
     }
 
     static {
@@ -151,13 +162,27 @@ public final class CatalogueActions {
         action("KPI_SUPPRIME", "Ligne d'historique KPI supprimée", Entite.PLANNING);
 
         /* ------------------------- Exports -------------------------- */
-        action("EXPORT_PDF", "Plannings exportés en PDF", Entite.PLANNING);
-        action("EXPORT_PDF_ANIMATEUR", "Planning d'un animateur exporté en PDF", Entite.ANIMATEUR);
-        action("EXPORT_ICS", "Plannings exportés en calendrier", Entite.PLANNING);
-        action("EXPORT_ICS_ANIMATEUR", "Planning d'un animateur exporté en calendrier", Entite.ANIMATEUR);
-        action("EXPORT_ARCHIVE", "Archive complète des plannings exportée", Entite.PLANNING);
-        action("EXPORT_HEURES", "Heures exportées en CSV", Entite.PLANNING);
-        action("EXPORT_BASE", "Base de données exportée", Entite.SAUVEGARDE);
+        // Every download that leaves with somebody's data writes a line, the
+        // GETs included: « qui a sorti la liste des bénévoles, et quand » is
+        // the question the history must answer for as long as it keeps rows.
+        // Declared through `export`, never `action`: the flag it sets is what
+        // the history's « Exports » filter selects on.
+        export("EXPORT_PDF", "Plannings exportés en PDF", Entite.PLANNING);
+        export("EXPORT_PDF_ANIMATEUR", "Planning d'un animateur exporté en PDF", Entite.ANIMATEUR);
+        export("EXPORT_ICS", "Plannings exportés en calendrier", Entite.PLANNING);
+        export("EXPORT_ICS_ANIMATEUR", "Planning d'un animateur exporté en calendrier", Entite.ANIMATEUR);
+        export("EXPORT_ARCHIVE", "Archive complète des plannings exportée", Entite.PLANNING);
+        export("EXPORT_HEURES", "Heures exportées en CSV", Entite.PLANNING);
+        export("EXPORT_BASE", "Base de données exportée", Entite.SAUVEGARDE);
+        export("EXPORT_PDF_GLOBAL", "Planning global exporté en PDF", Entite.PLANNING);
+        export("EXPORT_REFERENTIELS", "Référentiels exportés en CSV", Entite.PLANNING);
+        export("EXPORT_SCENARIO", "Scénario de l'édition exporté en YAML", Entite.PLANNING);
+        export("EXPORT_EQUITE", "Rapport d'équité exporté en CSV", Entite.PLANNING);
+        export("EXPORT_RELECTURE", "Relecture avant envoi exportée en CSV", Entite.PLANNING);
+        // The whole grid, every animateur at once: it bears on the edition,
+        // not on one fiche.
+        export("EXPORT_COMPETENCES", "Grille des compétences exportée en CSV", Entite.PLANNING);
+        export("EXPORT_INTENDANCE", "Intendance des repas exportée en CSV", Entite.PLANNING);
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData("SCENARIO_IMPORTE", "Scénario importé", Entite.PLANNING);
@@ -193,6 +218,11 @@ public final class CatalogueActions {
         action("CODE_ESPACE_DEMANDE", "Code d'accès à l'espace demandé", Entite.ANIMATEUR);
         action("SESSION_ESPACE_OUVERTE", "Session d'espace ouverte", Entite.ANIMATEUR);
         action("DECONNEXION", "Déconnexion", Entite.PARAMETRES);
+        // One line per explicit download, never per page shown: « a-t-il bien
+        // récupéré son planning ? » without turning the history into an
+        // access log. The calendar subscription stays out — see SANS_TRACE.
+        export("TELECHARGEMENT_ESPACE_PDF", "Planning téléchargé en PDF depuis l'espace", Entite.ANIMATEUR);
+        export("TELECHARGEMENT_ESPACE_ICS", "Planning téléchargé en calendrier depuis l'espace", Entite.ANIMATEUR);
 
         /* ------------------ The application itself ------------------ */
         // The nightly sends are the only thing the application does on its own
@@ -212,6 +242,12 @@ public final class CatalogueActions {
      * test rather than silently stopping to journal.
      */
     private static final Map<String, String> ROUTES = new LinkedHashMap<>();
+
+    /**
+     * Routes recorded only when the caller proved who they are — see
+     * {@link #recordedOnlyWhenProven(String)}.
+     */
+    private static final Set<String> SI_PROUVE = new LinkedHashSet<>();
 
     private static void route(String cle, String code) {
         ROUTES.put(cle, code);
@@ -303,9 +339,18 @@ public final class CatalogueActions {
         route("PlanningExportResource#exportAnimateurIcs", "EXPORT_ICS_ANIMATEUR");
         route("PlanningExportResource#exportAllBundleZip", "EXPORT_ARCHIVE");
         route("PlanningHoursResource#exportCsv", "EXPORT_HEURES");
-        // The one GET that is journalled: a dump carries every animateur's
-        // fiche, minors included, and leaving with it is an act.
-        route("DatabaseResource#exportDatabase", "EXPORT_BASE");
+        // Downloads are GETs, and journalled all the same: a dump, an archive
+        // of the referentials or a nominative CSV carries people's data, and
+        // leaving with it is an act. JournalCoverageStructurelleTest holds
+        // every GET that answers a file to this list or to SANS_TRACE.
+        route("DatabaseResource#export", "EXPORT_BASE");
+        route("PlanningExportResource#exportGlobalPdf", "EXPORT_PDF_GLOBAL");
+        route("ReferenceDataResource#exportCsv", "EXPORT_REFERENTIELS");
+        route("PlanningResource#exportScenario", "EXPORT_SCENARIO");
+        route("EquiteResource#exportCsv", "EXPORT_EQUITE");
+        route("PublicationResource#exportCsv", "EXPORT_RELECTURE");
+        route("AnimateurResource#exportCompetencesGrid", "EXPORT_COMPETENCES");
+        route("PauseResource#exportIntendance", "EXPORT_INTENDANCE");
         route("DatabaseResource#importDump", "BASE_IMPORTEE");
         route("ReferenceDataResource#importReferenceData", "DONNEES_IMPORTEES");
         route("ReferenceDataResource#importScenario", "SCENARIO_IMPORTE");
@@ -338,6 +383,21 @@ public final class CatalogueActions {
         route("EspaceAnimateurResource#cancel", "ABONNEMENT_ANNULE");
         route("EspaceAnimateurResource#requestCode", "CODE_ESPACE_DEMANDE");
         route("EspaceAnimateurResource#openSession", "SESSION_ESPACE_OUVERTE");
+        routeWhenProven("EspaceAnimateurResource#planningPdf", "TELECHARGEMENT_ESPACE_PDF");
+        routeWhenProven("EspaceAnimateurResource#planningIcs", "TELECHARGEMENT_ESPACE_ICS");
+    }
+
+    /**
+     * A {@code GET} on an open route, journalled only once the caller proved
+     * who they are. A write refused there is worth a line — somebody tried to
+     * change something — but a download is a read anyone can repeat for
+     * free: an unknown token (404) or a missing session (401) would let any
+     * visitor fill the table with lines naming nobody, unthrottled. Its
+     * successes, and the refusals met by a proven animateur, still write.
+     */
+    private static void routeWhenProven(String cle, String code) {
+        route(cle, code);
+        SI_PROUVE.add(cle);
     }
 
     /**
@@ -440,9 +500,11 @@ public final class CatalogueActions {
     }
 
     /**
-     * Write-shaped entry points that are <b>not</b> actions, each with the
-     * reason. Almost all of them are {@code POST}s only because they take a
-     * body: they compute an answer and write nothing.
+     * Write-shaped entry points and downloads that are <b>not</b> actions,
+     * each with the reason. Almost all of them are {@code POST}s only because
+     * they take a body: they compute an answer and write nothing. The
+     * downloads here carry nobody's data — a template file — or are fetched
+     * by a machine rather than asked for by a person.
      */
     private static final Map<String, String> SANS_TRACE = new LinkedHashMap<>();
 
@@ -463,11 +525,20 @@ public final class CatalogueActions {
         untracked("StandResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("CreneauResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
         untracked("JourneeTypeResource#analyseCsv", "analyse préalable d'un fichier, n'écrit rien");
-        untracked("ReferenceDataResource#exportCsv", "exporte une copie, n'écrit rien");
-        untracked("ReferenceDataResource#volumesExportCsv", "compte les lignes, n'écrit rien");
         untracked("TypologieResource#exempleCsv", "télécharge un fichier d'exemple");
         untracked("EmplacementResource#exempleCsv", "télécharge un fichier d'exemple");
         untracked("StandResource#exempleCsv", "télécharge un fichier d'exemple");
+        untracked("StandResource#exempleGrille", "télécharge un fichier d'exemple");
+        untracked("CreneauResource#exempleCsv", "télécharge un fichier d'exemple");
+        untracked("JourneeTypeResource#exempleCsv", "télécharge un fichier d'exemple");
+        untracked("AnimateurResource#exempleCsvAnimateurs", "télécharge un fichier d'exemple, sans personne dedans");
+        // A calendar client re-reads the feed every few hours on its own: one
+        // line per sync would be noise, not a trace, and nobody chose to
+        // download anything. What the owner did — subscribing, cancelling —
+        // is journalled on the espace routes that do it.
+        untracked(
+                "AbonnementIcsResource#planningIcs",
+                "relu par l'agenda de l'animateur toutes les quelques heures, sans geste de sa part");
         untracked("CreneauResource#previewRecurrence", "prévisualisation, n'écrit rien");
         untracked("CreneauResource#previewDerivation", "prévisualisation, n'écrit rien");
         untracked("JourneeTypeResource#previewApplication", "prévisualisation, n'écrit rien");
@@ -482,6 +553,23 @@ public final class CatalogueActions {
         untracked("ReferenceDataResource#validateScenarioFile", "valide un fichier, n'écrit rien");
         untracked("JourJResource#suggestions", "suggestions de remplacement, n'écrit rien");
         untracked("DebugResource#throwTestException", "lève une exception pour vérifier la remontée d'erreurs");
+    }
+
+    /**
+     * Whether {@code cle} is recorded only when the request proved its
+     * caller's identity (a live espace session): a refusal met without that
+     * proof writes nothing.
+     */
+    public static boolean recordedOnlyWhenProven(String cle) {
+        return cle != null && SI_PROUVE.contains(cle);
+    }
+
+    /** The codes of every export, for the history's server-side « Exports » filter. */
+    public static Set<String> exportCodes() {
+        return ACTIONS.values().stream()
+                .filter(ActionJournalisee::export)
+                .map(ActionJournalisee::code)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     /** What {@code cle} does, {@code empty} when it is not a journalled action. */
@@ -542,5 +630,13 @@ public final class CatalogueActions {
 
     static Map<String, String> outils() {
         return Map.copyOf(OUTILS);
+    }
+
+    static Set<String> routesWhenProven() {
+        return Set.copyOf(SI_PROUVE);
+    }
+
+    static Map<String, String> untracked() {
+        return Map.copyOf(SANS_TRACE);
     }
 }

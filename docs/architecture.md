@@ -201,7 +201,19 @@ d'entrée l'effectue de l'autre, si bien qu'un stand créé depuis un écran et 
 stand créé par un assistant écrivent la même ligne.
 `JournalCoverageStructurelleTest` échoue sur toute route ou tout outil qui
 écrit sans figurer **ni** dans le catalogue **ni** dans sa liste d'exclusions
-motivées : on ne peut pas en sortir en oubliant. Il vérifie aussi les deux
+motivées : on ne peut pas en sortir en oubliant. La même règle tient pour les
+**téléchargements** : un `GET` qui rend un fichier — un type fichier
+n'importe où dans son `@Produces` (celui de la méthode, sinon celui de la
+classe, lu par réflexion : une constante ne cache rien), ou un
+`Content-Disposition` écrit par le corps de sa méthode, `CsvDownload` compris,
+ce corps étant délimité par ses accolades et non jusqu'à la route suivante —
+sort des données, et doit être catalogué ou exclu avec son motif. Un
+téléchargement catalogué est déclaré par `export(…)`, dont le drapeau sert au
+filtre « Exports » de l'historique, et celui de l'espace n'est tracé qu'une
+fois l'identité prouvée (`routeWhenProven`).
+Le test relit aussi l'inverse : une route du catalogue ou des exclusions qui
+ne correspond plus à aucune méthode échoue — c'est ainsi que `EXPORT_BASE`,
+qui nommait une méthode renommée depuis, a été retrouvé muet. Il vérifie aussi les deux
 bords que le premier jet avait laissés ouverts — qu'une classe d'outils
 journalisés porte bien `@Journalise`, l'appartenance au catalogue n'ayant
 jamais prouvé qu'une ligne s'écrive ; et qu'aucune action décrite ne soit

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
@@ -21,6 +22,9 @@ import java.util.Locale;
  * request), then requires a live {@code planning-espace} session of that
  * animateur. Aborts with 404 (unknown token) or 401 (no session — the
  * interface then offers the code screen) before the resource method runs.
+ * Once the session (or the proxy's assertion) holds, it marks the identity as
+ * proven on {@link EditionRequestScope}: that, and not the token, is what lets
+ * the history name the animateur as the author of what follows.
  *
  * <p>When the remote-user mode is enabled, an access proxy asserting the
  * token owner's own address takes the place of that session. The e-mail is
@@ -45,6 +49,9 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
     @Inject
     RemoteUserAuthentication remoteUser;
 
+    @Inject
+    EditionRequestScope editionRequestScope;
+
     @Override
     public void filter(ContainerRequestContext contexte) {
         TokenOwner owner = tokenFilter.resoudreOuAborter(contexte);
@@ -54,10 +61,13 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
         // The owner's edition is bound to the request by now, so the session
         // lookup — like every call below — is already correctly scoped.
         if (proxyAtteste(contexte, owner)) {
+            editionRequestScope.markIdentityProven();
             return;
         }
         Cookie cookie = contexte.getCookies().get(EspaceAnimateurResource.COOKIE_SESSION);
-        if (!espaceAccesService.validSession(cookie == null ? null : cookie.getValue(), owner.animateurId())) {
+        if (espaceAccesService.validSession(cookie == null ? null : cookie.getValue(), owner.animateurId())) {
+            editionRequestScope.markIdentityProven();
+        } else {
             contexte.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                     .type(MediaType.APPLICATION_JSON)
                     .entity(new ValidationError("Authentification requise : demandez un code d'accès par e-mail."))

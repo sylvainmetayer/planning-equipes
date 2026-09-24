@@ -9,6 +9,7 @@ import {
   BancDeTouche,
   ChangementsDonnees,
   Emplacement,
+  ActionHistorique,
   EntreeHistorique,
   KpiHistoriqueEntry,
   ModeMarge,
@@ -79,8 +80,19 @@ export class AnalysesApi {
     return this.api.delete(`/api/kpi/historique/${entryId}`);
   }
 
-  actionHistory(): Promise<EntreeHistorique[]> {
-    return this.api.get<EntreeHistorique[]>('/api/historique');
+  /**
+   * The edition's most recent actions. `exports` asks the server for the
+   * files that left the application only — selected in the database, so over
+   * the whole retention rather than over the last page of every kind.
+   */
+  actionHistory(nature: 'exports' | null = null): Promise<EntreeHistorique[]> {
+    const query = nature ? `?nature=${nature}` : '';
+    return this.api.get<EntreeHistorique[]>(`/api/historique${query}`);
+  }
+
+  /** The inventory of actions, with the server's classification of each. */
+  actionInventory(): Promise<ActionHistorique[]> {
+    return this.api.get<ActionHistorique[]>('/api/historique/actions');
   }
 
   /**

@@ -812,21 +812,32 @@ précédaient.
 ## Historique des actions
 
 `GET /api/historique?limite=200` — ce qui a été fait dans l'édition courante,
-du plus récent au plus ancien, plafonné à 500 lignes. `GET
-/api/historique/actions` rend l'inventaire des actions que l'application sait
-décrire, pour que l'écran propose un filtre qu'il n'a pas inventé.
+du plus récent au plus ancien, plafonné à 500 lignes. `nature=exports` ne
+rend que les fichiers sortis de l'application, **choisis par la base** : la
+recherche porte sur toute la rétention, et non sur la dernière page toutes
+actions confondues — un export enfoui sous deux cents modifications plus
+récentes est retrouvé. `GET /api/historique/actions` rend l'inventaire des
+actions que l'application sait décrire, pour que l'écran propose un filtre
+qu'il n'a pas inventé ; son drapeau `export` est la classification que ce
+paramètre applique, tenue par `CatalogueActions` et non devinée d'après
+l'orthographe du code.
 
 Lecture seule, et cette forme est définitive : un journal qu'on peut modifier
 n'est pas un journal. Aucune suppression non plus — ce qui borne la table est
 une **rétention** (`JOURNAL_RETENTION`, 90 jours par défaut) appliquée par la
 tâche de nuit, pas un bouton.
 
-Une ligne porte : quand, **qui** (`ADMIN`, `ANIMATEUR`, `ANONYME` pour un
-appel qui n'a présenté aucun justificatif valable — les routes de l'espace
-sont ouvertes, donc un jeton faux ou périmé va jusqu'au refus —, `ASSISTANT`
+Une ligne porte : quand, **qui** (`ADMIN`, `ANIMATEUR` quand l'appel a
+**prouvé** être l'animateur — session ouverte par le code e-mail, code juste
+échangé contre elle, adresse attestée par le proxy, ou jeton d'abonnement
+dédié —, `ANONYME` sinon sur les routes ouvertes : le lien de l'espace seul ne
+prouve pas qui le tient, et l'auteur se décide sur cette preuve, jamais sur le
+code HTTP — un mauvais code est un 400, une demande de code bridée un 429 —,
+l'animateur désigné par le jeton restant la cible de la ligne ; `ASSISTANT`
 pour un appel MCP, `SYSTEME` pour la nuit), l'action et sa phrase en français,
 ce qu'elle visait, **les noms des champs qu'une modification a réellement
-changés**, et si elle a abouti ou été refusée — avec son code HTTP.
+changés** (pour l'archive CSV des référentiels, les noms des référentiels
+emportés), et si elle a abouti ou été refusée — avec son code HTTP.
 
 Deux choses n'y sont pas, et c'est le contrat :
 
@@ -837,10 +848,25 @@ Deux choses n'y sont pas, et c'est le contrat :
   qu'une fiche supprimée laisse une ligne qui ne nomme plus personne.
 
 Sont tracées les écritures et les sorties de données (exports PDF, ICS, CSV,
-dump de base, envois de courriel), jamais les simples consultations : un
+archive des référentiels, scénario YAML, dump de base, envois de courriel),
+jamais les simples consultations : un
 `POST` qui ne fait que calculer — une prévisualisation, une simulation,
 l'analyse préalable d'un fichier — est déclaré **sans trace, avec son motif**,
 dans `CatalogueActions`.
+
+Un téléchargement est un `GET`, et il est tracé quand même : il emporte des
+données de personnes. Les actions `EXPORT_*` (administration) et
+`TELECHARGEMENT_ESPACE_*` (planning téléchargé par l'animateur depuis son
+espace, attribué à l'animateur) ne comptent **pas** dans
+`/api/historique/changements` : sortir une copie ne rend aucune résolution
+périmée. Un téléchargement d'espace n'est tracé **qu'une fois l'identité
+prouvée** : refusé avant — jeton inconnu (404), session absente (401) —, il
+n'écrit rien, car c'est une lecture gratuite que n'importe qui peut répéter,
+et une ligne par tentative livrerait la table au premier venu. Ses réussites,
+et les refus rencontrés par un animateur authentifié, restent tracés. Deux familles de `GET` restent sans
+trace, avec leur motif : les fichiers d'exemple, qui ne portent personne, et
+`/api/abonnements/{token}/planning.ics`, relu seul par l'agenda toutes les
+quelques heures — une ligne par relecture serait du bruit.
 
 ## Notifications planifiées
 

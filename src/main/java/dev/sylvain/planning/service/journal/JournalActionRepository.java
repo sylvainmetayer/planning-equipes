@@ -86,6 +86,38 @@ public class JournalActionRepository {
     }
 
     /**
+     * The most recent lines of the current edition whose action is one of
+     * {@code codes}, newest first — a family selected in the database, so it
+     * is searched over the whole retention and not over the last page.
+     */
+    public List<EntreeJournal> listAmong(Collection<String> codes, int limite) {
+        if (codes.isEmpty()) {
+            return List.of();
+        }
+        int plafond = Math.clamp(limite, 1, LIMITE_MAX);
+        return scope.read("Failed to read the history", connection -> {
+            Array bound = connection.createArrayOf("varchar", codes.toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
+                    champs, resultat, statut
+                    FROM journal_action
+                    WHERE edition_id = ? AND action = ANY(?)
+                    ORDER BY survenu_le DESC, id DESC
+                    LIMIT ?""")) {
+                ps.setArray(2, bound);
+                ps.setInt(3, plafond);
+                try (ResultSet rs = ps.executeQuery()) {
+                    List<EntreeJournal> entrees = new ArrayList<>();
+                    while (rs.next()) {
+                        entrees.add(read(rs));
+                    }
+                    return entrees;
+                }
+            }
+        });
+    }
+
+    /**
      * How many times each of {@code codes} succeeded since {@code depuis}, by
      * action code. Counted by the database rather than by paging through the
      * lines: the figure the solver screen shows is exact, whatever the volume.

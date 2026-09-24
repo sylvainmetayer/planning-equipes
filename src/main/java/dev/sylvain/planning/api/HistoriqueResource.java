@@ -42,15 +42,38 @@ public class HistoriqueResource {
     /** How many recent lines the summary shows: enough to recognise what happened, not a page of history. */
     private static final int RECENT_LINES = 5;
 
+    /** The one value of {@code nature}: the actions the catalogue flags as exports. */
+    static final String NATURE_EXPORTS = "exports";
+
     @Inject
     JournalActionService journal;
 
     @Inject
     ReferenceDataService referenceData;
 
+    /**
+     * The edition's most recent lines, newest first.
+     *
+     * @param nature {@code exports} keeps only the files that left the
+     *               application, selected in the database — so the whole
+     *               retention is searched, not the last page of every kind;
+     *               absent, every action. Anything else is refused rather
+     *               than read as « all »: a filter silently dropped would
+     *               answer a question nobody asked.
+     */
     @GET
-    public List<EntreeHistoriqueView> list(@QueryParam("limite") Integer limite) {
-        List<EntreeJournal> entrees = journal.list(limite);
+    public List<EntreeHistoriqueView> list(
+            @QueryParam("limite") Integer limite,
+            @QueryParam("nature") @Schema(enumeration = {NATURE_EXPORTS}) String nature) {
+        List<EntreeJournal> entrees;
+        if (nature == null || nature.isBlank()) {
+            entrees = journal.list(limite);
+        } else if (NATURE_EXPORTS.equals(nature)) {
+            entrees = journal.listExports(limite);
+        } else {
+            throw new BusinessError.Invalid(
+                    "Nature d'action inconnue : « " + nature + " » (attendu « " + NATURE_EXPORTS + " »).");
+        }
         Map<String, String> noms = referenceData.listAnimateurs().stream()
                 .collect(Collectors.toMap(Animateur::getId, Animateur::nomAffiche, (a, b) -> a));
         return entrees.stream().map(entree -> view(entree, noms::get)).toList();
@@ -117,7 +140,8 @@ public class HistoriqueResource {
                 .map(action -> new ActionView(
                         action.code(),
                         action.libelle(),
-                        action.entite() == null ? null : action.entite().name()))
+                        action.entite() == null ? null : action.entite().name(),
+                        action.export()))
                 .sorted((a, b) -> a.libelle().compareToIgnoreCase(b.libelle()))
                 .toList();
     }
@@ -148,7 +172,8 @@ public class HistoriqueResource {
      *                   here and never stored
      * @param libelle    what the action says in French, from the catalogue
      * @param entiteNom  same as {@code acteurNom}, for what the action bore upon
-     * @param champs     the field names an edit changed, never their values
+     * @param champs     the field names an edit changed, or the names of what
+     *                   an export took out — never their values
      */
     @Schema(requiredProperties = {"id"})
     public record EntreeHistoriqueView(
@@ -166,6 +191,13 @@ public class HistoriqueResource {
             String resultat,
             Integer statut) {}
 
-    /** One entry of the action inventory, for the screen's filter. */
-    public record ActionView(String code, String libelle, String entite) {}
+    /**
+     * One entry of the action inventory, for the screen's filter.
+     *
+     * @param export whether the action is a file leaving the application —
+     *               the catalogue's classification, which the screen reads
+     *               rather than guessing from the code
+     */
+    @Schema(requiredProperties = {"code", "libelle", "export"})
+    public record ActionView(String code, String libelle, String entite, boolean export) {}
 }

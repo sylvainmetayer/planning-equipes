@@ -2580,7 +2580,7 @@ export interface EntreeHistorique {
   entite: string | null;
   entiteId: string | null;
   entiteNom: string | null;
-  /** Names of the fields an edit changed — never their values. */
+  /** Names of the fields an edit changed, or of what an export took out — never their values. */
   champs: string[];
   resultat: 'SUCCES' | 'REFUS';
   /** HTTP status when the action came from a request, `null` for a scheduled one. */
@@ -2592,6 +2592,8 @@ export interface ActionHistorique {
   code: string;
   libelle: string;
   entite: string | null;
+  /** A file leaving the application — the server's catalogue decides, never the code's spelling. */
+  export: boolean;
 }
 
 export interface AlerteView {

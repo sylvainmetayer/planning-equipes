@@ -56,6 +56,22 @@
         <mat-button-toggle value="REFUS" i18n="@@historique.filter.refus">Refusé</mat-button-toggle>
       </mat-button-toggle-group>
 
+      <mat-button-toggle-group
+        [ngModel]="nature()"
+        (ngModelChange)="changeNature($event)"
+        i18n-aria-label="@@historique.filter.natureLabel"
+        aria-label="Filtrer par nature d'action"
+      >
+        <mat-button-toggle value="TOUTES" i18n="@@historique.filter.natureToutes">Toutes</mat-button-toggle>
+        <mat-button-toggle
+          value="EXPORTS"
+          i18n="@@historique.filter.exports"
+          i18n-matTooltip="@@historique.filter.exportsTooltip"
+          matTooltip="Les fichiers sortis de l'application : exports de l'administration et téléchargements depuis l'espace animateur."
+          >Exports</mat-button-toggle
+        >
+      </mat-button-toggle-group>
+
       @if (viewChanged()) {
         <button matButton type="button" (click)="reinitialiser()">
           <mat-icon>filter_alt_off</mat-icon>
@@ -101,12 +117,21 @@
             </span>
             <span class="historique-cible">{{ surQuoi(entree) }}</span>
             @if (entree.champs.length > 0) {
-              <span
-                class="historique-champs"
-                i18n-matTooltip="@@historique.champsTooltip"
-                matTooltip="Les champs qui ont changé. Leurs valeurs ne sont pas conservées."
-                >{{ entree.champs.join(', ') }}</span
-              >
+              @if (isExport(entree)) {
+                <span
+                  class="historique-champs"
+                  i18n-matTooltip="@@historique.champsExportTooltip"
+                  matTooltip="Ce que l'export a emporté. Seuls les noms sont conservés, jamais le contenu."
+                  >{{ entree.champs.join(', ') }}</span
+                >
+              } @else {
+                <span
+                  class="historique-champs"
+                  i18n-matTooltip="@@historique.champsTooltip"
+                  matTooltip="Les champs qui ont changé. Leurs valeurs ne sont pas conservées."
+                  >{{ entree.champs.join(', ') }}</span
+                >
+              }
             }
             <span class="historique-qui">{{ qui(entree) }}</span>
           </li>
