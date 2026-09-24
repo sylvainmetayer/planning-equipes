@@ -271,7 +271,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.wildfly.security:wildfly-elytron-x500` | 2.9.2.Final | Apache-2.0 |
 | `org.wildfly.security:wildfly-elytron-x500-cert` | 2.9.2.Final | Apache-2.0 |
 | `org.wildfly.security:wildfly-elytron-x500-cert-util` | 2.9.2.Final | Apache-2.0 |
-| `org.yaml:snakeyaml` | 2.6 | Apache-2.0 |
+| `org.yaml:snakeyaml` | 2.7 | Apache-2.0 |
 
 ## Paquets npm
 
