@@ -103,7 +103,7 @@ de tag, le numéro reste une décision humaine.
 PostgreSQL 18 et un Mailpit, avec l'environnement minimal de production. Il
 vérifie la disponibilité, la version exposée (celle du tag), l'uid 1000,
 qu'un `pg_dump` de la même majeure que le `postgres:` de
-`docker-compose.prod.yml` est présent, et que `/backups` est inscriptible ;
+`docker-compose.prod.yml` est présent, et que `/backup` est inscriptible ;
 en échec, les journaux du conteneur sont affichés. Ce n'est qu'ensuite que
 l'image est signée, puis que les tags lisibles sont posés — par digest, sans
 reconstruction. Une image qui ne démarre pas reste donc accessible sous
