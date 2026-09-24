@@ -371,8 +371,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   times for real and weighed 13 of the suite's 20 minutes, so `e2e-lourd.yml`
   plays those on the changes that can break them (its `paths` list, kept in
   step like the scenario one) and every night, the way `scenario-tests.yml`
-  does. Tag a spec that way when it solves a real-world fixture, never to
-  hide a slow test. `tests.yml` and `e2e.yml` also skip a push that touches
+  does. Tag a spec that way when it solves a real-world fixture, or when it
+  needs what that stack alone offers — the simulated clock
+  `passe-fige.spec.ts` sets (`e2e-suite.yml`'s `horloge-simulee` input,
+  refused on the ordinary stack, where `jour-j.spec.ts` checks the refusal) —
+  never to hide a slow test. `tests.yml` and `e2e.yml` also skip a push that touches
   only `docs/` and Markdown — minus the files a backend test reads or the
   `test` job compares to its build, which are re-included by name. Locally
   they **erase the database

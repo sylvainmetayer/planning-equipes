@@ -11,19 +11,85 @@ export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 /**
  * The Monday the fixtures are written against: every date a spec seeds is
  * spelt as if the event ran in the summer of 2026, from that week on, and is
- * moved to the future at run time by {@link decaler}.
+ * moved to the future at run time by {@link shiftDate}.
  */
-const LUNDI_DES_AMORCES = Date.UTC(2026, 6, 6);
+const FIXTURE_MONDAY = Date.UTC(2026, 6, 6);
 
 /** How far ahead of the real clock that Monday lands, at the least. */
-const AVANCE_MINIMALE_JOURS = 56;
+const MIN_LEAD_DAYS = 56;
 
-const JOUR_MS = 24 * 60 * 60 * 1000;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * The days the fixtures cover, as written: the summer of 2026 most specs
+ * seed, and the heatwave fortnight of `festival-hivernal.yaml`. Whatever the
+ * shift, none of them may land on a public holiday — see {@link SHIFT_DAYS}.
+ */
+const FIXTURE_WINDOWS: readonly [number, number][] = [
+  [Date.UTC(2026, 6, 6), Date.UTC(2026, 7, 16)],
+  [Date.UTC(2027, 1, 1), Date.UTC(2027, 1, 16)],
+];
+
+/** Anonymous Gregorian algorithm, as `JoursFeries.paques` computes it. */
+function easterSunday(year: number): number {
+  const a = year % 19;
+  const b = Math.floor(year / 100);
+  const c = year % 100;
+  const d = Math.floor(b / 4);
+  const e = b % 4;
+  const f = Math.floor((b + 8) / 25);
+  const g = Math.floor((b - f + 1) / 3);
+  const h = (19 * a + b - d - g + 15) % 30;
+  const i = Math.floor(c / 4);
+  const k = c % 4;
+  const l = (32 + 2 * e + 2 * i - h - k) % 7;
+  const m = Math.floor((a + 11 * h + 22 * l) / 451);
+  const month = Math.floor((h + l - 7 * m + 114) / 31);
+  const day = ((h + l - 7 * m + 114) % 31) + 1;
+  return Date.UTC(year, month - 1, day);
+}
+
+const HOLIDAYS_BY_YEAR = new Map<number, Set<number>>();
+
+/** The French public holidays of `year`: the eleven `JoursFeries` knows. */
+function publicHolidays(year: number): Set<number> {
+  let holidays = HOLIDAYS_BY_YEAR.get(year);
+  if (!holidays) {
+    const fixed = [
+      [1, 1],
+      [5, 1],
+      [5, 8],
+      [7, 14],
+      [8, 15],
+      [11, 1],
+      [11, 11],
+      [12, 25],
+    ].map(([month, day]) => Date.UTC(year, month - 1, day));
+    const easter = easterSunday(year);
+    // Easter Monday, Ascension Thursday, Whit Monday.
+    const movable = [1, 39, 50].map((offset) => easter + offset * DAY_MS);
+    holidays = new Set([...fixed, ...movable]);
+    HOLIDAYS_BY_YEAR.set(year, holidays);
+  }
+  return holidays;
+}
+
+function hitsAHoliday(shift: number): boolean {
+  return FIXTURE_WINDOWS.some(([first, last]) => {
+    for (let day = first; day <= last; day += DAY_MS) {
+      const shifted = day + shift * DAY_MS;
+      if (publicHolidays(new Date(shifted).getUTCFullYear()).has(shifted)) {
+        return true;
+      }
+    }
+    return false;
+  });
+}
 
 /**
  * Days every seeded date moves by: the smallest whole number of weeks that
- * puts {@link LUNDI_DES_AMORCES} at least {@link AVANCE_MINIMALE_JOURS} ahead
- * of today.
+ * puts {@link FIXTURE_MONDAY} at least {@link MIN_LEAD_DAYS} ahead of today,
+ * and lands no day of {@link FIXTURE_WINDOWS} on a public holiday.
  *
  * « Le passé est figé » (ADR 0044) is on in the e2e stack, as in production,
  * and the packaged application freezes no clock: a timeslot behind the real
@@ -35,43 +101,64 @@ const JOUR_MS = 24 * 60 * 60 * 1000;
  * Whole weeks, so a date keeps its weekday and the solver sees the very week
  * the fixture was measured on. The eight weeks keep the seeded days clear of
  * the specs that add a timeslot a month ahead or behind the real clock.
+ *
+ * No holiday, because a holiday is a hard rule for a minor (no work) and a
+ * reading of every equity figure: a shift that moved a fixture's Wednesday
+ * onto 14 July would hand the solver another problem on some weeks of the
+ * year and not on others. Skipping those weeks costs at most half a year of
+ * extra lead.
  */
-export const DECALAGE_JOURS = (() => {
-  const maintenant = new Date();
-  const aujourdhui = Date.UTC(
-    maintenant.getFullYear(),
-    maintenant.getMonth(),
-    maintenant.getDate(),
-  );
-  const retard = (aujourdhui + AVANCE_MINIMALE_JOURS * JOUR_MS - LUNDI_DES_AMORCES) / JOUR_MS;
-  return Math.max(0, Math.ceil(retard / 7)) * 7;
+export const SHIFT_DAYS = (() => {
+  const now = new Date();
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  const lag = (today + MIN_LEAD_DAYS * DAY_MS - FIXTURE_MONDAY) / DAY_MS;
+  let weeks = Math.max(0, Math.ceil(lag / 7));
+  while (hitsAHoliday(weeks * 7)) {
+    weeks++;
+  }
+  return weeks * 7;
 })();
 
 /**
- * `2026-07-12` → the same weekday {@link DECALAGE_JOURS} later, as
- * `AAAA-MM-JJ`: what a spec writes for every date of its fixture.
+ * `2026-07-12` → the same weekday {@link SHIFT_DAYS} later, as `AAAA-MM-JJ`:
+ * what a spec writes for every date of its fixture.
  *
  * A **minor's birth date goes through it too**: the minor/adult rules read the
  * age at the timeslot's date, and moving both by the same amount keeps that
  * age — a person born in 2010 stays sixteen on the seeded day whichever year
  * the suite runs. An adult's birth date needs no shift: they stay an adult.
  */
-export function decaler(date: string): string {
-  const [annee, mois, jour] = date.split('-').map(Number);
-  return new Date(Date.UTC(annee, mois - 1, jour + DECALAGE_JOURS)).toISOString().slice(0, 10);
+export function shiftDate(date: string): string {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + SHIFT_DAYS)).toISOString().slice(0, 10);
+}
+
+/**
+ * `days` days from the real clock, as `AAAA-MM-JJ` read on the local
+ * calendar — for what a spec places relative to today (a consigne's date, a
+ * window's bounds) rather than inside the seeded event.
+ */
+export function daysFromToday(days: number): string {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, '0'),
+    String(date.getDate()).padStart(2, '0'),
+  ].join('-');
 }
 
 /** `2026-07-10` → `10/07`: how most screens name a day. */
-export function jourMois(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
+export function dayMonth(date: string): string {
+  const [, month, day] = date.split('-');
+  return `${day}/${month}`;
 }
 
 /** `2026-07-10` → `Vendredi 10/07`: how the selectors and tables of a day say it. */
-export function libelleJour(date: string): string {
-  const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
-  const [annee, mois, jour] = date.split('-').map(Number);
-  return `${jours[new Date(Date.UTC(annee, mois - 1, jour)).getUTCDay()]} ${jourMois(date)}`;
+export function dayLabel(date: string): string {
+  const weekdays = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  const [year, month, day] = date.split('-').map(Number);
+  return `${weekdays[new Date(Date.UTC(year, month - 1, day)).getUTCDay()]} ${dayMonth(date)}`;
 }
 
 /** Ids of everything the suite seeds, so reseeding stays idempotent. */
@@ -87,8 +174,8 @@ export const SEED = {
   creneauId: 987001,
   /** The day after, where the free colleague holds the seat a directed échange trades against. */
   creneauAutreJour: 987002,
-  jour: decaler('2026-07-10'),
-  jourSuivant: decaler('2026-07-11'),
+  jour: shiftDate('2026-07-10'),
+  jourSuivant: shiftDate('2026-07-11'),
 } as const;
 
 /**
@@ -332,14 +419,26 @@ export async function lancerSolve(admin: APIRequestContext, seconds: number): Pr
   const lancement = await admin.post(`/api/solve/async/reference-data?seconds=${seconds}`);
   expect(lancement.status(), await lancement.text()).toBe(202);
   const { id } = (await lancement.json()) as { id: string };
+  return awaitJob(admin, id, seconds);
+}
 
+/**
+ * Waits for an already-submitted job — a full solve, an incremental one — to
+ * complete, and returns its terminal view. Fails loudly on a FAILED or
+ * CANCELLED job, and on one that outlives its budget by a minute.
+ */
+export async function awaitJob<T = JobTermine>(
+  admin: APIRequestContext,
+  id: string,
+  seconds: number,
+): Promise<T> {
   const debut = Date.now();
   for (;;) {
     const reponse = await admin.get(`/api/jobs/${id}`);
     expect(reponse.ok()).toBe(true);
     const job = (await reponse.json()) as JobTermine;
     if (job.status === 'COMPLETED') {
-      return job;
+      return job as unknown as T;
     }
     expect(job.status, job.error ?? 'job in a terminal non-completed state').not.toMatch(
       /FAILED|CANCELLED/,

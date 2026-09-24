@@ -57,7 +57,7 @@ test("l'écran avertit qu'il agit sur le planning enregistré", async ({ browser
 
 /**
  * Le jeu de données amorcé est daté de plusieurs semaines après l'horloge réelle
- * (`decaler`) : sur une exécution de CI, aucune journée n'est en cours. C'est le cas que l'écran rencontre le plus
+ * (`shiftDate`) : sur une exécution de CI, aucune journée n'est en cours. C'est le cas que l'écran rencontre le plus
  * souvent hors événement, et il doit le dire au lieu de se déclarer terminé.
  */
 test('une date sans créneau programmé se lit comme telle', async ({ browser }) => {

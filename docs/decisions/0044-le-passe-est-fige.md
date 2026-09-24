@@ -270,7 +270,7 @@ exploitation, `PASSE_FIGE=false` se réserve à une recette qui rejoue une
   l'avenir en gardant les âges des mineurs est un chantier à part ; la règle
   est couverte par `FrozenPastAcceptanceTest` sur l'horloge figée.
   *Mise à jour* : les amorces sont désormais datées depuis l'horloge réelle,
-  les naissances des mineurs avec elles (`decaler`, voir
+  les naissances des mineurs avec elles (`shiftDate`, voir
   [`developpement.md`](../developpement.md#tests-de-bout-en-bout-playwright)) ;
   la CI de bout en bout laisse le commutateur allumé, et `passe-fige.spec.ts`
   rejoue le scénario de `FrozenPastAcceptanceTest` depuis l'écran, sur la pile

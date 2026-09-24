@@ -10,7 +10,7 @@ import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import {
   choisirOption,
   contexteAdmin,
-  decaler,
+  shiftDate,
   dialogueOuvert,
   ouvrirSelect,
   pageAdmin,
@@ -31,9 +31,9 @@ const ANIMATEURS = [
   { id: 'E2E-JT-B', prenom: 'Bao', nom: 'Journee' },
   { id: 'E2E-JT-C', prenom: 'Cléo', nom: 'Journee' },
 ] as const;
-const JOUR1 = decaler('2026-07-13');
-const JOUR2 = decaler('2026-07-14');
-const JOUR3 = decaler('2026-07-15');
+const JOUR1 = shiftDate('2026-07-13');
+const JOUR2 = shiftDate('2026-07-14');
+const JOUR3 = shiftDate('2026-07-15');
 
 let admin: APIRequestContext;
 

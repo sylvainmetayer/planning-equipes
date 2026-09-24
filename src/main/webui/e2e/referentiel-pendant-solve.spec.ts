@@ -25,7 +25,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
-  decaler,
+  shiftDate,
   pageAdmin,
   seedReferentielSolveur,
 } from './support';
@@ -45,8 +45,8 @@ const STANDS: StandSeed[] = [
   { id: 'SOLV-GS2', nom: 'Stand garde deux', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
-  { id: C1, date: decaler('2026-07-20'), debut: '10:00', fin: '12:00' },
-  { id: C2, date: decaler('2026-07-21'), debut: '10:00', fin: '12:00' },
+  { id: C1, date: shiftDate('2026-07-20'), debut: '10:00', fin: '12:00' },
+  { id: C2, date: shiftDate('2026-07-21'), debut: '10:00', fin: '12:00' },
 ];
 
 /** Long enough that the assertions run while it is still solving. */

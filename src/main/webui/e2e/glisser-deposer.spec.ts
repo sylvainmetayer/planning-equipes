@@ -7,12 +7,12 @@
 // per-gesture rules are covered by DeplacementResourceTest, far more cheaply.
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, decaler, pageAdmin, planningPersiste } from './support';
+import { contexteAdmin, shiftDate, pageAdmin, planningPersiste } from './support';
 import { repartirDeLaReference } from './reference';
 
 const C1 = 987401;
 /** C1's day: ahead of the real clock, where a drop is still the operator's to make. */
-const JOUR = decaler('2026-07-22');
+const JOUR = shiftDate('2026-07-22');
 const ANIMATEURS = [
   { id: 'SOLV-DD-A', prenom: 'Anna', nom: 'Glisse', dateNaissance: '1990-01-01' },
   { id: 'SOLV-DD-B', prenom: 'Boris', nom: 'Glisse', dateNaissance: '1991-02-02' },
@@ -57,7 +57,7 @@ async function seedPlan(options: SeedOptions = {}): Promise<void> {
     ),
     ...ANIMATEURS.map(
       (animateur) =>
-        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? decaler('2012-01-01') : animateur.dateNaissance}', false);`,
+        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? shiftDate('2012-01-01') : animateur.dateNaissance}', false);`,
     ),
     `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${C1}, '${JOUR}', '10:00', '12:00');`,
     ...STANDS.map((stand, index) =>
