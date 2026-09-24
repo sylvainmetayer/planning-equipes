@@ -78,7 +78,7 @@ export class LoginPage {
   protected readonly echec = signal<'identifiants' | 'fermee' | null>(null);
 
   /** Signed in, without the `admin` role: the card explains instead of offering a login. */
-  protected readonly sansAcces = signal(false);
+  protected readonly signedInWithoutAccess = signal(false);
 
   constructor() {
     void this.checkSession();
@@ -87,10 +87,10 @@ export class LoginPage {
   /** Who is already signed in, if anyone — the login page itself is public. */
   private async checkSession(): Promise<void> {
     try {
-      this.sansAcces.set(signedInWithoutAdminRole(await this.adminApi.session()));
+      this.signedInWithoutAccess.set(signedInWithoutAdminRole(await this.adminApi.session()));
     } catch {
       // Anonymous, or the probe is unreachable: the ordinary card is right.
-      this.sansAcces.set(false);
+      this.signedInWithoutAccess.set(false);
     }
   }
 

@@ -179,7 +179,7 @@ export class McpPage implements OnInit, OnDestroy {
     this.enCours.set(true);
     this.erreur.set('');
     try {
-      this.afficherCle(await this.mcpApi.regenerateKey(this.motDePasse()));
+      this.showKey(await this.mcpApi.regenerateKey(this.motDePasse()));
     } catch {
       // Deliberately one message for every failure mode: telling a wrong
       // password from a rate-limited one would help exactly the person this
@@ -198,14 +198,14 @@ export class McpPage implements OnInit, OnDestroy {
    * the sign-in is. A 401 means too old — the page then says how to refresh
    * it, since signing in again on top of a live session changes nothing.
    */
-  protected async revelerParReconnexion(): Promise<void> {
+  protected async revealAfterRecentSignIn(): Promise<void> {
     if (this.enCours()) {
       return;
     }
     this.enCours.set(true);
     this.erreur.set('');
     try {
-      this.afficherCle(await this.mcpApi.revealKeyAfterRecentSignIn());
+      this.showKey(await this.mcpApi.revealKeyAfterRecentSignIn());
     } catch (error) {
       this.erreur.set(
         error instanceof ApiError && error.status === 401
@@ -217,7 +217,7 @@ export class McpPage implements OnInit, OnDestroy {
     }
   }
 
-  private afficherCle(reponse: CleMcp): void {
+  private showKey(reponse: CleMcp): void {
     this.cle.set(reponse.cle);
     this.pangolinAccessTokenId.set(reponse.pangolinAccessTokenId ?? '');
     this.pangolinAccessToken.set(reponse.pangolinAccessToken ?? '');
