@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigAdmin;
 import dev.sylvain.planning.config.ConfigObservabilite;
+import dev.sylvain.planning.config.ConfigOidc;
+import dev.sylvain.planning.config.ConfigSecours;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
@@ -54,18 +56,27 @@ public class ConfigResource {
 
     private final boolean mailMock;
 
+    private final ConfigOidc oidc;
+
+    private final ConfigSecours secours;
+
     @Inject
     public ConfigResource(
             ConfigObservabilite observabilite,
             DevMode devMode,
             ConfigAdmin admin,
             @ConfigProperty(name = "quarkus.application.version") String version,
-            @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock) {
+            @ConfigProperty(name = "quarkus.mailer.mock", defaultValue = "false") boolean mailMock,
+
+            ConfigOidc oidc,
+            ConfigSecours secours) {
         this.observabilite = observabilite;
         this.devMode = devMode;
         this.admin = admin;
         this.version = version;
         this.mailMock = mailMock;
+        this.oidc = oidc;
+        this.secours = secours;
     }
 
     @GET
@@ -77,7 +88,9 @@ public class ConfigResource {
                 devMode.isActive(),
                 admin.dragDropEnabled(),
                 version,
-                mailMock);
+                mailMock,
+                oidc.enabled(),
+                secours.enabled());
     }
 
     /**
@@ -94,8 +107,14 @@ public class ConfigResource {
      *                           {@code 999-SNAPSHOT} in a local build
      * @param mailMock           the mailer is mocked: a mail recorded as sent
      *                           never left the server
+     * @param authOidc           Keycloak signs people in: the login page and
+     *                           the espace offer its button. Both screens are
+     *                           reachable without a session, so neither can
+     *                           learn it from {@code /api/auth/me} in time
+     * @param authSecours        the break-glass password form is open. Says
+     *                           which door exists, never a credential of it
      */
-    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version", "mailMock"})
+    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version", "mailMock", "authOidc", "authSecours"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
@@ -103,5 +122,7 @@ public class ConfigResource {
             boolean devMode,
             boolean dragDropEnabled,
             String version,
-            boolean mailMock) {}
+            boolean mailMock,
+            boolean authOidc,
+            boolean authSecours) {}
 }

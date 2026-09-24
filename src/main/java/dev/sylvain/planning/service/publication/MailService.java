@@ -52,7 +52,6 @@ public class MailService {
 
     private static final String INDIVIDUAL_PLANNING = "mail/planning-individuel";
     private static final String PUBLISHED_PLANNING = "mail/planning-publie";
-    private static final String ACCESS_CODE = "mail/code-acces";
     /**
      * The invitation to declare one's availabilities. Public because the
      * nightly reminder of the collection reads who it reached from
@@ -172,16 +171,6 @@ public class MailService {
                 PUBLISHED_PLANNING,
                 templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"),
                 animateurId);
-    }
-
-    /** Sends the espace access code — the second factor of the espace animateur. */
-    @RequiresActiveEdition
-    public void sendAccessCode(String animateurId, String emailAnimateur, String prenom, String code) {
-        MailContent content = templates.render(
-                ACCESS_CODE,
-                productName.subject("votre code d'accès"),
-                MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "code", code));
-        metrics.send(mailer, ACCESS_CODE, templates.toMail(emailAnimateur, content), animateurId);
     }
 
     /**

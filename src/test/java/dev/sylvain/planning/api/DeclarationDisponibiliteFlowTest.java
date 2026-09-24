@@ -91,9 +91,10 @@ class DeclarationDisponibiliteFlowTest {
         aliceId = referenceData.createAnimateur(alice).getId();
 
         mailbox.clear();
-        session = EspaceSessions.open(mailbox, aliceToken(), EMAIL_ALICE);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        session = EspaceSessions.open(EMAIL_ALICE);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
         closeWindow();
     }
 
