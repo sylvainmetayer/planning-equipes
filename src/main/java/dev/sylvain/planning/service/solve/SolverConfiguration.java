@@ -276,12 +276,15 @@ final class SolverConfiguration {
 
     /**
      * {@link #resolveSolverFactory(Long)}, for one problem: a problem large
-     * enough for {@link LargeProblemConstruction} gets a factory of its own,
-     * built from the same XML with its construction sampled and the same
-     * termination as the shared one would have had.
+     * enough for {@link LargeProblemConstruction}, or held to a hard run of days
+     * ({@link HardRunCapSearch}), gets a factory of its own, built from the same
+     * XML with its construction sampled or its ruin-and-recreate made rare, and
+     * the same termination as the shared one would have had.
      */
     SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride, PlanningEvenement problem) {
-        if (!LargeProblemConstruction.applies(problem)) {
+        boolean large = LargeProblemConstruction.applies(problem);
+        boolean hardRunCap = HardRunCapSearch.applies(problem);
+        if (!large && !hardRunCap) {
             return resolveSolverFactory(secondsLimitOverride);
         }
         SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
@@ -292,7 +295,12 @@ final class SolverConfiguration {
         } else {
             applyTermination(solverConfig, secondsLimitOverride, 0L);
         }
-        LargeProblemConstruction.adapt(solverConfig);
+        if (large) {
+            LargeProblemConstruction.adapt(solverConfig);
+        }
+        if (hardRunCap) {
+            HardRunCapSearch.adapt(solverConfig);
+        }
         return SolverFactory.create(solverConfig);
     }
 
