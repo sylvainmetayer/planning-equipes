@@ -550,7 +550,7 @@ public class AnimateurCsvImportService {
                 + "personnes de " + usage.contraintesAdHoc() + " contrainte(s) ad hoc. La "
                 + "suppression emporte aussi, définitivement, ce qu'elles ont saisi : déclaration "
                 + "de disponibilités, accusé de réception du planning publié, échanges de la foire "
-                + "au planning, code d'accès à l'espace animateur, compétences et souhaits.";
+                + "au planning, compétences et souhaits.";
     }
 
     /** The lookups a row is resolved by, built once for the whole file. */

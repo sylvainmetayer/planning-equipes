@@ -5,9 +5,9 @@ personne administre, les animateurs consultent leur planning par un lien. Ce
 document rassemble ce que le service applique **de lui-même** quand on
 l'ouvre sur Internet, et ce qui reste à la charge du déploiement.
 
-L'authentification (session admin, jeton + code de l'espace animateur, clé
-MCP) est décrite dans [`api.md`](api.md) et [`mcp.md`](mcp.md) ; on ne la
-répète pas ici.
+L'authentification (Keycloak pour l'administration, l'espace animateur et MCP,
+porte de secours, clé MCP) est résumée plus bas et détaillée dans
+[`keycloak.md`](keycloak.md), [`api.md`](api.md) et [`mcp.md`](mcp.md).
 
 ## En-têtes de sécurité navigateur
 
@@ -113,26 +113,47 @@ Ces plafonds ne remplacent pas ceux du reverse proxy, qui doit rester la
 première ligne (limitation de débit par IP, plafond de connexions par client,
 délais d'attente).
 
+## Authentification : Keycloak, et la porte de secours
+
+Depuis l'[ADR 0049](decisions/0049-keycloak-obligatoire-comptes-nominatifs.md),
+tout le monde entre par **Keycloak** — administrateurs, animateurs, clients MCP
+en OAuth2 — et le realm impose un second facteur au rôle `admin`. Mise en place
+et exploitation : [`keycloak.md`](keycloak.md). Ce qui compte ici :
+
+- **Refus par défaut.** `/api/*` exige le rôle `admin`, nommé : un animateur
+  connecté reçoit `403`. Les seules routes ouvertes sans ce rôle sont listées
+  dans `application.properties`, chacune avec sa raison, et
+  `PolitiquesHttpStructuralTest` refuse toute nouvelle exception qui n'y
+  figure pas.
+- **Le rôle ordinaire `user` n'ouvre rien**, ni politique HTTP ni espace : il
+  est donné à tout compte du realm, et un privilège bâti dessus atteindrait
+  chaque futur compte sans que personne ne l'ait accordé.
+- **L'espace animateur** exige le rôle `animateur` et une adresse
+  **vérifiée** par le realm, égale à celle de la fiche que le lien désigne. Une
+  adresse non vérifiée est une adresse que n'importe qui ayant pu créer un
+  compte aurait pu taper.
+- **Les droits fins vivent dans l'application** : tables `compte` et
+  `habilitation`, par édition, avec expiration, jamais supprimées. Désactiver
+  un compte dans l'application lui retire tous ses rôles, ceux du realm
+  compris — l'interrupteur que l'organisateur tire sans la console Keycloak.
+  Les rôles délégués (RH, responsable de stand) n'ouvrent encore aucune route.
+- **Le masquage côté écran n'est pas une protection.** Cacher une entrée de
+  menu ou garder une route Angular est du confort ; la protection est la
+  politique HTTP et la projection servie par l'API.
+
+**La porte de secours.** Le compte embarqué `admin` / `ADMIN_PASSWORD` et son
+formulaire ne servent que le jour où le realm ne répond plus. Fermée par défaut
+(`ADMIN_SECOURS_ENABLED=false`), `/j_security_check` répond `409` sans lire le
+mot de passe, et une session ouverte pendant l'incident perd son rôle dès la
+fermeture. Ouverte, c'est la porte la plus faible de l'application — un mot de
+passe partagé, sans second facteur — et l'application l'écrit dans son journal
+à chaque démarrage. À ouvrir le temps d'un incident, à refermer ensuite.
+
+**Révéler la clé MCP** demande plus qu'une session : pour une session
+Keycloak, une connexion au realm de moins de cinq minutes (`auth_time`) ; pour
+le compte de secours, le mot de passe retapé.
+
 ## Limitation de débit
-
-`POST /api/espace-animateur/{jeton}/code` est le seul endpoint public qui
-**déclenche un envoi de mail**. Sans plafond, quiconque tient le lien d'un
-animateur noie sa boîte sous les codes, épuise le quota du serveur SMTP, et
-remet à cinq le compteur d'essais du code à chaque demande.
-
-Ce qui est compté, ce sont les codes **jamais utilisés** : ouvrir la session
-avec le code reçu efface le compteur. Un animateur qui se connecte
-normalement, même souvent, n'atteint donc jamais le plafond — seule
-l'accumulation de demandes sans suite, qui est exactement l'abus, y mène. Au
-delà, la réponse est `429` avec un `Retry-After`.
-
-| Variable | Défaut | Usage |
-| --- | --- | --- |
-| `ESPACE_CODE_MAX_DEMANDES` | `3` | Codes non utilisés tolérés par animateur et par fenêtre |
-| `ESPACE_CODE_FENETRE` | `PT10M` | Durée de la fenêtre, calée sur la validité d'un code |
-
-Le compteur vit en mémoire (application mono-instance), comme le verrouillage
-de la révélation de clé MCP.
 
 ### Débit des déclarations de disponibilités
 
@@ -299,11 +320,12 @@ plafond selon l'usage.
 > puisque le filtre passe avant l'authentification. Renseignez
 > `CONNEXION_PROXYS_FIABLES` en même temps que `PLANNING_MCP_API_KEY`.
 
-### Verrouillage du form login admin
+### Verrouillage du compte de secours
 
-L'application n'a qu'un compte, `admin`, sans second facteur : une seule paire
+Le compte de secours, `admin`, n'a pas de second facteur : une seule paire
 d'identifiants ouvre les données personnelles de ~150 personnes, mineurs
-compris. `/j_security_check` acceptait pourtant les tentatives au rythme du
+compris. Fermé par défaut ; quand il s'ouvre pour un incident, ce verrou le
+garde. `/j_security_check` acceptait pourtant les tentatives au rythme du
 réseau — alors que la révélation de la clé MCP se verrouillait déjà au bout de
 cinq essais.
 
@@ -388,8 +410,8 @@ resynchronisation.
 
 ### Pourquoi un jeton de plus plutôt que le jeton d'espace
 
-Le jeton d'espace ne suffit à rien seul aujourd'hui : il permet de *demander*
-un code par e-mail, et c'est tout. Le réutiliser ici en aurait fait, sur cette
+Le jeton d'espace ne suffit à rien seul : il faut encore la session Keycloak
+de la personne dont la fiche porte l'adresse. Le réutiliser ici en aurait fait, sur cette
 route, une preuve d'accès complète et durable au planning nominatif sans second
 facteur — et un lien imprimé sur un PDF circule.
 
@@ -417,7 +439,7 @@ cette route — ni l'inverse. `AbonnementIcsTest` vérifie les deux sens.
 **L'animateur révoque lui-même**, depuis son espace (« cette adresse a fuité,
 la remplacer ») : l'adresse n'est jamais affichée ailleurs que là, donc son
 porteur est la seule personne en position de savoir qu'elle a fuité, et
-atteindre ce bouton coûte déjà le jeton d'espace **et** le code e-mail — une
+atteindre ce bouton coûte déjà le jeton d'espace **et** la session Keycloak — une
 preuve plus forte que celle que l'abonnement demandera jamais. La rotation tue
 l'ancienne adresse immédiatement et n'affecte pas le jeton d'espace : le lien
 déjà imprimé sur un PDF survit.
@@ -443,11 +465,10 @@ reste : le jeton ne part dans le `Referer` d'aucune navigation sortante.
 
 ### Pas de limiteur de débit ici, et pourquoi
 
-`AdminLoginLimiter`, `CodeRequestLimiter` et `McpRateLimiter` bornent des choses
-précises : des tentatives d'authentification, un envoi de mail, et — pour le
-dernier — l'usage d'une clé partagée qui ouvre tout, plus les essais pour la
-deviner. Cette route ne fait rien de tout cela — elle
-lit, sans effet de bord, sur un jeton qui n'ouvre qu'un document.
+`AdminLoginLimiter` et `McpRateLimiter` bornent des choses précises : des
+tentatives d'authentification et — pour le second — l'usage d'une clé partagée
+qui ouvre tout, plus les essais pour la deviner. Cette route ne fait rien de
+tout cela — elle lit, sans effet de bord, sur un jeton qui n'ouvre qu'un document.
 
 Un plafond par animateur y serait **contre-productif** : un abonnement se
 resynchronise tout seul, depuis un téléphone, un ordinateur et une tablette à
@@ -617,7 +638,7 @@ Ce qu'elle change :
 - **PostgreSQL n'est plus publié du tout** — seul le réseau interne le voit ;
 - **ni pgAdmin ni Mailpit** ;
 - **aucune valeur par défaut sur les secrets** : `DB_PASSWORD`,
-  `ADMIN_PASSWORD`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et
+  `OIDC_CLIENT_SECRET`, `SESSION_ENCRYPTION_KEY`, `PUBLIC_URL`, `MAIL_HOST` et
   `MAIL_FROM` font échouer le démarrage si l'environnement ne les fournit pas,
   plutôt que de laisser passer un identifiant de développement ;
 - **un répertoire de sauvegarde** de l'hôte (`./backup`) monté sur `BACKUP_DIR`, où la tâche de nuit écrit
@@ -652,7 +673,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
 | **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, les deux plafonds par adresse ignorent `X-Forwarded-For` et comptent tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. **Obligatoire dès que `/mcp` sert** : ce plafond-là compte chaque requête, pas les seuls échecs. **Obligatoire aussi dès qu'un lien d'affichage mural existe** : sans elle, quelques requêtes au hasard verrouillent l'adresse du proxy, et un écran nouvellement branché — ou relancé après un redémarrage de l'application — n'affiche rien jusqu'à la fin du verrou. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
-| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP, affichage mural) ; le reste — exports, résolution, API — n'en a pas |
+| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (compte de secours, déclarations et consultations de l'espace, serveur MCP, affichage mural) ; le reste — exports, résolution, API — n'en a pas. Keycloak a ses propres protections contre la force brute, à activer dans le realm |
 | Journaliser sans les URL de l'espace animateur, **de l'abonnement ICS ni de l'affichage mural**, ou purger ces journaux | Les trois jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, l'abonnement y revient à chaque synchronisation d'un agenda et l'affichage mural chaque minute |
 | Ne jamais router le port 9000 (métriques), ni le publier sur l'hôte | Il n'a pas d'authentification : il est protégé par le réseau, pas par un mot de passe. Un scraper hors de la pile passe par un tunnel ou un réseau privé, pas par le proxy public |
 | Réserver `/q/health/*` à la source de la supervision, si elle est connue | Rien de sensible n'y est lu, mais une sonde n'a pas à être joignable par le monde entier ; le `healthcheck` du compose passe par la boucle locale et n'en dépend pas |
@@ -660,9 +681,13 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 
 ### Avant d'ouvrir : la liste courte
 
-- [ ] `ADMIN_PASSWORD` long, généré, propre à ce déploiement — l'application
-  **refuse de démarrer** en production s'il est resté sur l'exemple, `DB_PASSWORD`
-  compris ;
+- [ ] Keycloak en place et `OIDC_*` renseignées ([`keycloak.md`](keycloak.md)) :
+  `OIDC_CLIENT_SECRET` d'au moins 32 caractères, sinon l'application refuse de
+  démarrer ; second facteur des administrateurs vérifié sur une vraie
+  connexion ;
+- [ ] `ADMIN_SECOURS_ENABLED` laissé à `false`, et `ADMIN_PASSWORD` long,
+  généré, propre à ce déploiement quand même — resté sur l'exemple, comme
+  `DB_PASSWORD`, il fait **refuser le démarrage** ;
 - [ ] `SESSION_ENCRYPTION_KEY` définie (≥ 16 caractères) et gardée ;
 - [ ] `DB_PASSWORD` changé ;
 - [ ] `PUBLIC_URL` en `https://` ;
@@ -671,9 +696,6 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
       `CONNEXION_PROXYS_FIABLES` avec elle (voir ci-dessus) ;
 - [ ] `CONNEXION_PROXYS_FIABLES` renseignée avant de créer un lien
       d'affichage mural, derrière un proxy (voir ci-dessus) ;
-- [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
-      proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
-      démarrage échoue sans lui) ;
 - [ ] variables `LEGAL_*` renseignées : `/mentions-legales` est public, et une
       page de mentions légales vide vaut absence de mentions légales. Cinq
       d'entre elles — éditeur, hébergeur, contact, base légale, conservation —

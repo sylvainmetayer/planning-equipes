@@ -117,7 +117,7 @@ public class DeclarationDisponibiliteService {
      * Too many declarations in the window (see {@link DeclarationRateLimiter}).
      * Not a {@link BusinessError}: that hierarchy maps to 400/404/409, and a
      * caller told to slow down needs a 429 and a {@code Retry-After} — the same
-     * shape {@code EspaceAccesService.TooManyRequests} already carries.
+     * shape the MCP rate limiter answers with.
      */
     public static class TooManyRequests extends RuntimeException {
 

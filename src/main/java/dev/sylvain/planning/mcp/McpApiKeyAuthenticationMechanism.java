@@ -14,15 +14,22 @@ import jakarta.inject.Inject;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Set;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
  * Header-based authentication for the MCP endpoints (issue #107: "permettre
  * de définir des headers HTTP [...] et possibilité d'ajouter un MDP via
- * header basic auth par exemple"). There is no user/session model in this
- * application (see {@code ConstraintResource.ConstraintToggleUpdate}'s
- * javadoc), so a single shared API key compared against a configurable
- * header is the simplest fit — full OAuth2 would need a user/consent model
- * this app doesn't have.
+ * header basic auth par exemple"): a shared API key compared against a
+ * configurable header.
+ *
+ * <p>Since ADR 0049, {@code /mcp} is also an OAuth2 resource server — the
+ * {@code mcp} OIDC tenant, validating bearer tokens and their audience. The two
+ * coexist on purpose: the key stays the road for a deployment behind an access
+ * proxy that consumes {@code Authorization} for its own account, where a bearer
+ * token has no fallback header. This mechanism keeps first say (priority 2000),
+ * so a caller presenting a valid key never reaches the tenant; what changes is
+ * {@link #getChallenge}, which stands aside so the token path can advertise
+ * itself.</p>
  *
  * <p>Implemented as a Quarkus {@link HttpAuthenticationMechanism} — paired
  * with {@code quarkus.http.auth.permission.mcp.paths=/mcp/*} in
@@ -53,12 +60,27 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
 
     static final String PRINCIPAL = "mcp";
 
+    /** {@code AuthResource#oidcLogin}, which must be answered a redirect, not a 401. */
+    private static final String CHEMIN_CONNEXION_OIDC = "/api/auth/oidc/";
+
     private final ConfigMcp config;
 
     @Inject
     McpApiKeyAuthenticationMechanism(ConfigMcp config) {
         this.config = config;
     }
+
+    /**
+     * Whether the {@code mcp} OIDC tenant is on. A plain property rather than
+     * {@code ConfigOidc}: this runs on the authentication path of every
+     * request.
+     */
+    @ConfigProperty(name = "quarkus.oidc.mcptransport.tenant-enabled")
+    boolean oidcMcpTenantEnabled;
+
+    /** The default tenant, which owns the browser login route. */
+    @ConfigProperty(name = "quarkus.oidc.tenant-enabled")
+    boolean oidcTenantEnabled;
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {
@@ -104,9 +126,32 @@ public class McpApiKeyAuthenticationMechanism implements HttpAuthenticationMecha
         });
     }
 
+    /**
+     * A bare 401 everywhere — <b>except</b> where another mechanism has
+     * something to say that a client needs. This mechanism wins every challenge
+     * by priority, which is what {@code /api} wants: never a 302 to an HTML
+     * page (issue #165). It is exactly wrong for two routes:
+     *
+     * <ul>
+     *   <li><b>{@code /mcp} with the OIDC tenant on.</b> MCP clients discover
+     *       their authorization server from the {@code resource_metadata}
+     *       parameter of the 401's {@code WWW-Authenticate} challenge
+     *       (RFC 9728). A bare 401 carries none, and the OAuth2 path would
+     *       be configured, correct, and unusable.</li>
+     *   <li><b>The Keycloak login route</b>, whose whole purpose is the
+     *       redirect to the authorization endpoint.</li>
+     * </ul>
+     *
+     * <p>Both conditioned on the tenant being on: with Keycloak off there is
+     * nothing behind them, and standing aside would hand the route to form
+     * auth — whose challenge is the 302 issue #165 exists to prevent.</p>
+     */
     @Override
     public Uni<ChallengeData> getChallenge(RoutingContext context) {
-        return Uni.createFrom().item(new ChallengeData(401));
+        String path = context.request().path();
+        boolean cedeLaMain = oidcTenantEnabled && path.startsWith(CHEMIN_CONNEXION_OIDC)
+                || oidcMcpTenantEnabled && path.startsWith("/mcp");
+        return cedeLaMain ? Uni.createFrom().nullItem() : Uni.createFrom().item(new ChallengeData(401));
     }
 
     /**

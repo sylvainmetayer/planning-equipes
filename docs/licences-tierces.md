@@ -32,7 +32,7 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 198 | 4 |
+| Apache-2.0 | 223 | 4 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
 | CC0-1.0 | 2 | — |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **227** | **89** |
+| **Total** | **252** | **89** |
 
 ## Dépendances Java
 
@@ -67,6 +67,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.2 | Apache-2.0 |
+| `com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-base` | 2.22.2 | Apache-2.0 |
+| `com.fasterxml.jackson.jakarta.rs:jackson-jakarta-rs-yaml-provider` | 2.22.2 | Apache-2.0 |
+| `com.fasterxml.jackson.module:jackson-module-jakarta-xmlbind-annotations` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.5 | LGPL-2.1 ou MPL-2.0 |
@@ -114,6 +117,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
 | `io.quarkus.qute:qute-core` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.resteasy.reactive:resteasy-reactive` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive-client` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.resteasy.reactive:resteasy-reactive-common` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.resteasy.reactive:resteasy-reactive-common-types` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.resteasy.reactive:resteasy-reactive-jackson` | 3.39.4 | Apache-2.0 |
@@ -139,14 +143,23 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-jackson` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-jdbc-postgresql` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-jsonp` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-keycloak-admin-client-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-keycloak-admin-rest-client` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-mailer` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-micrometer` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-micrometer-registry-prometheus` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-mutiny` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-narayana-jta` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-netty` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-oidc` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-oidc-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-proxy-registry` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-qute` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-rest` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-client` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-client-config` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-client-jackson` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-client-jaxrs` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-rest-common` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-rest-jackson` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-rest-jackson-common` | 3.39.4 | Apache-2.0 |
@@ -159,6 +172,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-security-runtime-spi` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-smallrye-context-propagation` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-smallrye-health` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-smallrye-jwt-build` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-smallrye-openapi` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-swagger-ui` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-tls-registry` | 3.39.4 | Apache-2.0 |
@@ -169,6 +183,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-vertx-http` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-vertx-latebound-mdc-provider` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-virtual-threads` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-websockets-next-spi` | 3.39.4 | Apache-2.0 |
 | `io.sentry:sentry` | 8.57.0 | MIT |
 | `io.smallrye.certs:smallrye-private-key-pem-parser` | 0.9.4 | Apache-2.0 |
 | `io.smallrye.classfile:jdk-classfile-backport` | 26 | GPL-2.0-with-classpath-exception |
@@ -198,9 +213,11 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye.reactive:smallrye-mutiny-vertx-runtime` | 3.23.1 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-mutiny-vertx-uri-template` | 3.23.1 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-mutiny-vertx-web` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-web-client` | 3.23.1 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-mutiny-vertx-web-common` | 3.23.1 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-reactive-converter-api` | 3.0.3 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-reactive-converter-mutiny` | 3.0.3 | Apache-2.0 |
+| `io.smallrye.stork:stork-api` | 2.7.10 | Apache-2.0 |
 | `io.smallrye:jandex` | 3.6.0 | Apache-2.0 |
 | `io.smallrye:smallrye-context-propagation` | 2.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-context-propagation-api` | 2.3.0 | Apache-2.0 |
@@ -210,6 +227,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye:smallrye-health` | 4.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-health-api` | 4.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-health-provided-checks` | 4.3.0 | Apache-2.0 |
+| `io.smallrye:smallrye-jwt` | 4.6.3 | Apache-2.0 |
+| `io.smallrye:smallrye-jwt-build` | 4.6.3 | Apache-2.0 |
+| `io.smallrye:smallrye-jwt-common` | 4.6.3 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-core` | 4.3.5 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-model` | 4.3.5 | Apache-2.0 |
 | `io.vertx:vertx-auth-common` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
@@ -237,12 +257,15 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `jakarta.validation:jakarta.validation-api` | 3.1.1 | Apache-2.0 |
 | `jakarta.ws.rs:jakarta.ws.rs-api` | 3.1.0 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
 | `jakarta.xml.bind:jakarta.xml.bind-api` | 4.0.5 | EDL-1.0 |
+| `org.bitbucket.b_c:jose4j` | 0.9.6 | Apache-2.0 |
 | `org.crac:crac` | 1.5.0 | BSD-2-Clause |
 | `org.eclipse.angus:angus-activation` | 2.0.3 | EDL-1.0 |
 | `org.eclipse.microprofile.config:microprofile-config-api` | 3.1.1 | Apache-2.0 |
 | `org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api` | 1.3 | Apache-2.0 |
 | `org.eclipse.microprofile.health:microprofile-health-api` | 4.0.1 | Apache-2.0 |
+| `org.eclipse.microprofile.jwt:microprofile-jwt-auth-api` | 2.1 | Apache-2.0 |
 | `org.eclipse.microprofile.openapi:microprofile-openapi-api` | 4.1.1 | Apache-2.0 |
+| `org.eclipse.microprofile.rest.client:microprofile-rest-client-api` | 4.0 | Apache-2.0 |
 | `org.eclipse.parsson:parsson` | 1.1.9 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
 | `org.flywaydb:flyway-core` | 12.0.0 | Apache-2.0 |
 | `org.glassfish.expressly:expressly` | 6.0.0 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
@@ -261,6 +284,8 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.jboss:jboss-transaction-spi` | 8.0.0.Final | Public Domain |
 | `org.jctools:jctools-core` | 4.0.5 | Apache-2.0 |
 | `org.jspecify:jspecify` | 1.0.0 | Apache-2.0 |
+| `org.keycloak:keycloak-admin-client` | 26.0.12 | Apache-2.0 |
+| `org.keycloak:keycloak-client-common-synced` | 26.0.12 | Apache-2.0 |
 | `org.latencyutils:LatencyUtils` | 2.0.3 | CC0-1.0 |
 | `org.mcpjava:mcp-server-api` | 1.0.0 | Apache-2.0 |
 | `org.postgresql:postgresql` | 42.7.13 | BSD-2-Clause |

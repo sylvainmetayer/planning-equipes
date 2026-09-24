@@ -6,7 +6,6 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.NouvelleDeclaration;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
-import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
@@ -17,7 +16,6 @@ import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import io.quarkus.logging.Log;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -26,12 +24,9 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
-import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.NewCookie;
 import jakarta.ws.rs.core.Response;
-import jakarta.ws.rs.core.UriInfo;
 import java.util.List;
 
 /**
@@ -40,25 +35,20 @@ import java.util.List;
  * {@link AbonnementIcsResource}): every route carries the animateur's
  * access token, printed as a link on their individual PDF planning.
  *
- * <p>The guards do all the plumbing, declaratively. {@link TokenRequired}
- * (bootstrap routes: code request, session opening) resolves the token — 404
- * unknown, nothing must help guessing one — and binds the owner's edition to
- * the request, so no {@code X-Edition-Id} header is ever trusted here.
- * {@link EspaceSessionRequired} (every other route) adds the session check on
- * top: since the espace serves the planning for download, the link alone is
- * not enough — a session opened by e-mail code (see {@link EspaceAccesService})
- * rides in the {@code planning-espace} HttpOnly cookie, and a valid token without
- * it answers 401 (the interface then shows the code screen). The methods below
- * only contain business calls: identity and edition come from the guards.</p>
+ * <p>The guards do all the plumbing, declaratively. {@link EspaceSessionRequired}
+ * resolves the token — 404 unknown, nothing must help guessing one — binds the
+ * owner's edition to the request, so no {@code X-Edition-Id} header is ever
+ * trusted here, and requires a Keycloak session whose verified address is the
+ * one on that fiche (see {@link SessionEspaceFilter}): since the espace serves
+ * the planning for download, the link alone is not enough, and a valid token
+ * without that session answers 401 (the interface then offers the sign-in
+ * button). The methods below only contain business calls: identity and
+ * edition come from the guards.</p>
  */
 @Path("/espace-animateur")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
 public class EspaceAnimateurResource {
-
-    static final String COOKIE_SESSION = "planning-espace";
-
-    private final EspaceAccesService espaceAccesService;
 
     private final EspaceAnimateurService espaceAnimateurService;
 
@@ -80,7 +70,6 @@ public class EspaceAnimateurResource {
 
     @Inject
     public EspaceAnimateurResource(
-            EspaceAccesService espaceAccesService,
             EspaceAnimateurService espaceAnimateurService,
             DemandeEchangeService demandeEchangeService,
             DeclarationDisponibiliteService declarationService,
@@ -90,7 +79,6 @@ public class EspaceAnimateurResource {
             ConfirmationPlanningService confirmationService,
             ReferenceDataService referenceDataService,
             TeammateRequestService teammateRequestService) {
-        this.espaceAccesService = espaceAccesService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.demandeEchangeService = demandeEchangeService;
         this.declarationService = declarationService;
@@ -364,73 +352,6 @@ public class EspaceAnimateurResource {
         demandeEchangeService.cancel(animateurCourant(), demandeId);
         return Response.noContent().build();
     }
-
-    /**
-     * Sends a fresh access code to the animateur's e-mail address. One of the
-     * two bootstrap routes that only need the token: it is how a session gets
-     * created in the first place.
-     */
-    @POST
-    @Path("/{jeton}/code")
-    @TokenRequired
-    public Response requestCode() {
-        try {
-            return Response.ok(espaceAccesService.requestCode(animateurCourant()))
-                    .build();
-        } catch (EspaceAccesService.TooManyRequests e) {
-            return Response.status(429)
-                    .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
-                    .entity(new ValidationError(e.getMessage()))
-                    .build();
-        } catch (IllegalArgumentException e) {
-            return badRequest(e);
-        } catch (RuntimeException e) {
-            Log.errorf(e, "Failed to mail an espace access code");
-            return Response.serverError()
-                    .entity(new ValidationError("L'envoi du code a échoué : réessayez dans quelques instants."))
-                    .build();
-        }
-    }
-
-    /**
-     * Exchanges a valid code for the durable session cookie.
-     *
-     * <p>{@code Secure} is added as soon as the visitor reached the
-     * application over HTTPS — the scheme of the request the visitor really
-     * made, so a TLS-terminating reverse proxy announcing
-     * {@code X-Forwarded-Proto: https} counts (see
-     * {@code quarkus.http.proxy.proxy-address-forwarding}). Without it the
-     * 30-day session cookie would also travel on a plain http request to the
-     * same host, which is exactly what an attacker on the network needs.
-     * Attaching it unconditionally instead would make the espace unusable on
-     * the http-only local stack, so the flag follows the connection.</p>
-     */
-    @POST
-    @Path("/{jeton}/session")
-    @TokenRequired
-    public Response openSession(CodeSession codeSession, @Context UriInfo uriInfo) {
-        String session =
-                espaceAccesService.openSession(animateurCourant(), codeSession == null ? null : codeSession.code());
-        // The code was right: from here on the caller is the animateur.
-        editionRequestScope.markIdentityProven();
-        NewCookie cookie = new NewCookie.Builder(COOKIE_SESSION)
-                .value(session)
-                .path("/api/espace-animateur")
-                .httpOnly(true)
-                .sameSite(NewCookie.SameSite.STRICT)
-                .secure(encryptedRequest(uriInfo))
-                .maxAge((int) EspaceAccesService.VALIDITE_SESSION.toSeconds())
-                .build();
-        return Response.noContent().cookie(cookie).build();
-    }
-
-    /** True when the visitor's own request was HTTPS, proxy headers included. */
-    private static boolean encryptedRequest(UriInfo uriInfo) {
-        return "https".equalsIgnoreCase(uriInfo.getRequestUri().getScheme());
-    }
-
-    /** Body of the session opener: the code received by e-mail. */
-    public record CodeSession(String code) {}
 
     /** The animateur the guard resolved from the URL token — never {@code null} once a guard ran. */
     private String animateurCourant() {

@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.mcp.McpPrompts;
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
+import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
@@ -19,6 +20,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
+import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -39,6 +41,13 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * outlives the session it was copied from. Re-typing the password binds the
  * reveal to a person present at the keyboard, which is exactly the threat
  * model — not an anonymous attacker, who never gets this far.</p>
+ *
+ * <p>A Keycloak session has no password this application could re-ask
+ * (ADR 0049). The same fact — someone at the keyboard, just now — is read off
+ * the token instead: its {@code auth_time}, the moment the person last proved
+ * who they are to the realm, second factor included, must be less than
+ * {@link #FRAICHEUR_CONNEXION} old. A session older than that is told to sign
+ * out and back in. The password path stays for the break-glass account.</p>
  */
 /*
  * Explicitly @ApplicationScoped, unlike the neighbouring resources: the
@@ -63,6 +72,11 @@ public class McpResource {
 
     static final Duration DUREE_BLOCAGE = Duration.ofMinutes(5);
 
+    /** How recent a Keycloak authentication must be to reveal the cle. */
+    static final Duration FRAICHEUR_CONNEXION = Duration.ofMinutes(5);
+
+    private final SecurityIdentity identity;
+
     private final ConfigMcp mcp;
 
     private final McpPrompts prompts;
@@ -76,9 +90,11 @@ public class McpResource {
 
     @Inject
     public McpResource(
+            SecurityIdentity identity,
             ConfigMcp mcp,
             McpPrompts prompts,
             @ConfigProperty(name = "quarkus.security.users.embedded.users.admin") Optional<String> motDePasseAdmin) {
+        this.identity = identity;
         this.mcp = mcp;
         this.prompts = prompts;
         this.motDePasseAdmin = motDePasseAdmin;
@@ -96,7 +112,10 @@ public class McpResource {
     @GET
     @Path("/statut")
     public StatutMcp statut() {
-        return new StatutMcp(mcp.apiKey().isPresent() && !mcp.apiKey().get().isBlank(), mcp.apiKeyHeader());
+        return new StatutMcp(
+                mcp.apiKey().isPresent() && !mcp.apiKey().get().isBlank(),
+                mcp.apiKeyHeader(),
+                keycloakSession().isPresent());
     }
 
     /**
@@ -114,12 +133,26 @@ public class McpResource {
         return prompts.catalogue();
     }
 
-    /** Exchanges the admin password for the API cle. {@code 401} on a wrong password, {@code 429} once locked out. */
+    /**
+     * Exchanges the admin password — or, for a Keycloak session, a recent
+     * sign-in — for the API cle. {@code 401} on a wrong password or a sign-in
+     * too old, {@code 429} once locked out.
+     */
     @POST
     @Path("/cle")
     public synchronized Response reveal(DemandeRevelation demande) {
         if (blocageJusqua != null && Instant.now().isBefore(blocageJusqua)) {
             return Response.status(429).build();
+        }
+        Optional<JsonWebToken> jeton = keycloakSession();
+        if (jeton.isPresent()) {
+            if (!recentSignIn(jeton.get(), Instant.now())) {
+                return Response.status(Response.Status.UNAUTHORIZED)
+                        .entity(new ValidationError("Déconnectez-vous puis reconnectez-vous : révéler la clé exige"
+                                + " une connexion de moins de " + FRAICHEUR_CONNEXION.toMinutes() + " minutes."))
+                        .build();
+            }
+            return revealedKey();
         }
         String attendu = motDePasseAdmin.orElse("");
         String presente = demande == null || demande.motDePasse() == null ? "" : demande.motDePasse();
@@ -132,6 +165,10 @@ public class McpResource {
         }
         essaisRates = 0;
         blocageJusqua = null;
+        return revealedKey();
+    }
+
+    private Response revealedKey() {
         if (mcp.apiKey().isEmpty() || mcp.apiKey().get().isBlank()) {
             // Right password, nothing to reveal: 404 rather than an empty
             // string, so the page can tell "clé absente" from "clé hasNoChange".
@@ -144,14 +181,41 @@ public class McpResource {
                 .build();
     }
 
+    /** The Keycloak token of the caller, empty for the break-glass account or no session. */
+    private Optional<JsonWebToken> keycloakSession() {
+        return identity != null && !identity.isAnonymous() && identity.getPrincipal() instanceof JsonWebToken jeton
+                ? Optional.of(jeton)
+                : Optional.empty();
+    }
+
+    /**
+     * Whether the person proved who they are to the realm less than
+     * {@link #FRAICHEUR_CONNEXION} ago. A token without {@code auth_time}
+     * cannot say, and is refused.
+     */
+    static boolean recentSignIn(JsonWebToken jeton, Instant maintenant) {
+        Object authTime = jeton.getClaim("auth_time");
+        if (!(authTime instanceof Number secondes)) {
+            return false;
+        }
+        return Instant.ofEpochSecond(secondes.longValue())
+                .plus(FRAICHEUR_CONNEXION)
+                .isAfter(maintenant);
+    }
+
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
     private static boolean constantTimeEquals(String attendu, String presente) {
         return MessageDigest.isEqual(
                 attendu.getBytes(StandardCharsets.UTF_8), presente.getBytes(StandardCharsets.UTF_8));
     }
 
-    @Schema(requiredProperties = {"configuree"})
-    public record StatutMcp(boolean configuree, String header) {}
+    /**
+     * @param revelationParReconnexion the caller holds a Keycloak session: the
+     *                                 cle is revealed after a recent sign-in,
+     *                                 not against a password
+     */
+    @Schema(requiredProperties = {"configuree", "revelationParReconnexion"})
+    public record StatutMcp(boolean configuree, String header, boolean revelationParReconnexion) {}
 
     public record DemandeRevelation(String motDePasse) {}
 

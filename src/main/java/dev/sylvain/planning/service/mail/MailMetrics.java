@@ -41,7 +41,7 @@ public class MailMetrics {
     /**
      * Sends {@code mail} and counts the outcome.
      *
-     * @param template the template id ({@code mail/code-acces}) the mail was
+     * @param template the template id ({@code mail/planning-publie}) the mail was
      *                 rendered from
      */
     public void send(Mailer mailer, String template, Mail mail) {

@@ -143,8 +143,8 @@ pas, la règle ci-dessus s'applique.
 
 Un mail qui **accompagne** une opération déjà faite (demande soumise, décision
 prise, solve terminé) ne doit jamais la faire échouer : un SMTP en panne ne peut
-pas annuler ce qui a eu lieu. Un mail qui **est** l'opération (le code d'accès
-sans lequel l'animateur n'entre pas, le planning qu'on croit diffusé) doit au
+pas annuler ce qui a eu lieu. Un mail qui **est** l'opération (le planning
+qu'on croit diffusé, l'invitation à déclarer ses disponibilités) doit au
 contraire échouer bruyamment, pour que l'appelant dise qui n'a pas été joint.
 
 Les deux étaient portées par des méthodes de forme identique sur la même classe,

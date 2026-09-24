@@ -16,7 +16,8 @@ import org.junit.jupiter.api.Test;
 /**
  * Admin authentication (issue #165). The default %test profile opens the API
  * so the functional tests don't need a session; this profile restores the real
- * {@code authenticated} policy and exercises the whole form-login flow — the
+ * {@code role-admin} policy and exercises the whole break-glass form-login flow
+ * (open in {@code %test}, see {@code FormLoginSecoursTest} for the closed door) — the
  * 401 wall, the login endpoint, the session cookie, and the deliberate
  * public exceptions (espace animateur, calendar subscription, auth status,
  * legal notice).
@@ -32,8 +33,12 @@ class AuthentificationAdminTest {
             // default (ADMIN_PASSWORD unset), so no credential-looking literal
             // lives in this file.
             return Map.of(
-                    "quarkus.http.auth.permission.admin-api.policy", "authenticated",
-                    "quarkus.http.auth.permission.api-docs.policy", "authenticated");
+                    // The real policy, named: /api is roles-allowed=admin since
+                    // Keycloak made "authenticated" ambiguous — an animateur is
+                    // authenticated too. The break-glass account carries the
+                    // role, so nothing below changes.
+                    "quarkus.http.auth.permission.admin-api.policy", "role-admin",
+                    "quarkus.http.auth.permission.api-docs.policy", "role-admin");
         }
     }
 
@@ -262,6 +267,11 @@ class AuthentificationAdminTest {
 
     @Test
     void laDeconnexionEffaceLeCookie() {
-        given().when().post("/api/auth/logout").then().statusCode(204);
+        // No Keycloak session to end: the frontend has nowhere else to go.
+        given().when()
+                .post("/api/auth/logout")
+                .then()
+                .statusCode(200)
+                .body("urlDeconnexion", org.hamcrest.Matchers.nullValue());
     }
 }

@@ -57,8 +57,9 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 
 ### Premiers pas dans l'application
 
-1. Ouvrir <http://localhost:8080> et se connecter (compte `admin`, mot de passe
-   `admin` par défaut en local — variable `ADMIN_PASSWORD`) — la page
+1. Ouvrir <http://localhost:8080> et se connecter — en local sans Keycloak,
+   par le compte de secours (`admin` / `admin`, variable `ADMIN_PASSWORD`) ;
+   avec le Keycloak du compose, voir [`docs/keycloak.md`](docs/keycloak.md) — la page
    **État de l'édition** s'affiche : la checklist du cycle, chaque étape avec
    son état et un lien vers l'écran qui la fait avancer ; le menu latéral donne accès à chaque écran (en
    mode simple par défaut : « Menu simple », en tête du menu, bascule vers le
@@ -106,12 +107,16 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `PLANNING_MCP_LOCKOUT_DURATION` | `PT10M` | Durée de ce blocage, comptée depuis le dernier échec |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN_ID` | *(vide)* | Identifiant du jeton d'accès Pangolin, révélable depuis la page MCP (menu avancé ; même contrôle par mot de passe admin que la clé API) |
 | `PLANNING_MCP_PANGOLIN_ACCESS_TOKEN` | *(vide)* | Jeton d'accès Pangolin correspondant, révélable de la même façon |
-| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte administrateur `admin`. En production, le défaut refuse le démarrage : il faut en donner un |
+| `OIDC_ENABLED` | `true` (`false` sous `quarkus:dev`) | Authentification par Keycloak de l'administration, de l'espace animateur et de MCP — **obligatoire en production**, voir [`keycloak.md`](docs/keycloak.md) et l'[ADR 0049](docs/decisions/0049-keycloak-obligatoire-comptes-nominatifs.md) |
+| `OIDC_AUTH_SERVER_URL` | `http://keycloak:8081/realms/planning` | URL du realm, identique vue du navigateur et du conteneur |
+| `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | `planning-app` / — | Client confidentiel du realm ; en production, un secret d'au moins 32 caractères, sinon le démarrage échoue |
+| `OIDC_MCP_AUDIENCE` | `planning-mcp` | Audience exigée des jetons OAuth2 présentés à `/mcp` |
+| `OIDC_FORCE_HTTPS` | `false` | Fabriquer les URL de redirection et de métadonnées en `https` derrière un proxy qui termine le TLS |
+| `OIDC_PROVISIONING_ENABLED` | `false` | Créer le compte Keycloak d'un animateur à l'enregistrement de sa fiche (et le désactiver quand plus aucune fiche ne porte son adresse) — variables `OIDC_PROVISIONING_*` dans [`keycloak.md`](docs/keycloak.md) |
+| `ADMIN_SECOURS_ENABLED` | `false` (`true` sous `quarkus:dev`) | Ouvre la porte de secours : le formulaire du compte `admin`, pour le jour où Keycloak ne répond plus. À refermer après l'incident |
+| `ADMIN_PASSWORD` | `admin` | Mot de passe du compte de secours `admin`. En production, le défaut refuse le démarrage, même porte fermée |
 | `PROXY_ADDRESS_FORWARDING` | `true` | Suivre les en-têtes `X-Forwarded-*` d'un reverse proxy qui termine le TLS, indispensable pour que la redirection de connexion reste en `https` — voir [`api.md`](docs/api.md#derrière-un-reverse-proxy-qui-termine-le-tls) |
-| `REMOTE_USER_ENABLED` | `false` | Authentification par en-tête derrière un proxy d'accès, en plus du form login — voir [`api.md`](docs/api.md#mode-remote-user-facultatif-désactivé-par-défaut) |
-| `REMOTE_USER_SECRET` | — | Secret partagé avec le proxy. **Obligatoire** si `REMOTE_USER_ENABLED=true` : sans lui le démarrage échoue |
-| `REMOTE_USER_ADMIN_EMAIL` | — | Adresse qui obtient le rôle admin ; les autres adresses reconnues sont des animateurs |
-| `SESSION_ENCRYPTION_KEY` | *(vide = clé générée au démarrage)* | Clé (≥ 16 caractères) de chiffrement du cookie de session admin ; la définir pour que les sessions survivent aux redémarrages |
+| `SESSION_ENCRYPTION_KEY` | *(vide = clé générée au démarrage)* | Clé (≥ 16 caractères) de chiffrement du cookie de session du compte de secours ; la définir pour que les sessions survivent aux redémarrages |
 | `PASSE_FIGE` | `true` | `false` : le solveur peut de nouveau réécrire les journées déjà travaillées. Par défaut, toute résolution pendant l'événement reprend du plan enregistré les places des créneaux commencés et les fige — voir [`domaine.md`](docs/domaine.md#le-passé-est-figé). À réserver à une recette qui rejoue une édition ancienne |
 | `SOLVER_SECONDS_LIMIT_MAX` | `3600` | Plafond, en secondes, de la durée qu'une édition peut régler ou qu'un lancement peut demander ; au-dessus, refus. Démarrage refusé s'il est sous le défaut de 900 s — voir [`exploitation.md`](docs/exploitation.md#le-temps-de-calcul-que-chaque-édition-peut-prendre) |
 | `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX` | celui de la durée | Plafond de l'arrêt sans amélioration d'une édition |
@@ -132,7 +137,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `BRANDING_PDF_STRIP` | *(vide = aucun bandeau)* | Bandeau décoratif de la première page du planning individuel, même syntaxe |
 | `BRANDING_PDF_HEADLINE` | `#1f2933` | Encre principale des PDF (titres, noms, corps des tableaux) |
 | `BRANDING_PDF_MUTED` | `#6b7280` | Texte secondaire des PDF (horaires, emplacements, coéquipiers, pied de page) |
-| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF (pastilles de journée, titres d'encadré, bordures de carte, alertes) et des mails HTML (liseré, liens, code d'accès) — la palette `BRANDING_PDF_*` habille aussi les mails |
+| `BRANDING_PDF_ACCENT` | `#3a6ea5` | Accent des PDF (pastilles de journée, titres d'encadré, bordures de carte, alertes) et des mails HTML (liseré, liens) — la palette `BRANDING_PDF_*` habille aussi les mails |
 | `BRANDING_PDF_HIGHLIGHT` | `#e4eaf1` | Fond des tuiles de statistiques et des en-têtes de tableau |
 | `BRANDING_PDF_PILL` | `#f1f4f8` | Fond des pastilles d'horaire et couleur des filets de tableau |
 | `LEGAL_EDITEUR` | *(vide)* | Éditeur du site (nom, forme juridique, adresse, immatriculation) affiché sur `/mentions-legales` |
@@ -147,9 +152,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | `HSTS` | `max-age=31536000; includeSubDomains` | En-tête HSTS, envoyé uniquement sur une visite HTTPS ; vide = désactivé |
 | `MAX_BODY_SIZE` | `10M` | Taille maximale d'un corps de requête — dimensionnée par l'import de dump SQL |
 | `MAX_CONNECTIONS` | `500` | Connexions HTTP simultanées acceptées |
-| `ESPACE_CODE_MAX_DEMANDES` | `3` | Codes d'accès non utilisés tolérés par animateur avant `429` — voir [`securite.md`](docs/securite.md) |
-| `ESPACE_CODE_FENETRE` | `PT10M` | Fenêtre sur laquelle ce plafond se compte |
-| `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion admin tolérés par adresse avant verrouillage |
+| `CONNEXION_MAX_ECHECS` | `5` | Échecs de connexion au compte de secours tolérés par adresse avant verrouillage |
 | `CONNEXION_DUREE_BLOCAGE` | `PT15M` | Durée du verrouillage, comptée depuis le dernier échec |
 
 #### Marque blanche
@@ -349,7 +352,7 @@ interne (modèle, contraintes, API, formats), voir [`docs/`](docs/README.md).
 | Palette de commandes | Ctrl+K ouvre une zone de saisie unique qui mène à n'importe quel écran et retrouve un animateur, un stand ou un créneau ; « g » suivi d'une lettre va droit à un écran, « / » saisit le filtre de la page et « ? » liste les raccourcis |
 | Navigation au clavier des tableaux | Dans les tableaux de données de référence, « / » saisit le filtre de la page puis Flèche bas entre dans le tableau ; les flèches haut et bas déplacent ensuite la ligne courante, Entrée l'ouvre et Espace la coche pour une action groupée. Un clic sur une ligne la focalise de la même façon, et la tabulation entre aussi dans le tableau et en ressort sans jamais y rester coincée |
 | Thème clair ou sombre | Un bouton de la barre d'outils fait tourner l'affichage entre « automatique », « clair » et « sombre ». « Automatique » suit le réglage du système d'exploitation et le suit en direct ; un choix explicite est retenu par le navigateur et survit au rechargement comme au changement d'humeur de la machine |
-| Accès | Connexion administrateur par mot de passe, ou attestation par en-tête derrière un proxy d'accès ; les espaces animateurs restent joignables par leur lien |
+| Accès | Comptes nominatifs Keycloak : second facteur imposé aux administrateurs, espace animateur ouvert par le compte de la personne dont la fiche porte l'adresse, MCP en OAuth2 ; comptes et habilitations (par édition, avec expiration) gérés dans l'application ; porte de secours par mot de passe, fermée par défaut |
 
 Formats d'échange détaillés dans
 [`docs/import-export.md`](docs/import-export.md), contraintes dans

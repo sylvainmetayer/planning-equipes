@@ -47,6 +47,16 @@ class IdColumnsInventoryStructuralTest {
                     "demande_echange.stand_cible_id",
                     "the stand a directed swap aims at; no key since V46, the swap outliving a deleted stand"),
             Map.entry(
+                    "habilitation.edition_id",
+                    "the edition a right is scoped to, NULL for all; no key so that a dump import, which deletes "
+                            + "and recreates the editions, does not cascade the instance's rights away"),
+            Map.entry(
+                    "habilitation_stand.edition_id",
+                    "the edition of the stand beside it, for the same reason as habilitation.edition_id"),
+            Map.entry(
+                    "habilitation_stand.stand_id",
+                    "a stand id of that edition; no key for the same reason, the stand is checked when granted"),
+            Map.entry(
                     "journal_action.acteur_id",
                     "an animateur id when the actor is one, « admin » or « mcp » otherwise"),
             Map.entry(

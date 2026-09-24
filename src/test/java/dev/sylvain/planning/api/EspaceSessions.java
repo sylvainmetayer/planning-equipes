@@ -1,46 +1,24 @@
 package dev.sylvain.planning.api;
 
-import static io.restassured.RestAssured.given;
-import static org.assertj.core.api.Assertions.assertThat;
-
-import io.quarkus.mailer.Mail;
-import io.quarkus.mailer.MockMailbox;
-import io.restassured.http.ContentType;
+import dev.sylvain.planning.OidcJetons;
 import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
- * Opens espace-animateur sessions for the tests, the way an animateur does:
- * ask for a code, read it in the (mock) mailbox, exchange it for the session
- * cookie. No backdoor — the flow under test is the flow used.
+ * Opens espace-animateur sessions for the tests the way the application sees
+ * them since ADR 0049: a Keycloak token carrying the {@code animateur} realm
+ * role and the verified address of the fiche. Signed by the in-memory OIDC
+ * server's key, so the guard under test ({@code SessionEspaceFilter}) is the
+ * production one — only the browser's code flow is skipped.
  */
 final class EspaceSessions {
 
-    private static final Pattern CODE = Pattern.compile("\\b(\\d{6})\\b");
+    /** Where the tokens are sent: the {@code Authorization} header of the request. */
+    static final String EN_TETE = "Authorization";
 
     private EspaceSessions() {}
 
-    /** Returns the {@code planning-espace} cookie value of a fresh session. */
-    static String open(MockMailbox mailbox, String token, String email) {
-        given().contentType(ContentType.JSON)
-                .when()
-                .post("/api/espace-animateur/" + token + "/code")
-                .then()
-                .statusCode(200);
-        List<Mail> mails = mailbox.getMailsSentTo(email);
-        assertThat(mails).as("the access code mail must reach " + email).isNotEmpty();
-        Matcher matcher = CODE.matcher(mails.get(mails.size() - 1).getText());
-        assertThat(matcher.find()).as("the mail must carry a 6-digit code").isTrue();
-        String cookie = given().contentType(ContentType.JSON)
-                .body("{\"code\":\"" + matcher.group(1) + "\"}")
-                .when()
-                .post("/api/espace-animateur/" + token + "/session")
-                .then()
-                .statusCode(204)
-                .extract()
-                .cookie("planning-espace");
-        assertThat(cookie).isNotBlank();
-        return cookie;
+    /** The {@code Authorization} header value of a session for {@code email}. */
+    static String open(String email) {
+        return "Bearer " + OidcJetons.jeton(email, List.of("user", "animateur"), "planning-app", email, true);
     }
 }

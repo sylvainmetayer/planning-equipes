@@ -134,6 +134,19 @@ public class AnimateurRepository {
         return scope.exists("animateur", id);
     }
 
+    /** The address on one fiche of the current edition, {@code null} when it has none or does not exist. */
+    public String emailOf(String id) {
+        return scope.read("Failed to read the address of animator " + id, connection -> {
+            try (PreparedStatement ps =
+                    scope.prepareScoped(connection, "SELECT email FROM animateur WHERE edition_id = ? AND id = ?")) {
+                ps.setString(2, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? rs.getString(1) : null;
+                }
+            }
+        });
+    }
+
     /**
      * Writes it, refusing a creation whose id is taken and an update based on an
      * out-of-date read (issue #362): both are the write's own precondition.
@@ -290,9 +303,8 @@ public class AnimateurRepository {
     /**
      * Whether any animateur, in any edition, carries this address. Like
      * {@link #resolveAnimateurToken}, deliberately not edition-scoped: the
-     * caller is the startup check of the remote-user mode, which has no
-     * edition to speak of and wants to know whether the collision exists
-     * anywhere at all.
+     * caller is the Keycloak provisioning, which disables an account only once
+     * no fiche of any edition still expects the person.
      */
     public boolean emailAnimateurExiste(String email) {
         if (email == null || email.isBlank()) {

@@ -2,38 +2,37 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.service.EditionRequestScope;
 import dev.sylvain.planning.service.TokenOwner;
-import dev.sylvain.planning.service.espace.EspaceAccesService;
-import dev.sylvain.planning.service.espace.RemoteUserAuthentication;
+import dev.sylvain.planning.service.espace.OidcAuthentication;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerRequestFilter;
-import jakarta.ws.rs.core.Cookie;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.Provider;
-import java.util.Locale;
 
 /**
  * The authentication guard of the espace animateur, bound declaratively to
  * every {@link EspaceSessionRequired} route: resolves the URL token (via
  * {@link EspaceTokenFilter}, which also binds the owner's edition to the
- * request), then requires a live {@code planning-espace} session of that
- * animateur. Aborts with 404 (unknown token) or 401 (no session — the
- * interface then offers the code screen) before the resource method runs.
- * Once the session (or the proxy's assertion) holds, it marks the identity as
- * proven on {@link EditionRequestScope}: that, and not the token, is what lets
- * the history name the animateur as the author of what follows.
+ * request), then requires a Keycloak session asserting the very address that
+ * fiche carries. Aborts with 404 (unknown token) or 401 (no such session — the
+ * interface then offers the sign-in button) before the resource method runs.
+ * Once that session holds, it marks the identity as proven on
+ * {@link EditionRequestScope}: that, and not the token, is what lets the
+ * history name the animateur as the author of what follows.
  *
- * <p>When the remote-user mode is enabled, an access proxy asserting the
- * token owner's own address takes the place of that session. The e-mail is
- * precisely what the code screen proves — it sends a six-digit code to the
- * address on the fiche — so an assertion from the proxy that already
- * authenticated the person is the same fact established one step earlier, not
- * a weaker one. The link alone still is not enough: the address has to match
- * the fiche the token designates, so a proxy-authenticated animateur cannot
- * open a colleague's espace by picking up their link.</p>
+ * <p>Neither half is enough alone, and that is the whole design (ADR 0049).
+ * One Keycloak account is one <b>person</b>, who may hold a fiche in several
+ * editions: the account says who is knocking, the token says which espace
+ * opens. An animateur who picks up a colleague's link is authenticated — and it
+ * is someone else's fiche. The link alone opens nothing either: the espace
+ * serves the planning for download.</p>
+ *
+ * <p>With Keycloak off — the break-glass mode — the espace is closed: the
+ * six-digit code that used to open it is gone, and the password form is an
+ * administrator's door, not an animateur's.</p>
  */
 @Provider
 @EspaceSessionRequired
@@ -42,21 +41,15 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
 
     private final EspaceTokenFilter tokenFilter;
 
-    private final EspaceAccesService espaceAccesService;
-
-    private final RemoteUserAuthentication remoteUser;
+    private final OidcAuthentication oidc;
 
     private final EditionRequestScope editionRequestScope;
 
     @Inject
     public SessionEspaceFilter(
-            EspaceTokenFilter tokenFilter,
-            EspaceAccesService espaceAccesService,
-            RemoteUserAuthentication remoteUser,
-            EditionRequestScope editionRequestScope) {
+            EspaceTokenFilter tokenFilter, OidcAuthentication oidc, EditionRequestScope editionRequestScope) {
         this.tokenFilter = tokenFilter;
-        this.espaceAccesService = espaceAccesService;
-        this.remoteUser = remoteUser;
+        this.oidc = oidc;
         this.editionRequestScope = editionRequestScope;
     }
 
@@ -66,36 +59,29 @@ public class SessionEspaceFilter implements ContainerRequestFilter {
         if (owner == null) {
             return;
         }
-        // The owner's edition is bound to the request by now, so the session
-        // lookup — like every call below — is already correctly scoped.
-        if (proxyAtteste(contexte, owner)) {
-            editionRequestScope.markIdentityProven();
-            return;
-        }
-        Cookie cookie = contexte.getCookies().get(EspaceAnimateurResource.COOKIE_SESSION);
-        if (espaceAccesService.validSession(cookie == null ? null : cookie.getValue(), owner.animateurId())) {
+        // The owner's edition is bound to the request by now, so every call
+        // below is already correctly scoped.
+        if (keycloakAtteste(owner)) {
             editionRequestScope.markIdentityProven();
         } else {
             contexte.abortWith(Response.status(Response.Status.UNAUTHORIZED)
                     .type(MediaType.APPLICATION_JSON)
-                    .entity(new ValidationError("Authentification requise : demandez un code d'accès par e-mail."))
+                    .entity(new ValidationError("Authentification requise : connectez-vous avec votre compte."))
                     .build());
         }
     }
 
     /**
-     * True when the proxy asserts the address carried by the very fiche this
-     * token belongs to. A fiche without an e-mail can never match: it is
-     * exactly the fiche the code screen already refuses to serve, since the
-     * address is the second factor.
+     * True when the Keycloak session asserts the address carried by the fiche
+     * this token belongs to. A fiche without an e-mail never matches: the
+     * address is the identity.
      */
-    private boolean proxyAtteste(ContainerRequestContext contexte, TokenOwner owner) {
+    private boolean keycloakAtteste(TokenOwner owner) {
         if (owner.email() == null || owner.email().isBlank()) {
             return false;
         }
-        return remoteUser
-                .trustedEmail(nom -> contexte.getHeaderString(nom))
-                .filter(email -> email.equals(owner.email().trim().toLowerCase(Locale.ROOT)))
+        return oidc.trustedEmail()
+                .filter(email -> email.equals(OidcAuthentication.normalize(owner.email())))
                 .isPresent();
     }
 }

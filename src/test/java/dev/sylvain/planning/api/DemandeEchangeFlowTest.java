@@ -20,7 +20,10 @@ import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
 import io.restassured.builder.RequestSpecBuilder;
+import io.restassured.config.HeaderConfig;
+import io.restassured.config.RestAssuredConfig;
 import io.restassured.http.ContentType;
+import io.restassured.specification.RequestSpecification;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -333,13 +336,13 @@ class DemandeEchangeFlowTest {
                 .path("[0].id");
 
         // Bruno sees it among his received demandes, and declines.
-        given().cookie("planning-espace", sessionBruno)
+        given().header(EspaceSessions.EN_TETE, sessionBruno)
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues")
                 .then()
                 .statusCode(200)
                 .body("find { it.id == '" + demandeId + "' }.statut", equalTo("EN_ATTENTE_CIBLE"));
-        given().cookie("planning-espace", sessionBruno)
+        given().header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/refus")
@@ -354,7 +357,7 @@ class DemandeEchangeFlowTest {
                 .post("/api/echanges/" + demandeId + "/acceptation")
                 .then()
                 .statusCode(400);
-        given().cookie("planning-espace", sessionBruno)
+        given().header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
@@ -437,7 +440,7 @@ class DemandeEchangeFlowTest {
 
     /** Bruno (the target) agrees: the demande enters the admin queue. */
     private void agreementFromBruno(String demandeId) {
-        given().cookie("planning-espace", sessionBruno)
+        given().header(EspaceSessions.EN_TETE, sessionBruno)
                 .contentType(ContentType.JSON)
                 .when()
                 .post("/api/espace-animateur/" + tokenOf("ECH-B") + "/demandes-recues/" + demandeId + "/accord")
@@ -672,14 +675,12 @@ class DemandeEchangeFlowTest {
         // ownership rule, not a session mismatch.
         RestAssured.requestSpecification = null;
         given().contentType(ContentType.JSON)
-                .cookie("planning-espace", sessionBruno)
+                .header(EspaceSessions.EN_TETE, sessionBruno)
                 .when()
                 .post("/api/espace-animateur/" + brunoToken + "/demandes/" + demandeId + "/annulation")
                 .then()
                 .statusCode(400);
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", sessionAlice)
-                .build();
+        RestAssured.requestSpecification = defaultSession(sessionAlice);
 
         given().when()
                 .get("/api/espace-animateur/" + aliceToken + "/demandes")
@@ -700,7 +701,7 @@ class DemandeEchangeFlowTest {
         // An ordinary update of the fiche keeps the token stable.
         given().contentType(ContentType.JSON)
                 .body("{\"id\":\"ECH-A\",\"prenom\":\"Alice\",\"nom\":\"Martin\","
-                        + "\"dateNaissance\":\"1990-01-01\",\"email\":\"alice@example.org\"}")
+                        + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ech-alice@example.org\"}")
                 .when()
                 .put("/api/animateurs/ECH-A")
                 .then()
@@ -756,18 +757,16 @@ class DemandeEchangeFlowTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno, chloe), List.of(posteUn, posteDeux)));
         PlansPublies.publier(publication);
 
-        // The espace requires an e-mail-code session since the auth follow-up:
-        // both actors get an address, a session, and Alice's cookie rides on
+        // The espace requires a Keycloak session at the fiche's address (ADR
+        // 0049): both actors get an address, a session, and Alice's rides on
         // every request by default (harmless on the admin routes).
         donnerEmail("ECH-A", "ech-alice@example.org");
         donnerEmail("ECH-B", "ech-bruno@example.org");
         mailbox.clear();
         RestAssured.requestSpecification = null;
-        sessionAlice = EspaceSessions.open(mailbox, tokenOf("ECH-A"), "ech-alice@example.org");
-        sessionBruno = EspaceSessions.open(mailbox, tokenOf("ECH-B"), "ech-bruno@example.org");
-        RestAssured.requestSpecification = new RequestSpecBuilder()
-                .addCookie("planning-espace", sessionAlice)
-                .build();
+        sessionAlice = EspaceSessions.open("ech-alice@example.org");
+        sessionBruno = EspaceSessions.open("ech-bruno@example.org");
+        RestAssured.requestSpecification = defaultSession(sessionAlice);
     }
 
     /**
@@ -807,6 +806,20 @@ class DemandeEchangeFlowTest {
 
     private static int rankOf(List<Map<String, Object>> suggestions, String animateurId, String nature) {
         return suggestions.indexOf(suggestionOf(suggestions, animateurId, nature));
+    }
+
+    /**
+     * Alice's session on every request unless a call names another one. A
+     * header, unlike the cookie it replaced, is appended rather than replaced
+     * when a call adds its own: without the overwrite, Bruno's calls would
+     * travel with both sessions and the first one would win.
+     */
+    private static RequestSpecification defaultSession(String session) {
+        return new RequestSpecBuilder()
+                .setConfig(RestAssuredConfig.config()
+                        .headerConfig(HeaderConfig.headerConfig().overwriteHeadersWithName(EspaceSessions.EN_TETE)))
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
     }
 
     private void donnerEmail(String animateurId, String email) {
