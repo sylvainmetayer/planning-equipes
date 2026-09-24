@@ -86,7 +86,7 @@ class CarpoolFlowTest {
         }
         mailbox.clear();
         for (String label : List.of("COV-A", "COV-B")) {
-            sessions.put(label, EspaceSessions.open(mailbox, tokenOf(label), email(label)));
+            sessions.put(label, EspaceSessions.open(email(label)));
         }
         setWindow(true);
     }
@@ -268,8 +268,7 @@ class CarpoolFlowTest {
         requestCarpool("COV-A", idsOf("COV-B")).statusCode(200);
 
         // A declaration still carrying the old field: the field is ignored.
-        given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", sessions.get("COV-A"))
+        given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessions.get("COV-A"))
                 .contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[],\"covoiturage\":[]}")
                 .when()
@@ -340,7 +339,7 @@ class CarpoolFlowTest {
 
     @Test
     void aMemberWhoNeverAskedReadsTheCancellationToo() {
-        sessions.put("COV-C", EspaceSessions.open(mailbox, tokenOf("COV-C"), email("COV-C")));
+        sessions.put("COV-C", EspaceSessions.open(email("COV-C")));
         requestCarpool("COV-A", idsOf("COV-C")).statusCode(200);
         String demande = carpools().getString(of("COV-A") + ".id");
         validate(demande);
@@ -536,8 +535,7 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse carpoolView(String label) {
-        return given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessions.get(label))
                 .when()
                 .get("/api/espace-animateur/" + tokenOf(label) + "/covoiturage")
                 .then()
@@ -545,8 +543,7 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse declareDays(String label, String jours) {
-        return given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessions.get(label))
                 .contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":" + jours + ",\"souhaits\":[]}")
                 .when()
@@ -555,8 +552,7 @@ class CarpoolFlowTest {
     }
 
     private io.restassured.response.ValidatableResponse requestCarpool(String label, String teammateIds) {
-        return given().header("X-Edition-Id", "E1")
-                .cookie("planning-espace", sessions.get(label))
+        return given().header("X-Edition-Id", "E1").header(EspaceSessions.EN_TETE, sessions.get(label))
                 .contentType(ContentType.JSON)
                 .body("{\"teammateIds\":" + teammateIds + "}")
                 .when()

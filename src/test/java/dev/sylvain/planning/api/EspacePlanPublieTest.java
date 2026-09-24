@@ -18,6 +18,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.espace.DemandeEchangeService.NouvelleDemande;
+import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.JourJClock;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ParametresService;
@@ -73,6 +74,9 @@ class EspacePlanPublieTest {
     MockMailbox mailbox;
 
     @Inject
+    EspaceAnimateurService espaces;
+
+    @Inject
     DataSource dataSource;
 
     @Inject
@@ -100,9 +104,10 @@ class EspacePlanPublieTest {
 
         // The espace session (e-mail code flow) rides on every request.
         RestAssured.requestSpecification = null;
-        String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-A"), EMAIL_ALICE);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_ALICE);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
         mailbox.clear();
     }
 
@@ -298,9 +303,10 @@ class EspacePlanPublieTest {
 
         RestAssured.requestSpecification = null;
         donnerEmail("PUBESP-B", EMAIL_BRUNO);
-        String session = EspaceSessions.open(mailbox, tokenOf("PUBESP-B"), EMAIL_BRUNO);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_BRUNO);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -434,7 +440,8 @@ class EspacePlanPublieTest {
     /**
      * A fiche without an address is precisely the case this feature exists
      * for: the mail never left, so the espace is the only place those
-     * sentences can still be read.
+     * sentences can still be read — once the address is added and the person
+     * signs in (the espace itself needs the address since ADR 0049).
      */
     @Test
     void unePublicationQuiNAPasPuPartirResteLisibleDansLEspace() {
@@ -442,6 +449,7 @@ class EspacePlanPublieTest {
         donnerEmail("PUBESP-A", null);
         persistPlan("PUBESP-B");
         publication.publier();
+        donnerEmail("PUBESP-A", EMAIL_ALICE);
 
         given().header("X-Edition-Id", "E1")
                 .when()
@@ -457,6 +465,10 @@ class EspacePlanPublieTest {
      * delivery the Diffuser screen recorded, and a fiche without an address
      * says so instead of claiming a send. Before any send there is none to
      * claim, and outside the collection its two pages are not offered.
+     *
+     * <p>A fiche without an address no longer opens its espace at all — the
+     * address is what the Keycloak session is matched against (ADR 0069) —
+     * so that last state is read off the view the espace would render.</p>
      */
     @Test
     void theEspaceSaysWhetherTheMailActuallyLeft() {
@@ -483,8 +495,8 @@ class EspacePlanPublieTest {
                 .when()
                 .get("/api/espace-animateur/" + tokenOf("PUBESP-A"))
                 .then()
-                .statusCode(200)
-                .body("dernierEnvoi.statut", equalTo("SANS_EMAIL"));
+                .statusCode(401);
+        assertThat(espaces.buildView("PUBESP-A").dernierEnvoi().statut()).isEqualTo("SANS_EMAIL");
     }
 
     /**

@@ -32,7 +32,7 @@ import org.junit.jupiter.api.Test;
  * pending declaration per animateur" bounds the volume, this ceiling bounds
  * the pace.</p>
  *
- * <p>Its own profile, like {@link CodeRequestLimiterTest}: the ceiling drops
+ * <p>Its own profile, like {@code McpRateLimitTest}: the ceiling drops
  * to two so the test holds in three calls, and a profile is a separate
  * application, hence a counter no other test class has already spent.</p>
  */
@@ -67,9 +67,10 @@ class DeclarationRateLimitTest {
         animateur.setEmail(EMAIL);
         animateurId = referenceData.createAnimateur(animateur).getId();
         mailbox.clear();
-        String session = EspaceSessions.open(mailbox, token(), EMAIL);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
         window(true);
     }
 

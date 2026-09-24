@@ -187,13 +187,14 @@ public class DatabaseDumpService {
      *       arise: {@code JourJClock} ignores the row outside dev mode.)</li>
      *   <li>{@code backup_settings} — this server's backup schedule and the
      *       outcome of its last attempt. Same nature as the clock.</li>
-     *   <li>{@code espace_acces}, {@code espace_session} — code hashes,
-     *       remaining attempts, live sessions. Restoring them would hand
-     *       another instance credentials and reset a lockout counter.</li>
      *   <li>{@code lien_affichage_mural}, {@code lien_affichage_mural_emplacement}
      *       — the wall display links: token hashes, credentials of this
-     *       instance like the espace sessions. A restore elsewhere would reopen
+     *       instance like the accounts below. A restore elsewhere would reopen
      *       screens nobody there handed out.</li>
+     *   <li>{@code compte}, {@code habilitation}, {@code habilitation_stand}
+     *       — who may sign in to this instance and what they may do. Restoring
+     *       them would hand another instance's people access here, or strip
+     *       this one's.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
@@ -227,10 +228,11 @@ public class DatabaseDumpService {
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
             "horloge_jour_j",
             "backup_settings",
-            "espace_acces",
-            "espace_session",
             "lien_affichage_mural",
             "lien_affichage_mural_emplacement",
+            "compte",
+            "habilitation",
+            "habilitation_stand",
             "solver_job",
             "journal_action",
             "verification_besoin",
