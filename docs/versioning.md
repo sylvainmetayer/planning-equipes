@@ -93,11 +93,25 @@ Tout le reste dérive de ce geste, sans commande ni clone :
 
 | Ce qui part | Sur quoi | Ce qu'il fait |
 | --- | --- | --- |
-| `docker-ghcr.yml` | le push du tag | build `linux/amd64`, images `1.2.0` et `1.2`, SBOM, signature cosign, et `:latest` si le tag est le plus récent |
+| `docker-ghcr.yml` | le push du tag | build `linux/amd64` poussé sous `sha-…` seulement, **smoke test** de l'image publiée, SBOM, signature cosign, puis tags `1.2.0` et `1.2`, et `:latest` si le tag est le plus récent |
 | `release.yml` | la publication de la release | écrit le corps de la release : la section rendue par `git cliff --current` |
 
 Les deux sont indépendants et tournent de front ; aucun ne pose ni ne déplace
 de tag, le numéro reste une décision humaine.
+
+**Le smoke test démarre l'image publiée**, par son digest, contre un
+PostgreSQL 18 et un Mailpit, avec l'environnement minimal de production. Il
+vérifie la disponibilité, la version exposée (celle du tag), l'uid 1000,
+qu'un `pg_dump` de la même majeure que le `postgres:` de
+`docker-compose.prod.yml` est présent, et que `/backups` est inscriptible ;
+en échec, les journaux du conteneur sont affichés. Ce n'est qu'ensuite que
+l'image est signée, puis que les tags lisibles sont posés — par digest, sans
+reconstruction. Une image qui ne démarre pas reste donc accessible sous
+`sha-…` pour diagnostic, mais n'est jamais `1.2.0`, `:main` ni `:latest`.
+
+Si ce contrôle échoue sur un tag de release, le tag git existe mais pas
+l'image `1.2.0` : la réparation est celle des contrôles ci-dessous — supprimer
+la release et son tag, corriger, recommencer au même numéro.
 
 **Si tu écris quelque chose dans le corps** au moment de créer la release — le
 résumé que portait le message d'un tag annoté —, il est conservé : `release.yml`

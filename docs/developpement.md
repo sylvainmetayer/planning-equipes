@@ -891,7 +891,15 @@ points qui ne s'y voient pas :
   La garde qui empêche une PR de fork de déclencher ces workflows est
   **conservée** : elle tenait au socket Docker du runner auto-hébergé, et la
   lever relève de l'ouverture publique (#286), pas d'un changement de runner.
-- **`docker-ghcr.yml` publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
+- **`restauration.yml` joue `scripts/restaurer.sh` pour de vrai** : pile de
+  production montée avec l'image du commit, sauvegarde déposée dans le volume,
+  base modifiée, restauration, vérification — plus le mode `--essai`, le
+  refus d'un fichier qui n'est pas un dump ou d'un dump tronqué, et le retour
+  à l'état d'avant d'une restauration qui échoue en cours de route (un `GRANT`
+  à un rôle disparu). Il ne part que sur le script, la
+  pile, le `Dockerfile` et lui-même ;
+- **`docker-ghcr.yml` pousse l'image sous `sha-…`, la démarre (smoke test),
+  la signe, puis publie `:main` à chaque fusion et `1.2.0`/`1.2` sur un
   tag `vX.Y.Z`** ; `:latest` n'est jamais posé par `metadata-action`
   (`latest=false`) mais par une étape dédiée, uniquement quand le tag poussé
   est le plus récent du dépôt. Le pourquoi — et toute la politique de
