@@ -288,9 +288,14 @@ test.describe('déplacer au clavier', () => {
       // that lands would still reach the page underneath.
       await expect(dialogue.getByRole('combobox')).toBeFocused();
       await page.keyboard.type('Boris');
+      // The filtered option has to be on screen before the arrow can reach it:
+      // on a slow runner the keys otherwise land on an empty panel.
+      await expect(page.getByRole('option', { name: /Boris Glisse/ })).toBeVisible();
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('Enter');
-      await dialogue.getByRole('button', { name: 'Déplacer' }).focus();
+      const deplacer = dialogue.getByRole('button', { name: 'Déplacer' });
+      await expect(deplacer).toBeEnabled();
+      await deplacer.focus();
       await page.keyboard.press('Enter');
 
       await expect(page.locator('mat-snack-bar-container')).toContainText(
@@ -318,9 +323,14 @@ test.describe('déplacer au clavier', () => {
       await expect(dialogue).toContainText('Déplacer une vacation de Anna Glisse');
       await expect(dialogue.getByRole('combobox')).toBeFocused();
       await page.keyboard.type('Cléo');
+      // The filtered option has to be on screen before the arrow can reach it:
+      // on a slow runner the keys otherwise land on an empty panel.
+      await expect(page.getByRole('option', { name: /Cléo Glisse/ })).toBeVisible();
       await page.keyboard.press('ArrowDown');
       await page.keyboard.press('Enter');
-      await dialogue.getByRole('button', { name: 'Déplacer' }).focus();
+      const deplacer = dialogue.getByRole('button', { name: 'Déplacer' });
+      await expect(deplacer).toBeEnabled();
+      await deplacer.focus();
       await page.keyboard.press('Enter');
 
       await expect(page.locator('mat-snack-bar-container')).toContainText(
