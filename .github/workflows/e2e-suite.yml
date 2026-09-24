@@ -46,7 +46,7 @@ jobs:
     # `src/main/webui/package.json` : une dérive redonne un navigateur que
     # l'image n'outille pas.
     container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble
+      image: mcr.microsoft.com/playwright:v1.63.0-noble
       # Chromium plante sur le /dev/shm par défaut d'un conteneur (64 Mo).
       options: --ipc=host
 
