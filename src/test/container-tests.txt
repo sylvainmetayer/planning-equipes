@@ -28,6 +28,7 @@ dev/sylvain/planning/api/CollecteInvitationAtomicityTest.java
 dev/sylvain/planning/api/ComparateurSnapshotsResourceTest.java
 dev/sylvain/planning/api/CompetencesGrilleResourceTest.java
 dev/sylvain/planning/api/ConfigResourceDragDropTest.java
+dev/sylvain/planning/api/ConfigResourceTest.java
 dev/sylvain/planning/api/ConfirmationPlanningTest.java
 dev/sylvain/planning/api/ConsigneResourceTest.java
 dev/sylvain/planning/api/ConstraintDiagnosticResourceTest.java
@@ -107,6 +108,7 @@ dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java
 dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
 dev/sylvain/planning/mcp/SolveurMcpToolsQueueTest.java
+dev/sylvain/planning/observability/HealthProbesTest.java
 dev/sylvain/planning/service/ConcurrentModificationGuardTest.java
 dev/sylvain/planning/service/EditionContextFailClosedTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java

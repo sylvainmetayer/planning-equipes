@@ -16,7 +16,10 @@ public interface ConfigMentionsLegales {
      * Declares this instance a demo or a test bench, which is the one case
      * where an empty legal notice is the honest answer rather than a defect.
      * Never rendered: it says what the instance is for, not what the page
-     * states. {@link RequiredMentionsLegales} is the only reader.
+     * states. {@link RequiredMentionsLegales} enforces it at boot, and
+     * {@code /api/mentions-legales} exposes the flag so the deployment check
+     * ({@code scripts/verifier-deploiement.sh}) reads it from the instance
+     * itself rather than guessing it from an env file.
      */
     @WithDefault("false")
     boolean demoInstance();

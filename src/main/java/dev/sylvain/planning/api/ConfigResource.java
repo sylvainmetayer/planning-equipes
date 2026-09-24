@@ -8,6 +8,7 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.MediaType;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -28,6 +29,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *
  * <p>And whether the admin's day views offer <b>drag and drop</b> to move a
  * seat by hand — see {@link ConfigAdmin#dragDropEnabled()}.</p>
+ *
+ * <p>And which <b>version</b> of the backend answers — the value the startup
+ * line prints, derived from the git tag the image was built from
+ * (docs/versioning.md). It is what {@code scripts/verifier-deploiement.sh}
+ * compares with the version the operator meant to deploy; the footer of every
+ * page already shows it, so publishing it here reveals nothing new.</p>
  */
 @Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
@@ -42,6 +49,9 @@ public class ConfigResource {
     @Inject
     ConfigAdmin admin;
 
+    @ConfigProperty(name = "quarkus.application.version")
+    String version;
+
     @GET
     public ConfigView get() {
         return new ConfigView(
@@ -49,7 +59,8 @@ public class ConfigResource {
                 observabilite.sentry().environment(),
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
                 devMode.isActive(),
-                admin.dragDropEnabled());
+                admin.dragDropEnabled(),
+                version);
     }
 
     /**
@@ -61,12 +72,16 @@ public class ConfigResource {
      *                           interface may link to it
      * @param dragDropEnabled    the admin's day views let a seat be dragged
      *                           onto another line
+     * @param version            backend version: {@code X.Y.Z} on a release
+     *                           image, the short SHA on a recette image,
+     *                           {@code 999-SNAPSHOT} in a local build
      */
-    @Schema(requiredProperties = {"devMode", "dragDropEnabled"})
+    @Schema(requiredProperties = {"devMode", "dragDropEnabled", "version"})
     public record ConfigView(
             String sentryDsn,
             String sentryEnvironment,
             String cloudflareWebAnalyticsToken,
             boolean devMode,
-            boolean dragDropEnabled) {}
+            boolean dragDropEnabled,
+            String version) {}
 }

@@ -7,6 +7,19 @@ Deux briques, **désactivées en dev/test** : suivi d'erreurs
 Le câblage se lit dans `SentryInitializer`, `GlobalExceptionMapper` et
 `app/core/observability.ts` — ce document porte ce qui ne s'y voit pas.
 
+Une troisième brique est **toujours active** : les sondes de santé
+`/q/health/live` et `/q/health/ready` (SmallRye Health), publiques et muettes
+sur tout détail de connexion. La disponibilité repose sur un seul contrôle,
+l'historique Flyway (`FlywayMigrationsReadinessCheck`), dont le premier rôle
+est de dire la base injoignable : l'historique ne se lit pas sans elle. Une
+migration en attente ou en échec rend aussi l'instance non prête, mais c'est
+une défense en profondeur — une migration interrompue empêche déjà le
+démarrage — contre un historique modifié sous une instance en marche. Le
+verdict est gardé 5 s, la sonde étant publique. Le contrôle de
+source de données fourni par Quarkus est **coupé** : en échec, il recopie dans
+la réponse publique le message du pilote, et avec lui l'hôte de la base. Leur usage d'exploitation est
+dans [`exploitation.md`](exploitation.md) § 7.
+
 ## Le point qui n'est pas négociable : le jeton de l'espace animateur
 
 L'URL de l'espace porte le jeton d'accès, **un identifiant unique de personne,

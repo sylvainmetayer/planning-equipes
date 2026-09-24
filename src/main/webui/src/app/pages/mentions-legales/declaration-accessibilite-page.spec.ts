@@ -21,6 +21,7 @@ function mentions(accessibilite: Partial<DeclarationAccessibilite> = {}): Mentio
     conservation: '',
     mesureAudience: false,
     suiviErreurs: false,
+    demoInstance: false,
     accessibilite: {
       etat: '',
       dateAudit: '',

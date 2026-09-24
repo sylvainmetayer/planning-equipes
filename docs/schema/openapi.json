@@ -1307,7 +1307,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "dragDropEnabled" ],
+        "required" : [ "devMode", "dragDropEnabled", "version" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1324,6 +1324,9 @@
           },
           "dragDropEnabled" : {
             "type" : "boolean"
+          },
+          "version" : {
+            "type" : "string"
           }
         }
       },
@@ -4382,7 +4385,7 @@
         }
       },
       "MentionsLegalesView" : {
-        "required" : [ "mesureAudience", "suiviErreurs", "accessibilite" ],
+        "required" : [ "mesureAudience", "suiviErreurs", "demoInstance", "accessibilite" ],
         "type" : "object",
         "properties" : {
           "editeur" : {
@@ -4410,6 +4413,9 @@
             "type" : "boolean"
           },
           "suiviErreurs" : {
+            "type" : "boolean"
+          },
+          "demoInstance" : {
             "type" : "boolean"
           },
           "accessibilite" : {

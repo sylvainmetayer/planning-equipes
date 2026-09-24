@@ -54,6 +54,16 @@ class MentionsLegalesResourceTest {
     }
 
     /**
+     * The deployment check reads this flag from the instance rather than from
+     * an env file it may not see: the test profile declares nothing, so the
+     * instance is one whose mandatory mentions are expected.
+     */
+    @Test
+    void exposesWhetherTheInstanceDeclaredItselfADemo() {
+        given().when().get("/api/mentions-legales").then().statusCode(200).body("demoInstance", equalTo(false));
+    }
+
+    /**
      * The accessibility statement is the deploying organisation's to fill: an
      * unconfigured one yields empty fields, and the page then says it is not
      * filled in rather than claiming a compliance nobody measured.
