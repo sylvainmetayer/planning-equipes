@@ -551,6 +551,7 @@ describe('AdminShell', () => {
       // rather than something a loose assertion waves through.
       expect([...hidden].sort((a, b) => a.localeCompare(b))).toEqual([
         '/comparateur',
+        '/comptes',
         '/constraints',
         '/debug',
         '/equite',

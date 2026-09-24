@@ -97,6 +97,7 @@ const ROUTES: { path: string; marker?: string; sheet?: string }[] = [
   },
   { path: '/comparateur', sheet: 'comparateur-selection' },
   { path: '/historique', sheet: 'historique-controles' },
+  { path: '/comptes', marker: 'Comptes et droits', sheet: 'comptes-notes' },
   { path: '/journee?vue=pauses', sheet: 'pauses-message' },
   {
     path: '/journee?vue=changements',

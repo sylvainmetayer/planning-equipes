@@ -2529,6 +2529,60 @@ export interface StatutSession {
   roles: string[];
 }
 
+/* ------------------- Named accounts and delegated rights ------------------- */
+
+/**
+ * The roles an administrator grants in the application, per edition (ADR
+ * 0049). The global ones — `admin`, `mcp`, `animateur` — are Keycloak realm
+ * roles and never appear here.
+ */
+export type RoleHabilitation = 'RH' | 'RESPONSABLE_STAND';
+
+/** One right of an account. Withdrawn by `retireeLe`, never deleted. */
+export interface Habilitation {
+  id: string;
+  role: RoleHabilitation;
+  /** `null`: every edition. */
+  editionId: string | null;
+  /** Instant past which the right opens nothing; `null`: no expiry. */
+  expireLe: string | null;
+  /** The scope of a `RESPONSABLE_STAND`, empty for any other role. */
+  standIds: string[];
+  /** Who granted it — the granting session's name. */
+  creePar: string;
+  creeLe: string;
+  retireeLe: string | null;
+}
+
+/** `GET /api/comptes`: one person able to sign in, whatever the edition. Never deleted. */
+export interface Compte {
+  id: string;
+  email: string;
+  nom: string | null;
+  /** The Keycloak `sub`; `null` for an account created ahead of its first sign-in. */
+  sujet: string | null;
+  creeLe: string;
+  derniereConnexionLe: string | null;
+  /** Set while the account is deactivated: every role is then stripped, realm ones included. */
+  desactiveLe: string | null;
+  habilitations: Habilitation[];
+}
+
+/** Body of `POST /api/comptes`. */
+export interface NouveauCompte {
+  email: string;
+  nom: string | null;
+}
+
+/** Body of `POST /api/comptes/{id}/habilitations`. */
+export interface NouvelleHabilitation {
+  role: RoleHabilitation;
+  editionId: string | null;
+  /** ISO instant, in the future; `null`: no expiry. */
+  expireLe: string | null;
+  standIds: string[];
+}
+
 /** Answer of `POST /api/auth/logout`: where to go next to finish signing out. */
 export interface Deconnexion {
   /** Route ending the identity provider's session, `null` when there is none. */

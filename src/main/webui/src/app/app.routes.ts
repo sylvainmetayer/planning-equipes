@@ -129,6 +129,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/parametres/parametres-page').then((m) => m.ParametresPage),
   },
   {
+    // Named accounts and their delegated rights (ADR 0049); the credentials stay Keycloak's.
+    path: 'comptes',
+    title: () => $localize`:@@route.comptes:Comptes et droits`,
+    loadComponent: () => import('./pages/comptes/comptes-page').then((m) => m.ComptesPage),
+  },
+  {
     path: 'historique',
     title: () => $localize`:@@route.historique:Historique des actions`,
     loadComponent: () => import('./pages/historique/historique-page').then((m) => m.HistoriquePage),
