@@ -46,7 +46,12 @@ public class CurrentAction {
         this.action = code;
     }
 
-    /** Adds the fields an edit really changed, in the order they are declared. */
+    /**
+     * Adds the fields an edit really changed, in the order they are declared
+     * — or, for an export that lets its caller choose, the names of what it
+     * took out (the referentials of the CSV archive). Names only, never a
+     * value.
+     */
     public void champsModifies(List<String> noms) {
         if (noms != null) {
             champs.addAll(noms);

@@ -327,7 +327,36 @@ complètes. Quatre points sont connus et se consignent :
   `JOURNAL_RETENTION`, quatre-vingt-dix jours par défaut, appliquée chaque nuit
   — parce qu'un journal que personne ne relit deviendrait sinon un stockage de
   plus, conservé sans limite et repris dans chaque sauvegarde. Il cascade en
-  outre avec son édition, donc disparaît au plus tard à la purge annuelle ;
+  outre avec son édition, donc disparaît au plus tard à la purge annuelle.
+
+  Il trace aussi **les sorties de données**, et c'est ce qui permet de répondre,
+  pendant toute la rétention, à « qui a sorti la liste des animateurs, mineurs
+  compris, et quand ? » : chaque export de l'administration — PDF, archives,
+  CSV nominatifs, référentiels, scénario YAML, dump de la base — et chaque
+  téléchargement de son planning (PDF ou ICS) par un animateur depuis son
+  espace laisse une ligne — refus compris côté administration —, sous la même règle et **la même
+  rétention** `JOURNAL_RETENTION` pour la table vivante — les lignes
+  voyagent aussi dans les sauvegardes de nuit (`BACKUP_RETENTION`) et dans
+  tout dump exporté, qui les gardent à leur propre rythme. Rien de plus n'y
+  entre : l'action, la date, l'auteur, le code HTTP et, pour un téléchargement
+  d'espace, l'identifiant de l'animateur ; pour l'archive des référentiels,
+  les noms des référentiels emportés ; jamais le contenu du fichier. Un
+  téléchargement d'espace **refusé avant toute preuve d'identité** — lien
+  inconnu, ou code reçu par e-mail jamais saisi — n'écrit **rien** : détenir le
+  lien ne prouve pas qu'on est l'animateur, l'inscrire à son nom — souvent
+  celui d'un mineur — lui imputerait la tentative d'un autre, et une lecture
+  que n'importe qui peut répéter ne doit pas permettre de remplir la table.
+  Plus largement, l'animateur n'est l'**auteur** d'une ligne que si l'appel l'a
+  prouvé (session ouverte par le code e-mail) : une demande de code, un code
+  erroné ou une écriture refusée faute de session sont inscrits au nom
+  d'`ANONYME`, l'animateur restant nommé comme **cible**. L'auteur côté administration
+  reste « Administration » : l'application n'a qu'un compte, elle ne peut pas
+  dire laquelle des personnes qui le partagent a téléchargé. Seuls échappent à
+  la trace, avec leur motif dans `CatalogueActions`, les fichiers d'exemple
+  (qui ne portent personne) et **l'abonnement au calendrier** : l'agenda le
+  relit seul toutes les quelques heures, une ligne par relecture serait du
+  bruit, pas une trace — et rien ne compte ces relectures, comme le dit le
+  point sur l'abonnement plus haut ;
 - **l'import CSV des animateurs fait entrer des données personnelles par un
   fichier que l'exploitant tient lui-même**, et c'est une entrée à consigner :
   ce tableur porte des noms, des dates de naissance — donc l'information qui

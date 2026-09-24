@@ -25,11 +25,15 @@ import { keepViewInQueryParams, optionalParam } from '../../core/view-query-para
 import { StatusMessage } from '../../shared/status-message';
 import {
   FiltreActeur,
+  FiltreNature,
   FiltreResultat,
   entitesPresentes,
+  exportCodes,
   filter,
-  lireFiltreActeur,
-  lireFiltreResultat,
+  readActorFilter,
+  readNatureFilter,
+  readOutcomeFilter,
+  natureQuery,
   parJournee,
   qui,
   surQuoi,
@@ -75,8 +79,13 @@ export class HistoriquePage {
 
   protected readonly acteur = signal<FiltreActeur>('TOUS');
   protected readonly resultat = signal<FiltreResultat>('TOUS');
+  protected readonly nature = signal<FiltreNature>('TOUTES');
   protected readonly entite = signal('');
   protected readonly recherche = signal('');
+  /** The codes the server's catalogue flags as exports; empty until the inventory is read. */
+  private readonly exports = signal<ReadonlySet<string>>(new Set());
+  /** Which load the list shows: an answer to an older one never overwrites a newer one. */
+  private currentLoad = 0;
 
   protected readonly entites = computed(() => entitesPresentes(this.entrees()));
   protected readonly filtrees = computed(() =>
@@ -89,40 +98,83 @@ export class HistoriquePage {
     () =>
       this.acteur() !== 'TOUS' ||
       this.resultat() !== 'TOUS' ||
+      this.nature() !== 'TOUTES' ||
       this.entite() !== '' ||
       this.recherche().trim() !== '',
   );
 
   constructor() {
     const params = this.route.snapshot.queryParamMap;
-    this.acteur.set(lireFiltreActeur(params.get('acteur')));
-    this.resultat.set(lireFiltreResultat(params.get('resultat')));
+    this.acteur.set(readActorFilter(params.get('acteur')));
+    this.resultat.set(readOutcomeFilter(params.get('resultat')));
+    this.nature.set(readNatureFilter(params.get('nature')));
     this.entite.set(params.get('entite') ?? '');
     this.recherche.set(params.get('q') ?? '');
     void this.recharger();
+    void this.loadActionInventory();
     keepViewInQueryParams(() => ({
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
+      nature: this.nature() === 'TOUTES' ? null : this.nature(),
       entite: optionalParam(this.entite()),
       q: optionalParam(this.recherche()),
     }));
   }
 
   protected async recharger(): Promise<void> {
+    const ticket = ++this.currentLoad;
     this.chargement.set(true);
     this.erreur.set('');
     try {
-      this.entrees.set(await this.analysesApi.actionHistory());
+      const lines = await this.analysesApi.actionHistory(natureQuery(this.nature()));
+      if (ticket === this.currentLoad) {
+        this.entrees.set(lines);
+      }
     } catch (error) {
-      this.erreur.set(errorPrefix(error));
+      if (ticket === this.currentLoad) {
+        this.erreur.set(errorPrefix(error));
+      }
     } finally {
-      this.chargement.set(false);
+      if (ticket === this.currentLoad) {
+        this.chargement.set(false);
+      }
     }
+  }
+
+  /**
+   * « Exports » is a question put to the server — over the whole retention,
+   * not over the lines already on screen — so changing it reloads.
+   */
+  protected changeNature(nature: FiltreNature): void {
+    if (nature === this.nature()) {
+      return;
+    }
+    this.nature.set(nature);
+    void this.recharger();
+  }
+
+  /**
+   * The server's classification of the actions. Only used to word a line, so
+   * a failure leaves the list readable rather than showing an error.
+   */
+  private async loadActionInventory(): Promise<void> {
+    try {
+      this.exports.set(exportCodes(await this.analysesApi.actionInventory()));
+    } catch {
+      // Without it an export's names read as changed fields: worded less
+      // precisely, never wrong about what the line records.
+    }
+  }
+
+  /** Whether the line is a file leaving the application, as the server's catalogue says. */
+  protected isExport(entree: EntreeHistorique): boolean {
+    return this.exports().has(entree.action);
   }
 
   protected reinitialiser(): void {
     this.acteur.set('TOUS');
     this.resultat.set('TOUS');
+    this.changeNature('TOUTES');
     this.entite.set('');
     this.recherche.set('');
   }

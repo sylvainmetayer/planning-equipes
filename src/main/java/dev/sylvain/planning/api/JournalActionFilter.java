@@ -60,8 +60,15 @@ public class JournalActionFilter implements ContainerResponseFilter {
 
     @Override
     public void filter(ContainerRequestContext requete, ContainerResponseContext reponse) {
-        Optional<ActionJournalisee> catalogue = CatalogueActions.forRoute(key());
+        String cle = key();
+        Optional<ActionJournalisee> catalogue = CatalogueActions.forRoute(cle);
         if (catalogue.isEmpty()) {
+            return;
+        }
+        boolean prouve = requestScope.isIdentityProven();
+        if (CatalogueActions.recordedOnlyWhenProven(cle) && !prouve) {
+            // A download refused before anybody proved who they are: a free,
+            // repeatable read, and writing it would hand the table to anyone.
             return;
         }
         // A route whose method serves several actions says which one it was.
@@ -69,28 +76,43 @@ public class JournalActionFilter implements ContainerResponseFilter {
                 CatalogueActions.forCode(currentAction.action()).or(() -> catalogue);
         TokenOwner proprietaire = requestScope.getTokenOwner();
         String animateurId = proprietaire == null ? null : proprietaire.animateurId();
-        Acteur acteur = acteur(animateurId);
+        Acteur acteur = acteur(prouve);
         journal.record(
                 action.get(),
                 acteur,
-                acteur == Acteur.ANIMATEUR ? animateurId : journal.nomAdmin(),
+                switch (acteur) {
+                    case ANIMATEUR -> animateurId;
+                    // Nobody proved who they were: no name to write, not even « admin ».
+                    case ANONYME -> null;
+                    default -> journal.nomAdmin();
+                },
                 entiteId(requete, reponse, animateurId),
                 currentAction.champs(),
                 reponse.getStatus());
     }
 
     /**
-     * Who acted. A resolved espace token names an animateur; on the espace
-     * routes without one, nobody — those routes are open, so a bad or expired
-     * token reaches the refusal, and calling that « Administration » would
-     * misfile the very rows an operator goes looking for. Everywhere else the
-     * admin session is the only way in.
+     * Who acted. On the open routes — the espace and the calendar feed — the
+     * animateur only when the request <b>proved</b> it: a live session opened
+     * by the e-mail code, the code just exchanged for one, a proxy asserting
+     * the fiche's own address, or the dedicated subscription token (see
+     * {@link EditionRequestScope#isIdentityProven()}). Holding the espace link
+     * is not that proof: it can be forwarded or found, so a wrong code, a
+     * code request or a refused download is filed as ANONYME — pinning it on
+     * the animateur, often a minor, would blame them for someone else's
+     * attempt with their link. The animateur the token designates stays the
+     * <em>target</em> ({@code entite_id}), which is what an operator needs to
+     * see. Everywhere else the admin session is the only way in.
+     *
+     * <p>Decided on the proof, never on the response status: a wrong code is
+     * a 400, a code request throttled is a 429, and neither says anything
+     * about who is asking.</p>
      */
-    private Acteur acteur(String animateurId) {
-        if (animateurId != null) {
-            return Acteur.ANIMATEUR;
+    private Acteur acteur(boolean prouve) {
+        if (!openRoute()) {
+            return Acteur.ADMIN;
         }
-        return openRoute() ? Acteur.ANONYME : Acteur.ADMIN;
+        return prouve ? Acteur.ANIMATEUR : Acteur.ANONYME;
     }
 
     /**

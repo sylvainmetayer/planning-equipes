@@ -93,6 +93,11 @@ public class ReferentielCsvExportService {
         public String fileName() {
             return fileName;
         }
+
+        /** How the history names this referential: its file, without the extension. */
+        public String journalName() {
+            return fileName.substring(0, fileName.lastIndexOf('.'));
+        }
     }
 
     /** How many rows each referential would write — what the screen shows before downloading. */

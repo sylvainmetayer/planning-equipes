@@ -150,6 +150,16 @@ public class JournalActionService {
     }
 
     /**
+     * The edition's most recent exports, newest first — every action the
+     * catalogue flags as a file leaving the application. Selected by the
+     * database over the whole retention: « qui a sorti la liste, et quand ? »
+     * must not depend on how many edits happened since.
+     */
+    public List<EntreeJournal> listExports(Integer limite) {
+        return repository.listAmong(CatalogueActions.exportCodes(), limite == null ? LIMITE_DEFAUT : limite);
+    }
+
+    /**
      * What changed in the problem since {@code depuis}: the count per
      * referential family, and the {@code limite} most recent lines.
      *

@@ -2,10 +2,13 @@ import { describe, expect, it } from 'vitest';
 import { EntreeHistorique } from '../../core/models';
 import {
   entitesPresentes,
+  exportCodes,
   filter,
   journeeLocale,
-  lireFiltreActeur,
-  lireFiltreResultat,
+  readActorFilter,
+  readNatureFilter,
+  readOutcomeFilter,
+  natureQuery,
   parJournee,
   qui,
   surQuoi,
@@ -138,11 +141,62 @@ describe('parJournee', () => {
 
 describe('lecture des filtres depuis l’URL', () => {
   it('retombe sur le défaut pour une valeur inconnue', () => {
-    expect(lireFiltreActeur('ASSISTANT')).toBe('ASSISTANT');
-    expect(lireFiltreActeur('inventé')).toBe('TOUS');
-    expect(lireFiltreActeur(null)).toBe('TOUS');
-    expect(lireFiltreResultat('REFUS')).toBe('REFUS');
-    expect(lireFiltreResultat('peut-être')).toBe('TOUS');
+    expect(readActorFilter('ASSISTANT')).toBe('ASSISTANT');
+    expect(readActorFilter('inventé')).toBe('TOUS');
+    expect(readActorFilter(null)).toBe('TOUS');
+    expect(readOutcomeFilter('REFUS')).toBe('REFUS');
+    expect(readOutcomeFilter('peut-être')).toBe('TOUS');
+    expect(readNatureFilter('EXPORTS')).toBe('EXPORTS');
+    expect(readNatureFilter('exports')).toBe('TOUTES');
+    expect(readNatureFilter(null)).toBe('TOUTES');
+  });
+});
+
+describe('the Exports filter', () => {
+  it('is a question put to the server, never a filter over the loaded page', () => {
+    expect(natureQuery('EXPORTS')).toBe('exports');
+    expect(natureQuery('TOUTES')).toBeNull();
+  });
+
+  it('takes the classification from the server’s catalogue, not from the code', () => {
+    const codes = exportCodes([
+      {
+        code: 'EXPORT_REFERENTIELS',
+        libelle: 'Référentiels exportés en CSV',
+        entite: 'PLANNING',
+        export: true,
+      },
+      {
+        code: 'TELECHARGEMENT_ESPACE_PDF',
+        libelle: 'Planning téléchargé',
+        entite: 'ANIMATEUR',
+        export: true,
+      },
+      // A spelling that looks like an export is not one unless the catalogue says so.
+      { code: 'EXPORT_FICTIF', libelle: 'Pas un export', entite: null, export: false },
+      {
+        code: 'ANIMATEUR_MODIFIE',
+        libelle: 'Fiche animateur modifiée',
+        entite: 'ANIMATEUR',
+        export: false,
+      },
+    ]);
+    expect([...codes].sort()).toEqual(['EXPORT_REFERENTIELS', 'TELECHARGEMENT_ESPACE_PDF']);
+  });
+
+  it('leaves the other filters to combine over what the server sent', () => {
+    const entrees = [
+      entree({ id: 2, action: 'EXPORT_REFERENTIELS', entite: 'PLANNING', champs: ['stands'] }),
+      entree({
+        id: 3,
+        action: 'TELECHARGEMENT_ESPACE_PDF',
+        acteur: 'ANIMATEUR',
+        acteurId: 'A1',
+        champs: [],
+      }),
+    ];
+    expect(filter(entrees, 'ANIMATEUR', 'TOUS', '', '').map((e) => e.id)).toEqual([3]);
+    expect(filter(entrees, 'TOUS', 'TOUS', '', 'stands').map((e) => e.id)).toEqual([2]);
   });
 });
 

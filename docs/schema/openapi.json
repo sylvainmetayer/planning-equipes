@@ -83,6 +83,7 @@
         "enum" : [ "CREE", "MIS_A_JOUR", "REFUSE" ]
       },
       "ActionView" : {
+        "required" : [ "code", "libelle", "export" ],
         "type" : "object",
         "properties" : {
           "code" : {
@@ -93,6 +94,9 @@
           },
           "entite" : {
             "type" : "string"
+          },
+          "export" : {
+            "type" : "boolean"
           }
         }
       },
@@ -9864,6 +9868,13 @@
           "schema" : {
             "type" : "integer",
             "format" : "int32"
+          }
+        }, {
+          "name" : "nature",
+          "in" : "query",
+          "schema" : {
+            "type" : "string",
+            "enum" : [ "exports" ]
           }
         } ],
         "responses" : {

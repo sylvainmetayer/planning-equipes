@@ -20,6 +20,7 @@ public class EditionRequestScope {
 
     private String editionIdDemande;
     private TokenOwner tokenOwner;
+    private boolean identityProven;
 
     public String getEditionIdDemande() {
         return editionIdDemande;
@@ -36,5 +37,22 @@ public class EditionRequestScope {
 
     public void setTokenOwner(TokenOwner tokenOwner) {
         this.tokenOwner = tokenOwner;
+    }
+
+    /**
+     * Whether the caller proved to be the {@link #getTokenOwner() token
+     * owner} — a live espace session, an access proxy asserting the fiche's
+     * own address, a code just exchanged for a session, or the dedicated
+     * subscription token. The espace access token alone never sets it: a link
+     * can be forwarded, found or guessed, and holding it does not say who
+     * holds it. Read by the history to decide whether a line may name the
+     * animateur as its author.
+     */
+    public boolean isIdentityProven() {
+        return identityProven && tokenOwner != null;
+    }
+
+    public void markIdentityProven() {
+        this.identityProven = true;
     }
 }

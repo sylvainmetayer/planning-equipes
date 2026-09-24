@@ -241,8 +241,14 @@ class FoireAndEspaceExportsTest {
         }
     }
 
+    /**
+     * A download asked with a token that resolves nobody is refused, and
+     * writes nothing: nobody proved who they were, and a free read anyone can
+     * repeat must not be a way to fill the history.
+     */
     @Test
-    void unJetonInconnuNeTelechargeRien() {
+    void anUnknownTokenDownloadsNothingAndWritesNothing() {
+        int avant = espaceDownloadLines();
         given().when()
                 .get("/api/espace-animateur/jeton-invente/planning.pdf")
                 .then()
@@ -251,6 +257,53 @@ class FoireAndEspaceExportsTest {
                 .get("/api/espace-animateur/jeton-invente/planning.ics")
                 .then()
                 .statusCode(404);
+
+        assertThat(espaceDownloadLines()).isEqualTo(avant);
+    }
+
+    /** How many espace downloads the history holds, whatever their outcome. */
+    private static int espaceDownloadLines() {
+        return given().queryParam("nature", "exports")
+                .queryParam("limite", 500)
+                .when()
+                .get("/api/historique")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.action.startsWith('TELECHARGEMENT_ESPACE_') }")
+                .size();
+    }
+
+    /**
+     * « A-t-il bien récupéré son planning ? » — each explicit download from
+     * the espace writes one line, attributed to the animateur rather than to
+     * the administration, by id: the name is joined when the line is read.
+     */
+    @Test
+    void anEspaceDownloadIsRecordedUnderTheAnimateur() {
+        String token = tokenOf("FOIRE-A");
+        given().when()
+                .get("/api/espace-animateur/" + token + "/planning.pdf")
+                .then()
+                .statusCode(200);
+        given().when()
+                .get("/api/espace-animateur/" + token + "/planning.ics")
+                .then()
+                .statusCode(200);
+
+        for (String action : List.of("TELECHARGEMENT_ESPACE_PDF", "TELECHARGEMENT_ESPACE_ICS")) {
+            given().when()
+                    .get("/api/historique")
+                    .then()
+                    .statusCode(200)
+                    .body("find { it.action == '" + action + "' }.acteur", equalTo("ANIMATEUR"))
+                    .body("find { it.action == '" + action + "' }.acteurId", equalTo("FOIRE-A"))
+                    .body("find { it.action == '" + action + "' }.acteurNom", equalTo("Alice Martin"))
+                    .body("find { it.action == '" + action + "' }.entiteId", equalTo("FOIRE-A"))
+                    .body("find { it.action == '" + action + "' }.resultat", equalTo("SUCCES"))
+                    .body("find { it.action == '" + action + "' }.statut", equalTo(200));
+        }
     }
 
     private static void configure(boolean ouverte) {

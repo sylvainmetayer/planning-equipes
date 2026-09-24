@@ -46,5 +46,9 @@ public class AbonnementTokenFilter implements ContainerRequestFilter {
             return;
         }
         editionRequestScope.setTokenOwner(owner);
+        // The subscription token is a credential of its own, rotated from the
+        // espace behind the e-mail code, and good for one read-only document:
+        // within that perimeter it is the proof.
+        editionRequestScope.markIdentityProven();
     }
 }
