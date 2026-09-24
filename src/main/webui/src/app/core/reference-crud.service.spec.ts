@@ -616,13 +616,19 @@ describe('ReferenceCrudService', () => {
   });
 
   describe('reload', () => {
-    it("rapporte l'erreur sans la propager à la vue", async () => {
+    it('reports the error without throwing it to the view, and answers false', async () => {
       store.reload.mockRejectedValueOnce(new Error('indisponible'));
 
-      await expect(service.reload()).resolves.toBeUndefined();
+      await expect(service.reload()).resolves.toBe(false);
       expect(notifications.notify).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'error', message: 'indisponible' }),
       );
+    });
+
+    it('answers true once the store holds what the server has', async () => {
+      store.reload.mockResolvedValueOnce(undefined);
+
+      await expect(service.reload()).resolves.toBe(true);
     });
   });
 

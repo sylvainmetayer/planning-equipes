@@ -25,7 +25,14 @@ import { MatDialog } from '@angular/material/dialog';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { AdminApi } from '../core/api/admin-api';
+import {
+  LOCAL_DRAFT_STORAGE,
+  SESSION_DRAFT_STORAGE,
+  purgeExpiredDrafts,
+  purgeAllDrafts,
+} from '../core/brouillon-formulaire';
 import { EditionStore } from '../core/edition.store';
+import { SESSION_END_BUS, announceLogout, onLogoutElsewhere } from '../core/session-end';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../core/locale';
 import {
   defaultNavStorage,
@@ -121,6 +128,9 @@ export class AdminShell {
   private readonly announcer = inject(LiveAnnouncer);
   private readonly pageFocus = inject(PageFocusService);
   private readonly snackBar = inject(MatSnackBar);
+  /** Where the long forms keep their drafts: purged of the expired ones here, of all of them at logout. */
+  private readonly draftStorages = [inject(LOCAL_DRAFT_STORAGE), inject(SESSION_DRAFT_STORAGE)];
+  private readonly sessionEnd = inject(SESSION_END_BUS);
 
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
   protected readonly hasUnreadAlert = computed(() =>
@@ -165,6 +175,13 @@ export class AdminShell {
 
   constructor() {
     const destroyRef = this.destroyRef;
+    // A draft is a net against an accident, not a workspace: past a day it
+    // goes, whichever edition and form it belongs to (docs/rgpd.md §7).
+    this.draftStorages.forEach((storage) => purgeExpiredDrafts(storage));
+    // A logout in another tab reaches this one's sessionStorage only through
+    // this tab: its fiche animateur draft goes too (docs/rgpd.md §7).
+    const sessionDrafts = this.draftStorages[1];
+    destroyRef.onDestroy(onLogoutElsewhere(() => purgeAllDrafts(sessionDrafts), this.sessionEnd));
     // Starts polling the server-side solver lock for the whole session, and
     // stops it with this shell: the service is `providedIn: 'root'`, so a
     // session expiring (401 -> /login destroys this shell) would otherwise
@@ -435,6 +452,10 @@ export class AdminShell {
    * preloaded, so nothing keeps polling behind the login page.
    */
   protected async logout(): Promise<void> {
+    // Before anything that could fail: on a shared régie computer, the next
+    // person must not be offered the previous one's unsaved entries.
+    this.draftStorages.forEach((storage) => purgeAllDrafts(storage));
+    announceLogout(this.sessionEnd);
     try {
       await this.adminApi.logout();
     } finally {

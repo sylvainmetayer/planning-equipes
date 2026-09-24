@@ -187,7 +187,12 @@ test('un préréglage se crée, remplit le formulaire, et se supprime', async ({
   await page.getByRole('option', { name: 'Plan canicule E2E' }).click();
   await expect(form.getByLabel('Motif')).toHaveValue('Canicule');
   await expect(form.locator('.consigne-form-fenetres .consigne-fenetre')).toHaveCount(1);
+  // Picking a preset modified the form: leaving it asks before throwing the
+  // entry away, and « Abandonner » drops its draft too.
   await form.getByRole('button', { name: 'Annuler' }).click();
+  const abandon = page.getByRole('dialog').filter({ hasText: 'Abandonner les modifications ?' });
+  await abandon.getByRole('button', { name: 'Abandonner' }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
 
   await carte.getByRole('button', { name: 'Supprimer' }).click();
   await page.getByRole('dialog').getByRole('button', { name: 'Supprimer' }).click();

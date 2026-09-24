@@ -9,6 +9,11 @@ import { catchError } from 'rxjs/operators';
  * missing or expired (issue #165). The espace animateur and the auth endpoints
  * are left alone: they are public by design, a 401 there would be a real error
  * to surface, not a login redirect.
+ *
+ * The drafts are left alone: recovering an entry after the session expired
+ * is what they are for, and the fiche animateur's lives in this tab's
+ * sessionStorage, which nobody else reads. Only the explicit logout purges
+ * them (docs/rgpd.md §7).
  */
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const router = inject(Router);

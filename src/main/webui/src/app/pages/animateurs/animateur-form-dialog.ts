@@ -14,28 +14,17 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
 import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
+import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
 import { NewWindowLink } from '../../shared/new-window-link';
+import {
+  AnimateurDraft,
+  CompetenceRow,
+  isAnimateurModified,
+  readAnimateurDraft,
+  toDraft,
+} from './animateur-brouillon';
 
 const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
-
-interface CompetenceRow {
-  typologie: string;
-  niveau: NiveauCompetence;
-}
-
-interface AnimateurDraft {
-  id: string;
-  prenom: string;
-  nom: string;
-  dateNaissance: string;
-  manager: boolean;
-  email: string;
-  competences: CompetenceRow[];
-  souhaits: string[];
-  joursIndisponibles: string[];
-  /** The store's `modifieLe` at opening, sent back as the write's precondition (issue #362). */
-  modifieLe: string | null;
-}
 
 export interface AnimateurFormData {
   animateur: Animateur | null;
@@ -50,6 +39,7 @@ export interface AnimateurFormData {
 @Component({
   selector: 'app-animateur-form-dialog',
   imports: [
+    DraftBanner,
     NewWindowLink,
     FormsModule,
     MatDialogModule,
@@ -82,7 +72,26 @@ export class AnimateurFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.animateur?.id ?? null);
-  protected readonly draft = signal<AnimateurDraft>(toDraft(this.data.animateur));
+  private readonly initial = toDraft(this.data.animateur);
+  protected readonly draft = signal<AnimateurDraft>(this.initial);
+
+  /**
+   * The interrupted entry, kept in sessionStorage and nowhere else: a fiche
+   * carries an identity, a birth date and an e-mail, which must not outlive
+   * the tab on a shared computer (docs/rgpd.md §7).
+   */
+  protected readonly formDraft = new FormDraft<AnimateurDraft>({
+    type: 'animateur',
+    recordId: this.data.animateur?.id ?? null,
+    modifieLe: this.initial.modifieLe,
+    state: () => this.draft(),
+    modified: () => isAnimateurModified(this.initial, this.draft()),
+    read: (raw) => readAnimateurDraft(raw, this.data.animateur?.id ?? null),
+    precondition: (draft) => draft.modifieLe,
+    apply: (draft) => this.draft.set(draft),
+    dialogRef: this.dialogRef,
+    cancelResult: false,
+  });
   protected readonly newJour = signal('');
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
@@ -164,6 +173,7 @@ export class AnimateurFormDialog {
         $localize`:@@animateurs.entityLabel:Animateur`,
       )
     ) {
+      this.formDraft.complete();
       this.dialogRef.close(true);
     }
   }
@@ -242,36 +252,4 @@ export class AnimateurFormDialog {
   protected removeJourLabel(jour: string): string {
     return $localize`:@@animateurs.indispo.removeLabel:Retirer ${jour}:jour:`;
   }
-}
-
-function toDraft(animateur: Animateur | null): AnimateurDraft {
-  if (!animateur) {
-    return {
-      id: '',
-      prenom: '',
-      nom: '',
-      dateNaissance: '',
-      manager: false,
-      email: '',
-      competences: [],
-      souhaits: [],
-      joursIndisponibles: [],
-      modifieLe: null,
-    };
-  }
-  return {
-    id: animateur.id,
-    modifieLe: animateur.modifieLe ?? null,
-    prenom: animateur.prenom ?? '',
-    nom: animateur.nom ?? '',
-    dateNaissance: animateur.dateNaissance ?? '',
-    manager: animateur.manager ?? false,
-    email: animateur.email ?? '',
-    competences: Object.entries(animateur.competences ?? {}).map(([typologie, niveau]) => ({
-      typologie,
-      niveau,
-    })),
-    souhaits: [...(animateur.souhaits ?? [])],
-    joursIndisponibles: [...(animateur.joursIndisponibles ?? [])],
-  };
 }

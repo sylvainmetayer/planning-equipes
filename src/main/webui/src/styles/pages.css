@@ -447,3 +447,38 @@ a[target='_blank']:not(.mat-mdc-button-base):not(.mat-mdc-list-item):not(
   font-size: 0.85em;
   text-decoration: none;
 }
+
+/*
+ * The banner of a found draft (shared/brouillon-dialog.ts), at the top of the
+ * three long forms: an entry interrupted by a reload or a closed tab, offered
+ * back — never imposed.
+ */
+.brouillon-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  border-left: 3px solid var(--mat-sys-primary);
+  border-radius: 0.25rem;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.brouillon-banner-texte {
+  flex: 1 1 16rem;
+}
+
+.brouillon-banner-texte p {
+  margin: 0;
+}
+
+.brouillon-banner-conflit {
+  font-weight: 500;
+}
+
+.brouillon-banner-actions {
+  display: flex;
+  gap: 0.5rem;
+}

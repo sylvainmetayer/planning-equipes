@@ -3681,5 +3681,20 @@
   "verrouillages.list.titleFiltered": "Planning locks ({$INTERPOLATION} of {$INTERPOLATION_1})",
   "verrouillages.emptyFiltered": "No lock for these animateurs: the others are hidden.",
   "ouvertures.filtre.standSeul": "Only the stand « {$INTERPOLATION} » is shown.",
-  "ouvertures.filtre.toutAfficher": "Show all"
+  "ouvertures.filtre.toutAfficher": "Show all",
+  "brouillon.abandon.titre": "Discard your changes?",
+  "brouillon.abandon.message": "The unsaved entry in this form will be lost.",
+  "brouillon.abandon.confirmer": "Discard",
+  "brouillon.abandon.continuer": "Keep editing",
+  "brouillon.banner.conflit": "The record was modified since: when saving, you will choose between reloading and overwriting.",
+  "brouillon.banner.message": "An unsaved entry from {$jour} at {$heure} was found.",
+  "brouillon.banner.ignorer": "Ignore",
+  "brouillon.banner.reprendre": "Resume",
+  "brouillon.orphelin.titre": "Unsaved entry ignored",
+  "brouillon.orphelin.message": "{$fiches} was deleted in the meantime: the unsaved entry about it was erased.",
+  "animateurs.brouillon.orphelin": "Animateur {$ids}",
+  "stands.brouillon.orphelin": "Stand {$ids}",
+  "consignes.brouillon.orphelin": "The consigne of {$dates}",
+  "consignes.brouillon.conflit": "The consigne was modified since: saving will replace that newer version.",
+  "aide.data.brouillon": "The animateur form, the stand form and the consigne form keep a draft of the entry in progress. After a reload, an expired session or a closed tab, reopening the same form offers « Resume » or « Ignore »; if the record changed in the meantime, the banner says so and saving will make you choose between reloading and overwriting. Closing a modified form — Escape, a click outside, « Cancel » — asks for confirmation. The draft is erased on saving, on discarding, at logout and after 24 h; an animateur's draft does not outlive the closing of the tab, and the draft of a record deleted in the meantime is erased with a message."
 }

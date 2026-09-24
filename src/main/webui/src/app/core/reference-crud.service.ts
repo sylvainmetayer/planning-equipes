@@ -56,12 +56,19 @@ export class ReferenceCrudService {
   private readonly resolution = inject(PlanningResolutionStore);
   private readonly usages = inject(ReferenceUsageService);
 
-  /** Loads every collection; failures are reported but never thrown to the view. */
-  async reload(): Promise<void> {
+  /**
+   * Loads every collection; failures are reported but never thrown to the
+   * view. Answers whether the store now holds what the server has — a caller
+   * about to reason on an absence (a draft whose fiche is gone) must not do it
+   * on the empty lists of a failed load.
+   */
+  async reload(): Promise<boolean> {
     try {
       await this.store.reload();
+      return true;
     } catch (error) {
       this.reportError(error);
+      return false;
     }
   }
 
