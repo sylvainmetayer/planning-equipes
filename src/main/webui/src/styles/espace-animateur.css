@@ -248,7 +248,12 @@ app-espace-animateur-shell {
   margin-top: 0.75rem;
 }
 
-.espace-code-envoye,
+.espace-code-envoye {
+  display: flex;
+  align-items: baseline;
+  gap: 0.4rem;
+}
+
 /* Étiquette du groupe de créneaux du planning affiché (issue #165). */
 .espace-groupe {
   display: flex;

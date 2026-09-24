@@ -31,11 +31,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.jour-j-erreur {
-  margin: 0.5rem 0 0;
-  color: var(--mat-sys-error);
-}
-
 /* The consigne of the day (issue #4): the hours everybody works today are not
    the usual ones, said before the list of who is missing. */
 .jour-j-consigne {

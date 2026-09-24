@@ -553,6 +553,21 @@ describe('CalendarDayView rendering', () => {
       expect(cibles.find((cible) => cible.id === 'P2')!.label).toContain('Bob');
     });
 
+    it('leaves out the lines a lock closes, as the drop does', async () => {
+      const { fixture, open } = mount({
+        planning: plan,
+        verrous: { estStandVerrouille: (id) => id === 'Dixit' },
+      });
+      await fixture.whenStable();
+
+      root(fixture)
+        .querySelector<HTMLButtonElement>('button.affectation-poignee[aria-label*="Alice"]')!
+        .click();
+
+      const data = (open.mock.calls[0] as unknown[])[1] as { data: { targets: unknown[] } };
+      expect(data.data.targets).toEqual([]);
+    });
+
     it('moves through the same call as a drop', async () => {
       const { fixture, open } = mount({ planning: plan });
       open.mockReturnValueOnce({ afterClosed: () => of<unknown>({ source: null, target: 'P3' }) });
