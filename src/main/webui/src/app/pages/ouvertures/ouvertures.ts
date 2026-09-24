@@ -139,5 +139,11 @@ export function iconeAnomalie(type: TypeAnomalieOuverture): string {
       return 'help_outline';
     case 'SEGMENT_TROP_COURT':
       return 'hourglass_bottom';
+    case 'REGLES_CHEVAUCHANTES':
+      return 'layers';
+    case 'REGLE_MASQUEE':
+      return 'visibility_off';
+    case 'FENETRES_CHEVAUCHANTES':
+      return 'join_inner';
   }
 }

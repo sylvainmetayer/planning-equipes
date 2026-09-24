@@ -476,13 +476,16 @@
         </p>
         <ul class="ouvertures-anomalies">
           @for (anomalie of rapport()!.anomalies; track $index) {
-            <li>
+            <li [class.anomalie-info]="isInformationalAnomaly(anomalie.type)">
               <mat-icon>{{ iconeAnomalie(anomalie.type) }}</mat-icon>
               <span class="anomalie-stand">{{ anomalie.standNom || anomalie.standId }}</span>
               @if (anomalie.date) {
                 <span class="anomalie-date">{{ libelleJour(anomalie.date) }}</span>
               }
               <span>{{ anomalie.message }}</span>
+              @if (isInformationalAnomaly(anomalie.type)) {
+                <span class="anomalie-date" i18n="@@ouvertures.anomalies.pourInformation">(pour information)</span>
+              }
             </li>
           }
         </ul>

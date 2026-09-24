@@ -224,4 +224,29 @@ describe('buildStandDetail', () => {
       false,
     );
   });
+
+  // How the rules are written is said beside the other anomalies, named by its
+  // kind rather than a day, and never in the error colour: saving stays possible.
+  it('lists the rule overlaps by kind and for information only', () => {
+    const section = buildStandDetail(
+      stand({}),
+      [],
+      [
+        {
+          type: 'REGLES_CHEVAUCHANTES',
+          standId: 'S1',
+          standNom: 'Stand',
+          date: null,
+          message: 'Deux règles se recouvrent',
+          horaireId: 7,
+        },
+        { type: 'REGLE_MASQUEE', standId: 'S1', standNom: 'Stand', date: null, message: 'Masquée' },
+      ],
+    ).find((s) => s.title === 'Ouvertures effectives')!;
+
+    expect(section.rows).toEqual([
+      { label: 'Règles qui se recouvrent', value: 'Deux règles se recouvrent', alerte: false },
+      { label: 'Règle sans effet', value: 'Masquée', alerte: false },
+    ]);
+  });
 });

@@ -10,16 +10,26 @@
 // Every `$localize` below sits inside a function body on purpose: called at
 // module scope it would run before `main.ts` has loaded the translations.
 
-import { Creneau } from '../../core/models';
+import { Creneau, HoraireStand, Stand } from '../../core/models';
 import {
   ErreurSaisieFenetres,
+  FenetresChevauchantes,
+  JourEdition,
   JourResolu,
+  Priorite,
+  RegleMasquee,
+  ReglesChevauchantes,
+  anomaliesHoraires,
   conflitDeMode,
   decrireFenetre,
   erreurHoraire,
+  libelleJour,
   parseFenetres,
+  priorites,
 } from '../../core/horaire-stand';
+import { getStoredLocale, intlLocale } from '../../core/locale';
 import { HoraireDraft } from './stand-draft';
+import { describeDays } from './stand-detail';
 
 /**
  * Why one rule cannot be saved as entered, or `null` — the compact line first
@@ -113,4 +123,188 @@ export function decrireJour(jour: JourResolu): string {
 export function effectifDepuisSaisie(valeur: unknown): number | null {
   const count = valeur === '' || valeur === null || valeur === undefined ? null : Number(valeur);
   return count === null || Number.isNaN(count) ? null : count;
+}
+
+/* ------------------ warnings that never block a save ------------------ */
+
+/** What one rule card says below its fields, on top of its errors: warnings, then the priority it takes. */
+export interface NotesRegle {
+  avertissements: string[];
+  priorites: string[];
+}
+
+/** A rule as a reader recognises it: its days, then its windows. */
+function libelleRegle(horaire: HoraireStand): string {
+  const fenetres = horaire.fenetres
+    .filter((fenetre) => !!fenetre.heureDebut)
+    .map((fenetre) => decrireFenetre(fenetre, $localize`:@@stands.apercu.fermeture:fermeture`))
+    .join(', ');
+  return fenetres ? `${describeDays(horaire)} ${fenetres}` : describeDays(horaire);
+}
+
+/**
+ * Per rule, what the analysis of the Ouvertures screen will say about it once
+ * saved — overlapping rules (on the later one of the pair), a rule no day
+ * reads, overlapping windows — and, below the rule that wins, the rules of the
+ * opposite mode it takes over. Computed by the mirror of `core/horaire-stand.ts`
+ * on the rules as typed: nothing here blocks the submit.
+ *
+ * @param stand the dated exceptions, which win over every rule on their day
+ * @param jours the edition's days; empty while it has no créneau
+ * @param effectifMin what a window naming no headcount asks for, when known
+ */
+export function notesRegles(
+  horaires: readonly HoraireStand[],
+  stand: Pick<Stand, 'ouvertures' | 'indisponibilites'>,
+  jours: readonly JourEdition[],
+  effectifMin: number | null,
+): NotesRegle[] {
+  const notes: NotesRegle[] = horaires.map(() => ({ avertissements: [], priorites: [] }));
+  const anomalies = anomaliesHoraires(
+    {
+      horaires: [...horaires],
+      ouvertures: stand.ouvertures,
+      indisponibilites: stand.indisponibilites,
+    },
+    jours,
+    effectifMin,
+  );
+  for (const recouvrement of anomalies.reglesChevauchantes) {
+    notes[recouvrement.autreRegle].avertissements.push(
+      messageReglesChevauchantes(horaires, recouvrement),
+    );
+  }
+  for (const masquee of anomalies.reglesMasquees) {
+    notes[masquee.regle].avertissements.push(messageRegleMasquee(horaires, masquee));
+  }
+  for (const recouvrement of anomalies.fenetresChevauchantes) {
+    if (recouvrement.regle !== null) {
+      notes[recouvrement.regle].avertissements.push(
+        messageFenetresChevauchantes(horaires[recouvrement.regle], recouvrement),
+      );
+    }
+  }
+  for (const priorite of priorites(horaires, jours)) {
+    notes[priorite.regle].priorites.push(messagePriorite(horaires, priorite));
+  }
+  return notes;
+}
+
+/**
+ * {@link notesRegles} for rules several stands will carry at once — the bulk
+ * edit — each stand with its own dated exceptions: a warning is shown when
+ * any of them would report it, said once however many do. Stands carrying
+ * the same exceptions (most often none) are judged once.
+ *
+ * @param stands the dated exceptions of every stand the rules go to; empty
+ *               reads as a single stand without any
+ */
+export function notesReglesForStands(
+  horaires: readonly HoraireStand[],
+  stands: readonly Pick<Stand, 'ouvertures' | 'indisponibilites'>[],
+  jours: readonly JourEdition[],
+  effectifMin: number | null,
+): NotesRegle[] {
+  const distinct = new Map<string, Pick<Stand, 'ouvertures' | 'indisponibilites'>>();
+  for (const stand of stands.length > 0 ? stands : [{ ouvertures: [], indisponibilites: [] }]) {
+    const exceptions = {
+      ouvertures: stand.ouvertures ?? [],
+      indisponibilites: stand.indisponibilites ?? [],
+    };
+    distinct.set(JSON.stringify(exceptions), exceptions);
+  }
+  const merged: NotesRegle[] = horaires.map(() => ({ avertissements: [], priorites: [] }));
+  for (const exceptions of distinct.values()) {
+    notesRegles(horaires, exceptions, jours, effectifMin).forEach((note, index) => {
+      for (const avertissement of note.avertissements) {
+        if (!merged[index].avertissements.includes(avertissement)) {
+          merged[index].avertissements.push(avertissement);
+        }
+      }
+      for (const priorite of note.priorites) {
+        if (!merged[index].priorites.includes(priorite)) {
+          merged[index].priorites.push(priorite);
+        }
+      }
+    });
+  }
+  return merged;
+}
+
+function messageReglesChevauchantes(
+  horaires: readonly HoraireStand[],
+  recouvrement: ReglesChevauchantes,
+): string {
+  const autre = libelleRegle(horaires[recouvrement.regle]);
+  const { debut, fin, effectif, autreEffectif } = recouvrement;
+  if (horaires[recouvrement.regle].mode === 'FERMETURE') {
+    return $localize`:@@stands.horaires.avertissement.fermeturesChevauchantes:Recouvre la règle « ${autre}:regle: » de ${debut}:debut: à ${fin}:fin: : la même fermeture est dite deux fois, une seule règle suffit.`;
+  }
+  if (effectif === null || autreEffectif === null) {
+    return $localize`:@@stands.horaires.avertissement.reglesChevauchantesSansEffectif:Recouvre la règle « ${autre}:regle: » de ${debut}:debut: à ${fin}:fin: : c'est le plus haut des deux effectifs qui est retenu.`;
+  }
+  if (effectif === autreEffectif) {
+    return $localize`:@@stands.horaires.avertissement.reglesEnDouble:Recouvre la règle « ${autre}:regle: » de ${debut}:debut: à ${fin}:fin: : la même fenêtre est dite deux fois, avec le même effectif (${effectif}:effectif:).`;
+  }
+  const kept = Math.max(effectif, autreEffectif);
+  const dropped = Math.min(effectif, autreEffectif);
+  return $localize`:@@stands.horaires.avertissement.reglesChevauchantes:Recouvre la règle « ${autre}:regle: » de ${debut}:debut: à ${fin}:fin: : l'effectif retenu est ${kept}:retenu: (le plus haut), pas ${dropped}:ecarte:.`;
+}
+
+function messageRegleMasquee(horaires: readonly HoraireStand[], masquee: RegleMasquee): string {
+  const regles = masquee.masquantes.map((index) => `« ${libelleRegle(horaires[index])} »`);
+  if (masquee.exceptions && regles.length === 0) {
+    return $localize`:@@stands.horaires.avertissement.masqueeParExceptions:Cette règle n'est appliquée à aucun jour de l'édition : des exceptions datées la remplacent partout.`;
+  }
+  const qui = regles.join(', ');
+  return masquee.exceptions
+    ? $localize`:@@stands.horaires.avertissement.masqueeParReglesEtExceptions:Cette règle n'est appliquée à aucun jour de l'édition : ${qui}:regles: et des exceptions datées la remplacent partout.`
+    : $localize`:@@stands.horaires.avertissement.masquee:Cette règle n'est appliquée à aucun jour de l'édition : ${qui}:regles: la remplace partout.`;
+}
+
+function messageFenetresChevauchantes(
+  horaire: HoraireStand,
+  recouvrement: FenetresChevauchantes,
+): string {
+  const libelle = (index: number, effectif: number | null) =>
+    decrireFenetre(
+      { ...horaire.fenetres[index], effectif },
+      $localize`:@@stands.apercu.fermeture:fermeture`,
+    );
+  const first = libelle(recouvrement.fenetre, recouvrement.effectif);
+  const second = libelle(recouvrement.autreFenetre, recouvrement.autreEffectif);
+  const { debut, fin, effectif, autreEffectif } = recouvrement;
+  if (effectif === null || autreEffectif === null) {
+    // An unknown headcount (the bulk editor has no stand minimum) is not zero.
+    return $localize`:@@stands.horaires.avertissement.fenetresChevauchantesSansEffectif:${first}:premiere: et ${second}:seconde: se recouvrent de ${debut}:debut: à ${fin}:fin: : c'est le plus haut des deux effectifs qui est retenu.`;
+  }
+  const kept = Math.max(effectif, autreEffectif);
+  return $localize`:@@stands.horaires.avertissement.fenetresChevauchantes:${first}:premiere: et ${second}:seconde: se recouvrent : ${kept}:retenu: personne(s) de ${debut}:debut: à ${fin}:fin:.`;
+}
+
+/** How many dates a priority spells out before it stops. */
+const CITED_DATES = 5;
+
+/**
+ * The days of a rule inside a sentence: lower-cased in French (« samedi,
+ * dimanche »), left alone in English, where weekday names keep their capital.
+ */
+function daysInSentence(horaire: HoraireStand): string {
+  const days = describeDays(horaire);
+  return getStoredLocale() === 'fr' ? days.toLocaleLowerCase(intlLocale()) : days;
+}
+
+function messagePriorite(horaires: readonly HoraireStand[], priorite: Priorite): string {
+  const autre = daysInSentence(horaires[priorite.surRegle]);
+  const horaire = horaires[priorite.regle];
+  if (priorite.dates.length === 0) {
+    return $localize`:@@stands.horaires.priorite.sansJour:Prime sur « ${autre}:regle: » les jours qu'elle couvre.`;
+  }
+  // A weekday rule is read by its weekdays; the others by their dates.
+  const quand =
+    horaire.jours === 'JOURS_SEMAINE'
+      ? daysInSentence(horaire)
+      : priorite.dates.slice(0, CITED_DATES).map(libelleJour).join(', ') +
+        (priorite.dates.length > CITED_DATES ? '…' : '');
+  return $localize`:@@stands.horaires.priorite:Prime sur « ${autre}:regle: » : ${quand}:quand:.`;
 }

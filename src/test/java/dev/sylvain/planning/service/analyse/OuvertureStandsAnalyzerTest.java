@@ -351,6 +351,154 @@ class OuvertureStandsAnalyzerTest {
                 .isEmpty();
     }
 
+    /* ------------------- How the rules of one stand are written ------------------- */
+
+    private static HoraireStand everyDay(int debut, int fin, Integer effectif) {
+        return HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(debut, 0), LocalTime.of(fin, 0), effectif));
+    }
+
+    private static List<Anomaly> anomaliesOf(RapportOuvertures rapport, AnomalyType type) {
+        return rapport.anomalies().stream()
+                .filter(anomalie -> anomalie.type() == type)
+                .toList();
+    }
+
+    @Test
+    void twoEveryDayRulesOverlappingNameTheHeadcountKept() {
+        Stand stand = stand("DOUBLE");
+        stand.setEffectifMax(5);
+        HoraireStand quatre = everyDay(14, 20, 4);
+        HoraireStand deux = everyDay(14, 20, 2);
+        deux.setId(42L);
+        stand.setHoraires(List.of(quatre, deux));
+
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
+
+        assertThat(anomaliesOf(rapport, AnomalyType.REGLES_CHEVAUCHANTES))
+                .singleElement()
+                .satisfies(anomalie -> {
+                    assertThat(anomalie.message())
+                            .isEqualTo("Deux règles « tous les jours » se recouvrent de 14:00 à 20:00 : l'effectif "
+                                    + "retenu est 4 (le plus haut), pas 2.");
+                    assertThat(anomalie.horaireId()).isEqualTo(42L);
+                    assertThat(anomalie.type().isInformational()).isTrue();
+                });
+    }
+
+    @Test
+    void anEveryDayRuleReplacedOnEveryDayByAllSevenWeekdaysIsMasked() {
+        Stand stand = stand("MASQUE");
+        HoraireStand semaine = new HoraireStand(
+                null,
+                ModeHoraire.OUVERTURE,
+                dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0))));
+        semaine.setJoursSemaine(Set.of(java.time.DayOfWeek.values()));
+        stand.setHoraires(List.of(everyDay(10, 19, null), semaine));
+
+        RapportOuvertures rapport = analyze(List.of(stand), deuxJours());
+
+        assertThat(anomaliesOf(rapport, AnomalyType.REGLE_MASQUEE))
+                .singleElement()
+                .extracting(Anomaly::message)
+                .isEqualTo("La règle « tous les jours 10:00–19:00 » n'est appliquée à aucun jour : « du lundi au "
+                        + "dimanche 10:00–18:00 » la remplace partout.");
+        assertThat(anomaliesOf(rapport, AnomalyType.REGLES_CHEVAUCHANTES)).isEmpty();
+    }
+
+    @Test
+    void aRuleLeftWithOneDayIsNotMasked() {
+        Stand stand = stand("UN-JOUR");
+        HoraireStand mercredi = new HoraireStand(
+                null,
+                ModeHoraire.OUVERTURE,
+                dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(18, 0))));
+        mercredi.setJoursSemaine(Set.of(JOUR_1.getDayOfWeek()));
+        stand.setHoraires(List.of(everyDay(10, 19, null), mercredi));
+
+        assertThat(anomaliesOf(analyze(List.of(stand), deuxJours()), AnomalyType.REGLE_MASQUEE))
+                .isEmpty();
+    }
+
+    @Test
+    void aRuleReplacedByDatedExceptionsOnAllItsDaysIsMasked() {
+        Stand stand = stand("EXCEPTIONS");
+        stand.setHoraires(List.of(everyDay(10, 19, null)));
+        stand.getIndisponibilites().add(new IndisponibiliteStand(null, JOUR_1, LocalTime.of(12, 0), null, null));
+        stand.getOuvertures()
+                .add(new OuvertureStand(null, JOUR_1.plusDays(1), LocalTime.of(10, 0), LocalTime.of(12, 0), null));
+
+        assertThat(anomaliesOf(analyze(List.of(stand), deuxJours()), AnomalyType.REGLE_MASQUEE))
+                .singleElement()
+                .extracting(Anomaly::message)
+                .asString()
+                .endsWith(": des exceptions datées la remplacent partout.");
+    }
+
+    @Test
+    void twoWindowsOfOneRuleOverlappingAtDifferentHeadcountsAreReported() {
+        Stand stand = stand("FENETRES");
+        stand.setEffectifMax(5);
+        stand.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(14, 0), 3),
+                new FenetreHoraire(LocalTime.of(12, 0), LocalTime.of(18, 0), 2))));
+
+        assertThat(anomaliesOf(analyze(List.of(stand), deuxJours()), AnomalyType.FENETRES_CHEVAUCHANTES))
+                .singleElement()
+                .extracting(Anomaly::message)
+                .isEqualTo("Dans la règle « tous les jours », 10:00–14:00 @3 et 12:00–18:00 @2 se recouvrent : 3 "
+                        + "personne(s) de 12:00 à 14:00.");
+    }
+
+    @Test
+    void contiguousWindowsAreNotAnOverlap() {
+        Stand stand = stand("CONTIGUES");
+        stand.setEffectifMax(5);
+        stand.setHoraires(List.of(HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE,
+                new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0), 3),
+                new FenetreHoraire(LocalTime.of(12, 0), LocalTime.of(14, 0), 2))));
+
+        assertThat(analyze(List.of(stand), deuxJours()).anomalies())
+                .extracting(Anomaly::type)
+                .doesNotContain(AnomalyType.FENETRES_CHEVAUCHANTES);
+    }
+
+    /** « Le plus spécifique gagne » is the mechanism, not an anomaly. */
+    @Test
+    void aWeekdayClosureOverAnEveryDayOpeningIsNoAnomaly() {
+        Stand stand = stand("WEEKEND");
+        HoraireStand fermeture = new HoraireStand(
+                null,
+                ModeHoraire.FERMETURE,
+                dev.sylvain.planning.domain.TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(12, 0))));
+        fermeture.setJoursSemaine(Set.of(JOUR_1.getDayOfWeek()));
+        stand.setHoraires(List.of(everyDay(10, 20, null), fermeture));
+
+        assertThat(analyze(List.of(stand), deuxJours()).anomalies()).isEmpty();
+    }
+
+    /** Without a day, nothing can be masked nor merged; the windows of one rule are still read. */
+    @Test
+    void withoutTimeslotsOnlyTheWindowsOfOneRuleAreJudged() {
+        Stand stand = stand("SANS-JOUR");
+        stand.setEffectifMax(5);
+        stand.setHoraires(List.of(
+                HoraireStand.everyDay(
+                        ModeHoraire.OUVERTURE,
+                        new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(14, 0), 3),
+                        new FenetreHoraire(LocalTime.of(12, 0), LocalTime.of(18, 0), 2)),
+                everyDay(10, 18, 4)));
+
+        assertThat(analyze(List.of(stand), new ArrayList<>()).anomalies())
+                .extracting(Anomaly::type)
+                .containsOnly(AnomalyType.FENETRES_CHEVAUCHANTES, AnomalyType.STAND_JAMAIS_OUVERT);
+    }
+
     @Test
     void sansCreneauLeRapportEstVide() {
         RapportOuvertures rapport = analyze(List.of(stand("SEUL")), new ArrayList<>());

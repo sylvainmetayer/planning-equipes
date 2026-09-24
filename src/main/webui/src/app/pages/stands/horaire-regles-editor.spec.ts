@@ -20,6 +20,7 @@ import { HoraireReglesEditor } from './horaire-regles-editor';
         [prefixe]="prefixe"
         [horaires]="horaires()"
         [effectifMax]="4"
+        [jours]="jours"
         (horairesChange)="recu.push($event); horaires.set($event)"
       />
     </form>
@@ -27,6 +28,11 @@ import { HoraireReglesEditor } from './horaire-regles-editor';
 })
 class Hote {
   prefixe = 'bulk';
+  /** Two days of the edition, so rules can be judged on a calendar. */
+  readonly jours = [
+    { date: '2026-07-08', fin: '20:00' },
+    { date: '2026-07-09', fin: '20:00' },
+  ];
   readonly horaires = signal<HoraireDraft[]>([]);
   readonly recu: HoraireDraft[][] = [];
 }
@@ -157,5 +163,37 @@ describe('HoraireReglesEditor', () => {
     expect(
       (fixture.nativeElement as HTMLElement).querySelector('.field-error')!.textContent,
     ).toContain('(9)');
+  });
+
+  it('warns under the later of two overlapping rules without blocking anything', async () => {
+    const fixture = monter();
+    fixture.componentInstance.horaires.set([
+      { ...horaireVide(), fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 4 }] },
+      { ...horaireVide(), fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 2 }] },
+    ]);
+    await fixture.whenStable();
+
+    const cartes = (fixture.nativeElement as HTMLElement).querySelectorAll('.horaire-carte');
+    expect(cartes[0].querySelector('.horaire-avertissement')).toBeNull();
+    expect(cartes[1].querySelector('.horaire-avertissement')!.textContent).toContain(
+      "l'effectif retenu est 4 (le plus haut), pas 2",
+    );
+    // A warning, not an error: the card is not flagged and nothing says « refusé ».
+    expect(cartes[1].classList).not.toContain('horaire-carte-erreur');
+    expect((fixture.nativeElement as HTMLElement).querySelector('.field-error')).toBeNull();
+  });
+
+  it('shows the error alone under a rule whose entry is in error', async () => {
+    const fixture = monter();
+    fixture.componentInstance.horaires.set([
+      { ...horaireVide(), fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 4 }] },
+      { ...horaireVide(), fenetres: [{ heureDebut: '14:00', heureFin: '20:00', effectif: 9 }] },
+    ]);
+    await fixture.whenStable();
+
+    const cartes = (fixture.nativeElement as HTMLElement).querySelectorAll('.horaire-carte');
+    expect(cartes[1].classList).toContain('horaire-carte-erreur');
+    expect(cartes[1].querySelector('.field-error')!.textContent).toContain('(9)');
+    expect(cartes[1].querySelector('.horaire-avertissement')).toBeNull();
   });
 });

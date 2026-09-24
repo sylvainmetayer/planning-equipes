@@ -3,7 +3,7 @@
 // same split as `stand-bulk-edit.ts`.
 
 import { DetailRow, DetailSection } from '../../shared/detail-dialog';
-import { decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
+import { isInformationalAnomaly, decrireFenetre, resumerHoraires } from '../../core/horaire-stand';
 import {
   AnomalieOuverture,
   HoraireStand,
@@ -122,13 +122,32 @@ function sectionAnomalies(anomalies: readonly AnomalieOuverture[]): DetailSectio
             },
           ]
         : anomalies.map((anomalie) => ({
-            label: anomalie.date
-              ? jourCourt(anomalie.date)
-              : $localize`:@@detail.stand.anomalie.edition:Toute l'édition`,
+            label: anomalyLabel(anomalie),
             value: anomalie.message,
-            alerte: true,
+            // How the rules are written is said, not alarmed about: the
+            // resolver settles it, and saving stays possible.
+            alerte: !isInformationalAnomaly(anomalie.type),
           })),
   };
+}
+
+function anomalyLabel(anomalie: AnomalieOuverture): string {
+  switch (anomalie.type) {
+    case 'REGLES_CHEVAUCHANTES':
+      return $localize`:@@detail.stand.anomalie.reglesChevauchantes:Règles qui se recouvrent`;
+    case 'REGLE_MASQUEE':
+      return $localize`:@@detail.stand.anomalie.regleMasquee:Règle sans effet`;
+    case 'FENETRES_CHEVAUCHANTES':
+      if (anomalie.date) {
+        const jour = jourCourt(anomalie.date);
+        return $localize`:@@detail.stand.anomalie.fenetresChevauchantesLe:Fenêtres qui se recouvrent, ${jour}:jour:`;
+      }
+      return $localize`:@@detail.stand.anomalie.fenetresChevauchantes:Fenêtres qui se recouvrent`;
+    default:
+      return anomalie.date
+        ? jourCourt(anomalie.date)
+        : $localize`:@@detail.stand.anomalie.edition:Toute l'édition`;
+  }
 }
 
 /**
@@ -144,13 +163,13 @@ function decrireHoraire(horaire: HoraireStand): string {
   const fenetres = (horaire.fenetres ?? [])
     .map((fenetre) => decrireFenetre(fenetre, $localize`:@@stands.apercu.fermeture:fermeture`))
     .join(', ');
-  const morceaux = [mode, decrireJours(horaire), fenetres].filter((morceau) => morceau.length > 0);
+  const morceaux = [mode, describeDays(horaire), fenetres].filter((morceau) => morceau.length > 0);
   const description = morceaux.join(' · ');
   return horaire.motif ? `${description} — ${horaire.motif}` : description;
 }
 
 /** The day selector, read through whichever field `jours` designates — the others are ignored, exactly like the backend does. */
-function decrireJours(horaire: HoraireStand): string {
+export function describeDays(horaire: HoraireStand): string {
   switch (horaire.jours) {
     case 'JOURS_SEMAINE':
       return (horaire.joursSemaine ?? []).map(libelleJourSemaine).join(', ');

@@ -524,12 +524,16 @@
           },
           "message" : {
             "type" : "string"
+          },
+          "horaireId" : {
+            "type" : "integer",
+            "format" : "int64"
           }
         }
       },
       "AnomalyType" : {
         "type" : "string",
-        "enum" : [ "STAND_JAMAIS_OUVERT", "FENETRE_SANS_EFFET", "SEGMENT_TROP_COURT" ]
+        "enum" : [ "STAND_JAMAIS_OUVERT", "FENETRE_SANS_EFFET", "SEGMENT_TROP_COURT", "REGLES_CHEVAUCHANTES", "REGLE_MASQUEE", "FENETRES_CHEVAUCHANTES" ]
       },
       "ApercuJour" : {
         "required" : [ "date", "dejaSousConsigne", "creneauxDuJour", "siegesAvant", "siegesApres", "minutesAvant", "minutesApres", "creneauxAAjouter", "creneauxARetirer", "vacationsSansSiege", "standsOuverts", "standsEntrants", "standsSortants", "standsExceptionCoches", "mineursConcernes", "majeursDisponibles", "validationRetiree", "verrousTouches", "contraintesTouchees", "animateursDansLaBande" ],
@@ -2985,7 +2989,7 @@
         "enum" : [ "OUVERT_TOTAL", "OUVERT_PARTIEL", "FERME" ]
       },
       "EtatOuvertures" : {
-        "required" : [ "anomalies", "fenetresSansEffet", "standsJamaisOuverts", "statut" ],
+        "required" : [ "anomalies", "fenetresSansEffet", "informations", "standsJamaisOuverts", "statut" ],
         "type" : "object",
         "properties" : {
           "anomalies" : {
@@ -2997,6 +3001,10 @@
             "format" : "int32"
           },
           "standsJamaisOuverts" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "informations" : {
             "type" : "integer",
             "format" : "int32"
           },

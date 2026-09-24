@@ -18,12 +18,13 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import {
+  JourEdition,
   estCasParticulier,
   formaterFenetres,
   horaireVide,
   parseFenetres,
 } from '../../core/horaire-stand';
-import { FenetreHoraire, JourSemaine } from '../../core/models';
+import { FenetreHoraire, JourSemaine, Stand } from '../../core/models';
 import {
   HoraireDraft,
   ajouterA,
@@ -34,7 +35,12 @@ import {
   retirerDe,
 } from './stand-draft';
 import { libelleJourSemaine } from '../../core/horaire-stand';
-import { erreurRegle, messageConflitDeMode } from './stand-horaires';
+import {
+  erreurRegle,
+  messageConflitDeMode,
+  notesRegles,
+  notesReglesForStands,
+} from './stand-horaires';
 
 /**
  * The editor of a stand's recurring rules, shared by the stand form and the
@@ -77,6 +83,25 @@ export class HoraireReglesEditor {
    * « vide = celui du stand » names a number rather than a rule.
    */
   readonly effectifMin = input<number | undefined>(undefined);
+  /**
+   * The edition's days (`joursEdition`), so the warnings judge the rules on
+   * the calendar they will run on; empty leaves only the windows of one rule
+   * to judge.
+   */
+  readonly jours = input<readonly JourEdition[]>([]);
+  /** The stand's dated exceptions, which win over every rule on their day. */
+  readonly exceptions = input<Pick<Stand, 'ouvertures' | 'indisponibilites'>>({
+    ouvertures: [],
+    indisponibilites: [],
+  });
+  /**
+   * The bulk edit's: the dated exceptions of every selected stand, in place of
+   * {@link exceptions}. A warning is then shown when any of those stands would
+   * report it once the rules are written to it.
+   */
+  readonly exceptionsByStand = input<
+    readonly Pick<Stand, 'ouvertures' | 'indisponibilites'>[] | null
+  >(null);
   readonly disabled = input(false);
   /** Prefix of the control names, so two editors in one form never share a name. */
   readonly prefixe = input('');
@@ -105,6 +130,25 @@ export class HoraireReglesEditor {
   protected readonly erreursRegles = computed(() =>
     this.horaires().map((horaire) => erreurRegle(horaire, this.effectifMax())),
   );
+
+  /**
+   * What the Ouvertures analysis will report on each rule once saved, and the
+   * priority a more specific rule takes: shown under the card, never blocking.
+   * A rule whose entry is in error carries its error alone: a warning computed
+   * on what it currently holds would talk about something the user is rewriting.
+   */
+  protected readonly notes = computed(() => {
+    const minimum = this.effectifMin();
+    const errors = this.erreursRegles();
+    const effectif =
+      minimum !== undefined && Number.isFinite(minimum) && minimum > 0 ? minimum : null;
+    const byStand = this.exceptionsByStand();
+    return (
+      byStand === null
+        ? notesRegles(this.horaires(), this.exceptions(), this.jours(), effectif)
+        : notesReglesForStands(this.horaires(), byStand, this.jours(), effectif)
+    ).map((note, index) => (errors[index] !== null ? { ...note, avertissements: [] } : note));
+  });
 
   /** The one check that spans several rules: two rules of one scope disagreeing on the mode. */
   protected readonly conflitDeMode = computed(() => messageConflitDeMode(this.horaires()));

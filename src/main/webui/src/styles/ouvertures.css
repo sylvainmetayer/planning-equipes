@@ -270,6 +270,10 @@
   color: var(--mat-sys-error);
 }
 
+.ouvertures-anomalies .anomalie-info mat-icon {
+  color: var(--mat-sys-on-surface-variant);
+}
+
 .ouvertures-anomalies .anomalie-stand {
   font-weight: 600;
   flex: none;

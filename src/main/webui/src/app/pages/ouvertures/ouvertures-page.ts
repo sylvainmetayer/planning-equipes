@@ -21,6 +21,7 @@ import { ActivatedRoute, RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { bandeLabel } from '../../core/consigne-wording';
+import { isInformationalAnomaly } from '../../core/horaire-stand';
 import {
   AccesGrille,
   RecopieGrille,
@@ -1003,6 +1004,7 @@ export class OuverturesPage {
   protected readonly largeurPourcent = largeurPourcent;
   protected readonly classeCellule = classeCellule;
   protected readonly iconeAnomalie = iconeAnomalie;
+  protected readonly isInformationalAnomaly = isInformationalAnomaly;
 
   protected duree(minutes: number): string {
     return dureeCourte(minutes, {

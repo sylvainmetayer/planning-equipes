@@ -217,4 +217,31 @@ class HoraireStandResolverTest {
     private static Stand stand(String id) {
         return new Stand(id, id, Set.of(), 1, 1, false);
     }
+
+    /** The variant names the rules behind the verdict, and the verdict is the plain one's. */
+    @Test
+    void resolveDayWithRulesKeepsTheVerdictAndNamesTheRulesThatWon() {
+        HoraireStand tous = HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(10, 0), LocalTime.of(20, 0)));
+        HoraireStand samedi = new HoraireStand(
+                null,
+                ModeHoraire.FERMETURE,
+                TypeJoursHoraire.JOURS_SEMAINE,
+                List.of(new FenetreHoraire(LocalTime.of(12, 0), LocalTime.of(14, 0))));
+        samedi.setJoursSemaine(Set.of(DayOfWeek.SATURDAY));
+        HoraireStand aussiTous = HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(18, 0), LocalTime.of(22, 0), 3));
+        List<HoraireStand> horaires = List.of(tous, samedi, aussiTous);
+        LocalDate lundi = LocalDate.of(2026, 7, 6);
+
+        HoraireStandResolver.RuledDay mercredi = HoraireStandResolver.resolveDayWithRules(horaires, MERCREDI);
+        assertThat(mercredi.rules()).containsExactly(tous, aussiTous);
+        assertThat(mercredi.fenetres())
+                .isEqualTo(HoraireStandResolver.resolveDay(horaires, MERCREDI).fenetres());
+        assertThat(HoraireStandResolver.resolveDayWithRules(horaires, LocalDate.of(2026, 7, 11))
+                        .rules())
+                .containsExactly(samedi);
+        assertThat(HoraireStandResolver.resolveDayWithRules(List.of(samedi), lundi))
+                .isNull();
+    }
 }

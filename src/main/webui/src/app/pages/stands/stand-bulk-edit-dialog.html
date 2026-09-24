@@ -122,7 +122,7 @@
     </mat-select>
   </mat-form-field>
   @if (patch().horaires.mode === 'AJOUTER' || patch().horaires.mode === 'REMPLACER') {
-    <app-horaire-regles-editor prefixe="bulk" [horaires]="patch().horaires.horaires"
+    <app-horaire-regles-editor prefixe="bulk" [horaires]="patch().horaires.horaires" [jours]="joursEdition()" [exceptionsByStand]="exceptionsByStand()"
                                [disabled]="editingLocked()" (horairesChange)="remplacerHoraires($event)" />
   }
   @if (patch().horaires.mode === 'DEPUIS_STAND') {
