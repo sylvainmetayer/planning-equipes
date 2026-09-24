@@ -167,8 +167,9 @@ describe('app.routes', () => {
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
     // annonçaient de travers.
     // `/marge` lost its title when it became two tabs of the Diagnostic;
-    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another.
-    expect(titrees).toHaveLength(41);
+    // `/realise` (Réalisé vs planifié) brought one, `/editions/comparer` another,
+    // and `/comptes` a third.
+    expect(titrees).toHaveLength(42);
     TestBed.configureTestingModule({
       providers: [provideZonelessChangeDetection(), provideRouter([])],
     });
