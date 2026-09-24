@@ -1,0 +1,172 @@
+# Le script de restauration de l'exploitant, joué pour de vrai.
+#
+# scripts/restaurer.sh ne sert qu'un jour de crise, et c'est ce jour-là qu'on
+# découvre qu'une commande documentée visait un service qui s'appelle autrement.
+# Ce workflow monte la pile de production telle qu'elle est livrée
+# (docker-compose.prod.yml, image construite depuis ce commit), dépose une
+# sauvegarde dans le volume, modifie la base, restaure, et vérifie : la donnée
+# d'après la sauvegarde a disparu, celle d'avant est revenue, le dump de
+# précaution existe, l'application est de nouveau disponible. Le mode --essai,
+# le refus d'un fichier qui n'est pas un dump ou d'un dump tronqué, et le retour
+# arrière d'une restauration qui échoue en cours de route sont joués aussi.
+#
+# Il ne tourne que sur ce qui peut le casser : les scripts de l'exploitant (que
+# shellcheck relit au passage), la pile, l'image.
+name: Restauration
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/**'
+      - 'docker-compose.prod.yml'
+      - 'Dockerfile'
+      - '.github/workflows/restauration.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'scripts/**'
+      - 'docker-compose.prod.yml'
+      - 'Dockerfile'
+      - '.github/workflows/restauration.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: restauration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  restaurer:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      COMPOSE: docker compose -f docker-compose.prod.yml --env-file .env.prod
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Le Dockerfile lit l'historique pour la version et les Nouveautés.
+          fetch-depth: 0
+
+      - name: Lint the operator scripts
+        run: shellcheck scripts/*.sh
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Construite ici plutôt que tirée : c'est l'image de CE commit que la pile
+      # doit faire tourner. Le cache est celui du workflow de publication.
+      - name: Build the application image
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64
+          load: true
+          # Le nom même que docker-compose.prod.yml écrit en dur : c'est lui que
+          # la pile cherchera, fork ou pas.
+          tags: ghcr.io/sylvainmetayer/planning-equipes:restauration-ci
+          cache-from: type=gha
+
+      - name: Start the production stack
+        run: |
+          # Generated per run: GitGuardian scans the workflows, and a throwaway
+          # stack needs no credential anybody could reuse.
+          cat > .env.prod <<EOF
+          APP_VERSION=restauration-ci
+          DB_PASSWORD=$(openssl rand -hex 16)
+          ADMIN_PASSWORD=$(openssl rand -hex 16)
+          SESSION_ENCRYPTION_KEY=$(openssl rand -hex 16)
+          PUBLIC_URL=http://localhost:8080
+          MAIL_HOST=localhost
+          MAIL_FROM=ci@localhost
+          LEGAL_DEMO_INSTANCE=true
+          EOF
+          $COMPOSE up -d --wait --wait-timeout 300 || { $COMPOSE logs app; exit 1; }
+
+      - name: Put a backup in the volume, then change the database
+        run: |
+          psql() { $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$1"; }
+          psql "CREATE TABLE restauration_ci (etat text); INSERT INTO restauration_ci VALUES ('avant')"
+          $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom \
+            | $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'cat > /backups/planning-20260101-040000.dump'
+          psql "DELETE FROM restauration_ci; INSERT INTO restauration_ci VALUES ('apres')"
+
+      - name: A file that is not a dump is refused before anything stops
+        run: |
+          echo "pas un dump" > faux.dump
+          if scripts/restaurer.sh --oui --fichier faux.dump; then
+            echo "::error::un fichier invalide a été restauré"; exit 1
+          fi
+          test "$($COMPOSE ps --status running --services | grep -c '^app$')" = 1
+
+      # Cut short after its table of contents: `pg_restore --list` still reads
+      # it, only a read of the whole archive notices the missing end.
+      - name: A dump truncated after its table of contents is refused before anything stops
+        run: |
+          $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom > complet.dump
+          head -c "$(( $(stat -c %s complet.dump) - 64 ))" complet.dump > tronque.dump
+          $COMPOSE exec -T postgres pg_restore --list < tronque.dump > /dev/null
+          demarre="$(docker inspect --format '{{.State.StartedAt}}' "$($COMPOSE ps -q app)")"
+          if scripts/restaurer.sh --oui --fichier tronque.dump; then
+            echo "::error::un dump tronqué a été restauré"; exit 1
+          fi
+          # Never stopped, not merely running again.
+          test "$(docker inspect --format '{{.State.StartedAt}}' "$($COMPOSE ps -q app)")" = "$demarre"
+
+      - name: Trial restore in a throwaway database
+        run: |
+          scripts/restaurer.sh --essai --oui planning-20260101-040000.dump | tee essai.log
+          grep -q "restauré en" essai.log
+          # La production n'a pas bougé.
+          test "$($COMPOSE exec -T postgres psql -U festival -d festival -tAc 'SELECT etat FROM restauration_ci')" = apres
+          test -z "$(docker ps -aq --filter name=planning-essai-restauration)"
+
+      # A dump that passes every check and still fails halfway through
+      # pg_restore: it grants a privilege to a role dropped after it was taken,
+      # and that GRANT comes last, once every table is loaded. The script must
+      # put the state from before back and restart the application.
+      - name: A restore failing midway puts the state from before back
+        run: |
+          psql() { $COMPOSE exec -T postgres psql -U festival -d festival -v ON_ERROR_STOP=1 -tAc "$1"; }
+          psql "UPDATE restauration_ci SET etat = 'orphelin'; CREATE ROLE restauration_ci_orphelin; GRANT SELECT ON restauration_ci TO restauration_ci_orphelin"
+          $COMPOSE exec -T postgres pg_dump -U festival -d festival --format=custom > orphelin.dump
+          psql "DROP OWNED BY restauration_ci_orphelin; DROP ROLE restauration_ci_orphelin; UPDATE restauration_ci SET etat = 'apres'"
+          code=0
+          scripts/restaurer.sh --oui --fichier orphelin.dump > echec.log 2>&1 || code=$?
+          cat echec.log
+          if [ "$code" = 0 ]; then
+            echo "::error::la restauration aurait dû échouer"; exit 1
+          fi
+          grep -q "état d'avant restauré" echec.log
+          test "$(psql 'SELECT etat FROM restauration_ci')" = apres
+          # Restarted by the script itself, then healthy again.
+          test "$($COMPOSE ps --status running --services | grep -c '^app$')" = 1
+          etat=inconnu
+          for _ in $(seq 1 300); do
+            etat="$(docker inspect --format '{{.State.Health.Status}}' "$($COMPOSE ps -q app)")"
+            [ "$etat" = healthy ] && break
+            sleep 1
+          done
+          test "$etat" = healthy
+
+      - name: Restore
+        run: scripts/restaurer.sh --oui planning-20260101-040000.dump
+
+      - name: Check the restored state
+        run: |
+          test "$($COMPOSE exec -T postgres psql -U festival -d festival -tAc 'SELECT etat FROM restauration_ci')" = avant
+          $COMPOSE run --rm --no-deps -T --entrypoint bash app -c 'ls /backups' | tee sauvegardes.txt
+          grep -q '^planning-avant-restauration-.*\.dump$' sauvegardes.txt
+          test "$(docker inspect --format '{{.State.Health.Status}}' "$($COMPOSE ps -q app)")" = healthy
+
+      - name: Logs on failure
+        if: failure()
+        run: $COMPOSE logs --tail 200
+
+      - name: Tear down
+        if: always()
+        run: $COMPOSE down -v --remove-orphans || true

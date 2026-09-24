@@ -32,6 +32,31 @@ jobs:
     # garde-fou contre un blocage, pas une prévision.
     timeout-minutes: 60
 
+    # The smoke test starts the pushed image against a real PostgreSQL and a
+    # Mailpit, as the production stack does. Same images as docker-compose.yml,
+    # which Renovate keeps in step; the server major must also match the
+    # postgresql-client the Dockerfile installs, which the smoke test checks.
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_DB: festival
+          POSTGRES_USER: festival
+          # No password at all: a throwaway database on the runner, and
+          # GitGuardian scans the workflows — nothing here may look like a
+          # credential. The application still sends one (generated below),
+          # which `trust` ignores.
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U festival -d festival"
+          --health-interval 5s --health-timeout 5s --health-retries 12
+      mailpit:
+        image: axllent/mailpit:v1.31
+        ports:
+          - 1025:1025
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -90,11 +115,24 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=ref,event=branch
-            type=sha
           # The default `latest=auto` moves `:latest` on EVERY tag push — so
           # publishing a 1.2.4 patch after 1.3.0 is out would silently point
           # `:latest` back at the old line. It is set explicitly instead, by
           # the dedicated step below, and only ever moves forward.
+          flavor: |
+            latest=false
+
+      # Pushed under its `sha-…` tag ONLY. The readable tags (`X.Y.Z`, `X.Y`,
+      # `main`) are laid by digest further down, once the image has proven it
+      # boots: a broken image stays reachable for diagnosis, it never becomes
+      # a release or `:main`.
+      - name: Extract the digest-only tag
+        id: meta-sha
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=sha
           flavor: |
             latest=false
 
@@ -113,10 +151,79 @@ jobs:
           # au milieu d'une release.
           platforms: linux/amd64
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: ${{ steps.meta-sha.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      # The artefact that will be deployed, pulled by digest, started with the
+      # minimal production environment: what only the image can break — the
+      # JRE layer, uid 1000, the PGDG postgresql-client, the rights on
+      # /backups, the ENTRYPOINT, the startup guards (DefaultSecrets,
+      # RequiredMentionsLegales, BACKUP_RETENTION bounds) — breaks here,
+      # before anything is tagged, signed or attested.
+      - name: Smoke test the pushed image
+        env:
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          # Generated here rather than written down: nothing in this file is a
+          # credential, even a throwaway one.
+          db_secret="$(openssl rand -hex 16)"
+          admin_password="$(openssl rand -hex 16)"
+          session_key="$(openssl rand -hex 16)"
+          docker run -d --name smoke --network host \
+            -e DB_URL=jdbc:postgresql://localhost:5432/festival \
+            -e DB_USER=festival -e DB_PASSWORD="$db_secret" \
+            -e ADMIN_PASSWORD="$admin_password" \
+            -e QUARKUS_HTTP_AUTH_SESSION_ENCRYPTION_KEY="$session_key" \
+            -e PUBLIC_URL=http://localhost:8080 \
+            -e MAIL_MOCK=false -e MAIL_HOST=localhost -e MAIL_PORT=1025 \
+            -e MAIL_FROM=smoke@localhost -e MAIL_START_TLS=DISABLED \
+            -e LEGAL_DEMO_INSTANCE=true \
+            -e BACKUP_DIR=/backups -e BACKUP_RETENTION=3 \
+            "$IMAGE"
+
+          # The version the image must report: the Dockerfile's own
+          # derivation, word for word, on the same checkout — any tag exactly
+          # on HEAD (without its `v`), the short SHA otherwise. Keyed on the
+          # event instead, a push to main of a commit already tagged would
+          # expect the SHA where the image rightly says the version.
+          revision="$(git describe --tags --exact-match HEAD 2>/dev/null || git rev-parse --short HEAD)"
+          expected="${revision#v}"
+          if ! scripts/verifier-deploiement.sh --attente 180 --instance-demo \
+              --env-file /dev/null http://localhost:8080 "$expected"; then
+            echo "::error::L'image ne démarre pas ou ne répond pas comme attendu"
+            docker logs smoke
+            exit 1
+          fi
+
+          failed=0
+          uid="$(docker exec smoke id -u)"
+          if [ "$uid" = 1000 ]; then echo "✔ processus en uid 1000"; else echo "✘ uid $uid au lieu de 1000"; failed=1; fi
+
+          server_major="$(sed -n 's/^[[:space:]]*image: postgres:\([0-9]*\).*/\1/p' docker-compose.prod.yml | head -n1)"
+          client_major="$(docker exec smoke pg_dump --version | awk '{print $3}' | cut -d. -f1)"
+          if [ -n "$server_major" ] && [ "$client_major" = "$server_major" ]; then
+            echo "✔ pg_dump $client_major, comme postgres:$server_major de docker-compose.prod.yml"
+          else
+            echo "✘ pg_dump $client_major, docker-compose.prod.yml sert postgres:${server_major:-?}"; failed=1
+          fi
+
+          if docker exec smoke bash -c 'touch /backups/.smoke && rm /backups/.smoke'; then
+            echo "✔ /backups inscriptible"
+          else
+            echo "✘ /backups n'est pas inscriptible par l'utilisateur de l'image"; failed=1
+          fi
+
+          if [ "$failed" != 0 ]; then
+            echo "::error::Le smoke test de l'image a échoué"
+            docker logs smoke
+            exit 1
+          fi
+
+      - name: Stop the smoke-test container
+        if: always()
+        run: docker rm -f smoke >/dev/null 2>&1 || true
 
       # Syft reads the pushed image rather than the source tree: what has to be
       # inventoried is what actually ships (the JVM layer, the Quarkus app and
@@ -174,6 +281,21 @@ jobs:
           subject-digest: ${{ steps.build.outputs.digest }}
           sbom-path: sbom.cyclonedx.json
           push-to-registry: true
+
+      # The readable tags, by digest, only now: the image booted (smoke test)
+      # and is already signed and attested. A failure from here on leaves a
+      # signed image missing a tag — never a tagged image missing its
+      # signature. `imagetools create` re-points without rebuilding, so each
+      # tag names the exact digest that was tested; re-running is idempotent.
+      - name: Tag the validated image
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE: ghcr.io/${{ github.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          for tag in $TAGS; do
+            docker buildx imagetools create --tag "$tag" "$IMAGE"
+            echo "✔ $tag"
+          done
 
       # Last on purpose: everything above publishes and then SIGNS the image,
       # and a failure here — a flaky fetch, a registry hiccup on

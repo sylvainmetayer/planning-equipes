@@ -67,3 +67,7 @@ naissance et adresses de tous les animateurs, mineurs compris.
   que personne ne lit ;
 - l'export SQL de l'écran *Paramètres* reste ce qu'il a toujours été : un outil
   d'analyse et de transfert entre instances, pas une sauvegarde.
+- la restauration hors de l'application a reçu depuis un **script guidé**
+  exécuté sur l'hôte (`scripts/restaurer.sh`, voir `docs/exploitation.md` § 5) :
+  il automatise les étapes sans ouvrir aucune route, ce qui laisse cette
+  décision intacte.
