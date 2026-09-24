@@ -1427,14 +1427,6 @@
           }
         }
       },
-      "CodeSession" : {
-        "type" : "object",
-        "properties" : {
-          "code" : {
-            "type" : "string"
-          }
-        }
-      },
       "CoherenceFamily" : {
         "type" : "string",
         "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS", "AJUSTEMENTS", "CAPACITE" ]
@@ -1677,6 +1669,38 @@
           }
         }
       },
+      "Compte" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "sujet" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "derniereConnexionLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "desactiveLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "habilitations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Habilitation"
+            }
+          }
+        }
+      },
       "CompteEntiteView" : {
         "type" : "object",
         "required" : [ "entite", "nombre" ],
@@ -1691,7 +1715,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode", "dragDropEnabled", "version" ],
+        "required" : [ "devMode", "dragDropEnabled", "version", "authOidc", "authSecours" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1711,6 +1735,12 @@
           },
           "version" : {
             "type" : "string"
+          },
+          "authOidc" : {
+            "type" : "boolean"
+          },
+          "authSecours" : {
+            "type" : "boolean"
           }
         }
       },
@@ -2661,6 +2691,14 @@
           },
           "decideLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "Deconnexion" : {
+        "type" : "object",
+        "properties" : {
+          "urlDeconnexion" : {
+            "type" : "string"
           }
         }
       },
@@ -4042,6 +4080,38 @@
             "items" : {
               "$ref" : "#/components/schemas/GroupView"
             }
+          }
+        }
+      },
+      "Habilitation" : {
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "creePar" : {
+            "type" : "string"
+          },
+          "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "retireeLe" : {
+            "$ref" : "#/components/schemas/Instant"
           }
         }
       },
@@ -5495,6 +5565,17 @@
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
       },
+      "NouveauCompte" : {
+        "type" : "object",
+        "properties" : {
+          "email" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
       "NouvelleDeclaration" : {
         "type" : "object",
         "properties" : {
@@ -5539,6 +5620,26 @@
           },
           "standCibleId" : {
             "type" : "string"
+          }
+        }
+      },
+      "NouvelleHabilitation" : {
+        "type" : "object",
+        "properties" : {
+          "role" : {
+            "$ref" : "#/components/schemas/RoleHabilitation"
+          },
+          "editionId" : {
+            "type" : "string"
+          },
+          "expireLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "standIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -7414,6 +7515,10 @@
           }
         }
       },
+      "RoleHabilitation" : {
+        "type" : "string",
+        "enum" : [ "RH", "RESPONSABLE_STAND" ]
+      },
       "SaisieCellule" : {
         "required" : [ "creneauId" ],
         "type" : "object",
@@ -8002,7 +8107,7 @@
         "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
       },
       "StatutMcp" : {
-        "required" : [ "configuree" ],
+        "required" : [ "configuree", "revelationParReconnexion" ],
         "type" : "object",
         "properties" : {
           "configuree" : {
@@ -8010,11 +8115,14 @@
           },
           "header" : {
             "type" : "string"
+          },
+          "revelationParReconnexion" : {
+            "type" : "boolean"
           }
         }
       },
       "StatutSession" : {
-        "required" : [ "authentifie" ],
+        "required" : [ "authentifie", "roles" ],
         "type" : "object",
         "properties" : {
           "authentifie" : {
@@ -8022,6 +8130,12 @@
           },
           "nom" : {
             "type" : "string"
+          },
+          "roles" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -8766,6 +8880,13 @@
           }
         }
       }
+    },
+    "securitySchemes" : {
+      "SecurityScheme" : {
+        "type" : "openIdConnect",
+        "openIdConnectUrl" : "http://keycloak:8081/realms/planning/.well-known/openid-configuration",
+        "description" : "Authentication"
+      }
     }
   },
   "paths" : {
@@ -9286,7 +9407,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/Deconnexion"
+                }
               }
             }
           }
@@ -9311,6 +9434,38 @@
         },
         "summary" : "Me",
         "tags" : [ "Auth Resource" ]
+      }
+    },
+    "/api/auth/oidc/login" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "redirect",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "401" : {
+            "description" : "Not Authorized"
+          },
+          "403" : {
+            "description" : "Not Allowed"
+          }
+        },
+        "summary" : "Oidc Login",
+        "tags" : [ "Auth Resource" ],
+        "security" : [ {
+          "SecurityScheme" : [ ]
+        } ]
       }
     },
     "/api/backups" : {
@@ -9448,6 +9603,180 @@
         },
         "summary" : "Get",
         "tags" : [ "Branding Resource" ]
+      }
+    },
+    "/api/comptes" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/Compte"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Compte Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouveauCompte"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/desactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Deactivate",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NouvelleHabilitation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Grant",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/habilitations/{habilitationId}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "habilitationId",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Withdraw",
+        "tags" : [ "Compte Resource" ]
+      }
+    },
+    "/api/comptes/{id}/reactivation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/Compte"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Reactivate",
+        "tags" : [ "Compte Resource" ]
       }
     },
     "/api/config" : {
@@ -11465,22 +11794,6 @@
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
-    "/api/espace-animateur/{jeton}/code" : {
-      "post" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          }
-        },
-        "summary" : "Request Code",
-        "tags" : [ "Espace Animateur Resource" ]
-      }
-    },
     "/api/espace-animateur/{jeton}/collegues/{collegueId}/postes" : {
       "get" : {
         "parameters" : [ {
@@ -11794,35 +12107,6 @@
           }
         },
         "summary" : "Planning Pdf",
-        "tags" : [ "Espace Animateur Resource" ]
-      }
-    },
-    "/api/espace-animateur/{jeton}/session" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CodeSession"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Open Session",
         "tags" : [ "Espace Animateur Resource" ]
       }
     },

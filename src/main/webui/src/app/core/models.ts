@@ -2279,6 +2279,17 @@ export interface AppConfig {
   dragDropEnabled: boolean;
   /** Backend version, as the startup line prints it (docs/versioning.md). */
   version: string;
+  /**
+   * Keycloak (OIDC) sign-in is on — the normal door, for the administration
+   * and the espace animateur alike. Read at bootstrap because both screens
+   * that need it are reachable without a session.
+   */
+  authOidc: boolean;
+  /**
+   * The break-glass form login (the embedded `admin` account) is open. Closed
+   * by default in production; `POST /j_security_check` then answers 409.
+   */
+  authSecours: boolean;
 }
 
 /**
@@ -2506,16 +2517,34 @@ export interface RestaurationSnapshot {
 
 /* ----------------------- Foire au planning (issue #165) ----------------------- */
 
-/** `/api/auth/me`: whether the browser holds a valid admin session. */
+/** `/api/auth/me`: whether the browser holds a session, and what it opens. */
 export interface StatutSession {
   authentifie: boolean;
   nom: string | null;
+  /**
+   * Realm roles of the session, sorted — `admin` opens the administration,
+   * `animateur` an espace (with the matching e-mail), `user` nothing. Empty
+   * for an anonymous caller.
+   */
+  roles: string[];
+}
+
+/** Answer of `POST /api/auth/logout`: where to go next to finish signing out. */
+export interface Deconnexion {
+  /** Route ending the identity provider's session, `null` when there is none. */
+  urlDeconnexion: string | null;
 }
 
 /** Whether this deployment has an MCP API key at all, and the header it travels in. Never the key. */
 export interface StatutMcp {
   configuree: boolean;
   header: string;
+  /**
+   * The caller holds a Keycloak session: revealing the key asks for no
+   * password, only a sign-in less than five minutes old (401 otherwise). False
+   * under the break-glass form session, which still confirms the password.
+   */
+  revelationParReconnexion: boolean;
 }
 
 /** The MCP API key, returned only in exchange for the admin password. Never stored. */

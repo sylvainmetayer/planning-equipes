@@ -6,11 +6,13 @@ import {
   APIRequestContext,
   APIResponse,
   Browser,
+  BrowserContext,
   Locator,
   Page,
   Playwright,
   expect,
 } from '@playwright/test';
+import { assurerCompteAnimateur, connexionKeycloak } from './keycloak';
 
 export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 
@@ -644,34 +646,41 @@ export async function pageAdmin(browser: Browser, admin: APIRequestContext): Pro
 
 /* --------------------- Espace-animateur authentication ------------------- */
 
-/** Where the e2e stack's Mailpit serves its REST API (docker, port 8025). */
-const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
+/**
+ * Opens the espace of one animateur the way the animateur would: signs `page`
+ * in with Keycloak, as the account at `email` — which is what the server
+ * matches against the fiche the token designates — and lands on the espace.
+ *
+ * The account is prepared first (`assurerCompteAnimateur`): the fiches are
+ * seeded through the database import, which provisions nobody. The session
+ * lands in the page's browser context, so `page.request` carries it too.
+ * Needs a stack started with OIDC_ENABLED=true and a Keycloak behind it.
+ */
+export async function ouvrirSessionEspace(page: Page, jeton: string, email: string): Promise<void> {
+  const compte = await assurerCompteAnimateur(page.request, email);
+  await connexionKeycloak(page, compte, `/animateur/${jeton}`);
+}
 
 /**
- * Opens the espace session of one animateur the way the animateur would:
- * request a code, read it in Mailpit, exchange it for the HttpOnly cookie.
- * The cookie lands in the requester's jar — pass `page.request` so the page
- * itself is authenticated, or an `APIRequestContext` for API-level flows.
+ * A fresh browser context signed in as the animateur at `email`, for flows
+ * that talk to the espace API rather than click through it: use its `request`
+ * — never the admin context, whose break-glass session is a different person
+ * — and `close()` it afterwards.
  */
-export async function ouvrirSessionEspace(
-  requeteur: APIRequestContext,
+export async function contexteEspace(
+  browser: Browser,
   jeton: string,
   email: string,
-): Promise<void> {
-  const avant = await nombreDeMails(requeteur, email);
-  const envoi = await requeteur.post(`/api/espace-animateur/${jeton}/code`);
-  expect(envoi.ok(), await envoi.text()).toBe(true);
-  const code = await lireCodeMailpit(requeteur, email, avant);
-  const session = await requeteur.post(`/api/espace-animateur/${jeton}/session`, {
-    data: { code },
-  });
-  expect(session.status(), await session.text()).toBe(204);
+): Promise<BrowserContext> {
+  const contexte = await browser.newContext();
+  await ouvrirSessionEspace(await contexte.newPage(), jeton, email);
+  return contexte;
 }
 
-/** The newest access code Mailpit holds for `email` — for UI flows where the click itself sent it. */
-export function dernierCodeMailpit(requeteur: APIRequestContext, email: string): Promise<string> {
-  return lireCodeMailpit(requeteur, email, 0);
-}
+/* ------------------------------- Mailpit --------------------------------- */
+
+/** Where the e2e stack's Mailpit serves its REST API (docker, port 8025). */
+const MAILPIT_URL = process.env['E2E_MAILPIT_URL'] ?? 'http://localhost:8025';
 
 /** One page of a Mailpit search. `messages_count` is the REAL match total — `messages` is capped at 50 per page. */
 interface RechercheMailpit {
@@ -691,34 +700,6 @@ async function rechercherMails(
 /** How many mails Mailpit holds for `email` — read before and after a send that must happen once. */
 export async function nombreDeMails(requeteur: APIRequestContext, email: string): Promise<number> {
   return (await rechercherMails(requeteur, email))?.messages_count ?? 0;
-}
-
-/** Polls Mailpit until the freshly sent code mail lands, newest first. */
-async function lireCodeMailpit(
-  requeteur: APIRequestContext,
-  email: string,
-  mailsAvant: number,
-): Promise<string> {
-  for (let essai = 0; essai < 40; essai++) {
-    const recherche = await rechercherMails(requeteur, email);
-    if (recherche && recherche.messages_count > mailsAvant && recherche.messages.length > 0) {
-      // Parmi les seuls messages NOUVEAUX, du plus récent au plus ancien : la
-      // publication (issue #245) écrit elle aussi à cette adresse, et son mail
-      // peut arriver entre-temps sans porter de code. Se limiter aux nouveaux
-      // évite de rejouer un code déjà consommé.
-      const nouveaux = recherche.messages.slice(0, recherche.messages_count - mailsAvant);
-      for (const message of nouveaux) {
-        const detail = await requeteur.get(`${MAILPIT_URL}/api/v1/message/${message.ID}`);
-        const texte = ((await detail.json()) as { Text: string }).Text;
-        const code = /\b(\d{6})\b/.exec(texte)?.[1];
-        if (code) {
-          return code;
-        }
-      }
-    }
-    await new Promise((resolve) => setTimeout(resolve, 250));
-  }
-  throw new Error(`Aucun code d'accès reçu dans Mailpit pour ${email} (${MAILPIT_URL})`);
 }
 
 /** The database-generated espace token of one seeded animateur, via the admin API. */

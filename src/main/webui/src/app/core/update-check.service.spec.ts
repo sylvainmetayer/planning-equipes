@@ -28,7 +28,11 @@ describe('UpdateCheckService', () => {
   /** A fresh service over a session probe that answers « logged in ». */
   function reconstruire(authentifie = true): void {
     session.mockReset();
-    session.mockResolvedValue({ authentifie, nom: authentifie ? 'admin' : null });
+    session.mockResolvedValue({
+      authentifie,
+      nom: authentifie ? 'admin' : null,
+      roles: authentifie ? ['admin'] : [],
+    });
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({ providers: [{ provide: AdminApi, useValue: { session } }] });
     service = TestBed.inject(UpdateCheckService);
@@ -124,12 +128,25 @@ describe('UpdateCheckService', () => {
     await settle();
     expect(fetchMock).not.toHaveBeenCalled();
 
-    session.mockResolvedValue({ authentifie: true, nom: 'admin' });
+    session.mockResolvedValue({ authentifie: true, nom: 'admin', roles: ['admin'] });
     service.check('v1.0.0');
     await settle();
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(service.available()?.version).toBe('v1.1.0');
+  });
+
+  // Under Keycloak an animateur holds a session too: signed in is not admin.
+  it('ne demande rien à GitHub pour une session sans le rôle admin', async () => {
+    reconstruire();
+    session.mockResolvedValue({ authentifie: true, nom: 'marie', roles: ['animateur', 'user'] });
+    const fetchMock = repond({ tag_name: 'v9.9.9' });
+
+    service.check('v1.0.0');
+    await settle();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(service.available()).toBeNull();
   });
 
   it('ne demande rien à GitHub quand la sonde de session échoue', async () => {

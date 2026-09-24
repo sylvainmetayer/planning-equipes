@@ -204,7 +204,8 @@ describe('AdminShell', () => {
       onResultByType.set(type, handler);
       return unregisterResult;
     });
-    adminApi.logout.mockResolvedValue(undefined);
+    // The break-glass answer: no identity provider session left to end.
+    adminApi.logout.mockResolvedValue({ urlDeconnexion: null });
     api.get.mockResolvedValue({});
     draftLocal = memoryStorage({ 'planning-equipes.editionId': 'ed-1' });
     draftSession = memoryStorage();
@@ -882,6 +883,21 @@ describe('AdminShell', () => {
 
       expect(adminApi.logout).toHaveBeenCalledOnce();
       expect(assign).toHaveBeenCalledExactlyOnceWith('/login');
+      vi.restoreAllMocks();
+    });
+
+    // Under Keycloak, dropping our own cookie is half a logout: the identity
+    // provider would sign the visitor straight back in on the next click. The
+    // server names the route that ends its session, and that is where we go.
+    it('follows the identity provider logout when the server names one', async () => {
+      const assign = vi.fn();
+      vi.spyOn(window, 'location', 'get').mockReturnValue({ assign } as unknown as Location);
+      adminApi.logout.mockResolvedValue({ urlDeconnexion: '/api/auth/oidc/logout' });
+      const shell = createShell();
+
+      await shell.logout();
+
+      expect(assign).toHaveBeenCalledExactlyOnceWith('/api/auth/oidc/logout');
       vi.restoreAllMocks();
     });
 

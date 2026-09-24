@@ -60,43 +60,41 @@
   @if (espace.chargement()) {
     <mat-progress-bar mode="indeterminate" />
   } @else if (espace.authRequise()) {
-    <mat-card class="espace-code" appearance="outlined">
+    <!-- Le lien désigne le planning ; le compte Keycloak dit qui se connecte.
+         Sans Keycloak (mode secours), aucun des deux ne suffit : l'espace est
+         fermé, et l'écran le dit plutôt que de proposer une porte inexistante. -->
+    <mat-card class="espace-acces" appearance="outlined">
       <mat-card-header>
-        <h1 mat-card-title i18n="@@espace.code.titre">Accès à votre espace</h1>
-        <mat-card-subtitle i18n="@@espace.code.sousTitre">
-          Un code d'accès, envoyé à l'adresse e-mail connue de l'organisation, est demandé une fois
-          par appareil.
-        </mat-card-subtitle>
+        <h1 mat-card-title i18n="@@espace.acces.titre">Accès à votre espace</h1>
       </mat-card-header>
       <mat-card-content>
-        @if (codeEnvoyeA(); as adresse) {
-          <p class="espace-code-envoye">
-            <mat-icon inline>mark_email_read</mat-icon>
-            <span i18n="@@espace.code.envoye">Code envoyé à {{ adresse }} — il est valable 10 minutes.</span>
+        @if (!modeOidc) {
+          <p class="espace-acces-message" role="status">
+            <mat-icon inline>schedule</mat-icon>
+            <span i18n="@@espace.acces.indisponible">L'espace animateur est momentanément indisponible. Réessayez plus tard, ou rapprochez-vous de l'organisation.</span>
           </p>
-          <form class="espace-code-form" (submit)="$event.preventDefault(); validerCode()">
-            <mat-form-field appearance="outline">
-              <mat-label i18n="@@espace.code.champ">Code reçu</mat-label>
-              <input matInput inputmode="numeric" autocomplete="one-time-code" maxlength="6"
-                     [ngModel]="codeSaisi()" (ngModelChange)="codeSaisi.set($event)" name="code" />
-            </mat-form-field>
-            <button matButton="filled" type="submit" [disabled]="authEnCours() || !codeSaisi().trim()">
-              <mat-icon>login</mat-icon>
-              <span i18n="@@espace.code.valider">Ouvrir mon espace</span>
+        } @else if (signedInWithoutAccess()) {
+          <p class="espace-acces-message" role="alert">
+            <mat-icon inline>block</mat-icon>
+            <span i18n="@@espace.acces.sansAcces">Vous êtes connecté, mais ce compte n'ouvre pas cet espace. Rapprochez-vous de l'organisation.</span>
+          </p>
+          <div class="espace-acces-actions">
+            <button matButton type="button" (click)="deconnecter()">
+              <mat-icon>logout</mat-icon>
+              <span i18n="@@espace.acces.deconnexion">Se déconnecter</span>
             </button>
-            <button matButton type="button" [disabled]="authEnCours()" (click)="demanderCode()">
-              <span i18n="@@espace.code.renvoyer">Renvoyer un code</span>
-            </button>
-          </form>
+          </div>
         } @else {
-          <button matButton="filled" [disabled]="authEnCours()" (click)="demanderCode()">
-            <mat-icon>outgoing_mail</mat-icon>
-            <span i18n="@@espace.code.demander">Recevoir mon code par e-mail</span>
-          </button>
+          <p i18n="@@espace.acces.consigne">
+            Connectez-vous avec votre compte, à l'adresse e-mail connue de l'organisation.
+          </p>
+          <div class="espace-acces-actions">
+            <button matButton="filled" type="button" (click)="signInWithKeycloak()">
+              <mat-icon>login</mat-icon>
+              <span i18n="@@espace.acces.connexion">Se connecter avec mon compte</span>
+            </button>
+          </div>
         }
-        <!-- Annoncé : un code faux laissait le champ rempli et le bouton actif,
-             sans rien dire, sur le premier écran de tout le parcours. -->
-        <app-status-message [text]="erreurAuth() ?? ''" tone="error" />
       </mat-card-content>
     </mat-card>
   } @else if (espace.erreur()) {

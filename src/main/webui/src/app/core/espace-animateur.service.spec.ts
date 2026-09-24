@@ -149,21 +149,6 @@ describe('EspaceAnimateurService', () => {
     expect(service.view()).toBeNull();
   });
 
-  it("valider le code ouvre la session puis recharge l'espace", async () => {
-    seedStore(service, 'jeton', 'jeton-1');
-    api.getPreservingHttpError.mockImplementation(async (url: string) =>
-      url.endsWith('/demandes') ? [demande('D1')] : view(),
-    );
-
-    await service.validerCode('123456');
-
-    expect(api.post).toHaveBeenCalledWith('/api/espace-animateur/jeton-1/session', {
-      code: '123456',
-    });
-    expect(service.view()?.animateurId).toBe('A1');
-    expect(service.authRequise()).toBe(false);
-  });
-
   it('la soumission poste le lot et insère les demandes stockées en tête de liste', async () => {
     api.getPreservingHttpError.mockImplementation(async (url: string) =>
       url.endsWith('/demandes') ? [demande('ANCIENNE')] : view(),

@@ -12,7 +12,7 @@ import {
   SEED,
   contexteAdmin,
   jetonDe,
-  ouvrirSessionEspace,
+  contexteEspace,
   pageAdmin,
   seedPlanning,
   EDITION_REFERENCE,
@@ -223,23 +223,24 @@ test.describe('Publication du planning', () => {
     expect(lignes.filter((ligne) => ligne.trim() !== '')).toHaveLength(3);
   });
 
-  test('l’espace d’un animateur ne bouge qu’une fois publié', async () => {
+  test('l’espace d’un animateur ne bouge qu’une fois publié', async ({ browser }) => {
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(admin, jeton, EMAIL_ALICE);
+    const espace = await contexteEspace(browser, jeton, EMAIL_ALICE);
 
-    const avant = await admin.get(`/api/espace-animateur/${jeton}`);
+    const avant = await espace.request.get(`/api/espace-animateur/${jeton}`);
     expect(avant.ok()).toBe(true);
     expect(((await avant.json()) as { postes: unknown[] }).postes).toHaveLength(1);
 
     await deplacerUnSiege(admin);
 
-    const pendant = await admin.get(`/api/espace-animateur/${jeton}`);
+    const pendant = await espace.request.get(`/api/espace-animateur/${jeton}`);
     expect(((await pendant.json()) as { postes: unknown[] }).postes).toHaveLength(1);
 
     const publication = await admin.post('/api/planning/publication', { data: { exclusions: [] } });
     expect(publication.ok(), await publication.text()).toBe(true);
 
-    const apres = await admin.get(`/api/espace-animateur/${jeton}`);
+    const apres = await espace.request.get(`/api/espace-animateur/${jeton}`);
     expect(((await apres.json()) as { postes: unknown[] }).postes).toHaveLength(2);
+    await espace.close();
   });
 });

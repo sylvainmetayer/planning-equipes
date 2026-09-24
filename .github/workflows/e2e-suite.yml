@@ -1,9 +1,16 @@
-# La pile E2E — application packagée, PostgreSQL, Mailpit, Chromium — montée
-# pour une exécution et jetée. Appelée par deux workflows qui ne diffèrent que
-# par la sélection Playwright et le plafond : `e2e.yml` (chaque poussée, tout
-# sauf les specs @lourd) et `e2e-lourd.yml` (les specs @lourd, sur les seuls
-# changements qui peuvent les casser, et chaque nuit). Une seule description
-# de la pile, ou les deux dérivent.
+# La pile E2E — application packagée, PostgreSQL, Mailpit, Keycloak, Chromium —
+# montée pour une exécution et jetée. Une seule description de la pile, ou les
+# appelants dérivent ; ils ne diffèrent que par la sélection Playwright, le
+# plafond et les portes d'authentification ouvertes (`authentification`) :
+#
+#   keycloak-secours  Keycloak + compte de secours ouvert. La suite principale
+#                     (e2e.yml, job `e2e`) : l'administration s'y connecte par
+#                     le formulaire de secours, l'espace animateur par Keycloak.
+#   keycloak          Keycloak seul, secours fermé : la production. La suite
+#                     playwright.oidc.config.ts (e2e.yml, job `e2e-keycloak`).
+#   secours           Ni Keycloak ni espace : OIDC_ENABLED=false. Pour une
+#                     sélection qui n'ouvre aucun espace animateur — les specs
+#                     @lourd (e2e-lourd.yml), qui s'épargnent ainsi l'image.
 name: Pile E2E
 
 on:
@@ -23,6 +30,13 @@ on:
           Débogage peut figer la date du serveur, comme sur une recette.
         type: boolean
         default: false
+      authentification:
+        description: >-
+          Portes ouvertes sur la pile : `keycloak-secours`, `keycloak` ou
+          `secours` (voir l'en-tête). Décide aussi de la configuration
+          Playwright jouée.
+        type: string
+        required: true
 
 permissions:
   contents: read
@@ -35,20 +49,15 @@ jobs:
     # spec qui n'avance plus est coupé par son propre budget bien avant.
     timeout-minutes: ${{ inputs.timeout-minutes }}
 
-    # Le job tourne dans l'image officielle Playwright, qui porte les
-    # bibliothèques système dont Chromium a besoin. Les installer sur l'hôte
-    # (`playwright install --with-deps`) marcherait sur un runner jetable, mais
-    # coûterait cette installation à chaque exécution ; l'image les apporte
-    # déjà. Sans elles, le binaire se télécharge très bien puis refuse de
-    # démarrer (`libglib-2.0.so.0: cannot open shared object file`).
+    # Sur le runner hôte, pas dans l'image Playwright : Keycloak se lance ici
+    # par `docker run`, après le checkout — son realm et son image sont des
+    # fichiers du dépôt, qu'un `services:` (démarré AVANT le checkout) ne
+    # verrait pas —, et l'image Playwright ne porte pas le client Docker. Le
+    # navigateur s'installe donc plus bas, avec ses bibliothèques système.
     #
-    # La balise doit suivre la version de `@playwright/test` dans
-    # `src/main/webui/package.json` : une dérive redonne un navigateur que
-    # l'image n'outille pas.
-    container:
-      image: mcr.microsoft.com/playwright:v1.62.1-noble
-      # Chromium plante sur le /dev/shm par défaut d'un conteneur (64 Mo).
-      options: --ipc=host
+    # Second mérite : application et navigateur tournent tous deux sur l'hôte,
+    # donc « http://localhost:8081 » désigne le même Keycloak des deux côtés.
+    # L'émetteur des jetons est cohérent sans rien ajouter à /etc/hosts.
 
     # Pile jetable, montée pour cette exécution seule. La suite écrase la base
     # via `/api/database/import` : elle ne doit jamais viser autre chose que
@@ -70,9 +79,9 @@ jobs:
       mailpit:
         image: axllent/mailpit:v1.31
         ports:
-          # 1025 = SMTP, par où l'application dépose. 8025 = l'API REST, par où
-          # les specs relisent le code d'accès reçu par l'animateur. N'exposer
-          # que le premier laisse la suite muette sur tout le parcours espace.
+          # 1025 = SMTP, par où l'application (et Keycloak, sous le nom
+          # `mailpit`) dépose. 8025 = l'API REST, par où les specs comptent
+          # les courriels reçus et vident la boîte entre deux passes.
           - 1025:1025
           - 8025:8025
 
@@ -94,6 +103,78 @@ jobs:
           cache: npm
           cache-dependency-path: src/main/webui/package-lock.json
 
+      # L'image est celle du dépôt, pas l'officielle : docker/keycloak/Dockerfile
+      # y ajoute l'authentificateur « code par e-mail » et le thème, et c'est
+      # elle que la production déploie. La construire ici prouve qu'elle
+      # démarre. Le cache GitHub Actions rend l'extension Maven presque
+      # gratuite d'une exécution à l'autre.
+      - name: Set up Docker Buildx
+        if: inputs.authentification != 'secours'
+        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
+
+      # Les images de base (quay.io, Docker Hub) se tirent pendant la
+      # construction, et un registre qui hoquette faisait tomber toute la
+      # suite sur une erreur réseau. D'où une seconde tentative, trente
+      # secondes plus tard, plutôt qu'un échec rouge sans rapport avec le code.
+      - name: Build the Keycloak image (extension and theme)
+        id: keycloak-image
+        if: inputs.authentification != 'secours'
+        continue-on-error: true
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/keycloak/Dockerfile
+          load: true
+          tags: planning-equipes-keycloak:ci
+          cache-from: type=gha,scope=keycloak
+          cache-to: type=gha,mode=max,scope=keycloak
+
+      - name: Wait before retrying the Keycloak image
+        if: inputs.authentification != 'secours' && steps.keycloak-image.outcome == 'failure'
+        run: sleep 30
+
+      - name: Build the Keycloak image (second attempt)
+        if: inputs.authentification != 'secours' && steps.keycloak-image.outcome == 'failure'
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          file: docker/keycloak/Dockerfile
+          load: true
+          tags: planning-equipes-keycloak:ci
+          cache-from: type=gha,scope=keycloak
+
+      # Store embarqué de `start-dev` : aucune base à côté, la pile étant
+      # jetable. Sur le réseau des services, sous le nom `keycloak`, pour que
+      # le realm joigne Mailpit par son nom `mailpit` (son `smtpServer`) ; le
+      # port publié sert l'hôte, où tournent l'application et le navigateur.
+      - name: Start Keycloak with the planning realm
+        if: inputs.authentification != 'secours'
+        run: |
+          docker run -d --name keycloak \
+            --network "${{ job.services.postgres.network }}" --network-alias keycloak \
+            -p 8081:8081 \
+            -e KC_BOOTSTRAP_ADMIN_USERNAME=admin \
+            -e KC_BOOTSTRAP_ADMIN_PASSWORD=e2e-keycloak-Wq2fT7xM \
+            -e KC_HOSTNAME=http://localhost:8081 \
+            -e KC_HOSTNAME_STRICT=false \
+            -e KC_HTTP_ENABLED=true \
+            -e KC_HEALTH_ENABLED=true \
+            -v "$GITHUB_WORKSPACE/docker/keycloak/realm-planning.json:/opt/keycloak/data/import/realm-planning.json:ro" \
+            planning-equipes-keycloak:ci \
+            start-dev --import-realm --http-port=8081
+          # La découverte OIDC, pas le port : un realm mal importé laisse le
+          # serveur répondre et l'application échouer une minute plus tard.
+          for _ in $(seq 1 90); do
+            if curl -fsS http://localhost:8081/realms/planning/.well-known/openid-configuration > /dev/null; then
+              echo "Keycloak prêt, realm planning importé."
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "Keycloak n'a pas importé son realm en 180 s :"
+          docker logs keycloak | tail -n 200
+          exit 1
+
       # Quinoa construit le frontend pendant le package : l'application servie
       # est donc exactement celle qu'un déploiement sert, pas un `ng serve`.
       - name: Build the application
@@ -103,13 +184,16 @@ jobs:
         working-directory: src/main/webui
         run: npm ci
 
-      # Pas d'installation de navigateur : l'image en embarque un, outillé.
-      # `npx playwright install` en téléchargerait un autre, à côté des
-      # bibliothèques prévues pour celui-là.
+      # Le job ne tourne pas dans l'image Playwright : le navigateur et ses
+      # bibliothèques système s'installent ici, à la version que fixe
+      # package-lock.json.
+      - name: Install the browser
+        working-directory: src/main/webui
+        run: npx playwright install --with-deps chromium
 
       - name: Start the application
         env:
-          DB_URL: jdbc:postgresql://postgres:5432/festival
+          DB_URL: jdbc:postgresql://localhost:5432/festival
           DB_USER: festival
           DB_PASSWORD: e2e-db-Xq7mR2vL
           HTTP_PORT: 8080
@@ -135,10 +219,28 @@ jobs:
           # passe-fige.spec.ts voie ce même geste refusé sur une journée passée.
           GLISSER_DEPOSER_ACTIF: 'true'
           MAIL_MOCK: 'false'
-          MAIL_HOST: mailpit
+          MAIL_HOST: localhost
           MAIL_PORT: 1025
           MAIL_FROM: planning-equipes@localhost
           PUBLIC_URL: http://localhost:8080
+          # Les portes, dites explicitement dans les deux sens : la production
+          # ouvre Keycloak et ferme le secours par défaut, une pile de test ne
+          # doit hériter d'aucun des deux sans l'avoir choisi.
+          OIDC_ENABLED: ${{ inputs.authentification != 'secours' }}
+          ADMIN_SECOURS_ENABLED: ${{ inputs.authentification != 'keycloak' }}
+          # La même URL que celle du navigateur : c'est ce qui rend l'émetteur
+          # des jetons cohérent. Secrets de développement du realm importé.
+          OIDC_AUTH_SERVER_URL: http://localhost:8081/realms/planning
+          OIDC_CLIENT_ID: planning-app
+          OIDC_CLIENT_SECRET: dev-planning-app-oJ4kQ2vT-8fW6nB3q
+          # Le provisioning n'est allumé que sur la pile de production, dont la
+          # suite l'éprouve. Sur la suite principale, les fiches s'amorcent par
+          # import SQL, qui ne provisionne personne : e2e/keycloak.ts prépare
+          # lui-même les comptes des animateurs qu'elle connecte.
+          OIDC_PROVISIONING_ENABLED: ${{ inputs.authentification == 'keycloak' }}
+          OIDC_PROVISIONING_SERVER_URL: http://localhost:8081
+          OIDC_PROVISIONING_CLIENT_ID: planning-provisioning
+          OIDC_PROVISIONING_CLIENT_SECRET: dev-planning-provisioning-yH5mL8sK
         run: |
           java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           echo $! > app.pid
@@ -161,14 +263,17 @@ jobs:
       - name: Run the Playwright suite
         working-directory: src/main/webui
         env:
-          # L'application tourne dans ce conteneur-ci, donc localhost ; Mailpit
-          # est un service voisin, donc son nom. Dans un job conteneurisé les
-          # services ne sont pas sur localhost — c'est la différence qui casse
-          # une recette recopiée d'un job classique.
+          # Tout tourne sur l'hôte, services publiés compris : localhost.
           E2E_BASE_URL: http://localhost:8080
-          E2E_MAILPIT_URL: http://mailpit:8025
+          E2E_MAILPIT_URL: http://localhost:8025
           E2E_ADMIN_PASSWORD: e2e-admin-Kd9nT4wB
-        run: npm run e2e -- ${{ inputs.playwright-args }}
+          E2E_KEYCLOAK_URL: http://localhost:8081
+          E2E_KEYCLOAK_ADMIN: admin
+          E2E_KEYCLOAK_ADMIN_PASSWORD: e2e-keycloak-Wq2fT7xM
+          # La pile de production (secours fermé) joue sa propre configuration,
+          # sans le globalSetup qui se connecte par le formulaire de secours.
+          E2E_SCRIPT: ${{ inputs.authentification == 'keycloak' && 'e2e:oidc' || 'e2e' }}
+        run: npm run "$E2E_SCRIPT" -- ${{ inputs.playwright-args }}
 
       # Ce qu'un échec a sous les yeux, lisible dans le journal du job sans
       # télécharger l'artefact : la photographie de la page que Playwright
@@ -186,6 +291,11 @@ jobs:
             grep -nE "ERROR|WARN|Exception" app.log | tail -n 200 || true
             echo "::endgroup::"
           fi
+          if docker inspect keycloak > /dev/null 2>&1; then
+            echo "::group::keycloak"
+            docker logs keycloak 2>&1 | tail -n 200
+            echo "::endgroup::"
+          fi
 
       # Les traces ne sont conservées qu'en cas d'échec (`trace:
       # 'retain-on-failure'`), donc cet artefact est vide quand tout va bien.
@@ -193,7 +303,9 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: playwright-traces
+          # Suffixé : e2e.yml appelle cette pile deux fois dans un même run, et
+          # deux artefacts du même nom s'y refusent.
+          name: playwright-traces-${{ inputs.authentification }}
           path: src/main/webui/test-results/**
           if-no-files-found: ignore
           retention-days: 7
@@ -204,30 +316,15 @@ jobs:
         if: failure()
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: application-log
+          name: application-log-${{ inputs.authentification }}
           path: app.log
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Stop the application
+      - name: Stop the stack
         if: always()
         run: |
           if [ -f app.pid ]; then
             kill "$(cat app.pid)" 2>/dev/null || true
           fi
-
-      # Ce job tourne en root dans son conteneur, et écrit dans l'espace de
-      # travail que le runner partage avec tous les autres jobs. Sans cette
-      # étape, il y laisse des fichiers root : le `checkout` du job suivant
-      # échoue alors sur `Permission denied` en tentant de nettoyer, et
-      # l'ensemble de la CI reste bloqué jusqu'à une intervention manuelle sur
-      # la machine. C'est arrivé.
-      #
-      # L'uid n'est pas codé en dur : `RUNNER_TEMP` est créé hors conteneur par
-      # l'utilisateur du runner, il porte donc la bonne identité numérique.
-      - name: Give the workspace back to the runner
-        if: always()
-        run: |
-          proprietaire=$(stat -c '%u:%g' "$RUNNER_TEMP")
-          echo "Restitution de $GITHUB_WORKSPACE à $proprietaire"
-          chown -R "$proprietaire" "$GITHUB_WORKSPACE" || true
+          docker rm -f keycloak 2>/dev/null || true

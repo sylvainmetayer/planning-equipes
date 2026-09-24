@@ -36,6 +36,7 @@
     "licences": "node scripts/licences-tierces.js",
     "licences-check": "node scripts/licences-tierces.js --check",
     "e2e": "playwright test",
+    "e2e:oidc": "playwright test -c playwright.oidc.config.ts",
     "language-policy": "node scripts/check-language-policy.js",
     "language-policy-modifies": "node scripts/check-language-policy.js --modifies",
     "language-policy-inventaire": "node scripts/check-language-policy.js --inventaire"

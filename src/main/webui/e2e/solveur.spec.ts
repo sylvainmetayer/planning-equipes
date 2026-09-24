@@ -14,7 +14,7 @@ import {
   jetonDe,
   lancerSolve,
   occupantDe,
-  ouvrirSessionEspace,
+  contexteEspace,
   pageAdmin,
   planningPersiste,
   postesDe,
@@ -225,8 +225,10 @@ test('un échange accepté survit à la régénération du planning', async ({ b
   // L'espace montre le plan publié : sans publication, le siège que la demande
   // d'échange désigne n'y existe pas encore (issue #245).
   await publierPlanning(admin);
-  await ouvrirSessionEspace(admin, jeton, `${surS1}@example.org`);
-  const soumission = await admin.post(`/api/espace-animateur/${jeton}/demandes`, {
+  // Each side from its own Keycloak session: the admin context's break-glass
+  // session is not an animateur, and never opens an espace.
+  const espaceDemandeur = await contexteEspace(browser, jeton, `${surS1}@example.org`);
+  const soumission = await espaceDemandeur.request.post(`/api/espace-animateur/${jeton}/demandes`, {
     data: [{ creneauId: C1, standId: 'SOLV-S1', cibleId: surS2, motif: 'E2E régénération' }],
   });
   expect(soumission.ok(), await soumission.text()).toBe(true);
@@ -235,11 +237,13 @@ test('un échange accepté survit à la régénération du planning', async ({ b
   // A demande is born EN_ATTENTE_CIBLE: the admin may only arbitrate once the
   // targeted colleague has agreed, so the accord comes from THEIR espace.
   const jetonCible = await jetonDe(admin, surS2);
-  await ouvrirSessionEspace(admin, jetonCible, `${surS2}@example.org`);
-  const accord = await admin.post(
+  await espaceDemandeur.close();
+  const espaceCible = await contexteEspace(browser, jetonCible, `${surS2}@example.org`);
+  const accord = await espaceCible.request.post(
     `/api/espace-animateur/${jetonCible}/demandes-recues/${demandeId}/accord`,
   );
   expect(accord.ok(), await accord.text()).toBe(true);
+  await espaceCible.close();
 
   const acceptation = await admin.post(`/api/echanges/${demandeId}/acceptation`, { data: {} });
   expect(acceptation.ok(), await acceptation.text()).toBe(true);

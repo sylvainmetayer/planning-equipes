@@ -10,7 +10,6 @@ import { APIRequestContext, expect, test } from '@playwright/test';
 import {
   SEED,
   contexteAdmin,
-  dernierCodeMailpit,
   jetonDe,
   ongletEspace,
   ouvrirSelect,
@@ -19,6 +18,7 @@ import {
   publierPlanning,
   seedPlanning,
 } from './support';
+import { assurerCompteAnimateur, remplirFormulaireKeycloak } from './keycloak';
 import { repartirDeLaReference } from './reference';
 
 const EMAIL_ALICE = `${SEED.demandeur}@example.org`;
@@ -51,7 +51,7 @@ async function accordDeBruno(browser: import('@playwright/test').Browser): Promi
   const jetonBruno = await jetonDe(admin, SEED.cible);
   const contexteBruno = await browser.newContext();
   const pageBruno = await contexteBruno.newPage();
-  await ouvrirSessionEspace(pageBruno.request, jetonBruno, EMAIL_BRUNO);
+  await ouvrirSessionEspace(pageBruno, jetonBruno, EMAIL_BRUNO);
   await pageBruno.goto(`/animateur/${jetonBruno}/echanges`);
   await pageBruno.getByRole('button', { name: "Je suis d'accord" }).first().click();
   await expect(pageBruno.getByText('Votre accord est transmis', { exact: false })).toBeVisible();
@@ -68,26 +68,28 @@ test.describe('espace animateur', () => {
     await expect(page.getByRole('link', { name: 'Mon planning' })).toHaveCount(0);
   });
 
-  test("sans session, le lien mène à l'écran du code d'accès — pas au planning", async ({
-    page,
-  }) => {
+  test("sans session, le lien mène à l'écran d'accès — pas au planning", async ({ page }) => {
     await page.goto(`/animateur/${jeton}`);
     await expect(page.getByText('Accès à votre espace')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Recevoir mon code par e-mail' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Se connecter avec mon compte' })).toBeVisible();
+    // The e-mail code is gone for good: no field to type anything into.
+    await expect(page.getByRole('textbox')).toHaveCount(0);
     await expect(page.getByText('Stand E2E un')).toHaveCount(0);
     // The API itself refuses: the screen is not a mere curtain.
     const reponse = await page.request.get(`/api/espace-animateur/${jeton}`);
     expect(reponse.status()).toBe(401);
   });
 
-  test("le code reçu par e-mail ouvre l'espace depuis l'écran d'accès", async ({ page }) => {
+  test("le compte Keycloak ouvre l'espace depuis l'écran d'accès, et y revient", async ({
+    page,
+  }) => {
+    const compte = await assurerCompteAnimateur(page.request, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
-    await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
-    await expect(page.getByText('Code envoyé à E•••@example.org', { exact: false })).toBeVisible();
-    // The code lands in Mailpit — typed here as the animateur would type it.
-    const code = await dernierCodeMailpit(page.request, EMAIL_ALICE);
-    await page.getByLabel('Code reçu').fill(code);
-    await page.getByRole('button', { name: 'Ouvrir mon espace' }).click();
+    await page.getByRole('button', { name: 'Se connecter avec mon compte' }).click();
+    // Keycloak's own form, then back on this very espace — the token in the
+    // URL survived the round trip through the authorization server.
+    await remplirFormulaireKeycloak(page, compte);
+    await expect(page).toHaveURL(new RegExp(`/animateur/${jeton}(\\?|$)`));
     await expect(page.getByText('Alice E2E')).toBeVisible();
     await expect(page.getByText('Stand E2E un')).toBeVisible();
   });
@@ -96,24 +98,10 @@ test.describe('espace animateur', () => {
    * Le socle d'accessibilité de l'espace (RGAA 7.5, 12.7, 9.1). Joué aussi dans
    * le projet `mobile` : c'est le viewport réel de ceux qui ouvrent ce lien.
    */
-  test('un code faux est annoncé, pas seulement affiché', async ({ page }) => {
-    // The request is answered here: what is under test is the failure of the
-    // second step, and a real request would spend the address's rate limit.
-    await page.route(`**/api/espace-animateur/${jeton}/code`, (route) =>
-      route.fulfill({ json: { emailMasque: 'E•••@example.org' } }),
-    );
-    await page.goto(`/animateur/${jeton}`);
-    await page.getByRole('button', { name: 'Recevoir mon code par e-mail' }).click();
-    await page.getByLabel('Code reçu').fill('000000');
-    await page.getByRole('button', { name: 'Ouvrir mon espace' }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
-    await expect(page.getByRole('alert')).not.toHaveText('');
-  });
-
   test("le lien d'évitement est le premier arrêt, et chaque onglet rend le focus à la page", async ({
     page,
   }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
     await expect(page.getByText('Alice E2E')).toBeVisible();
     await expect(page.getByRole('heading', { level: 1, name: 'Mon planning' })).toHaveCount(1);
@@ -130,7 +118,7 @@ test.describe('espace animateur', () => {
   });
 
   test('le jeton ouvre le planning personnel, sans navigation admin', async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
     await expect(page.getByText('Alice E2E')).toBeVisible();
     await expect(page.getByText('Stand E2E un')).toBeVisible();
@@ -161,7 +149,7 @@ test.describe('espace animateur', () => {
     // Two browser contexts and a decision round trip: triple the budget.
     test.slow();
     // --- Animateur side: build then submit one demande. ---
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
@@ -228,7 +216,7 @@ test.describe('espace animateur', () => {
   test("refuser une demande transmet le motif à l'animateur", async ({ page, browser }) => {
     test.slow();
     // After the accepted swap, Alice proposes another one from her new seat.
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
@@ -258,7 +246,7 @@ test.describe('espace animateur', () => {
   });
 
   test("annuler une demande en attente depuis l'espace", async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
     await ouvrirSelect(page, 'Créneau concerné');
     await page.getByRole('option').first().click();
@@ -280,7 +268,7 @@ test.describe('espace animateur', () => {
     page,
     browser,
   }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     const vue = await page.request.get(`/api/espace-animateur/${jeton}`);
     expect(vue.ok(), await vue.text()).toBe(true);
     const { abonnementToken } = (await vue.json()) as { abonnementToken: string };
@@ -308,7 +296,7 @@ test.describe('espace animateur', () => {
   });
 
   test("l'espace propose l'abonnement, et le téléchargement en second", async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     // La bande est portée sous les trois onglets : on la trouve là où l'on
     // arrive, sans changer d'onglet pour emporter son planning.
     await page.goto(`/animateur/${jeton}`);
@@ -342,7 +330,7 @@ test.describe('espace animateur', () => {
    * plus loin, sans que l'un ait chassé l'autre.
    */
   test('chaque onglet tient sa promesse sans défiler', async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
 
     const hauteur = page.viewportSize()!.height;
@@ -384,7 +372,7 @@ test.describe('espace animateur', () => {
    * défiler. Toute la page était coupée à droite, menu de la barre compris.
    */
   test('une bande de quinze journées défile sans élargir la page', async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.route(`**/api/espace-animateur/${jeton}`, async (route) => {
       const reponse = await route.fetch();
       const corps = await reponse.json();
@@ -415,7 +403,7 @@ test.describe('espace animateur', () => {
   });
 
   test('aucun onglet ne déborde latéralement, même sur un écran étroit', async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     for (const largeur of [320, 360]) {
       await page.setViewportSize({ width: largeur, height: 780 });
       await page.goto(`/animateur/${jeton}`);
@@ -432,7 +420,7 @@ test.describe('espace animateur', () => {
 
   /** Les trois onglets, et l'action de l'espace sous les trois. */
   test('les trois onglets répondent à leurs trois questions', async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
 
     await expect(page.locator('.espace-bande-jour').first()).toBeVisible();
@@ -454,9 +442,11 @@ test.describe('espace animateur', () => {
   });
 
   test("le périmètre du jeton : l'espace ne donne aucune session admin", async ({ page }) => {
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}`);
     const reponse = await page.request.get('/api/constraints', { maxRedirects: 0 });
-    expect(reponse.status()).toBe(401);
+    // 403, not 401: the Keycloak session is recognised, it is the admin role
+    // that is missing.
+    expect(reponse.status()).toBe(403);
   });
 });

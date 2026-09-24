@@ -41,7 +41,7 @@ export class ApiService {
     return firstValueFrom(this.http.post<T>(url, body));
   }
 
-  /** GET flavour of {@link postPreservingHttpError} — the espace animateur tells a 401 (code required) from a 404 (dead link). */
+  /** GET flavour of {@link postPreservingHttpError} — the espace animateur tells a 401 (sign-in required) from a 404 (dead link). */
   getPreservingHttpError<T>(url: string): Promise<T> {
     return firstValueFrom(this.http.get<T>(url));
   }

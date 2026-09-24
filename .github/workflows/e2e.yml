@@ -54,6 +54,28 @@ jobs:
       # Tout sauf les specs @lourd — la semaine canicule sur festival-hivernal
       # pesait 13 des 20 minutes de la suite ; elle tourne dans e2e-lourd.yml.
       playwright-args: --grep-invert @lourd
+      # Keycloak ET compte de secours : l'administration se connecte par le
+      # formulaire de secours (le globalSetup aussi), l'espace animateur par
+      # un vrai compte Keycloak — c'est la seule porte qu'il ait.
+      authentification: keycloak-secours
       # Le dernier passage complet sans @lourd tient en ~10 min, montage de la
       # pile compris ; un runner lent a de la marge, un blocage n'en a pas.
-      timeout-minutes: 25
+      # Keycloak (image, realm, une connexion par ouverture d'espace) en
+      # ajoute quelques-unes.
+      timeout-minutes: 30
+
+  # La pile telle que la production la monte : Keycloak seul, compte de secours
+  # fermé. Sa suite (playwright.oidc.config.ts) éprouve ce que la précédente
+  # ne peut pas voir — le second facteur exigé de l'administrateur, le 409 du
+  # formulaire de secours, le provisioning des comptes, la déconnexion
+  # RP-initiated, le serveur MCP en OAuth2. Une pile à elle parce que le
+  # secours fermé interdit le globalSetup de la suite principale.
+  e2e-keycloak:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    uses: ./.github/workflows/e2e-suite.yml
+    with:
+      playwright-args: ''
+      authentification: keycloak
+      # Chaque connexion administrateur peut attendre une fenêtre TOTP neuve
+      # (jusqu'à trente secondes) : la suite est courte mais lente.
+      timeout-minutes: 30

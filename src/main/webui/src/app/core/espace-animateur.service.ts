@@ -38,8 +38,9 @@ export class EspaceAnimateurService {
   private readonly _erreur = signal<string | null>(null);
   readonly erreur = this._erreur.asReadonly();
   /**
-   * True when the token is valid but no session is open (401): the interface
-   * then offers the e-mail code screen instead of the espace.
+   * True when the espace answers 401: no Keycloak session opens this token's
+   * fiche (none at all, or the wrong account), or Keycloak is off on this
+   * deployment. The shell then renders its access screen instead.
    */
   private readonly _authRequise = signal(false);
   readonly authRequise = this._authRequise.asReadonly();
@@ -75,26 +76,6 @@ export class EspaceAnimateurService {
     } finally {
       this._chargement.set(false);
     }
-  }
-
-  /**
-   * Asks the server to mail a fresh access code; returns the masked address
-   * it went to, for the confirmation line under the input.
-   */
-  async demanderCode(): Promise<string> {
-    const jeton = this.requireJeton();
-    const reponse = await this.api.post<{ emailMasque: string }>(
-      `/api/espace-animateur/${jeton}/code`,
-      null,
-    );
-    return reponse.emailMasque;
-  }
-
-  /** Exchanges the received code for the session cookie, then loads the espace. */
-  async validerCode(code: string): Promise<void> {
-    const jeton = this.requireJeton();
-    await this.api.post<void>(`/api/espace-animateur/${jeton}/session`, { code });
-    await this.charger(jeton);
   }
 
   /**
