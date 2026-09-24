@@ -14,7 +14,10 @@ export interface LigneEtat {
   statut: StatutEtat;
   /** The figures behind the state, in one sentence. */
   detail: string;
-  lien: LienEtat;
+  /** The screen the line leads to; absent on a line whose detail unfolds in place instead. */
+  lien?: LienEtat;
+  /** A detail this line unfolds below itself rather than on another screen. */
+  panneau?: 'coherence';
 }
 
 /** Where a line leads: the screen that moves the step forward. */
@@ -80,6 +83,38 @@ function referentiels(etat: EtatEdition): LigneEtat {
           ? $localize`:@@accueil.lien.referentiels.voir:Voir les stands`
           : $localize`:@@accueil.lien.referentiels.saisir:Saisir les référentiels`,
     },
+  };
+}
+
+/**
+ * What was entered, read as a whole: the anomalies every other screen detects
+ * on its own, counted here and unfolded in place — no screen to go to, the
+ * detail is the list, and each of its lines links to the fiche that fixes it.
+ */
+function coherence(etat: EtatEdition): LigneEtat {
+  const { bloquants, aVerifier, informations, statut } = etat.coherence;
+  const total = bloquants + aVerifier + informations;
+  const parts: string[] = [];
+  if (bloquants > 0) {
+    parts.push($localize`:@@accueil.detail.coherence.bloquants:${bloquants}:count: bloquant(s)`);
+  }
+  if (aVerifier > 0) {
+    parts.push($localize`:@@accueil.detail.coherence.aVerifier:${aVerifier}:count: à vérifier`);
+  }
+  if (informations > 0) {
+    parts.push(
+      $localize`:@@accueil.detail.coherence.informations:${informations}:count: pour information`,
+    );
+  }
+  return {
+    id: 'coherence',
+    titre: $localize`:@@accueil.ligne.coherence:Cohérence du référentiel`,
+    statut,
+    detail:
+      total === 0
+        ? $localize`:@@accueil.detail.coherence.ok:Aucune anomalie dans ce qui est saisi`
+        : parts.join(' · '),
+    panneau: total === 0 ? undefined : 'coherence',
   };
 }
 
@@ -334,6 +369,7 @@ function foire(etat: EtatEdition): LigneEtat {
 export function buildLignes(etat: EtatEdition): LigneEtat[] {
   return [
     referentiels(etat),
+    coherence(etat),
     collecte(etat),
     ouvertures(etat),
     besoin(etat),

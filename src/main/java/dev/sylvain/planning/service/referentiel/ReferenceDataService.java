@@ -387,6 +387,17 @@ public class ReferenceDataService implements ReferenceData {
         return controlerGrille(listCreneaux());
     }
 
+    /**
+     * The persisted grid's own inconsistencies only — no openings, no
+     * feasibility: the part of {@link #controlerGrille()} the coherence
+     * checklist does not already read elsewhere — on the timeslots and locks
+     * the caller already holds.
+     */
+    public List<CreneauGridService.GridAnomaly> gridAnomalies(
+            List<Creneau> creneaux, List<VerrouillagePlanning> locks) {
+        return CreneauGridService.gridAnomalies(creneaux, getParametresLegaux(), locks, fenetresRepas());
+    }
+
     public CreneauGridService.DiagnosticGrille diagnoseGrille() {
         return CreneauGridService.diagnose(listCreneaux());
     }

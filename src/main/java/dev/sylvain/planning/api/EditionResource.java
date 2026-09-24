@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
@@ -37,6 +38,9 @@ public class EditionResource {
     @Inject
     EtatEditionService etatEditionService;
 
+    @Inject
+    CoherenceReferentielService coherenceService;
+
     @GET
     public List<Edition> list() {
         return editionService.listEditions();
@@ -65,6 +69,20 @@ public class EditionResource {
     @Path("/courant/etat")
     public EtatEditionView etat() {
         return etatEditionService.etat();
+    }
+
+    /**
+     * The coherence checklist of the current edition: every anomaly the
+     * application already detects on what was entered — write-time warnings
+     * replayed on the whole referential, opening anomalies, grid check,
+     * contradictory or untenable exceptions, staffing bound — one line each,
+     * with its family, its severity, its source's sentence and the fiche it
+     * is about. Read-only; never waits for a solve.
+     */
+    @GET
+    @Path("/courant/coherence")
+    public CoherenceReferentielService.CoherenceReport coherence() {
+        return coherenceService.report();
     }
 
     @POST

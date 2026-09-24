@@ -219,19 +219,7 @@ public class CreneauGridService {
             ParametresLegaux legaux,
             List<VerrouillagePlanning> verrouillages,
             List<FenetreRepas> fenetresRepas) {
-        List<GridAnomaly> anomalies = new ArrayList<>();
-        List<Creneau> dates =
-                creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
-
-        anomalies.addAll(unitAnomalies(creneaux, legaux, fenetresRepas == null ? List.of() : fenetresRepas));
-        anomalies.addAll(anomaliesByDay(dates));
-        anomalies.addAll(datesIsolees(dates));
-        anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
-
-        anomalies.sort(Comparator.comparingInt(
-                        (GridAnomaly anomalie) -> anomalie.severite().ordinal())
-                .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN)
-                .thenComparing(GridAnomaly::message));
+        List<GridAnomaly> anomalies = gridAnomalies(creneaux, legaux, verrouillages, fenetresRepas);
 
         List<Anomaly> ouvertures = openingAnomalies(creneaux, stands);
         FeasibilityReport faisabilite = stands.isEmpty() || creneaux.isEmpty()
@@ -260,6 +248,34 @@ public class CreneauGridService {
         return OuvertureStandsAnalyzer.analyze(stands, creneaux).anomalies().stream()
                 .filter(anomalie -> !anomalie.type().isInformational())
                 .toList();
+    }
+
+    /**
+     * The grid's own inconsistencies, sorted worst first — what
+     * {@link #validate} reports before it folds in the openings and the
+     * feasibility. Static and cheap: the coherence checklist reads it on every
+     * visit of the home screen, where the feasibility is already computed
+     * elsewhere and must not be paid twice.
+     */
+    public static List<GridAnomaly> gridAnomalies(
+            List<Creneau> creneaux,
+            ParametresLegaux legaux,
+            List<VerrouillagePlanning> verrouillages,
+            List<FenetreRepas> fenetresRepas) {
+        List<GridAnomaly> anomalies = new ArrayList<>();
+        List<Creneau> dates =
+                creneaux.stream().filter(creneau -> creneau.getDate() != null).toList();
+
+        anomalies.addAll(unitAnomalies(creneaux, legaux, fenetresRepas == null ? List.of() : fenetresRepas));
+        anomalies.addAll(anomaliesByDay(dates));
+        anomalies.addAll(datesIsolees(dates));
+        anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
+
+        anomalies.sort(Comparator.comparingInt(
+                        (GridAnomaly anomalie) -> anomalie.severite().ordinal())
+                .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN)
+                .thenComparing(GridAnomaly::message));
+        return anomalies;
     }
 
     /**

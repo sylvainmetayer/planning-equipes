@@ -61,10 +61,46 @@
               </div>
               <p class="accueil-detail">{{ ligne.detail }}</p>
             </div>
-            <a matButton class="accueil-lien" [routerLink]="ligne.lien.route" [queryParams]="ligne.lien.queryParams ?? null">
-              {{ ligne.lien.libelle }}
-              <mat-icon iconPositionEnd>arrow_forward</mat-icon>
-            </a>
+            @if (ligne.lien; as lien) {
+              <a matButton class="accueil-lien" [routerLink]="lien.route" [queryParams]="lien.queryParams ?? null">
+                {{ lien.libelle }}
+                <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+              </a>
+            } @else if (ligne.panneau === 'coherence') {
+              <button matButton type="button" class="accueil-lien"
+                      [attr.aria-controls]="coherenceOpen() ? 'accueil-coherence-panneau' : null"
+                      [attr.aria-expanded]="coherenceOpen()" (click)="toggleCoherence()">
+                @if (coherenceOpen()) {
+                  <ng-container i18n="@@accueil.coherence.masquer">Masquer le détail</ng-container>
+                } @else {
+                  <ng-container i18n="@@accueil.coherence.voir">Voir le détail</ng-container>
+                }
+                <mat-icon iconPositionEnd>{{ coherenceOpen() ? 'expand_less' : 'expand_more' }}</mat-icon>
+              </button>
+            }
+            @if (ligne.panneau === 'coherence' && coherenceOpen()) {
+              <div id="accueil-coherence-panneau" class="accueil-panneau">
+                @if (coherenceLoading() && !coherenceReport()) {
+                  <mat-progress-bar mode="indeterminate" />
+                } @else if (coherenceError()) {
+                  <p class="accueil-erreur" role="alert">{{ coherenceError() }}</p>
+                }
+                @for (groupe of coherenceGroups(); track groupe.famille) {
+                  <section class="accueil-panneau-groupe" [attr.data-famille]="groupe.famille">
+                    <h3 class="accueil-panneau-titre">{{ groupe.titre }} <span class="accueil-panneau-compte">{{ groupe.comptage }}</span></h3>
+                    <ul class="accueil-panneau-liste">
+                      @for (entree of groupe.lignes; track $index) {
+                        <li [class]="'accueil-panneau-ligne accueil-gravite-' + entree.gravite.toLowerCase()">
+                          <span class="accueil-gravite">{{ entree.severityLabel }}</span>
+                          <span class="accueil-panneau-message">{{ entree.sentence }}</span>
+                          <a class="accueil-panneau-lien" [routerLink]="entree.lien.route" [queryParams]="entree.lien.queryParams ?? null">{{ entree.lien.libelle }}</a>
+                        </li>
+                      }
+                    </ul>
+                  </section>
+                }
+              </div>
+            }
           </li>
         }
       </ol>

@@ -19,6 +19,8 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
     editionId: 'DEFAUT',
     editionNom: 'Édition par défaut',
     referentiels: { stands: 0, animateurs: 0, creneaux: 0, statut: 'A_FAIRE' },
+    // Nothing entered, nothing incoherent: the Référentiels line carries the « à faire ».
+    coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
     collecte: {
       ouverte: false,
       declarationsEnAttente: 0,
@@ -95,9 +97,10 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
 }
 
 describe('buildLignes', () => {
-  it('lists the ten steps of the cycle in the order of the guide', () => {
+  it('lists the eleven steps of the cycle in the order of the guide', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.id)).toEqual([
       'referentiels',
+      'coherence',
       'collecte',
       'ouvertures',
       'besoin',
@@ -111,27 +114,29 @@ describe('buildLignes', () => {
   });
 
   it('carries the state the server decided, line by line', () => {
-    expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual(
-      Array<string>(10).fill('A_FAIRE'),
-    );
+    expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual([
+      'A_FAIRE',
+      'FAIT',
+      ...Array<string>(9).fill('A_FAIRE'),
+    ]);
     expect(buildLignes(etatComplet()).map((ligne) => ligne.statut)).toEqual(
-      Array<string>(10).fill('FAIT'),
+      Array<string>(11).fill('FAIT'),
     );
   });
 
   it('leads an empty edition to the first referential to enter, the créneaux', () => {
     const [referentiels] = buildLignes(etatVide());
-    expect(referentiels.lien.route).toBe('/creneaux');
+    expect(referentiels.lien!.route).toBe('/creneaux');
     expect(referentiels.detail).toBe('0 stands · 0 animateurs · 0 créneaux');
 
     const withoutStand = etatVide({
       referentiels: { stands: 0, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
     });
-    expect(buildLignes(withoutStand)[0].lien.route).toBe('/stands');
+    expect(buildLignes(withoutStand)[0].lien!.route).toBe('/stands');
     const withoutAnimateur = etatVide({
       referentiels: { stands: 3, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
     });
-    expect(buildLignes(withoutAnimateur)[0].lien.route).toBe('/animateurs');
+    expect(buildLignes(withoutAnimateur)[0].lien!.route).toBe('/animateurs');
   });
 
   it('links every line to the screen that moves it, with the tab or the filter it needs', () => {
@@ -171,7 +176,7 @@ describe('buildLignes', () => {
 
     const cibles = [etatVide(), etatComplet()]
       .flatMap((etat) => buildLignes(etat))
-      .map((ligne) => ligne.lien);
+      .flatMap((ligne) => (ligne.lien ? [ligne.lien] : []));
 
     expect(cibles.length).toBeGreaterThan(0);
     for (const lien of cibles) {
@@ -258,7 +263,7 @@ describe('buildLignes', () => {
     const identiques = etatComplet({
       resolution: { ...etatComplet().resolution, scoreHorsPlancher: '0hard/0medium/-120soft' },
     });
-    expect(buildLignes(identiques)[4].detail).not.toContain('hors plancher');
+    expect(buildLignes(identiques)[5].detail).not.toContain('hors plancher');
 
     const withoutAnalysis = etatComplet({
       resolution: {
@@ -268,8 +273,8 @@ describe('buildLignes', () => {
         faisable: null,
       },
     });
-    expect(buildLignes(withoutAnalysis)[4].detail).not.toContain('score');
-    expect(buildLignes(withoutAnalysis)[4].detail).toContain('Résolue le ');
+    expect(buildLignes(withoutAnalysis)[5].detail).not.toContain('score');
+    expect(buildLignes(withoutAnalysis)[5].detail).toContain('Résolue le ');
   });
 
   it('counts what asks for attention on the lines that carry a figure', () => {
@@ -342,7 +347,7 @@ describe('summarizeLignes', () => {
         foire: { ouverte: false, demandesEnAttente: 0, statut: 'A_FAIRE' },
       }),
     );
-    expect(summarizeLignes(lignes)).toEqual({ faits: 8, attention: 1, info: 0, aFaire: 1 });
+    expect(summarizeLignes(lignes)).toEqual({ faits: 9, attention: 1, info: 0, aFaire: 1 });
   });
 });
 
@@ -360,5 +365,20 @@ describe('statut rendering', () => {
         statutIcon('FAIT'),
       ]).size,
     ).toBe(4);
+  });
+
+  it('counts the coherence checklist and unfolds it in place rather than linking elsewhere', () => {
+    const withIssues = etatComplet({
+      coherence: { bloquants: 1, aVerifier: 3, informations: 2, statut: 'ATTENTION' },
+    });
+    const ligne = buildLignes(withIssues).find((each) => each.id === 'coherence')!;
+    expect(ligne.titre).toBe('Cohérence du référentiel');
+    expect(ligne.detail).toBe('1 bloquant(s) · 3 à vérifier · 2 pour information');
+    expect(ligne.panneau).toBe('coherence');
+    expect(ligne.lien).toBeUndefined();
+
+    const withoutIssue = buildLignes(etatComplet()).find((each) => each.id === 'coherence')!;
+    expect(withoutIssue.detail).toBe('Aucune anomalie dans ce qui est saisi');
+    expect(withoutIssue.panneau).toBeUndefined();
   });
 });

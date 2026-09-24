@@ -12,6 +12,12 @@ import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuver
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceFamily;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceSeverity;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceSubject;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.FamilyCount;
 import dev.sylvain.planning.service.referentiel.ImportImpact;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.ReferenceUsage;
@@ -59,6 +65,9 @@ public class DiagnosticMcpTools {
 
     @Inject
     PlanningPersistenceService persistenceService;
+
+    @Inject
+    CoherenceReferentielService coherenceService;
 
     /**
      * The same computation as {@code GET /api/staffing}, through the same
@@ -154,6 +163,55 @@ public class DiagnosticMcpTools {
                 .toList();
         return new RapportOuvertures(
                 rapport.jours(), retenus, rapport.standsJamaisOuverts(), rapport.postesTotal(), rapport.anomalies());
+    }
+
+    /**
+     * One line of the coherence checklist as an assistant reads it: what, how
+     * serious, about which fiche — never the sentence nor the date. A warning
+     * on an animateur dates their majority, their birth date shifted by
+     * eighteen years (the rule of {@code WarningCodes}); the code says what the
+     * line means, and {@code consulter_*} gives what may be read about the
+     * fiche it names.
+     */
+    public record CoherenceIssueView(
+            CoherenceFamily famille, CoherenceSeverity gravite, String code, CoherenceSubject objet, String objetId) {}
+
+    /** The checklist without its sentences: the counts, then one line per anomaly. */
+    public record CoherenceListView(
+            int bloquants,
+            int aVerifier,
+            int informations,
+            List<FamilyCount> familles,
+            List<CoherenceIssueView> anomalies) {}
+
+    @Tool(
+            description = "La checklist de cohérence du référentiel : toutes les anomalies déjà détectées ailleurs, "
+                    + "recalculées sur toute l'édition — avertissements de saisie rejoués sur chaque animateur, "
+                    + "créneau, stand et verrouillage (codes TypeAvertissement), anomalies d'ouverture des stands, "
+                    + "contrôle de la grille de créneaux, ajustements manuels contradictoires ou intenables, besoin "
+                    + "en animateurs non couvert (BESOIN_NON_COUVERT, TYPOLOGIE_EN_MANQUE). Chaque ligne porte sa "
+                    + "famille (STANDS, CRENEAUX, ANIMATEURS, AJUSTEMENTS, CAPACITE), sa gravité (BLOQUANT, "
+                    + "A_VERIFIER, INFORMATION), son code et la fiche concernée (objet + objetId) — jamais de phrase "
+                    + "ni de date : les détails se lisent avec les outils consulter_* et analyser_*. Aucune règle "
+                    + "nouvelle, aucune résolution lancée.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    CoherenceListView lister_anomalies_referentiel(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        CoherenceReport rapport = coherenceService.report();
+        return new CoherenceListView(
+                rapport.bloquants(),
+                rapport.aVerifier(),
+                rapport.informations(),
+                rapport.familles(),
+                rapport.anomalies().stream()
+                        .map(ligne -> new CoherenceIssueView(
+                                ligne.famille(), ligne.gravite(), ligne.code(), ligne.objet(), ligne.objetId()))
+                        .toList());
     }
 
     /**

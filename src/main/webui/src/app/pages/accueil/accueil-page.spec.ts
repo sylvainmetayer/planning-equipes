@@ -18,6 +18,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
     editionId: 'DEFAUT',
     editionNom: 'Année 2026',
     referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
+    coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
     collecte: {
       ouverte: true,
       declarationsEnAttente: 3,
@@ -78,7 +79,7 @@ type PageInternals = {
 };
 
 describe('AccueilPage', () => {
-  const editionsApi = { etat: vi.fn() };
+  const editionsApi = { etat: vi.fn(), coherence: vi.fn() };
   const jobs = {
     onResult: vi.fn<(type: string, handler: () => void) => () => void>(() => () => undefined),
   };
@@ -86,6 +87,7 @@ describe('AccueilPage', () => {
 
   beforeEach(() => {
     editionsApi.etat.mockReset();
+    editionsApi.coherence.mockReset();
     jobs.onResult.mockClear();
     TestBed.configureTestingModule({
       providers: [
@@ -123,7 +125,7 @@ describe('AccueilPage', () => {
     return element().textContent!.replace(/\s+/g, ' ');
   }
 
-  it('says it is reading while the first state is in flight, then lists the ten lines', async () => {
+  it('says it is reading while the first state is in flight, then lists the eleven lines', async () => {
     const pending = deferred<EtatEdition>();
     editionsApi.etat.mockReturnValue(pending.promise);
     const page = createPage();
@@ -133,7 +135,7 @@ describe('AccueilPage', () => {
 
     pending.resolve(etat());
     await vi.waitFor(() => expect(page.chargement()).toBe(false));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(10);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(11);
     expect(text()).toContain('Année 2026');
     expect(editionsApi.etat).toHaveBeenCalledOnce();
   });
@@ -152,7 +154,7 @@ describe('AccueilPage', () => {
     expect(ligne('collecte').textContent).toContain('3 déclaration(s) à appliquer ou refuser');
     expect(ligne('resolution').classList.contains('accueil-ligne-a_faire')).toBe(true);
     expect(ligne('resolution').textContent).toContain('À faire');
-    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 5 à faire');
+    expect(text()).toContain('5 étape(s) faite(s) · 1 à vérifier · 5 à faire');
     expect(text()).not.toContain('pour information');
   });
 
@@ -172,7 +174,7 @@ describe('AccueilPage', () => {
     expect(ligne.classList.contains('accueil-ligne-attention')).toBe(false);
     expect(ligne.textContent).toContain('Pour information');
     expect(ligne.textContent).toContain('8 avertissement(s), rien de bloquant');
-    expect(text()).toContain('3 étape(s) faite(s) · 1 à vérifier · 1 pour information · 5 à faire');
+    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 1 pour information · 5 à faire');
   });
 
   it('links every line to its screen, tab and filter included', async () => {
@@ -218,7 +220,7 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockRejectedValueOnce(new Error('Serveur injoignable.'));
     page.recharger();
     await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(10);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(11);
   });
 
   // Both kinds of solve: « Corriger après un changement » rewrites the plan and
@@ -240,5 +242,105 @@ describe('AccueilPage', () => {
 
     fixture.destroy();
     expect(unregister).toHaveBeenCalledTimes(2);
+  });
+
+  // The sentence naming a minor is shown, never logged (AVERTISSEMENTS_HORS_JOURNAL):
+  // the panel reads it from the API and writes nothing to the browser's storage.
+  it('writes nothing to localStorage, the line about a minor included', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({ coherence: { bloquants: 0, aVerifier: 0, informations: 1, statut: 'INFO' } }),
+    );
+    editionsApi.coherence.mockResolvedValue({
+      bloquants: 0,
+      aVerifier: 0,
+      informations: 1,
+      familles: [{ famille: 'ANIMATEURS', bloquants: 0, aVerifier: 0, informations: 1 }],
+      anomalies: [
+        {
+          famille: 'ANIMATEURS',
+          gravite: 'INFORMATION',
+          code: 'MINEUR_PENDANT_EVENEMENT',
+          message: "L'animateur a-12 sera mineur pendant l'événement.",
+          objet: 'ANIMATEUR',
+          objetId: 'a-12',
+          date: null,
+        },
+      ],
+    });
+    const setItem = vi.spyOn(Storage.prototype, 'setItem');
+    try {
+      const page = createPage();
+      await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+      await fixture.whenStable();
+      element()
+        .querySelector<HTMLButtonElement>('li[data-ligne="coherence"] button.accueil-lien')!
+        .click();
+      await vi.waitFor(() => expect(text()).toContain('sera mineur pendant'));
+      expect(setItem).not.toHaveBeenCalled();
+    } finally {
+      setItem.mockRestore();
+    }
+  });
+
+  // The coherence line unfolds its detail below itself, read only then; each
+  // anomaly links to the fiche that fixes it.
+  it('unfolds the coherence checklist under its line, read only once asked for', async () => {
+    editionsApi.etat.mockResolvedValue(
+      etat({ coherence: { bloquants: 0, aVerifier: 1, informations: 0, statut: 'ATTENTION' } }),
+    );
+    editionsApi.coherence.mockResolvedValue({
+      bloquants: 0,
+      aVerifier: 1,
+      informations: 0,
+      familles: [
+        { famille: 'STANDS', bloquants: 0, aVerifier: 0, informations: 0 },
+        { famille: 'CRENEAUX', bloquants: 0, aVerifier: 1, informations: 0 },
+      ],
+      anomalies: [
+        {
+          famille: 'CRENEAUX',
+          gravite: 'A_VERIFIER',
+          code: 'CRENEAU_HORS_OUVERTURE_STANDS',
+          message: "Aucun des 2 stands de l'édition n'est ouvert pendant le créneau.",
+          objet: 'CRENEAU',
+          objetId: '7',
+          date: null,
+        },
+      ],
+    });
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+    expect(editionsApi.coherence).not.toHaveBeenCalled();
+
+    const bouton = element().querySelector<HTMLButtonElement>(
+      'li[data-ligne="coherence"] button.accueil-lien',
+    )!;
+    expect(bouton.getAttribute('aria-expanded')).toBe('false');
+    // Nothing to point at while folded: the panel is not in the page.
+    expect(bouton.hasAttribute('aria-controls')).toBe(false);
+    bouton.click();
+    await vi.waitFor(() => expect(editionsApi.coherence).toHaveBeenCalledOnce());
+    await fixture.whenStable();
+
+    const panneau = element().querySelector<HTMLElement>('#accueil-coherence-panneau')!;
+    await vi.waitFor(() =>
+      expect(panneau.textContent).toContain("n'est ouvert pendant le créneau"),
+    );
+    expect(
+      element()
+        .querySelector('li[data-ligne="coherence"] button.accueil-lien')!
+        .getAttribute('aria-expanded'),
+    ).toBe('true');
+    expect(
+      element()
+        .querySelector('li[data-ligne="coherence"] button.accueil-lien')!
+        .getAttribute('aria-controls'),
+    ).toBe('accueil-coherence-panneau');
+    expect(panneau.querySelectorAll('section')).toHaveLength(1);
+    // Below the page's h1 and the h2 of « À traiter aujourd'hui ».
+    expect(panneau.querySelector('h3')!.textContent).toContain('Créneaux');
+    expect(panneau.querySelector('h2')).toBeNull();
+    expect(panneau.querySelector('a')!.getAttribute('href')).toBe('/creneaux?edit=7');
   });
 });

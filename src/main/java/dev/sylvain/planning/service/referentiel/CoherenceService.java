@@ -112,6 +112,19 @@ public class CoherenceService {
     }
 
     /**
+     * The edition's stands with their own hours expanded on {@code creneaux} —
+     * rules, then dated exceptions, and no consigne: what every warning of this
+     * bean reads a stand against. The coherence checklist replays those
+     * warnings on the whole edition and resolves its stands here, so that a
+     * timeslot inside a consigne band is not reported outside every opening.
+     */
+    public List<Stand> standsOnOwnHours(List<Creneau> creneaux) {
+        List<Stand> resolus = stands.list();
+        HoraireStandResolver.apply(resolus, creneaux);
+        return resolus;
+    }
+
+    /**
      * Warnings about a hand-entered exception just written: the three readings
      * of « this forced assignment cannot be honoured » that
      * {@link CoherenceAnalyzer#onContrainteAdHoc} collects. The stands'

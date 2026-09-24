@@ -99,7 +99,9 @@ public class EditionMcpTools {
     }
 
     @Tool(
-            description = "État de l'édition : la checklist du cycle, calculée — référentiels saisis, collecte "
+            description = "État de l'édition : la checklist du cycle, calculée — référentiels saisis, cohérence "
+                    + "du référentiel (anomalies bloquantes, à vérifier, pour information ; le détail par "
+                    + "lister_anomalies_referentiel), collecte "
                     + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
                     + "les données ont bougé depuis, ou si une résolution est en cours), problèmes bloquants et "
                     + "avertissements, publication, accusés de réception, foire au planning. Chaque ligne porte un "

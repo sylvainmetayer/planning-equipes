@@ -418,6 +418,16 @@ détaillent ensuite la ligne qui pose question. Une résolution en cours s'y lit
 comme un statut, elle ne fait pas échouer l'appel. Aucune donnée nominative :
 des comptes et des dates, jamais une liste de noms.
 
+**La cohérence du référentiel, en codes.** Le bloc `coherence` d'`etat_edition`
+compte les anomalies de ce qui est saisi (bloquantes, à vérifier, pour
+information) ; `lister_anomalies_referentiel` en donne le détail — famille,
+gravité, code et fiche concernée (`objet`, `objetId`) — **sans la phrase ni la
+date** que l'écran affiche. C'est la règle de `WarningCodes` appliquée à la
+liste entière : l'avertissement sur un mineur date sa majorité, donc sa date de
+naissance décalée de dix-huit ans. Le code dit ce que la ligne signifie (un
+`TypeAvertissement`, une anomalie d'ouverture, un contrôle de grille, une cause
+de faisabilité), les outils `consulter_*` et `analyser_*` donnent le reste.
+
 **Deux dates, deux questions.** `etat_planning` dit quand le solveur a tourné
 pour la dernière fois ; `etat_publication` dit quand les animateurs ont été
 prévenus pour la dernière fois. La seconde est la seule qui décrive ce que les

@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 
@@ -65,6 +66,49 @@ class EtatEditionResourceTest {
                 .body("problemes.bloquants", notNullValue())
                 .body("publication.jamaisPublie", equalTo(true))
                 .body("foire.ouverte", notNullValue());
+    }
+
+    /**
+     * The coherence checklist: the counts on the home screen and the detail
+     * behind them add up, every family is listed, and an empty edition has an
+     * empty checklist that holds nothing back.
+     */
+    @Test
+    void theCoherenceChecklistMatchesItsBlockOnTheHomeScreen() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+        given().when()
+                .get("/api/editions/courant/coherence")
+                .then()
+                .statusCode(200)
+                .body("anomalies", hasSize(0))
+                .body("familles", hasSize(5));
+        given().when()
+                .get("/api/editions/courant/etat")
+                .then()
+                .statusCode(200)
+                .body("coherence.statut", equalTo("FAIT"));
+
+        seedScenario();
+        io.restassured.path.json.JsonPath detail = given().when()
+                .get("/api/editions/courant/coherence")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        io.restassured.path.json.JsonPath etat = given().when()
+                .get("/api/editions/courant/etat")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        org.assertj.core.api.Assertions.assertThat(etat.getInt("coherence.bloquants"))
+                .isEqualTo(detail.getInt("bloquants"));
+        org.assertj.core.api.Assertions.assertThat(etat.getInt("coherence.aVerifier"))
+                .isEqualTo(detail.getInt("aVerifier"));
+        org.assertj.core.api.Assertions.assertThat(etat.getInt("coherence.informations"))
+                .isEqualTo(detail.getInt("informations"));
+        org.assertj.core.api.Assertions.assertThat(detail.getList("anomalies"))
+                .hasSize(detail.getInt("bloquants") + detail.getInt("aVerifier") + detail.getInt("informations"));
     }
 
     /** No name, no birth date, no address leaves this route: the view is counts and dates only. */

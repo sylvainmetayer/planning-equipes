@@ -2,7 +2,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { Edition, EtatEdition } from '../models';
+import { CoherenceReport, Edition, EtatEdition } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class EditionsApi {
@@ -21,6 +21,11 @@ export class EditionsApi {
   /** The checklist of the current edition's cycle, one call for the home screen. */
   etat(): Promise<EtatEdition> {
     return this.api.get<EtatEdition>('/api/editions/courant/etat');
+  }
+
+  /** The coherence checklist of the referential, line by line — read when its panel is unfolded. */
+  coherence(): Promise<CoherenceReport> {
+    return this.api.get<CoherenceReport>('/api/editions/courant/coherence');
   }
 
   /**

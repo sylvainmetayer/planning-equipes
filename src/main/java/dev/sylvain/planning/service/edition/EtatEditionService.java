@@ -1,7 +1,10 @@
 package dev.sylvain.planning.service.edition;
 
+import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.Edition;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
@@ -14,6 +17,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDi
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatBesoin;
+import dev.sylvain.planning.service.edition.EtatEditionView.EtatCoherence;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCollecte;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatConfirmations;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatFoire;
@@ -30,6 +34,8 @@ import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
+import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
@@ -116,6 +122,9 @@ public class EtatEditionService {
     @Inject
     ValidationPrerequisService prerequisService;
 
+    @Inject
+    CoherenceReferentielService coherenceService;
+
     /**
      * Everything {@link #assemble} decides on, read once per call.
      *
@@ -128,6 +137,7 @@ public class EtatEditionService {
      * @param faisabilite       the pre-solve capacity check, always available
      * @param publication       what the next publication would announce
      * @param confirmations     the acknowledgements of the published plan
+     * @param coherence         the coherence checklist of the referential
      */
     public record Facts(
             Edition edition,
@@ -148,7 +158,8 @@ public class EtatEditionService {
             SyntheseConfirmations confirmations,
             boolean foireOuverte,
             int demandesEnAttente,
-            ProgressionValidations relecture) {}
+            ProgressionValidations relecture,
+            CoherenceReport coherence) {}
 
     /** The state of the current edition. */
     public EtatEditionView etat() {
@@ -162,11 +173,21 @@ public class EtatEditionService {
                 .filter(declaration -> declaration.getStatut() == StatutDeclaration.EN_ATTENTE)
                 .count();
         StoredAnalysis analysis = analysisStore.latest();
+        // Read once and handed to every reader below: the stands, resolved,
+        // and the timeslots feed the counts, the opening report, the
+        // feasibility check and the coherence checklist alike.
+        List<Stand> stands = referenceDataService.listSolvedStands();
+        List<Creneau> creneaux = referenceDataService.listCreneaux();
+        List<Animateur> animateurs = referenceDataService.listAnimateurs();
+        // Computed once and read twice: by their own lines, and by the
+        // coherence checklist that lists their anomalies.
+        RapportOuvertures ouvertures = OuvertureStandsAnalyzer.analyze(stands, creneaux);
+        StaffingSummary staffing = staffingService.analyzeEdition();
         return new Facts(
                 edition,
-                referenceDataService.listStands().size(),
-                referenceDataService.listAnimateurs().size(),
-                referenceDataService.listCreneaux().size(),
+                stands.size(),
+                animateurs.size(),
+                creneaux.size(),
                 // The window as it applies today, not the switch alone: a
                 // collection « open from 1 to 10 June », read in September, is
                 // closed for everybody the server answers, and a line saying
@@ -174,17 +195,16 @@ public class EtatEditionService {
                 declarationService.isCollecteOuverte(),
                 enAttente,
                 declarations.size() - enAttente,
-                OuvertureStandsAnalyzer.analyze(
-                        referenceDataService.listSolvedStands(), referenceDataService.listCreneaux()),
-                staffingService.analyzeEdition(),
+                ouvertures,
+                staffing,
                 persistenceService.loadResolution(),
                 analysis == null ? null : analysis.diagnostic(),
                 changeTracker.lastModifiedAt(),
                 solveRunning(edition.getId()),
                 feasibilityAnalyzer.analyze(
-                        referenceDataService.listAnimateurs(),
-                        referenceDataService.listSolvedStands(),
-                        referenceDataService.listCreneaux(),
+                        animateurs,
+                        stands,
+                        creneaux,
                         referenceDataService.listContraintesAdHoc(),
                         FeasibilityAnalyzer.encadrementMineursActif(referenceDataService.getContraintesDesactivees()),
                         new FeasibilityAnalyzer.PlanContext(
@@ -195,7 +215,8 @@ public class EtatEditionService {
                 confirmationService.synthese(),
                 demandeEchangeService.isFoireOpen(),
                 demandeEchangeService.pendingDemandes().size(),
-                prerequisService.progression());
+                prerequisService.progression(),
+                coherenceService.report(stands, creneaux, ouvertures, staffing));
     }
 
     /**
@@ -216,6 +237,7 @@ public class EtatEditionService {
                 facts.edition().getId(),
                 facts.edition().getNom(),
                 referentiels(facts, referentielsSaisis),
+                coherence(facts),
                 collecte(facts),
                 ouvertures(facts),
                 besoin(facts),
@@ -230,6 +252,25 @@ public class EtatEditionService {
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {
         return new EtatReferentiels(
                 facts.stands(), facts.animateurs(), facts.creneaux(), saisis ? Statut.FAIT : Statut.A_FAIRE);
+    }
+
+    /**
+     * Something to fix or to check is « à vérifier »; information alone — a
+     * minor, rules that overlap — is read, never acted upon. An empty edition
+     * has nothing to be incoherent about: the Référentiels line already says
+     * the step is ahead, and this one does not repeat it.
+     */
+    static EtatCoherence coherence(Facts facts) {
+        CoherenceReport rapport = facts.coherence();
+        Statut statut;
+        if (rapport.bloquants() > 0 || rapport.aVerifier() > 0) {
+            statut = Statut.ATTENTION;
+        } else if (rapport.informations() > 0) {
+            statut = Statut.INFO;
+        } else {
+            statut = Statut.FAIT;
+        }
+        return new EtatCoherence(rapport.bloquants(), rapport.aVerifier(), rapport.informations(), statut);
     }
 
     /**
