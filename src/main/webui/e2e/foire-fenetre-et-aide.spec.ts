@@ -117,10 +117,13 @@ test.describe('Foire au planning : bornes datées', () => {
     const refus = await espace.request.post(`/api/espace-animateur/${jeton}/demandes`, {
       data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible }],
     });
+    // Lu avant de fermer le contexte : sa fermeture libère aussi les réponses.
+    const statut = refus.status();
+    const corps = await refus.text();
     await espace.close();
 
-    expect(refus.status(), await refus.text()).toBe(400);
-    expect(await refus.text()).toContain('fermée');
+    expect(statut, corps).toBe(400);
+    expect(corps).toContain('fermée');
   });
 
   test("avant la date d'ouverture, l'espace dit « pas encore ouverte » et non « fermée »", async ({
