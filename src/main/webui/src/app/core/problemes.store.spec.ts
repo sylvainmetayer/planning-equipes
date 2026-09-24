@@ -46,6 +46,7 @@ function constraintsView(): ConstraintsView {
     plancherMedium: 0,
     plancherSoft: 0,
     pivotEcarts: [],
+    lecture: [],
     contraintes: [
       {
         name: 'dureeHebdomadaireMax',

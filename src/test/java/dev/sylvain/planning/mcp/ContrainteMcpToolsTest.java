@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class ContrainteMcpToolsTest {
 
     private static final ConstraintDefinition DEFINITION = new ConstraintDefinition(
-            "posteDoitEtrePourvu", ConstraintCatalog.Niveau.HARD, "Affectation", "description");
+            "posteDoitEtrePourvu", ConstraintCatalog.Niveau.HARD, "Affectation", "description", "Places pourvues");
 
     @Test
     void actifQuandAbsentDesContraintesDesactivees() {
@@ -56,7 +56,11 @@ class ContrainteMcpToolsTest {
     @Test
     void exposesTheFloorRatioAndItsWording() {
         ConstraintDefinition souhaits = new ConstraintDefinition(
-                "souhaitsIncompatibles", ConstraintCatalog.Niveau.MEDIUM, "Qualité d'organisation", "description");
+                "souhaitsIncompatibles",
+                ConstraintCatalog.Niveau.MEDIUM,
+                "Qualité d'organisation",
+                "description",
+                "Souhaits non couverts");
         ConstraintDiagnostic diagnostic = new ConstraintDiagnostic(
                 "souhaitsIncompatibles",
                 "0hard/-12medium/0soft",

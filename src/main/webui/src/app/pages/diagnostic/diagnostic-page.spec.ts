@@ -48,7 +48,10 @@ describe('DiagnosticPage', () => {
         { provide: ApiService, useValue: { get: vi.fn(async () => null) } },
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConstraintsApi, useValue: { catalogue: vi.fn(async () => null) } },
-        { provide: SolverJobService, useValue: { onResult: () => () => undefined } },
+        {
+          provide: SolverJobService,
+          useValue: { onResult: () => () => undefined, activeJob: () => null },
+        },
         {
           provide: ReferenceDataStore,
           useValue: {

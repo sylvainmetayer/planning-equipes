@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import dev.sylvain.planning.mcp.SolveurMcpTools.DiagnosticPlanView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkus.test.junit.QuarkusTest;
@@ -43,6 +44,9 @@ class DiagnosticPlanMcpToolsTest {
     @Inject
     SolverJobService solverJobService;
 
+    @Inject
+    ReferenceDataService referenceDataService;
+
     @AfterEach
     void clearEdition() throws InterruptedException {
         awaitSolverIdle();
@@ -65,6 +69,14 @@ class DiagnosticPlanMcpToolsTest {
         assertThat(solverJobService.findActive())
                 .as("un diagnostic ne lance aucune résolution")
                 .isEmpty();
+        // The reading of the score goes out with it, the verdict first, and
+        // names rules by their label — never an identifier, never a person.
+        assertThat(vue.lecture()).isNotEmpty();
+        assertThat(vue.lecture().getFirst()).containsPattern("règles? impératives?");
+        assertThat(vue.lecture()).allSatisfy(phrase -> assertThat(phrase).doesNotContainPattern("\\b\\p{Ll}+\\p{Lu}"));
+        assertThat(referenceDataService.listAnimateurs())
+                .allSatisfy(animateur ->
+                        assertThat(vue.lecture()).noneMatch(phrase -> phrase.contains(animateur.getNom())));
 
         // Same plan, same score: the diagnostic reads, it does not search.
         assertThat(solveurTools.diagnostiquer_plan(null).score()).isEqualTo(vue.score());

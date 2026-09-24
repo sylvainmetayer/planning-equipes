@@ -245,6 +245,10 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.results.lecture:La « Lecture du score », en tête de la page Solveur et du Diagnostic et pour chaque plan du Comparateur, dit la même chose en quelques phrases : si les règles impératives sont respectées, combien de places restent vides et quel jour, quelles règles pèsent le plus sur l'organisation et pour quelle part, ce qui vient d'une donnée absente et quels ajustements manuels sont en cause. Juste après une résolution, une dernière phrase dit ce qui a changé par rapport au plan d'avant. Chaque règle citée mène à sa ligne de la page Contraintes, chaque jour à sa Journée ; aucune personne n'y est nommée.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.results.courbe:Pendant la résolution, la page Solveur trace les trois composantes en direct, chacune dans son cadre. Le haut d'un cadre est le zéro : une courbe qui vient s'y coller veut dire « plus rien à corriger à ce niveau-là ». Quand le dur est à zéro depuis plusieurs minutes et que le souple ne bouge plus, la résolution plafonne : « Arrêter le solveur » ne vous coûtera rien, un solveur arrêté enregistre et analyse ce qu'il a trouvé. Seule la résolution en cours est tracée.`,
         },
         {

@@ -84,6 +84,12 @@ public class PlanningKpiService {
      * @param heuresFermeesParConsigne seat-hours the bands of those consignes
      *                          took away from the nominal days; {@code null}
      *                          for the same reason
+     * @param lecture           the reading of the score (see
+     *                          {@link ScoreReading}) of the analysis these
+     *                          figures were taken from — what the Comparateur
+     *                          shows for each plan. {@code null} when no
+     *                          analysis was read, and on a snapshot captured
+     *                          before the reading existed
      */
     @Schema(
             requiredProperties = {
@@ -117,7 +123,38 @@ public class PlanningKpiService {
             Integer scoreMediumHorsPlancher,
             Integer plancherMedium,
             Integer journeesSousConsigne,
-            Double heuresFermeesParConsigne) {}
+            Double heuresFermeesParConsigne,
+            List<ScoreReading.ScoreSentence> lecture) {
+
+        /** The same figures carrying {@code lecture}, the reading of the analysis they were taken from. */
+        public PlanningKpi withReading(List<ScoreReading.ScoreSentence> lecture) {
+            return new PlanningKpi(
+                    score,
+                    scoreHard,
+                    scoreMedium,
+                    scoreSoft,
+                    postesTotal,
+                    postesPourvus,
+                    animateursAffectes,
+                    standsDistincts,
+                    creneauxDistincts,
+                    heuresTotal,
+                    heuresMoyenne,
+                    heuresEcartType,
+                    heuresMin,
+                    heuresMax,
+                    heuresIncompletes,
+                    modificationsManuelles,
+                    tauxModificationsManuelles,
+                    dureeSolveSecondes,
+                    violationsParContrainte,
+                    scoreMediumHorsPlancher,
+                    plancherMedium,
+                    journeesSousConsigne,
+                    heuresFermeesParConsigne,
+                    lecture);
+        }
+    }
 
     /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
     record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
@@ -146,18 +183,19 @@ public class PlanningKpiService {
                 + referenceDataService.listVerrouillages().size();
         List<ConsigneService.Indicateur> indicateurs = consigneService.indicateurs();
         return compute(
-                affectations,
-                diagnostic == null ? null : diagnostic.score(),
-                violationsByContrainte(diagnostic),
-                modifications,
-                dureeSolveSecondes,
-                diagnostic == null ? null : diagnostic.plancherMedium(),
-                indicateurs.size(),
-                indicateurs.stream()
-                                .mapToInt(ConsigneService.Indicateur::minutesFermees)
-                                .sum()
-                        / 60.0,
-                EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux()));
+                        affectations,
+                        diagnostic == null ? null : diagnostic.score(),
+                        violationsByContrainte(diagnostic),
+                        modifications,
+                        dureeSolveSecondes,
+                        diagnostic == null ? null : diagnostic.plancherMedium(),
+                        indicateurs.size(),
+                        indicateurs.stream()
+                                        .mapToInt(ConsigneService.Indicateur::minutesFermees)
+                                        .sum()
+                                / 60.0,
+                        EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux()))
+                .withReading(diagnostic == null ? null : diagnostic.lecture());
     }
 
     /**
@@ -330,7 +368,8 @@ public class PlanningKpiService {
                 niveaux == null || plancherMedium == null ? null : niveaux[1] - plancherMedium,
                 plancherMedium,
                 journeesSousConsigne,
-                heuresFermeesParConsigne);
+                heuresFermeesParConsigne,
+                null);
     }
 
     private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {}

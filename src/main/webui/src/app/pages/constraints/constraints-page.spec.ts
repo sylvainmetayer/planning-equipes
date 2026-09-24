@@ -74,6 +74,7 @@ function view(contraintes: ConstraintView[]): ConstraintsView {
     plancherMedium: null,
     plancherSoft: null,
     pivotEcarts: [],
+    lecture: [],
     contraintes,
   };
 }

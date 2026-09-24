@@ -592,6 +592,40 @@ describe('ComparateurPage rendering', () => {
     expect(racine().querySelectorAll('.locked-hint')).toHaveLength(0);
   });
 
+  it('folds the reading of each side under its own name, and says when a side has none', async () => {
+    await comparerAvec({
+      base: cote({
+        kpi: kpi({
+          lecture: [
+            {
+              sujet: 'VERDICT',
+              niveau: 'OK',
+              texte: 'Le planning respecte toutes les règles impératives.',
+              liens: [],
+            },
+          ],
+        }),
+      }),
+    });
+
+    const sides = racine().querySelectorAll('details.comparateur-lecture');
+    expect(sides).toHaveLength(2);
+    expect(sides[0].querySelector('summary')!.textContent).toContain('Avant canicule');
+    expect(sides[0].textContent).toContain('Le planning respecte toutes les règles impératives.');
+    // Named once, by its summary: no second heading repeating it.
+    expect(sides[0].querySelector('h2')).toBeNull();
+    expect(sides[1].querySelector('summary')!.textContent).toContain('Après canicule');
+    expect(sides[1].textContent).toContain('Aucune lecture enregistrée pour ce plan');
+    expect(sides[1].textContent).not.toContain('règles impératives');
+  });
+
+  it('says a side has no reading when its list is empty, not only when it is absent', async () => {
+    await comparerAvec({ base: cote({ kpi: kpi({ lecture: [] }) }) });
+
+    const sides = racine().querySelectorAll('details.comparateur-lecture');
+    expect(sides[0].textContent).toContain('Aucune lecture enregistrée pour ce plan');
+  });
+
   it('lists the violations per constraint, and only when there are some', async () => {
     await comparerAvec({});
     expect(text()).not.toContain('Écarts par contrainte');

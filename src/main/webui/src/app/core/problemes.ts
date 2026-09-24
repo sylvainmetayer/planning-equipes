@@ -347,7 +347,9 @@ export function construireProblemes(
         id: `contrainte-${contrainte.name}`,
         niveau: niveauDeContrainte(contrainte.niveau),
         source: 'CONTRAINTE',
-        titre: contrainte.name,
+        // The short label, not the camelCase name: this list is read by
+        // organisers, and the rule's own line on Contraintes keeps the name.
+        titre: contrainte.libelleCourt || contrainte.name,
         message: contrainte.description,
         details: [...relatedDetails(enCause), ...lignes],
         references,

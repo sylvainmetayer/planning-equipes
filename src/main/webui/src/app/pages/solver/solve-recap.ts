@@ -14,6 +14,7 @@ import { intlLocale } from '../../core/locale';
 import {
   ImpactPublication,
   ImpactValidations,
+  ScoreSentence,
   PreviousPlan,
   ReamorcageEffectue,
   RestaurationSnapshot,
@@ -24,6 +25,7 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
 
 /**
@@ -35,7 +37,7 @@ import { confirmStaleRestore } from '../../shared/stale-snapshot-confirm';
  */
 @Component({
   selector: 'app-solve-recap',
-  imports: [MatCardModule, MatButtonModule],
+  imports: [MatCardModule, MatButtonModule, ScoreReadingPanel],
   templateUrl: './solve-recap.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -63,13 +65,22 @@ export class SolveRecap {
    * could actually move. Shown only when it differs from the raw one.
    */
   readonly scoreHorsPlancher = input<string | null>(null);
+  /**
+   * The score read out in sentences (issue « lecture du score »): the fresh
+   * one of the solve that just landed, with its comparison, or the last
+   * stored analysis otherwise.
+   */
+  readonly reading = input<ScoreSentence[] | null>(null);
 
   /** The previous plan is persisted again: says how many seats came back. */
   readonly restored = output<string>();
   /** The restore was refused server-side. */
   readonly failed = output<string>();
 
-  protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  private readonly jobs = inject(SolverJobService);
+  protected readonly editingLocked = this.jobs.editingLocked;
+  /** A solve is running: the reading shown is the one of the plan it is about to replace. */
+  protected readonly solveRunning = computed(() => this.jobs.activeJob() !== null);
   protected readonly restoring = signal(false);
 
   protected readonly formattedLastRun = computed(() => {

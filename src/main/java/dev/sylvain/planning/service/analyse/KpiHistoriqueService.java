@@ -95,7 +95,9 @@ public class KpiHistoriqueService {
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setString(1, editionId);
             ps.setString(2, editionNom);
-            ps.setString(3, objectMapper.writeValueAsString(kpi));
+            // A history row is a series of figures: the sentences of the
+            // reading belong to the snapshot the Comparateur reads, not here.
+            ps.setString(3, objectMapper.writeValueAsString(kpi == null ? null : kpi.withReading(null)));
             ps.setTimestamp(4, Timestamp.from(Instant.now()));
             ps.executeUpdate();
         } catch (SQLException | com.fasterxml.jackson.core.JsonProcessingException e) {

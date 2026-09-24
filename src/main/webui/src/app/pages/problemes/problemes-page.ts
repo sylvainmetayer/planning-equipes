@@ -17,6 +17,7 @@ import { intlLocale } from '../../core/locale';
 import { NiveauProbleme, niveauProblemeLabel } from '../../core/problemes';
 import { ProblemesStore } from '../../core/problemes.store';
 import { SolverJobService } from '../../core/solver-job.service';
+import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { LegalText } from '../../shared/legal-text';
 import { StatusMessage } from '../../shared/status-message';
 
@@ -39,6 +40,7 @@ import { StatusMessage } from '../../shared/status-message';
     MatChipsModule,
     MatProgressBarModule,
     LegalText,
+    ScoreReadingPanel,
   ],
   templateUrl: './problemes-page.html',
   styleUrl: './problemes-page.css',

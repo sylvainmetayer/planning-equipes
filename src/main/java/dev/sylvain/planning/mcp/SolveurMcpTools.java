@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
+import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
@@ -155,7 +156,7 @@ public class SolveurMcpTools {
      */
     @Tool(
             description = "Diagnostic du planning persisté : score global et score de chaque contrainte, nombre de "
-                    + "correspondances, postes non pourvus. Recalculé à la demande sur le plan en base, avec les "
+                    + "correspondances, postes non pourvus, et la lecture du score en quelques phrases. Recalculé à la demande sur le plan en base, avec les "
                     + "contraintes et pondérations actives du moment — aucune résolution n'est lancée. Pour le détail "
                     + "des violations dures, enchaîner avec expliquer_echec_contraintes_dures.",
             annotations =
@@ -178,6 +179,9 @@ public class SolveurMcpTools {
                 diagnostic.contraintes().stream()
                         .map(contrainte ->
                                 new ContrainteScoreView(contrainte.name(), contrainte.score(), contrainte.matchCount()))
+                        .toList(),
+                diagnostic.lecture().stream()
+                        .map(ScoreReading.ScoreSentence::texte)
                         .toList());
     }
 
@@ -377,9 +381,17 @@ public class SolveurMcpTools {
      * Score of the persisted plan, rule by rule. No violation message here —
      * those name animateurs and go out anonymised, through
      * {@code expliquer_echec_contraintes_dures}.
+     *
+     * <p>{@code lecture} is the reading of the score the screens show, sentence
+     * by sentence: rules, days and counts, never a person, so it goes out as
+     * it is.</p>
      */
     public record DiagnosticPlanView(
-            String score, int hardScore, int postesNonPourvus, List<ContrainteScoreView> contraintes) {}
+            String score,
+            int hardScore,
+            int postesNonPourvus,
+            List<ContrainteScoreView> contraintes,
+            List<String> lecture) {}
 
     public record ContrainteScoreView(String name, String score, int nombreCorrespondances) {}
 }

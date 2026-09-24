@@ -25,6 +25,7 @@ import {
   ImpactPublication,
   ImpactValidations,
   PerimetreReplanification,
+  ScoreSentence,
   PlanningDiagnostic,
   PreviousPlan,
   Reamorcage,
@@ -150,6 +151,28 @@ export class SolverPage {
   protected readonly score = signal<string | null>(null);
   /** The same score net of its floors (issue #495), for the recap. */
   protected readonly scoreHorsPlancher = signal<string | null>(null);
+  /**
+   * The reading of the solve that just landed here, comparison included; null
+   * until one lands, and again once the plan it describes is no longer the
+   * persisted one — the previous plan restored, or a newer stored analysis.
+   */
+  private readonly solveReading = signal<ScoreSentence[] | null>(null);
+  /**
+   * Which stored analysis the solve's reading stands for. The one on screen
+   * when the solve landed is older (`before`); the first different one to
+   * arrive is the solve's own (`bound`); any after that one supersedes the
+   * reading, which then gives way to it.
+   */
+  private readingAnchor: { before: string | null; bound: boolean; own: string | null } | null =
+    null;
+  /**
+   * What the recap reads out: the solve that just landed, or — on a visit
+   * after it — the reading of the last stored analysis, which has no
+   * comparison since « the plan before » no longer means anything.
+   */
+  protected readonly reading = computed(
+    () => this.solveReading() ?? this.problemes.constraints()?.lecture ?? null,
+  );
   protected readonly hardIssues = signal<HardIssue[]>([]);
   protected readonly arretEnCours = signal(false);
 
@@ -320,6 +343,13 @@ export class SolverPage {
       this.jobs.onResult('SOLVE_INCREMENTAL', surResultatSolve),
     ];
     inject(DestroyRef).onDestroy(() => desabonner.forEach((retirer) => retirer()));
+    // The solve's reading stands until a newer stored analysis supersedes it:
+    // one analysis later — the solve's own comes first — the plan was
+    // re-analysed, restored or rewritten, and the comparison no longer holds.
+    effect(() => {
+      const analysedAt = this.problemes.constraints()?.analysedAt ?? null;
+      untracked(() => this.followStoredAnalysis(analysedAt));
+    });
     // Explains why the solver buttons are locked when the job comes from
     // somewhere else (another tab, another browser, a private window).
     effect(() => {
@@ -425,6 +455,33 @@ export class SolverPage {
   protected onPlanPrecedentRestaure(message: string): void {
     this.planPrecedent.set(null);
     this.output.set(message);
+    // The reading described the plan just thrown away: the stored analysis of
+    // the restored one takes over, once re-read.
+    this.dropSolveReading();
+    void this.problemes.reload();
+  }
+
+  private dropSolveReading(): void {
+    this.solveReading.set(null);
+    this.readingAnchor = null;
+  }
+
+  /** See `readingAnchor`: binds the solve's own analysis, and drops the reading on the next one. */
+  private followStoredAnalysis(analysedAt: string | null): void {
+    const anchor = this.readingAnchor;
+    if (anchor === null || this.solveReading() === null) {
+      return;
+    }
+    if (!anchor.bound) {
+      if (analysedAt !== anchor.before) {
+        anchor.bound = true;
+        anchor.own = analysedAt;
+      }
+      return;
+    }
+    if (analysedAt !== anchor.own) {
+      this.dropSolveReading();
+    }
   }
 
   /** Read once: a solve never changes when the plan was last published. */
@@ -599,6 +656,12 @@ export class SolverPage {
     this.hardScore.set(diagnostic.hardScore);
     this.score.set(diagnostic.score);
     this.scoreHorsPlancher.set(diagnostic.scoreHorsPlancher ?? null);
+    this.solveReading.set(diagnostic.lecture ?? null);
+    this.readingAnchor = {
+      before: untracked(() => this.problemes.constraints()?.analysedAt ?? null),
+      bound: false,
+      own: null,
+    };
     const hardIssues = diagnostic.contraintes
       .filter((constraint) => hardPart(constraint.score) < 0)
       .map((constraint) => ({ name: constraint.name, matchCount: constraint.matchCount }));

@@ -3657,5 +3657,11 @@
   "accessibilite.signalement.texte": "If you cannot reach a content or a service, write to the organisation to be directed to an accessible alternative or to obtain the content in another form.",
   "accessibilite.recours": "Without a satisfactory answer, you can refer the matter to the {$START_LINK}Défenseur des droits{$CLOSE_LINK}.",
   "railJour.deplacer.aucuneVacation": "No shift to move on this line.",
-  "railJour.deplacer.verrouille": "Cannot move during a solve: the schedule is being rewritten."
+  "railJour.deplacer.verrouille": "Cannot move during a solve: the schedule is being rewritten.",
+  "lectureScore.title": "Reading of the score",
+  "lectureScore.empty": "No solve to read.",
+  "lectureScore.running": "A solve is running: this reading describes the last analysed plan.",
+  "comparateur.lecture.titre": "Reading of the score — {$cote}",
+  "comparateur.lecture.absente": "No reading recorded for this plan: it was captured before the reading existed, or without an analysis.",
+  "aide.results.lecture": "The « Reading of the score », at the top of the Solver page and the Diagnostic and for each plan of the A/B comparator, says the same thing in a few sentences: whether the mandatory rules hold, how many seats stay empty and on which day, which rules weigh most on the organisation and for what share, what comes from missing data and which manual adjustments are involved. Right after a solve, a last sentence says what changed against the plan before. Every rule it names leads to its line on the Constraints page, every day to its Day view; nobody is named in it."
 }
