@@ -227,6 +227,7 @@ describe('ParametresPage rendering', () => {
       },
     ],
     directoryError: null,
+    alertRecipientMissing: false,
   };
 
   async function rendre(
@@ -492,6 +493,16 @@ describe('ParametresPage rendering', () => {
     });
 
     expect(text(carte('Sauvegarde automatique'))).toContain('connection refused');
+  });
+
+  it('warns that a failed night alerts nobody when no admin address is configured', async () => {
+    await rendre({ onglet: 'Globaux', sauvegarde: { ...SAUVEGARDE, alertRecipientMissing: true } });
+    expect(text(carte('Sauvegarde automatique'))).toContain('MAIL_ADMIN');
+  });
+
+  it('says nothing about alerts when an admin address will receive them', async () => {
+    await rendre({ onglet: 'Globaux' });
+    expect(text(carte('Sauvegarde automatique'))).not.toContain('MAIL_ADMIN');
   });
 
   it('says the feature is inert when the deployment configured no directory', async () => {

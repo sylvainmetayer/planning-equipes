@@ -25,6 +25,7 @@ class ApplicationLinksTest {
 
         assertThat(liens.echangesScreen()).contains("https://planning.example.org/echanges");
         assertThat(liens.problemesScreen()).contains("https://planning.example.org/problemes");
+        assertThat(liens.parametresGlobauxScreen()).contains("https://planning.example.org/parametres?onglet=globaux");
         assertThat(liens.disponible()).isTrue();
     }
 

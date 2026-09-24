@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.notification;
 
 import dev.sylvain.planning.domain.DemandeEchange;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 
 /**
@@ -82,4 +83,29 @@ public sealed interface Notification {
      * @param joursMax  age of the oldest of them, in days
      */
     record PendingEchanges(int nombre, long joursMax) implements Notification {}
+
+    /**
+     * A scheduled backup failed. Sent at every failed attempt — at most one a
+     * night with the default schedule — so a second night says « 2 nuits
+     * consécutives » rather than staying silent.
+     *
+     * @param attemptedAt         when it ran, in the backup's own time zone
+     * @param reason              what went wrong, the sentence the Paramètres
+     *                            screen shows
+     * @param lastSuccessAt       the last backup that did work, {@code null}
+     *                            when none is on record
+     * @param consecutiveFailures failed attempts in a row, this one included;
+     *                            zero when the database could not say
+     */
+    record BackupFailed(ZonedDateTime attemptedAt, String reason, ZonedDateTime lastSuccessAt, int consecutiveFailures)
+            implements Notification {}
+
+    /**
+     * The first successful backup after one or more failures: the alert above
+     * is closed, and an admin who stopped hearing about it knows why.
+     *
+     * @param file           the dump just written
+     * @param failuresBefore how many attempts had failed in a row
+     */
+    record BackupRecovered(ZonedDateTime attemptedAt, String file, int failuresBefore) implements Notification {}
 }

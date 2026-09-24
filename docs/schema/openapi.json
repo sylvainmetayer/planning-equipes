@@ -729,7 +729,7 @@
         }
       },
       "BackupState" : {
-        "required" : [ "active", "configured", "retention" ],
+        "required" : [ "active", "configured", "retention", "alertRecipientMissing" ],
         "type" : "object",
         "properties" : {
           "configured" : {
@@ -765,6 +765,9 @@
           },
           "directoryError" : {
             "type" : "string"
+          },
+          "alertRecipientMissing" : {
+            "type" : "boolean"
           }
         }
       },

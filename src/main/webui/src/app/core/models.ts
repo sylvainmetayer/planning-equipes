@@ -3010,6 +3010,8 @@ export interface EtatSauvegarde {
   lastRun: ExecutionSauvegarde;
   files: FichierSauvegarde[];
   directoryError: string | null;
+  /** A backup is configured but MAIL_ADMIN is empty: a failed night alerts nobody. */
+  alertRecipientMissing: boolean;
 }
 
 /* --------------------------- Mode « jour J » ------------------------------ */

@@ -10,6 +10,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -58,6 +59,18 @@ public final class BackupStore {
 
     static String fileName(LocalDateTime at) {
         return PREFIX + STAMP.format(at) + SUFFIX;
+    }
+
+    /**
+     * When the dump named {@code name} was taken, in the zone it was named in
+     * — empty for a name this class did not produce.
+     */
+    static Optional<LocalDateTime> takenAt(String name) {
+        if (!PATTERN.matcher(name).matches()) {
+            return Optional.empty();
+        }
+        String stamp = name.substring(PREFIX.length(), name.length() - SUFFIX.length());
+        return Optional.of(LocalDateTime.parse(stamp, STAMP));
     }
 
     /** Creates the directory if needed, and clears whatever a killed run left behind. */

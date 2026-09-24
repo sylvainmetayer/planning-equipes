@@ -67,6 +67,8 @@ public class NotificationWriter {
             case Notification.RappelVeille n -> rappelVeille(n);
             case Notification.RelanceConfirmation n -> relanceConfirmation(n);
             case Notification.PendingEchanges n -> pendingEchanges(n);
+            case Notification.BackupFailed n -> backupFailed(n);
+            case Notification.BackupRecovered n -> backupRecovered(n);
         };
     }
 
@@ -214,6 +216,53 @@ public class NotificationWriter {
                         "score", n.score(),
                         "faisable", n.faisable(),
                         "lien", liens.problemesScreen().orElse(null))));
+    }
+
+    /** « 8 mars 2026 à 04:00 », in the zone the backup runs in. */
+    private static final DateTimeFormatter HORODATAGE =
+            DateTimeFormatter.ofPattern("d MMMM yyyy 'à' HH:mm", Locale.FRENCH);
+
+    /**
+     * Written for the person who must act, before anything else: when it
+     * failed, why, since when nothing has been saved, and where to look. The
+     * reason is the one the screen shows; it names no path beyond the backup
+     * directory, which is already on that screen.
+     */
+    private Optional<MailDraft> backupFailed(Notification.BackupFailed n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty()) {
+            return Optional.empty();
+        }
+        String sujet = productName.subject(
+                n.consecutiveFailures() > 1
+                        ? "échec de la sauvegarde nocturne (" + n.consecutiveFailures() + " nuits consécutives)"
+                        : "échec de la sauvegarde nocturne");
+        return Optional.of(draft(
+                admin.get(),
+                "mail/sauvegarde-echouee",
+                sujet,
+                MailTemplates.values(
+                        "tentative", HORODATAGE.format(n.attemptedAt()),
+                        "raison", n.reason() == null || n.reason().isBlank() ? "raison inconnue" : n.reason(),
+                        "dernierSucces", n.lastSuccessAt() == null ? null : HORODATAGE.format(n.lastSuccessAt()),
+                        "echecs", n.consecutiveFailures(),
+                        "lien", liens.parametresGlobauxScreen().orElse(null))));
+    }
+
+    private Optional<MailDraft> backupRecovered(Notification.BackupRecovered n) {
+        Optional<String> admin = adminAddress.resolue();
+        if (admin.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                admin.get(),
+                "mail/sauvegarde-retablie",
+                productName.subject("la sauvegarde nocturne est rétablie"),
+                MailTemplates.values(
+                        "tentative", HORODATAGE.format(n.attemptedAt()),
+                        "fichier", n.file(),
+                        "echecs", n.failuresBefore(),
+                        "lien", liens.parametresGlobauxScreen().orElse(null))));
     }
 
     private MailDraft draft(String destinataire, String template, String sujet, Map<String, Object> values) {

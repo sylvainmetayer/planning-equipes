@@ -71,17 +71,62 @@ public class BackupRepository {
         }
     }
 
-    public void saveLastRun(BackupRun run) {
+    /**
+     * Records the attempt and moves the failure streak in the same statement:
+     * a success clears it and dates the last success, a failure extends it.
+     * The streak as it stood <b>before</b> comes from the self-join, which
+     * PostgreSQL reads in the statement's snapshot — the pre-update row — so
+     * one statement tells a first success from a recovery, with no window
+     * between a read and a write.
+     * {@link BackupRun#never()} resets everything — what the tests start from.
+     *
+     * @return the streak after this attempt, and the one it replaced
+     */
+    public BackupStreak saveLastRun(BackupRun run) {
+        return saveLastRun(run, 0);
+    }
+
+    /**
+     * Same, folding in failures that happened while this very table could not
+     * be written: they extend the streak like any other, and they count as the
+     * streak "before" — so the success that follows them is a recovery.
+     *
+     * @param unrecordedFailures failed attempts the database never saw
+     */
+    public BackupStreak saveLastRun(BackupRun run, int unrecordedFailures) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement statement = connection.prepareStatement("""
-                        UPDATE backup_settings
-                        SET derniere_tentative = ?, dernier_succes = ?, dernier_fichier = ?, dernier_message = ?
-                        WHERE id = TRUE""")) {
-            statement.setTimestamp(1, run.attemptedAt() == null ? null : Timestamp.from(run.attemptedAt()));
+                        UPDATE backup_settings AS apres
+                        SET derniere_tentative = ?, dernier_succes = ?, dernier_fichier = ?, dernier_message = ?,
+                            echecs_consecutifs = CASE WHEN ? THEN apres.echecs_consecutifs + 1 + ? ELSE 0 END,
+                            dernier_succes_le = CASE WHEN ? THEN ? WHEN ? THEN NULL ELSE apres.dernier_succes_le END
+                        FROM backup_settings AS avant
+                        WHERE apres.id = TRUE AND avant.id = TRUE
+                        RETURNING apres.echecs_consecutifs, apres.dernier_succes_le,
+                                  avant.echecs_consecutifs + ? AS echecs_avant""")) {
+            Timestamp attemptedAt = run.attemptedAt() == null ? null : Timestamp.from(run.attemptedAt());
+            boolean failed = run.ranAtLeastOnce() && !run.succeeded();
+            statement.setTimestamp(1, attemptedAt);
             statement.setBoolean(2, run.succeeded());
             statement.setString(3, run.file());
             statement.setString(4, run.message());
-            statement.executeUpdate();
+            int folded = run.ranAtLeastOnce() ? unrecordedFailures : 0;
+            statement.setBoolean(5, failed);
+            statement.setInt(6, folded);
+            statement.setBoolean(7, run.succeeded());
+            statement.setTimestamp(8, attemptedAt);
+            statement.setBoolean(9, !run.ranAtLeastOnce());
+            statement.setInt(10, folded);
+            try (ResultSet rows = statement.executeQuery()) {
+                if (!rows.next()) {
+                    return BackupStreak.none();
+                }
+                Timestamp lastSuccess = rows.getTimestamp("dernier_succes_le");
+                return new BackupStreak(
+                        rows.getInt("echecs_consecutifs"),
+                        rows.getInt("echecs_avant"),
+                        lastSuccess == null ? null : lastSuccess.toInstant());
+            }
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to record the last automatic backup", e);
         }

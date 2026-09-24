@@ -1,16 +1,24 @@
 package dev.sylvain.planning.service.backup;
 
+import dev.sylvain.planning.service.notification.Notification;
+import dev.sylvain.planning.service.publication.AdminAddress;
+import io.quarkus.runtime.StartupEvent;
 import io.quarkus.scheduler.Scheduled;
 import io.quarkus.scheduler.Scheduler;
+import io.sentry.Sentry;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.jboss.logging.Logger;
 
 /**
@@ -29,6 +37,15 @@ import org.jboss.logging.Logger;
  * happened. It is recorded instead, and the Paramètres screen shows it — the
  * only place where "the backup stopped working three weeks ago" becomes
  * visible before it matters.</p>
+ *
+ * <p>And a scheduled run that fails does not wait for someone to open that
+ * screen: it fires {@link Notification.BackupFailed}, which mails
+ * {@code MAIL_ADMIN}, and the first success after one or more failures fires
+ * {@link Notification.BackupRecovered} to close the loop. Both go through the
+ * notification path, best-effort, so an SMTP outage on top of a backup
+ * failure is logged and stops there — and a second channel (a webhook) can
+ * observe the same facts without this class changing. The exception itself
+ * is also sent to the error tracker when one is configured.</p>
  */
 @ApplicationScoped
 public class BackupService {
@@ -50,6 +67,34 @@ public class BackupService {
     @Inject
     Scheduler scheduler;
 
+    @Inject
+    AdminAddress adminAddress;
+
+    @Inject
+    Event<Notification> notifications;
+
+    /**
+     * Failed attempts the database refused to record — the outage the alert
+     * is most likely about. Kept here until the next write that goes through
+     * folds them into the persisted streak: otherwise the success that follows
+     * would find no failure on record and never send the « rétablie » mail the
+     * failure mail promised, and every later count would be short. Lost on a
+     * restart, which is the one thing memory cannot do better.
+     */
+    private final AtomicInteger unrecordedFailures = new AtomicInteger();
+
+    /**
+     * Said once at startup rather than every night: with a backup configured
+     * and no admin address, a failure can only be seen on the screen. The
+     * screen says it too ({@link BackupState#alertRecipientMissing()}).
+     */
+    void warnWhenNobodyCanBeAlerted(@Observes StartupEvent startup) {
+        if (configuration.configured() && adminAddress.resolue().isEmpty()) {
+            LOG.warn("Automatic backup is configured but MAIL_ADMIN is empty: a failed backup will alert nobody,"
+                    + " it will only show on the Paramètres screen");
+        }
+    }
+
     /**
      * The nightly run. {@code SKIP} rather than a queue: a dump still running
      * when the next one is due means the database is far larger than this
@@ -65,11 +110,35 @@ public class BackupService {
         if (!configuration.configured()) {
             return;
         }
-        if (!repository.isActive()) {
+        boolean active;
+        try {
+            active = repository.isActive();
+        } catch (RuntimeException e) {
+            // The database does not answer: the likeliest cause of a failure at
+            // four in the morning, and the one where the screen is unreachable
+            // too. The switch cannot be read, so the run is attempted — pg_dump
+            // will fail on the same outage — and the alert still goes out.
+            LOG.error("Could not read the backup switch, attempting the backup anyway", e);
+            active = true;
+        }
+        if (!active) {
             LOG.debug("Automatic backup is suspended, skipping the scheduled run");
             return;
         }
-        run();
+        Attempt attempt = attempt();
+        if (!attempt.run().succeeded()) {
+            Instant lastSuccess = attempt.streak().lastSuccessAt();
+            notifications.fire(new Notification.BackupFailed(
+                    attempt.run().attemptedAt().atZone(zoneId()),
+                    attempt.run().message(),
+                    lastSuccess != null ? lastSuccess.atZone(zoneId()) : newestDumpOnDisk(),
+                    attempt.streak().consecutiveFailures()));
+        } else if (attempt.streak().recovered()) {
+            notifications.fire(new Notification.BackupRecovered(
+                    attempt.run().attemptedAt().atZone(zoneId()),
+                    attempt.run().file(),
+                    attempt.streak().failuresBefore()));
+        }
     }
 
     /**
@@ -79,6 +148,13 @@ public class BackupService {
      * @return what was recorded
      */
     public BackupRun run() {
+        return attempt().run();
+    }
+
+    /** One attempt and the failure streak it leaves behind. */
+    record Attempt(BackupRun run, BackupStreak streak) {}
+
+    private Attempt attempt() {
         Instant attemptedAt = Instant.now();
         Path directory = configuration
                 .targetDirectory()
@@ -97,10 +173,70 @@ public class BackupService {
             outcome = new BackupRun(attemptedAt, true, name, null);
         } catch (IOException | RuntimeException e) {
             LOG.error("Database backup failed", e);
+            reportToErrorTracker(e);
             outcome = new BackupRun(attemptedAt, false, null, reason(e));
         }
-        repository.saveLastRun(outcome);
-        return outcome;
+        return new Attempt(outcome, record(outcome));
+    }
+
+    /**
+     * Records the attempt, or says the streak is unknown when the database
+     * refuses the write — the alert must not depend on the very database whose
+     * outage it may be reporting.
+     */
+    private BackupStreak record(BackupRun outcome) {
+        int pending = unrecordedFailures.get();
+        try {
+            BackupStreak streak = repository.saveLastRun(outcome, pending);
+            unrecordedFailures.addAndGet(-pending);
+            return streak;
+        } catch (RuntimeException e) {
+            LOG.error("Could not record the backup attempt", e);
+            if (!outcome.succeeded()) {
+                unrecordedFailures.incrementAndGet();
+            }
+            return BackupStreak.unknown();
+        }
+    }
+
+    /**
+     * When the most recent dump still on disk was taken, for a failure mail
+     * whose database has no date to give: unreachable, or migrated from a
+     * version that only kept the last attempt — which, when it had failed,
+     * left no trace of the successes before it. Read from the file name, not
+     * the modification time, which a copy or a volume restore rewrites.
+     *
+     * @return {@code null} when the directory holds no dump or cannot be read
+     */
+    private ZonedDateTime newestDumpOnDisk() {
+        Optional<Path> directory = configuration.targetDirectory();
+        if (directory.isEmpty()) {
+            return null;
+        }
+        try {
+            return new BackupStore(directory.get())
+                    .list().stream()
+                            .findFirst()
+                            .flatMap(file -> BackupStore.takenAt(file.name()))
+                            .map(at -> at.atZone(zoneId()))
+                            .orElse(null);
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("Could not list the backup directory to date the last successful backup", e);
+            return null;
+        }
+    }
+
+    /**
+     * Best-effort, like the solver's: no {@code SENTRY_DSN} makes it a no-op,
+     * and a tracker that is down must not turn a recorded failure into a lost
+     * one. Nothing to mask: a backup failure carries no URL and no token.
+     */
+    private static void reportToErrorTracker(Exception failure) {
+        try {
+            Sentry.captureException(failure, scope -> scope.setTag("job.type", "backup"));
+        } catch (RuntimeException e) {
+            LOG.warn("The backup failure could not be reported to the error tracker", e);
+        }
     }
 
     /** The screen's whole view of the feature, in one read. */
@@ -125,7 +261,8 @@ public class BackupService {
                 directory.isPresent() ? nextRun() : null,
                 repository.lastRun(),
                 files,
-                directoryError);
+                directoryError,
+                directory.isPresent() && adminAddress.resolue().isEmpty());
     }
 
     /** Suspends or resumes the nightly run, and returns the refreshed state. */
