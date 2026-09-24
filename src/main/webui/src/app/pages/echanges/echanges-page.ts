@@ -30,6 +30,7 @@ import {
   HardMediumSoftScore,
 } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
+import { SolverJobService } from '../../core/solver-job.service';
 import { formatDeltaScore } from '../../core/score-format';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
@@ -82,6 +83,11 @@ export class EchangesPage {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
+  /**
+   * A solve holding the edition refuses this write in 409 — its landing
+   * rewrites every seat from the plan it started on: the buttons wait for it.
+   */
+  protected readonly editingLocked = inject(SolverJobService).editingLocked;
 
   protected readonly chargement = signal(false);
   protected readonly demandes = signal<DemandeEchangeView[]>([]);

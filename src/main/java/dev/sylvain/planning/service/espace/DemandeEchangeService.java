@@ -15,6 +15,7 @@ import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.EchangeSimulation;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.HardViolation;
+import dev.sylvain.planning.service.solve.SolverJobService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
@@ -62,6 +63,9 @@ public class DemandeEchangeService {
 
     @Inject
     PlanningPersistenceService persistenceService;
+
+    @Inject
+    SolverJobService solverJobs;
 
     @Inject
     ReferenceDataService referenceDataService;
@@ -438,8 +442,14 @@ public class DemandeEchangeService {
      * shows the previous planning. Announcing an échange nobody can see yet
      * would promise a planning that is not delivered — the next publication
      * says it, with the planning that carries it.</p>
+     *
+     * <p>Refused while a solve holds the edition, before anything is read or
+     * written: the landing would erase the swap from the plan and leave the
+     * demande ACCEPTEE with its locks pinning a seat nobody holds. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
      */
     public DemandeEchange accept(String demandeId, String commentaire) {
+        solverJobs.refuseIfSolving();
         DemandeEchange demande = requiredDemande(demandeId);
         requirePending(demande);
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();

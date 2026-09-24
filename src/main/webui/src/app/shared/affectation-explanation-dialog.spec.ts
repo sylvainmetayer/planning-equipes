@@ -8,7 +8,7 @@
 // cannot see: which branch is on screen, and that the loaded explanation is the
 // one being shown.
 
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,6 +29,7 @@ import {
   AffectationExplanationDialog,
   AffectationExplanationDialogData,
 } from './affectation-explanation-dialog';
+import { SolverJobService } from '../core/solver-job.service';
 
 function score(hardScore: number, mediumScore: number, softScore: number): HardMediumSoftScore {
   return { hardScore, mediumScore, softScore };
@@ -148,6 +149,7 @@ function mount(
         },
       },
       { provide: MatDialogRef, useValue: { close } },
+      { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       {
         provide: MAT_DIALOG_DATA,
         useValue: { poste: POSTE, planning: PLANNING, ...data },

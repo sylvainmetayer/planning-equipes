@@ -11,7 +11,7 @@ import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { PlanningApi } from '../../core/api/planning-api';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
@@ -21,6 +21,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService, TrackedJob } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { ModifiedFormsRegistry, UnsavedEntry } from '../../core/formulaires-modifies';
 import {
   CauseInfaisabilite,
   ChangementAffectation,
@@ -194,6 +195,7 @@ describe('SolverPage', () => {
   const solverSettings = { refresh: vi.fn(), secondsLimit: () => 600 };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn() };
+  const modifiedForms = { unsavedEntries: vi.fn((): UnsavedEntry[] => []) };
   const dialog = { open: vi.fn(() => ({ afterClosed: () => ({ subscribe: vi.fn() }) })) };
   const crud = { reload: vi.fn(), reportError: vi.fn() };
   // `resolution()` and `problemes()` are bound by the template, which does
@@ -262,6 +264,7 @@ describe('SolverPage', () => {
         { provide: SolverSettingsService, useValue: solverSettings },
         { provide: NotificationService, useValue: notifications },
         { provide: ConfirmService, useValue: confirm },
+        { provide: ModifiedFormsRegistry, useValue: modifiedForms },
         { provide: MatDialog, useValue: dialog },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: PlanningResolutionStore, useValue: resolution },
@@ -771,6 +774,48 @@ describe('SolverPage', () => {
 
       expect(confirm.ask).toHaveBeenCalledTimes(1);
       expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('an entry typed and not saved', () => {
+    afterEach(() => modifiedForms.unsavedEntries.mockReturnValue([]));
+
+    it('asks before solving without it, names it, and does nothing when refused', async () => {
+      modifiedForms.unsavedEntries.mockReturnValue([{ key: 'k', label: 'la fiche du stand S1' }]);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(false);
+
+      await page.onTimefoldSolve();
+
+      expect(confirm.ask).toHaveBeenCalledWith(
+        expect.objectContaining({ title: 'Calculer sans la saisie en cours ?' }),
+      );
+      await expect(confirm.ask.mock.calls.at(-1)![0].detail).resolves.toContain(
+        'la fiche du stand S1',
+      );
+      expect(jobs.submitSolveFromReferenceData).not.toHaveBeenCalled();
+    });
+
+    it('solves once the user said so', async () => {
+      modifiedForms.unsavedEntries.mockReturnValue([{ key: 'k', label: 'un nouveau stand' }]);
+      const page = createPage();
+      await fixture.whenStable();
+      confirm.ask.mockResolvedValueOnce(true);
+
+      await page.onTimefoldSolve();
+
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+    });
+
+    it('changes nothing when nothing is being typed', async () => {
+      const page = createPage();
+      await fixture.whenStable();
+
+      await page.onTimefoldSolve();
+
+      expect(confirm.ask).not.toHaveBeenCalled();
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalled();
     });
   });
 

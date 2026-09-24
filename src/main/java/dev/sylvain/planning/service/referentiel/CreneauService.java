@@ -65,7 +65,17 @@ public class CreneauService {
         return creneau;
     }
 
+    /**
+     * Rewrites the timeslot's date and hours.
+     *
+     * <p>Refused while a solve holds this edition's solver, for the reason
+     * {@code StandService.update} is: the landing persist re-upserts the
+     * créneaux its result names from the objects captured at its start, so a
+     * date or hours changed meanwhile would silently come back. See
+     * {@link SolverJobService#refuseIfSolving}.</p>
+     */
     public Creneau update(Long id, Creneau creneau) {
+        solverJobs.refuseIfSolving();
         CreneauValidator.check(creneau);
         if (!repository.creneauExists(id)) {
             throw new BusinessError.NotFound("Créneau inconnu : " + id);

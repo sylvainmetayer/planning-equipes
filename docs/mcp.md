@@ -247,6 +247,7 @@ qui vient d'afficher la donnée.
 | Outil | Ce qu'il fait autrement | Pourquoi |
 | --- | --- | --- |
 | `modifier_animateur` | fusionne au lieu de remplacer | voir le corollaire ci-dessus |
+| écritures `@WarnsWhileSolving` | portent `RESOLUTION_EN_COURS` dans `avertissements` quand une résolution tient l'édition ([ci-dessous](#écrire-pendant-quune-résolution-tourne)) | l'écran verrouille ces saisies le temps du calcul ; un assistant n'a pas d'écran, la réponse est le seul endroit où le lui dire |
 | `affecter_poste` | refuse un animateur que le siège ne peut pas accueillir : le geste est scoré sur le plan enregistré, et rejeté s'il dégrade le score dur ou introduit une violation dure sur le siège lui-même ([ADR 0046](decisions/0046-un-placement-intenable-est-dit-avant-le-calcul.md)) | l'écran de réparation ne propose jamais qu'un candidat déjà scoré ; un assistant nomme qui il veut, et cette porte acceptait n'importe qui |
 | `verrouiller` | rend `{ verrouillage, avertissements }` là où il rendait le verrou nu | le code `VERROUILLAGE_SUR_VIOLATION_DURE` dit que les places figées cassent déjà une règle dure : le verrou est écrit — il fige, il n'exempte pas — mais un assistant qui enchaîne sur `lancer_solveur` doit savoir d'où viendra le score dur négatif |
 | `deverrouiller` | échoue sur un id inconnu, là où `DELETE /api/verrouillages/{id}` répond 204 | un écran vient de lister les verrouillages et sait que la ligne existait ; un assistant travaille sur des ids qu'il a pu inventer, et « supprimé » sur un verrouillage inexistant lui ferait croire le planning libre de bouger |
@@ -375,6 +376,31 @@ elle, ne sort pas : un assistant n'a pas d'écran où envoyer quelqu'un.
 Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
 pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé
 durablement se pose avec `verrouiller`.
+
+## Écrire pendant qu'une résolution tourne
+
+Chaque outil d'écriture a une réponse écrite à la question « et si un calcul
+tient l'édition ? », et `McpWarnsWhileSolvingStructuralTest` fait échouer le
+build sur un outil qui n'en a pas — et relit, pour chaque outil refusé, que la
+méthode de service nommée appelle bien `refuseIfSolving` :
+
+| Pendant une résolution de l'édition | Outils | Ce que reçoit l'assistant |
+| --- | --- | --- |
+| **refusé** | modification et suppression de stands et d'animateurs, horaires et plages d'un stand, modification et suppression de créneaux, créneaux récurrents et dérivés, journées types matérialisées, consignes, `affecter_poste`, `deplacer_affectation`, `accepter_demande_echange`, restauration d'instantané, imports, réinitialisation | le refus (`409` côté REST), le job en cause nommé : l'atterrissage du calcul défairait l'écriture |
+| **accepté, averti** (`@WarnsWhileSolving`) | typologies, emplacements, contraintes ad hoc, paramètres légaux et durée du solveur, verrouillages, activation et poids des contraintes, création d'un stand, d'un animateur, d'un créneau, `ajouter_validation_journee` | la réponse habituelle, avec **`RESOLUTION_EN_COURS`** dans `avertissements` |
+| **sans rapport** | le solveur lui-même, éditions, publications et envois, préréglages de consigne, `retirer_validation_journee`, journées types non matérialisées, instantanés, paramètres de notification et de sauvegarde | la réponse habituelle ; chaque exclusion porte son motif dans le test |
+
+`RESOLUTION_EN_COURS` veut dire : **enregistré**, mais la résolution en cours a
+lu le référentiel et le plan à son démarrage et ne verra pas cette écriture ;
+relancer un calcul une fois celui-ci terminé (`statut_solveur` nomme le job).
+C'est un code, comme les autres avertissements de ce serveur : pas de phrase.
+Sur `ajouter_validation_journee`, il dit en plus que la validation peut ne pas
+survivre : l'atterrissage retire la relecture des journées où le calcul a
+déplacé un poste, sauf celles qui portent un verrouillage de type `JOUR`.
+Il ne vient ni d'une résolution d'une **autre** édition — c'est l'édition
+désignée par l'argument `edition` qui compte —, ni d'une résolution seulement
+**en file**, qui lira l'écriture à son tour. Les écrans n'en ont pas besoin :
+ils verrouillent ces saisies le temps du calcul.
 
 ## Chaque outil annonce ce qu'il fait aux données
 

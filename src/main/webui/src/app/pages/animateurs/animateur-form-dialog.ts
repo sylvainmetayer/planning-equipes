@@ -15,6 +15,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { urlLegifrance } from '../../core/legifrance';
 import { Animateur, NiveauCompetence, TypologieItem } from '../../core/models';
 import { DraftBanner, FormDraft } from '../../shared/brouillon-dialog';
+import { StatusMessage } from '../../shared/status-message';
 import { NewWindowLink } from '../../shared/new-window-link';
 import {
   AnimateurDraft,
@@ -40,6 +41,7 @@ export interface AnimateurFormData {
   selector: 'app-animateur-form-dialog',
   imports: [
     DraftBanner,
+    StatusMessage,
     NewWindowLink,
     FormsModule,
     MatDialogModule,

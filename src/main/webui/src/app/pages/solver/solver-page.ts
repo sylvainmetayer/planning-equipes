@@ -52,6 +52,7 @@ import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ValidationsStore } from '../../core/validations.store';
 import { ValidationBanner } from '../../shared/validation-banner';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { ModifiedFormsRegistry } from '../../core/formulaires-modifies';
 import { FeasibilityBanner, HardIssue } from '../../shared/feasibility-banner';
 import { causesRestantesMessage } from '../../shared/feasibility-messages';
 import { OutputPanel } from '../../shared/output-panel';
@@ -301,6 +302,7 @@ export class SolverPage {
   private readonly jobs = inject(SolverJobService);
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly confirm = inject(ConfirmService);
+  private readonly modifiedForms = inject(ModifiedFormsRegistry);
   private readonly dialog = inject(MatDialog);
   private readonly crud = inject(ReferenceCrudService);
   private readonly validations = inject(ValidationsStore);
@@ -402,7 +404,7 @@ export class SolverPage {
    * result says exactly which crews moved.
    */
   protected async onSolveIncremental(): Promise<void> {
-    if (!(await this.confirmerCausesBloquantes())) {
+    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
       return;
     }
     const scope = await firstValueFrom(
@@ -502,7 +504,7 @@ export class SolverPage {
    * a plan — « Calculer le planning » already starts cold then.
    */
   protected async onRecommencerDeZero(): Promise<void> {
-    if (!(await this.confirmerCausesBloquantes())) {
+    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
       return;
     }
     const affectations = this.affectationsEnregistrees() ?? 0;
@@ -524,10 +526,31 @@ export class SolverPage {
   }
 
   protected async onTimefoldSolve(reamorcage: Reamorcage = 'AUTO'): Promise<void> {
-    if (!(await this.confirmerCausesBloquantes())) {
+    if (!(await this.confirmUnsavedEntries()) || !(await this.confirmerCausesBloquantes())) {
       return;
     }
     await this.lancerSolve(reamorcage);
+  }
+
+  /**
+   * Asks before solving past an entry typed and not saved — a long form open
+   * in another tab, or a draft a navigation left behind: the solve reads the
+   * referential as it is saved, and would silently go without it. Nothing
+   * unsaved, nothing asked: the button behaves as it always did.
+   */
+  private async confirmUnsavedEntries(): Promise<boolean> {
+    const entries = this.modifiedForms.unsavedEntries();
+    if (entries.length === 0) {
+      return true;
+    }
+    return this.confirm.ask({
+      title: $localize`:@@solver.saisies.confirm.title:Calculer sans la saisie en cours ?`,
+      message: $localize`:@@solver.saisies.confirm.message:Une saisie n'est pas enregistrée ; le calcul ne la verra pas. Calculer quand même ?`,
+      detail: Promise.resolve(
+        $localize`:@@solver.saisies.confirm.detail:Non enregistré : ${entries.map((entry) => entry.label).join(', ')}:liste:.`,
+      ),
+      confirmLabel: $localize`:@@solver.saisies.confirm.action:Calculer quand même`,
+    });
   }
 
   /**

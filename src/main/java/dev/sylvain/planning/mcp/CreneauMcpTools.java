@@ -62,6 +62,7 @@ public class CreneauMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     WrittenCreneauView creer_creneau(
             @ToolArg(description = "Date (AAAA-MM-JJ)") String date,
             @ToolArg(description = "Heure de début (HH:MM)") String heureDebut,
@@ -422,7 +423,14 @@ public class CreneauMcpTools {
     }
 
     /** A write and its warnings as codes — the REST {@code WrittenCreneau}, seen from MCP. */
-    public record WrittenCreneauView(CreneauView creneau, List<String> avertissements) {}
+    public record WrittenCreneauView(CreneauView creneau, List<String> avertissements)
+            implements WarningCarrier<WrittenCreneauView> {
+
+        @Override
+        public WrittenCreneauView withWarning(String code) {
+            return new WrittenCreneauView(creneau, WarningCodes.with(avertissements, code));
+        }
+    }
 
     public record CreneauView(
             Long id,

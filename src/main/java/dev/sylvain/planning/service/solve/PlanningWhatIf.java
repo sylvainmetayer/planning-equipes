@@ -682,6 +682,10 @@ public final class PlanningWhatIf {
      * answering fast on a phone. Same checks, same single {@code UPDATE} per
      * seat, one read.</p>
      *
+     * <p>Refused first of all while a solve holds the edition
+     * ({@code SolverJobService.refuseIfSolving}): its landing would undo the
+     * repair.</p>
+     *
      * <p>Every seat is validated <b>before</b> the first write, so a lock on the
      * third one does not leave the first two reassigned. A seat of a timeslot
      * already started is refused the same way (ADR 0044): the past is not
@@ -703,6 +707,11 @@ public final class PlanningWhatIf {
      *                    blocked by the plan it is repairing
      */
     public void applyReparations(PlanningEvenement persiste, List<String> posteIds, String animateurId) {
+        // First of the pre-checks: a solve holding the edition would bring the
+        // seats back on landing, so nothing is looked up, scored or written.
+        if (persistence != null) {
+            persistence.refuseIfSolving();
+        }
         List<PosteAffectation> postes =
                 posteIds.stream().map(id -> findPoste(persiste, id)).toList();
         Animateur repreneur = animateurId == null ? null : findAnimateur(persiste, animateurId);

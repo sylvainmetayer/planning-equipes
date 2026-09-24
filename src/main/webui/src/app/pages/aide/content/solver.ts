@@ -121,6 +121,10 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.config.saisieEnCours:Un calcul ne lit que ce qui est enregistré. « Calculer » demande donc confirmation quand une fiche animateur, une fiche stand ou une consigne est en cours de saisie sans avoir été enregistrée, dans cet onglet ou laissée en brouillon. À l'inverse, si un calcul démarre pendant que vous saisissez — depuis un autre onglet, un autre poste, l'assistant ou une routine —, le formulaire le dit, avec l'heure de fin au plus tard : votre saisie reste à l'écran et s'enregistre à la fin du calcul. Les décisions de la page Disponibilités attendent aussi la fin du calcul. Un assistant peut, lui, continuer à écrire certaines données pendant un calcul ; sa réponse l'avertit alors que le calcul en cours n'en tiendra pas compte.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.config.file:Pendant qu'un calcul tourne, les boutons deviennent « Planifier » : la tâche est mise en file et démarre dès que la précédente se termine. C'est le geste pour enchaîner deux éditions sans attendre devant l'écran. Une tâche en attente ne verrouille rien et lit son édition telle qu'elle sera au démarrage, donc une correction apportée entre-temps sera prise en compte. La file s'affiche sous les boutons, une ligne s'en retire tant qu'elle n'a pas démarré, et un redémarrage du serveur la vide.`,
         },
       ],

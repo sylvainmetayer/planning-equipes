@@ -14,6 +14,7 @@ import dev.sylvain.planning.service.solve.FrozenPast;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.PlanningWhatIf.SuggestionsReparation;
+import dev.sylvain.planning.service.solve.SolverJobService;
 import io.quarkus.security.identity.SecurityIdentity;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -84,6 +85,9 @@ public class JourJService {
 
     @Inject
     PlanningService planningService;
+
+    @Inject
+    SolverJobService solverJobs;
 
     @Inject
     SecurityIdentity identity;
@@ -224,6 +228,12 @@ public class JourJService {
                 .sorted(Comparator.comparing(PosteAffectation::getId))
                 .toList();
         refuseLockedSeats(aLiberer);
+        // Refused while a solve holds the edition, seats to free or not: the
+        // solve read neither these exceptions nor the freed seats, and its
+        // landing could seat the absent person on the day again. Asked here,
+        // before the exceptions are written, so a refusal leaves nothing half
+        // done.
+        solverJobs.refuseIfSolving();
 
         String motif = motif(raison, jour, maintenant);
         Instant ecritLe = Instant.now();

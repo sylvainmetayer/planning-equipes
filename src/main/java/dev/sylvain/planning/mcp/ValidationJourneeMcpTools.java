@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.ValidationJournee;
 import dev.sylvain.planning.service.validation.ValidationJourneeService;
 import dev.sylvain.planning.service.validation.ValidationJourneeService.DemandeValidation;
@@ -86,13 +87,17 @@ public class ValidationJourneeMcpTools {
     @Tool(
             description = "Marque une journée entière « relue et acceptée ». poserVerrou fige en plus la journée "
                     + "pour les prochaines résolutions — facultatif, et faux par défaut. Relire une journée déjà "
-                    + "acceptée remplace la validation précédente.",
+                    + "acceptée remplace la validation précédente. Pendant une résolution de l'édition, la "
+                    + "validation est enregistrée mais la réponse porte RESOLUTION_EN_COURS : la résolution en "
+                    + "cours ne la voit pas, et à son atterrissage elle la retirera si elle déplace un poste de "
+                    + "cette journée.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     ResultatValidationView ajouter_validation_journee(
             @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
@@ -100,7 +105,7 @@ public class ValidationJourneeMcpTools {
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ValidationJourneeService.ResultatValidation resultat = validationService.accept(
                 new DemandeValidation(McpArgs.date(jour, "jour"), commentaire, Boolean.TRUE.equals(poserVerrou)));
-        return new ResultatValidationView(toView(resultat.validation()), resultat.verrouPose());
+        return new ResultatValidationView(toView(resultat.validation()), resultat.verrouPose(), List.of());
     }
 
     @Tool(
@@ -150,6 +155,22 @@ public class ValidationJourneeMcpTools {
     /** Where the relecture stands, and every reading behind it. */
     public record AvancementValidations(int journees, int journeesValidees, List<ValidationView> validations) {}
 
-    /** A reading, and whether the lock it was asked for was actually laid down. */
-    public record ResultatValidationView(ValidationView validation, boolean verrouPose) {}
+    /**
+     * A reading, whether the lock it was asked for was actually laid down, and
+     * the warning codes — {@code RESOLUTION_EN_COURS} alone, when a solve holds
+     * the edition: its landing withdraws the readings of the days it moved a
+     * seat on ({@code ValidationJourneeService.withdrawMovedDays}), this one
+     * included. Left out when empty.
+     */
+    public record ResultatValidationView(
+            ValidationView validation,
+            boolean verrouPose,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ResultatValidationView> {
+
+        @Override
+        public ResultatValidationView withWarning(String code) {
+            return new ResultatValidationView(validation, verrouPose, WarningCodes.with(avertissements, code));
+        }
+    }
 }

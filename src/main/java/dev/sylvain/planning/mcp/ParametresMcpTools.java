@@ -1,5 +1,6 @@
 package dev.sylvain.planning.mcp;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresLegaux;
@@ -61,6 +62,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     ParametresLegauxView modifier_parametres_legaux(
             @ToolArg(description = "Durée hebdomadaire maximale d'un majeur, en minutes", required = false)
                     Integer dureeHebdomadaireMaxMinutes,
@@ -158,6 +160,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
+    @WarnsWhileSolving
     ParametresSolveurView modifier_parametres_solveur(
             @ToolArg(description = "Durée de résolution par défaut, en secondes") int dureeResolutionSecondes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -252,6 +255,7 @@ public class ParametresMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     WrittenContrainteAdHocView creer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte (unique)") String id,
             @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
@@ -284,7 +288,14 @@ public class ParametresMcpTools {
     }
 
     /** The exception written, and the codes of what it raised — the sentence stays on the screen. */
-    public record WrittenContrainteAdHocView(ContrainteAdHocView contrainte, List<String> avertissements) {}
+    public record WrittenContrainteAdHocView(ContrainteAdHocView contrainte, List<String> avertissements)
+            implements WarningCarrier<WrittenContrainteAdHocView> {
+
+        @Override
+        public WrittenContrainteAdHocView withWarning(String code) {
+            return new WrittenContrainteAdHocView(contrainte, WarningCodes.with(avertissements, code));
+        }
+    }
 
     @Tool(
             description = "Supprime une contrainte ad hoc.",
@@ -294,6 +305,7 @@ public class ParametresMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
+    @WarnsWhileSolving
     SuppressionResult supprimer_contrainte_ad_hoc(
             @ToolArg(description = "Id de la contrainte") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -360,9 +372,69 @@ public class ParametresMcpTools {
             LocalTime coupureRepasMidiFin,
             LocalTime coupureRepasSoirDebut,
             LocalTime coupureRepasSoirFin,
-            LocalTime heureDebutSoiree) {}
+            LocalTime heureDebutSoiree,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ParametresLegauxView> {
 
-    public record ParametresSolveurView(int dureeResolutionSecondes) {}
+        ParametresLegauxView(
+                int dureeHebdomadaireMaxMinutes,
+                int dureeHebdomadaireMaxMineurMinutes,
+                int dureeVacationMaxMinutes,
+                int reposQuotidienMinimalMinutes,
+                int dureePauseMinutes,
+                int coupureRepasMinutes,
+                LocalTime coupureRepasMidiDebut,
+                LocalTime coupureRepasMidiFin,
+                LocalTime coupureRepasSoirDebut,
+                LocalTime coupureRepasSoirFin,
+                LocalTime heureDebutSoiree) {
+            this(
+                    dureeHebdomadaireMaxMinutes,
+                    dureeHebdomadaireMaxMineurMinutes,
+                    dureeVacationMaxMinutes,
+                    reposQuotidienMinimalMinutes,
+                    dureePauseMinutes,
+                    coupureRepasMinutes,
+                    coupureRepasMidiDebut,
+                    coupureRepasMidiFin,
+                    coupureRepasSoirDebut,
+                    coupureRepasSoirFin,
+                    heureDebutSoiree,
+                    List.of());
+        }
+
+        @Override
+        public ParametresLegauxView withWarning(String code) {
+            return new ParametresLegauxView(
+                    dureeHebdomadaireMaxMinutes,
+                    dureeHebdomadaireMaxMineurMinutes,
+                    dureeVacationMaxMinutes,
+                    reposQuotidienMinimalMinutes,
+                    dureePauseMinutes,
+                    coupureRepasMinutes,
+                    coupureRepasMidiDebut,
+                    coupureRepasMidiFin,
+                    coupureRepasSoirDebut,
+                    coupureRepasSoirFin,
+                    heureDebutSoiree,
+                    WarningCodes.with(avertissements, code));
+        }
+    }
+
+    public record ParametresSolveurView(
+            int dureeResolutionSecondes,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ParametresSolveurView> {
+
+        ParametresSolveurView(int dureeResolutionSecondes) {
+            this(dureeResolutionSecondes, List.of());
+        }
+
+        @Override
+        public ParametresSolveurView withWarning(String code) {
+            return new ParametresSolveurView(dureeResolutionSecondes, WarningCodes.with(avertissements, code));
+        }
+    }
 
     /** Whether a reason was given, never what it says: see {@link TextesLibres}. */
     public record ContrainteAdHocView(

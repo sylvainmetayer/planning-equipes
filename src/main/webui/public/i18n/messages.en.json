@@ -3696,5 +3696,19 @@
   "stands.brouillon.orphelin": "Stand {$ids}",
   "consignes.brouillon.orphelin": "The consigne of {$dates}",
   "consignes.brouillon.conflit": "The consigne was modified since: saving will replace that newer version.",
-  "aide.data.brouillon": "The animateur form, the stand form and the consigne form keep a draft of the entry in progress. After a reload, an expired session or a closed tab, reopening the same form offers « Resume » or « Ignore »; if the record changed in the meantime, the banner says so and saving will make you choose between reloading and overwriting. Closing a modified form — Escape, a click outside, « Cancel » — asks for confirmation. The draft is erased on saving, on discarding, at logout and after 24 h; an animateur's draft does not outlive the closing of the tab, and the draft of a record deleted in the meantime is erased with a message."
+  "aide.data.brouillon": "The animateur form, the stand form and the consigne form keep a draft of the entry in progress. After a reload, an expired session or a closed tab, reopening the same form offers « Resume » or « Ignore »; if the record changed in the meantime, the banner says so and saving will make you choose between reloading and overwriting. Closing a modified form — Escape, a click outside, « Cancel » — asks for confirmation. The draft is erased on saving, on discarding, at logout and after 24 h; an animateur's draft does not outlive the closing of the tab, and the draft of a record deleted in the meantime is erased with a message.",
+  "brouillon.verrou.sansFin": "A solve has just started. Your entry is kept on screen; you will be able to save it once the solve is over.",
+  "brouillon.verrou.fin": "A solve has just started (ending at the latest around {$heure}). Your entry is kept on screen; you will be able to save it once the solve is over.",
+  "saisies.label.animateurNouveau": "a new animateur",
+  "saisies.label.animateur": "the record of animateur {$id}",
+  "saisies.label.standNouveau": "a new stand",
+  "saisies.label.stand": "the record of stand {$id}",
+  "saisies.label.consigneNouvelle": "a new consigne",
+  "saisies.label.consigne": "the consigne of {$date}",
+  "dispo.verrouDemarre": "A solve has just started: nothing was sent. Decide once the solve is over.",
+  "solver.saisies.confirm.title": "Solve without the entry in progress?",
+  "solver.saisies.confirm.message": "An entry is not saved; the solve will not see it. Solve anyway?",
+  "solver.saisies.confirm.detail": "Not saved: {$liste}.",
+  "solver.saisies.confirm.action": "Solve anyway",
+  "aide.config.saisieEnCours": "A solve only reads what is saved. « Solve » therefore asks for confirmation when an animateur record, a stand record or a consigne is being typed without having been saved, in this tab or left as a draft. Conversely, if a solve starts while you are typing — from another tab, another computer, the assistant or a routine —, the form says so, with the latest end time: your entry stays on screen and can be saved once the solve is over. The decisions of the Availability page also wait for the end of the solve. An assistant may keep writing some data during a solve; its answer then warns it that the running solve will not take it into account."
 }

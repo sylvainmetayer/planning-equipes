@@ -40,7 +40,9 @@ import {
   writeDraft,
 } from '../core/brouillon-formulaire';
 import { intlLocale } from '../core/locale';
+import { ModifiedFormsRegistry, unsavedEntryLabel } from '../core/formulaires-modifies';
 import { NotificationService } from '../core/notification.service';
+import { SolverJobService } from '../core/solver-job.service';
 import { ConfirmService } from './confirm-dialog';
 
 /** How long after the last change the draft is written: often enough to lose little, rarely enough to cost nothing. */
@@ -82,6 +84,7 @@ export interface FormDraftOptions<T> {
  */
 export class FormDraft<T> {
   private readonly confirm = inject(ConfirmService);
+  private readonly jobs = inject(SolverJobService);
   private readonly key: string;
   /**
    * Where the draft lives, decided by the form type and nothing else: a fiche
@@ -100,6 +103,14 @@ export class FormDraft<T> {
   readonly conflict: Signal<boolean>;
   /** Whether the form differs from what it opened on. */
   readonly modified: Signal<boolean>;
+  /**
+   * A solve took the edition while the form holds unsaved typing — started
+   * from another tab, another computer, the MCP or a routine. The fieldset
+   * is disabled by `editingLocked` anyway; this says why, that nothing typed
+   * is lost, and when saving comes back. `null` otherwise, and the form shows
+   * its usual lock line.
+   */
+  readonly lockNotice: Signal<string | null>;
 
   private timer: ReturnType<typeof setTimeout> | null = null;
   private pendingWrite: (() => void) | null = null;
@@ -121,7 +132,29 @@ export class FormDraft<T> {
       const found = this._found();
       return found !== null && found.modifieLe !== options.modifieLe;
     });
+    this.lockNotice = computed(() => {
+      if (!this.jobs.editingLocked() || !this.modified()) {
+        return null;
+      }
+      const end = this.jobs.estimatedEndMs();
+      if (end === null) {
+        return $localize`:@@brouillon.verrou.sansFin:Une résolution vient de démarrer. Votre saisie est conservée à l'écran ; vous pourrez l'enregistrer à la fin du calcul.`;
+      }
+      const time = new Date(end).toLocaleTimeString(intlLocale(), {
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      return $localize`:@@brouillon.verrou.fin:Une résolution vient de démarrer (fin au plus tard vers ${time}:heure:). Votre saisie est conservée à l'écran ; vous pourrez l'enregistrer à la fin du calcul.`;
+    });
     this._found.set(this.lookUp());
+    // Declared to the one registry of unsaved entries, which the Solveur
+    // page reads before « Calculer »; withdrawn with the form.
+    const unregister = inject(ModifiedFormsRegistry).register(
+      this.key,
+      unsavedEntryLabel(options.type, options.recordId),
+      this.modified,
+    );
+    inject(DestroyRef).onDestroy(unregister);
     this.armAutoSave();
     this.armClose();
   }
