@@ -9,28 +9,67 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      <form (submit)="connecter($event)">
-        <mat-form-field appearance="outline">
-          <mat-label i18n="@@login.utilisateur">Utilisateur</mat-label>
-          <input matInput name="j_username" autocomplete="username"
-                 [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
-        </mat-form-field>
-        <mat-form-field appearance="outline">
-          <mat-label i18n="@@login.motDePasse">Mot de passe</mat-label>
-          <input matInput type="password" name="j_password" autocomplete="current-password"
-                 [ngModel]="motDePasse()" (ngModelChange)="motDePasse.set($event)" />
-        </mat-form-field>
-        @if (echec()) {
-          <p class="login-echec" role="alert">
-            <mat-icon inline>error</mat-icon>
-            <span i18n="@@login.echec">Identifiants incorrects.</span>
-          </p>
-        }
-        <button matButton="filled" type="submit" [disabled]="enCours() || !utilisateur() || !motDePasse()">
-          <mat-icon>login</mat-icon>
-          <span i18n="@@login.connexion">Se connecter</span>
+      @if (sansAcces()) {
+        <p class="login-echec" role="alert">
+          <mat-icon inline>block</mat-icon>
+          <span i18n="@@login.sansDroits">Vous êtes connecté, mais ce compte n'a pas accès à l'administration.</span>
+        </p>
+        <button matButton="filled" type="button" (click)="deconnecter()">
+          <mat-icon>logout</mat-icon>
+          <span i18n="@@login.deconnexion">Se déconnecter</span>
         </button>
-      </form>
+      } @else {
+        @if (modeOidc) {
+          <p class="login-oidc-intro" i18n="@@login.oidc.intro">
+            Connectez-vous avec votre compte de l'organisation.
+          </p>
+          <button matButton="filled" type="button" (click)="signInWithKeycloak()">
+            <mat-icon>login</mat-icon>
+            <span i18n="@@login.connexion">Se connecter</span>
+          </button>
+        }
+        @if (modeSecours) {
+          <section class="login-secours" aria-labelledby="login-secours-titre">
+            <h2 id="login-secours-titre" class="login-secours-titre">
+              <mat-icon inline>emergency</mat-icon>
+              <span i18n="@@login.secours.titre">Compte de secours</span>
+            </h2>
+            <p class="login-secours-aide" i18n="@@login.secours.aide">
+              Réservé aux interventions d'urgence, quand la connexion par compte est indisponible.
+            </p>
+            <form (submit)="connecter($event)">
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@login.utilisateur">Utilisateur</mat-label>
+                <input matInput name="j_username" autocomplete="username"
+                       [ngModel]="utilisateur()" (ngModelChange)="utilisateur.set($event)" />
+              </mat-form-field>
+              <mat-form-field appearance="outline">
+                <mat-label i18n="@@login.motDePasse">Mot de passe</mat-label>
+                <input matInput type="password" name="j_password" autocomplete="current-password"
+                       [ngModel]="motDePasse()" (ngModelChange)="motDePasse.set($event)" />
+              </mat-form-field>
+              @switch (echec()) {
+                @case ('identifiants') {
+                  <p class="login-echec" role="alert">
+                    <mat-icon inline>error</mat-icon>
+                    <span i18n="@@login.echec">Identifiants incorrects.</span>
+                  </p>
+                }
+                @case ('fermee') {
+                  <p class="login-echec" role="alert">
+                    <mat-icon inline>lock</mat-icon>
+                    <span i18n="@@login.secours.fermee">La connexion par mot de passe est fermée sur ce serveur.</span>
+                  </p>
+                }
+              }
+              <button matButton="outlined" type="submit" [disabled]="enCours() || !utilisateur() || !motDePasse()">
+                <mat-icon>key</mat-icon>
+                <span i18n="@@login.secours.connexion">Se connecter avec le compte de secours</span>
+              </button>
+            </form>
+          </section>
+        }
+      }
     </mat-card-content>
   </mat-card>
 </main>
