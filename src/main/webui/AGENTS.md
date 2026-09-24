@@ -99,7 +99,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   rather than dropping it, ADR 0047), `/export-csv`, `/creneaux`, `/typologies`,
   `/ad-hoc-constraints` (« Ajustements manuels » on screen — the route, the API
   path and the domain type keep the `ContrainteAdHoc` name, only the label was
-  renamed), `/calendar`, `/journee` (« Journée » — one day under five
+  renamed; two readings chosen by `?vue=liste|reseau` — the table, and the
+  network of the AFFINITE / INCOMPATIBILITE pairs drawn by hand in SVG over
+  the pure `reseau-paires.ts`, filtered by `?personne=` and `?paires=`),
+  `/calendar`, `/journee` (« Journée » — one day under five
   renderings chosen by `?vue=calendrier|rail|carte|pauses|changements`: the
   calendar stand by stand, the rail animateur by animateur, the day replayed on
   the emplacement map with one time cursor, the breaks, and what changed since

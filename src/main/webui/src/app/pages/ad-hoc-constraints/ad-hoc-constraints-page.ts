@@ -8,8 +8,10 @@ import {
   Injector,
   signal,
   viewChild,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
@@ -31,6 +33,10 @@ import {
   AdHocConstraintFormData,
   AdHocConstraintFormDialog,
 } from './ad-hoc-constraint-form-dialog';
+import { FiltreTypesPaires, readFiltreTypes, ReseauPairesView } from './reseau-paires-vue';
+
+/** The two readings of the page, and the values of the `vue` query param. */
+export type AdjustmentsView = 'liste' | 'reseau';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
@@ -55,21 +61,35 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  * <p>The prescriptive ones are evaluated as hard constraints by the solver. The
  * backend only exposes POST (create or overwrite by id) and DELETE, so an edit
  * is always saved as a creation (see the form dialog).</p>
+ *
+ * <p>Two readings of the same data (`?vue=reseau`): the table, and the network
+ * of the AFFINITE / INCOMPATIBILITE pairs — a second reading on the same page
+ * rather than a route of its own, as the renderings of the Journée are.</p>
  */
 @Component({
   selector: 'app-ad-hoc-constraints-page',
   imports: [
     MatCardModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatIconModule,
     MatTableModule,
     MatTooltipModule,
+    ReseauPairesView,
     RouterLink,
   ],
   templateUrl: './ad-hoc-constraints-page.html',
+  styleUrl: './ad-hoc-constraints-page.css',
+  // Global by design (AGENTS.md): loaded with the route, unscoped like a partial.
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AdHocConstraintsPage {
+  /** The reading on screen, and the network's own state: all three in the URL. */
+  protected readonly view = signal<AdjustmentsView>('liste');
+  protected readonly filtreReseau = signal('');
+  protected readonly typesReseau = signal<FiltreTypesPaires>('toutes');
+
   protected readonly columns = ['id', 'type', 'animateurs', 'portee', 'raison', 'actions'];
   protected readonly store = inject(ReferenceDataStore);
   protected readonly jobs = inject(SolverJobService);
@@ -117,6 +137,16 @@ export class AdHocConstraintsPage {
   }
 
   constructor() {
+    const params = currentViewParams();
+    this.view.set(params.get('vue') === 'reseau' ? 'reseau' : 'liste');
+    this.filtreReseau.set(params.get('personne') ?? '');
+    this.typesReseau.set(readFiltreTypes(params.get('paires')));
+    keepViewInQueryParams(() => ({
+      vue: this.view() === 'reseau' ? 'reseau' : null,
+      personne: this.view() === 'reseau' ? optionalParam(this.filtreReseau()) : null,
+      paires:
+        this.view() === 'reseau' && this.typesReseau() !== 'toutes' ? this.typesReseau() : null,
+    }));
     keepViewInQueryParams(() => ({ ids: optionalParam(this.onlyIds().join(',')) }));
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
@@ -129,6 +159,16 @@ export class AdHocConstraintsPage {
         this.openDialog(contrainte);
       }
     });
+  }
+
+  protected changeView(view: AdjustmentsView): void {
+    this.view.set(view);
+  }
+
+  /** The network's filters narrowed the picture: one action puts it back. */
+  protected resetReseau(): void {
+    this.filtreReseau.set('');
+    this.typesReseau.set('toutes');
   }
 
   protected typeLabel(contrainte: ContrainteAdHoc): string {

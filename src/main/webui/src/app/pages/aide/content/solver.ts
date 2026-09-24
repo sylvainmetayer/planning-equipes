@@ -456,6 +456,10 @@ export function buildSolverSections(): HelpSection[] {
           kind: 'paragraph',
           text: $localize`:@@aide.adHoc.apres:Quand une résolution se termine malgré tout en défaut, la page Problèmes nomme les ajustements que le solveur n'a pas pu honorer, avec le nombre d'écarts de chacun — c'est ce qui distingue « le solveur n'y arrive pas » de « ces trois exceptions-là sont à arbitrer ».`,
         },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.adHoc.reseau:La bascule « Réseau » de la page redessine les affinités et les incompatibilités comme un réseau de personnes : un point par animateur cité par une paire, un trait plein pour une affinité, des pointillés pour une incompatibilité, un petit losange quand l'ajustement est limité à un créneau ou un stand. Les personnes reliées par des affinités forment des grappes, encadrées et numérotées ; celles qui ne sont liées que par des incompatibilités sont regroupées à part, et un compteur dit combien d'animateurs n'ont aucune paire. Une incompatibilité entre deux membres d'une même grappe est épaissie et marquée d'un « ! » : le solveur ne pourra jamais récompenser le groupe entier. Un clic sur une personne surligne ses paires et les liste sous le dessin, avec un lien vers sa timeline ; un clic sur un trait ouvre l'ajustement — ou, quand la même paire en porte plusieurs, les liste chacun avec son bouton « Modifier ». La raison d'un ajustement n'apparaît qu'au survol du trait. Le même contenu se lit en texte sous le dessin, au clavier. Le dessin est identique d'un chargement à l'autre : les grappes sont rangées par taille, leurs membres par ordre alphabétique, en cercle — ou en colonnes au-delà de trente personnes.`,
+        },
       ],
       links: [
         {

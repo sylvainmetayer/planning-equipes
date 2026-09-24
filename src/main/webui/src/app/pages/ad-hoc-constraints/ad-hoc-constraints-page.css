@@ -1,0 +1,245 @@
+/* The Ajustements manuels page: the Liste | Réseau switch, and the network of
+   pairs drawn by hand in SVG. Affinity and incompatibility differ by the stroke
+   pattern first — solid against dashed, spelled out by the legend — and by the
+   colour only second. The positive tone is the shared `--app-positive`
+   (styles/branding.css): no `--mat-sys-*` token means "positive". */
+
+.ajustements-vues .mat-icon {
+  margin-right: 0.35rem;
+}
+
+.reseau-vide {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.reseau-outils {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 0.5rem 1rem;
+}
+
+.reseau-legende {
+  list-style: none;
+  margin: 0 0 0.5rem;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 1.25rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.reseau-legende li {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.reseau-dessin {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.reseau-dessin svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+.reseau-cadre rect {
+  fill: var(--mat-sys-surface-container-low);
+  stroke: var(--mat-sys-outline-variant);
+}
+
+.reseau-cadre--isoles rect {
+  fill: none;
+  stroke-dasharray: 4 4;
+}
+
+.reseau-cadre-titre {
+  font: var(--mat-sys-label-large);
+  fill: var(--mat-sys-on-surface-variant);
+}
+
+.reseau-arete {
+  fill: none;
+  stroke-width: 2;
+}
+
+.reseau-arete--affinite {
+  stroke: var(--app-positive);
+}
+
+.reseau-arete--incompatibilite {
+  stroke: var(--mat-sys-error);
+  stroke-dasharray: 6 4;
+}
+
+.reseau-arete--interne {
+  stroke-width: 4;
+}
+
+.reseau-arete--doublee {
+  stroke-width: 3;
+}
+
+/* A wide transparent twin of each edge: a two-pixel line is too thin to click. */
+.reseau-arete-cible {
+  fill: none;
+  stroke: transparent;
+  stroke-width: 12;
+}
+
+.reseau-lien {
+  cursor: pointer;
+}
+
+.reseau-lien--inactif {
+  opacity: 0.15;
+}
+
+.reseau-losange {
+  fill: var(--mat-sys-surface);
+  stroke: var(--mat-sys-on-surface);
+  stroke-width: 1.5;
+}
+
+.reseau-alerte {
+  font: var(--mat-sys-title-medium);
+  fill: var(--mat-sys-error);
+}
+
+.reseau-noeud {
+  cursor: pointer;
+}
+
+.reseau-noeud circle {
+  fill: var(--mat-sys-primary);
+  stroke: var(--mat-sys-surface);
+  stroke-width: 2;
+}
+
+.reseau-noeud text {
+  font: var(--mat-sys-body-small);
+  fill: var(--mat-sys-on-surface);
+}
+
+.reseau-noeud--inconnu circle {
+  fill: var(--mat-sys-outline);
+}
+
+.reseau-noeud--inconnu text {
+  font-style: italic;
+}
+
+.reseau-noeud--selection circle {
+  stroke: var(--mat-sys-tertiary);
+  stroke-width: 4;
+}
+
+.reseau-noeud--selection text {
+  font-weight: 700;
+}
+
+.reseau-noeud--attenue {
+  opacity: 0.25;
+}
+
+.reseau-titre {
+  font: var(--mat-sys-title-medium);
+  margin: 1rem 0 0.25rem;
+}
+
+.reseau-sous-titre {
+  font: var(--mat-sys-title-small);
+  margin: 0.75rem 0 0.25rem;
+}
+
+.reseau-paires,
+.reseau-personnes {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.reseau-paires li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}
+
+/* The adjustments of one edge carrying several: one « Modifier » each. */
+.reseau-ajustements {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.reseau-ajustements li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.5rem;
+}
+
+/* Why every « Modifier » of the edge is disabled while a solve runs. */
+.reseau-verrou {
+  flex-basis: 100%;
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.reseau-ajustement-id {
+  font-family: var(--mat-sys-body-medium-font), monospace;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.reseau-personnes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem 0.5rem;
+  list-style: none;
+  padding-left: 0;
+}
+
+.reseau-personne {
+  font: inherit;
+  padding: 0.15rem 0.6rem;
+  border-radius: 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+}
+
+.reseau-personne[aria-pressed='true'] {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+  border-color: var(--mat-sys-tertiary);
+}
+
+.reseau-personne:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.reseau-type {
+  font: var(--mat-sys-label-medium);
+  color: var(--app-positive);
+}
+
+.reseau-type--incompatibilite {
+  color: var(--mat-sys-error);
+}
+
+.reseau-signal {
+  color: var(--mat-sys-error);
+}
+
+.reseau-compteur {
+  color: var(--mat-sys-on-surface-variant);
+}
