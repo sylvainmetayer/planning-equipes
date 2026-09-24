@@ -1052,12 +1052,13 @@ exister :
 | Règle | Ce qui la fait échouer |
 | --- | --- |
 | Le SVG est le rendu de son `.puml` | Un `.puml` modifié sans régénération. PlantUML embarque sa source dans le SVG : le test la décode et la compare, sans rien redessiner, donc sans dépendre des polices de la machine |
-| Chaque diagramme est montré par un document de `docs/`, chaque image montrée existe | Un diagramme orphelin, un lien vers un SVG absent |
-| Un `participant` ou une `class` nommé comme un type Java en est un | Une classe renommée. Les rôles qui ne sont pas du code s'écrivent `actor`, `boundary`, `control` ou `database`, ou portent un espace ou un point dans leur nom : ils ne sont pas vérifiés |
-| Un message `méthode(…)` envoyé à un tel participant est déclaré dans son fichier source | Une méthode renommée. Un libellé qui n'est pas un appel ne commence pas par `identifiant(` |
+| Chaque diagramme est montré par un document de `docs/` — une image Markdown, hors bloc de code —, chaque image montrée existe | Un diagramme orphelin, un lien vers un SVG absent |
+| Chaque document qui montre un diagramme figure dans les chemins du workflow Tests | Un document ajouté sans sa ligne : une poussée qui n'y toucherait que lui ne jouerait pas le contrôle ci-dessus |
+| Un `participant`, ou une boîte `class`, `abstract class`, `interface` ou `enum`, nommé comme un type Java en est un | Une classe renommée. Les rôles qui ne sont pas du code s'écrivent `actor`, `boundary`, `control` ou `database`, ou portent un espace ou un point dans leur nom : ils ne sont pas vérifiés |
+| Un message `méthode(…)` envoyé à un tel participant, quel que soit le sens ou le style de la flèche, est déclaré par son type ou par un de ses supertypes du projet | Une méthode renommée. Un libellé qui n'est pas un appel ne commence pas par `identifiant(` ; une flèche à deux pointes n'est pas vérifiée |
 | Une route `VERBE /api/…` citée existe | Comme pour `api.md` |
 | Un diagramme d'états qui porte `' enum: Nom` dessine exactement les constantes de cette enum | Une constante ajoutée et oubliée, un état qui n'existe plus |
-| Un champ `nom : Type` dessiné dans une classe existe dans son fichier | Un champ renommé du modèle |
+| Un champ `nom : Type` dessiné dans une boîte est un champ déclaré par la classe (ou une composante de son record) ; une constante dessinée dans une boîte `enum` en est une | Un champ renommé du modèle, une constante retirée |
 
 Ce que le test ne voit pas, c'est l'ordre des appels et le sens d'un
 libellé : un diagramme reste de la prose, à relire quand le flux qu'il dessine

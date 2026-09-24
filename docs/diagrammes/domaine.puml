@@ -75,6 +75,8 @@ class VerrouillagePlanning {
 class AffectationPubliee <<record>> {
   standId : String
   date : LocalDate
+  heureDebut : LocalTime
+  heureFin : LocalTime
   animateurId : String
 }
 

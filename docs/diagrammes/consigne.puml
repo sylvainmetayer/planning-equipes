@@ -46,10 +46,15 @@ admin -> resource : POST /api/consignes/levee/apercu
 resource -> consignes : apercuLevee(dates)
 admin -> resource : POST /api/consignes/levee
 resource -> consignes : lever(dates)
-note right of consignes : pas une transaction unique :\nchaque étape s'enregistre à part
+consignes -> jobs : refuseIfSolving()
+note right of consignes
+  toutes les dates d'abord, avant toute suppression :
+  une date qui n'est pas à venir → 400,
+  une date sans consigne → 404 ; rien n'a bougé
+end note
+note right of consignes : ensuite, pas une transaction unique :\nchaque étape s'enregistre à part
 loop chaque date
   consignes -> depot : delete(date)
-  note right of depot : pas de consigne ce jour : 404
   consignes -> referentiel : deleteCreneaux(créneaux qu'elle avait ajoutés)
   note right of referentiel : les postes de ces créneaux partent avec eux
 end

@@ -119,12 +119,11 @@ class DiagramsStructuralTest {
      */
     @Test
     void everyDiagramIsShownByADocumentAndEveryImageShownExists() throws IOException {
-        Pattern image = Pattern.compile("diagrammes/([\\w-]+)\\.svg");
         Set<String> shown = new TreeSet<>();
         Set<String> missing = new TreeSet<>();
         try (Stream<Path> files = Files.walk(DOCS)) {
             for (Path md : files.filter(f -> f.toString().endsWith(".md")).toList()) {
-                Matcher matcher = image.matcher(read(md));
+                Matcher matcher = SHOWN_DIAGRAM.matcher(withoutFencedCode(read(md)));
                 while (matcher.find()) {
                     shown.add(matcher.group(1));
                     if (!Files.exists(DIAGRAMS.resolve(matcher.group(1) + ".svg"))) {
@@ -143,6 +142,78 @@ class DiagramsStructuralTest {
                 .as("images of docs/diagrammes shown by a document but absent")
                 .isEmpty();
         assertThat(neverShown).as("diagrams that no document of docs/ shows").isEmpty();
+    }
+
+    /**
+     * The Tests workflow skips a push that only touches {@code docs/}, except
+     * the paths it lists. A document that shows a diagram and is not listed
+     * could drop its image, or misspell it, and merge green: the check above
+     * would never have run.
+     */
+    @Test
+    void everyDocumentShowingADiagramTriggersTheTests() throws IOException {
+        String workflow = read(Path.of(".github/workflows/tests.yml"));
+        // One path list per trigger (push, pull_request): a document must be in each.
+        int triggers = occurrences(workflow, "- 'docs/diagrammes/**'");
+        assertThat(triggers)
+                .as("path lists of tests.yml naming docs/diagrammes/**")
+                .isPositive();
+        Set<String> unlisted = new TreeSet<>();
+        try (Stream<Path> files = Files.walk(DOCS)) {
+            for (Path md : files.filter(f -> f.toString().endsWith(".md")).toList()) {
+                String path = md.toString().replace('\\', '/');
+                if (SHOWN_DIAGRAM.matcher(withoutFencedCode(read(md))).find()
+                        && occurrences(workflow, "- '" + path + "'") != triggers) {
+                    unlisted.add(path);
+                }
+            }
+        }
+        assertThat(unlisted)
+                .as("documents showing a diagram that the paths of .github/workflows/tests.yml leave out")
+                .isEmpty();
+    }
+
+    /** A Markdown image of this directory — the syntax a reader sees rendered, not a mention of the path. */
+    private static final Pattern SHOWN_DIAGRAM = Pattern.compile("!\\[[^\\]]*]\\(diagrammes/([\\w-]+)\\.svg\\)");
+
+    /**
+     * The document without its fenced blocks: an example of the embedding
+     * syntax, like the one {@code docs/developpement.md} gives, shows nothing
+     * and must not count as showing the diagram it names.
+     */
+    static String withoutFencedCode(String markdown) {
+        StringBuilder kept = new StringBuilder();
+        boolean fenced = false;
+        for (String line : markdown.split("\n", -1)) {
+            if (line.stripLeading().startsWith("```")) {
+                fenced = !fenced;
+                continue;
+            }
+            if (!fenced) {
+                kept.append(line).append('\n');
+            }
+        }
+        return kept.toString();
+    }
+
+    @Test
+    void anImageInAFencedExampleShowsNothing() {
+        String markdown = """
+                ![Un solve](diagrammes/solve.svg)
+
+                ```markdown
+                ![Exemple](diagrammes/exemple.svg)
+                ```
+
+                Le fichier `diagrammes/cite.svg` est seulement nommé.
+                """;
+
+        Matcher matcher = SHOWN_DIAGRAM.matcher(withoutFencedCode(markdown));
+        List<String> shown = new ArrayList<>();
+        while (matcher.find()) {
+            shown.add(matcher.group(1));
+        }
+        assertThat(shown).containsExactly("solve");
     }
 
     /* ------------------------- participants, calls ------------------------ */
@@ -176,13 +247,13 @@ class DiagramsStructuralTest {
                 if (type == null || !types.containsKey(type)) {
                     continue;
                 }
-                if (!declaresMethod(read(types.get(type)), call[1])) {
+                if (!declaresMethodInHierarchy(type, call[1], types, new LinkedHashSet<>())) {
                     undeclared.add(name(puml) + ": " + type + "." + call[1] + "()");
                 }
             }
         }
         assertThat(undeclared)
-                .as("methods a diagram calls on a type whose source file declares no such method")
+                .as("methods a diagram calls on a type that neither it nor a supertype declares")
                 .isEmpty();
     }
 
@@ -206,13 +277,14 @@ class DiagramsStructuralTest {
     }
 
     /**
-     * Alias → type, for every {@code participant} and every {@code class}
-     * whose displayed name is a Java type name. A name with a space, a dot or
-     * an accent is a role, not a type, and is left alone.
+     * Alias → type, for every {@code participant} and every box of a class
+     * diagram ({@code class}, {@code abstract class}, {@code interface},
+     * {@code enum}, …) whose displayed name is a Java type name. A name with
+     * a space, a dot or an accent is a role, not a type, and is left alone.
      */
     static Map<String, String> namedTypes(String puml) {
         Pattern declaration = Pattern.compile(
-                "^\\s*(?:participant|class)\\s+(?:\"([^\"]+)\"|([^\\s{<]+))(?:\\s+as\\s+([\\w]+))?", Pattern.MULTILINE);
+                "^\\s*" + TYPE_KEYWORD + "\\s+(?:\"([^\"]+)\"|([^\\s{<]+))(?:\\s+as\\s+([\\w]+))?", Pattern.MULTILINE);
         Map<String, String> types = new LinkedHashMap<>();
         Matcher matcher = declaration.matcher(puml);
         while (matcher.find()) {
@@ -224,15 +296,30 @@ class DiagramsStructuralTest {
         return types;
     }
 
-    /** {@code [target alias, method]} for every message whose label opens with {@code method(}. */
+    /** The keywords that declare a participant or a box named after a type. */
+    private static final String TYPE_KEYWORD =
+            "(?:participant|(?:abstract\\s+)?class|abstract|interface|enum|annotation)";
+
+    /**
+     * {@code [target alias, method]} for every message whose label opens with
+     * {@code method(}, whichever way the arrow points and however it is
+     * styled: {@code A -> B}, {@code A ->> B}, {@code A -[#red]> B},
+     * {@code B <- A}, {@code B <<-- A}. A two-headed arrow names no single
+     * receiver and is skipped.
+     */
     static List<String[]> calls(String puml) {
         Pattern message = Pattern.compile(
-                "^\\s*[\\w\\[\\]]+\\s*[-.]*-+>{1,2}[ox]?\\s*(\\w+)\\s*(?:\\+\\+|--|\\*\\*|!!)?\\s*:\\s*([a-z]\\w*)\\(",
+                "^\\s*([\\w\\[\\]]+)\\s*([ox]?<{1,2})?-+(?:\\[[^\\]]*])?-*(>{1,2}[ox]?|[\\\\/]{1,2}[ox]?)?"
+                        + "\\s*([\\w\\[\\]]+)\\s*(?:\\+\\+|--|\\*\\*|!!)?\\s*:\\s*([a-z]\\w*)\\(",
                 Pattern.MULTILINE);
         List<String[]> calls = new ArrayList<>();
         Matcher matcher = message.matcher(puml);
         while (matcher.find()) {
-            calls.add(new String[] {matcher.group(1), matcher.group(2)});
+            boolean left = matcher.group(2) != null;
+            boolean right = matcher.group(3) != null;
+            if (left != right) {
+                calls.add(new String[] {right ? matcher.group(4) : matcher.group(1), matcher.group(5)});
+            }
         }
         return calls;
     }
@@ -249,6 +336,10 @@ class DiagramsStructuralTest {
                 pipeline --> admin -- : Resolution
                 pipeline ->> StandService : update(id, stand)
                 StandService -> stream : événement
+                StandService <- admin : saveStand(stand)
+                admin -[#red]> pipeline : stop()
+                pipeline <<-- admin : cancel(job)
+                admin <-> pipeline : both(ways)
                 @enduml
                 """;
 
@@ -256,19 +347,90 @@ class DiagramsStructuralTest {
                 .containsExactly(Map.entry("pipeline", "SolvePipeline"), Map.entry("StandService", "StandService"));
         assertThat(calls(puml))
                 .extracting(a -> a[0] + "." + a[1])
-                .containsExactly("pipeline.execute", "StandService.update");
+                .containsExactly(
+                        "pipeline.execute",
+                        "StandService.update",
+                        "StandService.saveStand",
+                        "pipeline.stop",
+                        "pipeline.cancel");
+    }
+
+    @Test
+    void everyKindOfClassBoxNamesItsType() {
+        String puml = """
+                @startuml
+                abstract class Foo
+                interface Bar {
+                }
+                enum Baz
+                class "Avec espace" as avec
+                @enduml
+                """;
+
+        assertThat(namedTypes(puml).values()).containsExactly("Foo", "Bar", "Baz");
     }
 
     /**
-     * A declaration, not a call: a return type or a modifier before the name.
-     * {@code return update(…)} and {@code new Update(…)} are calls.
+     * A declaration, not a call: a return type or a modifier before the name,
+     * annotations allowed in front on the same line. {@code return update(…)},
+     * {@code assert update(…)} and {@code new Update(…)} are calls.
      */
     static boolean declaresMethod(String javaSource, String method) {
         Pattern declaration = Pattern.compile(
-                "^\\s*+(?!return\\b|new\\b|throw\\b|else\\b|yield\\b)[\\w.<>\\[\\]?, ]*[\\w>\\]]\\s+"
+                "^\\s*+(?:@[\\w.]+(?:\\([^)]*\\))?\\s+)*+"
+                        + "(?!return\\b|new\\b|throw\\b|else\\b|yield\\b|assert\\b|case\\b)"
+                        + "[\\w.<>\\[\\]?, ]*[\\w>\\]]\\s+"
                         + Pattern.quote(method) + "\\s*\\(",
                 Pattern.MULTILINE);
         return declaration.matcher(javaSource).find();
+    }
+
+    /**
+     * The method is declared by the type or by one of its supertypes that
+     * the main sources declare — a call to an inherited or default method is
+     * a call on the type all the same. A supertype from a library is not
+     * searched, and cannot vouch for anything.
+     */
+    private static boolean declaresMethodInHierarchy(
+            String type, String method, Map<String, Path> types, Set<String> visited) throws IOException {
+        Path file = types.get(type);
+        if (file == null || !visited.add(type)) {
+            return false;
+        }
+        String source = read(file);
+        if (declaresMethod(source, method)) {
+            return true;
+        }
+        for (String supertype : supertypes(source, type)) {
+            if (declaresMethodInHierarchy(supertype, method, types, visited)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** The simple names after {@code extends} and {@code implements} in the header of {@code type}. */
+    static List<String> supertypes(String javaSource, String type) {
+        Matcher header = Pattern.compile(
+                        "\\b(?:class|interface|enum|record)\\s+" + Pattern.quote(type) + "\\b([^{]*)\\{")
+                .matcher(javaSource);
+        if (!header.find()) {
+            return List.of();
+        }
+        String clauses = header.group(1).replaceAll("<[^<>]*>", "").replaceAll("<[^<>]*>", "");
+        Matcher named = Pattern.compile(
+                        "\\b(?:extends|implements)\\s+([\\w.\\s,]+?)(?=\\bimplements\\b|\\bpermits\\b|$)")
+                .matcher(clauses.replaceAll("\\s+", " ").trim());
+        List<String> supertypes = new ArrayList<>();
+        while (named.find()) {
+            for (String name : named.group(1).split(",")) {
+                String simple = name.trim().replaceAll(".*\\.", "");
+                if (!simple.isEmpty()) {
+                    supertypes.add(simple);
+                }
+            }
+        }
+        return supertypes;
     }
 
     @Test
@@ -286,6 +448,23 @@ class DiagramsStructuralTest {
         assertThat(declaresMethod(source, "update")).isTrue();
         assertThat(declaresMethod(source, "list")).isTrue();
         assertThat(declaresMethod(source, "validate")).isFalse();
+        assertThat(declaresMethod("        assert check(x);\n", "check")).isFalse();
+        assertThat(declaresMethod("    @Override public void run() {}\n", "run"))
+                .isTrue();
+        assertThat(declaresMethod("    @Tool(name = \"x\") @Journalise Object tool(int n) {\n", "tool"))
+                .isTrue();
+    }
+
+    @Test
+    void aSupertypeIsReadFromTheHeader() {
+        String source = """
+                public final class SolverJobService extends Base<Job, Map<String, Integer>>
+                        implements dev.sylvain.Stoppable, Closeable {
+                }
+                """;
+
+        assertThat(supertypes(source, "SolverJobService")).containsExactly("Base", "Stoppable", "Closeable");
+        assertThat(supertypes("interface Foo extends Bar, Baz {}", "Foo")).containsExactly("Bar", "Baz");
     }
 
     /* ---------------------------- state diagrams -------------------------- */
@@ -324,11 +503,16 @@ class DiagramsStructuralTest {
     /** The states of a PlantUML state diagram, the pseudo-states {@code [*]} aside. */
     static Set<String> states(String puml) {
         Set<String> states = new TreeSet<>();
-        Matcher transition = Pattern.compile("^\\s*(\\[\\*]|\\w+)\\s*-[\\w-]*->\\s*(\\[\\*]|\\w+)", Pattern.MULTILINE)
+        // Any arrow PlantUML accepts: -->, ->, -[#blue]->, -down->, -[dotted]->, and the same pointing left.
+        Matcher transition = Pattern.compile(
+                        "^\\s*(\\[\\*]|\\w+)\\s*(<?)-+(?:\\[[^\\]]*]|[a-z]+)?-*(>?)\\s*(\\[\\*]|\\w+)",
+                        Pattern.MULTILINE)
                 .matcher(puml);
         while (transition.find()) {
-            states.add(transition.group(1));
-            states.add(transition.group(2));
+            if (transition.group(2).isEmpty() != transition.group(3).isEmpty()) {
+                states.add(transition.group(1));
+                states.add(transition.group(4));
+            }
         }
         Matcher declaration =
                 Pattern.compile("^\\s*state\\s+(\\w+)", Pattern.MULTILINE).matcher(puml);
@@ -346,23 +530,39 @@ class DiagramsStructuralTest {
         if (!start.find()) {
             return Set.of();
         }
-        String body = javaSource
-                .substring(start.end())
-                .replaceAll("(?s)/\\*.*?\\*/", "")
-                .replaceAll("//[^\\n]*", "");
+        // One pass that skips comments and literals, so a `//` or a `)` inside
+        // a string cannot cut the list, and that counts braces as well as
+        // parentheses, so a constant with a body does not end the enum.
         StringBuilder list = new StringBuilder();
         int depth = 0;
-        for (char c : body.toCharArray()) {
+        int i = start.end();
+        while (i < javaSource.length()) {
+            char c = javaSource.charAt(i);
+            if (javaSource.startsWith("//", i)) {
+                int end = javaSource.indexOf('\n', i);
+                i = end < 0 ? javaSource.length() : end;
+                continue;
+            }
+            if (javaSource.startsWith("/*", i)) {
+                int end = javaSource.indexOf("*/", i + 2);
+                i = end < 0 ? javaSource.length() : end + 2;
+                continue;
+            }
+            if (c == '"' || c == '\'') {
+                i = afterLiteral(javaSource, i);
+                continue;
+            }
             if (depth == 0 && (c == ';' || c == '}')) {
                 break;
             }
-            if (c == '(') {
+            if (c == '(' || c == '{') {
                 depth++;
-            } else if (c == ')') {
+            } else if (c == ')' || c == '}') {
                 depth--;
             } else if (depth == 0) {
                 list.append(c);
             }
+            i++;
         }
         Set<String> constants = new TreeSet<>();
         for (String element : list.toString().split(",")) {
@@ -372,6 +572,38 @@ class DiagramsStructuralTest {
             }
         }
         return constants;
+    }
+
+    /** The index just after the string, text block or char literal that opens at {@code start}. */
+    private static int afterLiteral(String source, int start) {
+        if (source.startsWith("\"\"\"", start)) {
+            int end = source.indexOf("\"\"\"", start + 3);
+            return end < 0 ? source.length() : end + 3;
+        }
+        char quote = source.charAt(start);
+        int i = start + 1;
+        while (i < source.length() && source.charAt(i) != quote) {
+            i += source.charAt(i) == '\\' ? 2 : 1;
+        }
+        return i + 1;
+    }
+
+    @Test
+    void anEnumConstantWithABodyOrAQuotedArgumentKeepsTheRestOfTheList() {
+        assertThat(constants("enum E { A { void f() {} }, B, C; }", "E")).containsExactly("A", "B", "C");
+        assertThat(constants("enum E { A(\"http://x\"), B(')'), C }", "E")).containsExactly("A", "B", "C");
+    }
+
+    @Test
+    void aStateReachedOnlyThroughAStyledOrLeftArrowIsDrawn() {
+        String puml = """
+                [*] --> A
+                A -[#blue]-> B
+                C <-- A
+                A -down-> D
+                """;
+
+        assertThat(states(puml)).containsExactly("A", "B", "C", "D");
     }
 
     @Test
@@ -415,29 +647,93 @@ class DiagramsStructuralTest {
     void everyFieldDrawnInAClassExists() throws IOException {
         Map<String, Path> types = declaredTypes();
         Set<String> missingFields = new TreeSet<>();
-        Pattern box = Pattern.compile("^\\s*class\\s+(\\w+)[^{\\n]*\\{([^}]*)}", Pattern.MULTILINE);
+        Pattern box = Pattern.compile("^\\s*" + TYPE_KEYWORD + "\\s+(\\w+)[^{\\n]*\\{([^}]*)}", Pattern.MULTILINE);
         Pattern field = Pattern.compile("^\\s*[-+#~]?\\s*(\\w+)\\s*:", Pattern.MULTILINE);
+        Pattern constant = Pattern.compile("^\\s*([A-Z][A-Z0-9_]*)\\s*$", Pattern.MULTILINE);
         for (Path puml : diagrams()) {
             Matcher matcher = box.matcher(read(puml));
             while (matcher.find()) {
-                Path file = types.get(matcher.group(1));
+                String type = matcher.group(1);
+                Path file = types.get(type);
                 if (file == null) {
                     continue;
                 }
                 String java = read(file);
                 Matcher fields = field.matcher(matcher.group(2));
                 while (fields.find()) {
-                    if (!Pattern.compile("\\b" + fields.group(1) + "\\b")
-                            .matcher(java)
-                            .find()) {
-                        missingFields.add(name(puml) + ": " + matcher.group(1) + "." + fields.group(1));
+                    if (!declaresField(java, type, fields.group(1))) {
+                        missingFields.add(name(puml) + ": " + type + "." + fields.group(1));
+                    }
+                }
+                Matcher constants = constant.matcher(matcher.group(2));
+                while (constants.find()) {
+                    if (!constants(java, type).contains(constants.group(1))) {
+                        missingFields.add(name(puml) + ": " + type + "." + constants.group(1));
                     }
                 }
             }
         }
         assertThat(missingFields)
-                .as("fields drawn in a class box that the class does not declare")
+                .as("fields or enum constants drawn in a box that the type does not declare")
                 .isEmpty();
+    }
+
+    /**
+     * {@code type} declares {@code field}: a field declaration from the type's
+     * own header onwards, or a component of its record header. A word that
+     * only shows up in a comment or a parameter is not a field. A local
+     * variable declared on a line of its own still reads like one: telling
+     * them apart takes a parser, and the regression this guards against — a
+     * field renamed while the diagram kept the old name — leaves no local
+     * behind.
+     */
+    static boolean declaresField(String javaSource, String type, String field) {
+        Matcher header = Pattern.compile("\\b(?:class|interface|enum|record)\\s+" + Pattern.quote(type) + "\\b")
+                .matcher(javaSource);
+        if (!header.find()) {
+            return false;
+        }
+        String declared = javaSource.substring(header.start());
+        Matcher record = Pattern.compile("^record\\s+\\w+\\s*(?:<[^>]*>)?\\s*\\(([^)]*)\\)")
+                .matcher(declared);
+        if (record.find()
+                && Pattern.compile("\\s" + Pattern.quote(field) + "\\s*(?:,|$)")
+                        .matcher(record.group(1).strip())
+                        .find()) {
+            return true;
+        }
+        return Pattern.compile(
+                        "^\\s*(?:@[\\w.]+(?:\\([^)]*\\))?\\s+)*"
+                                + "(?:(?:private|protected|public|static|final|transient|volatile)\\s+)*"
+                                + "[\\w.<>\\[\\]?, ]*[\\w>\\]]\\s+"
+                                + Pattern.quote(field) + "\\s*[;=]",
+                        Pattern.MULTILINE)
+                .matcher(declared)
+                .find();
+    }
+
+    @Test
+    void aFieldIsADeclarationNotAWord() {
+        String source = """
+                /** The seat is passe once it has started. */
+                public class PosteAffectation {
+                    @PlanningPin
+                    private boolean verrouille;
+                    private Map<String, List<Integer>> competences = new HashMap<>();
+
+                    void mark(boolean passe) {
+                        int local = 0;
+                    }
+                }
+                """;
+
+        assertThat(declaresField(source, "PosteAffectation", "verrouille")).isTrue();
+        assertThat(declaresField(source, "PosteAffectation", "competences")).isTrue();
+        assertThat(declaresField(source, "PosteAffectation", "passe")).isFalse();
+        assertThat(declaresField("public record R(\n  String standId, LocalDate date) {}", "R", "date"))
+                .isTrue();
+        assertThat(declaresField("public record R(String standId) {}", "R", "date"))
+                .isFalse();
     }
 
     /* -------------------------------- helpers ----------------------------- */
@@ -468,6 +764,14 @@ class DiagramsStructuralTest {
             }
         }
         return types;
+    }
+
+    private static int occurrences(String text, String fragment) {
+        int count = 0;
+        for (int i = text.indexOf(fragment); i >= 0; i = text.indexOf(fragment, i + 1)) {
+            count++;
+        }
+        return count;
     }
 
     private static String name(Path file) {
