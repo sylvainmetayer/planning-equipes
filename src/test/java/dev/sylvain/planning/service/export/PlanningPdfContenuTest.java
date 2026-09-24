@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
-import org.openpdf.text.pdf.PdfBoolean;
 import org.openpdf.text.pdf.PdfDictionary;
 import org.openpdf.text.pdf.PdfName;
 import org.openpdf.text.pdf.PdfReader;
@@ -486,14 +485,15 @@ class PlanningPdfContenuTest {
                 .doesNotContain("publiée le");
     }
 
-    /** A provenance carrying no date at all, whichever plan is asked for. */
     /**
      * RGAA 13.3: a reader's software announces the document by its title and
-     * reads it in its language, over a structure tree rather than a stream of
-     * text — on the three documents, the two individual layouts included.
+     * reads it in its language — on the three documents, the two individual
+     * layouts included. And it never claims a structure it does not have:
+     * OpenPDF tags nothing that {@code Document.add} writes, so a « tagged »
+     * flag over an empty tree would make the document read as blank.
      */
     @Test
-    void everyPdfCarriesATitleALanguageAndAStructureTree() throws IOException {
+    void everyPdfCarriesATitleAndALanguageAndNoEmptyStructure() throws IOException {
         PlanningEvenement planning = planning();
         List<Map.Entry<String, byte[]>> documents = List.of(
                 Map.entry("Planning individuel — Ada Lovelace", service.exportAnimateurPdf(planning, "A-ADA")),
@@ -508,13 +508,13 @@ class PlanningPdfContenuTest {
                 PdfDictionary catalogue = reader.getCatalog();
                 assertThat(catalogue.getAsString(PdfName.LANG).toUnicodeString())
                         .isEqualTo("fr-FR");
-                assertThat(catalogue.get(PdfName.STRUCTTREEROOT)).isNotNull();
-                assertThat(catalogue.getAsDict(PdfName.MARKINFO).get(PdfName.MARKED))
-                        .isEqualTo(PdfBoolean.PDFTRUE);
+                assertThat(catalogue.get(PdfName.STRUCTTREEROOT)).isNull();
+                assertThat(catalogue.get(PdfName.MARKINFO)).isNull();
             }
         }
     }
 
+    /** A provenance carrying no date at all, whichever plan is asked for. */
     private static PlanningExportService withoutDate() {
         return new PlanningExportService(
                 new ApplicationLinks(Optional.empty()),
