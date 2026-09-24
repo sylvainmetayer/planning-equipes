@@ -159,7 +159,7 @@ describe('McpPage — révéler la clé', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function boutonReveler(): HTMLButtonElement {
+  function revealButton(): HTMLButtonElement {
     return [...racine().querySelectorAll('button')].find((b) =>
       b.textContent!.includes("Révéler la clé d'API"),
     )!;
@@ -177,7 +177,7 @@ describe('McpPage — révéler la clé', () => {
       pangolinAccessToken: null,
     });
 
-    boutonReveler().click();
+    revealButton().click();
     await stabiliser();
 
     expect(racine().querySelector('input[type=password]')).toBeNull();
@@ -190,7 +190,7 @@ describe('McpPage — révéler la clé', () => {
     await rendre(true);
     mcpApi.revealKeyAfterRecentSignIn.mockRejectedValue(new SessionExpireeError());
 
-    boutonReveler().click();
+    revealButton().click();
     await stabiliser();
 
     expect(racine().textContent).toContain(
@@ -202,7 +202,7 @@ describe('McpPage — révéler la clé', () => {
   it('compte de secours : le mot de passe administrateur reste demandé', async () => {
     await rendre(false);
 
-    boutonReveler().click();
+    revealButton().click();
     await stabiliser();
 
     expect(racine().querySelector('input[type=password]')).not.toBeNull();

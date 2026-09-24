@@ -218,7 +218,7 @@ app-espace-animateur-shell {
   margin: 0;
 }
 
-/* Écran d'accès : la connexion par compte Keycloak, ou pourquoi l'espace reste fermé. */
+/* Access screen: signing in with a Keycloak account, or why the espace stays closed. */
 .espace-acces {
   max-width: 34rem;
   margin: 1rem auto;
