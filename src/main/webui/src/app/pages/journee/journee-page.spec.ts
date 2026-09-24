@@ -320,6 +320,92 @@ describe('JourneePage', () => {
     expect(loadForDisplay).toHaveBeenCalledTimes(2);
   });
 
+  it('puts the two days of the URL side by side, read-only, and restores the renderings on leaving', async () => {
+    const page = (await monter({
+      date: '2026-08-01',
+      comparer: '2026-08-02',
+    })) as PageInternals & { quitterComparaison: () => void };
+    await fixture.whenStable();
+
+    const comparaison = racine().querySelector('app-comparaison-vue');
+    expect(comparaison).not.toBeNull();
+    // No calendar, hence no drag handle nor drop target, while two days are on screen.
+    expect(racine().querySelector('app-calendar-day-vue')).toBeNull();
+    expect(racine().querySelector('[cdkdrag], .affectation-poignee')).toBeNull();
+    // A reading covers one whole day, never a pair.
+    expect(racine().querySelector('app-validation-panel')).toBeNull();
+    // Tir is open on the first day only: a line on both sides, closed on the second.
+    expect(comparaison?.textContent).toContain('fermé ce jour-là');
+    expect(TestBed.inject(Location).path()).toContain('comparer=2026-08-02');
+
+    page.quitterComparaison();
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
+    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
+    expect(racine().querySelector('app-validation-panel')).not.toBeNull();
+    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
+  });
+
+  it('ignores a second day equal to the first, or unknown, and says so', async () => {
+    await monter({ date: '2026-08-01', comparer: '2026-08-01' });
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
+    expect(racine().querySelector('app-calendar-day-vue')).not.toBeNull();
+    expect(racine().textContent).toContain('Comparaison ignorée');
+
+    await monter({ comparer: '2030-01-01' });
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
+    expect(racine().textContent).toContain("ce jour n'existe pas");
+  });
+
+  it('keeps a way out of a comparison requested on a plan of one day', async () => {
+    const oneDay = planningDeuxJours();
+    oneDay.postes = oneDay.postes.slice(0, 1);
+    loadForDisplay.mockResolvedValue(oneDay);
+    const page = await monter({ comparer: '2026-08-02' });
+    await fixture.whenStable();
+
+    expect(racine().textContent).toContain("ce jour n'existe pas");
+    const quitter = [...racine().querySelectorAll('button')].find((bouton) =>
+      bouton.textContent?.includes('Quitter la comparaison'),
+    );
+    expect(quitter).toBeDefined();
+    // No second selector: there is no other day to offer.
+    expect(racine().textContent).not.toContain('Comparer avec');
+    expect(page.viewChanged()).toBe(true);
+
+    quitter?.click();
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().textContent).not.toContain('Comparaison ignorée');
+    expect(racine().textContent).not.toContain('Quitter la comparaison');
+    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
+  });
+
+  it('drops the second day on « Réinitialiser la vue »', async () => {
+    const page = await monter({ date: '2026-08-01', comparer: '2026-08-02', ecarts: '1' });
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).not.toBeNull();
+
+    page.resetView();
+    TestBed.tick();
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
+    expect(page.viewChanged()).toBe(false);
+    expect(TestBed.inject(Location).path()).not.toContain('comparer=');
+    expect(TestBed.inject(Location).path()).not.toContain('ecarts=');
+  });
+
+  it('keeps the map, the breaks and the changes on one day', async () => {
+    await monter({ vue: 'pauses', comparer: '2026-08-02' });
+    await fixture.whenStable();
+    expect(racine().querySelector('app-comparaison-vue')).toBeNull();
+    expect(racine().querySelector('app-pauses-vue')).not.toBeNull();
+    expect(racine().textContent).not.toContain('Comparer avec');
+  });
+
   it('shows the failure instead of an empty day when the plan cannot be read', async () => {
     loadForDisplay.mockRejectedValue(new Error('planning illisible'));
 

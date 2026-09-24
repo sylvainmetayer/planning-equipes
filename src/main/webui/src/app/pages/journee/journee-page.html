@@ -66,6 +66,51 @@
       </button>
     </div>
 
+    <!-- A requested comparison always keeps its way out, even on a plan of one day where it can only be ignored. -->
+    @if (comparableView() && (jours().length > 1 || comparerDemande() !== null)) {
+      <div class="journee-comparaison-barre">
+        @if (comparerDemande() === null) {
+          <button matButton type="button" (click)="openComparison()">
+            <mat-icon>compare_arrows</mat-icon>
+            <ng-container i18n="@@journee.comparaison.ouvrir">Comparer avec…</ng-container>
+          </button>
+        } @else {
+          @if (jours().length > 1) {
+            <mat-form-field appearance="outline" class="journee-jour">
+              <mat-label i18n="@@journee.comparaison.jourB">Comparer avec</mat-label>
+              <mat-select [value]="jourCompare()?.key ?? null" (valueChange)="compareWith($event)">
+                @for (jour of joursComparables(); track jour.key) {
+                  <mat-option [value]="jour.key">{{ jour.title }}</mat-option>
+                }
+              </mat-select>
+            </mat-form-field>
+            @if (semainePrecedente(); as jour) {
+              <button matButton type="button" (click)="compareWith(jour.key)">
+                <mat-icon>keyboard_double_arrow_left</mat-icon>
+                <ng-container i18n="@@journee.comparaison.semainePrecedente">Même jour, semaine précédente</ng-container>
+              </button>
+            }
+            @if (semaineSuivante(); as jour) {
+              <button matButton type="button" (click)="compareWith(jour.key)">
+                <ng-container i18n="@@journee.comparaison.semaineSuivante">Même jour, semaine suivante</ng-container>
+                <mat-icon iconPositionEnd>keyboard_double_arrow_right</mat-icon>
+              </button>
+            }
+          }
+          <button matButton="tonal" type="button" (click)="quitterComparaison()">
+            <mat-icon>close</mat-icon>
+            <ng-container i18n="@@journee.comparaison.quitter">Quitter la comparaison</ng-container>
+          </button>
+        }
+      </div>
+    }
+    @if (comparableView() && comparaisonIgnoree()) {
+      <p class="journee-comparaison-ignoree" role="status">
+        <mat-icon inline aria-hidden="true">info</mat-icon>
+        {{ comparaisonIgnoree() }}
+      </p>
+    }
+
     <div class="journee-filtres">
       <mat-form-field appearance="outline" class="journee-filtre">
         <mat-label i18n="@@journee.filter.stand">Stand</mat-label>
@@ -106,12 +151,31 @@
 
 @if (!error() && dateCourante(); as jour) {
   <div class="journee-panneaux">
-    <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
+    <!-- A reading covers one whole day, never a pair: hidden while two are on screen. -->
+    @if (!comparaisonActive()) {
+      <app-validation-panel [jour]="jour" [filtre]="filtreActif()" (reported)="message.set($event)" />
+    }
     <app-consigne-card [jour]="jour" />
   </div>
 }
 
-@if (!error() && !loading()) {
+@if (!error() && !loading() && comparaisonActive()) {
+  @if (jourCourant(); as jourA) {
+    @if (jourCompare(); as jourB) {
+      <app-comparaison-vue
+        [planning]="planning()"
+        [pauses]="pauses()"
+        [jourA]="jourA"
+        [jourB]="jourB"
+        [view]="view() === 'rail' ? 'rail' : 'calendrier'"
+        [filtre]="filtre()"
+        [stand]="stand()"
+        [animateur]="animateur()"
+        [(seulementEcarts)]="seulementEcarts"
+      />
+    }
+  }
+} @else if (!error() && !loading()) {
   @switch (view()) {
     @case ('rail') {
       <app-rail-jour-vue

@@ -38,10 +38,13 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   signals to the toolbar's three-state button, and `main.ts` applies it
   synchronously before bootstrap so no frame paints the wrong scheme. There is
   **no second theme block and no parallel stylesheet** — which is exactly why a
-  hard-coded colour in `src/styles/` is now a dark-mode bug, not a nit. Two
+  hard-coded colour in `src/styles/` is now a dark-mode bug, not a nit. Three
   colours are not `mat.theme()`'s to switch and carry their own `light-dark()`
   pairs: `styles/typologie-colors.css` (a categorical palette has no
-  `--mat-sys-*` equivalent) and `--app-accent` once `BRANDING_ACCENT_COLOR`
+  `--mat-sys-*` equivalent), `--app-positive` in `styles/branding.css` (the
+  "better" green of an écart or an affinity: Material 3 has no success role,
+  so a page needing it reads that variable instead of writing its own pair),
+  and `--app-accent` once `BRANDING_ACCENT_COLOR`
   fills it — `core/branding.ts` writes it as a pair, the configured colour on
   light and an OKLCH-lightened twin on dark, because it is a *text* colour on
   `--mat-sys-surface` in a dozen partials. Deliberately outside the switch: the
@@ -102,7 +105,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   the emplacement map with one time cursor, the breaks, and what changed since
   the last publication or the last solve (`?reference=publication|resolution`,
   absent = the publication when one exists; `?lecture=animateurs` for the
-  per-person reading); one day selector and the
+  per-person reading); `?comparer=<day>` puts a second day beside the first
+  on the calendar and the rail — aligned lines, a banner of écarts, read-only,
+  `?ecarts=1` for the differences only — in `pages/journee/comparaison-vue`;
+  one day selector and the
   same `stand`, `animateur` and `q` filters in the URL, the plan and the breaks
   read once by the page and handed to the rendering on screen — the views under
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and

@@ -256,3 +256,189 @@
     font-size: 0.8rem;
   }
 }
+
+/* The comparison mode: two days side by side, read-only. The positive tone of
+   an écart is a `light-dark()` pair — no `--mat-sys-*` token means "better" —
+   and colour is never the only mark: the écart is signed, and a line that
+   differs carries the word « écart ». */
+.journee-comparaison-barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.journee-comparaison-ignoree {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-comparaison-titre {
+  font: var(--mat-sys-title-medium);
+  margin: 0 0 0.25rem;
+}
+
+.journee-comparaison-lecture {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.75rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-synthese,
+.journee-comparaison-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 0.75rem;
+}
+
+.journee-comparaison-table {
+  table-layout: fixed;
+}
+
+.journee-synthese th,
+.journee-synthese td,
+.journee-comparaison-table th,
+.journee-comparaison-table td {
+  padding: 0.35rem 0.5rem;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.journee-synthese td {
+  font-variant-numeric: tabular-nums;
+}
+
+.journee-comparaison-lettre {
+  display: inline-block;
+  min-width: 1.4em;
+  text-align: center;
+  border-radius: 0.3em;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-weight: 600;
+}
+
+.journee-comparaison-filtree {
+  margin-left: 0.25rem;
+  font: var(--mat-sys-label-small);
+  font-style: italic;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-comparaison-relue {
+  margin-left: 0.25rem;
+  padding: 0 0.4em;
+  border-radius: 1em;
+  font: var(--mat-sys-label-small);
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.journee-synthese-ecart {
+  font-weight: 600;
+}
+
+.journee-synthese-ecart--mieux {
+  color: var(--app-positive);
+}
+
+.journee-synthese-ecart--pire {
+  color: var(--mat-sys-error);
+}
+
+.journee-synthese-ecart--neutre {
+  color: var(--mat-sys-tertiary);
+}
+
+.journee-comparaison-options {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+/* The A / B tabs exist for narrow screens only. */
+.journee-comparaison-onglets {
+  display: none;
+}
+
+.journee-comparaison-difference > th {
+  box-shadow: inset 4px 0 0 var(--mat-sys-tertiary);
+}
+
+.journee-comparaison-marque {
+  margin-left: 0.25rem;
+  padding: 0 0.4em;
+  border-radius: 1em;
+  font: var(--mat-sys-label-small);
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.journee-comparaison-compte {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-comparaison-plages {
+  list-style: none;
+  margin: 0.15rem 0 0;
+  padding: 0;
+}
+
+.journee-comparaison-libres {
+  color: var(--mat-sys-error);
+}
+
+.journee-comparaison-absent {
+  display: block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.3rem;
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface-variant);
+  font-style: italic;
+}
+
+.journee-comparaison-vide {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.journee-col-a,
+.journee-col-b {
+  width: 40%;
+}
+
+@media (max-width: 600px) {
+  .journee-comparaison-onglets {
+    display: inline-flex;
+    max-width: 100%;
+  }
+
+  .journee-comparaison-onglets .mat-button-toggle {
+    flex: 1 1 0;
+    min-width: 0;
+  }
+
+  .journee-comparaison:not(.journee-comparaison--onglet-b) .journee-col-b,
+  .journee-comparaison--onglet-b .journee-col-a {
+    display: none;
+  }
+
+  .journee-col-a,
+  .journee-col-b {
+    width: 65%;
+  }
+
+  .journee-synthese {
+    font-size: 0.8rem;
+  }
+}
