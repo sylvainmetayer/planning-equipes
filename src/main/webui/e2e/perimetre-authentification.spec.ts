@@ -1,5 +1,9 @@
 // Security perimeter of the admin application (issue #165): everything behind
 // the session, the two deliberate public exceptions, and the login round trip.
+//
+// The e2e stack runs Keycloak AND the break-glass account
+// (ADMIN_SECOURS_ENABLED=true): the admin specs sign in through the latter,
+// the Keycloak door itself is covered by authentification-keycloak.spec.ts.
 
 import { expect, test } from '@playwright/test';
 import { MOT_DE_PASSE_ADMIN } from './support';
@@ -26,7 +30,11 @@ test.describe('mur d’authentification', () => {
   test("ouvrir l'administration sans session mène à la page de connexion", async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+    // Keycloak first, the break-glass account below it, named as such.
+    await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeVisible();
+    await expect(
+      page.getByRole('button', { name: 'Se connecter avec le compte de secours' }),
+    ).toBeVisible();
     // None of the admin chrome leaked onto the login page.
     await expect(page.getByRole('navigation', { name: 'Navigation principale' })).toHaveCount(0);
   });
@@ -35,7 +43,7 @@ test.describe('mur d’authentification', () => {
     await page.goto('/login');
     await page.getByLabel('Utilisateur').fill('admin');
     await page.getByLabel('Mot de passe').fill('mauvais-mot-de-passe');
-    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await page.getByRole('button', { name: 'Se connecter avec le compte de secours' }).click();
     await expect(page.getByText('Identifiants incorrects.')).toBeVisible();
     await expect(page).toHaveURL(/\/login$/);
     const statut = await page.request.get('/api/auth/me');
@@ -46,7 +54,7 @@ test.describe('mur d’authentification', () => {
     await page.goto('/login');
     await page.getByLabel('Utilisateur').fill('admin');
     await page.getByLabel('Mot de passe').fill(MOT_DE_PASSE_ADMIN);
-    await page.getByRole('button', { name: 'Se connecter' }).click();
+    await page.getByRole('button', { name: 'Se connecter avec le compte de secours' }).click();
 
     // The admin shell is up and the API answers with the session cookie.
     await expect(page).toHaveURL(/\/$/);
