@@ -84,7 +84,18 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   — « Imprimer cette journée » of the Planning page: the same print layout of
   `pages/mural`, route data `apercu`, read under the admin session from
   `GET /api/affichage-mural/apercu`, never through a token; a 401 sends to
-  `/login` like any admin call). The espace has
+  `/login` like any admin call). **Sign-in is Keycloak's**, and the frontend holds no OIDC
+  library and no token: `/login` and the espace's access screen navigate the
+  whole page to `/api/auth/oidc/login?redirect=…` (`AdminApi.oidcLoginUrl`),
+  the backend runs the code flow, and `/api/auth/me` says who came back and
+  with which realm roles. `/login` shows the break-glass form only when
+  `/api/config` says `authSecours` (closed by default; its 409 is worded), the
+  auth interceptor sends a 401 *or a 403* (signed in, no `admin` role) to
+  `/login`, which then explains instead of looping, and every logout goes
+  through `core/session.ts` `signOut`, which follows the server's
+  `urlDeconnexion` so the Keycloak session ends too. The espace opens only with
+  a Keycloak session whose e-mail is the fiche's; without Keycloak (`authOidc`
+  false) it says it is unavailable. The espace has
   five child routes of its own: `/animateur/:jeton` (« Mon planning » — three
   tabs chosen by `?onglet=jour|apercu|coequipiers`, the day on screen carried by
   `?jour=`: the day with its strip, its state band and its seat cards; the
@@ -740,7 +751,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   unchanged total, the casts of a spec renamed or moved. The count is now
   zero and the baseline empty: a spec that writes a cast fails CI.
 - End-to-end tests are Playwright specs in `src/main/webui/e2e` (`npm run
-  e2e`): the issue #165 security perimeter (auth wall, espace animateur
+  e2e`, against a stack running Keycloak with the break-glass account open:
+  the admin specs sign in through its form, the espace specs through a real
+  Keycloak account `e2e/keycloak.ts` prepares; `npm run e2e:oidc` plays
+  `authentification-keycloak`/`-methodes` against a production-like stack,
+  break-glass closed): the issue #165 security perimeter (auth wall, espace animateur
   boundary, full échange flow with refusal and cancellation), a smoke sweep of
   every admin route plus the language and colour-scheme toggles, reference-data
   CRUD through the
