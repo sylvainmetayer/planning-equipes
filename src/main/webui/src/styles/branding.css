@@ -32,6 +32,11 @@
      measurement: see docs/developpement.md § Accessibilité. */
   --app-toolbar-background: #007eb2;
   --app-toolbar-foreground: #fff;
+  /* The "better" colour: an écart that improves, an affinity. Material 3 has
+     no success role, so this is the one pair of its kind — shared here rather
+     than hard-coded page by page. Both halves read above 4.5:1 on
+     `--mat-sys-surface`, since it colours text as well as strokes. */
+  --app-positive: light-dark(#1d6b2a, #8fd89a);
 }
 
 /* Le logo est rendu par <app-brand-logo> : `display: contents` laisse l'image

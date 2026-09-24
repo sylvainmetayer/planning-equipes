@@ -1,0 +1,163 @@
+<mat-card appearance="outlined" class="page-card journee-comparaison" [class.journee-comparaison--onglet-b]="onglet() === 'b'">
+  <mat-card-content>
+    <h2 class="journee-comparaison-titre" i18n="@@journee.comparaison.titre">Comparaison de deux journées</h2>
+    <p class="journee-comparaison-lecture">
+      <mat-icon inline aria-hidden="true">visibility</mat-icon>
+      <span i18n="@@journee.comparaison.lectureSeule">Lecture seule : quittez la comparaison pour déplacer quelqu'un.</span>
+    </p>
+
+    <table class="journee-synthese">
+      <caption class="visually-hidden" i18n="@@journee.comparaison.synthese.caption">Synthèse des deux journées et écart B − A</caption>
+      <thead>
+        <tr>
+          <th scope="col">
+            <ng-container i18n="@@journee.comparaison.synthese.indicateur">Indicateur</ng-container>
+            @if (filtree()) {
+              <span class="journee-comparaison-filtree" i18n="@@journee.comparaison.synthese.filtree">filtré</span>
+            }
+          </th>
+          <th scope="col">
+            <span class="journee-comparaison-lettre">A</span> {{ jourA().title }}
+            @if (relueA()) {
+              <span class="journee-comparaison-relue" i18n="@@journee.comparaison.relue">relue</span>
+            }
+          </th>
+          <th scope="col">
+            <span class="journee-comparaison-lettre">B</span> {{ jourB().title }}
+            @if (relueB()) {
+              <span class="journee-comparaison-relue" i18n="@@journee.comparaison.relue">relue</span>
+            }
+          </th>
+          <th scope="col" i18n="@@journee.comparaison.synthese.ecart">Écart B − A</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (ligne of synthese(); track ligne.key) {
+          <tr>
+            <th scope="row">{{ ligne.label }}</th>
+            <td>{{ ligne.a ?? '—' }}</td>
+            <td>{{ ligne.b ?? '—' }}</td>
+            <td class="journee-synthese-ecart" [class.journee-synthese-ecart--mieux]="ligne.tonalite === 'mieux'"
+                [class.journee-synthese-ecart--pire]="ligne.tonalite === 'pire'"
+                [class.journee-synthese-ecart--neutre]="ligne.tonalite === 'neutre'">
+              {{ formatDelta(ligne.delta) }}
+              @if (ligne.tonalite === 'mieux') {
+                <span class="visually-hidden" i18n="@@journee.comparaison.ecart.mieux">(mieux)</span>
+              } @else if (ligne.tonalite === 'pire') {
+                <span class="visually-hidden" i18n="@@journee.comparaison.ecart.pire">(moins bien)</span>
+              }
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+
+    <div class="journee-comparaison-options">
+      <mat-checkbox [ngModel]="seulementEcarts()" (ngModelChange)="seulementEcarts.set($event)"
+                    i18n="@@journee.comparaison.seulementEcarts">Seulement les différences ({{ deltaCount() }})</mat-checkbox>
+      <mat-button-toggle-group class="journee-comparaison-onglets" [value]="onglet()" (change)="onglet.set($event.value)"
+                               [attr.aria-label]="ongletsLabel">
+        <mat-button-toggle value="a">A · {{ jourA().title }}</mat-button-toggle>
+        <mat-button-toggle value="b">B · {{ jourB().title }}</mat-button-toggle>
+      </mat-button-toggle-group>
+    </div>
+
+    @if (aucuneLigne()) {
+      @if (view() === 'rail') {
+        <p class="journee-comparaison-vide" i18n="@@journee.comparaison.aucunAnimateur">Personne n'occupe de siège ces deux jours-là.</p>
+      } @else {
+        <p class="journee-comparaison-vide" i18n="@@journee.comparaison.aucunStand">Aucun stand n'est ouvert ces deux jours-là.</p>
+      }
+    } @else if (view() === 'rail') {
+      @if (lignesAnimateurs().length === 0) {
+        <p class="journee-comparaison-vide" i18n="@@journee.comparaison.aucuneLigne">Aucune ligne ne correspond aux filtres.</p>
+      } @else {
+        <table class="journee-comparaison-table">
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@journee.comparaison.colonne.animateur">Animateur</th>
+              <th scope="col" class="journee-col-a"><span class="journee-comparaison-lettre">A</span> {{ jourA().title }}</th>
+              <th scope="col" class="journee-col-b"><span class="journee-comparaison-lettre">B</span> {{ jourB().title }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignesAnimateurs(); track ligne.animateurId) {
+              <tr [class.journee-comparaison-difference]="ligne.different">
+                <th scope="row">
+                  {{ ligne.nom }}
+                  @if (ligne.different) {
+                    <span class="journee-comparaison-marque" i18n="@@journee.comparaison.marque">écart</span>
+                  }
+                </th>
+                <td class="journee-col-a"><ng-container [ngTemplateOutlet]="celluleAnimateur" [ngTemplateOutletContext]="{ $implicit: ligne.a }" /></td>
+                <td class="journee-col-b"><ng-container [ngTemplateOutlet]="celluleAnimateur" [ngTemplateOutletContext]="{ $implicit: ligne.b }" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    } @else {
+      @if (lignesStands().length === 0) {
+        <p class="journee-comparaison-vide" i18n="@@journee.comparaison.aucuneLigne">Aucune ligne ne correspond aux filtres.</p>
+      } @else {
+        <table class="journee-comparaison-table">
+          <thead>
+            <tr>
+              <th scope="col" i18n="@@journee.comparaison.colonne.stand">Stand</th>
+              <th scope="col" class="journee-col-a"><span class="journee-comparaison-lettre">A</span> {{ jourA().title }}</th>
+              <th scope="col" class="journee-col-b"><span class="journee-comparaison-lettre">B</span> {{ jourB().title }}</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (ligne of lignesStands(); track ligne.standId) {
+              <tr [class.journee-comparaison-difference]="ligne.different">
+                <th scope="row">
+                  {{ ligne.standNom }}
+                  @if (ligne.different) {
+                    <span class="journee-comparaison-marque" i18n="@@journee.comparaison.marque">écart</span>
+                  }
+                </th>
+                <td class="journee-col-a"><ng-container [ngTemplateOutlet]="celluleStand" [ngTemplateOutletContext]="{ $implicit: ligne.a }" /></td>
+                <td class="journee-col-b"><ng-container [ngTemplateOutlet]="celluleStand" [ngTemplateOutletContext]="{ $implicit: ligne.b }" /></td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  </mat-card-content>
+</mat-card>
+
+<ng-template #celluleStand let-cellule>
+  @if (cellule) {
+    <div class="journee-comparaison-compte" i18n="@@journee.comparaison.pourvus">{{ cellule.pourvus }} / {{ cellule.sieges }} sièges pourvus</div>
+    <ul class="journee-comparaison-plages">
+      @for (plage of cellule.plages; track plage.heureDebut + plage.heureFin) {
+        <li>
+          <strong>{{ plage.heureDebut }}–{{ plage.heureFin }}</strong>
+          @if (plage.noms.length > 0) {
+            · {{ plage.noms.join(', ') }}
+          }
+          @if (plage.sieges > plage.noms.length) {
+            <span class="journee-comparaison-libres" i18n="@@journee.comparaison.libres">· {{ plage.sieges - plage.noms.length }} siège(s) libre(s)</span>
+          }
+        </li>
+      }
+    </ul>
+  } @else {
+    <span class="journee-comparaison-absent" i18n="@@journee.comparaison.ferme">fermé ce jour-là</span>
+  }
+</ng-template>
+
+<ng-template #celluleAnimateur let-cellule>
+  @if (cellule) {
+    <div class="journee-comparaison-compte">{{ formatDuration(cellule.minutes) }}</div>
+    <ul class="journee-comparaison-plages">
+      @for (vacation of cellule.vacations; track vacation.heureDebut + vacation.standId) {
+        <li><strong>{{ vacation.heureDebut }}–{{ vacation.heureFin }}</strong> · {{ vacation.standNom }}</li>
+      }
+    </ul>
+  } @else {
+    <span class="journee-comparaison-absent" i18n="@@journee.comparaison.absent">pas en poste ce jour-là</span>
+  }
+</ng-template>

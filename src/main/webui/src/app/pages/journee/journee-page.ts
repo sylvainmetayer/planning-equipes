@@ -34,13 +34,18 @@ import { ChangementsView } from './changements-vue';
 import { ConsigneCard } from './consigne-card';
 import { ValidationPanel } from './validation-panel';
 import { RailJourView, RailVue } from '../rail-jour/rail-jour-vue';
+import { ComparaisonView } from './comparaison-vue';
 import {
+  isComparable,
   JourEvenement,
+  defaultComparisonDay,
   JourneeView,
+  jourSemaineVoisine,
   requestedKey,
   jourDemande,
   planningDays,
   readView,
+  resolveComparison,
 } from './journee';
 import { StatusMessage } from '../../shared/status-message';
 
@@ -78,6 +83,7 @@ interface Option {
     ValidationPanel,
     ConsigneCard,
     ChangementsView,
+    ComparaisonView,
     CalendarDayView,
     RailJourView,
     PausesView,
@@ -151,6 +157,61 @@ export class JourneePage {
     () => this.jourCourant()?.key === this.jours().at(-1)?.key,
   );
 
+  /*
+   * The comparison mode: a second day, named by the `comparer` param in the
+   * same key format as `date`. It shows on the calendar and the rail only;
+   * the three other renderings stay on one day and keep the param for the
+   * way back.
+   */
+  /** The key the URL or the second selector asked for, as given; null out of the comparison. */
+  protected readonly comparerDemande = signal<string | null>(null);
+  private readonly comparaison = computed(() =>
+    resolveComparison(this.jours(), this.jourCourant(), this.comparerDemande()),
+  );
+  /** The second day, when it names a day of the plan other than the one on screen. */
+  protected readonly jourCompare = computed(() => this.comparaison().jour);
+  /** True when the rendering on screen can compare. */
+  protected readonly comparableView = computed(() => isComparable(this.view()));
+  /** True when two days are on screen: the renderings, and their drag and drop, give way to the comparison. */
+  protected readonly comparaisonActive = computed(
+    () => this.comparableView() && this.jourCompare() !== null,
+  );
+  /** Why the requested second day was set aside — said once the plan is known, never guessed before. */
+  protected readonly comparaisonIgnoree = computed(() => {
+    if (this.jours().length === 0) {
+      return '';
+    }
+    switch (this.comparaison().refus) {
+      case 'identique':
+        return $localize`:@@journee.comparaison.ignoree.identique:Comparaison ignorée : le jour demandé est celui déjà affiché.`;
+      case 'inconnu':
+        return $localize`:@@journee.comparaison.ignoree.inconnu:Comparaison ignorée : ce jour n'existe pas dans le planning.`;
+      default:
+        return '';
+    }
+  });
+  /** What the `comparer` param carries: the resolved key, or the request as given until the plan says. */
+  private readonly comparerParam = computed(() => {
+    const demande = this.comparerDemande();
+    if (demande === null || this.jours().length === 0) {
+      return demande;
+    }
+    return this.jourCompare()?.key ?? demande;
+  });
+  /** « Même jour, semaine précédente / suivante », when the event holds it. */
+  protected readonly semainePrecedente = computed(() =>
+    jourSemaineVoisine(this.jours(), this.jourCourant(), -1),
+  );
+  protected readonly semaineSuivante = computed(() =>
+    jourSemaineVoisine(this.jours(), this.jourCourant(), 1),
+  );
+  /** The days the second selector offers: all but the one on screen. */
+  protected readonly joursComparables = computed(() =>
+    this.jours().filter((jour) => jour.key !== this.jourCourant()?.key),
+  );
+  /** « Seulement les différences » of the comparison (`ecarts`). */
+  protected readonly seulementEcarts = signal(false);
+
   protected readonly stands = computed<Option[]>(() => {
     const options = new Map<string, string>();
     for (const poste of this.planning()?.postes ?? []) {
@@ -182,6 +243,8 @@ export class JourneePage {
       this.withoutRelais() ||
       this.coupuresManquantes() ||
       this.seulementProblemes() ||
+      this.seulementEcarts() ||
+      this.comparerDemande() !== null ||
       this.referenceChangements() !== null ||
       this.lectureChangements() !== 'vacations',
   );
@@ -216,6 +279,8 @@ export class JourneePage {
     this.seulementProblemes.set(params.get('problemes') === '1');
     this.referenceChangements.set(readReference(params.get('reference')));
     this.lectureChangements.set(readReading(params.get('lecture')));
+    this.comparerDemande.set(params.get('comparer') || null);
+    this.seulementEcarts.set(params.get('ecarts') === '1');
     void this.refresh();
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a
@@ -239,7 +304,27 @@ export class JourneePage {
       problemes: this.seulementProblemes() ? '1' : null,
       reference: this.referenceChangements(),
       lecture: this.lectureChangements() === 'vacations' ? null : this.lectureChangements(),
+      comparer: this.comparerParam(),
+      ecarts: this.seulementEcarts() ? '1' : null,
     }));
+  }
+
+  /** « Comparer avec… »: opens the second selector on the likeliest twin of the day on screen. */
+  protected openComparison(): void {
+    const jour = defaultComparisonDay(this.jours(), this.jourCourant());
+    if (jour) {
+      this.comparerDemande.set(jour.key);
+    }
+  }
+
+  protected compareWith(key: string): void {
+    this.comparerDemande.set(key);
+  }
+
+  /** Back to one day: the renderings, and their drag and drop, return. */
+  protected quitterComparaison(): void {
+    this.comparerDemande.set(null);
+    this.seulementEcarts.set(false);
   }
 
   /**
@@ -305,6 +390,8 @@ export class JourneePage {
     this.withoutRelais.set(false);
     this.coupuresManquantes.set(false);
     this.seulementProblemes.set(false);
+    this.comparerDemande.set(null);
+    this.seulementEcarts.set(false);
     this.referenceChangements.set(null);
     this.lectureChangements.set('vacations');
   }
