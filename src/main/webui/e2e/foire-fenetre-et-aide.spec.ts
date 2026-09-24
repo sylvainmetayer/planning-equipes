@@ -14,6 +14,7 @@ import {
   contexteAdmin,
   daysFromToday,
   jetonDe,
+  contexteEspace,
   ouvrirSessionEspace,
   pageAdmin,
   seedPlanning,
@@ -98,7 +99,9 @@ test.describe('Accusé de réception : la colonne s’explique', () => {
 });
 
 test.describe('Foire au planning : bornes datées', () => {
-  test('hors fenêtre, le serveur refuse la soumission et ne fait pas que masquer', async () => {
+  test('hors fenêtre, le serveur refuse la soumission et ne fait pas que masquer', async ({
+    browser,
+  }) => {
     await configurerFoire(admin, {
       foireOuverte: true,
       debut: daysFromToday(3),
@@ -110,10 +113,11 @@ test.describe('Foire au planning : bornes datées', () => {
     expect(configuration.ouverteAujourdhui).toBe(false);
 
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(admin, jeton, EMAIL_ALICE);
-    const refus = await admin.post(`/api/espace-animateur/${jeton}/demandes`, {
+    const espace = await contexteEspace(browser, jeton, EMAIL_ALICE);
+    const refus = await espace.request.post(`/api/espace-animateur/${jeton}/demandes`, {
       data: [{ creneauId: SEED.creneauId, standId: SEED.standDemandeur, cibleId: SEED.cible }],
     });
+    await espace.close();
 
     expect(refus.status(), await refus.text()).toBe(400);
     expect(await refus.text()).toContain('fermée');
@@ -126,7 +130,7 @@ test.describe('Foire au planning : bornes datées', () => {
     await configurerFoire(admin, { foireOuverte: true, debut, fin: null });
 
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
 
     // Le reproche d'origine : « c'est terminé » annoncé à quelqu'un qui arrive
@@ -145,7 +149,7 @@ test.describe('Foire au planning : bornes datées', () => {
     });
 
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
     await page.goto(`/animateur/${jeton}/echanges`);
 
     // Rien à attendre : annoncer une date de retour serait promettre une

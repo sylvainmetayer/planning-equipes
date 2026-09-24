@@ -134,7 +134,7 @@
             @if (fiche.animateur.email) {
               {{ fiche.animateur.email }}
             } @else {
-              <span class="detail-muted" i18n="@@fiche.email.absent">Aucun : ni planning ni code d'accès par e-mail</span>
+              <span class="detail-muted" i18n="@@fiche.email.absent">Aucun : ni planning par e-mail, ni espace animateur</span>
             }
             @if (fiche.confirmation?.dernierEnvoi; as envoi) {
               @if (envoi.enEchec) {

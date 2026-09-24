@@ -32,7 +32,7 @@ test.describe('cas limites', () => {
   test("régénérer le jeton tue l'ancien lien, le nouveau prend le relais", async ({ page }) => {
     await seedPlanning(admin);
     const ancienJeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, ancienJeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, ancienJeton, EMAIL_ALICE);
 
     // The old link works…
     await page.goto(`/animateur/${ancienJeton}`);
@@ -69,7 +69,7 @@ test.describe('cas limites', () => {
     test.slow();
     await seedPlanning(admin, { avecCollegueIndisponible: true });
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
 
     // Alice asks to swap with Chloé, who declared the day off.
     await page.goto(`/animateur/${jeton}/echanges`);
@@ -104,7 +104,7 @@ test.describe('cas limites', () => {
   test('« qui peut me remplacer ? » propose les trois façons d’échanger', async ({ page }) => {
     await seedPlanning(admin, { avecCollegueIndisponible: true, avecCollegueLibre: true });
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
 
     await page.goto(`/animateur/${jeton}/echanges`);
     // Le créneau, et rien d'autre : aucun collègue n'est choisi avant la recherche.
@@ -168,7 +168,7 @@ test.describe('cas limites', () => {
     test.slow();
     await seedPlanning(admin);
     const jeton = await jetonDe(admin, SEED.demandeur);
-    await ouvrirSessionEspace(page.request, jeton, EMAIL_ALICE);
+    await ouvrirSessionEspace(page, jeton, EMAIL_ALICE);
 
     // The admin closes the foire from the Échanges screen: its state line
     // carries « Fermer » while it is open (configured on Paramètres › Édition).
@@ -238,7 +238,7 @@ test.describe('cas limites', () => {
     const page = await contexteAnonyme.newPage();
     await page.goto('/animateurs');
     await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('button', { name: 'Se connecter' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Se connecter', exact: true })).toBeVisible();
     await contexteAnonyme.close();
   });
 });
