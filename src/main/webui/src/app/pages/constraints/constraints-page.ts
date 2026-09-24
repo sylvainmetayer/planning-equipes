@@ -41,6 +41,7 @@ import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import { classeCellule, ColonnePivot, buildPivot, cellLink } from './ecarts-pivot';
+import { nextGridCell } from '../../core/grid-navigation';
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
 function niveauLabel(niveau: NiveauContrainte): string {
@@ -199,9 +200,10 @@ export class ConstraintsPage {
 
   /**
    * The cell the pivot hands the focus to (roving tabindex): one stop for the
-   * whole table on Tab, then the arrows move inside it — the marge grid's
-   * pattern. Clamped to the table on screen, since a change of axis reshapes it
-   * and a position past the last row would take the grid out of the tab order.
+   * whole table on Tab, then the arrows move inside it, through the same
+   * `core/grid-navigation` as the marge grid. Clamped to the table on screen,
+   * since a change of axis reshapes it and a position past the last row would
+   * take the grid out of the tab order.
    */
   protected readonly focusedCell = signal({ ligne: 0, colonne: 0 });
 
@@ -231,28 +233,9 @@ export class ConstraintsPage {
     }
     const lastRow = lignes.length - 1;
     const lastColumn = colonnes.length - 1;
-    let target: { ligne: number; colonne: number };
-    switch (event.key) {
-      case 'ArrowRight':
-        target = { ligne, colonne: Math.min(colonne + 1, lastColumn) };
-        break;
-      case 'ArrowLeft':
-        target = { ligne, colonne: Math.max(colonne - 1, 0) };
-        break;
-      case 'ArrowDown':
-        target = { ligne: Math.min(ligne + 1, lastRow), colonne };
-        break;
-      case 'ArrowUp':
-        target = { ligne: Math.max(ligne - 1, 0), colonne };
-        break;
-      case 'Home':
-        target = { ligne, colonne: 0 };
-        break;
-      case 'End':
-        target = { ligne, colonne: lastColumn };
-        break;
-      default:
-        return;
+    const target = nextGridCell(event.key, { ligne, colonne }, lastRow, lastColumn);
+    if (!target) {
+      return;
     }
     event.preventDefault();
     this.focusedCell.set(target);
