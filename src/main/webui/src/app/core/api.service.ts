@@ -54,8 +54,9 @@ export class ApiService {
     return this.run(this.http.put<T>(url, body));
   }
 
-  delete(url: string): Promise<void> {
-    return this.run(this.http.delete<void>(url));
+  /** `T` for the few DELETEs answering a body — withdrawing a right returns the account. */
+  delete<T = void>(url: string): Promise<T> {
+    return this.run(this.http.delete<T>(url));
   }
 
   /** DELETE whose answer carries a body — the state left once the thing is gone. */
