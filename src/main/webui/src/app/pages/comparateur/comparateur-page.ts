@@ -17,6 +17,7 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { PlanningApi } from '../../core/api/planning-api';
 import { intlLocale } from '../../core/locale';
 import { ComparaisonSnapshots, CoteComparaison, PlanSnapshot } from '../../core/models';
+import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { StatusMessage } from '../../shared/status-message';
 import { LigneMetrique, construireLignesMetriques } from './comparateur-metrics';
 import { errorMessage } from '../../core/error-message';
@@ -46,6 +47,7 @@ const COURANT = 'courant';
     MatTableModule,
     MatTooltipModule,
     StatusMessage,
+    ScoreReadingPanel,
   ],
   templateUrl: './comparateur-page.html',
   styleUrl: './comparateur-page.css',
@@ -185,6 +187,24 @@ export class ComparateurPage {
   protected libelleCote(cote: CoteComparaison): string {
     return cote.libelle ?? $localize`:@@comparateur.cote.courant:Plan actuellement persisté`;
   }
+
+  /**
+   * The reading of each side, its heading worded once: each side reads its
+   * own plan — its own edition too — never a mix of the two.
+   */
+  protected readonly readings = computed(() => {
+    const comparaison = this.comparaison();
+    if (!comparaison) {
+      return [];
+    }
+    return [comparaison.base, comparaison.variante].map((cote) => {
+      const libelle = this.libelleCote(cote);
+      return {
+        heading: $localize`:@@comparateur.lecture.titre:Lecture du score — ${libelle}:cote:`,
+        sentences: cote.kpi.lecture ?? [],
+      };
+    });
+  });
 
   protected deltaLabel(ligne: LigneMetrique): string {
     if (ligne.delta === null) {

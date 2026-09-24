@@ -1653,6 +1653,9 @@
           "description" : {
             "type" : "string"
           },
+          "libelleCourt" : {
+            "type" : "string"
+          },
           "remediation" : {
             "type" : "string"
           },
@@ -1756,6 +1759,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/Cellule"
+            }
+          },
+          "lecture" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreSentence"
             }
           }
         }
@@ -5142,6 +5151,12 @@
           "heuresFermeesParConsigne" : {
             "type" : "number",
             "format" : "double"
+          },
+          "lecture" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ScoreSentence"
+            }
           }
         }
       },
@@ -5979,6 +5994,34 @@
           }
         }
       },
+      "ReadingLink" : {
+        "type" : "object",
+        "properties" : {
+          "texte" : {
+            "type" : "string"
+          },
+          "route" : {
+            "type" : "string"
+          },
+          "parametres" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          },
+          "fragment" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ReadingSubject" : {
+        "type" : "string",
+        "enum" : [ "VERDICT", "COUVERTURE", "ORGANISATION", "PLANCHER", "CONFORT", "AJUSTEMENTS", "COMPARAISON" ]
+      },
+      "ReadingTone" : {
+        "type" : "string",
+        "enum" : [ "OK", "INFO", "ATTENTION", "BLOQUANT" ]
+      },
       "Reamorcage" : {
         "type" : "string",
         "enum" : [ "AUTO", "PLAN_COURANT", "AUCUN" ]
@@ -6343,6 +6386,26 @@
             "type" : "array",
             "items" : {
               "type" : "string"
+            }
+          }
+        }
+      },
+      "ScoreSentence" : {
+        "type" : "object",
+        "properties" : {
+          "sujet" : {
+            "$ref" : "#/components/schemas/ReadingSubject"
+          },
+          "niveau" : {
+            "$ref" : "#/components/schemas/ReadingTone"
+          },
+          "texte" : {
+            "type" : "string"
+          },
+          "liens" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReadingLink"
             }
           }
         }

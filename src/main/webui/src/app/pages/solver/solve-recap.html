@@ -1,3 +1,6 @@
+<mat-card-content>
+  <app-lecture-score [sentences]="reading()" [running]="solveRunning()" />
+</mat-card-content>
 @if (lastRunAt()) {
   <mat-card-content>
     <p class="calendar-meta" i18n="@@solver.lastRun">Dernière exécution : {{ formattedLastRun() }}</p>

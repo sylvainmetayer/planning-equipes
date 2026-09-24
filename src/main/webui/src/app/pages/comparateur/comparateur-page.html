@@ -134,6 +134,19 @@
           </table>
         </div>
 
+        <div class="comparateur-lectures">
+          @for (side of readings(); track $index) {
+            <details class="comparateur-lecture">
+              <summary>{{ side.heading }}</summary>
+              @if (side.sentences.length > 0) {
+                <app-lecture-score [sentences]="side.sentences" [hideHeading]="true" />
+              } @else {
+                <p class="empty-hint" i18n="@@comparateur.lecture.absente">Aucune lecture enregistrée pour ce plan : il a été capturé avant elle, ou sans analyse.</p>
+              }
+            </details>
+          }
+        </div>
+
         @if (resultat.diffViolations.length > 0) {
           <h2 class="comparateur-sous-titre" i18n="@@comparateur.violations.title">Écarts par contrainte</h2>
           <div class="table-wrapper">

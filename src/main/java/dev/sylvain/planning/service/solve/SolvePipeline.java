@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
+import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.PlanPublieService;
@@ -204,6 +205,7 @@ public class SolvePipeline {
         // snapshotted first, so a solve no longer destroys the previous result.
         PlanSnapshotService.SnapshotMeta replaced = snapshotService.captureBeforeSolve();
         String scoreBefore = scoreOfReplacedPlan(replaced);
+        PlanningDiagnosticService.PlanningDiagnostic diagnosticBefore = diagnosticOfReplacedPlan(replaced, scoreBefore);
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
         PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
@@ -226,10 +228,16 @@ public class SolvePipeline {
         // has just recorded — and never in a position to fail the solve.
         kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
         announce(editionNom, diagnostic);
+        // The comparison goes to the Solveur page alone: the stored analysis
+        // describes the persisted plan, and outlives the moment « the plan
+        // before » means anything.
+        PlanningDiagnosticService.PlanningDiagnostic withComparison = diagnosticBefore == null
+                ? diagnostic
+                : diagnostic.withReading(ScoreReading.withComparison(diagnostic, diagnosticBefore));
         return new Resolution<>(
                 probleme,
                 resolu,
-                diagnostic,
+                withComparison,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 impactPublication(resolu),
                 impactValidations(avant, resolu),
@@ -386,6 +394,27 @@ public class SolvePipeline {
             return new ImpactPublication(personnes, publication.publieLe());
         } catch (RuntimeException e) {
             LOG.warn("The publication impact of the solve could not be computed", e);
+            return null;
+        }
+    }
+
+    /**
+     * The diagnostic of the plan a solve is about to replace, for the
+     * comparison sentence of the reading — the stored analysis, and only when
+     * it scores what that plan scored: an analysis recorded before a restore
+     * or a hand move describes another plan, and comparing against it would
+     * state a change nobody made. {@code null} when that cannot be told.
+     */
+    private PlanningDiagnosticService.PlanningDiagnostic diagnosticOfReplacedPlan(
+            PlanSnapshotService.SnapshotMeta replaced, String scoreBefore) {
+        if (replaced == null || scoreBefore == null) {
+            return null;
+        }
+        try {
+            ConstraintAnalysisStore.StoredAnalysis stored = analysisStore.latest();
+            return stored != null && scoreBefore.equals(stored.diagnostic().score()) ? stored.diagnostic() : null;
+        } catch (RuntimeException e) {
+            LOG.warn("The replaced plan's diagnostic could not be read; the reading carries no comparison", e);
             return null;
         }
     }

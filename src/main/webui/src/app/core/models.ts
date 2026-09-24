@@ -980,6 +980,43 @@ export interface PlanningDiagnostic {
   plancherSoft: number;
   /** Where the breaches concentrate (issue #496) — see {@link ConstraintsView.pivotEcarts}. */
   pivotEcarts: CellulePivot[];
+  /** The score read out in a few French sentences — see {@link ScoreSentence}. */
+  lecture: ScoreSentence[];
+}
+
+/** What a sentence of the reading of the score talks about, in its fixed order. */
+export type ReadingSubject =
+  | 'VERDICT'
+  | 'COUVERTURE'
+  | 'ORGANISATION'
+  | 'PLANCHER'
+  | 'CONFORT'
+  | 'AJUSTEMENTS'
+  | 'COMPARAISON';
+
+/** How a sentence of the reading is coloured. */
+export type ReadingTone = 'OK' | 'INFO' | 'ATTENTION' | 'BLOQUANT';
+
+/**
+ * One sentence of the reading of the score, written server-side in French
+ * from templates (never translated: like the feasibility causes, it is a
+ * server message). Rules are named by their short label, days by their date,
+ * never a person.
+ */
+export interface ScoreSentence {
+  sujet: ReadingSubject;
+  niveau: ReadingTone;
+  texte: string;
+  /** Links on words of `texte`, in the order those words appear. */
+  liens: ReadingLink[];
+}
+
+/** A link inside a sentence of the reading: `texte` appears verbatim in the sentence. */
+export interface ReadingLink {
+  texte: string;
+  route: string;
+  parametres: Record<string, string>;
+  fragment: string | null;
 }
 
 /**
@@ -1072,6 +1109,8 @@ export interface ConstraintView {
   niveau: NiveauContrainte;
   categorie: string;
   description: string;
+  /** The rule in a few words of the organiser's language — never the technical name. */
+  libelleCourt?: string;
   /**
    * What an organiser can do about this rule being in default — hire, open a
    * stand later, vet somebody, lower a weight. The pivot of issue #496 says
@@ -1191,6 +1230,8 @@ export interface ConstraintsView {
    * the table of zeroes is drawn here. Empty until something is analysed.
    */
   pivotEcarts: CellulePivot[];
+  /** The reading of the score of that analysis; empty until something is analysed. */
+  lecture: ScoreSentence[];
 }
 
 /** The axes a pivot of the breaches can be read against. */
@@ -2977,6 +3018,8 @@ export interface PlanningKpi {
   journeesSousConsigne: number | null;
   /** Seat-hours the consignes' bands took away; null on a row older than the measure. */
   heuresFermeesParConsigne: number | null;
+  /** The reading of the score of the analysis measured; null on a snapshot older than the reading. */
+  lecture?: ScoreSentence[] | null;
 }
 
 /** One row of `GET /api/kpi/historique` (issue #89) — survives its edition's deletion. */

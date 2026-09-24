@@ -55,3 +55,15 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* The reading of each side, folded: the table stays the first thing read. */
+.comparateur-lectures {
+  display: grid;
+  gap: 0.5rem;
+  margin-block: 1rem;
+}
+
+.comparateur-lecture summary {
+  cursor: pointer;
+  font: var(--mat-sys-title-small);
+}

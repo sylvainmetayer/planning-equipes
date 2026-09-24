@@ -17,6 +17,7 @@
       <span class="calendar-meta">{{ resumeFaisabilite() }}</span>
     </div>
     <p class="calendar-meta">{{ resumeAnalyse() }}</p>
+    <app-lecture-score [sentences]="store.constraints()?.lecture" [running]="jobs.activeJob() !== null" />
     @if (store.loading()) {
       <mat-progress-bar mode="indeterminate" />
     }

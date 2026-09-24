@@ -55,7 +55,10 @@ describe('SolveRecap', () => {
         { provide: PlanningStateService, useValue: planningState },
         { provide: ProblemesStore, useValue: problemes },
         { provide: ConfirmService, useValue: confirm },
-        { provide: SolverJobService, useValue: { editingLocked: () => false } },
+        {
+          provide: SolverJobService,
+          useValue: { editingLocked: () => false, activeJob: () => null },
+        },
       ],
     });
   });
@@ -90,6 +93,23 @@ describe('SolveRecap', () => {
       postesPasses: 0,
     });
     expect(recap.reamorcageLabel()).toContain('10 postes repris et 2 laissés libres');
+  });
+
+  it('reads the score out first, and says there is nothing to read before any solve', () => {
+    createRecap();
+    expect(text()).toContain('Aucune résolution à lire.');
+
+    fixture.componentRef.setInput('reading', [
+      {
+        sujet: 'VERDICT',
+        niveau: 'OK',
+        texte: 'Le planning respecte toutes les règles impératives.',
+        liens: [],
+      },
+    ]);
+    fixture.detectChanges();
+    expect(text()).toContain('Lecture du score');
+    expect(text()).toContain('Le planning respecte toutes les règles impératives.');
   });
 
   it('names the past seats frozen as worked, only when the event is under way', () => {

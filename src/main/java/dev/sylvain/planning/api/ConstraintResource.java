@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.analyse.PivotEcarts;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintFloor;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
+import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -108,7 +109,8 @@ public class ConstraintResource {
                 analysis == null ? null : analysis.diagnostic().scoreHorsPlancher(),
                 analysis == null ? null : analysis.diagnostic().plancherMedium(),
                 analysis == null ? null : analysis.diagnostic().plancherSoft(),
-                analysis == null ? List.of() : analysis.diagnostic().pivotEcarts());
+                analysis == null ? List.of() : analysis.diagnostic().pivotEcarts(),
+                analysis == null ? List.of() : analysis.diagnostic().lecture());
     }
 
     /**
@@ -169,6 +171,7 @@ public class ConstraintResource {
                 definition.niveau().name(),
                 definition.categorie(),
                 definition.description(),
+                definition.libelleCourt(),
                 definition.remediation(),
                 !desactivees.contains(definition.name()),
                 definition.protegee(),
@@ -186,6 +189,8 @@ public class ConstraintResource {
     }
 
     /**
+     * @param libelleCourt the rule in a few words, for a sentence or a title
+     *                    read by somebody who does not know its technical name
      * @param actif       whether the constraint is applied on the next solve
      * @param protegee    whether this rule founds the plan in law, in the
      *                    minors' safety policy, or in the meal rule the event
@@ -248,6 +253,7 @@ public class ConstraintResource {
             String niveau,
             String categorie,
             String description,
+            String libelleCourt,
             String remediation,
             boolean actif,
             boolean protegee,
@@ -307,6 +313,10 @@ public class ConstraintResource {
      *                  is on each constraint, « où » is here. Keys are ids,
      *                  the screen resolves the labels from its referential.
      *                  Empty until something has been analysed
+     * @param lecture   the same analysis read out in a few French sentences
+     *                  (see {@code ScoreReading}) — what the Diagnostic and the
+     *                  Solveur page show above the tables. Empty until
+     *                  something has been analysed
      */
     public record ConstraintsView(
             Instant analysedAt,
@@ -319,5 +329,6 @@ public class ConstraintResource {
             String scoreHorsPlancher,
             Integer plancherMedium,
             Integer plancherSoft,
-            List<PivotEcarts.Cellule> pivotEcarts) {}
+            List<PivotEcarts.Cellule> pivotEcarts,
+            List<ScoreReading.ScoreSentence> lecture) {}
 }

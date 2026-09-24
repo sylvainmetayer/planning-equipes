@@ -24,11 +24,13 @@ import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.jboss.logging.Logger;
 
 /**
  * Turns a solved — or merely persisted — planning into the business-facing
@@ -44,6 +46,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * repackaging pass (A4 of the audit), which decides the whole layout at once.</p>
  */
 public final class PlanningDiagnosticService {
+
+    private static final Logger LOG = Logger.getLogger(PlanningDiagnosticService.class);
 
     private final ConstraintDiagnosticService constraintDiagnosticService;
 
@@ -183,7 +187,7 @@ public final class PlanningDiagnosticService {
                         .reversed()
                         .thenComparing(ContributionAdHoc::contrainteId))
                 .toList();
-        return new PlanningDiagnostic(
+        PlanningDiagnostic diagnostic = new PlanningDiagnostic(
                 String.valueOf(solved.getScore()),
                 unassigned,
                 constraintDiagnostics,
@@ -194,6 +198,37 @@ public final class PlanningDiagnosticService {
                 borne(plancherMedium),
                 borne(plancherSoft),
                 PivotEcarts.of(matchesParContrainte));
+        // Read once, here, so every screen and the MCP tool say the same thing.
+        return diagnostic.withReading(
+                readingOrNothing(() -> ScoreReading.read(diagnostic, Optional.empty(), disabledRules(solved))));
+    }
+
+    /**
+     * The reading, or none when writing it failed. The sentences are a way in
+     * to the tables, not the diagnostic itself: a template tripping on an
+     * unexpected label must not take the diagnostic — hence the end of every
+     * solve — down with it. Logged, so the defect is still seen.
+     */
+    static <T> List<T> readingOrNothing(Supplier<List<T>> reading) {
+        try {
+            List<T> sentences = reading.get();
+            return sentences == null ? List.of() : sentences;
+        } catch (RuntimeException e) {
+            LOG.warn("The reading of the score could not be written; the diagnostic goes out without it", e);
+            return List.of();
+        }
+    }
+
+    /**
+     * Names of the rules the plan handed here was solved with switched off —
+     * its own toggles, then the catalogue's default, exactly as the solver
+     * read them.
+     */
+    private static Set<String> disabledRules(PlanningEvenement solved) {
+        return ConstraintCatalog.definitions().stream()
+                .map(ConstraintCatalog.ConstraintDefinition::name)
+                .filter(name -> !ConstraintCatalog.isActive(solved.getConstraintsDesactivees(), name))
+                .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
     }
 
     /**
@@ -442,6 +477,11 @@ public final class PlanningDiagnosticService {
      * covers every rule, hard and not: {@code violations} stops at the hard
      * ones because listing thousands of lines is what costs, and counting them
      * is not.</p>
+     *
+     * <p>{@code lecture} is the same diagnostic read out in a few French
+     * sentences for an organiser (see {@link ScoreReading}): verdict, coverage,
+     * what weighs on the organisation, floors, comfort, exceptions. Rules by
+     * their short label, days by their date, never a person.</p>
      */
     public record PlanningDiagnostic(
             String score,
@@ -453,7 +493,51 @@ public final class PlanningDiagnosticService {
             String scoreHorsPlancher,
             int plancherMedium,
             int plancherSoft,
-            List<PivotEcarts.Cellule> pivotEcarts) {}
+            List<PivotEcarts.Cellule> pivotEcarts,
+            List<ScoreReading.ScoreSentence> lecture) {
+
+        /** A diagnostic not read yet: {@link #withReading} gives it its sentences. */
+        public PlanningDiagnostic(
+                String score,
+                int postesNonPourvus,
+                List<ConstraintDiagnostic> contraintes,
+                FeasibilityAnalyzer.FeasibilityReport faisabilite,
+                int hardScore,
+                List<ContributionAdHoc> contraintesAdHocEnCause,
+                String scoreHorsPlancher,
+                int plancherMedium,
+                int plancherSoft,
+                List<PivotEcarts.Cellule> pivotEcarts) {
+            this(
+                    score,
+                    postesNonPourvus,
+                    contraintes,
+                    faisabilite,
+                    hardScore,
+                    contraintesAdHocEnCause,
+                    scoreHorsPlancher,
+                    plancherMedium,
+                    plancherSoft,
+                    pivotEcarts,
+                    List.of());
+        }
+
+        /** The same diagnostic carrying {@code lecture} as its reading. */
+        public PlanningDiagnostic withReading(List<ScoreReading.ScoreSentence> lecture) {
+            return new PlanningDiagnostic(
+                    score,
+                    postesNonPourvus,
+                    contraintes,
+                    faisabilite,
+                    hardScore,
+                    contraintesAdHocEnCause,
+                    scoreHorsPlancher,
+                    plancherMedium,
+                    plancherSoft,
+                    pivotEcarts,
+                    lecture == null ? List.of() : List.copyOf(lecture));
+        }
+    }
 
     /**
      * One hand-entered exception the last analysis found still violated, most

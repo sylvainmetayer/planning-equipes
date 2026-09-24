@@ -362,7 +362,11 @@ trois propriétés d'un coup :
 recalcule le score du **plan persisté**, celui dont parlent `etat_planning` et
 `lister_affectations`. Il remplace un outil d'analyse qui lançait une résolution
 complète et en jetait le résultat : le budget d'un solve pour décrire un
-planning que rien ni personne n'aurait affiché ensuite.
+planning que rien ni personne n'aurait affiché ensuite. Il renvoie aussi la
+**lecture du score** (`lecture`), les mêmes phrases que la page Solveur et le
+Diagnostic : écrites par gabarits à partir du diagnostic, elles ne nomment que
+des règles (par leur libellé court), des jours et des nombres — jamais une
+personne —, et sortent donc telles quelles.
 
 Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
 pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé

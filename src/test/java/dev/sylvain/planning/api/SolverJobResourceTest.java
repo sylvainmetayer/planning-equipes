@@ -102,6 +102,11 @@ class SolverJobResourceTest {
         JsonPath premier = pollUntilFinished(solveFromReferenceData());
         assertThat(premier.getString("status")).isEqualTo("COMPLETED");
         assertThat(premier.getMap("result.previousPlan")).isNull();
+        // The reading of the score travels with the result, verdict first;
+        // with nothing replaced, it compares with nothing.
+        assertThat(premier.getString("result.diagnostic.lecture[0].sujet")).isEqualTo("VERDICT");
+        assertThat(premier.getList("result.diagnostic.lecture.sujet", String.class))
+                .doesNotContain("COMPARAISON");
 
         awaitIdleSolver();
         JsonPath second = pollUntilFinished(solveFromReferenceData());
@@ -110,6 +115,14 @@ class SolverJobResourceTest {
         assertThat(second.getLong("result.previousPlan.snapshotId")).isPositive();
         assertThat(second.getString("result.previousPlan.score")).isNotBlank();
         assertThat(second.getBoolean("result.previousPlan.degraded")).isNotNull();
+        // Its reading ends on what changed against that plan.
+        assertThat(second.getList("result.diagnostic.lecture.sujet", String.class))
+                .last()
+                .isEqualTo("COMPARAISON");
+        assertThat(second.getList("result.diagnostic.lecture.texte", String.class))
+                .last()
+                .asString()
+                .startsWith("Par rapport au plan précédent : ");
     }
 
     private String solveFromReferenceData() {

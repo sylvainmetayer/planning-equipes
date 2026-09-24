@@ -24,6 +24,7 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import {
   CauseInfaisabilite,
   ChangementAffectation,
+  ConstraintsView,
   ConstraintDiagnostic,
   FeasibilityReport,
   JobView,
@@ -32,6 +33,7 @@ import {
   PreviousPlan,
   ReamorcageEffectue,
   ResultatSolveIncremental,
+  ScoreSentence,
   ScoreTrace,
   StatistiquesIncremental,
 } from '../../core/models';
@@ -66,6 +68,7 @@ function diagnostic(overrides: Partial<PlanningDiagnostic> = {}): PlanningDiagno
     plancherMedium: 0,
     plancherSoft: 0,
     pivotEcarts: [],
+    lecture: [],
     ...overrides,
   };
 }
@@ -144,6 +147,8 @@ type PageInternals = {
   impactPublication: Signal<ImpactPublication | null>;
   pointDeDepart: Signal<string>;
   planEnregistre: Signal<boolean>;
+  reading: Signal<ScoreSentence[] | null>;
+  onPlanPrecedentRestaure: (message: string) => void;
   onRecommencerDeZero: () => Promise<void>;
   onTimefoldSolve: (reamorcage?: string) => Promise<void>;
 };
@@ -196,9 +201,12 @@ describe('SolverPage', () => {
   // throw during change detection instead of failing an assertion.
   const resolution = { dataStale: () => false, resolution: () => null, reload: vi.fn() };
   const causesBloquantes = signal<CauseInfaisabilite[]>([]);
+  /** The stored analysis, which a solve's own reading gives way to once superseded. */
+  const constraints = signal<ConstraintsView | null>(null);
   const problemes = {
     reload: vi.fn(),
     alerteReglesLegales: () => '',
+    constraints,
     alertePausesSansRelais: () => '',
     comptage: () => ({ total: 0 }),
     problemes: () => [],
@@ -212,6 +220,7 @@ describe('SolverPage', () => {
     editingLocked.set(false);
     scoreTraceEdition.set(null);
     causesBloquantes.set([]);
+    constraints.set(null);
     for (const stub of [
       jobs.listJobs,
       jobs.submitSolveFromReferenceData,
@@ -274,6 +283,55 @@ describe('SolverPage', () => {
       handler(result);
     }
   }
+
+  /** A sentence of a reading, told apart by its words. */
+  function phrase(texte: string): ScoreSentence {
+    return { sujet: 'VERDICT', niveau: 'INFO', texte, liens: [] };
+  }
+
+  /** A stored analysis carrying one sentence, analysed at `analysedAt`. */
+  function stored(analysedAt: string, texte: string): ConstraintsView {
+    return { analysedAt, lecture: [phrase(texte)] } as unknown as ConstraintsView;
+  }
+
+  describe("the solve's reading", () => {
+    it('stands over its own stored analysis, and gives way to the next one', async () => {
+      constraints.set(stored('2026-07-01T10:00:00Z', 'avant'));
+      const page = createPage();
+      await fixture.whenStable();
+      expect(page.reading()?.[0].texte).toBe('avant');
+
+      pushResult('SOLVE', diagnostic({ lecture: [phrase('comparée')] }));
+      await fixture.whenStable();
+      expect(page.reading()?.[0].texte).toBe('comparée');
+
+      // The re-read after the solve brings the solve's own analysis: the
+      // reading with its comparison still stands.
+      constraints.set(stored('2026-07-01T11:00:00Z', 'la même sans comparaison'));
+      await fixture.whenStable();
+      expect(page.reading()?.[0].texte).toBe('comparée');
+
+      // A later analysis — the plan re-analysed or rewritten since.
+      constraints.set(stored('2026-07-01T12:00:00Z', 'plus récente'));
+      await fixture.whenStable();
+      expect(page.reading()?.[0].texte).toBe('plus récente');
+    });
+
+    it('gives way to the stored analysis once the previous plan is restored', async () => {
+      constraints.set(stored('2026-07-01T10:00:00Z', 'stockée'));
+      const page = createPage();
+      pushResult('SOLVE', diagnostic({ lecture: [phrase('comparée')] }));
+      await fixture.whenStable();
+      expect(page.reading()?.[0].texte).toBe('comparée');
+      problemes.reload.mockClear();
+
+      page.onPlanPrecedentRestaure('Plan restauré.');
+      await fixture.whenStable();
+
+      expect(page.reading()?.[0].texte).toBe('stockée');
+      expect(problemes.reload).toHaveBeenCalledOnce();
+    });
+  });
 
   describe('applying a solve result', () => {
     // The page subscribes to both job types: a solve launched from another
