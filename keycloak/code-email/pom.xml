@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Extension Keycloak, bâtie à part de l'application.
+
+  Ce module ne fait pas partie du réacteur de `planning-equipes` et c'est
+  délibéré : il ne produit pas du code qui tourne dans l'application, mais un
+  greffon chargé par un *autre* programme, dont il suit la version et le JDK.
+  Le mêler au build principal ferait porter à celui-ci les SPI de Keycloak et
+  sa contrainte de compilation, pour un artefact que l'application n'utilise
+  jamais.
+
+  Il n'existe que parce que Keycloak 26 ne sait pas envoyer de code par e-mail à
+  la connexion : le mot de passe, le TOTP, les passkeys, les codes de secours et
+  les fournisseurs externes sont tous natifs, celui-là seul ne l'est pas.
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>dev.sylvain</groupId>
+  <artifactId>planning-keycloak-code-email</artifactId>
+  <version>999-SNAPSHOT</version>
+  <packaging>jar</packaging>
+  <name>Planning Équipes — authentificateur « code par e-mail » pour Keycloak</name>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- Celle de l'image : docker/keycloak/Dockerfile part de
+         quay.io/keycloak/keycloak:26.5.7, et les deux versions bougent
+         ensemble. Un greffon compilé contre une autre lignée se charge puis
+         casse à la première méthode disparue. -->
+    <keycloak.version>26.5.7</keycloak.version>
+    <!-- Le JDK de Keycloak, pas celui de l'application : le serveur tourne sur
+         21, et un JAR compilé pour 25 y lève UnsupportedClassVersionError. -->
+    <maven.compiler.release>21</maven.compiler.release>
+  </properties>
+
+  <dependencies>
+    <!-- `provided` de bout en bout : tout cela est déjà dans le serveur, et
+         l'embarquer donnerait deux copies des mêmes classes au chargeur. -->
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi-private</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-services</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.ws.rs</groupId>
+      <artifactId>jakarta.ws.rs-api</artifactId>
+      <version>4.0.0</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <finalName>planning-keycloak-code-email</finalName>
+  </build>
+</project>
