@@ -1,0 +1,53 @@
+# Copiez en `terraform.tfvars` (ignoré par git) et remplissez.
+#
+# Les identifiants d'administration ne se mettent PAS ici : le fournisseur lit
+# l'environnement.
+#
+#   export KEYCLOAK_USER=terraform
+#   export KEYCLOAK_PASSWORD='...'
+#
+# Un compte de service dédié vaut mieux qu'un compte humain : il n'a pas de
+# second facteur à contourner.
+
+keycloak_url        = "https://sso.exemple.org"
+planning_public_url = "https://planning.exemple.org"
+
+# Les trois secrets de client se passent par l'environnement, pas par ce
+# fichier — une valeur écrite ici a la forme d'un secret même quand elle n'en
+# est pas une, et un fichier d'exemple qui montre où écrire le vrai finit par
+# l'obtenir :
+#
+#   export TF_VAR_client_app_secret='...'          # au moins 32 caractères
+#   export TF_VAR_client_mcp_secret='...'
+#   export TF_VAR_client_provisioning_secret='...'
+#
+# Pour le premier, la borne de 32 n'est pas décorative : voir la description de
+# la variable. `openssl rand -base64 32` en donne un.
+
+# Obligatoire : sans relais joignable, Keycloak n'envoie ni invitation, ni
+# réinitialisation, ni vérification d'adresse, ni code de connexion — et
+# l'échec n'apparaît que des jours plus tard, auprès de gens qui ne peuvent plus
+# activer leur compte.
+smtp = {
+  host              = "smtp.exemple.org"
+  port              = 587
+  from              = "sso@exemple.org"
+  from_display_name = "Planning Équipes"
+  starttls          = true
+}
+
+# Les identifiants du relais, eux aussi par l'environnement :
+#
+#   export TF_VAR_smtp_username='sso@exemple.org'
+#   export TF_VAR_smtp_password='...'
+#
+# Les deux ou aucun — un nom d'utilisateur sans mot de passe n'authentifie
+# rien, et le plan le refuse.
+
+# Google, facultatif : l'identifiant ici, le secret par TF_VAR_google_client_secret.
+# google_client_id = "1234567890-xxxx.apps.googleusercontent.com"
+
+# Éteint par défaut : allumé, quiconque atteint le realm peut y créer un
+# client. La liste d'hôtes est ce qui rend l'option tenable.
+dynamic_client_registration = false
+dcr_trusted_hosts           = []

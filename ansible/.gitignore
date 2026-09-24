@@ -1,0 +1,6 @@
+# L'inventaire et les variables d'un déploiement réel portent des secrets (mot
+# de passe d'administration de Keycloak) et des données personnelles (les
+# adresses du personnel). Seuls les fichiers `*.example.yml` sont versionnés.
+inventory.yml
+group_vars/*.yml
+!group_vars/*.example.yml

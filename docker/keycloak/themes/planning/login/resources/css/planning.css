@@ -1,0 +1,111 @@
+/*
+ * Thème « planning », couche commune — ce qui ne change PAS d'un client à
+ * l'autre. Un client change trois choses, et aucune ici : les fichiers de
+ * brand/ (logo.svg, background.svg, brand.css) et KEYCLOAK_BRAND_ACCENT.
+ *
+ * Une seule variable, --planning-accent, colore tout ce qui est coloré :
+ * bouton principal, liens, bordure haute de la carte, focus des champs. Les
+ * variables globales de PatternFly 5 sont redirigées vers elle plutôt que
+ * redéfinies composant par composant — c'est ce qui fait qu'une page ajoutée
+ * par une version future de Keycloak sera colorée sans qu'on y touche.
+ */
+:root {
+    --planning-accent: #3a6ea5;
+    --planning-accent-dark: color-mix(in srgb, var(--planning-accent) 78%, black);
+    --planning-accent-soft: color-mix(in srgb, var(--planning-accent) 14%, white);
+
+    /* Les visuels viennent de brand/, jamais d'ici. */
+    --keycloak-logo-url: url('../brand/logo.svg');
+    --keycloak-bg-logo-url: url('../brand/background.svg');
+    --keycloak-logo-height: 64px;
+    --keycloak-logo-width: 340px;
+    --keycloak-card-top-color: var(--planning-accent);
+
+    --pf-v5-global--primary-color--100: var(--planning-accent);
+    --pf-v5-global--primary-color--200: var(--planning-accent-dark);
+    --pf-v5-global--active-color--100: var(--planning-accent);
+    --pf-v5-global--link--Color: var(--planning-accent);
+    --pf-v5-global--link--Color--hover: var(--planning-accent-dark);
+    --pf-v5-global--FontFamily--sans-serif: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --pf-v5-global--FontFamily--heading-sans-serif: var(--pf-v5-global--FontFamily--sans-serif);
+}
+
+.login-pf body {
+    background-color: #eef2f7;
+    background-size: cover;
+}
+
+/* L'en-tête porte le logo, plus un nom en capitales espacées. */
+#kc-header-wrapper {
+    text-transform: none;
+    letter-spacing: 0;
+    padding-bottom: var(--pf-v5-global--spacer--md);
+}
+
+div.kc-logo-text {
+    margin: 0 auto;
+}
+
+/* Le nom du realm reste lisible par un lecteur d'écran : masqué visuellement,
+   pas retiré (le parent fait display:none, ce qui le retirait). */
+div.kc-logo-text span {
+    display: block;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.pf-v5-c-login__main {
+    border-radius: 12px;
+    box-shadow: 0 16px 48px rgb(15 23 42 / 0.18);
+    overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+    border-top-width: 5px;
+}
+
+.pf-v5-c-button.pf-m-primary {
+    --pf-v5-c-button--m-primary--BackgroundColor: var(--planning-accent);
+    --pf-v5-c-button--m-primary--hover--BackgroundColor: var(--planning-accent-dark);
+    --pf-v5-c-button--m-primary--focus--BackgroundColor: var(--planning-accent-dark);
+    --pf-v5-c-button--m-primary--active--BackgroundColor: var(--planning-accent-dark);
+    border-radius: 8px;
+}
+
+.pf-v5-c-button.pf-m-secondary {
+    --pf-v5-c-button--m-secondary--Color: var(--planning-accent);
+    --pf-v5-c-button--m-secondary--BorderColor: var(--planning-accent);
+    --pf-v5-c-button--m-secondary--hover--Color: var(--planning-accent-dark);
+    --pf-v5-c-button--m-secondary--hover--BorderColor: var(--planning-accent-dark);
+    border-radius: 8px;
+}
+
+.pf-v5-c-form-control {
+    border-radius: 6px;
+}
+
+/* Les méthodes de connexion (passkey, mot de passe…) : une liste de cartes. */
+.select-auth-box-parent:hover {
+    background-color: var(--planning-accent-soft);
+}
+
+/* Mode sombre : le parent pose la classe sur <html>, à côté de login-pf. Le
+   fond du client n'est pas remplacé, il est assombri par un dégradé posé
+   par-dessus — le même visuel sert aux deux modes. */
+.pf-v5-theme-dark body {
+    background-color: #0f172a;
+    background-image: linear-gradient(rgb(15 23 42 / 0.82), rgb(15 23 42 / 0.82)), var(--keycloak-bg-logo-url);
+}
+
+.pf-v5-theme-dark .pf-v5-c-login__main {
+    box-shadow: 0 16px 48px rgb(0 0 0 / 0.5);
+}
+
+.pf-v5-theme-dark .select-auth-box-parent:hover {
+    background-color: color-mix(in srgb, var(--planning-accent) 24%, black);
+}
