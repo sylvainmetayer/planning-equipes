@@ -67,10 +67,12 @@ const PREFIXES_DE_TEST = ['E2E-', 'E2EIMP-', 'SOLV-', 'FUZZ-', 'CJ-', 'ENE-', 'A
  * survivent donc à chaque restauration, et l'import les refuserait — sa liste
  * d'instructions autorisées dérive de la même constante.</p>
  *
- * <p>Sans conséquence pour la suite : la seule spec qui touche à l'horloge
- * vérifie que la figer est **refusée** (l'application packagée tourne en mode
- * production), et aucune n'observe l'historique des KPI. Ce serait à revoir le
- * jour où l'une des deux devient un fait sur lequel un test s'appuie.</p>
+ * <p>Sans conséquence pour la suite : sur la pile ordinaire, la seule spec qui
+ * touche à l'horloge vérifie que la figer est **refusée** (l'application
+ * packagée tourne en mode production) ; sur la pile `@lourd`, qui l'accepte,
+ * `passe-fige.spec.ts` la fige puis la rend réelle dans son `afterAll`. Aucune
+ * n'observe l'historique des KPI. Ce serait à revoir le jour où l'un des deux
+ * devient un fait sur lequel une autre spec s'appuie.</p>
  */
 
 function fichierDeReference(baseURL: string): string {

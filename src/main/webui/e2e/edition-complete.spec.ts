@@ -7,7 +7,14 @@
 // petit jeu qui passe par toutes les capacités de l'outil.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { choisirOption, contexteAdmin, dialogueOuvert, ouvrirSelect, pageAdmin } from './support';
+import {
+  choisirOption,
+  contexteAdmin,
+  decaler,
+  dialogueOuvert,
+  ouvrirSelect,
+  pageAdmin,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const EDITION_NOM = 'E2E Journées types';
@@ -24,9 +31,9 @@ const ANIMATEURS = [
   { id: 'E2E-JT-B', prenom: 'Bao', nom: 'Journee' },
   { id: 'E2E-JT-C', prenom: 'Cléo', nom: 'Journee' },
 ] as const;
-const JOUR1 = '2027-07-12';
-const JOUR2 = '2027-07-13';
-const JOUR3 = '2027-07-14';
+const JOUR1 = decaler('2026-07-13');
+const JOUR2 = decaler('2026-07-14');
+const JOUR3 = decaler('2026-07-15');
 
 let admin: APIRequestContext;
 

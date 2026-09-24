@@ -3,7 +3,7 @@
 // in-app guide with its search — including the new foire au planning section.
 
 import { APIRequestContext, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedPlanning } from './support';
+import { SEED, contexteAdmin, pageAdmin, seedPlanning } from './support';
 import { repartirDeLaReference } from './reference';
 
 let admin: APIRequestContext;
@@ -25,13 +25,13 @@ test('poser un verrouillage de journée, mesurer son impact, le retirer', async 
 
   // Type "Journée" is the default; pick the seeded day.
   await page.getByLabel('Journée').click();
-  await page.getByRole('option', { name: '2026-07-10' }).click();
+  await page.getByRole('option', { name: SEED.jour }).click();
   // The preview counts the already-assigned seats the lock would freeze.
   await expect(page.locator('#contenu')).toContainText(/affectation\(s\) déjà enregistrée\(s\)/);
   await page.getByRole('button', { name: 'Verrouiller', exact: true }).click();
   await expect(page.getByText('Verrouillage enregistré.')).toBeVisible();
 
-  const ligne = page.getByRole('row', { name: /2026-07-10/ }).first();
+  const ligne = page.getByRole('row', { name: new RegExp(SEED.jour) }).first();
   await expect(ligne).toBeVisible();
   await ligne.getByRole('button').last().click();
   await page.getByRole('dialog').getByRole('button', { name: 'Déverrouiller' }).click();

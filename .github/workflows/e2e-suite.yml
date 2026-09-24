@@ -17,6 +17,12 @@ on:
         description: 'Plafond du job, en minutes.'
         type: number
         required: true
+      horloge-simulee:
+        description: >-
+          Monte l'application avec HORLOGE_SIMULEE_AUTORISEE=true : la page
+          Débogage peut figer la date du serveur, comme sur une recette.
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -115,17 +121,18 @@ jobs:
           # exactement l'instance « pas en service » que ce drapeau déclare —
           # remplir cinq variables légales fictives dirait le contraire.
           LEGAL_DEMO_INSTANCE: 'true'
-          # « Le passé est figé » (ADR 0044) est coupé ici : les jeux de
-          # données des specs sont datés en juillet-août 2026, derrière
-          # l'horloge réelle, et l'application packagée refuse l'horloge
-          # simulée. Avec la règle, chaque résolution reprendrait ces journées
-          # du plan enregistré — vide au premier calcul — et n'affecterait
-          # personne. Les specs qui résolvent devraient dater leurs amorces
-          # dans l'avenir en gardant les âges des mineurs ; d'ici là, la règle
-          # est couverte par FrozenPastAcceptanceTest, sur l'horloge figée.
-          PASSE_FIGE: 'false'
+          # « Le passé est figé » (ADR 0044) reste à sa valeur par défaut,
+          # celle de la production : les specs datent leurs amorces plusieurs
+          # semaines après l'horloge réelle (`decaler`, e2e/support.ts), si
+          # bien qu'aucun de leurs créneaux n'est encore commencé.
+          #
+          # L'horloge simulée, elle, reste refusée sur la pile ordinaire —
+          # jour-j.spec.ts vérifie ce refus. Seul l'appelant qui joue la spec
+          # du passé figé l'autorise.
+          HORLOGE_SIMULEE_AUTORISEE: ${{ inputs.horloge-simulee }}
           # Le glisser-déposer est coupé par défaut ; la pile E2E l'active pour
-          # que glisser-deposer.spec.ts continue d'exercer le geste.
+          # que glisser-deposer.spec.ts continue d'exercer le geste, et que
+          # passe-fige.spec.ts voie ce même geste refusé sur une journée passée.
           GLISSER_DEPOSER_ACTIF: 'true'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit

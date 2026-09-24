@@ -11,6 +11,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
+  decaler,
   lancerSolve,
   pageAdmin,
   planningPersiste,
@@ -45,10 +46,10 @@ const STANDS: StandSeed[] = [
   { id: 'SOLV-DEG-S3', nom: 'Stand Degrade trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
-  { id: C1, date: '2026-08-12', debut: '10:00', fin: '12:00' },
-  { id: C2, date: '2026-08-13', debut: '10:00', fin: '12:00' },
-  { id: C3, date: '2026-08-14', debut: '10:00', fin: '12:00' },
-  { id: C4, date: '2026-08-15', debut: '10:00', fin: '12:00' },
+  { id: C1, date: decaler('2026-08-12'), debut: '10:00', fin: '12:00' },
+  { id: C2, date: decaler('2026-08-13'), debut: '10:00', fin: '12:00' },
+  { id: C3, date: decaler('2026-08-14'), debut: '10:00', fin: '12:00' },
+  { id: C4, date: decaler('2026-08-15'), debut: '10:00', fin: '12:00' },
 ];
 
 /** Twelve seats: 3 stands × 4 créneaux, each stand needing one animateur. */

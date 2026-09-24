@@ -12,6 +12,7 @@ import {
   CreneauSeed,
   StandSeed,
   contexteAdmin,
+  decaler,
   pageAdmin,
   seedReferentielSolveur,
 } from './support';
@@ -38,10 +39,10 @@ const STANDS: StandSeed[] = [
   { id: 'SOLV-S3', nom: 'Stand Solve trois', effectif: 1 },
 ];
 const CRENEAUX: CreneauSeed[] = [
-  { id: 987201, date: '2026-07-12', debut: '10:00', fin: '12:00' },
-  { id: 987202, date: '2026-07-13', debut: '10:00', fin: '12:00' },
-  { id: 987203, date: '2026-07-14', debut: '10:00', fin: '12:00' },
-  { id: 987204, date: '2026-07-15', debut: '10:00', fin: '12:00' },
+  { id: 987201, date: decaler('2026-07-12'), debut: '10:00', fin: '12:00' },
+  { id: 987202, date: decaler('2026-07-13'), debut: '10:00', fin: '12:00' },
+  { id: 987203, date: decaler('2026-07-14'), debut: '10:00', fin: '12:00' },
+  { id: 987204, date: decaler('2026-07-15'), debut: '10:00', fin: '12:00' },
 ];
 
 let admin: APIRequestContext;

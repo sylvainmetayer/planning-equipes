@@ -6,6 +6,74 @@ import { APIRequestContext, Browser, Locator, Page, Playwright, expect } from '@
 
 export const MOT_DE_PASSE_ADMIN = process.env['E2E_ADMIN_PASSWORD'] ?? 'admin';
 
+/* ------------------------- Dates of the seeded event ------------------------- */
+
+/**
+ * The Monday the fixtures are written against: every date a spec seeds is
+ * spelt as if the event ran in the summer of 2026, from that week on, and is
+ * moved to the future at run time by {@link decaler}.
+ */
+const LUNDI_DES_AMORCES = Date.UTC(2026, 6, 6);
+
+/** How far ahead of the real clock that Monday lands, at the least. */
+const AVANCE_MINIMALE_JOURS = 56;
+
+const JOUR_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Days every seeded date moves by: the smallest whole number of weeks that
+ * puts {@link LUNDI_DES_AMORCES} at least {@link AVANCE_MINIMALE_JOURS} ahead
+ * of today.
+ *
+ * « Le passé est figé » (ADR 0044) is on in the e2e stack, as in production,
+ * and the packaged application freezes no clock: a timeslot behind the real
+ * date is taken from the saved plan and pinned by every solve, and a gesture
+ * on its seat is refused. A fixture dated once and for all would slide into
+ * the past and stop testing anything; this one is dated from today, whatever
+ * the year the suite runs in.
+ *
+ * Whole weeks, so a date keeps its weekday and the solver sees the very week
+ * the fixture was measured on. The eight weeks keep the seeded days clear of
+ * the specs that add a timeslot a month ahead or behind the real clock.
+ */
+export const DECALAGE_JOURS = (() => {
+  const maintenant = new Date();
+  const aujourdhui = Date.UTC(
+    maintenant.getFullYear(),
+    maintenant.getMonth(),
+    maintenant.getDate(),
+  );
+  const retard = (aujourdhui + AVANCE_MINIMALE_JOURS * JOUR_MS - LUNDI_DES_AMORCES) / JOUR_MS;
+  return Math.max(0, Math.ceil(retard / 7)) * 7;
+})();
+
+/**
+ * `2026-07-12` → the same weekday {@link DECALAGE_JOURS} later, as
+ * `AAAA-MM-JJ`: what a spec writes for every date of its fixture.
+ *
+ * A **minor's birth date goes through it too**: the minor/adult rules read the
+ * age at the timeslot's date, and moving both by the same amount keeps that
+ * age — a person born in 2010 stays sixteen on the seeded day whichever year
+ * the suite runs. An adult's birth date needs no shift: they stay an adult.
+ */
+export function decaler(date: string): string {
+  const [annee, mois, jour] = date.split('-').map(Number);
+  return new Date(Date.UTC(annee, mois - 1, jour + DECALAGE_JOURS)).toISOString().slice(0, 10);
+}
+
+/** `2026-07-10` → `10/07`: how most screens name a day. */
+export function jourMois(date: string): string {
+  const [, mois, jour] = date.split('-');
+  return `${jour}/${mois}`;
+}
+
+/** `2026-07-10` → `Vendredi 10/07`: how the selectors and tables of a day say it. */
+export function libelleJour(date: string): string {
+  const jours = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+  const [annee, mois, jour] = date.split('-').map(Number);
+  return `${jours[new Date(Date.UTC(annee, mois - 1, jour)).getUTCDay()]} ${jourMois(date)}`;
+}
+
 /** Ids of everything the suite seeds, so reseeding stays idempotent. */
 export const SEED = {
   demandeur: 'E2E-A',
@@ -19,8 +87,8 @@ export const SEED = {
   creneauId: 987001,
   /** The day after, where the free colleague holds the seat a directed échange trades against. */
   creneauAutreJour: 987002,
-  jour: '2026-07-10',
-  jourSuivant: '2026-07-11',
+  jour: decaler('2026-07-10'),
+  jourSuivant: decaler('2026-07-11'),
 } as const;
 
 /**
@@ -93,7 +161,7 @@ export async function seedPlanning(
     // Alice carries an email (mail-sending tests); Bruno deliberately none.
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager, email) values ('DEFAUT', '${SEED.demandeur}', 'Alice', 'E2E', '1990-01-01', false, '${SEED.demandeur}@example.org');`,
     `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${SEED.cible}', 'Bruno', 'E2E', '1992-02-02', false);`,
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauId}, '2026-07-10', '10:00', '12:00');`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${SEED.creneauId}, '${SEED.jour}', '10:00', '12:00');`,
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P1', '${SEED.standDemandeur}', ${SEED.creneauId}, '${SEED.demandeur}');`,
     `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.cible}');`,
     ...(options.avecCollegueIndisponible
