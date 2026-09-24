@@ -24,6 +24,7 @@ const CONFIG: AppConfig = {
   cloudflareWebAnalyticsToken: 'token-de-test',
   devMode: false,
   dragDropEnabled: false,
+  version: '',
 };
 
 describe('loadAppConfig', () => {
@@ -47,6 +48,7 @@ describe('loadAppConfig', () => {
       cloudflareWebAnalyticsToken: '',
       devMode: false,
       dragDropEnabled: false,
+      version: '',
     });
   });
 
@@ -58,6 +60,7 @@ describe('loadAppConfig', () => {
       cloudflareWebAnalyticsToken: '',
       devMode: false,
       dragDropEnabled: false,
+      version: '',
     });
   });
 });

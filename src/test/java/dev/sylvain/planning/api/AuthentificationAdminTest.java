@@ -45,6 +45,23 @@ class AuthentificationAdminTest {
         given().when().get("/api/constraints").then().statusCode(401);
     }
 
+    /**
+     * An external probe, a compose healthcheck or an orchestrator calls these
+     * without a session; behind the admin wall they would report every
+     * instance as down.
+     */
+    @Test
+    void healthProbesStayPublicWithoutSession() {
+        given().when().get("/q/health/live").then().statusCode(200);
+        given().when().get("/q/health/ready").then().statusCode(200);
+    }
+
+    /** The version is public too: {@code verifier-deploiement.sh} reads it without credentials. */
+    @Test
+    void configWithVersionStaysPublicWithoutSession() {
+        given().when().get("/api/config").then().statusCode(200);
+    }
+
     @Test
     void lEspaceAnimateurResteAccessibleSansSession() {
         // 404 (unknown token), never 401: the token itself is the credential.

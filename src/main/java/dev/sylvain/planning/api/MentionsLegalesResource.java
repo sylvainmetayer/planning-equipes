@@ -60,6 +60,7 @@ public class MentionsLegalesResource {
                 text(mentions.donnees().conservation()),
                 configured(observabilite.cloudflare().webAnalyticsToken()),
                 configured(observabilite.sentry().dsn()),
+                mentions.demoInstance(),
                 accessibilite());
     }
 
@@ -119,9 +120,13 @@ public class MentionsLegalesResource {
      * @param conservation         how long personal data is kept
      * @param mesureAudience       whether Cloudflare Web Analytics runs on this deployment
      * @param suiviErreurs         whether error reports are sent to a Sentry-protocol endpoint
+     * @param demoInstance         whether the deployment declared itself a demo or test bench
+     *                             ({@code LEGAL_DEMO_INSTANCE}), the one case where the fields
+     *                             above may all be empty; read by {@code scripts/verifier-deploiement.sh}
+     *                             so the check asks the running instance instead of an env file
      * @param accessibilite        the accessibility statement of this deployment
      */
-    @Schema(requiredProperties = {"mesureAudience", "suiviErreurs", "accessibilite"})
+    @Schema(requiredProperties = {"mesureAudience", "suiviErreurs", "demoInstance", "accessibilite"})
     public record MentionsLegalesView(
             String editeur,
             String directeurPublication,
@@ -132,6 +137,7 @@ public class MentionsLegalesResource {
             String conservation,
             boolean mesureAudience,
             boolean suiviErreurs,
+            boolean demoInstance,
             AccessibiliteView accessibilite) {}
 
     /**

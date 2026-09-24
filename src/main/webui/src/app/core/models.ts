@@ -1453,6 +1453,12 @@ export interface MentionsLegales {
    */
   mesureAudience: boolean;
   suiviErreurs: boolean;
+  /**
+   * The deployment declared itself a demo or test bench (`LEGAL_DEMO_INSTANCE`).
+   * Not rendered: the deployment check script reads it to know whether empty
+   * mandatory mentions are a defect.
+   */
+  demoInstance: boolean;
   /** The accessibility statement of this deployment — empty strings for what it did not state. */
   accessibilite: DeclarationAccessibilite;
 }
@@ -1960,6 +1966,8 @@ export interface AppConfig {
   devMode: boolean;
   /** The day views let a seat be dragged onto another line (`GLISSER_DEPOSER_ACTIF`). */
   dragDropEnabled: boolean;
+  /** Backend version, as the startup line prints it (docs/versioning.md). */
+  version: string;
 }
 
 /**

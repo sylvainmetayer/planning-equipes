@@ -32,7 +32,7 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 183 | 4 |
+| Apache-2.0 | 188 | 4 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
 | CC0-1.0 | 1 | — |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **211** | **89** |
+| **Total** | **216** | **89** |
 
 ## Dépendances Java
 
@@ -150,6 +150,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkus:quarkus-security` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-security-runtime-spi` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-smallrye-context-propagation` | 3.38.3 | Apache-2.0 |
+| `io.quarkus:quarkus-smallrye-health` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-smallrye-openapi` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-swagger-ui` | 3.38.3 | Apache-2.0 |
 | `io.quarkus:quarkus-tls-registry` | 3.38.3 | Apache-2.0 |
@@ -198,6 +199,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye:smallrye-context-propagation-jta` | 2.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-context-propagation-storage` | 2.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-fault-tolerance-vertx` | 6.11.2 | Apache-2.0 |
+| `io.smallrye:smallrye-health` | 4.3.0 | Apache-2.0 |
+| `io.smallrye:smallrye-health-api` | 4.3.0 | Apache-2.0 |
+| `io.smallrye:smallrye-health-provided-checks` | 4.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-core` | 4.3.5 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-model` | 4.3.5 | Apache-2.0 |
 | `io.vertx:vertx-auth-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
@@ -228,6 +232,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.eclipse.angus:angus-activation` | 2.0.3 | EDL-1.0 |
 | `org.eclipse.microprofile.config:microprofile-config-api` | 3.1.1 | Apache-2.0 |
 | `org.eclipse.microprofile.context-propagation:microprofile-context-propagation-api` | 1.3 | Apache-2.0 |
+| `org.eclipse.microprofile.health:microprofile-health-api` | 4.0.1 | Apache-2.0 |
 | `org.eclipse.microprofile.openapi:microprofile-openapi-api` | 4.1.1 | Apache-2.0 |
 | `org.eclipse.parsson:parsson` | 1.1.9 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
 | `org.flywaydb:flyway-core` | 12.0.0 | Apache-2.0 |

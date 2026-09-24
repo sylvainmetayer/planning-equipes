@@ -528,6 +528,12 @@ Ce qu'elle change :
   chiffrée, et jamais dans un ticket ni sur une instance de démonstration.
   L'application ne les expose par aucun endpoint, et il ne faut pas les servir
   depuis le reverse proxy non plus.
+- **deux sondes publiques**, `/q/health/live` et `/q/health/ready`, sans
+  session : une sonde externe ou un orchestrateur ne sait pas s'authentifier.
+  Elles ne rendent que `UP`/`DOWN`, le nom de leurs contrôles et deux compteurs
+  de migrations. Le contrôle de source de données de Quarkus est coupé pour
+  cette raison : en échec, il recopiait le message du pilote — donc l'hôte et
+  le port de la base — dans la réponse. Voir [`exploitation.md`](exploitation.md) § 7.
 
 ### Ce qui reste à la charge du reverse proxy
 
@@ -541,6 +547,7 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
 | Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP) ; le reste — exports, résolution, API — n'en a pas |
 | Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
+| Réserver `/q/health/*` à la source de la supervision, si elle est connue | Rien de sensible n'y est lu, mais une sonde n'a pas à être joignable par le monde entier ; le `healthcheck` du compose passe par la boucle locale et n'en dépend pas |
 | Ne pas réintroduire le site dans un index (page d'accueil du proxy, sitemap, annuaire interne) | L'application dit trois fois qu'elle ne veut pas être référencée (voir ci-dessus) ; un lien depuis une page publique, lui, se remarque |
 
 ### Avant d'ouvrir : la liste courte

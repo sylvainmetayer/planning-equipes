@@ -1995,6 +1995,13 @@ sa lecture échoue en silence vers une configuration désactivée, ce qui
 **masquerait** ces paragraphes là où les outils tournent vraiment. Ici, un échec
 affiche un message d'erreur au lieu d'une page silencieusement fausse.
 
+Un troisième booléen, `demoInstance`, dit si l'instance s'est déclarée de
+démonstration (`LEGAL_DEMO_INSTANCE`). La page ne l'affiche pas : c'est
+`scripts/verifier-deploiement.sh` qui le lit, pour savoir si des mentions
+obligatoires vides sont un défaut. Il le demande à l'instance plutôt qu'au
+`.env.prod`, qui ne voit ni une valeur posée ailleurs ni les graphies (`True`,
+guillemets) que l'application accepte.
+
 ## Référentiels
 
 Même schéma CRUD partout, tout cloisonné par édition — deux éditions portent les

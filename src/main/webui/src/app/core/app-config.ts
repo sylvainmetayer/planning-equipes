@@ -24,6 +24,7 @@ export const DEFAULT_APP_CONFIG: AppConfig = {
   cloudflareWebAnalyticsToken: '',
   devMode: false,
   dragDropEnabled: false,
+  version: '',
 };
 
 /**

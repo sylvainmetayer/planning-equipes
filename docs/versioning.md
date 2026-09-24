@@ -181,6 +181,13 @@ que le registre veut bien ; ni l'un ni l'autre n'est une réponse à « vous
 tourniez sur quoi ? ». `docker-compose.prod.yml` prend la version par la
 variable `APP_VERSION` du `.env.prod`.
 
+La version tourne aussi **en réponse** : `GET /api/config` porte un champ
+`version` (`X.Y.Z` sur une image de release, le SHA court sur une image de
+recette, `999-SNAPSHOT` en local), le même que la ligne de démarrage. C'est ce
+que compare `scripts/verifier-deploiement.sh` après un `up -d`, avec la
+disponibilité et les mentions légales — voir
+[`exploitation.md`](exploitation.md) § 2.
+
 ## 5. Patcher une version antérieure
 
 C'est la question qui justifie tout le reste. Réponse : **des branches de

@@ -142,13 +142,13 @@ jobs:
         run: |
           java -jar target/quarkus-app/quarkus-run.jar > app.log 2>&1 &
           echo $! > app.pid
-          # `/api/config` est la seule route publique sans session : c'est donc
-          # elle qui dit que l'application répond vraiment, et pas seulement
-          # que le port est ouvert.
+          # La sonde de disponibilité dit que l'application répond vraiment —
+          # base joignable, migrations passées —, et pas seulement que le port
+          # est ouvert.
           # `curl` est présent dans l'image Playwright ; s'il venait à
           # disparaître, l'attente échouerait avant l'application.
           for _ in $(seq 1 60); do
-            if curl -fsS http://localhost:8080/api/config > /dev/null; then
+            if curl -fsS http://localhost:8080/q/health/ready > /dev/null; then
               echo "Application prête."
               exit 0
             fi

@@ -88,6 +88,15 @@ services:
       LEGAL_RESPONSABLE_TRAITEMENT: ${LEGAL_RESPONSABLE_TRAITEMENT:-}
       LEGAL_BASE_LEGALE: ${LEGAL_BASE_LEGALE:-}
       LEGAL_CONSERVATION: ${LEGAL_CONSERVATION:-}
+    # Same probe as docker-compose.prod.yml: the image carries no curl, so bash
+    # writes the request on /dev/tcp. Ready = database reachable and migrations
+    # up to date.
+    healthcheck:
+      test: ["CMD", "bash", "-c", "exec 3<>/dev/tcp/127.0.0.1/8080 && printf 'GET /q/health/ready HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n' >&3 && head -n1 <&3 | grep -q ' 200 '"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 180s
     depends_on:
       postgres:
         condition: service_healthy
