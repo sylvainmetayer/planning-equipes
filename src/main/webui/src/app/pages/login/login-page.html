@@ -9,7 +9,7 @@
       </mat-card-subtitle>
     </mat-card-header>
     <mat-card-content>
-      @if (sansAcces()) {
+      @if (signedInWithoutAccess()) {
         <p class="login-echec" role="alert">
           <mat-icon inline>block</mat-icon>
           <span i18n="@@login.sansDroits">Vous êtes connecté, mais ce compte n'a pas accès à l'administration.</span>
