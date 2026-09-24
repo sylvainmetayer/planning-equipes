@@ -428,6 +428,15 @@ naissance décalée de dix-huit ans. Le code dit ce que la ligne signifie (un
 `TypeAvertissement`, une anomalie d'ouverture, un contrôle de grille, une cause
 de faisabilité), les outils `consulter_*` et `analyser_*` donnent le reste.
 
+**Ce qui attend aujourd'hui.** Le bloc `aTraiter` d'`etat_edition` répond à
+« qu'est-ce que je dois faire ce matin ? » : déclarations de disponibilité en
+attente (et la date de la plus ancienne), demandes d'échange à arbitrer dont
+celles plus anciennes que le seuil des notifications, journées non relues des
+sept jours à venir (aujourd'hui compris), silencieux à relancer, données
+modifiées depuis la résolution, personnes à prévenir. « Aujourd'hui » est
+celui de `JourJClock`, la date simulée de recette comprise ; des comptes et des
+dates, aucun nom.
+
 **Deux dates, deux questions.** `etat_planning` dit quand le solveur a tourné
 pour la dernière fois ; `etat_publication` dit quand les animateurs ont été
 prévenus pour la dernière fois. La seconde est la seule qui décrive ce que les

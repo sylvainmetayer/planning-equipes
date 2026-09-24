@@ -2824,6 +2824,64 @@
           }
         }
       },
+      "EtatATraiter" : {
+        "required" : [ "aujourdhui", "declarationsEnAttente", "donneesModifiees", "echangesAArbitrer", "echangesEnAlerte", "horizonJours", "journeesNonRelues", "personnesAPrevenir", "seuilAncienneteJours", "silenceJours", "silencieuxARelancer" ],
+        "type" : "object",
+        "properties" : {
+          "aujourdhui" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "declarationsEnAttente" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plusAncienneDeclaration" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "echangesAArbitrer" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echangesEnAlerte" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "seuilAncienneteJours" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plusAncienEchange" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "horizonJours" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "journeesNonRelues" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "silencieuxARelancer" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "silenceJours" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "donneesModifiees" : {
+            "type" : "boolean"
+          },
+          "personnesAPrevenir" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "EtatBesoin" : {
         "required" : [ "animateurs", "manque", "minimum", "statut" ],
         "type" : "object",
@@ -2975,6 +3033,9 @@
           },
           "foire" : {
             "$ref" : "#/components/schemas/EtatFoire"
+          },
+          "aTraiter" : {
+            "$ref" : "#/components/schemas/EtatATraiter"
           }
         }
       },

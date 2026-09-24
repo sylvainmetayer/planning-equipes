@@ -98,7 +98,7 @@ public class AlerteEchangeJob {
      * for them on that row. Chasing the colleague is a different feature, and
      * one nobody asked for.</p>
      */
-    private static Instant waitingSince(DemandeEchange demande) {
+    public static Instant waitingSince(DemandeEchange demande) {
         if (demande.getStatut() != StatutDemandeEchange.PROPOSEE) {
             return null;
         }

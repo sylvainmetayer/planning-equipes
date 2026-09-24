@@ -41,6 +41,7 @@ type PageInternals = {
   sort: WritableSignal<Sort>;
   accuses: WritableSignal<'tous' | 'jamais' | 'silence'>;
   silenceJours: WritableSignal<number>;
+  neverReminded: WritableSignal<boolean>;
   viewChanged: Signal<boolean>;
   animateursFiltres: Signal<Animateur[]>;
   typologiesFiltrees: Signal<string[]>;
@@ -118,7 +119,21 @@ async function setUpRoute(url: string) {
   return { fixture, dialog, router, location: TestBed.inject(Location) };
 }
 
-function setUp(queryParams: Record<string, string>, path = '/animateurs') {
+/** Carole holds a seat, never answered, and was reminded a long time ago. */
+const CAROLE_RELANCEE = {
+  animateurId: 'carole',
+  nomAffiche: 'Carole Petit',
+  statut: 'RELANCE',
+  affecte: true,
+  confirmeLe: null,
+  relanceLe: '2020-01-02T10:00:00Z',
+};
+
+function setUp(
+  queryParams: Record<string, string>,
+  path = '/animateurs',
+  confirmations: object[] = CONFIRMATIONS,
+) {
   const replaceState = vi.fn();
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
   TestBed.configureTestingModule({
@@ -131,7 +146,7 @@ function setUp(queryParams: Record<string, string>, path = '/animateurs') {
       {
         provide: AnimateursApi,
         useValue: {
-          confirmations: vi.fn(async () => CONFIRMATIONS),
+          confirmations: vi.fn(async () => confirmations),
           syntheseConfirmations: vi.fn(async () => ({
             confirmes: 1,
             relances: 0,
@@ -158,6 +173,7 @@ function setUp(queryParams: Record<string, string>, path = '/animateurs') {
   seedStore(store, 'animateurs', [
     animateur('alice', 'Alice', 'Martin', { ESCAPE: 'CONFIRME' }),
     animateur('bob', 'Bob', 'Durand'),
+    ...(confirmations.includes(CAROLE_RELANCEE) ? [animateur('carole', 'Carole', 'Petit')] : []),
   ]);
   seedStore(store, 'typologies', [{ id: 'ESCAPE', label: 'Escape game' }] as never);
   const fixture = TestBed.createComponent(AnimateursPage);
@@ -341,5 +357,49 @@ describe('AnimateursPage query-param sync', () => {
 
     expect(page.accuses()).toBe('tous');
     expect(page.animateursFiltres()).toHaveLength(2);
+  });
+
+  // « Jamais relancés »: the list « À traiter aujourd'hui » counts as silent to
+  // remind, and links to — somebody already reminded is not on it.
+
+  it('seeds « jamais relancés » from the URL and leaves out whoever was reminded', async () => {
+    const { fixture, page } = setUp({ silence: '3', relance: 'jamais' }, '/animateurs', [
+      ...CONFIRMATIONS,
+      CAROLE_RELANCEE,
+    ]);
+    await fixture.whenStable();
+
+    expect(page.neverReminded()).toBe(true);
+    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice']);
+  });
+
+  it('keeps the reminded among the silent without the criterion', async () => {
+    const { fixture, page } = setUp({ silence: '3' }, '/animateurs', [
+      ...CONFIRMATIONS,
+      CAROLE_RELANCEE,
+    ]);
+    await fixture.whenStable();
+
+    expect(page.neverReminded()).toBe(false);
+    expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'carole']);
+  });
+
+  it('writes the criterion to the URL only while a mode is on, and the reset drops it', async () => {
+    const { fixture, replaceState, page } = setUp({ silence: '3', relance: 'jamais' });
+    await fixture.whenStable();
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs?silence=3&relance=jamais');
+
+    page.accuses.set('tous');
+    await fixture.whenStable();
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
+
+    page.accuses.set('jamais');
+    await fixture.whenStable();
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs?confirmation=jamais&relance=jamais');
+
+    page.resetView();
+    await fixture.whenStable();
+    expect(page.neverReminded()).toBe(false);
+    expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
   });
 });

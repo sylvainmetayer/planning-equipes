@@ -7,6 +7,7 @@ import type { ConfirmationView } from '../../core/models';
 import {
   SILENCE_JOURS_DEFAUT,
   readModeAccuses,
+  readNeverReminded,
   keptByAcknowledgement,
 } from './confirmation-filter';
 
@@ -95,5 +96,33 @@ describe('keptByAcknowledgement', () => {
   it('never calls the confirmed silent, whatever the dates', () => {
     const confirme = reponse({ statut: 'CONFIRME', confirmeLe: '2026-07-02T10:00:00Z' });
     expect(keptByAcknowledgement('silence', 1, confirme, PUBLICATION, MAINTENANT)).toBe(false);
+  });
+});
+
+describe('« jamais relancés »', () => {
+  it('reads `relance=jamais` and nothing else', () => {
+    expect(readNeverReminded('jamais')).toBe(true);
+    expect(readNeverReminded(null)).toBe(false);
+    expect(readNeverReminded('oui')).toBe(false);
+  });
+
+  it('drops whoever a reminder already reached, however long ago', () => {
+    // Reminded a month ago: silent for 3 days, but not « jamais relancé ».
+    const relance = reponse({ statut: 'RELANCE', relanceLe: '2026-06-01T10:00:00Z' });
+    expect(keptByAcknowledgement('silence', 3, relance, PUBLICATION, MAINTENANT)).toBe(true);
+    expect(keptByAcknowledgement('silence', 3, relance, PUBLICATION, MAINTENANT, true)).toBe(false);
+    expect(keptByAcknowledgement('jamais', 3, relance, PUBLICATION, MAINTENANT, true)).toBe(false);
+  });
+
+  it('keeps the silent nobody chased: the people the home screen counts', () => {
+    expect(keptByAcknowledgement('silence', 3, reponse(), PUBLICATION, MAINTENANT, true)).toBe(
+      true,
+    );
+    expect(keptByAcknowledgement('jamais', 3, reponse(), PUBLICATION, MAINTENANT, true)).toBe(true);
+  });
+
+  it('leaves the default mode showing everybody', () => {
+    const relance = reponse({ statut: 'RELANCE', relanceLe: '2026-06-01T10:00:00Z' });
+    expect(keptByAcknowledgement('tous', 3, relance, PUBLICATION, MAINTENANT, true)).toBe(true);
   });
 });

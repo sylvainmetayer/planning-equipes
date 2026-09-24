@@ -33,6 +33,14 @@ export function readModeAccuses(
 }
 
 /**
+ * Reads the « jamais relancés » criterion from its URL param: `relance=jamais`
+ * and nothing else — any other value is the default, never an error.
+ */
+export function readNeverReminded(relance: string | null): boolean {
+  return relance === 'jamais';
+}
+
+/**
  * Whether one animateur stays on screen under the chosen mode.
  *
  * Both modes only keep people the question was asked of — a seat in the
@@ -41,8 +49,13 @@ export function readModeAccuses(
  * reminder when one went out) be older than N days: somebody reminded
  * yesterday is not yet worth a second gesture.
  *
+ * « Jamais relancés », on top of either mode, drops whoever a reminder already
+ * reached: what the home screen counts as « silencieux à relancer » is the
+ * silent nobody has chased yet, and its link opens exactly that list.
+ *
  * @param dernierePublicationLe ISO instant of the last publication, `null`
  *                              before the first one — nobody is then silent
+ * @param neverReminded         keep only the people no reminder went to
  */
 export function keptByAcknowledgement(
   mode: ModeAccuses,
@@ -50,11 +63,15 @@ export function keptByAcknowledgement(
   confirmation: ConfirmationView | undefined,
   dernierePublicationLe: string | null,
   maintenant: Date,
+  neverReminded = false,
 ): boolean {
   if (mode === 'tous') {
     return true;
   }
   if (!confirmation || !confirmation.affecte || confirmation.statut === 'CONFIRME') {
+    return false;
+  }
+  if (neverReminded && (confirmation.statut === 'RELANCE' || confirmation.relanceLe !== null)) {
     return false;
   }
   if (mode === 'jamais') {

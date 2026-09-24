@@ -5,6 +5,7 @@
 
 import { EtatEdition, StatutEtat } from '../../core/models';
 import { intlLocale } from '../../core/locale';
+import { libelleJour } from '../../core/horaire-stand';
 
 /** One line of the checklist, ready to render. */
 export interface LigneEtat {
@@ -389,4 +390,126 @@ export function summarizeLignes(lignes: readonly LigneEtat[]): BilanEtat {
     info: lignes.filter((ligne) => ligne.statut === 'INFO').length,
     aFaire: lignes.filter((ligne) => ligne.statut === 'A_FAIRE').length,
   };
+}
+
+/* ------------------------ « À traiter aujourd'hui » ------------------------ */
+
+/** One subject of the box: its sentence, whether it is an alert, and the screen that settles it. */
+export interface TodayItem {
+  id: string;
+  /** The subject in one sentence, its figures included. */
+  sentence: string;
+  alerte: boolean;
+  lien: LienEtat;
+}
+
+/** How many dates the « journées à relire » sentence spells out. */
+const DAYS_CITED = 4;
+
+function formatDate(iso: string | null): string {
+  return iso ? new Date(iso).toLocaleDateString(intlLocale()) : '';
+}
+
+/**
+ * The subjects of « À traiter aujourd'hui », those with something to say
+ * only. Empty means the box is not drawn: « rien à traiter » reads as an
+ * absence, not as one more green block.
+ */
+export function buildToday(etat: EtatEdition): TodayItem[] {
+  const bloc = etat.aTraiter;
+  const items: TodayItem[] = [];
+  if (bloc.declarationsEnAttente > 0) {
+    const count = bloc.declarationsEnAttente;
+    const depuis = formatDate(bloc.plusAncienneDeclaration);
+    items.push({
+      id: 'declarations',
+      sentence: depuis
+        ? $localize`:@@accueil.aTraiter.declarations:${count}:count: déclaration(s) de disponibilité à appliquer ou refuser, la plus ancienne reçue le ${depuis}:date:`
+        : $localize`:@@accueil.aTraiter.declarationsSansDate:${count}:count: déclaration(s) de disponibilité à appliquer ou refuser`,
+      alerte: false,
+      lien: {
+        route: '/disponibilites',
+        // The pending ones only, the oldest first: the declarations this line counts.
+        queryParams: { statut: 'en-attente' },
+        libelle: $localize`:@@accueil.aTraiter.lien.declarations:Traiter les déclarations`,
+      },
+    });
+  }
+  if (bloc.echangesAArbitrer > 0) {
+    const count = bloc.echangesAArbitrer;
+    const overdue = bloc.echangesEnAlerte;
+    const threshold = bloc.seuilAncienneteJours;
+    items.push({
+      id: 'echanges',
+      sentence:
+        overdue > 0
+          ? $localize`:@@accueil.aTraiter.echangesAnciens:${count}:count: demande(s) d'échange à arbitrer, dont ${overdue}:anciennes: en attente depuis plus de ${threshold}:seuil: jour(s)`
+          : $localize`:@@accueil.aTraiter.echanges:${count}:count: demande(s) d'échange à arbitrer`,
+      alerte: overdue > 0,
+      lien: {
+        route: '/echanges',
+        // The requests to arbitrate only, the longest waiting first: the ones this line counts.
+        queryParams: { statut: 'a-arbitrer' },
+        libelle: $localize`:@@accueil.aTraiter.lien.echanges:Arbitrer les échanges`,
+      },
+    });
+  }
+  if (bloc.journeesNonRelues.length > 0) {
+    const count = bloc.journeesNonRelues.length;
+    const horizon = bloc.horizonJours;
+    const cited = bloc.journeesNonRelues.slice(0, DAYS_CITED).map(libelleJour);
+    const dates = cited.join(', ') + (count > DAYS_CITED ? '…' : '');
+    const first = bloc.journeesNonRelues[0];
+    const firstLabel = libelleJour(first);
+    items.push({
+      id: 'relecture',
+      sentence: $localize`:@@accueil.aTraiter.relecture:${count}:count: journée(s) à relire dans les ${horizon}:horizon: prochains jours : ${dates}:dates:`,
+      alerte: false,
+      lien: {
+        route: '/journee',
+        queryParams: { date: first },
+        libelle: $localize`:@@accueil.aTraiter.lien.relecture:Relire le ${firstLabel}:jour:`,
+      },
+    });
+  }
+  if (bloc.silencieuxARelancer > 0) {
+    const count = bloc.silencieuxARelancer;
+    const jours = bloc.silenceJours;
+    items.push({
+      id: 'silencieux',
+      sentence: $localize`:@@accueil.aTraiter.silencieux:${count}:count: personne(s) sans réponse depuis plus de ${jours}:jours: jour(s), jamais relancée(s)`,
+      alerte: false,
+      lien: {
+        route: '/animateurs',
+        // The filter the Animateurs page reads from its address (issue #504),
+        // narrowed to the never reminded: the people this line counts.
+        queryParams: { silence: String(jours), relance: 'jamais' },
+        libelle: $localize`:@@accueil.aTraiter.lien.silencieux:Voir qui relancer`,
+      },
+    });
+  }
+  if (bloc.donneesModifiees) {
+    items.push({
+      id: 'donnees',
+      sentence: $localize`:@@accueil.aTraiter.donnees:Des données ont changé depuis la dernière résolution`,
+      alerte: false,
+      lien: {
+        route: '/solveur',
+        libelle: $localize`:@@accueil.aTraiter.lien.donnees:Ouvrir le solveur`,
+      },
+    });
+  }
+  if (bloc.personnesAPrevenir > 0) {
+    const count = bloc.personnesAPrevenir;
+    items.push({
+      id: 'prevenir',
+      sentence: $localize`:@@accueil.aTraiter.prevenir:${count}:count: personne(s) à prévenir d'un planning qui a changé`,
+      alerte: false,
+      lien: {
+        route: '/publication',
+        libelle: $localize`:@@accueil.aTraiter.lien.prevenir:Publier`,
+      },
+    });
+  }
+  return items;
 }

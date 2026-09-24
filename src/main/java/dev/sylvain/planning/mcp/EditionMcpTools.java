@@ -104,7 +104,11 @@ public class EditionMcpTools {
                     + "lister_anomalies_referentiel), collecte "
                     + "des disponibilités, ouvertures des stands, besoin en animateurs, dernière résolution (et si "
                     + "les données ont bougé depuis, ou si une résolution est en cours), problèmes bloquants et "
-                    + "avertissements, publication, accusés de réception, foire au planning. Chaque ligne porte un "
+                    + "avertissements, publication, accusés de réception, foire au planning ; et le bloc aTraiter "
+                    + "(« à traiter aujourd'hui », jugé sur la date du jour du serveur) : déclarations de "
+                    + "disponibilité en attente, demandes d'échange à arbitrer et celles en alerte, journées non "
+                    + "relues des sept jours à venir (aujourd'hui compris), silencieux à relancer, données modifiées depuis la "
+                    + "résolution, personnes à prévenir — des comptes et des dates, jamais un nom. Chaque ligne porte un "
                     + "statut A_FAIRE, ATTENTION, INFO (des chiffres à lire, rien qui bloque) ou FAIT, et les "
                     + "chiffres qui le décident ; aucune donnée nominative. "
                     + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",

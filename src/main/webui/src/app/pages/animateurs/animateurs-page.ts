@@ -62,6 +62,7 @@ import {
   ModeAccuses,
   SILENCE_JOURS_DEFAUT,
   readModeAccuses,
+  readNeverReminded,
   keptByAcknowledgement,
 } from './confirmation-filter';
 import { resumeRelance } from './relance-resume';
@@ -128,6 +129,13 @@ export class AnimateursPage {
   protected readonly accuses = signal<ModeAccuses>('tous');
   /** N of « silencieux depuis N jours »; kept, and in the URL, only while that mode is on. */
   protected readonly silenceJours = signal(SILENCE_JOURS_DEFAUT);
+  /**
+   * « Jamais relancés », on top of an acknowledgement mode: only the people no
+   * reminder reached — the list the home screen's « silencieux à relancer »
+   * counts. In the URL (`relance=jamais`) only while a mode other than
+   * « Tous » is on, since it narrows that mode and nothing else.
+   */
+  protected readonly neverReminded = signal(false);
   /** True as soon as the table shows something other than the whole referential, unsorted. */
   /**
    * Typologie ids, comma-separated, the list is narrowed to: only the
@@ -159,6 +167,7 @@ export class AnimateursPage {
   protected readonly animateursFiltres = computed(() => {
     const mode = this.accuses();
     const jours = this.silenceJours();
+    const neverReminded = this.neverReminded();
     const confirmations = this.confirmations();
     const lastPublishedAt = this.synthese()?.dernierePublicationLe ?? null;
     const maintenant = new Date();
@@ -170,6 +179,7 @@ export class AnimateursPage {
           confirmations.get(animateur.id),
           lastPublishedAt,
           maintenant,
+          neverReminded,
         ) &&
         this.matchesTypologieFilter(animateur) &&
         correspondAuFiltre(this.filtre(), [
@@ -337,6 +347,7 @@ export class AnimateursPage {
     const accuses = readModeAccuses(params.get('confirmation'), params.get('silence'));
     this.accuses.set(accuses.mode);
     this.silenceJours.set(accuses.jours);
+    this.neverReminded.set(readNeverReminded(params.get('relance')));
     this.typologie.set(params.get('typologie') ?? '');
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
@@ -346,6 +357,7 @@ export class AnimateursPage {
       q: optionalParam(this.filtre()),
       confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
       silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
+      relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
       typologie: optionalParam(this.typologie()),
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
@@ -492,6 +504,7 @@ export class AnimateursPage {
     this.sort.set(NO_SORT);
     this.accuses.set('tous');
     this.silenceJours.set(SILENCE_JOURS_DEFAUT);
+    this.neverReminded.set(false);
   }
 
   private matchesTypologieFilter(animateur: Animateur): boolean {

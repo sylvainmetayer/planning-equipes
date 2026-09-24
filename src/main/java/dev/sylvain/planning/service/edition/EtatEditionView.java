@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.edition;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -33,7 +35,8 @@ public record EtatEditionView(
         EtatRelecture relecture,
         EtatPublication publication,
         EtatConfirmations confirmations,
-        EtatFoire foire) {
+        EtatFoire foire,
+        EtatATraiter aTraiter) {
 
     /**
      * The states a line of the checklist can be in, from the step still ahead
@@ -156,4 +159,63 @@ public record EtatEditionView(
      */
     @Schema(requiredProperties = {"demandesEnAttente", "ouverte", "statut"})
     public record EtatFoire(boolean ouverte, int demandesEnAttente, Statut statut) {}
+
+    /**
+     * « À traiter aujourd'hui »: what waits on a decision of the organiser this
+     * morning, read against the day {@code JourJClock} says it is. Counts and
+     * dates only — the names are on the screens each subject links to. Nothing
+     * is stored: a subject disappears because the data behind it changed, never
+     * because somebody ticked it off.
+     *
+     * @param aujourdhui               the day the block was judged on, the simulated one when the
+     *                                 recette clock is frozen
+     * @param declarationsEnAttente    availability declarations neither applied nor refused,
+     *                                 whether the collection is still open or not
+     * @param plusAncienneDeclaration  when the oldest of them was submitted
+     * @param echangesAArbitrer        swap requests waiting for the organisation's decision — the
+     *                                 colleague has agreed; those still waiting on the colleague are not
+     *                                 the organiser's to decide
+     * @param echangesEnAlerte         among them, those waiting longer than
+     *                                 {@code seuilAncienneteJours}, the notification setting
+     * @param plusAncienEchange        since when the oldest of them has been waiting
+     * @param journeesNonRelues        days of the edition among the {@code horizonJours} days starting
+     *                                 today (today included),
+     *                                 not yet accepted, once there is a plan to read — none after
+     *                                 the event
+     * @param silencieuxARelancer      people seated by the published plan who never answered, were
+     *                                 not reminded since, and were told more than {@code silenceJours}
+     *                                 days ago
+     * @param donneesModifiees         the referential moved since the last solve — never while a
+     *                                 solve runs, it will read the new data
+     * @param personnesAPrevenir       what the next publication would announce, after a first one
+     *                                 and outside a running solve
+     */
+    @Schema(
+            requiredProperties = {
+                "aujourdhui",
+                "declarationsEnAttente",
+                "donneesModifiees",
+                "echangesAArbitrer",
+                "echangesEnAlerte",
+                "horizonJours",
+                "journeesNonRelues",
+                "personnesAPrevenir",
+                "seuilAncienneteJours",
+                "silenceJours",
+                "silencieuxARelancer"
+            })
+    public record EtatATraiter(
+            LocalDate aujourdhui,
+            int declarationsEnAttente,
+            Instant plusAncienneDeclaration,
+            int echangesAArbitrer,
+            int echangesEnAlerte,
+            int seuilAncienneteJours,
+            Instant plusAncienEchange,
+            int horizonJours,
+            List<LocalDate> journeesNonRelues,
+            int silencieuxARelancer,
+            int silenceJours,
+            boolean donneesModifiees,
+            int personnesAPrevenir) {}
 }

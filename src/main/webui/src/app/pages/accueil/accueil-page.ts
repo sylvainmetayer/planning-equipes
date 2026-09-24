@@ -17,7 +17,7 @@ import { EditionsApi } from '../../core/api/editions-api';
 import { ConsignesStore } from '../../core/consignes.store';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
-import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
+import { buildLignes, buildToday, statutIcon, statutLabel, summarizeLignes } from './accueil';
 import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 
@@ -72,6 +72,11 @@ export class AccueilPage {
     return etat ? buildLignes(etat) : [];
   });
   protected readonly bilan = computed(() => summarizeLignes(this.lignes()));
+  /** « À traiter aujourd'hui »: the subjects with something to say; the box is not drawn when empty. */
+  protected readonly today = computed(() => {
+    const etat = this.etatEdition();
+    return etat ? buildToday(etat) : [];
+  });
 
   /** Whether the coherence line is unfolded; its detail is only read then. */
   protected readonly coherenceOpen = signal(false);
