@@ -1031,6 +1031,12 @@ une règle dure. L'endpoint reste ouvert à l'API et à l'outil MCP
 Le glisser-déposer des vues journalières (#308), et le même geste par l'API
 et par les outils MCP `simuler_deplacement` / `deplacer_affectation`.
 
+Le geste est **coupé par défaut**, avec son jumeau au clavier (le dialogue
+« Déplacer … vers ») : `GLISSER_DEPOSER_ACTIF=true` rend les deux aux vues
+Journée et Rail (`dragDropEnabled` de `GET /api/config`, lu une fois au
+démarrage du frontend). Seul l'écran est concerné — les deux endpoints
+ci-dessous et les outils MCP restent ouverts.
+
 | Endpoint | Effet |
 | --- | --- |
 | `POST /api/postes/{id}/deplacement/simulation?cible=P` ou `?animateur=A` | Chiffre le geste sur le plan enregistré. Sans corps : le verdict se lit sur les règles de l'édition — celles que l'organisateur a désactivées comprises —, qui ne sont pas à l'appelant de fournir. Ne persiste rien. |

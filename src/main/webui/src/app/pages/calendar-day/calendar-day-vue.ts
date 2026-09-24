@@ -19,6 +19,7 @@ import {
   untracked,
   ViewEncapsulation,
 } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -27,6 +28,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { RouterLink } from '@angular/router';
+import { injectAppConfig } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { PlanningApi } from '../../core/api/planning-api';
 import { errorMessage } from '../../core/error-message';
@@ -119,6 +121,7 @@ interface DayCard {
     CdkDropList,
     CdkDropListGroup,
     FormsModule,
+    NgTemplateOutlet,
     MatCardModule,
     MatCheckboxModule,
     MatIconModule,
@@ -163,6 +166,11 @@ export class CalendarDayView {
   private readonly notifications = inject(NotificationService);
   /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  /**
+   * Whether this instance offers the gesture at all (`GLISSER_DEPOSER_ACTIF`,
+   * off by default): read from the server's answer once, like `devMode`.
+   */
+  protected readonly dragDropEnabled = injectAppConfig().dragDropEnabled;
 
   private readonly toutesLesJournees = computed<DayCard[]>(() =>
     buildDays(this.planning()?.postes ?? []),
@@ -292,6 +300,7 @@ export class CalendarDayView {
     nom: string,
   ): void {
     if (
+      !this.dragDropEnabled ||
       this.editingLocked() ||
       this.estLigneVerrouillee(slotSource, ligneSource) ||
       this.estJourVerrouille(day)

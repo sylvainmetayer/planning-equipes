@@ -245,7 +245,7 @@ coûte peu à l'écriture, les rattraper coûte cher.
   (« Déplacer … vers »), ouvert par la poignée — un bouton nommé, qu'un clic
   simple suffit à activer (WCAG 2.5.7) — sur la vue calendrier, et par Entrée
   sur la ligne du rail. Le choix fait dans le dialogue appelle la même méthode
-  que le dépôt. Une cellule qui ouvre un détail est un arrêt clavier (le
+  que le dépôt, et `GLISSER_DEPOSER_ACTIF` coupe les deux ensemble. Une cellule qui ouvre un détail est un arrêt clavier (le
   tableau croisé des contraintes : tabindex itinérant, Entrée), jamais un
   `(click)` sur un `<td>` seul.
 - **Les raccourcis à une touche se coupent** (WCAG 2.1.4) : une case dans le
@@ -505,9 +505,13 @@ Supprimez le cache et recréez le conteneur PostgreSQL si le schéma a changé.
 
 ```bash
 docker compose up -d postgres mailpit
-./mvnw quarkus:dev                       # les défauts suffisent : mail sur :1025, mot de passe « admin »
+GLISSER_DEPOSER_ACTIF=true ./mvnw quarkus:dev   # mail sur :1025, mot de passe « admin »
 cd src/main/webui && npm run e2e         # + --headed, --ui, --project=mobile, un chemin de spec
 ```
+
+`GLISSER_DEPOSER_ACTIF=true` est la seule variable à poser : le glisser-déposer
+des vues journalières est coupé par défaut, et `glisser-deposer.spec.ts`
+l'exerce. La pile de la CI (`e2e-suite.yml`) le pose de la même façon.
 
 Réglages par variable d'environnement, tous facultatifs : `E2E_BASE_URL`
 (défaut `http://localhost:8080`), `E2E_ADMIN_PASSWORD`, `E2E_MAILPIT_URL`

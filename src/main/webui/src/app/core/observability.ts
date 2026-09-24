@@ -5,19 +5,14 @@
 import { ErrorHandler, Provider } from '@angular/core';
 
 import { APP_VERSION } from '../version';
+import { DEFAULT_APP_CONFIG } from './app-config';
 import { AppConfig } from './models';
-
-const DISABLED_CONFIG: AppConfig = {
-  sentryDsn: '',
-  sentryEnvironment: 'local',
-  cloudflareWebAnalyticsToken: '',
-  devMode: false,
-};
 
 /**
  * Fetched once before `bootstrapApplication()`, same pattern as the i18n
  * catalog in `main.ts`: a failed fetch must not block startup, it just leaves
- * observability disabled for that session.
+ * the session on {@link DEFAULT_APP_CONFIG} — observability disabled, and no
+ * drag and drop in the day views, until the page is reloaded.
  */
 export async function loadAppConfig(): Promise<AppConfig> {
   try {
@@ -28,10 +23,10 @@ export async function loadAppConfig(): Promise<AppConfig> {
     return (await response.json()) as AppConfig;
   } catch (error) {
     console.error(
-      'Could not load the observability config, error tracking and analytics stay disabled.',
+      'Could not load /api/config: error tracking, analytics and drag and drop stay disabled until the page is reloaded.',
       error,
     );
-    return DISABLED_CONFIG;
+    return DEFAULT_APP_CONFIG;
   }
 }
 

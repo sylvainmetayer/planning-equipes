@@ -24,6 +24,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
+import { injectAppConfig } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
@@ -223,6 +224,11 @@ export class RailJourView {
   private readonly notifications = inject(NotificationService);
   /** A drop is a write to the plan: locked, like every other, while a solve is rewriting it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  /**
+   * Whether this instance offers the gesture at all (`GLISSER_DEPOSER_ACTIF`,
+   * off by default): read from the server's answer once, like `devMode`.
+   */
+  protected readonly dragDropEnabled = injectAppConfig().dragDropEnabled;
 
   /** Any other person's line receives, whether they work at that hour (swap) or not (hand-over). */
   protected readonly peutRecevoir = (
@@ -279,6 +285,9 @@ export class RailJourView {
    * then the very {@link transferer} the drop calls.
    */
   protected openMove(porteur: RailLigne, bloc?: RailBloc): void {
+    if (!this.dragDropEnabled) {
+      return;
+    }
     if (this.editingLocked()) {
       // The pointer sees the drag disabled; the keyboard is told why.
       this.notifications.notify({
@@ -326,8 +335,9 @@ export class RailJourView {
 
   protected naviguer(event: KeyboardEvent, index: number): void {
     // Enter on a line is the keyboard twin of dragging one of its shifts
-    // (RGAA 7.3): the drag has no key of its own.
-    if (event.key === 'Enter') {
+    // (RGAA 7.3): the drag has no key of its own. Switched off with the drag
+    // when the instance does not offer it.
+    if (event.key === 'Enter' && this.dragDropEnabled) {
       const ligne = this.lignesAffichees()[index];
       if (!ligne) {
         return;

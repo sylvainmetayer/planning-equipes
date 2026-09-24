@@ -75,6 +75,13 @@ let admin: APIRequestContext;
 
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
+  // The gesture is off unless the server is started with it: say so, instead
+  // of four locator timeouts on a handle that is never rendered.
+  const config = (await (await admin.get('/api/config')).json()) as { dragDropEnabled?: boolean };
+  expect(
+    config.dragDropEnabled,
+    'drag and drop is off on this server: start it with GLISSER_DEPOSER_ACTIF=true',
+  ).toBe(true);
   await repartirDeLaReference(admin);
 });
 

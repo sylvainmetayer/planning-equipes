@@ -1307,7 +1307,7 @@
         }
       },
       "ConfigView" : {
-        "required" : [ "devMode" ],
+        "required" : [ "devMode", "dragDropEnabled" ],
         "type" : "object",
         "properties" : {
           "sentryDsn" : {
@@ -1320,6 +1320,9 @@
             "type" : "string"
           },
           "devMode" : {
+            "type" : "boolean"
+          },
+          "dragDropEnabled" : {
             "type" : "boolean"
           }
         }

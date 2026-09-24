@@ -23,6 +23,7 @@ const CONFIG: AppConfig = {
   sentryEnvironment: 'production',
   cloudflareWebAnalyticsToken: 'token-de-test',
   devMode: false,
+  dragDropEnabled: false,
 };
 
 describe('loadAppConfig', () => {
@@ -45,6 +46,7 @@ describe('loadAppConfig', () => {
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
       devMode: false,
+      dragDropEnabled: false,
     });
   });
 
@@ -55,6 +57,7 @@ describe('loadAppConfig', () => {
       sentryEnvironment: 'local',
       cloudflareWebAnalyticsToken: '',
       devMode: false,
+      dragDropEnabled: false,
     });
   });
 });
