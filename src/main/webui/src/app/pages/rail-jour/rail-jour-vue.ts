@@ -280,6 +280,11 @@ export class RailJourView {
    */
   protected openMove(porteur: RailLigne, bloc?: RailBloc): void {
     if (this.editingLocked()) {
+      // The pointer sees the drag disabled; the keyboard is told why.
+      this.notifications.notify({
+        title: $localize`:@@railJour.deplacer.verrouille:Déplacement impossible pendant une résolution : le planning est en cours de réécriture.`,
+        variant: 'warning',
+      });
       return;
     }
     const cibles: OptionSelection[] = this.lignes()
@@ -324,9 +329,18 @@ export class RailJourView {
     // (RGAA 7.3): the drag has no key of its own.
     if (event.key === 'Enter') {
       const ligne = this.lignesAffichees()[index];
-      if (ligne && ligne.blocs.length > 0) {
-        event.preventDefault();
+      if (!ligne) {
+        return;
+      }
+      event.preventDefault();
+      if (ligne.blocs.length > 0) {
         this.openMove(ligne);
+      } else {
+        // A key that does nothing silently reads as a broken one.
+        this.notifications.notify({
+          title: $localize`:@@railJour.deplacer.aucuneVacation:Aucune vacation à déplacer sur cette ligne.`,
+          variant: 'info',
+        });
       }
       return;
     }

@@ -299,12 +299,14 @@ export class CalendarDayView {
       return;
     }
     // The whole day, not only the lines the filters leave on screen: the
-    // destination is typed into the dialog, it need not be visible first.
+    // destination is typed into the dialog, it need not be visible first. But
+    // only the lines a drop would accept: a locked stand or timeslot refuses
+    // the drag, and must refuse its keyboard twin just the same.
     const cibles: OptionSelection[] = [];
     for (const slot of (this.journee() ?? day).slots) {
       const heures = `${slot.heureDebut.slice(0, 5)}–${slot.heureFin.slice(0, 5)}`;
       for (const ligne of slot.stands) {
-        if (ligne === ligneSource) {
+        if (ligne === ligneSource || this.estLigneVerrouillee(slot, ligne)) {
           continue;
         }
         for (const libre of ligne.postesLibres) {

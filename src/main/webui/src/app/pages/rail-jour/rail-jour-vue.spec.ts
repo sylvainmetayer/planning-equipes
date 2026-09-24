@@ -239,6 +239,19 @@ describe('RailJourView', () => {
     dialog.closeAll();
   });
 
+  it('says so on Enter when the line holds no shift, rather than doing nothing', async () => {
+    await rendre(planningDeuxJours());
+    const ligneBob = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+      (each) => each.getAttribute('aria-label')!.includes('Bob'),
+    )!;
+
+    ligneBob.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(TestBed.inject(NotificationService).notify).toHaveBeenCalledWith(
+      expect.objectContaining({ title: expect.stringContaining('Aucune vacation') }),
+    );
+  });
+
   it('exposes exactly one tab stop for the whole rail', async () => {
     await rendre(planningDeuxJours());
 

@@ -127,7 +127,10 @@
         </th>
         <td mat-cell *matCellDef="let animateur">
           @if (confirmationLabel(animateur); as libelle) {
-            <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span><span class="visually-hidden"> — {{ confirmationDate(animateur) ?? '' }}</span>
+            <span [matTooltip]="confirmationDate(animateur) ?? ''">{{ libelle }}</span>
+            @if (confirmationDate(animateur); as date) {
+              <span class="visually-hidden"> — {{ date }}</span>
+            }
           } @else {
             —
           }

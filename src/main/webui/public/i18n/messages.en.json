@@ -3582,5 +3582,7 @@
   "accessibilite.contenus.pdf": "The schedules downloaded as PDF carry a title and a language, but are not tagged and are not guaranteed accessible: each animateur's personal space is their accessible version, and it is the one that follows every new publication.",
   "accessibilite.signalement.title": "Report an accessibility barrier",
   "accessibilite.signalement.texte": "If you cannot reach a content or a service, write to the organisation to be directed to an accessible alternative or to obtain the content in another form.",
-  "accessibilite.recours": "Without a satisfactory answer, you can refer the matter to the {$START_LINK}Défenseur des droits{$CLOSE_LINK}."
+  "accessibilite.recours": "Without a satisfactory answer, you can refer the matter to the {$START_LINK}Défenseur des droits{$CLOSE_LINK}.",
+  "railJour.deplacer.aucuneVacation": "No shift to move on this line.",
+  "railJour.deplacer.verrouille": "Cannot move during a solve: the schedule is being rewritten."
 }
