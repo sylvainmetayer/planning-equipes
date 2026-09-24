@@ -99,8 +99,20 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@verrouillages.list.title">Verrouillages ({{ rows().length }})</h2>
+    @if (onlyAnimateurs().length > 0) {
+      <h2 mat-card-title #listTitle tabindex="-1" i18n="@@verrouillages.list.titleFiltered">Verrouillages ({{ rows().length }} sur {{ totalCount() }})</h2>
+    } @else {
+      <h2 mat-card-title #listTitle tabindex="-1" i18n="@@verrouillages.list.title">Verrouillages ({{ rows().length }})</h2>
+    }
   </mat-card-header>
+  @if (onlyAnimateurs().length > 0) {
+    <mat-card-content>
+      <p class="calendar-meta">
+        <ng-container i18n="@@verrouillages.filter.animateurs">Seuls les verrouillages de ces animateurs sont affichés : {{ onlyAnimateurNames() }}.</ng-container>
+        <button matButton type="button" (click)="showAll()" i18n="@@verrouillages.filter.showAll">Tout afficher</button>
+      </p>
+    </mat-card-content>
+  }
   <mat-card-content class="table-wrapper">
     <table mat-table [dataSource]="rows()">
       <caption class="visually-hidden" i18n="@@verrouillages.table.caption">Verrouillages du planning : périmètre, état, période et actions</caption>
@@ -154,7 +166,11 @@
       <tr mat-row *matRowDef="let row; columns: columns"></tr>
     </table>
     @if (rows().length === 0) {
-      <p class="empty-hint" i18n="@@verrouillages.empty">Aucun verrouillage : le solveur peut réoptimiser tout le planning.</p>
+      @if (onlyAnimateurs().length > 0 && totalCount() > 0) {
+        <p class="empty-hint" i18n="@@verrouillages.emptyFiltered">Aucun verrouillage pour ces animateurs : les autres sont masqués.</p>
+      } @else {
+        <p class="empty-hint" i18n="@@verrouillages.empty">Aucun verrouillage : le solveur peut réoptimiser tout le planning.</p>
+      }
     }
   </mat-card-content>
 </mat-card>

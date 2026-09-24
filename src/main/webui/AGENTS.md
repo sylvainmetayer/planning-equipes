@@ -122,7 +122,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   rests, who was unavailable, under two renderings chosen by `?vue=grille|frise`:
   the animateur × day grid, whose cells print their hours only under
   `?densite=confort`, and the frise, one proportional bar per animateur that
-  fits a month-long edition on a screen), `/jour-j` (« Mode jour J » — the day-of screen:
+  fits a month-long edition on a screen; `?date=` marks one day's column and
+  puts the grid's tab stop on it), `/jour-j` (« Mode jour J » — the day-of screen:
   mark somebody absent, repair the seats they held), `/timeline` (« Timeline
   animateur »), `/heatmap` (« Heatmap de charge »), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs

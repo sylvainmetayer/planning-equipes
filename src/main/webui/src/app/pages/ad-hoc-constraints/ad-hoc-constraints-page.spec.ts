@@ -58,6 +58,43 @@ describe('AdHocConstraintsPage', () => {
     TestBed.createComponent(AdHocConstraintsPage);
   }
 
+  /** `?ids=a,b`: the adjustments a problem named, side by side, until « Tout afficher ». */
+  describe('the narrowing to the adjustments involved', () => {
+    type Internals = {
+      rows: () => ContrainteAdHoc[];
+      onlyIds: () => string[];
+      showAll: () => void;
+    };
+
+    it('shows only the adjustments the URL names, and all of them once asked', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?ids=AH2,AH3');
+      seedStore(referenceData, 'contraintes', [
+        contrainte('AH1'),
+        contrainte('AH2'),
+        contrainte('AH3'),
+      ]);
+      const fixture = TestBed.createComponent(AdHocConstraintsPage);
+      await fixture.whenStable();
+      const page = fixture.componentInstance as unknown as Internals;
+
+      expect(page.rows().map((row) => row.id)).toEqual(['AH2', 'AH3']);
+      expect((fixture.nativeElement as HTMLElement).textContent).toContain('AH2, AH3');
+
+      page.showAll();
+      await fixture.whenStable();
+      expect(page.rows().map((row) => row.id)).toEqual(['AH1', 'AH2', 'AH3']);
+      expect(page.onlyIds()).toEqual([]);
+    });
+
+    it('shows everything without the parameter', async () => {
+      createPage([contrainte('AH1'), contrainte('AH2')]);
+      const page = TestBed.createComponent(AdHocConstraintsPage)
+        .componentInstance as unknown as Internals;
+
+      expect(page.rows()).toHaveLength(2);
+    });
+  });
+
   /** `?edit=<id>`: « Voir la fiche » on an adjustment saved with a warning lands here with its form open. */
   describe('the edit deep link', () => {
     it('opens the form of the adjustment named in the URL once the référentiel is in', async () => {

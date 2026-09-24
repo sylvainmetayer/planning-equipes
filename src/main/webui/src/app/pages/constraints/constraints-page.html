@@ -6,7 +6,7 @@
 
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h2 mat-card-title i18n="@@constraints.active.title">Contraintes actives</h2>
+    <h2 mat-card-title #activeTitle tabindex="-1" i18n="@@constraints.active.title">Contraintes actives</h2>
     <mat-card-subtitle i18n="@@constraints.active.description">
       Description métier de chaque règle appliquée par le solveur, avec le résultat de la dernière analyse.
     </mat-card-subtitle>
@@ -30,6 +30,12 @@
         <span class="calendar-meta constraint-hors-plancher">{{ horsPlancherLabel() }}</span>
       }
     </div>
+    @if (highlightedLabel(); as ruleLabel) {
+      <p class="constraint-highlight-note">
+        <ng-container i18n="@@constraints.highlight.note">Règle mise en évidence : {{ ruleLabel }}</ng-container>
+        <button matButton type="button" (click)="clearHighlight()" i18n="@@constraints.highlight.reset">Retirer la mise en évidence</button>
+      </p>
+    }
     @if (groups().length > 1) {
       <nav class="constraint-toc" i18n-aria-label="@@constraints.toc.label" aria-label="Sommaire des catégories de contraintes">
         @for (group of groups(); track group.categorie) {
@@ -199,7 +205,8 @@
       <div class="constraint-list">
         @for (constraint of group.items; track constraint.name) {
           <mat-card appearance="outlined" class="constraint-card" [id]="constraint.name" tabindex="-1"
-                    [class.constraint-card-inactive]="!constraint.actif">
+                    [class.constraint-card-inactive]="!constraint.actif"
+                    [class.constraint-card-highlight]="constraint.name === highlightedRule()">
             <mat-card-content>
               <div class="constraint-card-header">
                 <div class="constraint-card-titre">

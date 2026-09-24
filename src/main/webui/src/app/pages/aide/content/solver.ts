@@ -315,6 +315,10 @@ export function buildSolverSections(): HelpSection[] {
           text: $localize`:@@aide.tuning.order:Réglez toujours dans cet ordre : d'abord les données, ensuite la durée de résolution, et seulement en dernier les contraintes. Désactiver une règle est un outil de diagnostic, pas une méthode de production.`,
         },
         {
+          kind: 'paragraph',
+          text: $localize`:@@aide.tuning.playbook:Sous chaque problème du Diagnostic, le bloc « Que faire ? » propose les gestes qui le règlent, du plus probable au moins probable, chacun avec une phrase d'explication et un bouton qui ouvre l'écran déjà positionné. Aucun bouton n'écrit rien : l'écran ouvert garde ses propres aperçus et confirmations, et c'est vous qui décidez. Pour un créneau en sous-effectif : voir qui pourrait venir (le banc de touche du créneau), puis ajouter une compétence sur la typologie du stand, puis baisser l'effectif demandé, enfin revoir les indisponibilités du jour. Pour une règle légale en défaut : proposer une réparation depuis la Journée, ou chercher un remplaçant au banc de touche — une règle légale ne se règle pas. Pour une règle de qualité : baisser son poids, la page Contraintes s'ouvre sur sa ligne. Pour une règle en plancher : saisir d'abord la donnée manquante. Pour une pause sans relais : ouvrir une place de relais sur le stand, ou raccourcir la vacation. Pour des ajustements manuels ou un verrou en cause : les revoir, affichés seuls. Une journée déjà commencée ne propose rien qui la modifierait : son plan est figé tel que travaillé. L'explication d'une règle reprend mot pour mot le conseil de la page Contraintes.`,
+        },
+        {
           kind: 'definitions',
           items: [
             {

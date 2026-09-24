@@ -921,6 +921,25 @@ export interface CauseInfaisabilite {
   demande: number;
   capacite: number;
   manque: number;
+  /** What to do about it, most likely gesture first — see {@link ActionType}. */
+  actions?: ActionType[];
+}
+
+/**
+ * One action of the playbook of blocking problems, positioned on what the
+ * problem names: a navigation to the screen that makes the gesture, never a
+ * write. Written server-side in French, like the causes it answers.
+ */
+export interface ActionType {
+  /** Stable code, the one an MCP client reads. */
+  code: string;
+  /** The words of the button. */
+  libelle: string;
+  /** Why this gesture — for a rule, its remediation word for word. */
+  explication: string;
+  route: string;
+  /** Query parameters positioning the target screen; empty when the problem names nothing precise. */
+  parametres: Record<string, string>;
 }
 
 /**
@@ -1111,6 +1130,8 @@ export interface ConstraintView {
   description: string;
   /** The rule in a few words of the organiser's language — never the technical name. */
   libelleCourt?: string;
+  /** What to do when this rule is in default, most likely gesture first; see {@link ActionType}. */
+  actions?: ActionType[];
   /**
    * What an organiser can do about this rule being in default — hire, open a
    * stand later, vet somebody, lower a weight. The pivot of issue #496 says

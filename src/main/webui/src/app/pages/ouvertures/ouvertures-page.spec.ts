@@ -125,6 +125,9 @@ function etatJourneesTypes(): EtatJourneesTypes {
 function mount(
   options: {
     vue?: string;
+    q?: string;
+    stand?: string;
+    date?: string;
     editingLocked?: boolean;
     confirme?: boolean;
     rapport?: RapportOuvertures;
@@ -183,7 +186,14 @@ function mount(
       {
         provide: ActivatedRoute,
         useValue: {
-          snapshot: { queryParamMap: convertToParamMap(options.vue ? { vue: options.vue } : {}) },
+          snapshot: {
+            queryParamMap: convertToParamMap({
+              ...(options.vue ? { vue: options.vue } : {}),
+              ...(options.q ? { q: options.q } : {}),
+              ...(options.stand ? { stand: options.stand } : {}),
+              ...(options.date ? { date: options.date } : {}),
+            }),
+          },
         },
       },
     ],
@@ -258,6 +268,67 @@ describe('OuverturesPage — saisie', () => {
    * but it can hold the class that turns it on, which a template edit drops
    * without anything else noticing.
    */
+  /** `?q=`: a « Que faire ? » action opens the entry grid on the one stand in question. */
+  it('restores the stand search from ?q=, so a link can open the grid on one stand', async () => {
+    const { fixture } = mount({ vue: 'saisie', q: 'B' });
+    await fixture.whenStable();
+    const page = fixture.componentInstance as unknown as {
+      lignes: () => { standId: string }[];
+      recherche: () => string;
+    };
+
+    expect(page.recherche()).toBe('B');
+    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['B']);
+  });
+
+  /** `?stand=`: the exact stand a « Que faire ? » action named, by name on screen, until « Tout afficher ». */
+  it('narrows the grid to the exact stand of ?stand=, and lets it all back', async () => {
+    const { fixture } = mount({ vue: 'saisie', stand: 'A' });
+    await fixture.whenStable();
+    const page = fixture.componentInstance as unknown as {
+      lignes: () => { standId: string }[];
+      onlyStandName: () => string;
+      showAllStands: () => void;
+    };
+
+    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['A']);
+    expect(root(fixture).textContent).toContain('Tout afficher');
+    expect(page.onlyStandName()).not.toBe('A');
+
+    page.showAllStands();
+    await fixture.whenStable();
+    expect(page.lignes().map((ligne) => ligne.standId)).toEqual(['A', 'B']);
+  });
+
+  /** `?date=` with `?stand=`: « Baisser l'effectif demandé » lands on the cell of that stand on that day. */
+  it('focuses the first cell of ?date= on the stand of ?stand=, and keeps the day in the address', async () => {
+    const { fixture } = mount({ vue: 'saisie', stand: 'A', date: '2026-07-09' });
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(champ(fixture, 'A', 3));
+    const location = TestBed.inject(Location) as unknown as {
+      replaceState: ReturnType<typeof vi.fn>;
+    };
+    expect(location.replaceState).toHaveBeenCalledWith(expect.stringContaining('date=2026-07-09'));
+  });
+
+  it('focuses the first row on ?date= alone, and forgets the day on leaving the entry view', async () => {
+    const { fixture } = mount({ vue: 'saisie', date: '2026-07-09' });
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+
+    expect(document.activeElement).toBe(champ(fixture, 'A', 3));
+    const page = fixture.componentInstance as unknown as {
+      changeView: (view: string) => Promise<void>;
+      saisieDate: () => string;
+    };
+    await page.changeView('CONSULTER');
+    expect(page.saisieDate()).toBe('');
+  });
+
   it('wraps each grid in the scrolling box its sticky header needs', async () => {
     for (const [vue, grille] of [
       ['lecture', '.ouvertures-grille'],

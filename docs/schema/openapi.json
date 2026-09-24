@@ -82,6 +82,29 @@
         "type" : "string",
         "enum" : [ "CREE", "MIS_A_JOUR", "REFUSE" ]
       },
+      "ActionType" : {
+        "type" : "object",
+        "properties" : {
+          "code" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "explication" : {
+            "type" : "string"
+          },
+          "route" : {
+            "type" : "string"
+          },
+          "parametres" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
       "ActionView" : {
         "required" : [ "code", "libelle", "export" ],
         "type" : "object",
@@ -866,6 +889,12 @@
           "manque" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ActionType"
+            }
           }
         }
       },
@@ -1708,6 +1737,12 @@
             "type" : "array",
             "items" : {
               "$ref" : "#/components/schemas/ConstraintParameter"
+            }
+          },
+          "actions" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ActionType"
             }
           }
         }

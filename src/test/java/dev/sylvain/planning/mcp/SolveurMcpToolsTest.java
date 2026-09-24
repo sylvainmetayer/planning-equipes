@@ -86,4 +86,15 @@ class SolveurMcpToolsTest {
 
         assertThat(tools.expliquer_echec_contraintes_dures(null)).isEmpty();
     }
+
+    /** A reward — two animateurs of an affinity sharing a stand — is no problem: no action however often it matched. */
+    @org.junit.jupiter.api.Test
+    void onlyAPenalisingScoreCallsForAnAction() {
+        assertThat(SolveurMcpTools.penalises("0hard/0medium/12soft")).isFalse();
+        assertThat(SolveurMcpTools.penalises("0hard/0medium/0soft")).isFalse();
+        assertThat(SolveurMcpTools.penalises("0hard/0medium/-1soft")).isTrue();
+        assertThat(SolveurMcpTools.penalises("-2hard/0medium/0soft")).isTrue();
+        assertThat(SolveurMcpTools.penalises("illisible")).isFalse();
+        assertThat(SolveurMcpTools.penalises(null)).isFalse();
+    }
 }

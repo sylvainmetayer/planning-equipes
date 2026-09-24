@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@adHoc.list.title">Ajustements manuels ({{ store.contraintes().length }})</h1>
+    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@adHoc.list.title">Ajustements manuels ({{ store.contraintes().length }})</h1>
     <mat-card-subtitle>
       <ng-container i18n="@@adHoc.list.subtitle">
         Des règles sur mesure pour placer ou écarter quelqu'un, que le solveur honore à chaque résolution.
@@ -16,8 +16,16 @@
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
   </mat-card-actions>
+  @if (onlyIds().length > 0) {
+    <mat-card-content>
+      <p class="calendar-meta">
+        <ng-container i18n="@@adHoc.filter.ids">Seuls les ajustements en cause sont affichés : {{ onlyIds().join(', ') }}.</ng-container>
+        <button matButton type="button" (click)="showAll()" i18n="@@adHoc.filter.showAll">Tout afficher</button>
+      </p>
+    </mat-card-content>
+  }
   <mat-card-content class="table-wrapper">
-    <table mat-table [dataSource]="store.contraintes()">
+    <table mat-table [dataSource]="rows()">
       <caption class="visually-hidden" i18n="@@adHoc.table.caption">Ajustements manuels actifs : type, animateurs concernés, raison et actions</caption>
       <ng-container matColumnDef="id">
         <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@common.id">Id</th>

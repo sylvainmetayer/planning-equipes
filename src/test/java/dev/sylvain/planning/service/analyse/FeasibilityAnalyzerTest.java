@@ -8,12 +8,16 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
+import dev.sylvain.planning.domain.PastHorizon;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.CauseInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.FeasibilityReport;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.SeveriteInfaisabilite;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer.TypeCauseInfaisabilite;
+import dev.sylvain.planning.service.diagnostic.MatchFacts;
+import dev.sylvain.planning.service.solve.FrozenPast;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -521,6 +525,176 @@ class FeasibilityAnalyzerTest {
     }
 
     /** A constraint targeting {@code a1} on {@code creneau}, the shape both contradiction tests need. */
+    /** The playbook of a shortfall opens the bench on that very timeslot first, the skills of its stand next. */
+    @Test
+    void aShortfallCarriesItsPlaybookPositionedOnTheTimeslot() {
+        Stand stand = stand("stand-1", 5, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        CauseInfaisabilite cause = analyzer.analyze(
+                        List.of(animateur("a1", "STRATEGIE")), List.of(stand), List.of(creneau))
+                .causes()
+                .getFirst();
+
+        assertThat(cause.actions())
+                .extracting(dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType::code)
+                .containsExactly("VOIR_BANC", "AJOUTER_COMPETENCE", "BAISSER_EFFECTIF", "REVOIR_INDISPONIBILITES");
+        assertThat(cause.actions().getFirst().route()).isEqualTo("/diagnostic");
+        assertThat(cause.actions().getFirst().parametres())
+                .containsEntry("onglet", "banc")
+                .containsEntry("creneau", "1");
+        assertThat(cause.actions().get(1).parametres()).containsEntry("typologies", "STRATEGIE");
+        assertThat(cause.actions().get(2).parametres()).containsEntry("stand", "stand-1");
+    }
+
+    /** A shortfall on a timeslot already started offers nothing that would rewrite a worked day, and says so. */
+    @Test
+    void aShortfallOnAStartedDayOffersNoGestureThatWouldChangeIt() {
+        Stand stand = stand("stand-1", 5, "STRATEGIE");
+        Creneau creneau = creneau(1, LocalDate.of(2026, 8, 1));
+
+        CauseInfaisabilite cause = analyzer.analyze(
+                        List.of(animateur("a1", "STRATEGIE")),
+                        List.of(stand),
+                        List.of(creneau),
+                        List.of(),
+                        false,
+                        new FeasibilityAnalyzer.PlanContext(
+                                List.of(),
+                                Set::of,
+                                new dev.sylvain.planning.domain.PastHorizon(
+                                        LocalDate.of(2026, 8, 1), LocalTime.of(11, 0))))
+                .causes()
+                .getFirst();
+
+        assertThat(cause.actions()).singleElement().satisfies(action -> {
+            assertThat(action.code()).isEqualTo("JOURNEE_FIGEE");
+            assertThat(action.explication()).contains("figé");
+            assertThat(action.parametres()).containsEntry("date", "2026-08-01");
+        });
+    }
+
+    /**
+     * A 09:00-13:00 timeslot on a stand opening at 11:00 is still ahead at
+     * 10:00: its seats start at 11:00, the freeze reads that start, and the
+     * cause keeps its gestures instead of calling the day frozen.
+     */
+    @Test
+    void aShortfallOnATimeslotWhoseStandOpensLaterIsNotFrozenBeforeTheOpening() {
+        LocalDate day = LocalDate.of(2026, 8, 1);
+        Stand stand = stand("stand-1", 5, "STRATEGIE");
+        stand.setOuvertures(List.of(new OuvertureStand(null, day, LocalTime.of(11, 0), LocalTime.of(13, 0), null)));
+        Creneau creneau = new Creneau(1L, 1, day, LocalTime.of(9, 0), LocalTime.of(13, 0));
+
+        CauseInfaisabilite atTen = shortfallAt(stand, creneau, new PastHorizon(day, LocalTime.of(10, 0)));
+        CauseInfaisabilite atEleven = shortfallAt(stand, creneau, new PastHorizon(day, LocalTime.of(11, 0)));
+
+        assertThat(atTen.actions())
+                .extracting(dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType::code)
+                .doesNotContain("JOURNEE_FIGEE")
+                .contains("VOIR_BANC");
+        assertThat(atEleven.actions())
+                .extracting(dev.sylvain.planning.service.diagnostic.BlockerPlaybook.ActionType::code)
+                .containsExactly("JOURNEE_FIGEE");
+    }
+
+    private CauseInfaisabilite shortfallAt(Stand stand, Creneau creneau, PastHorizon horizon) {
+        return analyzer.analyze(
+                        List.of(animateur("a1", "STRATEGIE")),
+                        List.of(stand),
+                        List.of(creneau),
+                        List.of(),
+                        false,
+                        new FeasibilityAnalyzer.PlanContext(List.of(), Set::of, horizon))
+                .causes()
+                .getFirst();
+    }
+
+    /** A rule is in the frozen past only when every one of its matches sits on seats already past. */
+    @Test
+    void aRuleIsInTheFrozenPastOnlyWhenEveryMatchSitsOnPastSeats() {
+        PastHorizon horizon = new PastHorizon(LocalDate.of(2026, 8, 2), LocalTime.of(11, 0));
+        Creneau yesterday = creneau(1, LocalDate.of(2026, 8, 1));
+        Creneau thisMorning = creneau(2, LocalDate.of(2026, 8, 2));
+        Creneau tomorrow = creneau(3, LocalDate.of(2026, 8, 3));
+        PosteAffectation seatYesterday = seat("p1", yesterday, true);
+        PosteAffectation seatThisMorning = seat("p2", thisMorning, true);
+        PosteAffectation seatTomorrow = seat("p3", tomorrow, false);
+        var timeslotFrozen = PlanningDiagnosticService.frozenTimeslots(
+                List.of(seatYesterday, seatThisMorning, seatTomorrow), horizon);
+        var started = List.of(new MatchFacts(List.of(seatYesterday)), new MatchFacts(List.of(List.of(thisMorning))));
+
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(started, horizon, timeslotFrozen))
+                .isTrue();
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(
+                        List.of(new MatchFacts(List.of(yesterday)), new MatchFacts(List.of(seatTomorrow))),
+                        horizon,
+                        timeslotFrozen))
+                .as("one breach still to come")
+                .isFalse();
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(
+                        List.of(new MatchFacts(List.of("agrégat"))), horizon, timeslotFrozen))
+                .as("a match naming no timeslot")
+                .isFalse();
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(started, null, timeslotFrozen))
+                .isFalse();
+    }
+
+    /**
+     * The rule's reading follows the seat's own freeze: at 10:00, a seat of a
+     * 09:00-13:00 timeslot whose stand opens at 11:00 is not past, so neither
+     * the seat nor its timeslot is read as frozen — although the timeslot
+     * itself started at 09:00.
+     */
+    @Test
+    void aRuleOnASeatStartingLaterThanItsTimeslotIsNotFrozenBeforeTheSeatStarts() {
+        LocalDate day = LocalDate.of(2026, 8, 1);
+        PastHorizon horizon = new PastHorizon(day, LocalTime.of(10, 0));
+        Creneau creneau = new Creneau(1L, 1, day, LocalTime.of(9, 0), LocalTime.of(13, 0));
+        PosteAffectation seat = new PosteAffectation("p1", stand("stand-1", 1, "STRATEGIE"), creneau);
+        seat.setHeureDebutEffective(LocalTime.of(11, 0));
+        seat.setHeureFinEffective(LocalTime.of(13, 0));
+        FrozenPast.mark(List.of(seat), horizon);
+        var timeslotFrozen = PlanningDiagnosticService.frozenTimeslots(List.of(seat), horizon);
+
+        assertThat(seat.isPasse()).isFalse();
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(
+                        List.of(new MatchFacts(List.of(seat))), horizon, timeslotFrozen))
+                .isFalse();
+        assertThat(PlanningDiagnosticService.onlyStartedTimeslots(
+                        List.of(new MatchFacts(List.of(creneau))), horizon, timeslotFrozen))
+                .isFalse();
+    }
+
+    /** A rule's actions open on its first breach naming a timeslot: that day, that stand, that holder. */
+    @Test
+    void aRuleIsPositionedOnItsFirstBreachNamingATimeslot() {
+        Creneau creneau = creneau(7, LocalDate.of(2026, 8, 3));
+        PosteAffectation seat = seat("p1", creneau, false);
+        seat.setAnimateur(animateur("a1", "STRATEGIE"));
+
+        var position = PlanningDiagnosticService.positionOf(
+                List.of(new MatchFacts(List.of("agrégat")), new MatchFacts(List.of(seat))), false);
+
+        assertThat(position.creneauId()).isEqualTo(7L);
+        assertThat(position.date()).isEqualTo(LocalDate.of(2026, 8, 3));
+        assertThat(position.standIds()).containsExactly("stand-1");
+        assertThat(position.typologieIds()).containsExactly("STRATEGIE");
+        assertThat(position.animateurIds()).containsExactly("a1");
+        assertThat(position.frozenPast()).isFalse();
+        assertThat(PlanningDiagnosticService.positionOf(List.of(new MatchFacts(List.of("agrégat"))), true))
+                .satisfies(bare -> {
+                    assertThat(bare.date()).isNull();
+                    assertThat(bare.frozenPast()).isTrue();
+                });
+    }
+
+    private static PosteAffectation seat(String id, Creneau creneau, boolean past) {
+        PosteAffectation seat = new PosteAffectation(id, stand("stand-1", 1, "STRATEGIE"), creneau);
+        seat.setPasse(past);
+        return seat;
+    }
+
     private static ContrainteAdHoc contrainte(String id, TypeContrainteAdHoc type, Creneau creneau) {
         ContrainteAdHoc contrainte = new ContrainteAdHoc(id, type);
         contrainte.setCreneau(creneau);

@@ -3,9 +3,12 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -218,9 +221,10 @@ export class OuverturesPage {
   );
   protected readonly chargement = signal(true);
   protected readonly filtre = signal<FiltreOuvertures>('TOUS');
-  protected readonly recherche = signal('');
+  /** `?q=`: the stand search, restored from the URL — a « Que faire ? » action opens the grid on one stand. */
+  protected readonly recherche = signal(this.route.snapshot.queryParamMap.get('q') ?? '');
   /** What the filter field holds, before the grid follows it: sixty-five rows of sixty cells are not re-laid on every keystroke. */
-  protected readonly rechercheSaisie = signal('');
+  protected readonly rechercheSaisie = signal(this.recherche());
   private filtrePending: ReturnType<typeof setTimeout> | null = null;
   protected readonly view = signal<VueOuvertures>(
     lireVue(this.route.snapshot.queryParamMap.get('vue')),
@@ -423,9 +427,48 @@ export class OuverturesPage {
     const rapport = this.rapport();
     return rapport ? synthese(rapport) : null;
   });
+  /**
+   * `?stand=<id>`: the one stand a « Que faire ? » action opened the grid on,
+   * matched by its exact id — a search on « S1 » would also keep S10, S11…
+   * Empty means no narrowing; « Tout afficher » clears it.
+   */
+  protected readonly onlyStand = signal(this.route.snapshot.queryParamMap.get('stand') ?? '');
+
+  /**
+   * `?date=` in the entry grid: the day a « Que faire ? » action opened it
+   * on. Once the grid is laid, the first cell of that day — on the stand of
+   * `?stand=`, else on the first row — takes the focus, which brings it into
+   * view; the address keeps the day until the page leaves the entry view.
+   */
+  private readonly saisieDate = signal(
+    this.view() === 'SAISIR' ? (this.route.snapshot.queryParamMap.get('date') ?? '') : '',
+  );
+  /** The requested day is focused once, on the first load: a reload after a save leaves the focus where the user put it. */
+  private saisieDateFocused = false;
+
+  /** The name of that stand, for the note: never a raw id on screen. */
+  protected readonly onlyStandName = computed(() => {
+    const standId = this.onlyStand();
+    if (!standId) {
+      return '';
+    }
+    return this.rapport()?.stands.find((ligne) => ligne.standId === standId)?.nom ?? standId;
+  });
+
+  private readonly injector = inject(Injector);
+  private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
+
+  /** Clears the narrowing to one stand; the button goes with it, the focus to the heading. */
+  protected showAllStands(): void {
+    this.onlyStand.set('');
+    afterNextRender(() => this.pageTitle()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   protected readonly lignes = computed<LigneStandOuverture[]>(() => {
     const rapport = this.rapport();
-    return rapport ? filtrerStands(rapport, this.filtre(), this.recherche()) : [];
+    const lignes = rapport ? filtrerStands(rapport, this.filtre(), this.recherche()) : [];
+    const standId = this.onlyStand();
+    return standId ? lignes.filter((ligne) => ligne.standId === standId) : lignes;
   });
   private readonly anomaliesParStand = computed(() =>
     anomaliesParStand(this.rapport()?.anomalies ?? []),
@@ -434,7 +477,14 @@ export class OuverturesPage {
   constructor() {
     keepViewInQueryParams(() => ({
       vue: PARAM_VUE[this.view()],
-      date: this.view() === 'JOURNEE' ? this.navigationJour.queryParam() : null,
+      date:
+        this.view() === 'JOURNEE'
+          ? this.navigationJour.queryParam()
+          : this.view() === 'SAISIR'
+            ? this.saisieDate() || null
+            : null,
+      q: this.recherche().trim() || null,
+      stand: this.onlyStand() || null,
     }));
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
@@ -479,11 +529,34 @@ export class OuverturesPage {
     } finally {
       this.chargement.set(false);
     }
+    this.focusRequestedDay();
+  }
+
+  /** Hands the focus to the first cell of `?date=`, once the grid is on screen. */
+  private focusRequestedDay(): void {
+    const date = this.saisieDate();
+    if (!date || this.saisieDateFocused || this.view() !== 'SAISIR') {
+      return;
+    }
+    const colonne = this.colonnes().find((each) => each.date === date);
+    const standId = this.onlyStand() || this.standIdsAffiches()[0];
+    if (!colonne || !standId) {
+      return;
+    }
+    this.saisieDateFocused = true;
+    afterNextRender(
+      () =>
+        this.hote.nativeElement
+          .querySelector<HTMLInputElement>(`[data-cellule="${key(standId, colonne.colonneId)}"]`)
+          ?.focus(),
+      { injector: this.injector },
+    );
   }
 
   /** « Voir la journée » from a day header of the grid: the same day, laid on time. */
   protected voirJournee(date: string): void {
     this.navigationJour.select(date);
+    this.saisieDate.set('');
     this.view.set('JOURNEE');
   }
 
@@ -508,6 +581,9 @@ export class OuverturesPage {
         return;
       }
       this.cellules.set(this.reference());
+    }
+    if (view !== 'SAISIR') {
+      this.saisieDate.set('');
     }
     this.view.set(view);
   }

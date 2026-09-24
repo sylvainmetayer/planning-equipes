@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDialog } from '@angular/material/dialog';
@@ -10,7 +20,12 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { consumeQueryParam } from '../../core/view-query-params';
+import {
+  consumeQueryParam,
+  currentViewParams,
+  keepViewInQueryParams,
+  optionalParam,
+} from '../../core/view-query-params';
 import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 import {
   AdHocConstraintFormData,
@@ -68,10 +83,41 @@ export class AdHocConstraintsPage {
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
 
+  private readonly injector = inject(Injector);
+  private readonly pageTitle = viewChild<ElementRef<HTMLElement>>('pageTitle');
   private readonly crud = inject(ReferenceCrudService);
   private readonly dialog = inject(MatDialog);
 
+  /**
+   * `?ids=a,b`: the adjustments a problem named — two that contradict each
+   * other, the ones a rule failed on — shown side by side, the others hidden
+   * until « Tout afficher ». Empty means no narrowing.
+   */
+  protected readonly onlyIds = signal<string[]>(
+    (currentViewParams().get('ids') ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id !== ''),
+  );
+
+  /** The rows on screen: every adjustment, or only the ones the URL named. */
+  protected readonly rows = computed(() => {
+    const ids = this.onlyIds();
+    const contraintes = this.store.contraintes();
+    return ids.length === 0
+      ? contraintes
+      : contraintes.filter((contrainte) => ids.includes(contrainte.id));
+  });
+
+  /** The one-action reset of the narrowing. */
+  protected showAll(): void {
+    this.onlyIds.set([]);
+    // The button disappears with the narrowing: the focus goes to the heading.
+    afterNextRender(() => this.pageTitle()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   constructor() {
+    keepViewInQueryParams(() => ({ ids: optionalParam(this.onlyIds().join(',')) }));
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     // `?edit=<id>`: « Voir la fiche » on an adjustment saved with a warning

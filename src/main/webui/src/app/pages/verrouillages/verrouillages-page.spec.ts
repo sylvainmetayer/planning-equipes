@@ -487,3 +487,71 @@ describe('VerrouillagesPage impact and list', () => {
     ).toBe(true);
   });
 });
+
+/** `?animateur=a,b`: the locks standing in the way of a forced assignment, until « Tout afficher ». */
+describe('VerrouillagesPage narrowed to some animateurs', () => {
+  function lock(id: string, animateurId: string | null): VerrouillagePlanning {
+    return {
+      id,
+      type: animateurId ? 'ANIMATEUR' : 'JOUR',
+      animateurId,
+      standId: null,
+      creneauId: null,
+      jour: animateurId ? null : '2026-07-10',
+      raison: null,
+    };
+  }
+
+  it('lists only the locks of the animateurs the URL names, and all of them once asked', async () => {
+    const fixture = mount();
+    const store = TestBed.inject(VerrouillageStore) as unknown as {
+      verrouillages: WritableSignal<VerrouillagePlanning[]>;
+    };
+    store.verrouillages.set([lock('V1', 'A1'), lock('V2', 'A2'), lock('V3', null)]);
+    const page = fixture.componentInstance as unknown as {
+      onlyAnimateurs: WritableSignal<string[]>;
+      rows: () => VerrouillagePlanning[];
+      showAll: () => void;
+    };
+
+    expect(page.rows()).toHaveLength(3);
+    page.onlyAnimateurs.set(['A2']);
+    expect(page.rows().map((row) => row.id)).toEqual(['V2']);
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain('Tout afficher');
+
+    const listTitle = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('h2'),
+    ).find((title) => title.textContent?.includes('Verrouillages ('));
+    expect(listTitle?.textContent).toContain('1 sur 3');
+
+    page.onlyAnimateurs.set(['A9']);
+    await fixture.whenStable();
+    expect((fixture.nativeElement as HTMLElement).textContent).toContain(
+      'Aucun verrouillage pour ces animateurs',
+    );
+
+    page.showAll();
+    expect(page.rows()).toHaveLength(3);
+  });
+
+  it('names the animateurs of the narrowing, and keeps the id of one the referential lost', async () => {
+    const fixture = mount();
+    const referentiel = TestBed.inject(ReferenceDataStore) as unknown as {
+      animateurs: WritableSignal<{ id: string; prenom: string; nom: string }[]>;
+    };
+    referentiel.animateurs.set([{ id: 'A1', prenom: 'Amélie', nom: 'Nothomb' }]);
+    const page = fixture.componentInstance as unknown as {
+      onlyAnimateurs: WritableSignal<string[]>;
+    };
+
+    page.onlyAnimateurs.set(['A1', 'A9']);
+    await fixture.whenStable();
+
+    const note = (fixture.nativeElement as HTMLElement).querySelector(
+      '.calendar-meta',
+    )!.textContent!;
+    expect(note).toContain('Amélie Nothomb, A9');
+    expect(note).not.toContain('A1');
+  });
+});

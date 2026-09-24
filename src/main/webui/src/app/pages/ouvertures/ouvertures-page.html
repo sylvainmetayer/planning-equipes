@@ -1,6 +1,6 @@
 <mat-card appearance="outlined" class="page-card">
   <mat-card-header>
-    <h1 mat-card-title i18n="@@ouvertures.title">Ouvertures des stands</h1>
+    <h1 mat-card-title #pageTitle tabindex="-1" i18n="@@ouvertures.title">Ouvertures des stands</h1>
     <mat-card-subtitle i18n="@@ouvertures.subtitle">
       Ce que le solveur lira : les ouvertures de chaque stand, règles et exceptions résolues, sur chaque créneau de l'édition.
     </mat-card-subtitle>
@@ -94,6 +94,12 @@
           <input matInput name="recherche" [ngModel]="rechercheSaisie()" (ngModelChange)="filterStands($event)" />
         </mat-form-field>
       </div>
+      @if (onlyStand()) {
+        <p class="calendar-meta">
+          <ng-container i18n="@@ouvertures.filtre.standSeul">Seul le stand « {{ onlyStandName() }} » est affiché.</ng-container>
+          <button matButton type="button" (click)="showAllStands()" i18n="@@ouvertures.filtre.toutAfficher">Tout afficher</button>
+        </p>
+      }
 
       <div class="ouvertures-legende">
         <span><i class="pastille etat-total"></i><ng-container i18n="@@ouvertures.legende.total">Toute l'amplitude</ng-container></span>

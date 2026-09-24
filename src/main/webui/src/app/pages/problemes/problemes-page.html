@@ -56,9 +56,23 @@
             {{ probleme.niveauLabel }}
           </mat-chip>
         </mat-chip-set>
-        <strong>{{ probleme.titre }}</strong>
+        <h2 class="probleme-titre" [id]="'probleme-titre-' + probleme.id">{{ probleme.titre }}</h2>
       </div>
       <p class="probleme-message"><app-legal-text [text]="probleme.message" /></p>
+      @if (probleme.actions.length > 0) {
+        <!-- Named by its heading and the problem's: N regions called « Que faire ? » alone would be indistinguishable. -->
+        <section class="probleme-que-faire" [attr.aria-labelledby]="'que-faire-' + probleme.id + ' probleme-titre-' + probleme.id">
+          <h3 class="probleme-que-faire-titre" [id]="'que-faire-' + probleme.id" i18n="@@problemes.queFaire.title">Que faire ?</h3>
+          <ol class="probleme-actions">
+            @for (action of probleme.actions; track action.code) {
+              <li class="probleme-action">
+                <a matButton="tonal" class="probleme-action-bouton" [attr.lang]="action.lang" [routerLink]="action.route" [queryParams]="action.queryParams">{{ action.libelle }}</a>
+                <span class="probleme-action-explication" [attr.lang]="action.lang">{{ action.explication }}</span>
+              </li>
+            }
+          </ol>
+        </section>
+      }
       @if (probleme.liens.length > 0) {
         <p class="probleme-liens">
           @for (lien of probleme.liens; track lien.libelle) {
