@@ -64,7 +64,7 @@ describe('LoginPage', () => {
     return fixture.nativeElement as HTMLElement;
   }
 
-  function texte(): string {
+  function pageText(): string {
     return element().textContent!.replace(/\s+/g, ' ');
   }
 
@@ -84,7 +84,7 @@ describe('LoginPage', () => {
     await rendre({ authOidc: true, authSecours: false });
 
     expect(element().querySelector('input[type=password]')).toBeNull();
-    expect(texte()).not.toContain('Compte de secours');
+    expect(pageText()).not.toContain('Compte de secours');
 
     bouton('Se connecter')!.click();
 
@@ -95,7 +95,7 @@ describe('LoginPage', () => {
     await rendre({ authOidc: true, authSecours: true });
 
     expect(bouton('Se connecter')).toBeDefined();
-    expect(texte()).toContain('Compte de secours');
+    expect(pageText()).toContain('Compte de secours');
     expect(element().querySelector('input[type=password]')).not.toBeNull();
     expect(bouton('Se connecter avec le compte de secours')).toBeDefined();
   });
@@ -108,7 +108,7 @@ describe('LoginPage', () => {
   });
 
   /** Filled in and submitted the way a person would, through the real form. */
-  async function soumettreSecours(): Promise<void> {
+  async function submitBreakGlass(): Promise<void> {
     const [utilisateur, motDePasse] = [...element().querySelectorAll('input')];
     utilisateur.value = 'admin';
     utilisateur.dispatchEvent(new Event('input'));
@@ -125,19 +125,19 @@ describe('LoginPage', () => {
     await rendre({ authOidc: true, authSecours: true });
     http.post.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 409 })));
 
-    await soumettreSecours();
+    await submitBreakGlass();
 
-    expect(texte()).toContain('La connexion par mot de passe est fermée sur ce serveur.');
-    expect(texte()).not.toContain('Identifiants incorrects.');
+    expect(pageText()).toContain('La connexion par mot de passe est fermée sur ce serveur.');
+    expect(pageText()).not.toContain('Identifiants incorrects.');
   });
 
   it('un 401 du formulaire reste « identifiants incorrects »', async () => {
     await rendre({ authOidc: true, authSecours: true });
     http.post.mockReturnValue(throwError(() => new HttpErrorResponse({ status: 401 })));
 
-    await soumettreSecours();
+    await submitBreakGlass();
 
-    expect(texte()).toContain('Identifiants incorrects.');
+    expect(pageText()).toContain('Identifiants incorrects.');
   });
 
   /**
@@ -153,7 +153,7 @@ describe('LoginPage', () => {
       { authentifie: true, nom: 'marie', roles: ['animateur', 'user'] },
     );
 
-    expect(texte()).toContain("ce compte n'a pas accès à l'administration");
+    expect(pageText()).toContain("ce compte n'a pas accès à l'administration");
     expect(bouton('Se connecter')).toBeUndefined();
     expect(element().querySelector('input[type=password]')).toBeNull();
 

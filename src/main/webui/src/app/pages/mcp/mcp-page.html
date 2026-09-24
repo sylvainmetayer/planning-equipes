@@ -30,7 +30,7 @@
             <!-- Session Keycloak : pas de mot de passe partagé à confirmer, le
                  serveur vérifie que la connexion a moins de cinq minutes. -->
             <button matButton="tonal" type="button" [disabled]="enCours()"
-                    (click)="etat.revelationParReconnexion ? revelerParReconnexion() : ouvrirFormulaire()">
+                    (click)="etat.revelationParReconnexion ? revealAfterRecentSignIn() : ouvrirFormulaire()">
               <mat-icon>key</mat-icon>
               <ng-container i18n="@@mcp.cle.reveler">Révéler la clé d'API</ng-container>
             </button>
