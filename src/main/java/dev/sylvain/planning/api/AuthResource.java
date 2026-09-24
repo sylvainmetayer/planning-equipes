@@ -15,7 +15,9 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
+import java.util.Objects;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 import org.eclipse.microprofile.jwt.JsonWebToken;
 import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -118,10 +120,18 @@ public class AuthResource {
      * declines to follow: the root.</p>
      */
     static URI target(URI base, String redirect) {
+        URI racine = base.resolve("/");
         try {
-            return base.resolve(localPath(redirect));
+            URI cible = base.resolve(localPath(redirect));
+            // Belt and braces over localPath: whatever the parser made of the
+            // suggestion, the browser only ever leaves for this scheme and
+            // this host.
+            return Objects.equals(cible.getScheme(), base.getScheme())
+                            && Objects.equals(cible.getRawAuthority(), base.getRawAuthority())
+                    ? cible
+                    : racine;
         } catch (IllegalArgumentException malforme) {
-            return base.resolve("/");
+            return racine;
         }
     }
 
@@ -158,14 +168,21 @@ public class AuthResource {
                 .build();
     }
 
+    /**
+     * Characters a path of this application may carry, query and fragment
+     * included. No backslash, no control character, no space: each is a way
+     * some browser rewrites a "path" into another host.
+     */
+    private static final Pattern CHEMIN_LOCAL = Pattern.compile("/[A-Za-z0-9\\-._~%/?=&#+@!$'()*,;:]*");
+
     /** A path of this application, or the root when the caller proposed anything else. */
     static String localPath(String redirect) {
         if (redirect == null || redirect.isBlank()) {
             return "/";
         }
-        // "//host" and "/\host" are paths to a browser's eye and absolute URLs
-        // to its resolver: the leading slash is not enough on its own.
-        if (!redirect.startsWith("/") || redirect.startsWith("//") || redirect.startsWith("/\\")) {
+        // "//host" is a path to a browser's eye and an absolute URL to its
+        // resolver: the leading slash is not enough on its own.
+        if (redirect.startsWith("//") || !CHEMIN_LOCAL.matcher(redirect).matches()) {
             return "/";
         }
         return redirect;
