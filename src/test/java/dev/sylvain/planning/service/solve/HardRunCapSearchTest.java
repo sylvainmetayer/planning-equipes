@@ -68,4 +68,31 @@ class HardRunCapSearchTest {
         assertThat(SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver())
                 .isNotNull();
     }
+
+    /**
+     * A reshaped XML must not fail the solves of the editions that hold the rule:
+     * the search is left as it is, the log says so, and the test above is what
+     * breaks the build.
+     */
+    @Test
+    void leavesAConfigurationWithoutRuinAndRecreateAsItIs() {
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        LocalSearchPhaseConfig feasibility = solverConfig.getPhaseConfigList().stream()
+                .filter(LocalSearchPhaseConfig.class::isInstance)
+                .map(LocalSearchPhaseConfig.class::cast)
+                .findFirst()
+                .orElseThrow();
+        UnionMoveSelectorConfig union = (UnionMoveSelectorConfig) feasibility.getMoveSelectorConfig();
+        union.setMoveSelectorList(union.getMoveSelectorList().stream()
+                .filter(selector -> !(selector instanceof RuinRecreateMoveSelectorConfig))
+                .toList());
+        int selectors = union.getMoveSelectorList().size();
+
+        HardRunCapSearch.adapt(solverConfig);
+
+        assertThat(union.getMoveSelectorList())
+                .hasSize(selectors)
+                .allSatisfy(selector ->
+                        assertThat(selector.getFixedProbabilityWeight()).isEqualTo(1.0));
+    }
 }

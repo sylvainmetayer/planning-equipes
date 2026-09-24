@@ -85,83 +85,99 @@ class WeekRelocationMoveIteratorFactoryTest {
     }
 
     // The run of days, when the edition holds it hard (ADR 0045): a Saturday and
-    // Sunday of one ISO week, the Monday of the next, and a cap of two days.
-    private static final LocalDate SAMEDI = LocalDate.of(2026, 7, 11);
-    private static final LocalDate DIMANCHE = LocalDate.of(2026, 7, 12);
-    private static final LocalDate LUNDI_SUIVANT = LocalDate.of(2026, 7, 13);
-    private final Creneau samedi = new Creneau(5L, 6, SAMEDI, LocalTime.of(9, 0), LocalTime.of(12, 0));
-    private final Creneau samediAprem = new Creneau(8L, 6, SAMEDI, LocalTime.of(13, 0), LocalTime.of(16, 0));
-    private final Creneau dimanche = new Creneau(6L, 7, DIMANCHE, LocalTime.of(9, 0), LocalTime.of(12, 0));
-    private final Creneau lundiSuivant = new Creneau(7L, 8, LUNDI_SUIVANT, LocalTime.of(9, 0), LocalTime.of(12, 0));
+    // Sunday of one ISO week, the Monday of the next, and a small cap.
+    private static final LocalDate SATURDAY = LocalDate.of(2026, 7, 11);
+    private static final LocalDate SUNDAY = LocalDate.of(2026, 7, 12);
+    private static final LocalDate NEXT_MONDAY = LocalDate.of(2026, 7, 13);
+    private final Creneau saturday = new Creneau(5L, 6, SATURDAY, LocalTime.of(9, 0), LocalTime.of(12, 0));
+    private final Creneau saturdayAfternoon = new Creneau(8L, 6, SATURDAY, LocalTime.of(13, 0), LocalTime.of(16, 0));
+    private final Creneau sunday = new Creneau(6L, 7, SUNDAY, LocalTime.of(9, 0), LocalTime.of(12, 0));
+    private final Creneau nextMonday = new Creneau(7L, 8, NEXT_MONDAY, LocalTime.of(9, 0), LocalTime.of(12, 0));
+    private final Creneau lundiSoir = new Creneau(9L, 1, LUNDI, LocalTime.of(18, 0), LocalTime.of(21, 0));
 
     @Test
     void releasesADayOfTheRunAcrossTheIsoWeekToAColleagueAlreadyThere() {
-        PosteAffectation xSamedi = seat("xs", montage, samedi, x);
-        PosteAffectation xDimanche = seat("xd", montage, dimanche, x);
-        PosteAffectation ySamedi = seat("ys", autre, samediAprem, y);
-        PosteAffectation yLundi = seat("yl", autre, lundiSuivant, y);
-        PosteAffectation trou = seat("tl", montage, lundiSuivant, null);
+        PosteAffectation xSaturday = seat("xs", montage, saturday, x);
+        PosteAffectation xSunday = seat("xd", montage, sunday, x);
+        PosteAffectation ySaturday = seat("ys", autre, saturdayAfternoon, y);
+        PosteAffectation yMonday = seat("yl", autre, nextMonday, y);
+        PosteAffectation hole = seat("tl", montage, nextMonday, null);
         PlanningEvenement plan =
-                new PlanningEvenement(SAMEDI, List.of(x, y), List.of(xSamedi, xDimanche, ySamedi, yLundi, trou));
+                new PlanningEvenement(SATURDAY, List.of(x, y), List.of(xSaturday, xSunday, ySaturday, yMonday, hole));
         holdRunsHard(plan, 2);
 
-        List<Move<PlanningEvenement>> chains = movesTouching(plan, trou);
+        List<Move<PlanningEvenement>> chains = movesTouching(plan, hole);
 
         // Only X is free for the Monday hole, and Monday would be X's third day in a
         // row: a weekend day has to go — in the other ISO week, which the chain of the
         // week never reached. Saturday, to Y, who works that afternoon; Sunday would
         // have to be a new day for somebody, which only moves the run.
         assertThat(chains).isNotEmpty().allSatisfy(chain -> {
-            assertThat(chain.getPlanningEntities()).containsExactlyInAnyOrder(trou, xSamedi);
+            assertThat(chain.getPlanningEntities()).containsExactlyInAnyOrder(hole, xSaturday);
             assertThat(chain.getPlanningValues()).containsExactlyInAnyOrder(x, y);
         });
     }
 
     @Test
     void keepsThePlainFillWhenTheHardRunRuleIsOff() {
-        PosteAffectation xSamedi = seat("xs", montage, samedi, x);
-        PosteAffectation xDimanche = seat("xd", montage, dimanche, x);
-        PosteAffectation ySamedi = seat("ys", autre, samediAprem, y);
-        PosteAffectation yLundi = seat("yl", autre, lundiSuivant, y);
-        PosteAffectation trou = seat("tl", montage, lundiSuivant, null);
+        PosteAffectation xSaturday = seat("xs", montage, saturday, x);
+        PosteAffectation xSunday = seat("xd", montage, sunday, x);
+        PosteAffectation ySaturday = seat("ys", autre, saturdayAfternoon, y);
+        PosteAffectation yMonday = seat("yl", autre, nextMonday, y);
+        PosteAffectation hole = seat("tl", montage, nextMonday, null);
         PlanningEvenement plan =
-                new PlanningEvenement(SAMEDI, List.of(x, y), List.of(xSamedi, xDimanche, ySamedi, yLundi, trou));
+                new PlanningEvenement(SATURDAY, List.of(x, y), List.of(xSaturday, xSunday, ySaturday, yMonday, hole));
 
-        assertThat(movesTouching(plan, trou)).isNotEmpty().allSatisfy(move -> {
-            assertThat(move.getPlanningEntities()).containsExactly(trou);
+        assertThat(movesTouching(plan, hole)).isNotEmpty().allSatisfy(move -> {
+            assertThat(move.getPlanningEntities()).containsExactly(hole);
             assertThat(move.getPlanningValues()).containsExactly(x);
+        });
+    }
+
+    /**
+     * A re-solve mid-event: X's weekend is past and pinned. It still makes Monday
+     * X's third day in a row, as the rule counts it, and it can never be handed
+     * over — so the chain goes to Z, whose run is clear, instead of a fill the
+     * score refuses.
+     */
+    @Test
+    void countsPinnedDaysInTheRunAndNeverHandsThemOver() {
+        PosteAffectation xSaturday = seat("xs", montage, saturday, x);
+        PosteAffectation xSunday = seat("xd", montage, sunday, x);
+        xSaturday.setVerrouille(true);
+        xSunday.setVerrouille(true);
+        PosteAffectation hole = seat("tl", montage, nextMonday, null);
+        PlanningEvenement plan = new PlanningEvenement(SATURDAY, List.of(x, z), List.of(xSaturday, xSunday, hole));
+        holdRunsHard(plan, 2);
+
+        assertThat(movesTouching(plan, hole)).isNotEmpty().allSatisfy(move -> {
+            assertThat(move.getPlanningEntities()).containsExactly(hole);
+            assertThat(move.getPlanningValues()).containsExactly(z);
         });
     }
 
     @Test
     void handsADayOfAnOverlongRunToAColleagueAlreadyThere() {
-        PosteAffectation xSamedi = seat("xs", montage, samedi, x);
-        PosteAffectation xDimanche = seat("xd", montage, dimanche, x);
-        PosteAffectation xLundi = seat("xl", montage, lundiSuivant, x);
-        PosteAffectation ySamedi = seat("ys", autre, samediAprem, y);
+        PosteAffectation xSaturday = seat("xs", montage, saturday, x);
+        PosteAffectation xSunday = seat("xd", montage, sunday, x);
+        PosteAffectation xMonday = seat("xl", montage, nextMonday, x);
+        PosteAffectation ySaturday = seat("ys", autre, saturdayAfternoon, y);
         PlanningEvenement plan =
-                new PlanningEvenement(SAMEDI, List.of(x, y), List.of(xSamedi, xDimanche, xLundi, ySamedi));
+                new PlanningEvenement(SATURDAY, List.of(x, y), List.of(xSaturday, xSunday, xMonday, ySaturday));
         holdRunsHard(plan, 2);
 
-        List<Move<PlanningEvenement>> moves = new ArrayList<>();
-        Iterator<Move<PlanningEvenement>> iterator =
-                new WeekRelocationMoveIteratorFactory().createRandomMoveIterator(director(plan), new Random(5));
-        for (int i = 0; i < 20; i++) {
-            moves.add(iterator.next());
-        }
-
         // X's Saturday morning to Y, the one colleague already there that day.
-        assertThat(moves).anySatisfy(move -> {
-            assertThat(move.getPlanningEntities()).containsExactly(xSamedi);
+        assertThat(draws(plan, 5, 20)).anySatisfy(move -> {
+            assertThat(move.getPlanningEntities()).containsExactly(xSaturday);
             assertThat(move.getPlanningValues()).containsExactly(y);
         });
     }
 
     @Test
     void regroupsAHalfDayOntoTheColleagueHoldingTheOtherHalf() {
-        PosteAffectation xMatin = seat("xm", montage, lundiMatin, x);
-        PosteAffectation yAprem = seat("ya", montage, lundiAprem, y);
-        PlanningEvenement plan = new PlanningEvenement(LUNDI, List.of(x, y), List.of(xMatin, yAprem));
+        PosteAffectation xMorning = seat("xm", montage, lundiMatin, x);
+        PosteAffectation yAfternoon = seat("ya", montage, lundiAprem, y);
+        PlanningEvenement plan = new PlanningEvenement(LUNDI, List.of(x, y), List.of(xMorning, yAfternoon));
         holdRunsHard(plan, 6);
 
         Move<PlanningEvenement> move = new WeekRelocationMoveIteratorFactory()
@@ -172,31 +188,63 @@ class WeekRelocationMoveIteratorFactoryTest {
         // and the Monday costs one person-day instead of two.
         assertThat(move.getPlanningEntities()).hasSize(1);
         assertThat(move.getPlanningValues())
-                .containsExactly(move.getPlanningEntities().contains(xMatin) ? y : x);
+                .containsExactly(move.getPlanningEntities().contains(xMorning) ? y : x);
+    }
+
+    @Test
+    void regroupsTwoSeatsOfADayOntoTheOneColleagueAlreadyThere() {
+        PosteAffectation xMorning = seat("xm", montage, lundiMatin, x);
+        PosteAffectation xAfternoon = seat("xa", montage, lundiAprem, x);
+        PosteAffectation yEvening = seat("ye", autre, lundiSoir, y);
+        PlanningEvenement plan = new PlanningEvenement(LUNDI, List.of(x, y), List.of(xMorning, xAfternoon, yEvening));
+        holdRunsHard(plan, 6);
+
+        assertThat(draws(plan, 2, 20)).anySatisfy(move -> {
+            assertThat(move.getPlanningEntities()).containsExactlyInAnyOrder(xMorning, xAfternoon);
+            assertThat(move.getPlanningValues()).containsOnly(y);
+        });
+    }
+
+    /** Only a day of the over-long run can shorten it: an isolated day elsewhere is not one. */
+    @Test
+    void theDaysOfAnOverlongRunAreTheOnlyOnesThatShortenIt() {
+        List<LocalDate> worked = List.of(LUNDI, SATURDAY, SUNDAY, NEXT_MONDAY, NEXT_MONDAY.plusDays(1));
+
+        assertThat(WeekRelocationMoveIteratorFactory.Index.daysOfRunsLongerThan(worked, 2))
+                .containsExactly(SATURDAY, SUNDAY, NEXT_MONDAY, NEXT_MONDAY.plusDays(1));
+        assertThat(WeekRelocationMoveIteratorFactory.Index.longestRun(worked, LUNDI, null))
+                .isEqualTo(4);
+        assertThat(WeekRelocationMoveIteratorFactory.Index.longestRun(worked, SUNDAY, null))
+                .isEqualTo(2);
+        assertThat(WeekRelocationMoveIteratorFactory.Index.longestRun(worked, null, SATURDAY.minusDays(1)))
+                .isEqualTo(5);
     }
 
     /** The moves of twenty draws that touch {@code seat}. */
     private List<Move<PlanningEvenement>> movesTouching(PlanningEvenement plan, PosteAffectation seat) {
+        return draws(plan, 3, 20).stream()
+                .filter(move -> move.getPlanningEntities().contains(seat))
+                .toList();
+    }
+
+    private List<Move<PlanningEvenement>> draws(PlanningEvenement plan, long seed, int count) {
         Iterator<Move<PlanningEvenement>> iterator =
-                new WeekRelocationMoveIteratorFactory().createRandomMoveIterator(director(plan), new Random(3));
-        List<Move<PlanningEvenement>> touching = new ArrayList<>();
-        for (int i = 0; i < 20; i++) {
-            Move<PlanningEvenement> move = iterator.next();
-            if (move.getPlanningEntities().contains(seat)) {
-                touching.add(move);
-            }
+                new WeekRelocationMoveIteratorFactory().createRandomMoveIterator(director(plan), new Random(seed));
+        List<Move<PlanningEvenement>> moves = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            moves.add(iterator.next());
         }
-        return touching;
+        return moves;
     }
 
     private static void holdRunsHard(PlanningEvenement plan, int joursConsecutifsMax) {
-        ParametresQualite defaut = new ParametresQualite();
+        ParametresQualite defaults = new ParametresQualite();
         plan.setParametresQualite(List.of(new ParametresQualite(
-                defaut.maxEmplacementsDistinctsParJour(),
-                defaut.heureServiceTardif(),
-                defaut.heureServiceMatinal(),
-                defaut.reposSouhaiteApresServiceTardifMinutes(),
-                defaut.typologiesDistinctesMax(),
+                defaults.maxEmplacementsDistinctsParJour(),
+                defaults.heureServiceTardif(),
+                defaults.heureServiceMatinal(),
+                defaults.reposSouhaiteApresServiceTardifMinutes(),
+                defaults.typologiesDistinctesMax(),
                 joursConsecutifsMax)));
         plan.setConstraintsDesactivees(List.of(new ConstraintToggle("maxJoursConsecutifsTravaillesDur", true)));
     }

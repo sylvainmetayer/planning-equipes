@@ -112,12 +112,7 @@ final class SolveRunner {
         termination.setSecondsSpentLimit(secondsLimitSecurite);
         termination.setBestScoreFeasible(true);
         solverConfig.setTerminationConfig(termination);
-        if (LargeProblemConstruction.applies(problem)) {
-            LargeProblemConstruction.adapt(solverConfig);
-        }
-        if (HardRunCapSearch.applies(problem)) {
-            HardRunCapSearch.adapt(solverConfig);
-        }
+        SolverConfiguration.adaptToProblem(solverConfig, problem);
         Solver<PlanningEvenement> solver =
                 SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
         return solver.solve(problem);

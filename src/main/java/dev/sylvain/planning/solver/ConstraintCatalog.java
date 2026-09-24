@@ -1,5 +1,6 @@
 package dev.sylvain.planning.solver;
 
+import dev.sylvain.planning.domain.ConstraintToggle;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -602,6 +603,23 @@ public final class ConstraintCatalog {
      */
     public static boolean activeByDefault(String nom) {
         return !DESACTIVEES_PAR_DEFAUT.contains(nom);
+    }
+
+    /**
+     * Whether {@code nom} is enforced on a plan carrying {@code toggles}: the
+     * toggle of that name when there is one, the catalogue's default otherwise
+     * — the reading {@code ConstraintToggleSupport} gives the streams, for the
+     * code outside them that must agree with the score on whether a rule bites.
+     */
+    public static boolean isActive(List<ConstraintToggle> toggles, String nom) {
+        if (toggles != null) {
+            for (ConstraintToggle toggle : toggles) {
+                if (nom.equals(toggle.getNom())) {
+                    return toggle.isActif();
+                }
+            }
+        }
+        return activeByDefault(nom);
     }
 
     public static List<ConstraintDefinition> definitions() {

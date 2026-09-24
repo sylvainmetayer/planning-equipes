@@ -2,7 +2,6 @@ package dev.sylvain.planning.service.analyse;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
-import dev.sylvain.planning.domain.ConstraintToggle;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -349,15 +348,8 @@ public final class PlanningDiagnosticService {
      * catalogue's default, exactly as the solver read them.
      */
     private static boolean encadrementMineursActif(PlanningEvenement solved) {
-        List<ConstraintToggle> toggles = solved.getConstraintsDesactivees();
-        if (toggles != null) {
-            for (ConstraintToggle toggle : toggles) {
-                if (ExclusionEligibilite.ENCADREMENT_DES_MINEURS.equals(toggle.getNom())) {
-                    return toggle.isActif();
-                }
-            }
-        }
-        return ConstraintCatalog.activeByDefault(ExclusionEligibilite.ENCADREMENT_DES_MINEURS);
+        return ConstraintCatalog.isActive(
+                solved.getConstraintsDesactivees(), ExclusionEligibilite.ENCADREMENT_DES_MINEURS);
     }
 
     private static List<Stand> distinctStands(PlanningEvenement solved) {
