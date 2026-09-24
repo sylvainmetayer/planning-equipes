@@ -2,7 +2,8 @@ name: Tests
 
 # Une poussée qui ne touche que la documentation ne joue pas la suite — sauf
 # les fichiers qu'un test relit (DocumentationStructuralTest, McpToolNamesTest,
-# DiagramsStructuralTest pour docs/diagrammes/)
+# DiagramsStructuralTest : docs/diagrammes/ et chaque document qui en montre
+# un — un document ajouté à cette liste de diagrammes s'ajoute aussi ici)
 # ou que ce job compare à ce qu'il produit (le contrat OpenAPI, l'inventaire
 # des licences). Sur une PR, GitHub évalue ce filtre sur l'ensemble des
 # fichiers de la PR, pas sur la dernière poussée : une PR mixte code + docs
@@ -19,6 +20,12 @@ on:
       - '!**/*.md'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
+      - 'docs/architecture.md'
+      - 'docs/domaine.md'
+      - 'docs/exploitation.md'
+      - 'docs/import-export.md'
+      - 'docs/securite.md'
+      - 'docs/versioning.md'
       - 'docs/licences-tierces.md'
       - 'docs/api.md'
       - 'docs/contraintes.md'
@@ -31,6 +38,12 @@ on:
       - '!**/*.md'
       - 'docs/schema/**'
       - 'docs/diagrammes/**'
+      - 'docs/architecture.md'
+      - 'docs/domaine.md'
+      - 'docs/exploitation.md'
+      - 'docs/import-export.md'
+      - 'docs/securite.md'
+      - 'docs/versioning.md'
       - 'docs/licences-tierces.md'
       - 'docs/api.md'
       - 'docs/contraintes.md'
