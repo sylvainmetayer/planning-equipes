@@ -429,10 +429,16 @@
                          mot de passe, comme la garde le demande à un
                          exploitant, et déclarent ce que ces tests sont — une
                          instance qui n'est pas en service. Elles passent au
-                         processus lancé, pas à celui de Maven. -->
+                         processus lancé, pas à celui de Maven.
+                         Keycloak est obligatoire en %prod (ADR 0049) et
+                         aucun realm ne tourne ici : ces tests se connectent
+                         par le compte de secours, ouvert pour eux seuls,
+                         comme la pile e2e « secours ». -->
                     <environmentVariables>
                         <ADMIN_PASSWORD>${it.admin.password}</ADMIN_PASSWORD>
                         <LEGAL_DEMO_INSTANCE>true</LEGAL_DEMO_INSTANCE>
+                        <OIDC_ENABLED>false</OIDC_ENABLED>
+                        <ADMIN_SECOURS_ENABLED>true</ADMIN_SECOURS_ENABLED>
                     </environmentVariables>
                 </configuration>
             </plugin>
