@@ -1,0 +1,60 @@
+@startuml
+' Une demande d'échange, de l'espace de l'animateur jusqu'à la décision du
+' coordinateur. Rien ne relance le solveur : un échange accepté est appliqué
+' au plan de travail et verrouillé ; il part chez les intéressés avec la
+' publication suivante. Voir docs/api.md, « Échanges », et echange-etats.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Demandeur" as demandeur
+actor "Collègue ciblé" as collegue
+actor "Coordinateur" as admin
+participant EspaceAnimateurResource as espace
+participant DemandeEchangeResource as resource
+participant DemandeEchangeService as echanges
+participant PlanningService as planning
+participant PlanningPersistenceService as persistence
+participant NotificationDispatcher as notifications
+
+demandeur -> espace : GET /api/espace-animateur/{jeton}/suggestions-echange
+espace --> demandeur : qui peut me remplacer (libéré, croisé, dirigé)
+demandeur -> espace : POST /api/espace-animateur/{jeton}/demandes
+espace -> echanges : submit(demandeurId, nouvelles)
+echanges -> echanges : checkFoireOpen()
+note right : foire fermée : 400
+echanges -> planning : simulateEchange(...) ou simulateDirectedEchange(...)
+note right : prévalidation sur les contraintes dures ;\nun poste déjà commencé est refusé (passé figé)
+echanges -> echanges : enregistrée quel que soit le verdict,\nstatut EN_ATTENTE_CIBLE
+echanges ->> notifications : Notification.TargetSolicited (meilleur effort)
+notifications ->> collegue : e-mail « on vous sollicite »
+
+alt le collègue accepte
+  collegue -> espace : POST /api/espace-animateur/{jeton}/demandes-recues/{demandeId}/accord
+  espace -> echanges : acceptByTarget(cibleId, demandeId)
+  echanges ->> notifications : Notification.DemandesSoumises
+  notifications ->> admin : e-mail « demandes à décider »
+else le collègue refuse
+  collegue -> espace : POST /api/espace-animateur/{jeton}/demandes-recues/{demandeId}/refus
+  espace -> echanges : declineByTarget(cibleId, demandeId)
+  echanges ->> notifications : Notification.DemandeDeclinee
+  notifications ->> demandeur : e-mail de refus
+end
+
+admin -> resource : GET /api/echanges/{id}/impact
+resource -> echanges : impact(demandeId)
+note right : resimulée sur le plan courant
+alt accepter
+  admin -> resource : POST /api/echanges/{id}/acceptation {commentaire}
+  resource -> echanges : accept(demandeId, commentaire)
+  echanges -> persistence : applyEchange(...) ou applyDirectedEchange(...)
+  echanges -> echanges : poserVerrouillages(demande)
+  note right : deux verrous ANIMATEUR_CRENEAU :\nle prochain solve ne défait pas l'échange
+  echanges -> echanges : recordDecision(demande, ACCEPTEE, commentaire)
+else refuser
+  admin -> resource : POST /api/echanges/{id}/refus {commentaire}
+  resource -> echanges : refuse(demandeId, commentaire)
+end
+note over admin, notifications : aucun e-mail à la décision : la publication suivante l'annonce\n(markAsCommunicated), avec le reste des changements
+@enduml

@@ -1,0 +1,102 @@
+@startuml
+' Le modèle Timefold : une solution, une seule entité, une seule variable.
+' Un poste est une place à tenir sur un stand pendant un créneau ; le solveur
+' choisit qui la tient. Pas de variable fantôme. Les typologies ne sont pas
+' des classes : des identifiants, portés par les animateurs et les stands.
+' Seuls les champs qui comptent pour le solveur sont dessinés.
+' Voir docs/domaine.md.
+!pragma layout smetana
+skinparam backgroundColor #FFFFFF
+skinparam classAttributeIconSize 0
+hide empty methods
+
+class PlanningEvenement <<@PlanningSolution>> {
+  animateurs : List<Animateur> <<@ValueRangeProvider animateurRange>>
+  postes : List<PosteAffectation> <<@PlanningEntityCollectionProperty>>
+  contraintesAdHoc : List<ContrainteAdHoc>
+  verrouillages : List<VerrouillagePlanning>
+  affectationsPubliees : List<AffectationPubliee>
+  quotasTypologies : List<QuotaTypologie>
+  pastHorizon : PastHorizon
+  score : HardMediumSoftScore <<@PlanningScore>>
+}
+
+class PosteAffectation <<@PlanningEntity>> {
+  id : String <<@PlanningId>>
+  stand : Stand
+  creneau : Creneau
+  heureDebutEffective : LocalTime
+  heureFinEffective : LocalTime
+  animateur : Animateur <<@PlanningVariable, allowsUnassigned>>
+  verrouille : boolean <<@PlanningPin>>
+  passe : boolean
+}
+
+class Animateur {
+  id : String
+  dateNaissance : LocalDate
+  competences : Map<typologieId, NiveauCompetence>
+  souhaits : Set<typologieId>
+  joursIndisponibles : Set<LocalDate>
+  ninja : boolean
+}
+
+class Stand {
+  id : String
+  typologiesProposees : Set<typologieId>
+  effectifMin : int
+  effectifMax : int
+  emplacement : Emplacement
+  ouvertures : List<OuvertureStand>
+}
+
+class Creneau {
+  id : Long
+  date : LocalDate
+  heureDebut : LocalTime
+  heureFin : LocalTime
+  couverturePause : boolean
+}
+
+class ContrainteAdHoc {
+  type : TypeContrainteAdHoc
+  animateursConcernes : List<Animateur>
+  creneau : Creneau
+  stand : Stand
+}
+
+class VerrouillagePlanning {
+  type : TypeVerrouillage
+  animateurId : String
+  standId : String
+  creneauId : Long
+}
+
+class AffectationPubliee <<record>> {
+  standId : String
+  date : LocalDate
+  animateurId : String
+}
+
+PlanningEvenement "1" *-- "*" PosteAffectation : postes
+PlanningEvenement "1" o-- "*" Animateur : animateurs
+PlanningEvenement "1" o-- "*" ContrainteAdHoc
+PlanningEvenement "1" o-- "*" VerrouillagePlanning
+PlanningEvenement "1" o-- "*" AffectationPubliee
+PosteAffectation "*" --> "1" Stand
+PosteAffectation "*" --> "1" Creneau
+PosteAffectation "*" --> "0..1" Animateur : variable
+ContrainteAdHoc --> "*" Animateur
+ContrainteAdHoc --> "0..1" Creneau
+ContrainteAdHoc --> "0..1" Stand
+
+note bottom of VerrouillagePlanning
+  désigne par identifiants ; épingle
+  (verrouille) les postes avant le solve
+end note
+note bottom of AffectationPubliee
+  le plan publié, clé naturelle
+  (jour, heures, stand) : la règle medium
+  de stabilité compte les écarts
+end note
+@enduml

@@ -1,0 +1,47 @@
+@startuml
+' Les deux façons d'entrer comme coordinateur : le formulaire intégré, gardé
+' par un verrou par adresse, et l'en-tête d'un proxy d'accès (facultatif,
+' désactivé par défaut). La clé MCP et l'espace animateur ont leurs propres
+' diagrammes. Voir docs/api.md, « Authentification ».
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+
+actor "Coordinateur" as admin
+boundary "Navigateur" as front
+boundary "Proxy d'accès\n(Pangolin, Authelia…)" as proxy
+participant AdminLoginLimiter as verrou
+participant RemoteUserAuthenticationMechanism as remote
+participant RemoteUserAuthentication as confiance
+boundary "Authentification formulaire\n(Quarkus, utilisateur admin)" as form
+
+== Formulaire intégré ==
+admin -> front : identifiant, mot de passe
+front -> verrou : POST /j_security_check
+alt adresse bloquée (5 échecs, 15 min)
+  verrou --> front : 429 + Retry-After, même avec le bon mot de passe
+else
+  verrou -> form : requête transmise
+  alt mot de passe correct
+    form --> front : cookie planning-session (8 h, SameSite=Strict)\npuis GET /api/auth/me
+    verrou -> verrou : successfulLogin(contexte) remet le compteur à zéro
+  else échec
+    form -> verrou : onFailure(AuthenticationFailureEvent)
+    form --> front : 401 sur /api/auth/me
+  end
+end
+
+== Mode « remote user » (REMOTE_USER_ENABLED) ==
+admin -> proxy : se connecte au proxy
+proxy -> remote : requête /api/… avec Remote-Email\net Remote-Auth-Secret
+remote -> confiance : trustedEmail(en-tête)
+note right of confiance : secret comparé à temps constant ;\nsans secret configuré, l'application\nrefuse de démarrer
+alt e-mail = planning.auth.remote-user.admin-email
+  remote -> confiance : isAdmin(email)
+  confiance --> remote : vrai
+  remote --> front : identité admin, sans formulaire
+else autre e-mail attesté
+  remote --> front : pas d'identité admin :\nl'espace animateur l'utilise à la place du code à 6 chiffres
+end
+note over remote : /mcp est ignoré : la clé MCP y reste seule juge
+@enduml

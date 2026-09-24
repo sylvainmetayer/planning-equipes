@@ -89,6 +89,10 @@ une PR par sujet, pas de `develop`. Une release, c'est **un formulaire** —
 *Releases* → *Draft a new release* sur GitHub : choisir le numéro `vX.Y.Z`
 (§ 2 dit lequel), viser `main`, publier. Le corps peut rester vide.
 
+![Fabrication d'une release et patch d'une version antérieure](diagrammes/release.svg)
+
+<sub>Source : [`diagrammes/release.puml`](diagrammes/release.puml).</sub>
+
 Tout le reste dérive de ce geste, sans commande ni clone :
 
 | Ce qui part | Sur quoi | Ce qu'il fait |

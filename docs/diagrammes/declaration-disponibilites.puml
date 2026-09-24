@@ -1,0 +1,55 @@
+@startuml
+' La collecte des disponibilités : le coordinateur ouvre une fenêtre, chacun
+' déclare depuis son espace, le coordinateur applique ou refuse. Appliquer
+' écrit la fiche ; le solveur n'est pas relancé.
+' Voir docs/api.md, « Déclaration de disponibilités ».
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur" as admin
+actor "Animateur" as animateur
+participant DeclarationDisponibiliteResource as resource
+participant EspaceAnimateurResource as espace
+participant DeclarationDisponibiliteService as declarations
+participant MailService as mails
+participant NotificationDispatcher as notifications
+
+admin -> resource : PUT /api/disponibilites/configuration\n{collecteOuverte, debut, fin, prevenirAnimateurs}
+resource -> declarations : configure(fenetre, prevenirAnimateurs)
+alt fin avant début, ou prévenir sans PUBLIC_URL
+  declarations --> admin : 400, rien n'est enregistré
+else
+  opt prevenirAnimateurs
+    loop chaque animateur
+      declarations -> mails : sendInvitationDeclaration(...)
+      note right : échec attrapé par personne
+    end
+  end
+  declarations --> admin : InvitationReport (envoyés, sans e-mail, échecs)
+end
+
+animateur -> espace : POST /api/espace-animateur/{jeton}/disponibilites
+espace -> declarations : submit(animateurId, nouvelle)
+alt fenêtre fermée
+  declarations --> animateur : 400
+else trop de soumissions
+  declarations --> animateur : 429
+else
+  declarations -> declarations : EN_ATTENTE, remplace la déclaration en attente
+  opt aucune déclaration en attente n'a été remplacée
+    declarations ->> notifications : Notification.DeclarationSoumise
+    notifications ->> admin : e-mail
+  end
+end
+
+alt appliquer
+  admin -> resource : POST /api/disponibilites/{id}/application
+  resource -> declarations : apply(id)
+  note right : APPLIQUEE d'abord (une course donne 409),\npuis la fiche est écrite ; ses avertissements reviennent
+else refuser
+  admin -> resource : POST /api/disponibilites/{id}/refus {commentaire}
+  resource -> declarations : refuse(id, commentaire)
+end
+@enduml

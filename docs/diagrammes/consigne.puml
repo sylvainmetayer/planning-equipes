@@ -1,0 +1,58 @@
+@startuml
+' Une consigne ferme une bande horaire, pour tout l'événement, un jour donné :
+' la préremplir, la simuler, la poser, puis la lever. Rien n'est détruit :
+' les créneaux nominaux, leurs postes et leurs verrous restent ; le résolveur
+' de consignes ne génère simplement plus de poste dans la bande.
+' Voir docs/api.md, « Consignes », et docs/decisions/0043.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur\n(ou assistant MCP)" as admin
+participant ConsigneResource as resource
+participant ConsigneService as consignes
+participant SolverJobService as jobs
+participant ReferenceDataService as referentiel
+participant ConsigneRepository as depot
+participant ValidationJourneeService as validations
+database PostgreSQL as db
+
+admin -> resource : POST /api/consignes/preselection
+resource -> consignes : preselection(date, fermetureDebut, fermetureFin)
+consignes --> admin : stands du jour, fenêtres proposées
+
+admin -> resource : POST /api/consignes/apercu
+resource -> consignes : apercu(demande)
+consignes --> admin : par jour : postes, verrous, contraintes ad hoc\net personnes placées dans la bande ; rien n'est écrit
+
+admin -> resource : POST /api/consignes
+resource -> consignes : poser(demande)
+consignes -> jobs : refuseIfSolving()
+note right of consignes : une date qui n'est pas strictement\nà venir est refusée (400) : le passé est figé
+consignes -> db : une transaction (scope.write) pour toutes les dates
+loop chaque date
+  consignes -> consignes : planifier(...) : créneaux gardés, à créer, à supprimer
+  consignes -> referentiel : writeCreneau(connexion, créneau ajouté)
+  consignes -> depot : save(connexion, consigne)
+  note right of depot : upsert sur (edition_id, date_jour) :\nreposer une consigne la remplace
+  consignes -> referentiel : deleteCreneaux(connexion, créneaux ajoutés devenus inutiles)
+end
+consignes -> validations : withdrawDays(connexion, dates)
+note right of validations : la validation de relecture du jour\nest retirée, même sur un jour verrouillé
+consignes --> admin : aperçu par jour
+
+admin -> resource : POST /api/consignes/levee/apercu
+resource -> consignes : apercuLevee(dates)
+admin -> resource : POST /api/consignes/levee
+resource -> consignes : lever(dates)
+note right of consignes : pas une transaction unique :\nchaque étape s'enregistre à part
+loop chaque date
+  consignes -> depot : delete(date)
+  note right of depot : pas de consigne ce jour : 404
+  consignes -> referentiel : deleteCreneaux(créneaux qu'elle avait ajoutés)
+  note right of referentiel : les postes de ces créneaux partent avec eux
+end
+consignes -> validations : withdrawDays(dates)
+resource --> admin : 204
+@enduml

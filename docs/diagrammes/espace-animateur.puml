@@ -1,0 +1,58 @@
+@startuml
+' Entrer dans son espace : le lien personnel désigne la fiche, le code à six
+' chiffres reçu par e-mail ouvre une session de 30 jours. L'espace ne montre
+' que le plan publié. Voir docs/api.md, « Espace animateur » et
+' « Accusé de réception du planning ».
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Animateur" as animateur
+boundary "Navigateur" as front
+participant EspaceTokenFilter as jeton
+participant SessionEspaceFilter as session
+participant EspaceAnimateurResource as espace
+participant EspaceAccesService as acces
+participant MailService as mails
+participant ConfirmationPlanningService as confirmations
+database PostgreSQL as db
+
+animateur -> front : ouvre le lien reçu (/espace/{jeton})
+front -> jeton : POST /api/espace-animateur/{jeton}/code
+note right of jeton : jeton inconnu : 404 ;\nX-Edition-Id est ignoré, le jeton désigne l'édition
+jeton -> espace : requestCode()
+espace -> acces : requestCode(animateurId)
+alt pas d'e-mail sur la fiche
+  acces --> front : 400
+else trop de demandes
+  acces --> front : 429 + Retry-After
+else
+  acces -> db : UPSERT espace_acces (empreinte du code, 10 min, 5 essais)
+  acces -> mails : sendAccessCode(email, prénom, code)
+  note right of mails : l'e-mail EST l'opération :\nun échec remonte en 500
+  acces --> front : CodeEnvoye (e-mail masqué)
+end
+
+animateur -> front : saisit le code
+front -> espace : POST /api/espace-animateur/{jeton}/session {code}
+espace -> acces : openSession(animateurId, code)
+acces -> db : INSERT espace_session (30 jours), code supprimé
+espace --> front : 204 + cookie planning-espace\n(HttpOnly, SameSite=Strict, chemin /api/espace-animateur)
+
+front -> session : GET /api/espace-animateur/{jeton}
+note right of session : sans cookie valide : 401.\nUn proxy d'accès qui atteste l'e-mail\n(mode remote user) en tient lieu.
+session -> espace : espace()
+espace --> front : plan publié de la personne\n(vide avant toute publication)
+
+animateur -> front : « J'ai bien reçu mon planning »
+front -> espace : POST /api/espace-animateur/{jeton}/confirmation
+espace -> confirmations : confirmer(animateurId)
+alt jamais publié, ou aucun poste sur le plan publié
+  confirmations --> front : 409
+else
+  confirmations -> db : CONFIRME, avec la date (un second clic rend la première)
+  confirmations --> front : AccuseReception
+end
+note over confirmations : une publication qui change le planning de la personne\nla remet à NON_VU (reset)
+@enduml

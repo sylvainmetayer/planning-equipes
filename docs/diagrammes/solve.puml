@@ -1,0 +1,83 @@
+@startuml
+' Un solve lancé depuis le référentiel : le chemin de l'écran Solveur et de
+' l'outil MCP lancer_solveur. Les quatre façons de lancer un solve passent par
+' le même SolvePipeline.execute ; seuls changent le fournisseur du problème et
+' la présence d'un détenteur du solveur. Voir docs/architecture.md.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+actor "Coordinateur" as admin
+boundary "Navigateur\n(solver-stream.ts)" as front
+participant SolverJobResource as resource
+participant SolverJobService as jobs
+participant SolverJobTasks as tasks
+participant SolvePipeline as pipeline
+participant PlanSnapshotService as snapshots
+participant PlanningService as planning
+participant SolveRunner as runner
+participant SolverScoreTrace as trace
+participant PlanningPersistenceService as persistence
+participant ConstraintAnalysisStore as analyses
+participant KpiHistoriqueService as kpi
+database PostgreSQL as db
+
+admin -> front : « Lancer le solveur »
+front -> resource : POST /api/solve/async/reference-data?seconds=&enFile=
+resource -> jobs : submitSolveFromReferenceData(secondes, enFile, reamorcage)
+alt un solve est déjà actif pour l'édition
+  alt enFile = false
+    jobs --> resource : SolverBusyException
+    resource --> front : 409 (le job en cours)
+  else enFile = true
+    jobs -> db : INSERT solver_job (QUEUED)
+    jobs --> front : 202 (job en file)
+    note over jobs : repris par startNext() à la fin du job actif
+  end
+else aucun solve actif
+  jobs -> db : INSERT solver_job (PENDING)
+  jobs --> front : 202 (job)
+  jobs ->> jobs : run(job) sur l'exécuteur, dans l'édition du job
+end
+
+== Sur le fil de l'exécuteur ==
+jobs -> tasks : solveFromReferenceData(...) : la tâche du job
+tasks -> pipeline : execute(édition, fournisseur, …, onSolverReady, arrêt demandé)
+pipeline -> snapshots : captureBeforeSolve()
+note right : le plan qui va être remplacé\nest photographié d'abord
+pipeline -> planning : buildFromReferenceData(reamorcage)
+planning --> pipeline : problème (PlanningEvenement)
+pipeline -> planning : solve(problème, secondes, attacheSolveur)
+planning -> runner : solve(problème, secondes, onSolverReady)
+runner -> tasks : « onSolverReady » reçoit le Solver
+tasks -> trace : follow(jobId, editionId, solver)
+loop à chaque meilleure solution
+  trace -> trace : record(...)
+  front -> resource : GET /api/jobs/score
+  resource --> front : courbe de score
+end
+runner --> planning : plan résolu
+planning --> pipeline : plan résolu
+
+alt arrêt du serveur pendant le calcul
+  pipeline -> pipeline : interrupted(...)
+  note right : le plan partiel n'est persisté\nque s'il bat strictement celui en place
+else fin normale ou arrêt demandé
+  pipeline -> persistence : persistAfterSolve(plan, snapshotId)
+  persistence -> db : réécrit les affectations
+  pipeline -> planning : diagnose(plan)
+  note right : ConstraintDiagnosticService,\npas l'API réservée de Timefold
+  pipeline -> analyses : record(diagnostic)
+  pipeline -> kpi : recordAfterSolve(durée)
+  pipeline -> pipeline : announce(édition, diagnostic)
+  note right : Notification.ResolutionTerminee,\nsi le mail de fin est demandé
+end
+pipeline --> tasks : Resolution
+tasks --> jobs : résultat
+jobs -> jobs : finishAndChain(job, …)
+jobs -> trace : finish(jobId)
+jobs -> db : UPDATE solver_job (COMPLETED, CANCELLED, FAILED ou INTERROMPU)
+jobs -> jobs : startNext()
+jobs ->> front : événement d'état sur GET /api/jobs/stream (SSE)
+@enduml

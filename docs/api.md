@@ -47,6 +47,10 @@ session, `/api/config` et `/api/branding` — lus par le frontend avant son
 démarrage, page de connexion comprise — et `/api/mentions-legales`. Un appel
 non authentifié répond **401, jamais une redirection HTML**.
 
+![Connexion du coordinateur : formulaire ou proxy d'accès](diagrammes/authentification.svg)
+
+<sub>Source : [`diagrammes/authentification.puml`](diagrammes/authentification.puml).</sub>
+
 Le form login `/j_security_check` répond `429` après cinq échecs depuis la même
 adresse, **y compris avec le bon mot de passe** ([`securite.md`](securite.md)).
 
@@ -166,6 +170,10 @@ qu'aux côtés d'un majeur, hors de sa nuit légale, d'un jour férié et des st
 réservés aux majeurs — une équipe de mineurs seuls n'y couvre plus rien.
 
 ### File d'attente
+
+![Cycle de vie d'un job de résolution](diagrammes/job-etats.svg)
+
+<sub>Source : [`diagrammes/job-etats.puml`](diagrammes/job-etats.puml).</sub>
 
 `enFile=true` met la tâche en file au lieu de la refuser. Trois propriétés :
 
@@ -497,6 +505,10 @@ raisonnement dans
 [ADR 0043](decisions/0043-consigne-d-edition-fermer-une-bande-sans-rien-detruire.md).
 Ce qui suit est ce que le schéma ne dit pas.
 
+![Préremplir, simuler, poser et lever une consigne](diagrammes/consigne.svg)
+
+<sub>Source : [`diagrammes/consigne.puml`](diagrammes/consigne.puml).</sub>
+
 **Jours à venir seulement.** Poser, modifier et lever refusent (`400`) une
 date qui n'est pas strictement après *aujourd'hui* — et *aujourd'hui* est
 celui de l'horloge du jour J, donc de la date figée par
@@ -622,6 +634,10 @@ pendant la fermeture » ramène le besoin à une personne par siège.
 
 `GET /api/planning/publication` — qui serait prévenu, et ce qu'il lirait.
 N'envoie rien. `POST` publie.
+
+![Aperçu puis publication du planning](diagrammes/publication.svg)
+
+<sub>Source : [`diagrammes/publication.puml`](diagrammes/publication.puml).</sub>
 
 Publier, c'est **marquer le plan de travail comme le plan communiqué** et
 n'écrire qu'aux personnes dont l'emploi du temps a changé depuis la dernière
@@ -1701,6 +1717,10 @@ Seules routes accessibles sans session admin. Le jeton — le lien imprimé sur 
 PDF individuel — résout à lui seul l'animateur **et** son édition :
 `X-Edition-Id` n'y est pas lu. Un jeton inconnu répond `404`, jamais `401`.
 
+![Entrée dans l'espace animateur et accusé de réception](diagrammes/espace-animateur.svg)
+
+<sub>Source : [`diagrammes/espace-animateur.puml`](diagrammes/espace-animateur.puml).</sub>
+
 **Le lien ne suffit pas.** L'espace sert le planning en téléchargement, donc
 toutes les routes sauf `/code` et `/session` exigent aussi la session du cookie
 `planning-espace`, liée à l'animateur que le jeton résout. L'e-mail de la fiche
@@ -1817,6 +1837,14 @@ Une fin antérieure au début est refusée (`400`) **avant** l'écriture : une
 configuration refusée laisse la précédente en place, jamais la moitié d'une
 nouvelle.
 
+![Une demande d'échange, de la soumission à la décision](diagrammes/echange.svg)
+
+<sub>Source : [`diagrammes/echange.puml`](diagrammes/echange.puml).</sub>
+
+![Cycle de vie d'une demande d'échange](diagrammes/echange-etats.svg)
+
+<sub>Source : [`diagrammes/echange-etats.puml`](diagrammes/echange-etats.puml).</sub>
+
 Une demande naît `EN_ATTENTE_CIBLE` et n'entre dans la file décidable
 (`PROPOSEE`) qu'une fois **acceptée par le collègue ciblé**. Un refus du
 collègue est terminal : l'admin n'arbitre jamais.
@@ -1831,7 +1859,9 @@ créneau et en récupère un autre désigné (« je te laisse mon lundi, je pren
 mardi »).
 
 L'acceptation applique l'échange exactement comme simulé, pose deux verrous
-`ANIMATEUR_CRENEAU` sur le créneau que chacun **reçoit**, et notifie. **Le
+`ANIMATEUR_CRENEAU` sur le créneau que chacun **reçoit**, et n'écrit à
+personne : l'échange a changé le plan de travail, pas le plan publié, et c'est
+la publication suivante qui l'annonce avec le planning qui le porte. **Le
 solveur n'est pas relancé.** Un créneau déjà commencé — donné ou reçu — refuse
 l'échange, à la proposition comme à l'acceptation (`400`, « Ce créneau est
 déjà commencé : le passé ne se modifie plus »,
@@ -1886,6 +1916,10 @@ erreur.
 L'animateur déclare lui-même, depuis son espace, ses **jours d'indisponibilité**
 et ses **souhaits** de typologies. Rien n'est écrit dans le référentiel à la
 soumission : la déclaration attend une décision explicite de l'admin.
+
+![Collecte des disponibilités](diagrammes/declaration-disponibilites.svg)
+
+<sub>Source : [`diagrammes/declaration-disponibilites.puml`](diagrammes/declaration-disponibilites.puml).</sub>
 
 C'est la **première route en écriture** ouverte depuis l'espace animateur, qui
 est public. Trois bornes, et aucune n'est cosmétique :

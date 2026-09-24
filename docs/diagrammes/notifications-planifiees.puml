@@ -1,0 +1,57 @@
+@startuml
+' L'envoi horaire : trois tâches, pour les seules éditions armées, lues sur le
+' plan publié. Chaque envoi est d'abord réservé en base sur une clé : un
+' passage de plus ne renvoie rien. Tout part en meilleur effort, par le
+' dispatcher. Voir docs/exploitation.md, « Les envois automatiques de nuit ».
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+control "Quarkus Scheduler\nNOTIFICATIONS_CRON (0 5 * * * ?)" as cron
+participant NotificationsPlanifieesService as service
+participant EditionContext as contexte
+participant RappelVeilleJob as veille
+participant RelanceConfirmationJob as relance
+participant AlerteEchangeJob as alerte
+participant JournalNotificationsRepository as journal
+participant NotificationDispatcher as dispatcher
+participant NotificationWriter as redacteur
+boundary "SMTP" as smtp
+
+cron -> service : scheduledRun()
+service -> service : run()
+service -> service : purgeHistory()
+loop chaque édition
+  service -> contexte : executeIn(édition, forOneEdition)
+  service -> service : forOneEdition(maintenant)
+  note right : 0 envoi si l'édition n'est pas armée
+  service -> veille : run(paramètres, maintenant)
+  note right of veille : passé l'heure du rappel :\npostes de demain sur le plan publié
+  service -> relance : run(paramètres, maintenant)
+  note right of relance : délai écoulé depuis la publication :\nceux qui n'ont pas accusé réception
+  service -> alerte : run(paramètres, maintenant)
+  note right of alerte : demandes PROPOSEE plus anciennes\nque ancienneteEchangeJours
+end
+
+group dans chaque tâche, pour chaque destinataire
+  alt pas d'e-mail sur la fiche
+    veille -> journal : claim(RAPPEL_VEILLE_INJOIGNABLE, …, libellé, sévérité)
+    note right : une alerte pour le coordinateur,\nréservée elle aussi : dite une seule fois
+  else
+    veille -> journal : claim(RAPPEL_VEILLE, clé, animateurId)
+    note right of journal : (edition_id, type, clé) unique :\nun second passage ne réserve rien
+    alt clé déjà réservée
+      journal --> veille : faux, rien ne part
+    else
+      veille ->> dispatcher : Notification.RappelVeille (événement CDI)
+      dispatcher -> dispatcher : surNotification(notification)
+      dispatcher -> redacteur : rediger(notification)
+      redacteur --> dispatcher : MailDraft (gabarit Qute)
+      dispatcher -> smtp : envoi
+      note right of dispatcher : le seul catch des mails d'accompagnement :\nun SMTP en panne n'annule rien
+    end
+  end
+end
+service -> service : NOTIFICATIONS_ENVOYEES au journal, s'il est parti quelque chose
+@enduml

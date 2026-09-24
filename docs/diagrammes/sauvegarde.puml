@@ -1,0 +1,57 @@
+@startuml
+' La sauvegarde automatique et la restauration, qui se fait hors de
+' l'application. L'API ne fait que lire l'état et suspendre ou reprendre :
+' ni téléchargement, ni restauration, ni sauvegarde à la demande.
+' Voir docs/exploitation.md §5 et docs/decisions/0015.
+skinparam backgroundColor #FFFFFF
+skinparam responseMessageBelowArrow true
+hide footbox
+autonumber
+
+control "Quarkus Scheduler\nBACKUP_CRON (0 0 4 * * ?)" as cron
+participant BackupService as service
+participant BackupRepository as depot
+participant BackupStore as store
+participant PgDump as pgdump
+boundary "pg_dump\n(postgresql-client-18)" as binaire
+database "Volume /backups" as volume
+database PostgreSQL as db
+actor "Exploitant" as ops
+actor "Coordinateur" as admin
+participant BackupResource as resource
+
+cron -> service : scheduledBackup()
+alt BACKUP_DIR vide
+  service --> cron : rien : sauvegarde non configurée
+else suspendue depuis l'écran Paramètres
+  service -> depot : isActive()
+  depot --> service : faux, rien
+else
+  service -> service : run()
+  service -> store : prepare()
+  note right : crée le dossier,\nsupprime les .part abandonnés
+  service -> store : publish(maintenant, pgDump::dumpTo)
+  store -> pgdump : dumpTo(planning-AAAAMMJJ-HHMMSS.dump.part)
+  pgdump -> binaire : --format=custom --no-password, PGPASSWORD en variable
+  binaire -> db : lecture
+  binaire -> volume : écrit le .part
+  note right of pgdump : au-delà de BACKUP_TIMEOUT (30 min) :\ndestroyForcibly, échec
+  store -> volume : renommage atomique en .dump
+  service -> store : rotate(BACKUP_RETENTION)
+  note right : garde les N plus récents de la série\nplanning-AAAAMMJJ-HHMMSS.dump ;\nne touche à aucun autre nom
+  service -> depot : saveLastRun(résultat)
+  note right : succès ou échec enregistré ;\nl'exception ne remonte jamais
+end
+
+admin -> resource : GET /api/backups
+resource -> service : state()
+resource --> admin : configurée, active, prochain passage, dernier résultat, fichiers
+admin -> resource : PUT /api/backups/active {active}
+resource -> service : setActive(active)
+
+== Restauration : l'exploitant, hors de l'application ==
+ops -> volume : docker compose cp app:/backups/planning-….dump .
+ops -> db : docker compose exec -T db pg_restore --clean --if-exists
+ops -> service : redémarre l'application
+note right : elle garde en cache les éditions\net l'édition par défaut
+@enduml
