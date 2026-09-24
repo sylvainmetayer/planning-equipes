@@ -3386,6 +3386,17 @@ export interface EtatReferentiels {
   statut: StatutEtat;
 }
 
+/**
+ * The coherence checklist of the referential, counted by severity — the detail
+ * is `GET /api/editions/courant/coherence`.
+ */
+export interface EtatCoherence {
+  bloquants: number;
+  aVerifier: number;
+  informations: number;
+  statut: StatutEtat;
+}
+
 export interface EtatCollecte {
   ouverte: boolean;
   declarationsEnAttente: number;
@@ -3472,6 +3483,7 @@ export interface EtatEdition {
   editionId: string;
   editionNom: string;
   referentiels: EtatReferentiels;
+  coherence: EtatCoherence;
   collecte: EtatCollecte;
   ouvertures: EtatOuvertures;
   besoin: EtatBesoin;
@@ -3481,6 +3493,53 @@ export interface EtatEdition {
   publication: EtatPublication;
   confirmations: EtatConfirmations;
   foire: EtatFoire;
+}
+
+/** The families the coherence checklist is grouped by, in reading order. */
+export type CoherenceFamily = 'STANDS' | 'CRENEAUX' | 'ANIMATEURS' | 'AJUSTEMENTS' | 'CAPACITE';
+
+/** How much a line of the checklist holds the edition back. */
+export type CoherenceSeverity = 'BLOQUANT' | 'A_VERIFIER' | 'INFORMATION';
+
+/** What a line of the checklist is about: the fiche or screen that corrects it follows from it. */
+export type CoherenceSubject =
+  | 'STAND'
+  | 'CRENEAU'
+  | 'ANIMATEUR'
+  | 'CONTRAINTE_AD_HOC'
+  | 'VERROUILLAGE'
+  | 'TYPOLOGIE'
+  | 'EDITION';
+
+/**
+ * One anomaly of the checklist: the source's code and sentence, and the id of
+ * what `objet` designates (`null` for the edition as a whole).
+ */
+export interface CoherenceIssue {
+  famille: CoherenceFamily;
+  gravite: CoherenceSeverity;
+  code: string;
+  message: string;
+  objet: CoherenceSubject;
+  objetId: string | null;
+  date: string | null;
+}
+
+/** The counts of one family, the header of its group. */
+export interface FamilyCount {
+  famille: CoherenceFamily;
+  bloquants: number;
+  aVerifier: number;
+  informations: number;
+}
+
+/** What `GET /api/editions/courant/coherence` returns. */
+export interface CoherenceReport {
+  bloquants: number;
+  aVerifier: number;
+  informations: number;
+  familles: FamilyCount[];
+  anomalies: CoherenceIssue[];
 }
 
 /**

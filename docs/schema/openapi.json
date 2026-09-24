@@ -1077,6 +1077,75 @@
           }
         }
       },
+      "CoherenceFamily" : {
+        "type" : "string",
+        "enum" : [ "STANDS", "CRENEAUX", "ANIMATEURS", "AJUSTEMENTS", "CAPACITE" ]
+      },
+      "CoherenceIssue" : {
+        "required" : [ "code", "famille", "gravite", "message", "objet" ],
+        "type" : "object",
+        "properties" : {
+          "famille" : {
+            "$ref" : "#/components/schemas/CoherenceFamily"
+          },
+          "gravite" : {
+            "$ref" : "#/components/schemas/CoherenceSeverity"
+          },
+          "code" : {
+            "type" : "string"
+          },
+          "message" : {
+            "type" : "string"
+          },
+          "objet" : {
+            "$ref" : "#/components/schemas/CoherenceSubject"
+          },
+          "objetId" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          }
+        }
+      },
+      "CoherenceReport" : {
+        "required" : [ "aVerifier", "anomalies", "bloquants", "familles", "informations" ],
+        "type" : "object",
+        "properties" : {
+          "bloquants" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aVerifier" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "informations" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "familles" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/FamilyCount"
+            }
+          },
+          "anomalies" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CoherenceIssue"
+            }
+          }
+        }
+      },
+      "CoherenceSeverity" : {
+        "type" : "string",
+        "enum" : [ "BLOQUANT", "A_VERIFIER", "INFORMATION" ]
+      },
+      "CoherenceSubject" : {
+        "type" : "string",
+        "enum" : [ "STAND", "CRENEAU", "ANIMATEUR", "CONTRAINTE_AD_HOC", "VERROUILLAGE", "TYPOLOGIE", "EDITION" ]
+      },
       "ColleagueView" : {
         "type" : "object",
         "properties" : {
@@ -2776,6 +2845,27 @@
           }
         }
       },
+      "EtatCoherence" : {
+        "required" : [ "aVerifier", "bloquants", "informations", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "bloquants" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aVerifier" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "informations" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
       "EtatCollecte" : {
         "required" : [ "declarationsEnAttente", "declarationsTraitees", "ouverte", "statut" ],
         "type" : "object",
@@ -2855,6 +2945,9 @@
           },
           "referentiels" : {
             "$ref" : "#/components/schemas/EtatReferentiels"
+          },
+          "coherence" : {
+            "$ref" : "#/components/schemas/EtatCoherence"
           },
           "collecte" : {
             "$ref" : "#/components/schemas/EtatCollecte"
@@ -3117,6 +3210,27 @@
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "FamilyCount" : {
+        "type" : "object",
+        "required" : [ "aVerifier", "bloquants", "famille", "informations" ],
+        "properties" : {
+          "famille" : {
+            "$ref" : "#/components/schemas/CoherenceFamily"
+          },
+          "bloquants" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "aVerifier" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "informations" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -9106,6 +9220,24 @@
           }
         },
         "summary" : "Courant",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/courant/coherence" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CoherenceReport"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Coherence",
         "tags" : [ "Edition Resource" ]
       }
     },

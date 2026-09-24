@@ -52,6 +52,10 @@ export function buildGettingStartedSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.start.coherence:Un avertissement fermé n'est pas perdu : la ligne « Cohérence du référentiel » de l'accueil rejoue tous les contrôles sur l'ensemble de ce qui est saisi — animateurs, créneaux, stands et ouvertures, ajustements manuels, besoin en animateurs — et en donne le compte. « Voir le détail » déplie la liste, une anomalie par ligne avec sa gravité et le lien vers la fiche qui la corrige. Un créneau devenu hors ouverture parce qu'un stand a changé ensuite s'y voit, alors qu'aucun message ne l'a signalé à l'enregistrement du stand.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.start.theme:En haut à droite, un bouton fait tourner l'affichage entre automatique, clair et sombre. « Automatique » suit le réglage de votre appareil ; un choix explicite fige l'affichage sur ce navigateur.`,
         },
       ],

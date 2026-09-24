@@ -61,6 +61,9 @@ class DiagnosticMcpToolsTest {
     @Inject
     ParametresMcpTools parametresTools;
 
+    @Inject
+    com.fasterxml.jackson.databind.ObjectMapper objectMapper;
+
     @AfterEach
     void clearEdition() {
         contrainteTools.modifier_poids_contrainte(CONTRAINTE, null, null);
@@ -299,5 +302,28 @@ class DiagnosticMcpToolsTest {
                         null, null, null, null, 19, null, null, null, null, null, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("L3121-16");
+    }
+
+    /**
+     * The checklist crosses to MCP as codes and ids: never the sentence — a
+     * warning on an animateur dates their majority — nor the date.
+     */
+    @Test
+    void theCoherenceChecklistCrossesAsCodesAndIdsOnly() throws Exception {
+        loadScenario();
+        referenceDataService.listAnimateurs().stream().findFirst().ifPresent(animateur -> {
+            animateur.setDateNaissance(java.time.LocalDate.now().minusYears(15));
+            referenceDataService.updateAnimateur(animateur.getId(), animateur);
+        });
+
+        DiagnosticMcpTools.CoherenceListView vue = diagnosticTools.lister_anomalies_referentiel(null);
+
+        assertThat(vue.anomalies()).hasSize(vue.bloquants() + vue.aVerifier() + vue.informations());
+        assertThat(vue.familles()).hasSize(5);
+        String json = objectMapper.writeValueAsString(vue);
+        assertThat(json)
+                .doesNotContain("\"message\"")
+                .doesNotContain("\"date\"")
+                .doesNotContain("mineur du");
     }
 }

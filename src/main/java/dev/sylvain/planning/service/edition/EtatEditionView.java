@@ -24,6 +24,7 @@ public record EtatEditionView(
         String editionId,
         String editionNom,
         EtatReferentiels referentiels,
+        EtatCoherence coherence,
         EtatCollecte collecte,
         EtatOuvertures ouvertures,
         EtatBesoin besoin,
@@ -51,6 +52,18 @@ public record EtatEditionView(
     /** How many rows each referential holds; a zero anywhere is a step still to do. */
     @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut"})
     public record EtatReferentiels(int stands, int animateurs, int creneaux, Statut statut) {}
+
+    /**
+     * The coherence checklist of the referential, counted by severity: every
+     * anomaly the application detects on what was entered, read on the whole
+     * edition — the detail is {@code GET /api/editions/courant/coherence}.
+     *
+     * @param bloquants    lines that guarantee a failed solve (contradictory exceptions, a malformed grid)
+     * @param aVerifier    write-time warnings replayed, opening anomalies, the staffing bound
+     * @param informations what is said for information only — a minor, rules that overlap
+     */
+    @Schema(requiredProperties = {"aVerifier", "bloquants", "informations", "statut"})
+    public record EtatCoherence(int bloquants, int aVerifier, int informations, Statut statut) {}
 
     /**
      * @param ouverte               the collection window as configured

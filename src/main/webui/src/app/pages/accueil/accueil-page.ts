@@ -6,6 +6,7 @@ import {
   computed,
   inject,
   resource,
+  signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -17,6 +18,7 @@ import { ConsignesStore } from '../../core/consignes.store';
 import { errorText, retainedValue } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import { buildLignes, statutIcon, statutLabel, summarizeLignes } from './accueil';
+import { coherenceGroups } from './coherence';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
 
 /**
@@ -71,6 +73,20 @@ export class AccueilPage {
   });
   protected readonly bilan = computed(() => summarizeLignes(this.lignes()));
 
+  /** Whether the coherence line is unfolded; its detail is only read then. */
+  protected readonly coherenceOpen = signal(false);
+  private readonly coherence = resource({
+    params: () => (this.coherenceOpen() ? true : undefined),
+    loader: () => this.editionsApi.coherence(),
+  });
+  protected readonly coherenceReport = retainedValue(this.coherence);
+  protected readonly coherenceLoading = this.coherence.isLoading;
+  protected readonly coherenceError = errorText(this.coherence);
+  protected readonly coherenceGroups = computed(() => {
+    const rapport = this.coherenceReport();
+    return rapport ? coherenceGroups(rapport) : [];
+  });
+
   protected readonly statutLabel = statutLabel;
   protected readonly statutIcon = statutIcon;
 
@@ -92,6 +108,13 @@ export class AccueilPage {
 
   protected recharger(): void {
     this.etat.reload();
+    if (this.coherenceOpen()) {
+      this.coherence.reload();
+    }
     void this.consignes.reload();
+  }
+
+  protected toggleCoherence(): void {
+    this.coherenceOpen.update((open) => !open);
   }
 }
