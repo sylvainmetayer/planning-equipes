@@ -217,6 +217,26 @@ personnes de plus** que ce minimum les jours de pic — à sept jours elle en
 tolère douze, quand un plan réel en demande dix. L'écart se comble par la
 grille ou par l'effectif, pas par le solveur.
 
+**Vérifier qu'un seuil tient, puis le faire trouver.** Ce sont deux questions.
+La première est arithmétique : chaque journée demande au moins son pic de
+sièges simultanés (un peu plus quand coupure repas, six heures continues ou
+dix heures par jour interdisent d'enchaîner deux sièges), et chaque fenêtre de
+(seuil + 1) jours n'offre au plus que seuil × effectif jours-personnes. Ce qui
+la tranche n'est pas cette borne mais un **plan** : construit à part et
+importé, l'écran Problèmes le juge, et zéro écart dur prouve que le besoin est
+tenable avec les règles telles qu'elles sont codées. La seconde est celle du
+solveur. Sous la forme dure allumée, sa phase de faisabilité cherche par
+**jours entiers** : la chaîne qui remplit un trou libère un jour de la *série*
+et non seulement de la semaine ISO, un jour rendu ne va qu'à des collègues
+déjà présents ce jour-là, une journée tenue en morceaux se regroupe sur moins
+de personnes — à six jours, c'est le jour-personne qui manque, pas l'heure —,
+et le *ruin and recreate*, qui reconstruit à l'heure du trou et coûtait presque
+tout le temps de la phase, devient rare. Sur `festival-hivernal` à six jours,
+les dix-huit sièges vides qui restaient après vingt minutes deviennent six :
+mieux, pas faisable, et aucun plan ne prouve que cette grille le soit. Sur une édition dont
+le besoin tient, le solveur atteint zéro écart dur. Le détail et les mesures
+sont dans [0049](decisions/0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md).
+
 Le niveau par défaut sort d'un banc de comparaison, pas d'une intuition. Sur
 `festival-hivernal` — la grille de l'organisateur, 153 animateurs, 600 s — la
 forme dure tient parfaitement sa promesse, personne au-delà de six jours, et
@@ -675,7 +695,10 @@ changement précis parmi un demi-million. `WeekRelocationMoveIteratorFactory`
 joue la chaîne entière comme un seul mouvement : le siège vide à quelqu'un de
 libre à cette heure, et les sièges qu'il tenait un autre jour de la même
 semaine à des collègues libres à ces heures, éligibles au sens de
-`EligibleAnimateurMoveFilter`. Le score juge le reste — heures, repos,
+`EligibleAnimateurMoveFilter`. Quand l'édition tient les jours d'affilée en
+dur, le jour rendu peut aussi être de l'autre semaine, pris dans la série que
+le trou allongerait (voir « Vérifier qu'un seuil tient, puis le faire
+trouver »). Le score juge le reste — heures, repos,
 coupures — et le mouvement se dégrade en simple changement quand il n'y a
 ni trou ni chaîne. Treize de ces chaînes, construites à la main, avaient
 rempli les 26 sièges sans enfreindre une règle ; le solveur les trouve

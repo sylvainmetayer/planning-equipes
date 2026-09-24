@@ -115,6 +115,9 @@ final class SolveRunner {
         if (LargeProblemConstruction.applies(problem)) {
             LargeProblemConstruction.adapt(solverConfig);
         }
+        if (HardRunCapSearch.applies(problem)) {
+            HardRunCapSearch.adapt(solverConfig);
+        }
         Solver<PlanningEvenement> solver =
                 SolverFactory.<PlanningEvenement>create(solverConfig).buildSolver();
         return solver.solve(problem);

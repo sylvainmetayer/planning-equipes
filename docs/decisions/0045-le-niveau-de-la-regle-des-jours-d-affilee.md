@@ -1,6 +1,6 @@
 # 0045 — Les jours d'affilée restent une règle dosée, avec une forme dure éteinte et un seuil réglable
 
-- **Statut** : accepté, implémenté
+- **Statut** : accepté, implémenté ; la recherche sous la forme dure est complétée par [0049](0049-la-regle-dure-des-jours-d-affilee-se-cherche-par-jours-entiers.md)
 - **Date** : septembre 2026
 - **Portée** : solveur (catalogue, contraintes de qualité), configuration des poids
 - **Prolonge** : [0006](0006-obligation-legale-ou-politique-organisateur.md), [0041](0041-encadrement-des-mineurs-eteint-par-defaut.md)
