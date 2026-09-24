@@ -38,7 +38,7 @@ comportement réel de `<mat-icon>`. Ses écarts ont tous été corrigés :
 | 7.5 — Messages de statut | une trentaine d'erreurs et de verdicts inertes | `app-status-message`, contrôlé par `status-messages-check` |
 | 9 — Structuration | écrans sans `<h1>`, `mat-card-title` non-titres | contrôlé par `headings-check` |
 | 12 — Navigation | espace animateur sans lien d'évitement ni reprise de focus | lien d'évitement et `<main>` refocalisé dans les deux coques |
-| 13 — Consultation | nouvelles fenêtres non annoncées ; PDF non balisés ; pas de déclaration | directive `NewWindowLink` ; titre, langue et arbre de structure ; page `/declaration-accessibilite` |
+| 13 — Consultation | nouvelles fenêtres non annoncées ; PDF non balisés ; pas de déclaration | directive `NewWindowLink` ; titre et langue des PDF ; page `/declaration-accessibilite` |
 
 Conforme sans correction, et consigné pour qu'un prochain audit ne le
 ré-instruise pas : les **formulaires** (thématique 11 — un `mat-label` par
@@ -77,9 +77,11 @@ qu'elle n'est pas retirée de la liste.
   Les défauts d'ordre de lecture et de verbosité ne sont couverts ni par l'audit
   statique ni par axe. Une déclaration de conformité demande un audit humain sur
   la grille complète.
-- **Les PDF** portent un titre, une langue et un arbre de structure minimal,
-  mais ne sont pas garantis accessibles. L'espace animateur est la version
-  accessible du même planning (critère 13.3, « si nécessaire »).
+- **Les PDF** portent un titre et une langue, mais **ne sont pas balisés** :
+  OpenPDF ne construit aucune structure sur ce que `Document.add` écrit, et un
+  PDF déclaré balisé sur un arbre vide se lit comme une page blanche — pire
+  qu'un PDF non balisé, lu comme un flux de texte. L'espace animateur est la
+  version accessible du même planning (critère 13.3, « si nécessaire »).
 - **La redirection vers `/login` sur une session expirée est silencieuse** et
   perd un formulaire en cours de saisie. Aucune limite de temps n'est imposée,
   mais l'expiration de session en tient lieu de fait.

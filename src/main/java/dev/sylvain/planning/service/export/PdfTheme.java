@@ -394,25 +394,25 @@ public class PdfTheme {
         return melange(accent, Color.WHITE, 0.07f);
     }
 
-    /** {@code part} of {@code couleur} over {@code fond} — no alpha in a PDF fill, so the blend is computed. */
     /**
      * What a reader's software needs to announce the document rather than a
-     * stream of text (RGAA 13.3): a title shown in place of the file name, the
-     * language it is written in, and a structure tree over its paragraphs and
-     * tables. Called before {@code document.open()}, which is when OpenPDF
-     * writes the first two and starts recording the third.
+     * file name (RGAA 13.3): a title shown in its place, and the language the
+     * text is written in, so a screen reader pronounces it in French.
      *
-     * <p>Not a compliance claim — the espace animateur is the accessible
-     * version of the same planning — but it costs three calls and helps the
-     * printout and the archive as much as the screen reader.</p>
+     * <p>Deliberately <em>not</em> {@code writer.setTagged()}: OpenPDF marks
+     * the file as tagged but builds no structure over what {@code Document.add}
+     * writes, and a tagged PDF with an empty structure tree reads as blank to
+     * the software that trusts the flag — worse than an untagged one, which it
+     * reads as a text stream. The espace animateur is the accessible version of
+     * the same planning.</p>
      */
     static void describe(Document document, PdfWriter writer, String title) {
         document.addTitle(title);
         writer.getExtraCatalog().put(PdfName.LANG, new PdfString("fr-FR"));
         writer.setViewerPreferences(PdfWriter.DisplayDocTitle);
-        writer.setTagged();
     }
 
+    /** {@code part} of {@code couleur} over {@code fond} — no alpha in a PDF fill, so the blend is computed. */
     static Color melange(Color couleur, Color fond, float part) {
         float reste = 1f - part;
         return new Color(
