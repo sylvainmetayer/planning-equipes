@@ -65,7 +65,8 @@ que si `/mcp` n'est joignable que depuis la machine elle-même.
 
 `PLANNING_MCP_TRUSTED_PROXIES` reprend par défaut la liste du verrou de
 connexion : les proxys sont un fait du déploiement, pas d'un endpoint, et deux
-listes à garder en phase en font une de trop. Ce qu'elle change, et pourquoi
+listes à garder en phase en font une de trop. Vide compte comme absente — c'est
+ce que transmettent les fichiers compose quand la variable n'est pas renseignée. Ce qu'elle change, et pourquoi
 l'en-tête se lit **par la droite**, est détaillé dans
 [`securite.md`](securite.md#débit-du-serveur-mcp).
 
@@ -101,6 +102,14 @@ s'authentifie efface la série. Seule une clé *présentée et refusée* compte 
 qui inclut la bonne clé privée d'un en-tête exigé par
 `PLANNING_MCP_REQUIRED_HEADERS`, à garder en tête en déployant derrière un proxy
 d'accès.
+
+**Une tentative se compte avant d'être faite.** Une requête qui présente une clé
+réserve sa place d'échec avant l'authentification, et la rend dès que le statut
+est écrit : une rafale de clés envoyées en parallèle ne dépasse donc jamais
+`PLANNING_MCP_MAX_FAILURES` tentatives, là où compter le `401` après coup en
+laissait passer autant que la rafale en contenait. Tant que ces places sont
+occupées par des requêtes en cours, la suivante reçoit `429` avec un
+`Retry-After` d'une seconde.
 
 ## Derrière un proxy d'accès
 

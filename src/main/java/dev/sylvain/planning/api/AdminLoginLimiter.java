@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.TrustedProxies;
+import dev.sylvain.planning.service.FailureLockout;
 import io.quarkus.security.spi.runtime.AuthenticationFailureEvent;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.core.http.HttpHeaders;
@@ -10,12 +11,7 @@ import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import org.eclipse.microprofile.config.inject.ConfigProperty;
 
 /**
@@ -70,8 +66,6 @@ public class AdminLoginLimiter {
     @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
     String nomCookieSession;
 
-    private final Map<String, Echecs> parAdresse = new ConcurrentHashMap<>();
-
     /**
      * Hard ceiling on the number of tracked addresses.
      *
@@ -90,8 +84,8 @@ public class AdminLoginLimiter {
      */
     private static final int ADRESSES_MAX = 1_000;
 
-    /** Consecutive failures of one address, and the instant of the last one. */
-    private record Echecs(int nombre, Instant dernier) {}
+    /** Consecutive failures per address, shared in shape with the MCP key lock. */
+    private final FailureLockout failures = new FailureLockout(ADRESSES_MAX);
 
     /**
      * The declared proxies, parsed once. Built here rather than lazily so a
@@ -124,7 +118,7 @@ public class AdminLoginLimiter {
         }
         contexte.addEndHandler(issue -> {
             if (issue.succeeded() && successfulLogin(contexte)) {
-                parAdresse.remove(address);
+                failures.clear(address);
             }
         });
         contexte.next();
@@ -137,16 +131,7 @@ public class AdminLoginLimiter {
         if (!(contexte instanceof RoutingContext routage) || !CHEMIN_CONNEXION.equals(routage.normalizedPath())) {
             return;
         }
-        Instant maintenant = Instant.now();
-        if (parAdresse.size() >= ADRESSES_MAX) {
-            evictDown(maintenant);
-        }
-        parAdresse.compute(address(routage), (ignore, courant) -> {
-            if (courant == null || courant.dernier().plus(config.dureeBlocage()).isBefore(maintenant)) {
-                return new Echecs(1, maintenant);
-            }
-            return new Echecs(courant.nombre() + 1, maintenant);
-        });
+        failures.recordFailure(address(routage), config.dureeBlocage());
     }
 
     /**
@@ -170,39 +155,9 @@ public class AdminLoginLimiter {
         return false;
     }
 
-    /**
-     * Brings the map back under its ceiling: expired entries first, then, if
-     * that is not enough, the oldest ones.
-     */
-    private void evictDown(Instant maintenant) {
-        parAdresse
-                .entrySet()
-                .removeIf(entree ->
-                        entree.getValue().dernier().plus(config.dureeBlocage()).isBefore(maintenant));
-        if (parAdresse.size() < ADRESSES_MAX) {
-            return;
-        }
-        parAdresse.entrySet().stream()
-                .sorted(Comparator.comparing(entree -> entree.getValue().dernier()))
-                .limit(Math.max(1, parAdresse.size() - ADRESSES_MAX + 1))
-                .map(Map.Entry::getKey)
-                .toList()
-                .forEach(parAdresse::remove);
-    }
-
     /** Seconds of lockout left, {@code 0} when the address may try its luck. */
     private long lockoutSeconds(String address) {
-        Echecs echecs = parAdresse.get(address);
-        if (echecs == null || echecs.nombre() < config.maxEchecs()) {
-            return 0;
-        }
-        long restant = Duration.between(Instant.now(), echecs.dernier().plus(config.dureeBlocage()))
-                .toSeconds();
-        if (restant <= 0) {
-            parAdresse.remove(address);
-            return 0;
-        }
-        return Math.max(restant, 1);
+        return failures.lockoutSeconds(address, config.maxEchecs(), config.dureeBlocage());
     }
 
     /**
