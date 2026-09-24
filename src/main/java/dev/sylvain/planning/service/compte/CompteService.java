@@ -75,7 +75,11 @@ public class CompteService {
         String cleCache = sujet == null ? "email:" + cle : "sub:" + sujet;
         Instant maintenant = Instant.now();
         Lu lu = cache.get(cleCache);
-        if (lu != null && lu.le().plus(FRAICHEUR).isAfter(maintenant)) {
+        // A cached account whose address is not the one presented is stale:
+        // the realm just changed it, and following it is the point.
+        if (lu != null
+                && lu.le().plus(FRAICHEUR).isAfter(maintenant)
+                && lu.compte().email().equals(cle)) {
             return lu.compte();
         }
         Compte compte = resolve(cle, nom, sujet, maintenant);
