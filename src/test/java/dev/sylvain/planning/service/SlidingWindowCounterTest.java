@@ -1,11 +1,11 @@
-package dev.sylvain.planning.service.espace;
+package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
-/** The distinct count behind {@link ColleagueLookupLimiter}; the plain count is covered through its two limiters. */
+/** The distinct count behind {@code ColleagueLookupLimiter}, and the ceiling of a counter keyed by source address. */
 class SlidingWindowCounterTest {
 
     private static final Duration HOUR = Duration.ofHours(1);
@@ -46,5 +46,25 @@ class SlidingWindowCounterTest {
         Thread.sleep(50);
 
         assertThat(counter.useDistinct("A1", "C", 1, court).autorise()).isTrue();
+    }
+
+    /**
+     * A counter keyed by source address is bounded: a new address past the
+     * ceiling evicts the oldest window, and one already counted evicts nothing.
+     */
+    @Test
+    void aBoundedCounterEvictsTheOldestOnlyForANewKey() {
+        SlidingWindowCounter counter = SlidingWindowCounter.bounded(2);
+        counter.use("a", 1, HOUR);
+        counter.use("b", 1, HOUR);
+
+        assertThat(counter.use("b", 1, HOUR).autorise())
+                .as("b, known, stays counted")
+                .isFalse();
+        assertThat(counter.use("c", 1, HOUR).autorise()).isTrue();
+
+        assertThat(counter.use("a", 1, HOUR).autorise())
+                .as("a was the oldest: evicted")
+                .isTrue();
     }
 }

@@ -27,29 +27,29 @@ import org.junit.jupiter.api.Test;
  * %test} value (100 000) so that only the lockout can answer 429 here.</p>
  */
 @QuarkusTest
-@TestProfile(McpKeyLockoutTest.Profil.class)
+@TestProfile(McpKeyLockoutTest.Profile.class)
 class McpKeyLockoutTest {
 
-    private static final int PLAFOND = 3;
+    private static final int CEILING = 3;
 
     /** Low enough to reach by hand, and a duration no test can outlive. */
-    public static class Profil implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of(
                     "planning.mcp.lockout.max-failures",
-                    String.valueOf(PLAFOND),
+                    String.valueOf(CEILING),
                     "planning.mcp.lockout.duration",
                     "PT10M");
         }
     }
 
     @Test
-    void verrouilleUneSerieDeClesRefusees() {
+    void locksOutARunOfRefusedKeys() {
         // A request carrying no key at all is refused, and counts for nothing:
         // a client not yet configured probes before it is set up, and locking
         // it out for that would punish the one case that is not an attack.
-        for (int i = 0; i < PLAFOND * 2; i++) {
+        for (int i = 0; i < CEILING * 2; i++) {
             given().when().post("/mcp").then().statusCode(401);
         }
 

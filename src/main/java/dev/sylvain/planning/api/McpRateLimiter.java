@@ -1,19 +1,19 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.config.ConfigAdminLogin;
 import dev.sylvain.planning.config.ConfigMcp;
 import dev.sylvain.planning.config.TrustedProxies;
 import dev.sylvain.planning.mcp.McpApiKeyAuthenticationMechanism;
+import dev.sylvain.planning.service.FailureLockout;
+import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.SlidingWindowCounter;
 import io.quarkus.vertx.http.runtime.filters.Filters;
 import io.vertx.ext.web.RoutingContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
-import java.time.Duration;
-import java.time.Instant;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Two guards on the MCP transport, both counted per source address.
@@ -73,42 +73,53 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>The lockout is checked first: it is the longer refusal, and a locked
  * address should not also spend rate tokens it will never use.</p>
  *
- * <p>In memory and per address, like the other two limiters. Rate limiting the
- * whole site per IP remains the reverse proxy's job — see
+ * <p><b>An attempt is counted before it is made.</b> A request carrying a key
+ * reserves its failure slot in {@link FailureLockout} before authentication
+ * runs, and gives it back as soon as the status is written. Checking the count
+ * and recording the 401 afterwards let a burst of parallel wrong keys all read
+ * « no failure yet »: 120 guesses per lockout where five were promised. The slot
+ * is given back on the headers, not on the end of the response, so a streaming
+ * {@code GET /mcp} does not hold it for as long as it stays open.</p>
+ *
+ * <p><b>The proxies are the deployment's.</b> An empty
+ * {@code planning.mcp.rate-limit.trusted-proxies} falls back to
+ * {@code planning.auth.connexion.proxys-fiables}, in Java rather than only in the
+ * property's default: a compose file that passes the variable through blank sets
+ * it to the empty string, which the {@code ${A:${B:}}} fallback does not treat as
+ * missing — every {@code /mcp} caller then shared the proxy's single counter.</p>
+ *
+ * <p>In memory and per address, like the other two limiters, on the counters
+ * the application shares ({@link SlidingWindowCounter}, {@link FailureLockout}).
+ * Rate limiting the whole site per IP remains the reverse proxy's job — see
  * {@code docs/securite.md}.</p>
  */
 @ApplicationScoped
 public class McpRateLimiter {
 
     /** The MCP transport: {@code /mcp} itself (streamable HTTP) and everything under it ({@code /mcp/sse}). */
-    static final String CHEMIN_MCP = "/mcp";
+    static final String MCP_PATH = "/mcp";
 
     /** After the security headers, before anything handles the request — as for the login lock. */
-    private static final int PRIORITE = 250;
+    private static final int PRIORITY = 250;
 
     /**
      * Hard ceiling on the number of tracked addresses, for the reason
-     * {@link AdminLoginLimiter} states at length: the maps are keyed by
-     * something the caller chooses, so sweeping only the expired entries would
-     * not bound them. Past the ceiling the oldest go, expired or not — losing an
-     * address its counter is a far smaller harm than unbounded memory on the
-     * request path. It applies to each map separately: they are fed by different
-     * events and neither should be able to evict the other's entries.
+     * {@link AdminLoginLimiter} states at length: the counters are keyed by
+     * something the caller chooses. It applies to each counter separately: they
+     * are fed by different events and neither should be able to evict the
+     * other's entries.
      */
-    private static final int ADRESSES_MAX = 1_000;
+    private static final int MAX_ADDRESSES = 1_000;
 
     @Inject
     ConfigMcp config;
 
-    private final Map<String, Fenetre> parAdresse = new ConcurrentHashMap<>();
+    @Inject
+    ConfigAdminLogin loginConfig;
 
-    private final Map<String, Echecs> echecsParAdresse = new ConcurrentHashMap<>();
+    private final SlidingWindowCounter requests = SlidingWindowCounter.bounded(MAX_ADDRESSES);
 
-    /** Requests counted for one address, and the instant its window opened. */
-    private record Fenetre(int nombre, Instant debut) {}
-
-    /** Consecutive wrong keys from one address, and the instant of the last one. */
-    private record Echecs(int nombre, Instant dernier) {}
+    private final FailureLockout wrongKeys = new FailureLockout(MAX_ADDRESSES);
 
     /**
      * The declared proxies, parsed once. Built here rather than lazily so a
@@ -116,36 +127,75 @@ public class McpRateLimiter {
      * believing it had declared its proxy, while both guards quietly counted
      * every caller on the proxy's own single counter.
      */
-    private volatile TrustedProxies proxysFiables = TrustedProxies.NONE;
+    private volatile TrustedProxies trustedProxies = TrustedProxies.NONE;
 
-    public void register(@Observes Filters filtres) {
-        proxysFiables = TrustedProxies.of(config.rateLimit().trustedProxies().orElse(List.of()));
-        filtres.register(this::apply, PRIORITE);
+    public void register(@Observes Filters filters) {
+        trustedProxies = TrustedProxies.of(proxies(
+                config.rateLimit().trustedProxies().orElse(List.of()),
+                loginConfig.proxysFiables().orElse(List.of())));
+        filters.register(this::apply, PRIORITY);
     }
 
-    private void apply(RoutingContext contexte) {
-        if (!isMcpPath(contexte.normalizedPath())) {
-            contexte.next();
-            return;
-        }
-        String address = ClientAddress.of(contexte, proxysFiables);
+    /**
+     * The MCP list when it names anything, the login lock's otherwise: the
+     * proxies are a fact about the deployment, and an entry left blank is how a
+     * compose file says « not set ».
+     */
+    static List<String> proxies(List<String> mcp, List<String> login) {
+        List<String> declared = mcp.stream().filter(entry -> !entry.isBlank()).toList();
+        return declared.isEmpty() ? login : declared;
+    }
 
-        long verrou = lockoutSeconds(address);
-        if (verrou > 0) {
-            refuse(contexte, verrou, "Trop de clés refusées : réessayez dans " + minutes(verrou) + " minute(s).");
+    private void apply(RoutingContext context) {
+        if (!isMcpPath(context.normalizedPath())) {
+            context.next();
             return;
         }
-        long attente = secondsBeforeNextTry(address);
-        if (attente > 0) {
-            refuse(contexte, attente, "Trop de requêtes sur /mcp : réessayez dans " + attente + " seconde(s).");
+        String address = ClientAddress.of(context, trustedProxies);
+        int maxFailures = config.lockout().maxFailures();
+
+        long locked =
+                wrongKeys.lockoutSeconds(address, maxFailures, config.lockout().duration());
+        if (locked > 0) {
+            refuse(context, locked, "Trop de clés refusées : réessayez dans " + minutes(locked) + " minute(s).");
             return;
         }
-        contexte.addEndHandler(issue -> {
-            if (issue.succeeded()) {
-                recordOutcome(contexte, address);
+        if (config.rateLimit().maxRequests() > 0) {
+            RateLimitVerdict verdict = requests.use(
+                    address,
+                    config.rateLimit().maxRequests(),
+                    config.rateLimit().window());
+            if (!verdict.autorise()) {
+                long wait = verdict.secondsBeforeNextTry();
+                refuse(context, wait, "Trop de requêtes sur /mcp : réessayez dans " + wait + " seconde(s).");
+                return;
             }
-        });
-        contexte.next();
+        }
+        if (McpApiKeyAuthenticationMechanism.presentedKey(context, config.apiKeyHeader()) != null) {
+            long wait = wrongKeys.reserve(address, maxFailures, config.lockout().duration());
+            if (wait > 0) {
+                refuse(context, wait, "Trop de clés refusées : réessayez dans " + minutes(wait) + " minute(s).");
+                return;
+            }
+            AtomicBoolean settled = new AtomicBoolean();
+            // Called just before the headers go out: the status is final.
+            context.addHeadersEndHandler(ignore -> {
+                if (settled.compareAndSet(false, true)) {
+                    wrongKeys.settle(address, outcome(context), config.lockout().duration());
+                }
+            });
+            // The headers may never be written — a connection reset first: the
+            // slot is given back all the same, as an attempt that tried nothing.
+            context.addEndHandler(ignore -> {
+                if (settled.compareAndSet(false, true)) {
+                    wrongKeys.settle(
+                            address,
+                            FailureLockout.Outcome.NEITHER,
+                            config.lockout().duration());
+                }
+            });
+        }
+        context.next();
     }
 
     /**
@@ -159,66 +209,31 @@ public class McpRateLimiter {
      * run on every single attempt, which counted nothing at all. It is not a
      * usable signal here.</p>
      *
-     * <p>So: {@code 401} is the policy refusing, counted only when the request
-     * actually carried a key (see the class javadoc). {@code 403} is an admin
-     * session holding no {@code mcp} role — no key was tried, so it neither
-     * counts nor clears. Anything else got through authentication, whatever the
-     * MCP transport then made of the body, and the run stops there.</p>
+     * <p>So: {@code 401} is the policy refusing the key. {@code 403} is an admin
+     * session holding no {@code mcp} role — no key was accepted or refused, so
+     * it neither counts nor clears. Anything else got through authentication,
+     * whatever the MCP transport then made of the body, and the run stops
+     * there.</p>
      */
-    private void recordOutcome(RoutingContext contexte, String address) {
-        int statut = contexte.response().getStatusCode();
-        if (statut != 401) {
-            if (statut != 403) {
-                echecsParAdresse.remove(address);
-            }
-            return;
-        }
-        if (McpApiKeyAuthenticationMechanism.presentedKey(contexte, config.apiKeyHeader()) == null) {
-            return;
-        }
-        Instant maintenant = Instant.now();
-        Duration blocage = config.lockout().duration();
-        if (echecsParAdresse.size() >= ADRESSES_MAX) {
-            evictDown(echecsParAdresse, Echecs::dernier, maintenant, blocage);
-        }
-        echecsParAdresse.compute(address, (ignore, courant) -> {
-            if (courant == null || courant.dernier().plus(blocage).isBefore(maintenant)) {
-                return new Echecs(1, maintenant);
-            }
-            return new Echecs(courant.nombre() + 1, maintenant);
-        });
+    private static FailureLockout.Outcome outcome(RoutingContext context) {
+        return switch (context.response().getStatusCode()) {
+            case 401 -> FailureLockout.Outcome.FAILURE;
+            case 403 -> FailureLockout.Outcome.NEITHER;
+            default -> FailureLockout.Outcome.SUCCESS;
+        };
     }
 
-    /** Seconds of lockout left, {@code 0} when the address may present a key again. */
-    private long lockoutSeconds(String address) {
-        if (config.lockout().maxFailures() <= 0) {
-            return 0;
-        }
-        Echecs echecs = echecsParAdresse.get(address);
-        if (echecs == null || echecs.nombre() < config.lockout().maxFailures()) {
-            return 0;
-        }
-        long restant = Duration.between(
-                        Instant.now(), echecs.dernier().plus(config.lockout().duration()))
-                .toSeconds();
-        if (restant <= 0) {
-            echecsParAdresse.remove(address);
-            return 0;
-        }
-        return Math.max(restant, 1);
-    }
-
-    private void refuse(RoutingContext contexte, long attente, String message) {
-        contexte.response()
+    private static void refuse(RoutingContext context, long wait, String message) {
+        context.response()
                 .setStatusCode(429)
-                .putHeader("Retry-After", String.valueOf(attente))
+                .putHeader("Retry-After", String.valueOf(wait))
                 .putHeader("Content-Type", "application/json;charset=UTF-8")
                 .end("{\"message\":\"" + message + "\"}");
     }
 
     /** Seconds rounded up to whole minutes, for a wait a human is meant to read. */
-    private static long minutes(long secondes) {
-        return Math.max(1, (secondes + 59) / 60);
+    private static long minutes(long seconds) {
+        return Math.max(1, (seconds + 59) / 60);
     }
 
     /**
@@ -227,60 +242,7 @@ public class McpRateLimiter {
      * REST side of the MCP page is out of reach either way — it is served under
      * {@code /api/mcp} and falls under the ordinary admin policy.
      */
-    private static boolean isMcpPath(String chemin) {
-        return chemin != null && (CHEMIN_MCP.equals(chemin) || chemin.startsWith(CHEMIN_MCP + "/"));
-    }
-
-    /**
-     * Seconds left before the rate window reopens, {@code 0} when the request
-     * may go through — the same shape, and the same name, as the espace
-     * limiters' {@code RateLimitVerdict.secondsBeforeNextTry}, and ready to be
-     * used as is for {@code Retry-After}.
-     */
-    private long secondsBeforeNextTry(String address) {
-        if (config.rateLimit().maxRequests() <= 0) {
-            return 0;
-        }
-        Duration fenetre = config.rateLimit().window();
-        Instant maintenant = Instant.now();
-        if (parAdresse.size() >= ADRESSES_MAX) {
-            evictDown(parAdresse, Fenetre::debut, maintenant, fenetre);
-        }
-        Fenetre apres = parAdresse.compute(address, (ignore, courante) -> {
-            if (courante == null || courante.debut().plus(fenetre).isBefore(maintenant)) {
-                return new Fenetre(1, maintenant);
-            }
-            return new Fenetre(courante.nombre() + 1, courante.debut());
-        });
-        if (apres.nombre() <= config.rateLimit().maxRequests()) {
-            return 0;
-        }
-        return Math.max(
-                Duration.between(maintenant, apres.debut().plus(fenetre)).toSeconds(), 1);
-    }
-
-    /**
-     * Brings one map back under the ceiling: expired entries first, then, if
-     * that is not enough, the oldest ones. Written once for the two maps —
-     * {@code instant} is what each record calls its own timestamp, and it is
-     * the only thing that differs.
-     */
-    private static <V> void evictDown(
-            Map<String, V> parAdresse,
-            java.util.function.Function<V, Instant> instant,
-            Instant maintenant,
-            Duration duree) {
-        parAdresse
-                .entrySet()
-                .removeIf(entree -> instant.apply(entree.getValue()).plus(duree).isBefore(maintenant));
-        if (parAdresse.size() < ADRESSES_MAX) {
-            return;
-        }
-        parAdresse.entrySet().stream()
-                .sorted(Comparator.comparing(entree -> instant.apply(entree.getValue())))
-                .limit(Math.max(1, parAdresse.size() - ADRESSES_MAX + 1))
-                .map(Map.Entry::getKey)
-                .toList()
-                .forEach(parAdresse::remove);
+    private static boolean isMcpPath(String path) {
+        return path != null && (MCP_PATH.equals(path) || path.startsWith(MCP_PATH + "/"));
     }
 }

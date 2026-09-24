@@ -29,8 +29,12 @@ services:
       # batch client, 0 disables it. See docs/mcp.md.
       PLANNING_MCP_MAX_REQUESTS: ${PLANNING_MCP_MAX_REQUESTS:-120}
       PLANNING_MCP_RATE_WINDOW: ${PLANNING_MCP_RATE_WINDOW:-PT1M}
-      # Defaults to CONNEXION_PROXYS_FIABLES; set it only to count /mcp callers
-      # on a different proxy list than the login lock does.
+      # Reverse proxies whose X-Forwarded-For the two per-address guards believe
+      # (admin login lock, /mcp). Blank, every caller behind the proxy shares one
+      # counter. See docs/securite.md.
+      CONNEXION_PROXYS_FIABLES: ${CONNEXION_PROXYS_FIABLES:-}
+      # Blank (the default) takes CONNEXION_PROXYS_FIABLES; set it only to count
+      # /mcp callers on a different proxy list than the login lock does.
       PLANNING_MCP_TRUSTED_PROXIES: ${PLANNING_MCP_TRUSTED_PROXIES:-}
       # Lockout on a run of WRONG keys, distinct from the ceiling above: it is
       # what makes guessing at the key cost time. A request carrying no key

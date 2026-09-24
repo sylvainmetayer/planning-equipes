@@ -1,6 +1,8 @@
 package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.config.ConfigEspaceCollegues;
+import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.SlidingWindowCounter;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 

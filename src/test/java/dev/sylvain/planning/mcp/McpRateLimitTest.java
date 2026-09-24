@@ -22,30 +22,30 @@ import org.junit.jupiter.api.Test;
  * depending on the order JUnit picked.</p>
  */
 @QuarkusTest
-@TestProfile(McpRateLimitTest.Profil.class)
+@TestProfile(McpRateLimitTest.Profile.class)
 class McpRateLimitTest {
 
-    private static final int PLAFOND = 3;
+    private static final int CEILING = 3;
 
     /**
      * A window long enough that no test can outlive it, and a ceiling low enough
      * to reach by hand. The production defaults (120 requests a minute) would
      * need two minutes of requests to prove the same thing.
      */
-    public static class Profil implements QuarkusTestProfile {
+    public static class Profile implements QuarkusTestProfile {
         @Override
         public Map<String, String> getConfigOverrides() {
             return Map.of(
                     "planning.mcp.rate-limit.max-requests",
-                    String.valueOf(PLAFOND),
+                    String.valueOf(CEILING),
                     "planning.mcp.rate-limit.window",
                     "PT10M");
         }
     }
 
     @Test
-    void plafonneLesRequetesDUneMemeAdresse() {
-        for (int i = 0; i < PLAFOND; i++) {
+    void capsTheRequestsOfOneAddress() {
+        for (int i = 0; i < CEILING; i++) {
             given().header("X-MCP-Api-Key", "test-mcp-key")
                     .when()
                     .post("/mcp")

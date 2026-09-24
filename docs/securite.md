@@ -278,7 +278,10 @@ c'est le même code (`ClientAddress`) qui la calcule : lecture de
 `X-Forwarded-For` **par la droite**, et seulement si la connexion elle-même vient
 d'un proxy déclaré. `PLANNING_MCP_TRUSTED_PROXIES` reprend par défaut la valeur
 de `CONNEXION_PROXYS_FIABLES` — les proxys sont un fait du déploiement, pas d'un
-endpoint. Voir [`mcp.md`](mcp.md#limitation-de-débit) pour le réglage du
+endpoint —, et une valeur **vide** compte comme absente : un fichier compose qui
+transmet la variable non renseignée la pose à la chaîne vide, que le repli
+`${A:${B:}}` de la configuration ne tient pas pour manquante. Sans ce repli en
+Java, tout appel à `/mcp` arrivant par le proxy tombait sur un seul compteur. Voir [`mcp.md`](mcp.md#limitation-de-débit) pour le réglage du
 plafond selon l'usage.
 
 > **Derrière un proxy, cette liste n'est pas facultative ici.** Le verrou de
