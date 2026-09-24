@@ -71,6 +71,9 @@ services:
       # clé ne compte pas, une requête qui s'authentifie efface la série.
       PLANNING_MCP_MAX_FAILURES: ${PLANNING_MCP_MAX_FAILURES:-5}
       PLANNING_MCP_LOCKOUT_DURATION: ${PLANNING_MCP_LOCKOUT_DURATION:-PT10M}
+      # Glisser-déposer des affectations dans les vues Journée et Rail : coupé
+      # par défaut tant que le geste n'est pas assez fiable. `true` pour l'offrir.
+      GLISSER_DEPOSER_ACTIF: ${GLISSER_DEPOSER_ACTIF:-false}
       # Suivi d'erreurs : vide = désactivé. Voir docs/observabilite.md.
       SENTRY_DSN: ${SENTRY_DSN:-}
       SENTRY_ENVIRONMENT: ${SENTRY_ENVIRONMENT:-production}

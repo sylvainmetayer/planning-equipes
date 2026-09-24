@@ -1,5 +1,6 @@
 package dev.sylvain.planning.api;
 
+import dev.sylvain.planning.config.ConfigAdmin;
 import dev.sylvain.planning.config.ConfigObservabilite;
 import dev.sylvain.planning.config.DevMode;
 import jakarta.inject.Inject;
@@ -24,6 +25,9 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * lets the UI offer the Quarkus Dev UI only where it exists. The frontend's own
  * build mode would be a poor proxy: it says how the bundle was built, not how
  * the server it talks to was launched.</p>
+ *
+ * <p>And whether the admin's day views offer <b>drag and drop</b> to move a
+ * seat by hand — see {@link ConfigAdmin#dragDropEnabled()}.</p>
  */
 @Path("/config")
 @Produces(MediaType.APPLICATION_JSON)
@@ -35,13 +39,17 @@ public class ConfigResource {
     @Inject
     DevMode devMode;
 
+    @Inject
+    ConfigAdmin admin;
+
     @GET
     public ConfigView get() {
         return new ConfigView(
                 observabilite.sentry().dsn().orElse(""),
                 observabilite.sentry().environment(),
                 observabilite.cloudflare().webAnalyticsToken().orElse(""),
-                devMode.isActive());
+                devMode.isActive(),
+                admin.dragDropEnabled());
     }
 
     /**
@@ -51,8 +59,14 @@ public class ConfigResource {
      * @param devMode            server launched with {@code quarkus:dev}: the
      *                           Dev UI exists at {@code /q/dev-ui}, so the
      *                           interface may link to it
+     * @param dragDropEnabled    the admin's day views let a seat be dragged
+     *                           onto another line
      */
-    @Schema(requiredProperties = {"devMode"})
+    @Schema(requiredProperties = {"devMode", "dragDropEnabled"})
     public record ConfigView(
-            String sentryDsn, String sentryEnvironment, String cloudflareWebAnalyticsToken, boolean devMode) {}
+            String sentryDsn,
+            String sentryEnvironment,
+            String cloudflareWebAnalyticsToken,
+            boolean devMode,
+            boolean dragDropEnabled) {}
 }

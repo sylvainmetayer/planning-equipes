@@ -12,6 +12,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { APP_CONFIG } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -79,6 +80,7 @@ interface Options {
   stand?: string;
   animateur?: string;
   countRejects?: boolean;
+  dragDropEnabled?: boolean;
   verrous?: Partial<{
     estJourVerrouille: (date: string | null) => boolean;
     estStandVerrouille: (id: string) => boolean;
@@ -119,6 +121,7 @@ function mount(options: Options = {}) {
         },
       },
       { provide: MatDialog, useValue: { open } },
+      { provide: APP_CONFIG, useValue: { dragDropEnabled: options.dragDropEnabled ?? false } },
     ],
   });
   const fixture = TestBed.createComponent(CalendarDayView);
@@ -243,16 +246,40 @@ describe('CalendarDayView rendering', () => {
   });
 
   // The drag-and-drop is announced as under test on the screen that carries
-  // it: the warning has to be there every time it is opened, so it is asserted
-  // like any other part of the page.
+  // it: wherever the instance offers it, the warning is there every time the
+  // page is opened, so it is asserted like any other part of the page.
   it('says on the page that dragging is still under test', async () => {
     const { fixture } = mount({
       planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+      dragDropEnabled: true,
     });
     await fixture.whenStable();
 
     const bandeau = root(fixture).querySelector('.essai-bandeau');
     expect(bandeau?.textContent).toContain('en cours de test');
+    const nom = root(fixture).querySelector<HTMLElement>('.affectation-glissable')!;
+    expect(nom.querySelector('.affectation-poignee')).not.toBeNull();
+    expect(nom.classList).toContain('cdk-drag');
+    expect(nom.classList).not.toContain('cdk-drag-disabled');
+  });
+
+  // GLISSER_DEPOSER_ACTIF is off by default: no handle, no warning, no gesture —
+  // the name still opens « Pourquoi lui ? ».
+  it('offers no drag and drop when the instance has not switched it on', async () => {
+    const { fixture } = mount({
+      planning: planning([poste('p1', AMBIANCE, C1, animateur('a1', 'Camille'))]),
+    });
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('.essai-bandeau')).toBeNull();
+    const nom = root(fixture).querySelector<HTMLElement>('.affectation-glissable')!;
+    expect(nom.querySelector('.affectation-poignee')).toBeNull();
+    // Not a disabled drag: no drag at all, so nothing is registered for it.
+    expect(nom.classList).not.toContain('cdk-drag');
+    expect(nom.querySelector('.affectation-link')).not.toBeNull();
+    expect(root(fixture).querySelector('.day-stand')!.classList).toContain(
+      'cdk-drop-list-disabled',
+    );
   });
 
   it('marks an unfilled line as such rather than leaving it blank', async () => {
@@ -534,7 +561,7 @@ describe('CalendarDayView rendering', () => {
     ]);
 
     it('names the handle and opens the move with every other seat of the day', async () => {
-      const { fixture, open } = mount({ planning: plan });
+      const { fixture, open } = mount({ planning: plan, dragDropEnabled: true });
       await fixture.whenStable();
 
       const poignee = root(fixture).querySelector<HTMLButtonElement>(
@@ -556,6 +583,7 @@ describe('CalendarDayView rendering', () => {
     it('leaves out the lines a lock closes, as the drop does', async () => {
       const { fixture, open } = mount({
         planning: plan,
+        dragDropEnabled: true,
         verrous: { estStandVerrouille: (id) => id === 'Dixit' },
       });
       await fixture.whenStable();
@@ -569,7 +597,7 @@ describe('CalendarDayView rendering', () => {
     });
 
     it('moves through the same call as a drop', async () => {
-      const { fixture, open } = mount({ planning: plan });
+      const { fixture, open } = mount({ planning: plan, dragDropEnabled: true });
       open.mockReturnValueOnce({ afterClosed: () => of<unknown>({ source: null, target: 'P3' }) });
       const move = TestBed.inject(AffectationExplanationService).deplacer as ReturnType<
         typeof vi.fn
@@ -588,6 +616,14 @@ describe('CalendarDayView rendering', () => {
         .click();
 
       await vi.waitFor(() => expect(move).toHaveBeenCalledWith('P1', { posteId: 'P3' }, 'a1'));
+    });
+
+    // Switched off with the drag: no handle to click, so no dialog either.
+    it('offers no move button when the instance has not switched drag and drop on', async () => {
+      const { fixture } = mount({ planning: plan });
+      await fixture.whenStable();
+
+      expect(root(fixture).querySelector('button.affectation-poignee')).toBeNull();
     });
   });
 });

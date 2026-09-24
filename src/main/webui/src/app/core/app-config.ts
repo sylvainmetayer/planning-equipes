@@ -1,4 +1,4 @@
-import { InjectionToken } from '@angular/core';
+import { InjectionToken, inject } from '@angular/core';
 import { AppConfig } from './models';
 
 /**
@@ -11,3 +11,26 @@ import { AppConfig } from './models';
  * menu entry belongs on screen.</p>
  */
 export const APP_CONFIG = new InjectionToken<AppConfig>('APP_CONFIG');
+
+/**
+ * What the application runs with when `/api/config` could not be read: every
+ * optional feature off. Observability stays silent, and the drag and drop of
+ * the day views is not offered — a gesture that writes to the plan is the last
+ * thing to switch on by guesswork.
+ */
+export const DEFAULT_APP_CONFIG: AppConfig = {
+  sentryDsn: '',
+  sentryEnvironment: 'local',
+  cloudflareWebAnalyticsToken: '',
+  devMode: false,
+  dragDropEnabled: false,
+};
+
+/**
+ * The server's answer, or {@link DEFAULT_APP_CONFIG} where no one provided it
+ * (a unit test mounting one component): the one place that decides what a
+ * missing value means.
+ */
+export function injectAppConfig(): AppConfig {
+  return inject(APP_CONFIG, { optional: true }) ?? DEFAULT_APP_CONFIG;
+}

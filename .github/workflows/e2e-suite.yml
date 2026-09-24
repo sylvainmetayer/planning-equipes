@@ -124,6 +124,9 @@ jobs:
           # dans l'avenir en gardant les âges des mineurs ; d'ici là, la règle
           # est couverte par FrozenPastAcceptanceTest, sur l'horloge figée.
           PASSE_FIGE: 'false'
+          # Le glisser-déposer est coupé par défaut ; la pile E2E l'active pour
+          # que glisser-deposer.spec.ts continue d'exercer le geste.
+          GLISSER_DEPOSER_ACTIF: 'true'
           MAIL_MOCK: 'false'
           MAIL_HOST: mailpit
           MAIL_PORT: 1025

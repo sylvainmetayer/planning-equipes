@@ -8,6 +8,7 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { describe, expect, it, vi } from 'vitest';
+import { APP_CONFIG } from '../../core/app-config';
 import { AffectationExplanationService } from '../../core/affectation-explanation.service';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -96,6 +97,7 @@ describe('RailJourView', () => {
     evenement: PlanningEvenement,
     entrees: { jour?: number; filtre?: string; stand?: string; animateur?: string } = {},
     pauses: RapportPauses | null = null,
+    dragDropEnabled = false,
   ): Promise<void> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -105,6 +107,7 @@ describe('RailJourView', () => {
         { provide: SolverJobService, useValue: { editingLocked: () => false } },
         { provide: NotificationService, useValue: { notify: vi.fn() } },
         { provide: AffectationExplanationService, useValue: { deplacer: vi.fn() } },
+        { provide: APP_CONFIG, useValue: { dragDropEnabled } },
       ],
     });
     fixture = TestBed.createComponent(RailJourView);
@@ -154,11 +157,30 @@ describe('RailJourView', () => {
   });
 
   // Same warning as the day calendar, on the other screen that carries the
-  // gesture: it has to be there every time the page is opened.
+  // gesture: wherever the instance offers it, it is there every time the page
+  // is opened.
   it('says on the page that dragging is still under test', async () => {
-    await rendre(planningDeuxJours());
+    await rendre(planningDeuxJours(), {}, null, true);
 
     expect(racine().querySelector('.essai-bandeau')?.textContent).toContain('en cours de test');
+    const bloc = racine().querySelector<HTMLElement>('.rail-bloc')!;
+    expect(bloc.querySelector('.rail-bloc-poignee')).not.toBeNull();
+    expect(bloc.classList).toContain('cdk-drag');
+    expect(bloc.classList).not.toContain('cdk-drag-disabled');
+    expect(bloc.getAttribute('title')).toContain('Glisser vers une autre personne');
+  });
+
+  // GLISSER_DEPOSER_ACTIF is off by default: no handle, no warning, no gesture.
+  it('offers no drag and drop when the instance has not switched it on', async () => {
+    await rendre(planningDeuxJours());
+
+    expect(racine().querySelector('.essai-bandeau')).toBeNull();
+    const bloc = racine().querySelector<HTMLElement>('.rail-bloc')!;
+    expect(bloc.querySelector('.rail-bloc-poignee')).toBeNull();
+    // Not a disabled drag: no drag at all, so nothing is registered for it.
+    expect(bloc.classList).not.toContain('cdk-drag');
+    expect(bloc.getAttribute('title')).not.toContain('Glisser');
+    expect(racine().querySelector('.rail-cell')!.classList).toContain('cdk-drop-list-disabled');
   });
 
   it('announces every line as text, since the rail itself is decorative', async () => {
@@ -220,7 +242,7 @@ describe('RailJourView', () => {
   // RGAA 7.3: the drag has no key of its own, so Enter on a line asks where
   // to move one of its shifts — only the lines a drop would accept.
   it('opens the move of a shift on Enter, offering the lines a drop would accept', async () => {
-    await rendre(planningDeuxJours());
+    await rendre(planningDeuxJours(), {}, null, true);
     const dialog = TestBed.inject(MatDialog);
     const open = vi.spyOn(dialog, 'open');
     const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
@@ -240,7 +262,7 @@ describe('RailJourView', () => {
   });
 
   it('says so on Enter when the line holds no shift, rather than doing nothing', async () => {
-    await rendre(planningDeuxJours());
+    await rendre(planningDeuxJours(), {}, null, true);
     const ligneBob = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
       (each) => each.getAttribute('aria-label')!.includes('Bob'),
     )!;
@@ -250,6 +272,20 @@ describe('RailJourView', () => {
     expect(TestBed.inject(NotificationService).notify).toHaveBeenCalledWith(
       expect.objectContaining({ title: expect.stringContaining('Aucune vacation') }),
     );
+  });
+
+  // Switched off with the drag: Enter on a line opens nothing and says nothing.
+  it('leaves Enter alone when the instance has not switched drag and drop on', async () => {
+    await rendre(planningDeuxJours());
+    const open = vi.spyOn(TestBed.inject(MatDialog), 'open');
+    const ligneAlice = Array.from(racine().querySelectorAll<HTMLElement>('[data-ligne]')).find(
+      (each) => each.getAttribute('aria-label')!.includes('Alice'),
+    )!;
+
+    ligneAlice.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    expect(open).not.toHaveBeenCalled();
+    expect(TestBed.inject(NotificationService).notify).not.toHaveBeenCalled();
   });
 
   it('exposes exactly one tab stop for the whole rail', async () => {

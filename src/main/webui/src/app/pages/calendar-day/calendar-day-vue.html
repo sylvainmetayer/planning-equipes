@@ -20,10 +20,12 @@
         <span i18n="@@calendarDay.legend.verrouille">Ligne figée par un verrouillage</span></li>
     </ul>
 
-    <p class="essai-bandeau">
-      <mat-icon inline aria-hidden="true">science</mat-icon>
-      <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
-    </p>
+    @if (dragDropEnabled) {
+      <p class="essai-bandeau">
+        <mat-icon inline aria-hidden="true">science</mat-icon>
+        <span i18n="@@commun.essai.glisserDeposer">Le glisser-déposer des affectations est en cours de test sur cet écran. Vérifiez le planning après un déplacement, et signalez ce qui vous surprend.</span>
+      </p>
+    }
 
   </mat-card-content>
 </mat-card>
@@ -76,7 +78,7 @@
                   <div class="day-stand" [class.empty-slot]="stand.entries.length === 0" [class.understaffed-slot]="isUnderstaffed(stand)" [class.appreciation-mismatch-slot]="hasAppreciationMismatch(stand)"
                        cdkDropList [cdkDropListData]="stand" [cdkDropListSortingDisabled]="true"
                        [cdkDropListEnterPredicate]="peutRecevoir"
-                       [cdkDropListDisabled]="editingLocked() || estLigneVerrouillee(slot, stand)"
+                       [cdkDropListDisabled]="!dragDropEnabled || editingLocked() || estLigneVerrouillee(slot, stand)"
                        (cdkDropListDropped)="onDrop($event)">
                     <strong>{{ stand.standNom }}</strong>
                     @if (stand.heureDebut !== slot.heureDebut || stand.heureFin !== slot.heureFin) {
@@ -109,36 +111,42 @@
                     } @else {
                       <span>
                         @for (entry of stand.entries; track entry.poste.id; let isLast = $last) {
-                          <span
-                            class="affectation-glissable"
-                            cdkDrag
-                            [cdkDragData]="entry.poste"
-                            [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand) || estJourVerrouille(day)"
-                            [attr.data-poste-id]="entry.poste.id"
-                          >
-                            <!-- The handle is the only draggable surface: without
-                                 it the CDK sets touch-action: none and user-select:
-                                 none on the whole name, so a swipe no longer scrolls
-                                 the day and the name can no longer be selected.
-                                 A button too (RGAA 7.3, WCAG 2.5.7): a click or
-                                 Enter opens the same move as a dialog, for the
-                                 keyboard and for whoever cannot hold a drag. -->
-                            <button
-                              type="button"
-                              class="affectation-poignee"
-                              cdkDragHandle
-                              [attr.aria-label]="moveLabel(entry.label)"
-                              [title]="glisserTooltip"
-                              (click)="openMove(day, slot, stand, entry.poste, entry.label)"
-                            >⠿</button
-                            ><button
-                              type="button"
-                              class="affectation-link"
-                              [title]="pourquoiLuiLabel"
-                              (click)="openExplanation(entry.poste)"
-                            >{{ entry.label }}</button>
-                          </span
-                          >{{ isLast ? '' : ', ' }}
+                          <!-- Switched off for the instance, the name carries no
+                               cdkDrag and no move button at all: a day holds
+                               hundreds of names, each a drag ref for nothing,
+                               and the move dialog is switched off with the drag.
+                               A lock or a solve disables the drag instead, and
+                               the CSS hides the handle then. -->
+                          @if (dragDropEnabled) {
+                            <span
+                              class="affectation-glissable"
+                              cdkDrag
+                              [cdkDragData]="entry.poste"
+                              [cdkDragDisabled]="editingLocked() || estLigneVerrouillee(slot, stand) || estJourVerrouille(day)"
+                              [attr.data-poste-id]="entry.poste.id"
+                            >
+                              <!-- The handle is the only draggable surface: without
+                                   it the CDK sets touch-action: none and user-select:
+                                   none on the whole name, so a swipe no longer scrolls
+                                   the day and the name can no longer be selected.
+                                   A button too (RGAA 7.3, WCAG 2.5.7): a click or
+                                   Enter opens the same move as a dialog, for the
+                                   keyboard and for whoever cannot hold a drag. -->
+                              <button
+                                type="button"
+                                class="affectation-poignee"
+                                cdkDragHandle
+                                [attr.aria-label]="moveLabel(entry.label)"
+                                [title]="glisserTooltip"
+                                (click)="openMove(day, slot, stand, entry.poste, entry.label)"
+                              >⠿</button
+                              ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }" />
+                            </span>
+                          } @else {
+                            <span class="affectation-glissable" [attr.data-poste-id]="entry.poste.id"
+                              ><ng-container [ngTemplateOutlet]="nomAffecte" [ngTemplateOutletContext]="{ $implicit: entry }"
+                            /></span>
+                          }{{ isLast ? '' : ', ' }}
                         }
                       </span>
                     }
@@ -158,3 +166,13 @@
     }
   </div>
 }
+
+<!-- One name of a stand line, drag handle or not: « Pourquoi lui ? » on click. -->
+<ng-template #nomAffecte let-entry>
+  <button
+    type="button"
+    class="affectation-link"
+    [title]="pourquoiLuiLabel"
+    (click)="openExplanation(entry.poste)"
+  >{{ entry.label }}</button>
+</ng-template>

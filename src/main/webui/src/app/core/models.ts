@@ -1949,8 +1949,8 @@ export interface ImportScenarioResult {
 
 /**
  * `/api/config`, fetched once before bootstrap: the observability keys — blank
- * when the matching feature is disabled server-side — and how the server was
- * launched.
+ * when the matching feature is disabled server-side —, how the server was
+ * launched, and the switches that decide what the admin interface offers.
  */
 export interface AppConfig {
   sentryDsn: string;
@@ -1958,6 +1958,8 @@ export interface AppConfig {
   cloudflareWebAnalyticsToken: string;
   /** Server running under `quarkus:dev`: the Dev UI exists at `/q/dev-ui`. */
   devMode: boolean;
+  /** The day views let a seat be dragged onto another line (`GLISSER_DEPOSER_ACTIF`). */
+  dragDropEnabled: boolean;
 }
 
 /**

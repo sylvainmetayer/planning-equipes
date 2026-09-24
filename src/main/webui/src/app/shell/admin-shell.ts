@@ -39,7 +39,7 @@ import { PlanningResolutionStore } from '../core/planning-resolution.store';
 import { ThemeService } from '../core/theme.service';
 import { NavModeService } from '../core/nav-mode.service';
 import { ThemePreference } from '../core/theme-preference';
-import { APP_CONFIG } from '../core/app-config';
+import { injectAppConfig } from '../core/app-config';
 import { SolverJobService } from '../core/solver-job.service';
 import { BrandLogo } from '../shared/brand-logo';
 import { DataStaleIndicator } from '../shared/data-stale-indicator';
@@ -95,9 +95,7 @@ export class AdminShell {
    * Built once, from the server's own answer: what the backend says it is,
    * not what this bundle was built as.
    */
-  protected readonly navGroups = buildNavGroups(
-    inject(APP_CONFIG, { optional: true })?.devMode ?? false,
-  );
+  protected readonly navGroups = buildNavGroups(injectAppConfig().devMode);
   /**
    * The path on screen, without its query string: what decides whether an
    * entry hidden by the simple menu is shown anyway, because the reader is
