@@ -73,9 +73,10 @@ class ConfirmationPlanningTest {
         donnerEmail("CONF-A", EMAIL_ALICE);
 
         RestAssured.requestSpecification = null;
-        String session = EspaceSessions.open(mailbox, tokenOf("CONF-A"), EMAIL_ALICE);
-        RestAssured.requestSpecification =
-                new RequestSpecBuilder().addCookie("planning-espace", session).build();
+        String session = EspaceSessions.open(EMAIL_ALICE);
+        RestAssured.requestSpecification = new RequestSpecBuilder()
+                .addHeader(EspaceSessions.EN_TETE, session)
+                .build();
         mailbox.clear();
     }
 

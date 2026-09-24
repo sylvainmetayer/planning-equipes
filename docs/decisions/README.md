@@ -94,10 +94,17 @@ scénario versionné de `src/main/resources/scenarios/`.
 | [0074](0074-deux-jobs-planifies-de-plus-webhooks-et-meteo.md) | Deux `@Scheduled` de plus : la reprise des webhooks chaque minute et l'alerte météo chaque matin ; webhooks configurés pour l'instance, livrés hors du fil de l'opération sans observateur transactionnel, vers l'adresse que la garde anti-SSRF a vérifiée, secrets chiffrés au repos | Accepté · révise 0070 |
 | [0075](0075-quota-de-calcul-de-l-instance-dans-l-application.md) | Le nombre de calculs se borne dans l'application, pour toute l'instance : quota sur 60 minutes glissantes compté au lancement (file, solve synchrone, vérification du besoin, MCP compris) et file plafonnée, refus en `409` qui dit quand revenir, compteur en mémoire ; pas de limite au reverse proxy ni de `429` | Accepté · prolonge 0051 |
 | [0076](0076-journal-des-connexions-admin-par-instance.md) | Les connexions administrateur, leurs échecs et les verrouillages du form login vont dans un journal de l'instance, sans édition, horodatage et adresse seulement — jamais ce qui a été saisi ; rétention de l'historique, hors du dump SQL | Accepté |
+<<<<<<< HEAD
 | [0078](0078-echange-de-journees-plutot-que-mouvements-pillar.md) | La seconde recherche locale échange des journées entières entre deux animateurs du même jour, couple choisi plutôt que tiré ; les *pillar moves* de Timefold, mesurés, sont écartés, et l'échange de deux journées identiques est gardé | Accepté · complète 0049 |
+<<<<<<< HEAD
 | [0079](0079-la-phase-de-faisabilite-tire-sur-une-liste-par-pas-et-reconstruit-rarement.md) | La phase de faisabilité tire ses sièges filtrés sur une liste mise en cache par pas, et joue le *ruin and recreate* à poids 0,02 pour toute édition ; `HardRunCapSearch` disparaît | Accepté · révise 0049, complète 0025 et 0067 |
 | [0080](0080-un-solveur-exact-pour-la-seule-verification-du-besoin-etude.md) | Un solveur exact (CP-SAT) pour la seule vérification du besoin : ce que chaque règle dure devient, les deux qui ne se traduisent pas sans une approximation plus stricte, le protocole du banc ; aucune dépendance dans l'application quoi qu'il en sorte | **Proposé** · étude · voisine de 0071 et 0079 |
 | [0081](0081-le-plateau-se-juge-sur-son-gain-de-medium-a-l-echelle-du-plan.md) | Le plateau se juge sur le medium gagné pendant la fenêtre, seuil proportionnel au nombre de sièges ; fenêtre par défaut 180 s, budget inchangé ; les rendements décroissants de Timefold, mesurés, sont écartés | Accepté · prolonge 0051, complète 0079 |
+=======
+=======
+| [0049](0049-keycloak-obligatoire-comptes-nominatifs.md) | Keycloak obligatoire pour l'administration, l'espace animateur et MCP ; le compte embarqué devient une porte de secours fermée ; un compte par personne ; les droits fins (par édition, datés) dans l'application | Accepté · socle implémenté |
+>>>>>>> 71c1ae9a (feat(auth)!: Keycloak obligatoire, comptes nominatifs et habilitations)
+>>>>>>> 34f7fdda (feat(auth)!: Keycloak obligatoire, comptes nominatifs et habilitations)
 
 **0002** et **0013** se lisent ensemble : la première pose le blocage du
 diagnostic par l'édition du solveur et retient deux modes de qualité inégale,
