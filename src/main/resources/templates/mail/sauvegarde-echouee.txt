@@ -1,0 +1,8 @@
+La sauvegarde automatique de la base a échoué le {tentative}.
+
+Raison : {raison}
+{#if dernierSucces}Dernière sauvegarde réussie : {dernierSucces}.{#else if echecs == 0}La base n'a pas pu être lue : la date de la dernière sauvegarde réussie est inconnue.{#else}Aucune sauvegarde réussie n'est enregistrée sur cette instance.{/if}{#if echecs > 1} C'est la {echecs}e tentative consécutive en échec.{/if}
+
+Tant que ce n'est pas réglé, une erreur de saisie ou une panne de la base ne se rattrape qu'à partir de la dernière sauvegarde réussie. Le compte rendu est sur l'écran Paramètres, onglet Globaux{#if lien} : {lien}{/if} ; les causes courantes et la restauration sont décrites dans docs/exploitation.md, section 5.
+
+Un message suivra quand une sauvegarde aura de nouveau réussi.

@@ -2151,6 +2151,7 @@
   "parametres.sauvegarde.conservationValeur": "{$INTERPOLATION} backups, the oldest removed as each new one is written",
   "parametres.sauvegarde.prochaine": "Next backup",
   "parametres.sauvegarde.reglage": " Location and number of copies are set by the host (BACKUP_DIR and BACKUP_RETENTION variables). ",
+  "parametres.sauvegarde.alerteSansDestinataire": " No admin address is configured (MAIL_ADMIN variable): a failed backup will not be reported by any e-mail, only on this screen. ",
   "parametres.sauvegarde.derniereOk": " Last backup succeeded on {$INTERPOLATION}: {$INTERPOLATION_1} ",
   "parametres.sauvegarde.derniereEchec": " The last backup failed on {$INTERPOLATION}: {$INTERPOLATION_1} ",
   "parametres.sauvegarde.jamais": " No backup has been attempted on this instance yet. ",

@@ -1,0 +1,12 @@
+{#include mail/layout}
+{#body}
+<p style="margin:0 0 12px;">La sauvegarde automatique de la base a échoué le <strong>{tentative}</strong>.</p>
+<p style="margin:0 0 12px;">Raison : {raison}</p>
+<p style="margin:0 0 12px;">{#if dernierSucces}Dernière sauvegarde réussie : {dernierSucces}.{#else if echecs == 0}La base n'a pas pu être lue : la date de la dernière sauvegarde réussie est inconnue.{#else}Aucune sauvegarde réussie n'est enregistrée sur cette instance.{/if}{#if echecs > 1} C'est la {echecs}<sup>e</sup> tentative consécutive en échec.{/if}</p>
+<p style="margin:0 0 12px;color:{muted};">Tant que ce n'est pas réglé, une erreur de saisie ou une panne de la base ne se rattrape qu'à partir de la dernière sauvegarde réussie. Les causes courantes et la restauration sont décrites dans docs/exploitation.md, section 5.</p>
+{#if lien}
+<p style="margin:0 0 12px;">Compte rendu sur l'écran Paramètres, onglet Globaux : <a href="{lien}" style="color:{accent};">{lien}</a></p>
+{/if}
+<p style="margin:0;color:{muted};">Un message suivra quand une sauvegarde aura de nouveau réussi.</p>
+{/body}
+{/include}

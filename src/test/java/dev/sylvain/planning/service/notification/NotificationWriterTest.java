@@ -7,6 +7,8 @@ import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
@@ -211,6 +213,62 @@ class NotificationWriterTest {
         redacteur.adminAddress = adminAddress(null);
 
         assertThat(redacteur.rediger(new Notification.DeclarationSoumise("Alice Dupont", 1, 0)))
+                .isEmpty();
+    }
+
+    // --- Automatic backup (admin) ------------------------------------------
+
+    private static final ZonedDateTime NUIT = ZonedDateTime.of(2026, 3, 8, 4, 0, 0, 0, ZoneId.of("Europe/Paris"));
+
+    @Test
+    void aFailedBackupSaysWhenWhyAndSinceWhen() {
+        MailDraft courrier =
+                rediger(new Notification.BackupFailed(NUIT, "No space left on device", NUIT.minusDays(1), 1));
+
+        assertThat(courrier.destinataire()).isEqualTo("admin@example.org");
+        assertThat(courrier.sujet()).contains("échec de la sauvegarde nocturne");
+        assertThat(courrier.corps())
+                .contains("8 mars 2026 à 04:00")
+                .contains("No space left on device")
+                .contains("Dernière sauvegarde réussie : 7 mars 2026 à 04:00")
+                .contains("https://planning.example.org/parametres?onglet=globaux");
+        assertThat(courrier.html()).contains("No space left on device");
+    }
+
+    @Test
+    void aBackupThatNeverWorkedSaysSoAndCountsTheNights() {
+        MailDraft courrier = rediger(new Notification.BackupFailed(NUIT, "boom", null, 3));
+
+        assertThat(courrier.sujet()).contains("3 nuits consécutives");
+        assertThat(courrier.corps())
+                .contains("Aucune sauvegarde réussie n'est enregistrée")
+                .contains("3e tentative");
+    }
+
+    /** The database itself was down: no count, no date, and the mail says why. */
+    @Test
+    void anUnknownStreakNamesNoCountAndNoDate() {
+        MailDraft courrier = rediger(new Notification.BackupFailed(NUIT, "connection refused", null, 0));
+
+        assertThat(courrier.sujet()).doesNotContain("consécutives");
+        assertThat(courrier.corps()).contains("date de la dernière sauvegarde réussie est inconnue");
+    }
+
+    @Test
+    void aRecoveredBackupClosesTheLoop() {
+        MailDraft courrier = rediger(new Notification.BackupRecovered(NUIT, "planning-20260308-040000.dump", 2));
+
+        assertThat(courrier.sujet()).contains("rétablie");
+        assertThat(courrier.corps()).contains("planning-20260308-040000.dump").contains("2 tentatives");
+    }
+
+    @Test
+    void withoutAnAdminAddressNoBackupAlertIsWritten() {
+        redacteur.adminAddress = adminAddress(null);
+
+        assertThat(redacteur.rediger(new Notification.BackupFailed(NUIT, "boom", null, 1)))
+                .isEmpty();
+        assertThat(redacteur.rediger(new Notification.BackupRecovered(NUIT, "f.dump", 1)))
                 .isEmpty();
     }
 }

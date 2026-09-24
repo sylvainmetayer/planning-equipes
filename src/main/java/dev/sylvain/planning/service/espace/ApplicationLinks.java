@@ -38,6 +38,14 @@ public class ApplicationLinks {
     /** Admin screen where self-service declarations are applied or refused. */
     private static final String ECRAN_DISPONIBILITES = "disponibilites";
 
+    /**
+     * Admin screen holding the instance-wide settings, the automatic backup
+     * among them; the tab is URL state (ADR 0012).
+     */
+    private static final String ECRAN_PARAMETRES = "parametres";
+
+    private static final String ONGLET_GLOBAUX = "globaux";
+
     /** Espace animateur, whose {@code :token} segment IS the credential. */
     private static final String ESPACE_ANIMATEUR = "animateur";
 
@@ -76,6 +84,15 @@ public class ApplicationLinks {
     public Optional<String> problemesScreen() {
         return base.map(
                 url -> UriBuilder.fromUri(url).path(ECRAN_PROBLEMES).build().toString());
+    }
+
+    /** The Paramètres screen, on the tab where the backup report lives. */
+    public Optional<String> parametresGlobauxScreen() {
+        return base.map(url -> UriBuilder.fromUri(url)
+                .path(ECRAN_PARAMETRES)
+                .queryParam("onglet", ONGLET_GLOBAUX)
+                .build()
+                .toString());
     }
 
     public Optional<String> disponibilitesScreen() {

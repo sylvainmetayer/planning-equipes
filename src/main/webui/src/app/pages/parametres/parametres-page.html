@@ -173,6 +173,13 @@
               BACKUP_RETENTION).
             </p>
 
+            @if (etat.alertRecipientMissing) {
+              <p class="locked-hint" role="status" i18n="@@parametres.sauvegarde.alerteSansDestinataire">
+                Aucune adresse d'administration n'est configurée (variable MAIL_ADMIN) : une sauvegarde en échec
+                ne sera signalée par aucun e-mail, seulement sur cet écran.
+              </p>
+            }
+
             @if (etat.lastRun.attemptedAt) {
               @if (etat.lastRun.succeeded) {
                 <p class="calendar-meta" role="status" i18n="@@parametres.sauvegarde.derniereOk">

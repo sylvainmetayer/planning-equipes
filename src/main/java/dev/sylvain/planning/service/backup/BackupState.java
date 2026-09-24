@@ -21,8 +21,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param files          the dumps currently on disk, most recent first
  * @param directoryError why the directory could not be listed, {@code null}
  *                       when it could
+ * @param alertRecipientMissing a backup is configured but {@code MAIL_ADMIN} is
+ *                       empty: a failed night alerts nobody, only this
+ *                       screen shows it
  */
-@Schema(requiredProperties = {"active", "configured", "retention"})
+@Schema(requiredProperties = {"active", "configured", "retention", "alertRecipientMissing"})
 public record BackupState(
         boolean configured,
         String directory,
@@ -33,4 +36,5 @@ public record BackupState(
         Instant nextRun,
         BackupRun lastRun,
         List<BackupFile> files,
-        String directoryError) {}
+        String directoryError,
+        boolean alertRecipientMissing) {}
