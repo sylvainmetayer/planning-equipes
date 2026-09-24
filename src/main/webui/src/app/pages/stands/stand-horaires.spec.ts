@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { JourResolu, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import { Creneau, HoraireStand, JourSemaine } from '../../core/models';
 import {
@@ -6,6 +6,8 @@ import {
   decrireJour,
   effectifDepuisSaisie,
   erreurRegle,
+  notesRegles,
+  notesReglesForStands,
   premiereErreurHoraire,
 } from './stand-horaires';
 
@@ -138,8 +140,15 @@ describe('datesEvenement', () => {
 });
 
 describe('libelleJour', () => {
+  afterEach(() => localStorage.clear());
+
   it('shortens an ISO date to day/month', () => {
     expect(libelleJour('2026-07-08')).toBe('08/07');
+  });
+
+  it('follows the UI locale: month/day in English', () => {
+    localStorage.setItem('planning-equipes.locale', 'en');
+    expect(libelleJour('2026-07-08')).toBe('07/08');
   });
 });
 
@@ -244,5 +253,178 @@ describe('erreurRegle', () => {
 
   it('checks the windows when no line was ever typed', () => {
     expect(erreurRegle(horaire({ fenetres: [] }))).toContain('au moins une fenêtre');
+  });
+});
+
+describe('notesRegles', () => {
+  const semaine = ['06', '07', '08', '09', '10', '11', '12'].map((jour) => ({
+    date: `2026-07-${jour}`,
+    fin: '20:00',
+  }));
+  const noException = { ouvertures: [], indisponibilites: [] };
+
+  it('says nothing on a single plain rule', () => {
+    expect(notesRegles([horaire()], noException, semaine, 1)).toEqual([
+      { avertissements: [], priorites: [] },
+    ]);
+  });
+
+  it('names the rule that replaces a masked one', () => {
+    const notes = notesRegles(
+      [
+        horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '19:00' }] }),
+        horaire({
+          jours: 'JOURS_SEMAINE',
+          joursSemaine: [
+            'MONDAY',
+            'TUESDAY',
+            'WEDNESDAY',
+            'THURSDAY',
+            'FRIDAY',
+            'SATURDAY',
+            'SUNDAY',
+          ],
+        }),
+      ],
+      noException,
+      semaine,
+      1,
+    );
+    expect(notes[0].avertissements).toHaveLength(1);
+    expect(notes[0].avertissements[0]).toContain("n'est appliquée à aucun jour");
+    expect(notes[1].avertissements).toEqual([]);
+  });
+
+  it('says so when dated exceptions replace a rule on all its days', () => {
+    const notes = notesRegles(
+      [horaire()],
+      {
+        ouvertures: [],
+        indisponibilites: [
+          { id: null, date: '2026-07-06', heureDebut: '00:00', heureFin: null, motif: null },
+        ],
+      },
+      semaine.slice(0, 1),
+      1,
+    );
+    expect(notes[0].avertissements[0]).toContain('des exceptions datées la remplacent partout');
+  });
+
+  it('reports two windows of one rule overlapping at different headcounts', () => {
+    const notes = notesRegles(
+      [
+        horaire({
+          fenetres: [
+            { heureDebut: '10:00', heureFin: '14:00', effectif: 3 },
+            { heureDebut: '12:00', heureFin: '18:00', effectif: 2 },
+          ],
+        }),
+      ],
+      noException,
+      [],
+      1,
+    );
+    expect(notes[0].avertissements).toEqual([
+      '10:00 → 14:00 ×3 et 12:00 → 18:00 ×2 se recouvrent : 3 personne(s) de 12:00 à 14:00.',
+    ]);
+  });
+
+  it('marks the priority of a weekday closure over an every-day opening, without a warning', () => {
+    const notes = notesRegles(
+      [
+        horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '19:00' }] }),
+        horaire({
+          mode: 'FERMETURE',
+          jours: 'JOURS_SEMAINE',
+          joursSemaine: ['SATURDAY', 'SUNDAY'],
+          fenetres: [{ heureDebut: '10:00', heureFin: '19:00' }],
+        }),
+      ],
+      noException,
+      semaine,
+      1,
+    );
+    expect(notes.flatMap((note) => note.avertissements)).toEqual([]);
+    expect(notes[0].priorites).toEqual([]);
+    expect(notes[1].priorites).toEqual(['Prime sur « tous les jours » : samedi, dimanche.']);
+  });
+
+  it('keeps the capitals of the days in English', () => {
+    localStorage.setItem('planning-equipes.locale', 'en');
+    try {
+      const notes = notesRegles(
+        [
+          horaire({ fenetres: [{ heureDebut: '10:00', heureFin: '19:00' }] }),
+          horaire({
+            mode: 'FERMETURE',
+            jours: 'JOURS_SEMAINE',
+            joursSemaine: ['SATURDAY', 'SUNDAY'],
+            fenetres: [{ heureDebut: '10:00', heureFin: '19:00' }],
+          }),
+        ],
+        noException,
+        semaine,
+        1,
+      );
+      // No translation is loaded here: the French source shows, left as written.
+      expect(notes[1].priorites).toEqual(['Prime sur « Tous les jours » : Samedi, Dimanche.']);
+    } finally {
+      localStorage.clear();
+    }
+  });
+
+  it('does not count an unknown headcount as zero', () => {
+    const notes = notesRegles(
+      [
+        horaire({
+          fenetres: [
+            { heureDebut: '10:00', heureFin: '14:00', effectif: 3 },
+            { heureDebut: '12:00', heureFin: '18:00', effectif: null },
+          ],
+        }),
+      ],
+      noException,
+      [],
+      null,
+    );
+    expect(notes[0].avertissements).toHaveLength(1);
+    expect(notes[0].avertissements[0]).toContain(
+      "se recouvrent de 12:00 à 14:00 : c'est le plus haut des deux effectifs qui est retenu.",
+    );
+    expect(notes[0].avertissements[0]).not.toContain('personne(s)');
+  });
+});
+
+describe('notesReglesForStands', () => {
+  const jour = [{ date: '2026-07-06', fin: '20:00' }];
+  const noException = { ouvertures: [], indisponibilites: [] };
+  const closedAllDay = {
+    ouvertures: [],
+    indisponibilites: [
+      { id: null, date: '2026-07-06', heureDebut: '00:00', heureFin: null, motif: null },
+    ],
+  };
+
+  it('warns when one selected stand of several would mask the rule with its exceptions', () => {
+    const notes = notesReglesForStands([horaire()], [noException, closedAllDay], jour, 1);
+    expect(notes[0].avertissements).toHaveLength(1);
+    expect(notes[0].avertissements[0]).toContain('des exceptions datées la remplacent partout');
+  });
+
+  it('says nothing when no selected stand has an exception in the way', () => {
+    expect(notesReglesForStands([horaire()], [noException, noException], jour, 1)).toEqual([
+      { avertissements: [], priorites: [] },
+    ]);
+  });
+
+  it('says a warning several stands share once', () => {
+    const notes = notesReglesForStands([horaire()], [closedAllDay, closedAllDay], jour, 1);
+    expect(notes[0].avertissements).toHaveLength(1);
+  });
+
+  it('reads an empty selection as one stand without exceptions', () => {
+    expect(notesReglesForStands([horaire()], [], jour, 1)).toEqual(
+      notesRegles([horaire()], noException, jour, 1),
+    );
   });
 });

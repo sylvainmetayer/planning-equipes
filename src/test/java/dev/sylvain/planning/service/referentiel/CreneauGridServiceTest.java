@@ -6,10 +6,16 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.HoraireStand;
+import dev.sylvain.planning.domain.ModeHoraire;
 import dev.sylvain.planning.domain.ParametresLegaux;
+import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
 import dev.sylvain.planning.domain.TypeVerrouillage;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.Anomaly;
+import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.AnomalyType;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomaly;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.GridAnomalyType;
 import dev.sylvain.planning.service.referentiel.CreneauGridService.RegleRecurrence;
@@ -17,6 +23,7 @@ import dev.sylvain.planning.service.referentiel.CreneauGridService.SeveriteGrill
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -329,6 +336,36 @@ class CreneauGridServiceTest {
         verrouillage.setCreneauHeureDebut(LocalTime.parse(debut));
         verrouillage.setCreneauHeureFin(LocalTime.parse(fin));
         return verrouillage;
+    }
+
+    /* ------------------------ The openings folded in ------------------------ */
+
+    /**
+     * Two overlapping « every day » rules are said on the Ouvertures screen,
+     * for information; the grid check folds in the opening anomalies and
+     * leaves those out — they are about how a stand is written, not the grid.
+     */
+    @Test
+    void theGridCheckLeavesOutTheInformationalOpeningAnomalies() {
+        Stand stand = new Stand("DOUBLE", "DOUBLE", Set.of(), 1, 5, false);
+        stand.setIndisponibilites(new ArrayList<>());
+        stand.setOuvertures(new ArrayList<>());
+        stand.setHoraires(List.of(everyDay(14, 20, 4), everyDay(14, 20, 2)));
+        List<Creneau> creneaux =
+                List.of(new Creneau(1L, 1, LocalDate.of(2026, 7, 6), LocalTime.of(10, 0), LocalTime.of(20, 0)));
+        HoraireStandResolver.apply(List.of(stand), creneaux);
+        assertThat(OuvertureStandsAnalyzer.analyze(List.of(stand), creneaux).anomalies())
+                .extracting(Anomaly::type)
+                .contains(AnomalyType.REGLES_CHEVAUCHANTES);
+
+        assertThat(CreneauGridService.openingAnomalies(creneaux, List.of(stand)))
+                .extracting(Anomaly::type)
+                .noneMatch(AnomalyType::isInformational);
+    }
+
+    private static HoraireStand everyDay(int debut, int fin, Integer effectif) {
+        return HoraireStand.everyDay(
+                ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(debut, 0), LocalTime.of(fin, 0), effectif));
     }
 
     /* -------------------------------- Outils -------------------------------- */

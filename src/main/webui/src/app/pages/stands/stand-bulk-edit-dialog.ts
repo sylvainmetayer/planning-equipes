@@ -13,6 +13,7 @@ import { HoraireReglesEditor } from './horaire-regles-editor';
 import { effectifDepuisSaisie, premiereErreurHoraire } from './stand-horaires';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { joursEdition } from '../../core/horaire-stand';
 import { SolverJobService } from '../../core/solver-job.service';
 import { NiveauEffort, Stand } from '../../core/models';
 import {
@@ -60,6 +61,23 @@ export interface StandBulkEditData {
 })
 export class StandBulkEditDialog {
   protected readonly store = inject(ReferenceDataStore);
+
+  /** The edition's days with the end of each one's span: what the rule warnings are judged on. */
+  protected readonly joursEdition = computed(() => joursEdition(this.store.creneaux()));
+
+  /**
+   * The dated exceptions of every selected stand: the rules typed here land on
+   * each of them, and an exception wins over a rule on its day — so a rule
+   * every exception of one stand masks is warned about, as the Ouvertures
+   * analysis will once saved.
+   */
+  protected readonly exceptionsByStand = computed(() =>
+    this.data.stands.map((stand) => ({
+      ouvertures: stand.ouvertures ?? [],
+      indisponibilites: stand.indisponibilites ?? [],
+    })),
+  );
+
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;

@@ -93,6 +93,7 @@
     }
   }
   <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()" [effectifMin]="effectifMinDeclare()"
+                             [jours]="joursEdition()" [exceptions]="draft()"
                              [disabled]="editingLocked()" (horairesChange)="patch({ horaires: $event })" />
 </fieldset>
 <fieldset class="span-2 stand-section">

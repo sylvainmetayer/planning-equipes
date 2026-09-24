@@ -216,6 +216,19 @@ Le résultat est toujours **un seul mode par jour** : c'est ce qui préserve
 l'invariant des trois états, et ce qui fait que ni le calcul de segments, ni les
 contraintes, ni les exports n'ont à connaître les règles.
 
+Ce que la résolution tranche en silence, l'analyse des ouvertures le dit **sans
+le refuser** : deux règles de même portée et de même mode qui se recouvrent un
+même jour (l'union des fenêtres, **l'effectif le plus haut** sur le
+recouvrement — « @4 » puis « @2 » sur les mêmes heures, c'est 4), une règle
+qu'aucun jour de l'édition n'applique parce qu'une règle plus spécifique ou une
+exception datée l'emporte partout, deux fenêtres d'une même règle qui se
+recouvrent à des effectifs différents. Avertir plutôt que refuser : le résultat
+est déterministe, certains recouvrements sont voulus (une règle de fond plus une
+règle de pic), et un refus casserait des scénarios existants. Seul le cas
+réellement ambigu — même portée, modes opposés — reste refusé.
+`HoraireStandResolver.resolveDayWithRules` rend, pour cela, les règles qui ont
+décidé chaque jour, sans rien changer au verdict.
+
 **Si un seul jour de l'événement reste non énoncé, aucune règle ne peut prendre
 `TOUS`** — elle gouvernerait un jour laissé volontairement ouvert par défaut.
 

@@ -181,6 +181,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.ouvertures.chevauchements:Trois autres points sont signalés pour information, sans jamais bloquer l'enregistrement : deux règles d'un même stand qui se recouvrent (c'est alors l'effectif le plus haut qui compte), une règle qu'aucun jour n'applique parce qu'une règle plus précise ou une exception datée la remplace partout, deux fenêtres d'une même règle qui se recouvrent à des effectifs différents. L'éditeur de règles de la fiche stand les dit en direct sous la règle concernée, et indique quand une règle plus précise prime sur une autre, par exemple une fermeture le week-end sur une ouverture de tous les jours.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.ouvertures.fermetures:Un stand n'a pas à déclarer ses fermetures : tout jour non déclaré est fermé. « Compacter les horaires », sur la page Stands, retire les fermetures devenues inutiles après avoir vérifié qu'aucune ouverture ne bouge.`,
         },
       ],

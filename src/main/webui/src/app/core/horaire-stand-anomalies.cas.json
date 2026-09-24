@@ -1,0 +1,1182 @@
+{
+  "_commentaire": "Jeu de cas partagé : HoraireRuleOverlapsSharedCasesTest (Java) et horaire-stand.spec.ts (Vitest) lisent ce fichier et doivent trouver les mêmes anomalies. Les index désignent les règles, les fenêtres et les ouvertures datées dans l'ordre du cas. Un cas peut donner ses créneaux au lieu de ses jours : les jours sont alors dérivés comme en production (OuvertureStandsAnalyzer.eventDays, joursEdition).",
+  "cas": [
+    {
+      "nom": "deux règles « tous les jours » 14:00-20:00 à 4 et à 2 se recouvrent",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "14:00",
+              "heureFin": "20:00",
+              "effectif": 4
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "14:00",
+              "heureFin": "20:00",
+              "effectif": 2
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [
+          {
+            "regle": 0,
+            "autreRegle": 1,
+            "date": "2026-07-06",
+            "debut": "14:00",
+            "fin": "20:00",
+            "effectif": 4,
+            "autreEffectif": 2
+          }
+        ],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une règle « tous les jours » masquée par une règle des sept jours de la semaine",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "19:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": [
+            "MONDAY",
+            "TUESDAY",
+            "WEDNESDAY",
+            "THURSDAY",
+            "FRIDAY",
+            "SATURDAY",
+            "SUNDAY"
+          ],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [
+          {
+            "regle": 0,
+            "masquantes": [1],
+            "exceptions": false
+          }
+        ],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une règle « tous les jours » à qui il reste le dimanche n'est pas masquée",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "19:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY"],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une règle masquée par des exceptions datées sur tous ses jours",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "19:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [
+        {
+          "date": "2026-07-08",
+          "heureDebut": "10:00",
+          "heureFin": "12:00",
+          "effectif": null
+        }
+      ],
+      "fermetures": ["2026-07-06", "2026-07-07"],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [
+          {
+            "regle": 0,
+            "masquantes": [],
+            "exceptions": true
+          }
+        ],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "deux fenêtres d'une même règle se recouvrent à des effectifs différents",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "14:00",
+              "effectif": 3
+            },
+            {
+              "heureDebut": "12:00",
+              "heureFin": "18:00",
+              "effectif": 2
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": [
+          {
+            "regle": 0,
+            "date": null,
+            "fenetre": 0,
+            "autreFenetre": 1,
+            "debut": "12:00",
+            "fin": "14:00",
+            "effectif": 3,
+            "autreEffectif": 2
+          }
+        ]
+      }
+    },
+    {
+      "nom": "deux fenêtres contiguës ne se recouvrent pas",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "12:00",
+              "effectif": 3
+            },
+            {
+              "heureDebut": "12:00",
+              "heureFin": "14:00",
+              "effectif": 2
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une fermeture le week-end sur une ouverture de tous les jours est le mécanisme voulu",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "19:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "FERMETURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": ["SATURDAY", "SUNDAY"],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "19:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "sans aucun jour, seules les fenêtres d'une même règle sont jugées",
+      "effectifParDefaut": 2,
+      "jours": [],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "14:00",
+              "effectif": 3
+            },
+            {
+              "heureDebut": "12:00",
+              "heureFin": "18:00",
+              "effectif": 2
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": 4
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": [
+          {
+            "regle": 0,
+            "date": null,
+            "fenetre": 0,
+            "autreFenetre": 1,
+            "debut": "12:00",
+            "fin": "14:00",
+            "effectif": 3,
+            "autreEffectif": 2
+          }
+        ]
+      }
+    },
+    {
+      "nom": "une fin ouverte s'arrête à la fin d'amplitude du jour, avant l'autre fenêtre",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "18:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "14:00",
+              "heureFin": null,
+              "effectif": 2
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "19:00",
+              "heureFin": "22:00",
+              "effectif": 4
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une fin ouverte recouvre l'autre fenêtre jusqu'à la fin d'amplitude du jour",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "14:00",
+              "heureFin": null,
+              "effectif": 2
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "19:00",
+              "heureFin": "22:00",
+              "effectif": 4
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [
+          {
+            "regle": 0,
+            "autreRegle": 1,
+            "date": "2026-07-06",
+            "debut": "19:00",
+            "fin": "20:00",
+            "effectif": 2,
+            "autreEffectif": 4
+          }
+        ],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une fermeture de même portée qu'une ouverture (scénario écrit à la main) est masquée",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "FERMETURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "12:00",
+              "heureFin": "14:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [
+          {
+            "regle": 1,
+            "masquantes": [0],
+            "exceptions": false
+          }
+        ],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une règle sans fenêtre valide n'est pas signalée masquée",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "14:00",
+              "heureFin": "12:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": [
+            "MONDAY",
+            "TUESDAY",
+            "WEDNESDAY",
+            "THURSDAY",
+            "FRIDAY",
+            "SATURDAY",
+            "SUNDAY"
+          ],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une plage hors de l'édition n'est pas une règle masquée",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "PLAGE",
+          "joursSemaine": [],
+          "dateDebut": "2026-08-01",
+          "dateFin": "2026-08-05",
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "12:00",
+              "effectif": null
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "deux ouvertures datées du même jour se recouvrent à des effectifs différents",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [],
+      "ouvertures": [
+        {
+          "date": "2026-07-08",
+          "heureDebut": "10:00",
+          "heureFin": "14:00",
+          "effectif": 3
+        },
+        {
+          "date": "2026-07-08",
+          "heureDebut": "12:00",
+          "heureFin": "16:00",
+          "effectif": null
+        },
+        {
+          "date": "2026-07-09",
+          "heureDebut": "12:00",
+          "heureFin": "16:00",
+          "effectif": null
+        }
+      ],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": [
+          {
+            "regle": null,
+            "date": "2026-07-08",
+            "fenetre": 0,
+            "autreFenetre": 1,
+            "debut": "12:00",
+            "fin": "14:00",
+            "effectif": 3,
+            "autreEffectif": 2
+          }
+        ]
+      }
+    },
+    {
+      "nom": "un effectif laissé vide vaut celui du stand : pas de chevauchement à effectifs égaux",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "TOUS",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "14:00",
+              "effectif": null
+            },
+            {
+              "heureDebut": "12:00",
+              "heureFin": "16:00",
+              "effectif": 2
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "deux règles de jours de semaine qui se croisent le samedi se recouvrent",
+      "effectifParDefaut": 2,
+      "jours": [
+        {
+          "date": "2026-07-06",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-07",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-08",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-09",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-10",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-11",
+          "fin": "20:00"
+        },
+        {
+          "date": "2026-07-12",
+          "fin": "20:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": ["FRIDAY", "SATURDAY"],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "10:00",
+              "heureFin": "18:00",
+              "effectif": null
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": ["SATURDAY", "SUNDAY"],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "16:00",
+              "heureFin": "20:00",
+              "effectif": 3
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [
+          {
+            "regle": 0,
+            "autreRegle": 1,
+            "date": "2026-07-11",
+            "debut": "16:00",
+            "fin": "18:00",
+            "effectif": 2,
+            "autreEffectif": 3
+          }
+        ],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    },
+    {
+      "nom": "une règle qui ne décide que le lendemain d'un créneau passant minuit n'est pas masquée",
+      "effectifParDefaut": 2,
+      "creneaux": [
+        {
+          "date": "2026-07-10",
+          "heureDebut": "20:00",
+          "heureFin": "02:00"
+        }
+      ],
+      "horaires": [
+        {
+          "mode": "OUVERTURE",
+          "jours": "JOURS_SEMAINE",
+          "joursSemaine": ["FRIDAY", "SATURDAY"],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": [],
+          "fenetres": [
+            {
+              "heureDebut": "00:00",
+              "heureFin": "02:00",
+              "effectif": 2
+            }
+          ]
+        },
+        {
+          "mode": "OUVERTURE",
+          "jours": "DATES",
+          "joursSemaine": [],
+          "dateDebut": null,
+          "dateFin": null,
+          "dates": ["2026-07-10"],
+          "fenetres": [
+            {
+              "heureDebut": "20:00",
+              "heureFin": null,
+              "effectif": 2
+            }
+          ]
+        }
+      ],
+      "ouvertures": [],
+      "fermetures": [],
+      "attendu": {
+        "reglesChevauchantes": [],
+        "reglesMasquees": [],
+        "fenetresChevauchantes": []
+      }
+    }
+  ]
+}

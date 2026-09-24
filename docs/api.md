@@ -2487,10 +2487,32 @@ donc l'écran valide la donnée réelle et non une seconde interprétation de la
 même saisie. `source` (`DEFAUT` / `REGLE` / `EXCEPTION`) dit quelle couche a
 décidé, ce qui permet de remonter à la saisie fautive.
 
-Trois anomalies, dont aucune ne bloque une résolution :
+Six anomalies, dont aucune ne bloque une résolution :
 `STAND_JAMAIS_OUVERT`, `FENETRE_SANS_EFFET` (fenêtre qui ne recoupe aucun
 créneau de son jour) et `SEGMENT_TROP_COURT` — la signature du contournement
-`23:59`.
+`23:59` —, puis trois **pour information**, sur la façon dont les règles d'un
+même stand sont écrites :
+
+| Code | Déclencheur |
+| --- | --- |
+| `REGLES_CHEVAUCHANTES` | deux règles de même portée et de même mode décident un même jour de l'édition, avec des fenêtres qui se recouvrent : le résolveur en fait l'union et garde l'effectif **le plus haut** — le message le nomme |
+| `REGLE_MASQUEE` | une règle couvre des jours de l'édition et n'en décide aucun : une règle plus spécifique ou une exception datée l'emporte partout |
+| `FENETRES_CHEVAUCHANTES` | deux fenêtres d'une même règle (ou deux ouvertures datées d'un même jour) se recouvrent avec des effectifs différents |
+
+Ces trois-là se jugent sur les **jours réels** de l'édition (les dates qui
+portent un créneau, et le lendemain d'un créneau qui passe minuit — les jours
+que le résolveur résout), une fin ouverte courant jusqu'à la fin d'amplitude du
+jour ; sans créneau, seules les fenêtres d'une même règle sont lues. Une
+règle `PLAGE` hors de l'édition n'est pas « masquée » (`FENETRE_SANS_EFFET` et
+`STAND_JAMAIS_OUVERT` disent déjà ce cas), une règle sans fenêtre valide non
+plus (elle est refusée à l'écriture), et une consigne d'édition ne masque rien.
+Portées différentes et modes opposés — une fermeture le week-end sur une
+ouverture de tous les jours — **n'est pas une anomalie** : c'est le mécanisme.
+`horaireId` désigne la règle concernée (la seconde d'une paire). L'État de
+l'édition les compte avec les autres (`ouvertures.informations`), sans qu'elles
+suffisent à passer la ligne « à vérifier ». L'éditeur de règles rejoue la même
+détection en direct (`core/horaire-stand.ts`), tenue d'accord avec le serveur
+par un jeu de cas partagé, `horaire-stand-anomalies.cas.json`.
 
 Chaque jour porte aussi ses **colonnes** (`jours[].creneaux`) : un créneau en
 un morceau, ou ses **tranches** quand une fenêtre d'un stand commence ou

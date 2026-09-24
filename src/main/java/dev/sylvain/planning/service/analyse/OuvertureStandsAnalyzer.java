@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,8 +37,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * créneau, an open stretch too short to be a real working slot. Those are what
  * turn a pretty grid into something worth reading. Pure and static, so they are
  * unit-testable without a database.</p>
+ *
+ * <p>Three more, for information only, describe how a stand's rules are
+ * written rather than what the solver gets: rules merged on a same day whose
+ * windows overlap, a rule no day ever reads, windows of one rule overlapping at
+ * different headcounts ({@link HoraireRuleOverlaps}). The resolver settles all
+ * three deterministically; the report is where they stop being silent.</p>
  */
 public final class OuvertureStandsAnalyzer {
+
+    private static final int MINUTES_PER_DAY = 24 * 60;
 
     private OuvertureStandsAnalyzer() {}
 
@@ -57,7 +66,33 @@ public final class OuvertureStandsAnalyzer {
         /** A window that overlaps no créneau of its date, so it changes nothing — usually a typo. */
         FENETRE_SANS_EFFET,
         /** An open stretch too short to be a real working slot: a data-entry artefact. */
-        SEGMENT_TROP_COURT
+        SEGMENT_TROP_COURT,
+        /**
+         * Two rules of one scope and one mode decide a same day and their windows
+         * overlap: the resolver merges them and keeps the highest headcount, so
+         * the lower one the operator may think they typed counts for nothing.
+         * For information — a background rule plus a peak rule is legitimate.
+         */
+        REGLES_CHEVAUCHANTES,
+        /**
+         * A rule covering days of the edition decides none of them: a more
+         * specific rule or a dated exception wins on every one. It serves no purpose.
+         */
+        REGLE_MASQUEE,
+        /**
+         * Two windows of one rule, or of one day's dated openings, overlap at
+         * different headcounts: the highest one is kept on the overlap.
+         */
+        FENETRES_CHEVAUCHANTES;
+
+        /**
+         * The anomalies that describe how the rules are written rather than a
+         * schedule the solver would misread: they are reported for information,
+         * and never hold the edition back on their own.
+         */
+        public boolean isInformational() {
+            return this == REGLES_CHEVAUCHANTES || this == REGLE_MASQUEE || this == FENETRES_CHEVAUCHANTES;
+        }
     }
 
     /**
@@ -172,6 +207,10 @@ public final class OuvertureStandsAnalyzer {
      * @param heureDebut with {@code heureFin}, the window a {@link AnomalyType#FENETRE_SANS_EFFET} names —
      *                   so the day timeline can draw it where it falls; {@code null} on the other types
      * @param heureFin   {@code null} on an open-ended window (« jusqu'à la fermeture »)
+     * @param horaireId  the rule a {@link AnomalyType#REGLE_MASQUEE}, {@link AnomalyType#REGLES_CHEVAUCHANTES}
+     *                   (the later of the two) or {@link AnomalyType#FENETRES_CHEVAUCHANTES} is about, so a
+     *                   screen can point at its line; {@code null} on the other types, on dated openings
+     *                   and on a rule not saved yet
      */
     public record Anomaly(
             AnomalyType type,
@@ -180,10 +219,22 @@ public final class OuvertureStandsAnalyzer {
             LocalDate date,
             LocalTime heureDebut,
             LocalTime heureFin,
-            String message) {
+            String message,
+            Long horaireId) {
 
         public Anomaly(AnomalyType type, String standId, String standNom, LocalDate date, String message) {
-            this(type, standId, standNom, date, null, null, message);
+            this(type, standId, standNom, date, null, null, message, null);
+        }
+
+        public Anomaly(
+                AnomalyType type,
+                String standId,
+                String standNom,
+                LocalDate date,
+                LocalTime heureDebut,
+                LocalTime heureFin,
+                String message) {
+            this(type, standId, standNom, date, heureDebut, heureFin, message, null);
         }
     }
 
@@ -250,6 +301,7 @@ public final class OuvertureStandsAnalyzer {
         List<Anomaly> anomalies = new ArrayList<>();
         int postesTotal = 0;
         int jamaisOuverts = 0;
+        List<HoraireRuleOverlaps.EventDay> eventDays = eventDays(creneaux);
         for (Stand stand : stands) {
             Map<LocalDate, List<PosteAffectation>> parJour = postesParStandEtJour.getOrDefault(stand.getId(), Map.of());
             List<CelluleJour> cellules = new ArrayList<>();
@@ -275,6 +327,7 @@ public final class OuvertureStandsAnalyzer {
                                 "Le stand n'est ouvert aucun jour du groupe de créneaux actif : aucun poste ne sera à pourvoir."));
             }
             anomalies.addAll(fenetresWithoutEffect(stand, creneauxParJour));
+            anomalies.addAll(HoraireAnomalies.of(stand, eventDays));
             postesTotal += postesStand;
             lignes.add(new LigneStand(
                     stand.getId(),
@@ -542,6 +595,35 @@ public final class OuvertureStandsAnalyzer {
                 libelle + " de " + heureDebut + " à "
                         + (heureFin != null ? heureFin.toString() : "la fermeture")
                         + " ne recoupe aucun créneau de ce jour : elle ne change rien."));
+    }
+
+    /**
+     * The edition's days as {@link HoraireRuleOverlaps} reads them: the days
+     * the resolver resolves ({@link HoraireStandResolver#datesConcernees}) —
+     * every date carrying a timeslot, and the morning after one that crosses
+     * midnight — each with the end of its opening span: the latest end among
+     * the timeslots of that date, capped at midnight, or where a timeslot of
+     * the eve that crossed midnight stops.
+     */
+    public static List<HoraireRuleOverlaps.EventDay> eventDays(Collection<Creneau> creneaux) {
+        List<Creneau> complets = creneaux.stream()
+                .filter(creneau ->
+                        creneau.getDate() != null && creneau.getHeureDebut() != null && creneau.getHeureFin() != null)
+                .toList();
+        Map<LocalDate, Integer> ends = new TreeMap<>();
+        for (LocalDate date : HoraireStandResolver.datesConcernees(complets)) {
+            ends.put(date, 0);
+        }
+        for (Creneau creneau : complets) {
+            int end = intervalle(creneau)[1];
+            ends.merge(creneau.getDate(), Math.min(end, MINUTES_PER_DAY), Math::max);
+            if (end > MINUTES_PER_DAY) {
+                ends.merge(creneau.getDate().plusDays(1), end - MINUTES_PER_DAY, Math::max);
+            }
+        }
+        List<HoraireRuleOverlaps.EventDay> days = new ArrayList<>();
+        ends.forEach((date, end) -> days.add(new HoraireRuleOverlaps.EventDay(date, end)));
+        return days;
     }
 
     /** A créneau as {@code [debut, fin]} minutes from its start day's midnight; midnight-crossing ends past 24 h. */

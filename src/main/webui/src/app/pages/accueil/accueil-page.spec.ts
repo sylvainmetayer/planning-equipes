@@ -24,7 +24,13 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       declarationsTraitees: 1,
       statut: 'ATTENTION',
     },
-    ouvertures: { anomalies: 0, fenetresSansEffet: 0, standsJamaisOuverts: 0, statut: 'FAIT' },
+    ouvertures: {
+      anomalies: 0,
+      fenetresSansEffet: 0,
+      standsJamaisOuverts: 0,
+      informations: 0,
+      statut: 'FAIT',
+    },
     besoin: { animateurs: 40, minimum: 32, manque: 0, statut: 'FAIT' },
     resolution: {
       resolue: false,

@@ -105,6 +105,21 @@
   border-color: var(--mat-sys-error);
 }
 
+/* What the Ouvertures analysis will say of a rule once saved: a warning in the
+   home page's « pour information » orange, never the error red — saving stays
+   possible. The priority a more specific rule takes is plainer still. */
+.horaire-carte .horaire-avertissement {
+  color: light-dark(#8a5000, #f0b357);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
+.horaire-carte .horaire-priorite {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 0.85rem;
+  margin: 0.25rem 0;
+}
+
 .horaire-entete .horaire-resume {
   flex: 1 1 10rem;
   font-weight: 600;

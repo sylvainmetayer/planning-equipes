@@ -68,7 +68,7 @@ public final class HoraireStandResolver {
      * than the slot's own date. Expanding beyond that would be pointless at
      * best (an unreadable window) and misleading at worst.
      */
-    static Set<LocalDate> datesConcernees(Collection<Creneau> creneaux) {
+    public static Set<LocalDate> datesConcernees(Collection<Creneau> creneaux) {
         Set<LocalDate> dates = new TreeSet<>();
         for (Creneau creneau : creneaux) {
             LocalDate date = creneau.getDate();
@@ -225,6 +225,25 @@ public final class HoraireStandResolver {
      * declared shut, whereas the other choice would.</p>
      */
     static JourResolu resolveDay(List<HoraireStand> horaires, LocalDate date) {
+        RuledDay jour = resolveDayWithRules(horaires, date);
+        return jour == null ? null : new JourResolu(jour.mode(), jour.fenetres(), jour.motif());
+    }
+
+    /**
+     * What {@link #resolveDay} decides for {@code date}, plus <b>which rules</b>
+     * decided it: the covering rules of highest specificity whose mode won, in
+     * the order the stand lists them. The verdict is the very same — this is
+     * the one implementation, {@link #resolveDay} only drops the rules.
+     *
+     * <p>Exists so an analysis can tell a rule that governs some day from one
+     * that never does, and two rules merged on a same day from two rules that
+     * never meet ({@code HoraireRuleOverlaps}). Dated exceptions are not read
+     * here, exactly as in {@link #resolveDay}: the caller skips the days they
+     * name.</p>
+     *
+     * @return {@code null} when no rule with a valid window covers the day
+     */
+    public static RuledDay resolveDayWithRules(List<HoraireStand> horaires, LocalDate date) {
         List<HoraireStand> couvrantes = horaires.stream()
                 .filter(horaire -> horaire.couvre(date))
                 .filter(horaire -> !horaire.validFenetres().isEmpty())
@@ -240,18 +259,26 @@ public final class HoraireStandResolver {
         ModeHoraire mode = gagnantes.stream().anyMatch(horaire -> horaire.getMode() == ModeHoraire.OUVERTURE)
                 ? ModeHoraire.OUVERTURE
                 : ModeHoraire.FERMETURE;
-        List<FenetreHoraire> fenetres = gagnantes.stream()
-                .filter(horaire -> horaire.getMode() == mode)
+        List<HoraireStand> retenues =
+                gagnantes.stream().filter(horaire -> horaire.getMode() == mode).toList();
+        List<FenetreHoraire> fenetres = retenues.stream()
                 .flatMap(horaire -> horaire.validFenetres().stream())
                 .distinct()
                 .sorted(Comparator.comparing(FenetreHoraire::getHeureDebut))
                 .toList();
-        String motif = gagnantes.stream()
-                .filter(horaire -> horaire.getMode() == mode)
+        String motif = retenues.stream()
                 .map(HoraireStand::getMotif)
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-        return new JourResolu(mode, fenetres, motif);
+        return new RuledDay(mode, fenetres, motif, retenues);
     }
+
+    /**
+     * The rules' verdict for one day and the rules that carry it.
+     *
+     * @param rules the rules whose windows were merged into {@code fenetres},
+     *              never empty
+     */
+    public record RuledDay(ModeHoraire mode, List<FenetreHoraire> fenetres, String motif, List<HoraireStand> rules) {}
 }

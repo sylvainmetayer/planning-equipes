@@ -20,7 +20,7 @@ import { focusApresSuppression } from '../../core/focus-apres-suppression';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { JourResolu, resoudreHoraires } from '../../core/horaire-stand';
+import { JourResolu, joursEdition, resoudreHoraires } from '../../core/horaire-stand';
 import { libelleJour } from '../../core/horaire-stand';
 import { datesEvenement, decrireJour, premiereErreurHoraire } from './stand-horaires';
 import { HoraireReglesEditor } from './horaire-regles-editor';
@@ -149,6 +149,9 @@ export class StandFormDialog {
     const minimum = this.effectifMinDeclare();
     return Number.isFinite(minimum) && minimum > 0 ? String(minimum) : '';
   });
+
+  /** The edition's days with the end of each one's span: what the rule warnings are judged on. */
+  protected readonly joursEdition = computed(() => joursEdition(this.store.creneaux()));
 
   /** Days the preview covers: the edition's créneaux — what the solver builds from. */
   protected readonly datesEvenement = computed(() => datesEvenement(this.store.creneaux()));

@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AnomaliesHoraires,
+  JourEdition,
+  anomaliesHoraires,
   conflitDeMode,
   couvreJour,
   decrireFenetre,
@@ -8,13 +11,16 @@ import {
   formaterFenetres,
   horaireVide,
   jourSemaineDe,
+  joursEdition,
   normaliseHour,
+  priorites,
   parseFenetres,
   resoudreHoraires,
   resoudreJour,
   resumerHoraires,
 } from './horaire-stand';
 import { HoraireStand, Stand } from './models';
+import casPartages from './horaire-stand-anomalies.cas.json';
 
 const MESSAGES = {
   fenetreRequise: 'fenetreRequise',
@@ -523,5 +529,102 @@ describe('estCasParticulier', () => {
     expect(estCasParticulier(regle({ jours: 'PLAGE' }))).toBe(true);
     expect(estCasParticulier(regle({ jours: 'DATES' }))).toBe(true);
     expect(estCasParticulier(regle({ motif: 'canicule' }))).toBe(true);
+  });
+});
+
+/** The case file `HoraireRuleOverlapsSharedCasesTest` reads too: both sides must find the same things. */
+interface CasPartage {
+  nom: string;
+  effectifParDefaut: number | null;
+  /** Absent when the case gives its créneaux: the days are then derived as in production. */
+  jours?: JourEdition[];
+  creneaux?: { date: string; heureDebut: string; heureFin: string }[];
+  horaires: Omit<HoraireStand, 'id' | 'motif'>[];
+  ouvertures: {
+    date: string;
+    heureDebut: string;
+    heureFin: string | null;
+    effectif: number | null;
+  }[];
+  fermetures: string[];
+  attendu: AnomaliesHoraires;
+}
+
+describe('anomaliesHoraires — cas partagés avec le backend', () => {
+  const cases = (casPartages as unknown as { cas: CasPartage[] }).cas;
+
+  it('lit un jeu de cas non vide', () => {
+    expect(cases.length).toBeGreaterThan(10);
+  });
+
+  for (const cas of cases) {
+    it(cas.nom, () => {
+      const stand = {
+        horaires: cas.horaires.map((horaire) => ({ ...horaire, id: null, motif: null })),
+        ouvertures: cas.ouvertures.map((ouverture) => ({ ...ouverture, id: null, motif: null })),
+        indisponibilites: cas.fermetures.map((date) => ({
+          id: null,
+          date,
+          heureDebut: '00:00',
+          heureFin: null,
+          motif: null,
+        })),
+      };
+      const jours = cas.jours ?? joursEdition(cas.creneaux ?? []);
+      expect(anomaliesHoraires(stand, jours, cas.effectifParDefaut)).toEqual(cas.attendu);
+    });
+  }
+});
+
+describe('priorites', () => {
+  const semaine = joursEdition(
+    ['06', '07', '08', '09', '10', '11', '12'].map((jour) => ({
+      date: `2026-07-${jour}`,
+      heureDebut: '10:00',
+      heureFin: '20:00',
+    })),
+  );
+  const everyDay: HoraireStand = {
+    ...horaireVide(),
+    fenetres: [{ heureDebut: '10:00', heureFin: '19:00', effectif: null }],
+  };
+  const weekendClosure: HoraireStand = {
+    ...horaireVide(),
+    mode: 'FERMETURE',
+    jours: 'JOURS_SEMAINE',
+    joursSemaine: ['SATURDAY', 'SUNDAY'],
+    fenetres: [{ heureDebut: '10:00', heureFin: '19:00', effectif: null }],
+  };
+
+  it('dit quand une règle plus spécifique prime, et les jours où elle le fait', () => {
+    expect(priorites([everyDay, weekendClosure], semaine)).toEqual([
+      { regle: 1, surRegle: 0, dates: ['2026-07-11', '2026-07-12'] },
+    ]);
+  });
+
+  it('ne dit rien entre deux règles de même mode', () => {
+    expect(priorites([everyDay, { ...weekendClosure, mode: 'OUVERTURE' }], semaine)).toEqual([]);
+  });
+
+  it("garde la paire sans jour quand l'édition n'en a pas encore", () => {
+    expect(priorites([everyDay, weekendClosure], [])).toEqual([
+      { regle: 1, surRegle: 0, dates: [] },
+    ]);
+  });
+});
+
+describe('joursEdition', () => {
+  it('retient la fin la plus tardive de chaque date, minuit pour un créneau qui le franchit, et son lendemain', () => {
+    expect(
+      joursEdition([
+        { date: '2026-07-08', heureDebut: '10:00:00', heureFin: '13:00:00' },
+        { date: '2026-07-08', heureDebut: '14:00:00', heureFin: '20:00:00' },
+        { date: '2026-07-09', heureDebut: '20:00:00', heureFin: '02:00:00' },
+      ]),
+    ).toEqual([
+      { date: '2026-07-08', fin: '20:00' },
+      { date: '2026-07-09', fin: '24:00' },
+      { date: '2026-07-10', fin: '02:00' },
+    ]);
   });
 });

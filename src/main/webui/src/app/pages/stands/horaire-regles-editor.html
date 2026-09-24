@@ -137,6 +137,12 @@
     @if (erreursRegles()[indexHoraire]; as erreur) {
       <p class="field-error" role="alert" [id]="nom('stand-horaire-erreur-') + indexHoraire">{{ erreur }}</p>
     }
+    @for (avertissement of notes()[indexHoraire].avertissements; track $index) {
+      <p class="horaire-avertissement"><mat-icon inline aria-hidden="true">warning_amber</mat-icon> {{ avertissement }}</p>
+    }
+    @for (priorite of notes()[indexHoraire].priorites; track $index) {
+      <p class="horaire-priorite"><mat-icon inline aria-hidden="true">low_priority</mat-icon> {{ priorite }}</p>
+    }
   </div>
 }
 @if (conflitDeMode(); as conflit) {

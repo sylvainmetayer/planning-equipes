@@ -66,9 +66,13 @@ public record EtatEditionView(
      * @param fenetresSansEffet among the anomalies, the windows that overlap no créneau of their date —
      *                          a stand said open at an hour the grid does not have, which produces
      *                          nothing and is worth its own sentence on the home page
+     * @param informations      among the anomalies, those reported for information only — rules or
+     *                          windows of a stand that overlap, a rule no day reads: they alone never
+     *                          make the line « à vérifier »
      */
-    @Schema(requiredProperties = {"anomalies", "fenetresSansEffet", "standsJamaisOuverts", "statut"})
-    public record EtatOuvertures(int anomalies, int fenetresSansEffet, int standsJamaisOuverts, Statut statut) {}
+    @Schema(requiredProperties = {"anomalies", "fenetresSansEffet", "informations", "standsJamaisOuverts", "statut"})
+    public record EtatOuvertures(
+            int anomalies, int fenetresSansEffet, int standsJamaisOuverts, int informations, Statut statut) {}
 
     /**
      * @param animateurs the roster as entered

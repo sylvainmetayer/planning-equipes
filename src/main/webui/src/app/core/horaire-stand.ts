@@ -7,13 +7,15 @@
 // the frontend re-implements domain logic — keep any change here and there in
 // the same commit.
 
-import { parseDateKey } from './date-utils';
+import { parseDateKey, toDateKey } from './date-utils';
+import { intlLocale } from './locale';
 import {
   FenetreHoraire,
   HoraireStand,
   JourSemaine,
   ModeHoraire,
   Stand,
+  TypeAnomalieOuverture,
   TypeJoursHoraire,
 } from './models';
 
@@ -65,7 +67,7 @@ export function couvreJour(horaire: HoraireStand, date: string): boolean {
   }
 }
 
-function fenetreValide(fenetre: FenetreHoraire): boolean {
+function isValidWindow(fenetre: { heureDebut: string; heureFin: string | null }): boolean {
   return !!fenetre.heureDebut && (!fenetre.heureFin || fenetre.heureFin > fenetre.heureDebut);
 }
 
@@ -86,21 +88,36 @@ export function resoudreJour(stand: Stand, date: string): JourResolu {
     return { date, mode: 'FERMETURE', fenetres: sort(fermetures), source: 'EXCEPTION' };
   }
 
-  const couvrantes = (stand.horaires ?? []).filter(
-    (horaire) => couvreJour(horaire, date) && horaire.fenetres.some(fenetreValide),
-  );
-  if (couvrantes.length === 0) {
+  const horaires = stand.horaires ?? [];
+  const retenues = reglesRetenues(horaires, date);
+  if (retenues.length === 0) {
     return { date, mode: null, fenetres: [], source: 'DEFAUT' };
   }
-  const specificiteMax = Math.max(...couvrantes.map((horaire) => SPECIFICITE[horaire.jours]));
-  const gagnantes = couvrantes.filter((horaire) => SPECIFICITE[horaire.jours] === specificiteMax);
-  const mode: ModeHoraire = gagnantes.some((horaire) => horaire.mode === 'OUVERTURE')
+  const fenetres = retenues.flatMap((index) => horaires[index].fenetres.filter(isValidWindow));
+  return { date, mode: horaires[retenues[0]].mode, fenetres: sort(fenetres), source: 'REGLE' };
+}
+
+/**
+ * Which rules decide `date`, by index: the covering rules of highest
+ * specificity whose mode won, in the stand's order — empty when none covers
+ * the day. Mirrors `HoraireStandResolver#resolveDayWithRules`, the variant the
+ * backend's analysis replays.
+ */
+export function reglesRetenues(horaires: readonly HoraireStand[], date: string): number[] {
+  const couvrantes = horaires
+    .map((horaire, index) => ({ horaire, index }))
+    .filter(({ horaire }) => couvreJour(horaire, date) && horaire.fenetres.some(isValidWindow));
+  if (couvrantes.length === 0) {
+    return [];
+  }
+  const specificiteMax = Math.max(...couvrantes.map(({ horaire }) => SPECIFICITE[horaire.jours]));
+  const gagnantes = couvrantes.filter(
+    ({ horaire }) => SPECIFICITE[horaire.jours] === specificiteMax,
+  );
+  const mode: ModeHoraire = gagnantes.some(({ horaire }) => horaire.mode === 'OUVERTURE')
     ? 'OUVERTURE'
     : 'FERMETURE';
-  const fenetres = gagnantes
-    .filter((horaire) => horaire.mode === mode)
-    .flatMap((horaire) => horaire.fenetres.filter(fenetreValide));
-  return { date, mode, fenetres: sort(fenetres), source: 'REGLE' };
+  return gagnantes.filter(({ horaire }) => horaire.mode === mode).map(({ index }) => index);
 }
 
 export function resoudreHoraires(stand: Stand, dates: readonly string[]): JourResolu[] {
@@ -181,6 +198,372 @@ export function resumerHoraires(
     morceaux.push(libelles.exceptions(exceptions));
   }
   return morceaux.join(' · ');
+}
+
+/* ----------------- how the rules of one stand are written ----------------- */
+//
+// Mirrors `HoraireRuleOverlaps` (backend, `service/analyse`): what the resolver
+// settles in silence between the rules of one stand. The editor runs it on the
+// rules being typed and warns under the card concerned; the Ouvertures screen
+// reads the backend's own. Both sides are held to the same answers by
+// `horaire-stand-anomalies.cas.json`, which the Java test and this file's spec
+// both read — change one side, the other's test fails.
+
+/** One day of the edition: a date carrying a créneau, and the end of its opening span (`HH:MM`, `24:00` at most). */
+export interface JourEdition {
+  date: string;
+  fin: string;
+}
+
+/** Two rules deciding a same day whose windows overlap. Indexes into the stand's rules. */
+export interface ReglesChevauchantes {
+  regle: number;
+  autreRegle: number;
+  date: string;
+  debut: string;
+  fin: string;
+  effectif: number | null;
+  autreEffectif: number | null;
+}
+
+/** A rule covering days of the edition that decides none of them. */
+export interface RegleMasquee {
+  regle: number;
+  /** The rules that decide its days instead. */
+  masquantes: number[];
+  /** Some of its days are stated by a dated exception. */
+  exceptions: boolean;
+}
+
+/** Two windows of one rule (`regle`), or of one day's dated openings (`date`), overlapping at different headcounts. */
+export interface FenetresChevauchantes {
+  regle: number | null;
+  date: string | null;
+  fenetre: number;
+  autreFenetre: number;
+  debut: string;
+  fin: string;
+  effectif: number | null;
+  autreEffectif: number | null;
+}
+
+export interface AnomaliesHoraires {
+  reglesChevauchantes: ReglesChevauchantes[];
+  reglesMasquees: RegleMasquee[];
+  fenetresChevauchantes: FenetresChevauchantes[];
+}
+
+const MINUTES_PER_DAY = 24 * 60;
+
+interface FenetreLue {
+  heureDebut: string;
+  heureFin: string | null;
+  effectif?: number | null;
+}
+
+function minutesOf(heure: string): number {
+  const [h, m] = heure.slice(0, 5).split(':').map(Number);
+  return h * 60 + m;
+}
+
+function hourOf(minutes: number): string {
+  const heures = String(Math.floor(minutes / 60)).padStart(2, '0');
+  return `${heures}:${String(minutes % 60).padStart(2, '0')}`;
+}
+
+/** Overlap of two windows in minutes, an open end running to `finJour`; `null` when they only touch. */
+function recouvrement(a: FenetreLue, b: FenetreLue, finJour: number): [number, number] | null {
+  const cap = Math.min(finJour, MINUTES_PER_DAY);
+  const start = Math.max(minutesOf(a.heureDebut), minutesOf(b.heureDebut));
+  const end = Math.min(
+    a.heureFin ? minutesOf(a.heureFin) : cap,
+    b.heureFin ? minutesOf(b.heureFin) : cap,
+  );
+  return end > start ? [start, end] : null;
+}
+
+function effectifOrDefault(
+  effectif: number | null | undefined,
+  defaut: number | null,
+): number | null {
+  return effectif !== null && effectif !== undefined ? effectif : defaut;
+}
+
+/**
+ * The three findings on one stand's schedule, judged on the edition's days
+ * (`jours`, sorted). Without a day only the windows of one rule are read —
+ * nothing can be masked or merged on a calendar that does not exist yet.
+ * `effectifParDefaut` is what a window naming no headcount asks for (the
+ * stand's minimum), `null` when unknown.
+ */
+export function anomaliesHoraires(
+  stand: Pick<Stand, 'horaires' | 'ouvertures' | 'indisponibilites'>,
+  jours: readonly JourEdition[],
+  effectifParDefaut: number | null,
+): AnomaliesHoraires {
+  const horaires = stand.horaires ?? [];
+  const ouvertures = stand.ouvertures ?? [];
+  const exceptions = new Set(
+    [...(stand.indisponibilites ?? []), ...ouvertures].map((exception) => exception.date),
+  );
+  const decideurs = new Map<string, number[]>();
+  for (const jour of jours) {
+    if (!exceptions.has(jour.date)) {
+      decideurs.set(jour.date, reglesRetenues(horaires, jour.date));
+    }
+  }
+  return {
+    reglesChevauchantes: reglesChevauchantes(horaires, jours, decideurs, effectifParDefaut),
+    reglesMasquees: reglesMasquees(horaires, jours, exceptions, decideurs),
+    fenetresChevauchantes: fenetresChevauchantes(horaires, ouvertures, jours, effectifParDefaut),
+  };
+}
+
+function reglesChevauchantes(
+  horaires: readonly HoraireStand[],
+  jours: readonly JourEdition[],
+  decideurs: ReadonlyMap<string, number[]>,
+  effectifParDefaut: number | null,
+): ReglesChevauchantes[] {
+  const trouvees: ReglesChevauchantes[] = [];
+  const seen = new Set<string>();
+  for (const jour of jours) {
+    const regles = decideurs.get(jour.date) ?? [];
+    for (let a = 0; a < regles.length; a++) {
+      for (let b = a + 1; b < regles.length; b++) {
+        const i = Math.min(regles[a], regles[b]);
+        const j = Math.max(regles[a], regles[b]);
+        if (seen.has(`${i}#${j}`)) {
+          continue;
+        }
+        const trouvee = premierRecouvrement(horaires, i, j, jour, effectifParDefaut);
+        if (trouvee) {
+          seen.add(`${i}#${j}`);
+          trouvees.push(trouvee);
+        }
+      }
+    }
+  }
+  return trouvees;
+}
+
+function premierRecouvrement(
+  horaires: readonly HoraireStand[],
+  i: number,
+  j: number,
+  jour: JourEdition,
+  effectifParDefaut: number | null,
+): ReglesChevauchantes | null {
+  for (const a of horaires[i].fenetres.filter(isValidWindow)) {
+    for (const b of horaires[j].fenetres.filter(isValidWindow)) {
+      const bornes = recouvrement(a, b, minutesOf(jour.fin));
+      if (bornes) {
+        return {
+          regle: i,
+          autreRegle: j,
+          date: jour.date,
+          debut: hourOf(bornes[0]),
+          fin: hourOf(bornes[1]),
+          effectif: effectifOrDefault(a.effectif, effectifParDefaut),
+          autreEffectif: effectifOrDefault(b.effectif, effectifParDefaut),
+        };
+      }
+    }
+  }
+  return null;
+}
+
+function reglesMasquees(
+  horaires: readonly HoraireStand[],
+  jours: readonly JourEdition[],
+  exceptions: ReadonlySet<string>,
+  decideurs: ReadonlyMap<string, number[]>,
+): RegleMasquee[] {
+  const trouvees: RegleMasquee[] = [];
+  horaires.forEach((horaire, index) => {
+    if (!horaire.fenetres.some(isValidWindow)) {
+      // Already ignored by the resolver and refused at write time.
+      return;
+    }
+    const couverts = jours.map((jour) => jour.date).filter((date) => couvreJour(horaire, date));
+    if (couverts.length === 0) {
+      // Outside the edition: the windows without effect say it already.
+      return;
+    }
+    if (couverts.some((date) => (decideurs.get(date) ?? []).includes(index))) {
+      return;
+    }
+    const masquantes = new Set<number>();
+    let byExceptions = false;
+    for (const date of couverts) {
+      if (exceptions.has(date)) {
+        byExceptions = true;
+      } else {
+        (decideurs.get(date) ?? []).forEach((autre) => masquantes.add(autre));
+      }
+    }
+    trouvees.push({
+      regle: index,
+      masquantes: [...masquantes].sort((x, y) => x - y),
+      exceptions: byExceptions,
+    });
+  });
+  return trouvees;
+}
+
+function fenetresChevauchantes(
+  horaires: readonly HoraireStand[],
+  ouvertures: readonly (FenetreLue & { date: string })[],
+  jours: readonly JourEdition[],
+  effectifParDefaut: number | null,
+): FenetresChevauchantes[] {
+  const trouvees: FenetresChevauchantes[] = [];
+  horaires.forEach((horaire, regle) => {
+    if (horaire.mode !== 'OUVERTURE') {
+      // A closure carries no headcount: nothing to decide between its windows.
+      return;
+    }
+    const fins = jours
+      .filter((jour) => couvreJour(horaire, jour.date))
+      .map((jour) => minutesOf(jour.fin));
+    const finJour = fins.length > 0 ? Math.max(...fins) : MINUTES_PER_DAY;
+    const fenetres = horaire.fenetres;
+    for (let a = 0; a < fenetres.length; a++) {
+      for (let b = a + 1; b < fenetres.length; b++) {
+        const trouvee = windowPair(fenetres[a], fenetres[b], finJour, effectifParDefaut);
+        if (trouvee) {
+          trouvees.push({ regle, date: null, fenetre: a, autreFenetre: b, ...trouvee });
+        }
+      }
+    }
+  });
+  for (let a = 0; a < ouvertures.length; a++) {
+    for (let b = a + 1; b < ouvertures.length; b++) {
+      const date = ouvertures[a].date;
+      if (!date || date !== ouvertures[b].date) {
+        continue;
+      }
+      const jour = jours.find((candidat) => candidat.date === date);
+      const finJour = jour ? minutesOf(jour.fin) : MINUTES_PER_DAY;
+      const trouvee = windowPair(ouvertures[a], ouvertures[b], finJour, effectifParDefaut);
+      if (trouvee) {
+        trouvees.push({ regle: null, date, fenetre: a, autreFenetre: b, ...trouvee });
+      }
+    }
+  }
+  return trouvees;
+}
+
+function windowPair(
+  a: FenetreLue,
+  b: FenetreLue,
+  finJour: number,
+  effectifParDefaut: number | null,
+): Pick<FenetresChevauchantes, 'debut' | 'fin' | 'effectif' | 'autreEffectif'> | null {
+  if (!isValidWindow(a) || !isValidWindow(b)) {
+    return null;
+  }
+  const effectif = effectifOrDefault(a.effectif, effectifParDefaut);
+  const autreEffectif = effectifOrDefault(b.effectif, effectifParDefaut);
+  if (effectif === autreEffectif) {
+    // Same headcount: the union is exactly what was meant.
+    return null;
+  }
+  const bornes = recouvrement(a, b, finJour);
+  return bornes
+    ? { debut: hourOf(bornes[0]), fin: hourOf(bornes[1]), effectif, autreEffectif }
+    : null;
+}
+
+/**
+ * Where a rule takes over a less specific one of the opposite mode — the
+ * layering working as intended (« le plus spécifique gagne »): no anomaly, but
+ * a priority worth saying under the rule that wins. `dates` are the edition
+ * days it does so on; empty when the edition has no day yet.
+ */
+export interface Priorite {
+  regle: number;
+  surRegle: number;
+  dates: string[];
+}
+
+export function priorites(
+  horaires: readonly HoraireStand[],
+  jours: readonly JourEdition[],
+): Priorite[] {
+  const trouvees: Priorite[] = [];
+  horaires.forEach((horaire, regle) => {
+    if (!horaire.fenetres.some(isValidWindow)) {
+      return;
+    }
+    horaires.forEach((autre, surRegle) => {
+      if (
+        regle === surRegle ||
+        autre.mode === horaire.mode ||
+        SPECIFICITE[autre.jours] >= SPECIFICITE[horaire.jours] ||
+        !autre.fenetres.some(isValidWindow)
+      ) {
+        return;
+      }
+      if (jours.length === 0) {
+        trouvees.push({ regle, surRegle, dates: [] });
+        return;
+      }
+      const dates = jours
+        .map((jour) => jour.date)
+        .filter(
+          (date) => couvreJour(autre, date) && reglesRetenues(horaires, date).includes(regle),
+        );
+      if (dates.length > 0) {
+        trouvees.push({ regle, surRegle, dates });
+      }
+    });
+  });
+  return trouvees;
+}
+
+/**
+ * The anomalies of the opening report about how a stand's rules are written —
+ * the three above, as the backend names them (`AnomalyType.isInformational`):
+ * the resolver settles them, so they are shown for information, never as an alert.
+ */
+export function isInformationalAnomaly(type: TypeAnomalieOuverture): boolean {
+  return (
+    type === 'REGLES_CHEVAUCHANTES' || type === 'REGLE_MASQUEE' || type === 'FENETRES_CHEVAUCHANTES'
+  );
+}
+
+/**
+ * The edition's days as the analysis reads them, from its créneaux — the days
+ * the resolver resolves (`HoraireStandResolver.datesConcernees`): each date
+ * carrying one, with the latest end among them (`24:00` for a créneau that
+ * reaches or crosses midnight), and the morning after a créneau that crosses
+ * midnight, ending where that créneau stops. Mirrors
+ * `OuvertureStandsAnalyzer.eventDays`.
+ */
+export function joursEdition(
+  creneaux: readonly { date: string; heureDebut: string; heureFin: string }[],
+): JourEdition[] {
+  const ends = new Map<string, number>();
+  const extend = (date: string, end: number) => ends.set(date, Math.max(ends.get(date) ?? 0, end));
+  for (const creneau of creneaux) {
+    if (!creneau.date || !creneau.heureDebut || !creneau.heureFin) {
+      continue;
+    }
+    const start = minutesOf(creneau.heureDebut);
+    const rawEnd = minutesOf(creneau.heureFin);
+    if (rawEnd > start) {
+      extend(creneau.date, rawEnd);
+    } else {
+      extend(creneau.date, MINUTES_PER_DAY);
+      const nextDay = parseDateKey(creneau.date);
+      nextDay.setDate(nextDay.getDate() + 1);
+      extend(toDateKey(nextDay), rawEnd);
+    }
+  }
+  return [...ends.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([date, end]) => ({ date, fin: hourOf(end) }));
 }
 
 /* ------------------------- compact window syntax ------------------------- */
@@ -416,8 +799,12 @@ export function libelleJourSemaine(jour: JourSemaine): string {
   }
 }
 
-/** Day label of the preview strip: `08/07`, short enough for a dozen cells in a row. */
+/**
+ * Day label of the preview strip: `08/07` in French, `07/08` in English —
+ * short enough for a dozen cells in a row, in the order the reader expects.
+ */
 export function libelleJour(date: string): string {
-  const [, mois, jour] = date.split('-');
-  return `${jour}/${mois}`;
+  return new Intl.DateTimeFormat(intlLocale(), { day: '2-digit', month: '2-digit' }).format(
+    parseDateKey(date),
+  );
 }

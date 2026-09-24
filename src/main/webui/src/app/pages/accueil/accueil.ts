@@ -108,10 +108,14 @@ function collecte(etat: EtatEdition): LigneEtat {
 }
 
 function ouvertures(etat: EtatEdition): LigneEtat {
-  const { anomalies, fenetresSansEffet, standsJamaisOuverts, statut } = etat.ouvertures;
+  const { anomalies, fenetresSansEffet, standsJamaisOuverts, informations, statut } =
+    etat.ouvertures;
   let detail: string;
   if (statut === 'A_FAIRE') {
     detail = $localize`:@@accueil.detail.ouvertures.aFaire:Sans stand ni créneau, rien à lire`;
+  } else if (anomalies > 0 && anomalies === informations) {
+    // Only how the rules are written: settled by the resolution, said for information.
+    detail = $localize`:@@accueil.detail.ouvertures.informations:${informations}:count: point(s) pour information : règles ou fenêtres d'horaires qui se recouvrent ou ne servent à rien`;
   } else if (fenetresSansEffet > 0) {
     // Named apart: a window outside every vacation is the one mistake a
     // hand-typed grid makes that the openings screen alone would bury.

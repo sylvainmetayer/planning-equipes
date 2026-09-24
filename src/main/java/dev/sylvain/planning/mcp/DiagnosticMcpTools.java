@@ -129,8 +129,12 @@ public class DiagnosticMcpTools {
     @Tool(
             description = "Quand chaque stand est réellement ouvert, jour par jour, après application de ses "
                     + "horaires récurrents et de ses plages datées : amplitude couverte, postes générés, et les anomalies "
-                    + "(stand jamais ouvert, fenêtre sans effet, segment trop court). C'est ici qu'on voit pourquoi un "
-                    + "stand ne génère aucun poste. Filtrable sur un stand ; les totaux restent ceux de l'édition.",
+                    + "(STAND_JAMAIS_OUVERT, FENETRE_SANS_EFFET, SEGMENT_TROP_COURT ; et, pour information seulement, "
+                    + "REGLES_CHEVAUCHANTES : deux règles de même portée et de même mode qui se recouvrent, l'effectif le "
+                    + "plus haut l'emporte ; REGLE_MASQUEE : une règle qu'aucun jour n'applique ; FENETRES_CHEVAUCHANTES : "
+                    + "deux fenêtres d'une même règle qui se recouvrent à des effectifs différents). C'est ici qu'on voit "
+                    + "pourquoi un stand ne génère aucun poste. Filtrable sur un stand ; les totaux restent ceux de "
+                    + "l'édition.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
