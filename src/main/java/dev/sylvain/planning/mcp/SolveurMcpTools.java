@@ -1,10 +1,13 @@
 package dev.sylvain.planning.mcp;
 
+import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ConstraintDiagnostic;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.PlanningDiagnostic;
 import dev.sylvain.planning.service.analyse.ScoreReading;
+import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
@@ -177,8 +180,11 @@ public class SolveurMcpTools {
                 diagnostic.hardScore(),
                 diagnostic.postesNonPourvus(),
                 diagnostic.contraintes().stream()
-                        .map(contrainte ->
-                                new ContrainteScoreView(contrainte.name(), contrainte.score(), contrainte.matchCount()))
+                        .map(contrainte -> new ContrainteScoreView(
+                                contrainte.name(),
+                                contrainte.score(),
+                                contrainte.matchCount(),
+                                penalises(contrainte.score()) ? actions(contrainte) : List.of()))
                         .toList(),
                 diagnostic.lecture().stream()
                         .map(ScoreReading.ScoreSentence::texte)
@@ -274,7 +280,8 @@ public class SolveurMcpTools {
 
     @Tool(
             description = "Détaille les contraintes de niveau HARD encore violées lors de la dernière analyse "
-                    + "(solve ou analyze), avec le message de chaque violation. Liste vide si la dernière analyse est "
+                    + "(solve ou analyze), avec le message de chaque violation et les actions types qui la "
+                    + "règlent (code, geste, explication). Liste vide si la dernière analyse est "
                     + "entièrement faisable, ou s'il n'y a jamais eu d'analyse.",
             annotations =
                     @Tool.Annotations(
@@ -296,7 +303,49 @@ public class SolveurMcpTools {
         return analysis.diagnostic().contraintes().stream()
                 .filter(diagnostic -> hardNames.contains(diagnostic.name()) && diagnostic.matchCount() > 0)
                 .map(diagnostic -> new ViolationHardView(
-                        diagnostic.name(), diagnostic.matchCount(), anonymisation.anonymiser(diagnostic.violations())))
+                        diagnostic.name(),
+                        diagnostic.matchCount(),
+                        anonymisation.anonymiser(diagnostic.violations()),
+                        actions(diagnostic)))
+                .toList();
+    }
+
+    /**
+     * Whether a rule's score costs anything on some level. A reward — the
+     * affinity of two animateurs, matched every time they share a stand — is
+     * not a problem, and gets no action however many times it matched.
+     */
+    static boolean penalises(String score) {
+        if (score == null || score.isBlank()) {
+            return false;
+        }
+        try {
+            HardMediumSoftScore parsed = HardMediumSoftScore.parseScore(score);
+            return parsed.hardScore() < 0 || parsed.mediumScore() < 0 || parsed.softScore() < 0;
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
+    /**
+     * The playbook of a rule in default, as an assistant reads it: the code,
+     * the gesture and why — never the route, since an assistant has no screen
+     * to send anyone to. The same actions the Diagnostic offers, so an
+     * assistant proposes the same gesture.
+     */
+    private static List<ActionMcpView> actions(ConstraintDiagnostic diagnostic) {
+        ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(diagnostic.name());
+        if (definition == null) {
+            return List.of();
+        }
+        return BlockerPlaybook.forRule(
+                        definition,
+                        diagnostic.plancher() == null
+                                ? null
+                                : diagnostic.plancher().lien(),
+                        diagnostic.position())
+                .stream()
+                .map(action -> new ActionMcpView(action.code(), action.libelle(), action.explication()))
                 .toList();
     }
 
@@ -375,7 +424,15 @@ public class SolveurMcpTools {
             LocalTime heureDebut,
             LocalTime heureFin) {}
 
-    public record ViolationHardView(String contrainte, int nombreCorrespondances, List<String> violations) {}
+    /**
+     * @param actions what to do about the rule, most likely gesture first —
+     *                see {@code BlockerPlaybook}
+     */
+    public record ViolationHardView(
+            String contrainte, int nombreCorrespondances, List<String> violations, List<ActionMcpView> actions) {}
+
+    /** One action of the playbook: its stable code, the gesture, and why. */
+    public record ActionMcpView(String code, String libelle, String explication) {}
 
     /**
      * Score of the persisted plan, rule by rule. No violation message here —
@@ -393,5 +450,10 @@ public class SolveurMcpTools {
             List<ContrainteScoreView> contraintes,
             List<String> lecture) {}
 
-    public record ContrainteScoreView(String name, String score, int nombreCorrespondances) {}
+    /**
+     * @param actions what to do about the rule, only when it matched on this
+     *                plan — see {@code BlockerPlaybook}
+     */
+    public record ContrainteScoreView(
+            String name, String score, int nombreCorrespondances, List<ActionMcpView> actions) {}
 }

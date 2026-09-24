@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { compterProblemes, construireProblemes, liensDeCause } from './problemes';
+import { actionsOfRule, compterProblemes, construireProblemes, liensDeCause } from './problemes';
 import type {
   CauseInfaisabilite,
   ConstraintView,
@@ -373,6 +373,54 @@ describe('compterProblemes', () => {
       avertissements: 1,
       mineurs: 1,
       total: 4,
+    });
+  });
+});
+
+describe('actionsOfRule', () => {
+  const banc = {
+    code: 'VOIR_BANC',
+    libelle: 'Voir qui pourrait venir',
+    explication: 'La remédiation de la règle.',
+    route: '/diagnostic',
+    parametres: { onglet: 'banc' },
+  };
+
+  it("keeps the server's positioning on the rule's first breach as sent", () => {
+    const reparation = {
+      code: 'PROPOSER_REPARATION',
+      libelle: 'Proposer une réparation',
+      explication: 'Sur la Journée…',
+      route: '/journee',
+      parametres: { date: '2026-07-12', stand: 'S1' },
+    };
+    const actions = actionsOfRule(
+      contrainte({
+        actions: [{ ...banc, parametres: { onglet: 'banc', creneau: '12' } }, reparation],
+        references: [{ texte: 'avec créneau', animateurId: null, standId: 'S1', creneauId: 12 }],
+      }),
+      [],
+    );
+
+    expect(actions[0].queryParams).toEqual({ onglet: 'banc', creneau: '12' });
+    expect(actions[0].explication).toBe('La remédiation de la règle.');
+    expect(actions[1]).toMatchObject({
+      route: '/journee',
+      queryParams: { date: '2026-07-12', stand: 'S1' },
+    });
+  });
+
+  it('leaves an aggregate rule bare, and adds the review of the exceptions it failed on', () => {
+    const actions = actionsOfRule(contrainte({ actions: [banc], references: [] }), [
+      contribution({ contrainteId: 'C1' }),
+      contribution({ contrainteId: 'C2' }),
+    ]);
+
+    expect(actions[0].queryParams).toEqual({ onglet: 'banc' });
+    expect(actions.at(-1)).toMatchObject({
+      code: 'REVOIR_AJUSTEMENTS',
+      route: '/ad-hoc-constraints',
+      queryParams: { ids: 'C1,C2' },
     });
   });
 });

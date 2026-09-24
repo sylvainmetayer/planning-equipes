@@ -38,6 +38,7 @@
 /* The rule a deep link named, and the category a summary link named: outlined
    so the eye finds it on a page the scroll landed in the middle of. */
 .constraint-card:target,
+.constraint-card-highlight,
 .constraint-groupe:target {
   outline: 2px solid var(--app-accent);
   outline-offset: 2px;
@@ -45,6 +46,16 @@
 
 .constraint-groupe {
   scroll-margin-top: 1rem;
+}
+
+/* Which rule a « Que faire ? » action highlighted, with the way to clear it. */
+.constraint-highlight-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.5rem 0;
+  font: var(--mat-sys-body-medium);
 }
 
 /* Name and badges on one line while both fit, the badges dropping to the next

@@ -184,12 +184,14 @@
                 </th>
                 <th scope="col" class="repos-total-header repos-colle-repos" i18n="@@repos.column.repos">Repos</th>
                 <th scope="col" class="repos-total-header repos-colle-serie" i18n="@@repos.column.serie">Série</th>
-                @for (jour of tableau().jours; track jour.jour) {
+                @for (jour of tableau().jours; track jour.jour; let indexJour = $index) {
                   <th
                     scope="col"
                     class="repos-day-header"
                     [class.repos-colonne-weekend]="jour.weekEnd"
                     [class.repos-colonne-semaine]="jour.debutSemaine"
+                    [class.repos-colonne-demandee]="indexJour === colonneDemandee()"
+                    [attr.aria-current]="indexJour === colonneDemandee() ? 'date' : null"
                     [matTooltip]="jour.titre"
                     [attr.aria-label]="jour.titre"
                   >

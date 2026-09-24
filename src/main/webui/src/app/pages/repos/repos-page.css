@@ -224,6 +224,13 @@ td.repos-total-cell.repos-colonne-weekend {
   box-shadow: inset 1px 0 0 var(--mat-sys-outline);
 }
 
+/* The day a « Que faire ? » action opened the grid on: underlined in the
+   primary colour, an inset shadow for the same reason as the week rule. */
+th.repos-colonne-demandee {
+  box-shadow: inset 0 -3px 0 var(--mat-sys-primary);
+  color: var(--mat-sys-primary);
+}
+
 .repos-cell-travaille {
   background: var(--mat-sys-surface-container-highest);
 }

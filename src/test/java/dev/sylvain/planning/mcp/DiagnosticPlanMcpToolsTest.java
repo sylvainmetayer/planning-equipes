@@ -69,6 +69,17 @@ class DiagnosticPlanMcpToolsTest {
         assertThat(solverJobService.findActive())
                 .as("un diagnostic ne lance aucune résolution")
                 .isEmpty();
+        // Every rule in default carries its playbook, by code: an assistant
+        // proposes the gesture the Diagnostic offers, never a route.
+        assertThat(vue.contraintes())
+                .filteredOn(contrainte -> SolveurMcpTools.penalises(contrainte.score()))
+                .isNotEmpty()
+                .allSatisfy(contrainte -> assertThat(contrainte.actions())
+                        .isNotEmpty()
+                        .allSatisfy(action -> assertThat(action.code()).matches("[A-Z_]+")));
+        assertThat(vue.contraintes())
+                .filteredOn(contrainte -> !SolveurMcpTools.penalises(contrainte.score()))
+                .allSatisfy(contrainte -> assertThat(contrainte.actions()).isEmpty());
         // The reading of the score goes out with it, the verdict first, and
         // names rules by their label — never an identifier, never a person.
         assertThat(vue.lecture()).isNotEmpty();

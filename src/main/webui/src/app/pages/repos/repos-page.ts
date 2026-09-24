@@ -2,6 +2,8 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
+  Injector,
+  afterNextRender,
   computed,
   inject,
   signal,
@@ -91,10 +93,16 @@ export class ReposPage {
   protected readonly sansReposSeulement = signal(false);
   protected readonly vue = signal<VueRepos>('grille');
   protected readonly densite = signal<DensiteRepos>('compact');
+  /**
+   * `?date=`: the day a « Que faire ? » action opened the grid on — its
+   * column is marked, brought into view and holds the grid's tab stop.
+   */
+  protected readonly jourDemande = signal('');
 
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
   private readonly hote = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly injector = inject(Injector);
 
   protected readonly tableau = computed<TableauRepos>(() => {
     const planning = this.planning();
@@ -111,6 +119,12 @@ export class ReposPage {
   });
 
   protected readonly lignes = computed<LigneRepos[]>(() => this.tableau().lignes);
+
+  /** The column of `?date=`, -1 when none is asked for or the plan has no such day. */
+  protected readonly colonneDemandee = computed(() => {
+    const date = this.jourDemande();
+    return date ? this.tableau().jours.findIndex((jour) => jour.date === date) : -1;
+  });
 
   protected readonly lignesAffichees = computed<LigneRepos[]>(() =>
     filtrerLignes(this.lignes(), this.filtre(), this.sansReposSeulement()),
@@ -147,7 +161,8 @@ export class ReposPage {
       this.filtre().trim() !== '' ||
       this.sansReposSeulement() ||
       this.vue() !== 'grille' ||
-      this.densite() !== 'compact',
+      this.densite() !== 'compact' ||
+      this.jourDemande() !== '',
   );
 
   protected readonly animateurColumnLabel = $localize`:@@repos.column.animateur:Animateur`;
@@ -188,12 +203,14 @@ export class ReposPage {
     // one non-default value falls back to the default rather than failing.
     this.vue.set(params.get('vue') === 'frise' ? 'frise' : 'grille');
     this.densite.set(params.get('densite') === 'confort' ? 'confort' : 'compact');
+    this.jourDemande.set(params.get('date') ?? '');
     void this.refresh();
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
       sansRepos: this.sansReposSeulement() ? '1' : null,
       vue: this.vue() === 'frise' ? 'frise' : null,
       densite: this.densite() === 'confort' ? 'confort' : null,
+      date: optionalParam(this.jourDemande()),
     }));
   }
 
@@ -202,6 +219,7 @@ export class ReposPage {
     this.error.set('');
     try {
       this.planning.set(await this.planningState.loadForDisplay());
+      this.showRequestedDay();
     } catch (error) {
       this.planning.set(null);
       this.error.set(errorPrefix(error));
@@ -210,8 +228,25 @@ export class ReposPage {
     }
   }
 
-  /** Back to the view this page opens on: everybody, no search, the compact grid. */
+  /** Puts the grid's tab stop on the column of `?date=`, and scrolls that column into view. */
+  private showRequestedDay(): void {
+    const colonne = this.colonneDemandee();
+    if (colonne < 0) {
+      return;
+    }
+    this.celluleCourante.set({ ligne: 0, colonne });
+    afterNextRender(
+      () =>
+        this.hote.nativeElement
+          .querySelector<HTMLElement>('.repos-colonne-demandee')
+          ?.scrollIntoView?.({ block: 'nearest', inline: 'center' }),
+      { injector: this.injector },
+    );
+  }
+
+  /** Back to the view this page opens on: everybody, no search, the compact grid, no day singled out. */
   protected resetView(): void {
+    this.jourDemande.set('');
     this.filtre.set('');
     this.sansReposSeulement.set(false);
     this.vue.set('grille');

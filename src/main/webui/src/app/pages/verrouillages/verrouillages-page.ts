@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  Injector,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -13,6 +23,11 @@ import { PlanningStateService } from '../../core/planning-state.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { VerrouillageStore } from '../../core/verrouillage.store';
+import {
+  currentViewParams,
+  keepViewInQueryParams,
+  optionalParam,
+} from '../../core/view-query-params';
 import {
   Avertissement,
   PlanningEvenement,
@@ -118,24 +133,77 @@ export class VerrouillagesPage {
     Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort(),
   );
 
-  protected readonly rows = computed<VerrouillageRow[]>(() =>
-    this.verrous.verrouillages().map((verrouillage) => ({
-      ...verrouillage,
-      typeLabel: typeLabel(verrouillage.type),
-      cibleLabel: this.cibleLabel(verrouillage),
-      attenteLabel: verrouillage.vacationMissing
-        ? $localize`:@@verrouillages.attente:En attente : la grille ne porte plus cette vacation. Le verrouillage reprend dès qu'elle est recréée à l'identique.`
-        : '',
-      actif: true,
-    })),
+  /**
+   * `?animateur=a,b`: the locks standing in the way of a forced assignment on
+   * those people, the others hidden until « Tout afficher ». Empty means no
+   * narrowing.
+   */
+  protected readonly onlyAnimateurs = signal<string[]>(
+    (currentViewParams().get('animateur') ?? '')
+      .split(',')
+      .map((id) => id.trim())
+      .filter((id) => id !== ''),
   );
 
+  /**
+   * Those people by name, for the note — never a raw id on screen, the way
+   * Ouvertures names its one stand. An id the referential no longer knows
+   * stays shown as is: saying nothing would hide that the filter names it.
+   */
+  protected readonly onlyAnimateurNames = computed(() => {
+    const byId = new Map(this.store.animateurs().map((animateur) => [animateur.id, animateur]));
+    return this.onlyAnimateurs()
+      .map((id) => {
+        const animateur = byId.get(id);
+        return animateur ? `${animateur.prenom} ${animateur.nom}`.trim() || id : id;
+      })
+      .join(', ');
+  });
+
+  /** Every lock of the edition, whatever the narrowing — the other half of « 2 sur 5 ». */
+  protected readonly totalCount = computed(() => this.verrous.verrouillages().length);
+
+  private readonly listTitle = viewChild<ElementRef<HTMLElement>>('listTitle');
+
+  /**
+   * The one-action reset of the narrowing. The button disappears with it, so
+   * the focus goes to the list's heading rather than back to the page top.
+   */
+  protected showAll(): void {
+    this.onlyAnimateurs.set([]);
+    afterNextRender(() => this.listTitle()?.nativeElement.focus(), { injector: this.injector });
+  }
+
+  protected readonly rows = computed<VerrouillageRow[]>(() =>
+    this.verrous
+      .verrouillages()
+      .filter(
+        (verrouillage) =>
+          this.onlyAnimateurs().length === 0 ||
+          (verrouillage.animateurId !== null &&
+            this.onlyAnimateurs().includes(verrouillage.animateurId)),
+      )
+      .map((verrouillage) => ({
+        ...verrouillage,
+        typeLabel: typeLabel(verrouillage.type),
+        cibleLabel: this.cibleLabel(verrouillage),
+        attenteLabel: verrouillage.vacationMissing
+          ? $localize`:@@verrouillages.attente:En attente : la grille ne porte plus cette vacation. Le verrouillage reprend dès qu'elle est recréée à l'identique.`
+          : '',
+        actif: true,
+      })),
+  );
+
+  private readonly injector = inject(Injector);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
 
   private readonly planningState = inject(PlanningStateService);
 
   constructor() {
+    keepViewInQueryParams(() => ({
+      animateur: optionalParam(this.onlyAnimateurs().join(',')),
+    }));
     void this.reload();
     void this.chargerPlanning();
   }

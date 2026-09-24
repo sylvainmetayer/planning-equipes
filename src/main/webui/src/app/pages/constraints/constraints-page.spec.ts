@@ -452,6 +452,36 @@ describe('ConstraintsPage', () => {
         document.getElementById('travailDeNuitInterditPourMineur'),
       );
     });
+
+    /** « Baisser son poids » lands on the rule's line, outlined, with a way to clear it. */
+    it('highlights and scrolls to the rule a playbook action named', async () => {
+      const scrollIntoView = vi.fn();
+      Element.prototype.scrollIntoView = scrollIntoView;
+      constraintsApi.catalogue.mockResolvedValue(
+        view([contrainte({ libelleCourt: 'Équilibre de la charge' }), REGLE_LEGALE]),
+      );
+
+      const harness = await RouterTestingHarness.create('/constraints?regle=equilibrerCharge');
+      await vi.waitFor(() => {
+        harness.detectChanges();
+        expect(document.getElementById('equilibrerCharge')).not.toBeNull();
+      });
+
+      await vi.waitFor(() => expect(scrollIntoView).toHaveBeenCalled());
+      const carte = document.getElementById('equilibrerCharge')!;
+      expect(scrollIntoView.mock.instances[0]).toBe(carte);
+      expect(carte.classList).toContain('constraint-card-highlight');
+      expect(document.getElementById('travailDeNuitInterditPourMineur')!.classList).not.toContain(
+        'constraint-card-highlight',
+      );
+      const note = harness.routeNativeElement!.querySelector('.constraint-highlight-note')!;
+      expect(note.textContent).toContain('Équilibre de la charge');
+
+      note.querySelector('button')!.click();
+      harness.detectChanges();
+      expect(carte.classList).not.toContain('constraint-card-highlight');
+      expect(harness.routeNativeElement!.querySelector('.constraint-highlight-note')).toBeNull();
+    });
   });
 
   // One control for the thirty-nine rules, protected ones included: a number

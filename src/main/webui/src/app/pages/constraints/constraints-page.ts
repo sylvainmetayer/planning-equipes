@@ -8,6 +8,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
@@ -38,6 +39,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { LegalText } from '../../shared/legal-text';
 import { StatusMessage } from '../../shared/status-message';
 import { ViolationDetailsDialog } from '../../shared/violation-details-dialog';
+import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { errorPrefix } from '../../core/error-message';
 import { LegalDisableConfirmService } from './legal-disable-dialog';
 import { classeCellule, ColonnePivot, buildPivot, cellLink } from './ecarts-pivot';
@@ -355,6 +357,38 @@ export class ConstraintsPage {
    */
   private ancreDemandee = this.route.snapshot.fragment;
 
+  /**
+   * `?regle=<name>`: the rule a « Que faire ? » action sent the reader to —
+   * « baisser son poids » lands on its line, outlined, rather than at the top
+   * of fifty rules. Read once; scrolled to once, like the anchor.
+   */
+  protected readonly highlightedRule = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('regle'),
+  );
+  private ruleToScrollTo = this.highlightedRule();
+
+  /** The short label of the highlighted rule, for the note and its reset. */
+  protected readonly highlightedLabel = computed(() => {
+    const name = this.highlightedRule();
+    if (!name) {
+      return '';
+    }
+    const regle = this.view()?.contraintes.find((constraint) => constraint.name === name);
+    return regle ? regle.libelleCourt || regle.name : '';
+  });
+
+  private readonly activeTitle = viewChild<ElementRef<HTMLElement>>('activeTitle');
+
+  /**
+   * The one-action reset of the highlight — the URL follows, so a reload
+   * does not bring it back. The button disappears with it: the focus goes to
+   * the card's heading.
+   */
+  protected clearHighlight(): void {
+    this.highlightedRule.set(null);
+    afterNextRender(() => this.activeTitle()?.nativeElement.focus(), { injector: this.injector });
+  }
+
   protected readonly summary = computed(() => {
     const view = this.view();
     if (!view) {
@@ -432,6 +466,7 @@ export class ConstraintsPage {
   });
 
   constructor() {
+    keepViewInQueryParams(() => ({ regle: optionalParam(this.highlightedRule()) }));
     void this.loadConstraints();
     // Every solve writes a fresh analysis server-side: reload the scored view
     // once one lands, whichever browser started it.
@@ -658,11 +693,12 @@ export class ConstraintsPage {
 
   /** Honours `/constraints#uneRegle` on a direct load, once the cards exist. */
   private honorerAncre(): void {
-    const ancre = this.ancreDemandee;
+    const ancre = this.ancreDemandee ?? this.ruleToScrollTo;
     if (!ancre) {
       return;
     }
     this.ancreDemandee = null;
+    this.ruleToScrollTo = null;
     afterNextRender(() => this.scrollToAnchor(ancre), { injector: this.injector });
   }
 

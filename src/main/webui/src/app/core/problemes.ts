@@ -12,6 +12,7 @@
 // the `$localize` labels resolve after `main.ts` has loaded the translations.
 
 import {
+  ActionType,
   CauseInfaisabilite,
   ConstraintView,
   ContributionAdHoc,
@@ -46,6 +47,114 @@ export interface Probleme {
   liens: LienProbleme[];
   /** The matches of a rule in default, each with the fiche it names — read by the Problèmes page next to `details`. */
   references: LinkedViolation[];
+  /**
+   * « Que faire ? » — the gestures that solve it, most likely first. Each one
+   * is a navigation to the screen that makes the gesture, positioned on the
+   * problem's object; none writes anything.
+   */
+  actions: ActionProbleme[];
+}
+
+/** One action of the playbook, ready for a `routerLink`. */
+export interface ActionProbleme {
+  code: string;
+  libelle: string;
+  explication: string;
+  route: string;
+  queryParams: Record<string, string>;
+  /**
+   * `'fr'` on an action the server wrote — its words are French whatever the
+   * language of the screen, and a screen reader must pronounce them so —;
+   * null on one written here, translated like the rest of the page.
+   */
+  lang: 'fr' | null;
+}
+
+/** A server action as the page links it. */
+export function actionOf(action: ActionType): ActionProbleme {
+  return {
+    code: action.code,
+    libelle: action.libelle,
+    explication: action.explication,
+    route: action.route,
+    queryParams: { ...(action.parametres ?? {}) },
+    lang: 'fr',
+  };
+}
+
+/**
+ * The actions of a rule in default. The server positions them on the rule's
+ * first breach — its timeslot for the bench, its day and stand for the
+ * repair and the openings — and they are kept as sent; what it cannot know is
+ * which hand-entered exceptions the rule failed on, and those are added here.
+ * A rule whose matches name nothing — an aggregate like the balance of the
+ * workload — keeps its screens bare.
+ */
+export function actionsOfRule(
+  contrainte: ConstraintView,
+  enCause: ContributionAdHoc[],
+): ActionProbleme[] {
+  const actions = (contrainte.actions ?? []).map((action) => {
+    const link = actionOf(action);
+    if (link.code === 'REVOIR_AJUSTEMENTS' && enCause.length > 0) {
+      link.queryParams = {
+        ...link.queryParams,
+        ids: enCause.map((contribution) => contribution.contrainteId).join(','),
+      };
+    }
+    return link;
+  });
+  if (enCause.length > 0 && !actions.some((action) => action.code === 'REVOIR_AJUSTEMENTS')) {
+    actions.push({
+      code: 'REVOIR_AJUSTEMENTS',
+      libelle: $localize`:@@problemes.action.revoirAjustements:Revoir l'ajustement`,
+      explication: $localize`:@@problemes.action.revoirAjustements.explication:La règle a buté sur des ajustements écrits à la main : revoyez-les ou supprimez-les.`,
+      route: '/ad-hoc-constraints',
+      queryParams: { ids: enCause.map((contribution) => contribution.contrainteId).join(',') },
+      lang: null,
+    });
+  }
+  return actions;
+}
+
+/**
+ * The relay-less breaks have no type server-side — they come from the breaks
+ * report, not from a rule — so their two gestures are written here: open one
+ * more seat on the stand at the time of the break, or shorten the shift that
+ * owes it. Positioned on the first break of the list.
+ */
+export function actionsOfBreaks(pauses: RapportPauses): ActionProbleme[] {
+  const firstBreak = pauses.journees
+    .flatMap((journee) => journee.sequences)
+    .flatMap((sequence) => sequence.pausesDues)
+    .find((pause) => !pause.relaisDisponible);
+  // The stand by its exact id: a search on « S1 » would also bring S10, S11…
+  const reliefParams: Record<string, string> = { vue: 'saisie' };
+  if (firstBreak?.standId) {
+    reliefParams['stand'] = firstBreak.standId;
+  }
+  const shiftParams: Record<string, string> = {};
+  if (firstBreak?.creneauId !== null && firstBreak?.creneauId !== undefined) {
+    shiftParams['edit'] = String(firstBreak.creneauId);
+  }
+  return [
+    {
+      code: 'OUVRIR_RELAIS',
+      libelle: $localize`:@@problemes.action.ouvrirRelais:Ouvrir une place de relais`,
+      explication: $localize`:@@problemes.action.ouvrirRelais.explication:Une place de plus sur ce stand à l'heure de la pause : quelqu'un peut alors relayer la personne seule.`,
+      route: '/ouvertures',
+      queryParams: reliefParams,
+      lang: null,
+    },
+    {
+      code: 'RACCOURCIR_VACATION',
+      libelle: $localize`:@@problemes.action.raccourcirVacation:Raccourcir la vacation`,
+      explication: $localize`:@@problemes.action.raccourcirVacation.explication:Une vacation plus courte ne doit plus la pause : elle tombe alors hors de la séquence.`,
+      route: '/creneaux',
+      queryParams: shiftParams,
+      lang: null,
+    },
+  ];
 }
 
 /** One match of a rule in default: its sentence, and the fiches it names as links. */
@@ -285,6 +394,7 @@ export function construireProblemes(
       message: $localize`:@@problemes.pauses.message:${pauses.relaisManquants}:count: pause(s) légale(s) tombent sur un stand où personne d'autre n'est présent : la personne est seule, personne ne peut la relayer. Prévoyez un relais extérieur, ou renforcez le stand.`,
       details: detailsDePauses(pauses),
       references: [],
+      actions: actionsOfBreaks(pauses),
       liens: [
         {
           route: '/journee',
@@ -304,6 +414,7 @@ export function construireProblemes(
       message: cause.message,
       details: detailsDeCause(cause),
       references: [],
+      actions: (cause.actions ?? []).map(actionOf),
       liens: liensDeCause(cause),
     });
   });
@@ -353,6 +464,7 @@ export function construireProblemes(
         message: contrainte.description,
         details: [...relatedDetails(enCause), ...lignes],
         references,
+        actions: actionsOfRule(contrainte, enCause),
         liens,
       });
     });

@@ -23,6 +23,24 @@ public record PastHorizon(LocalDate today, LocalTime now) {
         }
     }
 
+    /**
+     * Whether something starting on {@code date} at {@code start} had started
+     * at this horizon: a strictly earlier date, or this date with a start at
+     * or before the time of day. The one definition of « déjà commencé »
+     * (ADR 0044) — the freeze of a seat reads it on the seat's effective
+     * start, and every screen that says a day is frozen must read it the same
+     * way. A {@code null} date, or a {@code null} start on today, has not.
+     */
+    public boolean hasStarted(LocalDate date, LocalTime start) {
+        if (date == null || date.isAfter(today)) {
+            return false;
+        }
+        if (date.isBefore(today)) {
+            return true;
+        }
+        return start != null && !start.isAfter(now);
+    }
+
     /** One clock reading, so the date and the time of day cannot straddle midnight. */
     public static PastHorizon of(LocalDateTime moment) {
         return new PastHorizon(moment.toLocalDate(), moment.toLocalTime().withNano(0));

@@ -2,11 +2,15 @@ package dev.sylvain.planning.service.analyse;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.solver.SolutionManager;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.diagnostic.ConstraintContribution;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.diagnostic.MatchFacts;
@@ -19,16 +23,21 @@ import dev.sylvain.planning.solver.ConstraintFloorRules.FloorRule;
 import dev.sylvain.planning.solver.ConstraintFloorRules.MissingData;
 import dev.sylvain.planning.solver.constraints.ExclusionEligibilite;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.jboss.logging.Logger;
 
@@ -126,6 +135,7 @@ public final class PlanningDiagnosticService {
         Map<Denominator, Integer> evaluatedByDenominator = new EnumMap<>(Denominator.class);
         long plancherMedium = 0;
         long plancherSoft = 0;
+        Predicate<Creneau> timeslotFrozen = frozenTimeslots(solved.getPostes(), solved.getPastHorizon());
         for (ConstraintContribution ca : analysis.contributions()) {
             String name = ca.constraintName();
             boolean hard = ConstraintCatalog.NOMS_DURS.contains(name);
@@ -152,7 +162,16 @@ public final class PlanningDiagnosticService {
                 plancherSoft += ca.score().softScore();
             }
             constraintDiagnostics.add(new ConstraintDiagnostic(
-                    name, String.valueOf(ca.score()), ca.matchCount(), violations, evaluated, floor, references));
+                    name,
+                    String.valueOf(ca.score()),
+                    ca.matchCount(),
+                    violations,
+                    evaluated,
+                    floor,
+                    references,
+                    positionOf(
+                            ca.matches(),
+                            onlyStartedTimeslots(ca.matches(), solved.getPastHorizon(), timeslotFrozen))));
         }
         constraintDiagnostics.sort((a, b) -> Integer.compare(b.matchCount, a.matchCount));
         HardMediumSoftScore floorScore = HardMediumSoftScore.of(0, plancherMedium, plancherSoft);
@@ -229,6 +248,129 @@ public final class PlanningDiagnosticService {
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .filter(name -> !ConstraintCatalog.isActive(solved.getConstraintsDesactivees(), name))
                 .collect(Collectors.toCollection(java.util.LinkedHashSet::new));
+    }
+
+    /**
+     * Whether every match of a rule sits in the frozen past of ADR 0044 — on
+     * seats the solve can no longer move. A seat is read by its own
+     * {@link PosteAffectation#isPasse()} flag, the very one the preparation
+     * set on its effective start; a bare timeslot is frozen when every seat
+     * of it is ({@code timeslotFrozen}). A match naming neither (an
+     * aggregate) is not known to be in the past, and neither is anything
+     * without a horizon.
+     */
+    static boolean onlyStartedTimeslots(
+            List<MatchFacts> matches, PastHorizon horizon, Predicate<Creneau> timeslotFrozen) {
+        if (horizon == null || matches == null || matches.isEmpty()) {
+            return false;
+        }
+        for (MatchFacts match : matches) {
+            List<Boolean> frozen = new ArrayList<>();
+            collectFrozen(match.facts(), timeslotFrozen, frozen);
+            if (frozen.isEmpty() || frozen.contains(Boolean.FALSE)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Whether each timeslot of the plan is frozen: every seat of it past, as
+     * the preparation marked them. A timeslot carrying no seat has nothing a
+     * solve could move, and is read on its own start through the same
+     * {@link PastHorizon#hasStarted} the freeze uses.
+     */
+    static Predicate<Creneau> frozenTimeslots(List<PosteAffectation> postes, PastHorizon horizon) {
+        Map<Creneau, Boolean> allPast = new HashMap<>();
+        for (PosteAffectation poste : postes == null ? List.<PosteAffectation>of() : postes) {
+            if (poste.getCreneau() != null) {
+                allPast.merge(poste.getCreneau(), poste.isPasse(), Boolean::logicalAnd);
+            }
+        }
+        return creneau -> {
+            Boolean past = allPast.get(creneau);
+            if (past != null) {
+                return past;
+            }
+            return horizon != null && horizon.hasStarted(creneau.getDate(), creneau.getHeureDebut());
+        };
+    }
+
+    /**
+     * Where the playbook's actions open for a rule: on the first match naming
+     * a timeslot, directly or through a seat — its timeslot and day, the
+     * stands and holders that same match names, and the game categories of
+     * those stands. An aggregate names none, and its actions open bare.
+     */
+    static BlockerPlaybook.Context positionOf(List<MatchFacts> matches, boolean frozenPast) {
+        for (MatchFacts match : matches == null ? List.<MatchFacts>of() : matches) {
+            List<Object> facts = new ArrayList<>();
+            unfold(match.facts(), facts);
+            Creneau creneau = null;
+            Set<Stand> stands = new LinkedHashSet<>();
+            Set<String> animateurIds = new LinkedHashSet<>();
+            for (Object fact : facts) {
+                if (fact instanceof PosteAffectation poste) {
+                    creneau = creneau == null ? poste.getCreneau() : creneau;
+                    if (poste.getStand() != null) {
+                        stands.add(poste.getStand());
+                    }
+                    if (poste.getAnimateur() != null) {
+                        animateurIds.add(poste.getAnimateur().getId());
+                    }
+                } else if (fact instanceof Creneau timeslot) {
+                    creneau = creneau == null ? timeslot : creneau;
+                } else if (fact instanceof Stand stand) {
+                    stands.add(stand);
+                } else if (fact instanceof Animateur animateur) {
+                    animateurIds.add(animateur.getId());
+                }
+            }
+            if (creneau != null) {
+                List<String> typologieIds = stands.stream()
+                        .flatMap(stand -> stand.getTypologiesProposees() == null
+                                ? Stream.<String>empty()
+                                : stand.getTypologiesProposees().stream())
+                        .distinct()
+                        .sorted()
+                        .toList();
+                return new BlockerPlaybook.Context(
+                        creneau.getId(),
+                        creneau.getDate(),
+                        stands.stream().map(Stand::getId).toList(),
+                        typologieIds,
+                        List.of(),
+                        List.copyOf(animateurIds),
+                        frozenPast);
+            }
+        }
+        return frozenPast
+                ? new BlockerPlaybook.Context(null, null, List.of(), List.of(), List.of(), List.of(), true)
+                : BlockerPlaybook.Context.NONE;
+    }
+
+    /** A match's facts, collections unfolded. */
+    private static void unfold(Collection<?> facts, List<Object> into) {
+        for (Object fact : facts) {
+            if (fact instanceof Collection<?> nested) {
+                unfold(nested, into);
+            } else {
+                into.add(fact);
+            }
+        }
+    }
+
+    /** Whether each seat or timeslot a match names is frozen, collections unfolded. */
+    private static void collectFrozen(Collection<?> facts, Predicate<Creneau> timeslotFrozen, List<Boolean> frozen) {
+        for (Object fact : facts) {
+            if (fact instanceof PosteAffectation poste) {
+                frozen.add(poste.isPasse());
+            } else if (fact instanceof Creneau creneau) {
+                frozen.add(timeslotFrozen.test(creneau));
+            } else if (fact instanceof Collection<?> nested) {
+                collectFrozen(nested, timeslotFrozen, frozen);
+            }
+        }
     }
 
     /**
@@ -421,6 +563,13 @@ public final class PlanningDiagnosticService {
      *                    it evaluated: its points are a constant the solve
      *                    cannot move, and the reading names the missing data
      *                    when one explains it. {@code null} otherwise
+     * @param position    what the rule's first breach naming a timeslot
+     *                    points at — timeslot, day, stands, holders — for the
+     *                    playbook's actions to open their screen on it, and
+     *                    whether every breach sits on seats already started
+     *                    (ADR 0044): nothing is left to correct there, and the
+     *                    playbook says so rather than proposing a gesture.
+     *                    Read by the playbook, never put on the wire
      */
     public record ConstraintDiagnostic(
             String name,
@@ -429,7 +578,29 @@ public final class PlanningDiagnosticService {
             List<String> violations,
             Integer postesEvalues,
             ConstraintFloor plancher,
-            List<ViolationFormatter.ViolationReference> references) {}
+            List<ViolationFormatter.ViolationReference> references,
+            @JsonIgnore BlockerPlaybook.Context position) {
+
+        /** A rule read without a position, as the tests build them. */
+        public ConstraintDiagnostic(
+                String name,
+                String score,
+                int matchCount,
+                List<String> violations,
+                Integer postesEvalues,
+                ConstraintFloor plancher,
+                List<ViolationFormatter.ViolationReference> references) {
+            this(
+                    name,
+                    score,
+                    matchCount,
+                    violations,
+                    postesEvalues,
+                    plancher,
+                    references,
+                    BlockerPlaybook.Context.NONE);
+        }
+    }
 
     /**
      * A constraint read as a floor (issue #495): what share of its items it

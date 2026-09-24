@@ -19,6 +19,7 @@ function probleme(id: string, niveau: NiveauProbleme): Probleme {
     message: '',
     details: [],
     references: [],
+    actions: [],
     liens: [],
   };
 }

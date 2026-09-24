@@ -218,6 +218,25 @@ describe('ReposPage', () => {
     expect(cellule(1, 1).getAttribute('tabindex')).toBe('0');
   });
 
+  /** `?date=`: « Revoir les indisponibilités du jour » opens the grid on that day's column. */
+  it('marks the column of ?date= and puts the tab stop on it', async () => {
+    await rendre(planningDeuxJours(), { date: '2026-08-02' });
+    await fixture.whenStable();
+
+    const demandee = racine().querySelectorAll('th.repos-colonne-demandee');
+    expect(demandee).toHaveLength(1);
+    expect(demandee[0].getAttribute('aria-current')).toBe('date');
+    expect(demandee[0].textContent).toContain('J2');
+    expect(cellule(0, 1).getAttribute('tabindex')).toBe('0');
+  });
+
+  it('marks no column for a day the plan does not have', async () => {
+    await rendre(planningDeuxJours(), { date: '2030-01-01' });
+
+    expect(racine().querySelectorAll('th.repos-colonne-demandee')).toHaveLength(0);
+    expect(cellule(0, 0).getAttribute('tabindex')).toBe('0');
+  });
+
   it('keeps a tab stop when the filter drops the focused line', async () => {
     await rendre(planningDeuxJours());
     cellule(2, 0).dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));

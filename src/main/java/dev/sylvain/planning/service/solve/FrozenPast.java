@@ -4,8 +4,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.BusinessError;
-import java.time.LocalDate;
-import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -127,18 +125,10 @@ public final class FrozenPast {
      * nothing to compare — and a {@code null} horizon says the freeze is off.
      */
     public static boolean isPast(PosteAffectation poste, PastHorizon horizon) {
-        if (horizon == null || poste.getCreneau() == null || poste.getCreneau().getDate() == null) {
+        if (horizon == null || poste.getCreneau() == null) {
             return false;
         }
-        LocalDate date = poste.getCreneau().getDate();
-        if (date.isBefore(horizon.today())) {
-            return true;
-        }
-        if (date.isAfter(horizon.today())) {
-            return false;
-        }
-        LocalTime debut = poste.heureDebutEffectif();
-        return debut != null && !debut.isAfter(horizon.now());
+        return horizon.hasStarted(poste.getCreneau().getDate(), poste.heureDebutEffectif());
     }
 
     /**

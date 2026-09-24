@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
+import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnDayOff;
@@ -189,10 +190,10 @@ public class FeasibilityAnalyzer {
         List<Stand> standsSurs = stands == null ? List.of() : stands;
         List<Creneau> creneauxSurs = creneaux == null ? List.of() : creneaux;
 
-        List<CauseInfaisabilite> causes = new ArrayList<>(
-                creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs, encadrementMineursActif));
-        causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
         PastHorizon horizon = contexte == null ? null : contexte.horizon();
+        List<CauseInfaisabilite> causes = new ArrayList<>(
+                creneauxSousEffectif(animateursSurs, standsSurs, creneauxSurs, encadrementMineursActif, horizon));
+        causes.addAll(contraintesContradictoires(contraintesAdHoc, creneauxSurs));
         causes.addAll(
                 affectationsForceesIntenables(contraintesAdHoc, animateursSurs, standsSurs, creneauxSurs, horizon));
         causes.addAll(affectationsForceesHorsEligibilite(
@@ -242,7 +243,11 @@ public class FeasibilityAnalyzer {
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
-            List<Animateur> animateurs, List<Stand> stands, List<Creneau> creneaux, boolean encadrementMineursActif) {
+            List<Animateur> animateurs,
+            List<Stand> stands,
+            List<Creneau> creneaux,
+            boolean encadrementMineursActif,
+            PastHorizon horizon) {
         List<CauseInfaisabilite> causes = new ArrayList<>();
         for (Creneau creneau : creneaux) {
             List<Stand> standsOuverts =
@@ -254,6 +259,14 @@ public class FeasibilityAnalyzer {
             if (manque <= 0) {
                 continue;
             }
+            List<String> standIds = standsOuverts.stream().map(Stand::getId).toList();
+            List<String> typologieIds = standsOuverts.stream()
+                    .flatMap(stand -> stand.getTypologiesProposees() == null
+                            ? java.util.stream.Stream.<String>empty()
+                            : stand.getTypologiesProposees().stream())
+                    .distinct()
+                    .sorted()
+                    .toList();
             causes.add(new CauseInfaisabilite(
                     TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF,
                     manque >= demande ? SeveriteInfaisabilite.CRITIQUE : SeveriteInfaisabilite.ELEVE,
@@ -263,11 +276,21 @@ public class FeasibilityAnalyzer {
                     creneau.getDate(),
                     creneau.getHeureDebut(),
                     creneau.getHeureFin(),
-                    standsOuverts.stream().map(Stand::getId).toList(),
+                    standIds,
                     List.of(),
                     demande,
                     (int) capacite,
-                    manque));
+                    manque,
+                    BlockerPlaybook.forCause(
+                            TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF.name(),
+                            new BlockerPlaybook.Context(
+                                    creneau.getId(),
+                                    creneau.getDate(),
+                                    standIds,
+                                    typologieIds,
+                                    List.of(),
+                                    List.of(),
+                                    hasStarted(creneau, standsOuverts, horizon)))));
         }
         return causes;
     }
@@ -294,7 +317,17 @@ public class FeasibilityAnalyzer {
                     contradiction.contrainteIds(),
                     0,
                     0,
-                    0));
+                    0,
+                    BlockerPlaybook.forCause(
+                            TypeCauseInfaisabilite.CONTRAINTES_AD_HOC_CONTRADICTOIRES.name(),
+                            new BlockerPlaybook.Context(
+                                    null,
+                                    null,
+                                    List.of(),
+                                    List.of(),
+                                    contradiction.contrainteIds(),
+                                    List.of(),
+                                    false))));
         }
         return causes;
     }
@@ -392,19 +425,38 @@ public class FeasibilityAnalyzer {
     private static CauseInfaisabilite forcedAssignmentCause(
             TypeCauseInfaisabilite type, ContrainteAdHoc contrainte, String message, List<LocalDate> dates) {
         Creneau creneau = contrainte.getCreneau();
+        LocalDate date = dates.size() == 1 ? dates.getFirst() : null;
+        List<String> animateurIds = contrainte.getAnimateursConcernes() == null
+                ? List.of()
+                : contrainte.getAnimateursConcernes().stream()
+                        .filter(Objects::nonNull)
+                        .map(Animateur::getId)
+                        .toList();
         return new CauseInfaisabilite(
                 type,
                 SeveriteInfaisabilite.CRITIQUE,
                 message,
                 creneau == null ? null : creneau.getId(),
-                dates.size() == 1 ? dates.getFirst() : null,
+                date,
                 null,
                 null,
                 List.of(),
                 List.of(contrainte.getId()),
                 0,
                 0,
-                0);
+                0,
+                // The three detectors already leave the frozen past out: a
+                // cause here is always on a day still to come.
+                BlockerPlaybook.forCause(
+                        type.name(),
+                        new BlockerPlaybook.Context(
+                                creneau == null ? null : creneau.getId(),
+                                date,
+                                List.of(),
+                                List.of(),
+                                List.of(contrainte.getId()),
+                                animateurIds,
+                                false)));
     }
 
     /**
@@ -625,6 +677,9 @@ public class FeasibilityAnalyzer {
      * @param demande       seats to fill, {@code 0} outside a capacity cause
      * @param capacite      animateurs able to fill them
      * @param manque        {@code demande - capacite}
+     * @param actions       what to do about it, most likely gesture first —
+     *                      navigations positioned on what the cause names,
+     *                      never a write (see {@link BlockerPlaybook})
      */
     @Schema(requiredProperties = {"capacite", "demande", "manque"})
     public record CauseInfaisabilite(
@@ -639,7 +694,61 @@ public class FeasibilityAnalyzer {
             List<String> contrainteIds,
             int demande,
             int capacite,
-            int manque) {}
+            int manque,
+            List<BlockerPlaybook.ActionType> actions) {
+
+        /** A cause read without its playbook, as the tests build them. */
+        public CauseInfaisabilite(
+                TypeCauseInfaisabilite type,
+                SeveriteInfaisabilite severite,
+                String message,
+                Long creneauId,
+                LocalDate date,
+                LocalTime heureDebut,
+                LocalTime heureFin,
+                List<String> standIds,
+                List<String> contrainteIds,
+                int demande,
+                int capacite,
+                int manque) {
+            this(
+                    type,
+                    severite,
+                    message,
+                    creneauId,
+                    date,
+                    heureDebut,
+                    heureFin,
+                    standIds,
+                    contrainteIds,
+                    demande,
+                    capacite,
+                    manque,
+                    List.of());
+        }
+    }
+
+    /**
+     * Whether every seat {@code stands} open on {@code creneau} had started
+     * under {@code horizon} — the moment a solve can move none of them any
+     * more. A seat starts at its <b>effective</b> start, its open segment's,
+     * as {@code FrozenPast.isPast} reads it: a 09:00-13:00 timeslot on a stand
+     * opening at 11:00 is still ahead at 10:00. So the timeslot is frozen once
+     * its latest segment has started; with no open stand, once the timeslot
+     * itself has. Without a horizon nothing has.
+     */
+    static boolean hasStarted(Creneau creneau, List<Stand> stands, PastHorizon horizon) {
+        if (horizon == null || creneau == null || creneau.getHeureDebut() == null) {
+            return false;
+        }
+        int latestStartMinutes = 0;
+        for (Stand stand : stands) {
+            for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
+                latestStartMinutes = Math.max(latestStartMinutes, segment.debutMinutes());
+            }
+        }
+        return horizon.hasStarted(creneau.getDate(), creneau.getHeureDebut().plusMinutes(latestStartMinutes));
+    }
 
     /**
      * @param manqueAnimateurs worst single-créneau shortfall, {@code 0} when no

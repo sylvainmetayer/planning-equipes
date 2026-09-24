@@ -366,7 +366,11 @@ planning que rien ni personne n'aurait affiché ensuite. Il renvoie aussi la
 **lecture du score** (`lecture`), les mêmes phrases que la page Solveur et le
 Diagnostic : écrites par gabarits à partir du diagnostic, elles ne nomment que
 des règles (par leur libellé court), des jours et des nombres — jamais une
-personne —, et sortent donc telles quelles.
+personne —, et sortent donc telles quelles. Chaque règle en défaut y porte
+aussi ses **actions types** (`actions` : code, geste, explication), comme dans
+`expliquer_echec_contraintes_dures` : les mêmes que le bloc « Que faire ? » du
+Diagnostic, pour qu'un assistant propose le même geste. La route de l'écran,
+elle, ne sort pas : un assistant n'a pas d'écran où envoyer quelqu'un.
 
 Le périmètre de `resoudre_incremental` (animateurs, jours, stands) **ne touche
 pas aux verrouillages** : il ne vaut que pour ce job. Ce qui est figé

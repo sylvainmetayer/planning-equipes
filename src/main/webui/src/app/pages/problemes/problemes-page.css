@@ -46,6 +46,12 @@
   margin-bottom: 0.5rem;
 }
 
+/* The problem's name, a real heading so its « Que faire ? » can be named after it. */
+.probleme-titre {
+  font: var(--mat-sys-title-small);
+  margin: 0;
+}
+
 .probleme-message {
   font: var(--mat-sys-body-medium);
   margin: 0;
@@ -65,6 +71,37 @@
   flex-wrap: wrap;
   gap: 0.5rem;
   margin: 0.5rem 0 0;
+}
+
+/* « Que faire ? » — the playbook under each problem: one button per gesture,
+   most likely first, each with the sentence saying why. */
+.probleme-que-faire {
+  margin-block: 0.5rem;
+}
+
+.probleme-que-faire-titre {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.25rem;
+}
+
+.probleme-actions {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.probleme-action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 0.75rem;
+}
+
+.probleme-action-explication {
+  flex: 1 1 18rem;
+  color: var(--mat-sys-on-surface-variant);
+  font: var(--mat-sys-body-small);
 }
 
 /* The fiche a violation line names, as a link right after the sentence. */

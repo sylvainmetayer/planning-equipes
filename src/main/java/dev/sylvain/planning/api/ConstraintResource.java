@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
 import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
+import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
@@ -185,7 +186,13 @@ public class ConstraintResource {
                 diagnostic == null ? null : diagnostic.postesEvalues(),
                 diagnostic == null ? null : diagnostic.plancher(),
                 diagnostic == null ? List.of() : diagnostic.references(),
-                ConstraintParameters.of(definition.name(), legaux, qualite));
+                ConstraintParameters.of(definition.name(), legaux, qualite),
+                BlockerPlaybook.forRule(
+                        definition,
+                        diagnostic == null || diagnostic.plancher() == null
+                                ? null
+                                : diagnostic.plancher().lien(),
+                        diagnostic == null ? BlockerPlaybook.Context.NONE : diagnostic.position()));
     }
 
     /**
@@ -246,6 +253,11 @@ public class ConstraintResource {
      *                    referential or against an article of the Code du
      *                    travail has no field to fill. Never the weight, which
      *                    has its own field on that screen
+     * @param actions     what to do about this rule being in default, most
+     *                    likely gesture first (see {@code BlockerPlaybook}):
+     *                    navigations, never a write. The first one's
+     *                    explanation is {@code remediation} word for word; a
+     *                    floor puts the entry of its missing data first
      */
     @Schema(requiredProperties = {"actif", "activeByDefault", "dosable", "legale", "poids", "protegee"})
     public record ConstraintView(
@@ -267,7 +279,8 @@ public class ConstraintResource {
             Integer postesEvalues,
             ConstraintFloor plancher,
             List<ViolationFormatter.ViolationReference> references,
-            List<ConstraintParameter> parametres) {}
+            List<ConstraintParameter> parametres,
+            List<BlockerPlaybook.ActionType> actions) {}
 
     /**
      * @param actif whether the constraint is applied on the next solve
