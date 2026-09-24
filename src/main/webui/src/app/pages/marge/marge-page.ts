@@ -21,6 +21,7 @@ import { errorText } from '../../core/resource-state';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { SyntheseMarge, TableMarge, buildSynthese, buildTable, lienCellule, signe } from './marge';
 import { StatusMessage } from '../../shared/status-message';
+import { nextGridCell } from '../../core/grid-navigation';
 
 /**
  * « Marge disponible » (issue #499): the day × timeslot grid of what is left —
@@ -147,29 +148,9 @@ export class MargePage {
     const table = this.table();
     const lastRow = table.lignes.length - 1;
     const lastColumn = (table.lignes[ligne]?.cellules.length ?? 1) - 1;
-    // Every branch below assigns it, and the default returns.
-    let target: { ligne: number; colonne: number };
-    switch (event.key) {
-      case 'ArrowRight':
-        target = { ligne, colonne: Math.min(colonne + 1, lastColumn) };
-        break;
-      case 'ArrowLeft':
-        target = { ligne, colonne: Math.max(colonne - 1, 0) };
-        break;
-      case 'ArrowDown':
-        target = { ligne: Math.min(ligne + 1, lastRow), colonne };
-        break;
-      case 'ArrowUp':
-        target = { ligne: Math.max(ligne - 1, 0), colonne };
-        break;
-      case 'Home':
-        target = { ligne, colonne: 0 };
-        break;
-      case 'End':
-        target = { ligne, colonne: lastColumn };
-        break;
-      default:
-        return;
+    const target = nextGridCell(event.key, { ligne, colonne }, lastRow, lastColumn);
+    if (!target) {
+      return;
     }
     event.preventDefault();
     this.focusedCell.set(target);

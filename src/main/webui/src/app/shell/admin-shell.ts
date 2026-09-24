@@ -13,7 +13,6 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { Title } from '@angular/platform-browser';
 import { MatBadgeModule } from '@angular/material/badge';
 import { MatButtonModule } from '@angular/material/button';
 import { MatDividerModule } from '@angular/material/divider';
@@ -54,6 +53,7 @@ import { BRANDING } from '../core/branding';
 import { MascotDialog } from './mascot-dialog';
 import { NavGroup, buildNavGroups, visibleNavGroups } from './nav-groups';
 import { NewWindowLink } from '../shared/new-window-link';
+import { PageFocusService } from '../core/page-focus.service';
 
 /**
  * Admin shell: Material toolbar, navigation drawer listing every admin page,
@@ -120,8 +120,8 @@ export class AdminShell {
   private readonly router = inject(Router);
   private readonly dialog = inject(MatDialog);
   private readonly shortcuts = inject(KeyboardShortcutsService);
-  private readonly title = inject(Title);
   private readonly announcer = inject(LiveAnnouncer);
+  private readonly pageFocus = inject(PageFocusService);
   private readonly snackBar = inject(MatSnackBar);
 
   /** True while at least one unread notification is severity 'alert': overrides the badge count with a warning glyph. */
@@ -331,17 +331,12 @@ export class AdminShell {
   private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
 
   private annoncerNavigation(): void {
-    this.contenu()?.nativeElement.focus({ preventScroll: true });
-    const titre = this.title.getTitle().split('—')[0].trim();
-    if (titre) {
-      this.announcer.announce(titre, 'polite');
-    }
+    this.pageFocus.arriveOn(this.contenu()?.nativeElement);
   }
 
   /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
   protected focusContenu(event: Event): void {
-    event.preventDefault();
-    this.contenu()?.nativeElement.focus();
+    this.pageFocus.skipTo(event, this.contenu()?.nativeElement);
   }
 
   /** Closes the overlay drawer after navigating on a small screen. */

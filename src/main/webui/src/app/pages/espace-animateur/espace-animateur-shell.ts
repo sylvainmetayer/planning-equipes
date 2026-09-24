@@ -1,5 +1,4 @@
 import { DatePipe } from '@angular/common';
-import { LiveAnnouncer } from '@angular/cdk/a11y';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -20,7 +19,6 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { Title } from '@angular/platform-browser';
 import {
   ActivatedRoute,
   NavigationEnd,
@@ -31,6 +29,7 @@ import {
 } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
+import { PageFocusService } from '../../core/page-focus.service';
 import { AppLocale, getStoredLocale, setStoredLocaleAndReload } from '../../core/locale';
 import { errorMessage } from '../../core/error-message';
 import { BrandLogo } from '../../shared/brand-logo';
@@ -84,8 +83,7 @@ export class EspaceAnimateurShell {
   );
 
   private readonly router = inject(Router);
-  private readonly title = inject(Title);
-  private readonly announcer = inject(LiveAnnouncer);
+  private readonly pageFocus = inject(PageFocusService);
   private readonly contenu = viewChild<ElementRef<HTMLElement>>('contenu');
 
   constructor() {
@@ -116,17 +114,12 @@ export class EspaceAnimateurShell {
   }
 
   private announceNavigation(): void {
-    this.contenu()?.nativeElement.focus({ preventScroll: true });
-    const titre = this.title.getTitle().split('—')[0].trim();
-    if (titre) {
-      this.announcer.announce(titre, 'polite');
-    }
+    this.pageFocus.arriveOn(this.contenu()?.nativeElement);
   }
 
   /** Skip link: `href="#contenu"` alone would move the caret but not the focus. */
   protected focusContenu(event: Event): void {
-    event.preventDefault();
-    this.contenu()?.nativeElement.focus();
+    this.pageFocus.skipTo(event, this.contenu()?.nativeElement);
   }
 
   protected infobulleHorloge(date: string, heure: string): string {
