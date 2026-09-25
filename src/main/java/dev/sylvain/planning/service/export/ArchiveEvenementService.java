@@ -161,53 +161,58 @@ public class ArchiveEvenementService {
     @Schema(requiredProperties = {"planResolu", "publie", "resolutionEnCours"})
     public record ArchiveAvailability(boolean planResolu, boolean publie, boolean resolutionEnCours) {}
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
+    private final EditionService editionService;
+    private final CurrentAction currentAction;
+    private final PlanningPersistenceService persistence;
+    private final PlanningExportService exports;
+    private final EquiteService equite;
+    private final PlanningHoursService hours;
+    private final ReferentielCsvExportService referentials;
+    private final PlanningService planningService;
+    private final PlanPublicationService publication;
+    private final PlanSnapshotService snapshots;
+    private final ValidationPrerequisService validations;
+    private final ConstraintAnalysisStore analysisStore;
+    private final SolverJobService solverJobs;
+    private final ConfigMentionsLegales legal;
+    private final String applicationVersion;
 
     @Inject
-    EditionService editionService;
-
-    @Inject
-    CurrentAction currentAction;
-
-    @Inject
-    PlanningPersistenceService persistence;
-
-    @Inject
-    PlanningExportService exports;
-
-    @Inject
-    EquiteService equite;
-
-    @Inject
-    PlanningHoursService hours;
-
-    @Inject
-    ReferentielCsvExportService referentials;
-
-    @Inject
-    PlanningService planningService;
-
-    @Inject
-    PlanPublicationService publication;
-
-    @Inject
-    PlanSnapshotService snapshots;
-
-    @Inject
-    ValidationPrerequisService validations;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    ConfigMentionsLegales legal;
-
-    @ConfigProperty(name = "quarkus.application.version")
-    String applicationVersion;
+    public ArchiveEvenementService(
+            EditionContext editionContext,
+            EditionService editionService,
+            CurrentAction currentAction,
+            PlanningPersistenceService persistence,
+            PlanningExportService exports,
+            EquiteService equite,
+            PlanningHoursService hours,
+            ReferentielCsvExportService referentials,
+            PlanningService planningService,
+            PlanPublicationService publication,
+            PlanSnapshotService snapshots,
+            ValidationPrerequisService validations,
+            ConstraintAnalysisStore analysisStore,
+            SolverJobService solverJobs,
+            ConfigMentionsLegales legal,
+            @ConfigProperty(name = "quarkus.application.version") String applicationVersion) {
+        this.editionContext = editionContext;
+        this.editionService = editionService;
+        this.currentAction = currentAction;
+        this.persistence = persistence;
+        this.exports = exports;
+        this.equite = equite;
+        this.hours = hours;
+        this.referentials = referentials;
+        this.planningService = planningService;
+        this.publication = publication;
+        this.snapshots = snapshots;
+        this.validations = validations;
+        this.analysisStore = analysisStore;
+        this.solverJobs = solverJobs;
+        this.legal = legal;
+        this.applicationVersion = applicationVersion;
+    }
 
     /** Which parts would come out empty right now. */
     public ArchiveAvailability availability() {
@@ -408,8 +413,11 @@ public class ArchiveEvenementService {
     }
 
     private boolean solveRunning(String editionId) {
-        Optional<SolverJobService.SolverJob> actif = solverJobs.findActive();
-        return actif.isPresent() && editionId.equals(actif.get().getEditionId());
+        return solverJobs
+                .findActive()
+                .map(SolverJobService.SolverJob::getEditionId)
+                .filter(editionId::equals)
+                .isPresent();
     }
 
     private static String orUnset(Optional<String> value) {
