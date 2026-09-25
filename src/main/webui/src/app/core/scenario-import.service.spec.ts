@@ -202,8 +202,10 @@ describe('ScenarioImportService', () => {
 
     it('announces an edition the file names but that has no id yet as one to create', async () => {
       // The section gives only a name: the application draws the id on import.
-      const cible = target({ editionNomFichier: 'Édition importée' });
-      api.get = vi.fn(async (url: string) => (url.includes('cible-scenario') ? cible : impact()));
+      const namedOnly = target({ editionNomFichier: 'Édition importée' });
+      api.get = vi.fn(async (url: string) =>
+        url.includes('cible-scenario') ? namedOnly : impact(),
+      );
 
       await service.importer({ kind: 'name', name: 'edition-1708' });
 
