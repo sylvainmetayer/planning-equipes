@@ -25,8 +25,12 @@ import java.util.Set;
 @Path("/exports/archive-evenement")
 public class ArchiveEvenementResource {
 
+    private final ArchiveEvenementService archiveService;
+
     @Inject
-    ArchiveEvenementService archiveService;
+    public ArchiveEvenementResource(ArchiveEvenementService archiveService) {
+        this.archiveService = archiveService;
+    }
 
     /** Which parts would come out empty right now, so the screen greys them out. */
     @GET
