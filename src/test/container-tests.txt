@@ -66,6 +66,7 @@ dev/sylvain/planning/api/JourJResourceTest.java
 dev/sylvain/planning/api/JourneeTypeResourceTest.java
 dev/sylvain/planning/api/KpiHistoriqueResourceTest.java
 dev/sylvain/planning/api/MailFinResolutionTest.java
+dev/sylvain/planning/api/MargeTensionResourceTest.java
 dev/sylvain/planning/api/McpResourcePangolinTokenTest.java
 dev/sylvain/planning/api/McpResourceTest.java
 dev/sylvain/planning/api/MentionsLegalesResourceTest.java

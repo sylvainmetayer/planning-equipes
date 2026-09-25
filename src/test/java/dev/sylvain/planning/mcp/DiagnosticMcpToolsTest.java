@@ -12,11 +12,14 @@ import dev.sylvain.planning.mcp.ContrainteMcpTools.ContrainteView;
 import dev.sylvain.planning.mcp.DiagnosticMcpTools.PausesView;
 import dev.sylvain.planning.mcp.StandMcpTools.StandsView;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.MargeAnalyzer;
+import dev.sylvain.planning.service.analyse.MarginReading;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.CompetenceStaffing;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.ReferentielManquant;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
+import dev.sylvain.planning.service.analyse.TensionAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkiverse.mcp.server.ToolCallException;
@@ -302,6 +305,20 @@ class DiagnosticMcpToolsTest {
      * The checklist crosses to MCP as codes and ids: never the sentence — a
      * warning on an animateur dates their majority — nor the date.
      */
+    @Test
+    void theTensionModeCrossesTheMarginWithTheFragilityByIdOnly() throws Exception {
+        loadScenario();
+
+        MarginReading lecture = diagnosticTools.analyzeMargin("tension", null);
+
+        assertThat(lecture).isInstanceOf(TensionAnalyzer.RapportTension.class);
+        String json = objectMapper.writeValueAsString(lecture);
+        for (Animateur animateur : referenceDataService.listAnimateurs()) {
+            assertThat(json).doesNotContain(animateur.nomAffiche());
+        }
+        assertThat(diagnosticTools.analyzeMargin("apres", null)).isInstanceOf(MargeAnalyzer.RapportMarge.class);
+    }
+
     @Test
     void theTrainingPlanNamesItsCandidatesByIdOnly() throws Exception {
         loadScenario();

@@ -8,8 +8,8 @@ import dev.sylvain.planning.service.analyse.FormationService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
-import dev.sylvain.planning.service.analyse.MargeAnalyzer.RapportMarge;
 import dev.sylvain.planning.service.analyse.MargeService;
+import dev.sylvain.planning.service.analyse.MarginReading;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.LigneStand;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuvertures;
@@ -168,20 +168,30 @@ public class DiagnosticMcpTools {
                     + "pire tranche, et le rapport la pire de l'événement. Calcul en Java pur, aucune résolution "
                     + "lancée, compétences hors périmètre (voir analyser_effectifs pour le goulot par typologie). "
                     + "Lecture optimiste : une tranche annoncée négative l'est, une tranche confortable ne le "
-                    + "garantit pas.",
+                    + "garantit pas. Troisième mode, « tension » : la marge « apres » croisée avec la fragilité "
+                    + "du même planning persisté, chaque tranche notée CRITIQUE, ELEVEE, SURVEILLEE ou CALME par "
+                    + "des règles nommées (motifs : SIEGES_VIDES_NON_COUVRABLES, SIEGE_IRREMPLACABLE, "
+                    + "STAND_SANS_SPECIALISTE, MARGE_NULLE_AVEC_SIEGES_VIDES, FRAGILES_AU_DELA_DE_LA_MARGE, "
+                    + "SIEGES_FRAGILES, SPECIALISTE_UNIQUE_SANS_RENFORT), avec tous les sièges irremplaçables de la "
+                    + "tranche, sans troncature, et les animateurs et stands en cause par id seulement ; une "
+                    + "tranche déjà commencée est passee, sans gravité.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportMarge analyzeMargin(
+    MarginReading analyzeMargin(
             @ToolArg(
                             description = "« avant » (défaut) : capacité brute contre besoin ; « apres » : les "
-                                    + "personnes réellement libres sur le planning persisté",
+                                    + "personnes réellement libres sur le planning persisté ; « tension » : la "
+                                    + "marge « apres » croisée avec la fragilité, en quatre niveaux de gravité",
                             required = false)
                     String mode,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        if ("tension".equalsIgnoreCase(mode)) {
+            return margeService.tension();
+        }
         return margeService.analyzeEdition("apres".equalsIgnoreCase(mode) ? Mode.APRES : Mode.AVANT);
     }
 

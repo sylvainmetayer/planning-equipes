@@ -1134,6 +1134,79 @@
           }
         }
       },
+      "CelluleTension" : {
+        "required" : [ "animateursIrremplacables", "competencesRaresSansSpecialiste", "creneauId", "debut", "fin", "jour", "marge", "motifs", "passee", "siegesFragiles", "siegesIrremplacables", "siegesVides", "standsSansSpecialiste", "standsSpecialisteUnique" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "jour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "debut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "marge" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesVides" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesFragiles" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "siegesIrremplacables" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "competencesRaresSansSpecialiste" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "animateursIrremplacables" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "standsSpecialisteUnique" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "standsSansSpecialiste" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "passee" : {
+            "type" : "boolean"
+          },
+          "gravite" : {
+            "$ref" : "#/components/schemas/GraviteTension"
+          },
+          "motifs" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MotifTension"
+            }
+          }
+        }
+      },
       "ChangementsJournee" : {
         "required" : [ "animateursConcernes", "horairesModifies", "jour", "nouveaux", "parAnimateur", "parVacation", "reference", "referenceDisponible", "remplaces", "retires" ],
         "type" : "object",
@@ -3615,6 +3688,10 @@
           }
         }
       },
+      "GraviteTension" : {
+        "type" : "string",
+        "enum" : [ "CRITIQUE", "ELEVEE", "SURVEILLEE", "CALME" ]
+      },
       "GridAnomaly" : {
         "type" : "object",
         "properties" : {
@@ -4230,6 +4307,28 @@
           }
         }
       },
+      "JourTension" : {
+        "required" : [ "cellules", "jour" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "jour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cellules" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CelluleTension"
+            }
+          },
+          "pireCellule" : {
+            "$ref" : "#/components/schemas/CelluleTension"
+          }
+        }
+      },
       "JourneeAnimateurView" : {
         "required" : [ "jour", "mineur" ],
         "type" : "object",
@@ -4827,6 +4926,10 @@
             "type" : "string"
           }
         }
+      },
+      "MotifTension" : {
+        "type" : "string",
+        "enum" : [ "SIEGES_VIDES_NON_COUVRABLES", "SIEGE_IRREMPLACABLE", "STAND_SANS_SPECIALISTE", "MARGE_NULLE_AVEC_SIEGES_VIDES", "FRAGILES_AU_DELA_DE_LA_MARGE", "SIEGES_FRAGILES", "SPECIALISTE_UNIQUE_SANS_RENFORT" ]
       },
       "NiveauCompetence" : {
         "type" : "string",
@@ -6268,6 +6371,47 @@
             "items" : {
               "$ref" : "#/components/schemas/LigneCompetences"
             }
+          }
+        }
+      },
+      "RapportTension" : {
+        "required" : [ "animateursTotal", "cellulesCritiques", "jours", "message", "ninjaConfigure", "referentielsManquants", "tranches" ],
+        "type" : "object",
+        "properties" : {
+          "tranches" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/TrancheMarge"
+            }
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourTension"
+            }
+          },
+          "pireCellule" : {
+            "$ref" : "#/components/schemas/CelluleTension"
+          },
+          "animateursTotal" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "cellulesCritiques" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ninjaConfigure" : {
+            "type" : "boolean"
+          },
+          "referentielsManquants" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ReferentielManquant"
+            }
+          },
+          "message" : {
+            "type" : "string"
           }
         }
       },
@@ -11390,6 +11534,24 @@
           }
         },
         "summary" : "Analyze",
+        "tags" : [ "Marge Resource" ]
+      }
+    },
+    "/api/marge/tension" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/RapportTension"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Tension",
         "tags" : [ "Marge Resource" ]
       }
     },

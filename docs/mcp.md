@@ -674,6 +674,19 @@ et `etat` — `ORPHELINE` (proposée par un stand, maîtrisée par personne),
 quoi se lit par id avec `lister_animateurs`. La définition est celle que
 `etat_edition` compte dans `referentiels.typologiesOrphelines`.
 
+## La tension croise la marge et la fragilité
+
+`analyser_marge` prend un troisième `mode`, `tension` : la marge « apres »
+croisée avec la fragilité du même planning persisté, sur la même grille jour ×
+tranche. Chaque case porte une `gravite` (`CRITIQUE`, `ELEVEE`, `SURVEILLEE`,
+`CALME`) décidée par des règles nommées, et les `motifs` qui l'expliquent ; les
+sièges irremplaçables y sont **tous** comptés, jamais les vingt que l'écran
+Fragilité détaille par personne. Les personnes et les stands en cause sortent
+par id seulement (`animateursIrremplacables`, `standsSansSpecialiste`,
+`standsSpecialisteUnique`). Une tranche déjà commencée est `passee`, sans
+gravité. La réponse change de forme avec le mode : en `tension`, une case porte
+`gravite` et `motifs`, plus `besoin` ni `disponibles`.
+
 ## Le plan de formation se lit par id
 
 `plan_formation` rend l'onglet « À former » du Diagnostic : pour chaque
