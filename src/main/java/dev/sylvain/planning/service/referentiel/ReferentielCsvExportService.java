@@ -53,7 +53,7 @@ public class ReferentielCsvExportService {
      * Written by the download, never here: a mark inside a zip entry is what
      * makes a spreadsheet read the accents, and the caller owns the bytes.
      */
-    private static final String BOM = "﻿";
+    private static final String BOM = "\uFEFF";
 
     private final TypologieService typologies;
 
@@ -310,7 +310,7 @@ public class ReferentielCsvExportService {
     private static String joint(Iterable<String> valeurs) {
         StringBuilder cellule = new StringBuilder();
         for (String valeur : new LinkedHashSet<>(toList(valeurs))) {
-            if (cellule.length() > 0) {
+            if (!cellule.isEmpty()) {
                 cellule.append(SEPARATEUR_MULTI);
             }
             cellule.append(valeur);

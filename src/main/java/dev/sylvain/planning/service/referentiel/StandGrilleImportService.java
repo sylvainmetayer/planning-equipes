@@ -127,9 +127,18 @@ public class StandGrilleImportService {
         OuvertureStandsAnalyzer.RapportOuvertures rapport =
                 OuvertureStandsAnalyzer.analyze(stands.listSolved(), edition);
         StringBuilder csv = new StringBuilder();
+        appendHeaders(csv, rapport.jours());
+        for (OuvertureStandsAnalyzer.LigneStand ligne : rapport.stands()) {
+            appendStand(csv, ligne);
+        }
+        return csv.toString();
+    }
+
+    /** The two header lines: the date over each day's first column, then every column's band. */
+    private static void appendHeaders(StringBuilder csv, List<OuvertureStandsAnalyzer.JourAmplitude> jours) {
         csv.append("stand");
         StringBuilder bandes = new StringBuilder();
-        for (OuvertureStandsAnalyzer.JourAmplitude jour : rapport.jours()) {
+        for (OuvertureStandsAnalyzer.JourAmplitude jour : jours) {
             boolean premier = true;
             for (OuvertureStandsAnalyzer.ColonneCreneau colonne : jour.creneaux()) {
                 csv.append(';').append(premier ? jour.date().toString() : "");
@@ -138,16 +147,16 @@ public class StandGrilleImportService {
             }
         }
         csv.append('\n').append(bandes).append('\n');
-        for (OuvertureStandsAnalyzer.LigneStand ligne : rapport.stands()) {
-            csv.append(csv(ligne.standId()));
-            for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
-                for (OuvertureStandsAnalyzer.CelluleCreneau cellule : jour.creneaux()) {
-                    csv.append(';').append(cellule.effectif() == null ? "" : cellule.effectif());
-                }
+    }
+
+    private static void appendStand(StringBuilder csv, OuvertureStandsAnalyzer.LigneStand ligne) {
+        csv.append(csv(ligne.standId()));
+        for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
+            for (OuvertureStandsAnalyzer.CelluleCreneau cellule : jour.creneaux()) {
+                csv.append(';').append(cellule.effectif() == null ? "" : cellule.effectif());
             }
-            csv.append('\n');
         }
-        return csv.toString();
+        csv.append('\n');
     }
 
     /* --------------------------------- analysis -------------------------------- */
@@ -178,18 +187,7 @@ public class StandGrilleImportService {
     }
 
     private Analyse analyse(StandGrilleImportRequest request) {
-        if (request == null) {
-            throw new BusinessError.Invalid("Aucun fichier reçu : déposez le CSV de la matrice.");
-        }
-        refuseSpreadsheet(request.fileName(), request.content());
-        String content = request.content() == null ? "" : request.content();
-        if (content.isBlank()) {
-            throw new BusinessError.Invalid("Le fichier est vide.");
-        }
-        if (content.length() > MAX_CHARACTERS) {
-            throw new BusinessError.Invalid(
-                    "Fichier trop volumineux : " + grouped(MAX_CHARACTERS) + " caractères au maximum.");
-        }
+        String content = checkedContent(request);
         List<Creneau> edition = creneaux.list();
         if (edition.isEmpty()) {
             throw new BusinessError.Invalid("L'édition n'a aucun créneau : les colonnes du fichier n'auraient rien "
@@ -202,94 +200,15 @@ public class StandGrilleImportService {
         }
         List<String> warnings = new ArrayList<>();
 
-        // Each column lands on the créneaux of the edition that contain its
-        // date and hours, or on none; two columns may share a créneau as long
-        // as their hours do not overlap.
-        List<ImportedColumn> columns = new ArrayList<>();
-        Map<Integer, List<Long>> creneauParColonne = new HashMap<>();
-        Set<Long> dejaPris = new HashSet<>();
-        Map<Long, List<int[]>> prisParCreneau = new HashMap<>();
-        for (GrilleCsv.Colonne colonne : matrice.colonnes()) {
-            if (!colonne.namesCreneau()) {
-                columns.add(new ImportedColumn(
-                        colonne.index(),
-                        colonne.libelle(),
-                        colonne.date(),
-                        colonne.heureDebut(),
-                        colonne.heureFin(),
-                        null,
-                        0,
-                        "En-tête illisible : attendu une date et une bande « 10:00-12:00 » ou « 10h00-12h00 ». "
-                                + "Une bande devenue une date, « 30/11/1999 13:16:00 », est le signe d'un tableur qui "
-                                + "l'a convertie : repartez du modèle téléchargé, dont les bandes sont écrites avec "
-                                + "un « h » pour cette raison."));
-                continue;
-            }
-            // Every créneau of that date containing those hours — one, since
-            // the grid refuses two créneaux with the same hours.
-            List<Creneau> cibles = edition.stream()
-                    .filter(creneau -> colonne.date().equals(creneau.getDate())
-                            && contient(creneau, colonne.heureDebut(), colonne.heureFin()))
-                    .toList();
-            if (cibles.isEmpty()) {
-                columns.add(new ImportedColumn(
-                        colonne.index(),
-                        colonne.libelle(),
-                        colonne.date(),
-                        colonne.heureDebut(),
-                        colonne.heureFin(),
-                        null,
-                        cibles.size(),
-                        "Aucun créneau de l'édition ne contient ces heures à cette date : colonne ignorée."));
-                continue;
-            }
-            boolean recouvre = cibles.stream().anyMatch(creneau -> {
-                int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());
-                return prisParCreneau.getOrDefault(creneau.getId(), List.of()).stream()
-                        .anyMatch(pris -> bornes[0] < pris[1] && pris[0] < bornes[1]);
-            });
-            if (recouvre) {
-                columns.add(new ImportedColumn(
-                        colonne.index(),
-                        colonne.libelle(),
-                        colonne.date(),
-                        colonne.heureDebut(),
-                        colonne.heureFin(),
-                        null,
-                        cibles.size(),
-                        colonne.dateHeritee()
-                                ? "Cette colonne n'a pas de date à elle et reprend le " + colonne.date()
-                                        + " de la colonne précédente, qui nomme déjà ce créneau : elle est ignorée. "
-                                        + "Écrivez la date sur chaque première colonne de journée."
-                                : "Une colonne précédente nomme déjà ce créneau : celle-ci est ignorée."));
-                continue;
-            }
-            List<Long> ids = cibles.stream().map(Creneau::getId).toList();
-            dejaPris.addAll(ids);
-            for (Creneau creneau : cibles) {
-                prisParCreneau
-                        .computeIfAbsent(creneau.getId(), key -> new ArrayList<>())
-                        .add(OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin()));
-            }
-            creneauParColonne.put(colonne.index(), ids);
-            columns.add(new ImportedColumn(
-                    colonne.index(),
-                    colonne.libelle(),
-                    colonne.date(),
-                    colonne.heureDebut(),
-                    colonne.heureFin(),
-                    ids.get(0),
-                    ids.size(),
-                    null));
-        }
-        if (creneauParColonne.isEmpty()) {
+        ColumnMapping colonnes = readColumns(matrice.colonnes(), edition);
+        if (colonnes.creneauParColonne().isEmpty()) {
             throw new BusinessError.Invalid("Aucune colonne du fichier ne correspond à un créneau de l'édition. "
                     + "Attendu : une ligne de dates, une ligne de bandes « 10:00-12:00 », ou des en-têtes "
                     + "« 2026-07-08 10:00-12:00 ».");
         }
         List<String> creneauxAbsents = new ArrayList<>();
         for (Creneau creneau : edition) {
-            if (!dejaPris.contains(creneau.getId())) {
+            if (!colonnes.dejaPris().contains(creneau.getId())) {
                 creneauxAbsents.add(
                         creneau.getDate() + " " + court(creneau.getHeureDebut()) + "-" + court(creneau.getHeureFin()));
             }
@@ -301,52 +220,172 @@ public class StandGrilleImportService {
 
         // Each row names one stand of the edition, or none.
         // Resolved: a kept cell keeps its segments, which only the effective windows say.
-        List<Stand> tous = stands.listSolved();
-        Map<String, Stand> parId = new LinkedHashMap<>();
-        Map<String, List<Stand>> parNom = new HashMap<>();
-        for (Stand stand : tous) {
-            parId.put(stand.getId(), stand);
-            parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
-                    .add(stand);
-        }
-        Map<String, Map<Long, Integer>> actuelles = cellulesActuelles(edition);
+        RowReader lecture =
+                new RowReader(edition, matrice.colonnes(), colonnes, stands.listSolved(), cellulesActuelles(edition));
         List<ImportedGrilleRow> rows = new ArrayList<>();
-        List<Stand> aEcrire = new ArrayList<>();
-        Map<String, Integer> dejaVus = new HashMap<>();
         for (GrilleCsv.Ligne ligne : matrice.lignes()) {
+            rows.add(lecture.read(ligne));
+        }
+        return new Analyse(matrice.separator(), colonnes.columns(), creneauxAbsents, rows, warnings, lecture.aEcrire);
+    }
+
+    /** The upload's text, once the refusals that cost the whole file are passed. */
+    private static String checkedContent(StandGrilleImportRequest request) {
+        if (request == null) {
+            throw new BusinessError.Invalid("Aucun fichier reçu : déposez le CSV de la matrice.");
+        }
+        refuseSpreadsheet(request.fileName(), request.content());
+        String content = request.content() == null ? "" : request.content();
+        if (content.isBlank()) {
+            throw new BusinessError.Invalid("Le fichier est vide.");
+        }
+        if (content.length() > MAX_CHARACTERS) {
+            throw new BusinessError.Invalid(
+                    "Fichier trop volumineux : " + grouped(MAX_CHARACTERS) + " caractères au maximum.");
+        }
+        return content;
+    }
+
+    /**
+     * The header read: which créneaux each column lands on, and which créneaux
+     * some column claims.
+     */
+    private record ColumnMapping(
+            List<ImportedColumn> columns, Map<Integer, List<Long>> creneauParColonne, Set<Long> dejaPris) {}
+
+    /**
+     * Each column lands on the créneaux of the edition that contain its date
+     * and hours, or on none; two columns may share a créneau as long as their
+     * hours do not overlap.
+     */
+    private static ColumnMapping readColumns(List<GrilleCsv.Colonne> colonnes, List<Creneau> edition) {
+        List<ImportedColumn> columns = new ArrayList<>();
+        Map<Integer, List<Long>> creneauParColonne = new HashMap<>();
+        Set<Long> dejaPris = new HashSet<>();
+        Map<Long, List<int[]>> prisParCreneau = new HashMap<>();
+        for (GrilleCsv.Colonne colonne : colonnes) {
+            columns.add(readColumn(colonne, edition, prisParCreneau, creneauParColonne, dejaPris));
+        }
+        return new ColumnMapping(columns, creneauParColonne, dejaPris);
+    }
+
+    private static ImportedColumn readColumn(
+            GrilleCsv.Colonne colonne,
+            List<Creneau> edition,
+            Map<Long, List<int[]>> prisParCreneau,
+            Map<Integer, List<Long>> creneauParColonne,
+            Set<Long> dejaPris) {
+        if (!colonne.namesCreneau()) {
+            return ignoredColumn(
+                    colonne,
+                    0,
+                    "En-tête illisible : attendu une date et une bande « 10:00-12:00 » ou « 10h00-12h00 ». "
+                            + "Une bande devenue une date, « 30/11/1999 13:16:00 », est le signe d'un tableur qui "
+                            + "l'a convertie : repartez du modèle téléchargé, dont les bandes sont écrites avec "
+                            + "un « h » pour cette raison.");
+        }
+        // Every créneau of that date containing those hours — one, since
+        // the grid refuses two créneaux with the same hours.
+        List<Creneau> cibles = edition.stream()
+                .filter(creneau -> colonne.date().equals(creneau.getDate())
+                        && contient(creneau, colonne.heureDebut(), colonne.heureFin()))
+                .toList();
+        if (cibles.isEmpty()) {
+            return ignoredColumn(
+                    colonne,
+                    cibles.size(),
+                    "Aucun créneau de l'édition ne contient ces heures à cette date : colonne ignorée.");
+        }
+        boolean recouvre = cibles.stream().anyMatch(creneau -> {
+            int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin());
+            return prisParCreneau.getOrDefault(creneau.getId(), List.of()).stream()
+                    .anyMatch(pris -> bornes[0] < pris[1] && pris[0] < bornes[1]);
+        });
+        if (recouvre) {
+            return ignoredColumn(colonne, cibles.size(), overlapReason(colonne));
+        }
+        List<Long> ids = cibles.stream().map(Creneau::getId).toList();
+        dejaPris.addAll(ids);
+        for (Creneau creneau : cibles) {
+            prisParCreneau
+                    .computeIfAbsent(creneau.getId(), key -> new ArrayList<>())
+                    .add(OuvertureStandsAnalyzer.boundsWithin(creneau, colonne.heureDebut(), colonne.heureFin()));
+        }
+        creneauParColonne.put(colonne.index(), ids);
+        return new ImportedColumn(
+                colonne.index(),
+                colonne.libelle(),
+                colonne.date(),
+                colonne.heureDebut(),
+                colonne.heureFin(),
+                ids.get(0),
+                ids.size(),
+                null);
+    }
+
+    private static ImportedColumn ignoredColumn(GrilleCsv.Colonne colonne, int creneaux, String motif) {
+        return new ImportedColumn(
+                colonne.index(),
+                colonne.libelle(),
+                colonne.date(),
+                colonne.heureDebut(),
+                colonne.heureFin(),
+                null,
+                creneaux,
+                motif);
+    }
+
+    private static String overlapReason(GrilleCsv.Colonne colonne) {
+        if (colonne.dateHeritee()) {
+            return "Cette colonne n'a pas de date à elle et reprend le " + colonne.date()
+                    + " de la colonne précédente, qui nomme déjà ce créneau : elle est ignorée. "
+                    + "Écrivez la date sur chaque première colonne de journée.";
+        }
+        return "Une colonne précédente nomme déjà ce créneau : celle-ci est ignorée.";
+    }
+
+    /** The data rows read so far: what the next row is resolved and checked against. */
+    private static final class RowReader {
+
+        private final List<Creneau> edition;
+        private final List<GrilleCsv.Colonne> colonnes;
+        private final ColumnMapping lues;
+        private final Map<String, Stand> parId = new LinkedHashMap<>();
+        private final Map<String, List<Stand>> parNom = new HashMap<>();
+        private final Map<String, Map<Long, Integer>> actuelles;
+        private final Map<String, Integer> dejaVus = new HashMap<>();
+        private final List<Stand> aEcrire = new ArrayList<>();
+
+        RowReader(
+                List<Creneau> edition,
+                List<GrilleCsv.Colonne> colonnes,
+                ColumnMapping lues,
+                List<Stand> tous,
+                Map<String, Map<Long, Integer>> actuelles) {
+            this.edition = edition;
+            this.colonnes = colonnes;
+            this.lues = lues;
+            this.actuelles = actuelles;
+            for (Stand stand : tous) {
+                parId.put(stand.getId(), stand);
+                parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
+                        .add(stand);
+            }
+        }
+
+        ImportedGrilleRow read(GrilleCsv.Ligne ligne) {
             Stand stand = resolve(ligne.stand(), parId, parNom);
-            List<String> reasons = new ArrayList<>();
             if (stand == null) {
                 List<Stand> candidats = parNom.getOrDefault(normalise(ligne.stand()), List.of());
-                reasons.add(
-                        candidats.size() > 1
-                                ? "Ce nom désigne " + candidats.size() + " stands ("
-                                        + String.join(
-                                                ", ",
-                                                candidats.stream()
-                                                        .map(Stand::getId)
-                                                        .toList()) + ") : nommez le stand par son identifiant."
-                                : "Aucun stand « " + ligne.stand() + " » dans l'édition : créez le stand d'abord, "
-                                        + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).");
-                rows.add(new ImportedGrilleRow(
-                        ligne.line(), ligne.stand(), null, ImportGrilleAction.REJECTED, reasons, 0, 0, 0, null, null));
-                continue;
+                return rejected(ligne, null, List.of(unknownStandReason(ligne.stand(), candidats)), 0);
             }
             if (dejaVus.containsKey(stand.getId())) {
-                reasons.add("Le stand " + stand.getId() + " est déjà décrit ligne " + dejaVus.get(stand.getId())
-                        + " : cette ligne est ignorée.");
-                rows.add(new ImportedGrilleRow(
-                        ligne.line(),
-                        ligne.stand(),
+                return rejected(
+                        ligne,
                         stand.getId(),
-                        ImportGrilleAction.REJECTED,
-                        reasons,
-                        0,
-                        0,
-                        0,
-                        null,
-                        null));
-                continue;
+                        List.of("Le stand " + stand.getId() + " est déjà décrit ligne " + dejaVus.get(stand.getId())
+                                + " : cette ligne est ignorée."),
+                        0);
             }
             // The créneaux the file has no column for keep their cell, in one
             // piece; the others get one cell per column, at the column's own
@@ -354,51 +393,21 @@ public class StandGrilleImportService {
             Map<Long, Integer> actuellesDuStand = actuelles.getOrDefault(stand.getId(), Map.of());
             List<SaisieCellule> saisie = new ArrayList<>();
             for (Creneau creneau : edition) {
-                if (!dejaPris.contains(creneau.getId())) {
+                if (!lues.dejaPris().contains(creneau.getId())) {
                     saisie.add(new SaisieCellule(creneau.getId(), actuellesDuStand.get(creneau.getId())));
                 }
             }
-            int ouvertes = 0;
-            for (int index = 0; index < matrice.colonnes().size(); index++) {
-                GrilleCsv.Colonne colonne = matrice.colonnes().get(index);
-                List<Long> creneauIds = creneauParColonne.get(colonne.index());
-                if (creneauIds == null) {
-                    continue;
-                }
-                String brut = index < ligne.cellules().size() ? ligne.cellules().get(index) : "";
-                GrilleCsv.CelluleLue lue = GrilleCsv.cellule(brut);
-                if (!lue.lisible()) {
-                    reasons.add("Colonne « " + colonne.libelle() + " » : « " + brut.trim()
-                            + " » n'est pas un effectif (un entier, vide ou « - » pour fermé).");
-                    continue;
-                }
-                for (Long creneauId : creneauIds) {
-                    saisie.add(new SaisieCellule(creneauId, colonne.heureDebut(), colonne.heureFin(), lue.effectif()));
-                }
-                if (lue.effectif() != null) {
-                    ouvertes++;
-                }
-            }
+            List<String> reasons = new ArrayList<>();
+            int ouvertes = readCells(ligne, saisie, reasons);
             if (!reasons.isEmpty()) {
-                rows.add(new ImportedGrilleRow(
-                        ligne.line(),
-                        ligne.stand(),
-                        stand.getId(),
-                        ImportGrilleAction.REJECTED,
-                        reasons,
-                        ouvertes,
-                        0,
-                        0,
-                        null,
-                        null));
-                continue;
+                return rejected(ligne, stand.getId(), reasons, ouvertes);
             }
             try {
                 GrilleHorairesStands.LigneGrille grille = GrilleHorairesStands.apply(stand, edition, saisie);
                 StandValidator.check(stand);
                 dejaVus.put(stand.getId(), ligne.line());
                 aEcrire.add(stand);
-                rows.add(new ImportedGrilleRow(
+                return new ImportedGrilleRow(
                         ligne.line(),
                         ligne.stand(),
                         stand.getId(),
@@ -408,22 +417,65 @@ public class StandGrilleImportService {
                         grille.regles(),
                         grille.exceptions(),
                         grille.effectifMin(),
-                        grille.effectifMax()));
+                        grille.effectifMax());
             } catch (BusinessError e) {
-                rows.add(new ImportedGrilleRow(
-                        ligne.line(),
-                        ligne.stand(),
-                        stand.getId(),
-                        ImportGrilleAction.REJECTED,
-                        List.of(e.getMessage()),
-                        ouvertes,
-                        0,
-                        0,
-                        null,
-                        null));
+                return rejected(ligne, stand.getId(), List.of(e.getMessage()), ouvertes);
             }
         }
-        return new Analyse(matrice.separator(), columns, creneauxAbsents, rows, warnings, aEcrire);
+
+        /** Adds the row's cells to {@code saisie}; returns how many columns it opens. */
+        private int readCells(GrilleCsv.Ligne ligne, List<SaisieCellule> saisie, List<String> reasons) {
+            int ouvertes = 0;
+            for (int index = 0; index < colonnes.size(); index++) {
+                GrilleCsv.Colonne colonne = colonnes.get(index);
+                List<Long> creneauIds = lues.creneauParColonne().get(colonne.index());
+                if (creneauIds != null) {
+                    String brut =
+                            index < ligne.cellules().size() ? ligne.cellules().get(index) : "";
+                    GrilleCsv.CelluleLue lue = GrilleCsv.cellule(brut);
+                    if (!lue.lisible()) {
+                        reasons.add("Colonne « " + colonne.libelle() + " » : « " + brut.trim()
+                                + " » n'est pas un effectif (un entier, vide ou « - » pour fermé).");
+                    } else {
+                        addCells(saisie, creneauIds, colonne, lue.effectif());
+                        ouvertes += lue.effectif() != null ? 1 : 0;
+                    }
+                }
+            }
+            return ouvertes;
+        }
+
+        private static void addCells(
+                List<SaisieCellule> saisie, List<Long> creneauIds, GrilleCsv.Colonne colonne, Integer effectif) {
+            for (Long creneauId : creneauIds) {
+                saisie.add(new SaisieCellule(creneauId, colonne.heureDebut(), colonne.heureFin(), effectif));
+            }
+        }
+
+        private static String unknownStandReason(String texte, List<Stand> candidats) {
+            if (candidats.size() > 1) {
+                return "Ce nom désigne " + candidats.size() + " stands ("
+                        + String.join(", ", candidats.stream().map(Stand::getId).toList())
+                        + ") : nommez le stand par son identifiant.";
+            }
+            return "Aucun stand « " + texte + " » dans l'édition : créez le stand d'abord, "
+                    + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).";
+        }
+
+        private static ImportedGrilleRow rejected(
+                GrilleCsv.Ligne ligne, String standId, List<String> reasons, int ouvertes) {
+            return new ImportedGrilleRow(
+                    ligne.line(),
+                    ligne.stand(),
+                    standId,
+                    ImportGrilleAction.REJECTED,
+                    reasons,
+                    ouvertes,
+                    0,
+                    0,
+                    null,
+                    null);
+        }
     }
 
     /**
@@ -495,7 +547,7 @@ public class StandGrilleImportService {
 
     /** Thousands spaced out, the way the animateur import writes its own caps. */
     private static String grouped(int value) {
-        return String.valueOf(value).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
+        return String.format(Locale.ROOT, "%,d", value).replace(',', ' ');
     }
 
     /** A field a spreadsheet reads back as one: quoted as soon as it carries the separator, a quote or a newline. */

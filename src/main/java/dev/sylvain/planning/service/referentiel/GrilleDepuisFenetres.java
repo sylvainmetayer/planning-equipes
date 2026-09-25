@@ -98,25 +98,34 @@ public final class GrilleDepuisFenetres {
         List<Coupure> coupures = new ArrayList<>();
         List<LocalDate> joursSansFenetre = new ArrayList<>();
         for (LocalDate date : dates) {
-            // Every open window of the day, in minutes: [debut, fin, stand index].
+            // Every open window of the day, in minutes: [debut, fin].
             List<int[]> fenetres = new ArrayList<>();
             Map<Integer, TreeSet<String>> standsParBorne = new TreeMap<>();
-            for (Stand stand : stands) {
-                if (HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.DEFAUT) {
-                    continue;
-                }
-                for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-                    if (!date.equals(ouverture.getDate()) || !ouverture.hasValidRange()) {
-                        continue;
-                    }
+            collectWindows(stands, date, fermeture, fenetres, standsParBorne);
+            if (fenetres.isEmpty()) {
+                joursSansFenetre.add(date);
+            } else {
+                deriveDay(date, fenetres, standsParBorne, parametres.dureeMinimaleMinutes(), creneaux, coupures);
+            }
+        }
+        return new Derivation(creneaux, coupures, joursSansFenetre);
+    }
+
+    /** Collects every open window of {@code date}, and the stands starting or ending at each bound. */
+    private static void collectWindows(
+            List<Stand> stands,
+            LocalDate date,
+            int fermeture,
+            List<int[]> fenetres,
+            Map<Integer, TreeSet<String>> standsParBorne) {
+        for (Stand stand : stands) {
+            if (HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.DEFAUT) {
+                continue;
+            }
+            for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
+                if (date.equals(ouverture.getDate()) && ouverture.hasValidRange()) {
                     int debut = ouverture.getHeureDebut().toSecondOfDay() / 60;
-                    // A window may not cross midnight on its own (hasValidRange),
-                    // but « until closing » may: an event closing at 02:00, or a
-                    // window opening after the closing hour given, means the next
-                    // day. Read as a same-day end it was silently dropped.
-                    int fin = ouverture.getHeureFin() != null
-                            ? ouverture.getHeureFin().toSecondOfDay() / 60
-                            : fermeture > debut ? fermeture : fermeture + MINUTES_PAR_JOUR;
+                    int fin = windowEnd(ouverture, debut, fermeture);
                     fenetres.add(new int[] {debut, fin});
                     standsParBorne
                             .computeIfAbsent(debut, key -> new TreeSet<>())
@@ -124,41 +133,56 @@ public final class GrilleDepuisFenetres {
                     standsParBorne.computeIfAbsent(fin, key -> new TreeSet<>()).add(stand.getId());
                 }
             }
-            if (fenetres.isEmpty()) {
-                joursSansFenetre.add(date);
-                continue;
-            }
-            List<Integer> bornes = new ArrayList<>(standsParBorne.keySet());
-            List<int[]> tranches = new ArrayList<>();
-            for (int i = 1; i < bornes.size(); i++) {
-                int debut = bornes.get(i - 1);
-                int fin = bornes.get(i);
-                if (fenetres.stream().anyMatch(fenetre -> fenetre[0] <= debut && fin <= fenetre[1])) {
-                    tranches.add(new int[] {debut, fin});
-                }
-            }
-            // A hole too short to be worth a break is one stand's clock
-            // artefact too — one closing at 18:00 while its neighbour opens at
-            // 18:05 — and closing it keeps one créneau where two would be cut.
-            tranches = withoutShortHoles(tranches, parametres.dureeMinimaleMinutes());
-            // A stretch too short to be a slot joins the stretch after it, its
-            // own end cut dropped — or the one before it, when nothing follows.
-            tranches = withoutShortStretches(tranches, parametres.dureeMinimaleMinutes());
-            for (int[] tranche : tranches) {
-                creneaux.add(new Creneau(null, 0, date, minuteToTime(tranche[0]), minuteToTime(tranche[1])));
-            }
-            // Only the cuts that survived: reporting the merged-away ones as
-            // reasons for a grid that no longer holds them explains nothing.
-            for (int borne : retainedBounds(tranches)) {
-                TreeSet<String> ids = standsParBorne.get(borne);
-                coupures.add(new Coupure(
-                        date,
-                        minuteToTime(borne),
-                        ids.stream().limit(STANDS_CITES).toList(),
-                        ids.size()));
+        }
+    }
+
+    /**
+     * The end of a window in minutes. A window may not cross midnight on its own
+     * (hasValidRange), but « until closing » may: an event closing at 02:00, or a
+     * window opening after the closing hour given, means the next day. Read as a
+     * same-day end it was silently dropped.
+     */
+    private static int windowEnd(OuvertureStand ouverture, int debut, int fermeture) {
+        if (ouverture.getHeureFin() != null) {
+            return ouverture.getHeureFin().toSecondOfDay() / 60;
+        }
+        return fermeture > debut ? fermeture : fermeture + MINUTES_PAR_JOUR;
+    }
+
+    /** Cuts one day's windows into créneaux, and records the cuts that survived. */
+    private static void deriveDay(
+            LocalDate date,
+            List<int[]> fenetres,
+            Map<Integer, TreeSet<String>> standsParBorne,
+            int dureeMinimaleMinutes,
+            List<Creneau> creneaux,
+            List<Coupure> coupures) {
+        List<Integer> bornes = new ArrayList<>(standsParBorne.keySet());
+        List<int[]> tranches = new ArrayList<>();
+        for (int i = 1; i < bornes.size(); i++) {
+            int debut = bornes.get(i - 1);
+            int fin = bornes.get(i);
+            if (fenetres.stream().anyMatch(fenetre -> fenetre[0] <= debut && fin <= fenetre[1])) {
+                tranches.add(new int[] {debut, fin});
             }
         }
-        return new Derivation(creneaux, coupures, joursSansFenetre);
+        // A hole too short to be worth a break is one stand's clock
+        // artefact too — one closing at 18:00 while its neighbour opens at
+        // 18:05 — and closing it keeps one créneau where two would be cut.
+        tranches = withoutShortHoles(tranches, dureeMinimaleMinutes);
+        // A stretch too short to be a slot joins the stretch after it, its
+        // own end cut dropped — or the one before it, when nothing follows.
+        tranches = withoutShortStretches(tranches, dureeMinimaleMinutes);
+        for (int[] tranche : tranches) {
+            creneaux.add(new Creneau(null, 0, date, minuteToTime(tranche[0]), minuteToTime(tranche[1])));
+        }
+        // Only the cuts that survived: reporting the merged-away ones as
+        // reasons for a grid that no longer holds them explains nothing.
+        for (int borne : retainedBounds(tranches)) {
+            TreeSet<String> ids = standsParBorne.get(borne);
+            coupures.add(new Coupure(
+                    date, minuteToTime(borne), ids.stream().limit(STANDS_CITES).toList(), ids.size()));
+        }
     }
 
     /** Joins two stretches separated by a hole shorter than {@code dureeMinimaleMinutes}. */

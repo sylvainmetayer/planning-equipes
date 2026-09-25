@@ -239,6 +239,30 @@ public class CoherenceReferentielService {
         List<CoherenceIssue> issues = new ArrayList<>();
         JoursEvenement jours = JoursEvenement.of(sources.creneaux());
 
+        standIssues(sources, issues);
+        timeslotIssues(sources, issues);
+
+        for (Animateur animateur : sources.animateurs()) {
+            CoherenceAnalyzer.onAnimateur(animateur, jours)
+                    .forEach(avertissement -> issues.add(warning(
+                            CoherenceFamily.ANIMATEURS, avertissement, CoherenceSubject.ANIMATEUR, animateur.getId())));
+        }
+
+        adHoc(sources, issues);
+        for (VerrouillagePlanning verrouillage : sources.verrouillages()) {
+            CoherenceAnalyzer.onVerrouillage(verrouillage, sources.diagnostics(), sources.creneaux())
+                    .forEach(avertissement -> issues.add(warning(
+                            CoherenceFamily.AJUSTEMENTS,
+                            avertissement,
+                            CoherenceSubject.VERROUILLAGE,
+                            verrouillage.getId())));
+        }
+
+        capacity(sources, issues);
+        return summarize(issues);
+    }
+
+    private static void standIssues(Sources sources, List<CoherenceIssue> issues) {
         for (Stand stand : sources.ownHoursStands()) {
             // The two other stand warnings are the opening report's own
             // anomalies, read below: see the class javadoc.
@@ -257,7 +281,9 @@ public class CoherenceReferentielService {
                     anomalie.standId(),
                     anomalie.date()));
         }
+    }
 
+    private static void timeslotIssues(Sources sources, List<CoherenceIssue> issues) {
         for (Creneau creneau : sources.creneaux()) {
             CoherenceAnalyzer.onCreneau(creneau, sources.ownHoursStands())
                     .forEach(avertissement -> issues.add(warning(
@@ -278,25 +304,10 @@ public class CoherenceReferentielService {
                     null,
                     anomalie.date()));
         }
+    }
 
-        for (Animateur animateur : sources.animateurs()) {
-            CoherenceAnalyzer.onAnimateur(animateur, jours)
-                    .forEach(avertissement -> issues.add(warning(
-                            CoherenceFamily.ANIMATEURS, avertissement, CoherenceSubject.ANIMATEUR, animateur.getId())));
-        }
-
-        adHoc(sources, issues);
-        for (VerrouillagePlanning verrouillage : sources.verrouillages()) {
-            CoherenceAnalyzer.onVerrouillage(verrouillage, sources.diagnostics(), sources.creneaux())
-                    .forEach(avertissement -> issues.add(warning(
-                            CoherenceFamily.AJUSTEMENTS,
-                            avertissement,
-                            CoherenceSubject.VERROUILLAGE,
-                            verrouillage.getId())));
-        }
-
-        capacity(sources, issues);
-
+    /** Sorts the issues and counts them, by family and overall. */
+    private static CoherenceReport summarize(List<CoherenceIssue> issues) {
         issues.sort(
                 Comparator.comparing((CoherenceIssue issue) -> issue.famille().ordinal())
                         .thenComparing(issue -> issue.gravite().ordinal())

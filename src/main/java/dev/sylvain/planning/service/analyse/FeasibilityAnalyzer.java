@@ -101,12 +101,6 @@ public class FeasibilityAnalyzer {
                     .thenComparingLong(cause -> cause.creneauId() == null ? Long.MIN_VALUE : cause.creneauId());
 
     /**
-     * Within one severity, a contradiction between two exceptions comes first:
-     * it is a one-click fix on data the user typed themselves, where a
-     * shortfall of animateurs takes recruiting or reopening a stand. Not the
-     * enum's own order — that one is on the wire and is only ever appended to.
-     */
-    /**
      * The legal parameters this estimate reads break lengths from: the domain's
      * defaults, because none of its callers holds the edition's. The only
      * eligibility motif that reads one is the minor's daily cap on a single
@@ -115,6 +109,15 @@ public class FeasibilityAnalyzer {
      */
     private static final ParametresLegaux PAUSES_PAR_DEFAUT = new ParametresLegaux();
 
+    /** Id and name of the ordinary seat {@link #capacite} measures eligibility against. */
+    private static final String SIEGE_CAPACITE = "capacite";
+
+    /**
+     * Within one severity, a contradiction between two exceptions comes first:
+     * it is a one-click fix on data the user typed themselves, where a
+     * shortfall of animateurs takes recruiting or reopening a stand. Not the
+     * enum's own order — that one is on the wire and is only ever appended to.
+     */
     private static int rank(CauseInfaisabilite cause) {
         return cause.type() == TypeCauseInfaisabilite.CRENEAU_SOUS_EFFECTIF ? 1 : 0;
     }
@@ -233,13 +236,29 @@ public class FeasibilityAnalyzer {
                 totalCauses,
                 causesCritiques,
                 causesElevees,
-                sansAnimateur
-                        ? buildMessageWithoutAnimateur(totalCauses)
-                        : sansCreneau
-                                ? MESSAGE_SANS_CRENEAU
-                                : sansPoste
-                                        ? MESSAGE_SANS_POSTE
-                                        : buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses));
+                reportMessage(
+                        sansAnimateur, sansCreneau, sansPoste, feasible, manqueAnimateurs, totalCauses, topCauses));
+    }
+
+    /** The headline: an empty referential says so before any count of causes. */
+    private String reportMessage(
+            boolean sansAnimateur,
+            boolean sansCreneau,
+            boolean sansPoste,
+            boolean feasible,
+            int manqueAnimateurs,
+            int totalCauses,
+            List<CauseInfaisabilite> topCauses) {
+        if (sansAnimateur) {
+            return buildMessageWithoutAnimateur(totalCauses);
+        }
+        if (sansCreneau) {
+            return MESSAGE_SANS_CRENEAU;
+        }
+        if (sansPoste) {
+            return MESSAGE_SANS_POSTE;
+        }
+        return buildMessage(feasible, manqueAnimateurs, totalCauses, topCauses);
     }
 
     private List<CauseInfaisabilite> creneauxSousEffectif(
@@ -499,8 +518,8 @@ public class FeasibilityAnalyzer {
             Creneau creneau,
             int demande,
             boolean encadrementMineursActif) {
-        Stand standOrdinaire = new Stand("capacite", "capacite", Set.of(), 1, 1, false);
-        PosteAffectation siegeOrdinaire = new PosteAffectation("capacite", standOrdinaire, creneau);
+        Stand standOrdinaire = new Stand(SIEGE_CAPACITE, SIEGE_CAPACITE, Set.of(), 1, 1, false);
+        PosteAffectation siegeOrdinaire = new PosteAffectation(SIEGE_CAPACITE, standOrdinaire, creneau);
         long majeurs = 0;
         long mineurs = 0;
         for (Animateur animateur : animateurs) {
@@ -597,7 +616,10 @@ public class FeasibilityAnalyzer {
                 .map(FeasibilityAnalyzer::nomStand)
                 .collect(Collectors.joining(", "));
         int restants = stands.size() - MAX_STANDS_NOMMES;
-        return restants > 0 ? nommes + " et " + restants + (restants > 1 ? " autres stands" : " autre stand") : nommes;
+        if (restants <= 0) {
+            return nommes;
+        }
+        return nommes + " et " + restants + (restants > 1 ? " autres stands" : " autre stand");
     }
 
     private static String nomStand(Stand stand) {

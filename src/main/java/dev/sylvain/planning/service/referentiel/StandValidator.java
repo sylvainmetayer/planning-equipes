@@ -8,6 +8,7 @@ import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import java.time.LocalDate;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -183,41 +184,52 @@ final class StandValidator {
             throw new BusinessError.Invalid("Un horaire de stand requiert au moins une fenêtre horaire");
         }
         for (FenetreHoraire fenetre : horaire.getFenetres()) {
-            if (fenetre.getHeureDebut() == null) {
-                throw new BusinessError.Invalid("Une fenêtre horaire requiert une heure de début "
-                        + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
-            }
-            if (fenetre.getHeureFin() != null && !fenetre.getHeureFin().isAfter(fenetre.getHeureDebut())) {
-                throw new BusinessError.Invalid("heureFin (" + fenetre.getHeureFin() + ") doit être après heureDebut ("
-                        + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
-                        + "entrez-en deux");
-            }
-            checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire", stand);
+            checkFenetre(fenetre, stand);
         }
+        checkSelector(horaire);
+    }
+
+    private static void checkFenetre(FenetreHoraire fenetre, Stand stand) {
+        if (fenetre.getHeureDebut() == null) {
+            throw new BusinessError.Invalid("Une fenêtre horaire requiert une heure de début "
+                    + "(l'heure de fin peut être vide : jusqu'à la fermeture)");
+        }
+        if (fenetre.getHeureFin() != null && !fenetre.getHeureFin().isAfter(fenetre.getHeureDebut())) {
+            throw new BusinessError.Invalid("heureFin (" + fenetre.getHeureFin() + ") doit être après heureDebut ("
+                    + fenetre.getHeureDebut() + ") — une fenêtre horaire ne peut pas chevaucher minuit, "
+                    + "entrez-en deux");
+        }
+        checkEffectifFenetre(fenetre.getEffectif(), "une fenêtre horaire", stand);
+    }
+
+    /** The data each selector needs; {@code TOUS} carries none of its own. */
+    private static void checkSelector(HoraireStand horaire) {
         switch (horaire.getJours()) {
-            case JOURS_SEMAINE -> {
-                if (horaire.getJoursSemaine().isEmpty()) {
-                    throw new BusinessError.Invalid(
-                            "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
-                }
-            }
-            case PLAGE -> {
-                if (horaire.getDateDebut() == null || horaire.getDateFin() == null) {
-                    throw new BusinessError.Invalid("Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
-                }
-                if (horaire.getDateFin().isBefore(horaire.getDateDebut())) {
-                    throw new BusinessError.Invalid("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "
-                            + "à dateDebut (" + horaire.getDateDebut() + ")");
-                }
-            }
-            case DATES -> {
-                if (horaire.getDates().isEmpty()) {
-                    throw new BusinessError.Invalid("Un horaire de portée DATES requiert au moins une date");
-                }
-            }
+            case JOURS_SEMAINE ->
+                requireSome(
+                        horaire.getJoursSemaine(),
+                        "Un horaire de portée JOURS_SEMAINE requiert au moins un jour de la semaine");
+            case PLAGE -> checkPlage(horaire);
+            case DATES -> requireSome(horaire.getDates(), "Un horaire de portée DATES requiert au moins une date");
             case TOUS -> {
                 // Nothing else to check: the selector carries no data of its own.
             }
+        }
+    }
+
+    private static void requireSome(Collection<?> valeurs, String message) {
+        if (valeurs.isEmpty()) {
+            throw new BusinessError.Invalid(message);
+        }
+    }
+
+    private static void checkPlage(HoraireStand horaire) {
+        if (horaire.getDateDebut() == null || horaire.getDateFin() == null) {
+            throw new BusinessError.Invalid("Un horaire de portée PLAGE requiert une dateDebut et une dateFin");
+        }
+        if (horaire.getDateFin().isBefore(horaire.getDateDebut())) {
+            throw new BusinessError.Invalid("dateFin (" + horaire.getDateFin() + ") doit être après ou égale "
+                    + "à dateDebut (" + horaire.getDateDebut() + ")");
         }
     }
 
@@ -228,6 +240,10 @@ final class StandValidator {
      * {@code OuvertureStand}'s javadoc for the three-state rule this protects.
      */
     private static void checkExclusiveModesPerDay(Stand stand) {
+        // Never null through Stand's setters; checked alike to the two checks above.
+        if (stand.getIndisponibilites() == null || stand.getOuvertures() == null) {
+            return;
+        }
         Set<LocalDate> joursFermeture = stand.getIndisponibilites().stream()
                 .map(IndisponibiliteStand::getDate)
                 .filter(Objects::nonNull)

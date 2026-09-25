@@ -117,6 +117,23 @@ public final class PlanningDiagnosticService {
         return diagnose(persisted);
     }
 
+    /** How many units a medium or soft rule was evaluated on, and the floor it cannot go below. */
+    private record EvaluatedFloor(Integer evaluated, ConstraintFloor floor) {
+        static final EvaluatedFloor NONE = new EvaluatedFloor(null, null);
+    }
+
+    private static EvaluatedFloor evaluatedFloor(
+            ConstraintContribution ca, Map<Denominator, Integer> evaluatedByDenominator, PlanningEvenement solved) {
+        FloorRule rule = ConstraintFloorRules.of(ca.constraintName());
+        if (rule == null) {
+            return EvaluatedFloor.NONE;
+        }
+        // Several rules share a grain: each denominator is counted once per diagnostic.
+        Integer evaluated =
+                evaluatedByDenominator.computeIfAbsent(rule.denominator(), denominator -> denominator.count(solved));
+        return new EvaluatedFloor(evaluated, floorOf(rule, ca.matchCount(), evaluated, solved));
+    }
+
     /**
      * Builds the diagnostic of an already-solved planning, without solving it
      * again. Used right after {@link SolveRunner#solve(PlanningEvenement)} so a
@@ -142,21 +159,19 @@ public final class PlanningDiagnosticService {
             if (!ca.matches().isEmpty()) {
                 matchesParContrainte.put(name, ca.matches());
             }
-            List<String> violations = hard ? formatViolations(ca.matches()) : List.of();
-            List<ViolationFormatter.ViolationReference> references =
-                    hard ? referenceViolations(ca.matches()) : List.of();
+            List<String> violations = List.of();
+            List<ViolationFormatter.ViolationReference> references = List.of();
+            EvaluatedFloor evaluatedFloor;
             if (hard) {
+                violations = formatViolations(ca.matches());
+                references = referenceViolations(ca.matches());
                 collectContributionsAdHoc(name, ca.matches(), contributionsAdHoc);
+                evaluatedFloor = EvaluatedFloor.NONE;
+            } else {
+                evaluatedFloor = evaluatedFloor(ca, evaluatedByDenominator, solved);
             }
-            Integer evaluated = null;
-            ConstraintFloor floor = null;
-            FloorRule rule = hard ? null : ConstraintFloorRules.of(name);
-            if (rule != null) {
-                // Several rules share a grain: each denominator is counted once per diagnostic.
-                evaluated = evaluatedByDenominator.computeIfAbsent(
-                        rule.denominator(), denominator -> denominator.count(solved));
-                floor = floorOf(rule, ca.matchCount(), evaluated, solved);
-            }
+            Integer evaluated = evaluatedFloor.evaluated();
+            ConstraintFloor floor = evaluatedFloor.floor();
             if (floor != null) {
                 plancherMedium += ca.score().mediumScore();
                 plancherSoft += ca.score().softScore();
@@ -306,47 +321,67 @@ public final class PlanningDiagnosticService {
         for (MatchFacts match : matches == null ? List.<MatchFacts>of() : matches) {
             List<Object> facts = new ArrayList<>();
             unfold(match.facts(), facts);
-            Creneau creneau = null;
-            Set<Stand> stands = new LinkedHashSet<>();
-            Set<String> animateurIds = new LinkedHashSet<>();
-            for (Object fact : facts) {
-                if (fact instanceof PosteAffectation poste) {
-                    creneau = creneau == null ? poste.getCreneau() : creneau;
-                    if (poste.getStand() != null) {
-                        stands.add(poste.getStand());
-                    }
-                    if (poste.getAnimateur() != null) {
-                        animateurIds.add(poste.getAnimateur().getId());
-                    }
-                } else if (fact instanceof Creneau timeslot) {
-                    creneau = creneau == null ? timeslot : creneau;
-                } else if (fact instanceof Stand stand) {
-                    stands.add(stand);
-                } else if (fact instanceof Animateur animateur) {
-                    animateurIds.add(animateur.getId());
-                }
-            }
-            if (creneau != null) {
-                List<String> typologieIds = stands.stream()
-                        .flatMap(stand -> stand.getTypologiesProposees() == null
-                                ? Stream.<String>empty()
-                                : stand.getTypologiesProposees().stream())
-                        .distinct()
-                        .sorted()
-                        .toList();
+            MatchPosition position = new MatchPosition();
+            facts.forEach(position::read);
+            if (position.creneau != null) {
                 return new BlockerPlaybook.Context(
-                        creneau.getId(),
-                        creneau.getDate(),
-                        stands.stream().map(Stand::getId).toList(),
-                        typologieIds,
+                        position.creneau.getId(),
+                        position.creneau.getDate(),
+                        position.stands.stream().map(Stand::getId).toList(),
+                        typologieIds(position.stands),
                         List.of(),
-                        List.copyOf(animateurIds),
+                        List.copyOf(position.animateurIds),
                         frozenPast);
             }
         }
         return frozenPast
                 ? new BlockerPlaybook.Context(null, null, List.of(), List.of(), List.of(), List.of(), true)
                 : BlockerPlaybook.Context.NONE;
+    }
+
+    /** What one match names: its first timeslot, and the stands and holders it mentions. */
+    private static final class MatchPosition {
+        private Creneau creneau;
+        private final Set<Stand> stands = new LinkedHashSet<>();
+        private final Set<String> animateurIds = new LinkedHashSet<>();
+
+        void read(Object fact) {
+            if (fact instanceof PosteAffectation poste) {
+                readSeat(poste);
+            } else if (fact instanceof Creneau timeslot) {
+                firstTimeslot(timeslot);
+            } else if (fact instanceof Stand stand) {
+                stands.add(stand);
+            } else if (fact instanceof Animateur animateur) {
+                animateurIds.add(animateur.getId());
+            }
+        }
+
+        private void readSeat(PosteAffectation poste) {
+            firstTimeslot(poste.getCreneau());
+            if (poste.getStand() != null) {
+                stands.add(poste.getStand());
+            }
+            if (poste.getAnimateur() != null) {
+                animateurIds.add(poste.getAnimateur().getId());
+            }
+        }
+
+        private void firstTimeslot(Creneau candidate) {
+            if (creneau == null) {
+                creneau = candidate;
+            }
+        }
+    }
+
+    private static List<String> typologieIds(Set<Stand> stands) {
+        return stands.stream()
+                .flatMap(stand -> stand.getTypologiesProposees() == null
+                        ? Stream.<String>empty()
+                        : stand.getTypologiesProposees().stream())
+                .distinct()
+                .sorted()
+                .toList();
     }
 
     /** A match's facts, collections unfolded. */
@@ -419,7 +454,7 @@ public final class PlanningDiagnosticService {
      * over a number nobody would read anyway.
      */
     private static int borne(long valeur) {
-        return (int) Math.max(Integer.MIN_VALUE, Math.min(Integer.MAX_VALUE, valeur));
+        return Math.clamp(valeur, Integer.MIN_VALUE, Integer.MAX_VALUE);
     }
 
     /** Wording of a floor no missing data explains — the rule itself may not fit this edition. */

@@ -29,6 +29,32 @@ public class JournalActionRepository {
     /** Hard ceiling on one page of history: a screen, not an export. */
     static final int LIMITE_MAX = 500;
 
+    private static final String SQL_VARCHAR = "varchar";
+
+    private static final String SELECT_RECENT = """
+            SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
+            champs, resultat, statut
+            FROM journal_action
+            WHERE edition_id = ?
+            ORDER BY survenu_le DESC, id DESC
+            LIMIT ?""";
+
+    private static final String SELECT_RECENT_AMONG = """
+            SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
+            champs, resultat, statut
+            FROM journal_action
+            WHERE edition_id = ? AND action = ANY(?)
+            ORDER BY survenu_le DESC, id DESC
+            LIMIT ?""";
+
+    private static final String SELECT_SINCE = """
+            SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
+            champs, resultat, statut
+            FROM journal_action
+            WHERE edition_id = ? AND survenu_le > ? AND resultat = 'SUCCES' AND action = ANY(?)
+            ORDER BY survenu_le DESC, id DESC
+            LIMIT ?""";
+
     private final JdbcEditionScope scope;
 
     @Inject
@@ -70,13 +96,7 @@ public class JournalActionRepository {
     public List<EntreeJournal> list(int limite) {
         int plafond = Math.clamp(limite, 1, LIMITE_MAX);
         return scope.read("Failed to read the history", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
-                    champs, resultat, statut
-                    FROM journal_action
-                    WHERE edition_id = ?
-                    ORDER BY survenu_le DESC, id DESC
-                    LIMIT ?""")) {
+            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_RECENT)) {
                 ps.setInt(2, plafond);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<EntreeJournal> entrees = new ArrayList<>();
@@ -100,14 +120,8 @@ public class JournalActionRepository {
         }
         int plafond = Math.clamp(limite, 1, LIMITE_MAX);
         return scope.read("Failed to read the history", connection -> {
-            Array bound = connection.createArrayOf("varchar", codes.toArray());
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
-                    champs, resultat, statut
-                    FROM journal_action
-                    WHERE edition_id = ? AND action = ANY(?)
-                    ORDER BY survenu_le DESC, id DESC
-                    LIMIT ?""")) {
+            Array bound = connection.createArrayOf(SQL_VARCHAR, codes.toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_RECENT_AMONG)) {
                 ps.setArray(2, bound);
                 ps.setInt(3, plafond);
                 try (ResultSet rs = ps.executeQuery()) {
@@ -136,7 +150,7 @@ public class JournalActionRepository {
             return Map.of();
         }
         return scope.read("Failed to count the changes since the last solve", connection -> {
-            Array bound = connection.createArrayOf("varchar", codes.toArray());
+            Array bound = connection.createArrayOf(SQL_VARCHAR, codes.toArray());
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT action, COUNT(*) AS nombre
                     FROM journal_action
@@ -162,14 +176,8 @@ public class JournalActionRepository {
         }
         int plafond = Math.clamp(limite, 1, LIMITE_MAX);
         return scope.read("Failed to read the changes since the last solve", connection -> {
-            Array bound = connection.createArrayOf("varchar", codes.toArray());
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT id, survenu_le, acteur, acteur_id, action, entite, entite_id,
-                    champs, resultat, statut
-                    FROM journal_action
-                    WHERE edition_id = ? AND survenu_le > ? AND resultat = 'SUCCES' AND action = ANY(?)
-                    ORDER BY survenu_le DESC, id DESC
-                    LIMIT ?""")) {
+            Array bound = connection.createArrayOf(SQL_VARCHAR, codes.toArray());
+            try (PreparedStatement ps = scope.prepareScoped(connection, SELECT_SINCE)) {
                 ps.setTimestamp(2, Timestamp.from(depuis));
                 ps.setArray(3, bound);
                 ps.setInt(4, plafond);

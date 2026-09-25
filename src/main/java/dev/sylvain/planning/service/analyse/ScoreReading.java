@@ -99,6 +99,7 @@ public final class ScoreReading {
     private static final String ROUTE_DAY = "/journee";
     private static final String ROUTE_ADJUSTMENTS = "/ad-hoc-constraints";
     private static final String SEATS_RULE = "posteDoitEtrePourvu";
+    private static final String ECART = "écart";
     private static final DateTimeFormatter DAY = DateTimeFormatter.ofPattern("EEEE dd/MM", Locale.FRENCH);
 
     private ScoreReading() {}
@@ -199,9 +200,8 @@ public final class ScoreReading {
         String start =
                 n == 1 ? "1 règle impérative n'est pas respectée" : n + " règles impératives ne sont pas respectées";
         String name = quote(heaviest.definition());
-        String detail = n == 1
-                ? " (" + name + ", " + count(heaviest.matchCount(), "écart") + ")"
-                : " (surtout " + name + ", " + count(heaviest.matchCount(), "écart") + ")";
+        String ecarts = count(heaviest.matchCount(), ECART);
+        String detail = n == 1 ? " (" + name + ", " + ecarts + ")" : " (surtout " + name + ", " + ecarts + ")";
         String text = start + " : le planning ne devrait pas être publié en l'état" + detail + "." + reminder;
         return new ScoreSentence(
                 ReadingSubject.VERDICT, ReadingTone.BLOQUANT, text, List.of(ruleLink(heaviest.definition())));
@@ -219,32 +219,43 @@ public final class ScoreReading {
         int otherHard = 0;
         for (String ruleName : new LinkedHashSet<>(disabledRules)) {
             ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(ruleName);
-            if (definition == null || !definition.activeByDefault() || definition.niveau() != Niveau.HARD) {
-                continue;
-            }
-            if (definition.legale()) {
-                legal++;
-            } else {
-                otherHard++;
+            if (isRecalledWhenDisabled(definition)) {
+                if (definition.legale()) {
+                    legal++;
+                } else {
+                    otherHard++;
+                }
             }
         }
         StringBuilder reminder = new StringBuilder();
         if (legal > 0) {
-            reminder.append(
-                    legal == 1
-                            ? " 1 règle légale est désactivée pour cette édition : le verdict ne la vérifie pas."
-                            : " " + legal + " règles légales sont désactivées pour cette édition : le verdict ne les"
-                                    + " vérifie pas.");
+            reminder.append(legalReminder(legal));
         }
         if (otherHard > 0) {
-            reminder.append(
-                    otherHard == 1
-                            ? " 1 " + (legal > 0 ? "autre " : "") + "règle impérative est désactivée pour cette"
-                                    + " édition : le verdict ne la vérifie pas."
-                            : " " + otherHard + (legal > 0 ? " autres" : "") + " règles impératives sont désactivées"
-                                    + " pour cette édition : le verdict ne les vérifie pas.");
+            reminder.append(otherHardReminder(otherHard, legal > 0));
         }
         return reminder.toString();
+    }
+
+    /** A hard rule the catalogue ships on: switching it off was somebody's decision. */
+    private static boolean isRecalledWhenDisabled(ConstraintDefinition definition) {
+        return definition != null && definition.activeByDefault() && definition.niveau() == Niveau.HARD;
+    }
+
+    private static String legalReminder(int legal) {
+        if (legal == 1) {
+            return " 1 règle légale est désactivée pour cette édition : le verdict ne la vérifie pas.";
+        }
+        return " " + legal + " règles légales sont désactivées pour cette édition : le verdict ne les vérifie pas.";
+    }
+
+    private static String otherHardReminder(int otherHard, boolean afterLegal) {
+        if (otherHard == 1) {
+            return " 1 " + (afterLegal ? "autre " : "") + "règle impérative est désactivée pour cette"
+                    + " édition : le verdict ne la vérifie pas.";
+        }
+        return " " + otherHard + (afterLegal ? " autres" : "") + " règles impératives sont désactivées"
+                + " pour cette édition : le verdict ne les vérifie pas.";
     }
 
     // ---- 2. coverage --------------------------------------------------------
@@ -335,21 +346,12 @@ public final class ScoreReading {
     // ---- 4. floors ----------------------------------------------------------
 
     private static Optional<ScoreSentence> floors(PlanningDiagnostic diagnostic) {
-        long medium = -Math.min(0L, (long) diagnostic.plancherMedium());
-        long soft = -Math.min(0L, (long) diagnostic.plancherSoft());
+        long medium = -Math.min(0L, diagnostic.plancherMedium());
+        long soft = -Math.min(0L, diagnostic.plancherSoft());
         if (medium == 0 && soft == 0) {
             return Optional.empty();
         }
-        List<Rule> floorRules = new ArrayList<>();
-        floorRules.addAll(rules(diagnostic, Niveau.MEDIUM));
-        floorRules.addAll(rules(diagnostic, Niveau.SOFT));
-        floorRules = floorRules.stream()
-                .filter(Rule::floor)
-                .filter(rule -> rule.score().mediumScore() < 0 || rule.score().softScore() < 0)
-                .sorted(Comparator.comparingLong((Rule rule) -> rule.score().mediumScore())
-                        .thenComparingLong(rule -> rule.score().softScore())
-                        .thenComparing(Rule::name))
-                .toList();
+        List<Rule> floorRules = penalisingFloorRules(diagnostic);
         List<String> points = new ArrayList<>();
         if (medium > 0) {
             points.add(number(medium) + (medium == 1 ? " point d'organisation" : " points d'organisation"));
@@ -364,14 +366,32 @@ public final class ScoreReading {
         if (!floorRules.isEmpty()) {
             List<String> pieces = new ArrayList<>();
             for (Rule rule : floorRules) {
-                String reason = reason(rule.diagnostic().plancher().libelle());
-                pieces.add(quote(rule.definition()) + (reason.isEmpty() ? "" : " (" + reason + ")"));
+                pieces.add(floorPiece(rule));
                 links.add(ruleLink(rule.definition()));
             }
             text.append(" : ").append(enumerate(pieces));
         }
         text.append('.');
         return Optional.of(new ScoreSentence(ReadingSubject.PLANCHER, ReadingTone.INFO, text.toString(), links));
+    }
+
+    /** The medium and soft rules stuck at a floor that costs points, heaviest first. */
+    private static List<Rule> penalisingFloorRules(PlanningDiagnostic diagnostic) {
+        List<Rule> floorRules = new ArrayList<>();
+        floorRules.addAll(rules(diagnostic, Niveau.MEDIUM));
+        floorRules.addAll(rules(diagnostic, Niveau.SOFT));
+        return floorRules.stream()
+                .filter(Rule::floor)
+                .filter(rule -> rule.score().mediumScore() < 0 || rule.score().softScore() < 0)
+                .sorted(Comparator.comparingLong((Rule rule) -> rule.score().mediumScore())
+                        .thenComparingLong(rule -> rule.score().softScore())
+                        .thenComparing(Rule::name))
+                .toList();
+    }
+
+    private static String floorPiece(Rule rule) {
+        String reason = reason(rule.diagnostic().plancher().libelle());
+        return quote(rule.definition()) + (reason.isEmpty() ? "" : " (" + reason + ")");
     }
 
     /**
@@ -458,7 +478,7 @@ public final class ScoreReading {
         String linkWords = involved.size() == 1 ? "ajustement manuel" : "ajustements manuels";
         List<ReadingLink> links = new ArrayList<>();
         links.add(new ReadingLink(linkWords, ROUTE_ADJUSTMENTS, ids.isEmpty() ? Map.of() : Map.of("ids", ids), null));
-        StringBuilder text = new StringBuilder(subject).append(" : ").append(count(breaches, "écart"));
+        StringBuilder text = new StringBuilder(subject).append(" : ").append(count(breaches, ECART));
         if (!brokenRules.isEmpty()) {
             text.append(" sur ")
                     .append(enumerate(brokenRules.values().stream()
@@ -486,47 +506,22 @@ public final class ScoreReading {
         List<ReadingLink> links = new ArrayList<>();
         int emptyDelta = after.postesNonPourvus() - before.postesNonPourvus();
         if (emptyDelta != 0) {
-            int n = Math.abs(emptyDelta);
-            pieces.add(number(n)
-                    + (n == 1 ? " place vide" : " places vides")
-                    + (emptyDelta < 0 ? " en moins" : " en plus"));
+            pieces.add(number(Math.abs(emptyDelta)) + delta(emptyDelta, " place vide", " places vides"));
         }
         int hardDelta = failingHardRules(after) - failingHardRules(before);
         if (hardDelta != 0) {
-            int n = Math.abs(hardDelta);
-            pieces.add(n
-                    + (n == 1 ? " règle impérative en défaut" : " règles impératives en défaut")
-                    + (hardDelta < 0 ? " en moins" : " en plus"));
+            pieces.add(Math.abs(hardDelta)
+                    + delta(hardDelta, " règle impérative en défaut", " règles impératives en défaut"));
         }
-        Map<String, Integer> beforeByRule = matchesByRule(before, Niveau.MEDIUM);
-        Map<String, Integer> afterByRule = matchesByRule(after, Niveau.MEDIUM);
-        // Only the rules both analyses measured: a rule missing on one side is
-        // unknown there, not at zero.
-        Set<String> names = new LinkedHashSet<>(beforeByRule.keySet());
-        names.retainAll(afterByRule.keySet());
-        String improved = null;
-        int bestGain = 0;
-        String worsened = null;
-        int worstLoss = 0;
-        for (String ruleName : names.stream().sorted().toList()) {
-            int delta = afterByRule.getOrDefault(ruleName, 0) - beforeByRule.getOrDefault(ruleName, 0);
-            if (delta < bestGain) {
-                bestGain = delta;
-                improved = ruleName;
-            }
-            if (delta > worstLoss) {
-                worstLoss = delta;
-                worsened = ruleName;
-            }
-        }
-        if (improved != null) {
-            ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(improved);
-            pieces.add(quote(definition) + " en progrès (" + count(-bestGain, "cas") + " en moins)");
+        RuleMoves moves = RuleMoves.between(matchesByRule(before, Niveau.MEDIUM), matchesByRule(after, Niveau.MEDIUM));
+        if (moves.improved != null) {
+            ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(moves.improved);
+            pieces.add(quote(definition) + " en progrès (" + count(-moves.bestGain, "cas") + " en moins)");
             links.add(ruleLink(definition));
         }
-        if (worsened != null) {
-            ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(worsened);
-            pieces.add(quote(definition) + " en recul (" + count(worstLoss, "cas") + " en plus)");
+        if (moves.worsened != null) {
+            ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(moves.worsened);
+            pieces.add(quote(definition) + " en recul (" + count(moves.worstLoss, "cas") + " en plus)");
             links.add(ruleLink(definition));
         }
         ReadingTone tone = tone(after.score(), before.score());
@@ -542,6 +537,45 @@ public final class ScoreReading {
                 ReadingSubject.COMPARAISON, tone, "Par rapport au plan précédent : " + enumerate(pieces) + ".", links));
     }
 
+    /** « place vide en moins », « places vides en plus »: the noun agreed with the size of a non-zero change. */
+    private static String delta(int change, String singular, String plural) {
+        return (Math.abs(change) == 1 ? singular : plural) + (change < 0 ? " en moins" : " en plus");
+    }
+
+    /**
+     * The medium rule that gained the most matches back and the one that lost
+     * the most, over the rules both analyses measured: a rule missing on one
+     * side is unknown there, not at zero. Ties go to the first name.
+     */
+    private static final class RuleMoves {
+        private String improved;
+        private int bestGain;
+        private String worsened;
+        private int worstLoss;
+
+        static RuleMoves between(Map<String, Integer> beforeByRule, Map<String, Integer> afterByRule) {
+            Set<String> names = new LinkedHashSet<>(beforeByRule.keySet());
+            names.retainAll(afterByRule.keySet());
+            RuleMoves moves = new RuleMoves();
+            for (String ruleName : names.stream().sorted().toList()) {
+                moves.consider(
+                        ruleName, afterByRule.getOrDefault(ruleName, 0) - beforeByRule.getOrDefault(ruleName, 0));
+            }
+            return moves;
+        }
+
+        private void consider(String ruleName, int delta) {
+            if (delta < bestGain) {
+                bestGain = delta;
+                improved = ruleName;
+            }
+            if (delta > worstLoss) {
+                worstLoss = delta;
+                worsened = ruleName;
+            }
+        }
+    }
+
     private static ReadingTone tone(String after, String before) {
         HardMediumSoftScore scoreAfter = parse(after);
         HardMediumSoftScore scoreBefore = parse(before);
@@ -549,7 +583,10 @@ public final class ScoreReading {
             return ReadingTone.INFO;
         }
         int comparison = scoreAfter.compareTo(scoreBefore);
-        return comparison > 0 ? ReadingTone.OK : comparison < 0 ? ReadingTone.ATTENTION : ReadingTone.INFO;
+        if (comparison > 0) {
+            return ReadingTone.OK;
+        }
+        return comparison < 0 ? ReadingTone.ATTENTION : ReadingTone.INFO;
     }
 
     private static int failingHardRules(PlanningDiagnostic diagnostic) {
@@ -611,13 +648,13 @@ public final class ScoreReading {
         }
         try {
             return HardMediumSoftScore.parseScore(score);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return null;
         }
     }
 
     private static String quote(ConstraintDefinition definition) {
-        return "« " + definition.libelleCourt() + " »";
+        return "«\u00A0" + definition.libelleCourt() + "\u00A0»";
     }
 
     private static ReadingLink ruleLink(ConstraintDefinition definition) {
@@ -628,7 +665,7 @@ public final class ScoreReading {
     private static String dayLabel(String iso) {
         try {
             return LocalDate.parse(iso).format(DAY);
-        } catch (DateTimeParseException | NullPointerException e) {
+        } catch (DateTimeParseException | NullPointerException _) {
             return null;
         }
     }
@@ -647,7 +684,7 @@ public final class ScoreReading {
         StringBuilder grouped = new StringBuilder();
         for (int i = 0; i < digits.length(); i++) {
             if (i > 0 && (digits.length() - i) % 3 == 0) {
-                grouped.append(' ');
+                grouped.append('\u00A0');
             }
             grouped.append(digits.charAt(i));
         }

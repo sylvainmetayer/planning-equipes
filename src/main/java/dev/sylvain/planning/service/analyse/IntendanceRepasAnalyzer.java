@@ -146,39 +146,9 @@ public class IntendanceRepasAnalyzer {
         Map<String, Emplacement> emplacements = emplacementsByStand(planning);
         Map<String, List<PosteAffectation>> parJournee = postesByAnimateurAndDay(planning);
 
-        // date -> window label -> emplacement id -> tally
-        Map<LocalDate, Map<String, Map<String, Compte>>> comptes = new LinkedHashMap<>();
-        for (JourneeAnimateurView journee :
-                pauseAnalyzer.analyze(planning, parametres, fenetresRepas).journees()) {
-            for (CoupureRepasView coupure : journee.coupuresRepas()) {
-                if (coupure.debut() == null) {
-                    // The day leaves no room for the break: nobody eats here,
-                    // and PauseAnalyzer already reports it as a violation.
-                    continue;
-                }
-                Emplacement emplacement = emplacementOfCoupure(
-                        parJournee.get(dayKey(journee.animateurId(), journee.date())), coupure, emplacements);
-                comptes.computeIfAbsent(journee.date(), ignored -> new LinkedHashMap<>())
-                        .computeIfAbsent(coupure.libelle(), ignored -> new LinkedHashMap<>())
-                        .computeIfAbsent(emplacement.getId(), ignored -> new Compte(emplacement))
-                        .ajouter(coupure, journee.mineur());
-            }
-        }
-
-        List<JourneeIntendance> journees = new ArrayList<>();
-        for (LocalDate date : comptes.keySet().stream().sorted().toList()) {
-            List<FenetreIntendance> vues = new ArrayList<>();
-            for (FenetreRepas fenetre : fenetresRepas) {
-                Map<String, Compte> parEmplacement = comptes.get(date).get(fenetre.libelle());
-                if (!fenetre.appliesTo(date) || parEmplacement == null || parEmplacement.isEmpty()) {
-                    continue;
-                }
-                vues.add(fenetreView(fenetre, parEmplacement));
-            }
-            if (!vues.isEmpty()) {
-                journees.add(new JourneeIntendance(date, List.copyOf(vues)));
-            }
-        }
+        Map<LocalDate, Map<String, Map<String, Compte>>> comptes = tallyBreaks(
+                pauseAnalyzer.analyze(planning, parametres, fenetresRepas).journees(), parJournee, emplacements);
+        List<JourneeIntendance> journees = dayViews(comptes, fenetresRepas);
         if (journees.isEmpty()) {
             return new RapportIntendance(
                     PAS_MINUTES,
@@ -186,6 +156,49 @@ public class IntendanceRepasAnalyzer {
                     "Aucune coupure repas sur ce planning : aucune journée ne traverse une fenêtre déclarée.");
         }
         return new RapportIntendance(PAS_MINUTES, List.copyOf(journees), "");
+    }
+
+    /** date -> window label -> emplacement id -> tally, over every meal break the plan places. */
+    private static Map<LocalDate, Map<String, Map<String, Compte>>> tallyBreaks(
+            List<JourneeAnimateurView> journeesAnimateurs,
+            Map<String, List<PosteAffectation>> parJournee,
+            Map<String, Emplacement> emplacements) {
+        Map<LocalDate, Map<String, Map<String, Compte>>> comptes = new LinkedHashMap<>();
+        for (JourneeAnimateurView journee : journeesAnimateurs) {
+            for (CoupureRepasView coupure : journee.coupuresRepas()) {
+                // A break without a start: the day leaves no room for it,
+                // nobody eats here, and PauseAnalyzer already reports it as a
+                // violation.
+                if (coupure.debut() != null) {
+                    Emplacement emplacement = emplacementOfCoupure(
+                            parJournee.get(dayKey(journee.animateurId(), journee.date())), coupure, emplacements);
+                    comptes.computeIfAbsent(journee.date(), ignored -> new LinkedHashMap<>())
+                            .computeIfAbsent(coupure.libelle(), ignored -> new LinkedHashMap<>())
+                            .computeIfAbsent(emplacement.getId(), ignored -> new Compte(emplacement))
+                            .ajouter(coupure, journee.mineur());
+                }
+            }
+        }
+        return comptes;
+    }
+
+    /** One view per day, holding the windows somebody ate in. */
+    private static List<JourneeIntendance> dayViews(
+            Map<LocalDate, Map<String, Map<String, Compte>>> comptes, List<FenetreRepas> fenetresRepas) {
+        List<JourneeIntendance> journees = new ArrayList<>();
+        for (LocalDate date : comptes.keySet().stream().sorted().toList()) {
+            List<FenetreIntendance> vues = new ArrayList<>();
+            for (FenetreRepas fenetre : fenetresRepas) {
+                Map<String, Compte> parEmplacement = comptes.get(date).get(fenetre.libelle());
+                if (fenetre.appliesTo(date) && parEmplacement != null && !parEmplacement.isEmpty()) {
+                    vues.add(fenetreView(fenetre, parEmplacement));
+                }
+            }
+            if (!vues.isEmpty()) {
+                journees.add(new JourneeIntendance(date, List.copyOf(vues)));
+            }
+        }
+        return journees;
     }
 
     private static FenetreIntendance fenetreView(FenetreRepas fenetre, Map<String, Compte> parEmplacement) {
@@ -236,16 +249,10 @@ public class IntendanceRepasAnalyzer {
         PosteAffectation avant = null;
         PosteAffectation apres = null;
         for (PosteAffectation poste : postes) {
-            LocalTime fin = poste.heureFinEffectif();
-            LocalTime ouverture = poste.heureDebutEffectif();
-            if (fin != null
-                    && fin.toSecondOfDay() <= debut
-                    && (avant == null || fin.isAfter(avant.heureFinEffectif()))) {
+            if (endsLaterBefore(poste, debut, avant)) {
                 avant = poste;
             }
-            if (ouverture != null
-                    && ouverture.toSecondOfDay() >= debut
-                    && (apres == null || ouverture.isBefore(apres.heureDebutEffectif()))) {
+            if (startsSoonerAfter(poste, debut, apres)) {
                 apres = poste;
             }
         }
@@ -255,6 +262,20 @@ public class IntendanceRepasAnalyzer {
         }
         Emplacement emplacement = emplacements.get(retenu.getStand().getId());
         return emplacement == null || emplacement.getId() == null ? EMPLACEMENT_INCONNU : emplacement;
+    }
+
+    /** Whether {@code poste} ends by {@code debut}, later than {@code avant} does. */
+    private static boolean endsLaterBefore(PosteAffectation poste, int debut, PosteAffectation avant) {
+        LocalTime fin = poste.heureFinEffectif();
+        return fin != null && fin.toSecondOfDay() <= debut && (avant == null || fin.isAfter(avant.heureFinEffectif()));
+    }
+
+    /** Whether {@code poste} starts from {@code debut} on, sooner than {@code apres} does. */
+    private static boolean startsSoonerAfter(PosteAffectation poste, int debut, PosteAffectation apres) {
+        LocalTime ouverture = poste.heureDebutEffectif();
+        return ouverture != null
+                && ouverture.toSecondOfDay() >= debut
+                && (apres == null || ouverture.isBefore(apres.heureDebutEffectif()));
     }
 
     private static Map<String, List<PosteAffectation>> postesByAnimateurAndDay(PlanningEvenement planning) {

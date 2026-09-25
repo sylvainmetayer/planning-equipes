@@ -158,8 +158,7 @@ public final class OuvertureStandsAnalyzer {
      * highest one, and {@code segments} says what the cell really holds. A
      * save keeps those segments as long as the cell is not retyped
      * ({@link dev.sylvain.planning.service.referentiel.GrilleHorairesStands}).
-     */
-    /**
+     *
      * @param tranche     the column's rank inside its créneau ({@link ColonneCreneau#tranche()})
      * @param segments    the open stretches of the cell, empty when closed;
      *                    one stretch spanning the column when the cell is not
@@ -532,10 +531,8 @@ public final class OuvertureStandsAnalyzer {
                     creneauxParJour,
                     anomalies,
                     dejaVues,
-                    ouverture.getDate(),
-                    ouverture.getHeureDebut(),
-                    ouverture.getHeureFin(),
-                    "L'ouverture");
+                    new DatedWindow(
+                            ouverture.getDate(), ouverture.getHeureDebut(), ouverture.getHeureFin(), "L'ouverture"));
         }
         for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
             reportIfWithoutEffect(
@@ -543,23 +540,25 @@ public final class OuvertureStandsAnalyzer {
                     creneauxParJour,
                     anomalies,
                     dejaVues,
-                    fermeture.getDate(),
-                    fermeture.getHeureDebut(),
-                    fermeture.getHeureFin(),
-                    "La fermeture");
+                    new DatedWindow(
+                            fermeture.getDate(), fermeture.getHeureDebut(), fermeture.getHeureFin(), "La fermeture"));
         }
         return anomalies;
     }
+
+    /** A dated opening or closure, with the words that name its kind in a message. */
+    private record DatedWindow(LocalDate date, LocalTime heureDebut, LocalTime heureFin, String libelle) {}
 
     private static void reportIfWithoutEffect(
             Stand stand,
             Map<LocalDate, List<Creneau>> creneauxParJour,
             List<Anomaly> anomalies,
             TreeSet<String> dejaVues,
-            LocalDate date,
-            LocalTime heureDebut,
-            LocalTime heureFin,
-            String libelle) {
+            DatedWindow fenetre) {
+        LocalDate date = fenetre.date();
+        LocalTime heureDebut = fenetre.heureDebut();
+        LocalTime heureFin = fenetre.heureFin();
+        String libelle = fenetre.libelle();
         if (date == null || heureDebut == null) {
             return;
         }

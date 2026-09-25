@@ -106,6 +106,10 @@ public class JourneeTypeService {
                 throw new BusinessError.Invalid("Une journée type s'appelle déjà « " + autre.getNom() + " »");
             }
         }
+        validateVacations(journeeType);
+    }
+
+    private static void validateVacations(JourneeType journeeType) {
         if (journeeType.getVacations().isEmpty()) {
             throw new BusinessError.Invalid(
                     "Une journée type contient au moins une vacation, ex. « 09:00-12:00, 14:00-18:00 »");
@@ -166,8 +170,9 @@ public class JourneeTypeService {
 
     /* ------------------------------ Whole state ------------------------------ */
 
-    /** Everything the card reads in one call, the drift between calendar and grid included. */
     /**
+     * Everything the card reads in one call, the drift between calendar and grid included.
+     *
      * @param datesSousConsigne the dates a consigne governs (issue #4): the
      *                          card shows them « sous consigne » rather than
      *                          « en écart », since the créneaux the consigne

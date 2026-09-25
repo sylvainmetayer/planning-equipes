@@ -112,36 +112,45 @@ public class CompetencesGrilleService {
         for (SaisieCompetences saisie : saisies) {
             String id = saisie.animateurId();
             Animateur source = id == null ? null : parId.get(id);
-            if (source == null) {
-                lignes.add(new LigneCompetences(
-                        id, ResultatLigne.REJECTED, "Animateur inconnu dans la grille : " + id, null));
-                continue;
-            }
-            if (!dejaVus.add(id)) {
-                lignes.add(new LigneCompetences(
-                        id, ResultatLigne.REJECTED, "L'animateur " + id + " apparaît deux fois dans la grille.", null));
-                continue;
-            }
-            if (saisie.competences() == null) {
-                lignes.add(new LigneCompetences(
-                        id, ResultatLigne.REJECTED, "Aucune compétence transmise pour l'animateur " + id + ".", null));
-                continue;
-            }
-            Animateur copie = GrilleCompetences.withCompetences(source, saisie.competences(), saisie.modifieLe());
-            try {
-                animateurs.update(id, copie);
-                modifie = true;
-                lignes.add(new LigneCompetences(id, ResultatLigne.WRITTEN, null, copie.getModifieLe()));
-            } catch (BusinessError.Stale stale) {
-                lignes.add(new LigneCompetences(id, ResultatLigne.STALE, stale.getMessage(), stale.getModifieLe()));
-            } catch (BusinessError refus) {
-                lignes.add(new LigneCompetences(id, ResultatLigne.REJECTED, refus.getMessage(), null));
+            String refus = gridRejection(id, source, saisie, dejaVus);
+            if (refus != null) {
+                lignes.add(new LigneCompetences(id, ResultatLigne.REJECTED, refus, null));
+            } else {
+                LigneCompetences ligne = writeGridRow(id, source, saisie);
+                modifie |= ligne.resultat() == ResultatLigne.WRITTEN;
+                lignes.add(ligne);
             }
         }
         if (modifie) {
             currentAction.champsModifies(List.of("competences"));
         }
         return lignes;
+    }
+
+    /** Why a grid row cannot be written at all, checked in this order; {@code null} when it can. */
+    private static String gridRejection(String id, Animateur source, SaisieCompetences saisie, Set<String> dejaVus) {
+        if (source == null) {
+            return "Animateur inconnu dans la grille : " + id;
+        }
+        if (!dejaVus.add(id)) {
+            return "L'animateur " + id + " apparaît deux fois dans la grille.";
+        }
+        if (saisie.competences() == null) {
+            return "Aucune compétence transmise pour l'animateur " + id + ".";
+        }
+        return null;
+    }
+
+    private LigneCompetences writeGridRow(String id, Animateur source, SaisieCompetences saisie) {
+        Animateur copie = GrilleCompetences.withCompetences(source, saisie.competences(), saisie.modifieLe());
+        try {
+            animateurs.update(id, copie);
+            return new LigneCompetences(id, ResultatLigne.WRITTEN, null, copie.getModifieLe());
+        } catch (BusinessError.Stale stale) {
+            return new LigneCompetences(id, ResultatLigne.STALE, stale.getMessage(), stale.getModifieLe());
+        } catch (BusinessError refus) {
+            return new LigneCompetences(id, ResultatLigne.REJECTED, refus.getMessage(), null);
+        }
     }
 
     /* ----------------------------------- CSV ----------------------------------- */
@@ -205,6 +214,49 @@ public class CompetencesGrilleService {
     }
 
     private Analyse analyse(CompetencesGrilleImportRequest request) {
+        String content = checkedContent(request);
+        List<TypologieItem> referentiel = typologies.list();
+        if (referentiel.isEmpty()) {
+            throw new BusinessError.Invalid("L'édition n'a aucune typologie : les colonnes du fichier n'auraient rien "
+                    + "sur quoi se poser. Créez les typologies d'abord.");
+        }
+        CsvParser.Table table = CsvParser.parse(content);
+        if (table.rows().size() > MAX_ROWS) {
+            throw new BusinessError.Invalid("Fichier trop long : " + grouped(MAX_ROWS) + " lignes au maximum.");
+        }
+        List<String> warnings = new ArrayList<>();
+
+        ColumnMapping colonnes = readColumns(table.columns(), referentiel);
+        if (colonnes.typologieParColonne().isEmpty()) {
+            throw new BusinessError.Invalid("Aucune colonne du fichier ne correspond à une typologie de l'édition. "
+                    + "Attendu : une première colonne « animateur » portant l'identifiant, puis une colonne par "
+                    + "typologie, nommée par son identifiant.");
+        }
+        long sansColonne = referentiel.stream()
+                .filter(typologie -> !colonnes.dejaPrises().contains(typologie.id()))
+                .count();
+        if (sansColonne > 0) {
+            warnings.add(sansColonne + " typologie(s) de l'édition n'ont pas de colonne dans le fichier : "
+                    + "les appréciations correspondantes sont conservées telles quelles.");
+        }
+
+        // Each row names one animateur of the edition, by id, or none.
+        AnimateurIndex index = new AnimateurIndex(new LinkedHashMap<>(), new HashMap<>());
+        for (Animateur animateur : animateurs.list()) {
+            index.parId().put(animateur.getId(), animateur);
+            index.parIdNormalise().putIfAbsent(normalise(animateur.getId()), animateur);
+        }
+        List<ImportedCompetencesRow> rows = new ArrayList<>();
+        List<Animateur> aEcrire = new ArrayList<>();
+        Map<String, Integer> dejaVus = new HashMap<>();
+        for (CsvParser.Row row : table.rows()) {
+            rows.add(analyseRow(row, index, colonnes.typologieParColonne(), table.columns(), dejaVus, aEcrire));
+        }
+        return new Analyse(String.valueOf(table.separator()), colonnes.columns(), rows, warnings, aEcrire);
+    }
+
+    /** The upload's text, once the refusals that cost the whole file are passed. */
+    private static String checkedContent(CompetencesGrilleImportRequest request) {
         if (request == null) {
             throw new BusinessError.Invalid("Aucun fichier reçu : déposez le CSV de la grille des compétences.");
         }
@@ -217,18 +269,17 @@ public class CompetencesGrilleService {
             throw new BusinessError.Invalid(
                     "Fichier trop volumineux : " + grouped(MAX_CHARACTERS) + " caractères au maximum.");
         }
-        List<TypologieItem> referentiel = typologies.list();
-        if (referentiel.isEmpty()) {
-            throw new BusinessError.Invalid("L'édition n'a aucune typologie : les colonnes du fichier n'auraient rien "
-                    + "sur quoi se poser. Créez les typologies d'abord.");
-        }
-        CsvParser.Table table = CsvParser.parse(content);
-        if (table.rows().size() > MAX_ROWS) {
-            throw new BusinessError.Invalid("Fichier trop long : " + grouped(MAX_ROWS) + " lignes au maximum.");
-        }
-        List<String> warnings = new ArrayList<>();
+        return content;
+    }
 
-        // Each column past the first names one typologie of the edition, or none.
+    /** The header read: which column feeds which typologie, and the typologies already claimed. */
+    private record ColumnMapping(
+            List<ImportedCompetencesColumn> columns,
+            Map<Integer, String> typologieParColonne,
+            Set<String> dejaPrises) {}
+
+    /** Each column past the first names one typologie of the edition, or none. */
+    private static ColumnMapping readColumns(List<String> headers, List<TypologieItem> referentiel) {
         Map<String, String> typologieParCle = new HashMap<>();
         for (TypologieItem typologie : referentiel) {
             typologieParCle.putIfAbsent(normalise(typologie.id()), typologie.id());
@@ -239,118 +290,107 @@ public class CompetencesGrilleService {
         List<ImportedCompetencesColumn> columns = new ArrayList<>();
         Map<Integer, String> typologieParColonne = new LinkedHashMap<>();
         Set<String> dejaPrises = new HashSet<>();
-        for (int index = 1; index < table.columns().size(); index++) {
-            String libelle = table.columns().get(index);
+        for (int index = 1; index < headers.size(); index++) {
+            String libelle = headers.get(index);
             String typologieId = typologieExacte.get(libelle);
             if (typologieId == null) {
                 typologieId = typologieParCle.get(normalise(libelle));
             }
-            if (typologieId == null) {
-                columns.add(new ImportedCompetencesColumn(
-                        index,
-                        libelle,
-                        null,
-                        "Aucune typologie de l'édition ne porte cet identifiant : colonne ignorée."));
-                continue;
+            String motif = columnRejection(typologieId, dejaPrises);
+            if (motif == null) {
+                typologieParColonne.put(index, typologieId);
+                columns.add(new ImportedCompetencesColumn(index, libelle, typologieId, null));
+            } else {
+                columns.add(new ImportedCompetencesColumn(index, libelle, null, motif));
             }
-            if (!dejaPrises.add(typologieId)) {
-                columns.add(new ImportedCompetencesColumn(
-                        index,
-                        libelle,
-                        null,
-                        "Une colonne précédente nomme déjà la typologie " + typologieId + " : celle-ci est ignorée."));
-                continue;
-            }
-            typologieParColonne.put(index, typologieId);
-            columns.add(new ImportedCompetencesColumn(index, libelle, typologieId, null));
         }
-        if (typologieParColonne.isEmpty()) {
-            throw new BusinessError.Invalid("Aucune colonne du fichier ne correspond à une typologie de l'édition. "
-                    + "Attendu : une première colonne « animateur » portant l'identifiant, puis une colonne par "
-                    + "typologie, nommée par son identifiant.");
-        }
-        long sansColonne = referentiel.stream()
-                .filter(typologie -> !dejaPrises.contains(typologie.id()))
-                .count();
-        if (sansColonne > 0) {
-            warnings.add(sansColonne + " typologie(s) de l'édition n'ont pas de colonne dans le fichier : "
-                    + "les appréciations correspondantes sont conservées telles quelles.");
-        }
+        return new ColumnMapping(columns, typologieParColonne, dejaPrises);
+    }
 
-        // Each row names one animateur of the edition, by id, or none.
-        Map<String, Animateur> parId = new LinkedHashMap<>();
-        Map<String, Animateur> parIdNormalise = new HashMap<>();
-        for (Animateur animateur : animateurs.list()) {
-            parId.put(animateur.getId(), animateur);
-            parIdNormalise.putIfAbsent(normalise(animateur.getId()), animateur);
+    /** Why a column is ignored; {@code null} when it claims its typologie. */
+    private static String columnRejection(String typologieId, Set<String> dejaPrises) {
+        if (typologieId == null) {
+            return "Aucune typologie de l'édition ne porte cet identifiant : colonne ignorée.";
         }
-        List<ImportedCompetencesRow> rows = new ArrayList<>();
-        List<Animateur> aEcrire = new ArrayList<>();
-        Map<String, Integer> dejaVus = new HashMap<>();
-        for (CsvParser.Row row : table.rows()) {
-            String label = row.value(0).trim();
+        if (!dejaPrises.add(typologieId)) {
+            return "Une colonne précédente nomme déjà la typologie " + typologieId + " : celle-ci est ignorée.";
+        }
+        return null;
+    }
+
+    /** The edition's animateurs by id as written, then by id with case and accents aside. */
+    private record AnimateurIndex(Map<String, Animateur> parId, Map<String, Animateur> parIdNormalise) {
+
+        Animateur find(String label) {
             Animateur animateur = parId.get(label);
-            if (animateur == null) {
-                animateur = parIdNormalise.get(normalise(label));
-            }
-            if (animateur == null) {
-                String motif = label.isEmpty()
-                        ? "Première colonne vide : chaque ligne doit porter l'identifiant de l'animateur."
-                        : "Aucun animateur « " + label + " » dans l'édition : créez la fiche d'abord, l'import "
-                                + "ne crée pas d'animateur.";
-                rows.add(new ImportedCompetencesRow(
-                        row.line(), label, null, ImportCompetencesAction.REJECTED, List.of(motif), 0));
-                continue;
-            }
-            String id = animateur.getId();
-            if (dejaVus.containsKey(id)) {
-                rows.add(new ImportedCompetencesRow(
-                        row.line(),
-                        label,
-                        id,
-                        ImportCompetencesAction.REJECTED,
-                        List.of("L'animateur " + id + " est déjà décrit ligne " + dejaVus.get(id)
-                                + " : cette ligne est ignorée."),
-                        0));
-                continue;
-            }
-            Map<String, NiveauCompetence> competences =
-                    new LinkedHashMap<>(animateur.getCompetences() == null ? Map.of() : animateur.getCompetences());
-            List<String> reasons = new ArrayList<>();
-            int changees = 0;
-            for (Map.Entry<Integer, String> colonne : typologieParColonne.entrySet()) {
-                String brut = row.value(colonne.getKey());
-                GrilleCompetences.CelluleCompetence lue = GrilleCompetences.cellule(brut);
-                if (!lue.lisible()) {
-                    reasons.add("Colonne « " + table.columns().get(colonne.getKey()) + " » : « " + brut.trim()
-                            + " » n'est pas un niveau (attendu : DEBUTANT, AUTONOME ou REFERENT, ou vide pour "
-                            + "laisser l'appréciation telle quelle).");
-                    continue;
-                }
-                if (lue.vide()) {
-                    continue;
-                }
-                if (competences.get(colonne.getValue()) != lue.niveau()) {
-                    competences.put(colonne.getValue(), lue.niveau());
-                    changees++;
-                }
-            }
-            dejaVus.put(id, row.line());
-            if (!reasons.isEmpty()) {
-                rows.add(new ImportedCompetencesRow(
-                        row.line(), label, id, ImportCompetencesAction.REJECTED, reasons, 0));
-                continue;
-            }
-            if (changees == 0) {
-                rows.add(new ImportedCompetencesRow(
-                        row.line(), label, id, ImportCompetencesAction.UNCHANGED, List.of(), 0));
-                continue;
-            }
-            aEcrire.add(GrilleCompetences.withCompetences(animateur, competences, null));
-            rows.add(new ImportedCompetencesRow(
-                    row.line(), label, id, ImportCompetencesAction.UPDATED, List.of(), changees));
+            return animateur != null ? animateur : parIdNormalise.get(normalise(label));
         }
-        return new Analyse(String.valueOf(table.separator()), columns, rows, warnings, aEcrire);
+    }
+
+    private static ImportedCompetencesRow analyseRow(
+            CsvParser.Row row,
+            AnimateurIndex index,
+            Map<Integer, String> typologieParColonne,
+            List<String> headers,
+            Map<String, Integer> dejaVus,
+            List<Animateur> aEcrire) {
+        String label = row.value(0).trim();
+        Animateur animateur = index.find(label);
+        if (animateur == null) {
+            String motif = label.isEmpty()
+                    ? "Première colonne vide : chaque ligne doit porter l'identifiant de l'animateur."
+                    : "Aucun animateur « " + label + " » dans l'édition : créez la fiche d'abord, l'import "
+                            + "ne crée pas d'animateur.";
+            return new ImportedCompetencesRow(
+                    row.line(), label, null, ImportCompetencesAction.REJECTED, List.of(motif), 0);
+        }
+        String id = animateur.getId();
+        if (dejaVus.containsKey(id)) {
+            return new ImportedCompetencesRow(
+                    row.line(),
+                    label,
+                    id,
+                    ImportCompetencesAction.REJECTED,
+                    List.of("L'animateur " + id + " est déjà décrit ligne " + dejaVus.get(id)
+                            + " : cette ligne est ignorée."),
+                    0);
+        }
+        Map<String, NiveauCompetence> competences =
+                new LinkedHashMap<>(animateur.getCompetences() == null ? Map.of() : animateur.getCompetences());
+        List<String> reasons = new ArrayList<>();
+        int changees = applyCells(row, typologieParColonne, headers, competences, reasons);
+        dejaVus.put(id, row.line());
+        if (!reasons.isEmpty()) {
+            return new ImportedCompetencesRow(row.line(), label, id, ImportCompetencesAction.REJECTED, reasons, 0);
+        }
+        if (changees == 0) {
+            return new ImportedCompetencesRow(row.line(), label, id, ImportCompetencesAction.UNCHANGED, List.of(), 0);
+        }
+        aEcrire.add(GrilleCompetences.withCompetences(animateur, competences, null));
+        return new ImportedCompetencesRow(row.line(), label, id, ImportCompetencesAction.UPDATED, List.of(), changees);
+    }
+
+    /** Lays the row's readable cells over {@code competences}; returns how many levels moved. */
+    private static int applyCells(
+            CsvParser.Row row,
+            Map<Integer, String> typologieParColonne,
+            List<String> headers,
+            Map<String, NiveauCompetence> competences,
+            List<String> reasons) {
+        int changees = 0;
+        for (Map.Entry<Integer, String> colonne : typologieParColonne.entrySet()) {
+            String brut = row.value(colonne.getKey());
+            GrilleCompetences.CelluleCompetence lue = GrilleCompetences.cellule(brut);
+            if (!lue.lisible()) {
+                reasons.add("Colonne « " + headers.get(colonne.getKey()) + " » : « " + brut.trim()
+                        + " » n'est pas un niveau (attendu : DEBUTANT, AUTONOME ou REFERENT, ou vide pour "
+                        + "laisser l'appréciation telle quelle).");
+            } else if (!lue.vide() && competences.get(colonne.getValue()) != lue.niveau()) {
+                competences.put(colonne.getValue(), lue.niveau());
+                changees++;
+            }
+        }
+        return changees;
     }
 
     /** Case and accents aside, the way the stand matrix compares a name. */
@@ -360,7 +400,7 @@ public class CompetencesGrilleService {
 
     /** Thousands spaced out, the way the other imports write their caps. */
     private static String grouped(int value) {
-        return String.valueOf(value).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
+        return String.format(Locale.ROOT, "%,d", value).replace(',', ' ');
     }
 
     private static void refuseSpreadsheet(String fileName, String content) {

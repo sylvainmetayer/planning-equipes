@@ -82,7 +82,7 @@ public class JournalActionFilter implements ContainerResponseFilter {
         TokenOwner proprietaire = requestScope.getTokenOwner();
         String animateurId = proprietaire == null ? null : proprietaire.animateurId();
         Acteur acteur = acteur(prouve);
-        journal.record(
+        journal.recordAction(
                 action.get(),
                 acteur,
                 switch (acteur) {

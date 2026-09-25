@@ -44,6 +44,17 @@ public record AnimateurCsvMapping(
         Integer souhaits,
         Integer joursIndisponibles) {
 
+    /* The field keys of ALIASES, as {@link #match} is asked for them. */
+    private static final String FIELD_ID = "id";
+    private static final String FIELD_PRENOM = "prenom";
+    private static final String FIELD_NOM = "nom";
+    private static final String FIELD_DATE_NAISSANCE = "dateNaissance";
+    private static final String FIELD_EMAIL = "email";
+    private static final String FIELD_MANAGER = "manager";
+    private static final String FIELD_COMPETENCES = "competences";
+    private static final String FIELD_SOUHAITS = "souhaits";
+    private static final String FIELD_JOURS_INDISPONIBLES = "joursIndisponibles";
+
     /**
      * The header spellings each field answers to, accents and case removed.
      *
@@ -54,10 +65,10 @@ public record AnimateurCsvMapping(
      * « Date de naiss. ».</p>
      */
     private static final Map<String, List<String>> ALIASES = Map.of(
-            "id", List.of("id", "identifiant", "matricule", "code"),
-            "prenom", List.of("prenom", "firstname", "first name", "given name"),
-            "nom", List.of("nom", "nom de famille", "lastname", "last name", "surname", "name"),
-            "dateNaissance",
+            FIELD_ID, List.of("id", "identifiant", "matricule", "code"),
+            FIELD_PRENOM, List.of("prenom", "firstname", "first name", "given name"),
+            FIELD_NOM, List.of("nom", "nom de famille", "lastname", "last name", "surname", "name"),
+            FIELD_DATE_NAISSANCE,
                     List.of(
                             "date de naissance",
                             "datenaissance",
@@ -68,11 +79,11 @@ public record AnimateurCsvMapping(
                             "birthdate",
                             "birth date",
                             "date of birth"),
-            "email", List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique"),
-            "manager", List.of("manager", "responsable", "encadrant", "chef"),
-            "competences", List.of("competences", "competence", "typologies", "typologie", "skills"),
-            "souhaits", List.of("souhaits", "souhait", "voeux", "preferences", "wishes"),
-            "joursIndisponibles",
+            FIELD_EMAIL, List.of("email", "e mail", "mail", "adresse mail", "courriel", "adresse electronique"),
+            FIELD_MANAGER, List.of("manager", "responsable", "encadrant", "chef"),
+            FIELD_COMPETENCES, List.of("competences", "competence", "typologies", "typologie", "skills"),
+            FIELD_SOUHAITS, List.of("souhaits", "souhait", "voeux", "preferences", "wishes"),
+            FIELD_JOURS_INDISPONIBLES,
                     List.of(
                             "jours indisponibles",
                             "joursindisponibles",
@@ -105,15 +116,15 @@ public record AnimateurCsvMapping(
                 columns.stream().map(AnimateurCsvMapping::normalise).toList();
         boolean[] taken = new boolean[normalised.size()];
         return new AnimateurCsvMapping(
-                match(normalised, taken, "id"),
-                match(normalised, taken, "prenom"),
-                match(normalised, taken, "nom"),
-                match(normalised, taken, "dateNaissance"),
-                match(normalised, taken, "email"),
-                match(normalised, taken, "manager"),
-                match(normalised, taken, "competences"),
-                match(normalised, taken, "souhaits"),
-                match(normalised, taken, "joursIndisponibles"));
+                match(normalised, taken, FIELD_ID),
+                match(normalised, taken, FIELD_PRENOM),
+                match(normalised, taken, FIELD_NOM),
+                match(normalised, taken, FIELD_DATE_NAISSANCE),
+                match(normalised, taken, FIELD_EMAIL),
+                match(normalised, taken, FIELD_MANAGER),
+                match(normalised, taken, FIELD_COMPETENCES),
+                match(normalised, taken, FIELD_SOUHAITS),
+                match(normalised, taken, FIELD_JOURS_INDISPONIBLES));
     }
 
     /**

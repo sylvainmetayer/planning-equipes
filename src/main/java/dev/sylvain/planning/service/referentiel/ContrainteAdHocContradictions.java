@@ -86,11 +86,10 @@ public final class ContrainteAdHocContradictions {
      * Contradictions the whole set holds, each reported once. Used to refuse a
      * scenario import, and to report — before any solve — exceptions entered
      * before this check existed.
-     */
-    /**
-     * Every contradiction among {@code contraintes}, each one checked against
+     *
+     * <p>Every contradiction among {@code contraintes}, each one checked against
      * the ones ahead of it — the same pairs, in the same order, as calling
-     * {@link #against} for each of them on its prefix.
+     * {@link #against} for each of them on its prefix.</p>
      *
      * <p>That naive form compared every exception with every earlier one, and
      * its fourth rule, for each forced assignment, every earlier forced
@@ -159,39 +158,63 @@ public final class ContrainteAdHocContradictions {
             Map<String, List<Integer>> forceesParAnimateurSeul,
             Map<String, List<Integer>> incompatibilitesParAnimateur,
             Map<Long, Creneau> creneaux) {
-        List<Contradiction> contradictions = new ArrayList<>();
         if (candidate.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE) {
-            String seul = soleAnimateur(candidate);
-            if (seul == null) {
-                return contradictions;
-            }
-            List<Integer> incompatibilites = incompatibilitesParAnimateur.getOrDefault(seul, List.of());
-            if (incompatibilites.isEmpty()) {
-                return contradictions;
-            }
-            TreeSet<Integer> forcees = new TreeSet<>();
-            for (int incompatibilite : incompatibilites) {
-                for (String animateur : animateurIds(known.get(incompatibilite))) {
-                    forcees.addAll(forceesParAnimateurSeul.getOrDefault(animateur, List.of()));
-                }
-            }
-            for (int other : forcees) {
-                for (int incompatibilite : incompatibilites) {
-                    forbiddenTogether(known.get(other), candidate, known.get(incompatibilite), creneaux)
-                            .ifPresent(contradictions::add);
-                }
-            }
-        } else if (candidate.getType() == TypeContrainteAdHoc.INCOMPATIBILITE) {
-            TreeSet<Integer> forcees = new TreeSet<>();
-            for (String animateur : animateurIds(candidate)) {
+            return forcedCandidateIndexed(
+                    candidate, known, forceesParAnimateurSeul, incompatibilitesParAnimateur, creneaux);
+        }
+        if (candidate.getType() == TypeContrainteAdHoc.INCOMPATIBILITE) {
+            return incompatibleCandidateIndexed(candidate, known, forceesParAnimateurSeul, creneaux);
+        }
+        return new ArrayList<>();
+    }
+
+    /** Rule 4 for a forced assignment: against every earlier forced one and incompatibility sharing its animateur. */
+    private static List<Contradiction> forcedCandidateIndexed(
+            ContrainteAdHoc candidate,
+            List<ContrainteAdHoc> known,
+            Map<String, List<Integer>> forceesParAnimateurSeul,
+            Map<String, List<Integer>> incompatibilitesParAnimateur,
+            Map<Long, Creneau> creneaux) {
+        List<Contradiction> contradictions = new ArrayList<>();
+        String seul = soleAnimateur(candidate);
+        if (seul == null) {
+            return contradictions;
+        }
+        List<Integer> incompatibilites = incompatibilitesParAnimateur.getOrDefault(seul, List.of());
+        if (incompatibilites.isEmpty()) {
+            return contradictions;
+        }
+        TreeSet<Integer> forcees = new TreeSet<>();
+        for (int incompatibilite : incompatibilites) {
+            for (String animateur : animateurIds(known.get(incompatibilite))) {
                 forcees.addAll(forceesParAnimateurSeul.getOrDefault(animateur, List.of()));
             }
-            List<Integer> ordre = new ArrayList<>(forcees);
-            for (int first = 0; first < ordre.size(); first++) {
-                for (int second = first + 1; second < ordre.size(); second++) {
-                    forbiddenTogether(known.get(ordre.get(first)), known.get(ordre.get(second)), candidate, creneaux)
-                            .ifPresent(contradictions::add);
-                }
+        }
+        for (int other : forcees) {
+            for (int incompatibilite : incompatibilites) {
+                forbiddenTogether(known.get(other), candidate, known.get(incompatibilite), creneaux)
+                        .ifPresent(contradictions::add);
+            }
+        }
+        return contradictions;
+    }
+
+    /** Rule 4 for an incompatibility: every pair of earlier forced assignments of its animateurs. */
+    private static List<Contradiction> incompatibleCandidateIndexed(
+            ContrainteAdHoc candidate,
+            List<ContrainteAdHoc> known,
+            Map<String, List<Integer>> forceesParAnimateurSeul,
+            Map<Long, Creneau> creneaux) {
+        List<Contradiction> contradictions = new ArrayList<>();
+        TreeSet<Integer> forcees = new TreeSet<>();
+        for (String animateur : animateurIds(candidate)) {
+            forcees.addAll(forceesParAnimateurSeul.getOrDefault(animateur, List.of()));
+        }
+        List<Integer> ordre = new ArrayList<>(forcees);
+        for (int first = 0; first < ordre.size(); first++) {
+            for (int second = first + 1; second < ordre.size(); second++) {
+                forbiddenTogether(known.get(ordre.get(first)), known.get(ordre.get(second)), candidate, creneaux)
+                        .ifPresent(contradictions::add);
             }
         }
         return contradictions;
@@ -258,7 +281,7 @@ public final class ContrainteAdHocContradictions {
                     default -> null;
                 };
         Set<String> pair = animateurPair(candidate);
-        if (opposite == null || pair == null || other.getType() != opposite || !pair.equals(animateurPair(other))) {
+        if (opposite == null || pair.isEmpty() || other.getType() != opposite || !pair.equals(animateurPair(other))) {
             return Optional.empty();
         }
         return Optional.of(new Contradiction(
@@ -410,7 +433,7 @@ public final class ContrainteAdHocContradictions {
             return Optional.empty();
         }
         Set<String> pair = animateurPair(incompatibility);
-        if (pair == null
+        if (pair.isEmpty()
                 || !pair.equals(Set.of(firstAnimateur, secondAnimateur))
                 || !covers(incompatibility, first)
                 || !covers(incompatibility, second)) {
@@ -456,18 +479,19 @@ public final class ContrainteAdHocContradictions {
     private static boolean overlap(Creneau first, Creneau second) {
         LocalDateTime[] firstWindow = window(first);
         LocalDateTime[] secondWindow = window(second);
-        if (firstWindow == null || secondWindow == null) {
+        if (firstWindow.length == 0 || secondWindow.length == 0) {
             return false;
         }
         return firstWindow[0].isBefore(secondWindow[1]) && secondWindow[0].isBefore(firstWindow[1]);
     }
 
+    /** {@code [start, end]} of the créneau, or an empty array when its date or an hour is unknown. */
     private static LocalDateTime[] window(Creneau creneau) {
         if (creneau == null
                 || creneau.getDate() == null
                 || creneau.getHeureDebut() == null
                 || creneau.getHeureFin() == null) {
-            return null;
+            return new LocalDateTime[0];
         }
         LocalDateTime debut = creneau.getDate().atTime(creneau.getHeureDebut());
         LocalDateTime fin = creneau.getDate().atTime(creneau.getHeureFin());
@@ -531,16 +555,16 @@ public final class ContrainteAdHocContradictions {
         return ids.size() == 1 ? ids.getFirst() : null;
     }
 
-    /** The unordered pair of the first two animateur ids, or null when the constraint doesn't name a genuine pair. */
+    /** The unordered pair of the first two animateur ids, or an empty set when the constraint doesn't name a genuine pair. */
     private static Set<String> animateurPair(ContrainteAdHoc contrainte) {
         List<Animateur> animateurs = contrainte.getAnimateursConcernes();
         if (animateurs == null || animateurs.size() < 2 || animateurs.get(0) == null || animateurs.get(1) == null) {
-            return null;
+            return Set.of();
         }
         String premier = animateurs.get(0).getId();
         String second = animateurs.get(1).getId();
         if (premier == null || second == null || premier.equals(second)) {
-            return null;
+            return Set.of();
         }
         return Set.of(premier, second);
     }

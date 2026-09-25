@@ -46,7 +46,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class PlanningKpiService {
 
-    private static final Pattern SCORE_PATTERN = Pattern.compile("(-?\\d+)hard/(-?\\d+)medium/(-?\\d+)soft");
+    private static final Pattern SCORE_PATTERN = Pattern.compile("(-?+\\d++)hard/(-?+\\d++)medium/(-?+\\d++)soft");
 
     private final PlanningPersistenceService persistenceService;
 
@@ -190,7 +190,7 @@ public class PlanningKpiService {
         int modifications = referenceDataService.listContraintesAdHoc().size()
                 + referenceDataService.listVerrouillages().size();
         List<ConsigneService.Indicateur> indicateurs = consigneService.indicateurs();
-        return compute(
+        return compute(new KpiInputs(
                         affectations,
                         diagnostic == null ? null : diagnostic.score(),
                         violationsByContrainte(diagnostic),
@@ -202,7 +202,7 @@ public class PlanningKpiService {
                                         .mapToInt(ConsigneService.Indicateur::minutesFermees)
                                         .sum()
                                 / 60.0,
-                        EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux()))
+                        EffectiveWork.breakMinutesPerAnimateur(planning.getPostes(), planning.parametresLegaux())))
                 .withReading(diagnostic == null ? null : diagnostic.lecture());
     }
 
@@ -275,7 +275,7 @@ public class PlanningKpiService {
             Integer modificationsManuelles,
             Long dureeSolveSecondes,
             Integer plancherMedium) {
-        return compute(
+        return compute(new KpiInputs(
                 affectations,
                 score,
                 violationsParContrainte,
@@ -283,35 +283,17 @@ public class PlanningKpiService {
                 dureeSolveSecondes,
                 plancherMedium,
                 null,
-                null);
+                null,
+                Map.of()));
     }
 
     /**
-     * Same, with the consigne figures of the plan (issue #4): how many dates a
-     * consigne governed, and the seat-hours their bands took away.
-     */
-    public static PlanningKpi compute(
-            List<AffectationKpi> affectations,
-            String score,
-            Map<String, Integer> violationsParContrainte,
-            Integer modificationsManuelles,
-            Long dureeSolveSecondes,
-            Integer plancherMedium,
-            Integer journeesSousConsigne,
-            Double heuresFermeesParConsigne) {
-        return compute(
-                affectations,
-                score,
-                violationsParContrainte,
-                modificationsManuelles,
-                dureeSolveSecondes,
-                plancherMedium,
-                journeesSousConsigne,
-                heuresFermeesParConsigne,
-                Map.of());
-    }
-
-    /**
+     * What the aggregation reads.
+     *
+     * @param plancherMedium           the constant part of the medium score the
+     *                                 analysis measured, {@code null} when it did not
+     * @param journeesSousConsigne     how many dates a consigne governed (issue #4)
+     * @param heuresFermeesParConsigne the seat-hours their bands took away
      * @param breakMinutesPerAnimateur minutes of legal break each
      *        animateur's days owe, deducted from their hours so this report
      *        counts travail effectif like every other hour read-out (ADR 0048).
@@ -319,7 +301,7 @@ public class PlanningKpiService {
      *        an old snapshot, whose seats carry no start time: those rows stay
      *        at amplitude, and the KPI page says so.
      */
-    public static PlanningKpi compute(
+    record KpiInputs(
             List<AffectationKpi> affectations,
             String score,
             Map<String, Integer> violationsParContrainte,
@@ -328,17 +310,66 @@ public class PlanningKpiService {
             Integer plancherMedium,
             Integer journeesSousConsigne,
             Double heuresFermeesParConsigne,
-            Map<String, Integer> breakMinutesPerAnimateur) {
-        Set<String> stands = new LinkedHashSet<>();
-        Set<String> creneaux = new LinkedHashSet<>();
-        Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
-        int pourvus = 0;
-        boolean heuresIncompletes = false;
-        for (AffectationKpi affectation : affectations) {
+            Map<String, Integer> breakMinutesPerAnimateur) {}
+
+    /** Same, with every figure the caller holds — the consigne ones and the breaks owed included. */
+    public static PlanningKpi compute(KpiInputs inputs) {
+        SeatTally tally = SeatTally.of(inputs.affectations());
+        Map<String, Double> heuresParAnimateur = tally.heuresParAnimateur;
+        inputs.breakMinutesPerAnimateur()
+                .forEach((animateurId, minutes) ->
+                        heuresParAnimateur.computeIfPresent(animateurId, (id, heures) -> heures - minutes / 60.0));
+        Dispersion dispersion = dispersion(heuresParAnimateur.values());
+        int[] niveaux = parseScore(inputs.score());
+        int total = inputs.affectations().size();
+        Integer modificationsManuelles = inputs.modificationsManuelles();
+        Double taux = modificationsManuelles == null || total == 0 ? null : modificationsManuelles / (double) total;
+        return new PlanningKpi(
+                inputs.score(),
+                level(niveaux, 0),
+                level(niveaux, 1),
+                level(niveaux, 2),
+                total,
+                tally.pourvus,
+                heuresParAnimateur.size(),
+                tally.stands.size(),
+                tally.creneaux.size(),
+                dispersion.total(),
+                dispersion.moyenne(),
+                dispersion.ecartType(),
+                dispersion.min(),
+                dispersion.max(),
+                tally.heuresIncompletes,
+                modificationsManuelles,
+                taux,
+                inputs.dureeSolveSecondes(),
+                inputs.violationsParContrainte() == null ? Map.of() : inputs.violationsParContrainte(),
+                mediumNetOfFloor(niveaux, inputs.plancherMedium()),
+                inputs.plancherMedium(),
+                inputs.journeesSousConsigne(),
+                inputs.heuresFermeesParConsigne(),
+                null);
+    }
+
+    /** The seats counted once: distinct stands and créneaux, the filled ones, and the hours per animateur. */
+    private static final class SeatTally {
+        private final Set<String> stands = new LinkedHashSet<>();
+        private final Set<String> creneaux = new LinkedHashSet<>();
+        private final Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
+        private int pourvus;
+        private boolean heuresIncompletes;
+
+        static SeatTally of(List<AffectationKpi> affectations) {
+            SeatTally tally = new SeatTally();
+            affectations.forEach(tally::add);
+            return tally;
+        }
+
+        private void add(AffectationKpi affectation) {
             stands.add(affectation.standId());
             creneaux.add(affectation.creneauId());
             if (affectation.animateurId() == null) {
-                continue;
+                return;
             }
             pourvus++;
             if (affectation.dureeMinutes() == null) {
@@ -347,44 +378,25 @@ public class PlanningKpiService {
                 heuresParAnimateur.merge(affectation.animateurId(), affectation.dureeMinutes() / 60.0, Double::sum);
             }
         }
-        breakMinutesPerAnimateur.forEach((animateurId, minutes) ->
-                heuresParAnimateur.computeIfPresent(animateurId, (id, heures) -> heures - minutes / 60.0));
-        Dispersion dispersion = dispersion(heuresParAnimateur.values());
-        int[] niveaux = parseScore(score);
-        int total = affectations.size();
-        Double taux = modificationsManuelles == null || total == 0 ? null : modificationsManuelles / (double) total;
-        return new PlanningKpi(
-                score,
-                niveaux == null ? null : niveaux[0],
-                niveaux == null ? null : niveaux[1],
-                niveaux == null ? null : niveaux[2],
-                total,
-                pourvus,
-                heuresParAnimateur.size(),
-                stands.size(),
-                creneaux.size(),
-                dispersion == null ? null : dispersion.total,
-                dispersion == null ? null : dispersion.moyenne,
-                dispersion == null ? null : dispersion.ecartType,
-                dispersion == null ? null : dispersion.min,
-                dispersion == null ? null : dispersion.max,
-                heuresIncompletes,
-                modificationsManuelles,
-                taux,
-                dureeSolveSecondes,
-                violationsParContrainte == null ? Map.of() : violationsParContrainte,
-                niveaux == null || plancherMedium == null ? null : niveaux[1] - plancherMedium,
-                plancherMedium,
-                journeesSousConsigne,
-                heuresFermeesParConsigne,
-                null);
     }
 
-    private record Dispersion(double total, double moyenne, double ecartType, double min, double max) {}
+    private static Integer level(int[] niveaux, int index) {
+        return niveaux.length == 0 ? null : niveaux[index];
+    }
+
+    /** The medium score net of its floor, unmeasured when either is. */
+    private static Integer mediumNetOfFloor(int[] niveaux, Integer plancherMedium) {
+        return niveaux.length == 0 || plancherMedium == null ? null : niveaux[1] - plancherMedium;
+    }
+
+    /** Spread of the hours per animateur; every figure {@code null} when nobody holds a seat. */
+    private record Dispersion(Double total, Double moyenne, Double ecartType, Double min, Double max) {
+        static final Dispersion NONE = new Dispersion(null, null, null, null, null);
+    }
 
     private static Dispersion dispersion(Collection<Double> valeurs) {
         if (valeurs.isEmpty()) {
-            return null;
+            return Dispersion.NONE;
         }
         double total = 0;
         double min = Double.MAX_VALUE;
@@ -404,17 +416,17 @@ public class PlanningKpiService {
 
     /**
      * The three levels of a {@code HardMediumSoftScore} rendered as text (e.g.
-     * {@code 0hard/-3medium/-120soft}), or {@code null} when the text does not
-     * carry them (unsolved score, older format). An {@code -Ninit/} prefix is
-     * tolerated: the levels behind it still parse.
+     * {@code 0hard/-3medium/-120soft}), or an empty array when the text does
+     * not carry them (no score, unsolved score, older format). An
+     * {@code -Ninit/} prefix is tolerated: the levels behind it still parse.
      */
     static int[] parseScore(String score) {
         if (score == null) {
-            return null;
+            return new int[0];
         }
         Matcher matcher = SCORE_PATTERN.matcher(score);
         if (!matcher.find()) {
-            return null;
+            return new int[0];
         }
         return new int[] {
             Integer.parseInt(matcher.group(1)), Integer.parseInt(matcher.group(2)), Integer.parseInt(matcher.group(3))

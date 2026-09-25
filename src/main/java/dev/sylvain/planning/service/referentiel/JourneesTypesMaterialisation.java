@@ -89,32 +89,47 @@ public final class JourneesTypesMaterialisation {
                         + " est affecté à une journée type inconnue : " + affectation.journeeTypeId());
             }
             int avant = misAJour.size() + aCreer.size() + aSupprimer.size();
-            Map<String, Creneau> duJour = new LinkedHashMap<>();
-            for (Creneau creneau : existantsParDate.getOrDefault(affectation.date(), List.of())) {
-                // A duplicate slot (same hours twice) is the grid's DOUBLON
-                // error: the first row stands for the key, the others go.
-                if (duJour.putIfAbsent(keyOf(creneau), creneau) != null) {
-                    aSupprimer.add(creneau);
-                }
-            }
-            for (VacationType vacation : journeeType.getVacations()) {
-                Creneau present = duJour.remove(vacation.key());
-                if (present == null) {
-                    aCreer.add(vacation.toCreneau(affectation.date()));
-                } else if (present.isCouverturePause() != vacation.couverturePause()) {
-                    Creneau corrige = copie(present);
-                    corrige.setCouverturePause(vacation.couverturePause());
-                    misAJour.add(corrige);
-                } else {
-                    conserves.add(present);
-                }
-            }
-            aSupprimer.addAll(duJour.values());
+            Plan duJour = planDay(
+                    affectation.date(), journeeType, existantsParDate.getOrDefault(affectation.date(), List.of()));
+            conserves.addAll(duJour.conserves());
+            misAJour.addAll(duJour.misAJour());
+            aCreer.addAll(duJour.aCreer());
+            aSupprimer.addAll(duJour.aSupprimer());
             if (misAJour.size() + aCreer.size() + aSupprimer.size() > avant) {
                 datesEnEcart.add(affectation.date());
             }
         }
         return new Plan(conserves, misAJour, aCreer, aSupprimer, datesEnEcart);
+    }
+
+    /** The plan of one calendar date against the créneaux it already has; no drift dates. */
+    private static Plan planDay(LocalDate date, JourneeType journeeType, List<Creneau> existantsDuJour) {
+        List<Creneau> conserves = new ArrayList<>();
+        List<Creneau> misAJour = new ArrayList<>();
+        List<Creneau> aCreer = new ArrayList<>();
+        List<Creneau> aSupprimer = new ArrayList<>();
+        Map<String, Creneau> duJour = new LinkedHashMap<>();
+        for (Creneau creneau : existantsDuJour) {
+            // A duplicate slot (same hours twice) is the grid's DOUBLON
+            // error: the first row stands for the key, the others go.
+            if (duJour.putIfAbsent(keyOf(creneau), creneau) != null) {
+                aSupprimer.add(creneau);
+            }
+        }
+        for (VacationType vacation : journeeType.getVacations()) {
+            Creneau present = duJour.remove(vacation.key());
+            if (present == null) {
+                aCreer.add(vacation.toCreneau(date));
+            } else if (present.isCouverturePause() != vacation.couverturePause()) {
+                Creneau corrige = copie(present);
+                corrige.setCouverturePause(vacation.couverturePause());
+                misAJour.add(corrige);
+            } else {
+                conserves.add(present);
+            }
+        }
+        aSupprimer.addAll(duJour.values());
+        return new Plan(conserves, misAJour, aCreer, aSupprimer, List.of());
     }
 
     /** The templates a grid implies, and the calendar that maps its dates onto them. */

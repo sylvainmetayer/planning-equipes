@@ -15,6 +15,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.DateTimeParseException;
@@ -32,6 +33,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -141,7 +143,7 @@ public class AnimateurCsvImportService {
     static final int MAX_EMAIL = 255;
 
     /** The four bytes every ZIP archive — hence every {@code .xlsx} — starts with. */
-    private static final String ZIP_SIGNATURE = "PK";
+    private static final String ZIP_SIGNATURE = "PK\u0003\u0004";
 
     /** What the browser leaves where a byte it could not decode as UTF-8 was. */
     private static final char REPLACEMENT = '\uFFFD';
@@ -390,7 +392,7 @@ public class AnimateurCsvImportService {
 
     /** {@code 1000000} written « 1 000 000 » — the cap is read by a human, in a French sentence. */
     private static String grouped(int value) {
-        return String.valueOf(value).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
+        return String.format(Locale.ROOT, "%,d", value).replace(',', ' ');
     }
 
     private Analysis build(
@@ -400,7 +402,7 @@ public class AnimateurCsvImportService {
             Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
         Index index = new Index(existants, pendingDeclarations());
-        Dates dates = new Dates(LocalDate.now(), joursEvenement);
+        Dates dates = new Dates(LocalDate.now(ZoneId.systemDefault()), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
         List<Animateur> toWrite = new ArrayList<>();
@@ -578,18 +580,7 @@ public class AnimateurCsvImportService {
         if (precedente != null) {
             reasons.add("Doublon dans le fichier : la même personne est déjà décrite ligne " + precedente + ".");
         }
-        if (prenom.isEmpty() && nom.isEmpty() && idCell.isEmpty()) {
-            // Checked on the cells rather than on the label, which falls back to
-            // the e-mail: a row carrying nothing but an address would otherwise
-            // create a nameless fiche.
-            reasons.add("La ligne ne nomme personne : prénom, nom et identifiant sont vides.");
-        } else {
-            // The fiche as it would stand after the row, not the cell: a row
-            // matched by id or e-mail may leave the names blank when the fiche
-            // already carries them, exactly as it may leave the birth date.
-            checkPresent("Prénom absent", effective(prenom, existant == null ? null : existant.getPrenom()), reasons);
-            checkPresent("Nom absent", effective(nom, existant == null ? null : existant.getNom()), reasons);
-        }
+        checkNames(prenom, nom, idCell, existant, reasons);
 
         int motifsAvantDate = reasons.size();
         LocalDate dateNaissance = readBirthDate(row, mapping, existant, dates.today(), reasons, warnings);
@@ -597,9 +588,7 @@ public class AnimateurCsvImportService {
             reasons.add(
                     "Date de naissance absente : elle est obligatoire, tout le régime " + "mineur / majeur en dépend.");
         }
-        if (!email.isEmpty() && (!email.contains("@") || email.contains(" "))) {
-            reasons.add("Adresse e-mail invalide : « " + email + " ».");
-        }
+        checkEmail(email, reasons);
         boolean manager = readManager(row, mapping, existant, reasons);
 
         Map<String, NiveauCompetence> competences = readCompetences(row, mapping, existant, reasons);
@@ -614,16 +603,7 @@ public class AnimateurCsvImportService {
         }
 
         if (!reasons.isEmpty()) {
-            return new RowOutcome(
-                    new AnimateurCsvImportReport.ImportedRow(
-                            row.line(),
-                            label,
-                            existant != null ? existant.getId() : null,
-                            AnimateurCsvImportReport.ImportAction.REJECTED,
-                            List.copyOf(reasons),
-                            List.of(),
-                            List.of()),
-                    null);
+            return rejected(row, label, existant, reasons);
         }
 
         // Only a row that is going in is remembered as an identity: a duplicate
@@ -636,11 +616,11 @@ public class AnimateurCsvImportService {
 
         Animateur animateur = new Animateur();
         animateur.setId(existant != null ? existant.getId() : generateId(prenom, nom, idCell, index.idsPris));
-        animateur.setPrenom(!prenom.isEmpty() || existant == null ? prenom : existant.getPrenom());
-        animateur.setNom(!nom.isEmpty() || existant == null ? nom : existant.getNom());
+        animateur.setPrenom(cellOrFiche(prenom, existant, Animateur::getPrenom));
+        animateur.setNom(cellOrFiche(nom, existant, Animateur::getNom));
         animateur.setDateNaissance(dateNaissance);
         animateur.setManager(manager);
-        animateur.setEmail(!email.isEmpty() ? email : (existant != null ? existant.getEmail() : null));
+        animateur.setEmail(effectiveEmail(email, existant));
         animateur.setCompetences(competences);
         animateur.setSouhaits(souhaits);
         animateur.setJoursIndisponibles(jours);
@@ -656,6 +636,53 @@ public class AnimateurCsvImportService {
                         List.copyOf(warnings),
                         List.copyOf(jours)),
                 animateur);
+    }
+
+    private static RowOutcome rejected(CsvParser.Row row, String label, Animateur existant, List<String> reasons) {
+        return new RowOutcome(
+                new AnimateurCsvImportReport.ImportedRow(
+                        row.line(),
+                        label,
+                        existant != null ? existant.getId() : null,
+                        AnimateurCsvImportReport.ImportAction.REJECTED,
+                        List.copyOf(reasons),
+                        List.of(),
+                        List.of()),
+                null);
+    }
+
+    private static void checkNames(String prenom, String nom, String idCell, Animateur existant, List<String> reasons) {
+        if (prenom.isEmpty() && nom.isEmpty() && idCell.isEmpty()) {
+            // Checked on the cells rather than on the label, which falls back to
+            // the e-mail: a row carrying nothing but an address would otherwise
+            // create a nameless fiche.
+            reasons.add("La ligne ne nomme personne : prénom, nom et identifiant sont vides.");
+        } else {
+            // The fiche as it would stand after the row, not the cell: a row
+            // matched by id or e-mail may leave the names blank when the fiche
+            // already carries them, exactly as it may leave the birth date.
+            checkPresent("Prénom absent", effective(prenom, existant == null ? null : existant.getPrenom()), reasons);
+            checkPresent("Nom absent", effective(nom, existant == null ? null : existant.getNom()), reasons);
+        }
+    }
+
+    private static void checkEmail(String email, List<String> reasons) {
+        if (!email.isEmpty() && (!email.contains("@") || email.contains(" "))) {
+            reasons.add("Adresse e-mail invalide : « " + email + " ».");
+        }
+    }
+
+    /** A name cell left blank keeps what the matched fiche carries; a new fiche takes the cell as is. */
+    private static String cellOrFiche(String cell, Animateur existant, Function<Animateur, String> field) {
+        return !cell.isEmpty() || existant == null ? cell : field.apply(existant);
+    }
+
+    /** The cell when it says something, else what the fiche already carries. */
+    private static String effectiveEmail(String email, Animateur existant) {
+        if (!email.isEmpty()) {
+            return email;
+        }
+        return existant != null ? existant.getEmail() : null;
     }
 
     /* ---------------------------- Row-level reads ---------------------------- */
@@ -825,7 +852,7 @@ public class AnimateurCsvImportService {
             if (parts.length == 2 && !parts[1].isBlank()) {
                 try {
                     niveau = NiveauCompetence.valueOf(parts[1].trim().toUpperCase(Locale.ROOT));
-                } catch (IllegalArgumentException e) {
+                } catch (IllegalArgumentException _) {
                     reasons.add("Niveau de compétence inconnu : « " + parts[1].trim()
                             + " » (attendu : DEBUTANT, AUTONOME ou REFERENT).");
                     continue;
@@ -968,7 +995,7 @@ public class AnimateurCsvImportService {
         for (DateTimeFormatter format : dialects) {
             try {
                 return LocalDate.parse(cleaned, format);
-            } catch (DateTimeParseException ignored) {
+            } catch (DateTimeParseException _) {
                 // Try the next dialect.
             }
         }

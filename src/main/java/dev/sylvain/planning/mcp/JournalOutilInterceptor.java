@@ -70,13 +70,13 @@ public class JournalOutilInterceptor {
             // noted them on the way — the same enrichment the REST filter
             // reads, so a « champs modifiés » column no longer depends on
             // which door the write came through.
-            journal.record(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, currentAction.champs(), 200);
+            journal.recordAction(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, currentAction.champs(), 200);
             return resultat;
         } catch (Exception e) {
             // A refused tool call is a fact worth keeping: an assistant that
             // tried to delete an edition and was told no belongs in the
             // history quite as much as one that succeeded.
-            journal.record(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
+            journal.recordAction(action.get(), Acteur.ASSISTANT, PRINCIPAL, entiteId, List.of(), 400);
             throw e;
         }
     }

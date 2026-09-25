@@ -164,19 +164,7 @@ public class ContrainteAdHocRepository {
                      OR date_trunc('milliseconds', contrainte_ad_hoc.modifie_le)
                         = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
-            Creneau creneau = contrainte.getCreneau();
-            ps.setString(2, contrainte.getId());
-            ps.setString(3, contrainte.getType() != null ? contrainte.getType().name() : null);
-            ps.setObject(4, creneau != null ? creneau.getId() : null);
-            ps.setString(
-                    5, contrainte.getStand() != null ? contrainte.getStand().getId() : null);
-            ps.setString(6, contrainte.getRaison());
-            ps.setString(7, contrainte.getCreeParUtilisateurId());
-            Instant creeLe = contrainte.getCreeLe() != null ? contrainte.getCreeLe() : Instant.now();
-            ps.setTimestamp(8, Timestamp.from(creeLe));
-            ps.setObject(9, creneau != null ? creneau.getDate() : null);
-            ps.setObject(10, creneau != null ? creneau.getHeureDebut() : null);
-            ps.setObject(11, creneau != null ? creneau.getHeureFin() : null);
+            bindContrainte(ps, contrainte);
             WriteStamp.bindPrecondition(ps, 12, !failIfPresent, contrainte.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
@@ -191,21 +179,40 @@ public class ContrainteAdHocRepository {
         }
         List<Animateur> cibles = contrainte.getAnimateursConcernes();
         if (cibles != null && !cibles.isEmpty()) {
-            try (PreparedStatement ins = scope.prepareScoped(connection, """
-                    INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
-                    VALUES (?, ?, ?, ?)""")) {
-                int position = 0;
-                for (Animateur animateur : cibles) {
-                    if (animateur == null || animateur.getId() == null) {
-                        continue;
-                    }
-                    ins.setString(2, contrainte.getId());
+            insertTargets(connection, contrainte.getId(), cibles);
+        }
+    }
+
+    /** Placeholders 2 to 11 of the upsert: the exception and the natural key of its créneau. */
+    private static void bindContrainte(PreparedStatement ps, ContrainteAdHoc contrainte) throws SQLException {
+        Creneau creneau = contrainte.getCreneau();
+        ps.setString(2, contrainte.getId());
+        ps.setString(3, contrainte.getType() != null ? contrainte.getType().name() : null);
+        ps.setObject(4, creneau != null ? creneau.getId() : null);
+        ps.setString(5, contrainte.getStand() != null ? contrainte.getStand().getId() : null);
+        ps.setString(6, contrainte.getRaison());
+        ps.setString(7, contrainte.getCreeParUtilisateurId());
+        Instant creeLe = contrainte.getCreeLe() != null ? contrainte.getCreeLe() : Instant.now();
+        ps.setTimestamp(8, Timestamp.from(creeLe));
+        ps.setObject(9, creneau != null ? creneau.getDate() : null);
+        ps.setObject(10, creneau != null ? creneau.getHeureDebut() : null);
+        ps.setObject(11, creneau != null ? creneau.getHeureFin() : null);
+    }
+
+    private void insertTargets(Connection connection, String contrainteId, List<Animateur> cibles) throws SQLException {
+        try (PreparedStatement ins = scope.prepareScoped(connection, """
+                INSERT INTO contrainte_animateur (edition_id, contrainte_id, animateur_id, position)
+                VALUES (?, ?, ?, ?)""")) {
+            int position = 0;
+            for (Animateur animateur : cibles) {
+                if (animateur != null && animateur.getId() != null) {
+                    ins.setString(2, contrainteId);
                     ins.setString(3, animateur.getId());
                     ins.setInt(4, position++);
                     ins.addBatch();
                 }
-                ins.executeBatch();
             }
+            ins.executeBatch();
         }
     }
 }

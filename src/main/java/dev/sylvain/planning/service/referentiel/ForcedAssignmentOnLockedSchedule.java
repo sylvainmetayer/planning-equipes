@@ -128,19 +128,8 @@ public final class ForcedAssignmentOnLockedSchedule {
                         .iterator();
                 sieges.hasNext(); ) {
             PosteAffectation siege = sieges.next();
-            for (String animateurId : nommes) {
-                // Already seated in the scope: the exception is satisfied by a
-                // seat the lock pins rather than blocks, and asks for nothing.
-                if (tenues.contains(new PlaceTenue(
-                        animateurId,
-                        siege.getStand().getId(),
-                        siege.getCreneau().getId()))) {
-                    return Optional.empty();
-                }
-                if (!frozen(verrouillages, animateurId, siege.getCreneau().getId())) {
-                    // One seat this person is still free to take.
-                    return Optional.empty();
-                }
+            if (anyStillOpen(siege, nommes, tenues, verrouillages)) {
+                return Optional.empty();
             }
             LocalDate date = siege.getCreneau().getDate();
             dates.add(date);
@@ -152,6 +141,27 @@ public final class ForcedAssignmentOnLockedSchedule {
             return Optional.empty();
         }
         return Optional.of(new Conflit(contrainte, List.copyOf(dates)));
+    }
+
+    /** Whether somebody the exception names already holds {@code siege}, or is still free to take it. */
+    private static boolean anyStillOpen(
+            PosteAffectation siege,
+            Set<String> nommes,
+            Set<PlaceTenue> tenues,
+            List<VerrouillagePlanning> verrouillages) {
+        for (String animateurId : nommes) {
+            // Already seated in the scope: the exception is satisfied by a
+            // seat the lock pins rather than blocks, and asks for nothing.
+            if (tenues.contains(new PlaceTenue(
+                    animateurId, siege.getStand().getId(), siege.getCreneau().getId()))) {
+                return true;
+            }
+            if (!frozen(verrouillages, animateurId, siege.getCreneau().getId())) {
+                // One seat this person is still free to take.
+                return true;
+            }
+        }
+        return false;
     }
 
     /**

@@ -61,6 +61,8 @@ public final class CoherenceAnalyzer {
     /** How many dates a message spells out before it says "and n others". */
     private static final int DATES_CITEES = 5;
 
+    private static final String STAND_PREFIX = "Le stand ";
+
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
     private CoherenceAnalyzer() {}
@@ -133,38 +135,44 @@ public final class CoherenceAnalyzer {
         List<LocalDate> hors =
                 nouveaux.stream().filter(jour -> !jours.covers(jour)).toList();
         if (!hors.isEmpty()) {
-            avertissements.add(new Avertissement(
-                    TypeAvertissement.INDISPONIBILITE_HORS_EVENEMENT,
-                    (hors.size() == 1
-                                    ? "Indisponibilité hors de l'événement : "
-                                    : "Indisponibilités hors de l'événement : ")
-                            + citer(hors) + ". L'événement court du " + jours.first() + " au " + jours.last()
-                            + " (dates des créneaux de l'édition) : "
-                            + (hors.size() == 1
-                                    ? "ce jour ne recouvre aucun créneau"
-                                    : "ces jours ne recouvrent aucun créneau")
-                            + " et ne changera rien au planning. La saisie est enregistrée."));
+            avertissements.add(outsideEventWarning(hors, jours));
         }
         List<LocalDate> creux = nouveaux.stream()
                 .filter(jours::covers)
                 .filter(jour -> !jours.hasCreneauOn(jour))
                 .toList();
         if (!creux.isEmpty()) {
-            avertissements.add(new Avertissement(
-                    TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU,
-                    (creux.size() == 1
-                                    ? "Indisponibilité sur un jour sans créneau : "
-                                    : "Indisponibilités sur des jours sans créneau : ")
-                            + citer(creux) + ". "
-                            + (creux.size() == 1
-                                    ? "Ce jour est dans l'événement mais ne porte aucun créneau"
-                                    : "Ces jours sont dans l'événement mais ne portent aucun créneau")
-                            + " : l'espace animateur ne "
-                            + (creux.size() == 1 ? "l'affichera pas" : "les affichera pas")
-                            + ", et la première déclaration de disponibilités appliquée "
-                            + (creux.size() == 1 ? "l'effacera" : "les effacera")
-                            + ". La saisie est enregistrée."));
+            avertissements.add(dayWithoutTimeslotWarning(creux));
         }
+    }
+
+    private static Avertissement outsideEventWarning(List<LocalDate> hors, JoursEvenement jours) {
+        boolean seul = hors.size() == 1;
+        return new Avertissement(
+                TypeAvertissement.INDISPONIBILITE_HORS_EVENEMENT,
+                (seul ? "Indisponibilité hors de l'événement : " : "Indisponibilités hors de l'événement : ")
+                        + citer(hors) + ". L'événement court du " + jours.first() + " au " + jours.last()
+                        + " (dates des créneaux de l'édition) : "
+                        + (seul ? "ce jour ne recouvre aucun créneau" : "ces jours ne recouvrent aucun créneau")
+                        + " et ne changera rien au planning. La saisie est enregistrée.");
+    }
+
+    private static Avertissement dayWithoutTimeslotWarning(List<LocalDate> creux) {
+        boolean seul = creux.size() == 1;
+        return new Avertissement(
+                TypeAvertissement.INDISPONIBILITE_JOUR_SANS_CRENEAU,
+                (seul
+                                ? "Indisponibilité sur un jour sans créneau : "
+                                : "Indisponibilités sur des jours sans créneau : ")
+                        + citer(creux) + ". "
+                        + (seul
+                                ? "Ce jour est dans l'événement mais ne porte aucun créneau"
+                                : "Ces jours sont dans l'événement mais ne portent aucun créneau")
+                        + " : l'espace animateur ne "
+                        + (seul ? "l'affichera pas" : "les affichera pas")
+                        + ", et la première déclaration de disponibilités appliquée "
+                        + (seul ? "l'effacera" : "les effacera")
+                        + ". La saisie est enregistrée.");
     }
 
     /**
@@ -334,7 +342,7 @@ public final class CoherenceAnalyzer {
             List<LocalDate> triees = horsEvenement.stream().distinct().sorted().toList();
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
-                    "Le stand " + apres.getId() + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
+                    STAND_PREFIX + apres.getId() + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
                             + "des jours de l'événement (" + jours.first() + " → " + jours.last() + "), sur "
                             + triees.size() + " date(s) : " + citer(triees)
                             + ". Aucun créneau ne les lira. Le stand est enregistré."));
@@ -357,7 +365,7 @@ public final class CoherenceAnalyzer {
                     .orElse(sansEffet.get(0));
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_FENETRE_SANS_EFFET,
-                    "Le stand " + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
+                    STAND_PREFIX + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
                             + "créneau de leur jour : " + citer(joursConcernes) + ". Par exemple le "
                             + premiere.date() + ", " + premiere.message()
                             + " Vérifiez les heures saisies contre la grille de créneaux. Le stand est enregistré."));
@@ -368,7 +376,7 @@ public final class CoherenceAnalyzer {
         if (!ouvertQuelquePart) {
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_JAMAIS_OUVERT,
-                    "Le stand " + apres.getId() + " n'est ouvert sur aucun des " + creneaux.size()
+                    STAND_PREFIX + apres.getId() + " n'est ouvert sur aucun des " + creneaux.size()
                             + " créneaux de l'édition : il n'ouvrira aucun poste et le solveur n'y placera personne. "
                             + "Le stand est enregistré."));
         }
@@ -569,15 +577,15 @@ public final class CoherenceAnalyzer {
             ViolationFormatter.ViolationReference reference,
             Map<Long, LocalDate> joursParCreneau) {
         return switch (verrouillage.target().orElse(null)) {
-            case VerrouillageTarget.OnAnimateur sur -> sur.animateurId().equals(reference.animateurId());
-            case VerrouillageTarget.OnStand sur -> sur.standId().equals(reference.standId());
-            case VerrouillageTarget.OnCreneau sur ->
-                Long.valueOf(sur.creneauId()).equals(reference.creneauId());
-            case VerrouillageTarget.OnJour sur ->
-                reference.creneauId() != null && sur.jour().equals(joursParCreneau.get(reference.creneauId()));
-            case VerrouillageTarget.OnAnimateurAndCreneau sur ->
-                sur.animateurId().equals(reference.animateurId())
-                        && Long.valueOf(sur.creneauId()).equals(reference.creneauId());
+            case VerrouillageTarget.OnAnimateur(String animateurId) -> animateurId.equals(reference.animateurId());
+            case VerrouillageTarget.OnStand(String standId) -> standId.equals(reference.standId());
+            case VerrouillageTarget.OnCreneau(long creneauId) ->
+                Long.valueOf(creneauId).equals(reference.creneauId());
+            case VerrouillageTarget.OnJour(LocalDate jour) ->
+                reference.creneauId() != null && jour.equals(joursParCreneau.get(reference.creneauId()));
+            case VerrouillageTarget.OnAnimateurAndCreneau(String animateurId, long creneauId) ->
+                animateurId.equals(reference.animateurId())
+                        && Long.valueOf(creneauId).equals(reference.creneauId());
             case null -> false;
         };
     }

@@ -94,17 +94,22 @@ public final class CsvParser {
             char current = text.charAt(i);
             if (current == '"') {
                 quoted = !quoted;
-                continue;
-            }
-            if (quoted) {
-                continue;
-            }
-            for (int candidate = 0; candidate < SEPARATORS.length; candidate++) {
-                if (current == SEPARATORS[candidate]) {
-                    counts[candidate]++;
-                }
+            } else if (!quoted) {
+                countSeparator(counts, current);
             }
         }
+        return mostFrequent(counts);
+    }
+
+    private static void countSeparator(int[] counts, char current) {
+        for (int candidate = 0; candidate < SEPARATORS.length; candidate++) {
+            if (current == SEPARATORS[candidate]) {
+                counts[candidate]++;
+            }
+        }
+    }
+
+    private static char mostFrequent(int[] counts) {
         int best = -1;
         for (int candidate = 0; candidate < SEPARATORS.length; candidate++) {
             if (counts[candidate] > 0 && (best < 0 || counts[candidate] > counts[best])) {
@@ -114,66 +119,93 @@ public final class CsvParser {
         return best < 0 ? DEFAULT_SEPARATOR : SEPARATORS[best];
     }
 
-    /** The state machine proper: quotes, doubled quotes, CRLF, LF and a lone CR. */
     private static List<Row> split(String text, char separator) {
-        List<Row> rows = new ArrayList<>();
-        List<String> values = new ArrayList<>();
-        StringBuilder cell = new StringBuilder();
-        boolean quoted = false;
-        int line = 1;
-        int startLine = 1;
-        int index = 0;
-        while (index < text.length()) {
-            char current = text.charAt(index);
-            if (quoted) {
-                if (current == '"') {
-                    if (index + 1 < text.length() && text.charAt(index + 1) == '"') {
-                        cell.append('"');
-                        index += 2;
-                        continue;
-                    }
+        return new Splitter(text, separator).run();
+    }
+
+    /** The state machine proper: quotes, doubled quotes, CRLF, LF and a lone CR. */
+    private static final class Splitter {
+
+        private final String text;
+        private final char separator;
+        private final List<Row> rows = new ArrayList<>();
+        private final List<String> values = new ArrayList<>();
+        private final StringBuilder cell = new StringBuilder();
+        private boolean quoted;
+        private int line = 1;
+        private int startLine = 1;
+        private int index;
+
+        Splitter(String text, char separator) {
+            this.text = text;
+            this.separator = separator;
+        }
+
+        List<Row> run() {
+            while (index < text.length()) {
+                char current = text.charAt(index);
+                if (quoted) {
+                    readQuoted(current);
+                } else {
+                    readPlain(current);
+                }
+            }
+            if (!cell.isEmpty() || !values.isEmpty()) {
+                values.add(cell.toString());
+                rows.add(new Row(startLine, List.copyOf(values)));
+            }
+            return rows;
+        }
+
+        private void readQuoted(char current) {
+            if (current == '"') {
+                if (nextIs('"')) {
+                    cell.append('"');
+                    index += 2;
+                } else {
                     quoted = false;
                     index++;
-                    continue;
                 }
-                if (current == '\n') {
-                    line++;
-                }
-                cell.append(current);
-                index++;
-                continue;
+                return;
             }
-            if (current == '"') {
-                quoted = true;
-                index++;
-                continue;
-            }
-            if (current == separator) {
-                values.add(cell.toString());
-                cell.setLength(0);
-                index++;
-                continue;
-            }
-            if (current == '\r' || current == '\n') {
-                values.add(cell.toString());
-                cell.setLength(0);
-                rows.add(new Row(startLine, List.copyOf(values)));
-                values.clear();
-                if (current == '\r' && index + 1 < text.length() && text.charAt(index + 1) == '\n') {
-                    index++;
-                }
+            if (current == '\n') {
                 line++;
-                startLine = line;
-                index++;
-                continue;
             }
             cell.append(current);
             index++;
         }
-        if (cell.length() > 0 || !values.isEmpty()) {
-            values.add(cell.toString());
-            rows.add(new Row(startLine, List.copyOf(values)));
+
+        private void readPlain(char current) {
+            if (current == '"') {
+                quoted = true;
+            } else if (current == separator) {
+                endCell();
+            } else if (current == '\r' || current == '\n') {
+                endRow(current);
+            } else {
+                cell.append(current);
+            }
+            index++;
         }
-        return rows;
+
+        private boolean nextIs(char expected) {
+            return index + 1 < text.length() && text.charAt(index + 1) == expected;
+        }
+
+        private void endCell() {
+            values.add(cell.toString());
+            cell.setLength(0);
+        }
+
+        private void endRow(char current) {
+            endCell();
+            rows.add(new Row(startLine, List.copyOf(values)));
+            values.clear();
+            if (current == '\r' && nextIs('\n')) {
+                index++;
+            }
+            line++;
+            startLine = line;
+        }
     }
 }

@@ -83,13 +83,55 @@ public class TypologieAnalyzer {
                         .filter(poste -> poste.getAnimateur() != null && poste.getStand() != null)
                         .toList();
 
-        Map<String, Set<String>> affectesParTypologie = new LinkedHashMap<>();
-        Map<String, String> nomParAnimateur = new LinkedHashMap<>();
-        Map<String, Double> heuresParTypologie = new LinkedHashMap<>();
-        Map<String, Integer> postesParTypologie = new LinkedHashMap<>();
-        Map<String, Map<String, Double>> heuresParTypologieEtJour = new LinkedHashMap<>();
-        TreeSet<String> jours = new TreeSet<>();
-        for (PosteAffectation poste : postes) {
+        HeldSeats tenus = new HeldSeats();
+        postes.forEach(tenus::add);
+        Map<String, String> nomParAnimateur = tenus.nomParAnimateur;
+        Map<String, Set<String>> competentsParTypologie = competentsByTypologie(animateurs, nomParAnimateur);
+
+        Map<String, TypologieItem> referentiel = new LinkedHashMap<>();
+        for (TypologieItem typologie : typologies == null ? List.<TypologieItem>of() : typologies) {
+            referentiel.put(typologie.id(), typologie);
+        }
+        Set<String> tousLesIds = new TreeSet<>(referentiel.keySet());
+        tousLesIds.addAll(tenus.affectesParTypologie.keySet());
+        tousLesIds.addAll(competentsParTypologie.keySet());
+
+        List<LigneTypologie> lignes = new ArrayList<>();
+        for (String id : tousLesIds) {
+            lignes.add(line(id, referentiel.get(id), tenus, competentsParTypologie.getOrDefault(id, Set.of())));
+        }
+        return new RapportTypologies(lignes, List.copyOf(tenus.jours));
+    }
+
+    /** The line of one game category, {@code item} {@code null} when the referential does not declare it. */
+    private static LigneTypologie line(String id, TypologieItem item, HeldSeats tenus, Set<String> competents) {
+        Map<String, String> nomParAnimateur = tenus.nomParAnimateur;
+        Set<String> affectes = tenus.affectesParTypologie.getOrDefault(id, Set.of());
+        return new LigneTypologie(
+                id,
+                item == null ? id : item.label(),
+                item != null && item.ninja(),
+                item == null ? null : item.maxCreneauxParAnimateur(),
+                item == null ? null : item.description(),
+                noms(affectes, nomParAnimateur),
+                noms(competents, nomParAnimateur),
+                noms(without(competents, affectes), nomParAnimateur),
+                noms(without(affectes, competents), nomParAnimateur),
+                tenus.heuresParTypologie.getOrDefault(id, 0.0),
+                tenus.postesParTypologie.getOrDefault(id, 0),
+                new LinkedHashMap<>(tenus.heuresParTypologieEtJour.getOrDefault(id, Map.of())));
+    }
+
+    /** What the held seats add up to, game category by game category. */
+    private static final class HeldSeats {
+        private final Map<String, Set<String>> affectesParTypologie = new LinkedHashMap<>();
+        private final Map<String, String> nomParAnimateur = new LinkedHashMap<>();
+        private final Map<String, Double> heuresParTypologie = new LinkedHashMap<>();
+        private final Map<String, Integer> postesParTypologie = new LinkedHashMap<>();
+        private final Map<String, Map<String, Double>> heuresParTypologieEtJour = new LinkedHashMap<>();
+        private final TreeSet<String> jours = new TreeSet<>();
+
+        void add(PosteAffectation poste) {
             Animateur animateur = poste.getAnimateur();
             nomParAnimateur.putIfAbsent(animateur.getId(), animateur.nomAffiche());
             double heures = poste.getDureeEffectiveMinutes() / 60.0;
@@ -115,7 +157,11 @@ public class TypologieAnalyzer {
                 }
             }
         }
+    }
 
+    /** Who the referential vets on each game category; their names join {@code nomParAnimateur}. */
+    private static Map<String, Set<String>> competentsByTypologie(
+            List<Animateur> animateurs, Map<String, String> nomParAnimateur) {
         Map<String, Set<String>> competentsParTypologie = new LinkedHashMap<>();
         for (Animateur animateur : animateurs == null ? List.<Animateur>of() : animateurs) {
             if (animateur.getCompetences() == null) {
@@ -128,35 +174,7 @@ public class TypologieAnalyzer {
                         .add(animateur.getId());
             }
         }
-
-        Map<String, TypologieItem> referentiel = new LinkedHashMap<>();
-        for (TypologieItem typologie : typologies == null ? List.<TypologieItem>of() : typologies) {
-            referentiel.put(typologie.id(), typologie);
-        }
-        Set<String> tousLesIds = new TreeSet<>(referentiel.keySet());
-        tousLesIds.addAll(affectesParTypologie.keySet());
-        tousLesIds.addAll(competentsParTypologie.keySet());
-
-        List<LigneTypologie> lignes = new ArrayList<>();
-        for (String id : tousLesIds) {
-            TypologieItem item = referentiel.get(id);
-            Set<String> affectes = affectesParTypologie.getOrDefault(id, Set.of());
-            Set<String> competents = competentsParTypologie.getOrDefault(id, Set.of());
-            lignes.add(new LigneTypologie(
-                    id,
-                    item == null ? id : item.label(),
-                    item != null && item.ninja(),
-                    item == null ? null : item.maxCreneauxParAnimateur(),
-                    item == null ? null : item.description(),
-                    noms(affectes, nomParAnimateur),
-                    noms(competents, nomParAnimateur),
-                    noms(without(competents, affectes), nomParAnimateur),
-                    noms(without(affectes, competents), nomParAnimateur),
-                    heuresParTypologie.getOrDefault(id, 0.0),
-                    postesParTypologie.getOrDefault(id, 0),
-                    new LinkedHashMap<>(heuresParTypologieEtJour.getOrDefault(id, Map.of()))));
-        }
-        return new RapportTypologies(lignes, List.copyOf(jours));
+        return competentsParTypologie;
     }
 
     private static Set<String> standTypologies(Stand stand) {

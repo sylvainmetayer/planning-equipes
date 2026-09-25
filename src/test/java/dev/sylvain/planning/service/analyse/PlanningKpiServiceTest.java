@@ -94,10 +94,10 @@ class PlanningKpiServiceTest {
     }
 
     @Test
-    void parseScoreLitLesTroisNiveauxEtTolereLePrefixeInit() {
+    void parseScoreReadsTheThreeLevelsAndToleratesTheInitPrefix() {
         assertThat(PlanningKpiService.parseScore("0hard/-3medium/-120soft")).containsExactly(0, -3, -120);
         assertThat(PlanningKpiService.parseScore("-2init/-1hard/0medium/5soft")).containsExactly(-1, 0, 5);
-        assertThat(PlanningKpiService.parseScore(null)).isNull();
-        assertThat(PlanningKpiService.parseScore("pas un score")).isNull();
+        assertThat(PlanningKpiService.parseScore(null)).isEmpty();
+        assertThat(PlanningKpiService.parseScore("pas un score")).isEmpty();
     }
 }

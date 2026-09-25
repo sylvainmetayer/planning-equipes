@@ -72,35 +72,18 @@ public class PlanningHoursService {
 
     private static final int SECONDES_PAR_JOUR = 24 * 3600;
 
-    public HeuresRapport compute(PlanningEvenement planning) {
-        ParametresLegaux parametres = planning.parametresLegaux();
-        Map<String, Map<String, Double>> heuresParAnimateurEtSemaine = new LinkedHashMap<>();
-        Map<String, Double> totalParAnimateur = new LinkedHashMap<>();
-        Map<String, Double> dimancheParAnimateur = new LinkedHashMap<>();
-        Map<String, Double> ferieParAnimateur = new LinkedHashMap<>();
-        Map<String, Double> dimancheFerieParAnimateur = new LinkedHashMap<>();
-        Map<String, Double> nuitParAnimateur = new LinkedHashMap<>();
-        TreeSet<String> semaines = new TreeSet<>();
+    /** The premium counters, in amplitude: Sunday, public holiday, both at once, and night. */
+    private static final class Premiums {
+        private final Map<String, Double> dimancheParAnimateur = new LinkedHashMap<>();
+        private final Map<String, Double> ferieParAnimateur = new LinkedHashMap<>();
+        private final Map<String, Double> dimancheFerieParAnimateur = new LinkedHashMap<>();
+        private final Map<String, Double> nuitParAnimateur = new LinkedHashMap<>();
 
-        for (PosteAffectation poste : planning.getPostes()) {
-            if (poste.getAnimateur() == null || poste.getCreneau() == null) {
-                continue;
-            }
-            String animateurId = poste.getAnimateur().getId();
-            String semaine = poste.getCreneau().semaineIso();
-            // Amplitude, for the premium counters only: the week and the total
-            // are travail effectif, added up day by day below.
-            double heures = poste.getDureeEffectiveMinutes() / 60.0;
-            semaines.add(semaine);
-
-            LocalDate date = poste.getCreneau().getDate();
-            if (date == null) {
-                continue;
-            }
+        void add(PosteAffectation poste, String animateurId, LocalDate date, double heures) {
             // Sunday alone, never « week-end »: only Sunday carries a premium,
             // and the Équité screen's heuresWeekEnd adds Saturday in — which is
             // why that column could not answer this question (issue #597).
-            boolean dimanche = date.getDayOfWeek() == DayOfWeek.SUNDAY;
+            boolean dimanche = DayOfWeek.SUNDAY.equals(date.getDayOfWeek());
             boolean ferie = JoursFeries.isFerieInFrance(date);
             if (dimanche) {
                 dimancheParAnimateur.merge(animateurId, heures, Double::sum);
@@ -116,6 +99,35 @@ public class PlanningHoursService {
                 dimancheFerieParAnimateur.merge(animateurId, heures, Double::sum);
             }
             nuitParAnimateur.merge(animateurId, nightMinutes(poste) / 60.0, Double::sum);
+        }
+    }
+
+    public HeuresRapport compute(PlanningEvenement planning) {
+        ParametresLegaux parametres = planning.parametresLegaux();
+        Map<String, Map<String, Double>> heuresParAnimateurEtSemaine = new LinkedHashMap<>();
+        Map<String, Double> totalParAnimateur = new LinkedHashMap<>();
+        Premiums premiums = new Premiums();
+        Map<String, Double> dimancheParAnimateur = premiums.dimancheParAnimateur;
+        Map<String, Double> ferieParAnimateur = premiums.ferieParAnimateur;
+        Map<String, Double> dimancheFerieParAnimateur = premiums.dimancheFerieParAnimateur;
+        Map<String, Double> nuitParAnimateur = premiums.nuitParAnimateur;
+        TreeSet<String> semaines = new TreeSet<>();
+
+        for (PosteAffectation poste : planning.getPostes()) {
+            if (poste.getAnimateur() == null || poste.getCreneau() == null) {
+                continue;
+            }
+            String animateurId = poste.getAnimateur().getId();
+            String semaine = poste.getCreneau().semaineIso();
+            // Amplitude, for the premium counters only: the week and the total
+            // are travail effectif, added up day by day below.
+            double heures = poste.getDureeEffectiveMinutes() / 60.0;
+            semaines.add(semaine);
+
+            LocalDate date = poste.getCreneau().getDate();
+            if (date != null) {
+                premiums.add(poste, animateurId, date, heures);
+            }
         }
 
         // Day by day, then added into the weeks: a break is owed per stretch,

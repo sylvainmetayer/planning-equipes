@@ -20,6 +20,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -172,28 +173,9 @@ public final class HoraireCompaction {
             Set<LocalDate> datesEvenement,
             Map<LocalDate, Integer> endOfDay,
             int fenetresAvant) {
-        if (!stand.getHoraires().isEmpty()) {
-            return new LigneCompactage(
-                    stand.getId(),
-                    fenetresAvant,
-                    stand.getHoraires().size(),
-                    fenetresAvant,
-                    0,
-                    false,
-                    "Le stand a déjà des horaires récurrents — compactage ignoré pour ne pas les fusionner");
-        }
-        if (fenetresAvant == 0) {
-            return new LigneCompactage(stand.getId(), 0, 0, 0, 0, false, "Aucune fenêtre datée à compacter");
-        }
-        if (datesEvenement.isEmpty()) {
-            return new LigneCompactage(
-                    stand.getId(),
-                    fenetresAvant,
-                    0,
-                    fenetresAvant,
-                    0,
-                    false,
-                    "Aucun créneau : impossible de savoir quels jours une règle couvrirait");
+        Optional<LigneCompactage> ignore = skipped(stand, datesEvenement, fenetresAvant);
+        if (ignore.isPresent()) {
+            return ignore.get();
         }
 
         Map<LocalDate, JourSaisi> parJour = groupByDay(stand, endOfDay);
@@ -227,26 +209,7 @@ public final class HoraireCompaction {
 
         List<IndisponibiliteStand> fermetures = new ArrayList<>();
         List<OuvertureStand> ouvertures = new ArrayList<>();
-        restentDates.forEach((date, jour) -> {
-            for (FenetreHoraire fenetre : jour.fenetres()) {
-                if (jour.mode() == ModeHoraire.OUVERTURE) {
-                    // The effectif rides along: a day left dated because its
-                    // pattern repeats nowhere is exactly the busy Saturday the
-                    // organiser staffed differently, and dropping it here made
-                    // the window fall back on effectifMin without a word.
-                    ouvertures.add(new OuvertureStand(
-                            null,
-                            date,
-                            fenetre.getHeureDebut(),
-                            fenetre.getHeureFin(),
-                            jour.motif(),
-                            fenetre.getEffectif()));
-                } else {
-                    fermetures.add(new IndisponibiliteStand(
-                            null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), jour.motif()));
-                }
-            }
-        });
+        restentDates.forEach((date, jour) -> addDatedExceptions(date, jour, ouvertures, fermetures));
 
         // Days the stand never said anything about were open all day, by
         // default. Now that rules declaring openings shut the days they do not
@@ -255,12 +218,7 @@ public final class HoraireCompaction {
         // rewrite it claims to be. Grid-entered data never gets here: an empty
         // cell already leaves an explicit closure behind.
         if (HoraireStandResolver.declaresOpenings(regles)) {
-            for (LocalDate date : datesEvenement) {
-                if (!parJour.containsKey(date)) {
-                    ouvertures.add(new OuvertureStand(
-                            null, date, LocalTime.MIDNIGHT, null, MOTIF_OUVERT_TOUTE_LA_JOURNEE, null));
-                }
-            }
+            addUnstatedDays(datesEvenement, parJour.keySet(), ouvertures);
         }
 
         Stand candidat = copyWithHoraires(stand, regles, fermetures, ouvertures);
@@ -293,6 +251,69 @@ public final class HoraireCompaction {
                 ecart,
                 true,
                 raison);
+    }
+
+    /** Why a stand is left alone before any pattern is looked for, if it is. */
+    private static Optional<LigneCompactage> skipped(Stand stand, Set<LocalDate> datesEvenement, int fenetresAvant) {
+        if (!stand.getHoraires().isEmpty()) {
+            return Optional.of(new LigneCompactage(
+                    stand.getId(),
+                    fenetresAvant,
+                    stand.getHoraires().size(),
+                    fenetresAvant,
+                    0,
+                    false,
+                    "Le stand a déjà des horaires récurrents — compactage ignoré pour ne pas les fusionner"));
+        }
+        if (fenetresAvant == 0) {
+            return Optional.of(
+                    new LigneCompactage(stand.getId(), 0, 0, 0, 0, false, "Aucune fenêtre datée à compacter"));
+        }
+        if (datesEvenement.isEmpty()) {
+            return Optional.of(new LigneCompactage(
+                    stand.getId(),
+                    fenetresAvant,
+                    0,
+                    fenetresAvant,
+                    0,
+                    false,
+                    "Aucun créneau : impossible de savoir quels jours une règle couvrirait"));
+        }
+        return Optional.empty();
+    }
+
+    /** Writes one day left dated back as dated openings or closures. */
+    private static void addDatedExceptions(
+            LocalDate date, JourSaisi jour, List<OuvertureStand> ouvertures, List<IndisponibiliteStand> fermetures) {
+        for (FenetreHoraire fenetre : jour.fenetres()) {
+            if (jour.mode() == ModeHoraire.OUVERTURE) {
+                // The effectif rides along: a day left dated because its
+                // pattern repeats nowhere is exactly the busy Saturday the
+                // organiser staffed differently, and dropping it here made
+                // the window fall back on effectifMin without a word.
+                ouvertures.add(new OuvertureStand(
+                        null,
+                        date,
+                        fenetre.getHeureDebut(),
+                        fenetre.getHeureFin(),
+                        jour.motif(),
+                        fenetre.getEffectif()));
+            } else {
+                fermetures.add(new IndisponibiliteStand(
+                        null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), jour.motif()));
+            }
+        }
+    }
+
+    /** States every event day the stand never said anything about as open all day. */
+    private static void addUnstatedDays(
+            Set<LocalDate> datesEvenement, Set<LocalDate> joursStates, List<OuvertureStand> ouvertures) {
+        for (LocalDate date : datesEvenement) {
+            if (!joursStates.contains(date)) {
+                ouvertures.add(
+                        new OuvertureStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_OUVERT_TOUTE_LA_JOURNEE, null));
+            }
+        }
     }
 
     /** One day's hand-entered statement, normalised so two identical days compare equal. */
@@ -387,7 +408,8 @@ public final class HoraireCompaction {
 
     /**
      * The one pattern allowed to be written as a plain "every day" rule and let
-     * the others override it, or {@code null} when none is.
+     * the others override it, or an empty set when none is (never one of
+     * {@code groupes}' own sets, so the identity test against it fails).
      *
      * <p>This is what turns "these ten dates, then those two dates" into "every
      * day, except those two" — the layering doing the work instead of two date
@@ -413,13 +435,13 @@ public final class HoraireCompaction {
     private static Set<LocalDate> baseGroup(
             Map<JourSaisi, Set<LocalDate>> groupes, Set<LocalDate> joursStates, Set<LocalDate> datesEvenement) {
         if (!joursStates.containsAll(datesEvenement)) {
-            return null;
+            return Set.of();
         }
         return groupes.values().stream()
                 .filter(dates -> dates.size() >= 2)
                 .max(Comparator.<Set<LocalDate>>comparingInt(Set::size)
                         .thenComparing(dates -> dates.iterator().next(), Comparator.reverseOrder()))
-                .orElse(null);
+                .orElse(Set.of());
     }
 
     /**

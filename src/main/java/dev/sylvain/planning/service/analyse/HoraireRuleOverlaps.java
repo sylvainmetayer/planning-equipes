@@ -15,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -199,38 +200,49 @@ public final class HoraireRuleOverlaps {
             Map<LocalDate, List<Integer>> deciders) {
         List<MaskedRule> found = new ArrayList<>();
         for (int i = 0; i < horaires.size(); i++) {
-            HoraireStand horaire = horaires.get(i);
-            if (horaire.validFenetres().isEmpty()) {
-                // Already ignored by the resolver, and already refused at write
-                // time: saying it twice would only bury the first message.
-                continue;
-            }
-            List<LocalDate> covered =
-                    days.stream().map(EventDay::date).filter(horaire::couvre).toList();
-            if (covered.isEmpty()) {
-                // Outside the edition: another situation, which the windows
-                // without effect and the never-open stand already name.
-                continue;
-            }
-            int rule = i;
-            boolean decides = covered.stream()
-                    .anyMatch(date -> deciders.getOrDefault(date, List.of()).contains(rule));
-            if (decides) {
-                continue;
-            }
-            Set<Integer> masking = new TreeSet<>();
-            boolean byExceptions = false;
-            for (LocalDate date : covered) {
-                if (exceptions.contains(date)) {
-                    byExceptions = true;
-                } else {
-                    masking.addAll(deciders.getOrDefault(date, List.of()));
-                }
-            }
-            found.add(new MaskedRule(i, List.copyOf(masking), byExceptions));
+            maskedRule(i, horaires.get(i), days, exceptions, deciders).ifPresent(found::add);
         }
         return found;
     }
+
+    /** Rule {@code i} when it covers event days yet decides none of them. */
+    private static Optional<MaskedRule> maskedRule(
+            int i,
+            HoraireStand horaire,
+            List<EventDay> days,
+            Set<LocalDate> exceptions,
+            Map<LocalDate, List<Integer>> deciders) {
+        if (horaire.validFenetres().isEmpty()) {
+            // Already ignored by the resolver, and already refused at write
+            // time: saying it twice would only bury the first message.
+            return Optional.empty();
+        }
+        List<LocalDate> covered =
+                days.stream().map(EventDay::date).filter(horaire::couvre).toList();
+        if (covered.isEmpty()) {
+            // Outside the edition: another situation, which the windows
+            // without effect and the never-open stand already name.
+            return Optional.empty();
+        }
+        boolean decides = covered.stream()
+                .anyMatch(date -> deciders.getOrDefault(date, List.of()).contains(i));
+        if (decides) {
+            return Optional.empty();
+        }
+        Set<Integer> masking = new TreeSet<>();
+        boolean byExceptions = false;
+        for (LocalDate date : covered) {
+            if (exceptions.contains(date)) {
+                byExceptions = true;
+            } else {
+                masking.addAll(deciders.getOrDefault(date, List.of()));
+            }
+        }
+        return Optional.of(new MaskedRule(i, List.copyOf(masking), byExceptions));
+    }
+
+    /** One window of a pair being compared: its position, its range and its headcount. */
+    private record Window(int index, LocalTime start, LocalTime end, Integer effectif) {}
 
     private static List<WindowsOverlap> windowsOverlaps(
             List<HoraireStand> horaires,
@@ -240,98 +252,88 @@ public final class HoraireRuleOverlaps {
         List<WindowsOverlap> found = new ArrayList<>();
         for (int r = 0; r < horaires.size(); r++) {
             HoraireStand horaire = horaires.get(r);
-            if (horaire.getMode() != ModeHoraire.OUVERTURE) {
-                // A closure carries no headcount: two of its windows overlapping
-                // shut the same minutes twice, and nothing is decided.
-                continue;
-            }
-            int end = days.stream()
-                    .filter(day -> horaire.couvre(day.date()))
-                    .mapToInt(EventDay::endMinute)
-                    .max()
-                    .orElse(MINUTES_PER_DAY);
-            List<FenetreHoraire> fenetres = horaire.getFenetres();
-            for (int a = 0; a < fenetres.size(); a++) {
-                for (int b = a + 1; b < fenetres.size(); b++) {
-                    FenetreHoraire first = fenetres.get(a);
-                    FenetreHoraire second = fenetres.get(b);
-                    WindowsOverlap overlap = windowsOverlap(
-                            r,
-                            null,
-                            a,
-                            b,
-                            first.hasValidRange() ? first.getHeureDebut() : null,
-                            first.getHeureFin(),
-                            first.getEffectif(),
-                            second.hasValidRange() ? second.getHeureDebut() : null,
-                            second.getHeureFin(),
-                            second.getEffectif(),
-                            end,
-                            defaultEffectif);
-                    if (overlap != null) {
-                        found.add(overlap);
-                    }
-                }
+            // A closure carries no headcount: two of its windows overlapping
+            // shut the same minutes twice, and nothing is decided.
+            if (horaire.getMode() == ModeHoraire.OUVERTURE) {
+                found.addAll(ruleWindowsOverlaps(r, horaire, days, defaultEffectif));
             }
         }
         for (int a = 0; a < datedOpenings.size(); a++) {
             for (int b = a + 1; b < datedOpenings.size(); b++) {
-                OuvertureStand first = datedOpenings.get(a);
-                OuvertureStand second = datedOpenings.get(b);
-                if (first.getDate() == null || !first.getDate().equals(second.getDate())) {
-                    continue;
-                }
-                LocalDate date = first.getDate();
-                int end = days.stream()
-                        .filter(day -> day.date().equals(date))
-                        .mapToInt(EventDay::endMinute)
-                        .findFirst()
-                        .orElse(MINUTES_PER_DAY);
-                WindowsOverlap overlap = windowsOverlap(
-                        null,
-                        date,
-                        a,
-                        b,
-                        valid(first.getHeureDebut(), first.getHeureFin()) ? first.getHeureDebut() : null,
-                        first.getHeureFin(),
-                        first.getEffectif(),
-                        valid(second.getHeureDebut(), second.getHeureFin()) ? second.getHeureDebut() : null,
-                        second.getHeureFin(),
-                        second.getEffectif(),
-                        end,
-                        defaultEffectif);
-                if (overlap != null) {
-                    found.add(overlap);
-                }
+                datedWindowsOverlap(datedOpenings, a, b, days, defaultEffectif).ifPresent(found::add);
             }
         }
         return found;
     }
 
-    private static WindowsOverlap windowsOverlap(
-            Integer rule,
-            LocalDate date,
-            int a,
-            int b,
-            LocalTime startA,
-            LocalTime endA,
-            Integer effectifA,
-            LocalTime startB,
-            LocalTime endB,
-            Integer effectifB,
-            int dayEnd,
-            Integer defaultEffectif) {
-        if (startA == null || startB == null) {
-            return null;
+    /** The overlapping windows, with different headcounts, of one opening rule. */
+    private static List<WindowsOverlap> ruleWindowsOverlaps(
+            int r, HoraireStand horaire, List<EventDay> days, Integer defaultEffectif) {
+        List<WindowsOverlap> found = new ArrayList<>();
+        int end = days.stream()
+                .filter(day -> horaire.couvre(day.date()))
+                .mapToInt(EventDay::endMinute)
+                .max()
+                .orElse(MINUTES_PER_DAY);
+        List<FenetreHoraire> fenetres = horaire.getFenetres();
+        for (int a = 0; a < fenetres.size(); a++) {
+            for (int b = a + 1; b < fenetres.size(); b++) {
+                windowsOverlap(r, null, window(a, fenetres.get(a)), window(b, fenetres.get(b)), end, defaultEffectif)
+                        .ifPresent(found::add);
+            }
         }
-        Integer first = effectif(effectifA, defaultEffectif);
-        Integer second = effectif(effectifB, defaultEffectif);
+        return found;
+    }
+
+    private static Window window(int index, FenetreHoraire fenetre) {
+        return new Window(
+                index,
+                fenetre.hasValidRange() ? fenetre.getHeureDebut() : null,
+                fenetre.getHeureFin(),
+                fenetre.getEffectif());
+    }
+
+    /** Dated openings {@code a} and {@code b}, when they fall on the same day and overlap. */
+    private static Optional<WindowsOverlap> datedWindowsOverlap(
+            List<OuvertureStand> datedOpenings, int a, int b, List<EventDay> days, Integer defaultEffectif) {
+        OuvertureStand first = datedOpenings.get(a);
+        OuvertureStand second = datedOpenings.get(b);
+        if (first.getDate() == null || !first.getDate().equals(second.getDate())) {
+            return Optional.empty();
+        }
+        LocalDate date = first.getDate();
+        int end = days.stream()
+                .filter(day -> day.date().equals(date))
+                .mapToInt(EventDay::endMinute)
+                .findFirst()
+                .orElse(MINUTES_PER_DAY);
+        return windowsOverlap(null, date, window(a, first), window(b, second), end, defaultEffectif);
+    }
+
+    private static Window window(int index, OuvertureStand ouverture) {
+        return new Window(
+                index,
+                valid(ouverture.getHeureDebut(), ouverture.getHeureFin()) ? ouverture.getHeureDebut() : null,
+                ouverture.getHeureFin(),
+                ouverture.getEffectif());
+    }
+
+    private static Optional<WindowsOverlap> windowsOverlap(
+            Integer rule, LocalDate date, Window a, Window b, int dayEnd, Integer defaultEffectif) {
+        if (a.start() == null || b.start() == null) {
+            return Optional.empty();
+        }
+        Integer first = effectif(a.effectif(), defaultEffectif);
+        Integer second = effectif(b.effectif(), defaultEffectif);
         if (Objects.equals(first, second)) {
             // Same headcount: the union is exactly what was meant.
-            return null;
+            return Optional.empty();
         }
-        int[] overlap = overlap(startA, endA, startB, endB, dayEnd);
-        return overlap == null ? null : new WindowsOverlap(rule, date, a, b, overlap[0], overlap[1], first, second);
+        int[] overlap = overlap(a.start(), a.end(), b.start(), b.end(), dayEnd);
+        return overlap == null
+                ? Optional.empty()
+                : Optional.of(
+                        new WindowsOverlap(rule, date, a.index(), b.index(), overlap[0], overlap[1], first, second));
     }
 
     private static boolean valid(LocalTime start, LocalTime end) {
