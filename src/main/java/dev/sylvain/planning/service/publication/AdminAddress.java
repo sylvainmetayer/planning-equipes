@@ -24,9 +24,7 @@ public class AdminAddress {
      */
     @Inject
     public AdminAddress(@ConfigProperty(name = "planning.mail.admin") Optional<String> configuree) {
-        this.resolue = configuree == null
-                ? Optional.empty()
-                : configuree.map(String::trim).filter(address -> !address.isBlank());
+        this.resolue = configuree.map(String::trim).filter(address -> !address.isBlank());
     }
 
     /** The configured address, trimmed, or empty when notifications are disabled. */

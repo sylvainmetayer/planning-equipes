@@ -75,7 +75,7 @@ public record EtiquetteEdition(String nom, LocalDate debut, LocalDate fin) {
         if (debut.getYear() != fin.getYear()) {
             return "du " + jourMoisAnnee(debut) + " au " + jourMoisAnnee(fin);
         }
-        if (debut.getMonth() != fin.getMonth()) {
+        if (debut.getMonthValue() != fin.getMonthValue()) {
             return "du " + jourMois(debut) + " au " + jourMoisAnnee(fin);
         }
         return "du " + jour(debut) + " au " + jourMoisAnnee(fin);

@@ -27,10 +27,10 @@ public class BusinessErrorMapper implements ExceptionMapper<BusinessError> {
     public Response toResponse(BusinessError erreur) {
         Response.Status statut =
                 switch (erreur) {
-                    case BusinessError.Invalid ignored -> Response.Status.BAD_REQUEST;
-                    case BusinessError.NotFound ignored -> Response.Status.NOT_FOUND;
-                    case BusinessError.Conflict ignored -> Response.Status.CONFLICT;
-                    case BusinessError.Stale ignored -> Response.Status.CONFLICT;
+                    case BusinessError.Invalid _ -> Response.Status.BAD_REQUEST;
+                    case BusinessError.NotFound _ -> Response.Status.NOT_FOUND;
+                    case BusinessError.Conflict _ -> Response.Status.CONFLICT;
+                    case BusinessError.Stale _ -> Response.Status.CONFLICT;
                 };
         // A stale write is the one 409 the client answers with a dialog (reload
         // or overwrite), so its body says which 409 it is — the message alone

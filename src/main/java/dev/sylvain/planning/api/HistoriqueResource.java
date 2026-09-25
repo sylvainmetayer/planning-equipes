@@ -18,7 +18,7 @@ import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
@@ -146,7 +146,7 @@ public class HistoriqueResource {
                 .toList();
     }
 
-    private static EntreeHistoriqueView view(EntreeJournal entree, Function<String, String> nomDe) {
+    private static EntreeHistoriqueView view(EntreeJournal entree, UnaryOperator<String> nomDe) {
         ActionJournalisee action = CatalogueActions.actions().get(entree.action());
         return new EntreeHistoriqueView(
                 entree.id(),

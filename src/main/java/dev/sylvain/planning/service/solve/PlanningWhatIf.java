@@ -228,50 +228,13 @@ public final class PlanningWhatIf {
         List<Animateur> eligibles = candidatsEligibles(solved, poste);
         List<Animateur> evalues = eligibles.size() > plafond ? eligibles.subList(0, plafond) : eligibles;
 
+        BaselineState baseline = new BaselineState(scoreAvant, violeesAvant, nomsAvant);
         List<SuggestionReparation> suggestions = new ArrayList<>();
         for (Animateur candidat : evalues) {
-            // Same throwaway in-place substitution as simulateSwap, reverted in
-            // the finally: the planning is a per-request payload, never shared.
-            PlanningAnalysis apres;
-            poste.setAnimateur(candidat);
-            try {
-                apres = constraintDiagnosticService.analyze(solved);
-            } finally {
-                poste.setAnimateur(actuel);
+            SuggestionReparation suggestion = suggestion(solved, poste, actuel, candidat, baseline);
+            if (suggestion != null) {
+                suggestions.add(suggestion);
             }
-            HardMediumSoftScore scoreApres = apres.score();
-            // The verdict is planning-wide, like simulateEchange's: moving this
-            // seat can break a hard constraint on a poste it does not touch
-            // (weekly hours, rest periods), which the poste's own matches would
-            // never show.
-            if (scoreApres.hardScore() < scoreAvant.hardScore()) {
-                continue;
-            }
-            List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
-            Set<String> nomsApres =
-                    violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
-            List<ContrainteImpact> introduites = violeesApres.stream()
-                    .filter(impact -> !nomsAvant.contains(impact.name()))
-                    .toList();
-            // The planning-wide test above is not enough on an empty seat: filling
-            // it settles one hard point (posteDoitEtrePourvu) and can spend it on
-            // another, leaving the global hard score flat while the candidate
-            // plainly breaks a rule on this very poste — an animateur forced
-            // unavailable on that timeslot being the case issue #297 walks into.
-            // The invariant SuggestionReparation states is therefore enforced
-            // here, not merely hoped for: a suggestion never introduces a hard
-            // violation on the seat it repairs.
-            if (introduites.stream().anyMatch(impact -> DUR.equals(impact.niveau()))) {
-                continue;
-            }
-            suggestions.add(new SuggestionReparation(
-                    candidat.getId(),
-                    scoreApres,
-                    scoreApres.subtract(scoreAvant),
-                    violeesAvant.stream()
-                            .filter(impact -> !nomsApres.contains(impact.name()))
-                            .toList(),
-                    introduites));
         }
         suggestions.sort(Comparator.comparing(
                         SuggestionReparation::delta,
@@ -286,6 +249,63 @@ public final class PlanningWhatIf {
                 evalues.size(),
                 plafond,
                 List.copyOf(suggestions));
+    }
+
+    /** The seat's state before any substitution, which every candidate is measured against. */
+    private record BaselineState(HardMediumSoftScore score, List<ContrainteImpact> violees, Set<String> noms) {}
+
+    /**
+     * {@code candidat} simulated on {@code poste}, or {@code null} when it
+     * worsens the plan's hard score or introduces a hard violation on the seat.
+     */
+    private SuggestionReparation suggestion(
+            PlanningEvenement solved,
+            PosteAffectation poste,
+            Animateur actuel,
+            Animateur candidat,
+            BaselineState avant) {
+        // Same throwaway in-place substitution as simulateSwap, reverted in
+        // the finally: the planning is a per-request payload, never shared.
+        PlanningAnalysis apres;
+        poste.setAnimateur(candidat);
+        try {
+            apres = constraintDiagnosticService.analyze(solved);
+        } finally {
+            poste.setAnimateur(actuel);
+        }
+        HardMediumSoftScore scoreApres = apres.score();
+        // The verdict is planning-wide, like simulateEchange's: moving this
+        // seat can break a hard constraint on a poste it does not touch
+        // (weekly hours, rest periods), which the poste's own matches would
+        // never show.
+        if (scoreApres.hardScore() < avant.score().hardScore()) {
+            return null;
+        }
+        List<ContrainteImpact> violeesApres = impactsFor(apres, poste, true);
+        Set<String> nomsApres =
+                violeesApres.stream().map(ContrainteImpact::name).collect(Collectors.toSet());
+        List<ContrainteImpact> introduites = violeesApres.stream()
+                .filter(impact -> !avant.noms().contains(impact.name()))
+                .toList();
+        // The planning-wide test above is not enough on an empty seat: filling
+        // it settles one hard point (posteDoitEtrePourvu) and can spend it on
+        // another, leaving the global hard score flat while the candidate
+        // plainly breaks a rule on this very poste — an animateur forced
+        // unavailable on that timeslot being the case issue #297 walks into.
+        // The invariant SuggestionReparation states is therefore enforced
+        // here, not merely hoped for: a suggestion never introduces a hard
+        // violation on the seat it repairs.
+        if (introduites.stream().anyMatch(impact -> DUR.equals(impact.niveau()))) {
+            return null;
+        }
+        return new SuggestionReparation(
+                candidat.getId(),
+                scoreApres,
+                scoreApres.subtract(avant.score()),
+                avant.violees().stream()
+                        .filter(impact -> !nomsApres.contains(impact.name()))
+                        .toList(),
+                introduites);
     }
 
     private static int effectiveCandidateCap(Integer demande) {
@@ -463,22 +483,7 @@ public final class PlanningWhatIf {
 
         List<AnimateurAvailability> lignes = new ArrayList<>(banc.size());
         for (Animateur animateur : banc) {
-            AffectationHypothesis hypothese = hypotheses.get(animateur.getId());
-            Set<String> contraintes = new LinkedHashSet<>();
-            for (EligibleAnimateurMoveFilter.Motif motif :
-                    EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.parametresLegaux())) {
-                contraintes.add(motif.contrainte());
-            }
-            if (hypothese != null) {
-                contraintes.addAll(hypothese.contraintesAggravees());
-            }
-            List<MotifExclusion> motifs =
-                    contraintes.stream().map(PlanningWhatIf::motifExclusion).toList();
-            boolean disponible = motifs.stream().noneMatch(PlanningWhatIf::isHardRule);
-            HardMediumSoftScore delta =
-                    hypothese == null ? null : hypothese.delta().subtract(reference);
-            boolean degradeLePlan = delta != null && delta.hardScore() < 0;
-            lignes.add(new AnimateurAvailability(animateur.getId(), disponible, degradeLePlan, delta, motifs));
+            lignes.add(availability(solved, cible, animateur, hypotheses.get(animateur.getId()), reference));
         }
         // Available first: this screen is opened to find someone, and the
         // people who can take the seat without breaking anything are the
@@ -498,6 +503,33 @@ public final class PlanningWhatIf {
                 disponibles,
                 creneauxAvecSieges,
                 List.copyOf(lignes));
+    }
+
+    /**
+     * One animateur of the bench on {@code cible}: every reason that keeps
+     * them off it — the move filter's and the hypothesis's — and what seating
+     * them would cost against {@code reference}, the occupant's own cost.
+     */
+    private static AnimateurAvailability availability(
+            PlanningEvenement solved,
+            PosteAffectation cible,
+            Animateur animateur,
+            AffectationHypothesis hypothese,
+            HardMediumSoftScore reference) {
+        Set<String> contraintes = new LinkedHashSet<>();
+        for (EligibleAnimateurMoveFilter.Motif motif :
+                EligibleAnimateurMoveFilter.motifs(cible, animateur, solved.parametresLegaux())) {
+            contraintes.add(motif.contrainte());
+        }
+        if (hypothese != null) {
+            contraintes.addAll(hypothese.contraintesAggravees());
+        }
+        List<MotifExclusion> motifs =
+                contraintes.stream().map(PlanningWhatIf::motifExclusion).toList();
+        boolean disponible = motifs.stream().noneMatch(PlanningWhatIf::isHardRule);
+        HardMediumSoftScore delta = hypothese == null ? null : hypothese.delta().subtract(reference);
+        boolean degradeLePlan = delta != null && delta.hardScore() < 0;
+        return new AnimateurAvailability(animateur.getId(), disponible, degradeLePlan, delta, motifs);
     }
 
     /**
@@ -1251,15 +1283,12 @@ public final class PlanningWhatIf {
         List<HardViolation> violations = new ArrayList<>();
         for (ConstraintContribution ca : apres.contributions()) {
             String name = ca.constraintName();
-            if (!ConstraintCatalog.NOMS_DURS.contains(name)) {
-                continue;
-            }
             int supplement = ca.matchCount() - matchesAvant.getOrDefault(name, 0);
-            if (supplement <= 0) {
-                continue;
+            if (ConstraintCatalog.NOMS_DURS.contains(name) && supplement > 0) {
+                ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
+                violations.add(
+                        new HardViolation(name, definition == null ? name : definition.description(), supplement));
             }
-            ConstraintCatalog.ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(name);
-            violations.add(new HardViolation(name, definition == null ? name : definition.description(), supplement));
         }
         return violations;
     }

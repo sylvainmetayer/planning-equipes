@@ -383,13 +383,13 @@ public class EspaceAnimateurResource {
     /** Same readable convention as the admin exports — the very same code, in fact. */
     private String fileName(PlanningEvenement planning, String extension) {
         return PlanningExportService.planningFileName(
-                planningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
+                PlanningExportService.resolveAnimateurName(planning, animateurCourant()), extension);
     }
 
     /** The same name, told apart by layout: two downloads must not be one file. */
     private String fileName(PlanningEvenement planning, String extension, FormatPlanning format) {
         return PlanningExportService.planningFileName(
-                planningExportService.resolveAnimateurName(planning, animateurCourant()), extension, format);
+                PlanningExportService.resolveAnimateurName(planning, animateurCourant()), extension, format);
     }
 
     private static Response badRequest(IllegalArgumentException e) {

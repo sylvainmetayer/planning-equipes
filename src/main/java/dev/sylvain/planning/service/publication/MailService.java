@@ -7,6 +7,7 @@ import io.quarkus.mailer.Mailer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.List;
 
@@ -39,6 +40,9 @@ import java.util.List;
 @ApplicationScoped
 public class MailService {
 
+    /** Template value: the animateur's first name, which every mail to one of them opens with. */
+    private static final String KEY_PRENOM = "prenom";
+
     @Inject
     Mailer mailer;
 
@@ -65,18 +69,12 @@ public class MailService {
         MailContent content = templates.render(
                 "mail/planning-individuel",
                 productName.subject("votre planning individuel"),
-                MailTemplates.values("prenom", blankToNull(prenom), "lienEspace", blankToNull(lienEspace)));
+                MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "lienEspace", blankToNull(lienEspace)));
         mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /**
-     * Sends one animateur the planning that has just been published, and what
-     * changed for <b>them</b> since the last one (issue #245).
-     *
-     * <p>The lines are computed and reviewed upstream: the admin saw exactly
-     * these sentences on screen before clicking Publier. Nothing is worded
-     * here beyond the frame around them — a mail that says what moved is worth
-     * more than a PDF redelivered without a word.</p>
+     * What the mail announcing a publication says, around the attached planning.
      *
      * @param premiereDiffusion nothing was ever published to this person, so
      *                          their whole planning is the news; the change
@@ -89,32 +87,47 @@ public class MailService {
      *                          the one reason a vacation moves that the person
      *                          must hear, not just see
      */
-    public void sendPlanningPublie(
-            String emailAnimateur,
+    public record PlanningPublie(
             String prenom,
             String lienEspace,
-            byte[] pdf,
-            String fileName,
             boolean premiereDiffusion,
             List<String> changements,
             List<String> demandes,
-            List<String> journeesModifiees) {
+            List<String> journeesModifiees) {}
+
+    private static List<String> orEmpty(List<String> lignes) {
+        return lignes == null ? List.of() : lignes;
+    }
+
+    /**
+     * Sends one animateur the planning that has just been published, and what
+     * changed for <b>them</b> since the last one (issue #245).
+     *
+     * <p>The lines are computed and reviewed upstream: the admin saw exactly
+     * these sentences on screen before clicking Publier. Nothing is worded
+     * here beyond the frame around them — a mail that says what moved is worth
+     * more than a PDF redelivered without a word.</p>
+     *
+     * @param message what the mail says around the attached planning
+     */
+    public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
         MailContent content = templates.render(
                 "mail/planning-publie",
-                productName.subject(premiereDiffusion ? "votre planning individuel" : "votre planning a changé"),
+                productName.subject(
+                        message.premiereDiffusion() ? "votre planning individuel" : "votre planning a changé"),
                 MailTemplates.values(
-                        "prenom",
-                        blankToNull(prenom),
+                        KEY_PRENOM,
+                        blankToNull(message.prenom()),
                         "lienEspace",
-                        blankToNull(lienEspace),
+                        blankToNull(message.lienEspace()),
                         "premiereDiffusion",
-                        premiereDiffusion,
+                        message.premiereDiffusion(),
                         "changements",
-                        changements == null ? List.of() : changements,
+                        orEmpty(message.changements()),
                         "demandes",
-                        demandes == null ? List.of() : demandes,
+                        orEmpty(message.demandes()),
                         "journeesModifiees",
-                        journeesModifiees == null ? List.of() : journeesModifiees));
+                        orEmpty(message.journeesModifiees())));
         mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
@@ -123,7 +136,7 @@ public class MailService {
         MailContent content = templates.render(
                 "mail/code-acces",
                 productName.subject("votre code d'accès"),
-                MailTemplates.values("prenom", blankToNull(prenom), "code", code));
+                MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "code", code));
         mailer.send(templates.toMail(emailAnimateur, content));
     }
 
@@ -148,9 +161,12 @@ public class MailService {
                 "mail/invitation-declaration",
                 productName.subject("vos disponibilités sont attendues"),
                 MailTemplates.values(
-                        "prenom", blankToNull(prenom),
-                        "lienDeclaration", lienDeclaration,
-                        "fenetre", describeFenetre(debut, fin)));
+                        KEY_PRENOM,
+                        blankToNull(prenom),
+                        "lienDeclaration",
+                        lienDeclaration,
+                        "fenetre",
+                        describeFenetre(debut, fin)));
         mailer.send(templates.toMail(emailAnimateur, content));
     }
 
@@ -198,7 +214,8 @@ public class MailService {
         MailContent content = templates.render(
                 "mail/test",
                 productName.subject("mail de test"),
-                MailTemplates.values("horodatage", ZonedDateTime.now().toString()));
+                MailTemplates.values(
+                        "horodatage", ZonedDateTime.now(ZoneId.systemDefault()).toString()));
         mailer.send(templates.toMail(destinataire, content));
         return destinataire;
     }

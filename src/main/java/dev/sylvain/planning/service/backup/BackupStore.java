@@ -30,7 +30,7 @@ import java.util.stream.Stream;
  * something the rotation ignores, never a truncated file that would count as
  * one of the copies kept.</p>
  */
-public final class BackupStore {
+public record BackupStore(Path directory) {
 
     /** Same shape as the manual command documented in {@code docs/exploitation.md}, to the second. */
     static final DateTimeFormatter STAMP = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
@@ -46,16 +46,6 @@ public final class BackupStore {
      */
     private static final Pattern PATTERN =
             Pattern.compile(Pattern.quote(PREFIX) + "\\d{8}-\\d{6}" + Pattern.quote(SUFFIX));
-
-    private final Path directory;
-
-    public BackupStore(Path directory) {
-        this.directory = directory;
-    }
-
-    public Path directory() {
-        return directory;
-    }
 
     static String fileName(LocalDateTime at) {
         return PREFIX + STAMP.format(at) + SUFFIX;

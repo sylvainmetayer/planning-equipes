@@ -341,15 +341,8 @@ public class SolverJobService {
         if (actif.isPresent()) {
             refuseDuplicate(type, editionId);
         }
-        SolverJob job = new SolverJob(
-                UUID.randomUUID().toString(),
-                type,
-                secondsLimit,
-                editionId,
-                nomEdition(editionId),
-                scope,
-                reamorcage,
-                rejouable);
+        SolverJob job =
+                new SolverJob(type, secondsLimit, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
@@ -818,7 +811,7 @@ public class SolverJobService {
             if (!executor.awaitTermination(SHUTDOWN_GRACE, TimeUnit.SECONDS)) {
                 executor.shutdownNow();
             }
-        } catch (InterruptedException e) {
+        } catch (InterruptedException _) {
             executor.shutdownNow();
             Thread.currentThread().interrupt();
         }
@@ -887,8 +880,8 @@ public class SolverJobService {
 
         private volatile Solver<PlanningEvenement> solver;
 
+        /** A new job, under a fresh random id. */
         private SolverJob(
-                String id,
                 JobType type,
                 Long secondsLimit,
                 String editionId,
@@ -896,7 +889,7 @@ public class SolverJobService {
                 ReplanificationScope scope,
                 Reamorcage reamorcage,
                 boolean rejouable) {
-            this.id = id;
+            this.id = UUID.randomUUID().toString();
             this.type = type;
             this.secondsLimit = secondsLimit;
             this.editionId = editionId;

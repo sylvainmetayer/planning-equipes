@@ -178,10 +178,10 @@ class SolverJobRepriseTest {
      * the operator had decided to throw away.
      */
     @Test
-    void leReamorcageDemandeSurvitAuRedemarrage() {
+    void theRequestedReamorcageSurvivesARestart() {
         for (Reamorcage demande : new Reamorcage[] {Reamorcage.AUCUN, Reamorcage.PLAN_COURANT, null}) {
             String id = UUID.randomUUID().toString();
-            jobRepository.record(new LigneJob(
+            jobRepository.save(new LigneJob(
                     id,
                     editionContext.editionIdCourant(),
                     "Édition de test",
@@ -210,7 +210,7 @@ class SolverJobRepriseTest {
     private String writeRow(JobType type, JobStatus statut, boolean rejouable, ReplanificationScope scope) {
         String id = UUID.randomUUID().toString();
         Instant maintenant = Instant.now();
-        jobRepository.record(new LigneJob(
+        jobRepository.save(new LigneJob(
                 id,
                 editionContext.editionIdCourant(),
                 "Édition de test",

@@ -9,10 +9,12 @@ import dev.sylvain.planning.service.referentiel.HoraireStandResolver;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The fourth layer of a stand's schedule: the edition's consignes, applied on
@@ -112,15 +114,7 @@ public final class ConsigneResolver {
         // 1. The day as the stand's own rules and exceptions leave it, as
         //    segments carrying a headcount (null = the stand's minimum).
         List<Segment> nominal = journeeNominale(stand, date);
-
-        // The headcount to inherit: the highest one the band takes away.
-        Integer herite = null;
-        for (Segment segment : nominal) {
-            if (chevauchent(segment.bornes(), bande)) {
-                int effectif = segment.effectif() != null ? segment.effectif() : stand.getEffectifMin();
-                herite = herite == null ? effectif : Math.max(herite, effectif);
-            }
-        }
+        Integer herite = inheritedHeadcount(stand, nominal, bande);
 
         // 2. The band, then the added stretches, carved out of the stand's own hours.
         List<int[]> fermes = new ArrayList<>();
@@ -137,16 +131,31 @@ public final class ConsigneResolver {
         //    typed on that window, else inherited. A morning at 2 and an
         //    evening at 7 are two different windows of one stand.
         for (ConsigneEdition.Ouverture ouverture : consigne.openingsOf(stand.getId())) {
-            if (ouverture.debut() == null) {
-                continue;
-            }
-            Integer effectif = ouverture.effectif() != null ? ouverture.effectif() : herite;
-            for (int[] morceau : soustraire(minutes(ouverture.debut(), ouverture.fin()), List.of(bande))) {
-                restes.add(new Segment(morceau, effectif));
+            if (ouverture.debut() != null) {
+                Integer effectif = ouverture.effectif() != null ? ouverture.effectif() : herite;
+                for (int[] morceau : soustraire(minutes(ouverture.debut(), ouverture.fin()), List.of(bande))) {
+                    restes.add(new Segment(morceau, effectif));
+                }
             }
         }
 
-        // Land the day: every dated row of that date is replaced by what is left.
+        land(stand, date, restes);
+    }
+
+    /** The headcount to inherit: the highest one the band takes away, {@code null} when it takes none. */
+    private static Integer inheritedHeadcount(Stand stand, List<Segment> nominal, int[] bande) {
+        Integer herite = null;
+        for (Segment segment : nominal) {
+            if (chevauchent(segment.bornes(), bande)) {
+                int effectif = segment.effectif() != null ? segment.effectif() : stand.getEffectifMin();
+                herite = herite == null ? effectif : Math.max(herite, effectif);
+            }
+        }
+        return herite;
+    }
+
+    /** Lands the day: every dated row of that date is replaced by what is left. */
+    private static void land(Stand stand, LocalDate date, List<Segment> restes) {
         List<IndisponibiliteStand> fermetures = new ArrayList<>();
         for (IndisponibiliteStand fermeture : stand.getIndisponibilitesEffectives()) {
             if (!date.equals(fermeture.getDate())) {
@@ -175,7 +184,25 @@ public final class ConsigneResolver {
     }
 
     /** One open stretch of a day, {@code [debut, fin)} in minutes, and its headcount ({@code null} = minimum). */
-    record Segment(int[] bornes, Integer effectif) {}
+    record Segment(int[] bornes, Integer effectif) {
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Segment segment
+                    && Arrays.equals(bornes, segment.bornes)
+                    && Objects.equals(effectif, segment.effectif);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Arrays.hashCode(bornes) + Objects.hashCode(effectif);
+        }
+
+        @Override
+        public String toString() {
+            return "Segment[bornes=" + Arrays.toString(bornes) + ", effectif=" + effectif + "]";
+        }
+    }
 
     /**
      * The stand's day before the consigne, as open segments: the opening

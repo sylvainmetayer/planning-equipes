@@ -323,21 +323,20 @@ public final class ProblemBuilder {
                     poste.getStand().getId(), poste.getCreneau().getId());
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
             int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
-            if (poste.isVerrouille() || place >= tenants.size()) {
-                continue;
+            if (!poste.isVerrouille() && place < tenants.size()) {
+                Animateur tenant = animateursById.get(tenants.get(place));
+                poste.setAnimateur(tenant);
+                if (tenant == null
+                        || indisponible(tenant, poste)
+                        || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
+                    poste.setAnimateur(null);
+                    liberes++;
+                } else {
+                    // Deliberately no setVerrouille(true): that line is what makes the
+                    // incremental re-solve incremental, and its absence is this method.
+                    reamorces++;
+                }
             }
-            Animateur tenant = animateursById.get(tenants.get(place));
-            poste.setAnimateur(tenant);
-            if (tenant == null
-                    || indisponible(tenant, poste)
-                    || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
-                poste.setAnimateur(null);
-                liberes++;
-                continue;
-            }
-            // Deliberately no setVerrouille(true): that line is what makes the
-            // incremental re-solve incremental, and its absence is this method.
-            reamorces++;
         }
         return new int[] {reamorces, liberes};
     }
@@ -473,36 +472,14 @@ public final class ProblemBuilder {
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
             int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
             String tenantId = place < tenants.size() ? tenants.get(place) : null;
-            if (FrozenPast.isPast(poste, horizon)) {
-                // History: whoever sat there sat there, and nobody can be
-                // seated there now — pinned even when empty.
-                poste.setPasse(true);
-                poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
-                poste.setVerrouille(true);
-                passes++;
-                continue;
+            Animateur tenant = tenantId == null ? null : animateursById.get(tenantId);
+            switch (freezeOrRelease(poste, tenantId, tenant, scope, indisponibilitesForcees, horizon)) {
+                case PAST -> passes++;
+                case NEW -> nouveaux++;
+                case RELEASED_BY_SCOPE -> liberesManuellement++;
+                case FREED -> liberes++;
+                case FROZEN -> figes++;
             }
-            if (tenantId == null) {
-                nouveaux++;
-                continue;
-            }
-            if (scope.release(poste, tenantId)) {
-                liberesManuellement++;
-                continue;
-            }
-            Animateur tenant = animateursById.get(tenantId);
-            // Seeded first: the ad hoc check below reads the seat as staffed,
-            // exactly like the constraint it shares its implementation with.
-            poste.setAnimateur(tenant);
-            if (tenant == null
-                    || indisponible(tenant, poste)
-                    || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
-                poste.setAnimateur(null);
-                liberes++;
-                continue;
-            }
-            poste.setVerrouille(true);
-            figes++;
         }
         return new StatistiquesIncremental(
                 postes.size(),
@@ -512,6 +489,54 @@ public final class ProblemBuilder {
                 nouveaux,
                 passes,
                 FrozenPast.countEmptyPast(postes));
+    }
+
+    /** What {@link #figerPostesIncremental} did with one seat, for its counts. */
+    private enum SeatOutcome {
+        PAST,
+        NEW,
+        RELEASED_BY_SCOPE,
+        FREED,
+        FROZEN
+    }
+
+    /**
+     * Settles one seat of an incremental re-solve against the tenant the
+     * persisted plan gave it ({@code tenantId}, {@code tenant} being that id
+     * resolved, {@code null} when the referential no longer knows it).
+     */
+    private static SeatOutcome freezeOrRelease(
+            PosteAffectation poste,
+            String tenantId,
+            Animateur tenant,
+            ReplanificationScope scope,
+            List<ContrainteAdHoc> indisponibilitesForcees,
+            PastHorizon horizon) {
+        if (FrozenPast.isPast(poste, horizon)) {
+            // History: whoever sat there sat there, and nobody can be
+            // seated there now — pinned even when empty.
+            poste.setPasse(true);
+            poste.setAnimateur(tenant);
+            poste.setVerrouille(true);
+            return SeatOutcome.PAST;
+        }
+        if (tenantId == null) {
+            return SeatOutcome.NEW;
+        }
+        if (scope.release(poste, tenantId)) {
+            return SeatOutcome.RELEASED_BY_SCOPE;
+        }
+        // Seeded first: the ad hoc check below reads the seat as staffed,
+        // exactly like the constraint it shares its implementation with.
+        poste.setAnimateur(tenant);
+        if (tenant == null
+                || indisponible(tenant, poste)
+                || forbiddenByContrainteAdHoc(indisponibilitesForcees, poste)) {
+            poste.setAnimateur(null);
+            return SeatOutcome.FREED;
+        }
+        poste.setVerrouille(true);
+        return SeatOutcome.FROZEN;
     }
 
     private static boolean indisponible(Animateur animateur, PosteAffectation poste) {
@@ -606,13 +631,12 @@ public final class ProblemBuilder {
             if (place < tenants.size()) {
                 poste.setAnimateur(animateursById.get(tenants.get(place)));
             }
-            if (poste.getAnimateur() == null) {
-                continue;
-            }
-            boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
-            poste.setVerrouille(gele);
-            if (!gele) {
-                poste.setAnimateur(null);
+            if (poste.getAnimateur() != null) {
+                boolean gele = verrouillages.stream().anyMatch(verrouillage -> verrouillage.couvre(poste));
+                poste.setVerrouille(gele);
+                if (!gele) {
+                    poste.setAnimateur(null);
+                }
             }
         }
     }
@@ -660,30 +684,38 @@ public final class ProblemBuilder {
      */
     public static List<PosteAffectation> buildPostes(List<Stand> stands, List<Creneau> creneaux) {
         List<PosteAffectation> postes = new ArrayList<>();
-        int counter = 0;
         for (Stand stand : stands) {
             for (Creneau creneau : creneaux) {
-                List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
-                boolean creneauEntierOuvert = segments.size() == 1
-                        && segments.get(0).debutMinutes() == 0
-                        && segments.get(0).finMinutes() == creneau.getDureeMinutes();
-                for (Creneau.SegmentOuvert segment : segments) {
-                    // At least one seat on an open stand, half on a
-                    // break-covering shift: the rule lives on the slot so the
-                    // analyses count exactly what is generated here.
-                    int seats = creneau.siegesSegment(segment.effectif());
-                    for (int seat = 0; seat < seats; seat++) {
-                        PosteAffectation poste = new PosteAffectation("poste-" + (counter++), stand, creneau);
-                        if (!creneauEntierOuvert) {
-                            poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
-                            poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
-                        }
-                        postes.add(poste);
-                    }
-                }
+                addPostes(postes, stand, creneau);
             }
         }
         return postes;
+    }
+
+    /**
+     * The seats of one stand × timeslot, appended to {@code postes}. Each is
+     * numbered by its position in that list, which is what the single running
+     * counter of {@link #buildPostes} always gave it.
+     */
+    private static void addPostes(List<PosteAffectation> postes, Stand stand, Creneau creneau) {
+        List<Creneau.SegmentOuvert> segments = creneau.segmentsOuverts(stand);
+        boolean creneauEntierOuvert = segments.size() == 1
+                && segments.get(0).debutMinutes() == 0
+                && segments.get(0).finMinutes() == creneau.getDureeMinutes();
+        for (Creneau.SegmentOuvert segment : segments) {
+            // At least one seat on an open stand, half on a
+            // break-covering shift: the rule lives on the slot so the
+            // analyses count exactly what is generated here.
+            int seats = creneau.siegesSegment(segment.effectif());
+            for (int seat = 0; seat < seats; seat++) {
+                PosteAffectation poste = new PosteAffectation("poste-" + postes.size(), stand, creneau);
+                if (!creneauEntierOuvert) {
+                    poste.setHeureDebutEffective(shift(creneau.getHeureDebut(), segment.debutMinutes()));
+                    poste.setHeureFinEffective(shift(creneau.getHeureDebut(), segment.finMinutes()));
+                }
+                postes.add(poste);
+            }
+        }
     }
 
     /** {@code heureDebut} shifted forward by {@code minutes}, wrapping past midnight. */

@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -320,8 +321,9 @@ public class PlanSnapshotService {
      */
     public SnapshotMeta captureBeforeSolve() {
         try {
-            return capture("Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now()), true);
-        } catch (RuntimeException e) {
+            return capture(
+                    "Avant solve du " + LIBELLE_AUTO_FORMAT.format(ZonedDateTime.now(ZoneId.systemDefault())), true);
+        } catch (RuntimeException _) {
             // Deliberately swallowed: see javadoc.
             return null;
         }
@@ -360,9 +362,14 @@ public class PlanSnapshotService {
     private static final String DEPUIS_SNAPSHOT =
             " FROM plan_snapshot s " + "LEFT JOIN edition e ON e.id = s.edition_id";
 
+    /** A snapshot's metadata and KPIs, without its content: what a listing reads. */
+    private static final String SELECT_META = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT;
+
+    /** A snapshot whole, content included: what a restore or a comparison reads. */
+    private static final String SELECT_DETAIL = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT;
+
     public List<SnapshotMeta> list() {
-        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
-                + " WHERE s.edition_id = ? ORDER BY s.cree_le DESC, s.id DESC";
+        String sql = SELECT_META + " WHERE s.edition_id = ? ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             return readMetas(ps);
@@ -380,7 +387,7 @@ public class PlanSnapshotService {
      * stays edition-scoped ({@link #restaurer}).
      */
     public List<SnapshotMeta> listAllEditions() {
-        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT + " ORDER BY s.cree_le DESC, s.id DESC";
+        String sql = SELECT_META + " ORDER BY s.cree_le DESC, s.id DESC";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             return readMetas(ps);
@@ -391,8 +398,7 @@ public class PlanSnapshotService {
 
     /** {@code null} when no snapshot of this edition carries that id. */
     public SnapshotDetail load(long id) {
-        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
-                + " WHERE s.edition_id = ? AND s.id = ?";
+        String sql = SELECT_DETAIL + " WHERE s.edition_id = ? AND s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, id);
@@ -409,7 +415,7 @@ public class PlanSnapshotService {
      * snapshot without its edition having to be named.
      */
     public SnapshotDetail loadAllEditions(long id) {
-        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT + " WHERE s.id = ?";
+        String sql = SELECT_DETAIL + " WHERE s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = connection.prepareStatement(sql)) {
             ps.setLong(1, id);
@@ -493,7 +499,7 @@ public class PlanSnapshotService {
      * once.
      */
     public SnapshotMeta lastPublication() {
-        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT
+        String sql = SELECT_META
                 + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
                 + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";
         try (Connection connection = dataSource.getConnection();
@@ -522,7 +528,7 @@ public class PlanSnapshotService {
      * not.</p>
      */
     public SnapshotDetail loadLastBeforeSolve() {
-        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+        String sql = SELECT_DETAIL
                 + " JOIN planning_resolution r ON r.edition_id = s.edition_id AND r.snapshot_avant_solve_id = s.id"
                 + " WHERE s.edition_id = ? AND s.automatique";
         try (Connection connection = dataSource.getConnection();
@@ -563,7 +569,7 @@ public class PlanSnapshotService {
 
     /** Same as {@link #lastPublication()}, content included. */
     public SnapshotDetail loadLastPublication() {
-        String sql = "SELECT " + COLONNES_META + ", s.contenu, s.kpi" + DEPUIS_SNAPSHOT
+        String sql = SELECT_DETAIL
                 + " WHERE s.edition_id = ? AND s.publie_le IS NOT NULL"
                 + " ORDER BY s.publie_le DESC, s.id DESC LIMIT 1";
         try (Connection connection = dataSource.getConnection();
@@ -576,7 +582,7 @@ public class PlanSnapshotService {
 
     /** Meta of one snapshot of this edition, content excluded; {@code null} when unknown. */
     private SnapshotMeta meta(long id) {
-        String sql = "SELECT " + COLONNES_META + ", s.kpi" + DEPUIS_SNAPSHOT + " WHERE s.edition_id = ? AND s.id = ?";
+        String sql = SELECT_META + " WHERE s.edition_id = ? AND s.id = ?";
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setLong(2, id);
@@ -664,7 +670,7 @@ public class PlanSnapshotService {
         // Best-effort like captureBeforeSolve — it must not undo the restore.
         try {
             analysisStore.refreshFromPersistedPlan();
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             // Deliberately swallowed: a missing analysis is an empty screen,
             // the restore itself succeeded.
         }
@@ -864,7 +870,7 @@ public class PlanSnapshotService {
     private PlanningKpiService.PlanningKpi kpiCourant() {
         try {
             return kpiService.computeCurrent(null);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return null;
         }
     }
@@ -872,7 +878,7 @@ public class PlanSnapshotService {
     private String writeKpi(PlanningKpiService.PlanningKpi kpi) {
         try {
             return objectMapper.writeValueAsString(kpi);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return null;
         }
     }
@@ -884,7 +890,7 @@ public class PlanSnapshotService {
         }
         try {
             return objectMapper.readValue(json, PlanningKpiService.PlanningKpi.class);
-        } catch (Exception e) {
+        } catch (Exception _) {
             return null;
         }
     }

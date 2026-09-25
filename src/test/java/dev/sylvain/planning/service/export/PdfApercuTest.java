@@ -69,7 +69,7 @@ class PdfApercuTest {
     };
 
     @Test
-    void lesTroisDocumentsSeComposentEtTiennentLeurNombreDePages() throws IOException {
+    void theThreeDocumentsComposeAndKeepTheirPageCount() throws IOException {
         PlanningEvenement planning = festival();
         PlanningExportService service = new PlanningExportService(
                 new ApplicationLinks(Optional.of("http://localhost:8080")),
@@ -100,28 +100,30 @@ class PdfApercuTest {
                 dossier.resolve("livret-canicule.pdf"),
                 new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
                         .render(
-                                "Abby Desbarbieux",
-                                miens,
-                                PlanningExportService.teammatesByPoste(planning, "A-1"),
-                                PlanningExportService.daysOff(planning, "A-1"),
-                                List.of(),
-                                List.of(),
+                                new DocumentAnimateur.Contenu(
+                                        "Abby Desbarbieux",
+                                        miens,
+                                        PlanningExportService.teammatesByPoste(planning, "A-1"),
+                                        PlanningExportService.daysOff(planning, "A-1"),
+                                        List.of(),
+                                        List.of(),
+                                        consignes),
                                 "http://localhost:8080/animateur/jeton-de-demo",
-                                PROVENANCE.publiee(),
-                                consignes));
+                                PROVENANCE.publiee()));
         Files.write(
                 dossier.resolve("feuille-canicule.pdf"),
                 new AnimateurFeuillePdf(new PdfTheme(), TYPOLOGIES)
                         .render(
-                                "Abby Desbarbieux",
-                                miens,
-                                PlanningExportService.teammatesByPoste(planning, "A-1"),
-                                PlanningExportService.daysOff(planning, "A-1"),
-                                List.of(),
-                                List.of(),
+                                new DocumentAnimateur.Contenu(
+                                        "Abby Desbarbieux",
+                                        miens,
+                                        PlanningExportService.teammatesByPoste(planning, "A-1"),
+                                        PlanningExportService.daysOff(planning, "A-1"),
+                                        List.of(),
+                                        List.of(),
+                                        consignes),
                                 "http://localhost:8080/animateur/jeton-de-demo",
-                                PROVENANCE.publiee(),
-                                consignes));
+                                PROVENANCE.publiee()));
     }
 
     private static int pages(byte[] pdf) throws IOException {

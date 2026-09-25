@@ -6,6 +6,7 @@ import dev.sylvain.planning.service.EditionContext;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -103,7 +104,7 @@ public class EditionService {
             throw new BusinessError.Invalid(
                     "Impossible de supprimer l'édition par défaut — désignez-en une autre d'abord");
         }
-        if (id.equals(editionContext.editionIdCourant())) {
+        if (Objects.equals(id, editionContext.editionIdCourant())) {
             throw new BusinessError.Invalid("Impossible de supprimer l'édition courante — basculez ailleurs d'abord");
         }
         repository.delete(id);

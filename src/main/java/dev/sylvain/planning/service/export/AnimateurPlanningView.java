@@ -310,29 +310,34 @@ record AnimateurPlanningView(
             List<PauseAnalyzer.PauseAnimateurView> pauses) {
         Map<PosteAffectation, List<PauseAnalyzer.CoupureAnimateurView>> parPoste = new LinkedHashMap<>();
         for (PauseAnalyzer.CoupureAnimateurView coupure : coupures) {
-            if (pauses.stream().anyMatch(coupure::couvre)) {
-                continue;
-            }
-            PosteAffectation ancre = null;
-            PosteAffectation suivant = null;
-            for (PosteAffectation poste : postes) {
-                LocalDate date =
-                        poste.getCreneau() == null ? null : poste.getCreneau().getDate();
-                if (!coupure.date().equals(date) || poste.heureFinEffectif() == null) {
-                    continue;
-                }
-                if (!poste.heureFinEffectif().isAfter(coupure.debut())) {
-                    ancre = poste;
-                } else if (suivant == null) {
-                    suivant = poste;
-                }
-            }
-            PosteAffectation retenu = ancre != null ? ancre : suivant;
+            PosteAffectation retenu = pauses.stream().anyMatch(coupure::couvre) ? null : ancre(postes, coupure);
             if (retenu != null) {
                 parPoste.computeIfAbsent(retenu, ignored -> new ArrayList<>()).add(coupure);
             }
         }
         return parPoste;
+    }
+
+    /**
+     * The shift a meal break hangs off: the last one of its day ending before
+     * it, else the first one after, {@code null} on a day with no shift.
+     */
+    private static PosteAffectation ancre(List<PosteAffectation> postes, PauseAnalyzer.CoupureAnimateurView coupure) {
+        PosteAffectation ancre = null;
+        PosteAffectation suivant = null;
+        for (PosteAffectation poste : postes) {
+            LocalDate date =
+                    poste.getCreneau() == null ? null : poste.getCreneau().getDate();
+            if (!coupure.date().equals(date) || poste.heureFinEffectif() == null) {
+                continue;
+            }
+            if (!poste.heureFinEffectif().isAfter(coupure.debut())) {
+                ancre = poste;
+            } else if (suivant == null) {
+                suivant = poste;
+            }
+        }
+        return ancre != null ? ancre : suivant;
     }
 
     /**

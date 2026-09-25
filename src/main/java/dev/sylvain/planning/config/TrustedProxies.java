@@ -1,6 +1,7 @@
 package dev.sylvain.planning.config;
 
 import java.net.InetAddress;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,6 +51,23 @@ public final class TrustedProxies {
             }
             int mask = 0xFF << (8 - remainingBits);
             return (candidate[fullBytes] & mask) == (address[fullBytes] & mask);
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof Entry entry
+                    && prefixBits == entry.prefixBits
+                    && Arrays.equals(address, entry.address);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * Arrays.hashCode(address) + prefixBits;
+        }
+
+        @Override
+        public String toString() {
+            return "Entry[address=" + Arrays.toString(address) + ", prefixBits=" + prefixBits + "]";
         }
     }
 
@@ -134,7 +152,7 @@ public final class TrustedProxies {
         byte[] adresse;
         try {
             adresse = InetAddress.ofLiteral(candidate.trim()).getAddress();
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return false;
         }
         return entries.stream().anyMatch(entry -> entry.matches(adresse));

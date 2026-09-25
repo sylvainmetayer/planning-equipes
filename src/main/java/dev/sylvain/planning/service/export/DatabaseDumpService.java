@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.sql.DataSource;
 
 /**
@@ -191,6 +192,18 @@ public class DatabaseDumpService {
             "plan_snapshot",
             "publication_destinataire");
 
+    /**
+     * Advances each identity/serial sequence past the highest id now in its
+     * table, so the next row the app creates never collides with one just
+     * replayed from the dump. One statement for every table, built once from
+     * {@link #IDENTITY_TABLES}: a table name cannot be bound as a parameter,
+     * and this list is the only thing ever concatenated into it.
+     */
+    private static final String RESYNC_IDENTITY_SEQUENCES = IDENTITY_TABLES.stream()
+            .map(table -> "setval(pg_get_serial_sequence('" + table + "', 'id'), " + "COALESCE((SELECT MAX(id) FROM "
+                    + table + "), 1), true)")
+            .collect(Collectors.joining(", ", "SELECT ", ""));
+
     private static final Pattern STATEMENT_PATTERN =
             Pattern.compile("^(insert\\s+into|delete\\s+from|truncate\\s+table|truncate)\\s+([a-z_][a-z0-9_]*)");
 
@@ -248,14 +261,15 @@ public class DatabaseDumpService {
         int executed = scope.writeAndReturn("Failed to import the database", connection -> {
             try (Statement statement = connection.createStatement()) {
                 for (String sql : statements) {
-                    statement.execute(sql);
+                    statement.addBatch(sql);
                 }
-                resyncIdentitySequences(statement);
+                statement.executeBatch();
+                statement.execute(RESYNC_IDENTITY_SEQUENCES);
                 return statements.size();
             } catch (SQLException e) {
                 // Rolled back by the caller, which lets this one through unwrapped:
                 // a rejected script is the operator's mistake (400), not a database failure.
-                throw new BusinessError.Invalid("The SQL script could not be replayed: " + e.getMessage(), e);
+                throw new BusinessError.Invalid("The SQL script could not be replayed: " + serverMessage(e), e);
             }
         });
         // The replayed dump brings its own editions: without this, every
@@ -266,15 +280,13 @@ public class DatabaseDumpService {
     }
 
     /**
-     * Advances each identity/serial sequence past the highest id now in its
-     * table, so the next row the app creates never collides with one just
-     * replayed from the dump.
+     * The database's own sentence for a failed replay. A batch wraps it: the
+     * statement that failed is the chained exception, and its message is the
+     * one naming the table and the constraint.
      */
-    private void resyncIdentitySequences(Statement statement) throws SQLException {
-        for (String table : IDENTITY_TABLES) {
-            statement.execute("SELECT setval(pg_get_serial_sequence('" + table + "', 'id'), "
-                    + "COALESCE((SELECT MAX(id) FROM " + table + "), 1), true)");
-        }
+    private static String serverMessage(SQLException e) {
+        SQLException cause = e.getNextException();
+        return (cause != null ? cause : e).getMessage();
     }
 
     private void appendTable(Connection connection, String table, StringBuilder sql) throws SQLException {
@@ -350,47 +362,78 @@ public class DatabaseDumpService {
      * and the {@code --} comment lines.
      */
     static List<String> splitStatements(String script) {
-        List<String> statements = new ArrayList<>();
         if (script == null) {
+            return new ArrayList<>();
+        }
+        return new StatementSplitter(script).split();
+    }
+
+    /** One pass over a script, cutting it on the semicolons that end a statement. */
+    private static final class StatementSplitter {
+
+        private final String script;
+        private final List<String> statements = new ArrayList<>();
+        private final StringBuilder current = new StringBuilder();
+        private boolean inString;
+        private int position;
+
+        StatementSplitter(String script) {
+            this.script = script;
+        }
+
+        List<String> split() {
+            while (position < script.length()) {
+                step(script.charAt(position));
+            }
+            flush();
             return statements;
         }
-        StringBuilder current = new StringBuilder();
-        boolean inString = false;
-        boolean inComment = false;
-        for (int i = 0; i < script.length(); i++) {
-            char c = script.charAt(i);
-            if (inComment) {
-                if (c == '\n') {
-                    inComment = false;
-                    current.append(' ');
-                }
-                continue;
-            }
-            if (!inString && c == '-' && i + 1 < script.length() && script.charAt(i + 1) == '-') {
-                inComment = true;
-                i++;
-                continue;
-            }
-            if (c == '\'') {
-                // Doubled quotes escape a quote inside a literal.
-                if (inString && i + 1 < script.length() && script.charAt(i + 1) == '\'') {
-                    current.append("''");
-                    i++;
-                    continue;
-                }
-                inString = !inString;
+
+        private void step(char c) {
+            if (!inString && c == '-' && charAt(position + 1) == '-') {
+                skipComment();
+            } else if (c == '\'') {
+                quote();
+            } else if (c == ';' && !inString) {
+                flush();
+                position++;
+            } else {
                 current.append(c);
-                continue;
+                position++;
             }
-            if (c == ';' && !inString) {
-                addStatement(statements, current);
-                current.setLength(0);
-                continue;
-            }
-            current.append(c);
         }
-        addStatement(statements, current);
-        return statements;
+
+        /** A {@code --} comment runs to the end of its line, which stands in for it as one blank. */
+        private void skipComment() {
+            int endOfLine = script.indexOf('\n', position);
+            if (endOfLine < 0) {
+                position = script.length();
+            } else {
+                current.append(' ');
+                position = endOfLine + 1;
+            }
+        }
+
+        /** Doubled quotes escape a quote inside a literal; a single one opens or closes it. */
+        private void quote() {
+            if (inString && charAt(position + 1) == '\'') {
+                current.append("''");
+                position += 2;
+            } else {
+                inString = !inString;
+                current.append('\'');
+                position++;
+            }
+        }
+
+        private char charAt(int index) {
+            return index < script.length() ? script.charAt(index) : '\0';
+        }
+
+        private void flush() {
+            addStatement(statements, current);
+            current.setLength(0);
+        }
     }
 
     private static void addStatement(List<String> statements, StringBuilder current) {

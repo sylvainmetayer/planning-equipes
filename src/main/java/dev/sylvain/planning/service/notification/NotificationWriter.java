@@ -34,6 +34,9 @@ import java.util.Optional;
 @ApplicationScoped
 public class NotificationWriter {
 
+    /** Template value: how many items the mail is about. */
+    private static final String KEY_NOMBRE = "nombre";
+
     /**
      * « samedi 11 juillet » — the same way a planning is read aloud.
      *
@@ -143,9 +146,12 @@ public class NotificationWriter {
                 "mail/echanges-en-attente",
                 sujet,
                 MailTemplates.values(
-                        "nombre", n.nombre(),
-                        "joursMax", n.joursMax(),
-                        "lien", liens.echangesScreen().orElse(null))));
+                        KEY_NOMBRE,
+                        n.nombre(),
+                        "joursMax",
+                        n.joursMax(),
+                        "lien",
+                        liens.echangesScreen().orElse(null))));
     }
 
     private Optional<MailDraft> targetSolicited(Notification.TargetSolicited n) {
@@ -158,9 +164,7 @@ public class NotificationWriter {
                 n.emailCible(),
                 "mail/echange-propose",
                 sujet,
-                MailTemplates.values(
-                        "demandeur", n.demandeurNomComplet(),
-                        "nombre", n.nombre())));
+                MailTemplates.values("demandeur", n.demandeurNomComplet(), KEY_NOMBRE, n.nombre())));
     }
 
     private Optional<MailDraft> demandeDeclinee(Notification.DemandeDeclinee n) {
@@ -194,10 +198,14 @@ public class NotificationWriter {
                 "mail/demandes-soumises",
                 sujet,
                 MailTemplates.values(
-                        "demandeur", n.demandeurNomComplet(),
-                        "nombre", demandes.size(),
-                        "infaisables", infaisables,
-                        "lien", liens.echangesScreen().orElse(null))));
+                        "demandeur",
+                        n.demandeurNomComplet(),
+                        KEY_NOMBRE,
+                        demandes.size(),
+                        "infaisables",
+                        infaisables,
+                        "lien",
+                        liens.echangesScreen().orElse(null))));
     }
 
     private Optional<MailDraft> resolutionTerminee(Notification.ResolutionTerminee n) {

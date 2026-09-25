@@ -35,11 +35,11 @@ class SolverScoreTraceTest {
     void improvementsInsideTheSameSecondCollapseIntoTheLatestOne() {
         trace.start("job-1", "edition-1");
 
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
         // Same window: the solver announced twice in the same second, which is
         // the normal rate at the start of a run.
-        trace.record("job-1", event(300, -30, -8, -900));
-        trace.record("job-1", event(1000, -20, -6, -800));
+        trace.recordEvent("job-1", event(300, -30, -8, -900));
+        trace.recordEvent("job-1", event(1000, -20, -6, -800));
 
         // Two points, and the middle one is gone — but the value kept for the
         // first second is the LATEST of the window, never the first: the score
@@ -54,8 +54,8 @@ class SolverScoreTraceTest {
         // Half the seats are still empty, so almost nothing is violated: a
         // flattering score that would draw a cliff at the moment the plan
         // becomes complete, reading as a regression when it is the opposite.
-        trace.record("job-1", uninitialized(0, -1, 0, 0));
-        trace.record("job-1", event(1000, -40, -10, -1000));
+        trace.recordEvent("job-1", uninitialized(0, -1, 0, 0));
+        trace.recordEvent("job-1", event(1000, -40, -10, -1000));
 
         assertThat(points()).containsExactly(new Point(1000, -40, -10, -1000));
     }
@@ -67,7 +67,7 @@ class SolverScoreTraceTest {
         // One point per second for well past the cap: a long solve must cost no
         // more memory, and no more bytes on the wire, than a short one.
         for (int seconde = 0; seconde < 3 * SolverScoreTrace.MAX_POINTS; seconde++) {
-            trace.record("job-1", event(seconde * 1000L, -seconde, 0, 0));
+            trace.recordEvent("job-1", event(seconde * 1000L, -seconde, 0, 0));
         }
 
         Trace snapshot = trace.snapshot();
@@ -88,7 +88,7 @@ class SolverScoreTraceTest {
         int avant = trace.generation();
 
         for (int seconde = 0; seconde <= SolverScoreTrace.MAX_POINTS; seconde++) {
-            trace.record("job-1", event(seconde * 1000L, -seconde, 0, 0));
+            trace.recordEvent("job-1", event(seconde * 1000L, -seconde, 0, 0));
         }
 
         // Everything else only ever appends at the end; this is the one
@@ -106,7 +106,7 @@ class SolverScoreTraceTest {
     @Test
     void aRunThatStopsImprovingKeepsReportingTimePassing() throws InterruptedException {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
 
         long avant = trace.snapshot().dureeMs();
         // No further announcement: this is exactly what a plateau produces.
@@ -120,7 +120,7 @@ class SolverScoreTraceTest {
     @Test
     void aFinishedRunStopsStretchingInsteadOfGrowingForever() throws InterruptedException {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
         trace.finish("job-1");
 
         long fige = trace.snapshot().dureeMs();
@@ -136,7 +136,7 @@ class SolverScoreTraceTest {
         trace.start("job-1", "edition-1");
         // A point Timefold timed well past the wall clock this trace started
         // on: the axis must still contain it rather than cut it off.
-        trace.record("job-1", event(600_000, -40, -10, -1000));
+        trace.recordEvent("job-1", event(600_000, -40, -10, -1000));
 
         assertThat(trace.snapshot().dureeMs()).isGreaterThanOrEqualTo(600_000);
     }
@@ -144,11 +144,11 @@ class SolverScoreTraceTest {
     @Test
     void theEndOfTheRunFlushesTheFinalScoreEvenMidWindow() {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
         // Two hundred milliseconds later the solver stops: the sampling window
         // has not elapsed, but the final score is the one number of the whole
         // curve that must not be an approximation.
-        trace.record("job-1", event(200, 0, -2, -900));
+        trace.recordEvent("job-1", event(200, 0, -2, -900));
 
         trace.finish("job-1");
 
@@ -160,10 +160,10 @@ class SolverScoreTraceTest {
     @Test
     void aFinishedCurveIgnoresLateAnnouncementsFromItsOwnSolver() {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
         trace.finish("job-1");
 
-        trace.record("job-1", event(5000, 0, 0, 0));
+        trace.recordEvent("job-1", event(5000, 0, 0, 0));
 
         assertThat(points()).containsExactly(new Point(0, -40, -10, -1000));
     }
@@ -171,11 +171,11 @@ class SolverScoreTraceTest {
     @Test
     void anotherJobNeitherWritesIntoNorClosesTheCurrentCurve() {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
 
         // A listener of a previous run outliving its solver must not be able to
         // pollute the curve of the one on screen.
-        trace.record("job-0", event(1000, -1, -1, -1));
+        trace.recordEvent("job-0", event(1000, -1, -1, -1));
         trace.finish("job-0");
 
         Trace snapshot = trace.snapshot();
@@ -186,7 +186,7 @@ class SolverScoreTraceTest {
     @Test
     void aNewRunReplacesTheCurveAndItsEdition() {
         trace.start("job-1", "edition-1");
-        trace.record("job-1", event(0, -40, -10, -1000));
+        trace.recordEvent("job-1", event(0, -40, -10, -1000));
         trace.finish("job-1");
 
         trace.start("job-2", "edition-2");

@@ -16,6 +16,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 @Path("/planning/export")
@@ -41,9 +42,10 @@ public class PlanningExportResource {
     @Produces("application/pdf")
     public Response exportGlobalPdf() {
         byte[] content = planningExportService.exportGlobalPdf(persistenceService.loadPersistedPlanning());
-        String filename = "planning-global-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
+        String filename = "planning-global-"
+                + LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE) + ".pdf";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(filename))
                 .build();
     }
 
@@ -60,7 +62,7 @@ public class PlanningExportResource {
         byte[] content = planningExportService.exportAllPdfZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning-pdf.zip";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(filename))
                 .build();
     }
 
@@ -80,7 +82,7 @@ public class PlanningExportResource {
                 ? "planning-" + safeAnimateurId + "-feuille.pdf"
                 : "planning-" + safeAnimateurId + ".pdf";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(filename))
                 .build();
     }
 
@@ -92,7 +94,7 @@ public class PlanningExportResource {
         byte[] content = planningExportService.exportAllBundleZip(planningEvenement, layout);
         String filename = layout == FormatPlanning.FEUILLE ? "planning-feuilles.zip" : "planning.zip";
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(filename))
                 .build();
     }
 
@@ -102,7 +104,7 @@ public class PlanningExportResource {
     public Response exportAllIcsZip(PlanningEvenement planningEvenement) {
         byte[] content = planningExportService.exportAllIcsZip(planningEvenement);
         return Response.ok(content)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"planning-ics.zip\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment("planning-ics.zip"))
                 .build();
     }
 
@@ -112,11 +114,15 @@ public class PlanningExportResource {
     public Response exportAnimateurIcs(
             @PathParam("animateurId") String animateurId, PlanningEvenement planningEvenement) {
         String content = planningExportService.exportAnimateurIcs(planningEvenement, animateurId);
-        String displayName = planningExportService.resolveAnimateurName(planningEvenement, animateurId);
+        String displayName = PlanningExportService.resolveAnimateurName(planningEvenement, animateurId);
         String safeFilename = (displayName == null ? "planning" : displayName).replaceAll("[\\\\/\\r\\n\\\"]", "_");
         return Response.ok(content)
                 .type("text/calendar; charset=utf-8")
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + safeFilename + ".ics\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, attachment(safeFilename + ".ics"))
                 .build();
+    }
+
+    private static String attachment(String filename) {
+        return "attachment; filename=\"" + filename + "\"";
     }
 }

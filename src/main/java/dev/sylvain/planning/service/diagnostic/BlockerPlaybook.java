@@ -41,6 +41,9 @@ import java.util.function.Function;
  */
 public final class BlockerPlaybook {
 
+    /** Query parameter naming the rule an action opens its screen on. */
+    private static final String PARAM_REGLE = "regle";
+
     /**
      * One action type, instantiated on a problem.
      *
@@ -250,8 +253,11 @@ public final class BlockerPlaybook {
      * @return empty for a rule of a category the playbook has no line for
      */
     public static List<ActionType> forRule(ConstraintDefinition definition, String floorLink, Context position) {
-        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates = BY_RULE.get(definition.name());
-        if (templates == null) {
+        // Map.of refuses a null key even on get(): a definition missing its
+        // name or category finds no line rather than throwing.
+        List<BiFunction<ConstraintDefinition, Context, ActionType>> templates =
+                definition.name() == null ? null : BY_RULE.get(definition.name());
+        if (templates == null && definition.categorie() != null) {
             templates = BY_CATEGORY.get(definition.categorie());
         }
         if (templates == null) {
@@ -412,7 +418,7 @@ public final class BlockerPlaybook {
                 "Baisser son poids",
                 "Une règle de qualité se dose : à 1, elle cède devant les autres.",
                 ROUTE_CONSTRAINTS,
-                Map.of("regle", definition.name()));
+                Map.of(PARAM_REGLE, definition.name()));
     }
 
     private static ActionType adjustWeightAction(ConstraintDefinition definition) {
@@ -421,7 +427,7 @@ public final class BlockerPlaybook {
                 "Ajuster son poids",
                 "Une préférence départage deux plannings valides : baissez son poids si l'écart vous convient.",
                 ROUTE_CONSTRAINTS,
-                Map.of("regle", definition.name()));
+                Map.of(PARAM_REGLE, definition.name()));
     }
 
     private static ActionType ruleAction(ConstraintDefinition definition) {
@@ -430,7 +436,7 @@ public final class BlockerPlaybook {
                 "Voir la règle",
                 "Sa ligne sur l'écran Contraintes dit ce qu'elle mesure et ce qui la règle.",
                 ROUTE_CONSTRAINTS,
-                Map.of("regle", definition.name()));
+                Map.of(PARAM_REGLE, definition.name()));
     }
 
     private static ActionType reviewAdjustmentsAction(List<String> contrainteIds) {

@@ -45,6 +45,9 @@ import java.util.Optional;
 @ApplicationScoped
 public class MailTemplates {
 
+    private static final String HTML_SUFFIX = ".html";
+    private static final String TEXT_SUFFIX = ".txt";
+
     /** Content id of the inlined logo, referenced as {@code cid:} by the layout. */
     static final String LOGO_CID = "logo@planning-equipes";
 
@@ -102,7 +105,7 @@ public class MailTemplates {
         data.put("highlight", branding.highlight());
         data.put("pill", branding.pill());
         data.put("logoCid", branding.logo() == null ? null : LOGO_CID);
-        return new MailContent(subject, render(template + ".txt", data), render(template + ".html", data));
+        return new MailContent(subject, render(template + TEXT_SUFFIX, data), render(template + HTML_SUFFIX, data));
     }
 
     private String render(String id, Map<String, Object> data) {
@@ -155,11 +158,11 @@ public class MailTemplates {
 
     /** Resolves {@code mail/xxx.txt} directly, and a suffix-less {@code mail/layout} the way Quarkus does. */
     private static Optional<TemplateLocator.TemplateLocation> locate(String id) {
-        List<String> candidates = id.contains(".") ? List.of(id) : List.of(id + ".html", id + ".txt");
+        List<String> candidates = id.contains(".") ? List.of(id) : List.of(id + HTML_SUFFIX, id + TEXT_SUFFIX);
         for (String candidate : candidates) {
             URL url = MailTemplates.class.getClassLoader().getResource("templates/" + candidate);
             if (url != null) {
-                String contentType = candidate.endsWith(".html") ? Variant.TEXT_HTML : Variant.TEXT_PLAIN;
+                String contentType = candidate.endsWith(HTML_SUFFIX) ? Variant.TEXT_HTML : Variant.TEXT_PLAIN;
                 return Optional.of(new TemplateLocator.TemplateLocation() {
                     @Override
                     public Reader read() {

@@ -137,8 +137,7 @@ public class JournalNotificationsRepository {
      * merged result is still read newest-first.</p>
      */
     public List<Alerte> alertes(int limite) {
-        return scope.read("Failed to load the scheduled notification alerts", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        String sql = """
                     SELECT type, cle, declenche_le, libelle, severite, animateur_id
                     FROM (
                         SELECT type, cle, declenche_le, libelle, severite, animateur_id,
@@ -147,7 +146,9 @@ public class JournalNotificationsRepository {
                         WHERE edition_id = ? AND libelle IS NOT NULL
                     ) classees
                     WHERE rang <= ?
-                    ORDER BY declenche_le DESC""")) {
+                    ORDER BY declenche_le DESC""";
+        return scope.read("Failed to load the scheduled notification alerts", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setInt(2, limite);
                 try (ResultSet rs = ps.executeQuery()) {
                     List<Alerte> alertes = new ArrayList<>();

@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.export;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.domain.PlanningEvenement;
@@ -57,6 +58,15 @@ import org.openpdf.text.pdf.PdfWriter;
  */
 @ApplicationScoped
 public class GlobalPlanningPdf {
+
+    /** Section titles, shared by the summary, the headings and the PDF outline. */
+    private static final String TITLE_OVERVIEW = "Vue d'ensemble";
+
+    private static final String TITLE_BY_DAY = "Par journée";
+    private static final String TITLE_ANIMATEURS = "Animateurs";
+
+    /** What separates two items on one line. */
+    private static final String DOT_SEPARATOR = "  ·  ";
 
     private static final float LARGEUR = PageSize.A4.getHeight() - 68f;
 
@@ -118,7 +128,7 @@ public class GlobalPlanningPdf {
      * readable at event scale (3 500 seats becoming ~2 000 lines).
      */
     private List<LigneAffectation> lignesAffectation(PlanningEvenement planning) {
-        Map<String, LigneAffectation> parCle = new LinkedHashMap<>();
+        Map<String, List<PosteAffectation>> parCle = new LinkedHashMap<>();
         for (PosteAffectation poste : planning.getPostes()) {
             Creneau creneau = poste.getCreneau();
             Stand stand = poste.getStand();
@@ -127,23 +137,24 @@ public class GlobalPlanningPdf {
             }
             String key = stand.getId() + "@" + creneau.getId() + "#" + poste.heureDebutEffectif() + "-"
                     + poste.heureFinEffectif();
-            LigneAffectation ligne = parCle.computeIfAbsent(
-                    key,
-                    ignored -> new LigneAffectation(
-                            stand,
-                            creneau,
-                            poste.heureDebutEffectif(),
-                            poste.heureFinEffectif(),
-                            new ArrayList<>(),
-                            new int[] {0}));
-            ligne.sieges()[0]++;
-            if (poste.getAnimateur() != null) {
-                ligne.animateurs().add(poste.getAnimateur().nomAffiche());
-            }
+            parCle.computeIfAbsent(key, ignored -> new ArrayList<>()).add(poste);
         }
-        List<LigneAffectation> lignes = new ArrayList<>(parCle.values());
-        for (LigneAffectation ligne : lignes) {
-            ligne.animateurs().sort(String::compareToIgnoreCase);
+        List<LigneAffectation> lignes = new ArrayList<>(parCle.size());
+        for (List<PosteAffectation> postes : parCle.values()) {
+            PosteAffectation premier = postes.get(0);
+            List<String> animateurs = postes.stream()
+                    .map(PosteAffectation::getAnimateur)
+                    .filter(Objects::nonNull)
+                    .map(Animateur::nomAffiche)
+                    .sorted(String::compareToIgnoreCase)
+                    .toList();
+            lignes.add(new LigneAffectation(
+                    premier.getStand(),
+                    premier.getCreneau(),
+                    premier.heureDebutEffectif(),
+                    premier.heureFinEffectif(),
+                    animateurs,
+                    postes.size()));
         }
         return lignes;
     }
@@ -151,16 +162,15 @@ public class GlobalPlanningPdf {
     /**
      * One stand × vacation line of the global export.
      *
-     * @param sieges seats generated for that line, as a single-element array so
-     *               the count can be incremented while grouping — never the
-     *               stand's {@code effectifMin}, which a meal-pause coverage
-     *               vacation deliberately halves
+     * @param sieges seats generated for that line — never the stand's
+     *               {@code effectifMin}, which a meal-pause coverage vacation
+     *               deliberately halves
      */
     private record LigneAffectation(
-            Stand stand, Creneau creneau, LocalTime debut, LocalTime fin, List<String> animateurs, int[] sieges) {
+            Stand stand, Creneau creneau, LocalTime debut, LocalTime fin, List<String> animateurs, int sieges) {
 
         boolean incomplete() {
-            return animateurs.size() < sieges[0];
+            return animateurs.size() < sieges;
         }
 
         LocalDate date() {
@@ -210,7 +220,7 @@ public class GlobalPlanningPdf {
                 }
                 numeroDuJour.putIfAbsent(date, ligne.creneau().getJour());
                 stands.putIfAbsent(ligne.stand().getId(), ligne.stand());
-                compteSieges += ligne.sieges()[0];
+                compteSieges += ligne.sieges();
                 comptePourvus += ligne.animateurs().size();
                 int duree = minutes(ligne);
                 for (String animateur : ligne.animateurs()) {
@@ -329,11 +339,11 @@ public class GlobalPlanningPdf {
         table.setTotalWidth(LARGEUR);
         table.setLockedWidth(true);
 
-        table.addCell(entreeSommaire(1, "Vue d'ensemble", DEST_ENSEMBLE));
+        table.addCell(entreeSommaire(1, TITLE_OVERVIEW, DEST_ENSEMBLE));
         table.addCell(summaryText("La grille des " + plan.tousLesStands().size() + " stands × " + plan.dates.size()
                 + " jours : combien d'animateurs, où et quand."));
 
-        table.addCell(entreeSommaire(2, "Par journée", destJour(plan.dates.get(0))));
+        table.addCell(entreeSommaire(2, TITLE_BY_DAY, destJour(plan.dates.get(0))));
         PdfPCell jours = new PdfPCell();
         jours.setBorder(Rectangle.NO_BORDER);
         jours.setPaddingBottom(8f);
@@ -464,7 +474,7 @@ public class GlobalPlanningPdf {
             boolean premier = true;
             for (Stand stand : entree.getValue()) {
                 if (!premier) {
-                    noms.add(new Chunk("  ·  ", theme.lienLabelFont()));
+                    noms.add(new Chunk(DOT_SEPARATOR, theme.lienLabelFont()));
                 }
                 premier = false;
                 Chunk lien = new Chunk(stand.getNom(), theme.tableMiniFont());
@@ -526,7 +536,7 @@ public class GlobalPlanningPdf {
                 "Qui tient quel stand, chaque jour",
                 "Nombre d'animateurs différents sur le stand dans la journée",
                 DEST_ENSEMBLE,
-                "Vue d'ensemble"));
+                TITLE_OVERVIEW));
         document.add(legendeChaleur());
 
         List<LocalDate> dates = plan.dates;
@@ -564,19 +574,8 @@ public class GlobalPlanningPdf {
         return table;
     }
 
-    private PdfPTable grille(PlanView plan, List<LocalDate> dates) {
-        float colonneStand = 170f;
-        float[] largeurs = new float[dates.size() + 1];
-        largeurs[0] = colonneStand;
-        float reste = (LARGEUR - colonneStand) / dates.size();
-        for (int i = 1; i < largeurs.length; i++) {
-            largeurs[i] = reste;
-        }
-        PdfPTable table = new PdfPTable(largeurs);
-        table.setTotalWidth(LARGEUR);
-        table.setLockedWidth(true);
-        table.setHeaderRows(2);
-
+    /** The two header rows of the grid: each day's number, linking to its page, then its initial. */
+    private void addGrilleEntete(PdfPTable table, PlanView plan, List<LocalDate> dates) {
         PdfPCell jour = new PdfPCell(new Phrase("Jour", theme.tableMiniHeaderFont()));
         jour.setBorderColor(theme.pill());
         jour.setPadding(2f);
@@ -601,6 +600,41 @@ public class GlobalPlanningPdf {
             cell.setPadding(1f);
             table.addCell(cell);
         }
+    }
+
+    /** One stand's row of the grid: its name, then its headcount on each day, warmer as it grows. */
+    private void addGrilleStand(PdfPTable table, PlanView plan, Stand stand, List<LocalDate> dates) {
+        PdfPCell nom = new PdfPCell(standName(stand));
+        nom.setBorderColor(theme.pill());
+        nom.setPadding(2f);
+        table.addCell(nom);
+        for (LocalDate date : dates) {
+            Integer effectif = plan.effectifParStandEtJour.get(PlanView.key(stand.getId(), date));
+            PdfPCell cell =
+                    new PdfPCell(new Phrase(effectif == null ? "" : String.valueOf(effectif), theme.tableMiniFont()));
+            if (effectif != null) {
+                cell.setBackgroundColor(theme.chaleur(palier(effectif)));
+            }
+            cell.setBorderColor(theme.pill());
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setPadding(1.5f);
+            table.addCell(cell);
+        }
+    }
+
+    private PdfPTable grille(PlanView plan, List<LocalDate> dates) {
+        float colonneStand = 170f;
+        float[] largeurs = new float[dates.size() + 1];
+        largeurs[0] = colonneStand;
+        float reste = (LARGEUR - colonneStand) / dates.size();
+        for (int i = 1; i < largeurs.length; i++) {
+            largeurs[i] = reste;
+        }
+        PdfPTable table = new PdfPTable(largeurs);
+        table.setTotalWidth(LARGEUR);
+        table.setLockedWidth(true);
+        table.setHeaderRows(2);
+        addGrilleEntete(table, plan, dates);
 
         for (Map.Entry<String, List<Stand>> entree : plan.standsByLieu.entrySet()) {
             PdfPCell lieu = new PdfPCell(new Phrase(entree.getKey(), theme.tableMiniHeaderFont()));
@@ -610,22 +644,7 @@ public class GlobalPlanningPdf {
             lieu.setPadding(2f);
             table.addCell(lieu);
             for (Stand stand : entree.getValue()) {
-                PdfPCell nom = new PdfPCell(standName(stand));
-                nom.setBorderColor(theme.pill());
-                nom.setPadding(2f);
-                table.addCell(nom);
-                for (LocalDate date : dates) {
-                    Integer effectif = plan.effectifParStandEtJour.get(PlanView.key(stand.getId(), date));
-                    PdfPCell cell = new PdfPCell(
-                            new Phrase(effectif == null ? "" : String.valueOf(effectif), theme.tableMiniFont()));
-                    if (effectif != null) {
-                        cell.setBackgroundColor(theme.chaleur(palier(effectif)));
-                    }
-                    cell.setBorderColor(theme.pill());
-                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    cell.setPadding(1.5f);
-                    table.addCell(cell);
-                }
+                addGrilleStand(table, plan, stand, dates);
             }
         }
 
@@ -683,7 +702,7 @@ public class GlobalPlanningPdf {
             }
             premier = false;
             List<LigneAffectation> duJour = plan.duJour(date);
-            int sieges = duJour.stream().mapToInt(ligne -> ligne.sieges()[0]).sum();
+            int sieges = duJour.stream().mapToInt(LigneAffectation::sieges).sum();
             int pourvus =
                     duJour.stream().mapToInt(ligne -> ligne.animateurs().size()).sum();
             String etat =
@@ -694,7 +713,7 @@ public class GlobalPlanningPdf {
                     standCount(duJour) + " stands · " + duJour.size() + " créneaux · "
                             + plan.presentsParJour.getOrDefault(date, 0) + " animateurs · " + etat,
                     destJour(date),
-                    "Par journée"));
+                    TITLE_BY_DAY));
             document.add(tableauFenetres(plan, duJour, true));
         }
     }
@@ -743,38 +762,48 @@ public class GlobalPlanningPdf {
         }
 
         if (parStand) {
-            Map<String, List<LigneAffectation>> parLieu = new LinkedHashMap<>();
-            for (LigneAffectation ligne : lignes) {
-                parLieu.computeIfAbsent(PlanView.lieu(ligne.stand()), ignored -> new ArrayList<>())
-                        .add(ligne);
-            }
-            for (Map.Entry<String, List<LigneAffectation>> entree : parLieu.entrySet()) {
-                PdfPCell lieu = new PdfPCell(new Phrase(entree.getKey(), theme.tableMiniHeaderFont()));
-                lieu.setColspan(largeurs.length);
-                lieu.setBackgroundColor(theme.voile());
-                lieu.setBorderColor(theme.pill());
-                lieu.setPadding(2f);
-                table.addCell(lieu);
-                Map<String, Stand> distincts = new LinkedHashMap<>();
-                for (LigneAffectation ligne : entree.getValue()) {
-                    distincts.putIfAbsent(ligne.stand().getId(), ligne.stand());
-                }
-                List<Stand> stands = distincts.values().stream()
-                        .sorted(Comparator.comparing(Stand::getNom, String.CASE_INSENSITIVE_ORDER))
-                        .toList();
-                for (Stand stand : stands) {
-                    table.addCell(celluleIntitule(standName(stand), plan.palette.libelleDuStand(stand)));
-                    fillWindows(
-                            table,
-                            fenetres,
-                            entree.getValue().stream()
-                                    .filter(ligne -> ligne.stand().getId().equals(stand.getId()))
-                                    .toList());
-                }
-            }
-            return table;
+            addRowsByStand(table, plan, lignes, fenetres);
+        } else {
+            addRowsByDay(table, plan, lignes, fenetres);
         }
+        return table;
+    }
 
+    /** One row per stand, grouped under its location, its windows in columns. */
+    private void addRowsByStand(PdfPTable table, PlanView plan, List<LigneAffectation> lignes, List<Fenetre> fenetres) {
+        Map<String, List<LigneAffectation>> parLieu = new LinkedHashMap<>();
+        for (LigneAffectation ligne : lignes) {
+            parLieu.computeIfAbsent(PlanView.lieu(ligne.stand()), ignored -> new ArrayList<>())
+                    .add(ligne);
+        }
+        for (Map.Entry<String, List<LigneAffectation>> entree : parLieu.entrySet()) {
+            PdfPCell lieu = new PdfPCell(new Phrase(entree.getKey(), theme.tableMiniHeaderFont()));
+            lieu.setColspan(fenetres.size() + 1);
+            lieu.setBackgroundColor(theme.voile());
+            lieu.setBorderColor(theme.pill());
+            lieu.setPadding(2f);
+            table.addCell(lieu);
+            Map<String, Stand> distincts = new LinkedHashMap<>();
+            for (LigneAffectation ligne : entree.getValue()) {
+                distincts.putIfAbsent(ligne.stand().getId(), ligne.stand());
+            }
+            List<Stand> stands = distincts.values().stream()
+                    .sorted(Comparator.comparing(Stand::getNom, String.CASE_INSENSITIVE_ORDER))
+                    .toList();
+            for (Stand stand : stands) {
+                table.addCell(celluleIntitule(standName(stand), plan.palette.libelleDuStand(stand)));
+                fillWindows(
+                        table,
+                        fenetres,
+                        entree.getValue().stream()
+                                .filter(ligne -> ligne.stand().getId().equals(stand.getId()))
+                                .toList());
+            }
+        }
+    }
+
+    /** One row per day, its windows in columns. */
+    private void addRowsByDay(PdfPTable table, PlanView plan, List<LigneAffectation> lignes, List<Fenetre> fenetres) {
         List<LocalDate> dates = lignes.stream()
                 .map(LigneAffectation::date)
                 .filter(Objects::nonNull)
@@ -790,7 +819,6 @@ public class GlobalPlanningPdf {
                     fenetres,
                     lignes.stream().filter(ligne -> date.equals(ligne.date())).toList());
         }
-        return table;
     }
 
     private PdfPCell celluleIntitule(Phrase intitule, String detail) {
@@ -837,7 +865,7 @@ public class GlobalPlanningPdf {
                 .sorted(String.CASE_INSENSITIVE_ORDER)
                 .toList();
         int manquants = lignes.stream()
-                .mapToInt(ligne -> ligne.sieges()[0] - ligne.animateurs().size())
+                .mapToInt(ligne -> ligne.sieges() - ligne.animateurs().size())
                 .sum();
         if (animateurs.isEmpty()) {
             cell.setPhrase(new Phrase("Aucun animateur affecté", theme.tableAlertFont()));
@@ -845,7 +873,7 @@ public class GlobalPlanningPdf {
         }
         Paragraph paragraphe = new Paragraph(String.join(", ", animateurs), theme.tableMiniFont());
         if (manquants > 0) {
-            paragraphe.add(new Chunk("  ·  " + nonPourvus(manquants), theme.tableAlertFont()));
+            paragraphe.add(new Chunk(DOT_SEPARATOR + nonPourvus(manquants), theme.tableAlertFont()));
         }
         cell.addElement(paragraphe);
         return cell;
@@ -858,7 +886,7 @@ public class GlobalPlanningPdf {
         table.setLockedWidth(true);
         table.setHeaderRows(1);
         table.setSpacingAfter(6f);
-        for (String entete : List.of("Horaires", parStand ? "Stand" : "Jour", "Animateurs")) {
+        for (String entete : List.of("Horaires", parStand ? "Stand" : "Jour", TITLE_ANIMATEURS)) {
             PdfPCell cell = new PdfPCell(new Phrase(entete, theme.tableMiniHeaderFont()));
             cell.setBackgroundColor(theme.highlight());
             cell.setBorderColor(theme.pill());
@@ -926,7 +954,7 @@ public class GlobalPlanningPdf {
         ancre.setLocalDestination(destStand(stand));
         titre.add(ancre);
         cell.addElement(titre);
-        cell.addElement(new Paragraph(lieu + "  ·  " + compte, theme.sousTitreFont()));
+        cell.addElement(new Paragraph(lieu + DOT_SEPARATOR + compte, theme.sousTitreFont()));
         table.addCell(cell);
         return table;
     }
@@ -945,7 +973,7 @@ public class GlobalPlanningPdf {
                 "Animateurs de A à Z",
                 "Heures travaillées par jour · « Cr. » = nombre de créneaux",
                 DEST_ANIMATEURS,
-                "Animateurs"));
+                TITLE_ANIMATEURS));
 
         List<LocalDate> dates = plan.dates;
         for (int depart = 0; depart < dates.size(); depart += JOURS_PAR_GRILLE) {
@@ -953,81 +981,100 @@ public class GlobalPlanningPdf {
             if (depart > 0) {
                 document.newPage();
             }
-            float colonne = 150f;
-            float[] largeurs = new float[tranche.size() + 3];
-            largeurs[0] = colonne;
-            largeurs[1] = 36f;
-            largeurs[2] = 24f;
-            for (int i = 3; i < largeurs.length; i++) {
-                largeurs[i] = (LARGEUR - colonne - 60f) / tranche.size();
-            }
-            PdfPTable table = new PdfPTable(largeurs);
-            table.setTotalWidth(LARGEUR);
-            table.setLockedWidth(true);
-            table.setHeaderRows(1);
+            document.add(tableAnimateurs(plan, tranche));
+        }
+    }
 
-            for (String entete : List.of("Animateur", "Total", "Cr.")) {
-                PdfPCell cell = new PdfPCell(new Phrase(entete, theme.tableMiniHeaderFont()));
-                cell.setBackgroundColor(theme.highlight());
-                cell.setBorderColor(theme.pill());
-                cell.setPadding(2f);
-                table.addCell(cell);
-            }
-            for (LocalDate date : tranche) {
-                Chunk lien = new Chunk(String.valueOf(plan.numeroDuJour.get(date)), theme.tableMiniHeaderFont());
-                lien.setLocalGoto(destJour(date));
-                PdfPCell cell = new PdfPCell(new Phrase(lien));
-                cell.setBackgroundColor(theme.highlight());
-                cell.setBorderColor(theme.pill());
-                cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                cell.setPadding(2f);
-                table.addCell(cell);
-            }
+    /** The table of one run of days: a row per animateur, their hours on each day of {@code tranche}. */
+    private PdfPTable tableAnimateurs(PlanView plan, List<LocalDate> tranche) {
+        float colonne = 150f;
+        float[] largeurs = new float[tranche.size() + 3];
+        largeurs[0] = colonne;
+        largeurs[1] = 36f;
+        largeurs[2] = 24f;
+        for (int i = 3; i < largeurs.length; i++) {
+            largeurs[i] = (LARGEUR - colonne - 60f) / tranche.size();
+        }
+        PdfPTable table = new PdfPTable(largeurs);
+        table.setTotalWidth(LARGEUR);
+        table.setLockedWidth(true);
+        table.setHeaderRows(1);
 
-            Set<String> lettresAncrees = new TreeSet<>();
-            for (Map.Entry<String, int[]> animateur : plan.totauxParAnimateur.entrySet()) {
-                // The letter chips of the summary land on the first name they
-                // name, so « S » opens where the S's start and not on page one
-                // of the section.
-                Chunk chunk = new Chunk(animateur.getKey(), theme.tableMiniFont());
-                String lettre = animateur.getKey().isEmpty()
-                        ? "?"
-                        : animateur.getKey().substring(0, 1).toUpperCase(Locale.FRENCH);
-                if (lettresAncrees.add(lettre)) {
-                    chunk.setLocalDestination(destLettre(lettre));
-                }
-                PdfPCell nom = new PdfPCell(new Phrase(chunk));
-                nom.setBorderColor(theme.pill());
-                nom.setPadding(2f);
-                table.addCell(nom);
-                PdfPCell total = new PdfPCell(new Phrase(
-                        AnimateurPlanningPdf.heures(animateur.getValue()[0]) + " h", theme.tableMiniHeaderFont()));
-                total.setBorderColor(theme.pill());
-                total.setHorizontalAlignment(Element.ALIGN_RIGHT);
-                total.setPadding(2f);
-                table.addCell(total);
-                PdfPCell creneaux =
-                        new PdfPCell(new Phrase(String.valueOf(animateur.getValue()[1]), theme.tableMiniFont()));
-                creneaux.setBorderColor(theme.pill());
-                creneaux.setHorizontalAlignment(Element.ALIGN_CENTER);
-                creneaux.setPadding(2f);
-                table.addCell(creneaux);
-                for (LocalDate date : tranche) {
-                    Integer minutes = plan.minutesParAnimateurEtJour.get(PlanView.key(animateur.getKey(), date));
-                    int niveau = minutes == null ? 0 : palierHeures(minutes);
-                    PdfPCell cell = new PdfPCell(new Phrase(
-                            minutes == null ? "" : AnimateurPlanningPdf.heures(minutes),
-                            minutes == null ? theme.tableMiniFont() : surChaleur(theme.tableMiniFont(), niveau)));
-                    if (minutes != null) {
-                        cell.setBackgroundColor(theme.chaleur(niveau));
-                    }
-                    cell.setBorderColor(theme.pill());
-                    cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-                    cell.setPadding(1.5f);
-                    table.addCell(cell);
-                }
+        for (String entete : List.of("Animateur", "Total", "Cr.")) {
+            PdfPCell cell = new PdfPCell(new Phrase(entete, theme.tableMiniHeaderFont()));
+            cell.setBackgroundColor(theme.highlight());
+            cell.setBorderColor(theme.pill());
+            cell.setPadding(2f);
+            table.addCell(cell);
+        }
+        for (LocalDate date : tranche) {
+            Chunk lien = new Chunk(String.valueOf(plan.numeroDuJour.get(date)), theme.tableMiniHeaderFont());
+            lien.setLocalGoto(destJour(date));
+            PdfPCell cell = new PdfPCell(new Phrase(lien));
+            cell.setBackgroundColor(theme.highlight());
+            cell.setBorderColor(theme.pill());
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setPadding(2f);
+            table.addCell(cell);
+        }
+
+        Set<String> lettresAncrees = new TreeSet<>();
+        for (Map.Entry<String, int[]> animateur : plan.totauxParAnimateur.entrySet()) {
+            addAnimateurRow(table, plan, animateur, tranche, lettresAncrees);
+        }
+        return table;
+    }
+
+    /**
+     * One animateur's row: their name, total hours and timeslot count, then
+     * their hours on each day of {@code tranche}.
+     *
+     * @param lettresAncrees the initials already given an anchor in this table
+     */
+    private void addAnimateurRow(
+            PdfPTable table,
+            PlanView plan,
+            Map.Entry<String, int[]> animateur,
+            List<LocalDate> tranche,
+            Set<String> lettresAncrees) {
+        // The letter chips of the summary land on the first name they
+        // name, so « S » opens where the S's start and not on page one
+        // of the section.
+        Chunk chunk = new Chunk(animateur.getKey(), theme.tableMiniFont());
+        String lettre = animateur.getKey().isEmpty()
+                ? "?"
+                : animateur.getKey().substring(0, 1).toUpperCase(Locale.FRENCH);
+        if (lettresAncrees.add(lettre)) {
+            chunk.setLocalDestination(destLettre(lettre));
+        }
+        PdfPCell nom = new PdfPCell(new Phrase(chunk));
+        nom.setBorderColor(theme.pill());
+        nom.setPadding(2f);
+        table.addCell(nom);
+        PdfPCell total = new PdfPCell(
+                new Phrase(AnimateurPlanningPdf.heures(animateur.getValue()[0]) + " h", theme.tableMiniHeaderFont()));
+        total.setBorderColor(theme.pill());
+        total.setHorizontalAlignment(Element.ALIGN_RIGHT);
+        total.setPadding(2f);
+        table.addCell(total);
+        PdfPCell creneaux = new PdfPCell(new Phrase(String.valueOf(animateur.getValue()[1]), theme.tableMiniFont()));
+        creneaux.setBorderColor(theme.pill());
+        creneaux.setHorizontalAlignment(Element.ALIGN_CENTER);
+        creneaux.setPadding(2f);
+        table.addCell(creneaux);
+        for (LocalDate date : tranche) {
+            Integer minutes = plan.minutesParAnimateurEtJour.get(PlanView.key(animateur.getKey(), date));
+            int niveau = minutes == null ? 0 : palierHeures(minutes);
+            PdfPCell cell = new PdfPCell(new Phrase(
+                    minutes == null ? "" : AnimateurPlanningPdf.heures(minutes),
+                    minutes == null ? theme.tableMiniFont() : surChaleur(theme.tableMiniFont(), niveau)));
+            if (minutes != null) {
+                cell.setBackgroundColor(theme.chaleur(niveau));
             }
-            document.add(table);
+            cell.setBorderColor(theme.pill());
+            cell.setHorizontalAlignment(Element.ALIGN_CENTER);
+            cell.setPadding(1.5f);
+            table.addCell(cell);
         }
     }
 
@@ -1043,7 +1090,6 @@ public class GlobalPlanningPdf {
 
     // --- Shared ---------------------------------------------------------------------
 
-    /** A section's header: the navigation strip, the title, and the anchor the summary links to. */
     /** An invisible anchor a link can land on, where the title itself is drawn by another element. */
     private Chunk ancrage(String destination) {
         Chunk chunk = new Chunk(" ", theme.lienLabelFont());
@@ -1083,10 +1129,10 @@ public class GlobalPlanningPdf {
         Paragraph paragraphe = new Paragraph();
         Map<String, String> entrees = new LinkedHashMap<>();
         entrees.put("Sommaire", DEST_SOMMAIRE);
-        entrees.put("Vue d'ensemble", DEST_ENSEMBLE);
-        entrees.put("Par journée", destJour(plan.dates.get(0)));
+        entrees.put(TITLE_OVERVIEW, DEST_ENSEMBLE);
+        entrees.put(TITLE_BY_DAY, destJour(plan.dates.get(0)));
         entrees.put("Par stand", destStand(plan.tousLesStands().get(0)));
-        entrees.put("Animateurs", DEST_ANIMATEURS);
+        entrees.put(TITLE_ANIMATEURS, DEST_ANIMATEURS);
         boolean premier = true;
         for (Map.Entry<String, String> entree : entrees.entrySet()) {
             if (!premier) {

@@ -183,7 +183,7 @@ public class NotificationsPlanifieesService {
     public ZoneId zoneId() {
         try {
             return ZoneId.of(zone);
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             LOG.warnf("Unknown notification time zone %s, falling back on the system zone", zone);
             return ZoneId.systemDefault();
         }

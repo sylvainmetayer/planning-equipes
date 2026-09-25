@@ -99,20 +99,24 @@ public class JdbcEditionScope {
      */
     public <T> T writeAndReturn(String failure, Query<T> statement) {
         try (Connection connection = dataSource.getConnection()) {
-            boolean autoCommitPrecedent = connection.getAutoCommit();
-            connection.setAutoCommit(false);
-            try {
-                T result = statement.execute(connection);
-                connection.commit();
-                return result;
-            } catch (SQLException | RuntimeException e) {
-                connection.rollback();
-                throw e;
-            } finally {
-                connection.setAutoCommit(autoCommitPrecedent);
-            }
+            return inTransaction(connection, statement);
         } catch (SQLException e) {
             throw new IllegalStateException(failure, e);
+        }
+    }
+
+    private static <T> T inTransaction(Connection connection, Query<T> statement) throws SQLException {
+        boolean autoCommitPrecedent = connection.getAutoCommit();
+        connection.setAutoCommit(false);
+        try {
+            T result = statement.execute(connection);
+            connection.commit();
+            return result;
+        } catch (SQLException | RuntimeException e) {
+            connection.rollback();
+            throw e;
+        } finally {
+            connection.setAutoCommit(autoCommitPrecedent);
         }
     }
 

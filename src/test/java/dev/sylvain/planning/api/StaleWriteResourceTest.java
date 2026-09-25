@@ -41,7 +41,7 @@ class StaleWriteResourceTest {
                     .put("/api/stands/SW-S1")
                     .then()
                     .statusCode(409)
-                    .body("code", equalTo(StaleWriteError.CODE))
+                    .body("code", equalTo(StaleWriteError.STALE_WRITE_CODE))
                     .body("message", containsString("par une autre session"))
                     .body("modifieLe", notNullValue());
 

@@ -75,7 +75,7 @@ public class AbonnementIcsResource {
                         HttpHeaders.CONTENT_DISPOSITION,
                         "inline; filename=\""
                                 + PlanningExportService.planningFileName(
-                                        planningExportService.resolveAnimateurName(planning, animateurId), "ics")
+                                        PlanningExportService.resolveAnimateurName(planning, animateurId), "ics")
                                 + "\"")
                 .build();
     }

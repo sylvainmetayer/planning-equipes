@@ -176,7 +176,7 @@ public class BackupService {
             reportToErrorTracker(e);
             outcome = new BackupRun(attemptedAt, false, null, reason(e));
         }
-        return new Attempt(outcome, record(outcome));
+        return new Attempt(outcome, recordOutcome(outcome));
     }
 
     /**
@@ -184,7 +184,7 @@ public class BackupService {
      * refuses the write — the alert must not depend on the very database whose
      * outage it may be reporting.
      */
-    private BackupStreak record(BackupRun outcome) {
+    private BackupStreak recordOutcome(BackupRun outcome) {
         int pending = unrecordedFailures.get();
         try {
             BackupStreak streak = repository.saveLastRun(outcome, pending);
@@ -294,7 +294,7 @@ public class BackupService {
     private ZoneId zoneId() {
         try {
             return ZoneId.of(configuration.zone());
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             // The scheduler already refused this value; naming the file in the
             // system zone is better than losing the dump over its name.
             LOG.warnf("Unknown backup time zone %s, naming the dump in the system zone", configuration.zone());

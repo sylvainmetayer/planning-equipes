@@ -75,14 +75,15 @@ public class DeclarationDisponibiliteRepository {
     }
 
     public void saveFenetre(FenetreCollecte fenetre) {
-        scope.write("Failed to store the collection window", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        String sql = """
                     INSERT INTO parametres_collecte (edition_id, collecte_ouverte, date_debut, date_fin)
                     VALUES (?, ?, ?, ?)
                     ON CONFLICT (edition_id) DO UPDATE SET
                         collecte_ouverte = EXCLUDED.collecte_ouverte,
                         date_debut = EXCLUDED.date_debut,
-                        date_fin = EXCLUDED.date_fin""")) {
+                        date_fin = EXCLUDED.date_fin""";
+        scope.write("Failed to store the collection window", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setBoolean(2, fenetre.ouverte());
                 ps.setObject(3, fenetre.debut());
                 ps.setObject(4, fenetre.fin());

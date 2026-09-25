@@ -100,7 +100,7 @@ public class PublicationTraceRepository {
     ObjectMapper objectMapper;
 
     /** Records everyone a publication addressed, reached or not. */
-    public void record(long snapshotId, List<Destinataire> destinataires) {
+    public void recordRecipients(long snapshotId, List<Destinataire> destinataires) {
         if (destinataires.isEmpty()) {
             return;
         }
@@ -110,8 +110,8 @@ public class PublicationTraceRepository {
  VALUES (?, ?, ?, ?, ?, ?, ?, ?::jsonb, ?::jsonb, ?)""";
         scope.write("Failed to record the publication recipients", connection -> {
             try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
+                ps.setLong(2, snapshotId);
                 for (Destinataire destinataire : destinataires) {
-                    ps.setLong(2, snapshotId);
                     ps.setString(3, destinataire.animateurId());
                     ps.setString(4, destinataire.nomAffiche());
                     ps.setString(5, destinataire.email());
@@ -162,26 +162,6 @@ public class PublicationTraceRepository {
     }
 
     /**
-     * The last thing this animateur was told <b>about their own schedule</b>,
-     * {@code null} when they never were (issue #532). One row, not a filter
-     * over {@link #byAnimateur(String)}: the espace reads it on every open, and
-     * what it shows is the newest line, never the history.
-     *
-     * <p>A row that only announces an échange decision is skipped: it moves
-     * nobody's days, so it neither resets the confirmation nor may it hide the
-     * changes that did — taking it as « the last line » emptied the banner of
-     * somebody still asked to confirm those changes. A first delivery is kept:
-     * it is the boundary before which there is nothing to replay.</p>
-     *
-     * <p>Read whatever the send's outcome was: a line the mail never carried —
-     * no address on the fiche, a send that failed — is exactly the one the
-     * espace has to show, since nothing else ever will. A <b>deferred</b> line
-     * is the one exception (issue #503): it records a publication that
-     * deliberately said nothing to this person, so replaying it in their
-     * espace would show them, as their last message, one that was never
-     * sent.</p>
-     */
-    /**
      * The people whose <b>last</b> line of the trace says they were deferred:
      * a publication went out knowing they were concerned and said nothing to
      * them, and nothing has said anything since (issue #503).
@@ -213,6 +193,26 @@ public class PublicationTraceRepository {
         }
     }
 
+    /**
+     * The last thing this animateur was told <b>about their own schedule</b>,
+     * {@code null} when they never were (issue #532). One row, not a filter
+     * over {@link #byAnimateur(String)}: the espace reads it on every open, and
+     * what it shows is the newest line, never the history.
+     *
+     * <p>A row that only announces an échange decision is skipped: it moves
+     * nobody's days, so it neither resets the confirmation nor may it hide the
+     * changes that did — taking it as « the last line » emptied the banner of
+     * somebody still asked to confirm those changes. A first delivery is kept:
+     * it is the boundary before which there is nothing to replay.</p>
+     *
+     * <p>Read whatever the send's outcome was: a line the mail never carried —
+     * no address on the fiche, a send that failed — is exactly the one the
+     * espace has to show, since nothing else ever will. A <b>deferred</b> line
+     * is the one exception (issue #503): it records a publication that
+     * deliberately said nothing to this person, so replaying it in their
+     * espace would show them, as their last message, one that was never
+     * sent.</p>
+     */
     public Destinataire lastScheduleSentTo(String animateurId) {
         String sql = """
  SELECT snapshot_id, animateur_id, nom_affiche, email, statut, envoye_le, changements, demandes,
@@ -268,7 +268,7 @@ public class PublicationTraceRepository {
         }
         try {
             return objectMapper.readValue(json, new TypeReference<List<String>>() {});
-        } catch (Exception e) {
+        } catch (Exception _) {
             return List.of();
         }
     }

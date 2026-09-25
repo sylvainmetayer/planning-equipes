@@ -129,7 +129,7 @@ public class SolverScoreTrace {
      */
     public void follow(String jobId, String editionId, Solver<PlanningEvenement> solver) {
         start(jobId, editionId);
-        solver.addEventListener(event -> record(jobId, event));
+        solver.addEventListener(event -> recordEvent(jobId, event));
     }
 
     synchronized void start(String jobId, String editionId) {
@@ -150,7 +150,7 @@ public class SolverScoreTrace {
      * on purpose: this runs inside the solve, and must never be what slows it
      * down or what breaks it.
      */
-    synchronized void record(String jobId, BestSolutionChangedEvent<PlanningEvenement> event) {
+    synchronized void recordEvent(String jobId, BestSolutionChangedEvent<PlanningEvenement> event) {
         if (!Objects.equals(this.jobId, jobId) || termine) {
             return;
         }

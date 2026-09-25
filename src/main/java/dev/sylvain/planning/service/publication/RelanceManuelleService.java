@@ -140,84 +140,119 @@ public class RelanceManuelleService {
             }
         }
 
-        List<String> envoyes = new ArrayList<>();
-        List<String> dejaConfirmes = new ArrayList<>();
-        List<String> sansEmail = new ArrayList<>();
-        List<String> dejaRelances = new ArrayList<>();
-        List<String> echecs = new ArrayList<>();
-        List<String> sansPoste = new ArrayList<>();
+        Tri tri = new Tri();
         Instant maintenant = Instant.now();
         for (String animateurId : retenus) {
-            Animateur fiche = fiches.get(animateurId);
-            ConfirmationPlanningService.ConfirmationView reponse = reponses.get(animateurId);
-            if (!reponse.affecte()) {
-                sansPoste.add(animateurId);
-                continue;
-            }
-            if (StatutConfirmation.CONFIRME.name().equals(reponse.statut())) {
-                dejaConfirmes.add(animateurId);
-                continue;
-            }
-            String cle = animateurId + "|" + publieLe;
-            if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
-                sansEmail.add(animateurId);
-                // Same trace as the nightly job leaves for the same case: a
-                // notification bubble lasts nine seconds, the eve of the event
-                // does not.
-                journal.claim(
-                        JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
-                        cle,
-                        animateurId,
-                        "Relance impossible : aucune adresse e-mail sur la fiche.",
-                        JournalNotificationsRepository.Severite.WARNING);
-                continue;
-            }
-            // Already reminded for this planning, whichever hand did it: the
-            // status is what the night reads too, and a republication that
-            // moves somebody is what puts them back to NON_VU.
-            if (StatutConfirmation.RELANCE.name().equals(reponse.statut())) {
-                dejaRelances.add(animateurId);
-                continue;
-            }
-            // The same key the nightly job claims: whoever wins the insert is
-            // the one who writes, and the other hand is refused.
-            if (!journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, animateurId)) {
-                dejaRelances.add(animateurId);
-                continue;
-            }
-            try {
-                mailService.sendRelanceConfirmation(
-                        fiche.getEmail(),
-                        fiche.getPrenom(),
-                        liens.espaceAnimateur(fiche.getAccessToken()).orElse(null));
-                // Recorded only once the mail has left: the status is what the
-                // screen, the « silent since N days » filter and the summary all
-                // read, and moving it for a send that failed would count a
-                // reminder nobody received.
-                confirmationService.recordReminder(animateurId, maintenant);
-                envoyes.add(animateurId);
-            } catch (RuntimeException e) {
-                Log.errorf(e, "Failed to mail the confirmation reminder to animateur %s", animateurId);
-                // The reservation goes back, so a retry is possible at all —
-                // holding it would refuse the hand and the night alike — and the
-                // failure is left on the Notifications screen rather than in a
-                // bubble that disappears.
-                journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
-                journal.claim(
-                        JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
-                        cle,
-                        animateurId,
-                        "Relance non partie : l'envoi du courriel a échoué.",
-                        JournalNotificationsRepository.Severite.ALERTE);
-                echecs.add(animateurId);
-            }
+            remindOne(
+                    animateurId,
+                    fiches.get(animateurId),
+                    reponses.get(animateurId),
+                    animateurId + "|" + publieLe,
+                    maintenant,
+                    tri);
         }
-        return new RapportRelance(
-                List.copyOf(envoyes),
-                List.copyOf(dejaConfirmes),
-                List.copyOf(sansEmail),
-                List.copyOf(dejaRelances),
-                List.copyOf(echecs),
-                List.copyOf(sansPoste));
+        return tri.rapport();
+    }
+
+    /** The six lists the report is made of, filled one animateur at a time. */
+    private record Tri(
+            List<String> envoyes,
+            List<String> dejaConfirmes,
+            List<String> sansEmail,
+            List<String> dejaRelances,
+            List<String> echecs,
+            List<String> sansPoste) {
+
+        Tri() {
+            this(
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>(),
+                    new ArrayList<>());
+        }
+
+        RapportRelance rapport() {
+            return new RapportRelance(
+                    List.copyOf(envoyes),
+                    List.copyOf(dejaConfirmes),
+                    List.copyOf(sansEmail),
+                    List.copyOf(dejaRelances),
+                    List.copyOf(echecs),
+                    List.copyOf(sansPoste));
+        }
+    }
+
+    /**
+     * Reminds one animateur, or says in {@code tri} why not.
+     *
+     * @param cle the key both the manual and the nightly reminder claim for
+     *            this person and this publication
+     */
+    private void remindOne(
+            String animateurId,
+            Animateur fiche,
+            ConfirmationPlanningService.ConfirmationView reponse,
+            String cle,
+            Instant maintenant,
+            Tri tri) {
+        if (!reponse.affecte()) {
+            tri.sansPoste().add(animateurId);
+            return;
+        }
+        if (StatutConfirmation.CONFIRME.name().equals(reponse.statut())) {
+            tri.dejaConfirmes().add(animateurId);
+            return;
+        }
+        if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
+            tri.sansEmail().add(animateurId);
+            // Same trace as the nightly job leaves for the same case: a
+            // notification bubble lasts nine seconds, the eve of the event
+            // does not.
+            journal.claim(
+                    JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                    cle,
+                    animateurId,
+                    "Relance impossible : aucune adresse e-mail sur la fiche.",
+                    JournalNotificationsRepository.Severite.WARNING);
+            return;
+        }
+        // Already reminded for this planning, whichever hand did it: the
+        // status is what the night reads too, and a republication that
+        // moves somebody is what puts them back to NON_VU.
+        // The same key the nightly job claims: whoever wins the insert is
+        // the one who writes, and the other hand is refused.
+        if (StatutConfirmation.RELANCE.name().equals(reponse.statut())
+                || !journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, animateurId)) {
+            tri.dejaRelances().add(animateurId);
+            return;
+        }
+        try {
+            mailService.sendRelanceConfirmation(
+                    fiche.getEmail(),
+                    fiche.getPrenom(),
+                    liens.espaceAnimateur(fiche.getAccessToken()).orElse(null));
+            // Recorded only once the mail has left: the status is what the
+            // screen, the « silent since N days » filter and the summary all
+            // read, and moving it for a send that failed would count a
+            // reminder nobody received.
+            confirmationService.recordReminder(animateurId, maintenant);
+            tri.envoyes().add(animateurId);
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Failed to mail the confirmation reminder to animateur %s", animateurId);
+            // The reservation goes back, so a retry is possible at all —
+            // holding it would refuse the hand and the night alike — and the
+            // failure is left on the Notifications screen rather than in a
+            // bubble that disappears.
+            journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
+            journal.claim(
+                    JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                    cle,
+                    animateurId,
+                    "Relance non partie : l'envoi du courriel a échoué.",
+                    JournalNotificationsRepository.Severite.ALERTE);
+            tri.echecs().add(animateurId);
+        }
     }
 }

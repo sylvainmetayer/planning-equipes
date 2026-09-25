@@ -27,6 +27,7 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -114,10 +115,9 @@ public class DemandeEchangeService {
             return List.of();
         }
         PlanningEvenement planning = persistenceService.loadPersistedPlanning();
-        PlanningPersistenceService.PlanningResolution resolution = persistenceService.loadResolution();
         List<DemandeEchange> demandes = new ArrayList<>();
         for (NouvelleDemande nouvelle : nouvelles) {
-            demandes.add(buildDemande(demandeurId, nouvelle, planning, resolution));
+            demandes.add(buildDemande(demandeurId, nouvelle, planning));
         }
         for (DemandeEchange demande : demandes) {
             inserer(demande);
@@ -139,11 +139,7 @@ public class DemandeEchangeService {
         return demandes;
     }
 
-    private DemandeEchange buildDemande(
-            String demandeurId,
-            NouvelleDemande nouvelle,
-            PlanningEvenement planning,
-            PlanningPersistenceService.PlanningResolution resolution) {
+    private DemandeEchange buildDemande(String demandeurId, NouvelleDemande nouvelle, PlanningEvenement planning) {
         if (nouvelle.creneauId() == null
                 || nouvelle.standId() == null
                 || nouvelle.standId().isBlank()) {
@@ -265,8 +261,7 @@ public class DemandeEchangeService {
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to answer demande " + demandeId, e);
         }
-        DemandeEchange demande = requiredDemande(demandeId);
-        return demande;
+        return requiredDemande(demandeId);
     }
 
     private String emailOf(String animateurId) {
@@ -348,7 +343,7 @@ public class DemandeEchangeService {
      * exists once the admin has decided something.
      */
     public boolean isFoireOpen() {
-        return fenetre().openOn(LocalDate.now());
+        return fenetre().openOn(LocalDate.now(ZoneId.systemDefault()));
     }
 
     /**

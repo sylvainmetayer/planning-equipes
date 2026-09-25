@@ -34,7 +34,7 @@ public class SolverJobPersistence {
     /** Writes the job as it stands; a database refusal is logged, never propagated. */
     void store(SolverJob job) {
         try {
-            repository.record(new LigneJob(
+            repository.save(new LigneJob(
                     job.getId(),
                     job.getEditionId(),
                     job.getEditionNom(),

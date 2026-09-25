@@ -185,10 +185,9 @@ public class JournalActionFilter implements ContainerResponseFilter {
                     if (imbrique != null) {
                         return imbrique;
                     }
-                } catch (ReflectiveOperationException | RuntimeException e) {
+                } catch (ReflectiveOperationException | RuntimeException _) {
                     // One unreadable component is not the end of the search:
                     // a later one may well carry the id.
-                    continue;
                 }
             }
         }
@@ -202,7 +201,7 @@ public class JournalActionFilter implements ContainerResponseFilter {
         try {
             Object id = objet.getClass().getMethod("getId").invoke(objet);
             return id == null ? null : String.valueOf(id);
-        } catch (ReflectiveOperationException | RuntimeException e) {
+        } catch (ReflectiveOperationException | RuntimeException _) {
             return null;
         }
     }

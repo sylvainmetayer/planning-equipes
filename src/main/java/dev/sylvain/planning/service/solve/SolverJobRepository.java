@@ -71,7 +71,7 @@ public class SolverJobRepository {
      * <p>{@code ordre} is left to the sequence on insert and never touched on
      * update: a job keeps the queue position it was given when submitted.</p>
      */
-    public void record(LigneJob ligne) {
+    public void save(LigneJob ligne) {
         String sql = """
  INSERT INTO solver_job (id, edition_id, edition_nom, type, statut, seconds_limit,
  perimetre, reamorcage, rejouable, erreur, soumis_le, demarre_le, termine_le)
@@ -164,7 +164,7 @@ public class SolverJobRepository {
         }
         try {
             return Reamorcage.valueOf(value);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return Reamorcage.AUTO;
         }
     }
@@ -191,7 +191,7 @@ public class SolverJobRepository {
         }
         try {
             return objectMapper.readValue(json, ReplanificationScope.class);
-        } catch (JsonProcessingException e) {
+        } catch (JsonProcessingException _) {
             return null;
         }
     }

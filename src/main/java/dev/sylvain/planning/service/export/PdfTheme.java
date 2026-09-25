@@ -16,6 +16,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -77,7 +78,7 @@ public class PdfTheme {
     private final Color accent;
     private final Color highlight;
     private final Color pill;
-    private final Color cardBackground = Color.WHITE;
+    private static final Color CARD_BACKGROUND = Color.WHITE;
 
     // --- Fonts: bold sans for headline figures, plain sans for supporting text ---
     private final Font brandLabelFont;
@@ -129,11 +130,12 @@ public class PdfTheme {
         this(
                 productName.value(),
                 branding.organisation().orElse(""),
-                branding.pdf().palette().headline(),
-                branding.pdf().palette().muted(),
-                branding.pdf().palette().accent(),
-                branding.pdf().palette().highlight(),
-                branding.pdf().palette().pill(),
+                new Couleurs(
+                        branding.pdf().palette().headline(),
+                        branding.pdf().palette().muted(),
+                        branding.pdf().palette().accent(),
+                        branding.pdf().palette().highlight(),
+                        branding.pdf().palette().pill()),
                 branding.pdf().logo().orElse(""),
                 branding.pdf().strip().orElse(""));
     }
@@ -143,28 +145,28 @@ public class PdfTheme {
      * tests, which assert on content and not on a customer's colours.
      */
     PdfTheme() {
-        this(ProductName.neutral().value(), "", "#1f2933", "#6b7280", "#3a6ea5", "#e4eaf1", "#f1f4f8", "", "");
+        this(
+                ProductName.neutral().value(),
+                "",
+                new Couleurs("#1f2933", "#6b7280", "#3a6ea5", "#e4eaf1", "#f1f4f8"),
+                "",
+                "");
     }
 
+    /** The five colours of the palette, as {@code #rrggbb} text. */
+    private record Couleurs(String headline, String muted, String accent, String highlight, String pill) {}
+
     private PdfTheme(
-            String productName,
-            String organisation,
-            String headline,
-            String muted,
-            String accent,
-            String highlight,
-            String pill,
-            String logoResource,
-            String stripResource) {
+            String productName, String organisation, Couleurs couleurs, String logoResource, String stripResource) {
         this.productName = productName.trim();
         this.organisation = organisation.trim();
         this.logoResource = logoResource.trim();
         this.stripResource = stripResource.trim();
-        this.headline = parseColor(headline);
-        this.muted = parseColor(muted);
-        this.accent = parseColor(accent);
-        this.highlight = parseColor(highlight);
-        this.pill = parseColor(pill);
+        this.headline = parseColor(couleurs.headline());
+        this.muted = parseColor(couleurs.muted());
+        this.accent = parseColor(couleurs.accent());
+        this.highlight = parseColor(couleurs.highlight());
+        this.pill = parseColor(couleurs.pill());
 
         this.brandLabelFont = new Font(Font.HELVETICA, 8.5f, Font.BOLD, this.accent);
         this.nameFont = new Font(Font.HELVETICA, 24, Font.BOLD, this.headline);
@@ -238,7 +240,7 @@ public class PdfTheme {
     }
 
     Color cardBackground() {
-        return cardBackground;
+        return CARD_BACKGROUND;
     }
 
     Font brandLabelFont() {
@@ -385,7 +387,7 @@ public class PdfTheme {
      */
     Color chaleur(int niveau) {
         float[] parts = {0.14f, 0.34f, 0.62f, 0.9f};
-        float part = parts[Math.max(0, Math.min(parts.length - 1, niveau))];
+        float part = parts[Math.clamp(niveau, 0, parts.length - 1)];
         return melange(accent, Color.WHITE, part);
     }
 
@@ -451,6 +453,7 @@ public class PdfTheme {
      * carries: see {@link ExportProvenance}.</p>
      */
     FooterEvent footerEvent(String what, Instant generatedAt, ExportProvenance.Provenance provenance) {
+        Objects.requireNonNull(provenance, "provenance");
         String text = footerOwner() + " · " + what + " généré le "
                 + GENERATED_AT_FORMAT.format(generatedAt.atZone(ZoneId.systemDefault()));
         return new FooterEvent(text, provenanceText(provenance), footerFont, muted);
@@ -472,9 +475,6 @@ public class PdfTheme {
     }
 
     private static String provenanceText(ExportProvenance.Provenance provenance) {
-        if (provenance == null) {
-            return null;
-        }
         String edition =
                 provenance.editionNom() == null || provenance.editionNom().isBlank()
                         ? "à partir des données de l'édition courante"
@@ -504,8 +504,7 @@ public class PdfTheme {
     PdfPTable brandHeader(
             Document document, float titleWidth, String brandText, String title, String subtitle, float spacingAfter) {
         Image logo = loadOptionalImage(logoResource);
-        PdfPTable header =
-                logo == null ? new PdfPTable(new float[] {titleWidth}) : new PdfPTable(new float[] {46f, titleWidth});
+        PdfPTable header = new PdfPTable(logo == null ? new float[] {titleWidth} : new float[] {46f, titleWidth});
         header.setTotalWidth(document.getPageSize().getWidth() - document.leftMargin() - document.rightMargin());
         header.setLockedWidth(true);
 
@@ -563,7 +562,7 @@ public class PdfTheme {
         if (premier.equals(dernier)) {
             return formatFrenchDayDate(premier) + " " + premier.getYear();
         }
-        boolean memeMois = premier.getMonth() == dernier.getMonth() && premier.getYear() == dernier.getYear();
+        boolean memeMois = premier.getMonthValue() == dernier.getMonthValue() && premier.getYear() == dernier.getYear();
         String debut = memeMois ? JOUR_SANS_MOIS.format(premier) : FRENCH_DAY_DATE_FORMAT.format(premier);
         return "Du " + debut + " au " + FRENCH_DAY_DATE_FORMAT.format(dernier) + " " + dernier.getYear();
     }
@@ -797,55 +796,67 @@ public class PdfTheme {
                 float x2 = left + width * (clamp(barre.finMinutes()) - debutAmplitude) / span;
                 float largeur = Math.max(1.5f, x2 - x1);
                 if (barre.pause()) {
-                    PdfContentByte ligne = canvases[PdfPTable.LINECANVAS];
-                    ligne.saveState();
-                    ligne.setColorStroke(barre.couleur());
-                    ligne.setLineWidth(0.7f);
-                    ligne.setLineDash(1.6f, 1.4f, 0f);
-                    float hauteur = position.getHeight() * 0.42f;
-                    ligne.rectangle(x1, position.getBottom() + (position.getHeight() - hauteur) / 2f, largeur, hauteur);
-                    ligne.stroke();
-                    ligne.restoreState();
-                    continue;
+                    drawPause(canvases[PdfPTable.LINECANVAS], position, barre, x1, largeur);
+                } else {
+                    drawBar(canvases, position, barre, x1, largeur);
                 }
-                float hauteur = position.getHeight() - 2.5f;
-                float bas = position.getBottom() + 1.25f;
-                fondCanvas.saveState();
-                fondCanvas.setColorFill(barre.couleur());
-                fondCanvas.roundRectangle(x1, bas, largeur, hauteur, 1.5f);
-                fondCanvas.fill();
-                fondCanvas.restoreState();
-
-                String libelle = barre.libelle();
-                if (libelle == null || libelle.isBlank()) {
-                    continue;
-                }
-                Font font = new Font(libelleFont);
-                font.setColor(lisibleSur(barre.couleur()));
-                BaseFont baseFont = font.getCalculatedBaseFont(false);
-                float taille = font.getCalculatedSize();
-                float disponible = largeur - 4f;
-                String texte = libelle;
-                while (baseFont.getWidthPoint(texte, taille) > disponible && texte.length() > 1) {
-                    texte = texte.substring(0, texte.length() - 1);
-                }
-                if (baseFont.getWidthPoint(texte, taille) > disponible) {
-                    continue;
-                }
-                PdfContentByte texteCanvas = canvases[PdfPTable.TEXTCANVAS];
-                texteCanvas.saveState();
-                texteCanvas.beginText();
-                texteCanvas.setFontAndSize(baseFont, taille);
-                texteCanvas.setColorFill(font.getColor());
-                texteCanvas.setTextMatrix(x1 + 2f, bas + (hauteur - taille) / 2f + 0.8f);
-                texteCanvas.showText(texte);
-                texteCanvas.endText();
-                texteCanvas.restoreState();
             }
         }
 
+        /** A break: a dashed outline, lower than a shift's bar. */
+        private static void drawPause(PdfContentByte ligne, Rectangle position, Barre barre, float x1, float largeur) {
+            ligne.saveState();
+            ligne.setColorStroke(barre.couleur());
+            ligne.setLineWidth(0.7f);
+            ligne.setLineDash(1.6f, 1.4f, 0f);
+            float hauteur = position.getHeight() * 0.42f;
+            ligne.rectangle(x1, position.getBottom() + (position.getHeight() - hauteur) / 2f, largeur, hauteur);
+            ligne.stroke();
+            ligne.restoreState();
+        }
+
+        /** A shift: a filled bar, and its label inside when it fits. */
+        private void drawBar(PdfContentByte[] canvases, Rectangle position, Barre barre, float x1, float largeur) {
+            float hauteur = position.getHeight() - 2.5f;
+            float bas = position.getBottom() + 1.25f;
+            PdfContentByte fondCanvas = canvases[PdfPTable.BACKGROUNDCANVAS];
+            fondCanvas.saveState();
+            fondCanvas.setColorFill(barre.couleur());
+            fondCanvas.roundRectangle(x1, bas, largeur, hauteur, 1.5f);
+            fondCanvas.fill();
+            fondCanvas.restoreState();
+
+            String libelle = barre.libelle();
+            if (libelle == null || libelle.isBlank()) {
+                return;
+            }
+            Font font = new Font(libelleFont);
+            font.setColor(lisibleSur(barre.couleur()));
+            BaseFont baseFont = font.getCalculatedBaseFont(false);
+            float taille = font.getCalculatedSize();
+            float disponible = largeur - 4f;
+            String texte = libelle;
+            while (baseFont.getWidthPoint(texte, taille) > disponible && texte.length() > 1) {
+                texte = texte.substring(0, texte.length() - 1);
+            }
+            if (baseFont.getWidthPoint(texte, taille) > disponible) {
+                return;
+            }
+            PdfContentByte texteCanvas = canvases[PdfPTable.TEXTCANVAS];
+            texteCanvas.saveState();
+            texteCanvas.beginText();
+            texteCanvas.setFontAndSize(baseFont, taille);
+            texteCanvas.setColorFill(font.getColor());
+            texteCanvas.setTextMatrix(x1 + 2f, bas + (hauteur - taille) / 2f + 0.8f);
+            texteCanvas.showText(texte);
+            texteCanvas.endText();
+            texteCanvas.restoreState();
+        }
+
         private int clamp(int minute) {
-            return Math.max(debutAmplitude, Math.min(finAmplitude, minute));
+            // Math.clamp refuses an upper bound below the lower one; an empty
+            // opening span pins everything to its start, as it always has.
+            return Math.clamp(minute, debutAmplitude, Math.max(debutAmplitude, finAmplitude));
         }
     }
 

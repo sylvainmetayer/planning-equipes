@@ -20,6 +20,7 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -219,10 +220,10 @@ public class SolvePipeline {
         }
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
-        Map<String, List<String>> avant = assignmentsBeforePersist();
+        Optional<Map<String, List<String>>> avant = assignmentsBeforePersist();
         persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
-        analysisStore.record(diagnostic);
+        analysisStore.store(diagnostic);
         // KPI history (issue #89): one row per finished solve, carrying the real
         // duration. Deliberately after the analysis — the KPI reads the score it
         // has just recorded — and never in a position to fail the solve.
@@ -240,7 +241,7 @@ public class SolvePipeline {
                 withComparison,
                 PreviousPlan.of(replaced == null ? null : replaced.id(), scoreBefore, diagnostic.score()),
                 impactPublication(resolu),
-                impactValidations(avant, resolu),
+                avant.map(image -> impactValidations(image, resolu)).orElse(null),
                 null);
     }
 
@@ -261,10 +262,10 @@ public class SolvePipeline {
         Thread.interrupted();
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         boolean kept = keepsPartialPlan(scoreBefore, diagnostic.score());
-        Map<String, List<String>> avant = kept ? assignmentsBeforePersist() : null;
+        Optional<Map<String, List<String>>> avant = kept ? assignmentsBeforePersist() : Optional.empty();
         if (kept) {
             persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
-            analysisStore.record(diagnostic);
+            analysisStore.store(diagnostic);
             kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
             LOG.infof(
                     "Solve stopped by the server after %d s: its plan (%s) replaces the persisted one (%s)",
@@ -283,7 +284,7 @@ public class SolvePipeline {
                 // A kept partial plan replaced the persisted one just the same:
                 // the readings of the days it moved are as stale as after a
                 // solve that finished, and nothing else would ever withdraw them.
-                impactValidations(avant, resolu),
+                avant.map(image -> impactValidations(image, resolu)).orElse(null),
                 new Interruption(kept, diagnostic.score(), scoreBefore));
     }
 
@@ -323,9 +324,9 @@ public class SolvePipeline {
 
     /**
      * The plan in place, seat by cell — the before-image the days that moved
-     * are read from, or {@code null} when there is nothing to compare.
+     * are read from, or empty when there is nothing to compare.
      *
-     * <p>{@code null} on an edition carrying no reading at all: the image is
+     * <p>Empty on an edition carrying no reading at all: the image is
      * the whole persisted plan seat by seat, and an edition nobody reviews must
      * not pay for it on every solve. Distinct from an <b>empty</b> image, which
      * says the plan held nothing — every day then genuinely moved, and the
@@ -334,15 +335,15 @@ public class SolvePipeline {
      * <p>Best-effort: a failure here costs the recap a figure and leaves the
      * readings alone, it never fails a solve.</p>
      */
-    private Map<String, List<String>> assignmentsBeforePersist() {
+    private Optional<Map<String, List<String>>> assignmentsBeforePersist() {
         try {
             if (!validationService.hasValidations()) {
-                return null;
+                return Optional.empty();
             }
-            return persistenceService.loadAnimateursByStandCreneau();
+            return Optional.ofNullable(persistenceService.loadAnimateursByStandCreneau());
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan could not be read back; no reading is withdrawn", e);
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -354,9 +355,6 @@ public class SolvePipeline {
      * must not see a solve fail on a figure it does not read.</p>
      */
     private ImpactValidations impactValidations(Map<String, List<String>> avant, PlanningEvenement resolu) {
-        if (avant == null) {
-            return null;
-        }
         try {
             int journees = validationService.withdrawMovedDays(ReplanificationDiff.joursModifies(avant, resolu));
             return journees == 0 ? null : new ImpactValidations(journees);
@@ -450,7 +448,7 @@ public class SolvePipeline {
             // recap that sent the user there to restore it.
             snapshotService.recordScore(replaced.id(), diagnostic.score());
             return diagnostic.score();
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return null;
         }
     }

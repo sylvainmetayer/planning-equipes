@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.HttpHeaders;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 /**
@@ -28,7 +29,8 @@ public class DatabaseResource {
     @Produces("application/sql")
     public Response export() {
         String dump = databaseDumpService.exportDump();
-        String filename = "planning-equipes-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".sql";
+        String filename = "planning-equipes-"
+                + LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE) + ".sql";
         return Response.ok(dump)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .build();

@@ -32,12 +32,6 @@ public class OuvertureStandsResource {
     @Inject
     ReferenceDataService referenceDataService;
 
-    /**
-     * Stands come <b>resolved</b> and créneaux from the <em>active</em> group
-     * only — the exact pair {@code PlanningService} builds a problem from, which
-     * is the whole point: the screen must show what the solver gets, not a
-     * second interpretation of the same data.
-     */
     /** The grid as submitted: only the stands that were edited, each with all its cells. */
     public record SaisieGrille(List<GrilleHorairesStands.SaisieStand> stands) {}
 
@@ -58,6 +52,12 @@ public class OuvertureStandsResource {
                 saisie == null || saisie.stands() == null ? List.of() : saisie.stands()));
     }
 
+    /**
+     * Stands come <b>resolved</b> and créneaux from the <em>active</em> group
+     * only — the exact pair {@code PlanningService} builds a problem from, which
+     * is the whole point: the screen must show what the solver gets, not a
+     * second interpretation of the same data.
+     */
     @GET
     public RapportOuvertures analyze() {
         return OuvertureStandsAnalyzer.analyze(

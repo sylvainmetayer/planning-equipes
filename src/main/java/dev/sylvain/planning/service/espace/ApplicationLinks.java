@@ -67,8 +67,7 @@ public class ApplicationLinks {
      */
     @Inject
     public ApplicationLinks(@ConfigProperty(name = "planning.public-url") Optional<String> baseUrl) {
-        this.base =
-                baseUrl == null ? Optional.empty() : baseUrl.map(String::trim).filter(url -> !url.isBlank());
+        this.base = baseUrl.map(String::trim).filter(url -> !url.isBlank());
     }
 
     /** Whether links can be printed at all — false when no base URL is configured. */

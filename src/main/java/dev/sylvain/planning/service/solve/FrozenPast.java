@@ -199,17 +199,15 @@ public final class FrozenPast {
                     poste.getStand().getId(), poste.getCreneau().getId());
             List<String> tenants = animateursPersistes.getOrDefault(key, List.of());
             int place = prochainePlace.merge(key, 1, Integer::sum) - 1;
-            if (!isPast(poste, horizon)) {
-                continue;
+            if (isPast(poste, horizon)) {
+                poste.setPasse(true);
+                passes++;
+                if (!poste.isVerrouille()) {
+                    String tenantId = place < tenants.size() ? tenants.get(place) : null;
+                    poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
+                    poste.setVerrouille(true);
+                }
             }
-            poste.setPasse(true);
-            passes++;
-            if (poste.isVerrouille()) {
-                continue;
-            }
-            String tenantId = place < tenants.size() ? tenants.get(place) : null;
-            poste.setAnimateur(tenantId == null ? null : animateursById.get(tenantId));
-            poste.setVerrouille(true);
         }
         return passes;
     }

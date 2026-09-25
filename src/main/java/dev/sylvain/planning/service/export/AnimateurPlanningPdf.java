@@ -1,7 +1,5 @@
 package dev.sylvain.planning.service.export;
 
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -11,7 +9,6 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import org.openpdf.text.Chunk;
 import org.openpdf.text.Document;
 import org.openpdf.text.Element;
@@ -60,28 +57,11 @@ public class AnimateurPlanningPdf implements DocumentAnimateur {
 
     @Override
     public byte[] render(
-            String animateurName,
-            List<PosteAffectation> postes,
-            Map<String, List<String>> teammatesByPoste,
-            List<PlanningExportService.JourRepos> joursRepos,
-            List<PauseAnalyzer.PauseAnimateurView> pauses,
-            List<PauseAnalyzer.CoupureAnimateurView> coupures,
-            String lienEspaceAnimateur,
-            ExportProvenance.Provenance provenance,
-            Map<LocalDate, String> journeesModifiees) {
+            DocumentAnimateur.Contenu contenu, String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
         // The days a consigne governs, and what to print under their date —
         // handed down rather than kept on the bean, which is shared by every
         // build running at once.
-        AnimateurPlanningView view = AnimateurPlanningView.build(
-                animateurName,
-                postes,
-                teammatesByPoste,
-                joursRepos,
-                pauses,
-                coupures,
-                journeesModifiees,
-                TypologiePalette.of(typologies));
-        return render(view, lienEspaceAnimateur, provenance);
+        return render(contenu.view(TypologiePalette.of(typologies)), lienEspaceAnimateur, provenance);
     }
 
     byte[] render(AnimateurPlanningView view, String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
