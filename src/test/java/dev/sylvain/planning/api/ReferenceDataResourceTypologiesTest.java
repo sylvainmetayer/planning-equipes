@@ -16,18 +16,21 @@ import org.junit.jupiter.api.Test;
 /**
  * The optional {@code typologies:} scenario section: a scenario may declare
  * {@code {id, label}} pairs for the CRUD-managed {@code typologie}
- * referential up front, instead of letting every id a stand/animateur
- * references fall back to the id-as-its-own-label default {@code
- * ReferenceDataImportRepository#importFromPlanning} derives on the fly. See
- * {@code scenario-typologies.yaml} (test fixture): {@code STRATEGIE} is a
- * seeded typologie (label {@code STRATEGIE} by default) redeclared with a
- * real label, {@code JEUX_VIDEO} is only referenced by the stand.
+ * referential up front, instead of letting every reference a stand/animateur
+ * makes fall back to the reference-as-its-own-label default the import derives
+ * on the fly. See {@code scenario-typologies.yaml} (test fixture): {@code
+ * STRATEGIE} is redeclared with a real label, {@code JEUX_VIDEO} is only
+ * referenced by the stand.
+ *
+ * <p>The file's references are local to it (ADR 0050): the rows they land on
+ * carry a generated id and the reference as their {@code code}, so everything
+ * read back here is designated by code.</p>
  */
 @QuarkusTest
 class ReferenceDataResourceTypologiesTest {
 
     @Test
-    void importScenarioAppliqueLesLibellesDeTypologiesDeclares() {
+    void scenarioImportAppliesTheDeclaredTypologieLabels() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         given().when()
@@ -44,11 +47,11 @@ class ReferenceDataResourceTypologiesTest {
                 .getList("$");
 
         assertThat(typologies)
-                .filteredOn(t -> "STRATEGIE".equals(t.get("id")))
+                .filteredOn(t -> "STRATEGIE".equals(t.get("code")))
                 .extracting(t -> t.get("label"))
                 .containsExactly("Stratégie");
         assertThat(typologies)
-                .filteredOn(t -> "JEUX_VIDEO".equals(t.get("id")))
+                .filteredOn(t -> "JEUX_VIDEO".equals(t.get("code")))
                 .extracting(t -> t.get("label"))
                 .containsExactly("JEUX_VIDEO");
     }
@@ -66,7 +69,7 @@ class ReferenceDataResourceTypologiesTest {
     }
 
     @Test
-    void designerUneNouvelleTypologieNinjaRetrogradeLaPrecedente() {
+    void promotingANewNinjaTypologieDemotesThePreviousOne() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
@@ -76,17 +79,18 @@ class ReferenceDataResourceTypologiesTest {
 
         // Only one typologie may be ninja at a time: promoting another one must
         // demote the previous holder rather than fail on the unique index.
+        String jeuxVideo = typologieIdByCode("JEUX_VIDEO");
         given().contentType(ContentType.JSON)
-                .body(Map.of("id", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
+                .body(Map.of("id", jeuxVideo, "code", "JEUX_VIDEO", "label", "Jeux vidéo", "ninja", true))
                 .when()
-                .put("/api/typologies/JEUX_VIDEO")
+                .put("/api/typologies/" + jeuxVideo)
                 .then()
                 .statusCode(200);
 
         assertThat(typologiesNinja()).containsExactly("JEUX_VIDEO");
     }
 
-    /** Ids of the typologies currently flagged ninja — expected to hold at most one. */
+    /** Codes of the typologies currently flagged ninja — expected to hold at most one. */
     private static List<String> typologiesNinja() {
         List<Map<String, Object>> typologies = given().when()
                 .get("/api/typologies")
@@ -97,12 +101,28 @@ class ReferenceDataResourceTypologiesTest {
                 .getList("$");
         return typologies.stream()
                 .filter(t -> Boolean.TRUE.equals(t.get("ninja")))
-                .map(t -> (String) t.get("id"))
+                .map(t -> (String) t.get("code"))
                 .toList();
     }
 
+    /** The generated id of the typologie carrying {@code code} in the default edition. */
+    private static String typologieIdByCode(String code) {
+        List<Map<String, Object>> typologies = given().when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
+        return typologies.stream()
+                .filter(t -> code.equals(t.get("code")))
+                .map(t -> (String) t.get("id"))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No typologie of code " + code));
+    }
+
     @Test
-    void importScenarioFichierAppliqueLesLibellesDeTypologiesDeclares() throws Exception {
+    void scenarioFileImportAppliesTheDeclaredTypologieLabels() throws Exception {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
         String yamlContent = Files.readString(Path.of("src/main/resources/scenarios/scenario-typologies.yaml"));
@@ -127,11 +147,11 @@ class ReferenceDataResourceTypologiesTest {
                 .getList("$");
 
         assertThat(typologies)
-                .filteredOn(t -> "STRATEGIE".equals(t.get("id")))
+                .filteredOn(t -> "STRATEGIE".equals(t.get("code")))
                 .extracting(t -> t.get("label"))
                 .containsExactly("Stratégie");
         assertThat(typologies)
-                .filteredOn(t -> "JEUX_VIDEO".equals(t.get("id")))
+                .filteredOn(t -> "JEUX_VIDEO".equals(t.get("code")))
                 .extracting(t -> t.get("label"))
                 .containsExactly("JEUX_VIDEO");
     }
@@ -147,25 +167,29 @@ class ReferenceDataResourceTypologiesTest {
      * back.</p>
      */
     @Test
-    void lePlafondDeCreneauxSurvitALaCreationEtALaModification() {
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":4}")
+    void theTimeslotCapSurvivesCreationAndUpdate() {
+        // The id is generated on creation (ADR 0050): the one the response
+        // carries designates the row from then on.
+        String id = given().contentType(ContentType.JSON)
+                .body("{\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":4}")
                 .when()
                 .post("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
+                .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4))
+                .extract()
+                .path("id");
 
         given().when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'TYPO-PLAFOND' }.maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
+                .body("find { it.id == '" + id + "' }.maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(4));
 
         given().contentType(ContentType.JSON)
-                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":2}")
+                .body("{\"id\":\"" + id + "\",\"label\":\"Typologie plafonnée\",\"maxCreneauxParAnimateur\":2}")
                 .when()
-                .put("/api/typologies/TYPO-PLAFOND")
+                .put("/api/typologies/" + id)
                 .then()
                 .statusCode(200)
                 .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.equalTo(2));
@@ -173,14 +197,14 @@ class ReferenceDataResourceTypologiesTest {
         // No cap at all is a legitimate value, and must erase the one before:
         // « vide » on the form means « plus de plafond », not « inchangé ».
         given().contentType(ContentType.JSON)
-                .body("{\"id\":\"TYPO-PLAFOND\",\"label\":\"Typologie plafonnée\"}")
+                .body("{\"id\":\"" + id + "\",\"label\":\"Typologie plafonnée\"}")
                 .when()
-                .put("/api/typologies/TYPO-PLAFOND")
+                .put("/api/typologies/" + id)
                 .then()
                 .statusCode(200)
                 .body("maxCreneauxParAnimateur", org.hamcrest.Matchers.nullValue());
 
-        given().when().delete("/api/typologies/TYPO-PLAFOND").then().statusCode(204);
+        given().when().delete("/api/typologies/" + id).then().statusCode(204);
     }
 
     /**
@@ -190,22 +214,23 @@ class ReferenceDataResourceTypologiesTest {
      * to test for.
      */
     @Test
-    void laDescriptionSurvitALaCreationEtALaModification() {
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"TYPO-NOTE\",\"label\":\"Typologie annotée\","
-                        + "\"description\":\"Nécessite d'apprendre 45 jeux\"}")
+    void theDescriptionSurvivesCreationAndUpdate() {
+        String id = given().contentType(ContentType.JSON)
+                .body("{\"label\":\"Typologie annotée\",\"description\":\"Nécessite d'apprendre 45 jeux\"}")
                 .when()
                 .post("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("description", org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
+                .body("description", org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"))
+                .extract()
+                .path("id");
 
         given().when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
                 .body(
-                        "find { it.id == 'TYPO-NOTE' }.description",
+                        "find { it.id == '" + id + "' }.description",
                         org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
 
         // The plan read by typologie carries it too: it is the screen the note
@@ -215,17 +240,17 @@ class ReferenceDataResourceTypologiesTest {
                 .then()
                 .statusCode(200)
                 .body(
-                        "typologies.find { it.typologie == 'TYPO-NOTE' }.description",
+                        "typologies.find { it.typologie == '" + id + "' }.description",
                         org.hamcrest.Matchers.equalTo("Nécessite d'apprendre 45 jeux"));
 
         given().contentType(ContentType.JSON)
-                .body("{\"id\":\"TYPO-NOTE\",\"label\":\"Typologie annotée\",\"description\":\"   \"}")
+                .body("{\"id\":\"" + id + "\",\"label\":\"Typologie annotée\",\"description\":\"   \"}")
                 .when()
-                .put("/api/typologies/TYPO-NOTE")
+                .put("/api/typologies/" + id)
                 .then()
                 .statusCode(200)
                 .body("description", org.hamcrest.Matchers.nullValue());
 
-        given().when().delete("/api/typologies/TYPO-NOTE").then().statusCode(204);
+        given().when().delete("/api/typologies/" + id).then().statusCode(204);
     }
 }

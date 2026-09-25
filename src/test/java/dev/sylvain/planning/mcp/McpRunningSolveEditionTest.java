@@ -43,8 +43,6 @@ class McpRunningSolveEditionTest {
 
     private static final LocalDate JOUR = LocalDate.of(2030, 9, 3);
 
-    private static final String NEIGHBOUR = "RUN-EDITION-B";
-
     private static final String CODE = WarningCodes.RESOLUTION_EN_COURS;
 
     @Inject
@@ -83,22 +81,25 @@ class McpRunningSolveEditionTest {
                 new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("RUN-P1", stand, creneau, animateur)));
         String held = editionContext.editionIdCourant();
         String jobId = null;
+        String neighbour = null;
+        String absent = null;
+        String typologie = null;
         try {
-            editions.create(new Edition(NEIGHBOUR, "Édition voisine du calcul", false, null));
+            neighbour = editions.create(new Edition(null, "Édition voisine du calcul", false, null))
+                    .getId();
             persistence.persist(probleme);
-            referenceData.createAnimateur(animateur("RUN-A2"));
+            absent = referenceData.createAnimateur(animateur(null)).getId();
             waitForFreeSolver();
 
             jobId = solverJobs.submitSolve(probleme, 60L).getId();
             assertThat(solverJobs.findActive().orElseThrow().getEditionId()).isEqualTo(held);
 
             // The warning: named edition held → warned; the neighbour → nothing.
+            var pendant = standTools.createTypologie("Pendant le calcul", null, held);
+            typologie = pendant.id();
+            assertThat(pendant.avertissements()).contains(CODE);
             assertThat(standTools
-                            .createTypologie("RUN-T1", "Pendant le calcul", held)
-                            .avertissements())
-                    .contains(CODE);
-            assertThat(standTools
-                            .createTypologie("RUN-T2", "À côté du calcul", NEIGHBOUR)
+                            .createTypologie("À côté du calcul", null, neighbour)
                             .avertissements())
                     .doesNotContain(CODE);
 
@@ -116,7 +117,8 @@ class McpRunningSolveEditionTest {
             // An absence with no seat to free is refused all the same: the
             // solve never read its exceptions, and could seat the person there.
             int exceptions = referenceData.listContraintesAdHoc().size();
-            assertThatThrownBy(() -> jourJ.recordAbsence("RUN-A2", null, JOUR, JOUR.atTime(LocalTime.of(8, 0))))
+            String absentId = absent;
+            assertThatThrownBy(() -> jourJ.recordAbsence(absentId, null, JOUR, JOUR.atTime(LocalTime.of(8, 0))))
                     .isInstanceOf(SolverJobService.SolverBusyException.class);
             assertThat(referenceData.listContraintesAdHoc()).hasSize(exceptions);
 
@@ -133,10 +135,16 @@ class McpRunningSolveEditionTest {
             persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
             referenceData.deleteStand("RUN-S1");
             referenceData.deleteAnimateur("RUN-A1");
-            referenceData.deleteAnimateur("RUN-A2");
+            if (absent != null) {
+                referenceData.deleteAnimateur(absent);
+            }
             referenceData.deleteCreneaux(List.of(9701L));
-            referenceData.deleteTypologie("RUN-T1");
-            editions.delete(NEIGHBOUR);
+            if (typologie != null) {
+                referenceData.deleteTypologie(typologie);
+            }
+            if (neighbour != null) {
+                editions.delete(neighbour);
+            }
         }
     }
 
@@ -160,7 +168,7 @@ class McpRunningSolveEditionTest {
     }
 
     private static Animateur animateur(String id) {
-        return new Animateur(id, "Prenom", "Nom " + id, LocalDate.of(1990, 1, 1), false);
+        return new Animateur(id, "Prenom", "Nom " + (id == null ? "absent" : id), LocalDate.of(1990, 1, 1), false);
     }
 
     private static PosteAffectation poste(String id, Stand stand, Creneau creneau, Animateur animateur) {

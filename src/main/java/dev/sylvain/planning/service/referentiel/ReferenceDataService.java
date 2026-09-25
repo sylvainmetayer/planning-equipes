@@ -31,6 +31,7 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -255,15 +256,25 @@ public class ReferenceDataService implements ReferenceData {
      * created without anyone being told (issue #392, A5). The typologies are
      * validated on the same connection, where the ones written a moment ago
      * are visible.
+     *
+     * <p>The stand names what it needs by code until those exist (ADR 0050):
+     * a typologie of {@code typologiesACreer} is cited in
+     * {@link Stand#getTypologiesProposees} by its code, and replaced there by
+     * the id it is created under; the emplacement to create is the stand's own.</p>
      */
     public WrittenStand writeStand(Stand stand, List<TypologieItem> typologiesACreer, Emplacement emplacementACreer) {
         Stand ecrit = scope.writeAndReturn(
-                "Failed to create stand " + stand.getId() + " with its dependencies", connection -> {
+                "Failed to create stand " + stand.getNom() + " with its dependencies", connection -> {
+                    Set<String> proposees = new LinkedHashSet<>(stand.getTypologiesProposees());
                     for (TypologieItem typologie : typologiesACreer) {
-                        typologies.create(connection, typologie);
+                        TypologieItem creee = typologies.create(connection, typologie);
+                        if (proposees.remove(typologie.code())) {
+                            proposees.add(creee.id());
+                        }
                     }
+                    stand.setTypologiesProposees(proposees);
                     if (emplacementACreer != null) {
-                        emplacements.create(connection, emplacementACreer);
+                        stand.setEmplacement(emplacements.create(connection, emplacementACreer));
                     }
                     return stands.create(connection, stand);
                 });

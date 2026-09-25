@@ -5,7 +5,8 @@ import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneResolver;
@@ -58,6 +59,12 @@ public class StandService {
         this.consignes = consignes;
     }
 
+    @Inject
+    IdGenerator ids;
+
+    @Inject
+    JdbcEditionScope scope;
+
     /**
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated
      * exceptions, side by side, with no expansion. This is the CRUD view — what
@@ -97,15 +104,28 @@ public class StandService {
         ConsigneResolver.apply(stands, consignes.list(), creneaux);
     }
 
+    /** Id of the stand carrying {@code code}, {@code null} when none does. */
+    public String idByCode(String code) {
+        return repository.idByCode(code);
+    }
+
     /** One stand as persisted, or {@code null}: what a write compares itself against. */
     public Stand find(String id) {
         return repository.findStand(id);
     }
 
+    /**
+     * Creates the stand under an id the application draws (ADR 0050): an id
+     * the caller sent is overwritten.
+     */
     public Stand create(Stand stand) {
-        stand.setId(Ids.required(stand.getId(), "stand id"));
         validate(stand);
-        repository.saveStand(stand, true);
+        scope.write("Failed to create stand " + stand.getNom(), connection -> {
+            stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
+            Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, "le stand");
+            stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
+            repository.saveStand(connection, stand, true);
+        });
         changeTracker.markModified();
         return stand;
     }
@@ -116,8 +136,10 @@ public class StandService {
      * ago, so they are checked on that connection, where they exist.
      */
     Stand create(Connection connection, Stand stand) throws SQLException {
-        stand.setId(Ids.required(stand.getId(), "stand id"));
         StandValidator.check(stand);
+        stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
+        Codes.refuseTaken(stand.getCode(), repository.idByCode(connection, stand.getCode()), null, "le stand");
+        stand.setId(ids.next(connection, IdGenerator.Kind.STAND));
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(connection, stand.getTypologiesProposees());
         }
@@ -149,6 +171,8 @@ public class StandService {
         }
         stand.setId(id);
         validate(stand);
+        stand.setCode(Codes.normalise(stand.getCode(), IdGenerator.Kind.STAND));
+        Codes.refuseTaken(stand.getCode(), repository.idByCode(stand.getCode()), id, "le stand");
         repository.saveStand(stand, false);
         changeTracker.markModified();
         return stand;
@@ -230,6 +254,7 @@ public class StandService {
 
     /** Every proposed typologie must reference an id already present in the {@code typologie} referential. */
     private void validate(Stand stand) {
+        stand.setTypologiesProposees(typologies.resolveIds(stand.getTypologiesProposees()));
         StandValidator.check(stand);
         if (stand.getTypologiesProposees() != null) {
             typologies.validateIds(stand.getTypologiesProposees());

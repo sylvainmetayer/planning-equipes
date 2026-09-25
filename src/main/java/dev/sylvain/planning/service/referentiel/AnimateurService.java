@@ -3,7 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.TokenOwner;
 import dev.sylvain.planning.service.solve.SolverJobService;
@@ -40,13 +40,21 @@ public class AnimateurService {
         this.solverJobs = solverJobs;
     }
 
+    @Inject
+    IdGenerator ids;
+
     public List<Animateur> list() {
         return repository.listAnimateurs();
     }
 
+    /**
+     * Creates the fiche under an id the application draws (ADR 0050): an id
+     * the caller sent is overwritten. Never one derived from the name — the
+     * id is the one thing about an animateur that leaves over MCP.
+     */
     public Animateur create(Animateur animateur) {
-        animateur.setId(Ids.required(animateur.getId(), "animateur id"));
         validate(animateur);
+        animateur.setId(ids.next(IdGenerator.Kind.ANIMATEUR));
         repository.saveAnimateur(animateur, true);
         changeTracker.markModified();
         return animateur;
@@ -100,6 +108,9 @@ public class AnimateurService {
      */
     private void validate(Animateur animateur) {
         requireIdentity(animateur);
+        // A typologie may be named by its code (ADR 0050): stored by its id.
+        animateur.setCompetences(typologies.resolveKeys(animateur.getCompetences()));
+        animateur.setSouhaits(typologies.resolveIds(animateur.getSouhaits()));
         if (animateur.getCompetences() != null) {
             typologies.validateIds(animateur.getCompetences().keySet());
         }

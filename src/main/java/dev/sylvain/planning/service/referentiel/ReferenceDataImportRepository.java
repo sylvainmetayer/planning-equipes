@@ -93,7 +93,7 @@ public class ReferenceDataImportRepository {
             Map<Long, Long> idsRemap = insertTimeslotsTx(connection, creneauxById.values());
             upsertEmplacementsTx(connection, standsById.values());
             for (TypologieItem typologie : typologieRepository.derivedTypologies(standsById.values(), animateurs)) {
-                typologieRepository.upsertTypologieDerivee(connection, typologie);
+                typologieRepository.insertTypologieDerivee(connection, typologie);
             }
             for (Stand stand : standsById.values()) {
                 standRepository.upsertStand(connection, stand);

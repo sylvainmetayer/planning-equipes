@@ -55,7 +55,8 @@ class SolverJobArretTest {
     public static class Profil implements QuarkusTestProfile {}
 
     private static final LocalDate JOUR = LocalDate.of(2030, 9, 3);
-    private static final String EDITION = "ARRET-EDITION";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String edition;
 
     @Inject
     SolverJobService solverJobs;
@@ -107,7 +108,7 @@ class SolverJobArretTest {
             // to beat it. Timefold resets an early termination asked before
             // solve() starts, hence the delay.
             SolvePipeline.Resolution<ProblemeReamorce> resolution = withinEdition(() -> pipeline.execute(
-                    EDITION,
+                    edition,
                     () -> planningService.buildFromReferenceData(Reamorcage.AUCUN),
                     ProblemeReamorce::planning,
                     30L,
@@ -173,7 +174,7 @@ class SolverJobArretTest {
     }
 
     private <T> T withinEdition(java.util.concurrent.Callable<T> travail) {
-        return editionContext.executeIn(EDITION, travail);
+        return editionContext.executeIn(edition, travail);
     }
 
     private void attendreFin(SolverJob job) {
@@ -222,13 +223,16 @@ class SolverJobArretTest {
         }
 
         void create() {
-            if (editions.listEditions().stream().noneMatch(edition -> EDITION.equals(edition.getId()))) {
-                editions.create(new Edition(EDITION, "Édition de l'arrêt", false, null));
+            if (edition == null
+                    || editions.listEditions().stream().noneMatch(candidate -> edition.equals(candidate.getId()))) {
+                edition = editions.create(new Edition(null, "Édition de l'arrêt", false, null))
+                        .getId();
             }
-            editionContext.executeIn(EDITION, () -> {
+            editionContext.executeIn(edition, () -> {
                 clean();
-                if (referenceData.listTypologies().stream().noneMatch(item -> "STRATEGIE".equals(item.id()))) {
-                    referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                if (referenceData.listTypologies().stream().noneMatch(item -> "STRATEGIE".equals(item.code()))) {
+                    referenceData.createTypologie(
+                            new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 }
                 referenceData.createStand(stand);
                 animateurs.forEach(referenceData::createAnimateur);
@@ -237,7 +241,7 @@ class SolverJobArretTest {
         }
 
         void clean() {
-            editionContext.executeIn(EDITION, () -> {
+            editionContext.executeIn(edition, () -> {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
                 referenceData.deleteStand("ARRET-S1");
                 animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));

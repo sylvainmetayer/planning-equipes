@@ -38,80 +38,95 @@ class ConcurrentModificationGuardTest {
 
     @Test
     void staleStandWriteIsRefusedAndNothingIsWritten() {
-        Stand stand = referenceData.createStand(new Stand("CM-S1", "Stand", Set.of("STRATEGIE"), 1, 1, false));
+        Stand stand = referenceData.createStand(new Stand(null, "Stand", Set.of(strategie()), 1, 1, false));
+        String id = stand.getId();
         try {
             assertThat(stand.getModifieLe()).isNotNull();
             // Session B saves first.
             Stand sessionB = referenceData.listStands().stream()
-                    .filter(s -> "CM-S1".equals(s.getId()))
+                    .filter(s -> id.equals(s.getId()))
                     .findFirst()
                     .orElseThrow();
             sessionB.setNom("Renommé par B");
-            Stand ecritB = referenceData.updateStand("CM-S1", sessionB);
+            Stand ecritB = referenceData.updateStand(id, sessionB);
             assertThat(ecritB.getModifieLe()).isAfter(stand.getModifieLe());
 
             // Session A still holds the stamp it loaded before B wrote.
-            Stand sessionA = new Stand("CM-S1", "Renommé par A", Set.of("STRATEGIE"), 1, 1, false);
+            Stand sessionA = new Stand(id, "Renommé par A", Set.of(strategie()), 1, 1, false);
             sessionA.setModifieLe(stand.getModifieLe());
-            assertThatThrownBy(() -> referenceData.updateStand("CM-S1", sessionA))
+            assertThatThrownBy(() -> referenceData.updateStand(id, sessionA))
                     .isInstanceOf(BusinessError.Stale.class)
                     .hasMessageContaining("par une autre session")
                     .extracting(e -> ((BusinessError.Stale) e).getModifieLe())
                     .isEqualTo(ecritB.getModifieLe());
             assertThat(referenceData.listStands())
-                    .filteredOn(s -> "CM-S1".equals(s.getId()))
+                    .filteredOn(s -> id.equals(s.getId()))
                     .singleElement()
                     .extracting(Stand::getNom)
                     .isEqualTo("Renommé par B");
 
             // Knowingly: A sends B's stamp (what the 409 body carries) — or none at all.
             sessionA.setModifieLe(ecritB.getModifieLe());
-            assertThat(referenceData.updateStand("CM-S1", sessionA).getNom()).isEqualTo("Renommé par A");
+            assertThat(referenceData.updateStand(id, sessionA).getNom()).isEqualTo("Renommé par A");
             sessionA.setModifieLe(null);
             sessionA.setNom("Sans précondition");
-            assertThat(referenceData.updateStand("CM-S1", sessionA).getNom()).isEqualTo("Sans précondition");
+            assertThat(referenceData.updateStand(id, sessionA).getNom()).isEqualTo("Sans précondition");
         } finally {
-            referenceData.deleteStand("CM-S1");
+            referenceData.deleteStand(id);
         }
     }
 
     /**
-     * A creation is checked by the same write: the id being taken is the
-     * `ON CONFLICT` branch refusing to fire, never a probe that another session
-     * could slip past.
+     * A creation never takes the caller's id (ADR 0050): two creations sent
+     * with the same one make two rows, each under an id the application drew.
      */
     @Test
-    void creatingATakenIdIsRefusedInsteadOfReplacing() {
-        Stand stand = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of("STRATEGIE"), 1, 1, false));
+    void creatingTwiceWithTheSameIdCreatesTwoRows() {
+        Stand premier = referenceData.createStand(new Stand("CM-DUP", "Le premier", Set.of(strategie()), 1, 1, false));
+        Stand second = referenceData.createStand(new Stand("CM-DUP", "Le second", Set.of(strategie()), 2, 2, false));
         try {
-            assertThatThrownBy(() -> referenceData.createStand(
-                            new Stand("CM-DUP", "Le second", Set.of("STRATEGIE"), 2, 2, false)))
-                    .isInstanceOf(BusinessError.Conflict.class)
-                    .hasMessageContaining("déjà pris");
-            assertThat(referenceData.listStands())
-                    .filteredOn(s -> "CM-DUP".equals(s.getId()))
-                    .singleElement()
-                    .extracting(Stand::getNom)
-                    .isEqualTo("Le premier");
-            assertThat(stand.getModifieLe()).isNotNull();
+            assertThat(premier.getId()).isNotEqualTo("CM-DUP").startsWith("S");
+            assertThat(second.getId()).isNotEqualTo(premier.getId()).startsWith("S");
+            assertThat(premier.getModifieLe()).isNotNull();
         } finally {
-            referenceData.deleteStand("CM-DUP");
+            referenceData.deleteStand(premier.getId());
+            referenceData.deleteStand(second.getId());
+        }
+    }
+
+    /**
+     * A code, unlike an id, is the caller's to choose — and like an id it
+     * designates one row: a second stand claiming it is refused.
+     */
+    @Test
+    void creatingATakenCodeIsRefused() {
+        Stand premier = new Stand(null, "Le premier", Set.of(strategie()), 1, 1, false);
+        premier.setCode("CM-CODE");
+        String id = referenceData.createStand(premier).getId();
+        try {
+            Stand second = new Stand(null, "Le second", Set.of(strategie()), 1, 1, false);
+            second.setCode("CM-CODE");
+            assertThatThrownBy(() -> referenceData.createStand(second))
+                    .isInstanceOf(BusinessError.Conflict.class)
+                    .hasMessageContaining("CM-CODE");
+        } finally {
+            referenceData.deleteStand(id);
         }
     }
 
     @Test
     void staleAnimateurWriteIsRefused() {
         Animateur animateur =
-                referenceData.createAnimateur(new Animateur("CM-A1", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+                referenceData.createAnimateur(new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+        String id = animateur.getId();
         try {
-            Animateur perime = new Animateur("CM-A1", "Prenom", "Autre", LocalDate.of(1990, 1, 1), false);
+            Animateur perime = new Animateur(id, "Prenom", "Autre", LocalDate.of(1990, 1, 1), false);
             perime.setModifieLe(PERIME);
-            assertThatThrownBy(() -> referenceData.updateAnimateur("CM-A1", perime))
-                    .isInstanceOf(BusinessError.Stale.class);
+            assertThatThrownBy(() -> referenceData.updateAnimateur(id, perime)).isInstanceOf(BusinessError.Stale.class);
             perime.setModifieLe(animateur.getModifieLe());
-            assertThat(referenceData.updateAnimateur("CM-A1", perime).getNom()).isEqualTo("Autre");
+            assertThat(referenceData.updateAnimateur(id, perime).getNom()).isEqualTo("Autre");
         } finally {
-            referenceData.deleteAnimateur("CM-A1");
+            referenceData.deleteAnimateur(id);
         }
     }
 
@@ -137,34 +152,35 @@ class ConcurrentModificationGuardTest {
 
     @Test
     void staleTypologieWriteIsRefused() {
-        TypologieItem typologie = referenceData.createTypologie(new TypologieItem("CM-T1", "Typologie"));
+        TypologieItem typologie = referenceData.createTypologie(new TypologieItem(null, "Typologie"));
+        String id = typologie.id();
         try {
             assertThat(typologie.modifieLe()).isNotNull();
             assertThatThrownBy(() -> referenceData.updateTypologie(
-                            "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, null, PERIME)))
+                            id, new TypologieItem(id, null, "Autre", false, null, null, PERIME)))
                     .isInstanceOf(BusinessError.Stale.class);
             TypologieItem ecrite = referenceData.updateTypologie(
-                    "CM-T1", new TypologieItem("CM-T1", "Autre", false, null, null, typologie.modifieLe()));
+                    id, new TypologieItem(id, null, "Autre", false, null, null, typologie.modifieLe()));
             assertThat(ecrite.label()).isEqualTo("Autre");
             assertThat(ecrite.modifieLe()).isAfterOrEqualTo(typologie.modifieLe());
         } finally {
-            referenceData.deleteTypologie("CM-T1");
+            referenceData.deleteTypologie(id);
         }
     }
 
     @Test
     void staleEmplacementWriteIsRefused() {
-        Emplacement emplacement = referenceData.createEmplacement(new Emplacement("CM-E1", "Place", null, null));
+        Emplacement emplacement = referenceData.createEmplacement(new Emplacement(null, "Place", null, null));
+        String id = emplacement.getId();
         try {
-            Emplacement perime = new Emplacement("CM-E1", "Autre place", null, null);
+            Emplacement perime = new Emplacement(id, "Autre place", null, null);
             perime.setModifieLe(PERIME);
-            assertThatThrownBy(() -> referenceData.updateEmplacement("CM-E1", perime))
+            assertThatThrownBy(() -> referenceData.updateEmplacement(id, perime))
                     .isInstanceOf(BusinessError.Stale.class);
             perime.setModifieLe(emplacement.getModifieLe());
-            assertThat(referenceData.updateEmplacement("CM-E1", perime).getNom())
-                    .isEqualTo("Autre place");
+            assertThat(referenceData.updateEmplacement(id, perime).getNom()).isEqualTo("Autre place");
         } finally {
-            referenceData.deleteEmplacement("CM-E1");
+            referenceData.deleteEmplacement(id);
         }
     }
 
@@ -172,15 +188,17 @@ class ConcurrentModificationGuardTest {
     @Test
     void staleAdHocConstraintOverwriteIsRefused() {
         Animateur animateur =
-                referenceData.createAnimateur(new Animateur("CM-A2", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
-        ContrainteAdHoc contrainte = new ContrainteAdHoc("CM-C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+                referenceData.createAnimateur(new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
         contrainte.getAnimateursConcernes().add(animateur);
         contrainte.setRaison("Première raison");
+        String contrainteId = null;
         try {
             ContrainteAdHoc ecrite = referenceData.createContrainteAdHoc(contrainte);
+            contrainteId = ecrite.getId();
             assertThat(ecrite.getModifieLe()).isNotNull();
 
-            ContrainteAdHoc perimee = new ContrainteAdHoc("CM-C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+            ContrainteAdHoc perimee = new ContrainteAdHoc(ecrite.getId(), TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
             perimee.getAnimateursConcernes().add(animateur);
             perimee.setRaison("Autre raison");
             perimee.setModifieLe(PERIME);
@@ -190,8 +208,19 @@ class ConcurrentModificationGuardTest {
             perimee.setModifieLe(ecrite.getModifieLe());
             assertThat(referenceData.createContrainteAdHoc(perimee).getRaison()).isEqualTo("Autre raison");
         } finally {
-            referenceData.deleteContrainteAdHoc("CM-C1");
-            referenceData.deleteAnimateur("CM-A2");
+            if (contrainteId != null) {
+                referenceData.deleteContrainteAdHoc(contrainteId);
+            }
+            referenceData.deleteAnimateur(animateur.getId());
         }
+    }
+
+    /** The seeded typologie, under whatever id V100 gave it. */
+    private String strategie() {
+        return referenceData.listTypologies().stream()
+                .filter(typologie -> "STRATEGIE".equals(typologie.code()))
+                .findFirst()
+                .orElseThrow()
+                .id();
     }
 }

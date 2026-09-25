@@ -74,10 +74,19 @@ public final class GrilleCompetences {
      * roster asks for.
      */
     public static String csv(List<Animateur> animateurs, List<String> typologieIds) {
+        return csv(animateurs, typologieIds, Map.of());
+    }
+
+    /**
+     * The same grid, a column headed by what {@code entetes} gives for its
+     * typologie — its code, which a reader recognises, where the id is a
+     * number (ADR 0050) — and by its id otherwise. The import reads both.
+     */
+    public static String csv(List<Animateur> animateurs, List<String> typologieIds, Map<String, String> entetes) {
         StringBuilder csv = new StringBuilder();
         csv.append(COLONNE_ANIMATEUR);
         for (String typologie : typologieIds) {
-            csv.append(';').append(field(typologie));
+            csv.append(';').append(field(entetes.getOrDefault(typologie, typologie)));
         }
         csv.append('\n');
         for (Animateur animateur : animateurs) {

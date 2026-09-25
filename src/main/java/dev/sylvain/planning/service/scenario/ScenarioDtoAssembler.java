@@ -158,6 +158,7 @@ final class ScenarioDtoAssembler {
         return stands.stream()
                 .map(stand -> new StandDto(
                         stand.getId(),
+                        stand.getCode(),
                         stand.getNom(),
                         stand.getEmplacement() == null
                                 ? null
@@ -266,6 +267,7 @@ final class ScenarioDtoAssembler {
         return emplacements.stream()
                 .map(emplacement -> new EmplacementDto(
                         emplacement.getId(),
+                        emplacement.getCode(),
                         emplacement.getNom(),
                         emplacement.getLatitude(),
                         emplacement.getLongitude()))
@@ -276,6 +278,7 @@ final class ScenarioDtoAssembler {
         return typologies.stream()
                 .map(typologie -> new TypologieDto(
                         typologie.id(),
+                        typologie.code(),
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),

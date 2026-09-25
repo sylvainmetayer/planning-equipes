@@ -8,6 +8,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -30,13 +31,24 @@ import org.junit.jupiter.api.Test;
 class ConstraintPoidsResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String DEFAUT = "DEFAUT";
 
     /** MEDIUM, « Qualité d'organisation » — one of the twelve meant to be dosed. */
     private static final String DOSABLE = "equilibrerCharge";
 
     /** HARD, « Légal (mineurs) » — protected, and never dosable. */
     private static final String PROTEGEE = "travailDeNuitInterditPourMineur";
+
+    /** The default edition of the test database, resolved rather than assumed (ADR 0050). */
+    private String defaut;
+
+    @BeforeEach
+    void resolveDefaultEdition() {
+        defaut = listEditions().stream()
+                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .map(edition -> (String) edition.get("id"))
+                .findFirst()
+                .orElseThrow();
+    }
 
     /**
      * Weights are an edition-scoped override, so a test that sets one leaves a
@@ -45,12 +57,12 @@ class ConstraintPoidsResourceTest {
      * configured default, so the cleanup exercises that path on every run.
      */
     @AfterEach
-    void rendreLesPoidsEtLesEditionsCommeTrouves() {
-        setPoids(DEFAUT, DOSABLE, null, 200);
-        setPoids(DEFAUT, PROTEGEE, null, 200);
+    void restoreWeightsAndEditions() {
+        setPoids(defaut, DOSABLE, null, 200);
+        setPoids(defaut, PROTEGEE, null, 200);
         for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
-            if (!DEFAUT.equals(id)) {
+            if (!defaut.equals(id)) {
                 given().when().delete("/api/editions/" + id);
             }
         }
@@ -66,13 +78,16 @@ class ConstraintPoidsResourceTest {
                 .getList("$");
     }
 
-    private void createEdition(String id, String nom) {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
+    /** Creates an edition and answers the id the application drew for it. */
+    private String createEdition(String nom) {
+        return given().contentType("application/json")
+                .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     /** @param poids {@code null} sends a JSON {@code null}, which drops the override. */
@@ -98,8 +113,8 @@ class ConstraintPoidsResourceTest {
     }
 
     @Test
-    void leCatalogueExposeLePoidsEtCeQueChaqueRegleAutorise() {
-        given().header(HEADER, DEFAUT)
+    void theCatalogueExposesTheWeightAndWhatEachRuleAllows() {
+        given().header(HEADER, defaut)
                 .when()
                 .get("/api/constraints")
                 .then()
@@ -115,116 +130,119 @@ class ConstraintPoidsResourceTest {
     }
 
     @Test
-    void unPoidsPosePersisteEtSeRelitDansLeCatalogue() {
-        setPoids(DEFAUT, DOSABLE, 7, 200);
+    void aWeightSetPersistsAndIsReadBackInTheCatalogue() {
+        setPoids(defaut, DOSABLE, 7, 200);
 
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(7);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(7);
     }
 
     @Test
-    void reposerLeMemePoidsEcraseLaLigneAuLieuDeLaDupliquer() {
-        setPoids(DEFAUT, DOSABLE, 7, 200);
+    void settingTheWeightAgainOverwritesTheRowInsteadOfDuplicatingIt() {
+        setPoids(defaut, DOSABLE, 7, 200);
         // The primary key is (edition_id, nom): without the ON CONFLICT clause
         // this second call would violate the uniqueness constraint.
-        setPoids(DEFAUT, DOSABLE, 12, 200);
+        setPoids(defaut, DOSABLE, 12, 200);
 
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(12);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(12);
     }
 
     @Test
-    void unPoidsNulRetireLaSurchargeEtRendLaValeurParDefaut() {
-        setPoids(DEFAUT, DOSABLE, 12, 200);
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(12);
+    void aNullWeightDropsTheOverrideAndRestoresTheDefault() {
+        setPoids(defaut, DOSABLE, 12, 200);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(12);
 
-        setPoids(DEFAUT, DOSABLE, null, 200);
+        setPoids(defaut, DOSABLE, null, 200);
 
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
     }
 
     @Test
-    void unPoidsZeroEstRefuse() {
+    void aZeroWeightIsRefused() {
         // Zero would switch the rule off in fact while still displaying it as
         // active — and, for a legal rule, without the confirmation that guards
         // it.
-        setPoids(DEFAUT, DOSABLE, 0, 400);
-        setPoids(DEFAUT, DOSABLE, -3, 400);
+        setPoids(defaut, DOSABLE, 0, 400);
+        setPoids(defaut, DOSABLE, -3, 400);
 
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
     }
 
     @Test
-    void unPoidsHorsBorneHauteEstRefuseAvantDatteindreLaBase() {
-        setPoids(DEFAUT, DOSABLE, 101, 400);
+    void aWeightAboveTheUpperBoundIsRefusedBeforeReachingTheDatabase() {
+        setPoids(defaut, DOSABLE, 101, 400);
 
         // Refused by the application, so the caller gets a business message:
         // the database CHECK is the last net, not the first.
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(1);
     }
 
     @Test
-    void unNomDeContrainteInconnuEstRefuseAuLieuDetreStockeEnSilence() {
-        setPoids(DEFAUT, "contrainteQuiNexistePas", 5, 404);
+    void anUnknownConstraintNameIsRefusedInsteadOfBeingStoredSilently() {
+        setPoids(defaut, "contrainteQuiNexistePas", 5, 404);
     }
 
     @Test
-    void deuxEditionsNePartagentPasLeurDosage() {
-        createEdition("ANNEE-2026", "Année 2026");
+    void twoEditionsDoNotShareTheirDosage() {
+        String annee2026 = createEdition("Année 2026");
 
-        setPoids(DEFAUT, DOSABLE, 9, 200);
+        setPoids(defaut, DOSABLE, 9, 200);
 
         // This is the assertion that justifies migration V53: the setting
         // follows the event, not the deployment.
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(9);
-        assertThat(readPoids("ANNEE-2026", DOSABLE)).isEqualTo(1);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(9);
+        assertThat(readPoids(annee2026, DOSABLE)).isEqualTo(1);
 
-        setPoids("ANNEE-2026", DOSABLE, 3, 200);
+        setPoids(annee2026, DOSABLE, 3, 200);
 
-        assertThat(readPoids("ANNEE-2026", DOSABLE)).isEqualTo(3);
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(9);
+        assertThat(readPoids(annee2026, DOSABLE)).isEqualTo(3);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(9);
     }
 
     @Test
-    void supprimerUneEditionEmporteSesPoids() {
-        createEdition("ANNEE-2026", "Année 2026");
-        setPoids("ANNEE-2026", DOSABLE, 4, 200);
+    void deletingAnEditionTakesItsWeightsAlong() {
+        String premiere = createEdition("Année 2026");
+        setPoids(premiere, DOSABLE, 4, 200);
 
-        given().when().delete("/api/editions/ANNEE-2026").then().statusCode(204);
-        createEdition("ANNEE-2026", "Année 2026");
+        given().when().delete("/api/editions/" + premiere).then().statusCode(204);
+        String recreee = createEdition("Année 2026");
 
         // The foreign key cascade towards `edition`: an edition recreated under
-        // the same identifier must not inherit the settings of the one it
-        // replaces.
-        assertThat(readPoids("ANNEE-2026", DOSABLE)).isEqualTo(1);
+        // the same name must not inherit the settings of the one it replaces —
+        // and, its id being drawn afresh (ADR 0050), it never reuses the old one.
+        assertThat(recreee).isNotEqualTo(premiere);
+        assertThat(readPoids(recreee, DOSABLE)).isEqualTo(1);
     }
 
     @Test
-    void dupliquerUneEditionRecopieSonDosage() {
-        setPoids(DEFAUT, DOSABLE, 8, 200);
+    void duplicatingAnEditionCopiesItsDosage() {
+        setPoids(defaut, DOSABLE, 8, 200);
 
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
+        String copie = given().contentType("application/json")
+                .body("{\"nom\":\"Copie 2026\"}")
                 .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer")
+                .post("/api/editions/" + defaut + "/dupliquer")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
 
         // Duplicating is how an event starts from last year's setup: a
         // patiently tuned dosage that failed to follow would be a silent
         // regression — the copy would solve a different problem than its model.
-        assertThat(readPoids("COPIE-2026", DOSABLE)).isEqualTo(8);
+        assertThat(readPoids(copie, DOSABLE)).isEqualTo(8);
 
-        setPoids("COPIE-2026", DOSABLE, 2, 200);
+        setPoids(copie, DOSABLE, 2, 200);
 
-        assertThat(readPoids("COPIE-2026", DOSABLE)).isEqualTo(2);
-        assertThat(readPoids(DEFAUT, DOSABLE)).isEqualTo(8);
+        assertThat(readPoids(copie, DOSABLE)).isEqualTo(2);
+        assertThat(readPoids(defaut, DOSABLE)).isEqualTo(8);
     }
 
     @Test
-    void unPoidsPeutSePoserSurUneRegleProtegee() {
+    void aWeightCanBeSetOnAProtectedRule() {
         // Protecting a rule means keeping its switch guarded, not its dial:
         // strengthening a legal rule never needs to be prevented.
-        setPoids(DEFAUT, PROTEGEE, 50, 200);
+        setPoids(defaut, PROTEGEE, 50, 200);
 
-        assertThat(readPoids(DEFAUT, PROTEGEE)).isEqualTo(50);
+        assertThat(readPoids(defaut, PROTEGEE)).isEqualTo(50);
     }
 }

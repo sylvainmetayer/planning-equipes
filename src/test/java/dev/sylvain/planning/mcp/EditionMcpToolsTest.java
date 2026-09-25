@@ -34,8 +34,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class EditionMcpToolsTest {
 
-    private static final String EDITION_TEST = "MCP-EDITION-TEST";
-    private static final String EDITION_COPIE = "MCP-EDITION-COPIE";
+    private static final String NOM_TEST = "Édition de test MCP";
+    private static final String NOM_COPIE = "Copie de test MCP";
     private static final LocalDate DATE_TEST = LocalDate.of(2027, 1, 4);
 
     @Inject
@@ -52,23 +52,26 @@ class EditionMcpToolsTest {
 
     @AfterEach
     void nettoyer() {
-        for (String id : List.of(EDITION_COPIE, EDITION_TEST)) {
-            if (editionService.listEditions().stream()
-                    .anyMatch(edition -> edition.getId().equals(id))) {
-                editionService.delete(id);
-            }
-        }
+        // The ids are drawn by the application (ADR 0050): the test's
+        // editions are found back by their names.
+        editionService.listEditions().stream()
+                .filter(edition -> NOM_TEST.equals(edition.getNom()) || NOM_COPIE.equals(edition.getNom()))
+                .forEach(edition -> editionService.delete(edition.getId()));
+    }
+
+    private String createTestEdition() {
+        return editionTools.createEdition(NOM_TEST).id();
     }
 
     @Test
     void writingInTheDesignatedEditionLeavesTheOthersAlone() {
-        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
+        String editionTest = createTestEdition();
 
         CreneauView cree = creneauTools
-                .createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST)
+                .createCreneau("2027-01-04", "09:00", "12:00", null, editionTest)
                 .creneau();
 
-        assertThat(creneauTools.listCreneaux(EDITION_TEST))
+        assertThat(creneauTools.listCreneaux(editionTest))
                 .extracting(CreneauView::id)
                 .contains(cree.id());
         assertThat(creneauTools.listCreneaux(null))
@@ -87,22 +90,22 @@ class EditionMcpToolsTest {
 
     @Test
     void anEditionCanBeDesignatedByItsName() {
-        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, "Édition de test MCP");
+        String editionTest = createTestEdition();
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, NOM_TEST);
 
-        assertThat(creneauTools.listCreneaux(EDITION_TEST)).hasSize(1);
+        assertThat(creneauTools.listCreneaux(editionTest)).hasSize(1);
     }
 
     @Test
-    void listEditionsGivesEnoughToRecogniseEachOne() {
-        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+    void listingEditionsGivesWhatIsNeededToRecogniseEachOne() {
+        String editionTest = createTestEdition();
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, editionTest);
 
         List<EditionView> editions = editionTools.listEditions();
 
-        assertThat(editions).extracting(EditionView::id).contains(EDITION_TEST);
+        assertThat(editions).extracting(EditionView::id).contains(editionTest);
         EditionView test = editions.stream()
-                .filter(edition -> edition.id().equals(EDITION_TEST))
+                .filter(edition -> edition.id().equals(editionTest))
                 .findFirst()
                 .orElseThrow();
         assertThat(test.nombreCreneaux()).isEqualTo(1);
@@ -126,24 +129,24 @@ class EditionMcpToolsTest {
      */
     @Test
     void etatEditionReadsTheDesignatedEditionAndNamesNobody() {
-        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
+        String editionTest = createTestEdition();
 
-        EtatEditionView vide = editionTools.editionState(EDITION_TEST);
+        EtatEditionView vide = editionTools.editionState(editionTest);
 
-        assertThat(vide.editionId()).isEqualTo(EDITION_TEST);
-        assertThat(vide.editionNom()).isEqualTo("Édition de test MCP");
+        assertThat(vide.editionId()).isEqualTo(editionTest);
+        assertThat(vide.editionNom()).isEqualTo(NOM_TEST);
         assertThat(vide.referentiels().statut()).isEqualTo(Statut.A_FAIRE);
         assertThat(vide.resolution().resolue()).isFalse();
         assertThat(vide.resolution().solveEnCours()).isFalse();
         assertThat(vide.publication().jamaisPublie()).isTrue();
 
-        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, editionTest);
 
-        assertThat(editionTools.editionState(EDITION_TEST).referentiels().creneaux())
+        assertThat(editionTools.editionState(editionTest).referentiels().creneaux())
                 .isEqualTo(1);
         assertThat(editionTools.editionState(null).editionId())
                 .as("sans argument, l'édition courante")
-                .isNotEqualTo(EDITION_TEST);
+                .isNotEqualTo(editionTest);
         for (var composant : EtatEditionView.class.getRecordComponents()) {
             assertThat(composant.getType().isRecord() || composant.getType() == String.class)
                     .as(
@@ -155,14 +158,15 @@ class EditionMcpToolsTest {
 
     @Test
     void duplicatingAnEditionCopiesItsDataWithoutTouchingTheOriginal() {
-        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+        String editionTest = createTestEdition();
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, editionTest);
 
-        EditionView copie = editionTools.duplicateEdition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP", null);
+        EditionView copie = editionTools.duplicateEdition(editionTest, NOM_COPIE, null);
+        String editionCopie = copie.id();
 
         assertThat(copie.nombreCreneaux()).isEqualTo(1);
-        creneauTools.createCreneau("2027-01-05", "09:00", "12:00", null, EDITION_COPIE);
-        assertThat(creneauTools.listCreneaux(EDITION_TEST))
+        creneauTools.createCreneau("2027-01-05", "09:00", "12:00", null, editionCopie);
+        assertThat(creneauTools.listCreneaux(editionTest))
                 .as("la copie vit sa vie : l'originale ne bouge plus")
                 .hasSize(1);
     }

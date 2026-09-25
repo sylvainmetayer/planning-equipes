@@ -3,12 +3,12 @@ package dev.sylvain.planning.service.scenario;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PrereglageConsigne;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
+import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
-import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -49,22 +49,22 @@ public class ScenarioImportService {
 
     private final EditionContext editionContext;
 
-    private final PlanningService planningService;
-
     private final ConsigneRepository consigneRepository;
+
+    private final ScenarioTargetIds identifiants;
 
     @Inject
     public ScenarioImportService(
             ReferenceDataService referenceDataService,
             EditionService editionService,
             EditionContext editionContext,
-            PlanningService planningService,
-            ConsigneRepository consigneRepository) {
+            ConsigneRepository consigneRepository,
+            ScenarioTargetIds identifiants) {
         this.referenceDataService = referenceDataService;
         this.editionService = editionService;
         this.editionContext = editionContext;
-        this.planningService = planningService;
         this.consigneRepository = consigneRepository;
+        this.identifiants = identifiants;
     }
 
     /**
@@ -72,7 +72,7 @@ public class ScenarioImportService {
      * {@code src/main/resources/scenarios}, by name.
      */
     public ScenarioImportOutcome importBundled(String name) {
-        return importScenario(planningService.loadScenario(name));
+        return importScenario(ScenarioYamlReader.readBundledScenario(name));
     }
 
     /**
@@ -82,7 +82,7 @@ public class ScenarioImportService {
      * document rather than importing part of it.
      */
     public ScenarioImportOutcome importYaml(String yamlContent) {
-        return importScenario(planningService.buildFromScenarioText(yamlContent));
+        return importScenario(ScenarioYamlReader.parseScenarioText(yamlContent));
     }
 
     /**
@@ -91,9 +91,16 @@ public class ScenarioImportService {
      * It used to be written out twice, and the two copies had drifted: the
      * bundled path re-read the file once per optional section.
      */
-    private ScenarioImportOutcome importScenario(ScenarioYamlReader.ScenarioImporte importe) {
-        ScenarioYamlReader.ScenarioSections sections = importe.sections();
-        return importIntoTarget(sections.edition(), () -> {
+    private ScenarioImportOutcome importScenario(ScenarioDto scenario) {
+        // Built once before anything is written, so that a file the mapper
+        // refuses is refused before its edition: section is acted upon.
+        ScenarioYamlReader.fromDto(scenario, referenceDataService::getParametresLegaux);
+        return importIntoTarget(ScenarioYamlReader.edition(scenario), () -> {
+            // The ids of the file are its own; the ones of the edition are
+            // decided here, inside it (ADR 0050).
+            ScenarioYamlReader.ScenarioImporte importe = ScenarioYamlReader.fromDto(
+                    ScenarioIdRemap.remap(scenario, identifiants.of()), referenceDataService::getParametresLegaux);
+            ScenarioYamlReader.ScenarioSections sections = importe.sections();
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
             sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);

@@ -9,6 +9,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.EtatTypologie;
 import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.TypologieUsage;
@@ -27,6 +28,7 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -109,7 +111,9 @@ public class StandMcpTools {
 
     @Tool(
             name = "creer_stand",
-            description = "Crée un stand. Les typologies proposées doivent exister dans le référentiel des typologies.",
+            description = "Crée un stand ; son id (S suivi d'un nombre) est attribué par l'application et figure "
+                    + "dans la réponse. Les typologies proposées doivent exister dans le référentiel des typologies, "
+                    + "désignées par leur id ou leur code.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -118,22 +122,23 @@ public class StandMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenStandView createStand(
-            @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
-            @ToolArg(description = "Ids de typologies de jeu proposées", required = false)
+            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « JEU-LIBRE »)", required = false)
+                    String code,
+            @ToolArg(description = "Typologies de jeu proposées : ids ou codes", required = false)
                     List<String> typologiesProposees,
             @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
             @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "Emplacement géographique : son id ou son code", required = false)
+                    String emplacementId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Stand stand = new Stand();
-        stand.setId(id);
         stand.setNom(nom);
-        stand.setTypologiesProposees(
-                typologiesProposees == null ? new HashSet<>() : new HashSet<>(typologiesProposees));
+        stand.setCode(code);
+        stand.setTypologiesProposees(typologyIds(typologiesProposees));
         stand.setEffectifMin(effectifMin == null ? 1 : effectifMin);
         stand.setEffectifMax(effectifMax == null ? Math.max(1, stand.getEffectifMin()) : effectifMax);
         stand.setReserveMajeurs(Boolean.TRUE.equals(reserveMajeurs));
@@ -158,6 +163,8 @@ public class StandMcpTools {
                     + "horaires prend les fenêtres d'OUVERTURE au format « 10:00-12:00,14:00- » : le stand est alors fermé "
                     + "en dehors, ce qui est la façon d'exprimer « ce stand n\u0027ouvre que de tant à tant ». Pour une règle "
                     + "de fermeture, ou plusieurs règles de portées différentes, utiliser ajouter_horaire_stand. "
+                    + "Les ids (stand, typologies, emplacement) sont attribués par l'application ; une typologie ou "
+                    + "un emplacement créé au passage reçoit pour code la valeur citée. "
                     + "La réponse énumère ce qui a été créé au passage, pour que rien ne soit créé à l\u0027insu de "
                     + "l\u0027utilisateur.",
             annotations =
@@ -168,9 +175,10 @@ public class StandMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     CreationStandComplet createCompleteStand(
-            @ToolArg(description = "Id du stand (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
-            @ToolArg(description = "Ids de typologies de jeu proposées", required = false)
+            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « JEU-LIBRE »)", required = false)
+                    String code,
+            @ToolArg(description = "Typologies de jeu proposées : ids ou codes", required = false)
                     List<String> typologiesProposees,
             @ToolArg(description = "Créer les typologies absentes du référentiel au lieu d'échouer", required = false)
                     Boolean creerTypologiesManquantes,
@@ -179,7 +187,11 @@ public class StandMcpTools {
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium (nécessite un animateur référent)", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(
+                            description = "Emplacement géographique : son id ou son code ; le code de l'emplacement "
+                                    + "créé s'il n'existe pas",
+                            required = false)
+                    String emplacementId,
             @ToolArg(description = "Nom de l'emplacement, à créer s'il n'existe pas encore", required = false)
                     String emplacementNom,
             @ToolArg(description = "Latitude de l'emplacement créé", required = false) Double latitude,
@@ -205,10 +217,10 @@ public class StandMcpTools {
         Emplacement emplacementACreer = missingEmplacement(emplacementId, emplacementNom, latitude, longitude);
 
         Stand stand = new Stand();
-        stand.setId(id);
         stand.setNom(nom);
-        stand.setTypologiesProposees(
-                typologiesProposees == null ? new HashSet<>() : new HashSet<>(typologiesProposees));
+        stand.setCode(code);
+        Set<String> proposees = typologyIds(typologiesProposees);
+        stand.setTypologiesProposees(proposees);
         stand.setEffectifMin(effectifMin == null ? 1 : effectifMin);
         stand.setEffectifMax(effectifMax == null ? Math.max(1, stand.getEffectifMin()) : effectifMax);
         stand.setReserveMajeurs(Boolean.TRUE.equals(reserveMajeurs));
@@ -237,11 +249,16 @@ public class StandMcpTools {
         // One transaction for the three: a stand refused on its own validation
         // no longer leaves a typologie and an emplacement behind that the
         // answer — which never came — was meant to enumerate.
+        Set<String> connues = new HashSet<>(proposees);
+        typologiesACreer.forEach(typologie -> connues.remove(typologie.code()));
         WrittenStand ecrit = referenceDataService.writeStand(stand, typologiesACreer, emplacementACreer);
         return new CreationStandComplet(
                 toView(ecrit.stand()),
                 emplacementACreer == null ? null : emplacementACreer.getId(),
-                typologiesACreer.stream().map(TypologieItem::id).toList(),
+                ecrit.stand().getTypologiesProposees().stream()
+                        .filter(typologie -> !connues.contains(typologie))
+                        .sorted()
+                        .toList(),
                 WarningCodes.of(ecrit.avertissements()));
     }
 
@@ -256,16 +273,48 @@ public class StandMcpTools {
         if (typologies == null || typologies.isEmpty() || !autorise) {
             return List.of();
         }
-        Set<String> connues = referenceDataService.listTypologies().stream()
-                .map(TypologieItem::id)
-                .collect(Collectors.toCollection(HashSet::new));
+        Set<String> connues = new HashSet<>();
+        referenceDataService.listTypologies().forEach(typologie -> {
+            connues.add(typologie.id());
+            if (typologie.code() != null) {
+                connues.add(typologie.code());
+            }
+        });
         List<TypologieItem> manquantes = new ArrayList<>();
         for (String typologie : typologies) {
-            if (connues.add(typologie)) {
-                manquantes.add(new TypologieItem(typologie, typologie));
+            // A value shaped like a typologie id names one that does not
+            // exist: an error to report, not a code to create.
+            if (!IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie) && connues.add(typologie)) {
+                // Cited by the stand under that value until it exists: see
+                // ReferenceDataService#writeStand, which swaps in the id.
+                manquantes.add(new TypologieItem(null, typologie, typologie, false, null, null, null));
             }
         }
         return manquantes;
+    }
+
+    /**
+     * The typologies a caller named, as ids: each value is an id of the
+     * referential, or the code of one, or left as written — for the
+     * validation to refuse, or for {@link #missingTypologies} to create.
+     */
+    private Set<String> typologyIds(List<String> valeurs) {
+        Set<String> ids = new LinkedHashSet<>();
+        if (valeurs == null) {
+            return ids;
+        }
+        List<TypologieItem> referentiel = referenceDataService.listTypologies();
+        for (String valeur : valeurs) {
+            ids.add(referentiel.stream()
+                    .filter(typologie -> typologie.id().equals(valeur))
+                    .findFirst()
+                    .or(() -> referentiel.stream()
+                            .filter(typologie -> valeur.equals(typologie.code()))
+                            .findFirst())
+                    .map(TypologieItem::id)
+                    .orElse(valeur));
+        }
+        return ids;
     }
 
     /** @return the emplacement to write with the stand, or {@code null} when it exists or was not named. */
@@ -274,8 +323,14 @@ public class StandMcpTools {
             return null;
         }
         boolean exists = referenceDataService.listEmplacements().stream()
-                .anyMatch(emplacement -> emplacementId.equals(emplacement.getId()));
-        return exists ? null : new Emplacement(emplacementId, nom, latitude, longitude);
+                .anyMatch(emplacement ->
+                        emplacementId.equals(emplacement.getId()) || emplacementId.equals(emplacement.getCode()));
+        if (exists) {
+            return null;
+        }
+        Emplacement emplacement = new Emplacement(null, nom, latitude, longitude);
+        emplacement.setCode(emplacementId);
+        return emplacement;
     }
 
     private static HoraireStand horaireOuverture(
@@ -327,14 +382,16 @@ public class StandMcpTools {
     WrittenStandView updateStand(
             @ToolArg(description = "Id du stand") String id,
             @ToolArg(description = "Nom affiché", required = false) String nom,
-            @ToolArg(description = "Ids de typologies proposées (remplace la liste existante)", required = false)
+            @ToolArg(description = "Code lisible, unique dans l'édition", required = false) String code,
+            @ToolArg(description = "Typologies proposées, ids ou codes (remplace la liste existante)", required = false)
                     List<String> typologiesProposees,
             @ToolArg(description = "Nombre minimum d'animateurs par créneau", required = false) Integer effectifMin,
             @ToolArg(description = "Nombre maximum d'animateurs par créneau", required = false) Integer effectifMax,
             @ToolArg(description = "Réservé aux animateurs majeurs", required = false) Boolean reserveMajeurs,
             @ToolArg(description = "Stand premium", required = false) Boolean premium,
             @ToolArg(description = "Niveau d'effort : NORMAL ou EPUISANT", required = false) String niveauEffort,
-            @ToolArg(description = "Id de l'emplacement géographique", required = false) String emplacementId,
+            @ToolArg(description = "Emplacement géographique : son id ou son code", required = false)
+                    String emplacementId,
             @ToolArg(
                             description =
                                     "WriteStamp modifieLe lu avant la modification (précondition : refusé si la fiche a changé depuis ; omis, pas de contrôle)",
@@ -348,8 +405,11 @@ public class StandMcpTools {
         if (nom != null) {
             stand.setNom(nom);
         }
+        if (code != null) {
+            stand.setCode(code);
+        }
         if (typologiesProposees != null) {
-            stand.setTypologiesProposees(new HashSet<>(typologiesProposees));
+            stand.setTypologiesProposees(typologyIds(typologiesProposees));
         }
         if (effectifMin != null) {
             stand.setEffectifMin(effectifMin);
@@ -600,7 +660,8 @@ public class StandMcpTools {
 
     @Tool(
             name = "creer_emplacement",
-            description = "Crée un emplacement géographique.",
+            description = "Crée un emplacement géographique ; son id (L suivi d'un nombre) est attribué par "
+                    + "l'application et figure dans la réponse.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -609,12 +670,15 @@ public class StandMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     EmplacementView createEmplacement(
-            @ToolArg(description = "Id de l'emplacement (unique)") String id,
             @ToolArg(description = "Nom affiché") String nom,
+            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « PAVILLON »)", required = false)
+                    String code,
             @ToolArg(description = "Latitude (-90 à 90)", required = false) Double latitude,
             @ToolArg(description = "Longitude (-180 à 180)", required = false) Double longitude,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return toView(referenceDataService.createEmplacement(new Emplacement(id, nom, latitude, longitude)));
+        Emplacement emplacement = new Emplacement(null, nom, latitude, longitude);
+        emplacement.setCode(code);
+        return toView(referenceDataService.createEmplacement(emplacement));
     }
 
     @Tool(
@@ -700,7 +764,8 @@ public class StandMcpTools {
 
     @Tool(
             name = "creer_typologie",
-            description = "Crée une typologie de jeu.",
+            description = "Crée une typologie de jeu ; son id (T suivi d'un nombre) est attribué par l'application "
+                    + "et figure dans la réponse.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -709,10 +774,12 @@ public class StandMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     TypologieView createTypologie(
-            @ToolArg(description = "Id de la typologie (unique)") String id,
-            @ToolArg(description = "Libellé affiché", required = false) String label,
+            @ToolArg(description = "Libellé affiché") String label,
+            @ToolArg(description = "Code lisible, unique dans l'édition (ex. « STRATEGIE »)", required = false)
+                    String code,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return TypologieView.of(referenceDataService.createTypologie(new TypologieItem(id, label)));
+        return TypologieView.of(
+                referenceDataService.createTypologie(new TypologieItem(null, code, label, false, null, null, null)));
     }
 
     @Tool(
@@ -749,6 +816,7 @@ public class StandMcpTools {
                 id,
                 new TypologieItem(
                         id,
+                        actuelle == null ? null : actuelle.code(),
                         label,
                         ninja,
                         actuelle == null ? null : actuelle.maxCreneauxParAnimateur(),
@@ -783,10 +851,15 @@ public class StandMcpTools {
                 .orElseThrow(() -> new NoSuchElementException("Stand introuvable : " + id));
     }
 
+    /** The emplacement of that id — or of that code, the way a caller may name it. */
     private Emplacement findEmplacement(String id) {
-        return referenceDataService.listEmplacements().stream()
+        List<Emplacement> emplacements = referenceDataService.listEmplacements();
+        return emplacements.stream()
                 .filter(emplacement -> emplacement.getId().equals(id))
                 .findFirst()
+                .or(() -> emplacements.stream()
+                        .filter(emplacement -> id.equals(emplacement.getCode()))
+                        .findFirst())
                 .orElseThrow(() -> new NoSuchElementException("Emplacement introuvable : " + id));
     }
 
@@ -823,6 +896,7 @@ public class StandMcpTools {
                         horaire.getMotif())));
         return new StandView(
                 stand.getId(),
+                stand.getCode(),
                 stand.getNom(),
                 stand.getTypologiesProposees(),
                 stand.getEffectifMin(),
@@ -840,6 +914,7 @@ public class StandMcpTools {
     static EmplacementView toView(Emplacement emplacement) {
         return new EmplacementView(
                 emplacement.getId(),
+                emplacement.getCode(),
                 emplacement.getNom(),
                 emplacement.getLatitude(),
                 emplacement.getLongitude(),
@@ -861,6 +936,7 @@ public class StandMcpTools {
 
     public record StandView(
             String id,
+            String code,
             String nom,
             Set<String> typologiesProposees,
             int effectifMin,
@@ -900,6 +976,7 @@ public class StandMcpTools {
 
     public record EmplacementView(
             String id,
+            String code,
             String nom,
             Double latitude,
             Double longitude,
@@ -907,14 +984,14 @@ public class StandMcpTools {
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<EmplacementView> {
 
-        EmplacementView(String id, String nom, Double latitude, Double longitude, Instant modifieLe) {
-            this(id, nom, latitude, longitude, modifieLe, List.of());
+        EmplacementView(String id, String code, String nom, Double latitude, Double longitude, Instant modifieLe) {
+            this(id, code, nom, latitude, longitude, modifieLe, List.of());
         }
 
         @Override
-        public EmplacementView withWarning(String code) {
+        public EmplacementView withWarning(String avertissement) {
             return new EmplacementView(
-                    id, nom, latitude, longitude, modifieLe, WarningCodes.with(avertissements, code));
+                    id, code, nom, latitude, longitude, modifieLe, WarningCodes.with(avertissements, avertissement));
         }
     }
 
@@ -931,6 +1008,7 @@ public class StandMcpTools {
      */
     public record TypologieListItem(
             String id,
+            String code,
             String label,
             boolean ninja,
             Integer maxCreneauxParAnimateur,
@@ -945,6 +1023,7 @@ public class StandMcpTools {
         static TypologieListItem of(TypologieItem typologie, TypologieUsage usage) {
             return new TypologieListItem(
                     typologie.id(),
+                    typologie.code(),
                     typologie.label(),
                     typologie.ninja(),
                     typologie.maxCreneauxParAnimateur(),
@@ -960,6 +1039,7 @@ public class StandMcpTools {
 
     public record TypologieView(
             String id,
+            String code,
             String label,
             boolean ninja,
             Integer maxCreneauxParAnimateur,
@@ -971,6 +1051,7 @@ public class StandMcpTools {
         static TypologieView of(TypologieItem typologie) {
             return new TypologieView(
                     typologie.id(),
+                    typologie.code(),
                     typologie.label(),
                     typologie.ninja(),
                     typologie.maxCreneauxParAnimateur(),
@@ -980,15 +1061,16 @@ public class StandMcpTools {
         }
 
         @Override
-        public TypologieView withWarning(String code) {
+        public TypologieView withWarning(String avertissement) {
             return new TypologieView(
                     id,
+                    code,
                     label,
                     ninja,
                     maxCreneauxParAnimateur,
                     description,
                     modifieLe,
-                    WarningCodes.with(avertissements, code));
+                    WarningCodes.with(avertissements, avertissement));
         }
     }
 }

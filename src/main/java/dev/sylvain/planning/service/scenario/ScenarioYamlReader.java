@@ -223,8 +223,39 @@ public final class ScenarioYamlReader {
      */
     public static ScenarioImporte buildFromScenarioText(
             String yamlContent, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
+        return fromDto(bind(yamlContent), parametresLegauxParDefaut);
+    }
+
+    /**
+     * A scenario document read from text, before anything is built from it:
+     * what the import rewrites the ids of (see {@code ScenarioIdRemap}) before
+     * building. Throws {@link BusinessError.Invalid} on a malformed document.
+     */
+    public static ScenarioDto parseScenarioText(String yamlContent) {
+        return bind(yamlContent);
+    }
+
+    /** A bundled scenario, read but not built — see {@link #parseScenarioText}. */
+    public static ScenarioDto readBundledScenario(String scenarioName) {
+        try {
+            return readScenario(scenarioPath(scenarioName));
+        } catch (IOException e) {
+            throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
+        }
+    }
+
+    /** The {@code edition:} section of a document, when it names its target. */
+    public static Optional<EditionCibleDto> edition(ScenarioDto scenario) {
+        return ScenarioDomainMapper.edition(scenario);
+    }
+
+    /**
+     * The planning and the sections a document describes, a mapping failure
+     * reported as the file's fault ({@link BusinessError.Invalid}) rather than
+     * as a bug.
+     */
+    public static ScenarioImporte fromDto(ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
         Objects.requireNonNull(parametresLegauxParDefaut, PARAMETRES_LEGAUX_PAR_DEFAUT);
-        ScenarioDto scenario = bind(yamlContent);
         PlanningEvenement planning;
         try {
             planning = ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut);

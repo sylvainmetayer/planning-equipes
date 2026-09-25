@@ -116,7 +116,8 @@ class IsolationEditionStructurelleTest {
             "consigne_edition_ouverture",
             "consigne_edition_creneau",
             "prereglage_consigne",
-            "prereglage_consigne_fenetre");
+            "prereglage_consigne_fenetre",
+            "compteur_identifiant");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An

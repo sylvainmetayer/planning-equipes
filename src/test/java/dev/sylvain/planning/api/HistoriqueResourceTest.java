@@ -13,6 +13,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,20 +28,22 @@ class HistoriqueResourceTest {
 
     @Test
     void aWriteLeavesALineNamingWhatItTouched() {
-        given().contentType(ContentType.JSON)
+        String id = given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"HIST-A1","prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
+                        {"prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
 
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"HIST-A1","prenom":"Alice","nom":"Durand","dateNaissance":"1990-01-01",
+                        {"prenom":"Alice","nom":"Durand","dateNaissance":"1990-01-01",
                          "email":"alice@example.org"}""")
                 .when()
-                .put("/api/animateurs/HIST-A1")
+                .put("/api/animateurs/" + id)
                 .then()
                 .statusCode(200);
 
@@ -49,16 +52,16 @@ class HistoriqueResourceTest {
                 .then()
                 .statusCode(200)
                 // The creation and the edit, newest first.
-                .body("find { it.action == 'ANIMATEUR_MODIFIE' }.entiteId", equalTo("HIST-A1"))
+                .body("find { it.action == 'ANIMATEUR_MODIFIE' }.entiteId", equalTo(id))
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.libelle", equalTo("Fiche animateur modifiée"))
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.resultat", equalTo("SUCCES"))
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.champs", hasItem("nom"))
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.champs", hasItem("email"))
                 // Untouched fields stay out: the screen re-sends the whole fiche.
                 .body("find { it.action == 'ANIMATEUR_MODIFIE' }.champs", not(hasItem("prenom")))
-                .body("find { it.action == 'ANIMATEUR_CREE' }.entiteId", equalTo("HIST-A1"));
+                .body("find { it.action == 'ANIMATEUR_CREE' }.entiteId", equalTo(id));
 
-        given().when().delete("/api/animateurs/HIST-A1").then().statusCode(204);
+        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
     }
 
     /**
@@ -68,21 +71,23 @@ class HistoriqueResourceTest {
      */
     @Test
     void nothingNominativeIsStoredAndTheNameIsJoinedOnRead() {
-        given().contentType(ContentType.JSON)
+        String id = given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"HIST-A2","prenom":"Bérénice","nom":"Dupont","dateNaissance":"1990-01-01"}""")
+                        {"prenom":"Bérénice","nom":"Dupont","dateNaissance":"1990-01-01"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
 
         given().when()
                 .get("/api/historique")
                 .then()
                 .statusCode(200)
-                .body("find { it.entiteId == 'HIST-A2' }.entiteNom", equalTo("Bérénice Dupont"));
+                .body("find { it.entiteId == '" + id + "' }.entiteNom", equalTo("Bérénice Dupont"));
 
-        given().when().delete("/api/animateurs/HIST-A2").then().statusCode(204);
+        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
 
         // The line survives; the name does not.
         given().when()
@@ -90,7 +95,7 @@ class HistoriqueResourceTest {
                 .then()
                 .statusCode(200)
                 .body(
-                        "find { it.action == 'ANIMATEUR_SUPPRIME' && it.entiteId == 'HIST-A2' }.entiteNom",
+                        "find { it.action == 'ANIMATEUR_SUPPRIME' && it.entiteId == '" + id + "' }.entiteNom",
                         equalTo(null));
     }
 
@@ -174,13 +179,15 @@ class HistoriqueResourceTest {
     void theChangesSinceAMomentAreCountedPerFamilyAndDated() {
         String avant = Instant.now().toString();
 
-        given().contentType(ContentType.JSON)
+        String id = given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"HIST-C1","prenom":"Chloé","nom":"Bernard","dateNaissance":"1990-01-01"}""")
+                        {"prenom":"Chloé","nom":"Bernard","dateNaissance":"1990-01-01"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
         // Reading changes nothing, and an export leaves with a copy of the plan
         // without moving it: neither belongs in this summary.
         given().when().get("/api/animateurs").then().statusCode(200);
@@ -192,8 +199,8 @@ class HistoriqueResourceTest {
                 .statusCode(200)
                 .body("total", greaterThan(0))
                 .body("parEntite.find { it.entite == 'ANIMATEUR' }.nombre", greaterThan(0))
-                .body("dernieres.find { it.entiteId == 'HIST-C1' }.libelle", equalTo("Animateur ajouté"))
-                .body("dernieres.find { it.entiteId == 'HIST-C1' }.entiteNom", equalTo("Chloé Bernard"))
+                .body("dernieres.find { it.entiteId == '" + id + "' }.libelle", equalTo("Animateur ajouté"))
+                .body("dernieres.find { it.entiteId == '" + id + "' }.entiteNom", equalTo("Chloé Bernard"))
                 .body("dernieres.action", everyItem(not(equalTo("ANIMATEURS_LUS"))));
 
         // Asked from now on, the same creation is behind us.
@@ -206,7 +213,7 @@ class HistoriqueResourceTest {
                 .body("parEntite", empty())
                 .body("dernieres", empty());
 
-        given().when().delete("/api/animateurs/HIST-C1").then().statusCode(204);
+        given().when().delete("/api/animateurs/" + id).then().statusCode(204);
     }
 
     /**
@@ -298,15 +305,17 @@ class HistoriqueResourceTest {
     void theExportsFilterSearchesTheDatabaseNotTheLastPage() {
         given().when().get("/api/reference-data/export-csv?stands=true").then().statusCode(200);
         // More recent lines than the page asked for below, none of them an export.
+        List<String> crees = new ArrayList<>();
         for (int i = 0; i < 3; i++) {
             given().when().get("/api/reference-data/export-csv").then().statusCode(400);
-            given().contentType(ContentType.JSON)
-                    .body("{\"id\":\"HIST-X" + i
-                            + "\",\"prenom\":\"X\",\"nom\":\"Y\",\"dateNaissance\":\"1990-01-01\"}")
+            crees.add(given().contentType(ContentType.JSON)
+                    .body("{\"prenom\":\"X" + i + "\",\"nom\":\"Y\",\"dateNaissance\":\"1990-01-01\"}")
                     .when()
                     .post("/api/animateurs")
                     .then()
-                    .statusCode(200);
+                    .statusCode(200)
+                    .extract()
+                    .path("animateur.id"));
         }
 
         List<String> exportCodes = given().when()
@@ -331,8 +340,8 @@ class HistoriqueResourceTest {
                 .as("l'export réussi, derrière des lignes plus récentes que la page")
                 .anySatisfy(ligne -> assertThat(ligne).containsEntry("champs", List.of("stands")));
 
-        for (int i = 0; i < 3; i++) {
-            given().when().delete("/api/animateurs/HIST-X" + i).then().statusCode(204);
+        for (String id : crees) {
+            given().when().delete("/api/animateurs/" + id).then().statusCode(204);
         }
     }
 

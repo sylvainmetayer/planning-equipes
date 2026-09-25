@@ -52,7 +52,7 @@ class AbonnementIcsTest {
     private static final String ANIMATEUR = "ABO-A";
     private static final String EMAIL = "abo-alice@example.org";
     /** A second, deliberately empty edition: nothing has ever been published there. */
-    private static final String EDITION_VIERGE = "ABO-EDITION-VIERGE";
+    private static final String EDITION_VIERGE = "Édition sans publication";
 
     @Inject
     PlanningPersistenceService persistence;
@@ -254,11 +254,14 @@ class AbonnementIcsTest {
     @Test
     void anEditionThatNeverPublishedServesAnEmptyCalendar() {
         dropEditionIfPresent();
-        editionService.create(new Edition(EDITION_VIERGE, "Édition sans publication", false, null));
-        String token = editionContext.executeIn(EDITION_VIERGE, () -> {
-            referenceData.createAnimateur(
-                    new Animateur("ABO-VIDE", "Bruno", "Vierge", LocalDate.of(1991, 3, 3), false));
-            return referenceData.abonnementToken("ABO-VIDE");
+        String vierge = editionService
+                .create(new Edition(null, EDITION_VIERGE, false, null))
+                .getId();
+        String token = editionContext.executeIn(vierge, () -> {
+            String animateur = referenceData
+                    .createAnimateur(new Animateur(null, "Bruno", "Vierge", LocalDate.of(1991, 3, 3), false))
+                    .getId();
+            return referenceData.abonnementToken(animateur);
         });
 
         String ics = given().when()
@@ -279,10 +282,9 @@ class AbonnementIcsTest {
 
     /** Leftover of a previous run, or of a failure halfway through this one. */
     private void dropEditionIfPresent() {
-        if (editionService.listEditions().stream()
-                .anyMatch(edition -> edition.getId().equals(EDITION_VIERGE))) {
-            editionService.delete(EDITION_VIERGE);
-        }
+        editionService.listEditions().stream()
+                .filter(edition -> EDITION_VIERGE.equals(edition.getNom()))
+                .forEach(edition -> editionService.delete(edition.getId()));
     }
 
     /** A deleted fiche takes its subscription with it — no orphan calendar survives. */

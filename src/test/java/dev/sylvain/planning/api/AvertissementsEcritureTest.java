@@ -36,13 +36,15 @@ class AvertissementsEcritureTest {
 
     private static final String JOUR = "2027-06-10";
 
+    /** The stand every test starts from, under the id the application gave it. */
+    private String standId;
+
     @BeforeEach
     void resetReferentiel() {
         given().when().post("/api/planning/reset").then().statusCode(200);
-        given().contentType("application/json")
+        standId = given().contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-STAND",
                           "nom":"Stand de l'après-midi",
                           "typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,
@@ -56,7 +58,21 @@ class AvertissementsEcritureTest {
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+    }
+
+    /** POSTs an animateur and hands back the id it was given. */
+    private static String postAnimateur(String corps) {
+        return given().contentType("application/json")
+                .body(corps)
+                .when()
+                .post("/api/animateurs")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
     }
 
     /**
@@ -124,10 +140,10 @@ class AvertissementsEcritureTest {
      * ever said it on the review screen before.
      */
     @Test
-    void unStandDontLaFenetreNeRecoupeAucunCreneauEstEcritEtSignale() {
+    void aStandWhoseWindowOverlapsNoTimeslotIsWrittenAndWarned() {
         postCreneau("14:00:00", "18:00:00");
 
-        given().contentType("application/json")
+        String matin = given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-MATIN",
@@ -145,16 +161,19 @@ class AvertissementsEcritureTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("stand.id", equalTo("AVERT-MATIN"))
+                .body("stand.id", not(equalTo("AVERT-MATIN")))
                 .body("avertissements.type", contains("STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT"))
-                .body("avertissements[0].message", containsString("08:00"));
+                .body("avertissements[0].message", containsString("08:00"))
+                .extract()
+                .path("stand.id");
 
-        // Written despite the warnings, rules included.
+        // Written despite the warnings, rules included — under the id the
+        // application drew, the one the body carried being ignored (ADR 0050).
         given().when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'AVERT-MATIN' }.horaires.size()", equalTo(1));
+                .body("find { it.id == '" + matin + "' }.horaires.size()", equalTo(1));
     }
 
     /**
@@ -164,12 +183,12 @@ class AvertissementsEcritureTest {
      * which issues one PUT per row, re-shouts about data nobody touched.
      */
     @Test
-    void renommerUnStandDontLaFenetreEstDejaSansEffetNeRedItRien() {
+    void renamingAStandWhoseWindowWasAlreadyUselessSaysNothingAgain() {
         postCreneau("14:00:00", "18:00:00");
-        given().contentType("application/json")
+        String matin = given().contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-MATIN","nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
+                          "nom":"Stand du matin","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
                           "horaires":[
                             {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
@@ -180,12 +199,14 @@ class AvertissementsEcritureTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("avertissements.type", hasItem("STAND_FENETRE_SANS_EFFET"));
+                .body("avertissements.type", hasItem("STAND_FENETRE_SANS_EFFET"))
+                .extract()
+                .path("stand.id");
 
         given().contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-MATIN","nom":"Renommé","typologiesProposees":["STRATEGIE"],
+                          "nom":"Renommé","typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,"effectifMax":1,"reserveMajeurs":false,
                           "horaires":[
                             {"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"08:00:00","heureFin":"10:00:00"}]}
@@ -193,7 +214,7 @@ class AvertissementsEcritureTest {
                         }
                         """)
                 .when()
-                .put("/api/stands/AVERT-MATIN")
+                .put("/api/stands/" + matin)
                 .then()
                 .statusCode(200)
                 .body("stand.nom", equalTo("Renommé"))
@@ -201,13 +222,12 @@ class AvertissementsEcritureTest {
     }
 
     @Test
-    void unStandCoherentNeProduitAucunAvertissementEtRenommerNeRedItRien() {
+    void aConsistentStandRaisesNoWarningAndRenamingSaysNothingAgain() {
         postCreneau("14:00:00", "18:00:00");
 
         given().contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-STAND",
                           "nom":"Renommé",
                           "typologiesProposees":["STRATEGIE"],
                           "effectifMin":1,
@@ -219,7 +239,7 @@ class AvertissementsEcritureTest {
                         }
                         """)
                 .when()
-                .put("/api/stands/AVERT-STAND")
+                .put("/api/stands/" + standId)
                 .then()
                 .statusCode(200)
                 .body("stand.nom", equalTo("Renommé"))
@@ -231,10 +251,10 @@ class AvertissementsEcritureTest {
      * the off day included, which is what proves nothing was rolled back.
      */
     @Test
-    void unAnimateurMineurEtIndisponibleHorsBornesEstEcritEtSignale() {
+    void aMinorOffOutsideTheBoundsIsWrittenAndWarned() {
         postCreneau("14:00:00", "18:00:00");
 
-        given().contentType("application/json")
+        String animateur = given().contentType("application/json")
                 .body("""
                         {
                           "id":"AVERT-A1",
@@ -248,38 +268,41 @@ class AvertissementsEcritureTest {
                 .post("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("animateur.id", equalTo("AVERT-A1"))
+                .body("animateur.id", not(equalTo("AVERT-A1")))
                 .body("avertissements.type", hasItem("MINEUR_PENDANT_EVENEMENT"))
                 .body("avertissements.type", hasItem("INDISPONIBILITE_HORS_EVENEMENT"))
                 .body(
                         "avertissements.find { it.type == 'MINEUR_PENDANT_EVENEMENT' }.message",
-                        containsString("2027-06-10"));
+                        containsString("2027-06-10"))
+                .extract()
+                .path("animateur.id");
 
         given().when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'AVERT-A1' }.joursIndisponibles", contains("2027-08-15"));
+                .body("find { it.id == '" + animateur + "' }.joursIndisponibles", contains("2027-08-15"));
     }
 
     /** Same two rules on the edit path, and both of them silent this time. */
     @Test
-    void unAnimateurCoherentModifieNeProduitAucunAvertissement() {
+    void editingAConsistentAnimateurRaisesNoWarning() {
         postCreneau("14:00:00", "18:00:00");
-        given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A2\",\"prenom\":\"Alix\",\"nom\":\"Martin\","
-                        + "\"dateNaissance\":\"1990-01-01\"}")
+        String animateur = given().contentType("application/json")
+                .body("{\"prenom\":\"Alix\",\"nom\":\"Martin\",\"dateNaissance\":\"1990-01-01\"}")
                 .when()
                 .post("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("avertissements", empty());
+                .body("avertissements", empty())
+                .extract()
+                .path("animateur.id");
 
         given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A2\",\"prenom\":\"Alix\",\"nom\":\"Martin\","
+                .body("{\"prenom\":\"Alix\",\"nom\":\"Martin\","
                         + "\"dateNaissance\":\"1990-01-01\",\"joursIndisponibles\":[\"" + JOUR + "\"]}")
                 .when()
-                .put("/api/animateurs/AVERT-A2")
+                .put("/api/animateurs/" + animateur)
                 .then()
                 .statusCode(200)
                 .body("avertissements", empty());
@@ -287,21 +310,14 @@ class AvertissementsEcritureTest {
 
     /** The edit path warns too: the same fiche, moved to a birth date that makes it a minor. */
     @Test
-    void laModificationDUnAnimateurSignaleAussi() {
+    void editingAnAnimateurWarnsToo() {
         postCreneau("14:00:00", "18:00:00");
-        given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A3\",\"prenom\":\"Sacha\",\"nom\":\"Roux\","
-                        + "\"dateNaissance\":\"1990-01-01\"}")
-                .when()
-                .post("/api/animateurs")
-                .then()
-                .statusCode(200);
+        String animateur = postAnimateur("{\"prenom\":\"Sacha\",\"nom\":\"Roux\",\"dateNaissance\":\"1990-01-01\"}");
 
         given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A3\",\"prenom\":\"Sacha\",\"nom\":\"Roux\","
-                        + "\"dateNaissance\":\"2012-01-01\"}")
+                .body("{\"prenom\":\"Sacha\",\"nom\":\"Roux\",\"dateNaissance\":\"2012-01-01\"}")
                 .when()
-                .put("/api/animateurs/AVERT-A3")
+                .put("/api/animateurs/" + animateur)
                 .then()
                 .statusCode(200)
                 .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"));
@@ -310,7 +326,7 @@ class AvertissementsEcritureTest {
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'AVERT-A3' }.dateNaissance", equalTo("2012-01-01"));
+                .body("find { it.id == '" + animateur + "' }.dateNaissance", equalTo("2012-01-01"));
     }
 
     /**
@@ -320,24 +336,25 @@ class AvertissementsEcritureTest {
      * birth date nobody touched must come back silent.
      */
     @Test
-    void modifierUnMineurSansToucherSaDateDeNaissanceNeSignaleRien() {
+    void editingAMinorWithoutTouchingTheBirthDateSaysNothing() {
         postCreneau("14:00:00", "18:00:00");
-        given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A5\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
-                        + "\"dateNaissance\":\"2012-01-01\"}")
+        String animateur = given().contentType("application/json")
+                .body("{\"prenom\":\"Noa\",\"nom\":\"Blanc\",\"dateNaissance\":\"2012-01-01\"}")
                 .when()
                 .post("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"));
+                .body("avertissements.type", contains("MINEUR_PENDANT_EVENEMENT"))
+                .extract()
+                .path("animateur.id");
 
         // The very shape ReferenceDataStore.saveMany sends: the whole fiche,
         // one field of it changed.
         given().contentType("application/json")
-                .body("{\"id\":\"AVERT-A5\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
+                .body("{\"id\":\"" + animateur + "\",\"prenom\":\"Noa\",\"nom\":\"Blanc\","
                         + "\"dateNaissance\":\"2012-01-01\",\"email\":\"noa@example.org\"}")
                 .when()
-                .put("/api/animateurs/AVERT-A5")
+                .put("/api/animateurs/" + animateur)
                 .then()
                 .statusCode(200)
                 .body("avertissements", empty());
@@ -349,13 +366,12 @@ class AvertissementsEcritureTest {
      * and never by their identity nor their date de naissance.
      */
     @Test
-    void leMessageDeMinoriteNeNommeNiLIdentiteNiLaDateDeNaissance() {
+    void theMinorityMessageNamesNeitherTheIdentityNorTheBirthDate() {
         postCreneau("14:00:00", "18:00:00");
 
-        given().contentType("application/json")
+        var reponse = given().contentType("application/json")
                 .body("""
                         {
-                          "id":"AVERT-A6",
                           "prenom":"Camille",
                           "nom":"Durand",
                           "dateNaissance":"2010-06-11"
@@ -364,8 +380,9 @@ class AvertissementsEcritureTest {
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200)
-                .body("avertissements[0].message", containsString("AVERT-A6"))
+                .statusCode(200);
+        String animateur = reponse.extract().path("animateur.id");
+        reponse.body("avertissements[0].message", containsString(animateur))
                 .body("avertissements[0].message", not(containsString("Camille")))
                 .body("avertissements[0].message", not(containsString("Durand")))
                 .body("avertissements[0].message", not(containsString("2010-06-11")));

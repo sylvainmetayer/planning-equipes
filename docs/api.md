@@ -2067,6 +2067,26 @@ guillemets) que l'application accepte.
 Même schéma CRUD partout, tout cloisonné par édition — deux éditions portent les
 mêmes identifiants métier sans se marcher dessus.
 
+**Un identifiant n'est jamais choisi par l'appelant**
+([ADR 0050](decisions/0050-identifiants-generes-par-edition.md)). Le `POST`
+de création l'attribue — `A1`, `A2`… pour un animateur, `S…` pour un stand,
+`T…` pour une typologie, `L…` pour un emplacement, `C…` pour un ajustement,
+numérotés dans chaque édition ; `E1`, `E2`… pour une édition — et le rend
+dans sa réponse. Un `id` présent dans le corps d'une création est ignoré :
+c'est ce que la réponse porte qui désigne la nouvelle ligne. Un numéro libéré
+par une suppression ne resert jamais. Seule exception de forme : un ajustement
+se modifie en renvoyant son `POST` **avec** son identifiant, qui doit alors
+exister (`400` sinon).
+
+Les stands, les typologies et les emplacements portent en plus un **`code`**
+facultatif (`STRATEGIE`, `JEU-LIBRE`), unique dans l'édition (`409` s'il est
+déjà porté), qui n'a jamais la forme d'un identifiant de son référentiel
+(`400`) : c'est la clé que les fichiers d'import citent. Partout où un stand
+ou un animateur cite une typologie (`typologiesProposees`, `competences`,
+`souhaits`), l'identifiant et le code sont acceptés, et c'est l'identifiant
+qui est enregistré. Un nom d'édition de la forme `E` suivi d'un nombre est
+refusé (`400`) : l'argument MCP `edition` le prendrait pour un identifiant.
+
 Les typologies de jeux sont un référentiel, **pas un enum figé** : les
 compétences et les typologies proposées référencent leurs `id` par clé
 étrangère. Un `id` inconnu répond `400`, et supprimer une typologie encore
@@ -2202,9 +2222,9 @@ La vérification **fait partie de l'écriture** : un seul ordre SQL, dont le
 quand elle échoue. Une lecture suivie d'une écriture laisserait passer deux
 enregistrements séparés d'une milliseconde — la perte de modification que ce
 mécanisme existe pour empêcher — et coûterait un aller-retour de plus par
-enregistrement. La création est vérifiée de la même façon : un `POST` dont
-l'identifiant est déjà pris répond `409` au lieu de remplacer la ligne
-existante en silence.
+enregistrement. La création est vérifiée de la même façon : si l'identifiant
+tiré du compteur était déjà pris — une base retouchée à la main —, le `POST`
+répond `409` au lieu de remplacer la ligne existante en silence.
 
 Ce n'est **pas un verrou** : deux sessions peuvent toujours modifier, la
 seconde est simplement prévenue. Avec un seul compte partagé, le serveur ne
@@ -2227,10 +2247,10 @@ l'entité :
 ```json
 POST /api/animateurs  →  200
 {
-  "animateur": { "id": "A-12", "prenom": "…", … },
+  "animateur": { "id": "A12", "prenom": "…", … },
   "avertissements": [
     { "type": "MINEUR_PENDANT_EVENEMENT",
-      "message": "L'animateur A-12 est mineur du 2026-07-08 au 2026-07-08 et devient majeur le 2026-07-09 …" }
+      "message": "L'animateur A12 est mineur du 2026-07-08 au 2026-07-08 et devient majeur le 2026-07-09 …" }
   ]
 }
 ```

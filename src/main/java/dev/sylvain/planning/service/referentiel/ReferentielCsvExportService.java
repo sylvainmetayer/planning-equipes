@@ -174,20 +174,21 @@ public class ReferentielCsvExportService {
 
     private String csvTypologies() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "libelle", "ninja");
+        ligne(csv, "id", "code", "libelle", "ninja");
         for (TypologieItem typologie : typologies.list()) {
-            ligne(csv, typologie.id(), typologie.label(), typologie.ninja() ? "oui" : "");
+            ligne(csv, typologie.id(), texte(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
         }
         return csv.toString();
     }
 
     private String csvEmplacements() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "nom", "latitude", "longitude");
+        ligne(csv, "id", "code", "nom", "latitude", "longitude");
         for (Emplacement emplacement : emplacements.list()) {
             ligne(
                     csv,
                     emplacement.getId(),
+                    texte(emplacement.getCode()),
                     emplacement.getNom(),
                     decimal(emplacement.getLatitude()),
                     decimal(emplacement.getLongitude()));
@@ -197,13 +198,17 @@ public class ReferentielCsvExportService {
 
     private String csvStands() {
         StringBuilder csv = new StringBuilder();
-        ligne(csv, "id", "nom", "typologies", "effectifMin", "effectifMax");
+        ligne(csv, "id", "code", "nom", "typologies", "effectifMin", "effectifMax");
+        Map<String, String> typologieParId = typologiesLisibles();
         for (Stand stand : stands.list()) {
             ligne(
                     csv,
                     stand.getId(),
+                    texte(stand.getCode()),
                     stand.getNom(),
-                    joint(new TreeSet<>(stand.getTypologiesProposees())),
+                    joint(new TreeSet<>(stand.getTypologiesProposees().stream()
+                            .map(typologie -> typologieParId.getOrDefault(typologie, typologie))
+                            .toList())),
                     String.valueOf(stand.getEffectifMin()),
                     String.valueOf(stand.getEffectifMax()));
         }
@@ -264,6 +269,24 @@ public class ReferentielCsvExportService {
         return csv.toString();
     }
 
+    /**
+     * How a typologie is cited in a file: by its code when it has one — what
+     * a person reading the spreadsheet recognises — and by its id otherwise.
+     * Both read back (ADR 0050).
+     */
+    private Map<String, String> typologiesLisibles() {
+        Map<String, String> parId = new LinkedHashMap<>();
+        typologies
+                .list()
+                .forEach(typologie ->
+                        parId.put(typologie.id(), typologie.code() != null ? typologie.code() : typologie.id()));
+        return parId;
+    }
+
+    private static String texte(String valeur) {
+        return valeur == null ? "" : valeur;
+    }
+
     /** {@code HH:MM}, never {@code HH:MM:SS}: the grid has no seconds and a spreadsheet shows them. */
     private static String heure(LocalTime heure) {
         return heure == null ? "" : String.format("%02d:%02d", heure.getHour(), heure.getMinute());
@@ -286,6 +309,7 @@ public class ReferentielCsvExportService {
                 "compétences",
                 "souhaits",
                 "jours indisponibles");
+        Map<String, String> typologieParId = typologiesLisibles();
         for (Animateur animateur : animateurs.list()) {
             ligne(
                     csv,
@@ -297,21 +321,25 @@ public class ReferentielCsvExportService {
                             : animateur.getDateNaissance().toString(),
                     animateur.getEmail() == null ? "" : animateur.getEmail(),
                     animateur.isManager() ? "oui" : "non",
-                    competences(animateur),
-                    joint(new TreeSet<>(animateur.getSouhaits())),
+                    competences(animateur, typologieParId),
+                    joint(new TreeSet<>(animateur.getSouhaits().stream()
+                            .map(souhait -> typologieParId.getOrDefault(souhait, souhait))
+                            .toList())),
                     joint(new TreeSet<>(animateur.getJoursIndisponibles())
                             .stream().map(Object::toString).toList()));
         }
         return csv.toString();
     }
 
-    /** {@code TYPOLOGIE:NIVEAU}, the form the import reads; a plain id means « autonome ». */
-    private static String competences(Animateur animateur) {
+    /** {@code TYPOLOGIE:NIVEAU}, the form the import reads; a plain code means « autonome ». */
+    private static String competences(Animateur animateur, Map<String, String> typologieParId) {
+        Map<String, NiveauCompetence> parNom = new java.util.TreeMap<>();
+        animateur
+                .getCompetences()
+                .forEach((typologie, niveau) -> parNom.put(typologieParId.getOrDefault(typologie, typologie), niveau));
         List<String> valeurs = new ArrayList<>();
-        new TreeSet<>(animateur.getCompetences().keySet()).forEach(typologie -> {
-            NiveauCompetence niveau = animateur.getCompetences().get(typologie);
-            valeurs.add(niveau == null ? typologie : typologie + ":" + niveau.name());
-        });
+        parNom.forEach(
+                (typologie, niveau) -> valeurs.add(niveau == null ? typologie : typologie + ":" + niveau.name()));
         return joint(valeurs);
     }
 

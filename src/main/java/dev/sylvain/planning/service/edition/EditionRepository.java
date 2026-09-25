@@ -27,8 +27,12 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class EditionRepository {
 
-    /** Edition seeded by V30, and the fallback for any caller designating none. */
-    public static final String EDITION_DEFAUT_ID = "DEFAUT";
+    /**
+     * The fallback for any caller designating no edition, when the table is
+     * empty: the id the first edition of a fresh database carries — V30 seeded
+     * it as {@code DEFAUT}, V100 renumbered it.
+     */
+    public static final String EDITION_DEFAUT_ID = "E1";
 
     /**
      * Reference tables copied by {@link #duplicate}, ordered so a sequential
@@ -47,8 +51,8 @@ public class EditionRepository {
      * one. That test is what makes the next added column loud.</p>
      */
     static final List<TableToCopy> TABLES_A_COPIER = List.of(
-            new TableToCopy("typologie", "id, label, ninja, max_creneaux_par_animateur, description"),
-            new TableToCopy("emplacement", "id, nom, latitude, longitude"),
+            new TableToCopy("typologie", "id, code, label, ninja, max_creneaux_par_animateur, description"),
+            new TableToCopy("emplacement", "id, code, nom, latitude, longitude"),
             // email travels with the copy (the canicule-edition ritual of issue
             // #172 ends with « Envoyer à all », mute without it); neither token
             // does: the column defaults mint fresh ones per edition, so an
@@ -57,7 +61,8 @@ public class EditionRepository {
             new TableToCopy("animateur", "id, prenom, nom, date_naissance, manager, email"),
             new TableToCopy(
                     "stand",
-                    "id, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, niveau_effort"),
+                    "id, code, nom, effectif_min, effectif_max, reserve_majeurs, premium, emplacement_id, "
+                            + "niveau_effort"),
             new TableToCopy("animateur_competence", "animateur_id, typologie, niveau"),
             new TableToCopy("animateur_jour_indispo", "animateur_id, jour"),
             new TableToCopy("animateur_souhait", "animateur_id, typologie"),
@@ -109,7 +114,12 @@ public class EditionRepository {
                     "id, nom, fermeture_debut, fermeture_fin, motif, repas_midi_debut, repas_midi_fin, "
                             + "repas_soir_debut, repas_soir_fin, repas_coupure_minutes, repas_justification, "
                             + "cree_le"),
-            new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"));
+            new TableToCopy("prereglage_consigne_fenetre", "prereglage_id, position, heure_debut, heure_fin"),
+            // The id counters travel with the ids they handed out (ADR 0050):
+            // the copy keeps every id verbatim, so its next animateur must be
+            // numbered after the ones it inherited, not from A1 again. Copied
+            // even without the people — a number is never handed out twice.
+            new TableToCopy("compteur_identifiant", "entite, dernier"));
 
     record TableToCopy(String nom, String colonnes) {}
 

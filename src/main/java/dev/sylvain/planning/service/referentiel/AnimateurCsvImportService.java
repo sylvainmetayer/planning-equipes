@@ -401,7 +401,7 @@ public class AnimateurCsvImportService {
             AnimateurCsvMapping mapping,
             Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
-        Index index = new Index(existants, pendingDeclarations());
+        Index index = new Index(existants, pendingDeclarations(), typologies.list());
         Dates dates = new Dates(LocalDate.now(ZoneId.systemDefault()), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
@@ -417,7 +417,9 @@ public class AnimateurCsvImportService {
             rows.add(outcome.reported());
             if (outcome.animateur() != null) {
                 toWrite.add(outcome.animateur());
-                idsTouches.add(outcome.animateur().getId());
+                if (outcome.animateur().getId() != null) {
+                    idsTouches.add(outcome.animateur().getId());
+                }
                 accepted++;
                 if (outcome.reported().action() == AnimateurCsvImportReport.ImportAction.CREATED) {
                     created++;
@@ -517,14 +519,21 @@ public class AnimateurCsvImportService {
         private final Map<String, Animateur> parId = new LinkedHashMap<>();
         private final Map<String, List<Animateur>> parEmail = new LinkedHashMap<>();
         private final Map<String, List<Animateur>> parNom = new LinkedHashMap<>();
-        private final Set<String> idsPris = new LinkedHashSet<>();
         private final Set<String> enAttente;
 
-        private Index(List<Animateur> existants, Set<String> enAttente) {
+        /** A typologie by its id or by its code — a file may name it either way (ADR 0050). */
+        private final Map<String, String> typologies = new LinkedHashMap<>();
+
+        private Index(List<Animateur> existants, Set<String> enAttente, List<TypologieItem> referentiel) {
             this.enAttente = enAttente;
+            referentiel.forEach(typologie -> {
+                if (typologie.code() != null) {
+                    typologies.putIfAbsent(typologie.code(), typologie.id());
+                }
+            });
+            referentiel.forEach(typologie -> typologies.put(typologie.id(), typologie.id()));
             for (Animateur animateur : existants) {
                 parId.put(animateur.getId(), animateur);
-                idsPris.add(animateur.getId());
                 if (animateur.getEmail() != null && !animateur.getEmail().isBlank()) {
                     parEmail.computeIfAbsent(
                                     animateur.getEmail().trim().toLowerCase(Locale.ROOT), key -> new ArrayList<>())
@@ -575,6 +584,10 @@ public class AnimateurCsvImportService {
         checkLength("Adresse e-mail trop longue", email, MAX_EMAIL, reasons);
 
         Resolution resolution = resolve(idCell, email, prenom, nom, label, index, reasons);
+        if (!idCell.isEmpty() && !index.parId.containsKey(idCell)) {
+            warnings.add("L'identifiant « " + idCell + " » n'existe pas dans cette édition : il est ignoré, la ligne "
+                    + "est rapprochée par son adresse e-mail ou son nom.");
+        }
         Animateur existant = resolution.existant();
         Integer precedente = resolution.identity() == null ? null : seen.get(resolution.identity());
         if (precedente != null) {
@@ -591,9 +604,13 @@ public class AnimateurCsvImportService {
         checkEmail(email, reasons);
         boolean manager = readManager(row, mapping, existant, reasons);
 
-        Map<String, NiveauCompetence> competences = readCompetences(row, mapping, existant, reasons);
+        Map<String, NiveauCompetence> competences = new LinkedHashMap<>();
+        readCompetences(row, mapping, existant, reasons)
+                .forEach((typologie, niveau) ->
+                        competences.put(index.typologies.getOrDefault(typologie, typologie), niveau));
         Set<String> souhaits = existant != null ? new LinkedHashSet<>(existant.getSouhaits()) : new LinkedHashSet<>();
-        souhaits.addAll(values(cell(row, mapping.souhaits())));
+        values(cell(row, mapping.souhaits()))
+                .forEach(souhait -> souhaits.add(index.typologies.getOrDefault(souhait, souhait)));
         checkTypologies(competences, souhaits, reasons);
 
         Set<LocalDate> jours = readJours(row, mapping, request, existant, dates, reasons, warnings);
@@ -615,7 +632,9 @@ public class AnimateurCsvImportService {
         }
 
         Animateur animateur = new Animateur();
-        animateur.setId(existant != null ? existant.getId() : generateId(prenom, nom, idCell, index.idsPris));
+        // A new fiche gets its id when written (ADR 0050) — never one derived
+        // from the name, which is how « marie-dupont » used to leave over MCP.
+        animateur.setId(existant != null ? existant.getId() : null);
         animateur.setPrenom(cellOrFiche(prenom, existant, Animateur::getPrenom));
         animateur.setNom(cellOrFiche(nom, existant, Animateur::getNom));
         animateur.setDateNaissance(dateNaissance);
@@ -744,7 +763,7 @@ public class AnimateurCsvImportService {
 
     private static Resolution resolve(
             String idCell, String email, String prenom, String nom, String label, Index index, List<String> reasons) {
-        if (!idCell.isEmpty()) {
+        if (!idCell.isEmpty() && index.parId.containsKey(idCell)) {
             return new Resolution(index.parId.get(idCell), idCell);
         }
         if (!email.isEmpty()) {
@@ -1029,38 +1048,5 @@ public class AnimateurCsvImportService {
                 .toLowerCase(Locale.ROOT)
                 .replaceAll("[^a-z0-9]+", " ")
                 .trim();
-    }
-
-    /**
-     * A readable id for a new fiche, derived from the name and suffixed until
-     * it is free — including against the ids this very import just handed out.
-     *
-     * <p>Truncated to {@link #MAX_ID}, suffix included: two names of 128
-     * characters each build a key of 257 and the column holds 64. The id is
-     * derived rather than read, so no row can be refused over it and the cap
-     * belongs here.</p>
-     */
-    private static String generateId(String prenom, String nom, String idCell, Set<String> taken) {
-        if (!idCell.isEmpty()) {
-            taken.add(idCell);
-            return idCell;
-        }
-        String base = nameKey(prenom, nom).replace(' ', '-');
-        if (base.isEmpty()) {
-            base = "animateur";
-        }
-        String candidate = truncate(base, MAX_ID);
-        int suffix = 2;
-        while (taken.contains(candidate)) {
-            String marque = "-" + suffix;
-            candidate = truncate(base, MAX_ID - marque.length()) + marque;
-            suffix++;
-        }
-        taken.add(candidate);
-        return candidate;
-    }
-
-    private static String truncate(String value, int max) {
-        return value.length() <= max ? value : value.substring(0, max);
     }
 }

@@ -3,7 +3,8 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Emplacement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -31,14 +32,23 @@ public class EmplacementService {
         this.staleWrites = staleWrites;
     }
 
+    @Inject
+    IdGenerator ids;
+
+    @Inject
+    JdbcEditionScope scope;
+
     public List<Emplacement> list() {
         return repository.listEmplacements();
     }
 
+    /**
+     * Creates the emplacement under an id the application draws (ADR 0050):
+     * an id the caller sent is overwritten.
+     */
     public Emplacement create(Emplacement emplacement) {
-        emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
-        validateCoordinates(emplacement);
-        repository.saveEmplacement(emplacement, true);
+        scope.write(
+                "Failed to create emplacement " + emplacement.getNom(), connection -> create(connection, emplacement));
         changeTracker.markModified();
         return emplacement;
     }
@@ -49,8 +59,11 @@ public class EmplacementService {
      * its transaction is committed (see {@code TypologieService}).
      */
     Emplacement create(Connection connection, Emplacement emplacement) throws SQLException {
-        emplacement.setId(Ids.required(emplacement.getId(), "emplacement id"));
         validateCoordinates(emplacement);
+        emplacement.setCode(Codes.normalise(emplacement.getCode(), IdGenerator.Kind.EMPLACEMENT));
+        Codes.refuseTaken(
+                emplacement.getCode(), repository.idByCode(connection, emplacement.getCode()), null, "l'emplacement");
+        emplacement.setId(ids.next(connection, IdGenerator.Kind.EMPLACEMENT));
         repository.saveEmplacement(connection, emplacement, true);
         return emplacement;
     }
@@ -61,9 +74,16 @@ public class EmplacementService {
         }
         emplacement.setId(id);
         validateCoordinates(emplacement);
+        emplacement.setCode(Codes.normalise(emplacement.getCode(), IdGenerator.Kind.EMPLACEMENT));
+        Codes.refuseTaken(emplacement.getCode(), repository.idByCode(emplacement.getCode()), id, "l'emplacement");
         repository.saveEmplacement(emplacement, false);
         changeTracker.markModified();
         return emplacement;
+    }
+
+    /** Id of the emplacement carrying {@code code}, {@code null} when none does. */
+    public String idByCode(String code) {
+        return repository.idByCode(code);
     }
 
     public void delete(String id) {

@@ -49,12 +49,13 @@ public class TypologieRepository {
         List<TypologieItem> typologies = new ArrayList<>();
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
-                        SELECT id, label, ninja, max_creneaux_par_animateur, description, modifie_le
+                        SELECT id, code, label, ninja, max_creneaux_par_animateur, description, modifie_le
                         FROM typologie WHERE edition_id = ? ORDER BY id""");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 typologies.add(new TypologieItem(
                         rs.getString("id"),
+                        rs.getString("code"),
                         rs.getString("label"),
                         rs.getBoolean("ninja"),
                         (Integer) rs.getObject("max_creneaux_par_animateur"),
@@ -76,6 +77,25 @@ public class TypologieRepository {
             return rs.next() ? Optional.of(rs.getString("id")) : Optional.empty();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to read the ninja typology", e);
+        }
+    }
+
+    /** Id of the typologie carrying {@code code} in the current edition, {@code null} when none does. */
+    public String idByCode(String code) {
+        return scope.read("Failed to look typology code " + code + " up", connection -> idByCode(connection, code));
+    }
+
+    /** Same lookup inside a caller's transaction. */
+    String idByCode(Connection connection, String code) throws SQLException {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "SELECT id FROM typologie WHERE edition_id = ? AND code = ?")) {
+            ps.setString(2, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("id") : null;
+            }
         }
     }
 
@@ -159,10 +179,10 @@ public class TypologieRepository {
     private TypologieItem upsertTypologie(Connection connection, TypologieItem typologie, boolean failIfPresent)
             throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO typologie (edition_id, id, label, ninja, max_creneaux_par_animateur, description)
-                VALUES (?, ?, ?, ?, ?, ?)
+                INSERT INTO typologie (edition_id, id, code, label, ninja, max_creneaux_par_animateur, description)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET label = EXCLUDED.label, ninja = EXCLUDED.ninja,
+                DO UPDATE SET code = EXCLUDED.code, label = EXCLUDED.label, ninja = EXCLUDED.ninja,
                 max_creneaux_par_animateur = EXCLUDED.max_creneaux_par_animateur,
                 description = EXCLUDED.description, modifie_le = now()
                 WHERE CAST(? AS boolean)
@@ -171,11 +191,12 @@ public class TypologieRepository {
                         = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, typologie.id());
-            ps.setString(3, typologie.label());
-            ps.setBoolean(4, typologie.ninja());
-            ps.setObject(5, typologie.maxCreneauxParAnimateur(), java.sql.Types.INTEGER);
-            ps.setString(6, typologie.description());
-            WriteStamp.bindPrecondition(ps, 7, !failIfPresent, typologie.modifieLe());
+            ps.setString(3, typologie.code());
+            ps.setString(4, typologie.label());
+            ps.setBoolean(5, typologie.ninja());
+            ps.setObject(6, typologie.maxCreneauxParAnimateur(), java.sql.Types.INTEGER);
+            ps.setString(7, typologie.description());
+            WriteStamp.bindPrecondition(ps, 8, !failIfPresent, typologie.modifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, TABLE, typologie.id());
@@ -185,19 +206,20 @@ public class TypologieRepository {
     }
 
     /**
-     * Upsert used for the typologies {@link #importFromPlanning} derives from the
-     * ids stands and animateurs reference. Unlike {@link #upsertTypologie} it
-     * leaves {@code ninja} alone: an import must not silently demote the ninja
-     * typologie just because the derived item carries the default {@code false}.
+     * Insert used for the typologies {@link #importFromPlanning} derives from the
+     * ids stands and animateurs reference, so that their foreign keys hold.
+     * An existing row is left alone — its label, its code and above all its
+     * {@code ninja} flag: the import's {@code typologies:} section, applied
+     * next, is what writes those (see {@code ScenarioImportService}).
      */
-    void upsertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
+    void insertTypologieDerivee(Connection connection, TypologieItem typologie) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO typologie (edition_id, id, label, ninja)
-                VALUES (?, ?, ?, FALSE)
-                ON CONFLICT (edition_id, id)
-                DO UPDATE SET label = EXCLUDED.label, modifie_le = now()""")) {
+                INSERT INTO typologie (edition_id, id, code, label, ninja)
+                VALUES (?, ?, ?, ?, FALSE)
+                ON CONFLICT DO NOTHING""")) {
             ps.setString(2, typologie.id());
-            ps.setString(3, typologie.label());
+            ps.setString(3, typologie.code());
+            ps.setString(4, typologie.label());
             ps.executeUpdate();
         }
     }

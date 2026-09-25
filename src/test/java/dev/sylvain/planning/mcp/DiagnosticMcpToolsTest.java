@@ -21,6 +21,7 @@ import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.TypologieStaffing;
 import dev.sylvain.planning.service.analyse.TensionAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.TypologieItem;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
@@ -99,13 +100,23 @@ class DiagnosticMcpToolsTest {
 
         CompetenceStaffing competence = diagnosticTools.analyzeEffectifs(null).parCompetence();
 
+        // The lines carry typologie ids, which are generated (ADR 0050): the
+        // scenario's references are the codes of the rows they landed on.
         assertThat(competence.animateursTotal()).isPositive();
         assertThat(competence.parTypologie())
                 .extracting(TypologieStaffing::typologie)
-                .containsExactlyInAnyOrder("STRATEGIE", "HOMME_JEU");
+                .containsExactlyInAnyOrder(typologieIdByCode("STRATEGIE"), typologieIdByCode("HOMME_JEU"));
         assertThat(competence.parTypologie())
                 .allSatisfy(ligne -> assertThat(ligne.minimumTotal()).isPositive());
         assertThat(competence.siegesNonAttribues()).isZero();
+    }
+
+    private String typologieIdByCode(String code) {
+        return referenceDataService.listTypologies().stream()
+                .filter(typologie -> code.equals(typologie.code()))
+                .map(TypologieItem::id)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("No typologie of code " + code));
     }
 
     @Test

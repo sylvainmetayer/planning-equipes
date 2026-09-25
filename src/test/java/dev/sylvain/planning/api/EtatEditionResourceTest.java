@@ -21,12 +21,20 @@ class EtatEditionResourceTest {
     @Test
     void anEmptyEditionAnswersWithEveryLineToDo() {
         given().when().post("/api/planning/reset").then().statusCode(200);
+        // A request without X-Edition-Id works in the default edition, whose id
+        // is drawn by the application (ADR 0050): read it, never assume it.
+        String defaut = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.defaut == true }.id");
 
         given().when()
                 .get("/api/editions/courant/etat")
                 .then()
                 .statusCode(200)
-                .body("editionId", equalTo("DEFAUT"))
+                .body("editionId", equalTo(defaut))
                 .body("editionNom", notNullValue())
                 .body("referentiels.stands", equalTo(0))
                 .body("referentiels.statut", equalTo("A_FAIRE"))

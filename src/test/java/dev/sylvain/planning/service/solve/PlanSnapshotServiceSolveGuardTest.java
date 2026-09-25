@@ -37,7 +37,8 @@ class PlanSnapshotServiceSolveGuardTest {
 
     private static final LocalDate JOUR = LocalDate.of(2030, 8, 3);
 
-    private static final String EDITION_VOISINE = "SNAP-EDITION-B";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String editionVoisine;
 
     @Inject
     PlanSnapshotService snapshots;
@@ -102,7 +103,8 @@ class PlanSnapshotServiceSolveGuardTest {
                 new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SNAP-P2", stand, creneau, animateur)));
         String jobId = null;
         try {
-            editions.create(new Edition(EDITION_VOISINE, "Édition voisine des instantanés", false, null));
+            editionVoisine = editions.create(new Edition(null, "Édition voisine des instantanés", false, null))
+                    .getId();
             persistence.persist(probleme);
             attendreSolveurLibre();
 
@@ -110,7 +112,7 @@ class PlanSnapshotServiceSolveGuardTest {
             assertThat(solverJobs.findActive().orElseThrow().getEditionId())
                     .isEqualTo(editionContext.editionIdCourant());
 
-            editionContext.executeIn(EDITION_VOISINE, () -> {
+            editionContext.executeIn(editionVoisine, () -> {
                 assertThat(snapshots.restaurer(Long.MAX_VALUE, false)).isNull();
             });
         } finally {
@@ -118,7 +120,7 @@ class PlanSnapshotServiceSolveGuardTest {
                 solverJobs.cancel(jobId);
             }
             nettoyer();
-            editions.delete(EDITION_VOISINE);
+            editions.delete(editionVoisine);
         }
     }
 

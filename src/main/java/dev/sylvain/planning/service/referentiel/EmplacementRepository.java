@@ -39,12 +39,13 @@ public class EmplacementRepository {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(
                         connection,
-                        "SELECT id, nom, latitude, longitude, modifie_le FROM emplacement WHERE edition_id = ? ORDER BY id");
+                        "SELECT id, code, nom, latitude, longitude, modifie_le FROM emplacement WHERE edition_id = ? ORDER BY id");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
                 Emplacement emplacement = new Emplacement(
                         rs.getString("id"), rs.getString("nom"), (Double) rs.getObject("latitude"), (Double)
                                 rs.getObject("longitude"));
+                emplacement.setCode(rs.getString("code"));
                 emplacement.setModifieLe(
                         rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                 emplacements.add(emplacement);
@@ -53,6 +54,25 @@ public class EmplacementRepository {
             throw new IllegalStateException("Failed to list emplacements", e);
         }
         return emplacements;
+    }
+
+    /** Id of the emplacement carrying {@code code} in the current edition, {@code null} when none does. */
+    public String idByCode(String code) {
+        return scope.read("Failed to look emplacement code " + code + " up", connection -> idByCode(connection, code));
+    }
+
+    /** Same lookup inside a caller's transaction. */
+    String idByCode(Connection connection, String code) throws SQLException {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "SELECT id FROM emplacement WHERE edition_id = ? AND code = ?")) {
+            ps.setString(2, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("id") : null;
+            }
+        }
     }
 
     public boolean emplacementExists(String id) {
@@ -98,10 +118,10 @@ public class EmplacementRepository {
     void upsertEmplacementTx(Connection connection, Emplacement emplacement, boolean failIfPresent)
             throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO emplacement (edition_id, id, nom, latitude, longitude)
-                VALUES (?, ?, ?, ?, ?)
+                INSERT INTO emplacement (edition_id, id, code, nom, latitude, longitude)
+                VALUES (?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
+                DO UPDATE SET code = EXCLUDED.code, nom = EXCLUDED.nom, latitude = EXCLUDED.latitude, longitude = EXCLUDED.longitude,
                 modifie_le = now()
                 WHERE CAST(? AS boolean)
                 AND (CAST(? AS timestamptz) IS NULL
@@ -109,10 +129,11 @@ public class EmplacementRepository {
                         = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, emplacement.getId());
-            ps.setString(3, emplacement.getNom());
-            ps.setObject(4, emplacement.getLatitude());
-            ps.setObject(5, emplacement.getLongitude());
-            WriteStamp.bindPrecondition(ps, 6, !failIfPresent, emplacement.getModifieLe());
+            ps.setString(3, emplacement.getCode());
+            ps.setString(4, emplacement.getNom());
+            ps.setObject(5, emplacement.getLatitude());
+            ps.setObject(6, emplacement.getLongitude());
+            WriteStamp.bindPrecondition(ps, 7, !failIfPresent, emplacement.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, "emplacement", emplacement.getId());
