@@ -38,7 +38,7 @@
              on the same Jackson release as the rest of the classpath. -->
         <jackson-yaml.version>2.22.2</jackson-yaml.version>
         <jsonschema-generator.version>4.38.0</jsonschema-generator.version>
-        <mcp-server.version>1.13.2</mcp-server.version>
+        <mcp-server.version>2.0.1</mcp-server.version>
         <!-- The MIT build of PlantUML: renders docs/diagrammes/ (profile
              generate-diagrams) and lets DiagramsStructuralTest decode the
              source each SVG embeds. Test scope, so it stays out of the image
