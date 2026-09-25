@@ -8,10 +8,18 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 
@@ -29,8 +37,16 @@ import org.junit.jupiter.api.Test;
 class ScenarioLadderImportTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "LADDER-IMPORT";
+    private static final String EDITION_NOM = "Gamme de scénarios";
+    /** The name the {@code edition:} section of rung 10 designates its edition by. */
+    private static final String GAMME_10_NOM = "Gamme 10 — journées types";
     private static final long CEILING_SECONDS = 120L;
+
+    /**
+     * The landing editions of the test under way, by the ids the application
+     * drew for them (ADR 0050) — deleted after each test.
+     */
+    private final List<String> landingEditions = new ArrayList<>();
 
     @Inject
     PlanningService planningService;
@@ -40,17 +56,36 @@ class ScenarioLadderImportTest {
 
     @AfterEach
     void deleteTheLandingEditions() {
-        given().when().delete("/api/editions/" + EDITION);
-        given().when().delete("/api/editions/GAMME-10");
+        landingEditions.forEach(id -> given().when().delete("/api/editions/" + id));
+        landingEditions.clear();
     }
 
-    private void createLandingEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Gamme de scénarios\"}")
+    private String createLandingEdition() {
+        String id = given().contentType("application/json")
+                .body("{\"nom\":\"" + EDITION_NOM + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
+        landingEditions.add(id);
+        return id;
+    }
+
+    /** Ids of the editions carrying {@code nom} — what an interrupted earlier run may have left behind. */
+    private static List<String> editionsNamed(String nom) {
+        List<Map<String, Object>> editions = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
+        return editions.stream()
+                .filter(edition -> nom.equals(edition.get("nom")))
+                .map(edition -> (String) edition.get("id"))
+                .toList();
     }
 
     private void importInto(String edition, String name) {
@@ -88,35 +123,51 @@ class ScenarioLadderImportTest {
                 .body("aucunChangement", equalTo(true));
     }
 
+    /**
+     * The harness keeps the file's stand ids; the import gives each stand a
+     * generated id and keeps the file's reference as its code (ADR 0050). The
+     * production seats are therefore keyed by code before the comparison.
+     */
     private void assertSameSeatsAsTheHarness(PlanningEvenement production, String name) {
-        assertThat(seatCountByStandAndDate(production.getPostes()))
+        assertThat(seatCountByStandCodeAndDate(production.getPostes()))
                 .isEqualTo(seatCountByStandAndDate(
                         ScenarioLadder.load(name).problem().getPostes()));
+    }
+
+    private static Map<String, Map<LocalDate, Long>> seatCountByStandCodeAndDate(Collection<PosteAffectation> postes) {
+        return postes.stream()
+                .collect(Collectors.groupingBy(
+                        poste -> poste.getStand().getCode() != null
+                                ? poste.getStand().getCode()
+                                : poste.getStand().getId(),
+                        TreeMap::new,
+                        Collectors.groupingBy(
+                                poste -> poste.getCreneau().getDate(), TreeMap::new, Collectors.counting())));
     }
 
     @Test
     void rung02MiddayRelayThroughTheImport() {
         String name = "gamme-02-1j-2stands-4animateurs-relais-midi";
-        createLandingEdition();
-        importInto(EDITION, name);
-        assertDayTemplatesLandedInStep(EDITION, 1);
+        String edition = createLandingEdition();
+        importInto(edition, name);
+        assertDayTemplatesLandedInStep(edition, 1);
 
-        PlanningEvenement problem = buildIn(EDITION);
+        PlanningEvenement problem = buildIn(edition);
         assertSameSeatsAsTheHarness(problem, name);
 
-        assertFeasible(solveIn(EDITION, problem));
+        assertFeasible(solveIn(edition, problem));
     }
 
     @Test
     void rung07RecurringOpeningsThroughTheImport() {
         String name = "gamme-07-3j-5stands-10animateurs-horaires-recurrents";
-        createLandingEdition();
-        importInto(EDITION, name);
+        String edition = createLandingEdition();
+        importInto(edition, name);
 
-        PlanningEvenement problem = buildIn(EDITION);
+        PlanningEvenement problem = buildIn(edition);
         assertSameSeatsAsTheHarness(problem, name);
 
-        assertFeasible(solveIn(EDITION, problem));
+        assertFeasible(solveIn(edition, problem));
     }
 
     /**
@@ -127,32 +178,38 @@ class ScenarioLadderImportTest {
     @Test
     void rung08TheImportedGridMatchesTheHarness() {
         String name = "gamme-08-3j-5stands-16animateurs-relais-midi-reduit";
-        createLandingEdition();
-        importInto(EDITION, name);
+        String edition = createLandingEdition();
+        importInto(edition, name);
 
-        PlanningEvenement problem = buildIn(EDITION);
+        PlanningEvenement problem = buildIn(edition);
         assertSameSeatsAsTheHarness(problem, name);
 
-        assertFeasible(solveIn(EDITION, problem));
+        assertFeasible(solveIn(edition, problem));
     }
 
     /** The file names its own edition: the import creates it, whatever edition the caller sits on. */
     @Test
     void rung10TheFileLandsInTheEditionItNames() {
         String name = "gamme-10-4j-8stands-20animateurs-journees-types-multiples";
-        given().contentType("text/plain")
+        // The section designates its edition by name once its id is unknown:
+        // one left over by an interrupted run would be landed in, not created.
+        editionsNamed(GAMME_10_NOM).forEach(id -> given().when().delete("/api/editions/" + id));
+        String edition = given().contentType("text/plain")
                 .body(ScenarioLadder.yaml(name))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200)
-                .body("editionId", equalTo("GAMME-10"))
-                .body("editionCreee", equalTo(true));
-        assertDayTemplatesLandedInStep("GAMME-10", 3);
+                .body("editionCreee", equalTo(true))
+                .extract()
+                .path("editionId");
+        landingEditions.add(edition);
+        assertThat(editionsNamed(GAMME_10_NOM)).containsExactly(edition);
+        assertDayTemplatesLandedInStep(edition, 3);
 
-        PlanningEvenement problem = buildIn("GAMME-10");
+        PlanningEvenement problem = buildIn(edition);
         assertSameSeatsAsTheHarness(problem, name);
 
-        assertFeasible(solveIn("GAMME-10", problem));
+        assertFeasible(solveIn(edition, problem));
     }
 }

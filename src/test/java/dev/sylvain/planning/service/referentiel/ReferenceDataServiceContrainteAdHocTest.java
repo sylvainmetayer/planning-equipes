@@ -12,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.ArrayList;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -30,8 +31,6 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class ReferenceDataServiceContrainteAdHocTest {
 
-    private static final String PREFIXE = "AFFI-TEST-";
-
     @Inject
     ReferenceDataService referenceDataService;
 
@@ -41,11 +40,14 @@ class ReferenceDataServiceContrainteAdHocTest {
     private Creneau matin;
     private Creneau chevauchant;
 
+    /** The ids the application drew for the constraints a test created (ADR 0050). */
+    private final List<String> contraintesCreees = new ArrayList<>();
+
     @BeforeEach
     void createAnimateurs() {
-        premier = animateur(PREFIXE + "A1");
-        second = animateur(PREFIXE + "A2");
-        troisieme = animateur(PREFIXE + "A3");
+        premier = animateur();
+        second = animateur();
+        troisieme = animateur();
         matin = referenceDataService.createCreneau(
                 new Creneau(null, 1, LocalDate.of(2026, 8, 1), LocalTime.of(10, 0), LocalTime.of(14, 0)));
         chevauchant = referenceDataService.createCreneau(
@@ -54,10 +56,11 @@ class ReferenceDataServiceContrainteAdHocTest {
 
     @AfterEach
     void cleanUp() {
-        referenceDataService.listContraintesAdHoc().stream()
+        List<String> restantes = referenceDataService.listContraintesAdHoc().stream()
                 .map(ContrainteAdHoc::getId)
-                .filter(id -> id.startsWith(PREFIXE))
-                .forEach(referenceDataService::deleteContrainteAdHoc);
+                .toList();
+        contraintesCreees.stream().filter(restantes::contains).forEach(referenceDataService::deleteContrainteAdHoc);
+        contraintesCreees.clear();
         for (Animateur animateur : List.of(premier, second, troisieme)) {
             referenceDataService.deleteAnimateur(animateur.getId());
         }
@@ -67,63 +70,67 @@ class ReferenceDataServiceContrainteAdHocTest {
     }
 
     @Test
-    void affiniteSurUnePaireDejaIncompatibleEstRejetee() {
-        referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
+    void anAffinityOnAnAlreadyIncompatiblePairIsRejected() {
+        String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
-        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, second)))
+        assertThatThrownBy(() -> create(contrainte(TypeContrainteAdHoc.AFFINITE, premier, second)))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(PREFIXE + "C1")
+                .hasMessageContaining(incompatibilite)
                 .hasMessageContaining("incompatible");
     }
 
     @Test
-    void incompatibiliteSurUnePaireDejaEnAffiniteEstRejeteeMemeAvecLaPaireInversee() {
-        referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second));
+    void anIncompatibilityOnAPairAlreadyInAffinityIsRejectedEvenWithThePairReversed() {
+        String affinite = create(contrainte(TypeContrainteAdHoc.AFFINITE, premier, second));
 
         // The same pair, declared the other way round: the contradiction must be seen.
-        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
+        assertThatThrownBy(() -> create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, second, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(PREFIXE + "C1");
+                .hasMessageContaining(affinite);
     }
 
     @Test
-    void affiniteSurUneAutrePaireEstAcceptee() {
-        referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
+    void anAffinityOnAnotherPairIsAccepted() {
+        String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
-        assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                        contrainte(PREFIXE + "C2", TypeContrainteAdHoc.AFFINITE, premier, troisieme)))
+        String[] affinite = new String[1];
+        assertThatCode(() -> affinite[0] = create(contrainte(TypeContrainteAdHoc.AFFINITE, premier, troisieme)))
                 .doesNotThrowAnyException();
 
         assertThat(referenceDataService.listContraintesAdHoc())
                 .extracting(ContrainteAdHoc::getId)
-                .contains(PREFIXE + "C1", PREFIXE + "C2");
+                .contains(incompatibilite, affinite[0]);
     }
 
     @Test
-    void resaisirLaMemeContrainteSousSonIdPeutChangerDeType() {
-        referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
+    void savingTheSameConstraintAgainUnderItsIdMayChangeItsType() {
+        String id = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
 
         // Saving replaces the previous version: no coexistence, no conflict.
-        assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                        contrainte(PREFIXE + "C1", TypeContrainteAdHoc.AFFINITE, premier, second)))
+        ContrainteAdHoc resaisie = contrainte(TypeContrainteAdHoc.AFFINITE, premier, second);
+        resaisie.setId(id);
+        assertThatCode(() -> referenceDataService.createContrainteAdHoc(resaisie))
                 .doesNotThrowAnyException();
     }
 
     @Test
-    void aForcedSeatOnAnUnavailableSlotIsRefused() {
-        referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, matin, premier));
+    void aNewConstraintSentWithAnIdThatNamesNothingIsRefused() {
+        // A new exception is sent without an id: the application draws one.
+        ContrainteAdHoc inventee = contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second);
+        inventee.setId("AFFI-TEST-C1");
 
-        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier)))
+        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(inventee))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(PREFIXE + "C1")
+                .hasMessageContaining("Ajustement inconnu");
+    }
+
+    @Test
+    void aForcedSeatOnAnUnavailableSlotIsRefused() {
+        String indisponibilite = create(onCreneau(TypeContrainteAdHoc.INDISPONIBILITE_FORCEE, matin, premier));
+
+        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier)))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining(indisponibilite)
                 .hasMessageContaining("indisponible");
     }
 
@@ -131,28 +138,23 @@ class ReferenceDataServiceContrainteAdHocTest {
     void twoForcedSeatsOnOverlappingCreneauxAreRefused() {
         // The overlap is read from the persisted créneaux: the constraint only
         // carries their ids.
-        referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
+        String premiere = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
-        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier)))
+        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, chevauchant, premier)))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(PREFIXE + "C1")
+                .hasMessageContaining(premiere)
                 .hasMessageContaining("chevauchent");
     }
 
     @Test
     void anIncompatiblePairForcedOntoOneCreneauIsRefused() {
-        referenceDataService.createContrainteAdHoc(
-                contrainte(PREFIXE + "C1", TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
-        referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
+        String incompatibilite = create(contrainte(TypeContrainteAdHoc.INCOMPATIBILITE, premier, second));
+        String affectation = create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
-        assertThatThrownBy(() -> referenceDataService.createContrainteAdHoc(
-                        onCreneau(PREFIXE + "C3", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second)))
+        assertThatThrownBy(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, second)))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining(PREFIXE + "C1")
-                .hasMessageContaining(PREFIXE + "C2")
+                .hasMessageContaining(incompatibilite)
+                .hasMessageContaining(affectation)
                 .hasMessageContaining("incompatibles");
     }
 
@@ -160,30 +162,41 @@ class ReferenceDataServiceContrainteAdHocTest {
     void twoForcedSeatsOnDisjointCreneauxAreAccepted() {
         Creneau soir = referenceDataService.createCreneau(
                 new Creneau(null, 1, LocalDate.of(2026, 8, 1), LocalTime.of(16, 0), LocalTime.of(20, 0)));
-        referenceDataService.createContrainteAdHoc(
-                onCreneau(PREFIXE + "C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
+        create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, matin, premier));
 
-        assertThatCode(() -> referenceDataService.createContrainteAdHoc(
-                        onCreneau(PREFIXE + "C2", TypeContrainteAdHoc.AFFECTATION_FORCEE, soir, premier)))
+        assertThatCode(() -> create(onCreneau(TypeContrainteAdHoc.AFFECTATION_FORCEE, soir, premier)))
                 .doesNotThrowAnyException();
 
+        // The constraint on that créneau goes first: it names it.
+        cleanUpConstraints();
         referenceDataService.deleteCreneau(soir.getId());
     }
 
-    private static ContrainteAdHoc onCreneau(
-            String id, TypeContrainteAdHoc type, Creneau creneau, Animateur... animateurs) {
-        ContrainteAdHoc contrainte = contrainte(id, type, animateurs);
+    /** Creates the constraint without an id and answers the one the application drew. */
+    private String create(ContrainteAdHoc contrainte) {
+        String id = referenceDataService.createContrainteAdHoc(contrainte).getId();
+        contraintesCreees.add(id);
+        return id;
+    }
+
+    private void cleanUpConstraints() {
+        contraintesCreees.forEach(referenceDataService::deleteContrainteAdHoc);
+        contraintesCreees.clear();
+    }
+
+    private static ContrainteAdHoc onCreneau(TypeContrainteAdHoc type, Creneau creneau, Animateur... animateurs) {
+        ContrainteAdHoc contrainte = contrainte(type, animateurs);
         contrainte.setCreneau(creneau);
         return contrainte;
     }
 
-    private Animateur animateur(String id) {
+    private Animateur animateur() {
         return referenceDataService.createAnimateur(
-                new Animateur(id, "Prenom", "Nom", LocalDate.of(2000, 1, 1), false));
+                new Animateur(null, "Prenom", "Nom", LocalDate.of(2000, 1, 1), false));
     }
 
-    private static ContrainteAdHoc contrainte(String id, TypeContrainteAdHoc type, Animateur... animateurs) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, type);
+    private static ContrainteAdHoc contrainte(TypeContrainteAdHoc type, Animateur... animateurs) {
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, type);
         contrainte.setAnimateursConcernes(List.of(animateurs));
         contrainte.setCreeParUtilisateurId("test");
         return contrainte;
