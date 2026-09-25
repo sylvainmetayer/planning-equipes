@@ -129,6 +129,10 @@ public class ContrainteAdHocRepository {
         });
     }
 
+    public boolean contrainteExists(String id) {
+        return scope.exists("contrainte_ad_hoc", id);
+    }
+
     public void deleteContrainte(String id) {
         scope.delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);
     }

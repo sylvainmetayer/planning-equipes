@@ -67,7 +67,8 @@ class SolverJobReamorcageTest {
      * "two seats, one animateur" problem is only infeasible when nobody else
      * is around to take the second seat.
      */
-    private static final String EDITION = "WARM-EDITION";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String edition;
 
     @Test
     void autoReseedsFromThePersistedPlanWithoutPinningAnything() {
@@ -96,7 +97,7 @@ class SolverJobReamorcageTest {
         try {
             fixture.create();
             editionContext.executeIn(
-                    EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of())));
+                    edition, () -> persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of())));
 
             ProblemeReamorce probleme = withinEdition(() -> planningService.buildFromReferenceData(Reamorcage.AUTO));
             assertThat(probleme.reamorcage()).isEqualTo(Reamorcage.AUCUN);
@@ -207,7 +208,7 @@ class SolverJobReamorcageTest {
     }
 
     private <T> T withinEdition(java.util.concurrent.Callable<T> travail) {
-        return editionContext.executeIn(EDITION, travail);
+        return editionContext.executeIn(edition, travail);
     }
 
     private void attendreFin(SolverJob job) {
@@ -246,16 +247,19 @@ class SolverJobReamorcageTest {
         }
 
         void create() {
-            if (editions.listEditions().stream().noneMatch(edition -> EDITION.equals(edition.getId()))) {
-                editions.create(new Edition(EDITION, "Édition du réamorçage", false, null));
+            if (edition == null
+                    || editions.listEditions().stream().noneMatch(candidate -> edition.equals(candidate.getId()))) {
+                edition = editions.create(new Edition(null, "Édition du réamorçage", false, null))
+                        .getId();
             }
-            editionContext.executeIn(EDITION, () -> {
+            editionContext.executeIn(edition, () -> {
                 clean();
                 // A creation whose id is taken is a 409 since the write carries
                 // its own precondition (issue #362): the fixture runs once per
                 // test, the typologie survives clean().
-                if (referenceData.listTypologies().stream().noneMatch(item -> "STRATEGIE".equals(item.id()))) {
-                    referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+                if (referenceData.listTypologies().stream().noneMatch(item -> "STRATEGIE".equals(item.code()))) {
+                    referenceData.createTypologie(
+                            new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 }
                 referenceData.createStand(stand);
                 animateurs.forEach(referenceData::createAnimateur);
@@ -273,7 +277,7 @@ class SolverJobReamorcageTest {
                 postes.add(poste);
             }
             editionContext.executeIn(
-                    EDITION, () -> persistence.persist(new PlanningEvenement(JOUR, animateurs, postes)));
+                    edition, () -> persistence.persist(new PlanningEvenement(JOUR, animateurs, postes)));
         }
 
         /** This fixture's seats only: the edition may hold other tests' créneaux, on which the stand also opens. */
@@ -286,7 +290,7 @@ class SolverJobReamorcageTest {
 
         void clean() {
             attendreSolveurLibre();
-            editionContext.executeIn(EDITION, () -> {
+            editionContext.executeIn(edition, () -> {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
                 referenceData.deleteStand("WARM-S1");
                 animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));

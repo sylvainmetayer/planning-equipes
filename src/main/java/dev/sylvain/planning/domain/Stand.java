@@ -11,6 +11,15 @@ import java.util.Set;
 public class Stand {
 
     private String id;
+
+    /**
+     * The readable key of this stand in the files an organiser keeps (the CSV
+     * imports, the scenario), unique in its edition, {@code null} when none
+     * was given. The id is generated and means nothing (ADR 0050); the code is
+     * what a file matches on.
+     */
+    private String code;
+
     private String nom;
     /** Ids referencing the {@code typologie} referential table (CRUD-managed), not a fixed enum. */
     private Set<String> typologiesProposees = new HashSet<>();
@@ -108,6 +117,14 @@ public class Stand {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public Instant getModifieLe() {

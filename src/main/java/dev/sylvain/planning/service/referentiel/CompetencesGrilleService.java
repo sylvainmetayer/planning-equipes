@@ -157,9 +157,15 @@ public class CompetencesGrilleService {
 
     /** The grid as it stands, in the format the import reads back. */
     public String exportCsv() {
+        List<TypologieItem> referentiel = typologies.list();
+        Map<String, String> entetes = new LinkedHashMap<>();
+        referentiel.forEach(typologie -> {
+            if (typologie.code() != null) {
+                entetes.put(typologie.id(), typologie.code());
+            }
+        });
         return GrilleCompetences.csv(
-                animateurs.list(),
-                typologies.list().stream().map(TypologieItem::id).toList());
+                animateurs.list(), referentiel.stream().map(TypologieItem::id).toList(), entetes);
     }
 
     public CompetencesGrilleImportReport preview(CompetencesGrilleImportRequest request) {
@@ -230,7 +236,7 @@ public class CompetencesGrilleService {
         if (colonnes.typologieParColonne().isEmpty()) {
             throw new BusinessError.Invalid("Aucune colonne du fichier ne correspond à une typologie de l'édition. "
                     + "Attendu : une première colonne « animateur » portant l'identifiant, puis une colonne par "
-                    + "typologie, nommée par son identifiant.");
+                    + "typologie, nommée par son code ou son identifiant.");
         }
         long sansColonne = referentiel.stream()
                 .filter(typologie -> !colonnes.dejaPrises().contains(typologie.id()))
@@ -283,9 +289,17 @@ public class CompetencesGrilleService {
         Map<String, String> typologieParCle = new HashMap<>();
         for (TypologieItem typologie : referentiel) {
             typologieParCle.putIfAbsent(normalise(typologie.id()), typologie.id());
+            if (typologie.code() != null) {
+                typologieParCle.putIfAbsent(normalise(typologie.code()), typologie.id());
+            }
             typologieParCle.putIfAbsent(normalise(typologie.label()), typologie.id());
         }
         Map<String, String> typologieExacte = new HashMap<>();
+        referentiel.forEach(typologie -> {
+            if (typologie.code() != null) {
+                typologieExacte.putIfAbsent(typologie.code(), typologie.id());
+            }
+        });
         referentiel.forEach(typologie -> typologieExacte.put(typologie.id(), typologie.id()));
         List<ImportedCompetencesColumn> columns = new ArrayList<>();
         Map<Integer, String> typologieParColonne = new LinkedHashMap<>();
@@ -310,7 +324,7 @@ public class CompetencesGrilleService {
     /** Why a column is ignored; {@code null} when it claims its typologie. */
     private static String columnRejection(String typologieId, Set<String> dejaPrises) {
         if (typologieId == null) {
-            return "Aucune typologie de l'édition ne porte cet identifiant : colonne ignorée.";
+            return "Aucune typologie de l'édition ne porte ce code, cet identifiant ni ce libellé : colonne ignorée.";
         }
         if (!dejaPrises.add(typologieId)) {
             return "Une colonne précédente nomme déjà la typologie " + typologieId + " : celle-ci est ignorée.";

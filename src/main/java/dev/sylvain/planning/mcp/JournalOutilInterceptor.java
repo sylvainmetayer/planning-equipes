@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.journal.PayloadIds;
 import io.quarkiverse.mcp.server.Tool;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
@@ -66,6 +67,11 @@ public class JournalOutilInterceptor {
         String entiteId = entiteId(context);
         try {
             Object resultat = context.proceed();
+            // A creation names nothing in its arguments — the id is drawn by
+            // the application (ADR 0050) — so it is read off the answer.
+            if (entiteId == null) {
+                entiteId = PayloadIds.of(resultat);
+            }
             // The fields the edit really changed, as the referential façade
             // noted them on the way — the same enrichment the REST filter
             // reads, so a « champs modifiés » column no longer depends on
@@ -90,7 +96,7 @@ public class JournalOutilInterceptor {
      * <p>An {@code @EditionArg} is skipped even when it is named
      * {@code edition}: there it says where the line lands, not what the tool
      * acts on. On the cross-edition tools the same word is the subject —
-     * {@code supprimer_edition(edition)} — and those carry no
+     * {@code deleteEdition(edition)} — and those carry no
      * {@code @EditionArg}, which is exactly what tells the two apart.</p>
      */
     private static String entiteId(InvocationContext context) {

@@ -8,8 +8,14 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.util.List;
 
+/**
+ * One stand. {@code id} is a reference local to the file — what the seats,
+ * the ad hoc constraints and the consignes cite — and {@code code} the
+ * readable key the import matches an existing stand on (ADR 0050).
+ */
 public record StandDto(
         @NotBlank String id,
+        String code,
         @NotBlank String nom,
         String emplacementId,
 

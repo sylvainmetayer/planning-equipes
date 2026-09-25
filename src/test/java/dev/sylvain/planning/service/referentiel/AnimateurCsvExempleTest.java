@@ -57,7 +57,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class AnimateurCsvExempleTest {
 
-    private static final String EDITION = "CSV-EXEMPLE-TEST";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String edition;
 
     private static final String SCENARIO = "scenarios/festival-realiste-canicule.yaml";
 
@@ -94,8 +95,8 @@ class AnimateurCsvExempleTest {
     @BeforeEach
     void createTheScenarioEdition() throws IOException {
         scenario = readScenario();
-        editions.create(new Edition(EDITION, "Exemple CSV", false, null));
-        editionContext.executeIn(EDITION, () -> {
+        edition = editions.create(new Edition(null, "Exemple CSV", false, null)).getId();
+        editionContext.executeIn(edition, () -> {
             for (TypologieDto typologie : scenario.typologies()) {
                 referenceData.createTypologie(
                         new TypologieItem(typologie.id(), typologie.label(), Boolean.TRUE.equals(typologie.ninja())));
@@ -110,7 +111,7 @@ class AnimateurCsvExempleTest {
 
     @AfterEach
     void deleteTheEdition() {
-        editions.delete(EDITION);
+        editions.delete(edition);
     }
 
     /* ------------------------------ The claim ------------------------------ */
@@ -301,7 +302,7 @@ class AnimateurCsvExempleTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     private <T> T inEdition(java.util.concurrent.Callable<T> travail) {
-        return editionContext.executeIn(EDITION, travail);
+        return editionContext.executeIn(edition, travail);
     }
 
     private static AnimateurCsvImportRequest exampleRequest() {

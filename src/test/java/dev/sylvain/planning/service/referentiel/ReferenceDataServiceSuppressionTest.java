@@ -65,7 +65,8 @@ class ReferenceDataServiceSuppressionTest {
 
     private static final LocalDate JOUR = LocalDate.of(2030, 7, 3);
 
-    private static final String EDITION_VOISINE = "SUP-EDITION-B";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String editionVoisine;
 
     /** Deleting a stand takes the seats that were opened on it, and only those. */
     @Test
@@ -252,13 +253,17 @@ class ReferenceDataServiceSuppressionTest {
         PlanningEvenement probleme =
                 new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P10", stand, creneau, animateur)));
         String jobId = null;
-        editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
+        editionVoisine = editions.create(new Edition(null, "Édition voisine", false, null))
+                .getId();
         try {
             // Edition B gets a referential of its own, through the edition scope.
-            editionContext.executeIn(EDITION_VOISINE, () -> {
-                referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
-                referenceData.createStand(stand("SUP-S10"));
-                referenceData.createAnimateur(animateur("SUP-A10"));
+            // The ids are drawn in edition B (ADR 0050): read back from the creations.
+            String[] voisins = new String[2];
+            editionContext.executeIn(editionVoisine, () -> {
+                referenceData.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
+                voisins[0] = referenceData.createStand(stand(null)).getId();
+                voisins[1] = referenceData.createAnimateur(animateur(null)).getId();
             });
 
             persistence.persist(probleme);
@@ -278,15 +283,15 @@ class ReferenceDataServiceSuppressionTest {
                     .map(SolverJobService.SolverJob::getId)
                     .contains(jobEnCours);
             editionContext.executeIn(
-                    EDITION_VOISINE,
+                    editionVoisine,
                     () -> assertThat(solverJobs.activeJobForCurrentEdition()).isEmpty());
 
             // In B, nothing is at risk: the deletes go through.
-            editionContext.executeIn(EDITION_VOISINE, () -> {
-                referenceData.deleteAnimateur("SUP-A10");
-                referenceData.deleteStand("SUP-S10");
-                assertThat(referenceData.listAnimateurs()).noneMatch(a -> "SUP-A10".equals(a.getId()));
-                assertThat(referenceData.listStands()).noneMatch(st -> "SUP-S10".equals(st.getId()));
+            editionContext.executeIn(editionVoisine, () -> {
+                referenceData.deleteAnimateur(voisins[1]);
+                referenceData.deleteStand(voisins[0]);
+                assertThat(referenceData.listAnimateurs()).noneMatch(a -> voisins[1].equals(a.getId()));
+                assertThat(referenceData.listStands()).noneMatch(st -> voisins[0].equals(st.getId()));
             });
 
             // And A is still protected by the very same running job, with the
@@ -306,7 +311,7 @@ class ReferenceDataServiceSuppressionTest {
             // on several conditions, and letting it run first would skip nettoyer()
             // entirely, leaking the SUP-* fixtures into the classes that follow.
             nettoyer();
-            editions.delete(EDITION_VOISINE);
+            editions.delete(editionVoisine);
         }
     }
 
@@ -381,19 +386,22 @@ class ReferenceDataServiceSuppressionTest {
 
     /** A solve on another edition must not freeze data entry here — same rule as the deletes. */
     @Test
-    void modifierDansUneAutreEditionEstAccepteePendantUnSolve() {
+    void editingInAnotherEditionIsAcceptedDuringASolve() {
         Creneau creneau = creneau(9508L);
         Stand stand = stand("SUP-S12");
         Animateur animateur = animateur("SUP-A12");
         PlanningEvenement probleme =
                 new PlanningEvenement(JOUR, List.of(animateur), List.of(poste("SUP-P12", stand, creneau, animateur)));
         String jobId = null;
-        editions.create(new Edition(EDITION_VOISINE, "Édition voisine", false, null));
+        editionVoisine = editions.create(new Edition(null, "Édition voisine", false, null))
+                .getId();
+        String[] voisins = new String[2];
         try {
-            editionContext.executeIn(EDITION_VOISINE, () -> {
-                referenceData.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
-                referenceData.createStand(stand("SUP-S13"));
-                referenceData.createAnimateur(animateur("SUP-A13"));
+            editionContext.executeIn(editionVoisine, () -> {
+                referenceData.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
+                voisins[0] = referenceData.createStand(stand(null)).getId();
+                voisins[1] = referenceData.createAnimateur(animateur(null)).getId();
             });
 
             persistence.persist(probleme);
@@ -403,12 +411,12 @@ class ReferenceDataServiceSuppressionTest {
             jobId = solverJobs.submitSolve(probleme, 60L).getId();
             assertThat(solverJobs.findActive()).isPresent();
 
-            editionContext.executeIn(EDITION_VOISINE, () -> {
-                Stand renomme = stand("SUP-S13");
+            editionContext.executeIn(editionVoisine, () -> {
+                Stand renomme = stand(voisins[0]);
                 renomme.setNom("Renomme pendant le solve d'a cote");
-                referenceData.updateStand("SUP-S13", renomme);
+                referenceData.updateStand(voisins[0], renomme);
                 assertThat(referenceData.listStands())
-                        .filteredOn(st -> "SUP-S13".equals(st.getId()))
+                        .filteredOn(st -> voisins[0].equals(st.getId()))
                         .singleElement()
                         .satisfies(st -> assertThat(st.getNom()).isEqualTo("Renomme pendant le solve d'a cote"));
             });
@@ -424,11 +432,15 @@ class ReferenceDataServiceSuppressionTest {
             }
             attendreSolveurLibre();
             nettoyer();
-            editionContext.executeIn(EDITION_VOISINE, () -> {
-                referenceData.deleteStand("SUP-S13");
-                referenceData.deleteAnimateur("SUP-A13");
+            editionContext.executeIn(editionVoisine, () -> {
+                if (voisins[0] != null) {
+                    referenceData.deleteStand(voisins[0]);
+                }
+                if (voisins[1] != null) {
+                    referenceData.deleteAnimateur(voisins[1]);
+                }
             });
-            editions.delete(EDITION_VOISINE);
+            editions.delete(editionVoisine);
         }
     }
 

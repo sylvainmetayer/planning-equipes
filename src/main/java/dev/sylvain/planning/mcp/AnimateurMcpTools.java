@@ -103,7 +103,6 @@ public class AnimateurMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenAnimateurView createAnimateur(
-            @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(
                             description =
                                     "Date de naissance (AAAA-MM-JJ), obligatoire : seule source du statut mineur/majeur des contraintes légales",
@@ -121,7 +120,6 @@ public class AnimateurMcpTools {
                     List<String> joursIndisponibles,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         Animateur animateur = new Animateur();
-        animateur.setId(id);
         animateur.setPrenom(prenom);
         animateur.setNom(nom);
         animateur.setDateNaissance(McpArgs.date(dateNaissance, "dateNaissance"));

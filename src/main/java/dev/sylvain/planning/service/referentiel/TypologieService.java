@@ -2,13 +2,16 @@ package dev.sylvain.planning.service.referentiel;
 
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -24,8 +27,6 @@ import java.util.stream.Collectors;
  */
 @ApplicationScoped
 public class TypologieService implements TypologieLibelles {
-
-    private static final String TYPOLOGY_ID = "typology id";
 
     private final TypologieRepository repository;
 
@@ -43,6 +44,12 @@ public class TypologieService implements TypologieLibelles {
         this.staleWrites = staleWrites;
     }
 
+    @Inject
+    IdGenerator ids;
+
+    @Inject
+    JdbcEditionScope scope;
+
     public List<TypologieItem> list() {
         return repository.listTypologies();
     }
@@ -59,16 +66,14 @@ public class TypologieService implements TypologieLibelles {
                         TypologieItem::id, TypologieItem::label, (premier, doublon) -> premier, LinkedHashMap::new));
     }
 
+    /**
+     * Creates the typologie under an id the application draws (ADR 0050): an
+     * id the caller sent is ignored — it is what the returned item carries
+     * that designates the new row.
+     */
     public TypologieItem create(TypologieItem typologie) {
-        TypologieItem cree = repository.saveTypologie(
-                new TypologieItem(
-                        Ids.required(typologie.id(), TYPOLOGY_ID),
-                        typologie.label(),
-                        typologie.ninja(),
-                        typologie.maxCreneauxParAnimateur(),
-                        typologie.description(),
-                        null),
-                true);
+        TypologieItem cree = scope.writeAndReturn(
+                "Failed to create typology " + typologie.label(), connection -> create(connection, typologie));
         changeTracker.markModified();
         return cree;
     }
@@ -80,10 +85,13 @@ public class TypologieService implements TypologieLibelles {
      * rollback, and the Solveur screen would announce data that never changed.
      */
     TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
+        String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
+        Codes.refuseTaken(code, repository.idByCode(connection, code), null, "la typologie");
         return repository.saveTypologie(
                 connection,
                 new TypologieItem(
-                        Ids.required(typologie.id(), TYPOLOGY_ID),
+                        ids.next(connection, IdGenerator.Kind.TYPOLOGIE),
+                        code,
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
@@ -93,15 +101,20 @@ public class TypologieService implements TypologieLibelles {
     }
 
     /**
-     * The write of an import: a scenario's {@code typologies:} section names
-     * ids the import has just auto-derived, so a taken id is the normal case
-     * here and not the mistake {@link #create} refuses. No precondition
-     * either — a file replaces a referential, it does not edit a fiche.
+     * The write of an import: the row the file designates when it carries an
+     * id the edition knows, a new one otherwise. No precondition — a file
+     * replaces a referential, it does not edit a fiche.
      */
     public TypologieItem importer(TypologieItem typologie) {
+        if (typologie.id() == null || !repository.typologieExists(typologie.id())) {
+            return create(typologie);
+        }
+        String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
+        Codes.refuseTaken(code, repository.idByCode(code), typologie.id(), "la typologie");
         TypologieItem ecrite = repository.saveTypologie(
                 new TypologieItem(
-                        Ids.required(typologie.id(), TYPOLOGY_ID),
+                        typologie.id(),
+                        code,
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
@@ -116,9 +129,12 @@ public class TypologieService implements TypologieLibelles {
         if (!repository.typologieExists(id)) {
             throw new BusinessError.NotFound("Typologie inconnue : " + id);
         }
+        String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
+        Codes.refuseTaken(code, repository.idByCode(code), id, "la typologie");
         TypologieItem misAJour = repository.saveTypologie(
                 new TypologieItem(
                         id,
+                        code,
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
@@ -127,6 +143,11 @@ public class TypologieService implements TypologieLibelles {
                 false);
         changeTracker.markModified();
         return misAJour;
+    }
+
+    /** Id of the typologie carrying {@code code}, {@code null} when none does. */
+    public String idByCode(String code) {
+        return repository.idByCode(code);
     }
 
     public void delete(String id) {
@@ -144,6 +165,45 @@ public class TypologieService implements TypologieLibelles {
      */
     public Optional<String> ninja() {
         return repository.findTypologieNinja();
+    }
+
+    /**
+     * The typologies a write names, as ids: each value is an id of the
+     * referential or the code of one — codes and ids never overlap (see
+     * {@link Codes#normalise(String, IdGenerator.Kind)}) — and a value that is
+     * neither is left as written, for {@link #validateIds} to refuse by name.
+     * What lets a REST or MCP caller say « STRATEGIE » rather than look its id up.
+     */
+    public Set<String> resolveIds(Set<String> valeurs) {
+        if (valeurs == null || valeurs.isEmpty()) {
+            return valeurs;
+        }
+        Map<String, String> parCle = byIdOrCode(repository.listTypologies());
+        return valeurs.stream()
+                .map(valeur -> parCle.getOrDefault(valeur, valeur))
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+    }
+
+    /** Same, for the keys of a competence map. */
+    public <V> Map<String, V> resolveKeys(Map<String, V> valeurs) {
+        if (valeurs == null || valeurs.isEmpty()) {
+            return valeurs;
+        }
+        Map<String, String> parCle = byIdOrCode(repository.listTypologies());
+        Map<String, V> resolues = new LinkedHashMap<>();
+        valeurs.forEach((cle, valeur) -> resolues.put(parCle.getOrDefault(cle, cle), valeur));
+        return resolues;
+    }
+
+    private static Map<String, String> byIdOrCode(List<TypologieItem> referentiel) {
+        Map<String, String> parCle = new HashMap<>();
+        referentiel.forEach(typologie -> {
+            if (typologie.code() != null) {
+                parCle.put(typologie.code(), typologie.id());
+            }
+        });
+        referentiel.forEach(typologie -> parCle.put(typologie.id(), typologie.id()));
+        return parCle;
     }
 
     /**

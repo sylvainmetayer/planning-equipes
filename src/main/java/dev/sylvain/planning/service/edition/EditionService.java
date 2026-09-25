@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.edition;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
+import dev.sylvain.planning.service.IdGenerator;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -24,6 +25,9 @@ public class EditionService {
         this.repository = repository;
         this.editionContext = editionContext;
     }
+
+    @Inject
+    IdGenerator ids;
 
     public List<Edition> listEditions() {
         return repository.listEditions();
@@ -48,7 +52,7 @@ public class EditionService {
 
     public Edition renommer(String id, Edition edition) {
         requireExisting(id);
-        String nom = requireNonBlank(edition.getNom(), "nom de l'édition");
+        String nom = requireName(edition.getNom());
         Edition renomme = new Edition(id, nom, false, null);
         repository.save(renomme);
         return renomme;
@@ -78,13 +82,13 @@ public class EditionService {
         return cree;
     }
 
+    /**
+     * Creates an empty edition under an id the application draws (ADR 0050) —
+     * {@code E} and a number; an id the caller sent is ignored.
+     */
     private Edition createEmpty(Edition edition) {
-        String id = requireNonBlank(edition.getId(), "id de l'édition");
-        String nom = requireNonBlank(edition.getNom(), "nom de l'édition");
-        if (repository.exists(id)) {
-            throw new BusinessError.Invalid("Une édition portant l'identifiant " + id + " existe déjà");
-        }
-        Edition cree = new Edition(id, nom, false, null);
+        String nom = requireName(edition.getNom());
+        Edition cree = new Edition(ids.nextEditionId(), nom, false, null);
         repository.save(cree);
         editionContext.invaliderCache();
         return cree;
@@ -123,33 +127,44 @@ public class EditionService {
     }
 
     /**
-     * Resolves the edition a scenario's {@code edition:} section targets:
-     * reuses it when it exists (its display name wins over the file's), or
-     * creates it empty first. Reports which of the two happened — the UI must
-     * show that recap to the operator.
+     * Resolves the edition a scenario's {@code edition:} section targets: the
+     * edition of that id when it exists, else the one edition of that name,
+     * else a new edition of that name. Its display name wins over the file's
+     * when it exists. Reports which of the three happened — the UI must show
+     * that recap to the operator.
+     *
+     * <p>The file's id designates, it never creates: a new edition gets the
+     * next {@code E…} like any other (ADR 0050). A file naming no edition
+     * name falls back on its id as the name, the shape of the files written
+     * before, unless that id has an edition id's own shape.</p>
      */
     public ImportTarget resolveForImport(String id, String nom) {
-        String idCible = requireNonBlank(id, "id de l'édition").trim();
-        return listEditions().stream()
-                .filter(edition -> edition.getId().equals(idCible))
-                .findFirst()
-                .map(edition -> new ImportTarget(edition, false))
-                .orElseGet(() -> {
-                    // Only ids the import CREATES are constrained: an id is
-                    // reused verbatim in headers, URLs and localStorage, so a
-                    // file must not be able to smuggle an arbitrary blob in.
-                    // Existing editions (whatever the UI let through) are
-                    // matched above without this check.
-                    if (!idCible.matches("[\\p{L}0-9][\\p{L}0-9 ._-]{0,63}")) {
-                        throw new BusinessError.Invalid(
-                                "Id d'édition invalide dans la section edition : lettres, chiffres, espaces,"
-                                        + " points, tirets et tirets bas uniquement (64 caractères max).");
-                    }
-                    return new ImportTarget(
-                            create(new Edition(
-                                    idCible, nom == null || nom.isBlank() ? idCible : nom.trim(), false, null)),
-                            true);
-                });
+        String idCible = id == null ? "" : id.trim();
+        String nomCible = nom == null ? "" : nom.trim();
+        List<Edition> editions = listEditions();
+        if (!idCible.isEmpty()) {
+            for (Edition edition : editions) {
+                if (edition.getId().equals(idCible)) {
+                    return new ImportTarget(edition, false);
+                }
+            }
+        }
+        String nomCree = nomCible.isEmpty() ? idCible : nomCible;
+        if (nomCree.isEmpty()) {
+            throw new BusinessError.Invalid("La section edition doit donner le nom de l'édition cible.");
+        }
+        List<Edition> homonymes = editions.stream()
+                .filter(edition ->
+                        edition.getNom() != null && edition.getNom().trim().equalsIgnoreCase(nomCree))
+                .toList();
+        if (homonymes.size() == 1) {
+            return new ImportTarget(homonymes.getFirst(), false);
+        }
+        if (homonymes.size() > 1) {
+            throw new BusinessError.Invalid("Plusieurs éditions portent le nom « " + nomCree
+                    + " » : désignez celle voulue par son id dans la section edition.");
+        }
+        return new ImportTarget(create(new Edition(null, nomCree, false, null)), true);
     }
 
     /** Result of {@link #resolveForImport}: the edition to import into, and whether it was just created. */
@@ -159,6 +174,22 @@ public class EditionService {
         if (!repository.exists(id)) {
             throw new BusinessError.NotFound("Édition inconnue : " + id);
         }
+    }
+
+    /**
+     * The name, trimmed. Refused when it has an edition id's shape (D5 of
+     * ADR 0050): the MCP {@code edition} argument takes an id or a name and
+     * tries the id first, so an edition named « E2 » could never be reached by
+     * its name — or worse, would reach another edition.
+     */
+    private static String requireName(String nom) {
+        String valeur = requireNonBlank(nom, "nom de l'édition").trim();
+        if (IdGenerator.looksLikeEditionId(valeur)) {
+            throw new BusinessError.Invalid("Le nom « " + valeur
+                    + " » a la forme d'un identifiant d'édition (E suivi d'un nombre) : choisissez-en un autre,"
+                    + " par exemple « Année 2027 ».");
+        }
+        return valeur;
     }
 
     private static String requireNonBlank(String valeur, String champ) {

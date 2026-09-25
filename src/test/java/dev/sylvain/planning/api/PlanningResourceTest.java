@@ -32,7 +32,8 @@ class PlanningResourceTest {
 
     @Test
     void standCrudWorks() {
-        given().contentType("application/json")
+        // The id sent is ignored: the stand gets a generated one (ADR 0046).
+        String id = given().contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-TEST",
@@ -47,15 +48,17 @@ class PlanningResourceTest {
                 .post("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("stand.id", equalTo("STAND-TEST"));
+                .body("stand.id", notNullValue())
+                .extract()
+                .path("stand.id");
 
         given().when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'STAND-TEST' }.nom", equalTo("Test Stand"));
+                .body("find { it.id == '" + id + "' }.nom", equalTo("Test Stand"));
 
-        given().when().delete("/api/stands/STAND-TEST").then().statusCode(204);
+        given().when().delete("/api/stands/" + id).then().statusCode(204);
     }
 
     @Test
@@ -67,7 +70,7 @@ class PlanningResourceTest {
                 .extract()
                 .path("derniereModificationDonnees");
 
-        given().contentType("application/json")
+        String standId = given().contentType("application/json")
                 .body("""
                         {
                           "id":"STAND-STALE-MARKER",
@@ -81,7 +84,9 @@ class PlanningResourceTest {
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
 
         try {
             String after = given().when()
@@ -96,7 +101,7 @@ class PlanningResourceTest {
                 assertThat(java.time.Instant.parse(after)).isAfterOrEqualTo(java.time.Instant.parse(before));
             }
         } finally {
-            given().when().delete("/api/stands/STAND-STALE-MARKER").then().statusCode(204);
+            given().when().delete("/api/stands/" + standId).then().statusCode(204);
         }
     }
 

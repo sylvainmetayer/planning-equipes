@@ -219,7 +219,9 @@ final class ScenarioDomainMapper {
         Map<String, Emplacement> emplacementsParId = new HashMap<>();
         if (scenario.emplacements() != null) {
             for (EmplacementDto dto : scenario.emplacements()) {
-                emplacementsParId.put(dto.id(), new Emplacement(dto.id(), dto.nom(), dto.latitude(), dto.longitude()));
+                Emplacement emplacement = new Emplacement(dto.id(), dto.nom(), dto.latitude(), dto.longitude());
+                emplacement.setCode(dto.code());
+                emplacementsParId.put(dto.id(), emplacement);
             }
         }
 
@@ -262,6 +264,7 @@ final class ScenarioDomainMapper {
                 required(dto.effectifMax(), "stands.effectifMax"),
                 Boolean.TRUE.equals(dto.reserveMajeurs()),
                 Boolean.TRUE.equals(dto.premium()));
+        stand.setCode(dto.code());
         stand.setNiveauEffort(dto.niveauEffort() == null ? NiveauEffort.NORMAL : dto.niveauEffort());
         if (dto.emplacementId() != null) {
             stand.setEmplacement(emplacementsParId.get(dto.emplacementId()));
@@ -687,8 +690,9 @@ final class ScenarioDomainMapper {
         if (edition == null) {
             return Optional.empty();
         }
-        if (edition.id() == null || edition.id().isBlank()) {
-            throw new BusinessError.Invalid("La section edition exige un champ id non vide.");
+        if ((edition.id() == null || edition.id().isBlank())
+                && (edition.nom() == null || edition.nom().isBlank())) {
+            throw new BusinessError.Invalid("La section edition exige un id ou un nom non vide.");
         }
         return Optional.of(edition);
     }
@@ -701,6 +705,7 @@ final class ScenarioDomainMapper {
         for (TypologieDto dto : dtos) {
             typologies.add(new TypologieItem(
                     dto.id(),
+                    dto.code(),
                     dto.label(),
                     Boolean.TRUE.equals(dto.ninja()),
                     dto.maxCreneauxParAnimateur(),

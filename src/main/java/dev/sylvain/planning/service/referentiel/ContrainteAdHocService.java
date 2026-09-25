@@ -4,7 +4,7 @@ import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
-import dev.sylvain.planning.service.Ids;
+import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.service.referentiel.ContrainteAdHocContradictions.Contradiction;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -38,19 +38,29 @@ public class ContrainteAdHocService {
         this.staleWrites = staleWrites;
     }
 
+    @Inject
+    IdGenerator ids;
+
     public List<ContrainteAdHoc> list() {
         return repository.listContraintes();
     }
 
     /**
-     * Create-or-overwrite by id — the only write this resource has, so the
+     * Create, or overwrite by id — the only write this resource has, so the
      * concurrent-edit check of the other referentials lives here: a payload
      * carrying the {@code modifieLe} it loaded is refused when the row moved
      * since, a payload without one (a creation, an import) is not checked.
+     *
+     * <p>Without an id, the ajustement is new and the application draws its
+     * id (ADR 0050); with one, it must name an existing ajustement — an id is
+     * no longer something a caller chooses.</p>
      */
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
-        contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
+        requireKnownOrNew(contrainte);
         refuseContradiction(contrainte);
+        if (contrainte.getId() == null) {
+            contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
+        }
         nameVacation(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
@@ -83,7 +93,7 @@ public class ContrainteAdHocService {
         List<ContrainteAdHoc> deja = new ArrayList<>(list());
         List<String> messages = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
-            contrainte.setId(Ids.required(contrainte.getId(), "constraint id"));
+            requireKnownOrNew(contrainte);
             ContrainteAdHocContradictions.detect(contrainte, deja, creneaux).stream()
                     .map(Contradiction::message)
                     .filter(message -> !messages.contains(message))
@@ -94,6 +104,9 @@ public class ContrainteAdHocService {
             throw new BusinessError.Invalid(String.join(" ", messages));
         }
         for (ContrainteAdHoc contrainte : contraintes) {
+            if (contrainte.getId() == null) {
+                contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
+            }
             nameVacation(contrainte);
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
@@ -102,6 +115,17 @@ public class ContrainteAdHocService {
         }
         changeTracker.markModified();
         return contraintes;
+    }
+
+    /** A blank id is a creation; any other must designate an ajustement of this edition. */
+    private void requireKnownOrNew(ContrainteAdHoc contrainte) {
+        if (contrainte.getId() != null && contrainte.getId().isBlank()) {
+            contrainte.setId(null);
+        }
+        if (contrainte.getId() != null && !repository.contrainteExists(contrainte.getId())) {
+            throw new BusinessError.Invalid("Ajustement inconnu : " + contrainte.getId()
+                    + ". Un nouvel ajustement s'envoie sans identifiant : l'application en attribue un.");
+        }
     }
 
     /**

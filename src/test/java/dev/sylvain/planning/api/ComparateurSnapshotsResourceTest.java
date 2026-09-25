@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -27,36 +28,50 @@ import org.junit.jupiter.api.Test;
 class ComparateurSnapshotsResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String DEFAUT = "DEFAUT";
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
+    /** The default edition of the test database, resolved rather than assumed (ADR 0050). */
+    private String defaut;
+
+    @BeforeEach
+    void resolveDefaultEdition() {
+        defaut = listEditions().stream()
+                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .map(edition -> (String) edition.get("id"))
+                .findFirst()
+                .orElseThrow();
+    }
+
     /** Editions created by a test are dropped, so the shared database is left as found. */
     @AfterEach
-    void supprimerLesEditionsCreees() {
-        List<Map<String, Object>> editions = given().when()
+    void dropCreatedEditions() {
+        for (Map<String, Object> edition : listEditions()) {
+            String id = (String) edition.get("id");
+            if (!defaut.equals(id)) {
+                given().when().delete("/api/editions/" + id);
+            }
+        }
+    }
+
+    private static List<Map<String, Object>> listEditions() {
+        return given().when()
                 .get("/api/editions")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
                 .getList("$");
-        for (Map<String, Object> edition : editions) {
-            String id = (String) edition.get("id");
-            if (!DEFAUT.equals(id)) {
-                given().when().delete("/api/editions/" + id);
-            }
-        }
     }
 
     @Test
-    void compareDeuxInstantanesSansJamaisDeclencherDeResolution() {
-        persistedPlan(DEFAUT);
-        long base = capture(DEFAUT, "Base");
-        solve(DEFAUT);
-        long variante = capture(DEFAUT, "Variante");
+    void comparesTwoSnapshotsWithoutEverTriggeringASolve() {
+        persistedPlan(defaut);
+        long base = capture(defaut, "Base");
+        solve(defaut);
+        long variante = capture(defaut, "Variante");
 
-        JsonPath comparaison = comparer(DEFAUT, String.valueOf(base), String.valueOf(variante));
+        JsonPath comparaison = comparer(defaut, String.valueOf(base), String.valueOf(variante));
 
         assertThat(comparaison.getLong("base.snapshotId")).isEqualTo(base);
         assertThat(comparaison.getString("base.libelle")).isEqualTo("Base");
@@ -75,11 +90,11 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void compareUnInstantaneAuPlanCourant() {
-        persistedPlan(DEFAUT);
-        long base = capture(DEFAUT, "Avant retouche");
+    void comparesASnapshotWithTheCurrentPlan() {
+        persistedPlan(defaut);
+        long base = capture(defaut, "Avant retouche");
 
-        JsonPath comparaison = comparer(DEFAUT, String.valueOf(base), "courant");
+        JsonPath comparaison = comparer(defaut, String.valueOf(base), "courant");
 
         assertThat(comparaison.getLong("base.snapshotId")).isEqualTo(base);
         // The current plan has no snapshot id and no label: naming that side is
@@ -91,25 +106,25 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void compareDeuxEditionsEtSignaleQueLesReferentielsDifferent() {
-        persistedPlan(DEFAUT);
-        long base = capture(DEFAUT, "Édition par défaut");
+    void comparesTwoEditionsAndReportsThatTheirReferentialsDiffer() {
+        persistedPlan(defaut);
+        long base = capture(defaut, "Édition par défaut");
 
-        createEdition("VARIANTE-2026", "Variante 2026");
-        persistedPlan("VARIANTE-2026");
-        long variante = capture("VARIANTE-2026", "Édition variante");
+        String varianteEdition = createEdition("Variante 2026");
+        persistedPlan(varianteEdition);
+        long variante = capture(varianteEdition, "Édition variante");
 
         // Asked from the default edition: the comparator reads across editions
         // on purpose, otherwise the variant would be invisible from here.
-        JsonPath comparaison = comparer(DEFAUT, String.valueOf(base), String.valueOf(variante));
+        JsonPath comparaison = comparer(defaut, String.valueOf(base), String.valueOf(variante));
 
-        assertThat(comparaison.getString("base.editionId")).isEqualTo(DEFAUT);
-        assertThat(comparaison.getString("variante.editionId")).isEqualTo("VARIANTE-2026");
+        assertThat(comparaison.getString("base.editionId")).isEqualTo(defaut);
+        assertThat(comparaison.getString("variante.editionId")).isEqualTo(varianteEdition);
         assertThat(comparaison.getString("variante.editionNom")).isEqualTo("Variante 2026");
         assertThat(comparaison.getBoolean("editionsDifferentes")).isTrue();
 
         // And both are offered as sides, whichever edition the browser sits on.
-        List<Object> ids = given().header(HEADER, DEFAUT)
+        List<Object> ids = given().header(HEADER, defaut)
                 .when()
                 .get("/api/planning/snapshots/comparables")
                 .then()
@@ -121,13 +136,13 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void unInstantaneInconnuRepond404() {
-        given().header(HEADER, DEFAUT)
+    void anUnknownSnapshotAnswers404() {
+        given().header(HEADER, defaut)
                 .when()
                 .get("/api/planning/snapshots/compare?base=999999999&variante=courant")
                 .then()
                 .statusCode(404);
-        given().header(HEADER, DEFAUT)
+        given().header(HEADER, defaut)
                 .when()
                 .get("/api/planning/snapshots/compare?base=courant")
                 .then()
@@ -146,13 +161,16 @@ class ComparateurSnapshotsResourceTest {
                 .jsonPath();
     }
 
-    private void createEdition(String id, String nom) {
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
+    /** Creates an edition and answers the id the application drew for it. */
+    private String createEdition(String nom) {
+        return given().contentType(ContentType.JSON)
+                .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     private long capture(String editionId, String libelle) {

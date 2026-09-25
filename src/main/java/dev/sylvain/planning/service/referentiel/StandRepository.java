@@ -70,8 +70,9 @@ public class StandRepository {
         Map<String, Stand> byId = new LinkedHashMap<>();
         try (Connection connection = dataSource.getConnection()) {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
-                    SELECT s.id, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
-                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.nom AS emplacement_nom,
+                    SELECT s.id, s.code, s.nom, s.effectif_min, s.effectif_max, s.reserve_majeurs,
+                    s.premium, s.niveau_effort, s.modifie_le, e.id AS emplacement_id, e.code AS emplacement_code,
+                    e.nom AS emplacement_nom,
                     e.latitude AS emplacement_latitude, e.longitude AS emplacement_longitude
                     FROM stand s
                     LEFT JOIN emplacement e ON e.edition_id = s.edition_id AND e.id = s.emplacement_id
@@ -81,6 +82,7 @@ public class StandRepository {
                 while (rs.next()) {
                     Stand stand = new Stand();
                     stand.setId(rs.getString("id"));
+                    stand.setCode(rs.getString("code"));
                     stand.setNom(rs.getString("nom"));
                     stand.setEffectifMin(rs.getInt("effectif_min"));
                     stand.setEffectifMax(rs.getInt("effectif_max"));
@@ -91,11 +93,13 @@ public class StandRepository {
                             rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
                     String emplacementId = rs.getString("emplacement_id");
                     if (emplacementId != null) {
-                        stand.setEmplacement(new Emplacement(
+                        Emplacement emplacement = new Emplacement(
                                 emplacementId,
                                 rs.getString("emplacement_nom"),
                                 (Double) rs.getObject("emplacement_latitude"),
-                                (Double) rs.getObject("emplacement_longitude")));
+                                (Double) rs.getObject("emplacement_longitude"));
+                        emplacement.setCode(rs.getString("emplacement_code"));
+                        stand.setEmplacement(emplacement);
                     }
                     byId.put(stand.getId(), stand);
                 }
@@ -243,6 +247,25 @@ public class StandRepository {
                 .orElse(null);
     }
 
+    /** Id of the stand carrying {@code code} in the current edition, {@code null} when none does. */
+    public String idByCode(String code) {
+        return scope.read("Failed to look stand code " + code + " up", connection -> idByCode(connection, code));
+    }
+
+    /** Same lookup inside a caller's transaction. */
+    String idByCode(Connection connection, String code) throws SQLException {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        try (PreparedStatement ps =
+                scope.prepareScoped(connection, "SELECT id FROM stand WHERE edition_id = ? AND code = ?")) {
+            ps.setString(2, code);
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next() ? rs.getString("id") : null;
+            }
+        }
+    }
+
     public boolean standExists(String id) {
         return scope.exists("stand", id);
     }
@@ -330,11 +353,11 @@ public class StandRepository {
 
     void upsertStand(Connection connection, Stand stand, boolean failIfPresent) throws SQLException {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
-                INSERT INTO stand (edition_id, id, nom, effectif_min, effectif_max,
+                INSERT INTO stand (edition_id, id, code, nom, effectif_min, effectif_max,
                 reserve_majeurs, premium, emplacement_id, niveau_effort)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (edition_id, id)
-                DO UPDATE SET nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min,
+                DO UPDATE SET code = EXCLUDED.code, nom = EXCLUDED.nom, effectif_min = EXCLUDED.effectif_min,
                 effectif_max = EXCLUDED.effectif_max, reserve_majeurs = EXCLUDED.reserve_majeurs,
                 premium = EXCLUDED.premium, emplacement_id = EXCLUDED.emplacement_id,
                 niveau_effort = EXCLUDED.niveau_effort,
@@ -345,15 +368,16 @@ public class StandRepository {
                         = date_trunc('milliseconds', CAST(? AS timestamptz)))
                 RETURNING modifie_le""")) {
             ps.setString(2, stand.getId());
-            ps.setString(3, stand.getNom());
-            ps.setInt(4, stand.getEffectifMin());
-            ps.setInt(5, stand.getEffectifMax());
-            ps.setBoolean(6, stand.isReserveMajeurs());
-            ps.setBoolean(7, stand.isPremium());
+            ps.setString(3, stand.getCode());
+            ps.setString(4, stand.getNom());
+            ps.setInt(5, stand.getEffectifMin());
+            ps.setInt(6, stand.getEffectifMax());
+            ps.setBoolean(7, stand.isReserveMajeurs());
+            ps.setBoolean(8, stand.isPremium());
             ps.setString(
-                    8, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
-            ps.setString(9, stand.getNiveauEffort().name());
-            WriteStamp.bindPrecondition(ps, 10, !failIfPresent, stand.getModifieLe());
+                    9, stand.getEmplacement() != null ? stand.getEmplacement().getId() : null);
+            ps.setString(10, stand.getNiveauEffort().name());
+            WriteStamp.bindPrecondition(ps, 11, !failIfPresent, stand.getModifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
                 refuse(failIfPresent, "stand", stand.getId());

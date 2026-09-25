@@ -260,7 +260,8 @@ public class ParametresMcpTools {
                     + "sur ce créneau. INCOMPATIBILITE : les animateurs listés ne peuvent pas être affectés au même stand "
                     + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
                     + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
-                    + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement).",
+                    + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement). "
+                    + "Son id (C suivi d'un nombre) est attribué par l'application et figure dans la réponse.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -269,7 +270,6 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenContrainteAdHocView createContrainteAdHoc(
-            @ToolArg(description = "Id de la contrainte (unique)") String id,
             @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
                     String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
@@ -278,7 +278,7 @@ public class ParametresMcpTools {
             @ToolArg(description = "Raison, purement informative", required = false) String raison,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ContrainteAdHoc contrainte =
-                new ContrainteAdHoc(id, McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
+                new ContrainteAdHoc(null, McpArgs.enumeration(TypeContrainteAdHoc.class, type, "type"));
         contrainte.setAnimateursConcernes(animateurs(animateurIds));
         if (creneauId != null) {
             contrainte.setCreneau(referenceDataService.listCreneaux().stream()

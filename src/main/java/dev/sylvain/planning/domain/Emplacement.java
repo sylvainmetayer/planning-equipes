@@ -13,6 +13,15 @@ import java.util.Objects;
 public class Emplacement {
 
     private String id;
+
+    /**
+     * The readable key of this emplacement in the files an organiser keeps (the CSV
+     * imports, the scenario), unique in its edition, {@code null} when none
+     * was given. The id is generated and means nothing (ADR 0050); the code is
+     * what a file matches on.
+     */
+    private String code;
+
     private String nom;
     private Double latitude;
     private Double longitude;
@@ -42,6 +51,14 @@ public class Emplacement {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    public void setCode(String code) {
+        this.code = code;
     }
 
     public Instant getModifieLe() {

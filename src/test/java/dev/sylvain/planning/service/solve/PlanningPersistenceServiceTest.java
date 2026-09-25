@@ -97,44 +97,55 @@ class PlanningPersistenceServiceTest {
      * jour.</p>
      */
     @Test
-    void unCreneauReconstruitPrendSaPlaceDansLaNumerotationDesJours() {
-        editionService.create(new Edition("EDITION-JOURS", "Édition jours", false, null));
+    void aRebuiltTimeslotTakesItsPlaceInTheDayNumbering() {
+        String edition = editionService
+                .create(new Edition(null, "Édition jours", false, null))
+                .getId();
         try {
-            editionContext.executeIn("EDITION-JOURS", () -> {
-                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
-                referenceDataService.createStand(
-                        new Stand("STAND-JOURS", "Stand jours", Set.of("STRATEGIE"), 1, 1, false));
+            editionContext.executeIn(edition, () -> {
+                referenceDataService.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
+                String stand = referenceDataService
+                        .createStand(new Stand(null, "Stand jours", Set.of("STRATEGIE"), 1, 1, false))
+                        .getId();
                 Creneau premier = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 11), LocalTime.of(10, 0), LocalTime.of(12, 0)));
                 Creneau troisieme = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 13), LocalTime.of(10, 0), LocalTime.of(12, 0)));
-                referenceDataService.createAnimateur(
-                        new Animateur("A-JOURS", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+                String animateur = referenceDataService
+                        .createAnimateur(new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false))
+                        .getId();
 
                 // The middle day is gone from the grid, and only the seat still
                 // describes it — exactly what a published snapshot carries.
                 long disparu = Math.max(premier.getId(), troisieme.getId()) + 1;
                 PlanningEvenement assemble = persistenceService.assemblerPlanning(List.of(
-                        siege("poste-1", premier.getId(), null),
+                        siege("poste-1", stand, animateur, premier.getId(), null),
                         siege(
                                 "poste-2",
+                                stand,
+                                animateur,
                                 disparu,
                                 new PlanningPersistenceService.VacationSnapshot(
                                         LocalDate.of(2026, 7, 12), LocalTime.of(14, 0), LocalTime.of(18, 0))),
-                        siege("poste-3", troisieme.getId(), null)));
+                        siege("poste-3", stand, animateur, troisieme.getId(), null)));
 
                 assertThat(assemble.getPostes())
                         .extracting(poste -> poste.getCreneau().getJour())
                         .containsExactly(1, 2, 3);
             });
         } finally {
-            editionService.delete("EDITION-JOURS");
+            editionService.delete(edition);
         }
     }
 
     private static PlanningPersistenceService.Siege siege(
-            String posteId, long creneauId, PlanningPersistenceService.VacationSnapshot vacation) {
-        return new PlanningPersistenceService.Siege(posteId, "STAND-JOURS", creneauId, "A-JOURS", null, null, vacation);
+            String posteId,
+            String standId,
+            String animateurId,
+            long creneauId,
+            PlanningPersistenceService.VacationSnapshot vacation) {
+        return new PlanningPersistenceService.Siege(posteId, standId, creneauId, animateurId, null, null, vacation);
     }
 
     /**
@@ -147,17 +158,20 @@ class PlanningPersistenceServiceTest {
      * along, which is exactly why nothing failed.
      */
     @Test
-    void lePlanningAssembleporteLesFenetresRepasDesParametres() {
-        editionService.create(new Edition("EDITION-REPAS", "Édition repas", false, null));
+    void theAssembledPlanCarriesTheMealWindowsOfTheParameters() {
+        String edition = editionService
+                .create(new Edition(null, "Édition repas", false, null))
+                .getId();
         try {
-            editionContext.executeIn("EDITION-REPAS", () -> {
-                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+            editionContext.executeIn(edition, () -> {
+                referenceDataService.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 Stand stand = referenceDataService.createStand(
-                        new Stand("STAND-REPAS", "Stand repas", Set.of("STRATEGIE"), 1, 1, false));
+                        new Stand(null, "Stand repas", Set.of("STRATEGIE"), 1, 1, false));
                 Creneau creneau = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 16), LocalTime.of(9, 0), LocalTime.of(20, 0)));
                 Animateur animateur = referenceDataService.createAnimateur(
-                        new Animateur("A-REPAS", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+                        new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
 
                 PosteAffectation poste = new PosteAffectation("poste-repas", stand, creneau);
                 poste.setAnimateur(animateur);
@@ -172,7 +186,7 @@ class PlanningPersistenceServiceTest {
                                 FenetreRepas.from(charge.getParametresLegaux().get(0)));
             });
         } finally {
-            editionService.delete("EDITION-REPAS");
+            editionService.delete(edition);
         }
     }
 
@@ -184,17 +198,24 @@ class PlanningPersistenceServiceTest {
      * once — spotted while analyzing issue #167, wrong since multi-édition.
      */
     @Test
-    void chargerAnimateursParStandCreneauNeVoitQueSonEdition() {
-        editionService.create(new Edition("EDITION-SCOPE", "Édition scope", false, null));
+    void loadingAnimateursByStandTimeslotSeesOnlyItsEdition() {
+        String edition = editionService
+                .create(new Edition(null, "Édition scope", false, null))
+                .getId();
+        String[] animateurId = new String[1];
+        long[] creneauScope = new long[1];
         try {
-            editionContext.executeIn("EDITION-SCOPE", () -> {
-                referenceDataService.createTypologie(new TypologieItem("STRATEGIE", "Stratégie"));
+            editionContext.executeIn(edition, () -> {
+                referenceDataService.createTypologie(
+                        new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 Stand stand = referenceDataService.createStand(
-                        new Stand("STAND-SCOPE", "Stand scope", Set.of("STRATEGIE"), 1, 1, false));
+                        new Stand(null, "Stand scope", Set.of("STRATEGIE"), 1, 1, false));
                 Creneau creneau = referenceDataService.createCreneau(
                         new Creneau(null, 1, LocalDate.of(2026, 7, 15), LocalTime.of(10, 0), LocalTime.of(12, 0)));
                 Animateur animateur = referenceDataService.createAnimateur(
-                        new Animateur("A-SCOPE", "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+                        new Animateur(null, "Prenom", "Nom", LocalDate.of(1990, 1, 1), false));
+                animateurId[0] = animateur.getId();
+                creneauScope[0] = creneau.getId();
 
                 PosteAffectation poste = new PosteAffectation("poste-scope", stand, creneau);
                 poste.setAnimateur(animateur);
@@ -202,14 +223,16 @@ class PlanningPersistenceServiceTest {
                         new PlanningEvenement(creneau.getDate(), List.of(animateur), List.of(poste)));
 
                 assertThat(persistenceService.loadAnimateursByStandCreneau().values())
-                        .anySatisfy(animateurs -> assertThat(animateurs).contains("A-SCOPE"));
+                        .anySatisfy(animateurs -> assertThat(animateurs).contains(animateurId[0]));
             });
 
-            // Back in the default edition: the other edition's rows must be invisible.
-            assertThat(persistenceService.loadAnimateursByStandCreneau().values())
-                    .allSatisfy(animateurs -> assertThat(animateurs).doesNotContain("A-SCOPE"));
+            // Back in the default edition: the other edition's rows must be
+            // invisible. Numbered per edition, the same id may well exist here:
+            // what must not show up is the other edition's stand × timeslot.
+            assertThat(persistenceService.loadAnimateursByStandCreneau())
+                    .allSatisfy((cle, animateurs) -> assertThat(cle).doesNotEndWith("#" + creneauScope[0]));
         } finally {
-            editionService.delete("EDITION-SCOPE");
+            editionService.delete(edition);
         }
     }
 }

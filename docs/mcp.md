@@ -191,6 +191,18 @@ personne.
 statut majeur/mineur et moins-de-16-ans — dérivés de la date, jamais la date —
 et les attributs de planification non identifiants.
 
+**L'id ne dit rien de la personne**, et c'est structurel : il est attribué par
+l'application (`A1`, `A2`… dans chaque édition,
+[ADR 0050](decisions/0050-identifiants-generes-par-edition.md)), jamais choisi
+par un appelant ni dérivé du nom. Un id tapé à la main (`marie.dupont`) ou
+tiré du nom par un import (`marie-dupont`) aurait fait ressortir la personne
+dans chaque réponse. Les outils de création (`creer_animateur`, `creer_stand`,
+`creer_stand_complet`, `creer_emplacement`, `creer_typologie`,
+`creer_contrainte_ad_hoc`, `creer_edition`, `dupliquer_edition`) ne prennent
+donc aucun id : ils rendent celui qu'ils ont attribué. Un stand, une
+typologie ou un emplacement se crée avec un `code` lisible facultatif, et les
+outils qui citent une typologie ou un emplacement acceptent l'id comme le code.
+
 Quatre mécanismes :
 
 1. **Des vues, jamais les objets de domaine.** Chaque outil renvoie un `record`
@@ -312,7 +324,9 @@ remplacer la phrase à la main, ce que ce traitement transverse rend inutile.
 Une requête MCP n'est pas une requête JAX-RS : `EditionHeaderFilter` ne la voit
 jamais, et **`X-Edition-Id` n'a aucun effet sur `/mcp`**. Chaque outil porte un
 argument `edition` facultatif, qui accepte l'id ou le nom. Omis, l'outil
-travaille dans l'édition par défaut.
+travaille dans l'édition par défaut. L'id est essayé d'abord : un nom
+d'édition de la forme d'un id (`E` suivi d'un nombre) est donc refusé à la
+création comme au renommage, sans quoi il désignerait une autre édition.
 
 **Une édition inconnue échoue**, au lieu de retomber sur la courante — seule
 divergence volontaire avec l'en-tête HTTP. Les deux appelants ne sont pas dans

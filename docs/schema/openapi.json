@@ -2860,6 +2860,9 @@
           "id" : {
             "type" : "string"
           },
+          "code" : {
+            "type" : "string"
+          },
           "nom" : {
             "type" : "string"
           },
@@ -7155,6 +7158,9 @@
           "id" : {
             "type" : "string"
           },
+          "code" : {
+            "type" : "string"
+          },
           "nom" : {
             "type" : "string"
           },
@@ -7574,6 +7580,9 @@
         "type" : "object",
         "properties" : {
           "id" : {
+            "type" : "string"
+          },
+          "code" : {
             "type" : "string"
           },
           "label" : {
@@ -13029,35 +13038,6 @@
           }
         },
         "summary" : "Impact Import",
-        "tags" : [ "Reference Data Resource" ]
-      }
-    },
-    "/api/reference-data/import" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/PlanningEvenement"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : { }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Reference Data",
         "tags" : [ "Reference Data Resource" ]
       }
     },

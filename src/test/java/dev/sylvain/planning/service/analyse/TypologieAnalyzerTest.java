@@ -137,7 +137,7 @@ class TypologieAnalyzerTest {
     void lePlafondDeLaTypologieEstReporte() {
         RapportTypologies rapport = TypologieAnalyzer.compute(
                 null,
-                List.of(new TypologieItem("HOMMES-JEU", "Hommes jeu", false, 4, "45 jeux à apprendre", null)),
+                List.of(new TypologieItem("HOMMES-JEU", null, "Hommes jeu", false, 4, "45 jeux à apprendre", null)),
                 List.of());
 
         assertThat(ligne(rapport, "HOMMES-JEU").maxCreneauxParAnimateur()).isEqualTo(4);

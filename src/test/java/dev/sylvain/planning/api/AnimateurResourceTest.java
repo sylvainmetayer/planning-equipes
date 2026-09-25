@@ -21,18 +21,21 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class AnimateurResourceTest {
 
-    private static final String ID = "AR-INCOMPLET";
+    /** The id the application generated for the fiche a test created, if any. */
+    private String createdId;
 
     @AfterEach
     void removeFixture() {
-        given().when().delete("/api/animateurs/" + ID);
+        if (createdId != null) {
+            given().when().delete("/api/animateurs/" + createdId);
+        }
     }
 
     @Test
     void aCreationWithoutBirthDateIsRefusedNamingTheDate() {
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"AR-INCOMPLET","prenom":"Alice","nom":"Martin"}""")
+                        {"prenom":"Alice","nom":"AR-Incomplet"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
@@ -41,14 +44,15 @@ class AnimateurResourceTest {
                 .body("message", not(containsString("prénom")))
                 .body("message", not(containsString("le nom")));
 
-        given().when().get("/api/animateurs").then().statusCode(200).body("id", not(hasItem(ID)));
+        // Nothing was written: no fiche carries that name.
+        given().when().get("/api/animateurs").then().statusCode(200).body("nom", not(hasItem("AR-Incomplet")));
     }
 
     @Test
     void aCreationWithABlankFirstNameIsRefused() {
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"AR-INCOMPLET","prenom":"   ","nom":"Martin","dateNaissance":"1990-01-01"}""")
+                        {"prenom":"   ","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
@@ -61,7 +65,7 @@ class AnimateurResourceTest {
     void aCreationMissingEverythingIsRefusedOnceNamingAllThreeFields() {
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"AR-INCOMPLET","prenom":"","nom":""}""")
+                        {"prenom":"","nom":""}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
@@ -78,19 +82,21 @@ class AnimateurResourceTest {
 
     @Test
     void anEditCannotBlankTheNameNorDropTheBirthDate() {
-        given().contentType(ContentType.JSON)
+        createdId = given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"AR-INCOMPLET","prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
+                        {"prenom":"Alice","nom":"Martin","dateNaissance":"1990-01-01"}""")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
 
         given().contentType(ContentType.JSON)
                 .body("""
-                        {"id":"AR-INCOMPLET","prenom":"Alice","nom":"","dateNaissance":null}""")
+                        {"prenom":"Alice","nom":"","dateNaissance":null}""")
                 .when()
-                .put("/api/animateurs/" + ID)
+                .put("/api/animateurs/" + createdId)
                 .then()
                 .statusCode(400)
                 .body("message", containsString("nom"))
@@ -102,7 +108,7 @@ class AnimateurResourceTest {
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'AR-INCOMPLET' }.nom", equalTo("Martin"))
-                .body("find { it.id == 'AR-INCOMPLET' }.dateNaissance", equalTo("1990-01-01"));
+                .body("find { it.id == '" + createdId + "' }.nom", equalTo("Martin"))
+                .body("find { it.id == '" + createdId + "' }.dateNaissance", equalTo("1990-01-01"));
     }
 }

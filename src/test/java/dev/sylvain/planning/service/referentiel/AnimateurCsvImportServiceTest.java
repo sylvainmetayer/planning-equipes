@@ -39,7 +39,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class AnimateurCsvImportServiceTest {
 
-    private static final String EDITION = "CSV-IMPORT-TEST";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String edition;
 
     private static final LocalDate JOUR1 = LocalDate.of(2030, 7, 18);
     private static final LocalDate JOUR2 = LocalDate.of(2030, 7, 19);
@@ -64,8 +65,8 @@ class AnimateurCsvImportServiceTest {
 
     @BeforeEach
     void creerEdition() {
-        editions.create(new Edition(EDITION, "Import CSV", false, null));
-        editionContext.executeIn(EDITION, () -> {
+        edition = editions.create(new Edition(null, "Import CSV", false, null)).getId();
+        editionContext.executeIn(edition, () -> {
             referenceData.createTypologie(new TypologieItem("jeux", "Jeux de société", false));
             referenceData.createTypologie(new TypologieItem("ateliers", "Ateliers", false));
             referenceData.createCreneau(new Creneau(null, 1, JOUR1, LocalTime.of(10, 0), LocalTime.of(12, 0)));
@@ -75,11 +76,11 @@ class AnimateurCsvImportServiceTest {
 
     @AfterEach
     void supprimerEdition() {
-        editions.delete(EDITION);
+        editions.delete(edition);
     }
 
     private <T> T inEdition(java.util.concurrent.Callable<T> travail) {
-        return editionContext.executeIn(EDITION, travail);
+        return editionContext.executeIn(edition, travail);
     }
 
     private static AnimateurCsvImportRequest demande(String contenu) {

@@ -121,7 +121,6 @@ public final class CatalogueActions {
     private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
-    private static final String DONNEES_IMPORTEES = "DONNEES_IMPORTEES";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
     private static final String PARAMETRES_LEGAUX_MODIFIES = "PARAMETRES_LEGAUX_MODIFIES";
     private static final String PARAMETRES_QUALITE_MODIFIES = "PARAMETRES_QUALITE_MODIFIES";
@@ -317,7 +316,6 @@ public final class CatalogueActions {
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData(SCENARIO_IMPORTE, "Scénario importé", Entite.PLANNING);
-        changesData(DONNEES_IMPORTEES, "Données de référence importées", Entite.PLANNING);
         changesData(BASE_IMPORTEE, "Base de données restaurée depuis un fichier", Entite.SAUVEGARDE);
 
         /* ------------------------- Settings ------------------------- */
@@ -485,7 +483,6 @@ public final class CatalogueActions {
         route("ArchiveEvenementResource#export", EXPORT_ARCHIVE_EVENEMENT);
         route("FormationResource#exportCsv", EXPORT_FORMATION);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
-        route("ReferenceDataResource#importReferenceData", DONNEES_IMPORTEES);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
         route("ReferenceDataResource#importScenarioFile", SCENARIO_IMPORTE);
 

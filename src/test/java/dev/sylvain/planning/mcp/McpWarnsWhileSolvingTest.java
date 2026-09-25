@@ -71,45 +71,48 @@ class McpWarnsWhileSolvingTest {
     @Test
     void typologieWritesWarnDuringASolve() {
         solveHoldsTheEdition();
+        var creee = standTools.createTypologie("Pendant un calcul", null, null);
+        String id = creee.id();
         try {
+            assertThat(creee.avertissements()).contains(CODE);
             assertWarned(() -> standTools
-                    .createTypologie("RES-T1", "Pendant un calcul", null)
-                    .avertissements());
-            assertWarned(() -> standTools
-                    .updateTypologie("RES-T1", "Renommée pendant un calcul", null, null)
+                    .updateTypologie(id, "Renommée pendant un calcul", null, null)
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.deleteTypologie("RES-T1", null).avertissements());
+            assertWarned(() -> standTools.deleteTypologie(id, null).avertissements());
         }
     }
 
     @Test
     void emplacementWritesWarnDuringASolve() {
         solveHoldsTheEdition();
+        var cree = standTools.createEmplacement("Préau", null, 45.0, 4.0, null);
+        String id = cree.id();
         try {
+            assertThat(cree.avertissements()).contains(CODE);
             assertWarned(() -> standTools
-                    .createEmplacement("RES-E1", "Préau", 45.0, 4.0, null)
-                    .avertissements());
-            assertWarned(() -> standTools
-                    .updateEmplacement("RES-E1", "Préau nord", 45.0, 4.0, null, null)
+                    .updateEmplacement(id, "Préau nord", 45.0, 4.0, null, null)
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.deleteEmplacement("RES-E1", null).avertissements());
+            assertWarned(() -> standTools.deleteEmplacement(id, null).avertissements());
         }
     }
 
     /** A creation is not refused during a solve (its landing does not touch it): it warns instead. */
     @Test
     void aStandCreationWarnsDuringASolve() {
-        standTools.createTypologie("RES-T2", "Stratégie", null);
+        String typologie = standTools.createTypologie("Stratégie", null, null).id();
         solveHoldsTheEdition();
+        String stand = null;
         try {
-            assertWarned(() -> standTools
-                    .createStand("RES-S1", "Stand", List.of("RES-T2"), 1, 1, false, false, null, null, null)
-                    .avertissements());
+            var cree = standTools.createStand("Stand", null, List.of(typologie), 1, 1, false, false, null, null, null);
+            stand = cree.stand().id();
+            assertThat(cree.avertissements()).contains(CODE);
         } finally {
-            referenceData.deleteStand("RES-S1");
-            referenceData.deleteTypologie("RES-T2");
+            if (stand != null) {
+                referenceData.deleteStand(stand);
+            }
+            referenceData.deleteTypologie(typologie);
         }
     }
 
@@ -155,8 +158,8 @@ class McpWarnsWhileSolvingTest {
      */
     @Test
     void everyOtherAnnotatedToolWarnsAndKeepsItsOwnWarnings() {
-        String ed = "RES-WARN-ED";
-        editions.create(new Edition(ed, "Écritures pendant un calcul", false, null));
+        String ed = editions.create(new Edition(null, "Écritures pendant un calcul", false, null))
+                .getId();
         try {
             solveHoldsTheEdition();
             // No stand yet: the timeslot raises nothing of its own.
@@ -165,56 +168,44 @@ class McpWarnsWhileSolvingTest {
             Long creneauId = matin.creneau().id();
 
             // Open 14:00-16:00 only, over a grid with nothing there.
-            assertThat(standTools
-                            .createCompleteStand(
-                                    "RES-SC",
-                                    "Stand complet",
-                                    List.of("RES-WTY"),
-                                    true,
-                                    1,
-                                    1,
-                                    false,
-                                    false,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    "14:00-16:00",
-                                    "TOUS",
-                                    null,
-                                    null,
-                                    null,
-                                    null,
-                                    ed)
-                            .avertissements())
-                    .contains(CODE)
-                    .hasSizeGreaterThan(1);
+            var complet = standTools.createCompleteStand(
+                    "Stand complet",
+                    null,
+                    List.of("RES-WTY"),
+                    true,
+                    1,
+                    1,
+                    false,
+                    false,
+                    null,
+                    null,
+                    null,
+                    null,
+                    null,
+                    "14:00-16:00",
+                    "TOUS",
+                    null,
+                    null,
+                    null,
+                    null,
+                    ed);
+            String standComplet = complet.stand().id();
+            assertThat(complet.avertissements()).contains(CODE).hasSizeGreaterThan(1);
             assertThat(creneauTools
                             .createCreneau("2031-08-01", "20:00", "21:00", null, ed)
                             .avertissements())
                     .contains("CRENEAU_HORS_OUVERTURE_STANDS", CODE);
-            assertThat(animateurTools
-                            .createAnimateur(
-                                    "RES-AN",
-                                    "2020-01-01",
-                                    "Prénom",
-                                    "Nom",
-                                    null,
-                                    null,
-                                    null,
-                                    List.of("2031-08-01"),
-                                    ed)
-                            .avertissements())
-                    .contains("MINEUR_PENDANT_EVENEMENT", CODE);
+            var animateur = animateurTools.createAnimateur(
+                    "2020-01-01", "Prénom", "Nom", null, null, null, List.of("2031-08-01"), ed);
+            assertThat(animateur.avertissements()).contains("MINEUR_PENDANT_EVENEMENT", CODE);
+            String animateurId = animateur.animateur().id();
             // Forced onto a day the animateur is off: a warning, not a refusal.
-            assertThat(parametresTools
-                            .createContrainteAdHoc(
-                                    "RES-CA", "AFFECTATION_FORCEE", List.of("RES-AN"), creneauId, "RES-SC", null, ed)
-                            .avertissements())
-                    .contains("AFFECTATION_FORCEE_JOUR_INDISPONIBLE", CODE);
-            assertWarned(
-                    () -> parametresTools.deleteContrainteAdHoc("RES-CA", ed).avertissements());
+            var contrainte = parametresTools.createContrainteAdHoc(
+                    "AFFECTATION_FORCEE", List.of(animateurId), creneauId, standComplet, null, ed);
+            assertThat(contrainte.avertissements()).contains("AFFECTATION_FORCEE_JOUR_INDISPONIBLE", CODE);
+            String contrainteId = contrainte.contrainte().id();
+            assertWarned(() ->
+                    parametresTools.deleteContrainteAdHoc(contrainteId, ed).avertissements());
             assertWarned(() -> parametresTools
                     .updateParametresLegaux(null, null, null, null, null, null, null, null, null, null, null, ed)
                     .avertissements());
@@ -233,17 +224,15 @@ class McpWarnsWhileSolvingTest {
     /** The other half: with no solve holding the edition, the same writes carry nothing about one. */
     @Test
     void withoutASolveNothingIsSaid() {
+        var typologie = standTools.createTypologie("Au calme", null, null);
         try {
-            assertThat(standTools.createTypologie("RES-T3", "Au calme", null).avertissements())
-                    .doesNotContain(CODE);
-            assertThat(standTools
-                            .createEmplacement("RES-E3", "Cour", null, null, null)
-                            .avertissements())
-                    .doesNotContain(CODE);
-            assertThat(standTools.deleteEmplacement("RES-E3", null).avertissements())
+            assertThat(typologie.avertissements()).doesNotContain(CODE);
+            var emplacement = standTools.createEmplacement("Cour", null, null, null, null);
+            assertThat(emplacement.avertissements()).doesNotContain(CODE);
+            assertThat(standTools.deleteEmplacement(emplacement.id(), null).avertissements())
                     .doesNotContain(CODE);
         } finally {
-            assertThat(standTools.deleteTypologie("RES-T3", null).avertissements())
+            assertThat(standTools.deleteTypologie(typologie.id(), null).avertissements())
                     .doesNotContain(CODE);
         }
     }

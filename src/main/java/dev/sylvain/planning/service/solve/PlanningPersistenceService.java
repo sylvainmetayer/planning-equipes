@@ -204,7 +204,8 @@ public class PlanningPersistenceService {
             }
             ps.executeBatch();
         }
-        rewriteStandTypologies(connection, distinctStands);
+        Map<String, String> typologieParCode = typologieIdsByCode(connection);
+        rewriteStandTypologies(connection, distinctStands, typologieParCode);
         rewriteStandIndisponibilites(connection, distinctStands);
         rewriteStandOuvertures(connection, distinctStands);
 
@@ -242,11 +243,30 @@ public class PlanningPersistenceService {
                 ps.addBatch();
             }
             ps.executeBatch();
-            rewriteAnimateurDetails(connection, distinctAnimateurs);
+            rewriteAnimateurDetails(connection, distinctAnimateurs, typologieParCode);
         }
     }
 
-    private void rewriteStandTypologies(Connection connection, List<Stand> stands) throws SQLException {
+    /**
+     * The edition's typologies by code. A planning built in memory may name
+     * a typologie by its code as well as by its id — the rule every write
+     * follows (ADR 0050) — and what is stored is always the id; codes and ids
+     * never overlap, so an id goes through unchanged.
+     */
+    private Map<String, String> typologieIdsByCode(Connection connection) throws SQLException {
+        Map<String, String> parCode = new java.util.HashMap<>();
+        try (PreparedStatement ps = scope.prepareScoped(
+                        connection, "SELECT id, code FROM typologie WHERE edition_id = ? AND code IS NOT NULL");
+                java.sql.ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                parCode.put(rs.getString("code"), rs.getString("id"));
+            }
+        }
+        return parCode;
+    }
+
+    private void rewriteStandTypologies(Connection connection, List<Stand> stands, Map<String, String> parCode)
+            throws SQLException {
         try (PreparedStatement delete = scope.prepareScoped(
                         connection, "DELETE FROM stand_typologie WHERE edition_id = ? AND stand_id = ?");
                 PreparedStatement insert = scope.prepareScoped(
@@ -255,7 +275,10 @@ public class PlanningPersistenceService {
                 delete.setString(2, stand.getId());
                 delete.addBatch();
                 if (stand.getTypologiesProposees() != null) {
-                    for (String typologie : stand.getTypologiesProposees()) {
+                    Set<String> ids = new java.util.LinkedHashSet<>();
+                    stand.getTypologiesProposees()
+                            .forEach(typologie -> ids.add(parCode.getOrDefault(typologie, typologie)));
+                    for (String typologie : ids) {
                         insert.setString(2, stand.getId());
                         insert.setString(3, typologie);
                         insert.addBatch();
@@ -320,7 +343,8 @@ public class PlanningPersistenceService {
         }
     }
 
-    private void rewriteAnimateurDetails(Connection connection, List<Animateur> animateurs) throws SQLException {
+    private void rewriteAnimateurDetails(Connection connection, List<Animateur> animateurs, Map<String, String> parCode)
+            throws SQLException {
         try (PreparedStatement deleteComp = scope.prepareScoped(
                         connection, "DELETE FROM animateur_competence WHERE edition_id = ? AND animateur_id = ?");
                 PreparedStatement insertComp = scope.prepareScoped(connection, """
@@ -337,8 +361,12 @@ public class PlanningPersistenceService {
                 deleteJour.setString(2, animateur.getId());
                 deleteJour.addBatch();
                 if (animateur.getCompetences() != null) {
-                    for (Map.Entry<String, NiveauCompetence> entry :
-                            animateur.getCompetences().entrySet()) {
+                    Map<String, NiveauCompetence> parId = new java.util.LinkedHashMap<>();
+                    animateur
+                            .getCompetences()
+                            .forEach((typologie, niveau) ->
+                                    parId.put(parCode.getOrDefault(typologie, typologie), niveau));
+                    for (Map.Entry<String, NiveauCompetence> entry : parId.entrySet()) {
                         insertComp.setString(2, animateur.getId());
                         insertComp.setString(3, entry.getKey());
                         insertComp.setString(4, entry.getValue().name());

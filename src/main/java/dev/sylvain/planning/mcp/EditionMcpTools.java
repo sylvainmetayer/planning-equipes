@@ -140,7 +140,8 @@ public class EditionMcpTools {
 
     @Tool(
             name = "creer_edition",
-            description = "Crée une édition vide. Pour repartir d'une édition existante (stands, animateurs, "
+            description = "Crée une édition vide ; son id (E suivi d'un nombre) est attribué par l'application "
+                    + "et figure dans la réponse. Pour repartir d'une édition existante (stands, animateurs, "
                     + "paramètres), utiliser dupliquer_edition à la place.",
             annotations =
                     @Tool.Annotations(
@@ -149,9 +150,11 @@ public class EditionMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     EditionView createEdition(
-            @ToolArg(description = "Id de la nouvelle édition, repris tel quel dans les URLs (ex. « 2027 »)") String id,
-            @ToolArg(description = "Nom affiché (ex. « Année 2027 »)") String nom) {
-        return view(editionService.create(new Edition(id, nom, false, null)), editionContext.editionIdCourant());
+            @ToolArg(
+                            description = "Nom affiché (ex. « Année 2027 ») ; un nom de la forme E12 est refusé, c'est "
+                                    + "celle des identifiants")
+                    String nom) {
+        return view(editionService.create(new Edition(null, nom, false, null)), editionContext.editionIdCourant());
     }
 
     @Tool(
@@ -161,7 +164,8 @@ public class EditionMcpTools {
                     + "une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
                     + "variante EST une édition dupliquée. avec_animateurs=false laisse les personnes derrière — "
                     + "c'est le modèle d'année, à utiliser pour préparer l'édition suivante sans recopier un "
-                    + "fichier de personnes qui ne se sont pas réinscrites.",
+                    + "fichier de personnes qui ne se sont pas réinscrites. L'id de la nouvelle édition est attribué "
+                    + "par l'application ; les stands, animateurs, typologies et emplacements gardent les leurs.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -170,7 +174,6 @@ public class EditionMcpTools {
                             openWorldHint = false))
     EditionView duplicateEdition(
             @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
-            @ToolArg(description = "Id de l'édition à créer") String id,
             @ToolArg(description = "Nom affiché de l'édition à créer") String nom,
             @ToolArg(
                             description = "Reprendre les animateurs et ce qui les concerne (compétences, "
@@ -181,7 +184,7 @@ public class EditionMcpTools {
         String sourceId = requireEdition(source, "source");
         return view(
                 editionService.duplicate(
-                        sourceId, new Edition(id, nom, false, null), avecAnimateurs == null || avecAnimateurs),
+                        sourceId, new Edition(null, nom, false, null), avecAnimateurs == null || avecAnimateurs),
                 editionContext.editionIdCourant());
     }
 

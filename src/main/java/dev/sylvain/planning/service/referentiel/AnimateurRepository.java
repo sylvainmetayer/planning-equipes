@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
+import dev.sylvain.planning.service.IdGenerator;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.NaturalOrder;
 import dev.sylvain.planning.service.TokenOwner;
@@ -46,6 +47,9 @@ public class AnimateurRepository {
         this.dataSource = dataSource;
         this.scope = scope;
     }
+
+    @Inject
+    IdGenerator ids;
 
     public List<Animateur> listAnimateurs() {
         Map<String, Animateur> byId = new LinkedHashMap<>();
@@ -209,6 +213,11 @@ public class AnimateurRepository {
     public void importAnimateurs(List<Animateur> aEcrire, List<String> aSupprimer) {
         scope.write("Failed to import animators from a tabular file", connection -> {
             for (Animateur animateur : aEcrire) {
+                // A row matched no fiche: its id is drawn now, inside the
+                // import's transaction, so a rollback hands the numbers back.
+                if (animateur.getId() == null) {
+                    animateur.setId(ids.next(connection, IdGenerator.Kind.ANIMATEUR));
+                }
                 upsertAnimateur(connection, animateur, true);
             }
             for (String id : aSupprimer) {

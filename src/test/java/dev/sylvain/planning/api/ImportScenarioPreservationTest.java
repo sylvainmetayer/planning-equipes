@@ -58,10 +58,10 @@ class ImportScenarioPreservationTest {
 
             animateurs:
               - id: IMP-A
-                prenom: Alicia
+                prenom: Alice
                 nom: Martin
                 dateNaissance: 1990-01-01
-                manager: false
+                manager: true
                 competences:
                   STRATEGIE: DEBUTANT
               - id: IMP-C
@@ -107,9 +107,40 @@ class ImportScenarioPreservationTest {
     }
 
     @Test
-    void lImportConserveJetonEtEmailDesAnimateursDuFichierEtSupprimeLesAbsents() {
+    void importKeepsTokenAndEmailOfFileAnimateursAndDeletesAbsentOnes() {
         String tokenBefore = tokenOf("IMP-A");
 
+        importScenario();
+
+        // Alice came in the file — the same person, recognised by her name since
+        // the file carries no e-mail: updated in place, token AND e-mail intact
+        // (the missing e-mail must not wipe the stored one).
+        Animateur alice = animateurByEmail(EMAIL_ALICE);
+        assertThat(alice.isManager()).isTrue();
+        assertThat(alice.getAccessToken()).isEqualTo(tokenBefore);
+
+        // Chloé is new and gets a fresh token, under an id the application drew
+        // (IMP-C is only a reference local to the file); Bruno was absent: gone.
+        Animateur chloe = animateurByName("Chloé", "Nouvelle");
+        assertThat(chloe.getAccessToken()).isNotBlank();
+        assertThat(referenceData.listAnimateurs())
+                .noneMatch(a -> "Bruno".equals(a.getPrenom()) && "Petit".equals(a.getNom()));
+
+        // The resolved planning is erased coherently: no seat left, and no
+        // stale "résolu le …" claim either.
+        assertThat(persistence.countPersistedAssignments()).isZero();
+        assertThat(persistence.loadResolution()).isNull();
+
+        // Importing the same people again keeps every token, including the one
+        // of a fiche whose stored id is not the file's.
+        importScenario();
+        assertThat(animateurByEmail(EMAIL_ALICE).getAccessToken()).isEqualTo(tokenBefore);
+        Animateur chloeAgain = animateurByName("Chloé", "Nouvelle");
+        assertThat(chloeAgain.getId()).isEqualTo(chloe.getId());
+        assertThat(chloeAgain.getAccessToken()).isEqualTo(chloe.getAccessToken());
+    }
+
+    private static void importScenario() {
         // Bytes, not String: RestAssured has no encoder for x-yaml text.
         given().contentType("application/x-yaml")
                 .body(SCENARIO.getBytes(java.nio.charset.StandardCharsets.UTF_8))
@@ -117,22 +148,21 @@ class ImportScenarioPreservationTest {
                 .post("/api/reference-data/import-scenario-fichier")
                 .then()
                 .statusCode(200);
+    }
 
-        // IMP-A came in the file: updated in place, token AND e-mail intact
-        // (the file carries no email — it must not wipe the stored one).
-        Animateur alice = animateur("IMP-A");
-        assertThat(alice.getPrenom()).isEqualTo("Alicia");
-        assertThat(alice.getAccessToken()).isEqualTo(tokenBefore);
-        assertThat(alice.getEmail()).isEqualTo(EMAIL_ALICE);
+    private Animateur animateurByEmail(String email) {
+        return referenceData.listAnimateurs().stream()
+                .filter(candidat -> email.equalsIgnoreCase(candidat.getEmail()))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Animateur absent : " + email));
+    }
 
-        // IMP-C is new and gets a fresh token; IMP-B was absent: gone.
-        assertThat(animateur("IMP-C").getAccessToken()).isNotBlank();
-        assertThat(referenceData.listAnimateurs()).noneMatch(a -> a.getId().equals("IMP-B"));
-
-        // The resolved planning is erased coherently: no seat left, and no
-        // stale "résolu le …" claim either.
-        assertThat(persistence.countPersistedAssignments()).isZero();
-        assertThat(persistence.loadResolution()).isNull();
+    private Animateur animateurByName(String prenom, String nom) {
+        List<Animateur> matches = referenceData.listAnimateurs().stream()
+                .filter(candidat -> prenom.equals(candidat.getPrenom()) && nom.equals(candidat.getNom()))
+                .toList();
+        assertThat(matches).as("animateurs named %s %s", prenom, nom).hasSize(1);
+        return matches.getFirst();
     }
 
     private Animateur animateur(String id) {

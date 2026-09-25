@@ -61,6 +61,9 @@ public class DatabaseDumpService {
      */
     static final List<String> TABLES = List.of(
             "edition",
+            // The id counters (ADR 0050): restored with the rows they numbered,
+            // or the next creation would draw an id the dump just replayed.
+            "compteur_identifiant",
             "typologie",
             "emplacement",
             "animateur",
@@ -270,6 +273,9 @@ public class DatabaseDumpService {
                 }
                 statement.executeBatch();
                 statement.execute(RESYNC_IDENTITY_SEQUENCES);
+                for (String resync : RESYNC_ID_COUNTERS) {
+                    statement.execute(resync);
+                }
                 return statements.size();
             } catch (SQLException e) {
                 // Rolled back by the caller, which lets this one through unwrapped:
@@ -292,6 +298,33 @@ public class DatabaseDumpService {
     private static String serverMessage(SQLException e) {
         SQLException cause = e.getNextException();
         return (cause != null ? cause : e).getMessage();
+    }
+
+    /**
+     * The business ids are text drawn from counters (ADR 0050), which a
+     * sequence resync cannot reach: the edition sequence is moved past the
+     * highest E<n> replayed, and every per-edition counter is raised to the
+     * highest number its referential holds — a dump whose counter rows were
+     * edited out, or lag behind, must still never hand an id out twice. One
+     * statement per referential, assembled once from the constants below and
+     * never from input, like {@link #TABLES}.
+     */
+    private static final List<String> RESYNC_ID_COUNTERS = List.of(
+            "SELECT setval('edition_numero_seq', "
+                    + "COALESCE((SELECT MAX(CAST(substr(id, 2) AS BIGINT)) FROM edition WHERE id ~ '^E[0-9]+$'), 1), "
+                    + "EXISTS (SELECT 1 FROM edition WHERE id ~ '^E[0-9]+$'))",
+            counterResync("ANIMATEUR", "animateur", "A"),
+            counterResync("STAND", "stand", "S"),
+            counterResync("TYPOLOGIE", "typologie", "T"),
+            counterResync("EMPLACEMENT", "emplacement", "L"),
+            counterResync("CONTRAINTE", "contrainte_ad_hoc", "C"));
+
+    private static String counterResync(String entite, String table, String prefixe) {
+        return "INSERT INTO compteur_identifiant (edition_id, entite, dernier) "
+                + "SELECT edition_id, '" + entite + "', MAX(CAST(substr(id, 2) AS BIGINT)) FROM " + table
+                + " WHERE id ~ '^" + prefixe + "[0-9]+$' GROUP BY edition_id "
+                + "ON CONFLICT (edition_id, entite) DO UPDATE "
+                + "SET dernier = GREATEST(compteur_identifiant.dernier, EXCLUDED.dernier)";
     }
 
     private void appendTable(Connection connection, String table, StringBuilder sql) throws SQLException {

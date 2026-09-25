@@ -6,6 +6,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 /**
  * One entry of the typologie referential.
  *
+ * @param code      the readable key a file matches this typologie on
+ *                  ({@code STRATEGIE}), unique in its edition, {@code null}
+ *                  when none was given — the id itself is generated and
+ *                  means nothing (ADR 0050)
  * @param description free note the organiser writes for themselves — « cette
  *                  typologie nécessite d'apprendre 45 jeux ». Read on the
  *                  Typologies screen and in the planning-by-typologie view,
@@ -23,6 +27,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Schema(requiredProperties = {"ninja"})
 public record TypologieItem(
         String id,
+        String code,
         String label,
         boolean ninja,
         Integer maxCreneauxParAnimateur,
@@ -30,8 +35,11 @@ public record TypologieItem(
         Instant modifieLe) {
 
     public TypologieItem {
+        if (code != null && code.isBlank()) {
+            code = null;
+        }
         if (label == null || label.isBlank()) {
-            label = id;
+            label = code != null ? code : id;
         }
         // A blank note and no note are the same thing; storing the difference
         // would make the screens test for both.
@@ -51,15 +59,20 @@ public record TypologieItem(
      * short enough that nobody mistakes them for complete.
      */
     public TypologieItem(String id, String label, boolean ninja) {
-        this(id, label, ninja, null, null, null);
+        this(id, null, label, ninja, null, null, null);
     }
 
     public TypologieItem(String id, String label) {
-        this(id, label, false, null, null, null);
+        this(id, null, label, false, null, null, null);
+    }
+
+    /** The same item under the id the database gave it. */
+    public TypologieItem withId(String id) {
+        return new TypologieItem(id, code, label, ninja, maxCreneauxParAnimateur, description, modifieLe);
     }
 
     /** The same item, stamped with the moment the database wrote it. */
     public TypologieItem stamped(Instant modifieLe) {
-        return new TypologieItem(id, label, ninja, maxCreneauxParAnimateur, description, modifieLe);
+        return new TypologieItem(id, code, label, ninja, maxCreneauxParAnimateur, description, modifieLe);
     }
 }

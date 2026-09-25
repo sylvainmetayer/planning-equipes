@@ -41,7 +41,8 @@ import org.junit.jupiter.api.Test;
 class PlanSnapshotFraicheurTest {
 
     private static final LocalDate JOUR = LocalDate.of(2030, 9, 14);
-    private static final String EDITION_VOISINE = "FRAICHEUR-EDITION-B";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String editionVoisine;
     /** A stand must name at least one typologie, so the fixture shares one. */
     private static final String TYPOLOGIE = "FRA-T";
 
@@ -211,7 +212,7 @@ class PlanSnapshotFraicheurTest {
                     snapshots.capture("Instantané de l'édition courante", false).id();
             ensureNeighbouringEdition();
 
-            editionContext.executeIn(EDITION_VOISINE, () -> changeTracker.markModified());
+            editionContext.executeIn(editionVoisine, () -> changeTracker.markModified());
 
             assertThat(snapshots.load(id).meta().perime()).isFalse();
             assertThat(snapshots.restaurer(id, false).restaure()).isTrue();
@@ -222,7 +223,7 @@ class PlanSnapshotFraicheurTest {
             try {
                 nettoyer("FRA-S6", "FRA-A6", 9706L);
             } finally {
-                editions.delete(EDITION_VOISINE);
+                editions.delete(editionVoisine);
             }
         }
     }
@@ -252,8 +253,10 @@ class PlanSnapshotFraicheurTest {
 
     /** Idempotent, so a run that died before its cleanup does not fail the next one. */
     private void ensureNeighbouringEdition() {
-        if (editions.listEditions().stream().noneMatch(edition -> EDITION_VOISINE.equals(edition.getId()))) {
-            editions.create(new Edition(EDITION_VOISINE, "Édition voisine (fraîcheur)", false, null));
+        if (editionVoisine == null
+                || editions.listEditions().stream().noneMatch(edition -> editionVoisine.equals(edition.getId()))) {
+            editionVoisine = editions.create(new Edition(null, "Édition voisine (fraîcheur)", false, null))
+                    .getId();
         }
     }
 

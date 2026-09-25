@@ -42,7 +42,7 @@ import java.util.Set;
  *       file states, and a cell kept unchanged keeps its segments even when
  *       they cover part of the créneau only
  *       ({@link GrilleHorairesStands#apply}).</li>
- *   <li><b>Rows</b> name a stand by its id, else by its exact name; a name two
+ *   <li><b>Rows</b> name a stand by its id or its code, else by its exact name; a name two
  *       stands share, or a stand the edition does not have, rejects the row.
  *       A stand is not created here: it needs typologies the matrix does not
  *       carry.</li>
@@ -371,6 +371,13 @@ public class StandGrilleImportService {
                 parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
                         .add(stand);
             }
+            // A code names a stand as surely as its id (ADR 0050): read after
+            // the ids, so that an id always wins over a code spelled the same way.
+            for (Stand stand : tous) {
+                if (stand.getCode() != null) {
+                    parId.putIfAbsent(stand.getCode(), stand);
+                }
+            }
         }
 
         ImportedGrilleRow read(GrilleCsv.Ligne ligne) {
@@ -456,7 +463,7 @@ public class StandGrilleImportService {
             if (candidats.size() > 1) {
                 return "Ce nom désigne " + candidats.size() + " stands ("
                         + String.join(", ", candidats.stream().map(Stand::getId).toList())
-                        + ") : nommez le stand par son identifiant.";
+                        + ") : nommez le stand par son code ou son identifiant.";
             }
             return "Aucun stand « " + texte + " » dans l'édition : créez le stand d'abord, "
                     + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).";

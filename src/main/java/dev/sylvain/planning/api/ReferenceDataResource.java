@@ -1,6 +1,5 @@
 package dev.sylvain.planning.api;
 
-import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.scenario.ScenarioFormatException;
 import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.scenario.dto.EditionCibleDto;
@@ -60,13 +59,6 @@ public class ReferenceDataResource {
         this.planningService = planningService;
         this.editionService = editionService;
         this.scenarioImportService = scenarioImportService;
-    }
-
-    @POST
-    @Path("/import")
-    public Response importReferenceData(PlanningEvenement planning) {
-        referenceDataService.importFromPlanning(planning);
-        return Response.noContent().build();
     }
 
     /**

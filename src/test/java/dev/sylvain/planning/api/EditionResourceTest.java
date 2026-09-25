@@ -13,12 +13,15 @@ import org.junit.jupiter.api.Test;
  * The {@code edition} scope end-to-end: creating an edition, working in it
  * through {@code X-Edition-Id}, duplicating one into another, and the guards
  * around deletion. See {@code docs/decisions/0001-cloisonnement-par-edition.md}.
+ *
+ * <p>Every id is drawn by the application (ADR 0050): an edition, a stand or a
+ * typologie is designated by what its creation answered, never by a value the
+ * test chose.</p>
  */
 @QuarkusTest
 class EditionResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String DEFAUT = "DEFAUT";
 
     /**
      * Every test creates its own edition(s); dropping them afterwards keeps the
@@ -26,10 +29,11 @@ class EditionResourceTest {
      * is never touched, so an unrelated test never sees a leftover edition.
      */
     @AfterEach
-    void supprimerLesEditionsCreees() {
+    void dropCreatedEditions() {
+        String defaut = defaultEdition();
         for (Map<String, Object> edition : listEditions()) {
             String id = (String) edition.get("id");
-            if (!DEFAUT.equals(id)) {
+            if (!defaut.equals(id)) {
                 given().when().delete("/api/editions/" + id);
             }
         }
@@ -45,48 +49,76 @@ class EditionResourceTest {
                 .getList("$");
     }
 
-    private void createEdition(String id, String nom) {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
+    private String defaultEdition() {
+        return listEditions().stream()
+                .filter(edition -> Boolean.TRUE.equals(edition.get("defaut")))
+                .map(edition -> (String) edition.get("id"))
+                .findFirst()
+                .orElseThrow();
+    }
+
+    /** Creates an edition and answers the id the application gave it. */
+    private String createEdition(String nom) {
+        return given().contentType("application/json")
+                .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
+    }
+
+    private String duplicate(String sourceId, String nom, String query) {
+        return given().contentType("application/json")
+                .body("{\"nom\":\"" + nom + "\"}")
+                .when()
+                .post("/api/editions/" + sourceId + "/dupliquer" + query)
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     /**
-     * A stand always carries a typologie (issue #343): one is created in the
-     * edition first. A creation whose id is taken is a 409 since the write
-     * carries its own precondition (issue #362), so a second call is expected
-     * to bounce — the typologie is there either way.
+     * A stand always carries a typologie (issue #343): the edition's
+     * {@code TYPO} one, created on first use and cited by its code.
      */
-    private void createStand(String editionId, String standId) {
-        given().header(HEADER, editionId)
-                .contentType("application/json")
-                .body("{\"id\":\"TYPO-" + editionId + "\",\"label\":\"Typologie\"}")
+    private String createStand(String editionId, String nom) {
+        boolean typologieExiste = given().header(HEADER, editionId)
                 .when()
-                .post("/api/typologies")
+                .get("/api/typologies")
                 .then()
-                .statusCode(org.hamcrest.Matchers.anyOf(
-                        org.hamcrest.Matchers.equalTo(200), org.hamcrest.Matchers.equalTo(409)));
-        given().header(HEADER, editionId)
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("code", String.class)
+                .contains("TYPO");
+        if (!typologieExiste) {
+            createTypologie(editionId, "TYPO", false);
+        }
+        return given().header(HEADER, editionId)
                 .contentType("application/json")
-                .body("{\"id\":\"" + standId + "\",\"nom\":\"" + standId + "\",\"typologiesProposees\":[\"TYPO-"
-                        + editionId + "\"],\"effectifMin\":1,\"effectifMax\":2}")
+                .body("{\"nom\":\"" + nom
+                        + "\",\"typologiesProposees\":[\"TYPO\"],\"effectifMin\":1,\"effectifMax\":2}")
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
     }
 
-    private void createTypologie(String editionId, String typologieId, boolean ninja) {
-        given().header(HEADER, editionId)
+    private String createTypologie(String editionId, String code, boolean ninja) {
+        return given().header(HEADER, editionId)
                 .contentType("application/json")
-                .body("{\"id\":\"" + typologieId + "\",\"label\":\"" + typologieId + "\",\"ninja\":" + ninja + "}")
+                .body("{\"code\":\"" + code + "\",\"label\":\"" + code + "\",\"ninja\":" + ninja + "}")
                 .when()
                 .post("/api/typologies")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     private boolean isNinja(String editionId, String typologieId) {
@@ -113,76 +145,107 @@ class EditionResourceTest {
     }
 
     @Test
-    void aFreshDatabaseHoldsASingleDefaultEdition() {
+    void aFreshDatabaseHoldsASingleDefaultEditionNumberedLikeAnyOther() {
         assertThat(listEditions())
-                .filteredOn(edition -> DEFAUT.equals(edition.get("id")))
+                .filteredOn(edition -> Boolean.TRUE.equals(edition.get("defaut")))
                 .singleElement()
-                .satisfies(edition -> assertThat(edition).containsEntry("defaut", true));
+                .satisfies(edition -> assertThat((String) edition.get("id")).matches("E[1-9][0-9]*"));
     }
 
     @Test
-    void lesDonneesDuneEditionSontInvisiblesDepuisUneAutre() {
-        createEdition("ANNEE-2026", "Année 2026");
-        createStand("ANNEE-2026", "STAND-2026");
+    void theDataOfAnEditionAreInvisibleFromAnother() {
+        String edition = createEdition("Année 2026");
+        String stand = createStand(edition, "Stand 2026");
 
-        assertThat(listStandIds("ANNEE-2026")).contains("STAND-2026");
-        assertThat(listStandIds(DEFAUT)).doesNotContain("STAND-2026");
+        assertThat(listStandIds(edition)).contains(stand);
+        assertThat(given().header(HEADER, defaultEdition())
+                        .when()
+                        .get("/api/stands")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .jsonPath()
+                        .getList("nom", String.class))
+                .doesNotContain("Stand 2026");
     }
 
+    /**
+     * Numbered per edition: two fresh editions both start from {@code S1}, and
+     * the same id designates a different stand in each — exactly what the
+     * composite {@code (edition_id, id)} primary keys make possible.
+     */
     @Test
-    void deuxEditionsPeuventPorterLeMemeIdentifiantMetier() {
-        createEdition("ANNEE-2026", "Année 2026");
-        createStand(DEFAUT, "TIR-A-LA-CORDE");
-        // Same business id in another edition: this is exactly what the
-        // composite (edition_id, id) primary keys of V32 make possible.
-        createStand("ANNEE-2026", "TIR-A-LA-CORDE");
+    void twoEditionsNumberTheirStandsEachFromOne() {
+        String premiere = createEdition("Première");
+        String seconde = createEdition("Seconde");
+        String standPremiere = createStand(premiere, "Tir à la corde");
+        String standSeconde = createStand(seconde, "Tir à la corde");
 
-        assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
-        assertThat(listStandIds("ANNEE-2026")).contains("TIR-A-LA-CORDE");
+        assertThat(standPremiere).isEqualTo("S1");
+        assertThat(standSeconde).isEqualTo("S1");
 
-        given().header(HEADER, "ANNEE-2026")
+        given().header(HEADER, seconde)
                 .when()
-                .delete("/api/stands/TIR-A-LA-CORDE")
+                .delete("/api/stands/" + standSeconde)
                 .then()
                 .statusCode(204);
 
-        assertThat(listStandIds("ANNEE-2026")).doesNotContain("TIR-A-LA-CORDE");
-        assertThat(listStandIds(DEFAUT)).contains("TIR-A-LA-CORDE");
+        assertThat(listStandIds(seconde)).doesNotContain("S1");
+        assertThat(listStandIds(premiere)).contains("S1");
+        assertThat(createStand(seconde, "Remplaçant"))
+                .as("a number freed by a deletion is never handed out again")
+                .isEqualTo("S2");
     }
 
     @Test
-    void unEnteteInconnuRetombeSurLEditionParDefautSansEchouer() {
-        createStand(DEFAUT, "STAND-REPLI");
+    void anUnknownHeaderFallsBackOnTheDefaultEditionWithoutFailing() {
+        String defaut = defaultEdition();
+        String stand = createStand(defaut, "Stand repli");
 
         // A tab left open on a since-deleted edition must keep working.
-        assertThat(listStandIds("EDITION-QUI-NEXISTE-PAS")).contains("STAND-REPLI");
+        assertThat(listStandIds("EDITION-QUI-NEXISTE-PAS")).contains(stand);
 
         given().header(HEADER, "EDITION-QUI-NEXISTE-PAS")
                 .when()
                 .get("/api/editions/courant")
                 .then()
                 .statusCode(200)
-                .body("id", org.hamcrest.Matchers.equalTo(DEFAUT));
+                .body("id", org.hamcrest.Matchers.equalTo(defaut));
+        given().header(HEADER, defaut).when().delete("/api/stands/" + stand);
     }
 
     @Test
-    void dupliquerUneEditionRecopieSonReferentielMaisPasSesAffectations() {
-        createStand(DEFAUT, "STAND-A-COPIER");
+    void duplicatingAnEditionCopiesItsReferentialButNotItsAssignments() {
+        String source = createEdition("Source 2026");
+        String stand = createStand(source, "Stand à copier");
 
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then()
-                .statusCode(200);
+        String copie = duplicate(source, "Copie 2026", "");
 
-        assertThat(listStandIds("COPIE-2026")).contains("STAND-A-COPIER");
-        given().header(HEADER, "COPIE-2026")
+        assertThat(copie).matches("E[1-9][0-9]*").isNotEqualTo(source);
+        assertThat(listStandIds(copie)).contains(stand);
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/planning/persisted/count")
                 .then()
                 .statusCode(200)
                 .body("assignments", org.hamcrest.Matchers.equalTo(0));
+    }
+
+    /**
+     * The ids travel with a duplication — and so do the counters that drew
+     * them: the copy's next stand must follow the ones it inherited, not
+     * collide with the first of them.
+     */
+    @Test
+    void aDuplicateNumbersItsNextRowsAfterTheOnesItInherited() {
+        String source = createEdition("Source compteurs");
+        String premier = createStand(source, "Premier");
+        String second = createStand(source, "Second");
+
+        String copie = duplicate(source, "Copie compteurs", "");
+
+        assertThat(listStandIds(copie)).containsExactlyInAnyOrder(premier, second);
+        assertThat(createStand(copie, "Troisième")).isEqualTo("S3");
     }
 
     /**
@@ -195,59 +258,61 @@ class EditionResourceTest {
      * exactly one edition.
      */
     @Test
-    void dupliquerRecopieEmailEtHorairesMaisFrappeUnJetonNeuf() {
-        given().header(HEADER, DEFAUT)
+    void duplicatingCopiesEmailAndHoursButMintsAFreshToken() {
+        String source = createEdition("Source jetons");
+        createTypologie(source, "STRATEGIE", false);
+        String animateur = given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"id\":\"ANIM-COPIE\",\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
+                .body("{\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
                         + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ada@example.org\"}")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
-        given().header(HEADER, DEFAUT)
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
+        String stand = given().header(HEADER, source)
                 .contentType("application/json")
                 .body(
-                        "{\"id\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
+                        "{\"code\":\"STAND-HORAIRE\",\"nom\":\"Stand à règles\",\"typologiesProposees\":[\"STRATEGIE\"],\"effectifMin\":1,\"effectifMax\":2,"
                                 + "\"horaires\":[{\"mode\":\"FERMETURE\",\"typeJours\":\"TOUS\","
                                 + "\"fenetres\":[{\"heureDebut\":\"09:00:00\",\"heureFin\":\"10:00:00\"}]}]}")
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
-        String sourceToken = given().header(HEADER, DEFAUT)
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
+        String sourceToken = given().header(HEADER, source)
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getString("find { it.id == 'ANIM-COPIE' }.accessToken");
+                .getString("find { it.id == '" + animateur + "' }.accessToken");
 
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then()
-                .statusCode(200);
+        String copie = duplicate(source, "Copie jetons", "");
 
-        given().header(HEADER, "COPIE-2026")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'ANIM-COPIE' }.email", org.hamcrest.Matchers.equalTo("ada@example.org"))
+                .body("find { it.id == '" + animateur + "' }.email", org.hamcrest.Matchers.equalTo("ada@example.org"))
                 .body(
-                        "find { it.id == 'ANIM-COPIE' }.accessToken",
+                        "find { it.id == '" + animateur + "' }.accessToken",
                         org.hamcrest.Matchers.allOf(
                                 org.hamcrest.Matchers.notNullValue(), org.hamcrest.Matchers.not(sourceToken)));
-        given().header(HEADER, "COPIE-2026")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/stands")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'STAND-HORAIRE' }.horaires.size()", org.hamcrest.Matchers.equalTo(1))
+                .body("find { it.id == '" + stand + "' }.code", org.hamcrest.Matchers.equalTo("STAND-HORAIRE"))
+                .body("find { it.id == '" + stand + "' }.horaires.size()", org.hamcrest.Matchers.equalTo(1))
                 .body(
-                        "find { it.id == 'STAND-HORAIRE' }.horaires[0].fenetres[0].heureDebut",
+                        "find { it.id == '" + stand + "' }.horaires[0].fenetres[0].heureDebut",
                         org.hamcrest.Matchers.equalTo("09:00:00"));
     }
 
@@ -262,77 +327,67 @@ class EditionResourceTest {
      * either: a copy pointing at absent persons would be worse than no copy.</p>
      */
     @Test
-    void dupliquerSansLesAnimateursGardeLaStructureEtPersonne() {
-        createStand(DEFAUT, "STAND-MODELE");
-        given().header(HEADER, DEFAUT)
+    void duplicatingWithoutTheAnimateursKeepsTheStructureAndNobody() {
+        String source = createEdition("Source modèle");
+        String stand = createStand(source, "Stand modèle");
+        String animateur = given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"id\":\"ANIM-MODELE\",\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
+                .body("{\"prenom\":\"Ada\",\"nom\":\"Lovelace\","
                         + "\"dateNaissance\":\"1990-01-01\",\"email\":\"ada@example.org\"}")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
-        given().header(HEADER, DEFAUT)
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
+        given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"id\":\"AJUST-MODELE\",\"type\":\"INDISPONIBILITE_FORCEE\","
-                        + "\"animateursConcernes\":[{\"id\":\"ANIM-MODELE\"}],\"raison\":\"Absent\"}")
+                .body("{\"type\":\"INDISPONIBILITE_FORCEE\"," + "\"animateursConcernes\":[{\"id\":\"" + animateur
+                        + "\"}],\"raison\":\"Absent\"}")
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200);
 
-        given().contentType("application/json")
-                .body("{\"id\":\"MODELE-2027\",\"nom\":\"Modèle 2027\"}")
-                .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer?avecAnimateurs=false")
-                .then()
-                .statusCode(200);
+        String modele = duplicate(source, "Modèle 2027", "?avecAnimateurs=false");
 
-        assertThat(listStandIds("MODELE-2027")).contains("STAND-MODELE");
-        given().header(HEADER, "MODELE-2027")
+        assertThat(listStandIds(modele)).contains(stand);
+        given().header(HEADER, modele)
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
                 .body("size()", org.hamcrest.Matchers.equalTo(0));
-        given().header(HEADER, "MODELE-2027")
+        given().header(HEADER, modele)
                 .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()
                 .statusCode(200)
                 .body("size()", org.hamcrest.Matchers.equalTo(0));
-
-        // The ad hoc constraint was written into DEFAUT, which no @AfterEach
-        // clears: left there it would forbid ANIM-MODELE every seat, in every
-        // test that solves after this one.
-        given().header(HEADER, DEFAUT).when().delete("/api/contraintes-ad-hoc/AJUST-MODELE");
     }
 
     /** The default is unchanged: the people follow, as the « plan canicule » ritual of #172 needs. */
     @Test
-    void dupliquerSansPreciserRameneLesAnimateurs() {
-        given().header(HEADER, DEFAUT)
+    void duplicatingWithoutSayingBringsTheAnimateurs() {
+        String source = createEdition("Source avec");
+        String animateur = given().header(HEADER, source)
                 .contentType("application/json")
-                .body("{\"id\":\"ANIM-DEFAUT\",\"prenom\":\"Grace\",\"nom\":\"Hopper\","
-                        + "\"dateNaissance\":\"1990-01-01\"}")
+                .body("{\"prenom\":\"Grace\",\"nom\":\"Hopper\",\"dateNaissance\":\"1990-01-01\"}")
                 .when()
                 .post("/api/animateurs")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("animateur.id");
 
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-AVEC\",\"nom\":\"Copie avec\"}")
-                .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then()
-                .statusCode(200);
+        String copie = duplicate(source, "Copie avec", "");
 
-        given().header(HEADER, "COPIE-AVEC")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/animateurs")
                 .then()
                 .statusCode(200)
-                .body("id", org.hamcrest.Matchers.hasItem("ANIM-DEFAUT"));
+                .body("id", org.hamcrest.Matchers.hasItem(animateur));
     }
 
     /**
@@ -344,19 +399,14 @@ class EditionResourceTest {
      * the assertion would pass on the bug.
      *
      * <p>Source and copy are both editions this test creates, so
-     * {@link #supprimerLesEditionsCreees} takes them away: writing the settings
-     * into {@code DEFAUT} would leave it reconfigured for every test that runs
-     * after this one, and its {@code ninja} typologie would 409 the next run.</p>
+     * {@link #dropCreatedEditions} takes them away: writing the settings into
+     * the default edition would leave it reconfigured for every test that runs
+     * after this one.</p>
      */
     @Test
-    void dupliquerRecopieLesReglagesEtPasSeulementLeursDefauts() {
-        given().contentType("application/json")
-                .body("{\"id\":\"SOURCE-REGLAGES\",\"nom\":\"Source réglages\"}")
-                .when()
-                .post("/api/editions")
-                .then()
-                .statusCode(200);
-        given().header(HEADER, "SOURCE-REGLAGES")
+    void duplicatingCopiesTheSettingsAndNotJustTheirDefaults() {
+        String source = createEdition("Source réglages");
+        given().header(HEADER, source)
                 .contentType("application/json")
                 .body("{\"dureeHebdomadaireMaxMinutes\":2400,\"dureeHebdomadaireMaxMineurMinutes\":1800,"
                         + "\"dureePauseMinutes\":45,\"reposQuotidienMinimalMinutes\":720,"
@@ -368,29 +418,18 @@ class EditionResourceTest {
                 .put("/api/parametres-legaux")
                 .then()
                 .statusCode(200);
-        given().header(HEADER, "SOURCE-REGLAGES")
+        given().header(HEADER, source)
                 .contentType("application/json")
                 .body("{\"dureeResolutionSecondes\":123,\"mailFinResolution\":true}")
                 .when()
                 .put("/api/parametres-solveur")
                 .then()
                 .statusCode(200);
-        given().header(HEADER, "SOURCE-REGLAGES")
-                .contentType("application/json")
-                .body("{\"id\":\"POLYVALENT\",\"label\":\"Polyvalent\",\"ninja\":true}")
-                .when()
-                .post("/api/typologies")
-                .then()
-                .statusCode(200);
+        String polyvalent = createTypologie(source, "POLYVALENT", true);
 
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-REGLAGES\",\"nom\":\"Copie réglages\"}")
-                .when()
-                .post("/api/editions/SOURCE-REGLAGES/dupliquer")
-                .then()
-                .statusCode(200);
+        String copie = duplicate(source, "Copie réglages", "");
 
-        given().header(HEADER, "COPIE-REGLAGES")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/parametres-legaux")
                 .then()
@@ -399,71 +438,102 @@ class EditionResourceTest {
                 .body("dureeVacationMaxMinutes", org.hamcrest.Matchers.equalTo(300))
                 .body("dureePauseMinutes", org.hamcrest.Matchers.equalTo(45))
                 .body("coupureRepasMinutes", org.hamcrest.Matchers.equalTo(50));
-        given().header(HEADER, "COPIE-REGLAGES")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/parametres-solveur")
                 .then()
                 .statusCode(200)
                 .body("mailFinResolution", org.hamcrest.Matchers.equalTo(true))
                 .body("dureeResolutionSecondes", org.hamcrest.Matchers.equalTo(123));
-        given().header(HEADER, "COPIE-REGLAGES")
+        given().header(HEADER, copie)
                 .when()
                 .get("/api/typologies")
                 .then()
                 .statusCode(200)
-                .body("find { it.id == 'POLYVALENT' }.ninja", org.hamcrest.Matchers.equalTo(true));
+                .body("find { it.id == '" + polyvalent + "' }.ninja", org.hamcrest.Matchers.equalTo(true))
+                .body("find { it.id == '" + polyvalent + "' }.code", org.hamcrest.Matchers.equalTo("POLYVALENT"));
     }
 
     @Test
-    void uneEditionDupliqueeEstIndependanteDeSaSource() {
-        createStand(DEFAUT, "STAND-PARTAGE");
-        given().contentType("application/json")
-                .body("{\"id\":\"COPIE-2026\",\"nom\":\"Copie 2026\"}")
-                .when()
-                .post("/api/editions/" + DEFAUT + "/dupliquer")
-                .then()
-                .statusCode(200);
+    void aDuplicatedEditionIsIndependentOfItsSource() {
+        String source = createEdition("Source partage");
+        String stand = createStand(source, "Stand partagé");
+        String copie = duplicate(source, "Copie partage", "");
 
-        given().header(HEADER, "COPIE-2026")
+        given().header(HEADER, copie)
                 .when()
-                .delete("/api/stands/STAND-PARTAGE")
+                .delete("/api/stands/" + stand)
                 .then()
                 .statusCode(204);
 
-        assertThat(listStandIds("COPIE-2026")).doesNotContain("STAND-PARTAGE");
-        assertThat(listStandIds(DEFAUT)).contains("STAND-PARTAGE");
+        assertThat(listStandIds(copie)).doesNotContain(stand);
+        assertThat(listStandIds(source)).contains(stand);
     }
 
     @Test
-    void supprimerLEditionParDefautEstRefuse() {
-        createEdition("ANNEE-2026", "Année 2026");
+    void deletingTheDefaultEditionIsRefused() {
+        String edition = createEdition("Année 2026");
 
-        given().header(HEADER, "ANNEE-2026")
+        given().header(HEADER, edition)
                 .when()
-                .delete("/api/editions/" + DEFAUT)
+                .delete("/api/editions/" + defaultEdition())
                 .then()
                 .statusCode(400);
     }
 
     @Test
     void deletingTheCurrentEditionIsRefused() {
-        createEdition("ANNEE-2026", "Année 2026");
+        String edition = createEdition("Année 2026");
 
-        given().header(HEADER, "ANNEE-2026")
+        given().header(HEADER, edition)
                 .when()
-                .delete("/api/editions/ANNEE-2026")
+                .delete("/api/editions/" + edition)
                 .then()
                 .statusCode(400);
     }
 
+    /** An id sent in the body is ignored: two creations are two editions, never a 409 on a chosen id. */
     @Test
-    void creerDeuxFoisLeMemeIdentifiantEstRefuse() {
-        createEdition("ANNEE-2026", "Année 2026");
-
-        given().contentType("application/json")
+    void anIdSentOnCreationIsIgnored() {
+        String premiere = given().contentType("application/json")
+                .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Année 2026\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
+        String seconde = given().contentType("application/json")
                 .body("{\"id\":\"ANNEE-2026\",\"nom\":\"Doublon\"}")
                 .when()
                 .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
+
+        assertThat(premiere).matches("E[1-9][0-9]*");
+        assertThat(seconde).matches("E[1-9][0-9]*").isNotEqualTo(premiere);
+    }
+
+    /**
+     * A name shaped like an edition id is refused (D5 of ADR 0050): the MCP
+     * {@code edition} argument tries the id first, so « E2 » as a name would
+     * designate another edition. A plain year stays a fine name.
+     */
+    @Test
+    void aNameShapedLikeAnEditionIdIsRefused() {
+        given().contentType("application/json")
+                .body("{\"nom\":\"e12\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(400);
+        String annee = createEdition("2027");
+        given().contentType("application/json")
+                .body("{\"nom\":\"E7\"}")
+                .when()
+                .put("/api/editions/" + annee)
                 .then()
                 .statusCode(400);
     }
@@ -480,14 +550,14 @@ class EditionResourceTest {
      * explores.
      */
     @Test
-    void marquerUneTypologieNinjaNeDeflaguePasCelleDuneAutreEdition() {
-        createEdition("ANNEE-2025", "Année 2025");
-        createEdition("ANNEE-2026", "Année 2026");
-        createTypologie("ANNEE-2025", "NINJA_2025", true);
+    void flaggingANinjaTypologieDoesNotUnflagAnotherEditionS() {
+        String annee2025 = createEdition("Année 2025");
+        String annee2026 = createEdition("Année 2026");
+        String ninja2025 = createTypologie(annee2025, "NINJA_2025", true);
 
-        createTypologie("ANNEE-2026", "NINJA_2026", true);
+        String ninja2026 = createTypologie(annee2026, "NINJA_2026", true);
 
-        assertThat(isNinja("ANNEE-2026", "NINJA_2026")).isTrue();
-        assertThat(isNinja("ANNEE-2025", "NINJA_2025")).isTrue();
+        assertThat(isNinja(annee2026, ninja2026)).isTrue();
+        assertThat(isNinja(annee2025, ninja2025)).isTrue();
     }
 }

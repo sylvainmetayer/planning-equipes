@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.journal.ActionJournalisee;
 import dev.sylvain.planning.service.journal.CatalogueActions;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.journal.JournalActionService;
+import dev.sylvain.planning.service.journal.PayloadIds;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.container.ContainerRequestContext;
 import jakarta.ws.rs.container.ContainerResponseContext;
@@ -161,54 +162,8 @@ public class JournalActionFilter implements ContainerResponseFilter {
                 return valeur;
             }
         }
-        String cree = idOfPayload(reponse.getEntity());
+        String cree = PayloadIds.of(reponse.getEntity());
         return cree != null ? cree : animateurId;
-    }
-
-    /**
-     * The id of what a creation returned, read reflectively from the payload —
-     * either the object itself, or the single business component of a wrapper
-     * like {@code WrittenAnimateur}.
-     *
-     * <p>Reflection rather than a per-route rule because there is no shape all
-     * these payloads share, and swallowing everything because a trace must
-     * never cost an action: an unreadable payload leaves the id blank, it does
-     * not fail the request that already succeeded.</p>
-     */
-    private static String idOfPayload(Object payload) {
-        if (payload == null) {
-            return null;
-        }
-        String direct = readId(payload);
-        if (direct != null) {
-            return direct;
-        }
-        if (payload instanceof Record) {
-            for (var composant : payload.getClass().getRecordComponents()) {
-                try {
-                    String imbrique = readId(composant.getAccessor().invoke(payload));
-                    if (imbrique != null) {
-                        return imbrique;
-                    }
-                } catch (ReflectiveOperationException | RuntimeException _) {
-                    // One unreadable component is not the end of the search:
-                    // a later one may well carry the id.
-                }
-            }
-        }
-        return null;
-    }
-
-    private static String readId(Object objet) {
-        if (objet == null || objet instanceof String || objet instanceof Number || objet instanceof Boolean) {
-            return null;
-        }
-        try {
-            Object id = objet.getClass().getMethod("getId").invoke(objet);
-            return id == null ? null : String.valueOf(id);
-        } catch (ReflectiveOperationException | RuntimeException _) {
-            return null;
-        }
     }
 
     private static String first(Map<String, List<String>> params, String nom) {

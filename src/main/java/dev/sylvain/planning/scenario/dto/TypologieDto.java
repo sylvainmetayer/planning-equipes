@@ -12,6 +12,11 @@ import jakarta.validation.constraints.Positive;
  * {@code ReferenceDataImportRepository#importFromPlanning} derives for any
  * typologie id referenced by a stand/animateur but never declared here.
  *
+ * <p>{@code id} is a reference local to the file — what stands and
+ * animateurs cite — and {@code code} the readable key the import matches an
+ * existing typologie on (ADR 0050); a file without codes is matched on its
+ * ids, read as codes.</p>
+ *
  * <p>{@code ninja} (optional, {@code false} by default) marks the single
  * typologie whose holders are polyvalent — dispatchable on any stand. At most
  * one entry of the list should carry it; the referential keeps only the last
@@ -29,6 +34,7 @@ import jakarta.validation.constraints.Positive;
  */
 public record TypologieDto(
         @NotBlank String id,
+        String code,
         @NotBlank String label,
         Boolean ninja,
         @Positive Integer maxCreneauxParAnimateur,

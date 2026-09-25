@@ -1,6 +1,9 @@
 package dev.sylvain.planning.service;
 
-/** The one rule every referential shares: a business id is client-supplied and must not be blank. */
+/**
+ * A reference to an existing row must not be blank. Creating one never takes
+ * an id from the caller: {@link IdGenerator} draws it (ADR 0050).
+ */
 public final class Ids {
 
     private Ids() {}
