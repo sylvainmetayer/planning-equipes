@@ -35,7 +35,7 @@
         <p class="empty-hint" i18n="@@formation.aucunDeficit">Aucune typologie en déficit : ni le besoin ni la fragilité ne signalent de manque.</p>
       } @else {
         @if (!plan.planPersiste) {
-          <p class="formation-degrade" role="status" i18n="@@formation.sansPlan">Sans planning persisté, seul le besoin en animateurs est lu : jours en tension et postes irremplaçables viendront après une résolution.</p>
+          <output class="formation-degrade status-paragraph" i18n="@@formation.sansPlan">Sans planning persisté, seul le besoin en animateurs est lu : jours en tension et postes irremplaçables viendront après une résolution.</output>
         }
         <p class="formation-tri" i18n="@@formation.tri">Candidats classés par jours en tension disponibles, puis souhait, puis niveau (autonome avant débutant).</p>
         @for (ligne of plan.typologies; track ligne.typologie) {
