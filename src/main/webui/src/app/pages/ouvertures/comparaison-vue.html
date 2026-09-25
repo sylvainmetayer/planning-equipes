@@ -1,0 +1,164 @@
+<section class="comparaison-selection" i18n-aria-label="@@ouvertures.comparer.selection.label" aria-label="Stands comparés">
+  <div class="comparaison-ajout">
+    <mat-form-field appearance="outline" class="comparaison-recherche">
+      <mat-label i18n="@@ouvertures.comparer.ajouterStand">Ajouter un stand</mat-label>
+      <input matInput name="comparaisonRecherche" [matAutocomplete]="propositionsStands" [disabled]="complet()"
+             [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" data-test="comparaison-recherche" />
+      <mat-autocomplete #propositionsStands="matAutocomplete" [displayWith]="aucunTexte"
+                        (optionSelected)="ajouter($event.option.value)">
+        @for (ligne of propositions(); track ligne.standId) {
+          <mat-option [value]="ligne.standId">{{ ligne.nom || ligne.standId }}</mat-option>
+        }
+      </mat-autocomplete>
+    </mat-form-field>
+    <mat-form-field appearance="outline" class="comparaison-typologie">
+      <mat-label i18n="@@ouvertures.comparer.ajouterTypologie">Ajouter une typologie</mat-label>
+      <mat-select name="comparaisonTypologie" [disabled]="complet()" [value]="null"
+                  (selectionChange)="ajouterTypologie($event.value)">
+        @for (typologie of typologies(); track typologie.id) {
+          <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+  </div>
+  @if (refusLabel()) {
+    <p class="form-warning" role="status">{{ refusLabel() }}</p>
+  }
+  @if (inconnusLabel()) {
+    <p class="form-warning" role="status" data-test="comparaison-inconnus">{{ inconnusLabel() }}</p>
+  }
+
+  @if (comparaison().stands.length > 0) {
+    <mat-radio-group class="comparaison-stands" [value]="comparaison().referenceId"
+                     (change)="choisirReference($event.value)"
+                     i18n-aria-label="@@ouvertures.comparer.reference.label" aria-label="Stand de référence">
+      @for (stand of comparaison().stands; track stand.standId) {
+        <div class="comparaison-stand">
+          <mat-radio-button [value]="stand.standId">
+            {{ stand.nom }}
+            @if (stand.standId === comparaison().referenceId) {
+              <span class="comparaison-reference" i18n="@@ouvertures.comparer.reference">(référence)</span>
+            }
+          </mat-radio-button>
+          <button matIconButton type="button" (click)="retirer(stand.standId)"
+                  i18n-matTooltip="@@ouvertures.comparer.retirer" matTooltip="Retirer de la comparaison"
+                  i18n-aria-label="@@ouvertures.comparer.retirer" aria-label="Retirer de la comparaison">
+            <mat-icon>close</mat-icon>
+          </button>
+        </div>
+      }
+    </mat-radio-group>
+  }
+</section>
+
+@if (!comparable()) {
+  <p class="empty-hint" data-test="comparaison-vide" i18n="@@ouvertures.comparer.choisir">
+    Choisissez de {{ min }} à {{ max }} stands, un par un ou par typologie : le premier sert de référence.
+  </p>
+} @else {
+  <div class="comparaison-actions">
+    <mat-checkbox [checked]="ecartsSeulement()" (change)="ecartsSeulement.set($event.checked)"
+                  data-test="comparaison-ecarts" i18n="@@ouvertures.comparer.ecartsSeulement">
+      Seulement les jours qui diffèrent
+    </mat-checkbox>
+    <button matButton="tonal" type="button" [disabled]="editingLocked() || !copiable()" (click)="copierReference()"
+            data-test="comparaison-copier">
+      <mat-icon>content_copy</mat-icon>
+      <ng-container i18n="@@ouvertures.comparer.copier">Copier les horaires de la référence vers…</ng-container>
+    </button>
+  </div>
+
+  <h2 class="comparaison-titre" i18n="@@ouvertures.comparer.synthese.title">Synthèse</h2>
+  <ul class="comparaison-synthese" data-test="comparaison-synthese">
+    @for (ligne of comparaison().synthese; track ligne.standId) {
+      <li [class.comparaison-synthese-ecart]="ligne.joursEnEcart > 0">
+        <strong>{{ ligne.nom }}</strong> : {{ libelleSynthese(ligne.joursEnEcart, ligne.premierEcart) }}
+      </li>
+    }
+  </ul>
+
+  @if (joursAffiches().length === 0) {
+    <p class="empty-hint" i18n="@@ouvertures.comparer.aucunEcart">Aucun jour ne diffère de la référence.</p>
+  }
+  @for (jour of joursAffiches(); track jour.date) {
+    <div class="table-wrapper">
+      <table class="comparaison-grille" data-test="comparaison-jour">
+        <caption>{{ captionJour(jour.jour, jour.date) }}</caption>
+        <thead>
+          <tr>
+            <th scope="col" class="comparaison-colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
+            @for (colonne of jour.colonnes; track colonne.cle) {
+              <th scope="col" [class.comparaison-colonne-ecart]="colonne.ecart">{{ colonne.libelle }}</th>
+            }
+          </tr>
+        </thead>
+        <tbody>
+          @for (stand of comparaison().stands; track stand.standId; let indexStand = $index) {
+            <tr [class.comparaison-ligne-reference]="stand.standId === comparaison().referenceId">
+              <th scope="row" class="comparaison-colonne-stand">{{ stand.nom }}</th>
+              @for (colonne of jour.colonnes; track colonne.cle) {
+                @let cellule = colonne.cases[indexStand];
+                <td [class.comparaison-case-ecart]="cellule.ecarts.length > 0"
+                    [class.comparaison-case-fermee]="cellule.effectif === null"
+                    [matTooltip]="cellule.description">
+                  <span>{{ cellule.texte }}</span>
+                  @for (type of cellule.ecarts; track type) {
+                    <span class="comparaison-ecart-type">{{ libelleEcart(type) }}</span>
+                  }
+                  @if (cellule.description) {
+                    <span class="visually-hidden"> — {{ cellule.description }}</span>
+                  }
+                </td>
+              }
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+
+  <h2 class="comparaison-titre" i18n="@@ouvertures.comparer.regles.title">Règles et exceptions</h2>
+  @if (regles().length === 0) {
+    <p class="empty-hint" i18n="@@ouvertures.comparer.regles.indisponibles">Les fiches des stands ne sont pas chargées.</p>
+  }
+  <div class="comparaison-regles" data-test="comparaison-regles">
+    @for (stand of regles(); track stand.standId) {
+      <section class="comparaison-regles-stand" [class.comparaison-ligne-reference]="stand.reference">
+        <h3>
+          {{ stand.nom }}
+          @if (stand.reference) {
+            <span class="comparaison-reference" i18n="@@ouvertures.comparer.reference">(référence)</span>
+          }
+        </h3>
+        @if (stand.regles.length === 0) {
+          <p class="empty-hint" i18n="@@ouvertures.comparer.regles.aucune">Aucune règle.</p>
+        } @else {
+          <ul>
+            @for (regle of stand.regles; track $index) {
+              <li [class.comparaison-regle-ecart]="!regle.chezReference">
+                {{ texteRegle(regle.horaire) }}
+                @if (!regle.chezReference) {
+                  <span class="comparaison-ecart-type" i18n="@@ouvertures.comparer.regles.enPlus">absente de la référence</span>
+                }
+              </li>
+            }
+          </ul>
+        }
+        @for (manquante of stand.reglesManquantes; track $index) {
+          <p class="comparaison-regle-ecart comparaison-regle-manquante">
+            <span class="comparaison-ecart-type" i18n="@@ouvertures.comparer.regles.manquante">manque</span>
+            {{ texteRegle(manquante) }}
+          </p>
+        }
+        @if (stand.exceptions.length > 0) {
+          <h4 i18n="@@ouvertures.comparer.regles.exceptions">Exceptions datées</h4>
+          <ul>
+            @for (entree of stand.exceptions; track $index) {
+              <li>{{ exception(entree) }}</li>
+            }
+          </ul>
+        }
+      </section>
+    }
+  </div>
+}

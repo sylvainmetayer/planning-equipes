@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   OnInit,
@@ -28,6 +29,7 @@ import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
 import { buildStandDetail } from './stand-detail';
+import { MAX_STANDS_COMPARES, MIN_STANDS_COMPARES } from '../ouvertures/comparaison-ouvertures';
 import { StandFormData, StandFormDialog } from './stand-form-dialog';
 
 /**
@@ -112,6 +114,14 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
           store.typologies(),
           this.ouvertures()?.anomalies.filter((anomalie) => anomalie.standId === stand.id) ?? null,
         ),
+        // « Comparer avec… »: the comparator opens on this stand as the
+        // reference, and asks which others to lay beside it.
+        link: {
+          label: $localize`:@@stands.comparerAvec:Comparer avec…`,
+          icon: 'compare',
+          path: '/ouvertures',
+          queryParams: { vue: 'comparer', stands: stand.id },
+        },
       }),
       drafts: {
         type: 'stand',
@@ -231,6 +241,18 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       variant: 'success',
     });
   }
+
+  /**
+   * The link to the openings comparator for the ticked stands, or null outside
+   * two to eight — one stand has nothing to be compared with, and past eight
+   * the Consulter grid, filtered, is the tool.
+   */
+  protected readonly comparaisonParams = computed(() => {
+    const ids = this.selection.selectedIds();
+    return ids.length >= MIN_STANDS_COMPARES && ids.length <= MAX_STANDS_COMPARES
+      ? { vue: 'comparer', stands: ids.join(',') }
+      : null;
+  });
 
   protected editSelection(): void {
     const selectionnes = new Set(this.selection.selectedIds());

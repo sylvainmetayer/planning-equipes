@@ -62,6 +62,7 @@ function mount(
     saveMany?: number;
     modeles?: Stand[];
     creneaux?: Creneau[];
+    modele?: Stand;
   } = {},
 ) {
   const saveMany = vi.fn(async () => options.saveMany ?? stands.length);
@@ -85,7 +86,7 @@ function mount(
       },
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
-      { provide: MAT_DIALOG_DATA, useValue: { stands } },
+      { provide: MAT_DIALOG_DATA, useValue: { stands, modele: options.modele } },
     ],
   });
   return { fixture: TestBed.createComponent(StandBulkEditDialog), saveMany, close };
@@ -450,6 +451,20 @@ describe('StandBulkEditDialog', () => {
 
     expect(submit(fixture).disabled).toBe(false);
     expect(root(fixture).textContent).toContain('1 règle(s) et 1 exception(s) datée(s)');
+  });
+
+  it('opens preset on the model a caller names, and still writes nothing before the submit', async () => {
+    // How the openings comparator hands its reference over.
+    const { fixture, saveMany } = mount([stand('s1', { effectifMax: 4 })], {
+      modeles: [pavillon()],
+      modele: pavillon(),
+    });
+    await fixture.whenStable();
+
+    expect(modelStandSelect(fixture)).not.toBeNull();
+    expect(root(fixture).textContent).toContain('1 règle(s) et 1 exception(s) datée(s)');
+    expect(submit(fixture).disabled).toBe(false);
+    expect(saveMany).not.toHaveBeenCalled();
   });
 
   it('hands every selected stand the whole schedule of the model stand, exceptions included', async () => {

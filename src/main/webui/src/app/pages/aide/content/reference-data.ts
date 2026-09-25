@@ -177,6 +177,10 @@ export function buildReferenceDataSections(): HelpSection[] {
               term: $localize`:@@aide.ouvertures.term.saisir:Saisir`,
               text: $localize`:@@aide.ouvertures.def.saisir:La même grille en écriture : l'effectif à tenir dans chaque case, « - » ou 0 pour fermer, une case vidée gardant sa valeur. Les gestes d'un tableur — flèches, Entrée, collage d'un bloc, recopie d'un jour sur les autres, reprise de la ligne du dessus, application d'une case à toute sa colonne. Ces deux-là ont chacune un bouton, qui apparaît au survol en tête de ligne et en tête de colonne, et un raccourci : Ctrl+D et Ctrl+Maj+Bas. Les en-têtes et la colonne des stands restent en place pendant le défilement.`,
             },
+            {
+              term: $localize`:@@aide.ouvertures.term.comparer:Comparer`,
+              text: $localize`:@@aide.ouvertures.def.comparer:Deux à huit stands posés sur les mêmes jours et les mêmes colonnes, par exemple les buvettes qui devraient avoir les mêmes horaires. On les choisit un par un ou par typologie ; le premier sert de référence, et un autre peut prendre ce rôle. Chaque case qui s'écarte de la référence est encadrée et dit la nature de l'écart — ouverture, heures ou effectif. La comparaison porte sur ce que le solveur lira : une règle et des exceptions datées qui ouvrent de la même façon ne font aucun écart. La synthèse compte, par stand, les jours en écart et dit le premier ; « Seulement les jours qui diffèrent » masque les autres. Sous la grille, les règles et exceptions de chaque stand côte à côte, une règle absente de la référence ou manquante étant signalée. Un jour sous consigne est marqué. Le comparateur n'écrit rien : « Copier les horaires de la référence vers… » ouvre la modification en masse des stands, réglée sur « Remplacer par ceux d'un stand », qui attend son propre enregistrement. On y arrive aussi depuis la page Stands, par la sélection ou par « Comparer avec… » dans la fiche d'un stand ; l'adresse garde la sélection.`,
+            },
           ],
         },
         {

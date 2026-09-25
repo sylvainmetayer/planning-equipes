@@ -16,6 +16,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { OuverturesPage } from './ouvertures-page';
 
 /** The open segments of a fixture cell: none when closed, one hour out of two when partial. */
@@ -132,6 +133,8 @@ function mount(
     q?: string;
     stand?: string;
     date?: string;
+    stands?: string;
+    ref?: string;
     editingLocked?: boolean;
     confirme?: boolean;
     rapport?: RapportOuvertures;
@@ -160,6 +163,7 @@ function mount(
     ],
   }));
   const ask = vi.fn(async () => options.confirme ?? true);
+  const reloadStore = vi.fn(async () => undefined);
   const notify = vi.fn();
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -179,6 +183,16 @@ function mount(
         },
       },
       { provide: JourneesTypesApi, useValue: { etat: etatJT } },
+      {
+        provide: ReferenceDataStore,
+        useValue: {
+          reload: reloadStore,
+          stands: signal([]),
+          typologies: signal([]),
+          creneaux: signal([]),
+          emplacements: signal([]),
+        },
+      },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
       {
         provide: SolverJobService,
@@ -196,6 +210,8 @@ function mount(
               ...(options.q ? { q: options.q } : {}),
               ...(options.stand ? { stand: options.stand } : {}),
               ...(options.date ? { date: options.date } : {}),
+              ...(options.stands ? { stands: options.stands } : {}),
+              ...(options.ref ? { ref: options.ref } : {}),
             }),
           },
         },
@@ -203,7 +219,7 @@ function mount(
     ],
   });
   const fixture = TestBed.createComponent(OuverturesPage);
-  return { fixture, get, put, ask, notify, etatJT };
+  return { fixture, get, put, ask, notify, etatJT, reloadStore };
 }
 
 function root(fixture: ComponentFixture<OuverturesPage>): HTMLElement {
@@ -918,5 +934,29 @@ describe('OuverturesPage — grille par journée type', () => {
     await fixture.whenStable();
 
     expect(root(fixture).querySelector('.grille-journees-types')).toBeNull();
+  });
+  it('reopens « Comparer » from ?vue=comparer&stands=A,B&ref=B, identically', async () => {
+    const { fixture, reloadStore } = mount({ vue: 'comparer', stands: 'A,B', ref: 'B' });
+    await fixture.whenStable();
+
+    const jours = root(fixture).querySelectorAll('[data-test="comparaison-jour"]');
+    expect(jours).toHaveLength(2);
+    const reference = root(fixture).querySelector('.comparaison-ligne-reference th')!;
+    expect(reference.textContent).toContain('Stand B');
+    // The rules and the bulk edit read the referential: loaded for this view only.
+    expect(reloadStore).toHaveBeenCalledWith(['stands', 'typologies', 'creneaux', 'emplacements']);
+    const location = TestBed.inject(Location) as unknown as {
+      replaceState: ReturnType<typeof vi.fn>;
+    };
+    const adresse = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
+    expect(adresse).toContain('vue=comparer');
+    expect(adresse).toMatch(/stands=A(,|%2C)B/);
+    expect(adresse).toContain('ref=B');
+  });
+
+  it('never loads the referential for the other views', async () => {
+    const { fixture, reloadStore } = mount();
+    await fixture.whenStable();
+    expect(reloadStore).not.toHaveBeenCalled();
   });
 });

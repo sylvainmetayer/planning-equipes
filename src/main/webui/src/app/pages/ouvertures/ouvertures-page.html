@@ -24,6 +24,10 @@
         <mat-icon>view_timeline</mat-icon>
         <ng-container i18n="@@ouvertures.vue.journee">Journée</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="COMPARER">
+        <mat-icon>compare</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.comparer">Comparer</ng-container>
+      </mat-button-toggle>
     </mat-button-toggle-group>
     @if (view() === 'SAISIR' || view() === 'JOURNEES_TYPES') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
@@ -67,6 +71,15 @@
         <ng-container i18n="@@ouvertures.versCreneaux">Aller aux créneaux</ng-container>
       </a>
     } @else {
+      @if (view() === 'COMPARER') {
+        <app-comparaison-ouvertures
+          [rapport]="rapport()"
+          [(standIds)]="comparaisonStands"
+          [(referenceId)]="comparaisonReference"
+          [(ecartsSeulement)]="comparaisonEcarts"
+          (modifie)="recharger()"
+        />
+      } @else {
       @if (synthese(); as bilan) {
         <div class="ouvertures-synthese">
           <span><strong>{{ bilan.stands }}</strong>&nbsp;<ng-container i18n="@@ouvertures.synthese.stands">stands</ng-container></span>
@@ -495,6 +508,7 @@
             </li>
           }
         </ul>
+      }
       }
     }
   </mat-card-content>
