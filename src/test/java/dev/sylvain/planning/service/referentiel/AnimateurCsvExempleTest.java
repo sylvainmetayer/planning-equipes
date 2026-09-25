@@ -11,7 +11,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.domain.NiveauCompetence;
-import dev.sylvain.planning.scenario.dto.AnimateurDto;
 import dev.sylvain.planning.scenario.dto.CreneauDto;
 import dev.sylvain.planning.scenario.dto.ScenarioDto;
 import dev.sylvain.planning.scenario.dto.TypologieDto;
@@ -23,7 +22,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.junit.jupiter.api.AfterEach;
@@ -92,14 +93,28 @@ class AnimateurCsvExempleTest {
 
     private ScenarioDto scenario;
 
+    /**
+     * The id each typologie of the scenario was created under, by the file's
+     * reference — which is also the row's {@code code}, the key the CSV cites
+     * (ADR 0050).
+     */
+    private final Map<String, String> typologieIdParCode = new HashMap<>();
+
     @BeforeEach
     void createTheScenarioEdition() throws IOException {
         scenario = readScenario();
         edition = editions.create(new Edition(null, "Exemple CSV", false, null)).getId();
         editionContext.executeIn(edition, () -> {
             for (TypologieDto typologie : scenario.typologies()) {
-                referenceData.createTypologie(
-                        new TypologieItem(typologie.id(), typologie.label(), Boolean.TRUE.equals(typologie.ninja())));
+                TypologieItem creee = referenceData.createTypologie(new TypologieItem(
+                        null,
+                        typologie.id(),
+                        typologie.label(),
+                        Boolean.TRUE.equals(typologie.ninja()),
+                        null,
+                        null,
+                        null));
+                typologieIdParCode.put(typologie.id(), creee.id());
             }
             for (CreneauDto creneau : scenario.creneaux()) {
                 referenceData.createCreneau(
@@ -210,8 +225,8 @@ class AnimateurCsvExempleTest {
      */
     @Test
     void exampleTypologiesAndDaysBelongToTheScenario() {
-        Set<String> typologies =
-                scenario.typologies().stream().map(TypologieDto::id).collect(Collectors.toSet());
+        // What is stored is the id each cited code resolved to.
+        Set<String> typologies = Set.copyOf(typologieIdParCode.values());
         Set<LocalDate> joursEvenement =
                 scenario.creneaux().stream().map(CreneauDto::date).collect(Collectors.toSet());
 
@@ -235,9 +250,14 @@ class AnimateurCsvExempleTest {
         inEdition(() -> csvImport.apply(exampleRequest()));
         List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
 
-        Set<String> fixtureIds =
-                scenario.animateurs().stream().map(AnimateurDto::id).collect(Collectors.toSet());
-        assertThat(importes).noneSatisfy(animateur -> assertThat(fixtureIds).contains(animateur.getId()));
+        // Compared by identity, not by id: the ids are drawn by the edition
+        // (ADR 0050), so a fresh one hands out A1… whatever the file says.
+        Set<String> fixtureNoms = scenario.animateurs().stream()
+                .map(animateur -> animateur.prenom() + " " + animateur.nom())
+                .collect(Collectors.toSet());
+        assertThat(importes)
+                .noneSatisfy(animateur ->
+                        assertThat(fixtureNoms).contains(animateur.getPrenom() + " " + animateur.getNom()));
         assertThat(importes.stream().map(Animateur::getDateNaissance).distinct())
                 .hasSizeGreaterThan(5);
     }
