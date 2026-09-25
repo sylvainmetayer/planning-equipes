@@ -24,6 +24,10 @@
         <mat-icon>view_timeline</mat-icon>
         <ng-container i18n="@@ouvertures.vue.journee">Journée</ng-container>
       </mat-button-toggle>
+      <mat-button-toggle value="CALENDRIER">
+        <mat-icon>layers</mat-icon>
+        <ng-container i18n="@@ouvertures.vue.calendrier">Calendrier combiné</ng-container>
+      </mat-button-toggle>
       <mat-button-toggle value="COMPARER">
         <mat-icon>compare</mat-icon>
         <ng-container i18n="@@ouvertures.vue.comparer">Comparer</ng-container>
@@ -114,6 +118,7 @@
         </p>
       }
 
+      @if (view() !== 'CALENDRIER') {
       <div class="ouvertures-legende">
         <span><i class="pastille etat-total"></i><ng-container i18n="@@ouvertures.legende.total">Toute l'amplitude</ng-container></span>
         <span><i class="pastille etat-partiel"></i><ng-container i18n="@@ouvertures.legende.partiel">Partiel</ng-container></span>
@@ -121,6 +126,7 @@
         <span><i class="pastille source-regle"></i><ng-container i18n="@@ouvertures.legende.regle">Décidé par une règle</ng-container></span>
         <span><i class="pastille source-exception"></i><ng-container i18n="@@ouvertures.legende.exception">Décidé par une exception datée</ng-container></span>
       </div>
+      }
 
       @if (view() === 'SAISIR') {
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
@@ -337,6 +343,15 @@
             </tbody>
           </table>
         </div>
+      } @else if (view() === 'CALENDRIER') {
+        <!-- The three layers that decide the seats, laid over them, a week at a
+             time: read-only, and before any solve. -->
+        <app-calendrier-couches
+          [rapport]="rapport()"
+          [standIds]="standIdsFiltres()"
+          [(couches)]="couchesAffichees"
+          [(firstDay)]="calendarFirstDay"
+        />
       } @else if (view() === 'JOURNEE') {
         <!-- One day laid on time: a line per stand, the créneaux as bands, each
              open stretch a block carrying its headcount, and a window declared

@@ -4,6 +4,7 @@
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
 import {
+  OpeningLayers,
   ImportGrilleDemande,
   ImportGrilleRapport,
   RapportCompactage,
@@ -43,6 +44,12 @@ export class StandsApi {
   /** Every stand's openings on every day, as the grid screen shows them. */
   openings(): Promise<RapportOuvertures> {
     return this.api.get<RapportOuvertures>('/api/ouvertures-stands');
+  }
+
+  /** The combined calendar of `[du, au]` (`AAAA-MM-JJ`, both included): each stand's layers, day by day. */
+  openingLayers(du: string, au: string): Promise<OpeningLayers> {
+    const params = new URLSearchParams({ du, au });
+    return this.api.get<OpeningLayers>(`/api/ouvertures-stands/couches?${params}`);
   }
 
   /** The grid as edited, stand by stand — only the stands that changed travel. */

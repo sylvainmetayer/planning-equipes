@@ -248,6 +248,86 @@ class OuvertureStandsResourceTest {
                 .statusCode(400);
     }
 
+    /**
+     * {@code GET /api/ouvertures-stands/couches}: the combined calendar answers
+     * on an edition never solved, with one cell per stand and day of the report.
+     */
+    @Test
+    void theCombinedCalendarAnswersBeforeAnySolveWithOneCellPerStandAndDay() {
+        seedScenario();
+        JsonPath rapport = given().when()
+                .get("/api/ouvertures-stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+        String premier = rapport.getString("jours[0].date");
+
+        JsonPath couches = given().queryParam("du", premier)
+                .queryParam("au", premier)
+                .when()
+                .get("/api/ouvertures-stands/couches")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(couches.getList("jours.date")).containsExactly(premier);
+        assertThat(couches.getList("stands.standId")).isEqualTo(rapport.getList("stands.standId"));
+        assertThat(couches.getList("stands[0].jours")).hasSize(1);
+        assertThat(couches.getString("stands[0].jours[0].source")).isIn("DEFAUT", "REGLE", "EXCEPTION");
+        assertThat(couches.getList("jours[0].vacations")).isNotEmpty();
+    }
+
+    @Test
+    void theCombinedCalendarRefusesAnInvertedOrUnreadableRange() {
+        given().queryParam("du", "2026-07-10")
+                .queryParam("au", "2026-07-01")
+                .when()
+                .get("/api/ouvertures-stands/couches")
+                .then()
+                .statusCode(400);
+        given().queryParam("du", "demain")
+                .when()
+                .get("/api/ouvertures-stands/couches")
+                .then()
+                .statusCode(400);
+    }
+
+    /**
+     * The screen pages by seven <em>event</em> days, which may lie months
+     * apart: a range wider than any calendar cap must still answer, with the
+     * event days inside it and nothing in between.
+     */
+    @Test
+    void theCombinedCalendarServesEventDaysMonthsApart() {
+        given().when().post("/api/planning/reset").then().statusCode(200);
+        for (String creneau : List.of(
+                "{\"jour\":1,\"date\":\"2026-01-10\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}",
+                "{\"jour\":2,\"date\":\"2026-06-20\",\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"}")) {
+            given().contentType("application/json")
+                    .body(creneau)
+                    .when()
+                    .post("/api/creneaux")
+                    .then()
+                    .statusCode(200);
+        }
+
+        JsonPath couches = given().queryParam("du", "2026-01-10")
+                .queryParam("au", "2026-06-20")
+                .when()
+                .get("/api/ouvertures-stands/couches")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath();
+
+        assertThat(couches.getList("jours.date")).containsExactly("2026-01-10", "2026-06-20");
+
+        // Leave a coherent dataset behind for the other test classes.
+        seedScenario();
+    }
+
     private static void seedScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()

@@ -2595,6 +2595,36 @@ l'effectif **configuré** que le stand y demande, `null` s'il y est fermé.
 `partiel` ne subsiste que pour une borne qu'aucune colonne ne suit ; `effectif`
 est alors le plus haut et `segments` dit ce que la case porte.
 
+### Calendrier combiné : les couches avant résolution
+
+`GET /api/ouvertures-stands/couches?du=AAAA-MM-JJ&au=AAAA-MM-JJ` dit **d'où
+vient** chaque ouverture, là où le rapport ci-dessus dit ce qu'elle devient.
+Pour chaque stand et chaque jour de la plage qui porte un créneau :
+
+| Champ | Couche | Lu sur |
+| --- | --- | --- |
+| `source`, `horaireIds`, `motif`, `nominal` | les horaires du stand : aucune règle (ouvert par défaut), règle récurrente ou exception datée | `HoraireStandResolver` **seul** |
+| `jours[].consigne`, `reopenings` | la bande fermée par la consigne du jour, et les fenêtres où elle rouvre ce stand | la consigne telle qu'elle est posée |
+| `effective` | ce qui reste une fois la consigne passée : ce dont les sièges sont découpés | `StandService.resolve`, la même entrée que le solveur |
+| `jours[].vacations` | les créneaux de la grille, `addedByConsigne` pour ceux qu'une consigne a créés | la grille |
+
+Toutes les fenêtres sont en **minutes depuis minuit du jour** : un créneau qui
+passe minuit finit au-delà de 1440, et les fenêtres du lendemain matin sont
+reportées jusque-là — la convention de la vue Journée. Un `effectif` absent
+d'une fenêtre vaut le minimum du stand ; sur une réouverture, `null` dit que la
+consigne hérite l'effectif de ce que la bande a retiré.
+
+Un endpoint à part plutôt qu'un rapport qui grossit : le rapport est lu à
+chaque visite et à chaque enregistrement de la grille, les couches ne servent
+qu'au calendrier, une semaine à la fois. Les **sièges** n'y figurent pas : le
+calendrier les tire du rapport, avec la fonction même de la vue Journée, et
+ne peut donc pas en montrer d'autres. Rien n'y lit le plan : l'écran répond
+sur une édition jamais résolue. Les deux bornes sont facultatives (toute
+l'édition) ; `400` sur une date illisible ou une plage inversée. La plage n'est
+pas plafonnée : seuls les jours qui portent un créneau y sont calculés, et
+l'écran pagine par sept jours **d'événement**, qui peuvent être éloignés de
+plusieurs mois.
+
 ### Saisie en grille
 
 `PUT /api/ouvertures-stands/grille` écrit l'horaire des stands sous la forme

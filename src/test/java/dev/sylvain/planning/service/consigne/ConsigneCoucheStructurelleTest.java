@@ -50,7 +50,10 @@ class ConsigneCoucheStructurelleTest {
             "service/solve/PlanningService.java",
                     "exports the référentiel to a scenario file, whose stands are described nominally",
             "service/consigne/ConsigneService.java",
-                    "computes the nominal day a consigne departs from — what the band takes, what it inherits");
+                    "computes the nominal day a consigne departs from — what the band takes, what it inherits",
+            "service/consigne/LayerCalendarService.java",
+                    "shows the nominal day next to the effective one on the Ouvertures calendar, so an operator"
+                            + " sees what the consigne took away — read-only, never a source of seats");
 
     @Test
     void everyCallerOfTheRulesResolverIsTheEntryPointOrArgued() throws IOException {
