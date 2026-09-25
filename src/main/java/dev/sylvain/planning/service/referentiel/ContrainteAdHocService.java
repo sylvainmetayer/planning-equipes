@@ -26,20 +26,21 @@ public class ContrainteAdHocService {
 
     private final ConcurrentModificationGuard staleWrites;
 
+    private final IdGenerator ids;
+
     @Inject
     public ContrainteAdHocService(
             ContrainteAdHocRepository repository,
             CreneauService creneauService,
             ReferenceDataChangeTracker changeTracker,
-            ConcurrentModificationGuard staleWrites) {
+            ConcurrentModificationGuard staleWrites,
+            IdGenerator ids) {
         this.repository = repository;
         this.creneauService = creneauService;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
+        this.ids = ids;
     }
-
-    @Inject
-    IdGenerator ids;
 
     public List<ContrainteAdHoc> list() {
         return repository.listContraintes();

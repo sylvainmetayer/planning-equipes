@@ -18,11 +18,15 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 class ScenarioTargetIds {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final IdGenerator ids;
 
     @Inject
-    IdGenerator ids;
+    public ScenarioTargetIds(ReferenceDataService referenceDataService, IdGenerator ids) {
+        this.referenceDataService = referenceDataService;
+        this.ids = ids;
+    }
 
     /** A view of the current edition, read now: call it inside the edition the import writes into. */
     ScenarioIdRemap.Edition of() {

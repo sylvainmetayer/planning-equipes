@@ -41,15 +41,16 @@ public class AnimateurRepository {
 
     private final JdbcEditionScope scope;
 
+    private final IdGenerator ids;
+
     @Inject
-    public AnimateurRepository(ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+    public AnimateurRepository(
+            ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope, IdGenerator ids) {
         this.staleWrites = staleWrites;
         this.dataSource = dataSource;
         this.scope = scope;
+        this.ids = ids;
     }
-
-    @Inject
-    IdGenerator ids;
 
     public List<Animateur> listAnimateurs() {
         Map<String, Animateur> byId = new LinkedHashMap<>();

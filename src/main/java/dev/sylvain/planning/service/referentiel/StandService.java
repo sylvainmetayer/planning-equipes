@@ -41,6 +41,10 @@ public class StandService {
 
     private final ConsigneRepository consignes;
 
+    private final IdGenerator ids;
+
+    private final JdbcEditionScope scope;
+
     @Inject
     public StandService(
             StandRepository repository,
@@ -49,7 +53,9 @@ public class StandService {
             ReferenceDataChangeTracker changeTracker,
             ConcurrentModificationGuard staleWrites,
             SolverJobService solverJobs,
-            ConsigneRepository consignes) {
+            ConsigneRepository consignes,
+            IdGenerator ids,
+            JdbcEditionScope scope) {
         this.repository = repository;
         this.creneaux = creneaux;
         this.typologies = typologies;
@@ -57,13 +63,9 @@ public class StandService {
         this.staleWrites = staleWrites;
         this.solverJobs = solverJobs;
         this.consignes = consignes;
+        this.ids = ids;
+        this.scope = scope;
     }
-
-    @Inject
-    IdGenerator ids;
-
-    @Inject
-    JdbcEditionScope scope;
 
     /**
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated

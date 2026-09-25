@@ -21,14 +21,14 @@ public class EditionService {
 
     private final EditionContext editionContext;
 
-    @Inject
-    public EditionService(EditionRepository repository, EditionContext editionContext) {
-        this.repository = repository;
-        this.editionContext = editionContext;
-    }
+    private final IdGenerator ids;
 
     @Inject
-    IdGenerator ids;
+    public EditionService(EditionRepository repository, EditionContext editionContext, IdGenerator ids) {
+        this.repository = repository;
+        this.editionContext = editionContext;
+        this.ids = ids;
+    }
 
     public List<Edition> listEditions() {
         return repository.listEditions();
