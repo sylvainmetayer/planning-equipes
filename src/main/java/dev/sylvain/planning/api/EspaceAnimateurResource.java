@@ -10,6 +10,8 @@ import dev.sylvain.planning.service.espace.EspaceAccesService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DemandeEchangeView;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.EspaceAnimateurView;
+import dev.sylvain.planning.service.espace.TeammateRequestService;
+import dev.sylvain.planning.service.espace.TeammateRequestService.NewCarpoolRequest;
 import dev.sylvain.planning.service.export.FormatPlanning;
 import dev.sylvain.planning.service.export.PlanningExportService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
@@ -74,6 +76,8 @@ public class EspaceAnimateurResource {
 
     private final ReferenceDataService referenceDataService;
 
+    private final TeammateRequestService teammateRequestService;
+
     @Inject
     public EspaceAnimateurResource(
             EspaceAccesService espaceAccesService,
@@ -84,7 +88,8 @@ public class EspaceAnimateurResource {
             PlanPublieService planPublieService,
             PlanningExportService planningExportService,
             ConfirmationPlanningService confirmationService,
-            ReferenceDataService referenceDataService) {
+            ReferenceDataService referenceDataService,
+            TeammateRequestService teammateRequestService) {
         this.espaceAccesService = espaceAccesService;
         this.espaceAnimateurService = espaceAnimateurService;
         this.demandeEchangeService = demandeEchangeService;
@@ -94,6 +99,7 @@ public class EspaceAnimateurResource {
         this.planningExportService = planningExportService;
         this.confirmationService = confirmationService;
         this.referenceDataService = referenceDataService;
+        this.teammateRequestService = teammateRequestService;
     }
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
@@ -248,6 +254,44 @@ public class EspaceAnimateurResource {
                     .build();
         }
         return Response.ok(espaceAnimateurService.buildDeclarationView(animateurCourant()))
+                .build();
+    }
+
+    /**
+     * The Covoiturage tab: whether a request can be sent now — the collection
+     * window of the declarations —, who can be named, and where my car stands
+     * (none, pending, validated with whom, or set aside and why).
+     *
+     * <p>Readable window closed, like the declaration tab: an animateur must
+     * be able to read what became of their request.</p>
+     */
+    @GET
+    @Path("/{jeton}/covoiturage")
+    @EspaceSessionRequired
+    public EspaceAnimateurService.CarpoolEspaceView carpool() {
+        return espaceAnimateurService.buildCarpoolView(animateurCourant());
+    }
+
+    /**
+     * « Je viens avec… »: asks the organisation for a grouped arrival with up
+     * to three teammates, replacing my pending request; an empty list
+     * withdraws it. Sent apart from the declaration of availability — neither
+     * one touches the other — and refused in 409 while a validated group holds
+     * me, which only the organisation changes.
+     */
+    @POST
+    @Path("/{jeton}/covoiturage")
+    @EspaceSessionRequired
+    public Response requestCarpool(NewCarpoolRequest request) {
+        try {
+            teammateRequestService.request(animateurCourant(), request == null ? List.of() : request.teammateIds());
+        } catch (DeclarationDisponibiliteService.TooManyRequests e) {
+            return Response.status(429)
+                    .header(HttpHeaders.RETRY_AFTER, e.secondsBeforeNextTry())
+                    .entity(new ValidationError(e.getMessage()))
+                    .build();
+        }
+        return Response.ok(espaceAnimateurService.buildCarpoolView(animateurCourant()))
                 .build();
     }
 

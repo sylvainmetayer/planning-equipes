@@ -638,3 +638,45 @@ describe('buildRailJours — tight walks', () => {
     expect(ligne(jours[0].lignes, 'Ines').trajets).toEqual([]);
   });
 });
+
+describe('buildRailJours — covoiturage', () => {
+  it('marks the members of a group, in red on a day it does not hold', () => {
+    const ines = animateur('Ines');
+    const oscar = animateur('Oscar');
+    const jours = buildRailJours(
+      [poste({ id: 'p1', creneau: creneau({ id: 1 }), stand: stand('A'), animateur: ines })],
+      [ines, oscar, animateur('Zoe')],
+      [],
+      null,
+      null,
+      {
+        toleranceMinutes: 30,
+        groups: [
+          {
+            contrainteId: 'G1',
+            animateurIds: ['Ines', 'Oscar'],
+            misalignedDays: 1,
+            days: [
+              {
+                date: '2026-08-01',
+                aligned: false,
+                working: ['Ines'],
+                absent: ['Oscar'],
+                arrivalSpreadMinutes: 0,
+                departureSpreadMinutes: 0,
+                hours: [],
+              },
+            ],
+          },
+        ],
+      },
+    );
+
+    expect(ligne(jours[0].lignes, 'Ines').covoiturage).toEqual({
+      desaligne: true,
+      label: 'Covoiturage avec Oscar — désaligné ce jour',
+    });
+    expect(ligne(jours[0].lignes, 'Ines').resume).toContain('désaligné ce jour');
+    expect(ligne(jours[0].lignes, 'Zoe').covoiturage).toBeNull();
+  });
+});

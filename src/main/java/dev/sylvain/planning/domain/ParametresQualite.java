@@ -57,6 +57,10 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * @param toleranceTrajetMinutes walking time a gap between two seats may lack
  *        before {@code trajetInsuffisantEntrePostes} counts anything — a hop
  *        between two neighbouring stands is not a trip.
+ * @param toleranceArriveeGroupeeMinutes how far apart, in minutes, the first
+ *        arrivals — and the last departures — of an {@code ARRIVEE_GROUPEE}
+ *        group may be on a day before {@code arriveeGroupee} counts the
+ *        minutes beyond.
  */
 @Schema(
         requiredProperties = {
@@ -66,7 +70,8 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
             "joursConsecutifsMax",
             "vitesseMarcheKmH",
             "facteurDetour",
-            "toleranceTrajetMinutes"
+            "toleranceTrajetMinutes",
+            "toleranceArriveeGroupeeMinutes"
         })
 public record ParametresQualite(
         int maxEmplacementsDistinctsParJour,
@@ -77,7 +82,8 @@ public record ParametresQualite(
         int joursConsecutifsMax,
         double vitesseMarcheKmH,
         double facteurDetour,
-        int toleranceTrajetMinutes) {
+        int toleranceTrajetMinutes,
+        int toleranceArriveeGroupeeMinutes) {
 
     /** @see #maxEmplacementsDistinctsParJour() */
     public static final int EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT = 3;
@@ -148,6 +154,9 @@ public record ParametresQualite(
     /** 5 min — a jump between two neighbouring stands does not count as a trip. */
     public static final int TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT = 5;
 
+    /** 30 min — people sharing a car wait for each other a little, not an afternoon. */
+    public static final int TOLERANCE_ARRIVEE_GROUPEE_MINUTES_PAR_DEFAUT = 30;
+
     public ParametresQualite() {
         this(EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT);
     }
@@ -163,8 +172,8 @@ public record ParametresQualite(
     }
 
     /**
-     * The six thresholds that predate the walking time, the three trip
-     * settings at their default — what a caller that tunes none of them means.
+     * The six thresholds that predate the walking time, every later setting
+     * at its default — what a caller that tunes none of them means.
      */
     public ParametresQualite(
             int maxEmplacementsDistinctsParJour,
@@ -182,7 +191,8 @@ public record ParametresQualite(
                 joursConsecutifsMax,
                 VITESSE_MARCHE_KM_H_PAR_DEFAUT,
                 FACTEUR_DETOUR_PAR_DEFAUT,
-                TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT);
+                TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT,
+                TOLERANCE_ARRIVEE_GROUPEE_MINUTES_PAR_DEFAUT);
     }
 
     /** The same thresholds, with the three trip settings replaced. */
@@ -196,7 +206,23 @@ public record ParametresQualite(
                 joursConsecutifsMax,
                 vitesseMarcheKmH,
                 facteurDetour,
-                toleranceTrajetMinutes);
+                toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes);
+    }
+
+    /** The same thresholds, with the grouped-arrival tolerance replaced. */
+    public ParametresQualite withToleranceArriveeGroupee(int minutes) {
+        return new ParametresQualite(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes,
+                minutes);
     }
 
     /**

@@ -1,0 +1,14 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+L'organisation a validé votre arrivée groupée avec {coequipiers}.
+
+Le planning cherchera à vous donner les mêmes jours, avec des arrivées et des départs proches. Ce n'est pas une garantie de travailler sur le même stand.
+
+Ce groupe est désormais celui de l'organisation : pour le modifier ou le retirer, adressez-vous à elle.
+{#if lienEspace}
+
+Votre covoiturage, dans votre espace :
+{lienEspace}
+{/if}

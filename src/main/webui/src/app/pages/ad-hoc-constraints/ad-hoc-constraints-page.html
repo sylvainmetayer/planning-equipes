@@ -89,13 +89,31 @@
       <ng-container matColumnDef="actions" stickyEnd>
         <th mat-header-cell scope="col" *matHeaderCellDef i18n-aria-label="@@common.actions" aria-label="Actions"></th>
         <td mat-cell *matCellDef="let contrainte" class="row-actions">
-          <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(contrainte)">
-            <mat-icon>edit</mat-icon>
-          </button>
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
-                  (click)="remove(contrainte)">
-            <mat-icon>delete</mat-icon>
-          </button>
+          @if (contrainte.issueDeCovoiturage) {
+            <!-- A disabled button shows no tooltip: the wrapper carries it. -->
+            <span i18n-matTooltip="@@adHoc.covoiturage.tooltip"
+                  matTooltip="Arrivée groupée issue d'une demande de covoiturage : elle se gère depuis Disponibilités > Covoiturage, qui prévient le groupe.">
+              <button matIconButton i18n-aria-label="@@adHoc.covoiturage.editDisabled" aria-label="Modifier (géré depuis Disponibilités > Covoiturage)" disabled>
+                <mat-icon>edit</mat-icon>
+              </button>
+              <button matIconButton i18n-aria-label="@@adHoc.covoiturage.deleteDisabled" aria-label="Supprimer (géré depuis Disponibilités > Covoiturage)" class="danger-action" disabled>
+                <mat-icon>delete</mat-icon>
+              </button>
+            </span>
+            <a matIconButton routerLink="/disponibilites" [queryParams]="{ onglet: 'covoiturage' }"
+               i18n-matTooltip="@@adHoc.covoiturage.lien" matTooltip="Ouvrir Disponibilités > Covoiturage"
+               i18n-aria-label="@@adHoc.covoiturage.lien" aria-label="Ouvrir Disponibilités > Covoiturage">
+              <mat-icon>directions_car</mat-icon>
+            </a>
+          } @else {
+            <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(contrainte)">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+                    (click)="remove(contrainte)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          }
         </td>
       </ng-container>
       <tr mat-header-row *matHeaderRowDef="columns"></tr>

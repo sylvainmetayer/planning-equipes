@@ -161,6 +161,11 @@ public final class ConstraintCatalog {
                     "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
                             + "les paramètres légaux, ou baissez le poids."),
             Map.entry(
+                    "arriveeGroupee",
+                    "Un groupe de covoiturage n'arrive ou ne repart pas ensemble : vérifiez que ses membres ont "
+                            + "déclaré les mêmes jours d'indisponibilité, élargissez la tolérance sur la page "
+                            + "Paramètres, ou montez le poids de la règle."),
+            Map.entry(
                     "trajetInsuffisantEntrePostes",
                     "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
                             + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
@@ -493,6 +498,18 @@ public final class ConstraintCatalog {
                             + "récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, "
                             + "sans jamais la forcer.",
                     "Affinités entre animateurs"),
+            new ConstraintDefinition(
+                    "arriveeGroupee",
+                    Niveau.SOFT,
+                    CATEGORIE_AD_HOC,
+                    "Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, "
+                            + "arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur "
+                            + "la page Paramètres). Chaque jour et chaque paire du groupe coûtent les minutes d'écart "
+                            + "au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures "
+                            + "quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent "
+                            + "tenir des stands différents. Contrainte souple : elle cède devant les règles légales "
+                            + "et l'équilibre de charge.",
+                    "Arrivées groupées (covoiturage)"),
             new ConstraintDefinition(
                     "animateurVerrouilleFige",
                     Niveau.HARD,

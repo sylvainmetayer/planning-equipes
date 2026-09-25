@@ -134,7 +134,8 @@ public class ParametresRepository {
                         SELECT max_emplacements_distincts_par_jour, heure_service_tardif,
                         heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
                         typologies_distinctes_max, jours_consecutifs_max,
-                        vitesse_marche_km_h, facteur_detour, tolerance_trajet_minutes
+                        vitesse_marche_km_h, facteur_detour, tolerance_trajet_minutes,
+                        tolerance_arrivee_groupee_minutes
                         FROM parametres_qualite
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -148,7 +149,8 @@ public class ParametresRepository {
                         rs.getInt("jours_consecutifs_max"),
                         rs.getDouble("vitesse_marche_km_h"),
                         rs.getDouble("facteur_detour"),
-                        rs.getInt("tolerance_trajet_minutes"));
+                        rs.getInt("tolerance_trajet_minutes"),
+                        rs.getInt("tolerance_arrivee_groupee_minutes"));
             }
             return defauts;
         } catch (SQLException e) {
@@ -163,8 +165,8 @@ public class ParametresRepository {
                         heure_service_tardif, heure_service_matinal,
                         repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max,
                         jours_consecutifs_max, vitesse_marche_km_h, facteur_detour,
-                        tolerance_trajet_minutes)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                        tolerance_trajet_minutes, tolerance_arrivee_groupee_minutes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET
                         max_emplacements_distincts_par_jour = EXCLUDED.max_emplacements_distincts_par_jour,
@@ -176,7 +178,8 @@ public class ParametresRepository {
                         jours_consecutifs_max = EXCLUDED.jours_consecutifs_max,
                         vitesse_marche_km_h = EXCLUDED.vitesse_marche_km_h,
                         facteur_detour = EXCLUDED.facteur_detour,
-                        tolerance_trajet_minutes = EXCLUDED.tolerance_trajet_minutes""")) {
+                        tolerance_trajet_minutes = EXCLUDED.tolerance_trajet_minutes,
+                        tolerance_arrivee_groupee_minutes = EXCLUDED.tolerance_arrivee_groupee_minutes""")) {
             ps.setInt(2, parametres.maxEmplacementsDistinctsParJour());
             ps.setObject(3, parametres.heureServiceTardif());
             ps.setObject(4, parametres.heureServiceMatinal());
@@ -186,6 +189,7 @@ public class ParametresRepository {
             ps.setBigDecimal(8, BigDecimal.valueOf(parametres.vitesseMarcheKmH()));
             ps.setBigDecimal(9, BigDecimal.valueOf(parametres.facteurDetour()));
             ps.setInt(10, parametres.toleranceTrajetMinutes());
+            ps.setInt(11, parametres.toleranceArriveeGroupeeMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save quality parameters", e);

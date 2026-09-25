@@ -34,4 +34,5 @@ public record ParametresQualiteDto(
         @Positive Integer joursConsecutifsMax,
         @Positive @DecimalMax("15") Double vitesseMarcheKmH,
         @DecimalMin("1") @DecimalMax("5") Double facteurDetour,
-        @PositiveOrZero @Max(120) Integer toleranceTrajetMinutes) {}
+        @PositiveOrZero @Max(120) Integer toleranceTrajetMinutes,
+        @PositiveOrZero @Max(240) Integer toleranceArriveeGroupeeMinutes) {}

@@ -2108,6 +2108,44 @@ cassé.
 Les compétences ne se déclarent **pas** ici : une compétence auto-déclarée
 alimente des contraintes *dures*, et l'enjeu de validation n'est pas le même.
 
+### Covoiturage : une demande à part
+
+« Je viens avec… » (un à trois coéquipiers) **ne voyage pas avec la
+déclaration** : l'espace l'envoie depuis son propre onglet, par
+`POST /api/espace-animateur/{jeton}/covoiturage`, et l'admin la décide depuis
+`/api/disponibilites/coequipiers/…`. Appliquer ou refuser une déclaration ne la
+touche jamais, et l'inverse non plus — deux décisions indépendantes sur deux
+tables (`declaration_coequipier`).
+
+| Borne | Pourquoi |
+| --- | --- |
+| La **fenêtre de la collecte**, la même que celle des déclarations | Une seule période où l'animateur écrit avant la construction ; fermée, l'onglet se lit (`GET`) mais l'envoi répond `400` |
+| **Une demande en attente** par animateur (index unique partiel) | Renvoyer remplace ; une liste vide retire la demande |
+| Un compteur de débit **à part**, au même plafond que les déclarations | Se corriger d'un côté ne consomme pas les envois de l'autre |
+| `409` tant qu'une arrivée groupée validée nomme l'animateur | Le groupe validé appartient à l'organisation : elle l'annule depuis l'onglet Covoiturage, jamais depuis l'espace |
+
+« Écarter » accepte un motif facultatif (`reason`, 500 caractères au plus),
+stocké avec la demande et relu par l'animateur dans son onglet. Chaque
+décision part en **notification** (`service/notification/`), donc au mieux :
+la validation écrit à chaque membre, l'écart au seul demandeur, avec un lien
+vers l'onglet Covoiturage de l'espace (`ApplicationLinks`). Un SMTP en panne
+n'annule jamais la décision déjà enregistrée. Le motif n'entre pas au journal
+des actions, qui ne garde que l'identifiant de la demande.
+
+« Annuler l'arrivée groupée » (`POST /api/disponibilites/coequipiers/{id}/annulation`,
+même motif facultatif) vise le **groupe**, pas la seule demande `{id}` : il
+supprime l'ajustement et passe `ANNULEE` toutes les demandes validées avec lui,
+dans une transaction. `404` pour un `{id}` inconnu, `409` pour une demande qui
+n'est pas (ou plus) validée — annulée deux fois, écartée, en attente, ou dont
+l'ajustement a disparu. Le piège est de l'autre côté : `DELETE
+/api/contraintes-ad-hoc/{id}` et le `POST` qui réécrit un ajustement existant
+répondent `409` sur une arrivée groupée qu'une demande validée soutient (la vue
+porte `issueDeCovoiturage`) — la supprimer là laisserait le groupe croire à
+une voiture qui n'existe plus. L'annulation est refusée en `409` pendant
+qu'une résolution tient l'édition : le calcul en cours note encore l'arrivée
+groupée qu'il a reçue, et le groupe serait prévenu d'un changement que le plan
+à venir ne reflète pas.
+
 ## Marque et mentions légales
 
 `/api/branding` et `/api/mentions-legales` sont **publics**, comme

@@ -425,6 +425,14 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'covoiturage',
+        title: () => $localize`:@@route.espace.covoiturage:Mon covoiturage`,
+        loadComponent: () =>
+          import('./pages/espace-animateur/espace-covoiturage-page').then(
+            (m) => m.EspaceCovoituragePage,
+          ),
+      },
+      {
         path: 'aide',
         title: () => $localize`:@@route.espace.aide:Aide`,
         loadComponent: () =>

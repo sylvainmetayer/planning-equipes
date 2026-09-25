@@ -19,6 +19,8 @@ import {
   ViolationReference,
   FeasibilityReport,
   NiveauContrainte,
+  GroupDayView,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportPauses,
   TypeCauseInfaisabilite,
@@ -31,7 +33,7 @@ import { walkLabel } from './walks-index';
 /** Display severity of the merged list, from the most to the least blocking. */
 export type NiveauProbleme = 'BLOQUANT' | 'AVERTISSEMENT' | 'MINEUR';
 
-export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE' | 'PAUSES' | 'TRAJETS';
+export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE' | 'PAUSES' | 'TRAJETS' | 'COVOITURAGE';
 
 export interface Probleme {
   /** Stable within one merge, used as the `@for` track key. */
@@ -207,6 +209,7 @@ const RANG_SOURCE: Record<SourceProbleme, number> = {
   CONTRAINTE: 1,
   PAUSES: 2,
   TRAJETS: 3,
+  COVOITURAGE: 4,
 };
 
 export function niveauDeCause(severite: CauseInfaisabilite['severite']): NiveauProbleme {
@@ -403,8 +406,52 @@ export function construireProblemes(
   nomsStands: LabelIndex = new Map(),
   nomsAnimateurs: LabelIndex = new Map(),
   walks: WalkSequenceReport | null = null,
+  groupedArrivals: GroupedArrivalReport | null = null,
 ): Probleme[] {
   const problemes: Probleme[] = [];
+
+  // The days a covoiturage does not hold, group by group: a soft rule the
+  // solver may have traded away, and the organiser decides whether to act.
+  const misaligned = (groupedArrivals?.groups ?? []).filter((groupe) => groupe.misalignedDays > 0);
+  if (misaligned.length > 0) {
+    const count = misaligned.reduce((total, groupe) => total + groupe.misalignedDays, 0);
+    const days = [
+      ...new Set(
+        misaligned.flatMap((groupe) =>
+          groupe.days.filter((jour) => !jour.aligned).map((jour) => jour.date),
+        ),
+      ),
+    ].sort(compareCodeUnits);
+    problemes.push({
+      id: 'arrivees-groupees-desalignees',
+      niveau: 'MINEUR',
+      source: 'COVOITURAGE',
+      titre: $localize`:@@problemes.covoiturage.titre:Covoiturages désalignés`,
+      message: $localize`:@@problemes.covoiturage.message:${count}:count: jour(s) où un groupe de covoiturage n'arrive ou ne repart pas ensemble : un membre travaille sans les autres, ou leurs horaires s'écartent au-delà de la tolérance.`,
+      details: misaligned.flatMap((groupe) =>
+        groupe.days
+          .filter((jour) => !jour.aligned)
+          .map(
+            (jour) =>
+              `${labelsOf(nomsAnimateurs, groupe.animateurIds).join(', ')} · ${misalignmentLabel(jour, nomsAnimateurs)}`,
+          ),
+      ),
+      references: [],
+      actions: [],
+      liens: [
+        {
+          route: '/ad-hoc-constraints',
+          queryParams: { ids: misaligned.map((groupe) => groupe.contrainteId).join(',') },
+          libelle: $localize`:@@problemes.lien.adHoc:Voir les ajustements manuels`,
+        },
+        ...days.map((date) => ({
+          route: '/journee',
+          queryParams: { vue: 'rail', date },
+          libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
+        })),
+      ],
+    });
+  }
 
   // A walk the gap does not leave time for is a reading of the persisted plan,
   // not a score: the solver may still price it (trajetInsuffisantEntrePostes),
@@ -530,6 +577,18 @@ export function construireProblemes(
       RANG_NIVEAU[a.niveau] - RANG_NIVEAU[b.niveau] ||
       RANG_SOURCE[a.source] - RANG_SOURCE[b.source],
   );
+}
+
+/** « 2026-07-10 — sans Oscar Petit », « 2026-07-11 — arrivées à 45 min d'écart ». */
+function misalignmentLabel(jour: GroupDayView, nomsAnimateurs: LabelIndex): string {
+  const date = jour.date;
+  if (jour.absent.length > 0) {
+    const missing = labelsOf(nomsAnimateurs, jour.absent).join(', ');
+    return $localize`:@@problemes.covoiturage.absents:${date}:date: — sans ${missing}:absents:`;
+  }
+  const arrivee = jour.arrivalSpreadMinutes;
+  const depart = jour.departureSpreadMinutes;
+  return $localize`:@@problemes.covoiturage.ecarts:${date}:date: — arrivées à ${arrivee}:arrivee: min d'écart, départs à ${depart}:depart: min`;
 }
 
 export function compterProblemes(problemes: Probleme[]): ComptageProblemes {

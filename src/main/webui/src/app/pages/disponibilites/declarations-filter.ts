@@ -16,3 +16,15 @@ export function readPendingOnly(statut: string | null): boolean {
 export function oldestFirst<T extends DeclarationAdminView>(declarations: readonly T[]): T[] {
   return [...declarations].sort((a, b) => a.creeLe.localeCompare(b.creeLe));
 }
+
+/**
+ * The two tabs of the screen, and the values of the `onglet` query param: the
+ * declarations of availability, and the covoiturage requests — sent apart,
+ * decided apart.
+ */
+export type DisponibilitesTab = 'declarations' | 'covoiturage';
+
+/** Tolerant reading: anything but `covoiturage` is the declarations, the tab the screen opens on. */
+export function readDisponibilitesTab(value: string | null): DisponibilitesTab {
+  return value === 'covoiturage' ? 'covoiturage' : 'declarations';
+}

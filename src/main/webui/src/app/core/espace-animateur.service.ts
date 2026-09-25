@@ -6,10 +6,12 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject, signal } from '@angular/core';
 import { ApiService, toError } from './api.service';
 import {
+  CarpoolEspaceView,
   DeclarationEspaceView,
   AccuseReception,
   DemandeEchangeView,
   EspaceAnimateurView,
+  NewCarpoolRequest,
   NouvelleDeclaration,
   NouvelleDemandeEchange,
   PosteAnimateurView,
@@ -225,6 +227,31 @@ export class EspaceAnimateurService {
         `/api/espace-animateur/${jeton}/disponibilites`,
         nouvelle,
       ),
+    );
+  }
+
+  /* ----- Covoiturage: « Je viens avec… », apart from the declaration ----- */
+
+  /** `null` until the Covoiturage tab has been opened once. */
+  private readonly _carpool = signal<CarpoolEspaceView | null>(null);
+  readonly carpool = this._carpool.asReadonly();
+
+  /** Loads (or reloads) the Covoiturage tab, only when it is opened. */
+  async loadCarpool(): Promise<void> {
+    const jeton = this.requireJeton();
+    this._carpool.set(
+      await this.api.get<CarpoolEspaceView>(`/api/espace-animateur/${jeton}/covoiturage`),
+    );
+  }
+
+  /**
+   * Sends my covoiturage request, replacing the pending one; an empty list
+   * withdraws it. Nothing of it touches my declaration of availability.
+   */
+  async requestCarpool(request: NewCarpoolRequest): Promise<void> {
+    const jeton = this.requireJeton();
+    this._carpool.set(
+      await this.api.post<CarpoolEspaceView>(`/api/espace-animateur/${jeton}/covoiturage`, request),
     );
   }
 

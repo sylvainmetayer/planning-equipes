@@ -4,7 +4,11 @@
 export type NiveauCompetence = 'DEBUTANT' | 'AUTONOME' | 'REFERENT';
 export type NiveauEffort = 'NORMAL' | 'EPUISANT';
 export type TypeContrainteAdHoc =
-  'INDISPONIBILITE_FORCEE' | 'INCOMPATIBILITE' | 'AFFECTATION_FORCEE' | 'AFFINITE';
+  | 'INDISPONIBILITE_FORCEE'
+  | 'INCOMPATIBILITE'
+  | 'AFFECTATION_FORCEE'
+  | 'AFFINITE'
+  | 'ARRIVEE_GROUPEE';
 export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 
 /** `/api/typologies` items: the enum id plus a display label. */
@@ -727,6 +731,7 @@ export type TypeAvertissement =
   | 'AFFECTATION_FORCEE_JOUR_INDISPONIBLE'
   | 'AFFECTATION_FORCEE_MOTIF_LEGAL'
   | 'AFFECTATION_FORCEE_SIEGE_VERROUILLE'
+  | 'ARRIVEE_GROUPEE_JOURS_DIVERGENTS'
   | 'VERROUILLAGE_SUR_VIOLATION_DURE';
 
 export interface Avertissement {
@@ -865,6 +870,12 @@ export interface ContrainteAdHoc {
   raison: string;
   creeParUtilisateurId?: string;
   creeLe?: string;
+  /**
+   * Read-only: a validated covoiturage demand stands behind this grouped
+   * arrival. The server refuses to edit or delete it here (409): it is
+   * cancelled from Disponibilités > Covoiturage, which tells the group.
+   */
+  issueDeCovoiturage?: boolean;
 }
 
 /**
@@ -997,6 +1008,8 @@ export interface ParametresQualite {
   facteurDetour?: number;
   /** Minutes a gap between two seats may lack before `trajetInsuffisantEntrePostes` counts anything. */
   toleranceTrajetMinutes?: number;
+  /** Minutes the arrivals, or the departures, of a grouped arrival may differ before `arriveeGroupee` counts. */
+  toleranceArriveeGroupeeMinutes?: number;
 }
 
 export interface HardMediumSoftScore {
@@ -2799,6 +2812,11 @@ export interface EspaceAnimateurView {
   editionDebut: string | null;
   /** Last day, `null` under the same condition. */
   editionFin: string | null;
+  /**
+   * The days of my grouped arrival (covoiturage), aligned or not — never the
+   * others' seats. Empty when I belong to no group.
+   */
+  covoiturage?: CarpoolDayView[];
 }
 
 /**
@@ -3063,6 +3081,13 @@ export interface ReferenceUsage {
   consignes: number;
 }
 
+/** One day of my covoiturage, as the espace says it — only the days I work. */
+export interface CarpoolDayView {
+  date: string;
+  /** True: « même horaire que votre covoiturage » ; false: « horaires différents ce jour ». */
+  aligned: boolean;
+}
+
 /* ---------- Self-service declaration of availability (issue #291) ---------- */
 
 /** Lifecycle of a declaration: only one is ever `EN_ATTENTE` per animateur. */
@@ -3111,6 +3136,106 @@ export interface NouvelleDeclaration {
   joursIndisponibles: string[];
   souhaits: string[];
   commentaire: string | null;
+}
+
+/* ---------- Carpool: the grouped arrival ---------- */
+
+export type StatutDemandeCoequipier = 'EN_ATTENTE' | 'VALIDEE' | 'ECARTEE' | 'ANNULEE';
+
+/**
+ * `GET /api/espace-animateur/{jeton}/covoiturage`: the Covoiturage tab —
+ * « Je viens avec… », asked for apart from the declaration, on its window.
+ */
+export interface CarpoolEspaceView {
+  /** A request can be sent now: the collection window of the declarations. */
+  collectionOpen: boolean;
+  collectionStart?: string | null;
+  collectionEnd?: string | null;
+  /** Who can be named: the edition's other animateurs. */
+  colleagues: CollegueView[];
+  /** The others in my car: validated group, else pending request, else the last one set aside or cancelled. */
+  teammateIds: string[];
+  /** `null` when there is no car. */
+  status?: StatutDemandeCoequipier | null;
+  /** Why my last request was set aside, or my car cancelled, when the organisation said. */
+  reason?: string | null;
+  decidedAt?: string | null;
+}
+
+/** Payload of `POST /api/disponibilites/coequipiers/{id}/annulation`: an optional reason for the group. */
+export interface CarpoolCancellation {
+  reason?: string | null;
+}
+
+/** Payload of `POST /api/espace-animateur/{jeton}/covoiturage`; empty withdraws the pending request. */
+export interface NewCarpoolRequest {
+  teammateIds: string[];
+}
+
+/** A member of a declared car, named for the admin screen. */
+export interface MemberView {
+  animateurId: string;
+  fullName: string;
+}
+
+/** `GET /api/disponibilites/coequipiers`: one covoiturage declared in the collection. */
+export interface TeammateRequestView {
+  id: string;
+  animateurId: string;
+  nature: string;
+  status: StatutDemandeCoequipier;
+  /** The declarant first, then the teammates they named. */
+  members: MemberView[];
+  /** Every other member declared the very same car. */
+  confirmedByAll: boolean;
+  /** Days the members' declared unavailabilities disagree on — the car cannot hold there. */
+  divergentDayCount: number;
+  divergentDays: string[];
+  /** The `ARRIVEE_GROUPEE` exception the validation created or joined. */
+  contrainteId: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+  /** Why it was set aside or cancelled, as typed for the animateur; `null` when none. */
+  reason?: string | null;
+}
+
+/** Answer of a validation: the demand, and what the created exception raised. */
+export interface ValidatedCarpool {
+  request: TeammateRequestView;
+  avertissements: Avertissement[];
+}
+
+/** One member's day in a grouped arrival: first start and last end. */
+export interface MemberHoursView {
+  animateurId: string;
+  start: string;
+  end: string;
+}
+
+/** One day of one group, aligned or not. */
+export interface GroupDayView {
+  date: string;
+  aligned: boolean;
+  working: string[];
+  /** Members holding no seat while another does. */
+  absent: string[];
+  arrivalSpreadMinutes: number;
+  departureSpreadMinutes: number;
+  hours: MemberHoursView[];
+}
+
+/** One `ARRIVEE_GROUPEE` group and its days. */
+export interface GroupView {
+  contrainteId: string;
+  animateurIds: string[];
+  misalignedDays: number;
+  days: GroupDayView[];
+}
+
+/** `GET /api/planning/arrivees-groupees`: the grouped arrivals of the persisted plan, day by day. */
+export interface GroupedArrivalReport {
+  toleranceMinutes: number;
+  groups: GroupView[];
 }
 
 /** One declaration on the admin screen, with the animateur named and the wishes spelled out. */

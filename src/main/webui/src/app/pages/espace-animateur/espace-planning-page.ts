@@ -445,6 +445,16 @@ export class EspacePlanningPage {
   });
 
   /**
+   * My covoiturage on the day on screen: `null` when I belong to no group or
+   * do not work that day; otherwise whether the car holds — never who works
+   * where.
+   */
+  protected readonly carpoolOfDay = computed(() => {
+    const date = this.jourAffiche()?.date;
+    return (this.espace.view()?.covoiturage ?? []).find((jour) => jour.date === date) ?? null;
+  });
+
+  /**
    * The seats already over: everything before the one being held, or before the
    * next one when none is.
    *

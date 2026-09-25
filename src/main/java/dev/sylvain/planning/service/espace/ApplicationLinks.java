@@ -52,6 +52,9 @@ public class ApplicationLinks {
     /** Tab of the espace where an animateur declares — a child route of the above. */
     private static final String ESPACE_DISPONIBILITES = "disponibilites";
 
+    /** Tab of the espace where an animateur asks for, and reads, their covoiturage. */
+    private static final String ESPACE_COVOITURAGE = "covoiturage";
+
     /** Configured base URL, trimmed, or empty when unset or blank. */
     private final Optional<String> base;
 
@@ -121,13 +124,26 @@ public class ApplicationLinks {
      * see rather than something to go looking for.
      */
     public Optional<String> espaceDisponibilites(String token) {
+        return espaceTab(token, ESPACE_DISPONIBILITES);
+    }
+
+    /**
+     * The Covoiturage tab of that espace — where the mail announcing a decision
+     * on a covoiturage sends its reader, since that is where the group, or the
+     * reason it was set aside, is shown.
+     */
+    public Optional<String> espaceCovoiturage(String token) {
+        return espaceTab(token, ESPACE_COVOITURAGE);
+    }
+
+    private Optional<String> espaceTab(String token, String tab) {
         if (token == null || token.isBlank()) {
             return Optional.empty();
         }
         return base.map(url -> UriBuilder.fromUri(url)
                 .path(ESPACE_ANIMATEUR)
                 .path("{jeton}")
-                .path(ESPACE_DISPONIBILITES)
+                .path(tab)
                 .build(token)
                 .toString());
     }

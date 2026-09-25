@@ -34,6 +34,7 @@ import { openMoveDialog } from '../../shared/deplacement-dialog';
 import { OptionSelection } from '../../shared/selection-recherche';
 import {
   PlanningEvenement,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportPauses,
   TypologieItem,
@@ -91,6 +92,8 @@ export class RailJourView {
   readonly pauses = input<RapportPauses | null>(null);
   /** The tight walks of the plan; null when the request failed — the rail still draws. */
   readonly walks = input<WalkSequenceReport | null>(null);
+  /** The grouped arrivals of the plan; null when the request failed — the rail still draws. */
+  readonly groupedArrivals = input<GroupedArrivalReport | null>(null);
   /** The day number the page selected; the first day of the plan when null. */
   readonly jour = input<number | null>(null);
   /** The page's shared filters: a name, a stand, an animateur — each empty when unset. */
@@ -119,6 +122,7 @@ export class RailJourView {
       planning.contraintesAdHoc ?? [],
       this.pauses(),
       this.walks(),
+      this.groupedArrivals(),
     );
   });
 

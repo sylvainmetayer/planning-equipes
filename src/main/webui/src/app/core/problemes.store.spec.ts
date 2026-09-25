@@ -2,7 +2,13 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { ProblemesStore } from './problemes.store';
-import type { CauseInfaisabilite, ConstraintsView, FeasibilityReport, Stand } from './models';
+import type {
+  Animateur,
+  CauseInfaisabilite,
+  ConstraintsView,
+  FeasibilityReport,
+  Stand,
+} from './models';
 import { ReferenceDataStore } from './reference-data.store';
 import { seedStore } from './testing/seed-store';
 
@@ -196,6 +202,43 @@ describe('ProblemesStore', () => {
       expect(store.problemes()[0].liens[0].route).toBe('/journee');
       expect(store.alertePausesSansRelais()).toContain('1 pause(s) légale(s) sans relais');
       expect(store.error()).toBe('');
+    });
+
+    it('reads the grouped arrivals and names their members from the referential', async () => {
+      seedStore(TestBed.inject(ReferenceDataStore), 'animateurs', [
+        { id: 'a1', prenom: 'Ines', nom: 'Martin' } as Animateur,
+        { id: 'a2', prenom: 'Oscar', nom: 'Petit' } as Animateur,
+      ]);
+      api.responses = {
+        '/api/feasibility': report([]),
+        '/api/constraints': { ...constraintsView(), contraintes: [] },
+        '/api/planning/arrivees-groupees': {
+          toleranceMinutes: 30,
+          groups: [
+            {
+              contrainteId: 'G1',
+              animateurIds: ['a1', 'a2'],
+              misalignedDays: 1,
+              days: [
+                {
+                  date: '2026-08-01',
+                  aligned: false,
+                  working: ['a1'],
+                  absent: ['a2'],
+                  arrivalSpreadMinutes: 0,
+                  departureSpreadMinutes: 0,
+                  hours: [],
+                },
+              ],
+            },
+          ],
+        },
+      };
+      await store.reload();
+      expect(store.problemes().map((probleme) => probleme.source)).toEqual(['COVOITURAGE']);
+      expect(store.problemes()[0].details).toEqual([
+        'Ines Martin, Oscar Petit · 2026-08-01 — sans Oscar Petit',
+      ]);
     });
 
     it('says nothing about breaks when every one has a relay, or when the endpoint fails', async () => {

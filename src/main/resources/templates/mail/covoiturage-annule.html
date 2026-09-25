@@ -1,0 +1,19 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">L'organisation a annulé votre arrivée groupée avec {coequipiers}.</p>
+{#if motif}
+<p style="margin:0 0 12px;">Son explication : {motif}</p>
+{/if}
+{#if collecteOuverte}
+<p style="margin:0{#if lienEspace} 0 12px{/if};">Vous pouvez envoyer une nouvelle demande depuis l'onglet Covoiturage de votre espace, tant que la collecte des disponibilités est ouverte.</p>
+{#else}
+<p style="margin:0{#if lienEspace} 0 12px{/if};">La collecte des disponibilités est fermée : pour voyager de nouveau en groupe, adressez-vous à l'organisation.</p>
+{/if}
+{#if lienEspace}
+<p style="margin:0;">Votre covoiturage, dans votre espace : <a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

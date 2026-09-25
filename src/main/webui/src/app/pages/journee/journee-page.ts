@@ -22,6 +22,7 @@ import { errorPrefix } from '../../core/error-message';
 import {
   Emplacement,
   PlanningEvenement,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportPauses,
   TypologieItem,
@@ -121,6 +122,8 @@ export class JourneePage implements OnInit {
   protected readonly pauses = signal<RapportPauses | null>(null);
   /** The tight walks between two vacations; null when the request failed — the rail still draws. */
   protected readonly walks = signal<WalkSequenceReport | null>(null);
+  /** The grouped arrivals (covoiturages), day by day; null when the request failed. */
+  protected readonly groupedArrivals = signal<GroupedArrivalReport | null>(null);
   /** Emplacement referential, for the map; empty when it could not be read. */
   protected readonly emplacements = signal<Emplacement[]>([]);
 
@@ -353,18 +356,25 @@ export class JourneePage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [planning, typologies, pauses, emplacements, walks] = await Promise.all([
-        this.planningState.loadForDisplay(),
-        this.analysesApi.typologies().catch(() => []),
-        this.analysesApi.breaks().catch(() => null),
-        this.analysesApi.emplacements().catch(() => []),
-        this.analysesApi.walks().catch(() => null),
-      ]);
+      const [planning, typologies, pauses, emplacements, walks, groupedArrivals] =
+        await Promise.all([
+          this.planningState.loadForDisplay(),
+          this.analysesApi.typologies().catch(() => []),
+          this.analysesApi.breaks().catch(() => null),
+          this.analysesApi.emplacements().catch(() => []),
+          this.analysesApi.walks().catch(() => null),
+          this.analysesApi.groupedArrivals().catch(() => null),
+        ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       this.emplacements.set(emplacements);
       this.walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
+      this.groupedArrivals.set(
+        groupedArrivals && typeof groupedArrivals === 'object' && 'groups' in groupedArrivals
+          ? groupedArrivals
+          : null,
+      );
       // The banner is refreshed with the plan it comments on: a solve that
       // withdrew readings must not leave the old count on screen.
       void this.validations.reload();

@@ -498,3 +498,52 @@ describe('construireProblemes — tight walks', () => {
     ).toEqual([]);
   });
 });
+
+describe('construireProblemes — covoiturages', () => {
+  it('lists the misaligned days group by group, linking to the adjustments and the rail', () => {
+    const nomsAnimateurs = new Map([
+      ['a1', 'Ines Martin'],
+      ['a2', 'Oscar Petit'],
+    ]);
+    const problemes = construireProblemes(null, [], [], null, new Map(), nomsAnimateurs, null, {
+      toleranceMinutes: 30,
+      groups: [
+        {
+          contrainteId: 'G1',
+          animateurIds: ['a1', 'a2'],
+          misalignedDays: 1,
+          days: [
+            {
+              date: '2026-08-01',
+              aligned: false,
+              working: ['a1'],
+              absent: ['a2'],
+              arrivalSpreadMinutes: 0,
+              departureSpreadMinutes: 0,
+              hours: [],
+            },
+            {
+              date: '2026-08-02',
+              aligned: true,
+              working: ['a1', 'a2'],
+              absent: [],
+              arrivalSpreadMinutes: 10,
+              departureSpreadMinutes: 0,
+              hours: [],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0].source).toBe('COVOITURAGE');
+    expect(problemes[0].details).toEqual([
+      'Ines Martin, Oscar Petit · 2026-08-01 — sans Oscar Petit',
+    ]);
+    expect(problemes[0].liens.map((lien) => lien.queryParams)).toEqual([
+      { ids: 'G1' },
+      { vue: 'rail', date: '2026-08-01' },
+    ]);
+  });
+});

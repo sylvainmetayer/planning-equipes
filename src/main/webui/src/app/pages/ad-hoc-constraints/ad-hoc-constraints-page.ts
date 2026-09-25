@@ -51,6 +51,8 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
       return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
     case 'AFFINITE':
       return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
+    case 'ARRIVEE_GROUPEE':
+      return $localize`:@@adHoc.type.arriveeGroupee:Arrivée groupée (covoiturage, 2 à 4 animateurs)`;
   }
 }
 
@@ -63,6 +65,10 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
  * <p>The prescriptive ones are evaluated as hard constraints by the solver. The
  * backend only exposes POST (create or overwrite by id) and DELETE, so an edit
  * is always saved as a creation (see the form dialog).</p>
+ *
+ * <p>A grouped arrival a validated covoiturage stands behind
+ * (`issueDeCovoiturage`) is read here and changed nowhere: its row links to
+ * Disponibilités > Covoiturage, whose cancellation tells the group.</p>
  *
  * <p>Two readings of the same data (`?vue=reseau`): the table, and the network
  * of the AFFINITE / INCOMPATIBILITE pairs — a second reading on the same page
@@ -157,7 +163,9 @@ export class AdHocConstraintsPage {
     consumeQueryParam('edit', async (edit) => {
       await chargement;
       const contrainte = this.store.contraintes().find((candidate) => candidate.id === edit);
-      if (contrainte) {
+      // A request-backed grouped arrival has no form here: the server would
+      // refuse the save, and the Covoiturage tab is where it is cancelled.
+      if (contrainte && !contrainte.issueDeCovoiturage) {
         this.openDialog(contrainte);
       }
     });

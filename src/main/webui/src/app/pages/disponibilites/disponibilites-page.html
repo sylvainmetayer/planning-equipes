@@ -67,101 +67,201 @@
   <mat-progress-bar mode="indeterminate" />
 }
 
-<h2 i18n="@@dispo.enAttenteTitre">En attente de votre décision</h2>
-<mat-checkbox [checked]="pendingOnly()" (change)="pendingOnly.set($event.checked)"
-              i18n="@@dispo.filtreEnAttente">En attente seulement, la plus ancienne d'abord</mat-checkbox>
-@if (editingLocked()) {
-  <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
-}
-@if (pending().length === 0) {
-  <p class="espace-vide" i18n="@@dispo.aucuneEnAttente">Aucune déclaration en attente.</p>
-}
-@for (declaration of pending(); track declaration.id) {
-  <mat-card class="dispo-admin-declaration" appearance="outlined">
-    <mat-card-header>
-      <h3 mat-card-title>{{ declaration.animateurNom }}</h3>
-      <mat-card-subtitle>{{ declaration.creeLe | date: 'short' }}</mat-card-subtitle>
-    </mat-card-header>
-    <mat-card-content>
-      <div class="dispo-admin-colonnes">
-        <div class="dispo-admin-colonne">
-          <h4 i18n="@@dispo.colonne.declare">Ce qu'il déclare</h4>
-          <ul class="dispo-admin-valeurs">
-            @for (jour of declaration.joursIndisponibles; track jour) {
-              <li>{{ jour | date: 'EEE d MMM y' }}</li>
-            } @empty {
-              <li i18n="@@dispo.aucunJour">Disponible tous les jours</li>
-            }
-          </ul>
-          <ul class="dispo-admin-valeurs">
-            @for (souhait of declaration.souhaitsLabels; track souhait) {
-              <li>{{ souhait }}</li>
-            } @empty {
-              <li i18n="@@dispo.aucunSouhait">Aucun souhait</li>
-            }
-          </ul>
-        </div>
-        <div class="dispo-admin-colonne">
-          <h4 i18n="@@dispo.colonne.actuel">Ce que dit sa fiche aujourd'hui</h4>
-          <ul class="dispo-admin-valeurs">
-            @for (jour of declaration.joursActuels; track jour) {
-              <li>{{ jour | date: 'EEE d MMM y' }}</li>
-            } @empty {
-              <li i18n="@@dispo.aucunJourActuel">Disponible tous les jours</li>
-            }
-          </ul>
-          <ul class="dispo-admin-valeurs">
-            @for (souhait of declaration.souhaitsActuelsLabels; track souhait) {
-              <li>{{ souhait }}</li>
-            } @empty {
-              <li i18n="@@dispo.aucunSouhaitActuel">Aucun souhait</li>
-            }
-          </ul>
-        </div>
-      </div>
-      @if (declaration.commentaire) {
-        <p class="dispo-admin-commentaire">
-          <mat-icon inline>forum</mat-icon>
-          {{ declaration.commentaire }}
-        </p>
-      }
-    </mat-card-content>
-    <mat-card-actions>
-      <div class="dispo-admin-actions">
-        <button
-          matButton="filled"
-          [disabled]="editingLocked() || decisionEnCours() === declaration.id"
-          (click)="apply(declaration)"
-        >
-          <mat-icon>check</mat-icon>
-          <span i18n="@@dispo.appliquer">Appliquer</span>
-        </button>
-        <button matButton [disabled]="editingLocked() || decisionEnCours() === declaration.id" (click)="refuser(declaration)">
-          <mat-icon>close</mat-icon>
-          <span i18n="@@dispo.refuser">Refuser</span>
-        </button>
-      </div>
-    </mat-card-actions>
-  </mat-card>
-}
+<mat-button-toggle-group class="dispo-onglets" [value]="tab()" (change)="changeTab($event.value)"
+                         aria-label="Onglet des disponibilités" i18n-aria-label="@@dispo.onglet.label">
+  <mat-button-toggle value="declarations">
+    <mat-icon>event_available</mat-icon>
+    <ng-container i18n="@@dispo.onglet.declarations">Déclarations</ng-container>
+  </mat-button-toggle>
+  <mat-button-toggle value="covoiturage">
+    <mat-icon>directions_car</mat-icon>
+    <ng-container i18n="@@dispo.onglet.covoiturage">Covoiturage</ng-container>
+    @if (pendingCarpools().length > 0) {
+      <span class="dispo-onglet-compte">({{ pendingCarpools().length }})</span>
+    }
+  </mat-button-toggle>
+</mat-button-toggle-group>
 
-@if (!pendingOnly() && decidees().length > 0) {
-  <h2 i18n="@@dispo.decideesTitre">Déjà traitées</h2>
-  @for (declaration of decidees(); track declaration.id) {
+@if (tab() === 'covoiturage') {
+  <h2 i18n="@@dispo.covoiturage.titre">Demandes de covoiturage</h2>
+  <p class="dispo-admin-commentaire" i18n="@@dispo.covoiturage.intro">
+    « Je viens avec… » : demandé depuis l'espace, à part des déclarations. Valider crée un ajustement « arrivée
+    groupée » ; écarter le classe, avec un motif facultatif. Chacun est prévenu par e-mail.
+  </p>
+  @if (editingLocked()) {
+    <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  }
+  @for (carpool of pendingCarpools(); track carpool.id) {
     <mat-card class="dispo-admin-declaration" appearance="outlined">
+      <mat-card-header>
+        <h3 mat-card-title>{{ membersLabel(carpool) }}</h3>
+        <mat-card-subtitle>{{ carpool.createdAt | date: 'short' }}</mat-card-subtitle>
+      </mat-card-header>
       <mat-card-content>
         <p class="dispo-admin-commentaire">
-          <strong>{{ declaration.animateurNom }}</strong>
-          <span>{{ statutLabel(declaration) }}</span>
-          <span>{{ declaration.decideLe | date: 'short' }}</span>
+          @if (carpool.confirmedByAll) {
+            <span class="dispo-covoiturage-badge">
+              <mat-icon inline aria-hidden="true">verified</mat-icon>
+              <ng-container i18n="@@dispo.covoiturage.confirme">Confirmé par tous</ng-container>
+            </span>
+          } @else {
+            <span i18n="@@dispo.covoiturage.nonConfirme">Tous les membres n'ont pas nommé les autres.</span>
+          }
         </p>
-        @if (declaration.commentaireAdmin) {
+        @if (carpool.divergentDayCount > 0) {
           <p class="dispo-admin-commentaire">
-            <mat-icon inline>forum</mat-icon>
-            {{ declaration.commentaireAdmin }}
+            <mat-icon inline aria-hidden="true">warning</mat-icon>
+            <ng-container i18n="@@dispo.covoiturage.divergents">{{ carpool.divergentDayCount }} jour(s) où leurs indisponibilités déclarées divergent : ces jours-là, ils ne pourront pas arriver ensemble.</ng-container>
           </p>
         }
       </mat-card-content>
+      <mat-card-actions>
+        <div class="dispo-admin-actions">
+          <button
+            matButton="filled"
+            [disabled]="editingLocked() || decisionEnCours() === carpool.id"
+            (click)="validateCarpool(carpool)"
+          >
+            <mat-icon>directions_car</mat-icon>
+            <span i18n="@@dispo.covoiturage.valider">Valider l'arrivée groupée</span>
+          </button>
+          <button matButton [disabled]="decisionEnCours() === carpool.id" (click)="setCarpoolAside(carpool)">
+            <mat-icon>close</mat-icon>
+            <span i18n="@@dispo.covoiturage.ecarter">Écarter</span>
+          </button>
+        </div>
+      </mat-card-actions>
     </mat-card>
+  } @empty {
+    <p class="espace-vide" i18n="@@dispo.covoiturage.aucun">Aucune demande de covoiturage en attente.</p>
+  }
+  @if (decidedCarpools().length > 0) {
+    <h2 i18n="@@dispo.covoiturage.decidees">Déjà traitées</h2>
+    <ul class="dispo-admin-valeurs">
+      @for (carpool of decidedCarpools(); track carpool.id) {
+        <li>
+          <strong>{{ membersLabel(carpool) }}</strong> — {{ carpoolStatusLabel(carpool) }}
+          @if (carpool.decidedAt) {
+            <span>{{ carpool.decidedAt | date: 'short' }}</span>
+          }
+          @if (carpool.reason) {
+            <span class="dispo-admin-commentaire">
+              <mat-icon inline aria-hidden="true">forum</mat-icon>
+              {{ carpool.reason }}
+            </span>
+          }
+          @if (cancellableCarpoolIds().has(carpool.id)) {
+            <button
+              matButton
+              [disabled]="editingLocked() || decisionEnCours() === carpool.id"
+              (click)="cancelCarpool(carpool)"
+            >
+              <mat-icon>cancel</mat-icon>
+              <span i18n="@@dispo.covoiturage.annuler">Annuler l'arrivée groupée</span>
+            </button>
+          }
+        </li>
+      }
+    </ul>
+  }
+} @else {
+
+  <h2 i18n="@@dispo.enAttenteTitre">En attente de votre décision</h2>
+  <mat-checkbox [checked]="pendingOnly()" (change)="pendingOnly.set($event.checked)"
+                i18n="@@dispo.filtreEnAttente">En attente seulement, la plus ancienne d'abord</mat-checkbox>
+  @if (editingLocked()) {
+    <p class="locked-hint" i18n="@@stands.lockedHint">L'édition est verrouillée pendant que le solveur est en cours d'exécution.</p>
+  }
+  @if (pending().length === 0) {
+    <p class="espace-vide" i18n="@@dispo.aucuneEnAttente">Aucune déclaration en attente.</p>
+  }
+  @for (declaration of pending(); track declaration.id) {
+    <mat-card class="dispo-admin-declaration" appearance="outlined">
+      <mat-card-header>
+        <h3 mat-card-title>{{ declaration.animateurNom }}</h3>
+        <mat-card-subtitle>{{ declaration.creeLe | date: 'short' }}</mat-card-subtitle>
+      </mat-card-header>
+      <mat-card-content>
+        <div class="dispo-admin-colonnes">
+          <div class="dispo-admin-colonne">
+            <h4 i18n="@@dispo.colonne.declare">Ce qu'il déclare</h4>
+            <ul class="dispo-admin-valeurs">
+              @for (jour of declaration.joursIndisponibles; track jour) {
+                <li>{{ jour | date: 'EEE d MMM y' }}</li>
+              } @empty {
+                <li i18n="@@dispo.aucunJour">Disponible tous les jours</li>
+              }
+            </ul>
+            <ul class="dispo-admin-valeurs">
+              @for (souhait of declaration.souhaitsLabels; track souhait) {
+                <li>{{ souhait }}</li>
+              } @empty {
+                <li i18n="@@dispo.aucunSouhait">Aucun souhait</li>
+              }
+            </ul>
+          </div>
+          <div class="dispo-admin-colonne">
+            <h4 i18n="@@dispo.colonne.actuel">Ce que dit sa fiche aujourd'hui</h4>
+            <ul class="dispo-admin-valeurs">
+              @for (jour of declaration.joursActuels; track jour) {
+                <li>{{ jour | date: 'EEE d MMM y' }}</li>
+              } @empty {
+                <li i18n="@@dispo.aucunJourActuel">Disponible tous les jours</li>
+              }
+            </ul>
+            <ul class="dispo-admin-valeurs">
+              @for (souhait of declaration.souhaitsActuelsLabels; track souhait) {
+                <li>{{ souhait }}</li>
+              } @empty {
+                <li i18n="@@dispo.aucunSouhaitActuel">Aucun souhait</li>
+              }
+            </ul>
+          </div>
+        </div>
+        @if (declaration.commentaire) {
+          <p class="dispo-admin-commentaire">
+            <mat-icon inline>forum</mat-icon>
+            {{ declaration.commentaire }}
+          </p>
+        }
+      </mat-card-content>
+      <mat-card-actions>
+        <div class="dispo-admin-actions">
+          <button
+            matButton="filled"
+            [disabled]="editingLocked() || decisionEnCours() === declaration.id"
+            (click)="apply(declaration)"
+          >
+            <mat-icon>check</mat-icon>
+            <span i18n="@@dispo.appliquer">Appliquer</span>
+          </button>
+          <button matButton [disabled]="editingLocked() || decisionEnCours() === declaration.id" (click)="refuser(declaration)">
+            <mat-icon>close</mat-icon>
+            <span i18n="@@dispo.refuser">Refuser</span>
+          </button>
+        </div>
+      </mat-card-actions>
+    </mat-card>
+  }
+
+  @if (!pendingOnly() && decidees().length > 0) {
+    <h2 i18n="@@dispo.decideesTitre">Déjà traitées</h2>
+    @for (declaration of decidees(); track declaration.id) {
+      <mat-card class="dispo-admin-declaration" appearance="outlined">
+        <mat-card-content>
+          <p class="dispo-admin-commentaire">
+            <strong>{{ declaration.animateurNom }}</strong>
+            <span>{{ statutLabel(declaration) }}</span>
+            <span>{{ declaration.decideLe | date: 'short' }}</span>
+          </p>
+          @if (declaration.commentaireAdmin) {
+            <p class="dispo-admin-commentaire">
+              <mat-icon inline>forum</mat-icon>
+              {{ declaration.commentaireAdmin }}
+            </p>
+          }
+        </mat-card-content>
+      </mat-card>
+    }
   }
 }

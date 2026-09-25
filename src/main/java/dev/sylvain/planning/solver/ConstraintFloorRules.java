@@ -215,6 +215,7 @@ public final class ConstraintFloorRules {
             rule("maxJoursConsecutifsTravailles", Denominator.NONE, null),
             rule("coupureRepasPlacementPrefere", Denominator.NONE, null),
             rule("affiniteAdHoc", Denominator.NONE, null),
+            rule("arriveeGroupee", Denominator.NONE, null),
             rule("favoriserMixiteDesNiveaux", Denominator.STAFFED_STAND_CRENEAU_GROUPS, null),
             rule("equilibrerCreneauxPenibles", Denominator.NONE, null),
             rule("preserverBufferPolyvalents", Denominator.NONE, null));

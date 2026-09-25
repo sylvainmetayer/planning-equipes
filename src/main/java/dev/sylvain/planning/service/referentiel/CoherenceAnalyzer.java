@@ -10,6 +10,7 @@ import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.domain.VerrouillagePlanning;
 import dev.sylvain.planning.domain.VerrouillageTarget;
 import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer;
@@ -22,12 +23,14 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * The cross-field checks a write runs on top of {@link CreneauValidator} and
@@ -641,7 +644,43 @@ public final class CoherenceAnalyzer {
         ForcedAssignmentOnLockedSchedule.detectAll(une, verrouillages, stands, creneaux, placesTenues, horizon)
                 .forEach(conflit -> avertissements.add(
                         new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE, conflit.message())));
+        divergentGroupedArrival(contrainte, animateurs, creneaux).ifPresent(avertissements::add);
         return List.copyOf(avertissements);
+    }
+
+    /**
+     * A grouped arrival whose members declared different unavailable days, on
+     * the days carrying a timeslot. Names the members by id alone, like every
+     * warning.
+     */
+    static Optional<Avertissement> divergentGroupedArrival(
+            ContrainteAdHoc contrainte, List<Animateur> animateurs, List<Creneau> creneaux) {
+        if (contrainte == null || contrainte.getType() != TypeContrainteAdHoc.ARRIVEE_GROUPEE) {
+            return Optional.empty();
+        }
+        Map<String, Animateur> parId =
+                animateurs.stream().collect(Collectors.toMap(Animateur::getId, a -> a, (a, b) -> a));
+        List<String> membres = contrainte.getAnimateursConcernes().stream()
+                .filter(Objects::nonNull)
+                .map(Animateur::getId)
+                .distinct()
+                .toList();
+        List<Set<LocalDate>> jours = membres.stream()
+                .map(id -> parId.containsKey(id)
+                        ? (Set<LocalDate>) new TreeSet<>(parId.get(id).getJoursIndisponibles())
+                        : Set.<LocalDate>of())
+                .toList();
+        List<LocalDate> divergents = DivergentDays.of(
+                jours, new HashSet<>(JoursEvenement.of(creneaux).jours()));
+        if (divergents.isEmpty()) {
+            return Optional.empty();
+        }
+        return Optional.of(new Avertissement(
+                TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
+                "Les animateurs " + String.join(", ", membres) + " de l'arrivée groupée " + contrainte.getId()
+                        + " n'ont pas déclaré les mêmes jours d'indisponibilité (" + divergents.size()
+                        + " jour(s), dont le " + divergents.get(0)
+                        + ") : ces jours-là, le groupe ne pourra pas arriver ensemble."));
     }
 
     /* ------------------------------ Typologie ------------------------------ */

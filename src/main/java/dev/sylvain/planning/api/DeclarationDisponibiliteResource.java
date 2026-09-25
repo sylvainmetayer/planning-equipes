@@ -6,6 +6,8 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.InvitationReport;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
+import dev.sylvain.planning.service.espace.TeammateRequestService;
+import dev.sylvain.planning.service.espace.TeammateRequestService.TeammateRequestView;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
@@ -39,11 +41,16 @@ public class DeclarationDisponibiliteResource {
 
     private final EspaceAnimateurService espaceAnimateurService;
 
+    private final TeammateRequestService teammateRequestService;
+
     @Inject
     public DeclarationDisponibiliteResource(
-            DeclarationDisponibiliteService declarationService, EspaceAnimateurService espaceAnimateurService) {
+            DeclarationDisponibiliteService declarationService,
+            EspaceAnimateurService espaceAnimateurService,
+            TeammateRequestService teammateRequestService) {
         this.declarationService = declarationService;
         this.espaceAnimateurService = espaceAnimateurService;
+        this.teammateRequestService = teammateRequestService;
     }
 
     /** Every declaration of the current edition, most recent first, all statuts. */
@@ -132,6 +139,60 @@ public class DeclarationDisponibiliteResource {
         return Response.ok(view(declarationService.refuse(id, decision == null ? null : decision.commentaire())))
                 .build();
     }
+
+    /**
+     * The covoiturages the animateurs asked for from the Covoiturage tab of
+     * their espace (« Je viens avec… »), most recent first: the members,
+     * whether every one of them named the others, and how many days their
+     * declared unavailabilities disagree on. Decided apart from the
+     * declarations — applying or refusing one never touches them.
+     */
+    @GET
+    @Path("/coequipiers")
+    public List<TeammateRequestView> carpools() {
+        return teammateRequestService.list();
+    }
+
+    /**
+     * Validates one pending covoiturage: creates the {@code ARRIVEE_GROUPEE}
+     * exception naming its members — refused like any exception that
+     * contradicts another — and answers with the demand and the warnings the
+     * exception raised.
+     */
+    @POST
+    @Path("/coequipiers/{id}/validation")
+    public TeammateRequestService.ValidatedCarpool validateCarpool(@PathParam("id") String id) {
+        return teammateRequestService.validate(id);
+    }
+
+    /**
+     * Sets one pending covoiturage aside; nothing is written but its statut
+     * and the optional reason, which the animateur reads in their espace and
+     * in the mail telling them.
+     */
+    @POST
+    @Path("/coequipiers/{id}/ecart")
+    public TeammateRequestView setCarpoolAside(@PathParam("id") String id, CarpoolSetAside decision) {
+        return teammateRequestService.setAside(id, decision == null ? null : decision.reason());
+    }
+
+    /** Body of « Écarter »: an optional reason, a sentence for the animateur. */
+    public record CarpoolSetAside(String reason) {}
+
+    /**
+     * Cancels the validated grouped arrival demand {@code id} belongs to: its
+     * {@code ARRIVEE_GROUPEE} exception is deleted, every demand validated
+     * against it becomes {@code ANNULEE} with the optional reason, and each
+     * member is told by mail. 409 when the group is no longer validated.
+     */
+    @POST
+    @Path("/coequipiers/{id}/annulation")
+    public TeammateRequestView cancelCarpool(@PathParam("id") String id, CarpoolCancellation decision) {
+        return teammateRequestService.cancel(id, decision == null ? null : decision.reason());
+    }
+
+    /** Body of « Annuler l'arrivée groupée »: an optional reason, a sentence for the group. */
+    public record CarpoolCancellation(String reason) {}
 
     private DeclarationAdminView view(DeclarationDisponibilite declaration) {
         return espaceAnimateurService.toDeclarationViews(List.of(declaration)).get(0);

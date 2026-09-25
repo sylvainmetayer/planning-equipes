@@ -20,6 +20,7 @@ import {
   CauseInfaisabilite,
   ConstraintsView,
   FeasibilityReport,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportPauses,
 } from './models';
@@ -41,6 +42,9 @@ export class ProblemesStore {
   /** The tight walks of the persisted plan; null until loaded or when the request failed. */
   private readonly _walks = signal<WalkSequenceReport | null>(null);
   readonly walks = this._walks.asReadonly();
+  /** The grouped arrivals of the persisted plan; null until loaded or when the request failed. */
+  private readonly _groupedArrivals = signal<GroupedArrivalReport | null>(null);
+  readonly groupedArrivals = this._groupedArrivals.asReadonly();
   private readonly _loading = signal(false);
   readonly loading = this._loading.asReadonly();
   private readonly _error = signal('');
@@ -89,6 +93,7 @@ export class ProblemesStore {
       this.nomsStands(),
       this.nomsAnimateurs(),
       this.walks(),
+      this.groupedArrivals(),
     ),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
@@ -232,18 +237,24 @@ export class ProblemesStore {
   /** Reloads both sources, for the screens showing the full problem list. */
   async reload(): Promise<void> {
     this._loading.set(true);
-    const [feasibility, constraints, pauses, walks] = await Promise.all([
+    const [feasibility, constraints, pauses, walks, groupedArrivals] = await Promise.all([
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
       this.constraintsApi.catalogue().catch((error: unknown) => error as Error),
       // Without the breaks the list is merely shorter: never a failure of the screen.
       this.analysesApi.breaks().catch(() => null),
       // Same for the tight walks.
       this.analysesApi.walks().catch(() => null),
+      this.analysesApi.groupedArrivals().catch(() => null),
     ]);
     this._report.set(feasibility instanceof Error ? null : feasibility);
     this._constraints.set(constraints instanceof Error ? null : constraints);
     this._pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
     this._walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
+    this._groupedArrivals.set(
+      groupedArrivals && typeof groupedArrivals === 'object' && 'groups' in groupedArrivals
+        ? groupedArrivals
+        : null,
+    );
     const failure = [feasibility, constraints].find(
       (result): result is Error => result instanceof Error,
     );

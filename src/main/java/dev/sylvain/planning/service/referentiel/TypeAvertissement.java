@@ -81,6 +81,14 @@ public enum TypeAvertissement {
     AFFECTATION_FORCEE_SIEGE_VERROUILLE,
 
     /**
+     * A grouped arrival whose members did not declare the same unavailable
+     * days: on those days one of them cannot come while another can, and the
+     * car cannot hold whatever the solver does. Accepted — the admin chooses
+     * knowingly — and priced by {@code arriveeGroupee}.
+     */
+    ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
+
+    /**
      * A lock was just posted over seats that already carry a hard violation in
      * the latest analysis. Accepted — a lock freezes an assignment, it does not
      * exempt it from the rules, and the violation stays scored — but never

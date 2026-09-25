@@ -41,6 +41,9 @@ class IdColumnsInventoryStructuralTest {
                     "declaration_disponibilite.souhaits",
                     "typologie ids, one per line — a list, which a foreign key cannot cover"),
             Map.entry(
+                    "declaration_coequipier.contrainte_id",
+                    "the ad hoc adjustment a validation created; the decision outlives a deleted adjustment"),
+            Map.entry(
                     "demande_echange.stand_cible_id",
                     "the stand a directed swap aims at; no key since V46, the swap outliving a deleted stand"),
             Map.entry(

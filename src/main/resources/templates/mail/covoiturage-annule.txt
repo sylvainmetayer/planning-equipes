@@ -1,0 +1,20 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+L'organisation a annulé votre arrivée groupée avec {coequipiers}.
+{#if motif}
+
+Son explication : {motif}
+{/if}
+
+{#if collecteOuverte}
+Vous pouvez envoyer une nouvelle demande depuis l'onglet Covoiturage de votre espace, tant que la collecte des disponibilités est ouverte.
+{#else}
+La collecte des disponibilités est fermée : pour voyager de nouveau en groupe, adressez-vous à l'organisation.
+{/if}
+{#if lienEspace}
+
+Votre covoiturage, dans votre espace :
+{lienEspace}
+{/if}

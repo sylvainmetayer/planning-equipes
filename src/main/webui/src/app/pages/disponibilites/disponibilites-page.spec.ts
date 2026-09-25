@@ -11,14 +11,15 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { ActivatedRoute, convertToParamMap } from '@angular/router';
+import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
-import { DeclarationAdminView } from '../../core/models';
+import { DeclarationAdminView, TeammateRequestView } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DisponibilitesPage } from './disponibilites-page';
-import { oldestFirst, readPendingOnly } from './declarations-filter';
+import { oldestFirst, readDisponibilitesTab, readPendingOnly } from './declarations-filter';
 
 function declaration(id: string, statut: string, creeLe: string): DeclarationAdminView {
   return {
@@ -47,6 +48,12 @@ describe('declarations-filter', () => {
     expect(readPendingOnly('toutes')).toBe(false);
   });
 
+  it('reads the tab, the declarations whenever it is not `covoiturage`', () => {
+    expect(readDisponibilitesTab('covoiturage')).toBe('covoiturage');
+    expect(readDisponibilitesTab(null)).toBe('declarations');
+    expect(readDisponibilitesTab('autre')).toBe('declarations');
+  });
+
   it('puts the declaration received first on top', () => {
     expect(oldestFirst([RECENTE, ANCIENNE]).map((each) => each.id)).toEqual([
       'ancienne',
@@ -65,6 +72,7 @@ async function setUp(queryParams: Record<string, string>) {
         useValue: {
           declarations: vi.fn(async () => [RECENTE, ANCIENNE, APPLIQUEE]),
           configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
+          carpools: vi.fn(async () => []),
         },
       },
       { provide: MatDialog, useValue: { open: vi.fn() } },
@@ -72,7 +80,10 @@ async function setUp(queryParams: Record<string, string>) {
       { provide: Location, useValue: { path: () => '/disponibilites', replaceState } },
       {
         provide: ActivatedRoute,
-        useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },
+        useValue: {
+          snapshot: { queryParamMap: convertToParamMap(queryParams) },
+          queryParamMap: of(convertToParamMap(queryParams)),
+        },
       },
     ],
   });
@@ -143,14 +154,21 @@ describe('DisponibilitesPage during a solve', () => {
   const api = {
     declarations: vi.fn(async () => [DECLARATION]),
     configuration: vi.fn(async () => ({ collecteOuverte: true, debut: null, fin: null })),
+    carpools: vi.fn(async (): Promise<TeammateRequestView[]> => []),
+    validateCarpool: vi.fn(async () => ({ request: null, avertissements: [] })),
+    setCarpoolAside: vi.fn(async () => undefined),
+    cancelCarpool: vi.fn(async () => undefined),
     decide: vi.fn(async () => undefined),
     saveConfiguration: vi.fn(),
   };
   const notify = vi.fn();
   let locked: ReturnType<typeof signal<boolean>>;
   let ask: ReturnType<typeof vi.fn>;
+  let dialogAnswer: string | null;
 
-  async function mount(): Promise<ComponentFixture<DisponibilitesPage>> {
+  async function mount(
+    queryParams: Record<string, string> = {},
+  ): Promise<ComponentFixture<DisponibilitesPage>> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -158,12 +176,18 @@ describe('DisponibilitesPage during a solve', () => {
         { provide: DisponibilitesApi, useValue: api },
         { provide: NotificationService, useValue: { notify } },
         { provide: ConfirmService, useValue: { ask } },
-        { provide: MatDialog, useValue: { open: vi.fn() } },
+        {
+          provide: MatDialog,
+          useValue: { open: vi.fn(() => ({ afterClosed: () => of(dialogAnswer) })) },
+        },
         { provide: SolverJobService, useValue: { editingLocked: locked } },
         { provide: Location, useValue: { path: () => '/disponibilites', replaceState: vi.fn() } },
         {
           provide: ActivatedRoute,
-          useValue: { snapshot: { queryParamMap: convertToParamMap({}) } },
+          useValue: {
+            snapshot: { queryParamMap: convertToParamMap(queryParams) },
+            queryParamMap: of(convertToParamMap(queryParams)),
+          },
         },
       ],
     });
@@ -178,6 +202,7 @@ describe('DisponibilitesPage during a solve', () => {
     vi.clearAllMocks();
     locked = signal(false);
     ask = vi.fn(async () => true);
+    dialogAnswer = null;
   });
 
   it('disables « Appliquer » and « Refuser » while a solve holds the edition, and says why', async () => {
@@ -221,5 +246,143 @@ describe('DisponibilitesPage during a solve', () => {
     await fixture.whenStable();
 
     expect(api.decide).toHaveBeenCalledWith('D1', 'application', null);
+  });
+
+  function pendingCarpool(): TeammateRequestView {
+    return {
+      id: 'K1',
+      animateurId: 'A1',
+      nature: 'COVOITURAGE',
+      status: 'EN_ATTENTE',
+      members: [
+        { animateurId: 'A1', fullName: 'Alice Martin' },
+        { animateurId: 'A2', fullName: 'Bob Durand' },
+      ],
+      confirmedByAll: true,
+      divergentDayCount: 2,
+      divergentDays: ['2026-07-10', '2026-07-11'],
+      contrainteId: null,
+      createdAt: '2026-06-01T10:00:00Z',
+      decidedAt: null,
+      reason: null,
+    };
+  }
+
+  it('keeps the covoiturage requests off the declarations tab', async () => {
+    api.carpools.mockResolvedValueOnce([pendingCarpool()]);
+    const fixture = await mount();
+    await fixture.whenStable();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).not.toContain('Alice Martin, Bob Durand');
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.dispo-onglet-compte')?.textContent,
+    ).toBe('(1)');
+  });
+
+  it('shows a pending carpool on its tab with its badge and its divergent days, and validates it', async () => {
+    api.carpools.mockResolvedValueOnce([pendingCarpool()]);
+    const fixture = await mount({ onglet: 'covoiturage' });
+    await fixture.whenStable();
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+
+    expect(text).toContain('Alice Martin, Bob Durand');
+    expect(text).toContain('Confirmé par tous');
+    expect(text).toContain('2 jour(s) où leurs indisponibilités déclarées divergent');
+    expect(text).not.toContain('Animateur D1');
+
+    button(fixture, "Valider l'arrivée groupée").click();
+    await fixture.whenStable();
+
+    expect(api.validateCarpool).toHaveBeenCalledWith('K1');
+  });
+
+  it('sets a carpool aside with the reason typed, or none', async () => {
+    api.carpools.mockResolvedValue([pendingCarpool()]);
+    dialogAnswer = 'Bob ne vient que le samedi.';
+    const fixture = await mount({ onglet: 'covoiturage' });
+    await fixture.whenStable();
+
+    button(fixture, 'Écarter').click();
+    await fixture.whenStable();
+    expect(api.setCarpoolAside).toHaveBeenCalledWith('K1', 'Bob ne vient que le samedi.');
+
+    dialogAnswer = '';
+    button(fixture, 'Écarter').click();
+    await fixture.whenStable();
+    expect(api.setCarpoolAside).toHaveBeenLastCalledWith('K1', null);
+
+    dialogAnswer = null;
+    button(fixture, 'Écarter').click();
+    await fixture.whenStable();
+    expect(api.setCarpoolAside).toHaveBeenCalledTimes(2);
+    api.carpools.mockReset();
+    api.carpools.mockResolvedValue([]);
+  });
+
+  function decidedCarpool(
+    id: string,
+    status: TeammateRequestView['status'],
+    overrides: Partial<TeammateRequestView> = {},
+  ): TeammateRequestView {
+    return {
+      ...pendingCarpool(),
+      id,
+      status,
+      contrainteId: status === 'ECARTEE' ? null : 'C7',
+      decidedAt: '2026-06-02T10:00:00Z',
+      ...overrides,
+    };
+  }
+
+  it('offers to cancel a validated group once, and never a set-aside or cancelled one', async () => {
+    api.carpools.mockResolvedValueOnce([
+      decidedCarpool('K1', 'VALIDEE'),
+      // Bob's own demand, validated with the same car: one action for the group.
+      decidedCarpool('K2', 'VALIDEE', { animateurId: 'A2' }),
+      decidedCarpool('K3', 'ECARTEE', { reason: 'complet' }),
+      decidedCarpool('K4', 'ANNULEE', { contrainteId: 'C5', reason: 'panne' }),
+    ]);
+    const fixture = await mount({ onglet: 'covoiturage' });
+    await fixture.whenStable();
+
+    const actions = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].filter(
+      (candidate) => candidate.textContent?.includes("Annuler l'arrivée groupée"),
+    );
+    expect(actions).toHaveLength(1);
+  });
+
+  it('cancels a validated group with the reason typed, then reads it as cancelled', async () => {
+    api.carpools
+      .mockResolvedValueOnce([decidedCarpool('K1', 'VALIDEE')])
+      .mockResolvedValue([decidedCarpool('K1', 'ANNULEE', { reason: 'La voiture est en panne.' })]);
+    dialogAnswer = 'La voiture est en panne.';
+    const fixture = await mount({ onglet: 'covoiturage' });
+    await fixture.whenStable();
+
+    button(fixture, "Annuler l'arrivée groupée").click();
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+
+    expect(api.cancelCarpool).toHaveBeenCalledWith('K1', 'La voiture est en panne.');
+    const text = (fixture.nativeElement as HTMLElement).textContent ?? '';
+    expect(text).toContain('Annulée');
+    expect(text).toContain('La voiture est en panne.');
+    expect(button(fixture, "Annuler l'arrivée groupée")).toBeUndefined();
+    api.carpools.mockReset();
+    api.carpools.mockResolvedValue([]);
+  });
+
+  it('sends no cancellation when the dialog is dismissed', async () => {
+    api.carpools.mockResolvedValueOnce([decidedCarpool('K1', 'VALIDEE')]);
+    dialogAnswer = null;
+    const fixture = await mount({ onglet: 'covoiturage' });
+    await fixture.whenStable();
+
+    button(fixture, "Annuler l'arrivée groupée").click();
+    await fixture.whenStable();
+
+    expect(api.cancelCarpool).not.toHaveBeenCalled();
   });
 });

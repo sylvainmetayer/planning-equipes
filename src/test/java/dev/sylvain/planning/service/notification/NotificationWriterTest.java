@@ -272,4 +272,89 @@ class NotificationWriterTest {
         assertThat(redacteur.rediger(new Notification.BackupRecovered(NUIT, "f.dump", 1)))
                 .isEmpty();
     }
+
+    // --- Covoiturage (animateur) -------------------------------------------
+
+    @Test
+    void aValidatedCarpoolNamesTheTeammatesAndLinksToTheCovoiturageTab() {
+        MailDraft courrier = rediger(new Notification.CarpoolValidated(
+                "bob@example.org",
+                "Bob",
+                List.of("Alice Martin", "Chloé Petit"),
+                "https://planning.example.org/animateur/t0k/covoiturage"));
+
+        assertThat(courrier.destinataire()).isEqualTo("bob@example.org");
+        assertThat(courrier.sujet()).contains("arrivée groupée est validée");
+        assertThat(courrier.corps())
+                .startsWith("Bonjour Bob,")
+                .contains("avec Alice Martin, Chloé Petit")
+                .contains("pas une garantie de travailler sur le même stand")
+                .contains("adressez-vous à elle")
+                .contains("https://planning.example.org/animateur/t0k/covoiturage");
+        assertThat(courrier.html()).contains("href=\"https://planning.example.org/animateur/t0k/covoiturage\"");
+    }
+
+    @Test
+    void aCarpoolSetAsideCarriesTheReasonWhenOneWasGiven() {
+        MailDraft avecMotif = rediger(
+                new Notification.CarpoolSetAside("alice@example.org", "Alice", "Bob ne vient que le samedi.", null));
+        MailDraft sansMotif = rediger(new Notification.CarpoolSetAside("alice@example.org", "Alice", " ", null));
+
+        assertThat(avecMotif.sujet()).contains("n'a pas été retenue");
+        assertThat(avecMotif.corps())
+                .contains("Son explication : Bob ne vient que le samedi.")
+                .contains("nouvelle demande");
+        assertThat(avecMotif.html()).contains("Bob ne vient que le samedi.");
+        assertThat(sansMotif.corps()).doesNotContain("explication");
+    }
+
+    @Test
+    void aCancelledCarpoolNamesTheOthersGivesTheReasonAndInvitesANewRequestWhileTheWindowIsOpen() {
+        MailDraft courrier = rediger(new Notification.CarpoolCancelled(
+                "bob@example.org",
+                "Bob",
+                List.of("Alice Martin", "Chloé Petit"),
+                "La voiture est en panne.",
+                true,
+                "https://planning.example.org/animateur/t0k/covoiturage"));
+
+        assertThat(courrier.destinataire()).isEqualTo("bob@example.org");
+        assertThat(courrier.sujet()).contains("arrivée groupée est annulée");
+        assertThat(courrier.corps())
+                .startsWith("Bonjour Bob,")
+                .contains("a annulé votre arrivée groupée avec Alice Martin, Chloé Petit")
+                .contains("Son explication : La voiture est en panne.")
+                .contains("nouvelle demande depuis l'onglet Covoiturage")
+                .doesNotContain("adressez-vous à l'organisation")
+                .contains("https://planning.example.org/animateur/t0k/covoiturage");
+        assertThat(courrier.html())
+                .contains("La voiture est en panne.")
+                .contains("nouvelle demande depuis l'onglet Covoiturage")
+                .contains("href=\"https://planning.example.org/animateur/t0k/covoiturage\"");
+    }
+
+    @Test
+    void aCancelledCarpoolOutsideTheWindowSendsToTheOrganisationAndSaysNoReasonWhenNoneWasGiven() {
+        MailDraft courrier = rediger(
+                new Notification.CarpoolCancelled("bob@example.org", "Bob", List.of("Alice Martin"), " ", false, null));
+
+        assertThat(courrier.corps())
+                .contains("avec Alice Martin")
+                .doesNotContain("explication")
+                .doesNotContain("nouvelle demande")
+                .contains("La collecte des disponibilités est fermée")
+                .contains("adressez-vous à l'organisation");
+        assertThat(courrier.html()).contains("adressez-vous à l'organisation").doesNotContain("href=");
+    }
+
+    @Test
+    void aCarpoolDecisionWithoutAnAddressIsWrittenToNobody() {
+        assertThat(redacteur.rediger(new Notification.CarpoolValidated(null, "Bob", List.of("Alice"), null)))
+                .isEmpty();
+        assertThat(redacteur.rediger(new Notification.CarpoolSetAside(" ", "Alice", null, null)))
+                .isEmpty();
+        assertThat(redacteur.rediger(
+                        new Notification.CarpoolCancelled(null, "Alice", List.of("Bob"), null, true, null)))
+                .isEmpty();
+    }
 }

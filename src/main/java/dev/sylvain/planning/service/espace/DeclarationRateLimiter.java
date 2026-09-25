@@ -37,7 +37,18 @@ public class DeclarationRateLimiter {
 
     private final SlidingWindowCounter counter = new SlidingWindowCounter();
 
+    /**
+     * The covoiturage request of the espace's Covoiturage tab, counted apart:
+     * the same ceiling, but correcting one's car must not eat into the sends
+     * of one's declaration, nor the other way round.
+     */
+    private final SlidingWindowCounter carpoolCounter = new SlidingWindowCounter();
+
     public RateLimitVerdict submit(String animateurId) {
         return counter.use(animateurId, config.maxEnvois(), config.fenetre());
+    }
+
+    public RateLimitVerdict submitCarpool(String animateurId) {
+        return carpoolCounter.use(animateurId, config.maxEnvois(), config.fenetre());
     }
 }

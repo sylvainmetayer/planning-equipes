@@ -12,7 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { RouterLink } from '@angular/router';
 import { EspaceAnimateurService } from '../../core/espace-animateur.service';
 import { HelpBlocks } from '../../shared/help-blocks';
-import { EspaceAideCible, buildEspaceAideSections } from './espace-aide-content';
+import { EspaceHelpTarget, buildEspaceAideSections } from './espace-aide-content';
 
 /**
  * The animateur's own user guide: what this espace lets them do, in the
@@ -65,7 +65,7 @@ export class EspaceAidePage {
   }
 
   /** Route of the tab a section acts on, or `null` while the token is unknown. */
-  protected linkTo(target: EspaceAideCible): unknown[] | null {
+  protected linkTo(target: EspaceHelpTarget): unknown[] | null {
     const jeton = this.jeton();
     if (!jeton) {
       return null;
@@ -73,12 +73,14 @@ export class EspaceAidePage {
     return target === 'planning' ? ['/animateur', jeton] : ['/animateur', jeton, target];
   }
 
-  protected targetLabel(target: EspaceAideCible): string {
+  protected targetLabel(target: EspaceHelpTarget): string {
     switch (target) {
       case 'echanges':
         return $localize`:@@espace.nav.echanges:Mes échanges`;
       case 'disponibilites':
         return $localize`:@@espace.nav.disponibilites:Mes disponibilités`;
+      case 'covoiturage':
+        return $localize`:@@espace.nav.covoiturage:Covoiturage`;
       default:
         return $localize`:@@espace.nav.planning:Mon planning`;
     }

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.espace;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ConsigneEdition;
+import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.DeclarationDisponibilite;
 import dev.sylvain.planning.domain.DemandeEchange;
@@ -13,6 +14,7 @@ import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.analyse.GroupedArrivalAnalyzer;
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EtiquetteEdition;
@@ -89,6 +91,8 @@ public class EspaceAnimateurService {
 
     private final JourJClock clock;
 
+    private final TeammateRequestService teammateRequestService;
+
     @Inject
     public EspaceAnimateurService(
             ReferenceDataService referenceDataService,
@@ -103,7 +107,8 @@ public class EspaceAnimateurService {
             PauseAnalyzer pauseAnalyzer,
             ColleagueLookupLimiter colleagueLookups,
             PublicationTraceRepository traceRepository,
-            JourJClock clock) {
+            JourJClock clock,
+            TeammateRequestService teammateRequestService) {
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
         this.consigneService = consigneService;
@@ -117,6 +122,7 @@ public class EspaceAnimateurService {
         this.colleagueLookups = colleagueLookups;
         this.traceRepository = traceRepository;
         this.clock = clock;
+        this.teammateRequestService = teammateRequestService;
     }
 
     /**
@@ -279,7 +285,16 @@ public class EspaceAnimateurService {
             List<ConsigneEspaceView> consignes,
             String editionNom,
             LocalDate editionDebut,
-            LocalDate editionFin) {}
+            LocalDate editionFin,
+            List<CarpoolDayView> covoiturage) {}
+
+    /**
+     * One day of my grouped arrival, as the espace says it: whether the car
+     * holds that day — « même horaire que votre covoiturage » or « horaires
+     * différents ce jour » — and nothing of the others' seats.
+     */
+    @Schema(requiredProperties = {"aligned"})
+    public record CarpoolDayView(LocalDate date, boolean aligned) {}
 
     /**
      * A day of the person's planning a consigne governs (issue #4): the espace
@@ -331,6 +346,45 @@ public class EspaceAnimateurService {
             Instant cibleDecideLe,
             Instant decideLe,
             Instant communiqueeLe) {}
+
+    /**
+     * The days of my grouped arrivals on the plan I am shown, one line per day
+     * <b>I</b> work: aligned or not, read by the same
+     * {@link GroupedArrivalAnalyzer} as the admin screens. A day only a mate
+     * works is left out — saying the car does not hold that day would tell me
+     * where somebody else works. When I belong to two groups, a day holds only
+     * when both do.
+     */
+    private List<CarpoolDayView> carpoolDaysOf(PlanningEvenement planning, String animateurId) {
+        if (planning == null || planning.getPostes() == null) {
+            return List.of();
+        }
+        return carpoolDays(
+                referenceDataService.listContraintesAdHoc(),
+                planning.getPostes(),
+                animateurId,
+                referenceDataService.getParametresQualite().toleranceArriveeGroupeeMinutes());
+    }
+
+    /** {@link #carpoolDaysOf} without the database: the groups and the seats given. */
+    static List<CarpoolDayView> carpoolDays(
+            List<ContrainteAdHoc> contraintes, List<PosteAffectation> postes, String animateurId, int tolerance) {
+        Map<LocalDate, Boolean> parJour = new java.util.TreeMap<>();
+        for (ContrainteAdHoc contrainte : GroupedArrivalAnalyzer.groups(contraintes)) {
+            if (!GroupedArrivalAnalyzer.memberIds(contrainte).contains(animateurId)) {
+                continue;
+            }
+            for (GroupedArrivalAnalyzer.GroupDayView jour :
+                    GroupedArrivalAnalyzer.read(contrainte, postes, tolerance).days()) {
+                if (jour.working().contains(animateurId)) {
+                    parJour.merge(jour.date(), jour.aligned(), Boolean::logicalAnd);
+                }
+            }
+        }
+        return parJour.entrySet().stream()
+                .map(entree -> new CarpoolDayView(entree.getKey(), entree.getValue()))
+                .toList();
+    }
 
     public EspaceAnimateurView buildView(String animateurId) {
         List<Animateur> animateurs = referenceDataService.listAnimateurs();
@@ -385,7 +439,8 @@ public class EspaceAnimateurService {
                 consignesOf(postes, joursRepos, consigneService.byDate()),
                 edition.nom(),
                 edition.debut(),
-                edition.fin());
+                edition.fin(),
+                carpoolDaysOf(planning, animateurId));
     }
 
     /**
@@ -746,6 +801,60 @@ public class EspaceAnimateurService {
                 mesDeclarations.stream()
                         .filter(vue -> !StatutDeclaration.EN_ATTENTE.name().equals(vue.statut()))
                         .toList());
+    }
+
+    /**
+     * Everything the Covoiturage tab needs in one read — « Je viens avec… »,
+     * asked for apart from the declaration of availability, on the same
+     * collection window.
+     *
+     * @param collectionOpen whether a request can be sent now — the window of
+     *                       the declarations; the closure is enforced on
+     *                       submit, this flag only lets the tab say so
+     * @param collectionStart first day of the window, so a window not open
+     *                       yet reads « revenez à partir du… » rather than
+     *                       « fermée »
+     * @param colleagues     who can be named — the list the foire already
+     *                       shows, never myself
+     * @param teammateIds    the others in my car: the validated grouped
+     *                       arrival holding me, else my pending request, else
+     *                       my last request set aside or the car cancelled
+     *                       under me; empty when none
+     * @param status         {@code VALIDEE} — the organisation's to change, a
+     *                       request is then refused —, {@code EN_ATTENTE},
+     *                       {@code ECARTEE}, {@code ANNULEE}; {@code null}
+     *                       when there is no car
+     * @param reason         why my last request was set aside or my car
+     *                       cancelled, when the organisation said
+     */
+    @Schema(requiredProperties = {"collectionOpen", "colleagues", "teammateIds"})
+    public record CarpoolEspaceView(
+            boolean collectionOpen,
+            LocalDate collectionStart,
+            LocalDate collectionEnd,
+            List<ColleagueView> colleagues,
+            List<String> teammateIds,
+            String status,
+            String reason,
+            Instant decidedAt) {}
+
+    public CarpoolEspaceView buildCarpoolView(String animateurId) {
+        List<ColleagueView> colleagues = referenceDataService.listAnimateurs().stream()
+                .filter(candidat -> !candidat.getId().equals(animateurId))
+                .map(candidat -> new ColleagueView(candidat.getId(), candidat.nomAffiche()))
+                .sorted(Comparator.comparing(ColleagueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
+                .toList();
+        DeclarationDisponibiliteRepository.FenetreCollecte fenetre = declarationService.fenetre();
+        TeammateRequestService.CarpoolState state = teammateRequestService.stateOf(animateurId);
+        return new CarpoolEspaceView(
+                declarationService.isCollecteOuverte(),
+                fenetre.debut(),
+                fenetre.fin(),
+                colleagues,
+                state == null ? List.of() : state.teammateIds(),
+                state == null ? null : state.status().name(),
+                state == null ? null : state.reason(),
+                state == null ? null : state.decidedAt());
     }
 
     /**

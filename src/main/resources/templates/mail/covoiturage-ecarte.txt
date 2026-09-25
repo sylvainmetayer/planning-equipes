@@ -1,0 +1,15 @@
+{#if prenom}
+Bonjour {prenom},
+
+{/if}
+L'organisation n'a pas retenu votre demande de covoiturage.
+{#if motif}
+
+Son explication : {motif}
+{/if}
+
+Vous pouvez envoyer une nouvelle demande depuis votre espace tant que la collecte des disponibilités est ouverte.
+{#if lienEspace}
+
+{lienEspace}
+{/if}

@@ -17,6 +17,7 @@ const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
   'INCOMPATIBILITE',
   'AFFECTATION_FORCEE',
   'AFFINITE',
+  'ARRIVEE_GROUPEE',
 ];
 
 /** Called lazily (never at module scope, see `app.ts`'s `buildNavGroups`). */
@@ -30,6 +31,8 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
       return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
     case 'AFFINITE':
       return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
+    case 'ARRIVEE_GROUPEE':
+      return $localize`:@@adHoc.type.arriveeGroupee:Arrivée groupée (covoiturage, 2 à 4 animateurs)`;
   }
 }
 
@@ -115,6 +118,14 @@ export class AdHocConstraintFormDialog {
 
   protected patch(patch: Partial<ContrainteDraft>): void {
     this.draft.update((draft) => ({ ...draft, ...patch }));
+  }
+
+  /**
+   * A grouped arrival reads whole days: no timeslot, no stand — the server
+   * refuses one that names either, so choosing the type clears both.
+   */
+  protected changeType(type: TypeContrainteAdHoc): void {
+    this.patch(type === 'ARRIVEE_GROUPEE' ? { type, creneauId: '', standId: '' } : { type });
   }
 
   protected async save(): Promise<void> {

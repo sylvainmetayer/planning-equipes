@@ -71,4 +71,13 @@ class ApplicationLinksTest {
         assertThat(liens.espaceAnimateur("a b")).contains("https://planning.example.org/animateur/a%20b");
         assertThat(liens.espaceAnimateur("{jeton}")).contains("https://planning.example.org/animateur/%7Bjeton%7D");
     }
+
+    @Test
+    void theCovoiturageTabOfTheEspaceIsAChildOfItsRoute() {
+        ApplicationLinks liens = linksTo("https://planning.example.org/");
+
+        assertThat(liens.espaceCovoiturage("a1b2")).contains("https://planning.example.org/animateur/a1b2/covoiturage");
+        assertThat(liens.espaceCovoiturage(" ")).isEmpty();
+        assertThat(linksTo(null).espaceCovoiturage("a1b2")).isEmpty();
+    }
 }

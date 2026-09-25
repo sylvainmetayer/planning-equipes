@@ -57,7 +57,7 @@ describe('buildEspaceAideSections', () => {
     const cibles = sections.map((section) => section.cible).filter(Boolean);
     expect(cibles.length).toBeGreaterThan(0);
     for (const target of cibles) {
-      expect(['planning', 'echanges', 'disponibilites']).toContain(target);
+      expect(['planning', 'echanges', 'disponibilites', 'covoiturage']).toContain(target);
     }
   });
 
@@ -84,6 +84,24 @@ describe('buildEspaceAideSections', () => {
     expect(text).toContain('Mes déclarations précédentes');
     for (const statut of ['Prise en compte', 'Non retenue', "En attente de l'organisation"]) {
       expect(text, statut).toContain(statut);
+    }
+  });
+
+  it('answers the covoiturage tab: a wish, when, how many, and who decides', () => {
+    const section = sections.find((each) => each.id === 'covoiturage')!;
+    const text = textOf(section);
+
+    expect(section.cible).toBe('covoiturage');
+    for (const idea of [
+      'pas une garantie',
+      'collecte des disponibilités est ouverte',
+      'de un à trois',
+      'confirmé par tous',
+      "l'écarte",
+      'même stand',
+      'adressez-vous à elle',
+    ]) {
+      expect(text, idea).toContain(idea);
     }
   });
 

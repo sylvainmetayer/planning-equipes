@@ -36,7 +36,9 @@ public final class ParametresQualiteDefaults {
                 config.getOptionalValue("planning.contraintes.facteur-detour", Double.class)
                         .orElse(ParametresQualite.FACTEUR_DETOUR_PAR_DEFAUT),
                 config.getOptionalValue("planning.contraintes.tolerance-trajet-minutes", Integer.class)
-                        .orElse(ParametresQualite.TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT));
+                        .orElse(ParametresQualite.TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT),
+                config.getOptionalValue("planning.contraintes.tolerance-arrivee-groupee-minutes", Integer.class)
+                        .orElse(ParametresQualite.TOLERANCE_ARRIVEE_GROUPEE_MINUTES_PAR_DEFAUT));
     }
 
     /**

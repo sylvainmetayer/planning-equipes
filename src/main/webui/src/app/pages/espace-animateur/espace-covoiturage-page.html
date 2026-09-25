@@ -1,0 +1,182 @@
+<h1 class="espace-page-titre" i18n="@@espace.covoiturage.titrePage">Covoiturage</h1>
+
+@if (loading()) {
+  <mat-progress-bar mode="indeterminate" />
+} @else if (view(); as carpool) {
+  <mat-card class="espace-dispo-intro" appearance="outlined">
+    <mat-card-content>
+      <p i18n="@@espace.covoiturage.intro">
+        Vous venez en voiture avec d'autres animateurs ? Nommez jusqu'à trois coéquipiers : l'organisation
+        cherchera les mêmes jours et des horaires proches. Un souhait, sans garantie.
+      </p>
+      @if (carpool.collectionOpen) {
+        <p class="espace-dispo-fenetre">
+          <mat-icon inline>event_available</mat-icon>
+          @if (carpool.collectionEnd) {
+            <span i18n="@@espace.covoiturage.fenetre.fin"
+              >Vous pouvez faire votre demande jusqu'au {{ carpool.collectionEnd | date: 'longDate' }}.</span
+            >
+          } @else {
+            <span i18n="@@espace.covoiturage.fenetre.ouverte">Les demandes sont ouvertes pendant la collecte des disponibilités.</span>
+          }
+        </p>
+      } @else if (notOpenYet(); as start) {
+        <p class="espace-dispo-fenetre">
+          <mat-icon inline>schedule</mat-icon>
+          <span i18n="@@espace.covoiturage.fenetre.aVenir"
+            >Les demandes ne sont pas encore ouvertes : revenez à partir du
+            {{ start | date: 'longDate' }}.</span
+          >
+        </p>
+      } @else {
+        <p class="espace-dispo-fermee">
+          <mat-icon inline>lock</mat-icon>
+          <span i18n="@@espace.covoiturage.fermee"
+            >Les demandes sont fermées avec la collecte des disponibilités. Pour un changement,
+            adressez-vous directement à l'organisation.</span
+          >
+        </p>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <section class="espace-dispo-section">
+    <h2 i18n="@@espace.covoiturage.etat.titre">Où en est ma demande</h2>
+    @switch (carpool.status) {
+      @case ('VALIDEE') {
+        <p class="espace-dispo-aide" i18n="@@espace.covoiturage.valide">
+          Votre arrivée groupée a été validée par l'organisation. Pour la modifier ou la retirer, adressez-vous à elle :
+          elle ne se change plus depuis cette page.
+        </p>
+        <ul class="espace-dispo-souhaits espace-dispo-covoiturage-valide">
+          @for (id of carpool.teammateIds; track id) {
+            <li class="espace-dispo-souhait espace-dispo-souhait-actif">
+              <mat-icon inline>directions_car</mat-icon>
+              <span>{{ chosenName(id) }}</span>
+            </li>
+          }
+        </ul>
+      }
+      @case ('EN_ATTENTE') {
+        <p class="espace-dispo-aide">
+          <mat-icon inline>hourglass_top</mat-icon>
+          <span i18n="@@espace.covoiturage.enAttente">En attente de l'organisation — avec {{ current() }}.</span>
+        </p>
+      }
+      @case ('ECARTEE') {
+        <p class="espace-dispo-aide">
+          <mat-icon inline>block</mat-icon>
+          <span i18n="@@espace.covoiturage.ecartee">Votre demande avec {{ current() }} a été écartée par l'organisation.</span>
+          @if (carpool.decidedAt) {
+            <span> ({{ carpool.decidedAt | date: 'short' }})</span>
+          }
+        </p>
+        @if (carpool.reason) {
+          <p class="espace-dispo-reponse">
+            <mat-icon inline>forum</mat-icon>
+            {{ carpool.reason }}
+          </p>
+        }
+        @if (carpool.collectionOpen) {
+          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.ecartee.nouvelle">Vous pouvez envoyer une nouvelle demande ci-dessous.</p>
+        }
+      }
+      @case ('ANNULEE') {
+        <p class="espace-dispo-aide">
+          <mat-icon inline>cancel</mat-icon>
+          <span i18n="@@espace.covoiturage.annulee">L'organisation a annulé cette arrivée groupée avec {{ current() }}.</span>
+          @if (carpool.decidedAt) {
+            <span> ({{ carpool.decidedAt | date: 'short' }})</span>
+          }
+        </p>
+        @if (carpool.reason) {
+          <p class="espace-dispo-reponse">
+            <mat-icon inline>forum</mat-icon>
+            {{ carpool.reason }}
+          </p>
+        }
+        @if (carpool.collectionOpen) {
+          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.annulee.nouvelle">Vous pouvez envoyer une nouvelle demande ci-dessous.</p>
+        } @else {
+          <p class="espace-dispo-aide" i18n="@@espace.covoiturage.annulee.organisation">Pour voyager de nouveau en groupe, adressez-vous à l'organisation.</p>
+        }
+      }
+      @default {
+        <p class="espace-vide" i18n="@@espace.covoiturage.aucune">Aucune demande de covoiturage.</p>
+      }
+    }
+  </section>
+
+  @if (carpool.collectionOpen && !locked()) {
+    <section class="espace-dispo-section">
+      <h2 i18n="@@espace.covoiturage.form.titre">Je viens avec…</h2>
+      <div class="espace-dispo-souhaits">
+        @for (teammate of chosen(); track teammate.id) {
+          <button
+            type="button"
+            class="espace-dispo-souhait espace-dispo-souhait-actif"
+            [attr.aria-pressed]="true"
+            (click)="toggle(teammate.id)"
+          >
+            <mat-icon inline>check_circle</mat-icon>
+            <span>{{ teammate.name }}</span>
+          </button>
+        }
+      </div>
+      @if (chosen().length < carpoolMax) {
+        <mat-form-field appearance="outline" class="espace-dispo-commentaire">
+          <mat-label i18n="@@espace.covoiturage.recherche">Chercher un coéquipier par son nom</mat-label>
+          <input
+            matInput
+            name="coequipier"
+            autocomplete="off"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+          />
+        </mat-form-field>
+        <div class="espace-dispo-souhaits">
+          @for (colleague of suggestions(); track colleague.id) {
+            <button
+              type="button"
+              class="espace-dispo-souhait"
+              [attr.aria-pressed]="false"
+              (click)="toggle(colleague.id)"
+            >
+              <mat-icon inline>radio_button_unchecked</mat-icon>
+              <span>{{ colleague.nomComplet }}</span>
+            </button>
+          }
+        </div>
+      } @else {
+        <p class="espace-dispo-aide" i18n="@@espace.covoiturage.plein">Trois coéquipiers au plus : retirez-en un pour en choisir un autre.</p>
+      }
+      <p class="espace-dispo-aide" i18n="@@espace.covoiturage.confirmation">
+        Chacun de vos coéquipiers peut faire la même demande depuis son espace : l'organisation voit alors que
+        tout le monde est d'accord.
+      </p>
+    </section>
+
+    <div class="espace-dispo-actions">
+      <button matButton="filled" type="button" [disabled]="sending() || !modified()" (click)="send()">
+        <mat-icon>{{ withdrawing() ? 'delete' : 'send' }}</mat-icon>
+        @if (withdrawing()) {
+          <span i18n="@@espace.covoiturage.retirer">Retirer ma demande</span>
+        } @else {
+          <span i18n="@@espace.covoiturage.envoyer">Envoyer ma demande</span>
+        }
+      </button>
+      @if (sent()) {
+        <p class="espace-dispo-envoye">
+          <mat-icon inline>check_circle</mat-icon>
+          <span i18n="@@espace.covoiturage.envoyee"
+            >Enregistré. L'organisation relit les demandes ; rien n'est pris en compte avant sa validation.</span
+          >
+        </p>
+      }
+    </div>
+  }
+
+  <app-status-message [text]="error() ?? ''" tone="error" />
+} @else {
+  <app-status-message [text]="error() ?? ''" tone="error" />
+}

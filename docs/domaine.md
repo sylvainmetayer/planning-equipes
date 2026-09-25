@@ -754,8 +754,42 @@ donnerait des journées de 14 h sans un mot. Formats complets dans
 
 Exceptions ponctuelles posées par l'administrateur, stockées en base et évaluées
 dynamiquement — **jamais de contrainte codée en dur pour un cas particulier**.
-Quatre types : indisponibilité forcée, incompatibilité, affectation forcée,
-affinité.
+Cinq types : indisponibilité forcée, incompatibilité, affectation forcée,
+affinité, arrivée groupée.
+
+L'**arrivée groupée** (`ARRIVEE_GROUPEE`) réunit 2 à 4 animateurs qui arrivent
+et repartent ensemble — un covoiturage — sans créneau ni stand. Elle naît le plus
+souvent d'une demande : dans l'onglet Covoiturage de son espace, pendant la
+fenêtre de collecte des disponibilités, un animateur nomme jusqu'à trois
+coéquipiers (« Je viens avec… »). La demande est **indépendante de la
+déclaration de disponibilités** — son propre envoi, sa propre décision — et
+rangée dans `declaration_coequipier` (table générique, `nature` =
+`COVOITURAGE`, `BINOME` réservé) ; appliquer ou refuser une déclaration ne la
+touche pas. Une seule demande en attente par animateur ; l'administrateur la
+**valide** (onglet Covoiturage de la page Disponibilités), ce qui crée
+l'ajustement, ou l'**écarte** avec un `motif` facultatif que l'animateur relit
+dans son espace avant, s'il le veut, d'en envoyer une autre. Chaque décision est
+notifiée par e-mail, au mieux. Un groupe validé ne se change plus depuis
+l'espace : l'ajustement appartient à l'organisation, qui peut l'**annuler**
+depuis le même onglet, avec un `motif` facultatif. L'annulation supprime
+l'ajustement et fait passer, dans la même transaction, toutes les demandes
+validées avec lui (`contrainte_id`) au statut `ANNULEE` ; elles restent dans
+l'historique, chaque membre est prévenu, et une nouvelle demande obéit à la
+règle ordinaire (pendant la fenêtre de collecte seulement).
+
+| `statut` | Sens |
+| --- | --- |
+| `EN_ATTENTE` | Envoyée depuis l'espace, en attente de l'administrateur |
+| `VALIDEE` | Transformée en ajustement `ARRIVEE_GROUPEE` (`contrainte_id`) |
+| `ECARTEE` | Classée sans effet, rien n'a été écrit |
+| `ANNULEE` | Validée puis annulée : l'ajustement a été supprimé |
+
+Tant qu'une demande `VALIDEE` pointe vers une arrivée groupée, **aucune autre
+écriture ne la modifie ni ne la supprime** — page Ajustements manuels, outils
+MCP, tout appel de `ContrainteAdHocService` : `409` avec une phrase unique qui
+renvoie à l'onglet Covoiturage. Une arrivée groupée saisie à la main reste
+modifiable ; l'import d'un scénario et la réinitialisation, qui remplacent les
+ajustements de toute l'édition, ne sont pas concernés.
 
 Ce sont des règles sur mesure posées **avant** le calcul, qui disent où placer
 ou ne pas placer quelqu'un ; chaque résolution les honore, y compris en
@@ -927,6 +961,7 @@ jamais.
 | `vitesseMarcheKmH` | 4 | `planning.contraintes.vitesse-marche-km-h` | `trajetInsuffisantEntrePostes` |
 | `facteurDetour` | 1,3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
 | `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
+| `toleranceArriveeGroupeeMinutes` | 30 | `planning.contraintes.tolerance-arrivee-groupee-minutes` | `arriveeGroupee` |
 
 Une heure laissée **vide** dans la configuration se lit comme absente, pas comme
 minuit : c'est ainsi qu'un déploiement neutralise `eviterFermeturePuisOuverture`
@@ -951,8 +986,8 @@ peut donc pas desserrer un seuil de qualité en l'envoyant dans son payload.
 - Le statut mineur/majeur est calculé, jamais stocké.
 - `souhaits` est un `Set` sans ordre ni priorité — ne pas le transformer en
   liste ordonnée.
-- Les contraintes ad hoc prescriptives restent **dures** ; seule l'affinité est
-  une récompense soft, par conception.
+- Les contraintes ad hoc prescriptives restent **dures** ; seules l'affinité et
+  l'arrivée groupée sont souples, par conception.
 - Un créneau reste toujours l'unité de travail réellement assignable — jamais
   une amplitude d'ouverture brute.
 - L'espace animateur ne montre jamais le planning de travail : ce qu'une

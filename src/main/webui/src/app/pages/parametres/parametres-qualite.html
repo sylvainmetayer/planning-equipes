@@ -63,6 +63,12 @@
                [ngModel]="walkingTolerance()" (ngModelChange)="walkingTolerance.set($event)" />
         <mat-hint i18n="@@parametres.qualite.hint.toleranceTrajet">Ce qu'un battement entre deux postes peut manquer avant d'être pénalisé : un saut entre stands voisins ne compte pas. Par défaut 5 min.</mat-hint>
       </mat-form-field>
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.qualite.field.toleranceArriveeGroupee">Tolérance d'une arrivée groupée (minutes)</mat-label>
+        <input matInput type="number" min="0" max="240" step="5" name="toleranceArriveeGroupeeMinutes"
+               [ngModel]="carpoolTolerance()" (ngModelChange)="carpoolTolerance.set($event)" />
+        <mat-hint i18n="@@parametres.qualite.hint.toleranceArriveeGroupee">L'écart d'arrivée, ou de départ, toléré entre les membres d'un covoiturage avant d'être pénalisé. Par défaut 30 min.</mat-hint>
+      </mat-form-field>
       <div class="form-actions">
         <button matButton="filled" type="submit" [disabled]="loading()">
           <mat-icon>save</mat-icon>

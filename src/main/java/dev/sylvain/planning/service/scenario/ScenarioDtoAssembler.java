@@ -371,7 +371,8 @@ final class ScenarioDtoAssembler {
                         parametres.joursConsecutifsMax(),
                         parametres.vitesseMarcheKmH(),
                         parametres.facteurDetour(),
-                        parametres.toleranceTrajetMinutes());
+                        parametres.toleranceTrajetMinutes(),
+                        parametres.toleranceArriveeGroupeeMinutes());
     }
 
     private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {

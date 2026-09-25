@@ -331,6 +331,41 @@ class ContrainteAdHocContradictionsTest {
                 .isEmpty();
     }
 
+    /* --------------- Rule 5: a grouped arrival holding an incompatible pair --------------- */
+
+    @Test
+    void aGroupedArrivalHoldingAnIncompatiblePairIsRefusedWhicheverComesLast() {
+        ContrainteAdHoc incompatibilite = pair("C1", TypeContrainteAdHoc.INCOMPATIBILITE, "A2", "A3");
+        ContrainteAdHoc groupe = scoped("G1", TypeContrainteAdHoc.ARRIVEE_GROUPEE, null, null, "A1", "A2", "A3");
+
+        assertThat(detect(groupe, incompatibilite)).singleElement().satisfies(contradiction -> {
+            assertThat(contradiction.type()).isEqualTo(TypeContradiction.ARRIVEE_GROUPEE_INCOMPATIBLE);
+            assertThat(contradiction.contrainteIds()).containsExactly("C1", "G1");
+        });
+        assertThat(detect(incompatibilite, groupe)).hasSize(1);
+        assertThat(ContrainteAdHocContradictions.detectAll(List.of(groupe, incompatibilite), CRENEAUX))
+                .hasSize(1);
+    }
+
+    @Test
+    void aGroupedArrivalHoldingOnlyOneOfAnIncompatiblePairIsAccepted() {
+        ContrainteAdHoc incompatibilite = pair("C1", TypeContrainteAdHoc.INCOMPATIBILITE, "A2", "A9");
+        ContrainteAdHoc groupe = scoped("G1", TypeContrainteAdHoc.ARRIVEE_GROUPEE, null, null, "A1", "A2");
+
+        assertThat(detect(groupe, incompatibilite)).isEmpty();
+    }
+
+    @Test
+    void aGroupedArrivalHoldingAPairIncompatibleOnlyOnAStandOrATimeslotIsAccepted() {
+        ContrainteAdHoc groupe = scoped("G1", TypeContrainteAdHoc.ARRIVEE_GROUPEE, null, null, "A2", "A3");
+        ContrainteAdHoc surUnStand = scopedPair("C1", null, "S1", "A2", "A3");
+        ContrainteAdHoc surUnCreneau = scopedPair("C2", MATIN, null, "A2", "A3");
+
+        assertThat(detect(groupe, surUnStand, surUnCreneau)).isEmpty();
+        assertThat(detect(surUnStand, groupe)).isEmpty();
+        assertThat(detect(surUnCreneau, groupe)).isEmpty();
+    }
+
     private static List<Contradiction> detect(ContrainteAdHoc candidate, ContrainteAdHoc... others) {
         return ContrainteAdHocContradictions.detect(candidate, List.of(others), CRENEAUX);
     }

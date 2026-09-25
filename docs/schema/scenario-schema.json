@@ -493,6 +493,12 @@
           "format" : "int32",
           "minimum" : 0
         },
+        "toleranceArriveeGroupeeMinutes" : {
+          "type" : "integer",
+          "format" : "int32",
+          "minimum" : 0,
+          "maximum" : 240
+        },
         "toleranceTrajetMinutes" : {
           "type" : "integer",
           "format" : "int32",
@@ -673,7 +679,7 @@
     },
     "TypeContrainteAdHoc" : {
       "type" : "string",
-      "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE" ]
+      "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE", "ARRIVEE_GROUPEE" ]
     },
     "TypeJoursHoraire" : {
       "type" : "string",

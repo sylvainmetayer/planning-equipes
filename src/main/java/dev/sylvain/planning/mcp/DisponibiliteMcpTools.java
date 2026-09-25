@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.Confi
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteService.DeclarationAppliquee;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService;
 import dev.sylvain.planning.service.espace.EspaceAnimateurService.DeclarationAdminView;
+import dev.sylvain.planning.service.espace.TeammateRequestService;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -41,12 +42,65 @@ public class DisponibiliteMcpTools {
 
     private final EspaceAnimateurService espaceAnimateurService;
 
+    private final TeammateRequestService teammateRequestService;
+
     @Inject
     DisponibiliteMcpTools(
-            DeclarationDisponibiliteService declarationService, EspaceAnimateurService espaceAnimateurService) {
+            DeclarationDisponibiliteService declarationService,
+            EspaceAnimateurService espaceAnimateurService,
+            TeammateRequestService teammateRequestService) {
         this.declarationService = declarationService;
         this.espaceAnimateurService = espaceAnimateurService;
+        this.teammateRequestService = teammateRequestService;
     }
+
+    @Tool(
+            name = "lister_demandes_covoiturage",
+            description = "Liste les demandes de covoiturage (« Je viens avec… », un à trois coéquipiers) "
+                    + "envoyées depuis l'onglet Covoiturage de l'espace animateur pendant la collecte, du plus "
+                    + "récent au plus ancien : les membres, le statut (EN_ATTENTE, VALIDEE, ECARTEE, ANNULEE), si chacun a "
+                    + "nommé les autres (confirmedByAll), les jours où leurs indisponibilités déclarées divergent, "
+                    + "et l'ajustement ARRIVEE_GROUPEE créé par la validation. Une demande est distincte de la "
+                    + "déclaration de disponibilités : appliquer ou refuser une déclaration ne la touche pas, et "
+                    + "seule sa validation, depuis l'onglet Covoiturage de l'écran Disponibilités, crée "
+                    + "l'ajustement ; l'annulation d'une arrivée groupée validée se fait aussi depuis cet onglet, "
+                    + "qui prévient le groupe. Les animateurs y sont désignés par id seul ; le motif d'un écart ou "
+                    + "d'une annulation, texte libre, n'est pas rendu.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    List<CarpoolRequestMcpView> listCarpoolRequests(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return teammateRequestService.list().stream()
+                .map(demande -> new CarpoolRequestMcpView(
+                        demande.id(),
+                        demande.animateurId(),
+                        demande.members().stream()
+                                .map(TeammateRequestService.MemberView::animateurId)
+                                .toList(),
+                        demande.status(),
+                        demande.confirmedByAll(),
+                        demande.divergentDays(),
+                        demande.contrainteId(),
+                        demande.createdAt(),
+                        demande.decidedAt()))
+                .toList();
+    }
+
+    /** A covoiturage demand in ids: who declared it, who rides, and where it stands. */
+    public record CarpoolRequestMcpView(
+            String id,
+            String animateurId,
+            List<String> memberIds,
+            String status,
+            boolean confirmedByAll,
+            List<LocalDate> divergentDays,
+            String contrainteId,
+            Instant createdAt,
+            Instant decidedAt) {}
 
     @Tool(
             name = "lister_declarations_disponibilite",

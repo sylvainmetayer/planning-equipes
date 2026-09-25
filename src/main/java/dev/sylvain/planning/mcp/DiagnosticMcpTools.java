@@ -5,6 +5,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.analyse.FormationAnalyzer.PlanFormation;
 import dev.sylvain.planning.service.analyse.FormationAnalyzer.TypologieAFormer;
 import dev.sylvain.planning.service.analyse.FormationService;
+import dev.sylvain.planning.service.analyse.GroupedArrivalAnalyzer;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
@@ -71,6 +72,8 @@ public class DiagnosticMcpTools {
 
     private final WalkSequenceAnalyzer walkSequenceAnalyzer;
 
+    private final GroupedArrivalAnalyzer groupedArrivalAnalyzer;
+
     @Inject
     DiagnosticMcpTools(
             ReferenceDataService referenceDataService,
@@ -81,7 +84,8 @@ public class DiagnosticMcpTools {
             PauseAnalyzer pauseAnalyzer,
             PlanningPersistenceService persistenceService,
             CoherenceReferentielService coherenceService,
-            WalkSequenceAnalyzer walkSequenceAnalyzer) {
+            WalkSequenceAnalyzer walkSequenceAnalyzer,
+            GroupedArrivalAnalyzer groupedArrivalAnalyzer) {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.margeService = margeService;
@@ -91,6 +95,30 @@ public class DiagnosticMcpTools {
         this.persistenceService = persistenceService;
         this.coherenceService = coherenceService;
         this.walkSequenceAnalyzer = walkSequenceAnalyzer;
+        this.groupedArrivalAnalyzer = groupedArrivalAnalyzer;
+    }
+
+    /** The same reading as {@code GET /api/planning/arrivees-groupees}: ids only. */
+    @Tool(
+            name = "analyser_arrivees_groupees",
+            description = "Pour chaque arrivée groupée (ajustement ARRIVEE_GROUPEE, covoiturage de 2 à 4 "
+                    + "animateurs) du planning persisté, jour par jour : qui travaille, qui ne travaille pas alors "
+                    + "qu'un autre membre travaille, l'écart entre les premières arrivées et entre les derniers "
+                    + "départs, et si le jour est aligné (tous présents, écarts dans la tolérance de l'édition). "
+                    + "misalignedDays compte les jours à revoir. Lu sans lancer de résolution ; animateurs par id "
+                    + "seul.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    GroupedArrivalAnalyzer.GroupedArrivalReport analyzeGroupedArrivals(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return groupedArrivalAnalyzer.analyze(
+                persistenceService.loadPersistedPlanning(),
+                referenceDataService.listContraintesAdHoc(),
+                referenceDataService.getParametresQualite());
     }
 
     /**

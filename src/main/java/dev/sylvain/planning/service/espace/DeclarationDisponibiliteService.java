@@ -134,7 +134,12 @@ public class DeclarationDisponibiliteService {
         }
     }
 
-    /** One declaration as typed in the espace, before any validation. */
+    /**
+     * One declaration as typed in the espace, before any validation. It says
+     * nothing of a covoiturage: « Je viens avec… » has its own tab, its own
+     * submission and its own decision ({@link TeammateRequestService}), so
+     * applying or refusing a declaration never touches it.
+     */
     public record NouvelleDeclaration(List<LocalDate> joursIndisponibles, List<String> souhaits, String commentaire) {}
 
     /* --------------------------- Collection window --------------------------- */

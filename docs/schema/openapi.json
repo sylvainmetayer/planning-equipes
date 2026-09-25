@@ -948,6 +948,70 @@
           }
         }
       },
+      "CarpoolCancellation" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
+      "CarpoolDayView" : {
+        "required" : [ "aligned" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "aligned" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "CarpoolEspaceView" : {
+        "required" : [ "collectionOpen", "colleagues", "teammateIds" ],
+        "type" : "object",
+        "properties" : {
+          "collectionOpen" : {
+            "type" : "boolean"
+          },
+          "collectionStart" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "collectionEnd" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "colleagues" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ColleagueView"
+            }
+          },
+          "teammateIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "decidedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "CarpoolSetAside" : {
+        "type" : "object",
+        "properties" : {
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
       "CauseInfaisabilite" : {
         "type" : "object",
         "required" : [ "capacite", "demande", "manque" ],
@@ -2010,6 +2074,9 @@
           },
           "modifieLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "issueDeCovoiturage" : {
+            "type" : "boolean"
           }
         }
       },
@@ -3094,6 +3161,12 @@
           },
           "editionFin" : {
             "$ref" : "#/components/schemas/LocalDate"
+          },
+          "covoiturage" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CarpoolDayView"
+            }
           }
         }
       },
@@ -3760,6 +3833,85 @@
       "GridAnomalyType" : {
         "type" : "string",
         "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE", "VERROUILLAGE_SANS_VACATION", "VACATION_JOUR_FERIE" ]
+      },
+      "GroupDayView" : {
+        "required" : [ "aligned", "arrivalSpreadMinutes", "departureSpreadMinutes" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "aligned" : {
+            "type" : "boolean"
+          },
+          "working" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "absent" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "arrivalSpreadMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "departureSpreadMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "hours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MemberHoursView"
+            }
+          }
+        }
+      },
+      "GroupView" : {
+        "required" : [ "misalignedDays" ],
+        "type" : "object",
+        "properties" : {
+          "contrainteId" : {
+            "type" : "string"
+          },
+          "animateurIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "misalignedDays" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "days" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroupDayView"
+            }
+          }
+        }
+      },
+      "GroupedArrivalReport" : {
+        "required" : [ "toleranceMinutes", "groups" ],
+        "type" : "object",
+        "properties" : {
+          "toleranceMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "groups" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/GroupView"
+            }
+          }
+        }
       },
       "HardMediumSoftScore" : {
         "type" : "object",
@@ -5009,6 +5161,31 @@
           }
         }
       },
+      "MemberHoursView" : {
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "start" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          }
+        }
+      },
+      "MemberView" : {
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "fullName" : {
+            "type" : "string"
+          }
+        }
+      },
       "MentionsLegalesView" : {
         "required" : [ "mesureAudience", "suiviErreurs", "demoInstance", "accessibilite" ],
         "type" : "object",
@@ -5076,6 +5253,17 @@
       "MotifTension" : {
         "type" : "string",
         "enum" : [ "SIEGES_VIDES_NON_COUVRABLES", "SIEGE_IRREMPLACABLE", "STAND_SANS_SPECIALISTE", "MARGE_NULLE_AVEC_SIEGES_VIDES", "FRAGILES_AU_DELA_DE_LA_MARGE", "SIEGES_FRAGILES", "SPECIALISTE_UNIQUE_SANS_RENFORT" ]
+      },
+      "NewCarpoolRequest" : {
+        "type" : "object",
+        "properties" : {
+          "teammateIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
       },
       "NiveauCompetence" : {
         "type" : "string",
@@ -5290,7 +5478,7 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes", "toleranceArriveeGroupeeMinutes" ],
         "type" : "object",
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
@@ -5324,6 +5512,10 @@
             "format" : "double"
           },
           "toleranceTrajetMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "toleranceArriveeGroupeeMinutes" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -7757,6 +7949,57 @@
           }
         }
       },
+      "TeammateRequestView" : {
+        "required" : [ "confirmedByAll", "divergentDayCount" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "animateurId" : {
+            "type" : "string"
+          },
+          "nature" : {
+            "type" : "string"
+          },
+          "status" : {
+            "type" : "string"
+          },
+          "members" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MemberView"
+            }
+          },
+          "confirmedByAll" : {
+            "type" : "boolean"
+          },
+          "divergentDayCount" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "divergentDays" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "contrainteId" : {
+            "type" : "string"
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "decidedAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "reason" : {
+            "type" : "string"
+          }
+        }
+      },
       "TrancheMarge" : {
         "type" : "object",
         "required" : [ "debut", "fin" ],
@@ -7771,7 +8014,7 @@
       },
       "TypeAvertissement" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "VERROUILLAGE_SUR_VIOLATION_DURE" ]
+        "enum" : [ "INDISPONIBILITE_HORS_EVENEMENT", "INDISPONIBILITE_JOUR_SANS_CRENEAU", "MINEUR_PENDANT_EVENEMENT", "CRENEAU_HORS_OUVERTURE_STANDS", "CRENEAU_DEBORDE_OUVERTURE_STANDS", "STAND_EXCEPTION_HORS_EVENEMENT", "STAND_FENETRE_SANS_EFFET", "STAND_JAMAIS_OUVERT", "AFFECTATION_FORCEE_JOUR_INDISPONIBLE", "AFFECTATION_FORCEE_MOTIF_LEGAL", "AFFECTATION_FORCEE_SIEGE_VERROUILLE", "ARRIVEE_GROUPEE_JOURS_DIVERGENTS", "VERROUILLAGE_SUR_VIOLATION_DURE" ]
       },
       "TypeCauseInfaisabilite" : {
         "type" : "string",
@@ -7783,7 +8026,7 @@
       },
       "TypeContrainteAdHoc" : {
         "type" : "string",
-        "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE" ]
+        "enum" : [ "INDISPONIBILITE_FORCEE", "INCOMPATIBILITE", "AFFECTATION_FORCEE", "AFFINITE", "ARRIVEE_GROUPEE" ]
       },
       "TypeJoursHoraire" : {
         "type" : "string",
@@ -7969,6 +8212,20 @@
           },
           "couverturePause" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "ValidatedCarpool" : {
+        "type" : "object",
+        "properties" : {
+          "request" : {
+            "$ref" : "#/components/schemas/TeammateRequestView"
+          },
+          "avertissements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/Avertissement"
+            }
           }
         }
       },
@@ -9911,6 +10168,131 @@
         "tags" : [ "Declaration Disponibilite Resource" ]
       }
     },
+    "/api/disponibilites/coequipiers" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/TeammateRequestView"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Carpools",
+        "tags" : [ "Declaration Disponibilite Resource" ]
+      }
+    },
+    "/api/disponibilites/coequipiers/{id}/annulation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CarpoolCancellation"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeammateRequestView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Cancel Carpool",
+        "tags" : [ "Declaration Disponibilite Resource" ]
+      }
+    },
+    "/api/disponibilites/coequipiers/{id}/ecart" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/CarpoolSetAside"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/TeammateRequestView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Set Carpool Aside",
+        "tags" : [ "Declaration Disponibilite Resource" ]
+      }
+    },
+    "/api/disponibilites/coequipiers/{id}/validation" : {
+      "post" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ValidatedCarpool"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Validate Carpool",
+        "tags" : [ "Declaration Disponibilite Resource" ]
+      }
+    },
     "/api/disponibilites/configuration" : {
       "put" : {
         "requestBody" : {
@@ -10697,6 +11079,51 @@
           }
         },
         "summary" : "Confirmer Planning",
+        "tags" : [ "Espace Animateur Resource" ]
+      }
+    },
+    "/api/espace-animateur/{jeton}/covoiturage" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/NewCarpoolRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : { }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Request Carpool",
+        "tags" : [ "Espace Animateur Resource" ]
+      },
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CarpoolEspaceView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Carpool",
         "tags" : [ "Espace Animateur Resource" ]
       }
     },
@@ -12376,6 +12803,24 @@
         },
         "summary" : "Export Intendance",
         "tags" : [ "Pause Resource" ]
+      }
+    },
+    "/api/planning/arrivees-groupees" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/GroupedArrivalReport"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Grouped Arrivals",
+        "tags" : [ "Planning Resource" ]
       }
     },
     "/api/planning/enchainements" : {

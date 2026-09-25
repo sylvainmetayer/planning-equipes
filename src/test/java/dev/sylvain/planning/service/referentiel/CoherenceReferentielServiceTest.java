@@ -387,6 +387,31 @@ class CoherenceReferentielServiceTest {
     }
 
     @Test
+    void aCarWhoseMembersDeclaredDifferentDaysOffIsListed() {
+        ContrainteAdHoc voiture = new ContrainteAdHoc("G01", TypeContrainteAdHoc.ARRIVEE_GROUPEE);
+        voiture.setAnimateursConcernes(List.of(adulte("A1", SAMEDI), adulte("A2")));
+
+        CoherenceReport rapport = build(
+                List.of(adulte("A1", SAMEDI), adulte("A2")),
+                List.of(),
+                grille(),
+                List.of(voiture),
+                List.of(),
+                List.of(),
+                false);
+
+        assertThat(rapport.anomalies())
+                .filteredOn(ligne -> ligne.famille() == CoherenceFamily.AJUSTEMENTS)
+                .singleElement()
+                .satisfies(ligne -> {
+                    assertThat(ligne.code()).isEqualTo(TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS.name());
+                    assertThat(ligne.objetId()).isEqualTo("G01");
+                    // Named by id, never by identity.
+                    assertThat(ligne.message()).contains("A1").doesNotContain("Prénom");
+                });
+    }
+
+    @Test
     void aLockOverAHardViolationOfTheLatestAnalysisIsListed() {
         VerrouillagePlanning verrou = new VerrouillagePlanning("V1", TypeVerrouillage.ANIMATEUR);
         verrou.setAnimateurId("A1");
@@ -434,6 +459,8 @@ class CoherenceReferentielServiceTest {
                 TypeAvertissement.AFFECTATION_FORCEE_JOUR_INDISPONIBLE,
                 TypeAvertissement.AFFECTATION_FORCEE_MOTIF_LEGAL,
                 TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE,
+                // aCarWhoseMembersDeclaredDifferentDaysOffIsListed below.
+                TypeAvertissement.ARRIVEE_GROUPEE_JOURS_DIVERGENTS,
                 TypeAvertissement.VERROUILLAGE_SUR_VIOLATION_DURE);
 
         assertThat(couverts).containsExactlyInAnyOrder(TypeAvertissement.values());

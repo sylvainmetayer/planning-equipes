@@ -1,0 +1,15 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">L'organisation n'a pas retenu votre demande de covoiturage.</p>
+{#if motif}
+<p style="margin:0 0 12px;">Son explication : {motif}</p>
+{/if}
+<p style="margin:0{#if lienEspace} 0 12px{/if};">Vous pouvez envoyer une nouvelle demande depuis votre espace tant que la collecte des disponibilités est ouverte.</p>
+{#if lienEspace}
+<p style="margin:0;"><a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

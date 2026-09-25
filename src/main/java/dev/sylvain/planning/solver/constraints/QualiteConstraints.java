@@ -574,7 +574,7 @@ public final class QualiteConstraints {
      * when it ends. Both are instants, so a vacation running past midnight ends
      * on the following date — see {@link LegalConstraints#fin}.
      */
-    private static UniConstraintStream<Journee> journees(ConstraintFactory constraintFactory) {
+    static UniConstraintStream<Journee> journees(ConstraintFactory constraintFactory) {
         return constraintFactory
                 .forEach(PosteAffectation.class)
                 .filter(poste -> poste.getAnimateur() != null && LegalConstraints.horaireConnu(poste))
@@ -603,8 +603,7 @@ public final class QualiteConstraints {
      *                     now (ADR 0044) — a night between two days entirely
      *                     worked is history
      */
-    private record Journee(
-            Animateur animateur, int jour, LocalDateTime debut, LocalDateTime fin, boolean reproachable) {
+    record Journee(Animateur animateur, int jour, LocalDateTime debut, LocalDateTime fin, boolean reproachable) {
 
         LocalDate date() {
             return debut.toLocalDate();

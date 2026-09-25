@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.analyse.GroupedArrivalAnalyzer;
 import dev.sylvain.planning.service.analyse.WalkSequenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
@@ -44,6 +45,8 @@ public class PlanningResource {
 
     private final WalkSequenceAnalyzer walkSequenceAnalyzer;
 
+    private final GroupedArrivalAnalyzer groupedArrivalAnalyzer;
+
     @Inject
     public PlanningResource(
             SolvePipeline pipeline,
@@ -52,7 +55,8 @@ public class PlanningResource {
             ReferenceDataChangeTracker changeTracker,
             ProblemScaleService problemScaleService,
             ReferenceDataService referenceDataService,
-            WalkSequenceAnalyzer walkSequenceAnalyzer) {
+            WalkSequenceAnalyzer walkSequenceAnalyzer,
+            GroupedArrivalAnalyzer groupedArrivalAnalyzer) {
         this.pipeline = pipeline;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
@@ -60,6 +64,7 @@ public class PlanningResource {
         this.problemScaleService = problemScaleService;
         this.referenceDataService = referenceDataService;
         this.walkSequenceAnalyzer = walkSequenceAnalyzer;
+        this.groupedArrivalAnalyzer = groupedArrivalAnalyzer;
     }
 
     /**
@@ -167,6 +172,22 @@ public class PlanningResource {
                 persistenceService.loadPersistedPlanning(),
                 referenceDataService.getParametresQualite(),
                 referenceDataService.getParametresLegaux());
+    }
+
+    /**
+     * Day by day, whether each grouped arrival ({@code ARRIVEE_GROUPEE}) of
+     * the persisted plan arrives and leaves together, under the edition's
+     * current tolerance: the days a member works alone, and the days the first
+     * arrivals or the last departures are too far apart. A reading of the
+     * persisted plan, never a solve; ids only.
+     */
+    @GET
+    @Path("/planning/arrivees-groupees")
+    public GroupedArrivalAnalyzer.GroupedArrivalReport groupedArrivals() {
+        return groupedArrivalAnalyzer.analyze(
+                persistenceService.loadPersistedPlanning(),
+                referenceDataService.listContraintesAdHoc(),
+                referenceDataService.getParametresQualite());
     }
 
     @Schema(requiredProperties = {"assignments"})

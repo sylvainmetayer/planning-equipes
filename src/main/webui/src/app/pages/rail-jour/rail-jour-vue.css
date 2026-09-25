@@ -263,6 +263,14 @@
   outline-offset: 1px;
 }
 
+.rail-covoiturage-icon {
+  color: var(--mat-sys-primary);
+}
+
+.rail-covoiturage-desaligne {
+  color: var(--mat-sys-error);
+}
+
 .rail-trajet {
   position: absolute;
   top: 0;
