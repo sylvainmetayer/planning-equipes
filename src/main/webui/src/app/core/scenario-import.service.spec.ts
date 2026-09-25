@@ -200,6 +200,18 @@ describe('ScenarioImportService', () => {
       expect(confirm.ask.mock.calls[0][0].danger).toBe(true);
     });
 
+    it('announces an edition the file names but that has no id yet as one to create', async () => {
+      // The section gives only a name: the application draws the id on import.
+      const cible = target({ editionNomFichier: 'Édition importée' });
+      api.get = vi.fn(async (url: string) => (url.includes('cible-scenario') ? cible : impact()));
+
+      await service.importer({ kind: 'name', name: 'edition-1708' });
+
+      const message = confirm.ask.mock.calls[0][0].message as string;
+      expect(message).toContain('« Édition importée » : elle sera CRÉÉE');
+      expect(snapshots.capturer).not.toHaveBeenCalled();
+    });
+
     it('still asks for confirmation when the impact count fails — counting is comfort, not safety', async () => {
       impactResponse = new Error('500');
 

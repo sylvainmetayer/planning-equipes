@@ -8,6 +8,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * CRUD over the editions themselves — create "Année 2026", duplicate "Année
@@ -139,32 +140,49 @@ public class EditionService {
      * before, unless that id has an edition id's own shape.</p>
      */
     public ImportTarget resolveForImport(String id, String nom) {
+        Optional<Edition> existante = findForImport(id, nom);
+        if (existante.isPresent()) {
+            return new ImportTarget(existante.get(), false);
+        }
+        return new ImportTarget(create(new Edition(null, nameToCreate(id, nom), false, null)), true);
+    }
+
+    /**
+     * The edition a scenario's {@code edition} section designates, without
+     * creating anything: by id first, else by name. Empty when the import
+     * would create it. What both the import and its preview read, so the
+     * dialog cannot announce another target than the one written.
+     */
+    public Optional<Edition> findForImport(String id, String nom) {
         String idCible = id == null ? "" : id.trim();
-        String nomCible = nom == null ? "" : nom.trim();
         List<Edition> editions = listEditions();
         if (!idCible.isEmpty()) {
             for (Edition edition : editions) {
                 if (edition.getId().equals(idCible)) {
-                    return new ImportTarget(edition, false);
+                    return Optional.of(edition);
                 }
             }
         }
-        String nomCree = nomCible.isEmpty() ? idCible : nomCible;
-        if (nomCree.isEmpty()) {
-            throw new BusinessError.Invalid("La section edition doit donner le nom de l'édition cible.");
-        }
+        String nomCree = nameToCreate(id, nom);
         List<Edition> homonymes = editions.stream()
                 .filter(edition ->
                         edition.getNom() != null && edition.getNom().trim().equalsIgnoreCase(nomCree))
                 .toList();
-        if (homonymes.size() == 1) {
-            return new ImportTarget(homonymes.getFirst(), false);
-        }
         if (homonymes.size() > 1) {
             throw new BusinessError.Invalid("Plusieurs éditions portent le nom « " + nomCree
                     + " » : désignez celle voulue par son id dans la section edition.");
         }
-        return new ImportTarget(create(new Edition(null, nomCree, false, null)), true);
+        return homonymes.stream().findFirst();
+    }
+
+    /** The name an edition the section does not find is created under: its nom, else its id. */
+    private static String nameToCreate(String id, String nom) {
+        String nomCible = nom == null ? "" : nom.trim();
+        String nomCree = nomCible.isEmpty() ? (id == null ? "" : id.trim()) : nomCible;
+        if (nomCree.isEmpty()) {
+            throw new BusinessError.Invalid("La section edition doit donner le nom de l'édition cible.");
+        }
+        return nomCree;
     }
 
     /** Result of {@link #resolveForImport}: the edition to import into, and whether it was just created. */
