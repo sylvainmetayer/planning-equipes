@@ -55,4 +55,44 @@ class JoursFeriesTest {
         assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 4, 3))).isFalse();
         assertThat(JoursFeries.isFerieInFrance(LocalDate.of(2026, 12, 26))).isFalse();
     }
+
+    @Test
+    void everyHolidayOfTheYearHasItsName() {
+        assertThat(JoursFeries.between(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31)))
+                .extracting(JoursFeries.PublicHoliday::label)
+                .containsExactly(
+                        "Jour de l'an",
+                        "Lundi de Pâques",
+                        "Fête du Travail",
+                        "Victoire 1945",
+                        "Ascension",
+                        "Lundi de Pentecôte",
+                        "Fête nationale",
+                        "Assomption",
+                        "Toussaint",
+                        "Armistice 1918",
+                        "Noël");
+        assertThat(JoursFeries.label(LocalDate.of(2026, 5, 25))).contains("Lundi de Pentecôte");
+        assertThat(JoursFeries.label(LocalDate.of(2026, 7, 15))).isEmpty();
+        assertThat(JoursFeries.label(null)).isEmpty();
+    }
+
+    @Test
+    void ascensionFallingOnAFixedHolidayKeepsBothNames() {
+        // 2008: Easter on 23 March, Ascension on 1 May; 1997: Easter on
+        // 30 March, Ascension on 8 May.
+        assertThat(JoursFeries.label(LocalDate.of(2008, 5, 1))).contains("Fête du Travail et Ascension");
+        assertThat(JoursFeries.label(LocalDate.of(1997, 5, 8))).contains("Victoire 1945 et Ascension");
+        assertThat(JoursFeries.joursFeries(2008)).hasSize(10);
+    }
+
+    @Test
+    void aRangeAcrossNewYearReturnsTheHolidaysOfBothYears() {
+        assertThat(JoursFeries.between(LocalDate.of(2026, 12, 20), LocalDate.of(2027, 1, 5)))
+                .containsExactly(
+                        new JoursFeries.PublicHoliday(LocalDate.of(2026, 12, 25), "Noël"),
+                        new JoursFeries.PublicHoliday(LocalDate.of(2027, 1, 1), "Jour de l'an"));
+        assertThat(JoursFeries.between(LocalDate.of(2027, 1, 5), LocalDate.of(2026, 12, 20)))
+                .isEmpty();
+    }
 }

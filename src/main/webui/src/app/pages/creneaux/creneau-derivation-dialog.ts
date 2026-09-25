@@ -14,7 +14,9 @@ import { labelsOf, standNames } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DerivationRequest, RapportDerivation } from '../../core/models';
-import { summarizeVacationsByDay } from './jours-resume';
+import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
+import { JoursFeriesService } from '../../core/jours-feries.service';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 import { bilanGrille, grilleBloquee, gridAnomalyIcon, trierAnomalies } from './grille-creneaux';
 
 export interface CreneauDerivationData {
@@ -50,6 +52,7 @@ export interface DerivationDraft {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    PastilleFerie,
   ],
   templateUrl: './creneau-derivation-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -60,6 +63,8 @@ export class CreneauDerivationDialog {
     inject<MatDialogRef<CreneauDerivationDialog, RapportDerivation | null>>(MatDialogRef);
   private readonly data = inject<CreneauDerivationData>(MAT_DIALOG_DATA);
   private readonly creneauxApi = inject(CreneauxApi);
+  /** The public holidays of the preview's dates, marked beside them. */
+  private readonly feries = inject(JoursFeriesService);
   private readonly crud = inject(ReferenceCrudService);
   private readonly confirm = inject(ConfirmService);
   /** Stand id → name: the preview names the stands at a cut by id. */
@@ -99,8 +104,12 @@ export class CreneauDerivationDialog {
   );
   protected readonly resume = computed(() => {
     const apercu = this.apercu();
-    return apercu ? summarizeVacationsByDay(apercu.creneaux) : [];
+    return apercu ? summarizeVacationsByDay(apercu.creneaux, this.feries.byDate()) : [];
   });
+  /** « 14/07, 15/08 »: the dates of the preview that fall on a public holiday. */
+  protected readonly datesFeriees = computed(() =>
+    holidayDays(this.resume()).map((jour) => dayMonth(jour.date)),
+  );
   protected readonly bilan = computed(() => {
     const apercu = this.apercu();
     return apercu ? bilanGrille(apercu.controle) : null;
@@ -156,7 +165,9 @@ export class CreneauDerivationDialog {
     }
     this.chargement.set(true);
     try {
-      this.apercu.set(await this.creneauxApi.previewDerivation(this.requete()));
+      const apercu = await this.creneauxApi.previewDerivation(this.requete());
+      this.apercu.set(apercu);
+      void this.feries.load(apercu.creneaux.map((creneau) => creneau.date));
       this.signatureApercu.set(JSON.stringify(this.draft()));
     } catch (error) {
       this.crud.reportError(error);

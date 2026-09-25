@@ -12,6 +12,7 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { NgForm } from '@angular/forms';
 import { By } from '@angular/platform-browser';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { JoursFeriesService } from '../../core/jours-feries.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
@@ -32,6 +33,13 @@ function monter(
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
       { provide: ReferenceCrudService, useValue: { save } },
+      {
+        provide: JoursFeriesService,
+        useValue: {
+          load: vi.fn(async () => undefined),
+          label: (date: string) => (date === '2026-07-14' ? 'Fête nationale' : null),
+        },
+      },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { creneau } },
     ],
@@ -288,5 +296,15 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     expect(racine(fixture).textContent).not.toContain('franchit minuit');
+  });
+
+  it('says under the date field that the date typed is a public holiday, without refusing it', async () => {
+    const { fixture } = monter(CRENEAU);
+    await fixture.whenStable();
+    expect(racine(fixture).querySelector('mat-hint')!.textContent).toContain('Fête nationale');
+
+    saisir(fixture, 'date', '2026-07-15');
+    await fixture.whenStable();
+    expect(racine(fixture).querySelector('.pastille-ferie')).toBeNull();
   });
 });

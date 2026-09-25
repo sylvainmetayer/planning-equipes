@@ -48,6 +48,7 @@ function rapport(): RapportOuvertures {
       heureFin: '22:00',
       minutes: 240,
       nombreCreneaux: 1,
+      ferie: null,
       creneaux: [
         {
           id: index + 1,

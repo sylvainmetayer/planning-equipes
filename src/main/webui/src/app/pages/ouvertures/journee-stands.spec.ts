@@ -12,6 +12,7 @@ function rapport(): RapportOuvertures {
         heureFin: '20:00',
         minutes: 660,
         nombreCreneaux: 3,
+        ferie: null,
         creneaux: [
           { id: 1, tranche: 0, heureDebut: '09:00', heureFin: '12:00', couverturePause: false },
           { id: 2, tranche: 0, heureDebut: '12:00', heureFin: '13:00', couverturePause: true },

@@ -4004,5 +4004,13 @@
   "referentiel.hint.code": "Readable key quoted by import files (optional)",
   "editions.nomFormeId": "“{$nom}” is shaped like an edition identifier: choose another name.",
   "importRef.apercu.cle": "Key",
-  "aide.data.identifiants": "No identifier is typed in: the application assigns one to every record it creates — A12 for an animateur, S3 for a stand, T2 for a game category, L1 for a location, C4 for an adjustment. A stand, a category or a location may also carry a code, optional and unique within the edition, such as “STRATEGIE” or “PAVILLON”: it is the readable key import files quote and exports write, which carry no identifier — without a code, a row is designated there by its name."
+  "aide.data.identifiants": "No identifier is typed in: the application assigns one to every record it creates — A12 for an animateur, S3 for a stand, T2 for a game category, L1 for a location, C4 for an adjustment. A stand, a category or a location may also carry a code, optional and unique within the edition, such as “STRATEGIE” or “PAVILLON”: it is the readable key import files quote and exports write, which carry no identifier — without a code, a row is designated there by its name.",
+  "ferie.pastille": "Holiday",
+  "ferie.infobulle": "{$libelle} — public holiday: minors may not work on it (L3164-6), hours paid as holiday hours",
+  "ouvertures.journee.ferie": "Public holiday:",
+  "ouvertures.journee.ferieConsequence": "only adults may sit on it (L3164-6).",
+  "creneaux.apercu.feries": "{$INTERPOLATION} date(s) fall on a public holiday: {$INTERPOLATION_1}",
+  "creneaux.form.ferie": "Public holiday:",
+  "aide.creneaux.feries": "Public holidays are marked wherever a date is set — the timeslot table, the calendar of day templates, the preview of a series, the timeslot form — with their name: Fête nationale, Assomption… Nothing is forbidden, a festival legitimately opens on 14 July. But a minor does not work on a public holiday: when the edition has one that day, the grid check says so, so that it is thought of before the solve rather than at the diagnostic. Only the eleven days of the French Labour Code in mainland France are known, without the holidays of Alsace-Moselle or overseas.",
+  "aide.ouvertures.feries": "A public holiday carries the « Holiday » mark at the head of its column, and its column is tinted; the Day view announces it in a banner. Its name and what it changes — minors do not work on it, its hours count as holiday hours — can be read on hover or with the keyboard. It is information: nothing prevents opening that day."
 }

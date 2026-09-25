@@ -9,6 +9,9 @@
   <mat-label i18n="@@creneaux.field.date">Date</mat-label>
   <input matInput name="date" type="date" required
          [ngModel]="draft().date" (ngModelChange)="patch({ date: $event })" />
+  @if (ferie(); as ferie) {
+    <mat-hint><ng-container i18n="@@creneaux.form.ferie">Jour férié :</ng-container> <app-pastille-ferie [libelle]="ferie" /></mat-hint>
+  }
 </mat-form-field>
 <mat-form-field appearance="outline">
   <mat-label i18n="@@creneaux.field.heureDebut">Début</mat-label>

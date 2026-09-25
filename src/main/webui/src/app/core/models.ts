@@ -268,6 +268,14 @@ export interface JourAmplitude {
   minutes: number;
   nombreCreneaux: number;
   creneaux: ColonneCreneau[];
+  /** The name of the public holiday that day (« Fête nationale »), `null` on an ordinary day. */
+  ferie: string | null;
+}
+
+/** `GET /api/jours-feries`: one French public holiday, named. */
+export interface PublicHoliday {
+  date: string;
+  label: string;
 }
 
 /** One open stretch of a cell, in wall-clock hours, with the headcount it asks for. */
@@ -1456,7 +1464,8 @@ export type TypeAnomalieGrille =
   | 'TROU_DANS_LA_JOURNEE'
   | 'VACATION_TROP_LONGUE'
   | 'DATE_ISOLEE'
-  | 'RELAIS_REPAS_HORS_FENETRE';
+  | 'RELAIS_REPAS_HORS_FENETRE'
+  | 'VACATION_JOUR_FERIE';
 
 export interface AnomalieGrille {
   severite: SeveriteGrille;
@@ -1481,6 +1490,8 @@ export interface DiagnosticGrille {
   derniereDate: string | null;
   contientCouverturePause: boolean;
   explication: string;
+  /** The dates of the grid falling on a public holiday, named. */
+  joursFeries: PublicHoliday[];
 }
 
 /** A recurrence rule as `POST /api/creneaux/recurrence` reads it. */

@@ -5,6 +5,7 @@ import {
   DestroyRef,
   ElementRef,
   computed,
+  effect,
   inject,
   OnInit,
   signal,
@@ -29,6 +30,8 @@ import { RouterLink } from '@angular/router';
 import { consumeQueryParam } from '../../core/view-query-params';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ConsignesStore } from '../../core/consignes.store';
+import { JoursFeriesService } from '../../core/jours-feries.service';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 import { NotificationService } from '../../core/notification.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { labelCreneauxPluriel } from '../../core/entity-labels';
@@ -87,6 +90,7 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     RouterLink,
     BulkActionsBar,
     JourneesTypesCard,
+    PastilleFerie,
   ],
   templateUrl: './creneaux-page.html',
   styleUrls: [
@@ -111,6 +115,8 @@ export class CreneauxPage implements OnInit {
   private readonly crud = inject(ReferenceCrudService);
   /** The consignes (issue #4): a date under one, and a créneau one added, are marked in the table. */
   protected readonly consignes = inject(ConsignesStore);
+  /** The public holidays of the grid's dates, marked beside them. */
+  protected readonly feries = inject(JoursFeriesService);
   private readonly dialog = inject(MatDialog);
   private readonly resolution = inject(PlanningResolutionStore);
 
@@ -213,6 +219,8 @@ export class CreneauxPage implements OnInit {
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
     void this.consignes.reload();
+    // The holidays follow the grid: a year is read once, whatever is added to it.
+    effect(() => void this.feries.load(this.store.creneaux().map((creneau) => creneau.date)));
     // `?edit=<id>`: a link from a symptom lands here with the créneau to open.
     // Followed, obeyed, then dropped — see `reference-table-page.ts`.
     consumeQueryParam('edit', async (edit) => {

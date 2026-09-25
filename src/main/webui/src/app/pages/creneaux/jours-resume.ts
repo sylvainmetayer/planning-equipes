@@ -15,9 +15,19 @@ export interface VacationResumee {
 export interface JourResume {
   date: string;
   vacations: VacationResumee[];
+  /** The public holiday's name that day, `null` on an ordinary day. */
+  ferie: string | null;
 }
 
-export function summarizeVacationsByDay(vacations: Creneau[]): JourResume[] {
+/**
+ * The vacations by day, each day with its public holiday when `feries` (date
+ * → name, from `JoursFeriesService`) names one — the frontend never computes
+ * one itself.
+ */
+export function summarizeVacationsByDay(
+  vacations: Creneau[],
+  feries: ReadonlyMap<string, string> = new Map(),
+): JourResume[] {
   const byDate = new Map<string, Creneau[]>();
   for (const vacation of vacations) {
     const date = vacation.date ?? '';
@@ -35,5 +45,17 @@ export function summarizeVacationsByDay(vacations: Creneau[]): JourResume[] {
       vacations: [...jour]
         .sort((a, b) => a.heureDebut.localeCompare(b.heureDebut))
         .map((creneau) => ({ heureDebut: creneau.heureDebut, heureFin: creneau.heureFin })),
+      ferie: feries.get(date) ?? null,
     }));
+}
+
+/** The days of a summary that fall on a public holiday, in order. */
+export function holidayDays(resume: readonly JourResume[]): JourResume[] {
+  return resume.filter((jour) => jour.ferie !== null);
+}
+
+/** `2026-07-14` → `14/07`, the short form a list of dates reads in. */
+export function dayMonth(date: string): string {
+  const [, mois, jour] = date.split('-');
+  return `${jour}/${mois}`;
 }

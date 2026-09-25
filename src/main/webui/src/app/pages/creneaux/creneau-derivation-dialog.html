@@ -44,10 +44,16 @@
     @if (apercu.nombreGeneres === 0) {
       <p class="field-error" role="alert" i18n="@@creneaux.derivation.rien">Aucun stand ne déclare de fenêtre d'ouverture sur ces dates : rien à dériver.</p>
     }
+    @if (datesFeriees().length > 0) {
+      <p class="serie-feries" i18n="@@creneaux.apercu.feries">{{ datesFeriees().length }} date(s) tombent un jour férié : {{ datesFeriees().join(', ') }}</p>
+    }
     <div class="jours-resume">
       @for (jour of resume(); track jour.date) {
         <p>
           <strong>{{ jour.date }}</strong>
+          @if (jour.ferie) {
+            <app-pastille-ferie [libelle]="jour.ferie" />
+          }
           @for (vacation of jour.vacations; track $index) {
             <span class="vacation-chip">{{ vacation.heureDebut }}–{{ vacation.heureFin }}</span>
           }

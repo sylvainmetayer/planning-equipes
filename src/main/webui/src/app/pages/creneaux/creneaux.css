@@ -143,7 +143,9 @@
 }
 
 .creneau-sous-consigne,
-.creneau-ajoute-consigne {
+.creneau-ajoute-consigne,
+.creneau-ferie,
+.journee-ferie {
   margin-left: 0.35rem;
 }
 

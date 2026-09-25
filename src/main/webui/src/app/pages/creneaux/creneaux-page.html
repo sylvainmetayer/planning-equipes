@@ -76,6 +76,9 @@
           <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@creneaux.column.date">Date</th>
           <td mat-cell *matCellDef="let creneau">
             {{ creneau.date }}
+            @if (feries.label(creneau.date); as ferie) {
+              <app-pastille-ferie class="creneau-ferie" [libelle]="ferie" />
+            }
             @if (consignes.byDate().get(creneau.date); as consigne) {
               <span class="creneau-sous-consigne" [matTooltip]="consigne.motif" i18n="@@creneaux.badge.sousConsigne">sous consigne</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
             }

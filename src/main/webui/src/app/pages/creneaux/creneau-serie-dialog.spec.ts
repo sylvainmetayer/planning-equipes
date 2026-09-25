@@ -9,6 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
+import { JoursFeriesService } from '../../core/jours-feries.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { RapportRecurrence } from '../../core/models';
@@ -36,6 +37,7 @@ function monter(
     editingLocked?: boolean;
     reponse?: RapportRecurrence;
     controleActuel?: RapportRecurrence['controle'];
+    feries?: Map<string, string>;
   } = {},
 ) {
   // Two stubs, not one: a test must tell a preview from a write.
@@ -48,6 +50,13 @@ function monter(
       provideZonelessChangeDetection(),
       { provide: CreneauxApi, useValue: { previewRecurrence: preview, createRecurrence: post } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
+      {
+        provide: JoursFeriesService,
+        useValue: {
+          byDate: signal(options.feries ?? new Map()),
+          load: vi.fn(async () => undefined),
+        },
+      },
       {
         provide: SolverJobService,
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
@@ -108,6 +117,32 @@ describe('CreneauSerieDialog', () => {
     expect(bouton(fixture, 'Prévisualiser').disabled).toBe(false);
     // No preview yet: nothing to create from.
     expect(bouton(fixture, 'Créer la série').disabled).toBe(true);
+  });
+
+  it('lists the dates of the preview that fall on a public holiday, and marks them by name', async () => {
+    const reponse = apercu();
+    reponse.creneaux = [
+      { id: 0, jour: 0, date: '2026-07-14', heureDebut: '09:00', heureFin: '12:00' },
+      { id: 0, jour: 0, date: '2026-07-15', heureDebut: '09:00', heureFin: '12:00' },
+      { id: 0, jour: 0, date: '2026-08-15', heureDebut: '09:00', heureFin: '12:00' },
+    ];
+    const { fixture } = monter({
+      reponse,
+      feries: new Map([
+        ['2026-07-14', 'Fête nationale'],
+        ['2026-08-15', 'Assomption'],
+      ]),
+    });
+    await fixture.whenStable();
+    await remplirRegle(fixture);
+
+    bouton(fixture, 'Prévisualiser').click();
+    await fixture.whenStable();
+
+    expect(racine(fixture).querySelector('.serie-feries')!.textContent).toContain(
+      '2 date(s) tombent un jour férié : 14/07, 15/08',
+    );
+    expect(racine(fixture).querySelectorAll('.jours-resume .pastille-ferie')).toHaveLength(2);
   });
 
   it('previews on the server with the structured rule, writing nothing, then allows the creation', async () => {

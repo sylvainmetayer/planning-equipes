@@ -62,6 +62,19 @@ class OuvertureStandsAnalyzerTest {
     }
 
     @Test
+    void aPublicHolidayCarriesItsNameAndAnOrdinaryDayNone() {
+        List<Creneau> creneaux = List.of(
+                new Creneau(1L, 1, LocalDate.of(2026, 7, 13), LocalTime.of(10, 0), LocalTime.of(20, 0)),
+                new Creneau(2L, 2, LocalDate.of(2026, 7, 14), LocalTime.of(10, 0), LocalTime.of(20, 0)));
+
+        RapportOuvertures rapport = analyze(List.of(stand("LIBRE")), new ArrayList<>(creneaux));
+
+        assertThat(rapport.jours())
+                .extracting(OuvertureStandsAnalyzer.JourAmplitude::ferie)
+                .containsExactly(null, "Fête nationale");
+    }
+
+    @Test
     void unStandSansHoraireEstOuvertSurToutesLesAmplitudes() {
         Stand stand = stand("LIBRE");
 

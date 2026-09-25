@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   computed,
+  effect,
   inject,
   input,
   OnInit,
@@ -31,6 +32,8 @@ import {
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { JoursFeriesService } from '../../core/jours-feries.service';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 import { JourneeTypeDialog, JourneeTypeDialogData } from './journee-type-dialog';
 import {
   JourneesTypesApplicationData,
@@ -54,6 +57,8 @@ interface LigneCalendrier {
   enEcart: boolean;
   /** Under a consigne (issue #4): the templates ignore the date, and it never reads « en écart ». */
   sousConsigne: boolean;
+  /** The public holiday's name that day, `null` on an ordinary day. */
+  ferie: string | null;
 }
 
 /**
@@ -75,6 +80,7 @@ interface LigneCalendrier {
     MatProgressSpinnerModule,
     MatSelectModule,
     MatTooltipModule,
+    PastilleFerie,
   ],
   templateUrl: './journees-types-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -91,6 +97,7 @@ export class JourneesTypesCard implements OnInit {
   private readonly dialog = inject(MatDialog);
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
+  private readonly feries = inject(JoursFeriesService);
 
   protected readonly etat = signal<EtatJourneesTypes | null>(null);
   protected readonly chargement = signal(false);
@@ -115,6 +122,7 @@ export class JourneesTypesCard implements OnInit {
   protected readonly lignes = computed<LigneCalendrier[]>(() => {
     const ecarts = this.driftingDates();
     const sousConsigne = this.datesSousConsigne();
+    const feries = this.feries.byDate();
     return this.calendrier().map((affectation) => ({
       date: affectation.date,
       libelle: libelleJour(affectation.date),
@@ -122,6 +130,7 @@ export class JourneesTypesCard implements OnInit {
       journeeTypeId: affectation.journeeTypeId,
       enEcart: ecarts.has(affectation.date),
       sousConsigne: sousConsigne.has(affectation.date),
+      ferie: feries.get(affectation.date) ?? null,
     }));
   });
   protected readonly datesAAjouter = computed(() => datesDePlage(this.du(), this.au()));
@@ -137,6 +146,10 @@ export class JourneesTypesCard implements OnInit {
   );
 
   protected readonly libelleVacation = libelleVacation;
+
+  constructor() {
+    effect(() => void this.feries.load(this.calendrier().map((affectation) => affectation.date)));
+  }
 
   ngOnInit(): void {
     void this.recharger();

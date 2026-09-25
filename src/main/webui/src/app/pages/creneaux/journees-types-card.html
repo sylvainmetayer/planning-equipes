@@ -105,7 +105,12 @@
               <tbody>
                 @for (ligne of lignes(); track ligne.date) {
                   <tr [class.ligne-en-ecart]="ligne.enEcart">
-                    <td><span class="journee-jour-semaine">{{ ligne.jourSemaine }}</span> {{ ligne.libelle }}</td>
+                    <td>
+                      <span class="journee-jour-semaine">{{ ligne.jourSemaine }}</span> {{ ligne.libelle }}
+                      @if (ligne.ferie) {
+                        <app-pastille-ferie class="journee-ferie" [libelle]="ligne.ferie" />
+                      }
+                    </td>
                     <td>
                       <mat-select class="select-journee" [disabled]="verrouille() || ecriture()" [ngModel]="ligne.journeeTypeId"
                                   (ngModelChange)="changerJourneeType(ligne.date, $event)"

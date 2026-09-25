@@ -2739,7 +2739,7 @@
         }
       },
       "DiagnosticGrille" : {
-        "required" : [ "contientCouverturePause", "nombreCreneaux" ],
+        "required" : [ "contientCouverturePause", "joursFeries", "nombreCreneaux" ],
         "type" : "object",
         "properties" : {
           "nombreCreneaux" : {
@@ -2757,6 +2757,12 @@
           },
           "explication" : {
             "type" : "string"
+          },
+          "joursFeries" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/JourFerie"
+            }
           }
         }
       },
@@ -3653,7 +3659,7 @@
       },
       "GridAnomalyType" : {
         "type" : "string",
-        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE", "VERROUILLAGE_SANS_VACATION" ]
+        "enum" : [ "CRENEAU_INCOMPLET", "DUREE_NULLE", "DOUBLON", "REPOS_QUOTIDIEN_IMPOSSIBLE", "TROU_DANS_LA_JOURNEE", "VACATION_TROP_LONGUE", "DATE_ISOLEE", "RELAIS_REPAS_HORS_FENETRE", "VERROUILLAGE_SANS_VACATION", "VACATION_JOUR_FERIE" ]
       },
       "HardMediumSoftScore" : {
         "type" : "object",
@@ -4127,6 +4133,20 @@
             "items" : {
               "$ref" : "#/components/schemas/ColonneCreneau"
             }
+          },
+          "ferie" : {
+            "type" : "string"
+          }
+        }
+      },
+      "JourFerie" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "libelle" : {
+            "type" : "string"
           }
         }
       },
@@ -11283,6 +11303,40 @@
         },
         "summary" : "Changements",
         "tags" : [ "Changements Journee Resource" ]
+      }
+    },
+    "/api/jours-feries" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "debut",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "fin",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/JourFerie"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Jours Feries Resource" ]
       }
     },
     "/api/kpi/historique" : {
