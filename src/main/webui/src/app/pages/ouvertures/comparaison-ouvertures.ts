@@ -283,11 +283,11 @@ export function cleRegle(horaire: HoraireStand): string {
   const jours = (() => {
     switch (horaire.jours) {
       case 'JOURS_SEMAINE':
-        return [...(horaire.joursSemaine ?? [])].sort().join(',');
+        return [...(horaire.joursSemaine ?? [])].sort((a, b) => a.localeCompare(b)).join(',');
       case 'PLAGE':
         return `${horaire.dateDebut ?? ''}..${horaire.dateFin ?? ''}`;
       case 'DATES':
-        return [...(horaire.dates ?? [])].sort().join(',');
+        return [...(horaire.dates ?? [])].sort((a, b) => a.localeCompare(b)).join(',');
       default:
         return '';
     }
@@ -297,7 +297,7 @@ export function cleRegle(horaire: HoraireStand): string {
       (fenetre) =>
         `${formatHeure(fenetre.heureDebut)}-${fenetre.heureFin ? formatHeure(fenetre.heureFin) : ''}x${fenetre.effectif ?? ''}`,
     )
-    .sort()
+    .sort((a, b) => a.localeCompare(b))
     .join('|');
   return `${horaire.mode}/${horaire.jours}/${jours}/${fenetres}`;
 }
