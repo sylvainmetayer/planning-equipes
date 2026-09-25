@@ -59,7 +59,8 @@ public record AnimateurCsvImportReport(
      *
      * @param line               the physical line of the file, counted from 1
      * @param label              how the row names its person, for the operator to find it
-     * @param animateurId        the fiche it lands on — resolved or generated; null when rejected
+     * @param animateurId        the fiche it lands on — null when rejected, and on a preview
+     *                           for a fiche the write will create, whose id is drawn then
      * @param action             what happens to it
      * @param reasons            why it was refused, empty otherwise
      * @param warnings           what is accepted but worth saying
