@@ -76,8 +76,9 @@ public class ReferenceDataResource {
      * What the confirmation dialog must say about WHERE a scenario import
      * would write, before anything is imported: the {@code edition:} section
      * of the file (or named scenario), resolved against the existing
-     * editions. {@code editionId} null = no section, the import would write
-     * to the caller's current edition.
+     * editions. {@code editionId} and {@code editionNomFichier} both null = no
+     * section, the import would write to the caller's current edition; an
+     * edition to create has no id yet, only its name.
      */
     @Schema(requiredProperties = {"existe"})
     public record ImportTargetView(
@@ -88,11 +89,12 @@ public class ReferenceDataResource {
             return new ImportTargetView(null, null, false, null);
         }
         EditionCibleDto dto = target.get();
-        return editionService.listEditions().stream()
-                .filter(edition -> edition.getId().equals(dto.id().trim()))
-                .findFirst()
+        String idFichier =
+                dto.id() == null || dto.id().isBlank() ? null : dto.id().trim();
+        return editionService
+                .findForImport(dto.id(), dto.nom())
                 .map(edition -> new ImportTargetView(edition.getId(), dto.nom(), true, edition.getNom()))
-                .orElseGet(() -> new ImportTargetView(dto.id().trim(), dto.nom(), false, null));
+                .orElseGet(() -> new ImportTargetView(idFichier, dto.nom(), false, null));
     }
 
     @GET

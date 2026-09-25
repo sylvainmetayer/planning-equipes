@@ -136,7 +136,8 @@ export class ScenarioImportService {
     let editionImpact: string | null = null;
     let importDansEditionCourante = true;
     let compterImpact = true;
-    if (!target.editionId) {
+    // An edition the file would create has no id yet, only its name.
+    if (!target.editionId && !target.editionNomFichier) {
       lignes.push(
         $localize`:@@parametres.impact.edition:L'import écrit dans l'édition « ${courante}:edition: », et elle seule.`,
       );

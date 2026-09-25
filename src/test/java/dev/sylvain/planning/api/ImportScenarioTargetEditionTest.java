@@ -5,6 +5,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.matchesPattern;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
@@ -170,6 +171,38 @@ class ImportScenarioTargetEditionTest {
                 .body("editionId", equalTo(editionId))
                 .body("editionCreee", equalTo(false))
                 .body("editionNom", equalTo(NOM_RENOMME));
+    }
+
+    /**
+     * What the confirmation dialog reads before the import: the same lookup
+     * as the import itself, and nothing created by asking. A section giving
+     * only a name used to crash here, the preview assuming an id.
+     */
+    @Test
+    void thePreviewAnnouncesTheTargetWithoutCreatingIt() {
+        given().contentType("application/x-yaml")
+                .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
+                .when()
+                .post("/api/reference-data/cible-scenario-fichier")
+                .then()
+                .statusCode(200)
+                .body("editionId", nullValue())
+                .body("editionNomFichier", equalTo(NOM_EDITION_CIBLE))
+                .body("existe", equalTo(false));
+        given().when().get("/api/editions").then().statusCode(200).body("nom", not(hasItem(NOM_EDITION_CIBLE)));
+
+        String editionId = importScenario(SCENARIO);
+
+        // Once it exists, the name alone finds it again, as the import would.
+        given().contentType("application/x-yaml")
+                .body(SCENARIO.getBytes(StandardCharsets.UTF_8))
+                .when()
+                .post("/api/reference-data/cible-scenario-fichier")
+                .then()
+                .statusCode(200)
+                .body("editionId", equalTo(editionId))
+                .body("existe", equalTo(true))
+                .body("editionNomExistant", equalTo(NOM_EDITION_CIBLE));
     }
 
     @Test
