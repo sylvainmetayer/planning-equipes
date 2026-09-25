@@ -6,7 +6,7 @@
 import { formaterFenetres } from '../../core/horaire-stand';
 import { HoraireDraft, StandDraft } from './stand-draft';
 
-const EFFORT_LEVELS = ['NORMAL', 'EPUISANT'];
+const EFFORT_LEVELS: ReadonlySet<unknown> = new Set(['NORMAL', 'EPUISANT']);
 
 /**
  * True when the form no longer says what it said at opening. Only what is
@@ -31,7 +31,7 @@ export function readStandDraft(raw: unknown, recordId: string | null): StandDraf
     typeof raw['nom'] === 'string' &&
     typeof raw['reserveMajeurs'] === 'boolean' &&
     typeof raw['premium'] === 'boolean' &&
-    EFFORT_LEVELS.includes(raw['niveauEffort'] as string) &&
+    EFFORT_LEVELS.has(raw['niveauEffort']) &&
     (raw['emplacementId'] === null || typeof raw['emplacementId'] === 'string') &&
     (raw['modifieLe'] === null || typeof raw['modifieLe'] === 'string') &&
     Array.isArray(raw['typologiesProposees']) &&

@@ -11,6 +11,7 @@ import { ApercuLeveeConsigne, VacationRef } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
+import { compareCodeUnits } from '../../core/string-order';
 
 export interface ConsigneLeveeData {
   /** The dates still to come that carry a consigne: the only ones that can be lifted. */
@@ -52,11 +53,13 @@ export class ConsigneLeveeDialog {
   protected readonly levee = signal(false);
 
   protected readonly options = computed(() =>
-    [...this.data.datesLevables].sort().map((date) => ({ date, libelle: libelleDate(date) })),
+    [...this.data.datesLevables]
+      .sort(compareCodeUnits)
+      .map((date) => ({ date, libelle: libelleDate(date) })),
   );
 
   protected onDates(dates: string[]): void {
-    this.dates.set([...dates].sort());
+    this.dates.set([...dates].sort(compareCodeUnits));
     this.apercu.set(null);
   }
 

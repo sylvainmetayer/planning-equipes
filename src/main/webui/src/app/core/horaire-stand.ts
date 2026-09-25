@@ -286,7 +286,7 @@ function effectifOrDefault(
   effectif: number | null | undefined,
   defaut: number | null,
 ): number | null {
-  return effectif !== null && effectif !== undefined ? effectif : defaut;
+  return effectif ?? defaut;
 }
 
 /**
@@ -607,6 +607,50 @@ export function normaliseHour(text: string): string | null {
   return `${String(heures).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
+const LINE_TERMINATOR = /[\n\r\u2028\u2029]/;
+
+/**
+ * `10:00-12:00`, `10:00 - 12:00`, `10:00→12:00` split on their first
+ * separator — which must sit after the start, so `-` inside a time is not
+ * mistaken for it — into the start as typed and the end with its leading
+ * blanks dropped (possibly empty: an open end). `null` without a start or a
+ * separator, or when the end runs over a line break.
+ */
+export function splitHourRange(text: string): [debut: string, fin: string] | null {
+  const index = text.search(/[-–→]/);
+  if (index <= 0) {
+    return null;
+  }
+  const fin = text.slice(index + 1).trimStart();
+  return LINE_TERMINATOR.test(fin) ? null : [text.slice(0, index), fin];
+}
+
+/** One window of a compact line, `10:00-12:00@2`, or the first thing wrong with it. */
+function parseFenetre(morceau: string): FenetreHoraire | Exclude<ErreurSaisieFenetres, 'VIDE'> {
+  let corps = morceau;
+  let effectif: number | null = null;
+  const arobase = morceau.indexOf('@');
+  if (arobase >= 0) {
+    const valeur = morceau.slice(arobase + 1).trim();
+    corps = morceau.slice(0, arobase).trim();
+    if (!/^\d+$/.test(valeur) || Number(valeur) < 1) {
+      return 'EFFECTIF';
+    }
+    effectif = Number(valeur);
+  }
+  const plage = splitHourRange(corps);
+  if (!plage) {
+    return 'FORME';
+  }
+  const heureDebut = normaliseHour(plage[0]);
+  const endText = plage[1].trim();
+  const heureFin = endText === '' ? null : normaliseHour(endText);
+  if (heureDebut === null || (endText !== '' && heureFin === null)) {
+    return 'HEURE';
+  }
+  return { heureDebut, heureFin, effectif };
+}
+
 export function parseFenetres(text: string): SaisieFenetres {
   const fenetres: FenetreHoraire[] = [];
   for (const brut of text.split(/[,;]/)) {
@@ -614,30 +658,11 @@ export function parseFenetres(text: string): SaisieFenetres {
     if (morceau === '') {
       continue;
     }
-    let corps = morceau;
-    let effectif: number | null = null;
-    const arobase = morceau.indexOf('@');
-    if (arobase >= 0) {
-      const valeur = morceau.slice(arobase + 1).trim();
-      corps = morceau.slice(0, arobase).trim();
-      if (!/^\d+$/.test(valeur) || Number(valeur) < 1) {
-        return { fenetres: null, erreur: 'EFFECTIF', morceau };
-      }
-      effectif = Number(valeur);
+    const fenetre = parseFenetre(morceau);
+    if (typeof fenetre === 'string') {
+      return { fenetres: null, erreur: fenetre, morceau };
     }
-    // `10:00-12:00`, `10:00 - 12:00`, `10:00→12:00`; the separator must sit
-    // after the start, so `-` inside a time is not mistaken for it.
-    const m = /^([^-–→]+)[-–→]\s*(.*)$/.exec(corps);
-    if (!m) {
-      return { fenetres: null, erreur: 'FORME', morceau };
-    }
-    const heureDebut = normaliseHour(m[1]);
-    const finTexte = m[2].trim();
-    const heureFin = finTexte === '' ? null : normaliseHour(finTexte);
-    if (heureDebut === null || (finTexte !== '' && heureFin === null)) {
-      return { fenetres: null, erreur: 'HEURE', morceau };
-    }
-    fenetres.push({ heureDebut, heureFin, effectif });
+    fenetres.push(fenetre);
   }
   if (fenetres.length === 0) {
     return { fenetres: null, erreur: 'VIDE', morceau: text.trim() };
@@ -688,6 +713,19 @@ export function horaireVide(): HoraireStand {
   };
 }
 
+/** The messages {@link erreurHoraire} answers with, worded by the caller. */
+export interface MessagesErreurHoraire {
+  fenetreRequise: string;
+  heureDebutRequise: string;
+  fenetreInversee: string;
+  effectifInvalide: string;
+  /** Receives the window's effectif and the stand's maximum: the two numbers that disagree. */
+  effectifDepasse: (effectif: number, effectifMax: number) => string;
+  joursSemaineRequis: string;
+  plageRequise: string;
+  datesRequises: string;
+}
+
 /**
  * Why a rule cannot be saved as entered, or `null` when it can. Mirrors
  * `ReferenceDataService#validateHoraire`, so the dialog can block the submit
@@ -695,23 +733,21 @@ export function horaireVide(): HoraireStand {
  */
 export function erreurHoraire(
   horaire: HoraireStand,
-  messages: {
-    fenetreRequise: string;
-    heureDebutRequise: string;
-    fenetreInversee: string;
-    effectifInvalide: string;
-    /** Receives the window's effectif and the stand's maximum: the two numbers that disagree. */
-    effectifDepasse: (effectif: number, effectifMax: number) => string;
-    joursSemaineRequis: string;
-    plageRequise: string;
-    datesRequises: string;
-  },
+  messages: MessagesErreurHoraire,
   /** The stand's declared capacity, when known: a window may not ask for more. */
   effectifMax?: number,
 ): string | null {
   if (horaire.fenetres.length === 0) {
     return messages.fenetreRequise;
   }
+  return erreurFenetres(horaire, messages, effectifMax) ?? erreurJours(horaire, messages);
+}
+
+function erreurFenetres(
+  horaire: HoraireStand,
+  messages: MessagesErreurHoraire,
+  effectifMax: number | undefined,
+): string | null {
   for (const fenetre of horaire.fenetres) {
     if (!fenetre.heureDebut) {
       return messages.heureDebutRequise;
@@ -727,6 +763,10 @@ export function erreurHoraire(
       return messages.effectifDepasse(fenetre.effectif as number, Number(effectifMax));
     }
   }
+  return null;
+}
+
+function erreurJours(horaire: HoraireStand, messages: MessagesErreurHoraire): string | null {
   switch (horaire.jours) {
     case 'JOURS_SEMAINE':
       return horaire.joursSemaine.length === 0 ? messages.joursSemaineRequis : null;

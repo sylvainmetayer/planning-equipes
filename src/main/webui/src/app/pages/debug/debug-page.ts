@@ -5,6 +5,7 @@ import {
   computed,
   effect,
   inject,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -103,7 +104,7 @@ export const CLEAR_KEYWORD = 'VIDER';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DebugPage {
+export class DebugPage implements OnInit {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly output = signal('');
@@ -185,8 +186,6 @@ export class DebugPage {
     keepViewInQueryParams(() => ({
       onglet: this.onglet() === 'resolution' ? null : this.onglet(),
     }));
-    void this.chargerMailConfig();
-    void this.refresh();
     effect(() => {
       const champ = this.champDateDuJour();
       if (!champ || !this.focusPending) {
@@ -198,6 +197,11 @@ export class DebugPage {
       champ.nativeElement.scrollIntoView?.({ block: 'center' });
       champ.nativeElement.focus();
     });
+  }
+
+  ngOnInit(): void {
+    void this.chargerMailConfig();
+    void this.refresh();
   }
 
   protected changerOnglet(onglet: OngletDebug): void {

@@ -72,8 +72,11 @@ export function datesIllisibles(text: string): string[] {
     .filter((date) => date !== '' && !/^\d{4}-\d{2}-\d{2}$/.test(date));
 }
 
-export function regleDepuis(draft: SerieDraft): RegleOuErreur {
-  const saisie = parseFenetres(draft.fenetres);
+type ErreurRegle = Extract<RegleOuErreur, { regle: null }>;
+
+/** The windows of a series: closed, and without a headcount — a créneau has neither open end nor effectif. */
+function fenetresSerie(texte: string): FenetreHoraire[] | ErreurRegle {
+  const saisie = parseFenetres(texte);
   if (saisie.erreur !== null) {
     return {
       regle: null,
@@ -95,6 +98,31 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
     }
     fenetres.push({ heureDebut: fenetre.heureDebut, heureFin: fenetre.heureFin });
   }
+  return fenetres;
+}
+
+/** What is missing from the days a series runs on, or `null` when they are complete. */
+function erreurJoursSerie(draft: SerieDraft, dates: string[]): ErreurRegle | null {
+  if (draft.jours === 'DATES') {
+    return dates.length === 0 ? { regle: null, erreur: 'DATES_REQUISES', morceau: null } : null;
+  }
+  if (!draft.dateDebut || !draft.dateFin) {
+    return { regle: null, erreur: 'PLAGE_REQUISE', morceau: null };
+  }
+  if (draft.dateFin < draft.dateDebut) {
+    return { regle: null, erreur: 'PLAGE_INVERSEE', morceau: null };
+  }
+  if (draft.jours === 'JOURS_SEMAINE' && draft.joursSemaine.length === 0) {
+    return { regle: null, erreur: 'JOURS_SEMAINE_REQUIS', morceau: null };
+  }
+  return null;
+}
+
+export function regleDepuis(draft: SerieDraft): RegleOuErreur {
+  const fenetres = fenetresSerie(draft.fenetres);
+  if (!Array.isArray(fenetres)) {
+    return fenetres;
+  }
   const illisibles = datesIllisibles(draft.exclusions).concat(
     draft.jours === 'DATES' ? datesIllisibles(draft.dates) : [],
   );
@@ -104,20 +132,9 @@ export function regleDepuis(draft: SerieDraft): RegleOuErreur {
     return { regle: null, erreur: 'DATES_ILLISIBLES', morceau: illisibles.join(', ') };
   }
   const dates = draft.jours === 'DATES' ? datesFromText(draft.dates) : [];
-  if (draft.jours === 'DATES') {
-    if (dates.length === 0) {
-      return { regle: null, erreur: 'DATES_REQUISES', morceau: null };
-    }
-  } else {
-    if (!draft.dateDebut || !draft.dateFin) {
-      return { regle: null, erreur: 'PLAGE_REQUISE', morceau: null };
-    }
-    if (draft.dateFin < draft.dateDebut) {
-      return { regle: null, erreur: 'PLAGE_INVERSEE', morceau: null };
-    }
-    if (draft.jours === 'JOURS_SEMAINE' && draft.joursSemaine.length === 0) {
-      return { regle: null, erreur: 'JOURS_SEMAINE_REQUIS', morceau: null };
-    }
+  const erreurJours = erreurJoursSerie(draft, dates);
+  if (erreurJours) {
+    return erreurJours;
   }
   return {
     regle: {

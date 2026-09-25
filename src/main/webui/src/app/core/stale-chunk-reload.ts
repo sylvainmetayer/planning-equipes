@@ -44,7 +44,12 @@ const RELOAD_COOLDOWN_MS = 60_000;
  * fetched — each engine words it differently, none exposes a typed error.
  */
 export function isChunkLoadFailure(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : typeof error === 'string' ? error : '';
+  let message = '';
+  if (error instanceof Error) {
+    message = error.message;
+  } else if (typeof error === 'string') {
+    message = error;
+  }
   return (
     /failed to fetch dynamically imported module/i.test(message) || // Chromium
     /error loading dynamically imported module/i.test(message) || // Firefox

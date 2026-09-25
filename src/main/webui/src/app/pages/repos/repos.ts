@@ -402,7 +402,7 @@ function segmentsDe(cellules: CelluleJour[], nom: string): SegmentJours[] {
   const segments: SegmentJours[] = [];
   cellules.forEach((cellule) => {
     const courant = segments.at(-1);
-    if (courant && courant.statut === cellule.statut) {
+    if (courant?.statut === cellule.statut) {
       courant.dernierJour = cellule.jour;
       courant.jours += 1;
       courant.conflit = courant.conflit || cellule.conflit;

@@ -77,7 +77,7 @@ export function actionOf(action: ActionType): ActionProbleme {
     libelle: action.libelle,
     explication: action.explication,
     route: action.route,
-    queryParams: { ...(action.parametres ?? {}) },
+    queryParams: { ...action.parametres },
     lang: 'fr',
   };
 }
@@ -435,14 +435,15 @@ export function construireProblemes(
         texte: violation.texte,
         liens: linksOfViolation(violation),
       }));
-      const lignes =
-        references.length > 0
-          ? []
-          : contrainte.violations.length > 0
+      let lignes: string[] = [];
+      if (references.length === 0) {
+        lignes =
+          contrainte.violations.length > 0
             ? contrainte.violations
             : [
                 $localize`:@@problemes.detail.matches:${matchCount}:count: correspondance(s) sur la dernière analyse.`,
               ];
+      }
       const liens: LienProbleme[] = [
         // A violated rule is acted upon on the constraints screen: that is where
         // its weight is explained and where it can be relaxed.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -47,14 +47,14 @@ const HEURE_RAPPEL_MAX = '23:00';
   templateUrl: './parametres-notifications.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ParametresNotificationsPanel {
+export class ParametresNotificationsPanel implements OnInit {
   private readonly adminApi = inject(AdminApi);
   private readonly notifications = inject(NotificationService);
 
   protected readonly parametres = signal<ParametresNotifications | null>(null);
   protected readonly enregistrement = signal(false);
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

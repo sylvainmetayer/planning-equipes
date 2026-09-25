@@ -6,7 +6,6 @@
 // on stand X, who steps out and who covers. Hence the regrouping here.
 
 import { correspondAuFiltre } from '../../core/text-filter';
-import { formatHeure } from '../../core/time-of-day';
 import {
   CoupureRepasView,
   JourneeAnimateurPauses,
@@ -151,31 +150,27 @@ export function groupesDuJour(
     return [];
   }
   const parStand = new Map<string, GroupeStand>();
-  for (const journee of rapport.journees) {
-    if (journee.date !== date) {
-      continue;
+  const retenue = (ligne: LignePause): boolean =>
+    !(withoutRelaisOnly && ligne.relaisDisponible) &&
+    (recherche.trim() === '' || correspond(ligne, recherche));
+  const lignes = rapport.journees
+    .filter((journee) => journee.date === date)
+    .flatMap((journee) => lignesDe(journee))
+    .filter(retenue);
+  for (const ligne of lignes) {
+    let groupe = parStand.get(ligne.standId);
+    if (!groupe) {
+      groupe = {
+        standId: ligne.standId,
+        standNom: ligne.standNom,
+        lignes: [],
+        relaisManquants: 0,
+      };
+      parStand.set(ligne.standId, groupe);
     }
-    for (const ligne of lignesDe(journee)) {
-      if (withoutRelaisOnly && ligne.relaisDisponible) {
-        continue;
-      }
-      if (recherche.trim() !== '' && !correspond(ligne, recherche)) {
-        continue;
-      }
-      let groupe = parStand.get(ligne.standId);
-      if (!groupe) {
-        groupe = {
-          standId: ligne.standId,
-          standNom: ligne.standNom,
-          lignes: [],
-          relaisManquants: 0,
-        };
-        parStand.set(ligne.standId, groupe);
-      }
-      groupe.lignes.push(ligne);
-      if (!ligne.relaisDisponible) {
-        groupe.relaisManquants++;
-      }
+    groupe.lignes.push(ligne);
+    if (!ligne.relaisDisponible) {
+      groupe.relaisManquants++;
     }
   }
   const groupes = Array.from(parStand.values());
@@ -314,7 +309,7 @@ export function syntheseDuJour(rapport: RapportPauses | null, date: string | nul
 }
 
 /** The relays of a break, spelled out for a cell; empty when nobody. */
-export { formatHeure as heure };
+export { formatHeure as heure } from '../../core/time-of-day';
 
 export function libelleRelais(pause: Pick<PauseDueView, 'relais'>): string {
   return pause.relais.map((relais) => relais.nomComplet).join(', ');

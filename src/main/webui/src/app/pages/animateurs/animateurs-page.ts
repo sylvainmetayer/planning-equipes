@@ -5,6 +5,7 @@ import {
   ElementRef,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -113,7 +114,7 @@ import { resumeRelance } from './relance-resume';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AnimateursPage {
+export class AnimateursPage implements OnInit {
   protected readonly columns = [
     'select',
     'id',
@@ -365,7 +366,6 @@ export class AnimateursPage {
       }
     });
     void this.problemes.reloadFeasibility();
-    void this.chargerConfirmations();
     keepViewInQueryParams(() => ({
       ...sortQueryParams(this.sort()),
       q: optionalParam(this.filtre()),
@@ -384,6 +384,10 @@ export class AnimateursPage {
         this.openDialog(animateur);
       }
     });
+  }
+
+  ngOnInit(): void {
+    void this.chargerConfirmations();
   }
 
   /**
@@ -482,7 +486,7 @@ export class AnimateursPage {
   /** Wording of the acknowledgement column, and the text its quick filter matches on. */
   protected confirmationLabel(animateur: Animateur): string {
     const confirmation = this.confirmations().get(animateur.id);
-    if (!confirmation || !confirmation.affecte) {
+    if (!confirmation?.affecte) {
       return '';
     }
     return CONFIRMATION_LABELS[confirmation.statut]();
@@ -692,7 +696,7 @@ function rankConfirmation(
   confirmations: Map<string, ConfirmationView>,
 ): number {
   const confirmation = confirmations.get(animateur.id);
-  if (!confirmation || !confirmation.affecte) {
+  if (!confirmation?.affecte) {
     // Nothing was asked of them: last, because there is nothing to chase.
     return 3;
   }
@@ -721,7 +725,7 @@ function majorite(animateur: Animateur): 'majeur' | 'mineur' | 'inconnu' {
   if (!dateNaissance) {
     return 'inconnu';
   }
-  const [year, month, day] = dateNaissance.split('-').map((value) => Number(value));
+  const [year, month, day] = dateNaissance.split('-').map(Number);
   if (!year || !month || !day) {
     return 'inconnu';
   }

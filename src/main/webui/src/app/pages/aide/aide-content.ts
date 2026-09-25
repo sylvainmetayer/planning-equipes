@@ -12,8 +12,8 @@
  * their renderer are the ones both guides share (`shared/help-blocks.ts`).
  */
 
-import { HelpBlock, HelpDefinition, helpBlockText } from '../../shared/help-blocks';
-import { HelpLink, HelpSection } from './help-section';
+import { helpBlockText } from '../../shared/help-blocks';
+import { HelpSection } from './help-section';
 import { buildAnimateurSideSections } from './content/animateurs';
 import { buildGettingStartedSections } from './content/getting-started';
 import { buildOperationsSections } from './content/operations';
@@ -21,7 +21,8 @@ import { buildReferenceDataSections } from './content/reference-data';
 import { buildSolverSections } from './content/solver';
 import { buildToolsAndContactSections } from './content/tools-and-contact';
 
-export type { HelpBlock, HelpDefinition, HelpLink, HelpSection };
+export type { HelpBlock, HelpDefinition } from '../../shared/help-blocks';
+export type { HelpLink, HelpSection } from './help-section';
 
 /**
  * Built lazily (never at module scope): `$localize` only resolves once

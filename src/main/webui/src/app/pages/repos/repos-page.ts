@@ -6,6 +6,7 @@ import {
   afterNextRender,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -84,7 +85,7 @@ export type DensiteRepos = 'compact' | 'confort';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReposPage {
+export class ReposPage implements OnInit {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly planning = signal<PlanningEvenement | null>(null);
@@ -204,7 +205,6 @@ export class ReposPage {
     this.vue.set(params.get('vue') === 'frise' ? 'frise' : 'grille');
     this.densite.set(params.get('densite') === 'confort' ? 'confort' : 'compact');
     this.jourDemande.set(params.get('date') ?? '');
-    void this.refresh();
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
       sansRepos: this.sansReposSeulement() ? '1' : null,
@@ -212,6 +212,10 @@ export class ReposPage {
       densite: this.densite() === 'confort' ? 'confort' : null,
       date: optionalParam(this.jourDemande()),
     }));
+  }
+
+  ngOnInit(): void {
+    void this.refresh();
   }
 
   protected async refresh(): Promise<void> {

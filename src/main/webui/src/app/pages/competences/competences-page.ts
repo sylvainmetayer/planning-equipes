@@ -5,6 +5,7 @@ import {
   computed,
   effect,
   inject,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -101,7 +102,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CompetencesPage {
+export class CompetencesPage implements OnInit {
   private readonly animateursApi = inject(AnimateursApi);
   private readonly store = inject(ReferenceDataStore);
   private readonly crud = inject(ReferenceCrudService);
@@ -209,7 +210,6 @@ export class CompetencesPage {
       q: optionalParam(this.filtre()),
       typologies: optionalParam(this.typologiesChoisies().join(',')),
     }));
-    void this.recharger();
     // The import card is appended under the grid, which is as long as the
     // roster: on a real one, clicking « Importer un CSV » otherwise looks like
     // nothing happened. It is shown when the signal turns, so the scroll waits
@@ -222,6 +222,10 @@ export class CompetencesPage {
         carte.nativeElement.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
       }
     });
+  }
+
+  ngOnInit(): void {
+    void this.recharger();
   }
 
   /**

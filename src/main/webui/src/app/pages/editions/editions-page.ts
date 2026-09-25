@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -53,7 +54,7 @@ import { errorMessage } from '../../core/error-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditionsPage {
+export class EditionsPage implements OnInit {
   protected readonly columns = ['nom', 'id', 'etat', 'actions'];
   protected readonly store = inject(EditionStore);
 
@@ -77,7 +78,7 @@ export class EditionsPage {
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
 
-  constructor() {
+  ngOnInit(): void {
     void this.recharger();
   }
 
@@ -100,12 +101,14 @@ export class EditionsPage {
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
       this.keepAnimateurs.set(true);
+      let title = $localize`:@@editions.created:Édition ${nom}:nom: créée.`;
+      if (source) {
+        title = keepAnimateurs
+          ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
+          : $localize`:@@editions.duplicatedSansAnimateurs:Édition ${nom}:nom: créée à partir de ${source}:source:, sans les animateurs.`;
+      }
       this.notifications.notify({
-        title: source
-          ? keepAnimateurs
-            ? $localize`:@@editions.duplicated:Édition ${nom}:nom: créée à partir de ${source}:source:.`
-            : $localize`:@@editions.duplicatedSansAnimateurs:Édition ${nom}:nom: créée à partir de ${source}:source:, sans les animateurs.`
-          : $localize`:@@editions.created:Édition ${nom}:nom: créée.`,
+        title,
         variant: 'success',
         timeout: 4000,
       });

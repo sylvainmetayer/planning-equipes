@@ -306,8 +306,7 @@ export function buildStandHeatmap(postes: PosteAffectation[]): HeatmapTable {
           };
         }
         total += cell.total - cell.filled;
-        const level: HeatmapLevel =
-          cell.filled === 0 ? 'critical' : cell.filled < cell.total ? 'warning' : 'ok';
+        const level = heatmapLevel(cell.filled, cell.total);
         return {
           jour: day.jour,
           level,
@@ -389,11 +388,10 @@ export function buildAnimateurHeatmap(
     };
   });
 
+  rows.sort((left, right) => right.total - left.total || left.label.localeCompare(right.label));
   return {
     days,
-    rows: rows.sort(
-      (left, right) => right.total - left.total || left.label.localeCompare(right.label),
-    ),
+    rows,
   };
 }
 
@@ -437,6 +435,13 @@ function animateurStandsTooltip(
   const listeTypologies = typologies.map((typologie) => typologie.label).join(', ');
   const typologiesLabel = $localize`:@@heatmap.animateur.typologies:${typologies.length}:count: typologie(s) de jeu : ${listeTypologies}:typologies:`;
   return `${standsLabel} — ${typologiesLabel}`;
+}
+
+function heatmapLevel(filled: number, total: number): HeatmapLevel {
+  if (filled === 0) {
+    return 'critical';
+  }
+  return filled < total ? 'warning' : 'ok';
 }
 
 function animateurLoadLevel(count: number): HeatmapLevel {

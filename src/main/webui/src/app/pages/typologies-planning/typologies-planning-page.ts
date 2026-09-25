@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -79,7 +80,7 @@ export type OngletTypologies = 'table' | 'barres' | 'heatmap' | 'cartes';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TypologiesPlanningPage {
+export class TypologiesPlanningPage implements OnInit {
   protected readonly busy = signal(false);
   protected readonly output = signal('');
   protected readonly rapport = signal<RapportTypologies | null>(null);
@@ -129,7 +130,7 @@ export class TypologiesPlanningPage {
 
   private readonly planningApi = inject(PlanningApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

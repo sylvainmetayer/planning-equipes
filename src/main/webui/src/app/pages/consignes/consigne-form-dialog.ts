@@ -66,6 +66,7 @@ import {
   consigneRecordId,
   readConsigneDraft,
 } from './consigne-brouillon';
+import { compareCodeUnits } from '../../core/string-order';
 
 /** Poser a new consigne, modifier the one a row carries, or prolonger it on other dates. */
 export type ModeConsigne = 'poser' | 'modifier' | 'prolonger';
@@ -133,7 +134,7 @@ export class ConsigneFormDialog {
     if (this.data.consigne && this.mode === 'modifier') {
       dates.add(this.data.consigne.date);
     }
-    return [...dates].sort().map((date) => ({ date, libelle: libelleDate(date) }));
+    return [...dates].sort(compareCodeUnits).map((date) => ({ date, libelle: libelleDate(date) }));
   });
 
   // A deep link may name a day already begun: it is not ticked, and the
@@ -329,7 +330,7 @@ export class ConsigneFormDialog {
   );
 
   protected onDates(dates: string[]): void {
-    this.dates.set([...dates].sort());
+    this.dates.set([...dates].sort(compareCodeUnits));
     this.apercu.set(null);
   }
 
@@ -382,7 +383,7 @@ export class ConsigneFormDialog {
   }
 
   /** `type="number"` hands a number or `null` over; the field's text is what is kept and judged. */
-  protected onEffectif(stand: StandForm, index: number, valeur: unknown): void {
+  protected onEffectif(stand: StandForm, index: number, valeur: number | string | null): void {
     this.patchFenetreStand(stand, index, { effectif: String(valeur ?? '') });
   }
 

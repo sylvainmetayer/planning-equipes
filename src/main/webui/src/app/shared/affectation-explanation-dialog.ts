@@ -5,7 +5,14 @@
 // explainability, computed on the already-solved planning the caller passes
 // in — never triggers a solve.
 
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import {
   MAT_DIALOG_DATA,
@@ -231,7 +238,7 @@ export interface AffectationExplanationDialogData {
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AffectationExplanationDialog {
+export class AffectationExplanationDialog implements OnInit {
   protected readonly dialogRef = inject<MatDialogRef<AffectationExplanationDialog>>(MatDialogRef);
   protected readonly data = inject<AffectationExplanationDialogData>(MAT_DIALOG_DATA);
   private readonly explanationService = inject(AffectationExplanationService);
@@ -255,7 +262,7 @@ export class AffectationExplanationDialog {
     meilleuresSuggestions(this.suggestions()),
   );
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

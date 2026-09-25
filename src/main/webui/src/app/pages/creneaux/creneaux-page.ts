@@ -6,6 +6,7 @@ import {
   ElementRef,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -97,7 +98,7 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CreneauxPage {
+export class CreneauxPage implements OnInit {
   /** Bounds the dialog callbacks: this page is lazy and rebuilt on every visit, a callback on a dead one writes into nothing. */
   private readonly destroyRef = inject(DestroyRef);
   protected readonly store = inject(ReferenceDataStore);
@@ -210,7 +211,6 @@ export class CreneauxPage {
   constructor() {
     const chargement = this.crud.reload();
     void this.problemes.reloadFeasibility();
-    void this.chargerGrille();
     void this.consignes.reload();
     // `?edit=<id>`: a link from a symptom lands here with the créneau to open.
     // Followed, obeyed, then dropped — see `reference-table-page.ts`.
@@ -221,6 +221,10 @@ export class CreneauxPage {
         this.openDialog(creneau);
       }
     });
+  }
+
+  ngOnInit(): void {
+    void this.chargerGrille();
   }
 
   /* -------------------------- The grid as a whole -------------------------- */

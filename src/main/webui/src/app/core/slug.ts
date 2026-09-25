@@ -12,11 +12,14 @@ export function slugify(nom: string, existingIds: Iterable<string>): string {
       .replace(/[\u0300-\u036f]/g, '')
       .toUpperCase()
       .replace(/[^A-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '') || 'GROUPE';
+      // The runs are already collapsed to a single dash: at most one per end.
+      .replace(/^-|-$/g, '') || 'GROUPE';
   const existing = new Set(existingIds);
   let id = base;
-  for (let suffix = 2; existing.has(id); suffix++) {
+  let suffix = 2;
+  while (existing.has(id)) {
     id = `${base}-${suffix}`;
+    suffix++;
   }
   return id;
 }

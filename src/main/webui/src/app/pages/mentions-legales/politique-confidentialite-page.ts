@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -44,7 +45,7 @@ import { StatusMessage } from '../../shared/status-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PolitiqueConfidentialitePage {
+export class PolitiqueConfidentialitePage implements OnInit {
   protected readonly mentions = signal<MentionsLegales | null>(null);
   protected readonly erreur = signal('');
 
@@ -87,7 +88,7 @@ export class PolitiqueConfidentialitePage {
 
   private readonly adminApi = inject(AdminApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

@@ -8,7 +8,11 @@
 
 import { Animateur, NiveauCompetence } from '../../core/models';
 
-const LEVELS: readonly NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
+const LEVELS: ReadonlySet<unknown> = new Set<NiveauCompetence>([
+  'DEBUTANT',
+  'AUTONOME',
+  'REFERENT',
+]);
 
 export interface CompetenceRow {
   typologie: string;
@@ -115,5 +119,5 @@ function isCompetenceRow(value: unknown): value is CompetenceRow {
     return false;
   }
   const row = value as Record<string, unknown>;
-  return typeof row['typologie'] === 'string' && LEVELS.includes(row['niveau'] as NiveauCompetence);
+  return typeof row['typologie'] === 'string' && LEVELS.has(row['niveau']);
 }

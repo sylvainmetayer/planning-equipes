@@ -213,6 +213,16 @@ export function formatMinutes(minutes: number): string {
   return `${String(Math.floor(borne / 60)).padStart(2, '0')}:${String(borne % 60).padStart(2, '0')}`;
 }
 
+function etatStand(sieges: number, pourvus: number): EtatStand {
+  if (sieges === 0) {
+    return 'ferme';
+  }
+  if (pourvus === 0) {
+    return 'decouvert';
+  }
+  return pourvus < sieges ? 'partiel' : 'pourvu';
+}
+
 /** One stand resolved at one instant: which of its seats cover it, and how many are filled. */
 export function etatStandInstant(stand: StandJour, minutes: number): StandInstant {
   const couvrants = stand.postes.filter(
@@ -220,8 +230,7 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
   );
   const sieges = couvrants.length;
   const pourvus = couvrants.filter((poste) => poste.pourvu).length;
-  const etat: EtatStand =
-    sieges === 0 ? 'ferme' : pourvus === 0 ? 'decouvert' : pourvus < sieges ? 'partiel' : 'pourvu';
+  const etat = etatStand(sieges, pourvus);
   const horaire = plagesDistinctes(couvrants);
   return {
     standId: stand.standId,
@@ -439,6 +448,12 @@ function marqueur(point: PointEmplacement, stands: StandInstant[]): MarqueurJour
   const pourvus = ordonnes.reduce((total, stand) => total + stand.pourvus, 0);
   const etat: EtatEmplacement = ordonnes.length === 0 ? 'sansStand' : etatAgrege(ordonnes);
   const total = ordonnes.length;
+  let resume = $localize`:@@carteJour.marqueur.ouvert:${point.nom}:emplacement: : ${ouverts}:ouverts: stand(s) ouvert(s) sur ${total}:total:, ${pourvus}:pourvus: place(s) pourvue(s) sur ${sieges}:sieges:`;
+  if (etat === 'sansStand') {
+    resume = $localize`:@@carteJour.marqueur.sansStand:${point.nom}:emplacement: : aucun stand rattaché ce jour-là`;
+  } else if (ouverts === 0) {
+    resume = $localize`:@@carteJour.marqueur.ferme:${point.nom}:emplacement: : aucun stand ouvert à cette heure-là, sur ${total}:total: rattaché(s)`;
+  }
   return {
     emplacementId: point.id,
     nom: point.nom,
@@ -449,12 +464,7 @@ function marqueur(point: PointEmplacement, stands: StandInstant[]): MarqueurJour
     ouverts,
     sieges,
     pourvus,
-    resume:
-      etat === 'sansStand'
-        ? $localize`:@@carteJour.marqueur.sansStand:${point.nom}:emplacement: : aucun stand rattaché ce jour-là`
-        : ouverts === 0
-          ? $localize`:@@carteJour.marqueur.ferme:${point.nom}:emplacement: : aucun stand ouvert à cette heure-là, sur ${total}:total: rattaché(s)`
-          : $localize`:@@carteJour.marqueur.ouvert:${point.nom}:emplacement: : ${ouverts}:ouverts: stand(s) ouvert(s) sur ${total}:total:, ${pourvus}:pourvus: place(s) pourvue(s) sur ${sieges}:sieges:`,
+    resume,
   };
 }
 

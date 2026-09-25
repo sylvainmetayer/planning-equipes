@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   output,
   signal,
 } from '@angular/core';
@@ -65,7 +66,7 @@ import {
   templateUrl: './publication-panel.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PublicationPanel {
+export class PublicationPanel implements OnInit {
   private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly confirm = inject(ConfirmService);
@@ -163,6 +164,9 @@ export class PublicationPanel {
       tri: optionalParam(this.sortOrder() === 'nom' ? null : this.sortOrder()),
       mineurs: this.minorHidden() ? 'masques' : null,
     }));
+  }
+
+  ngOnInit(): void {
     void this.reloadPreview();
   }
 

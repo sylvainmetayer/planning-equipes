@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -78,7 +79,7 @@ import { StatusMessage } from '../../shared/status-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourJPage {
+export class JourJPage implements OnInit {
   private readonly jourJ = inject(JourJService);
   private readonly reparations = inject(AffectationExplanationService);
   private readonly notifications = inject(NotificationService);
@@ -162,7 +163,7 @@ export class JourJPage {
     })),
   );
 
-  constructor() {
+  ngOnInit(): void {
     void this.recharger();
   }
 

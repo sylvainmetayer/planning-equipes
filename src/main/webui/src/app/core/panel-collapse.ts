@@ -10,14 +10,12 @@
 // Same shape and same defensiveness as `nav-collapse`, its closest neighbour —
 // which folds the navigation drawer's groups.
 
-import { defaultNavStorage } from './nav-collapse';
-
 /**
  * The browser's localStorage when it is reachable. Borrowed from
  * `nav-collapse` rather than written twice: one place knows that a hardened
  * browser can *throw* on the mere access, not merely return null.
  */
-export const defaultPanelStorage = defaultNavStorage;
+export { defaultNavStorage as defaultPanelStorage } from './nav-collapse';
 
 /**
  * Reads a panel's folded state. Anything unreadable — no storage, a value

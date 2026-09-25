@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   DestroyRef,
+  OnInit,
   ViewEncapsulation,
   computed,
   inject,
@@ -88,7 +89,7 @@ interface LigneConsigne {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConsignesPage {
+export class ConsignesPage implements OnInit {
   private readonly destroyRef = inject(DestroyRef);
   private readonly store = inject(ConsignesStore);
   private readonly api = inject(ConsignesApi);
@@ -156,7 +157,6 @@ export class ConsignesPage {
   );
 
   constructor() {
-    void this.recharger().then(() => this.dropOrphanDrafts());
     const referentiel = this.crud.reload();
     // `?date=…&nouvelle=1`: a link from the Journée lands here with the form
     // open on that date. Obeyed once, then dropped — see `view-query-params.ts`.
@@ -172,6 +172,10 @@ export class ConsignesPage {
         date && this.datesCandidates().includes(date) ? [date] : [],
       );
     });
+  }
+
+  ngOnInit(): void {
+    void this.recharger().then(() => this.dropOrphanDrafts());
   }
 
   protected async recharger(): Promise<void> {

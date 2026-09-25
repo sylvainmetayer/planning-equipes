@@ -208,7 +208,7 @@ export class SolverJobService {
    */
   readonly estimatedEndMs = computed(() => {
     const job = this.activeJob();
-    if (!job || job.secondsLimit == null || job.secondsLimit <= 0) {
+    if (job?.secondsLimit == null || job.secondsLimit <= 0) {
       return null;
     }
     return job.startedAtMs + job.secondsLimit * 1000;
@@ -428,8 +428,8 @@ export class SolverJobService {
     if (enFile) {
       params.set('enFile', 'true');
     }
-    const url =
-      params.size > 0 ? `${endpoint}${endpoint.includes('?') ? '&' : '?'}${params}` : endpoint;
+    const separator = endpoint.includes('?') ? '&' : '?';
+    const url = params.size > 0 ? `${endpoint}${separator}${params}` : endpoint;
     let job: JobView;
     try {
       // Raw errors: the 409 branch below needs the status and the body.

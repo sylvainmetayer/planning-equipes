@@ -4,6 +4,54 @@
 
 import { CompteEntite } from '../../core/models';
 
+/** Each family's name, singular then plural. A function, so `$localize` runs after the translations load. */
+const FAMILY_LABELS: Record<string, () => [singulier: string, pluriel: string]> = {
+  ANIMATEUR: () => [
+    $localize`:@@changements.famille.animateur:animateur`,
+    $localize`:@@changements.famille.animateurs:animateurs`,
+  ],
+  STAND: () => [
+    $localize`:@@changements.famille.stand:stand`,
+    $localize`:@@changements.famille.stands:stands`,
+  ],
+  CRENEAU: () => [
+    $localize`:@@changements.famille.creneau:créneau`,
+    $localize`:@@changements.famille.creneaux:créneaux`,
+  ],
+  EMPLACEMENT: () => [
+    $localize`:@@changements.famille.emplacement:emplacement`,
+    $localize`:@@changements.famille.emplacements:emplacements`,
+  ],
+  TYPOLOGIE: () => [
+    $localize`:@@changements.famille.typologie:typologie`,
+    $localize`:@@changements.famille.typologies:typologies`,
+  ],
+  AJUSTEMENT: () => [
+    $localize`:@@changements.famille.ajustement:ajustement manuel`,
+    $localize`:@@changements.famille.ajustements:ajustements manuels`,
+  ],
+  VERROUILLAGE: () => [
+    $localize`:@@changements.famille.verrouillage:verrouillage`,
+    $localize`:@@changements.famille.verrouillages:verrouillages`,
+  ],
+  PARAMETRES: () => [
+    $localize`:@@changements.famille.parametre:réglage`,
+    $localize`:@@changements.famille.parametres:réglages`,
+  ],
+  DISPONIBILITE: () => [
+    $localize`:@@changements.famille.disponibilite:déclaration de disponibilités`,
+    $localize`:@@changements.famille.disponibilites:déclarations de disponibilités`,
+  ],
+  PLANNING: () => [
+    $localize`:@@changements.famille.global:changement global`,
+    $localize`:@@changements.famille.globaux:changements globaux`,
+  ],
+  SAUVEGARDE: () => [
+    $localize`:@@changements.famille.restauration:restauration de la base`,
+    $localize`:@@changements.famille.restaurations:restaurations de la base`,
+  ],
+};
+
 /**
  * What one family is called on screen, singular or plural. The server sends
  * the family's code (`ANIMATEUR`, `STAND`, …) and never a label: the history
@@ -14,55 +62,12 @@ import { CompteEntite } from '../../core/models';
  * warning caused by three changes.
  */
 export function familleLisible(entite: string, nombre: number): string {
-  const pluriel = nombre > 1;
-  switch (entite) {
-    case 'ANIMATEUR':
-      return pluriel
-        ? $localize`:@@changements.famille.animateurs:animateurs`
-        : $localize`:@@changements.famille.animateur:animateur`;
-    case 'STAND':
-      return pluriel
-        ? $localize`:@@changements.famille.stands:stands`
-        : $localize`:@@changements.famille.stand:stand`;
-    case 'CRENEAU':
-      return pluriel
-        ? $localize`:@@changements.famille.creneaux:créneaux`
-        : $localize`:@@changements.famille.creneau:créneau`;
-    case 'EMPLACEMENT':
-      return pluriel
-        ? $localize`:@@changements.famille.emplacements:emplacements`
-        : $localize`:@@changements.famille.emplacement:emplacement`;
-    case 'TYPOLOGIE':
-      return pluriel
-        ? $localize`:@@changements.famille.typologies:typologies`
-        : $localize`:@@changements.famille.typologie:typologie`;
-    case 'AJUSTEMENT':
-      return pluriel
-        ? $localize`:@@changements.famille.ajustements:ajustements manuels`
-        : $localize`:@@changements.famille.ajustement:ajustement manuel`;
-    case 'VERROUILLAGE':
-      return pluriel
-        ? $localize`:@@changements.famille.verrouillages:verrouillages`
-        : $localize`:@@changements.famille.verrouillage:verrouillage`;
-    case 'PARAMETRES':
-      return pluriel
-        ? $localize`:@@changements.famille.parametres:réglages`
-        : $localize`:@@changements.famille.parametre:réglage`;
-    case 'DISPONIBILITE':
-      return pluriel
-        ? $localize`:@@changements.famille.disponibilites:déclarations de disponibilités`
-        : $localize`:@@changements.famille.disponibilite:déclaration de disponibilités`;
-    case 'PLANNING':
-      return pluriel
-        ? $localize`:@@changements.famille.globaux:changements globaux`
-        : $localize`:@@changements.famille.global:changement global`;
-    case 'SAUVEGARDE':
-      return pluriel
-        ? $localize`:@@changements.famille.restaurations:restaurations de la base`
-        : $localize`:@@changements.famille.restauration:restauration de la base`;
-    default:
-      return entite.toLowerCase();
+  const libelles = Object.hasOwn(FAMILY_LABELS, entite) ? FAMILY_LABELS[entite] : undefined;
+  if (!libelles) {
+    return entite.toLowerCase();
   }
+  const [singulier, pluriel] = libelles();
+  return nombre > 1 ? pluriel : singulier;
 }
 
 /** « 3 animateurs, 1 stand, 2 créneaux » — the families in the order the server sent them. */

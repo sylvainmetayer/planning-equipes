@@ -22,7 +22,7 @@ export function readModeAccuses(
   confirmation: string | null,
   silence: string | null,
 ): { mode: ModeAccuses; jours: number } {
-  const jours = silence === null ? NaN : Number(silence);
+  const jours = silence === null ? Number.NaN : Number(silence);
   if (Number.isInteger(jours) && jours > 0) {
     return { mode: 'silence', jours };
   }

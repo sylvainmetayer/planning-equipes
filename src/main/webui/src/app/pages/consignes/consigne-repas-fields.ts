@@ -78,7 +78,7 @@ export class ConsigneRepasFields {
   }
 
   /** `type="number"` hands a number or `null` over; the field keeps text. */
-  protected onCoupure(valeur: unknown): void {
+  protected onCoupure(valeur: number | string | null): void {
     this.patch({ coupureMinutes: String(valeur ?? '') });
   }
 

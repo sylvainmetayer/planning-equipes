@@ -3,8 +3,9 @@
 // without rendering — same split as `grille-creneaux.ts` next door.
 
 import { formatHeure } from '../../core/time-of-day';
-import { normaliseHour } from '../../core/horaire-stand';
+import { normaliseHour, splitHourRange } from '../../core/horaire-stand';
 import { AffectationJourneeType, JourneeType, VacationType } from '../../core/models';
+import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * What stops a vacations line from being sent. A day template's vacation
@@ -16,6 +17,31 @@ export type ErreurVacations = 'VIDE' | 'FORME' | 'HEURE' | 'DOUBLON';
 export type SaisieVacations =
   | { readonly vacations: VacationType[]; readonly erreur: null; readonly morceau: null }
   | { readonly vacations: null; readonly erreur: ErreurVacations; readonly morceau: string };
+
+const LINE_TERMINATOR = /[\n\r\u2028\u2029]/;
+
+/**
+ * What is left of a vacation once its meal-relay mark is taken off — a
+ * trailing ` R` after a blank, or a trailing `(R)`, either case — or `null`
+ * when it carries none. What precedes the mark stays on one line.
+ */
+function withoutRelayMark(morceau: string): string | null {
+  const beforeLetter = morceau.slice(0, -1);
+  const bodyBeforeLetter = beforeLetter.trimEnd();
+  if (
+    /[rR]$/.test(morceau) &&
+    bodyBeforeLetter !== '' &&
+    bodyBeforeLetter.length < beforeLetter.length &&
+    !LINE_TERMINATOR.test(bodyBeforeLetter)
+  ) {
+    return bodyBeforeLetter;
+  }
+  const bodyBeforeParentheses = morceau.slice(0, -3).trimEnd();
+  if (/\([rR]\)$/.test(morceau) && !LINE_TERMINATOR.test(bodyBeforeParentheses)) {
+    return bodyBeforeParentheses;
+  }
+  return null;
+}
 
 /**
  * `09:00-12:00, 12:00-13:00 R, 13:00-14:00 R, 14:00-20:00`: one vacation per
@@ -33,17 +59,17 @@ export function parseVacations(text: string): SaisieVacations {
     }
     let corps = morceau;
     let couverturePause = false;
-    const relais = /^(.*\S)\s+[rR]$/.exec(morceau) ?? /^(.*?)\s*\([rR]\)$/.exec(morceau);
-    if (relais) {
+    const relais = withoutRelayMark(morceau);
+    if (relais !== null) {
       couverturePause = true;
-      corps = relais[1].trim();
+      corps = relais.trim();
     }
-    const m = /^([^-–→]+)[-–→]\s*(.*)$/.exec(corps);
-    if (!m || m[2].trim() === '') {
+    const plage = splitHourRange(corps);
+    if (!plage || plage[1].trim() === '') {
       return { vacations: null, erreur: 'FORME', morceau };
     }
-    const heureDebut = normaliseHour(m[1]);
-    const heureFin = normaliseHour(m[2]);
+    const heureDebut = normaliseHour(plage[0]);
+    const heureFin = normaliseHour(plage[1]);
     if (heureDebut === null || heureFin === null) {
       return { vacations: null, erreur: 'HEURE', morceau };
     }
@@ -152,6 +178,6 @@ export function bornesCalendrier(
   if (calendrier.length === 0) {
     return null;
   }
-  const dates = calendrier.map((affectation) => affectation.date).sort();
-  return { du: dates[0], au: dates[dates.length - 1] };
+  const dates = calendrier.map((affectation) => affectation.date).sort(compareCodeUnits);
+  return { du: dates[0], au: dates.at(-1) ?? dates[0] };
 }

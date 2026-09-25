@@ -4,6 +4,7 @@
 
 import { DetailSection } from '../../shared/detail-dialog';
 import { Animateur, TypologieItem } from '../../core/models';
+import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * Identity, statut and the two lists that drive the solver: the
@@ -22,7 +23,7 @@ export function buildAnimateurDetail(
   const aucun = $localize`:@@detail.none:Aucun`;
   const competences = Object.entries(animateur.competences ?? {});
   const souhaits = animateur.souhaits ?? [];
-  const indisponibilites = [...(animateur.joursIndisponibles ?? [])].sort();
+  const indisponibilites = [...(animateur.joursIndisponibles ?? [])].sort(compareCodeUnits);
 
   return [
     {

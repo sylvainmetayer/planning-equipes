@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -40,7 +41,7 @@ const SEVERITY_ICONS: Record<NotificationSeverity, string> = {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class NotificationsPage {
+export class NotificationsPage implements OnInit {
   protected readonly notifications = inject(NotificationService);
 
   private readonly analysesApi = inject(AnalysesApi);
@@ -57,7 +58,7 @@ export class NotificationsPage {
    */
   protected readonly alertes = signal<AlerteView[]>([]);
 
-  constructor() {
+  ngOnInit(): void {
     void this.chargerAlertes();
   }
 

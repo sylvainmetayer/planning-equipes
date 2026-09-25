@@ -23,6 +23,18 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
 
+const CLASSE_ACTION: Record<ActionImportReferentiel, string> = {
+  CREE: 'import-ligne-creation',
+  MIS_A_JOUR: 'import-ligne-maj',
+  REFUSE: 'import-ligne-rejet',
+};
+
+const ICONE_ACTION: Record<ActionImportReferentiel, string> = {
+  CREE: 'add',
+  MIS_A_JOUR: 'edit',
+  REFUSE: 'block',
+};
+
 /**
  * One referential read from a CSV: pick the file, read what would happen, then
  * and only then write it.
@@ -73,15 +85,11 @@ export class ImportReferentielCard {
   );
 
   protected classeAction(action: ActionImportReferentiel): string {
-    return action === 'CREE'
-      ? 'import-ligne-creation'
-      : action === 'MIS_A_JOUR'
-        ? 'import-ligne-maj'
-        : 'import-ligne-rejet';
+    return CLASSE_ACTION[action];
   }
 
   protected iconeAction(action: ActionImportReferentiel): string {
-    return action === 'CREE' ? 'add' : action === 'MIS_A_JOUR' ? 'edit' : 'block';
+    return ICONE_ACTION[action];
   }
 
   protected async telechargerExemple(): Promise<void> {

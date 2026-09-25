@@ -94,7 +94,7 @@ export function draftKeyPrefix(
   type: DraftFormType,
   scope: (base: string) => string = editionScopedKey,
 ): string {
-  return `${scope(`${DRAFT_KEY_PREFIX}.${type}`)}#`;
+  return scope(`${DRAFT_KEY_PREFIX}.${type}`) + '#';
 }
 
 /** The key of one draft: at most one per (edition, form, record or « nouveau »). */
@@ -186,7 +186,7 @@ export function draftKeys(
     const keys: string[] = [];
     for (let index = 0; index < storage.length; index++) {
       const key = storage.key(index);
-      if (key !== null && key.startsWith(prefix)) {
+      if (key?.startsWith(prefix)) {
         keys.push(key);
       }
     }

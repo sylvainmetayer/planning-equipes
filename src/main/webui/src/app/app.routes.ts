@@ -20,6 +20,11 @@ import type { CompetencesPage } from './pages/competences/competences-page';
 /** How a former screen's query param travels: its key renamed, and its values translated when they changed too. */
 type ParamRename = string | { key: string; values: Record<string, string> };
 
+/** A query param as `String()` would print it: a repeated param is joined by commas. */
+function paramText(value: string | readonly string[]): string {
+  return typeof value === 'string' ? value : value.join(',');
+}
+
 function redirectToJournee(
   vue: string,
   renames: Record<string, ParamRename> = {},
@@ -33,10 +38,8 @@ function redirectToJournee(
       }
       const rename = renames[key];
       const renamedKey = typeof rename === 'string' ? rename : (rename?.key ?? key);
-      const renamedValue =
-        typeof rename === 'object'
-          ? (rename.values[String(value)] ?? String(value))
-          : String(value);
+      const text = paramText(value);
+      const renamedValue = typeof rename === 'object' ? (rename.values[text] ?? text) : text;
       if (renamedKey !== 'vue') {
         params.set(renamedKey, renamedValue);
       }
@@ -56,7 +59,7 @@ function redirectToOnglet(page: string, onglet: string): RedirectFunction {
     params.set('onglet', onglet);
     for (const [key, valeur] of Object.entries(queryParams)) {
       if (key !== 'onglet' && valeur !== undefined && valeur !== null) {
-        params.set(key, String(valeur));
+        params.set(key, paramText(valeur));
       }
     }
     return `/${page}?${params.toString()}`;

@@ -5,6 +5,7 @@ import {
   ElementRef,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -44,6 +45,7 @@ import {
 } from '../../core/date-utils';
 import { errorPrefix } from '../../core/error-message';
 import { StatusMessage } from '../../shared/status-message';
+import { compareCodeUnits } from '../../core/string-order';
 
 interface AssignedEntry {
   poste: PosteAffectation;
@@ -141,7 +143,7 @@ const ALL = 'ALL';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class CalendarMonthPage {
+export class CalendarMonthPage implements OnInit {
   /** Bounds the repair-assistant callback to this page's life: it is lazy and rebuilt on every visit. */
   private readonly destroyRef = inject(DestroyRef);
   protected readonly error = signal('');
@@ -232,7 +234,7 @@ export class CalendarMonthPage {
     if (selected && assignments.has(selected)) {
       return selected;
     }
-    const keys = Array.from(assignments.keys()).sort();
+    const keys = Array.from(assignments.keys()).sort(compareCodeUnits);
     if (keys.length === 0) {
       return null;
     }
@@ -292,7 +294,6 @@ export class CalendarMonthPage {
 
   constructor() {
     this.seedStateFromQueryParams();
-    void this.refresh();
     // Fire-and-forget: the padlocks are an indicator, never a reason to fail
     // the calendar the user came to read.
     void this.verrous.reload().catch(() => undefined);
@@ -304,6 +305,10 @@ export class CalendarMonthPage {
       animateur: this.animateurFilter() === ALL ? null : this.animateurFilter(),
       stand: this.standFilter() === ALL ? null : this.standFilter(),
     }));
+  }
+
+  ngOnInit(): void {
+    void this.refresh();
   }
 
   /** True when the whole date is frozen by a JOUR lock on the edition. */
@@ -398,7 +403,7 @@ export class CalendarMonthPage {
    * under the user's feet.
    */
   private followSelection(): void {
-    const dateKeys = Array.from(this.assignmentsByDate().keys()).sort();
+    const dateKeys = Array.from(this.assignmentsByDate().keys()).sort(compareCodeUnits);
     const monthKey = toMonthKey(this.month());
     if (dateKeys.length === 0 || dateKeys.some((dateKey) => dateKey.startsWith(monthKey))) {
       return;
