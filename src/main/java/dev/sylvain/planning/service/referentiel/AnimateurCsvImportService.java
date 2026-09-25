@@ -207,7 +207,11 @@ public class AnimateurCsvImportService {
     }
 
     /** The report, plus what applying it would write — never leaves this class. */
-    private record Analysis(AnimateurCsvImportReport report, List<Animateur> toWrite, List<String> toDelete) {}
+    private record Analysis(
+            AnimateurCsvImportReport report,
+            List<Animateur> toWrite,
+            List<String> toDelete,
+            List<RowOutcome> outcomes) {}
 
     /**
      * The example CSV, read from the classpath — the columns this import
@@ -257,6 +261,13 @@ public class AnimateurCsvImportService {
         }
         animateurs.importAnimateurs(analysis.toWrite(), analysis.toDelete());
         changeTracker.markModified();
+        // A created fiche has its id only now, drawn by the write: the report
+        // names it, so the operator can find who was just added.
+        List<AnimateurCsvImportReport.ImportedRow> rows = analysis.outcomes().stream()
+                .map(outcome -> outcome.animateur() == null
+                        ? outcome.reported()
+                        : withId(outcome.reported(), outcome.animateur().getId()))
+                .toList();
         return new AnimateurCsvImportReport(
                 true,
                 report.columns(),
@@ -268,8 +279,13 @@ public class AnimateurCsvImportService {
                 report.created(),
                 report.updated(),
                 report.deleted(),
-                report.rows(),
+                rows,
                 report.warnings());
+    }
+
+    private static AnimateurCsvImportReport.ImportedRow withId(AnimateurCsvImportReport.ImportedRow row, String id) {
+        return new AnimateurCsvImportReport.ImportedRow(
+                row.line(), row.label(), id, row.action(), row.reasons(), row.warnings(), row.joursIndisponibles());
     }
 
     /* ------------------------------- Analysis ------------------------------- */
@@ -405,6 +421,7 @@ public class AnimateurCsvImportService {
         Dates dates = new Dates(LocalDate.now(ZoneId.systemDefault()), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
+        List<RowOutcome> outcomes = new ArrayList<>();
         List<Animateur> toWrite = new ArrayList<>();
         Map<String, Integer> seen = new HashMap<>();
         Set<String> idsTouches = new LinkedHashSet<>();
@@ -415,6 +432,7 @@ public class AnimateurCsvImportService {
         for (CsvParser.Row row : table.rows()) {
             RowOutcome outcome = analyseRow(row, table, mapping, request, index, dates, seen);
             rows.add(outcome.reported());
+            outcomes.add(outcome);
             if (outcome.animateur() != null) {
                 toWrite.add(outcome.animateur());
                 if (outcome.animateur().getId() != null) {
@@ -455,7 +473,7 @@ public class AnimateurCsvImportService {
                 toDelete.size(),
                 rows,
                 warnings);
-        return new Analysis(report, toWrite, toDelete);
+        return new Analysis(report, toWrite, toDelete, outcomes);
     }
 
     private Set<String> pendingDeclarations() {
