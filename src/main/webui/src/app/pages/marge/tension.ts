@@ -94,7 +94,7 @@ export function buildTableTension(rapport: RapportTension | null): TableTension 
     label: libelleTranche(tranche.debut, tranche.fin),
   }));
   const lignes = rapport.jours.map((jour) => {
-    const parTranche = new Map(
+    const bySlice = new Map(
       jour.cellules.map((cellule) => [libelleTranche(cellule.debut, cellule.fin), cellule]),
     );
     const jourLabel = libelleJourTension(jour);
@@ -102,7 +102,7 @@ export function buildTableTension(rapport: RapportTension | null): TableTension 
       cle: jour.date ?? String(jour.jour),
       label: jourLabel,
       cellules: colonnes.map((colonne) =>
-        buildCellule(parTranche.get(colonne.cle) ?? null, colonne, jourLabel),
+        buildCellule(bySlice.get(colonne.cle) ?? null, colonne, jourLabel),
       ),
     };
   });
