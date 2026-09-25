@@ -12,8 +12,9 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
  * shipped with the source.
  *
  * <p>{@code ADMIN_PASSWORD} defaults to {@code admin} and {@code DB_PASSWORD}
- * to {@code festival}, which is what makes {@code quarkus:dev} and the test
- * suite work with no setup. Neither default is scoped to a profile, so an image
+ * to {@code festival} (in dev, to the password of the development compose
+ * stack), which is what makes {@code quarkus:dev} and the test suite work with
+ * no setup. Neither default is scoped to a profile, so an image
  * started plainly — {@code docker run}, a Kubernetes manifest, anything that is
  * not the project's own {@code docker-compose.prod.yml}, which does demand both
  * — came up in production with {@code admin}/{@code admin} on an account that

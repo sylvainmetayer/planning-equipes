@@ -88,7 +88,7 @@ echo $CR_PAT | docker login ghcr.io -u USERNAME --password-stdin
 | Variable | Défaut | Usage |
 | --- | --- | --- |
 | `DB_URL` | `jdbc:postgresql://localhost:5432/festival` | Connexion PostgreSQL |
-| `DB_USER` / `DB_PASSWORD` | `festival` / `festival` | Identifiants base. En production, le mot de passe d'exemple refuse le démarrage |
+| `DB_USER` / `DB_PASSWORD` | `festival` / `festival` (en dev : celui du `docker-compose.yml`) | Identifiants base. En production, le mot de passe d'exemple refuse le démarrage |
 | `HTTP_PORT` | `8080` | Port HTTP exposé |
 | `SENTRY_DSN` | *(vide = désactivé)* | Suivi d'erreurs (Bugsink ou tout endpoint compatible Sentry) |
 | `SENTRY_ENVIRONMENT` | `local` | Étiquette d'environnement jointe aux erreurs remontées |
