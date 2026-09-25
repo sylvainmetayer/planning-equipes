@@ -552,11 +552,13 @@ export interface Avertissement {
  * The snack bar still shows it: it is the persistence that is refused, not the
  * warning.
  */
-const AVERTISSEMENTS_HORS_JOURNAL: readonly TypeAvertissement[] = ['MINEUR_PENDANT_EVENEMENT'];
+const AVERTISSEMENTS_HORS_JOURNAL: ReadonlySet<TypeAvertissement> = new Set<TypeAvertissement>([
+  'MINEUR_PENDANT_EVENEMENT',
+]);
 
 /** See {@link AVERTISSEMENTS_HORS_JOURNAL}. */
 export function estJournalisable(avertissement: Avertissement): boolean {
-  return !AVERTISSEMENTS_HORS_JOURNAL.includes(avertissement.type);
+  return !AVERTISSEMENTS_HORS_JOURNAL.has(avertissement.type);
 }
 
 /** Body of `POST`/`PUT /api/animateurs`: the fiche as written, and its warnings. */

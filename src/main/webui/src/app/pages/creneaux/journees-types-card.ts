@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   input,
+  OnInit,
   output,
   signal,
 } from '@angular/core';
@@ -20,7 +21,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
-import { jourSemaineDe } from '../../core/horaire-stand';
+import { jourSemaineDe, libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import {
   AffectationJourneeType,
   EtatJourneesTypes,
@@ -30,7 +31,6 @@ import {
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { libelleJour, libelleJourSemaine } from '../../core/horaire-stand';
 import { JourneeTypeDialog, JourneeTypeDialogData } from './journee-type-dialog';
 import {
   JourneesTypesApplicationData,
@@ -79,7 +79,7 @@ interface LigneCalendrier {
   templateUrl: './journees-types-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneesTypesCard {
+export class JourneesTypesCard implements OnInit {
   /** Editing is disabled while a solve runs, like the rest of the page. */
   readonly verrouille = input(false);
   /** The calendar was applied: the page reloads the grid, its verdict and its mode. */
@@ -138,7 +138,7 @@ export class JourneesTypesCard {
 
   protected readonly libelleVacation = libelleVacation;
 
-  constructor() {
+  ngOnInit(): void {
     void this.recharger();
   }
 

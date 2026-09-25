@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -47,7 +48,7 @@ import { StatusMessage } from '../../shared/status-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DeclarationAccessibilitePage {
+export class DeclarationAccessibilitePage implements OnInit {
   protected readonly mentions = signal<MentionsLegales | null>(null);
   protected readonly erreur = signal('');
   protected readonly produit = inject(BRANDING).productName;
@@ -62,7 +63,7 @@ export class DeclarationAccessibilitePage {
 
   private readonly adminApi = inject(AdminApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

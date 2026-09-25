@@ -285,7 +285,11 @@ export class AdminShell {
         return;
       }
       const touche = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-      position = touche === sequence[position] ? position + 1 : touche === sequence[0] ? 1 : 0;
+      if (touche === sequence[position]) {
+        position++;
+      } else {
+        position = touche === sequence[0] ? 1 : 0;
+      }
       if (position === sequence.length) {
         position = 0;
         this.dialog.open(MascotDialog, { autoFocus: false });

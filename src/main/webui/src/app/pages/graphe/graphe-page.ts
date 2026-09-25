@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
@@ -58,7 +65,7 @@ const NO_EMPLACEMENT = '__sans_emplacement__';
   styleUrl: './graphe-page.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class GraphePage {
+export class GraphePage implements OnInit {
   private readonly reference = inject(ReferenceDataStore);
   private readonly planningState = inject(PlanningStateService);
 
@@ -70,7 +77,7 @@ export class GraphePage {
   protected readonly creneauSelectionne = signal<string | null>(null);
   protected readonly animateurSelectionne = signal<string | null>(null);
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

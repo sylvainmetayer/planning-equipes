@@ -17,7 +17,7 @@ import { ReferenceUsage } from './models';
  * build theirs from the store, since what references them is data the page
  * already holds.
  */
-const RESOURCES_COMPTEES: readonly string[] = ['stands', 'animateurs', 'creneaux'];
+const RESOURCES_COMPTEES: ReadonlySet<string> = new Set(['stands', 'animateurs', 'creneaux']);
 
 /**
  * Longest query string a batch may build, in encoded characters.
@@ -54,7 +54,7 @@ export class ReferenceUsageService {
    * they asked for.
    */
   async describe(resource: string, ids: readonly (string | number)[]): Promise<string> {
-    if (!RESOURCES_COMPTEES.includes(resource) || ids.length === 0) {
+    if (!RESOURCES_COMPTEES.has(resource) || ids.length === 0) {
       return '';
     }
     try {
@@ -132,5 +132,6 @@ export function phraseUsages(usages: ReferenceUsage): string {
   if (usages.consignes === 0) {
     return trois;
   }
-  return `${trois} ${$localize`:@@usages.consignes:${usages.consignes}:consignes: journée(s) sous consigne l'ouvrent ou l'ont ajouté.`}`;
+  const consignes = $localize`:@@usages.consignes:${usages.consignes}:consignes: journée(s) sous consigne l'ouvrent ou l'ont ajouté.`;
+  return `${trois} ${consignes}`;
 }

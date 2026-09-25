@@ -4,6 +4,7 @@ import {
   ElementRef,
   computed,
   inject,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -106,7 +107,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ParametresPage {
+export class ParametresPage implements OnInit {
   /** Dump named after the deployment, so two instances' exports never collide in a downloads folder. */
   private readonly nomFichierDump = `${slugMarque(inject(BRANDING).productName)}.sql`;
 
@@ -165,6 +166,9 @@ export class ParametresPage {
     }));
     void this.problemes.reloadFeasibility();
     void this.crud.reload();
+  }
+
+  ngOnInit(): void {
     void this.chargerReglagesNotification();
     void this.chargerSauvegarde();
   }

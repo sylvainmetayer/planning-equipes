@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -72,7 +73,8 @@ function bande(debut: string, pasMinutes: number): string {
   const fin = (heures * 60 + minutes + pasMinutes) % (24 * 60);
   const finHeure = String(Math.floor(fin / 60)).padStart(2, '0');
   const finMinute = String(fin % 60).padStart(2, '0');
-  return `${formatHeure(debut)}–${formatHeure(`${finHeure}:${finMinute}`)}`;
+  const finFormatee = formatHeure(`${finHeure}:${finMinute}`);
+  return `${formatHeure(debut)}–${finFormatee}`;
 }
 
 function tableau(
@@ -145,7 +147,7 @@ function libelleCellule(personnes: number, mineurs: number): string {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class IntendancePage {
+export class IntendancePage implements OnInit {
   protected readonly busy = signal(false);
   protected readonly exportBusy = signal(false);
   protected readonly output = signal('');
@@ -157,7 +159,7 @@ export class IntendancePage {
 
   private readonly analyses = inject(AnalysesApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

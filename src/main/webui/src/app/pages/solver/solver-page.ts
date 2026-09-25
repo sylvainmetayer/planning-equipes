@@ -5,6 +5,7 @@ import {
   computed,
   effect,
   inject,
+  OnInit,
   signal,
   untracked,
   ViewEncapsulation,
@@ -144,7 +145,7 @@ function detailCausesBloquantes(bloquantes: readonly CauseInfaisabilite[]): stri
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SolverPage {
+export class SolverPage implements OnInit {
   protected readonly output = signal('');
   protected readonly feasibility = signal<FeasibilityReport | null>(null);
   protected readonly hardScore = signal<number | null>(null);
@@ -308,9 +309,6 @@ export class SolverPage {
   private readonly validations = inject(ValidationsStore);
 
   constructor() {
-    void this.loadLastRun();
-    void this.loadLastPublication();
-    void this.chargerPointDeDepart();
     void this.problemes.reload();
     void this.crud.reload();
     void this.validations.reload();
@@ -363,6 +361,12 @@ export class SolverPage {
         );
       }
     });
+  }
+
+  ngOnInit(): void {
+    void this.loadLastRun();
+    void this.loadLastPublication();
+    void this.chargerPointDeDepart();
   }
 
   /** Shared with the Contraintes screen: see `ProblemesStore.alerteReglesLegales`. */
@@ -444,7 +448,7 @@ export class SolverPage {
    */
   private applyIncrementalResult(result: JobResults['SOLVE'] | null): void {
     const incremental = result as Partial<ResultatSolveIncremental> | null;
-    if (incremental && incremental.statistiques && Array.isArray(incremental.changements)) {
+    if (incremental?.statistiques && Array.isArray(incremental.changements)) {
       this.incrementalStats.set(incremental.statistiques);
       this.incrementalChangements.set(incremental.changements);
       return;

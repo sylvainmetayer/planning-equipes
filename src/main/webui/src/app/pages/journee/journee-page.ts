@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -97,7 +98,7 @@ interface Option {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class JourneePage {
+export class JourneePage implements OnInit {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly route = inject(ActivatedRoute);
@@ -281,7 +282,6 @@ export class JourneePage {
     this.lectureChangements.set(readReading(params.get('lecture')));
     this.comparerDemande.set(params.get('comparer') || null);
     this.seulementEcarts.set(params.get('ecarts') === '1');
-    void this.refresh();
     // Every key of the screen, written by the one component that is always
     // mounted. The renderings hold their own state through `model()`, but a
     // rendering only writes while it is on screen: leaving the rail on
@@ -307,6 +307,10 @@ export class JourneePage {
       comparer: this.comparerParam(),
       ecarts: this.seulementEcarts() ? '1' : null,
     }));
+  }
+
+  ngOnInit(): void {
+    void this.refresh();
   }
 
   /** « Comparer avec… »: opens the second selector on the likeliest twin of the day on screen. */

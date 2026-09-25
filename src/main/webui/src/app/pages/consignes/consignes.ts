@@ -9,7 +9,7 @@
 // A window's end left empty reads « jusqu'à minuit », the convention of every
 // dated window here, and travels as `null`.
 
-import { normaliseHour } from '../../core/horaire-stand';
+import { normaliseHour, splitHourRange } from '../../core/horaire-stand';
 import {
   ConsigneEdition,
   Creneau,
@@ -20,6 +20,7 @@ import {
   RepasConsigne,
   Stand,
 } from '../../core/models';
+import { compareCodeUnits } from '../../core/string-order';
 
 /* ---------------------------------- dates ---------------------------------- */
 
@@ -35,7 +36,7 @@ export function datesCandidates(creneaux: readonly Creneau[], aujourdhui: string
   }
   return [...new Set(creneaux.map((creneau) => creneau.date))]
     .filter((date) => date > aujourdhui)
-    .sort();
+    .sort(compareCodeUnits);
 }
 
 /** True when the date is today or before: read-only on screen. */
@@ -406,11 +407,11 @@ export function alignSoirOnCompensation(
   if (bornes.length === 0) {
     return repas;
   }
-  const soirDebut = bornes.map((borne) => borne.debut).sort()[0];
+  const soirDebut = bornes.map((borne) => borne.debut).sort(compareCodeUnits)[0];
   const soirFin =
     bornes
       .map((borne) => borne.fin)
-      .sort()
+      .sort(compareCodeUnits)
       .at(-1) ?? soirDebut;
   return {
     ...repas,
@@ -497,6 +498,10 @@ export function mergePreselection(
         ? ligne.ouvertures
         : ouverturesInitiales.filter((ouverture) => ouverture.standId === ligne.standId);
     const depuisOuvertures = ouvertures.length > 0;
+    const fenetresInitiales = (): FenetreSaisie[] =>
+      depuisOuvertures
+        ? ouverturesSaisies(ouvertures)
+        : fenetresParDefaut.map((fenetre) => ({ ...fenetre, effectif: '' }));
     return {
       standId: ligne.standId,
       standNom: ligne.standNom,
@@ -508,11 +513,7 @@ export function mergePreselection(
       coche: precedent
         ? precedent.coche
         : depuisOuvertures || (ligne.preCoche && !ligne.exceptionDatee),
-      fenetres: precedent
-        ? precedent.fenetres
-        : depuisOuvertures
-          ? ouverturesSaisies(ouvertures)
-          : fenetresParDefaut.map((fenetre) => ({ ...fenetre, effectif: '' })),
+      fenetres: precedent?.fenetres ?? fenetresInitiales(),
       effectifMax: effectifMaxByStand.get(ligne.standId) ?? null,
     };
   });
@@ -653,12 +654,12 @@ export function parseFenetresSaisie(text: string): FenetreSaisie[] | null {
     if (morceau === '') {
       continue;
     }
-    const m = /^([^-–→]+)[-–→]\s*(.*)$/.exec(morceau);
-    if (!m) {
+    const plage = splitHourRange(morceau);
+    if (!plage) {
       return null;
     }
-    const debut = normaliseHour(m[1]);
-    const fin = m[2].trim() === '' ? '' : normaliseHour(m[2]);
+    const debut = normaliseHour(plage[0]);
+    const fin = plage[1].trim() === '' ? '' : normaliseHour(plage[1]);
     if (debut === null || fin === null) {
       return null;
     }

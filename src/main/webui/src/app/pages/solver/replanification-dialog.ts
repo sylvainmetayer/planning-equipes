@@ -8,6 +8,7 @@ import { MatSelectModule } from '@angular/material/select';
 import { intlLocale } from '../../core/locale';
 import { PerimetreReplanification } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * Perimeter of an incremental re-solve (issue #86).
@@ -43,7 +44,7 @@ export class ReplanificationDialog {
 
   /** The event days, deduplicated from the créneaux and in chronological order. */
   protected readonly joursDisponibles = computed(() =>
-    [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort(),
+    [...new Set(this.store.creneaux().map((creneau) => creneau.date))].sort(compareCodeUnits),
   );
 
   protected readonly animateursTries = computed(() =>

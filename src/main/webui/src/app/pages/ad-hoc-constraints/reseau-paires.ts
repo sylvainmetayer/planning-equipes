@@ -120,78 +120,11 @@ export function buildNetwork(
   animateurs: readonly Animateur[],
 ): Reseau {
   const referentiel = new Map(animateurs.map((animateur) => [animateur.id, animateur]));
-  const aretes = new Map<string, AreteReseau>();
-  for (const contrainte of contraintes) {
-    if (!isPairType(contrainte.type)) {
-      continue;
-    }
-    const [premier, second] = (contrainte.animateursConcernes ?? []).map((ref) => ref?.id);
-    if (!premier || !second || premier === second) {
-      continue;
-    }
-    const [source, target] = premier < second ? [premier, second] : [second, premier];
-    const key = `${contrainte.type}:${source}|${target}`;
-    let arete = aretes.get(key);
-    if (!arete) {
-      arete = {
-        key,
-        type: contrainte.type,
-        source,
-        target,
-        contraintes: [],
-        restreinte: false,
-        interne: false,
-        doublee: false,
-      };
-      aretes.set(key, arete);
-    }
-    arete.contraintes.push(contrainte);
-    // `!= null`: an older payload may omit the field rather than send null.
-    arete.restreinte ||= contrainte.creneau != null || contrainte.stand != null;
-  }
-
-  const labels = new Map<string, string>();
-  const compteurs = new Map<string, { affinites: number; incompatibilites: number }>();
-  const partition = new Partition();
-  for (const arete of aretes.values()) {
-    for (const id of [arete.source, arete.target]) {
-      const animateur = referentiel.get(id);
-      labels.set(
-        id,
-        animateur
-          ? nomAffiche(animateur)
-          : $localize`:@@adHoc.reseau.inconnu:animateur inconnu (${id}:id:)`,
-      );
-      const compteur = compteurs.get(id) ?? { affinites: 0, incompatibilites: 0 };
-      if (arete.type === 'AFFINITE') {
-        compteur.affinites += 1;
-      } else {
-        compteur.incompatibilites += 1;
-      }
-      compteurs.set(id, compteur);
-    }
-    if (arete.type === 'AFFINITE') {
-      partition.union(arete.source, arete.target);
-    }
-    const autre = `${arete.type === 'AFFINITE' ? 'INCOMPATIBILITE' : 'AFFINITE'}:${arete.source}|${arete.target}`;
-    arete.doublee = aretes.has(autre);
-  }
+  const aretes = collectEdges(contraintes);
+  const { labels, compteurs, partition } = readEndpoints(aretes, referentiel);
 
   const ordre = byLabel(labels);
-  const classes = new Map<string, string[]>();
-  const isoles: string[] = [];
-  for (const [id, compteur] of compteurs) {
-    if (compteur.affinites === 0) {
-      isoles.push(id);
-      continue;
-    }
-    const racine = partition.find(id);
-    classes.set(racine, [...(classes.get(racine) ?? []), id]);
-  }
-  const grappes = [...classes.values()]
-    .map((membres) => membres.sort(ordre))
-    .sort((gauche, droite) => droite.length - gauche.length || ordre(gauche[0], droite[0]))
-    .map((membres, index) => ({ numero: index + 1, membres }));
+  const { grappes, isoles } = groupClusters(compteurs, partition, ordre);
   const clusterOf = new Map<string, number>();
   for (const grappe of grappes) {
     for (const membre of grappe.membres) {
@@ -231,10 +164,112 @@ export function buildNetwork(
     noeuds,
     aretes: listeAretes,
     grappes,
-    isoles: isoles.sort(ordre),
+    isoles,
     incompatibilitesInternes: listeAretes.filter((arete) => arete.interne),
     sansPaire: animateurs.filter((animateur) => !compteurs.has(animateur.id)).length,
   };
+}
+
+/**
+ * The affinity clusters, largest first and numbered from 1, and the people
+ * tied by incompatibilities only; members in label order.
+ */
+function groupClusters(
+  compteurs: Map<string, { affinites: number; incompatibilites: number }>,
+  partition: Partition,
+  ordre: (gauche: string, droite: string) => number,
+): { grappes: GrappeReseau[]; isoles: string[] } {
+  const classes = new Map<string, string[]>();
+  const isoles: string[] = [];
+  for (const [id, compteur] of compteurs) {
+    if (compteur.affinites === 0) {
+      isoles.push(id);
+      continue;
+    }
+    const racine = partition.find(id);
+    classes.set(racine, [...(classes.get(racine) ?? []), id]);
+  }
+  for (const membres of classes.values()) {
+    membres.sort(ordre);
+  }
+  isoles.sort(ordre);
+  const grappes = [...classes.values()]
+    .sort((gauche, droite) => droite.length - gauche.length || ordre(gauche[0], droite[0]))
+    .map((membres, index) => ({ numero: index + 1, membres }));
+  return { grappes, isoles };
+}
+
+/** One edge per (type, pair), gathering every adjustment that draws it. */
+function collectEdges(contraintes: readonly ContrainteAdHoc[]): Map<string, AreteReseau> {
+  const aretes = new Map<string, AreteReseau>();
+  for (const contrainte of contraintes) {
+    if (!isPairType(contrainte.type)) {
+      continue;
+    }
+    const [premier, second] = (contrainte.animateursConcernes ?? []).map((ref) => ref?.id);
+    if (!premier || !second || premier === second) {
+      continue;
+    }
+    const [source, target] = premier < second ? [premier, second] : [second, premier];
+    const key = `${contrainte.type}:${source}|${target}`;
+    let arete = aretes.get(key);
+    if (!arete) {
+      arete = {
+        key,
+        type: contrainte.type,
+        source,
+        target,
+        contraintes: [],
+        restreinte: false,
+        interne: false,
+        doublee: false,
+      };
+      aretes.set(key, arete);
+    }
+    arete.contraintes.push(contrainte);
+    // `!= null`: an older payload may omit the field rather than send null.
+    arete.restreinte ||= contrainte.creneau != null || contrainte.stand != null;
+  }
+
+  return aretes;
+}
+
+/** Each endpoint's label and counts, and the affinity classes the edges draw. */
+function readEndpoints(
+  aretes: Map<string, AreteReseau>,
+  referentiel: Map<string, Animateur>,
+): {
+  labels: Map<string, string>;
+  compteurs: Map<string, { affinites: number; incompatibilites: number }>;
+  partition: Partition;
+} {
+  const labels = new Map<string, string>();
+  const compteurs = new Map<string, { affinites: number; incompatibilites: number }>();
+  const partition = new Partition();
+  for (const arete of aretes.values()) {
+    for (const id of [arete.source, arete.target]) {
+      const animateur = referentiel.get(id);
+      labels.set(
+        id,
+        animateur
+          ? nomAffiche(animateur)
+          : $localize`:@@adHoc.reseau.inconnu:animateur inconnu (${id}:id:)`,
+      );
+      const compteur = compteurs.get(id) ?? { affinites: 0, incompatibilites: 0 };
+      if (arete.type === 'AFFINITE') {
+        compteur.affinites += 1;
+      } else {
+        compteur.incompatibilites += 1;
+      }
+      compteurs.set(id, compteur);
+    }
+    if (arete.type === 'AFFINITE') {
+      partition.union(arete.source, arete.target);
+    }
+    const autre = `${arete.type === 'AFFINITE' ? 'INCOMPATIBILITE' : 'AFFINITE'}:${arete.source}|${arete.target}`;
+    arete.doublee = aretes.has(autre);
+  }
+  return { labels, compteurs, partition };
 }
 
 /* ---------------------------------- Layout ---------------------------------- */
@@ -304,6 +339,14 @@ export function rayonNoeud(noeud: NoeudReseau): number {
 }
 
 const arrondi = (valeur: number): number => Math.round(valeur * 10) / 10;
+
+/** Vertical nudge of a label, so it clears its node below, above or level with it. */
+function decalageLibelleY(sin: number): number {
+  if (sin > 0.3) {
+    return 10;
+  }
+  return sin < -0.3 ? -4 : 4;
+}
 
 interface Bloc {
   grappe: number | null;
@@ -489,7 +532,7 @@ function placerMembres(
       y: arrondi(noeudY),
       rayon,
       libelleX: arrondi(noeudX + (rayon + 6) * cos),
-      libelleY: arrondi(noeudY + (rayon + 6) * sin + (sin > 0.3 ? 10 : sin < -0.3 ? -4 : 4)),
+      libelleY: arrondi(noeudY + (rayon + 6) * sin + decalageLibelleY(sin)),
       ancre,
     });
   });

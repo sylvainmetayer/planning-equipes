@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   OnDestroy,
+  OnInit,
   computed,
   inject,
   signal,
@@ -59,7 +60,7 @@ import { NewWindowLink } from '../../shared/new-window-link';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class McpPage implements OnDestroy {
+export class McpPage implements OnInit, OnDestroy {
   /** How long a revealed key stays on screen without being copied. */
   private static readonly EFFACEMENT_MS = 2 * 60 * 1000;
 
@@ -92,7 +93,7 @@ export class McpPage implements OnDestroy {
 
   private effacement?: ReturnType<typeof setTimeout>;
 
-  constructor() {
+  ngOnInit(): void {
     void this.detecterPangolin();
     void this.chargerStatut();
     void this.chargerPrompts();

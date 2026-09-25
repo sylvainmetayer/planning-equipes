@@ -7,6 +7,7 @@ import {
   afterNextRender,
   computed,
   inject,
+  OnInit,
   signal,
   viewChild,
   ViewEncapsulation,
@@ -75,6 +76,25 @@ function categoryAnchor(categorie: string): string {
   return `categorie-${slug}`;
 }
 
+/**
+ * A category's constraints in the order the page shows them: by floor ratio
+ * then match count, by match count alone, or as the catalogue lists them.
+ */
+function sortCategoryItems(
+  items: ConstraintView[],
+  byFloor: boolean,
+  byScore: boolean,
+): ConstraintView[] {
+  if (byFloor) {
+    return [...items].sort(
+      (a, b) =>
+        (b.plancher?.ratio ?? -1) - (a.plancher?.ratio ?? -1) ||
+        (b.matchCount ?? 0) - (a.matchCount ?? 0),
+    );
+  }
+  return byScore ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0)) : items;
+}
+
 interface ConstraintGroup {
   categorie: string;
   items: ConstraintView[];
@@ -136,7 +156,7 @@ const POIDS_MAX = 100;
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ConstraintsPage {
+export class ConstraintsPage implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
@@ -270,7 +290,7 @@ export class ConstraintsPage {
     }
     const opened = this.openedCell();
     this.openedCell.set(
-      opened && opened.contrainte === contrainte && opened.cle === colonne.cle
+      opened?.contrainte === contrainte && opened.cle === colonne.cle
         ? null
         : { contrainte, cle: colonne.cle },
     );
@@ -452,22 +472,13 @@ export class ConstraintsPage {
     return Array.from(groups.entries()).map(([categorie, items]) => ({
       categorie,
       ancre: categoryAnchor(categorie),
-      items: byFloor
-        ? [...items].sort(
-            (a, b) =>
-              (b.plancher?.ratio ?? -1) - (a.plancher?.ratio ?? -1) ||
-              (b.matchCount ?? 0) - (a.matchCount ?? 0),
-          )
-        : parScore
-          ? [...items].sort((a, b) => (b.matchCount ?? 0) - (a.matchCount ?? 0))
-          : items,
+      items: sortCategoryItems(items, byFloor, parScore),
       dosable: items.some((constraint) => constraint.dosable),
     }));
   });
 
   constructor() {
     keepViewInQueryParams(() => ({ regle: optionalParam(this.highlightedRule()) }));
-    void this.loadConstraints();
     // Every solve writes a fresh analysis server-side: reload the scored view
     // once one lands, whichever browser started it.
     // SolverJobService.reportFinishedJob already raises the feasibility
@@ -478,6 +489,10 @@ export class ConstraintsPage {
     for (const type of ['SOLVE', 'SOLVE_INCREMENTAL'] as const) {
       destroyRef.onDestroy(this.jobs.onResult(type, () => void this.loadConstraints()));
     }
+  }
+
+  ngOnInit(): void {
+    void this.loadConstraints();
   }
 
   private async loadConstraints(): Promise<void> {

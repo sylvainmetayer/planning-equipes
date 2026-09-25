@@ -48,7 +48,7 @@ export function libelleDernierePublication(
   apercu: Pick<ApercuPublication, 'dernierePublicationLe'> | null,
   locale: string,
 ): string {
-  if (!apercu || !apercu.dernierePublicationLe) {
+  if (!apercu?.dernierePublicationLe) {
     return $localize`:@@publication.derniere.jamais:Jamais publié`;
   }
   const quand = new Date(apercu.dernierePublicationLe).toLocaleString(locale, {

@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -149,7 +150,7 @@ export interface TimelineDay {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AnimateurTimelinePage {
+export class AnimateurTimelinePage implements OnInit {
   protected readonly loading = signal(false);
   protected readonly exportBusy = signal(false);
   protected readonly envoiBusy = signal(false);
@@ -269,13 +270,16 @@ export class AnimateurTimelinePage {
 
   constructor() {
     this.selectedAnimateurId.set(this.route.snapshot.queryParamMap.get('animateur'));
-    void this.refresh();
     // Keeps the selection in the URL so it survives a refresh (F5) and can be
     // bookmarked/shared — « regarde le planning d'Untel » is a link, not a
     // description. This page had its own copy of that effect, written before
     // the shared helper existed and still navigating on every change; see
     // `docs/decisions/0018-ecrire-l-url-de-vue-sans-naviguer.md`.
     keepViewInQueryParams(() => ({ animateur: optionalParam(this.selectedAnimateurId()) }));
+  }
+
+  ngOnInit(): void {
+    void this.refresh();
   }
 
   protected async refresh(): Promise<void> {
@@ -436,7 +440,7 @@ export function exportFilename(
   format: 'pdf' | 'ics',
 ): string {
   const label = options.find((option) => option.id === animateurId)?.label ?? animateurId;
-  const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-+|-+$/g, '') || 'animateur';
+  const safeLabel = label.replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'animateur';
   return `planning-${safeLabel}.${format}`;
 }
 

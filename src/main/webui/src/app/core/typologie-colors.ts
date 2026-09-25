@@ -5,6 +5,7 @@
 // pages, across reloads, and whatever else the referential contains.
 
 import { Stand, TypologieItem } from './models';
+import { compareCodeUnits } from './string-order';
 
 /** Number of classes defined in `styles/typologie-colors.css`. */
 export const TYPOLOGIE_COLOR_COUNT = 8;
@@ -16,7 +17,7 @@ export const TYPOLOGIE_COLOR_NONE = 'typologie-color-none';
 export function typologieColorIndex(typologieId: string): number {
   let hash = 0x811c9dc5;
   for (let index = 0; index < typologieId.length; index += 1) {
-    hash ^= typologieId.charCodeAt(index);
+    hash ^= typologieId.codePointAt(index) ?? 0;
     hash = Math.imul(hash, 0x01000193);
   }
   return Math.abs(hash) % TYPOLOGIE_COLOR_COUNT;
@@ -39,9 +40,7 @@ export function typologieColorClass(typologieId: string | null | undefined): str
  * reading order; it has no business varying with the reader's language.</p>
  */
 export function typologiePrincipale(typologies: readonly string[]): string | null {
-  return (
-    [...typologies].sort((left, right) => (left < right ? -1 : left > right ? 1 : 0))[0] ?? null
-  );
+  return [...typologies].sort(compareCodeUnits)[0] ?? null;
 }
 
 /** Referential label of a typologie, falling back to its raw id when unknown. */

@@ -52,7 +52,7 @@ export function versNouvellesDemandes(
     creneauId,
     standId,
     cibleId,
-    motif: motif && motif.trim() ? motif.trim() : null,
+    motif: motif?.trim() || null,
     creneauCibleId: creneauCibleId ?? null,
     standCibleId: creneauCibleId != null ? (standCibleId ?? null) : null,
   }));

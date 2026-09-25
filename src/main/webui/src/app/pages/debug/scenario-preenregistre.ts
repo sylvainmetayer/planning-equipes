@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
@@ -35,7 +42,7 @@ import { OutputPanel } from '../../shared/output-panel';
   templateUrl: './scenario-preenregistre.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ScenarioPreenregistre {
+export class ScenarioPreenregistre implements OnInit {
   protected readonly output = signal('');
   protected readonly chargement = signal(false);
 
@@ -53,7 +60,7 @@ export class ScenarioPreenregistre {
   private readonly scenarioImport = inject(ScenarioImportService);
   private readonly jobs = inject(SolverJobService);
 
-  constructor() {
+  ngOnInit(): void {
     void this.loadScenarioList();
   }
 

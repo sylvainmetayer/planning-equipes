@@ -117,16 +117,20 @@ export function synthese(rapport: RapportOuvertures): SyntheseOuvertures {
   };
 }
 
+const CLASSE_ETAT_CELLULE: Partial<Record<CelluleJourOuverture['etat'], string>> = {
+  FERME: 'ferme',
+  OUVERT_PARTIEL: 'partiel',
+};
+
+const CLASSE_SOURCE_CELLULE: Partial<Record<CelluleJourOuverture['source'], string>> = {
+  EXCEPTION: ' source-exception',
+  REGLE: ' source-regle',
+};
+
 /** CSS class of a cell, driving its colour: state first, then which layer decided it. */
 export function classeCellule(cellule: CelluleJourOuverture): string {
-  const etat =
-    cellule.etat === 'FERME' ? 'ferme' : cellule.etat === 'OUVERT_PARTIEL' ? 'partiel' : 'total';
-  const source =
-    cellule.source === 'EXCEPTION'
-      ? ' source-exception'
-      : cellule.source === 'REGLE'
-        ? ' source-regle'
-        : '';
+  const etat = CLASSE_ETAT_CELLULE[cellule.etat] ?? 'total';
+  const source = CLASSE_SOURCE_CELLULE[cellule.source] ?? '';
   return `ouverture-cellule etat-${etat}${source}`;
 }
 

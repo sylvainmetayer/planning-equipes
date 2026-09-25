@@ -6,7 +6,7 @@ import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement, estJournalisable } from './models';
 import { NotificationService } from './notification.service';
 import { PlanningResolutionStore } from './planning-resolution.store';
-import { BulkResult, ReferenceDataStore, SaveResult } from './reference-data.store';
+import { BulkResult, RecordId, ReferenceDataStore, SaveResult } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
 import { errorMessage } from './error-message';
@@ -25,7 +25,7 @@ function quand(modifieLe: string | null): string {
 const MAX_ECHECS_DETAILLES = 3;
 
 /**
- * Sentinel id {@link ReferenceCrudService.persister} answers when the user
+ * Sentinel id {@link ReferenceCrudService.persist} answers when the user
  * chose to reload rather than overwrite: nothing was written, the caller has
  * nothing to announce and the form can close over the refreshed store.
  */
@@ -81,10 +81,10 @@ export class ReferenceCrudService {
    * user-typed natural id); créneaux pass `false` since their id is generated
    * by the server and never entered by the user.
    */
-  async save<T extends { id?: string | number | null }>(
+  async save<T extends { id?: RecordId | null }>(
     resource: string,
     payload: T,
-    editingId: string | number | null,
+    editingId: RecordId | null,
     label: string,
     options: { requireId?: boolean } = {},
   ): Promise<boolean> {
@@ -97,7 +97,7 @@ export class ReferenceCrudService {
       return false;
     }
     try {
-      const { id, avertissements } = await this.persister(resource, payload, editingId);
+      const { id, avertissements } = await this.persist(resource, payload, editingId);
       if (id === RECHARGE) {
         return true;
       }
@@ -159,10 +159,10 @@ export class ReferenceCrudService {
    *
    * Any other failure propagates to the caller's snack bar as before.
    */
-  private async persister<T extends { id?: string | number | null }>(
+  private async persist<T extends { id?: RecordId | null }>(
     resource: string,
     payload: T,
-    editingId: string | number | null,
+    editingId: RecordId | null,
   ): Promise<SaveResult> {
     try {
       return await this.store.save(resource, payload, editingId);
@@ -362,7 +362,7 @@ export class ReferenceCrudService {
       title: failureTitle(result.echecs.length),
       message:
         (restants > 0
-          ? `${details} · ${$localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`}`
+          ? details + ' · ' + $localize`:@@crud.bulkMoreErrors:et ${restants}:count: autre(s)`
           : details) + suite,
       variant: 'error',
       timeout: concurrentes > 0 ? 0 : undefined,
@@ -420,7 +420,7 @@ function detailler(avertissements: readonly Avertissement[]): string {
     .join(' · ');
   const restants = avertissements.length - MAX_AVERTISSEMENTS_DETAILLES;
   return restants > 0
-    ? `${detail} · ${$localize`:@@crud.moreWarnings:et ${restants}:count: autre(s)`}`
+    ? detail + ' · ' + $localize`:@@crud.moreWarnings:et ${restants}:count: autre(s)`
     : detail;
 }
 

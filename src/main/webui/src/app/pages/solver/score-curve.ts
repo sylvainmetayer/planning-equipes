@@ -75,7 +75,7 @@ export function construireSeries(
   // Never shorter than the last point: a snapshot taken between an improvement
   // and the next reading of the clock must not produce an axis that ends before
   // the data it has to show.
-  const fin = Math.max(dureeMs, points[points.length - 1].tempsMs);
+  const fin = Math.max(dureeMs, points.at(-1)?.tempsMs ?? 0);
   return NIVEAUX_SCORE.map((niveau) => serie(niveau, points, fin));
 }
 
@@ -94,7 +94,7 @@ function serie(niveau: NiveauScore, points: readonly ScorePoint[], fin: number):
   // the first point would rescale itself under every improvement.
   const x = (tempsMs: number): number => (fin === 0 ? 0 : (tempsMs / fin) * LARGEUR_COURBE);
 
-  const dernier = valeurs[valeurs.length - 1];
+  const dernier = valeurs.at(-1) ?? 0;
   // One point is a level, not a shape: held across the whole box, since a
   // polyline with a single vertex draws nothing at all and the first score of a
   // run would simply never appear.
@@ -105,7 +105,7 @@ function serie(niveau: NiveauScore, points: readonly ScorePoint[], fin: number):
   // Held flat to the right edge — that segment *is* the plateau. Without it a
   // run that stopped improving would end wherever its last improvement was, and
   // a solve at a standstill would draw exactly like one still under way.
-  if (points.length > 1 && fin > points[points.length - 1].tempsMs) {
+  if (points.length > 1 && fin > (points.at(-1)?.tempsMs ?? 0)) {
     sommets.push(coord(LARGEUR_COURBE, y(dernier)));
   }
 
@@ -125,7 +125,7 @@ function serie(niveau: NiveauScore, points: readonly ScorePoint[], fin: number):
  * to *now*, never up to the last recorded point.
  */
 function plateau(points: readonly ScorePoint[], valeurs: readonly number[], fin: number): number {
-  const dernier = valeurs[valeurs.length - 1];
+  const dernier = valeurs.at(-1);
   let index = valeurs.length - 1;
   while (index > 0 && valeurs[index - 1] === dernier) {
     index -= 1;

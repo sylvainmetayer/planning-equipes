@@ -453,9 +453,9 @@ export function collerBloc(
     return cellules;
   }
   let resultat = cellules;
-  const lignes = text.replace(/\r/g, '').split('\n');
+  const lignes = text.replaceAll('\r', '').split('\n');
   // A trailing newline, which every spreadsheet copy carries, is not a row.
-  if (lignes.length > 1 && lignes[lignes.length - 1] === '') {
+  if (lignes.length > 1 && lignes.at(-1) === '') {
     lignes.pop();
   }
   lignes.forEach((ligneTexte, i) => {

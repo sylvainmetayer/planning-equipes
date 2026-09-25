@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -48,7 +49,7 @@ import { NewWindowLink } from '../../shared/new-window-link';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MentionsLegalesPage {
+export class MentionsLegalesPage implements OnInit {
   /**
    * Article 13 of the AGPL requires that anyone interacting with the program
    * over a network can obtain its source — so the link belongs on this page,
@@ -85,7 +86,7 @@ export class MentionsLegalesPage {
 
   private readonly adminApi = inject(AdminApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

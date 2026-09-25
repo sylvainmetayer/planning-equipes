@@ -120,8 +120,7 @@ export class StaffingPage {
   protected readonly projectionLabel = computed(() => {
     const summary = this.summary();
     if (
-      !summary ||
-      !summary.indisponibilitesDeclarees ||
+      !summary?.indisponibilitesDeclarees ||
       summary.minimumAvecIndisponibilites <= summary.minimumTotal
     ) {
       return '';

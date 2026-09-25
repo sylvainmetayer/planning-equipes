@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -60,7 +61,7 @@ import { StatusMessage } from '../../shared/status-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EspaceDisponibilitesPage {
+export class EspaceDisponibilitesPage implements OnInit {
   protected readonly espace = inject(EspaceAnimateurService);
 
   protected readonly chargement = signal(true);
@@ -91,7 +92,7 @@ export class EspaceDisponibilitesPage {
     ouvertureAVenir(this.view(), toDateKey(new Date())),
   );
 
-  constructor() {
+  ngOnInit(): void {
     void this.recharger();
   }
 

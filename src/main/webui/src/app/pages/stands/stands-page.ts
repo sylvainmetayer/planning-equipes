@@ -3,6 +3,7 @@ import {
   Component,
   DestroyRef,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -58,7 +59,7 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class StandsPage extends ReferenceTablePage<Stand> {
+export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
   protected readonly columns = [
     'select',
     'id',
@@ -141,6 +142,9 @@ export class StandsPage extends ReferenceTablePage<Stand> {
       libellePluriel: labelStandsPluriel,
     });
     void this.problemes.reloadFeasibility();
+  }
+
+  ngOnInit(): void {
     void this.chargerOuvertures();
   }
 

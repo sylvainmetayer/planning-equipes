@@ -178,7 +178,7 @@ function merge(fenetres: Fenetre[]): Fenetre[] {
   const ordonnees = [...fenetres].sort((left, right) => left.debutMinutes - right.debutMinutes);
   const fusionnees: Fenetre[] = [];
   ordonnees.forEach((fenetre) => {
-    const last = fusionnees[fusionnees.length - 1];
+    const last = fusionnees.at(-1);
     if (last && fenetre.debutMinutes <= last.finMinutes) {
       if (fenetre.finMinutes > last.finMinutes) {
         last.finMinutes = fenetre.finMinutes;
@@ -323,11 +323,13 @@ function buildRailJour(
   noms: Map<string, string>,
 ): RailJour {
   const { date, spans: spansDuJour, spansParAnimateur } = contenu;
-  const premier = spansDuJour.reduce((tot, span) =>
-    span.debutMinutes < tot.debutMinutes ? span : tot,
+  const premier = spansDuJour.reduce(
+    (tot, span) => (span.debutMinutes < tot.debutMinutes ? span : tot),
+    spansDuJour[0],
   );
-  const dernier = spansDuJour.reduce((tard, span) =>
-    span.finMinutes > tard.finMinutes ? span : tard,
+  const dernier = spansDuJour.reduce(
+    (tard, span) => (span.finMinutes > tard.finMinutes ? span : tard),
+    spansDuJour[0],
   );
   const journee: Fenetre = {
     debutMinutes: premier.debutMinutes,
@@ -432,13 +434,17 @@ function buildRailLigne(
   // so it hatches the hours without taking them out of the mobilisable count.
   const declareIndisponible = date !== null && (animateur.joursIndisponibles ?? []).includes(date);
   const indisponible = declareIndisponible || journeeEntiere;
-  const statut: RailStatut = blocs.length > 0 ? 'affecte' : indisponible ? 'indisponible' : 'libre';
+  let statut: RailStatut = indisponible ? 'indisponible' : 'libre';
+  if (blocs.length > 0) {
+    statut = 'affecte';
+  }
   if (blocs.length === 0) {
-    const base = declareIndisponible
-      ? $localize`:@@railJour.resume.indisponible:${nom}:animateur: — déclaré indisponible ce jour-là`
-      : journeeEntiere
-        ? $localize`:@@railJour.resume.indisponibleForcee:${nom}:animateur: — indisponibilité saisie sur toute la journée`
-        : $localize`:@@railJour.resume.libre:${nom}:animateur: — aucune vacation ce jour-là, mobilisable`;
+    let base = $localize`:@@railJour.resume.libre:${nom}:animateur: — aucune vacation ce jour-là, mobilisable`;
+    if (declareIndisponible) {
+      base = $localize`:@@railJour.resume.indisponible:${nom}:animateur: — déclaré indisponible ce jour-là`;
+    } else if (journeeEntiere) {
+      base = $localize`:@@railJour.resume.indisponibleForcee:${nom}:animateur: — indisponibilité saisie sur toute la journée`;
+    }
     return {
       animateurId: animateur.id,
       nom,
@@ -460,8 +466,9 @@ function buildRailLigne(
   );
   const dureeLabel = formatDuration(minutesTravaillees);
   const amplitudeDebut = ordonnes[0].heureDebut;
-  const amplitudeFin = ordonnes.reduce((last, span) =>
-    span.finMinutes >= last.finMinutes ? span : last,
+  const amplitudeFin = ordonnes.reduce(
+    (last, span) => (span.finMinutes >= last.finMinutes ? span : last),
+    ordonnes[0],
   ).heureFin;
   const detail = blocs.map((bloc) => bloc.label).join(' ; ');
   const count = blocs.length;

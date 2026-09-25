@@ -148,6 +148,6 @@ export function slugMarque(productName: string): string {
     .replace(/\p{M}+/gu, '')
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '');
+    .replace(/^-|-$/g, ''); // runs already collapsed to one dash
   return slug || 'planning';
 }

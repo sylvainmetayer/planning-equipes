@@ -4,6 +4,7 @@
 // without rendering a calendar.
 
 import { DeclarationEspaceView, NouvelleDeclaration } from '../../core/models';
+import { compareCodeUnits } from '../../core/string-order';
 
 /** What the form holds while it is being filled in. */
 export interface BrouillonDeclaration {
@@ -71,9 +72,9 @@ export function ouvertureAVenir(
 /** Groups the event days by calendar month, in chronological order. */
 export function moisDeCollecte(joursEvenement: readonly string[]): MoisCollecte[] {
   const mois: MoisCollecte[] = [];
-  for (const jour of [...joursEvenement].sort()) {
+  for (const jour of [...joursEvenement].sort(compareCodeUnits)) {
     const dernier = mois.at(-1);
-    if (dernier && dernier.premierJour.slice(0, 7) === jour.slice(0, 7)) {
+    if (dernier?.premierJour.slice(0, 7) === jour.slice(0, 7)) {
       dernier.jours.push(jour);
     } else {
       mois.push({ premierJour: jour, jours: [jour] });
@@ -86,7 +87,7 @@ export function moisDeCollecte(joursEvenement: readonly string[]): MoisCollecte[
 export function basculer(valeurs: readonly string[], valeur: string): string[] {
   return valeurs.includes(valeur)
     ? valeurs.filter((candidat) => candidat !== valeur)
-    : [...valeurs, valeur].sort();
+    : [...valeurs, valeur].sort(compareCodeUnits);
 }
 
 /**
@@ -119,8 +120,8 @@ export function declarationModifiee(
 /** What actually leaves for the backend, normalised the way the server stores it. */
 export function versNouvelleDeclaration(brouillon: BrouillonDeclaration): NouvelleDeclaration {
   return {
-    joursIndisponibles: [...brouillon.joursIndisponibles].sort(),
-    souhaits: [...brouillon.souhaits].sort(),
+    joursIndisponibles: [...brouillon.joursIndisponibles].sort(compareCodeUnits),
+    souhaits: [...brouillon.souhaits].sort(compareCodeUnits),
     commentaire: brouillon.commentaire.trim() ? brouillon.commentaire.trim() : null,
   };
 }
@@ -130,6 +131,6 @@ function memesValeurs(gauche: readonly string[], droite: readonly string[]): boo
   if (gauche.length !== droite.length) {
     return false;
   }
-  const trie = [...gauche].sort();
-  return [...droite].sort().every((valeur, index) => valeur === trie[index]);
+  const trie = [...gauche].sort(compareCodeUnits);
+  return [...droite].sort(compareCodeUnits).every((valeur, index) => valeur === trie[index]);
 }

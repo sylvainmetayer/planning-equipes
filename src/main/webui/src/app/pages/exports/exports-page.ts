@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -56,7 +57,7 @@ interface LigneExport {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ExportsPage {
+export class ExportsPage implements OnInit {
   private readonly api = inject(ExportCsvApi);
   private readonly planningApi = inject(PlanningApi);
 
@@ -126,7 +127,7 @@ export class ExportsPage {
     this.lignes().filter((ligne) => this.isSelected(ligne.target) && ligne.total === 0),
   );
 
-  constructor() {
+  ngOnInit(): void {
     void this.charger();
   }
 

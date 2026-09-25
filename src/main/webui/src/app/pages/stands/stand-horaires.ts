@@ -30,6 +30,7 @@ import {
 import { getStoredLocale, intlLocale } from '../../core/locale';
 import { HoraireDraft } from './stand-draft';
 import { describeDays } from './stand-detail';
+import { compareCodeUnits } from '../../core/string-order';
 
 /**
  * Why one rule cannot be saved as entered, or `null` — the compact line first
@@ -100,7 +101,7 @@ export function messageConflitDeMode(horaires: readonly HoraireDraft[]): string 
 
 /** Days the preview covers: the edition's créneaux — what the solver builds from. */
 export function datesEvenement(creneaux: readonly Creneau[]): string[] {
-  return [...new Set(creneaux.map((creneau) => creneau.date))].sort();
+  return [...new Set(creneaux.map((creneau) => creneau.date))].sort(compareCodeUnits);
 }
 
 /** One resolved day of the preview strip, in words. */
@@ -301,10 +302,10 @@ function messagePriorite(horaires: readonly HoraireStand[], priorite: Priorite):
     return $localize`:@@stands.horaires.priorite.sansJour:Prime sur « ${autre}:regle: » les jours qu'elle couvre.`;
   }
   // A weekday rule is read by its weekdays; the others by their dates.
+  const ellipsis = priorite.dates.length > CITED_DATES ? '…' : '';
   const quand =
     horaire.jours === 'JOURS_SEMAINE'
       ? daysInSentence(horaire)
-      : priorite.dates.slice(0, CITED_DATES).map(libelleJour).join(', ') +
-        (priorite.dates.length > CITED_DATES ? '…' : '');
+      : priorite.dates.slice(0, CITED_DATES).map(libelleJour).join(', ') + ellipsis;
   return $localize`:@@stands.horaires.priorite:Prime sur « ${autre}:regle: » : ${quand}:quand:.`;
 }

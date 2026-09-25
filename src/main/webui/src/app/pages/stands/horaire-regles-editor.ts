@@ -22,6 +22,7 @@ import {
   estCasParticulier,
   formaterFenetres,
   horaireVide,
+  libelleJourSemaine,
   parseFenetres,
 } from '../../core/horaire-stand';
 import { FenetreHoraire, JourSemaine, Stand } from '../../core/models';
@@ -34,7 +35,6 @@ import {
   patchDansListe,
   retirerDe,
 } from './stand-draft';
-import { libelleJourSemaine } from '../../core/horaire-stand';
 import {
   erreurRegle,
   messageConflitDeMode,

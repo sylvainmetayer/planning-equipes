@@ -168,12 +168,43 @@ export function duringTheEvent(jours: JourPlanning[], aujourdhui: string): boole
   if (dates.length === 0) {
     return false;
   }
-  return aujourdhui >= dates[0] && aujourdhui <= dates[dates.length - 1];
+  return aujourdhui >= dates[0] && aujourdhui <= (dates.at(-1) ?? dates[0]);
 }
 
 /** True for a day already over — strictly before today, never « ends in an hour ». */
 export function isPasse(jour: JourPlanning, aujourdhui: string): boolean {
   return !!jour.date && jour.date < aujourdhui;
+}
+
+/**
+ * Where one seat stands against now: being held, still ahead, or neither
+ * (over, or undated).
+ */
+function situerPoste(
+  poste: PosteAnimateurView,
+  jourDate: string | null,
+  now: { aujourdhui: string; hier: string; heure: string },
+): 'enCours' | 'prochain' | null {
+  const { aujourdhui, hier, heure } = now;
+  const date = poste.date ?? jourDate;
+  const debut = heureCourte(poste.heureDebut);
+  const fin = heureCourte(poste.heureFin);
+  if (!date || !debut) {
+    return null;
+  }
+  if (date < aujourdhui) {
+    // Only one thing from before today can still be running: a shift that
+    // crossed midnight into it, and only until its own end.
+    return date === hier && traverseMinuit(debut, fin) && heure < fin! ? 'enCours' : null;
+  }
+  if (date > aujourdhui) {
+    return 'prochain';
+  }
+  const finie = !traverseMinuit(debut, fin) && fin !== null && fin <= heure;
+  if (debut <= heure && !finie) {
+    return 'enCours';
+  }
+  return debut > heure ? 'prochain' : null;
 }
 
 /**
@@ -200,28 +231,10 @@ export function repereMaintenant(jours: JourPlanning[], maintenant: Date): Reper
   let prochain: PosteAnimateurView | null = null;
   for (const jour of jours) {
     for (const poste of jour.postes) {
-      const date = poste.date ?? jour.date;
-      const debut = heureCourte(poste.heureDebut);
-      const fin = heureCourte(poste.heureFin);
-      if (!date || !debut) {
-        continue;
-      }
-      if (date < aujourdhui) {
-        // Only one thing from before today can still be running: a shift that
-        // crossed midnight into it, and only until its own end.
-        if (date === hier && traverseMinuit(debut, fin) && heure < fin!) {
-          held ??= poste;
-        }
-        continue;
-      }
-      if (date > aujourdhui) {
-        prochain ??= poste;
-        continue;
-      }
-      const finie = !traverseMinuit(debut, fin) && fin !== null && fin <= heure;
-      if (debut <= heure && !finie) {
+      const place = situerPoste(poste, jour.date, { aujourdhui, hier, heure });
+      if (place === 'enCours') {
         held ??= poste;
-      } else if (debut > heure) {
+      } else if (place === 'prochain') {
         prochain ??= poste;
       }
     }

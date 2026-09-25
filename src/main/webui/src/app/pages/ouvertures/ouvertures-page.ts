@@ -359,8 +359,8 @@ export class OuverturesPage {
   protected readonly journeesTypesEntetes = computed(() => {
     const entetes: { journeeTypeId: number; nom: string; colonnes: number; dates: number }[] = [];
     for (const colonne of this.colonnesJourneesTypes()) {
-      const dernier = entetes[entetes.length - 1];
-      if (dernier && dernier.journeeTypeId === colonne.journeeTypeId) {
+      const dernier = entetes.at(-1);
+      if (dernier?.journeeTypeId === colonne.journeeTypeId) {
         dernier.colonnes++;
         continue;
       }
@@ -477,12 +477,7 @@ export class OuverturesPage {
   constructor() {
     keepViewInQueryParams(() => ({
       vue: PARAM_VUE[this.view()],
-      date:
-        this.view() === 'JOURNEE'
-          ? this.navigationJour.queryParam()
-          : this.view() === 'SAISIR'
-            ? this.saisieDate() || null
-            : null,
+      date: this.dateQueryParam(),
       q: this.recherche().trim() || null,
       stand: this.onlyStand() || null,
     }));
@@ -530,6 +525,14 @@ export class OuverturesPage {
       this.chargement.set(false);
     }
     this.focusRequestedDay();
+  }
+
+  /** The `?date=` of the view on screen: the day shown, the day being entered, or none. */
+  private dateQueryParam(): string | null {
+    if (this.view() === 'JOURNEE') {
+      return this.navigationJour.queryParam();
+    }
+    return this.view() === 'SAISIR' ? this.saisieDate() || null : null;
   }
 
   /** Hands the focus to the first cell of `?date=`, once the grid is on screen. */
@@ -1116,11 +1119,9 @@ export class OuverturesPage {
     }
     lignes.push(
       $localize`:@@ouvertures.tooltip.ouvert:Ouvert ${this.duree(cellule.minutesOuvertes)}:ouvert: sur ${this.duree(cellule.minutesAmplitude)}:amplitude:`,
-    );
-    lignes.push(
       $localize`:@@ouvertures.tooltip.postes:${cellule.postes}:postes: poste(s) généré(s)`,
+      this.libelleSource(cellule),
     );
-    lignes.push(this.libelleSource(cellule));
     return lignes.join('\n');
   }
 

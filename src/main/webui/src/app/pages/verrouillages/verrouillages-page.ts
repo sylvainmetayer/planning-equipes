@@ -6,6 +6,7 @@ import {
   ElementRef,
   inject,
   Injector,
+  OnInit,
   signal,
   viewChild,
 } from '@angular/core';
@@ -40,6 +41,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { RouterLink } from '@angular/router';
 import { errorMessage } from '../../core/error-message';
+import { compareCodeUnits } from '../../core/string-order';
 
 /** Manually creatable types: ANIMATEUR_CRENEAU locks are only ever posed by an accepted échange (issue #165). */
 type TypeVerrouillageManuel = Exclude<TypeVerrouillage, 'ANIMATEUR_CRENEAU'>;
@@ -112,7 +114,7 @@ function phrases(avertissements: readonly Avertissement[]): string {
   templateUrl: './verrouillages-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class VerrouillagesPage {
+export class VerrouillagesPage implements OnInit {
   protected readonly columns = ['type', 'cible', 'etat', 'raison', 'actions'];
   protected readonly types = TYPE_VALUES.map((value) => ({ value, label: typeLabel(value) }));
   protected readonly store = inject(ReferenceDataStore);
@@ -130,7 +132,9 @@ export class VerrouillagesPage {
 
   /** Distinct event days, from the créneaux of the reference data. */
   protected readonly jours = computed(() =>
-    Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort(),
+    Array.from(new Set(this.store.creneaux().map((creneau) => creneau.date))).sort(
+      compareCodeUnits,
+    ),
   );
 
   /**
@@ -204,6 +208,9 @@ export class VerrouillagesPage {
     keepViewInQueryParams(() => ({
       animateur: optionalParam(this.onlyAnimateurs().join(',')),
     }));
+  }
+
+  ngOnInit(): void {
     void this.reload();
     void this.chargerPlanning();
   }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -45,7 +45,7 @@ import { NewWindowLink } from '../../shared/new-window-link';
   templateUrl: './parametres-legaux.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ParametresLegauxCard {
+export class ParametresLegauxCard implements OnInit {
   protected readonly parametresLoading = signal(false);
   protected readonly parametresError = signal('');
   protected readonly parametresSaved = signal(false);
@@ -90,7 +90,7 @@ export class ParametresLegauxCard {
 
   private readonly constraintsApi = inject(ConstraintsApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.loadParametresLegaux();
   }
 

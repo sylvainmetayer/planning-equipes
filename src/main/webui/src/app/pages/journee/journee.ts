@@ -128,7 +128,7 @@ export function resolveComparison(
   if (!jour) {
     return { jour: null, refus: 'inconnu' };
   }
-  if (courant && jour.key === courant.key) {
+  if (courant?.key === jour.key) {
     return { jour: null, refus: 'identique' };
   }
   return { jour, refus: null };
@@ -535,7 +535,8 @@ function cellulesAnimateurs(
   }
   const cellules = new Map<string, DayAnimateur>();
   for (const [id, entree] of byAnimateur) {
-    const vacations = entree.vacations.sort(
+    const vacations = entree.vacations;
+    vacations.sort(
       (gauche, droite) =>
         gauche.heureDebut.localeCompare(droite.heureDebut) ||
         gauche.standNom.localeCompare(droite.standNom),

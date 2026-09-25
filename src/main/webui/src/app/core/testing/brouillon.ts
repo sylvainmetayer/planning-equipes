@@ -18,8 +18,12 @@ export function memoryStorage(initial: Record<string, string> = {}): DraftStorag
     },
     key: (index) => [...entries.keys()][index] ?? null,
     getItem: (key) => entries.get(key) ?? null,
-    setItem: (key, value) => void entries.set(key, value),
-    removeItem: (key) => void entries.delete(key),
+    setItem: (key, value) => {
+      entries.set(key, value);
+    },
+    removeItem: (key) => {
+      entries.delete(key);
+    },
   };
 }
 

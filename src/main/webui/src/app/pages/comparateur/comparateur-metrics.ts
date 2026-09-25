@@ -36,7 +36,7 @@ export function construireLignesMetriques(
     valeurBase: number | null,
     valeurVariante: number | null,
     sens: Sens,
-    formatter: (valeur: number) => string = (valeur) => String(valeur),
+    formatter: (valeur: number) => string = String,
   ): void => {
     const delta =
       valeurBase === null || valeurVariante === null ? null : valeurVariante - valeurBase;

@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  OnInit,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -40,7 +47,7 @@ import { StatusMessage } from '../../shared/status-message';
   templateUrl: './solver-duration-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SolverDurationCard {
+export class SolverDurationCard implements OnInit {
   private readonly solverSettings = inject(SolverSettingsService);
   private readonly notifications = inject(NotificationService);
 
@@ -57,7 +64,7 @@ export class SolverDurationCard {
   );
   protected readonly step = computed(() => SOLVER_DURATION_UNIT_STEP[this.unit()]);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

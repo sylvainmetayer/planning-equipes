@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -56,7 +57,7 @@ import { errorPrefix } from '../../core/error-message';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SnapshotsPage {
+export class SnapshotsPage implements OnInit {
   protected readonly columns = [
     'libelle',
     'score',
@@ -190,7 +191,7 @@ export class SnapshotsPage {
   private readonly confirm = inject(ConfirmService);
   private readonly dialog = inject(MatDialog);
 
-  constructor() {
+  ngOnInit(): void {
     void this.recharger();
     void this.chargerAffectationsCourantes();
   }

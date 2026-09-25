@@ -100,6 +100,7 @@ export class SolverRunningIndicator {
     if (enAttente === 0) {
       return enCours;
     }
-    return `${enCours} ${$localize`:@@job.fileIndicator:${enAttente}:count: tâche(s) planifiée(s) à la suite.`}`;
+    const file = $localize`:@@job.fileIndicator:${enAttente}:count: tâche(s) planifiée(s) à la suite.`;
+    return `${enCours} ${file}`;
   });
 }

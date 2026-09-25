@@ -3,6 +3,7 @@
 
 import { ActionHistorique, EntreeHistorique } from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { compareCodeUnits } from '../../core/string-order';
 
 /** Which actors the list keeps. `TOUS` is the default: the history is read whole. */
 export type FiltreActeur = 'TOUS' | 'ADMIN' | 'ANIMATEUR' | 'ANONYME' | 'ASSISTANT' | 'SYSTEME';
@@ -17,9 +18,16 @@ export type FiltreResultat = 'TOUS' | 'SUCCES' | 'REFUS';
  */
 export type FiltreNature = 'TOUTES' | 'EXPORTS';
 
-const ACTEURS: FiltreActeur[] = ['TOUS', 'ADMIN', 'ANIMATEUR', 'ANONYME', 'ASSISTANT', 'SYSTEME'];
-const RESULTATS: FiltreResultat[] = ['TOUS', 'SUCCES', 'REFUS'];
-const NATURES: FiltreNature[] = ['TOUTES', 'EXPORTS'];
+const ACTEURS: ReadonlySet<string | null> = new Set<FiltreActeur>([
+  'TOUS',
+  'ADMIN',
+  'ANIMATEUR',
+  'ANONYME',
+  'ASSISTANT',
+  'SYSTEME',
+]);
+const RESULTATS: ReadonlySet<string | null> = new Set<FiltreResultat>(['TOUS', 'SUCCES', 'REFUS']);
+const NATURES: ReadonlySet<string | null> = new Set<FiltreNature>(['TOUTES', 'EXPORTS']);
 
 /**
  * What `GET /api/historique` is asked for: the « Exports » filter is applied by
@@ -36,15 +44,15 @@ export function exportCodes(actions: ActionHistorique[]): ReadonlySet<string> {
 
 /** Reads a filter off the URL, falling back to its default on anything unknown. */
 export function readActorFilter(valeur: string | null): FiltreActeur {
-  return ACTEURS.includes(valeur as FiltreActeur) ? (valeur as FiltreActeur) : 'TOUS';
+  return ACTEURS.has(valeur) ? (valeur as FiltreActeur) : 'TOUS';
 }
 
 export function readOutcomeFilter(valeur: string | null): FiltreResultat {
-  return RESULTATS.includes(valeur as FiltreResultat) ? (valeur as FiltreResultat) : 'TOUS';
+  return RESULTATS.has(valeur) ? (valeur as FiltreResultat) : 'TOUS';
 }
 
 export function readNatureFilter(valeur: string | null): FiltreNature {
-  return NATURES.includes(valeur as FiltreNature) ? (valeur as FiltreNature) : 'TOUTES';
+  return NATURES.has(valeur) ? (valeur as FiltreNature) : 'TOUTES';
 }
 
 /**
@@ -86,7 +94,7 @@ export function entitesPresentes(entrees: EntreeHistorique[]): string[] {
     ...new Set(
       entrees.map((entree) => entree.entite).filter((entite): entite is string => !!entite),
     ),
-  ].sort();
+  ].sort(compareCodeUnits);
 }
 
 /**

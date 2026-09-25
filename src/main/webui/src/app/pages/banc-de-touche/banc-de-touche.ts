@@ -44,8 +44,12 @@ export function etatDe(ligne: AnimateurBanc): EtatBanc {
 
 /** Hard reasons first: they are the ones that answer « pourquoi pas lui ». */
 export function ordreMotifs(motifs: MotifExclusion[]): MotifExclusion[] {
-  const rang = (motif: MotifExclusion): number =>
-    motif.niveau === 'HARD' ? 0 : motif.niveau === 'MEDIUM' ? 1 : 2;
+  const rang = (motif: MotifExclusion): number => {
+    if (motif.niveau === 'HARD') {
+      return 0;
+    }
+    return motif.niveau === 'MEDIUM' ? 1 : 2;
+  };
   return [...motifs].sort((a, b) => rang(a) - rang(b) || a.contrainte.localeCompare(b.contrainte));
 }
 

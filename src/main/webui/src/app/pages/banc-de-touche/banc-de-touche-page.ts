@@ -241,7 +241,7 @@ export class BancDeTouchePage {
 
   protected siegeLibelle(): string {
     const banc = this.banc();
-    if (!banc || !banc.posteCibleId) {
+    if (!banc?.posteCibleId) {
       return '';
     }
     const stand = this.standCible() || banc.standCibleId || '';
