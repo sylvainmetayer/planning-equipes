@@ -1,0 +1,178 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h1 mat-card-title i18n="@@nav.link.repartitionHeures">Répartition des heures</h1>
+    <mat-card-subtitle i18n="@@repartitionHeures.subtitle">Ce qui pèse dans l'édition, et où la couverture coince.</mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <div class="repartition-toolbar">
+      <mat-button-toggle-group
+        [value]="grouping()"
+        (change)="setGrouping($event.value)"
+        aria-label="Regroupement"
+        i18n-aria-label="@@repartitionHeures.grouping"
+      >
+        <mat-button-toggle value="stand" i18n="@@repartitionHeures.grouping.stand">Par stand</mat-button-toggle>
+        <mat-button-toggle value="typologie" i18n="@@repartitionHeures.grouping.typologie">Par typologie</mat-button-toggle>
+      </mat-button-toggle-group>
+
+      <mat-form-field appearance="outline" class="repartition-select" subscriptSizing="dynamic">
+        <mat-label i18n="@@repartitionHeures.period">Période</mat-label>
+        <mat-select [value]="periodValue()" (valueChange)="setPeriod($event)">
+          <mat-option value="all" i18n="@@repartitionHeures.period.all">Toute l'édition</mat-option>
+          @if (periodOptions().weeks.length > 1) {
+            <mat-optgroup label="Semaines" i18n-label="@@repartitionHeures.period.weeks">
+              @for (option of periodOptions().weeks; track option.value) {
+                <mat-option [value]="option.value">{{ option.label }}</mat-option>
+              }
+            </mat-optgroup>
+          }
+          <mat-optgroup label="Jours" i18n-label="@@repartitionHeures.period.days">
+            @for (option of periodOptions().days; track option.value) {
+              <mat-option [value]="option.value">{{ option.label }}</mat-option>
+            }
+          </mat-optgroup>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" class="repartition-select" subscriptSizing="dynamic">
+        <mat-label i18n="@@repartitionHeures.emplacement">Emplacement</mat-label>
+        <mat-select [value]="emplacementFilter()" (valueChange)="setEmplacement($event)">
+          <mat-option value="" i18n="@@repartitionHeures.emplacement.all">Tous</mat-option>
+          @for (option of emplacementOptions(); track option.value) {
+            <mat-option [value]="option.value">{{ option.label }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      @if (viewChanged()) {
+        <button matButton type="button" (click)="resetView()">
+          <mat-icon>filter_alt_off</mat-icon>
+          <ng-container i18n="@@common.resetView">Réinitialiser la vue</ng-container>
+        </button>
+      }
+      <button matButton="tonal" type="button" [disabled]="loading()" (click)="refresh()">
+        <mat-icon>refresh</mat-icon>
+        <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+      </button>
+    </div>
+
+    @if (grouping() === 'typologie') {
+      <p class="empty-hint">
+        <ng-container i18n="@@repartitionHeures.combinationNote">Un stand à plusieurs typologies compte une fois, sous leur combinaison.</ng-container>
+        <a routerLink="/typologies-planning" i18n="@@repartitionHeures.combinationLink">Un poste par typologie : Planning par typologie</a>
+      </p>
+    }
+
+    <div class="repartition-legend">
+      <span class="repartition-legend-item"><span class="repartition-swatch repartition-critical"></span><ng-container i18n="@@repartitionHeures.legend.critical">Critique (moins de 80 %)</ng-container></span>
+      <span class="repartition-legend-item"><span class="repartition-swatch repartition-partial"></span><ng-container i18n="@@repartitionHeures.legend.partial">Partiel (80 à 99 %)</ng-container></span>
+      <span class="repartition-legend-item"><span class="repartition-swatch repartition-full"></span><ng-container i18n="@@repartitionHeures.legend.full">Pourvu (100 %)</ng-container></span>
+      <span class="repartition-legend-item" i18n="@@repartitionHeures.legend.size">Surface : heures-sièges à pourvoir</span>
+    </div>
+
+    @if (loading()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    <app-status-message [text]="error()" tone="error" />
+  </mat-card-content>
+</mat-card>
+
+@if (!error() && !loading()) {
+  <mat-card appearance="outlined" class="page-card">
+    <mat-card-content>
+      @if (!hasPlan()) {
+        <p class="empty-hint" i18n="@@repartitionHeures.noPlan">Aucun planning enregistré pour le moment. Lancez une résolution depuis la page Solveur.</p>
+      } @else if (tree().requiredMinutes === 0) {
+        <p class="empty-hint" i18n="@@repartitionHeures.emptyPeriod">Aucun siège à pourvoir sur cette période ou cet emplacement.</p>
+      } @else {
+        <nav class="repartition-breadcrumb" aria-label="Fil d'Ariane" i18n-aria-label="@@repartitionHeures.breadcrumb">
+          @for (node of path(); track node.id; let last = $last) {
+            @if (last) {
+              <span aria-current="location">{{ node.label }} — {{ hours(node.requiredMinutes) }}</span>
+            } @else {
+              <button matButton type="button" (click)="zoomTo(node)">{{ node.label }}</button>
+              <mat-icon aria-hidden="true">chevron_right</mat-icon>
+            }
+          }
+        </nav>
+
+        <div #treemap class="repartition-treemap" role="group" [attr.aria-label]="describe(zoomed())">
+          @for (tile of tiles(); track tile.node.id) {
+            @if (tile.depth === 1) {
+              <button
+                type="button"
+                class="repartition-tile"
+                [class]="'repartition-' + level(tile.node)"
+                [style.left]="left(tile)"
+                [style.top]="top(tile)"
+                [style.width]="width(tile)"
+                [style.height]="height(tile)"
+                [matTooltip]="describe(tile.node)"
+                [attr.aria-label]="describe(tile.node) + ' — ' + action(tile.node)"
+                (click)="open(tile)"
+              >
+                @if (labelled(tile)) {
+                  <span class="repartition-tile-label" aria-hidden="true">
+                    <span class="repartition-tile-name">{{ tile.node.label }}</span>
+                    <span class="repartition-tile-figures">{{ hours(tile.node.requiredMinutes) }} · {{ rate(tile.node) }}</span>
+                  </span>
+                }
+              </button>
+            } @else {
+              <div
+                class="repartition-tile repartition-inner"
+                [class]="'repartition-' + level(tile.node)"
+                [style.left]="left(tile)"
+                [style.top]="top(tile)"
+                [style.width]="width(tile)"
+                [style.height]="height(tile)"
+                aria-hidden="true"
+              >
+                @if (labelled(tile)) {
+                  <span class="repartition-tile-label">
+                    <span class="repartition-tile-name">{{ tile.node.label }}</span>
+                    <span class="repartition-tile-figures">{{ hours(tile.node.requiredMinutes) }}</span>
+                  </span>
+                }
+              </div>
+            }
+          }
+        </div>
+        <p class="empty-hint" i18n="@@repartitionHeures.clickHint">Un clic sur un groupe l'agrandit ; sur un stand, il ouvre sa journée.</p>
+      }
+
+      @if (hasPlan()) {
+        <details class="repartition-table-details">
+          <summary i18n="@@repartitionHeures.table.summary">Tableau des heures</summary>
+          <div class="table-wrapper">
+            <table class="repartition-table">
+              <caption class="visually-hidden" i18n="@@repartitionHeures.table.caption">Heures-sièges par groupe puis par stand, des plus lourds aux plus légers</caption>
+              <thead>
+                <tr>
+                  <th scope="col" i18n="@@repartitionHeures.table.name">Groupe / stand</th>
+                  <th scope="col" i18n="@@repartitionHeures.table.required">À pourvoir</th>
+                  <th scope="col" i18n="@@repartitionHeures.table.filled">Pourvues</th>
+                  <th scope="col" i18n="@@repartitionHeures.table.empty">Vides</th>
+                  <th scope="col" i18n="@@repartitionHeures.table.rate">Couverture</th>
+                  <th scope="col" i18n="@@repartitionHeures.table.share">Part du total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (row of rows(); track row.node.id) {
+                  <tr [class.repartition-row-group]="row.depth === 0">
+                    <th scope="row" [style.padding-inline-start.rem]="0.75 + row.depth * 1.25">{{ row.node.label }}</th>
+                    <td>{{ hours(row.node.requiredMinutes) }}</td>
+                    <td>{{ hours(row.node.filledMinutes) }}</td>
+                    <td>{{ hours(row.node.requiredMinutes - row.node.filledMinutes) }}</td>
+                    <td [class]="'repartition-rate repartition-' + level(row.node)">{{ rate(row.node) }}</td>
+                    <td>{{ share(row.node) }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </details>
+      }
+    </mat-card-content>
+  </mat-card>
+}

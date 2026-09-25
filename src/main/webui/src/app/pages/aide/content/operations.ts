@@ -191,6 +191,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.heatmap:Jour croisé avec le stand (places pourvues sur places requises : les trous de couverture) ou avec l'animateur (postes par jour : les surcharges). Pour repérer un déséquilibre d'un coup d'œil.`,
             },
             {
+              term: $localize`:@@aide.views.term.repartitionHeures:Répartition des heures`,
+              text: $localize`:@@aide.views.def.repartitionHeures:Ce qui pèse dans l'édition, en une image. Chaque rectangle est un stand, sa surface les heures-sièges à pourvoir sur la période — sièges pourvus et vides confondus, sur la fenêtre réelle du siège : la pause d'une personne ne réduit pas le besoin de son stand. Sa couleur dit la part de ces heures réellement tenue, avec les couleurs de la Heatmap mais des seuils propres : critique sous 80 %, rayé en plus d'être rouge, partiel jusqu'à 99 %, pourvu à 100 % — la Heatmap, elle, ne dit critique qu'une case que personne ne tient. Les stands se regroupent par emplacement, ou par typologie : un stand qui propose plusieurs typologies est rangé une seule fois, sous leur combinaison (« Ambiance + Stratégie »), pour que les surfaces s'additionnent au total de l'édition — le Planning par typologie, lui, compte un poste pour chaque typologie. Quand un groupe écrase les autres, les plus petits se rangent sous « Autres ». Un clic agrandit un groupe, le fil d'Ariane ramène en arrière, et un clic sur un stand ouvre sa journée. Le tableau replié sous l'image donne les mêmes chiffres, stands à 0 h compris. Le sur-effectif n'y apparaît pas : le planning ne crée aucun siège au-delà du besoin.`,
+            },
+            {
               term: $localize`:@@aide.views.term.marge:Marge disponible`,
               text: $localize`:@@aide.views.def.marge:Journée croisée avec la tranche horaire, et dans chaque case les animateurs disponibles moins les sièges à pourvoir. Rouge en dessous de zéro, vert au-dessus. « Avant résolution » compare la capacité brute aux sièges à pourvoir et répond donc sans aucun calcul ; « après résolution » ne compte libre que celui qui n'est pas déjà en poste et qu'aucune règle dure n'écarte, face aux seuls sièges restés vides. La lecture est optimiste : une case négative l'est vraiment, une case confortable ne garantit rien.`,
             },
@@ -248,6 +252,10 @@ export function buildOperationsSections(): HelpSection[] {
       links: [
         { route: '/calendar', label: $localize`:@@nav.link.calendar:Calendrier des affectations` },
         { route: '/heatmap', label: $localize`:@@nav.link.heatmap:Heatmap de charge` },
+        {
+          route: '/repartition-heures',
+          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
+        },
         { route: '/marge', label: $localize`:@@nav.link.marge:Marge disponible` },
         { route: '/timeline', label: $localize`:@@nav.link.timeline:Timeline animateur` },
         {
