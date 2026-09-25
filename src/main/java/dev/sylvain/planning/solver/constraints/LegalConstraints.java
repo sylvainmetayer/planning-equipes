@@ -718,7 +718,25 @@ public final class LegalConstraints {
         List<PosteAffectation> tries = postes.stream()
                 .sorted(Comparator.comparing(LegalConstraints::debut))
                 .toList();
-        // Merged occupations: [start, end] pairs, non-overlapping, in order.
+        List<LocalDateTime[]> occupations = mergedOccupations(tries);
+        java.util.TreeSet<LocalDateTime> semaines = new java.util.TreeSet<>();
+        for (PosteAffectation poste : tries) {
+            if (PastSeats.reproachable(poste)) {
+                semaines.add(debutSemaine(poste.getCreneau().getDate()));
+            }
+        }
+        int deficit = 0;
+        for (LocalDateTime debutSemaine : semaines) {
+            long meilleur = longestCreditedRestMinutes(occupations, debutSemaine);
+            if (meilleur < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
+                deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
+            }
+        }
+        return deficit;
+    }
+
+    /** The seats' occupations merged: [start, end] pairs, non-overlapping, in order ({@code tries} sorted by start). */
+    private static List<LocalDateTime[]> mergedOccupations(List<PosteAffectation> tries) {
         List<LocalDateTime[]> occupations = new java.util.ArrayList<>();
         for (PosteAffectation poste : tries) {
             LocalDateTime debut = debut(poste);
@@ -732,30 +750,24 @@ public final class LegalConstraints {
                 occupations.add(new LocalDateTime[] {debut, fin});
             }
         }
-        java.util.TreeSet<LocalDateTime> semaines = new java.util.TreeSet<>();
-        for (PosteAffectation poste : tries) {
-            if (PastSeats.reproachable(poste)) {
-                semaines.add(debutSemaine(poste.getCreneau().getDate()));
-            }
-        }
-        int deficit = 0;
-        for (LocalDateTime debutSemaine : semaines) {
-            LocalDateTime finSemaine = debutSemaine.plusDays(7);
-            long meilleur = creditReposMinutes(null, occupations.get(0)[0], debutSemaine, finSemaine);
-            for (int i = 1; i < occupations.size(); i++) {
-                meilleur = Math.max(
-                        meilleur,
-                        creditReposMinutes(
-                                occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
-            }
+        return occupations;
+    }
+
+    /**
+     * The best rest credited to the week starting at {@code debutSemaine}:
+     * before the first occupation, between two of them, or after the last.
+     */
+    private static long longestCreditedRestMinutes(List<LocalDateTime[]> occupations, LocalDateTime debutSemaine) {
+        LocalDateTime finSemaine = debutSemaine.plusDays(7);
+        long meilleur = creditReposMinutes(null, occupations.get(0)[0], debutSemaine, finSemaine);
+        for (int i = 1; i < occupations.size(); i++) {
             meilleur = Math.max(
                     meilleur,
-                    creditReposMinutes(occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
-            if (meilleur < PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES) {
-                deficit += (int) (PlafondsLegauxMajeurs.REPOS_HEBDOMADAIRE_MIN_MINUTES - meilleur);
-            }
+                    creditReposMinutes(occupations.get(i - 1)[1], occupations.get(i)[0], debutSemaine, finSemaine));
         }
-        return deficit;
+        return Math.max(
+                meilleur,
+                creditReposMinutes(occupations.get(occupations.size() - 1)[1], null, debutSemaine, finSemaine));
     }
 
     /**

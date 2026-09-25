@@ -24,6 +24,16 @@ public final class ConstraintCatalog {
     /** The one category whose rules are dosed rather than switched off — see {@link ConstraintDefinition#dosable()}. */
     public static final String CATEGORIE_QUALITE = "Qualité d'organisation";
 
+    private static final String CATEGORIE_LEGAL_MINEURS = "Légal (mineurs)";
+    private static final String CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL = "Légal (temps de travail)";
+    private static final String CATEGORIE_SECURITE_MINEURS = "Sécurité (mineurs)";
+    private static final String CATEGORIE_AFFECTATION = "Affectation";
+    private static final String CATEGORIE_PREFERENCES = "Préférences";
+    private static final String CATEGORIE_AD_HOC = "Contraintes ad hoc";
+
+    /** The hard form of the run cap, shipped off (ADR 0045). */
+    private static final String MAX_JOURS_CONSECUTIFS_DUR = "maxJoursConsecutifsTravaillesDur";
+
     /**
      * The meal break, and the first « organisation rule » held hard. No article
      * of the Code du travail requires lunch — L3121-16 covers only the twenty
@@ -43,8 +53,11 @@ public final class ConstraintCatalog {
      * and what founds it, and the Contraintes screen keeps showing what is
      * off. See {@code docs/contraintes.md}.
      */
-    public static final Set<String> CATEGORIES_PROTEGEES =
-            Set.of("Légal (mineurs)", "Légal (temps de travail)", "Sécurité (mineurs)", CATEGORIE_ORGANISATION_REPAS);
+    public static final Set<String> CATEGORIES_PROTEGEES = Set.of(
+            CATEGORIE_LEGAL_MINEURS,
+            CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
+            CATEGORIE_SECURITE_MINEURS,
+            CATEGORIE_ORGANISATION_REPAS);
 
     /**
      * The two categories whose rules are founded on an article of the Code du
@@ -53,7 +66,8 @@ public final class ConstraintCatalog {
      * organiser sets: switching one off engages them just as much, but it does
      * not make the plan unlawful, and the confirmation must not say it does.
      */
-    public static final Set<String> CATEGORIES_LEGALES = Set.of("Légal (mineurs)", "Légal (temps de travail)");
+    public static final Set<String> CATEGORIES_LEGALES =
+            Set.of(CATEGORIE_LEGAL_MINEURS, CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL);
 
     /**
      * The rules the catalogue ships <b>switched off</b>: they exist, they are
@@ -79,7 +93,7 @@ public final class ConstraintCatalog {
      * migration.</p>
      */
     public static final Set<String> DESACTIVEES_PAR_DEFAUT =
-            Set.of("mineurNecessiteEncadrementMajeur", "maxJoursConsecutifsTravaillesDur");
+            Set.of("mineurNecessiteEncadrementMajeur", MAX_JOURS_CONSECUTIFS_DUR);
 
     /**
      * What to do about a rule in default, rule by rule.
@@ -153,7 +167,7 @@ public final class ConstraintCatalog {
                             + "convient. Le plafond de six jours n'est pas réglable — aucun paramètre "
                             + "légal ne le porte."),
             Map.entry(
-                    "maxJoursConsecutifsTravaillesDur",
+                    MAX_JOURS_CONSECUTIFS_DUR,
                     "Trop de jours d'affilée, et cette édition tient la règle en dur : ouvrez des "
                             + "disponibilités sur d'autres personnes pour couvrir ces journées. Si la série "
                             + "doit rester possible, désactivez maxJoursConsecutifsTravaillesDur depuis "
@@ -162,19 +176,19 @@ public final class ConstraintCatalog {
 
     /** Read by the Contraintes screen when a rule has no lever of its own. */
     private static final Map<String, String> REMEDIATIONS_PAR_CATEGORIE = Map.of(
-            "Légal (mineurs)",
+            CATEGORIE_LEGAL_MINEURS,
             "Une règle légale ne se règle pas : il faut changer le plan. Retirez le mineur de ces "
                     + "créneaux, ou raccourcissez-les.",
-            "Légal (temps de travail)",
+            CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
             "Une règle légale ne se règle pas : il faut changer le plan. Ajoutez du monde pour "
                     + "alléger ces journées, ou raccourcissez les vacations.",
-            "Sécurité (mineurs)",
+            CATEGORIE_SECURITE_MINEURS,
             "Règle de sécurité posée par l'organisateur : ajoutez un majeur sur ces créneaux, ou "
                     + "assumez l'encadrement hors planning et laissez la règle éteinte.",
             CATEGORIE_ORGANISATION_REPAS,
             "Réglez la fenêtre repas et sa durée dans les paramètres légaux, ou découpez les "
                     + "journées trop longues en deux vacations.",
-            "Affectation",
+            CATEGORIE_AFFECTATION,
             "Le plan ne peut pas tenir en l'état : ajoutez des animateurs disponibles, ou "
                     + "allégez ce que les stands demandent.",
             "Verrouillage",
@@ -258,19 +272,19 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "posteDoitEtrePourvu",
                     Niveau.HARD,
-                    "Affectation",
+                    CATEGORIE_AFFECTATION,
                     "Chaque place ouverte sur un stand doit être pourvue par un animateur.",
                     "Places pourvues"),
             new ConstraintDefinition(
                     "animateurDisponible",
                     Niveau.HARD,
-                    "Affectation",
+                    CATEGORIE_AFFECTATION,
                     "Un animateur ne peut pas être affecté un jour qu'il a déclaré indisponible.",
                     "Respect des indisponibilités"),
             new ConstraintDefinition(
                     "pasDeChevauchementHoraire",
                     Niveau.HARD,
-                    "Affectation",
+                    CATEGORIE_AFFECTATION,
                     "Un animateur ne peut pas tenir deux postes dont les créneaux se chevauchent dans le temps "
                             + "(y compris deux créneaux distincts qui se recouvrent, et pas seulement deux postes "
                             + "sur le même créneau).",
@@ -278,7 +292,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "plafondCreneauxParTypologie",
                     Niveau.HARD,
-                    "Affectation",
+                    CATEGORIE_AFFECTATION,
                     "Sur une typologie qui porte un plafond, un animateur ne tient pas plus que ce nombre de "
                             + "créneaux sur l'ensemble de l'édition. Un poste compte pour chaque typologie que son "
                             + "stand propose. Une typologie sans plafond n'impose rien.",
@@ -286,7 +300,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "standReserveAuxMajeurs",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Les stands réservés aux majeurs ne peuvent accueillir aucun mineur.",
                     "Stands réservés aux majeurs"),
             // Reclassified under "Sécurité (mineurs)": no article of the Code du travail requires an
@@ -295,7 +309,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "mineurNecessiteEncadrementMajeur",
                     Niveau.HARD,
-                    "Sécurité (mineurs)",
+                    CATEGORIE_SECURITE_MINEURS,
                     "Éteinte par défaut. Un mineur doit toujours être accompagné d'au moins un majeur sur le "
                             + "même stand et le même créneau. Règle de sécurité posée par l'organisateur, pas une "
                             + "obligation du Code du travail : l'organisateur de l'évènement la remplit par ses "
@@ -305,7 +319,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "travailDeNuitInterditPourMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Un mineur ne peut pas être affecté sur un créneau qui empiète sur sa nuit légale : "
                             + "20 h-6 h avant 16 ans, 22 h-6 h de 16 à 18 ans "
                             + "(Code du travail art. L3163-1).",
@@ -313,7 +327,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "dureeQuotidienneMaxMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Un mineur ne peut pas dépasser 8 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3162-1), ramenées à 7 heures avant 16 ans "
                             + "(art. D4153-3). Les pauses dues sont déduites : une pause, relayée ou prise "
@@ -322,7 +336,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "travailInterditJourFerieMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Un mineur ne peut pas travailler un jour férié légal "
                             + "(Code du travail art. L3164-6, liste de l'art. L3133-1). Aucune dérogation "
                             + "sectorielle n'est appliquée : celle de l'art. R3164-2 reste à instruire.",
@@ -330,7 +344,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "reposHebdomadaireMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Un mineur bénéficie de deux jours de repos consécutifs à l'intérieur de chaque semaine "
                             + "civile, du lundi 0 h au dimanche 24 h (Code du travail art. L3164-2 et L3121-35) : un "
                             + "dimanche et le lundi qui le suit sont chacun un jour de repos de leur semaine, mais "
@@ -341,7 +355,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "travailContinuMaxMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Aucune période de travail ininterrompue de plus de 4 h 30 pour un mineur : au-delà, chaque "
                             + "pause due doit être prise, soit comme un trou dans la grille, soit relayée par un "
                             + "collègue du même stand tenant une place pendant toute la pause. Une pause que "
@@ -352,7 +366,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "dureeHebdomadaireMax",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Aucun animateur majeur (tous payés, manager ou non) ne peut dépasser la durée hebdomadaire de "
                             + "travail effectif maximale paramétrée (48 h par défaut, Code du travail art. L3121-20, "
                             + "d'ordre public). Les pauses dues sont déduites, comme au plafond quotidien.",
@@ -360,7 +374,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxDeuxSemaines",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Un animateur majeur ne peut pas atteindre la durée hebdomadaire maximale sur deux semaines ISO "
                             + "consécutives : 48 h une semaine puis 48 h la suivante est refusé, 47 h puis 48 h reste "
                             + "permis. Forme courte et opérationnelle de la moyenne de 44 h sur douze semaines "
@@ -372,7 +386,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "dureeHebdomadaireMaxMineur",
                     Niveau.HARD,
-                    "Légal (mineurs)",
+                    CATEGORIE_LEGAL_MINEURS,
                     "Un mineur ne peut pas dépasser 35 heures de travail effectif par semaine "
                             + "(Code du travail art. L3162-1 ; art. D4153-3 pour les 14 à moins de 16 ans employés "
                             + "pendant les vacances scolaires). Les pauses dues sont déduites, comme au "
@@ -381,7 +395,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "dureeQuotidienneMaxMajeur",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Un animateur majeur ne peut pas dépasser 10 heures de travail effectif sur une même journée "
                             + "(Code du travail art. L3121-18). Les pauses dues sont déduites : une pause "
                             + "relayée est du repos, pas du travail effectif (art. L3121-1).",
@@ -389,7 +403,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "reposQuotidienMinimal",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Entre deux journées travaillées, tout animateur bénéficie d'un repos quotidien minimal : "
                             + "11 h pour un majeur (art. L3131-1), 12 h pour un mineur et 14 h avant 16 ans "
                             + "(art. L3164-1).",
@@ -397,14 +411,14 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "maxJoursTravaillesParSemaine",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Aucun animateur ne peut travailler plus de six jours dans la même semaine "
                             + "(Code du travail art. L3132-1).",
                     "Six jours travaillés par semaine au plus"),
             new ConstraintDefinition(
                     "reposHebdomadaireMinimal",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Chaque animateur bénéficie, dans chaque semaine, d'un repos hebdomadaire de 35 heures "
                             + "consécutives : 24 heures (art. L3132-2) auxquelles s'ajoutent les 11 heures de repos "
                             + "quotidien (art. L3131-1). Un repos à cheval sur le lundi compte en entier "
@@ -413,7 +427,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "travailContinuMaxMajeur",
                     Niveau.HARD,
-                    "Légal (temps de travail)",
+                    CATEGORIE_LEGAL_TEMPS_DE_TRAVAIL,
                     "Aucune période de travail ininterrompue de plus de 6 heures pour un majeur : au-delà, chaque "
                             + "pause due doit être prise, soit comme un trou dans la grille d'au moins la durée "
                             + "paramétrée, soit relayée par un collègue du même stand tenant une place pendant "
@@ -441,7 +455,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "coupureRepasPlacementPrefere",
                     Niveau.SOFT,
-                    "Préférences",
+                    CATEGORIE_PREFERENCES,
                     "Entre deux coupures repas possibles dans la même fenêtre, préférer celle vers laquelle la "
                             + "fenêtre penche : le midi la plus tard — 13 h-14 h plutôt que 12 h-13 h, les stands "
                             + "viennent d'ouvrir — et le soir la plus tôt, pour rouvrir ensuite. La couverture des "
@@ -451,25 +465,25 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "indisponibiliteForcee",
                     Niveau.HARD,
-                    "Contraintes ad hoc",
+                    CATEGORIE_AD_HOC,
                     "Indisponibilité posée manuellement par l'administrateur : l'animateur ne doit jamais être affecté sur le périmètre visé.",
                     "Indisponibilités posées à la main"),
             new ConstraintDefinition(
                     "incompatibiliteAdHoc",
                     Niveau.HARD,
-                    "Contraintes ad hoc",
+                    CATEGORIE_AD_HOC,
                     "Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau.",
                     "Incompatibilités entre animateurs"),
             new ConstraintDefinition(
                     "affectationForcee",
                     Niveau.HARD,
-                    "Contraintes ad hoc",
+                    CATEGORIE_AD_HOC,
                     "Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé.",
                     "Affectations forcées"),
             new ConstraintDefinition(
                     "affiniteAdHoc",
                     Niveau.SOFT,
-                    "Contraintes ad hoc",
+                    CATEGORIE_AD_HOC,
                     "Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est "
                             + "récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, "
                             + "sans jamais la forcer.",
@@ -491,19 +505,19 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "standComplexeAvecReferent",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Chaque stand devrait compter au moins un référent sur chaque créneau.",
                     "Un référent sur chaque stand"),
             new ConstraintDefinition(
                     "equilibrerCharge",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "La charge de travail doit être répartie équitablement entre les animateurs.",
                     "Équilibre de la charge"),
             new ConstraintDefinition(
                     "stabiliteDuPlanPublie",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Une fois un planning publié, chaque personne déplacée d'un siège qu'elle tenait dans le plan "
                             + "publié coûte : le solveur ne bouscule les gens déjà prévenus que si le gain vaut "
                             + "le dérangement. Muette tant que rien n'a été publié ; une vacation que le plan "
@@ -512,33 +526,33 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "repartitionMineursParCreneau",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Sur un créneau, un stand ne devrait pas compter plus de mineurs que de majeurs.",
                     "Pas plus de mineurs que de majeurs"),
             new ConstraintDefinition(
                     "experienceRequisePourStandsPremium",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie.",
                     "Expérience sur les stands premium"),
             new ConstraintDefinition(
                     "eviterRoulementStandsPremium",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Sur un stand premium, limiter le nombre d'animateurs différents qui s'y relaient au-delà d'un "
                             + "équipage : on privilégie la continuité.",
                     "Continuité sur les stands premium"),
             new ConstraintDefinition(
                     "eviterChangementEmplacementEloigne",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont "
                             + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent.",
                     "Changements d'emplacement éloignés"),
             new ConstraintDefinition(
                     "limiterEmplacementsParJour",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur "
                             + "(plafond réglable, 3 par défaut) : au-delà, la journée est dispersée quelles que "
                             + "soient les distances.",
@@ -546,7 +560,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "eviterEnchainementStandsEpuisants",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement "
                             + "épuisants sans repos ni stand plus facile entre les deux.",
                     "Enchaînement de stands épuisants"),
@@ -564,20 +578,20 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "appreciationIncompatible",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "L'appréciation de l'administrateur ne couvre aucune typologie de jeu proposée par le stand.",
                     "Appréciations non couvertes"),
             new ConstraintDefinition(
                     "souhaitsIncompatibles",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Aucune des typologies de jeu proposées par le stand ne figure dans les souhaits déclarés de "
                             + "l'animateur.",
                     "Souhaits non couverts"),
             new ConstraintDefinition(
                     "limiterTypologiesDistinctesParAnimateur",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Un animateur devrait intervenir sur un petit nombre de typologies de jeu (plafond réglable, "
                             + "2 par défaut) sur l'ensemble de l'édition, et pas seulement sur une journée : deux "
                             + "typologies le même après-midi et deux à une semaine d'écart comptent pareil.",
@@ -585,7 +599,7 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "maxJoursConsecutifsTravailles",
                     Niveau.MEDIUM,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Un animateur ne devrait pas travailler plus de jours consécutifs que le plafond réglé "
                             + "sur la page Paramètres (huit par défaut) sans au moins un jour de repos : moins "
                             + "est possible, plus ne devrait pas l'être. Règle d'organisation, dosable : aucun "
@@ -593,9 +607,9 @@ public final class ConstraintCatalog {
                             + "semaine civile, Cass. soc. 13 nov. 2025, n° 24-10.733).",
                     "Jours travaillés d'affilée"),
             new ConstraintDefinition(
-                    "maxJoursConsecutifsTravaillesDur",
+                    MAX_JOURS_CONSECUTIFS_DUR,
                     Niveau.HARD,
-                    "Qualité d'organisation",
+                    CATEGORIE_QUALITE,
                     "Éteinte par défaut. Le même plafond de jours consécutifs, tenu en dur : au-delà, le "
                             + "plan est refusé au lieu d'être pénalisé. Le seuil est celui de l'édition, "
                             + "réglable sur la page Paramètres : les deux formes le lisent au même endroit. "
@@ -608,19 +622,19 @@ public final class ConstraintCatalog {
             new ConstraintDefinition(
                     "favoriserMixiteDesNiveaux",
                     Niveau.SOFT,
-                    "Préférences",
+                    CATEGORIE_PREFERENCES,
                     "Quand un référent est présent sur un créneau, y associer un débutant pour favoriser la montée en compétence.",
                     "Mixité des niveaux"),
             new ConstraintDefinition(
                     "equilibrerCreneauxPenibles",
                     Niveau.SOFT,
-                    "Préférences",
+                    CATEGORIE_PREFERENCES,
                     "Répartir équitablement entre animateurs les créneaux pénibles (stands épuisants ou premium).",
                     "Équité des créneaux pénibles"),
             new ConstraintDefinition(
                     "preserverBufferPolyvalents",
                     Niveau.SOFT,
-                    "Préférences",
+                    CATEGORIE_PREFERENCES,
                     "Garder au moins un animateur polyvalent (typologie ninja) libre sur chaque créneau, pour pouvoir "
                             + "réparer le planning en cas d'absence de dernière minute.",
                     "Réserve de polyvalents"));
