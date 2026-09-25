@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import java.time.LocalTime;
@@ -269,6 +270,21 @@ class ParametresValidatorTest {
         assertThatCode(() -> ParametresValidator.checkConstraintWeight(1)).doesNotThrowAnyException();
         assertThatCode(() -> ParametresValidator.checkConstraintWeight(5)).doesNotThrowAnyException();
         assertThatCode(() -> ParametresValidator.checkConstraintWeight(ParametresValidator.CONSTRAINT_WEIGHT_MAX))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
+    void aWalkingSettingIsJudgedAtTheTwoDecimalsItIsStoredWith() {
+        ParametresQualite defaut = new ParametresQualite();
+        // 0.001 km/h would be stored as 0.00 and refused on the next save.
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresQualite(defaut.withTrajet(0.001, 1.3, 5)));
+        // 0.995 is stored as 1.00, and 0.994 as 0.99, under the floor of 1.
+        assertThatCode(() -> ParametresValidator.checkParametresQualite(defaut.withTrajet(4.0, 0.995, 5)))
+                .doesNotThrowAnyException();
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresQualite(defaut.withTrajet(4.0, 0.994, 5)));
+        assertThatCode(() -> ParametresValidator.checkParametresQualite(defaut.withTrajet(0.005, 1.3, 5)))
                 .doesNotThrowAnyException();
     }
 }

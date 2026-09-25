@@ -19,16 +19,19 @@ import {
   ViolationReference,
   FeasibilityReport,
   NiveauContrainte,
+  WalkSequenceReport,
   RapportPauses,
   TypeCauseInfaisabilite,
 } from './models';
 import { LabelIndex, labelOf, labelsOf } from './reference-labels';
+import { compareCodeUnits } from './string-order';
 import { formatHeure } from './time-of-day';
+import { walkLabel } from './walks-index';
 
 /** Display severity of the merged list, from the most to the least blocking. */
 export type NiveauProbleme = 'BLOQUANT' | 'AVERTISSEMENT' | 'MINEUR';
 
-export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE' | 'PAUSES';
+export type SourceProbleme = 'FAISABILITE' | 'CONTRAINTE' | 'PAUSES' | 'TRAJETS';
 
 export interface Probleme {
   /** Stable within one merge, used as the `@for` track key. */
@@ -199,7 +202,12 @@ export interface ComptageProblemes {
 const RANG_NIVEAU: Record<NiveauProbleme, number> = { BLOQUANT: 0, AVERTISSEMENT: 1, MINEUR: 2 };
 // Within one severity tier, a structural capacity problem comes before a
 // constraint violation: it must be fixed first, since no solve can work around it.
-const RANG_SOURCE: Record<SourceProbleme, number> = { FAISABILITE: 0, CONTRAINTE: 1, PAUSES: 2 };
+const RANG_SOURCE: Record<SourceProbleme, number> = {
+  FAISABILITE: 0,
+  CONTRAINTE: 1,
+  PAUSES: 2,
+  TRAJETS: 3,
+};
 
 export function niveauDeCause(severite: CauseInfaisabilite['severite']): NiveauProbleme {
   return severite === 'CRITIQUE' ? 'BLOQUANT' : 'AVERTISSEMENT';
@@ -384,7 +392,8 @@ function relatedDetails(contributions: ContributionAdHoc[]): string[] {
  *
  * `contraintesAdHocEnCause` comes from the same diagnostic and attributes the
  * ad hoc rules' violations to the exceptions that caused them. `nomsStands`
- * names the stands a cause lists by id; an unknown one keeps its id.
+ * names the stands a cause lists by id, `nomsAnimateurs` the animateurs a
+ * reading lists by id; an unknown one keeps its id.
  */
 export function construireProblemes(
   report: FeasibilityReport | null,
@@ -392,8 +401,39 @@ export function construireProblemes(
   contraintesAdHocEnCause: ContributionAdHoc[] = [],
   pauses: RapportPauses | null = null,
   nomsStands: LabelIndex = new Map(),
+  nomsAnimateurs: LabelIndex = new Map(),
+  walks: WalkSequenceReport | null = null,
 ): Probleme[] {
   const problemes: Probleme[] = [];
+
+  // A walk the gap does not leave time for is a reading of the persisted plan,
+  // not a score: the solver may still price it (trajetInsuffisantEntrePostes),
+  // but the pairs it leaves to its neighbour rule, and the past, are listed too.
+  const tightWalks = walks?.walks ?? [];
+  if (tightWalks.length > 0) {
+    const count = tightWalks.length;
+    const days = [...new Set(tightWalks.map((walk) => walk.date ?? ''))]
+      .filter(Boolean)
+      .sort(compareCodeUnits);
+    problemes.push({
+      id: 'enchainements-serres',
+      niveau: 'AVERTISSEMENT',
+      source: 'TRAJETS',
+      titre: $localize`:@@problemes.trajets.titre:Enchaînements serrés`,
+      message: $localize`:@@problemes.trajets.message:${count}:count: enchaînement(s) entre deux emplacements ne laissent pas le temps de marcher de l'un à l'autre, ou le prennent sur la pause. Élargissez le battement, ou rapprochez les stands.`,
+      details: tightWalks.map(
+        (walk) =>
+          `${walk.date ?? ''} · ${labelOf(nomsAnimateurs, walk.animateurId ?? '')} · ${labelOf(nomsStands, walk.fromStandId ?? '')} → ${labelOf(nomsStands, walk.toStandId ?? '')} · ${walkLabel(walk)}`,
+      ),
+      references: [],
+      actions: [],
+      liens: days.map((date) => ({
+        route: '/journee',
+        queryParams: { vue: 'rail', date },
+        libelle: $localize`:@@problemes.lien.railDuJour:Voir le rail du ${date}:date:`,
+      })),
+    });
+  }
 
   // A break nobody can relay is not a violation the solver sees — the seat is
   // held — but it is one person alone on a stand for twenty minutes, and the

@@ -991,6 +991,12 @@ export interface ParametresQualite {
   typologiesDistinctesMax?: number;
   /** Days in a row one animateur may work before the excess is counted; read by both forms of the rule. */
   joursConsecutifsMax?: number;
+  /** Walking pace, km/h, that turns a distance between two emplacements into minutes. */
+  vitesseMarcheKmH?: number;
+  /** What the straight-line distance is multiplied by before it is walked. */
+  facteurDetour?: number;
+  /** Minutes a gap between two seats may lack before `trajetInsuffisantEntrePostes` counts anything. */
+  toleranceTrajetMinutes?: number;
 }
 
 export interface HardMediumSoftScore {
@@ -2635,6 +2641,48 @@ export interface JourneeAnimateurPauses {
   sequences: SequenceView[];
   pausesPlanifiees: PausePlanifieeView[];
   coupuresRepas: CoupureRepasView[];
+}
+
+/**
+ * One walk between two consecutive seats of one animateur on one day, as
+ * `GET /api/planning/enchainements` reads it: ids only, the screens join the
+ * names.
+ */
+export interface WalkView {
+  animateurId?: string;
+  date?: string;
+  fromPosteId?: string;
+  toPosteId?: string;
+  fromCreneauId?: number;
+  toCreneauId?: number;
+  fromStandId?: string;
+  toStandId?: string;
+  fromEmplacementId?: string;
+  toEmplacementId?: string;
+  /** End of the seat left, `HH:mm:ss`. */
+  end?: string;
+  /** Start of the seat reached, `HH:mm:ss`. */
+  start?: string;
+  distanceMetres: number;
+  walkMinutes: number;
+  gapMinutes: number;
+  /** What the gap lacks beyond the tolerance; positive means the walk does not fit. */
+  missingMinutes: number;
+  /** The gap is the legal break, and the walk eats into it. */
+  walkOnBreak: boolean;
+}
+
+/**
+ * `GET /api/planning/enchainements`: the tight walks of the persisted plan,
+ * with the walking settings they were read under.
+ */
+export interface WalkSequenceReport {
+  walkingSpeedKmH: number;
+  detourFactor: number;
+  toleranceMinutes: number;
+  /** False when no stand sits on a geolocated emplacement: nothing could be computed. */
+  geolocated: boolean;
+  walks: WalkView[];
 }
 
 /**

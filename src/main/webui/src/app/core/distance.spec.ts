@@ -3,7 +3,7 @@
 // screen tells the organiser one thing and the solver penalises another.
 
 import { describe, expect, it } from 'vitest';
-import { distanceMetres, formatDistance } from './distance';
+import { distanceMetres, formatDistance, walkingMinutes } from './distance';
 
 describe('distanceMetres', () => {
   it('is zero between a point and itself', () => {
@@ -85,5 +85,17 @@ describe('formatDistance', () => {
     expect(formatDistance(1000)).toBe('1.0 km');
     expect(formatDistance(1540)).toBe('1.5 km');
     expect(formatDistance(100_400)).toBe('100.4 km');
+  });
+});
+
+describe('walkingMinutes', () => {
+  it('walks a kilometre in twenty minutes at 4 km/h with a detour factor of 1.3', () => {
+    expect(walkingMinutes(1000)).toBe(20);
+    expect(walkingMinutes(1000, { vitesseMarcheKmH: 4, facteurDetour: 1.3 })).toBe(20);
+  });
+
+  it('rounds up to the minute, and walks nothing for no distance', () => {
+    expect(walkingMinutes(1001, { vitesseMarcheKmH: 4, facteurDetour: 1 })).toBe(16);
+    expect(walkingMinutes(0)).toBe(0);
   });
 });

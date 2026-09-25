@@ -7,6 +7,7 @@ import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -132,7 +133,8 @@ public class ParametresRepository {
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         SELECT max_emplacements_distincts_par_jour, heure_service_tardif,
                         heure_service_matinal, repos_souhaite_apres_service_tardif_minutes,
-                        typologies_distinctes_max, jours_consecutifs_max
+                        typologies_distinctes_max, jours_consecutifs_max,
+                        vitesse_marche_km_h, facteur_detour, tolerance_trajet_minutes
                         FROM parametres_qualite
                         WHERE edition_id = ?""");
                 ResultSet rs = ps.executeQuery()) {
@@ -143,7 +145,10 @@ public class ParametresRepository {
                         rs.getObject("heure_service_matinal", LocalTime.class),
                         rs.getInt("repos_souhaite_apres_service_tardif_minutes"),
                         rs.getInt("typologies_distinctes_max"),
-                        rs.getInt("jours_consecutifs_max"));
+                        rs.getInt("jours_consecutifs_max"),
+                        rs.getDouble("vitesse_marche_km_h"),
+                        rs.getDouble("facteur_detour"),
+                        rs.getInt("tolerance_trajet_minutes"));
             }
             return defauts;
         } catch (SQLException e) {
@@ -157,8 +162,9 @@ public class ParametresRepository {
                         INSERT INTO parametres_qualite (edition_id, max_emplacements_distincts_par_jour,
                         heure_service_tardif, heure_service_matinal,
                         repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max,
-                        jours_consecutifs_max)
-                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        jours_consecutifs_max, vitesse_marche_km_h, facteur_detour,
+                        tolerance_trajet_minutes)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         ON CONFLICT (edition_id)
                         DO UPDATE SET
                         max_emplacements_distincts_par_jour = EXCLUDED.max_emplacements_distincts_par_jour,
@@ -167,13 +173,19 @@ public class ParametresRepository {
                         repos_souhaite_apres_service_tardif_minutes =
                                 EXCLUDED.repos_souhaite_apres_service_tardif_minutes,
                         typologies_distinctes_max = EXCLUDED.typologies_distinctes_max,
-                        jours_consecutifs_max = EXCLUDED.jours_consecutifs_max""")) {
+                        jours_consecutifs_max = EXCLUDED.jours_consecutifs_max,
+                        vitesse_marche_km_h = EXCLUDED.vitesse_marche_km_h,
+                        facteur_detour = EXCLUDED.facteur_detour,
+                        tolerance_trajet_minutes = EXCLUDED.tolerance_trajet_minutes""")) {
             ps.setInt(2, parametres.maxEmplacementsDistinctsParJour());
             ps.setObject(3, parametres.heureServiceTardif());
             ps.setObject(4, parametres.heureServiceMatinal());
             ps.setInt(5, parametres.reposSouhaiteApresServiceTardifMinutes());
             ps.setInt(6, parametres.typologiesDistinctesMax());
             ps.setInt(7, parametres.joursConsecutifsMax());
+            ps.setBigDecimal(8, BigDecimal.valueOf(parametres.vitesseMarcheKmH()));
+            ps.setBigDecimal(9, BigDecimal.valueOf(parametres.facteurDetour()));
+            ps.setInt(10, parametres.toleranceTrajetMinutes());
             ps.executeUpdate();
         } catch (SQLException e) {
             throw new IllegalStateException("Failed to save quality parameters", e);

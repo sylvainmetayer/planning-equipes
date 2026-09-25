@@ -441,3 +441,60 @@ describe('actionsOfRule', () => {
     });
   });
 });
+
+describe('construireProblemes — tight walks', () => {
+  it('adds one warning when the walks list is not empty, linking to the rail of each day', () => {
+    const nomsStands = new Map([
+      ['S1', 'Accueil'],
+      ['S2', 'Buvette'],
+    ]);
+    const nomsAnimateurs = new Map([['a1', 'Ines Martin']]);
+    const problemes = construireProblemes(null, [], [], null, nomsStands, nomsAnimateurs, {
+      walkingSpeedKmH: 4,
+      detourFactor: 1.3,
+      toleranceMinutes: 5,
+      geolocated: true,
+      walks: [
+        {
+          animateurId: 'a1',
+          date: '2026-08-01',
+          fromStandId: 'S1',
+          toStandId: 'S2',
+          end: '14:00:00',
+          start: '14:10:00',
+          distanceMetres: 1000,
+          walkMinutes: 20,
+          gapMinutes: 10,
+          missingMinutes: 5,
+          walkOnBreak: false,
+        },
+      ],
+    });
+
+    expect(problemes).toHaveLength(1);
+    expect(problemes[0].niveau).toBe('AVERTISSEMENT');
+    expect(problemes[0].source).toBe('TRAJETS');
+    expect(problemes[0].details).toEqual([
+      '2026-08-01 · Ines Martin · Accueil → Buvette · 14:00 → 14:10 : 20 min à pied, 10 min de battement',
+    ]);
+    expect(problemes[0].liens).toEqual([
+      {
+        route: '/journee',
+        queryParams: { vue: 'rail', date: '2026-08-01' },
+        libelle: 'Voir le rail du 2026-08-01',
+      },
+    ]);
+  });
+
+  it('adds nothing when no walk is tight', () => {
+    expect(
+      construireProblemes(null, [], [], null, new Map(), new Map(), {
+        walkingSpeedKmH: 4,
+        detourFactor: 1.3,
+        toleranceMinutes: 5,
+        geolocated: false,
+        walks: [],
+      }),
+    ).toEqual([]);
+  });
+});

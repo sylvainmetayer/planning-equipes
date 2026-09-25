@@ -48,13 +48,25 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  *        dosed form and the blocking form can never disagree on what « days in
  *        a row » means. Counted on the grid's own day numbers, not on
  *        calendar dates: a day the event does not cover breaks no run.
+ * @param vitesseMarcheKmH walking speed, in km/h, that turns a distance between
+ *        two emplacements into a walking time ({@code solver/TempsDeTrajet}).
+ *        The default is a crowd's pace, not a hiker's.
+ * @param facteurDetour what the great-circle distance is multiplied by before
+ *        it is walked: nobody crosses a site in a straight line. The lever for
+ *        a site where one walks around a river or a fence.
+ * @param toleranceTrajetMinutes walking time a gap between two seats may lack
+ *        before {@code trajetInsuffisantEntrePostes} counts anything — a hop
+ *        between two neighbouring stands is not a trip.
  */
 @Schema(
         requiredProperties = {
             "maxEmplacementsDistinctsParJour",
             "reposSouhaiteApresServiceTardifMinutes",
             "typologiesDistinctesMax",
-            "joursConsecutifsMax"
+            "joursConsecutifsMax",
+            "vitesseMarcheKmH",
+            "facteurDetour",
+            "toleranceTrajetMinutes"
         })
 public record ParametresQualite(
         int maxEmplacementsDistinctsParJour,
@@ -62,7 +74,10 @@ public record ParametresQualite(
         LocalTime heureServiceMatinal,
         int reposSouhaiteApresServiceTardifMinutes,
         int typologiesDistinctesMax,
-        int joursConsecutifsMax) {
+        int joursConsecutifsMax,
+        double vitesseMarcheKmH,
+        double facteurDetour,
+        int toleranceTrajetMinutes) {
 
     /** @see #maxEmplacementsDistinctsParJour() */
     public static final int EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT = 3;
@@ -124,6 +139,15 @@ public record ParametresQualite(
      */
     public static final int JOURS_CONSECUTIFS_MAX_PAR_DEFAUT = 8;
 
+    /** 4 km/h — a festive site, a crowd to cross, not an empty street. */
+    public static final double VITESSE_MARCHE_KM_H_PAR_DEFAUT = 4.0;
+
+    /** 1.3 — the usual ratio between a walked path and the straight line on a built-up site. */
+    public static final double FACTEUR_DETOUR_PAR_DEFAUT = 1.3;
+
+    /** 5 min — a jump between two neighbouring stands does not count as a trip. */
+    public static final int TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT = 5;
+
     public ParametresQualite() {
         this(EMPLACEMENTS_DISTINCTS_PAR_JOUR_MAX_PAR_DEFAUT);
     }
@@ -136,6 +160,43 @@ public record ParametresQualite(
                 REPOS_SOUHAITE_APRES_SERVICE_TARDIF_MINUTES_PAR_DEFAUT,
                 TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT,
                 JOURS_CONSECUTIFS_MAX_PAR_DEFAUT);
+    }
+
+    /**
+     * The six thresholds that predate the walking time, the three trip
+     * settings at their default — what a caller that tunes none of them means.
+     */
+    public ParametresQualite(
+            int maxEmplacementsDistinctsParJour,
+            LocalTime heureServiceTardif,
+            LocalTime heureServiceMatinal,
+            int reposSouhaiteApresServiceTardifMinutes,
+            int typologiesDistinctesMax,
+            int joursConsecutifsMax) {
+        this(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                VITESSE_MARCHE_KM_H_PAR_DEFAUT,
+                FACTEUR_DETOUR_PAR_DEFAUT,
+                TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT);
+    }
+
+    /** The same thresholds, with the three trip settings replaced. */
+    public ParametresQualite withTrajet(double vitesseMarcheKmH, double facteurDetour, int toleranceTrajetMinutes) {
+        return new ParametresQualite(
+                maxEmplacementsDistinctsParJour,
+                heureServiceTardif,
+                heureServiceMatinal,
+                reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax,
+                joursConsecutifsMax,
+                vitesseMarcheKmH,
+                facteurDetour,
+                toleranceTrajetMinutes);
     }
 
     /**

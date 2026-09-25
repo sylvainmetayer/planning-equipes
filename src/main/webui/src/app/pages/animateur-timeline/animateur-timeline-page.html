@@ -139,6 +139,16 @@
                 [attr.aria-label]="pause.label"
               ></div>
             }
+            @for (walk of dayWalks(day); track walk.offsetPercent) {
+              <div
+                class="timeline-walk"
+                [class.timeline-walk-tight]="walk.tight"
+                [style.left.%]="walk.offsetPercent"
+                [style.width.%]="walk.widthPercent"
+                [matTooltip]="walk.label"
+                [attr.aria-label]="walk.label"
+              ><mat-icon inline aria-hidden="true">double_arrow</mat-icon></div>
+            }
             @for (coupure of dayCoupures(day); track coupure.heureDebut) {
               <div
                 class="timeline-coupure"
@@ -159,6 +169,12 @@
                 } @else {
                   <span class="timeline-block-list-team" i18n="@@timeline.alone">seul(e) sur ce stand</span>
                 }
+              </li>
+            }
+            @for (walk of dayWalks(day); track walk.offsetPercent) {
+              <li class="timeline-walk-item" [class.timeline-walk-item-tight]="walk.tight">
+                <mat-icon inline aria-hidden="true">directions_walk</mat-icon>
+                {{ walk.label }}
               </li>
             }
             @for (coupure of dayCoupures(day); track coupure.heureDebut) {

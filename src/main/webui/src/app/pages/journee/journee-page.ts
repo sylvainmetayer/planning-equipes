@@ -19,7 +19,13 @@ import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceChangementsParam } from '../../core/api/journees-api';
 import { dayNavigation } from '../../core/day-navigation';
 import { errorPrefix } from '../../core/error-message';
-import { Emplacement, PlanningEvenement, RapportPauses, TypologieItem } from '../../core/models';
+import {
+  Emplacement,
+  PlanningEvenement,
+  WalkSequenceReport,
+  RapportPauses,
+  TypologieItem,
+} from '../../core/models';
 import { PlanningStateService } from '../../core/planning-state.service';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { ValidationsStore } from '../../core/validations.store';
@@ -113,6 +119,8 @@ export class JourneePage implements OnInit {
   protected readonly typologies = signal<TypologieItem[]>([]);
   /** The breaks of the plan; null when the request failed — the rail and the calendar still draw. */
   protected readonly pauses = signal<RapportPauses | null>(null);
+  /** The tight walks between two vacations; null when the request failed — the rail still draws. */
+  protected readonly walks = signal<WalkSequenceReport | null>(null);
   /** Emplacement referential, for the map; empty when it could not be read. */
   protected readonly emplacements = signal<Emplacement[]>([]);
 
@@ -345,16 +353,18 @@ export class JourneePage implements OnInit {
     this.loading.set(true);
     this.error.set('');
     try {
-      const [planning, typologies, pauses, emplacements] = await Promise.all([
+      const [planning, typologies, pauses, emplacements, walks] = await Promise.all([
         this.planningState.loadForDisplay(),
         this.analysesApi.typologies().catch(() => []),
         this.analysesApi.breaks().catch(() => null),
         this.analysesApi.emplacements().catch(() => []),
+        this.analysesApi.walks().catch(() => null),
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
       this.emplacements.set(emplacements);
+      this.walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
       // The banner is refreshed with the plan it comments on: a solve that
       // withdrew readings must not leave the old count on screen.
       void this.validations.reload();

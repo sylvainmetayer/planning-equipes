@@ -569,3 +569,72 @@ describe('buildRailJours', () => {
     });
   });
 });
+
+describe('buildRailJours — tight walks', () => {
+  it('puts a red chevron in the gap between the two vacations, and says it', () => {
+    const ines = animateur('Ines');
+    const jours = buildRailJours(
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1, heureDebut: '10:00', heureFin: '14:00' }),
+          stand: stand('A'),
+          animateur: ines,
+        }),
+        poste({
+          id: 'p2',
+          creneau: creneau({ id: 2, heureDebut: '14:10', heureFin: '18:00' }),
+          stand: stand('B'),
+          animateur: ines,
+        }),
+      ],
+      [ines],
+      [],
+      null,
+      {
+        walkingSpeedKmH: 4,
+        detourFactor: 1.3,
+        toleranceMinutes: 5,
+        geolocated: true,
+        walks: [
+          {
+            animateurId: 'Ines',
+            date: '2026-08-01',
+            end: '14:00:00',
+            start: '14:10:00',
+            distanceMetres: 1000,
+            walkMinutes: 20,
+            gapMinutes: 10,
+            missingMinutes: 5,
+            walkOnBreak: false,
+          },
+        ],
+      },
+    );
+
+    const line = ligne(jours[0].lignes, 'Ines');
+    expect(line.trajets).toHaveLength(1);
+    expect(line.trajets[0].tight).toBe(true);
+    expect(line.trajets[0].label).toBe('14:00 → 14:10 : 20 min à pied, 10 min de battement');
+    // 14:00 on a 10:00–18:00 rail is half-way.
+    expect(line.trajets[0].offsetPercent).toBe(50);
+    expect(line.resume).toContain('1 trajet(s) trop court(s)');
+  });
+
+  it('draws nothing without the report', () => {
+    const ines = animateur('Ines');
+    const jours = buildRailJours(
+      [
+        poste({
+          id: 'p1',
+          creneau: creneau({ id: 1 }),
+          stand: stand('A'),
+          animateur: ines,
+        }),
+      ],
+      [ines],
+    );
+
+    expect(ligne(jours[0].lignes, 'Ines').trajets).toEqual([]);
+  });
+});

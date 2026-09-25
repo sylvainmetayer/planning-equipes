@@ -5290,7 +5290,7 @@
         }
       },
       "ParametresQualite" : {
-        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax" ],
+        "required" : [ "maxEmplacementsDistinctsParJour", "reposSouhaiteApresServiceTardifMinutes", "typologiesDistinctesMax", "joursConsecutifsMax", "vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes" ],
         "type" : "object",
         "properties" : {
           "maxEmplacementsDistinctsParJour" : {
@@ -5312,6 +5312,18 @@
             "format" : "int32"
           },
           "joursConsecutifsMax" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "vitesseMarcheKmH" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "facteurDetour" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "toleranceTrajetMinutes" : {
             "type" : "integer",
             "format" : "int32"
           }
@@ -8038,6 +8050,96 @@
           "creneauId" : {
             "type" : "integer",
             "format" : "int64"
+          }
+        }
+      },
+      "WalkSequenceReport" : {
+        "required" : [ "walkingSpeedKmH", "detourFactor", "toleranceMinutes", "geolocated", "walks" ],
+        "type" : "object",
+        "properties" : {
+          "walkingSpeedKmH" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "detourFactor" : {
+            "type" : "number",
+            "format" : "double"
+          },
+          "toleranceMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "geolocated" : {
+            "type" : "boolean"
+          },
+          "walks" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/WalkView"
+            }
+          }
+        }
+      },
+      "WalkView" : {
+        "type" : "object",
+        "required" : [ "distanceMetres", "walkMinutes", "gapMinutes", "missingMinutes", "walkOnBreak" ],
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "fromPosteId" : {
+            "type" : "string"
+          },
+          "toPosteId" : {
+            "type" : "string"
+          },
+          "fromCreneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "toCreneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "fromStandId" : {
+            "type" : "string"
+          },
+          "toStandId" : {
+            "type" : "string"
+          },
+          "fromEmplacementId" : {
+            "type" : "string"
+          },
+          "toEmplacementId" : {
+            "type" : "string"
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "start" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "distanceMetres" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "walkMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "gapMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "missingMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "walkOnBreak" : {
+            "type" : "boolean"
           }
         }
       },
@@ -12274,6 +12376,24 @@
         },
         "summary" : "Export Intendance",
         "tags" : [ "Pause Resource" ]
+      }
+    },
+    "/api/planning/enchainements" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/WalkSequenceReport"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Walks",
+        "tags" : [ "Planning Resource" ]
       }
     },
     "/api/planning/envoi/animateur/{animateurId}" : {

@@ -5,6 +5,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -141,6 +142,122 @@ public class ParametresMcpTools {
             parametres.setHeureDebutSoiree(McpArgs.heure(heureDebutSoiree, "heureDebutSoiree"));
         }
         return toView(referenceDataService.updateParametresLegaux(parametres));
+    }
+
+    /* ---------------------------- Quality parameters ------------------------ */
+
+    @Tool(
+            name = "consulter_parametres_qualite",
+            description = "Consulte les seuils de « Qualité d'organisation » de l'édition, lus par les règles "
+                    + "moyennes dosables : emplacements distincts par jour, typologies distinctes par animateur, "
+                    + "jours travaillés d'affilée, heures d'un service tardif et d'un service matinal avec le repos "
+                    + "souhaité entre les deux, et le temps de trajet entre emplacements (vitesse de marche en km/h, "
+                    + "facteur de détour, tolérance en minutes).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    ParametresQualiteView getParametresQualite(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return ParametresQualiteView.of(referenceDataService.getParametresQualite());
+    }
+
+    @Tool(
+            name = "modifier_parametres_qualite",
+            description = "Modifie les seuils de « Qualité d'organisation ». Seuls les champs fournis sont "
+                    + "modifiés. Aucun n'est une obligation légale : ils règlent le confort du planning. Le temps de "
+                    + "marche entre deux emplacements vaut distance à vol d'oiseau × facteurDetour ÷ "
+                    + "vitesseMarcheKmH ; un battement entre deux postes peut en manquer toleranceTrajetMinutes "
+                    + "avant que trajetInsuffisantEntrePostes ne compte quoi que ce soit.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    @WarnsWhileSolving
+    ParametresQualiteView updateParametresQualite(
+            @ToolArg(description = "Emplacements distincts par jour et par animateur, au moins 1", required = false)
+                    Integer maxEmplacementsDistinctsParJour,
+            @ToolArg(description = "Typologies distinctes par animateur sur l'édition, au moins 1", required = false)
+                    Integer typologiesDistinctesMax,
+            @ToolArg(description = "Jours travaillés d'affilée, au moins 1", required = false)
+                    Integer joursConsecutifsMax,
+            @ToolArg(description = "Heure d'un service tardif (HH:MM)", required = false) String heureServiceTardif,
+            @ToolArg(description = "Heure d'un service matinal (HH:MM)", required = false) String heureServiceMatinal,
+            @ToolArg(description = "Repos souhaité après un service tardif, en minutes", required = false)
+                    Integer reposSouhaiteApresServiceTardifMinutes,
+            @ToolArg(description = "Vitesse de marche, en km/h (au plus 15)", required = false) Double vitesseMarcheKmH,
+            @ToolArg(description = "Facteur de détour, entre 1 et 5", required = false) Double facteurDetour,
+            @ToolArg(description = "Tolérance de trajet, en minutes (0 à 120)", required = false)
+                    Integer toleranceTrajetMinutes,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        ParametresQualite actuels = referenceDataService.getParametresQualite();
+        ParametresQualite nouveaux = new ParametresQualite(
+                maxEmplacementsDistinctsParJour == null
+                        ? actuels.maxEmplacementsDistinctsParJour()
+                        : maxEmplacementsDistinctsParJour,
+                heureServiceTardif == null
+                        ? actuels.heureServiceTardif()
+                        : McpArgs.heure(heureServiceTardif, "heureServiceTardif"),
+                heureServiceMatinal == null
+                        ? actuels.heureServiceMatinal()
+                        : McpArgs.heure(heureServiceMatinal, "heureServiceMatinal"),
+                reposSouhaiteApresServiceTardifMinutes == null
+                        ? actuels.reposSouhaiteApresServiceTardifMinutes()
+                        : reposSouhaiteApresServiceTardifMinutes,
+                typologiesDistinctesMax == null ? actuels.typologiesDistinctesMax() : typologiesDistinctesMax,
+                joursConsecutifsMax == null ? actuels.joursConsecutifsMax() : joursConsecutifsMax,
+                vitesseMarcheKmH == null ? actuels.vitesseMarcheKmH() : vitesseMarcheKmH,
+                facteurDetour == null ? actuels.facteurDetour() : facteurDetour,
+                toleranceTrajetMinutes == null ? actuels.toleranceTrajetMinutes() : toleranceTrajetMinutes);
+        return ParametresQualiteView.of(referenceDataService.updateParametresQualite(nouveaux));
+    }
+
+    /** The quality thresholds, and the codes of what the write raised. */
+    public record ParametresQualiteView(
+            int maxEmplacementsDistinctsParJour,
+            int typologiesDistinctesMax,
+            int joursConsecutifsMax,
+            LocalTime heureServiceTardif,
+            LocalTime heureServiceMatinal,
+            int reposSouhaiteApresServiceTardifMinutes,
+            double vitesseMarcheKmH,
+            double facteurDetour,
+            int toleranceTrajetMinutes,
+            @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
+            implements WarningCarrier<ParametresQualiteView> {
+
+        static ParametresQualiteView of(ParametresQualite parametres) {
+            return new ParametresQualiteView(
+                    parametres.maxEmplacementsDistinctsParJour(),
+                    parametres.typologiesDistinctesMax(),
+                    parametres.joursConsecutifsMax(),
+                    parametres.heureServiceTardif(),
+                    parametres.heureServiceMatinal(),
+                    parametres.reposSouhaiteApresServiceTardifMinutes(),
+                    parametres.vitesseMarcheKmH(),
+                    parametres.facteurDetour(),
+                    parametres.toleranceTrajetMinutes(),
+                    List.of());
+        }
+
+        @Override
+        public ParametresQualiteView withWarning(String code) {
+            return new ParametresQualiteView(
+                    maxEmplacementsDistinctsParJour,
+                    typologiesDistinctesMax,
+                    joursConsecutifsMax,
+                    heureServiceTardif,
+                    heureServiceMatinal,
+                    reposSouhaiteApresServiceTardifMinutes,
+                    vitesseMarcheKmH,
+                    facteurDetour,
+                    toleranceTrajetMinutes,
+                    WarningCodes.with(avertissements, code));
+        }
     }
 
     /* ---------------------------- Solver parameters ------------------------- */

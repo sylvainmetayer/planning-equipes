@@ -28,6 +28,7 @@ import {
   segmentsCoupure,
   segmentsPause,
 } from '../../core/pauses-index';
+import { indexWalks, WalkSegment, walkSegments, walksOf } from '../../core/walks-index';
 import { uniqueById } from '../../core/date-utils';
 import { bandeLabel } from '../../core/consigne-wording';
 import { endMinutesOfDay, formatDuration, minutesOfDay } from '../../core/time-of-day';
@@ -38,6 +39,7 @@ import {
   PlanningEvenement,
   PosteAffectation,
   TypologieItem,
+  WalkSequenceReport,
   RapportPauses,
 } from '../../core/models';
 import {
@@ -161,6 +163,8 @@ export class AnimateurTimelinePage implements OnInit {
   protected readonly typologies = signal<TypologieItem[]>([]);
   /** The breaks of the plan, drawn on the tracks; null when the request failed — the timeline still shows. */
   protected readonly pauses = signal<RapportPauses | null>(null);
+  /** The tight walks of the plan, drawn between the blocks; null when the request failed. */
+  protected readonly walks = signal<WalkSequenceReport | null>(null);
 
   private readonly analysesApi = inject(AnalysesApi);
   private readonly planningApi = inject(PlanningApi);
@@ -204,6 +208,31 @@ export class AnimateurTimelinePage implements OnInit {
 
   protected pausesDuJour(day: TimelineDay): SegmentPause[] {
     return this.pausesParJour().get(day.jour) ?? [];
+  }
+
+  private readonly walksIndex = computed(() => indexWalks(this.walks()));
+
+  /** The tight walks of each shown day, placed on that day's track; keyed by day number. */
+  protected readonly walksByDay = computed<Map<number, WalkSegment[]>>(() => {
+    const animateurId = this.selectedAnimateurId();
+    const segments = new Map<number, WalkSegment[]>();
+    if (!animateurId) {
+      return segments;
+    }
+    for (const day of this.days()) {
+      const walks = walksOf(this.walksIndex(), day.date, animateurId);
+      if (walks.length > 0) {
+        segments.set(
+          day.jour,
+          walkSegments(walks, day.amplitudeDebutMinutes, day.amplitudeMinutes),
+        );
+      }
+    }
+    return segments;
+  });
+
+  protected dayWalks(day: TimelineDay): WalkSegment[] {
+    return this.walksByDay().get(day.jour) ?? [];
   }
 
   private readonly indexCoupures = computed(() => indexerCoupures(this.pauses()));
@@ -288,17 +317,19 @@ export class AnimateurTimelinePage implements OnInit {
     // Same tolerance as the referentials below: a failed read leaves the note out.
     void this.consignes.reload();
     try {
-      const [planning, typologies, pauses] = await Promise.all([
+      const [planning, typologies, pauses, walks] = await Promise.all([
         this.planningState.loadForDisplay(),
         // Labels only: a missing referential degrades the chips to raw ids
         // rather than failing the whole timeline.
         this.analysesApi.typologies().catch(() => []),
         // Same spirit: without the breaks the tracks still draw.
         this.analysesApi.breaks().catch(() => null),
+        this.analysesApi.walks().catch(() => null),
       ]);
       this.planning.set(planning);
       this.typologies.set(typologies);
       this.pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
+      this.walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
       const options = this.animateurOptions();
       if (
         !this.selectedAnimateurId() ||

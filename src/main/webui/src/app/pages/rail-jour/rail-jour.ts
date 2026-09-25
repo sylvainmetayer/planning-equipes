@@ -8,8 +8,10 @@
 import {
   Animateur,
   ContrainteAdHoc,
+  WalkView,
   PauseDueView,
   PosteAffectation,
+  WalkSequenceReport,
   RapportPauses,
 } from '../../core/models';
 import {
@@ -26,6 +28,7 @@ import {
   formatHourTick,
   minutesOfDay,
 } from '../../core/time-of-day';
+import { indexWalks, WalkSegment, walkSegments, WalksIndex, walksOf } from '../../core/walks-index';
 import {
   standTypologies,
   typologieColorClass,
@@ -76,6 +79,8 @@ export interface RailLigne {
   blocages: RailBlocage[];
   /** The legal breaks of the day, as the rotation places them, drawn over the vacations. */
   pauses: SegmentPause[];
+  /** Tight walks between two consecutive vacations, drawn as a chevron in the gap. */
+  trajets: WalkSegment[];
   /** What a screen reader reads for the whole line — the rail itself is decorative. */
   resume: string;
 }
@@ -267,8 +272,10 @@ export function buildRailJours(
   animateurs: Animateur[],
   contraintes: ContrainteAdHoc[] = [],
   pauses: RapportPauses | null = null,
+  walks: WalkSequenceReport | null = null,
 ): RailJour[] {
   const indexPauses = indexerPauses(pauses);
+  const walksIndex = indexWalks(walks);
   const jours = new Map<number, ContenuJour>();
   postes.forEach((poste) => {
     const creneau = poste.creneau;
@@ -310,7 +317,7 @@ export function buildRailJours(
   return Array.from(jours.entries())
     .sort((left, right) => left[0] - right[0])
     .map(([jour, contenu]) =>
-      buildRailJour(jour, contenu, indexPauses, contraintes, effectif, noms),
+      buildRailJour(jour, contenu, indexPauses, walksIndex, contraintes, effectif, noms),
     );
 }
 
@@ -318,6 +325,7 @@ function buildRailJour(
   jour: number,
   contenu: ContenuJour,
   indexPauses: IndexPauses,
+  walksIndex: WalksIndex,
   contraintes: ContrainteAdHoc[],
   animateurs: Animateur[],
   noms: Map<string, string>,
@@ -364,6 +372,7 @@ function buildRailJour(
         merge(blocages.get(animateur.id) ?? []),
         echelle,
         pausesDe(indexPauses, date, animateur.id),
+        walksOf(walksIndex, date, animateur.id),
       ),
     )
     .sort((left, right) => left.nom.localeCompare(right.nom));
@@ -389,6 +398,7 @@ function buildRailLigne(
   fenetresBloquees: Fenetre[],
   echelle: Echelle,
   pausesDuJour: PauseDueView[] = [],
+  walks: WalkView[] = [],
 ): RailLigne {
   const { debutMinutes, amplitude } = echelle;
   const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
@@ -456,6 +466,7 @@ function buildRailLigne(
       amplitudeFin: null,
       chevauchement: false,
       pauses: [],
+      trajets: [],
       resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages),
     };
   }
@@ -488,8 +499,21 @@ function buildRailLigne(
     // The red outline and the warning icon are visual only; a line read out
     // loud must say the one anomaly this view exists to make visible.
     pauses,
-    resume: mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
+    trajets: walkSegments(walks, echelle.debutMinutes, echelle.amplitude),
+    resume: mentionWalks(
+      mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
+      walks,
+    ),
   };
+}
+
+/** Same, for the tight walks the chevron alone would only show. */
+function mentionWalks(base: string, walks: WalkView[]): string {
+  const tight = walks.filter((walk) => walk.missingMinutes > 0).length;
+  if (tight === 0) {
+    return base;
+  }
+  return $localize`:@@railJour.resume.trajets:${base}:ligne: — ${tight}:count: trajet(s) trop court(s) entre deux vacations`;
 }
 
 /** Same, for the breaks — a relay-less one is the thing to hear first. */

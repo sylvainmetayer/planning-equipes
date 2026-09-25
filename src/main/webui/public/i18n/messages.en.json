@@ -4187,5 +4187,20 @@
   "rejeu.slider": "Pointed solve",
   "rejeu.rule.appeared": "appeared",
   "rejeu.rule.disappeared": "disappeared",
-  "rejeu.day": "{$date}: {$pourvus} / {$postes} seats staffed"
+  "rejeu.day": "{$date}: {$pourvus} / {$postes} seats staffed",
+  "parametres.qualite.field.vitesseMarche": "Walking speed (km/h)",
+  "parametres.qualite.hint.vitesseMarche": "Turns a distance between two emplacements into a walking time. Default 4 km/h: a festive site, a crowd.",
+  "parametres.qualite.field.facteurDetour": "Detour factor",
+  "parametres.qualite.hint.facteurDetour": "The straight-line distance is multiplied by this factor: nobody crosses a site in a straight line. Default 1.3.",
+  "parametres.qualite.field.toleranceTrajet": "Walking tolerance (minutes)",
+  "parametres.qualite.hint.toleranceTrajet": "How much a gap between two seats may lack before it is penalised: a hop between neighbouring stands does not count. Default 5 min.",
+  "detail.emplacement.marche": "Walking time to the other places",
+  "detail.emplacement.marche.valeur": "{$distance}, {$minutes} min on foot",
+  "railJour.legend.trajet": "Red chevron: the gap does not leave time to walk to the next stand; neutral chevron: the walk is taken from the break",
+  "railJour.resume.trajets": "{$ligne} — {$count} walk(s) too short between two shifts",
+  "walks.tight": "{$fin} → {$debut}: {$trajet} min on foot, {$battement} min gap",
+  "walks.onBreak": "{$fin} → {$debut}: {$trajet} min on foot, taken from the break ({$battement} min gap)",
+  "problemes.trajets.titre": "Tight walks",
+  "problemes.trajets.message": "{$count} move(s) between two emplacements leave no time to walk from one to the other, or take it from the break. Widen the gap, or bring the stands closer.",
+  "problemes.lien.railDuJour": "See the rail of {$date}"
 }

@@ -15,6 +15,7 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.solver.WalkingTime;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
@@ -48,6 +49,7 @@ public final class QualiteConstraints {
             experienceRequisePourStandsPremium(constraintFactory),
             eviterRoulementStandsPremium(constraintFactory),
             eviterChangementEmplacementEloigne(constraintFactory),
+            trajetInsuffisantEntrePostes(constraintFactory),
             limiterEmplacementsParJour(constraintFactory),
             eviterEnchainementStandsEpuisants(constraintFactory),
             eviterFermeturePuisOuverture(constraintFactory),
@@ -307,6 +309,115 @@ public final class QualiteConstraints {
                         && emplacementsEloignes(precedent.getStand(), suivant.getStand()))
                 .penalize(HardMediumSoftScore.ONE_MEDIUM)
                 .asConstraint("eviterChangementEmplacementEloigne");
+    }
+
+    /**
+     * Same animateur, same day, two seats on different emplacements with a
+     * <b>strictly positive</b> gap between them that is too short to walk from
+     * one to the other: every minute the gap lacks, beyond the tolerance, costs
+     * one medium point — {@code walk − tolerance − gap}, computed by
+     * {@link WalkingTime}, the same arithmetic the Journée screen reads
+     * through {@code WalkSequenceAnalyzer}.
+     *
+     * <p><b>No double count with {@link #eviterChangementEmplacementEloigne}.</b>
+     * A pair whose timeslots touch (the first ends exactly when the second
+     * starts) is that rule's, and this one refuses it, on the same key the
+     * other one joins on — the timeslots' own hours. A pair is therefore judged
+     * by one rule or the other, never both. The gap itself is measured on the
+     * <em>effective</em> windows (a stand partially closed on a timeslot frees
+     * its holder earlier), as instants, so a shift running past midnight ends
+     * on the next date.</p>
+     *
+     * <p>Only <b>consecutive</b> seats are paired: a seat in between means the
+     * trip that matters is to or from that seat, and pairing across it would
+     * bill the same walk twice. The join is indexed on the animateur, the day
+     * and the order of the two seats, like its neighbour's; the
+     * {@code ifNotExists} on the seat in between only ever sees the pairs that
+     * already lack minutes, which are few.</p>
+     *
+     * <p>Inert on a stand without an emplacement or an emplacement without
+     * coordinates: an unknown trip is never a zero one, and never a long one
+     * either. A pair whose two seats are past is history (ADR 0044).</p>
+     */
+    private Constraint trajetInsuffisantEntrePostes(ConstraintFactory constraintFactory) {
+        return ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(PosteAffectation.class), "trajetInsuffisantEntrePostes")
+                .filter(QualiteConstraints::locatedWithKnownHours)
+                .join(
+                        // Filtered before the join, not after: the joiners
+                        // evaluate debut() on the right side, which a seat
+                        // without hours cannot answer.
+                        constraintFactory
+                                .forEach(PosteAffectation.class)
+                                .filter(QualiteConstraints::locatedWithKnownHours),
+                        Joiners.equal(PosteAffectation::getAnimateur),
+                        Joiners.equal(poste -> poste.getCreneau().getJour()),
+                        Joiners.lessThan(LegalConstraints::fin, LegalConstraints::debut))
+                .filter((precedent, suivant) -> PastSeats.reproachable(precedent, suivant)
+                        && !precedent
+                                .getCreneau()
+                                .getHeureFin()
+                                .equals(suivant.getCreneau().getHeureDebut())
+                        && !precedent
+                                .getStand()
+                                .getEmplacement()
+                                .equals(suivant.getStand().getEmplacement()))
+                .join(ParametresQualite.class)
+                .filter((precedent, suivant, parametres) -> missingWalkMinutes(precedent, suivant, parametres) > 0)
+                .ifNotExists(
+                        PosteAffectation.class,
+                        Joiners.equal(
+                                (precedent, suivant, parametres) -> precedent.getAnimateur(),
+                                PosteAffectation::getAnimateur),
+                        Joiners.lessThanOrEqual(
+                                (precedent, suivant, parametres) -> LegalConstraints.fin(precedent),
+                                QualiteConstraints::debutIfKnown),
+                        Joiners.greaterThanOrEqual(
+                                (precedent, suivant, parametres) -> LegalConstraints.debut(suivant),
+                                QualiteConstraints::finIfKnown))
+                .penalize(HardMediumSoftScore.ONE_MEDIUM, QualiteConstraints::missingWalkMinutes)
+                .asConstraint("trajetInsuffisantEntrePostes");
+    }
+
+    /** A seat whose stand sits on an emplacement, and whose timeslot has hours. */
+    private static boolean locatedWithKnownHours(PosteAffectation poste) {
+        return poste.getStand() != null
+                && poste.getStand().getEmplacement() != null
+                && LegalConstraints.horaireConnu(poste)
+                && poste.getCreneau().getHeureFin() != null;
+    }
+
+    /**
+     * Start of a seat that may sit between the two, or the far future when its
+     * hours are unknown — such a seat can never be « in between ».
+     */
+    private static LocalDateTime debutIfKnown(PosteAffectation poste) {
+        return LegalConstraints.horaireConnu(poste) ? LegalConstraints.debut(poste) : LocalDateTime.MAX;
+    }
+
+    /** End of a seat that may sit between the two, or the far future when its hours are unknown. */
+    private static LocalDateTime finIfKnown(PosteAffectation poste) {
+        return LegalConstraints.horaireConnu(poste) ? LegalConstraints.fin(poste) : LocalDateTime.MAX;
+    }
+
+    /**
+     * Minutes the gap between two seats lacks for the walk between their
+     * emplacements, beyond the tolerance. Zero when either emplacement has no
+     * coordinates.
+     */
+    private static int missingWalkMinutes(
+            PosteAffectation precedent, PosteAffectation suivant, ParametresQualite parametres) {
+        Integer marche = WalkingTime.minutes(
+                precedent.getStand().getEmplacement(),
+                suivant.getStand().getEmplacement(),
+                parametres.vitesseMarcheKmH(),
+                parametres.facteurDetour());
+        if (marche == null) {
+            return 0;
+        }
+        long ecart = Duration.between(LegalConstraints.fin(precedent), LegalConstraints.debut(suivant))
+                .toMinutes();
+        return WalkingTime.missingMinutes(marche, ecart, parametres.toleranceTrajetMinutes());
     }
 
     /**

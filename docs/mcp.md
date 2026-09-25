@@ -684,6 +684,21 @@ dans la vue de `consulter_parametres_legaux`. Trois clés ont disparu de ces
 outils avec le mode qu'elles portaient — `pauseSurPoste`,
 `pauseMinimaleEntreVacationsMinutes` et la durée par tranche d'âge.
 
+## Les enchaînements serrés se lisent par id
+
+`analyser_enchainements` rend la vérification des enchaînements du planning
+persisté : deux postes consécutifs d'un même animateur le même jour, sur deux
+emplacements géolocalisés différents, dont le battement ne laisse pas le temps
+de marcher de l'un à l'autre — ou ne le laisse qu'en prenant sur la pause
+légale (`walkOnBreak`). Chaque ligne porte les ids de l'animateur, des
+postes, des créneaux, des stands et des emplacements, les deux heures, la
+distance, le trajet estimé, le battement et les minutes manquantes au-delà de
+la tolérance ; jamais un nom. `geolocated=false` dit qu'aucun
+trajet n'était calculable, plutôt qu'une liste vide qui se lirait « tout va
+bien ». Les trois réglages du calcul — vitesse de marche, facteur de détour,
+tolérance — se lisent et se règlent avec les autres seuils de qualité par
+`consulter_parametres_qualite` / `modifier_parametres_qualite`.
+
 ## L'équité se lit par id
 
 `equite_planning` rend le tableau de l'écran Équité sur le planning persisté :

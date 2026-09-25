@@ -8,6 +8,8 @@ import dev.sylvain.planning.domain.PlafondsLegauxMajeurs;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
 import dev.sylvain.planning.service.solve.SolverBudgetBounds;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.Objects;
 
 /**
@@ -130,6 +132,57 @@ final class ParametresValidator {
             throw new BusinessError.Invalid("Le repos souhaité après un service tardif ne peut pas être négatif.");
         }
         checkFenetre(parametres.heureServiceTardif(), parametres.heureServiceMatinal(), "Les heures de service");
+        checkTrajet(parametres);
+    }
+
+    /** Fastest walking pace accepted, in km/h: beyond it, nobody is walking any more. */
+    static final double VITESSE_MARCHE_MAX_KM_H = 15.0;
+
+    /** Largest detour factor accepted: a path five times the straight line is a maze, not a site. */
+    static final double FACTEUR_DETOUR_MAX = 5.0;
+
+    /** Largest tolerance accepted, in minutes: beyond two hours, no gap on a day could ever lack enough. */
+    static final int TOLERANCE_TRAJET_MAX_MINUTES = 120;
+
+    /**
+     * The three walking-time settings. A speed of zero would make every trip
+     * infinite, and a detour factor under 1 would walk shorter than the
+     * straight line — two values that cannot mean anything. The upper bounds
+     * only keep a typo (40 km/h, a factor of 13) from silently muting the rule.
+     *
+     * <p>Both decimals are judged as they will be stored — two decimals, the
+     * column's {@code NUMERIC(4, 2)} — so a speed of 0.001 that the database
+     * would keep as 0.00 is refused now rather than on the next save.</p>
+     */
+    private static void checkTrajet(ParametresQualite parametres) {
+        double vitesse = asStored(parametres.vitesseMarcheKmH());
+        if (!(vitesse > 0) || vitesse > VITESSE_MARCHE_MAX_KM_H) {
+            throw new BusinessError.Invalid("La vitesse de marche doit être strictement positive et au plus de "
+                    + (int) VITESSE_MARCHE_MAX_KM_H + " km/h.");
+        }
+        double facteur = asStored(parametres.facteurDetour());
+        if (!(facteur >= 1) || facteur > FACTEUR_DETOUR_MAX) {
+            throw new BusinessError.Invalid("Le facteur de détour doit valoir entre 1 et " + (int) FACTEUR_DETOUR_MAX
+                    + " : sous 1, le trajet serait plus court que la ligne droite.");
+        }
+        if (parametres.toleranceTrajetMinutes() < 0
+                || parametres.toleranceTrajetMinutes() > TOLERANCE_TRAJET_MAX_MINUTES) {
+            throw new BusinessError.Invalid(
+                    "La tolérance de trajet doit valoir entre 0 et " + TOLERANCE_TRAJET_MAX_MINUTES + " minutes.");
+        }
+    }
+
+    /** Scale of the walking-speed and detour-factor columns. */
+    private static final int TRAJET_DECIMALES = 2;
+
+    /** A decimal rounded as PostgreSQL rounds it into its column; NaN and infinities are left to fail the bounds. */
+    private static double asStored(double value) {
+        if (!Double.isFinite(value)) {
+            return value;
+        }
+        return BigDecimal.valueOf(value)
+                .setScale(TRAJET_DECIMALES, RoundingMode.HALF_UP)
+                .doubleValue();
     }
 
     /**

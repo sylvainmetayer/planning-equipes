@@ -446,4 +446,26 @@ class ScenarioYamlWriterTest {
 
         assertThatThrownBy(planningService::exportScenarioYaml).isInstanceOf(IllegalStateException.class);
     }
+
+    @Test
+    void theWalkingSettingsTravelInTheScenarioFileAndComeBackIdentical() {
+        ParametresQualite reglee = new ParametresQualite().withTrajet(4.5, 1.6, 8);
+        String yaml = ScenarioYamlWriter.buildScenarioYaml(new ScenarioYamlWriter.ScenarioExport(
+                List.of(animateur),
+                List.of(stand),
+                List.of(creneau),
+                null,
+                List.of(),
+                List.of(),
+                null,
+                reglee,
+                null,
+                Map.of(),
+                Map.of(),
+                List.of()));
+
+        ScenarioYamlReader.ScenarioImporte relu = ScenarioYamlReader.buildFromScenarioText(yaml, ParametresLegaux::new);
+
+        assertThat(relu.sections().parametresQualite()).contains(reglee);
+    }
 }

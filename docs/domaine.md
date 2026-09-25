@@ -924,6 +924,9 @@ jamais.
 | `heureServiceTardif` | 22 h | `planning.contraintes.heure-service-tardif` | `eviterFermeturePuisOuverture` |
 | `heureServiceMatinal` | 10 h | `planning.contraintes.heure-service-matinal` | `eviterFermeturePuisOuverture` |
 | `reposSouhaiteApresServiceTardifMinutes` | 720 (12 h) | `planning.contraintes.repos-souhaite-apres-service-tardif-minutes` | `eviterFermeturePuisOuverture` |
+| `vitesseMarcheKmH` | 4 | `planning.contraintes.vitesse-marche-km-h` | `trajetInsuffisantEntrePostes` |
+| `facteurDetour` | 1,3 | `planning.contraintes.facteur-detour` | `trajetInsuffisantEntrePostes` |
+| `toleranceTrajetMinutes` | 5 | `planning.contraintes.tolerance-trajet-minutes` | `trajetInsuffisantEntrePostes` |
 
 Une heure laissée **vide** dans la configuration se lit comme absente, pas comme
 minuit : c'est ainsi qu'un déploiement neutralise `eviterFermeturePuisOuverture`

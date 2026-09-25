@@ -2,6 +2,8 @@ package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.analyse.WalkSequenceAnalyzer;
+import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.ProblemScaleService;
@@ -38,18 +40,26 @@ public class PlanningResource {
 
     private final ProblemScaleService problemScaleService;
 
+    private final ReferenceDataService referenceDataService;
+
+    private final WalkSequenceAnalyzer walkSequenceAnalyzer;
+
     @Inject
     public PlanningResource(
             SolvePipeline pipeline,
             PlanningService planningService,
             PlanningPersistenceService persistenceService,
             ReferenceDataChangeTracker changeTracker,
-            ProblemScaleService problemScaleService) {
+            ProblemScaleService problemScaleService,
+            ReferenceDataService referenceDataService,
+            WalkSequenceAnalyzer walkSequenceAnalyzer) {
         this.pipeline = pipeline;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
         this.changeTracker = changeTracker;
         this.problemScaleService = problemScaleService;
+        this.referenceDataService = referenceDataService;
+        this.walkSequenceAnalyzer = walkSequenceAnalyzer;
     }
 
     /**
@@ -140,6 +150,23 @@ public class PlanningResource {
     @Path("/planning/persisted/count")
     public PersistenceStatus persistedCount() {
         return new PersistenceStatus(persistenceService.countPersistedAssignments());
+    }
+
+    /**
+     * The tight walks of the persisted plan: two consecutive seats of one
+     * animateur, on two emplacements, whose gap does not leave the time to walk
+     * from one to the other — or leaves it only by eating the legal break. A
+     * reading of the persisted plan (ADR 0014), under the edition's current
+     * walking settings, never a solve; empty, and saying why, when no
+     * emplacement carries coordinates.
+     */
+    @GET
+    @Path("/planning/enchainements")
+    public WalkSequenceAnalyzer.WalkSequenceReport walks() {
+        return walkSequenceAnalyzer.analyze(
+                persistenceService.loadPersistedPlanning(),
+                referenceDataService.getParametresQualite(),
+                referenceDataService.getParametresLegaux());
     }
 
     @Schema(requiredProperties = {"assignments"})

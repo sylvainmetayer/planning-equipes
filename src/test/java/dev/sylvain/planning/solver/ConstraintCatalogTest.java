@@ -119,14 +119,14 @@ class ConstraintCatalogTest {
 
     /** What is dosed rather than switched off: the MEDIUM rules of « Qualité d'organisation ». */
     @Test
-    void lesReglesDeQualiteSontDosables() {
+    void qualityRulesAreDosable() {
         assertThat(ConstraintCatalog.definitions())
                 .filteredOn(ConstraintCatalog.ConstraintDefinition::dosable)
                 .allSatisfy(definition -> {
                     assertThat(definition.niveau()).isEqualTo(ConstraintCatalog.Niveau.MEDIUM);
                     assertThat(definition.categorie()).isEqualTo(ConstraintCatalog.CATEGORIE_QUALITE);
                 })
-                .hasSize(14);
+                .hasSize(15);
 
         // Nothing protected is presented as a dial.
         assertThat(ConstraintCatalog.definitions())

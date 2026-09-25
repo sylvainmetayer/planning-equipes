@@ -2,6 +2,7 @@ package dev.sylvain.planning.solver;
 
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
+import java.math.BigDecimal;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -143,6 +144,24 @@ public final class ConstraintParameters {
                             ONGLET_EDITION,
                             contexte -> jours(contexte.qualite().joursConsecutifsMax()))),
             Map.entry(
+                    "vitesseMarcheKmH",
+                    new Reference(
+                            "Vitesse de marche",
+                            ONGLET_EDITION,
+                            contexte -> decimal(contexte.qualite().vitesseMarcheKmH()) + " km/h")),
+            Map.entry(
+                    "facteurDetour",
+                    new Reference(
+                            "Facteur de détour",
+                            ONGLET_EDITION,
+                            contexte -> decimal(contexte.qualite().facteurDetour()))),
+            Map.entry(
+                    "toleranceTrajetMinutes",
+                    new Reference(
+                            "Tolérance de trajet",
+                            ONGLET_EDITION,
+                            contexte -> duree(contexte.qualite().toleranceTrajetMinutes()))),
+            Map.entry(
                     "heureServiceTardif",
                     new Reference(
                             "Heure d'un service tardif",
@@ -188,6 +207,9 @@ public final class ConstraintParameters {
                     "coupureRepasPlacementPrefere",
                     List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
             Map.entry("limiterEmplacementsParJour", List.of("maxEmplacementsDistinctsParJour")),
+            Map.entry(
+                    "trajetInsuffisantEntrePostes",
+                    List.of("vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes")),
             Map.entry("limiterTypologiesDistinctesParAnimateur", List.of("typologiesDistinctesMax")),
             Map.entry("maxJoursConsecutifsTravailles", List.of(JOURS_CONSECUTIFS_MAX)),
             Map.entry("maxJoursConsecutifsTravaillesDur", List.of(JOURS_CONSECUTIFS_MAX)),
@@ -238,6 +260,14 @@ public final class ConstraintParameters {
 
     private static String plage(LocalTime debut, LocalTime fin) {
         return debut == null || fin == null ? "non réglée" : debut + " – " + fin;
+    }
+
+    /** « 1,3 », « 4 » — a French decimal comma, and no trailing zero. */
+    private static String decimal(double valeur) {
+        BigDecimal nombre = BigDecimal.valueOf(valeur).stripTrailingZeros();
+        return (nombre.scale() < 0 ? nombre.setScale(0) : nombre)
+                .toPlainString()
+                .replace('.', ',');
     }
 
     private static String count(int valeur) {

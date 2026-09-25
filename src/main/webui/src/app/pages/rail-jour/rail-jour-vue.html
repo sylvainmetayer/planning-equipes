@@ -28,6 +28,8 @@
           <span i18n="@@railJour.legend.pause">Pause légale, telle que la rotation la pose</span></li>
         <li><span class="rail-swatch rail-swatch-pause-alerte"></span>
           <span i18n="@@railJour.legend.pauseAlerte">Pause sans relais sur le stand, ou en même temps qu'une autre</span></li>
+        <li><mat-icon inline class="rail-trajet-serre" aria-hidden="true">double_arrow</mat-icon>
+          <span i18n="@@railJour.legend.trajet">Chevron rouge : le battement ne laisse pas le temps de marcher jusqu'au stand suivant ; chevron neutre : le trajet est pris sur la pause</span></li>
         @for (item of legende(); track item.id) {
           <li><span class="typologie-dot" [class]="item.colorClass" aria-hidden="true"></span>{{ item.label }}</li>
         }
@@ -152,6 +154,15 @@
                         [style.width.%]="pause.widthPercent"
                         [title]="pause.label"
                       ></span>
+                    }
+                    @for (trajet of ligne.trajets; track trajet.offsetPercent) {
+                      <span
+                        class="rail-trajet"
+                        [class.rail-trajet-serre]="trajet.tight"
+                        [style.left.%]="trajet.offsetPercent"
+                        [style.width.%]="trajet.widthPercent"
+                        [title]="trajet.label"
+                      ><mat-icon inline aria-hidden="true">double_arrow</mat-icon></span>
                     }
                   </span>
                 </td>

@@ -99,6 +99,7 @@ dev/sylvain/planning/api/StaleWriteResourceTest.java
 dev/sylvain/planning/api/StandGrilleImportResourceTest.java
 dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
+dev/sylvain/planning/api/WalkingTimeResourceTest.java
 dev/sylvain/planning/api/WeightHistoryResourceTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
