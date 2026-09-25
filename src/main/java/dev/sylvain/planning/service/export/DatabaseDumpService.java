@@ -311,8 +311,8 @@ public class DatabaseDumpService {
      */
     private static final List<String> RESYNC_ID_COUNTERS = List.of(
             "SELECT setval('edition_numero_seq', "
-                    + "COALESCE((SELECT MAX(CAST(substr(id, 2) AS BIGINT)) FROM edition WHERE id ~ '^E[0-9]+$'), 1), "
-                    + "EXISTS (SELECT 1 FROM edition WHERE id ~ '^E[0-9]+$'))",
+                    + "COALESCE((SELECT MAX(CAST(substr(id, 2) AS BIGINT)) FROM edition WHERE id ~ '^E[1-9][0-9]{0,17}$'), 1), "
+                    + "EXISTS (SELECT 1 FROM edition WHERE id ~ '^E[1-9][0-9]{0,17}$'))",
             counterResync("ANIMATEUR", "animateur", "A"),
             counterResync("STAND", "stand", "S"),
             counterResync("TYPOLOGIE", "typologie", "T"),
@@ -322,7 +322,7 @@ public class DatabaseDumpService {
     private static String counterResync(String entite, String table, String prefixe) {
         return "INSERT INTO compteur_identifiant (edition_id, entite, dernier) "
                 + "SELECT edition_id, '" + entite + "', MAX(CAST(substr(id, 2) AS BIGINT)) FROM " + table
-                + " WHERE id ~ '^" + prefixe + "[0-9]+$' GROUP BY edition_id "
+                + " WHERE id ~ '^" + prefixe + "[1-9][0-9]{0,17}$' GROUP BY edition_id "
                 + "ON CONFLICT (edition_id, entite) DO UPDATE "
                 + "SET dernier = GREATEST(compteur_identifiant.dernier, EXCLUDED.dernier)";
     }

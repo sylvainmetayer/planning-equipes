@@ -417,7 +417,7 @@ public class AnimateurCsvImportService {
             AnimateurCsvMapping mapping,
             Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
-        Index index = new Index(existants, pendingDeclarations(), typologies.list());
+        Index index = new Index(existants, pendingDeclarations(), typologies.idsByKey());
         Dates dates = new Dates(LocalDate.now(ZoneId.systemDefault()), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
@@ -540,16 +540,11 @@ public class AnimateurCsvImportService {
         private final Set<String> enAttente;
 
         /** A typologie by its id or by its code — a file may name it either way (ADR 0050). */
-        private final Map<String, String> typologies = new LinkedHashMap<>();
+        private final Map<String, String> typologies;
 
-        private Index(List<Animateur> existants, Set<String> enAttente, List<TypologieItem> referentiel) {
+        private Index(List<Animateur> existants, Set<String> enAttente, Map<String, String> typologies) {
             this.enAttente = enAttente;
-            referentiel.forEach(typologie -> {
-                if (typologie.code() != null) {
-                    typologies.putIfAbsent(typologie.code(), typologie.id());
-                }
-            });
-            referentiel.forEach(typologie -> typologies.put(typologie.id(), typologie.id()));
+            this.typologies = typologies;
             for (Animateur animateur : existants) {
                 parId.put(animateur.getId(), animateur);
                 if (animateur.getEmail() != null && !animateur.getEmail().isBlank()) {
