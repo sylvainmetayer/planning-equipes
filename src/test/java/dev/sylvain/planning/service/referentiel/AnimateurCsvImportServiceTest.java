@@ -63,12 +63,25 @@ class AnimateurCsvImportServiceTest {
     @Inject
     EditionContext editionContext;
 
+    /**
+     * The ids the edition drew for the two typologies. The files below cite
+     * them by their codes, {@code jeux} and {@code ateliers}; what is stored
+     * is the id (ADR 0050).
+     */
+    private String jeuxId;
+
+    private String ateliersId;
+
     @BeforeEach
-    void creerEdition() {
+    void createEdition() {
         edition = editions.create(new Edition(null, "Import CSV", false, null)).getId();
         editionContext.executeIn(edition, () -> {
-            referenceData.createTypologie(new TypologieItem("jeux", "Jeux de société", false));
-            referenceData.createTypologie(new TypologieItem("ateliers", "Ateliers", false));
+            jeuxId = referenceData
+                    .createTypologie(new TypologieItem(null, "jeux", "Jeux de société", false, null, null, null))
+                    .id();
+            ateliersId = referenceData
+                    .createTypologie(new TypologieItem(null, "ateliers", "Ateliers", false, null, null, null))
+                    .id();
             referenceData.createCreneau(new Creneau(null, 1, JOUR1, LocalTime.of(10, 0), LocalTime.of(12, 0)));
             referenceData.createCreneau(new Creneau(null, 2, JOUR2, LocalTime.of(10, 0), LocalTime.of(12, 0)));
         });
@@ -106,7 +119,7 @@ class AnimateurCsvImportServiceTest {
     }
 
     @Test
-    void importEcritExactementCeQueLeRapportAnnonce() {
+    void theImportWritesExactlyWhatTheReportAnnounces() {
         String csv = """
                 prenom;nom;date de naissance;competences;jours indisponibles
                 Amélie;Durand;12/03/1990;jeux:REFERENT|ateliers;18/07/2030
@@ -126,8 +139,8 @@ class AnimateurCsvImportServiceTest {
                 .orElseThrow();
         assertThat(amelie.getDateNaissance()).isEqualTo(LocalDate.of(1990, 3, 12));
         assertThat(amelie.getCompetences())
-                .containsEntry("jeux", NiveauCompetence.REFERENT)
-                .containsEntry("ateliers", NiveauCompetence.AUTONOME);
+                .containsEntry(jeuxId, NiveauCompetence.REFERENT)
+                .containsEntry(ateliersId, NiveauCompetence.AUTONOME);
         assertThat(amelie.getJoursIndisponibles()).containsExactly(JOUR1);
     }
 
@@ -251,18 +264,19 @@ class AnimateurCsvImportServiceTest {
     @Test
     void aRowLeavingAFicheWithoutAFirstOrLastNameIsRejectedUnlessTheFicheHasThem() {
         Animateur existant = new Animateur();
-        existant.setId("amelie");
         existant.setPrenom("Amélie");
         existant.setNom("Durand");
         existant.setDateNaissance(LocalDate.of(1990, 3, 12));
-        inEdition(() -> referenceData.createAnimateur(existant));
+        // The row designates the fiche by the id the edition drew for it.
+        String amelieId =
+                inEdition(() -> referenceData.createAnimateur(existant)).getId();
         String csv = """
                 identifiant;prenom;nom;date de naissance;email
-                amelie;;;;amelie@example.org
+                %s;;;;amelie@example.org
                 bruno;;;04/06/1988;bruno@example.org
                 ;Carla;;01/01/1990;
                 ;;Santos;01/01/1990;
-                """;
+                """.formatted(amelieId);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
 
@@ -366,12 +380,11 @@ class AnimateurCsvImportServiceTest {
     }
 
     @Test
-    void unHomonymeDejaEnBaseEmpecheDeTrancherEtRejetteLaLigne() {
-        inEdition(() -> {
-            referenceData.createAnimateur(homonyme("H1"));
-            referenceData.createAnimateur(homonyme("H2"));
-            return null;
-        });
+    void aNamesakeAlreadyStoredPreventsDecidingAndRejectsTheRow() {
+        String premier =
+                inEdition(() -> referenceData.createAnimateur(homonyme())).getId();
+        String second =
+                inEdition(() -> referenceData.createAnimateur(homonyme())).getId();
 
         AnimateurCsvImportReport rapport =
                 inEdition(() -> csvImport.preview(demande("prenom;nom;date de naissance\nJean;Martin;01/01/1990\n")));
@@ -379,11 +392,12 @@ class AnimateurCsvImportServiceTest {
         assertThat(rapport.rejected()).isEqualTo(1);
         assertThat(motif(rapport, 2))
                 .contains("Plusieurs animateurs se nomment")
-                .contains("H1, H2");
+                .contains(premier)
+                .contains(second);
     }
 
-    private static Animateur homonyme(String id) {
-        return new Animateur(id, "Jean", "Martin", LocalDate.of(1990, 1, 1), false);
+    private static Animateur homonyme() {
+        return new Animateur(null, "Jean", "Martin", LocalDate.of(1990, 1, 1), false);
     }
 
     @Test
@@ -429,7 +443,7 @@ class AnimateurCsvImportServiceTest {
 
     /** A column the file does not carry never touches what the fiche already holds. */
     @Test
-    void uneColonneAbsenteNeTouchePasLaFiche() {
+    void aColumnTheFileDoesNotCarryLeavesTheFicheAlone() {
         Animateur existant = new Animateur("A-INTACT", "Amélie", "Durand", LocalDate.of(1990, 3, 12), false);
         existant.setJoursIndisponibles(Set.of(JOUR1));
         existant.setEmail("amelie@example.org");
@@ -443,19 +457,19 @@ class AnimateurCsvImportServiceTest {
         Animateur relu = inEdition(() -> referenceData.listAnimateurs()).get(0);
         assertThat(relu.getJoursIndisponibles()).containsExactly(JOUR1);
         assertThat(relu.getEmail()).isEqualTo("amelie@example.org");
-        assertThat(relu.getCompetences()).containsEntry("jeux", NiveauCompetence.REFERENT);
+        // Written by its code, stored and read back by its id.
+        assertThat(relu.getCompetences()).containsEntry(jeuxId, NiveauCompetence.REFERENT);
     }
 
     @Test
-    void uneDeclarationEnAttenteEstSignaleeAuRapport() {
-        Animateur existant = new Animateur("A-ATTENTE", "Amélie", "Durand", LocalDate.of(1990, 3, 12), false);
-        inEdition(() -> referenceData.createAnimateur(existant));
+    void aPendingDeclarationIsFlaggedInTheReport() {
+        Animateur existant = new Animateur(null, "Amélie", "Durand", LocalDate.of(1990, 3, 12), false);
+        String id = inEdition(() -> referenceData.createAnimateur(existant)).getId();
         inEdition(() -> {
             declarationService.configure(
                     new DeclarationDisponibiliteRepository.FenetreCollecte(true, null, null), false);
             return declarationService.submit(
-                    "A-ATTENTE",
-                    new DeclarationDisponibiliteService.NouvelleDeclaration(List.of(JOUR1), List.of(), null));
+                    id, new DeclarationDisponibiliteService.NouvelleDeclaration(List.of(JOUR1), List.of(), null));
         });
 
         AnimateurCsvImportReport rapport = inEdition(
@@ -605,12 +619,12 @@ class AnimateurCsvImportServiceTest {
     }
 
     /**
-     * The generated id has no cell to be refused over — it is derived from the
-     * name — so it is the derivation that has to hold the cap, and the write
-     * has to go through.
+     * A long name is refused on its own length, never on the id's: the id of a
+     * new fiche is drawn by the edition (ADR 0050), no longer derived from the
+     * name, so a long but acceptable name goes through and gets a short one.
      */
     @Test
-    void lIdentifiantDeriveDUnNomLongTientDansLaColonne() {
+    void aLongNameIsWrittenUnderADrawnIdThatFitsTheColumn() {
         String prenom = "Marie".repeat(30);
         String csv = "prenom;nom;date de naissance\n" + prenom + ";Durand;12/03/1990\n";
 
@@ -627,8 +641,10 @@ class AnimateurCsvImportServiceTest {
         assertThat(ecrit.accepted()).isEqualTo(1);
         assertThat(inEdition(() -> referenceData.listAnimateurs()))
                 .singleElement()
-                .satisfies(anime ->
-                        assertThat(anime.getId().length()).isLessThanOrEqualTo(AnimateurCsvImportService.MAX_ID));
+                .satisfies(anime -> {
+                    assertThat(anime.getId()).matches("A\\d+");
+                    assertThat(anime.getId().length()).isLessThanOrEqualTo(AnimateurCsvImportService.MAX_ID);
+                });
     }
 
     /* ------------------------------- Encoding ------------------------------ */

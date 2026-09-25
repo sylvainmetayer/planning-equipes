@@ -210,9 +210,9 @@ class JourJResourceTest {
                 .then()
                 .statusCode(400)
                 // Both exceptions are named: the one already recorded, and the
-                // one the absence would have written.
+                // one the absence would have written, under the id drawn for it.
                 .body("message", containsString(forcedAssignment))
-                .body("message", containsString("absence-jour-j-" + absent));
+                .body("message", org.hamcrest.Matchers.matchesPattern("(?s).*contrainte C\\d+ .*C\\d+.*"));
 
         assertThat(forcedUnavailabilities()).isEmpty();
         assertThat(persistedOccupants()).isEqualTo(avant);

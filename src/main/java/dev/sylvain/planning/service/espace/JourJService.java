@@ -65,11 +65,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class JourJService {
 
     /**
-     * Prefix of the exceptions this screen writes. The id is derived from
-     * (animateur, timeslot) rather than random, which makes marking the same
-     * person absent twice an overwrite instead of a pile of duplicates.
+     * The mark every reason this screen writes carries — what recognises its
+     * exceptions, since their ids are drawn by the application like any other
+     * (ADR 0050). Marking the same person absent twice on a timeslot
+     * overwrites the exception already there instead of piling up duplicates.
      */
-    private static final String PREFIXE_ABSENCE = "absence-jour-j";
+    private static final String MARQUE_ABSENCE = "(mode jour J)";
 
     /** Recorded against the exception when no admin session names the author. */
     private static final String AUTEUR_INCONNU = "jour-j";
@@ -249,8 +250,13 @@ public class JourJService {
         String motif = motif(raison, jour, maintenant);
         Instant ecritLe = Instant.now();
         String recordedBy = author();
+        Map<Long, String> dejaEcrites = new java.util.HashMap<>();
+        referenceDataService.listContraintesAdHoc().stream()
+                .filter(contrainte -> isWrittenHere(contrainte, animateur.getId()))
+                .forEach(contrainte -> dejaEcrites.put(contrainte.getCreneau().getId(), contrainte.getId()));
         List<ContrainteAdHoc> exceptions = restants.stream()
-                .map(creneau -> exception(animateur, creneau, motif, recordedBy, ecritLe))
+                .map(creneau ->
+                        exception(dejaEcrites.get(creneau.getId()), animateur, creneau, motif, recordedBy, ecritLe))
                 .toList();
         // Refuses the whole set rather than the first offender, and writes
         // nothing until every one of them is accepted.
@@ -476,14 +482,14 @@ public class JourJService {
     }
 
     private static String motif(String raison, LocalDate jour, LocalDateTime maintenant) {
-        String base = "Absent le " + jour + " à partir de " + maintenant.toLocalTime() + " (mode jour J)";
+        String base = "Absent le " + jour + " à partir de " + maintenant.toLocalTime() + " " + MARQUE_ABSENCE;
         return raison == null || raison.isBlank() ? base : base + " — " + raison.trim();
     }
 
+    /** @param id the exception this screen already wrote there, {@code null} for a new one */
     private static ContrainteAdHoc exception(
-            Animateur animateur, Creneau creneau, String motif, String author, Instant maintenant) {
-        ContrainteAdHoc contrainte = new ContrainteAdHoc(
-                idAbsence(animateur.getId(), creneau.getId()), TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
+            String id, Animateur animateur, Creneau creneau, String motif, String author, Instant maintenant) {
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, TypeContrainteAdHoc.INDISPONIBILITE_FORCEE);
         Animateur cible = new Animateur();
         cible.setId(animateur.getId());
         contrainte.setAnimateursConcernes(new ArrayList<>(List.of(cible)));
@@ -508,21 +514,17 @@ public class JourJService {
     }
 
     /**
-     * Whether this exception is one this screen wrote for that animateur — the
-     * id is derived from (animateur, timeslot) precisely so it can be read back
-     * without a column of its own.
+     * Whether this exception is one this screen wrote for that animateur: an
+     * unavailability on one timeslot, naming that person alone, whose reason
+     * carries {@link #MARQUE_ABSENCE} — read back without a column of its own.
      */
     private static boolean isWrittenHere(ContrainteAdHoc contrainte, String animateurId) {
-        return contrainte.getCreneau() != null
+        return contrainte.getType() == TypeContrainteAdHoc.INDISPONIBILITE_FORCEE
+                && contrainte.getCreneau() != null
                 && contrainte.getCreneau().getId() != null
-                && contrainte.getId() != null
-                && contrainte
-                        .getId()
-                        .equals(idAbsence(animateurId, contrainte.getCreneau().getId()));
-    }
-
-    private static String idAbsence(String animateurId, long creneauId) {
-        return PREFIXE_ABSENCE + "-" + animateurId + "-" + creneauId;
+                && contrainte.getRaison() != null
+                && contrainte.getRaison().contains(MARQUE_ABSENCE)
+                && targetsOnly(contrainte, animateurId);
     }
 
     private static boolean targetsOnly(ContrainteAdHoc contrainte, String animateurId) {
