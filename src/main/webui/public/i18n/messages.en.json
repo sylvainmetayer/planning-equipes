@@ -3194,7 +3194,7 @@
   "exports.archive.jamaisPublie": "never published",
   "exports.archive.feuille": "Double-sided sheets rather than booklets",
   "exports.archive.resolutionEnCours": "A solve is running: the archive will carry the last saved plan.",
-  "exports.archive.telecharger": "Download the archive",
+  "exports.archive.telecharger": "Download the end-of-event ZIP",
   "exports.archive.enCours": "Preparing the archive…",
   "nav.link.marge": "Available margin",
   "route.marge": "Available margin",

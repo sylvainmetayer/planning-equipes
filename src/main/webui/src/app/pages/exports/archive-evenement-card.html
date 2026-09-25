@@ -15,10 +15,10 @@
     @if (erreurChargement()) {
       <p class="field-error" role="alert">{{ erreurChargement() }}</p>
     }
-    <ul class="export-csv-liste">
+    <ul class="archive-evenement-liste">
       <li>
         <mat-checkbox [checked]="true" [disabled]="true">LISEZMOI.txt</mat-checkbox>
-        <span class="export-csv-fichier" i18n="@@exports.archive.manifeste">manifeste, toujours présent</span>
+        <span class="archive-evenement-fichier" i18n="@@exports.archive.manifeste">manifeste, toujours présent</span>
       </li>
       @for (ligne of lignes(); track ligne.part) {
         <li [attr.data-part]="ligne.part">
@@ -28,9 +28,9 @@
             (change)="basculer(ligne.part, $event.checked)">
             {{ ligne.libelle }}
           </mat-checkbox>
-          <span class="export-csv-fichier">{{ ligne.fichier }}</span>
+          <span class="archive-evenement-fichier">{{ ligne.fichier }}</span>
           @if (ligne.indisponible) {
-            <span class="export-csv-total">{{ ligne.indisponible }}</span>
+            <span class="archive-evenement-indisponible">{{ ligne.indisponible }}</span>
           }
         </li>
       }
@@ -48,7 +48,7 @@
     <div class="card-actions">
       <button matButton="filled" (click)="telecharger()" [disabled]="!peutTelecharger()">
         <mat-icon>inventory_2</mat-icon>
-        <span i18n="@@exports.archive.telecharger">Télécharger l'archive</span>
+        <span i18n="@@exports.archive.telecharger">Télécharger le ZIP de fin d'événement</span>
       </button>
     </div>
     @if (telechargement()) {
