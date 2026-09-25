@@ -136,8 +136,7 @@ public class SolverJobService {
     private final SolverScoreTrace scoreTrace;
 
     /** Operating metrics — durations, outcomes, the queue (docs/observabilite.md). */
-    @Inject
-    SolverMetrics metrics;
+    private final SolverMetrics metrics;
 
     /**
      * Whether the queue is replayed at startup. On by default — that is the
@@ -154,6 +153,7 @@ public class SolverJobService {
             SolverJobPersistence persistence,
             JobStreamBroadcaster jobStream,
             SolverScoreTrace scoreTrace,
+            SolverMetrics metrics,
             @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
                     boolean replayAtStartup) {
         this.tasks = tasks;
@@ -162,6 +162,7 @@ public class SolverJobService {
         this.persistence = persistence;
         this.jobStream = jobStream;
         this.scoreTrace = scoreTrace;
+        this.metrics = metrics;
         this.replayAtStartup = replayAtStartup;
     }
 

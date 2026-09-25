@@ -30,8 +30,12 @@ public class SolverMetrics {
     static final String QUEUE_SIZE = "planning.solver.queue.size";
     static final String ACTIVE = "planning.solver.active";
 
+    private final MeterRegistry registry;
+
     @Inject
-    MeterRegistry registry;
+    public SolverMetrics(MeterRegistry registry) {
+        this.registry = registry;
+    }
 
     /**
      * Registers the two gauges and the failure counters, so a scrape shows

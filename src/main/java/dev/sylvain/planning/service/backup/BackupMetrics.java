@@ -27,12 +27,16 @@ public class BackupMetrics {
     static final String LAST_SUCCESS = "planning.backup.last.success.timestamp";
     static final String SIZE = "planning.backup.size";
 
-    @Inject
-    MeterRegistry registry;
+    private final MeterRegistry registry;
 
     private final AtomicLong lastSuccessEpochSeconds = new AtomicLong();
     private final AtomicLong sizeBytes = new AtomicLong();
     private final AtomicBoolean gaugesBound = new AtomicBoolean();
+
+    @Inject
+    public BackupMetrics(MeterRegistry registry) {
+        this.registry = registry;
+    }
 
     /** One attempt, successful or not. */
     void attempted(boolean succeeded, Duration duration) {

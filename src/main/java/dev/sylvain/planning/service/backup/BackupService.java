@@ -69,6 +69,8 @@ public class BackupService {
 
     private final Event<Notification> notifications;
 
+    private final BackupMetrics metrics;
+
     @Inject
     public BackupService(
             BackupConfiguration configuration,
@@ -76,17 +78,16 @@ public class BackupService {
             PgDump pgDump,
             Scheduler scheduler,
             AdminAddress adminAddress,
-            Event<Notification> notifications) {
+            Event<Notification> notifications,
+            BackupMetrics metrics) {
         this.configuration = configuration;
         this.repository = repository;
         this.pgDump = pgDump;
         this.scheduler = scheduler;
         this.adminAddress = adminAddress;
         this.notifications = notifications;
+        this.metrics = metrics;
     }
-
-    @Inject
-    BackupMetrics metrics;
 
     /**
      * Failed attempts the database refused to record — the outage the alert

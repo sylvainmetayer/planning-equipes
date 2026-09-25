@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.solve;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.domain.PlanningEvenement;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -11,6 +12,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.List;
 import java.util.function.BooleanSupplier;
 import org.junit.jupiter.api.AfterEach;
@@ -25,15 +27,15 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolverMetricsTest {
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @Inject
     MeterRegistry registry;
 
     @BeforeEach
     @AfterEach
-    void idleSolver() throws InterruptedException {
+    void idleSolver() {
         for (String id : queuedIds()) {
             given().when().delete("/api/jobs/" + id);
         }
@@ -41,7 +43,7 @@ class SolverMetricsTest {
     }
 
     @Test
-    void twoQueuedJobsShowOnTheQueueGaugeAndAFinishedRunIsTimed() throws InterruptedException {
+    void twoQueuedJobsShowOnTheQueueGaugeAndAFinishedRunIsTimed() {
         importScenario();
         long completedBefore = completedFullRuns();
         String running = given().when()
@@ -80,7 +82,7 @@ class SolverMetricsTest {
     }
 
     @Test
-    void aRunThatDiesOnABugIsCounted() throws InterruptedException {
+    void aRunThatDiesOnABugIsCounted() {
         QuarkusMock.installMockForType(new FailingTasks(), SolverJobTasks.class);
         double before = registry.get(SolverMetrics.FAILURES)
                 .tag("type", "full")
@@ -161,40 +163,36 @@ class SolverMetricsTest {
                 .getList("id");
     }
 
-    private void awaitActive(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            var response = given().when().get("/api/jobs/active").then().extract();
-            if (response.statusCode() == 200 && jobId.equals(response.jsonPath().getString("id"))) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " never became active");
+    private void awaitActive(String jobId) {
+        await().alias("Job " + jobId + " never became active")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() -> {
+                    var response = given().when().get("/api/jobs/active").then().extract();
+                    return response.statusCode() == 200
+                            && jobId.equals(response.jsonPath().getString("id"));
+                });
     }
 
-    private void awaitIdleSolver() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void awaitIdleSolver() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }
