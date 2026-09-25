@@ -186,6 +186,11 @@ Single Quarkus service, no separate solver microservice. Package root:
     against the last published plan or the pre-solve automatique snapshot,
     seat by seat on the natural key (stand, day, hours — ADR 0025) and person
     by person through `PublicationDiffService`, never a comparison of its own.
+  - `service/profile/` — the fiche 360° of one animateur
+    (`AnimateurProfileService`): an assembler over `EquiteService`,
+    `FragiliteAnalyzer`, `ConfirmationPlanningService` and the referential,
+    each report computed over the whole plan and only then narrowed to the
+    person, so the fiche and the specialised screens cannot disagree.
   - `service/consigne/` — what an authority imposes on the whole event for
     one date (ADR 0043): a band every stand is shut on, and the compensation
     chosen stand by stand. `ConsigneResolver` is the **fourth layer** of a
