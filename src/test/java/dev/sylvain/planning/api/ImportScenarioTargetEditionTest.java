@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -66,8 +67,9 @@ class ImportScenarioTargetEditionTest {
             """;
 
     @BeforeEach
-    void nettoyerEditionCible() {
-        // Leftovers from a previous test run, found by name since their ids were drawn.
+    @AfterEach
+    void dropTargetEditions() {
+        // Leftovers of a previous test or run, found by name since their ids were drawn.
         List<Map<String, Object>> editions = given().when()
                 .get("/api/editions")
                 .then()
