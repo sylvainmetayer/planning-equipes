@@ -16,6 +16,7 @@ import io.restassured.http.ContentType;
 import io.restassured.response.Response;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -43,7 +44,12 @@ class ColleagueLookupRateLimitTest {
     }
 
     private static final String ME = "DEBIT-COL-A";
+    /** Labels only, borne as each colleague's nom: their ids are drawn (ADR 0050). */
     private static final List<String> COLLEAGUES = List.of("DEBIT-COL-B", "DEBIT-COL-C", "DEBIT-COL-D");
+
+    /** Label → the id the application gave that fiche. */
+    private final Map<String, String> ids = new HashMap<>();
+
     private static final String EMAIL = "debit-col@example.org";
 
     @Inject
@@ -58,9 +64,10 @@ class ColleagueLookupRateLimitTest {
         removeFixture();
         Animateur me = new Animateur(ME, "Carla", "Roux", LocalDate.of(1991, 3, 3), false);
         me.setEmail(EMAIL);
-        referenceData.createAnimateur(me);
-        for (String id : COLLEAGUES) {
-            referenceData.createAnimateur(new Animateur(id, "Camille", id, LocalDate.of(1990, 1, 1), false));
+        ids.put(ME, referenceData.createAnimateur(me).getId());
+        for (String label : COLLEAGUES) {
+            Animateur collegue = new Animateur(null, "Camille", label, LocalDate.of(1990, 1, 1), false);
+            ids.put(label, referenceData.createAnimateur(collegue).getId());
         }
         given().contentType(ContentType.JSON)
                 .body("{\"foireOuverte\":true}")
@@ -98,13 +105,15 @@ class ColleagueLookupRateLimitTest {
         seatsOf("DEBIT-COL-C").then().statusCode(200);
     }
 
-    private Response seatsOf(String collegueId) {
+    /** A label of this fixture, or any other string taken as an id nobody bears. */
+    private Response seatsOf(String collegue) {
+        String collegueId = ids.getOrDefault(collegue, collegue);
         return given().when().get("/api/espace-animateur/" + token() + "/collegues/" + collegueId + "/postes");
     }
 
     private String token() {
         return referenceData.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(ME))
+                .filter(candidat -> candidat.getId().equals(ids.get(ME)))
                 .findFirst()
                 .orElseThrow()
                 .getAccessToken();
@@ -113,8 +122,9 @@ class ColleagueLookupRateLimitTest {
     /** Leaves the shared database as it was found. */
     private void removeFixture() {
         referenceData.listAnimateurs().stream()
+                .filter(animateur -> EMAIL.equals(animateur.getEmail()) || COLLEAGUES.contains(animateur.getNom()))
                 .map(Animateur::getId)
-                .filter(id -> ME.equals(id) || COLLEAGUES.contains(id))
                 .forEach(referenceData::deleteAnimateur);
+        ids.clear();
     }
 }

@@ -22,7 +22,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
@@ -43,8 +45,14 @@ class PlanSnapshotFraicheurTest {
     private static final LocalDate JOUR = LocalDate.of(2030, 9, 14);
     /** Drawn by the application when the edition is created (ADR 0050). */
     private static String editionVoisine;
-    /** A stand must name at least one typologie, so the fixture shares one. */
+    /** A stand must name at least one typologie, so the fixture shares one — by its code. */
     private static final String TYPOLOGIE = "FRA-T";
+
+    /**
+     * Label of a fixture row → the id the application drew for it (ADR 0050).
+     * The labels keep the tests readable; the ids are what the services take.
+     */
+    private final Map<String, String> ids = new HashMap<>();
 
     /** Labels this class captures under, and the only ones its cleanup may delete. */
     private static final Set<String> LIBELLES = Set.of(
@@ -82,7 +90,7 @@ class PlanSnapshotFraicheurTest {
      * data, and says so.
      */
     @Test
-    void unInstantanePrisApresLaDerniereMutationEstAJour() {
+    void aSnapshotTakenAfterTheLastWriteIsFresh() {
         try {
             fixture("FRA-S1", "FRA-A1", 9701L, "FRA-P1");
 
@@ -106,12 +114,13 @@ class PlanSnapshotFraicheurTest {
      * even if they stopped.
      */
     @Test
-    void modifierUnStandPerimeLesInstantanesAnterieurs() {
+    void editingAStandMakesEarlierSnapshotsStale() {
         try {
             fixture("FRA-S2", "FRA-A2", 9702L, "FRA-P2");
             long id = snapshots.capture("Avant de renommer le stand", false).id();
 
-            referenceData.writeStand("FRA-S2", new Stand("FRA-S2", "Stand renommé", Set.of(TYPOLOGIE), 1, 1, false));
+            referenceData.writeStand(
+                    ids.get("FRA-S2"), new Stand(ids.get("FRA-S2"), "Stand renommé", Set.of(TYPOLOGIE), 1, 1, false));
 
             assertThat(snapshots.load(id).meta().perime()).isTrue();
         } finally {
@@ -125,16 +134,17 @@ class PlanSnapshotFraicheurTest {
      * the screen and the MCP tool both have to be able to say.
      */
     @Test
-    void restaurerUnInstantanePerimeEstRefuseSansRienEcrire() {
+    void restoringAStaleSnapshotIsRefusedAndWritesNothing() {
         try {
             fixture("FRA-S3", "FRA-A3", 9703L, "FRA-P3");
             long id = snapshots.capture("Plan à remettre", false).id();
             // The plan on screen differs from the snapshot, so a restore that
             // went through would be visible in the seat count.
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur("FRA-A3")), List.of()));
+            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur(ids.get("FRA-A3"))), List.of()));
             assertThat(persistence.countPersistedAssignments()).isZero();
 
-            referenceData.writeStand("FRA-S3", new Stand("FRA-S3", "Stand modifié", Set.of(TYPOLOGIE), 1, 2, false));
+            referenceData.writeStand(
+                    ids.get("FRA-S3"), new Stand(ids.get("FRA-S3"), "Stand modifié", Set.of(TYPOLOGIE), 1, 2, false));
 
             PlanSnapshotService.RestaurationResult refus = snapshots.restaurer(id, false);
 
@@ -154,13 +164,14 @@ class PlanSnapshotFraicheurTest {
      * nothing in the referential it predates.
      */
     @Test
-    void forcerRestaureMalgreLaPeremption() {
+    void forcingRestoresDespiteStaleness() {
         try {
             fixture("FRA-S4", "FRA-A4", 9704L, "FRA-P4");
             long id = snapshots.capture("Plan à forcer", false).id();
-            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur("FRA-A4")), List.of()));
+            persistence.persist(new PlanningEvenement(JOUR, List.of(animateur(ids.get("FRA-A4"))), List.of()));
 
-            referenceData.writeStand("FRA-S4", new Stand("FRA-S4", "Stand modifié", Set.of(TYPOLOGIE), 1, 2, false));
+            referenceData.writeStand(
+                    ids.get("FRA-S4"), new Stand(ids.get("FRA-S4"), "Stand modifié", Set.of(TYPOLOGIE), 1, 2, false));
 
             PlanSnapshotService.RestaurationResult forcee = snapshots.restaurer(id, true);
 
@@ -181,18 +192,18 @@ class PlanSnapshotFraicheurTest {
      * ids disappeared, and naming them is the actionable message.
      */
     @Test
-    void forcerNeLevePasLeRefusDesReferencesDisparues() {
+    void forcingDoesNotLiftTheRefusalOfMissingReferences() {
         try {
             fixture("FRA-S5", "FRA-A5", 9705L, "FRA-P5");
             long id = snapshots.capture("Plan orphelin", false).id();
 
-            referenceData.deleteStand("FRA-S5");
+            referenceData.deleteStand(ids.get("FRA-S5"));
 
             PlanSnapshotService.RestaurationResult refus = snapshots.restaurer(id, true);
 
             assertThat(refus.restaure()).isFalse();
             assertThat(refus.perime()).isFalse();
-            assertThat(refus.referencesManquantes()).contains("stand:FRA-S5");
+            assertThat(refus.referencesManquantes()).contains("stand:" + ids.get("FRA-S5"));
         } finally {
             nettoyer("FRA-S5", "FRA-A5", 9705L);
         }
@@ -205,7 +216,7 @@ class PlanSnapshotFraicheurTest {
      * column.
      */
     @Test
-    void modifierUneAutreEditionNePerimeRien() {
+    void editingAnotherEditionMakesNothingStale() {
         try {
             fixture("FRA-S6", "FRA-A6", 9706L, "FRA-P6");
             long id =
@@ -238,7 +249,7 @@ class PlanSnapshotFraicheurTest {
      * database, read here by a statement of its own.
      */
     @Test
-    void laDerniereMutationEstEnBaseEtNonEnMemoire() throws Exception {
+    void theLastWriteIsStoredInTheDatabaseNotInMemory() throws Exception {
         try {
             fixture("FRA-S7", "FRA-A7", 9707L, "FRA-P7");
 
@@ -281,24 +292,24 @@ class PlanSnapshotFraicheurTest {
      * through the referential services on purpose, so the marker is set by the
      * same call chain production uses.
      */
-    private void fixture(String standId, String animateurId, long creneauId, String posteId) {
-        if (referenceData.listTypologies().stream().noneMatch(item -> item.id().equals(TYPOLOGIE))) {
-            referenceData.createTypologie(new TypologieItem(TYPOLOGIE, "Typologie fraîcheur", false));
+    private void fixture(String standLabel, String animateurLabel, long creneauId, String posteId) {
+        if (referenceData.listTypologies().stream().noneMatch(item -> TYPOLOGIE.equals(item.code()))) {
+            referenceData.createTypologie(
+                    new TypologieItem(null, TYPOLOGIE, "Typologie fraîcheur", false, null, null, null));
         }
-        referenceData.writeStand(new Stand(standId, "Stand " + standId, Set.of(TYPOLOGIE), 1, 1, false));
-        referenceData.writeAnimateur(animateur(animateurId));
+        Stand nouveau = new Stand(null, "Stand " + standLabel, Set.of(TYPOLOGIE), 1, 1, false);
+        nouveau.setCode(standLabel);
+        Stand stand = referenceData.writeStand(nouveau).stand();
+        ids.put(standLabel, stand.getId());
+        Animateur animateur = referenceData.writeAnimateur(animateur(null)).animateur();
+        ids.put(animateurLabel, animateur.getId());
         referenceData.createCreneaux(List.of(creneau(creneauId)));
-        Stand stand = referenceData.listStands().stream()
-                .filter(candidat -> candidat.getId().equals(standId))
-                .findFirst()
-                .orElseThrow();
-        Animateur animateur = animateur(animateurId);
         PosteAffectation poste = new PosteAffectation(posteId, stand, creneau(creneauId));
         poste.setAnimateur(animateur);
         persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of(poste)));
     }
 
-    private void nettoyer(String standId, String animateurId, long creneauId) {
+    private void nettoyer(String standLabel, String animateurLabel, long creneauId) {
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
         // Only what this class captured: the edition is shared with every other
         // test of the run, and one of them leaves a published snapshot behind —
@@ -308,10 +319,16 @@ class PlanSnapshotFraicheurTest {
                 snapshots.delete(meta.id());
             }
         }
-        referenceData.deleteStand(standId);
-        referenceData.deleteAnimateur(animateurId);
+        if (ids.containsKey(standLabel)) {
+            referenceData.deleteStand(ids.get(standLabel));
+        }
+        if (ids.containsKey(animateurLabel)) {
+            referenceData.deleteAnimateur(ids.get(animateurLabel));
+        }
         referenceData.deleteCreneaux(List.of(creneauId));
-        referenceData.deleteTypologie(TYPOLOGIE);
+        referenceData.listTypologies().stream()
+                .filter(item -> TYPOLOGIE.equals(item.code()))
+                .forEach(item -> referenceData.deleteTypologie(item.id()));
     }
 
     private static Creneau creneau(long id) {
@@ -319,6 +336,6 @@ class PlanSnapshotFraicheurTest {
     }
 
     private static Animateur animateur(String id) {
-        return new Animateur(id, "Prenom", "Nom " + id, LocalDate.of(1990, 1, 1), false);
+        return new Animateur(id, "Prenom", "Nom fraîcheur", LocalDate.of(1990, 1, 1), false);
     }
 }

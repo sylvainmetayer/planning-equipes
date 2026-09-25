@@ -162,10 +162,11 @@ class AuthentificationRemoteUserTest {
                 .statusCode(401);
     }
 
-    private String createAnimateur(String id, String email) {
-        Animateur animateur = new Animateur(id, "Prénom", "Nom", java.time.LocalDate.of(1990, 1, 1), false);
+    /** The label becomes the fiche's nom: its id is drawn by the application (ADR 0050). */
+    private String createAnimateur(String label, String email) {
+        Animateur animateur = new Animateur(null, "Prénom", label, java.time.LocalDate.of(1990, 1, 1), false);
         animateur.setEmail(email);
-        referenceDataService.createAnimateur(animateur);
+        String id = referenceDataService.createAnimateur(animateur).getId();
         return referenceDataService.regenerateAnimateurToken(id);
     }
 }

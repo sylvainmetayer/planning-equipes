@@ -35,9 +35,15 @@ import org.junit.jupiter.api.Test;
 class PlanSnapshotSuppressionPublieeTest {
 
     private static final LocalDate JOUR = LocalDate.of(2030, 10, 5);
+    /** Codes: the ids themselves are drawn by the application (ADR 0050). */
     private static final String TYPOLOGIE = "SUP-T";
+
     private static final String STAND = "SUP-S1";
-    private static final String ANIMATEUR = "SUP-A1";
+    private static final String NOM_ANIMATEUR = "Nom SUP-A1";
+
+    private String typologieId;
+    private String standId;
+    private String animateurId;
     private static final long CRENEAU = 9801L;
 
     /** Labels this class captures under, and the only ones its cleanup may delete. */
@@ -108,16 +114,20 @@ class PlanSnapshotSuppressionPublieeTest {
     }
 
     private void fixture() {
-        if (referenceData.listTypologies().stream().noneMatch(item -> item.id().equals(TYPOLOGIE))) {
-            referenceData.createTypologie(new TypologieItem(TYPOLOGIE, "Typologie suppression", false));
-        }
-        referenceData.writeStand(new Stand(STAND, "Stand " + STAND, Set.of(TYPOLOGIE), 1, 1, false));
-        referenceData.writeAnimateur(animateur());
-        referenceData.createCreneaux(List.of(creneau()));
-        Stand stand = referenceData.listStands().stream()
-                .filter(candidat -> candidat.getId().equals(STAND))
+        typologieId = referenceData.listTypologies().stream()
+                .filter(item -> TYPOLOGIE.equals(item.code()))
+                .map(TypologieItem::id)
                 .findFirst()
-                .orElseThrow();
+                .orElseGet(() -> referenceData
+                        .createTypologie(
+                                new TypologieItem(null, TYPOLOGIE, "Typologie suppression", false, null, null, null))
+                        .id());
+        Stand nouveau = new Stand(null, "Stand " + STAND, Set.of(typologieId), 1, 1, false);
+        nouveau.setCode(STAND);
+        Stand stand = referenceData.writeStand(nouveau).stand();
+        standId = stand.getId();
+        animateurId = referenceData.writeAnimateur(animateur()).animateur().getId();
+        referenceData.createCreneaux(List.of(creneau()));
         PosteAffectation poste = new PosteAffectation("SUP-P1", stand, creneau());
         poste.setAnimateur(animateur());
         persistence.persist(new PlanningEvenement(JOUR, List.of(animateur()), List.of(poste)));
@@ -138,17 +148,17 @@ class PlanSnapshotSuppressionPublieeTest {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to clean the snapshots of the test", e);
         }
-        referenceData.deleteStand(STAND);
-        referenceData.deleteAnimateur(ANIMATEUR);
+        referenceData.deleteStand(standId);
+        referenceData.deleteAnimateur(animateurId);
         referenceData.deleteCreneaux(List.of(CRENEAU));
-        referenceData.deleteTypologie(TYPOLOGIE);
+        referenceData.deleteTypologie(typologieId);
     }
 
     private static Creneau creneau() {
         return new Creneau(CRENEAU, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0));
     }
 
-    private static Animateur animateur() {
-        return new Animateur(ANIMATEUR, "Prenom", "Nom " + ANIMATEUR, LocalDate.of(1990, 1, 1), false);
+    private Animateur animateur() {
+        return new Animateur(animateurId, "Prenom", NOM_ANIMATEUR, LocalDate.of(1990, 1, 1), false);
     }
 }
