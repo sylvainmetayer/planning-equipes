@@ -1,47 +1,54 @@
 @startuml
-' Les deux façons d'entrer comme coordinateur : le formulaire intégré, gardé
-' par un verrou par adresse, et l'en-tête d'un proxy d'accès (facultatif,
-' désactivé par défaut). La clé MCP et l'espace animateur ont leurs propres
-' diagrammes. Voir docs/api.md, « Authentification ».
+' Les deux façons d'entrer comme coordinateur : Keycloak, la porte normale
+' (second facteur imposé au rôle admin par le realm), et le compte de secours,
+' fermé par défaut, gardé par un verrou par adresse quand on l'ouvre. La clé
+' MCP et l'espace animateur ont leurs propres diagrammes. Voir docs/api.md,
+' « Authentification », et docs/keycloak.md.
 skinparam backgroundColor #FFFFFF
 skinparam responseMessageBelowArrow true
 hide footbox
 
 actor "Coordinateur" as admin
 boundary "Navigateur" as front
-boundary "Proxy d'accès\n(Pangolin, Authelia…)" as proxy
+boundary "Keycloak\n(realm planning)" as keycloak
+participant AuthResource as auth
+participant CompteIdentityAugmentor as compte
+participant CompteService as comptes
+participant FormLoginSecours as secours
 participant AdminLoginLimiter as verrou
-participant RemoteUserAuthenticationMechanism as remote
-participant RemoteUserAuthentication as confiance
 boundary "Authentification formulaire\n(Quarkus, utilisateur admin)" as form
 
-== Formulaire intégré ==
-admin -> front : identifiant, mot de passe
-front -> verrou : POST /j_security_check
-alt adresse bloquée (5 échecs, 15 min)
-  verrou --> front : 429 + Retry-After, même avec le bon mot de passe
-else
-  verrou -> form : requête transmise
-  alt mot de passe correct
-    form --> front : cookie planning-session (8 h, SameSite=Strict)\npuis GET /api/auth/me
-    verrou -> verrou : successfulLogin(contexte) remet le compteur à zéro
-  else échec
-    form -> verrou : onFailure(AuthenticationFailureEvent)
-    form --> front : 401 sur /api/auth/me
+== Keycloak (OIDC_ENABLED, par défaut) ==
+admin -> front : Se connecter avec Keycloak
+front -> auth : GET /api/auth/oidc/login?redirect=/chemin
+auth --> front : 302 vers Keycloak (code flow, PKCE)
+front -> keycloak : identifiant, méthode, puis second facteur (rôle admin)
+keycloak --> front : retour sur le chemin demandé,\ncookie de session chiffré
+front -> auth : GET /api/auth/me
+auth -> compte : augment(identité, contexte)
+compte -> comptes : signIn(email, nom, sujet)
+note right of comptes : compte créé à la première connexion,\nretrouvé par le « sub » puis par l'adresse ;\ndésactivé : plus aucun rôle
+auth --> front : {authentifie, nom, roles}
+note over auth : sans le rôle de realm admin :\n403 sur /api, la page de connexion l'explique
+
+== Compte de secours (ADMIN_SECOURS_ENABLED) ==
+admin -> front : identifiant admin, mot de passe
+front -> secours : POST /j_security_check
+alt porte fermée (défaut)
+  secours --> front : 409, sans lire le mot de passe
+else porte ouverte le temps d'un incident
+  secours -> verrou : requête transmise
+  alt adresse bloquée (5 échecs, 15 min)
+    verrou --> front : 429 + Retry-After, même avec le bon mot de passe
+  else
+    verrou -> form : requête transmise
+    alt mot de passe correct
+      form --> front : cookie planning-session (8 h, SameSite=Strict)\npuis GET /api/auth/me
+    else échec
+      form -> verrou : onFailure(AuthenticationFailureEvent)
+      form --> front : 401 sur /api/auth/me
+    end
   end
 end
-
-== Mode « remote user » (REMOTE_USER_ENABLED) ==
-admin -> proxy : se connecte au proxy
-proxy -> remote : requête /api/… avec Remote-Email\net Remote-Auth-Secret
-remote -> confiance : trustedEmail(en-tête)
-note right of confiance : secret comparé à temps constant ;\nsans secret configuré, l'application\nrefuse de démarrer
-alt e-mail = planning.auth.remote-user.admin-email
-  remote -> confiance : isAdmin(email)
-  confiance --> remote : vrai
-  remote --> front : identité admin, sans formulaire
-else autre e-mail attesté
-  remote --> front : pas d'identité admin :\nl'espace animateur l'utilise à la place du code à 6 chiffres
-end
-note over remote : /mcp est ignoré : la clé MCP y reste seule juge
+note over compte : une session de secours ouverte pendant l'incident\nperd son rôle dès que la porte se referme
 @enduml
