@@ -3464,6 +3464,11 @@ export interface EtatReferentiels {
   stands: number;
   animateurs: number;
   creneaux: number;
+  /**
+   * Typologies a stand proposes and nobody masters, polyvalents aside — enough
+   * to turn the step « à vérifier ».
+   */
+  typologiesOrphelines: number;
   statut: StatutEtat;
 }
 

@@ -46,7 +46,9 @@ type PageInternals = {
   animateursFiltres: Signal<Animateur[]>;
   typologiesFiltrees: Signal<string[]>;
   typologieLabel: Signal<string>;
+  souhaitLabel: Signal<string>;
   clearTypologie(): void;
+  clearSouhait(): void;
   resetView(): void;
 };
 
@@ -244,6 +246,32 @@ describe('AnimateursPage query-param sync', () => {
       expect(replaceState).toHaveBeenLastCalledWith('/animateurs?typologie=ESCAPE');
 
       page.clearTypologie();
+      await fixture.whenStable();
+
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs');
+    });
+  });
+
+  /**
+   * The link from the Typologies screen on a game category nobody masters:
+   * who wished for it is who to train first.
+   */
+  describe('the souhait filter', () => {
+    it('keeps only the animateurs who wished for the typologie, and names it', async () => {
+      const { fixture, page, replaceState } = setUp({ souhait: 'ESCAPE' });
+      seedStore(TestBed.inject(ReferenceDataStore), 'animateurs', [
+        animateur('alice', 'Alice', 'Martin'),
+        { ...animateur('bob', 'Bob', 'Durand'), souhaits: ['ESCAPE'] },
+      ]);
+      await fixture.whenStable();
+
+      expect(page.animateursFiltres().map((each) => each.id)).toEqual(['bob']);
+      expect(page.souhaitLabel()).toBe('Escape game');
+      expect(page.viewChanged()).toBe(true);
+      expect(replaceState).toHaveBeenLastCalledWith('/animateurs?souhait=ESCAPE');
+
+      page.clearSouhait();
       await fixture.whenStable();
 
       expect(page.animateursFiltres().map((each) => each.id)).toEqual(['alice', 'bob']);

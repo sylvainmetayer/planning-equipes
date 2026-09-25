@@ -1,0 +1,132 @@
+{
+  "_commentaire": "Jeu de cas partagé : CoherenceAnalyzerTypologieUsageTest (Java) et usage-typologies.spec.ts (Vitest) lisent ce fichier et doivent trouver les mêmes compteurs et le même état pour chaque typologie. Un compteur absent de « attendu » vaut 0.",
+  "cas": [
+    {
+      "nom": "une typologie proposée par un stand et appréciée par personne est orpheline",
+      "typologies": [{ "id": "ECHECS" }, { "id": "CARTES" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
+      "animateurs": [
+        { "id": "A1", "competences": { "CARTES": "REFERENT" }, "souhaits": ["ECHECS"] }
+      ],
+      "attendu": {
+        "ECHECS": { "etat": "ORPHELINE", "souhaits": 1, "stands": 1 },
+        "CARTES": { "etat": "INUTILISEE", "competents": 1, "referents": 1 }
+      }
+    },
+    {
+      "nom": "une seule appréciation, même débutante, rend la typologie fragile",
+      "typologies": [{ "id": "ECHECS" }],
+      "stands": [
+        { "id": "S1", "typologies": ["ECHECS"] },
+        { "id": "S2", "typologies": ["ECHECS"] }
+      ],
+      "animateurs": [
+        { "id": "A1", "competences": { "ECHECS": "DEBUTANT" } },
+        { "id": "A2", "competences": {} }
+      ],
+      "attendu": {
+        "ECHECS": { "etat": "FRAGILE", "competents": 1, "debutants": 1, "stands": 2 }
+      }
+    },
+    {
+      "nom": "deux appréciations : rien à signaler, avec la répartition par niveau",
+      "typologies": [{ "id": "ECHECS" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
+      "animateurs": [
+        { "id": "A1", "competences": { "ECHECS": "AUTONOME" } },
+        { "id": "A2", "competences": { "ECHECS": "REFERENT" }, "souhaits": ["ECHECS"] },
+        { "id": "A3", "competences": { "ECHECS": "DEBUTANT" } }
+      ],
+      "attendu": {
+        "ECHECS": {
+          "etat": "NORMALE",
+          "competents": 3,
+          "referents": 1,
+          "autonomes": 1,
+          "debutants": 1,
+          "souhaits": 1,
+          "stands": 1
+        }
+      }
+    },
+    {
+      "nom": "le ninja n'est pas compté comme compétent : il est un polyvalent, et la typologie reste orpheline",
+      "typologies": [{ "id": "NINJA", "ninja": true }, { "id": "ECHECS" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
+      "animateurs": [
+        { "id": "A1", "competences": { "NINJA": "REFERENT" } },
+        { "id": "A2", "competences": { "NINJA": "AUTONOME" } }
+      ],
+      "attendu": {
+        "NINJA": { "etat": "NORMALE", "competents": 2, "referents": 1, "autonomes": 1 },
+        "ECHECS": { "etat": "ORPHELINE", "polyvalents": 2, "stands": 1 }
+      }
+    },
+    {
+      "nom": "un ninja qui apprécie aussi la typologie compte comme compétent, pas comme polyvalent",
+      "typologies": [{ "id": "NINJA", "ninja": true }, { "id": "ECHECS" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
+      "animateurs": [{ "id": "A1", "competences": { "NINJA": "REFERENT", "ECHECS": "AUTONOME" } }],
+      "attendu": {
+        "NINJA": { "etat": "NORMALE", "competents": 1, "referents": 1 },
+        "ECHECS": { "etat": "FRAGILE", "competents": 1, "autonomes": 1, "stands": 1 }
+      }
+    },
+    {
+      "nom": "la typologie ninja que personne ne porte est inutilisée, jamais orpheline",
+      "typologies": [{ "id": "NINJA", "ninja": true }],
+      "stands": [{ "id": "S1", "typologies": [] }],
+      "animateurs": [{ "id": "A1", "competences": {} }],
+      "attendu": {
+        "NINJA": { "etat": "INUTILISEE" }
+      }
+    },
+    {
+      "nom": "un stand sans typologie ne compte pour aucune, et la typologie sans stand ni compétent est candidate à la suppression",
+      "typologies": [{ "id": "ECHECS" }],
+      "stands": [{ "id": "S1", "typologies": [] }],
+      "animateurs": [{ "id": "A1", "competences": {}, "souhaits": ["ECHECS"] }],
+      "attendu": {
+        "ECHECS": { "etat": "SANS_COMPETENT_INUTILISEE", "souhaits": 1 }
+      }
+    },
+    {
+      "nom": "une typologie proposée par aucun stand est inutilisée, jamais orpheline, même appréciée",
+      "typologies": [{ "id": "ECHECS" }],
+      "stands": [],
+      "animateurs": [{ "id": "A1", "competences": { "ECHECS": "REFERENT" } }],
+      "attendu": {
+        "ECHECS": { "etat": "INUTILISEE", "competents": 1, "referents": 1 }
+      }
+    },
+    {
+      "nom": "sans aucun animateur saisi, aucune alerte : les compteurs restent à zéro",
+      "typologies": [{ "id": "ECHECS" }, { "id": "CARTES" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS"] }],
+      "animateurs": [],
+      "attendu": {
+        "ECHECS": { "etat": "NORMALE", "stands": 1 },
+        "CARTES": { "etat": "INUTILISEE" }
+      }
+    },
+    {
+      "nom": "un stand qui propose deux typologies laisse orpheline celle que personne n'apprécie",
+      "typologies": [{ "id": "ECHECS" }, { "id": "CARTES" }],
+      "stands": [{ "id": "S1", "typologies": ["ECHECS", "CARTES"] }],
+      "animateurs": [
+        { "id": "A1", "competences": { "CARTES": "REFERENT" } },
+        { "id": "A2", "competences": { "CARTES": "AUTONOME" } }
+      ],
+      "attendu": {
+        "ECHECS": { "etat": "ORPHELINE", "stands": 1 },
+        "CARTES": {
+          "etat": "NORMALE",
+          "competents": 2,
+          "referents": 1,
+          "autonomes": 1,
+          "stands": 1
+        }
+      }
+    }
+  ]
+}

@@ -47,6 +47,16 @@
         </mat-chip>
       </mat-chip-set>
     }
+    @if (souhait()) {
+      <mat-chip-set class="animateurs-typologie-filtre" aria-label="Souhait filtré" i18n-aria-label="@@animateurs.filtreSouhait.label">
+        <mat-chip (removed)="clearSouhait()" [removable]="true">
+          <ng-container i18n="@@animateurs.filtreSouhait">Souhait : {{ souhaitLabel() }}</ng-container>
+          <button matChipRemove i18n-aria-label="@@animateurs.filtreSouhait.clear" aria-label="Retirer le filtre par souhait">
+            <mat-icon>cancel</mat-icon>
+          </button>
+        </mat-chip>
+      </mat-chip-set>
+    }
     @if (viewChanged()) {
       <button matButton type="button" (click)="resetView()">
         <mat-icon>filter_alt_off</mat-icon>

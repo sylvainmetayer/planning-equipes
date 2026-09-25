@@ -39,6 +39,7 @@ import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService.SyntheseConfirmations;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
+import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
 import dev.sylvain.planning.service.referentiel.JoursEvenement;
@@ -213,6 +214,7 @@ public class EtatEditionService {
             int stands,
             int animateurs,
             int creneaux,
+            int typologiesOrphelines,
             boolean collecteOuverte,
             int declarationsEnAttente,
             int declarationsTraitees,
@@ -264,6 +266,7 @@ public class EtatEditionService {
                 stands.size(),
                 animateurs.size(),
                 creneaux.size(),
+                CoherenceAnalyzer.countOrphanTypologies(referenceDataService.listTypologies(), stands, animateurs),
                 // The window as it applies today, not the switch alone: a
                 // collection « open from 1 to 10 June », read in September, is
                 // closed for everybody the server answers, and a line saying
@@ -360,8 +363,14 @@ public class EtatEditionService {
     }
 
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {
+        Statut statut;
+        if (!saisis) {
+            statut = Statut.A_FAIRE;
+        } else {
+            statut = facts.typologiesOrphelines() > 0 ? Statut.ATTENTION : Statut.FAIT;
+        }
         return new EtatReferentiels(
-                facts.stands(), facts.animateurs(), facts.creneaux(), saisis ? Statut.FAIT : Statut.A_FAIRE);
+                facts.stands(), facts.animateurs(), facts.creneaux(), facts.typologiesOrphelines(), statut);
     }
 
     /**

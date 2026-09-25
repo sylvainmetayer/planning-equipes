@@ -662,6 +662,18 @@ résolution. Là où l'écran et l'export CSV nomment les personnes, l'outil ne
 rend que des ids. L'heure de début de soirée se lit et se règle par
 `consulter_parametres_legaux` / `modifier_parametres_legaux`.
 
+## Une typologie se lit avec ce qui la tient
+
+`lister_typologies` rend chaque typologie avec les compteurs de l'écran
+Typologies : `competents` (les animateurs qui l'ont dans leurs compétences,
+quel que soit le niveau — un polyvalent qui ne porte que la typologie ninja n'en
+est pas), `polyvalents` (ceux-là), `souhaits`, `stands` (ceux qui la proposent),
+et `etat` — `ORPHELINE` (proposée par un stand, maîtrisée par personne),
+`FRAGILE` (une seule personne), `INUTILISEE` (aucun stand),
+`SANS_COMPETENT_INUTILISEE`, `NORMALE`. Des nombres seulement : qui maîtrise
+quoi se lit par id avec `lister_animateurs`. La définition est celle que
+`etat_edition` compte dans `referentiels.typologiesOrphelines`.
+
 ## Une grille est faite de vacations, et ça ne se demande plus
 
 `valider_creneaux`, `previsualiser_creneaux_recurrents`,

@@ -9,6 +9,9 @@ import dev.sylvain.planning.domain.NiveauEffort;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
+import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer;
+import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.EtatTypologie;
+import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.TypologieUsage;
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
@@ -22,8 +25,10 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
@@ -671,16 +676,26 @@ public class StandMcpTools {
     @Tool(
             name = "lister_typologies",
             description = "Liste les typologies de jeu (référentiel CRUD auquel se réfèrent les compétences des "
-                    + "animateurs et les typologies proposées par les stands).",
+                    + "animateurs et les typologies proposées par les stands), avec pour chacune le nombre de "
+                    + "compétents (hors polyvalents), de souhaits et de stands qui la proposent, et son état : "
+                    + "ORPHELINE (proposée, personne ne la maîtrise), FRAGILE (un seul compétent), INUTILISEE "
+                    + "(aucun stand), SANS_COMPETENT_INUTILISEE, NORMALE.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<TypologieItem> listTypologies(
+    List<TypologieListItem> listTypologies(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
-        return referenceDataService.listTypologies();
+        List<TypologieItem> typologies = referenceDataService.listTypologies();
+        Map<String, TypologieUsage> usages = new HashMap<>();
+        CoherenceAnalyzer.typologieUsages(
+                        typologies, referenceDataService.listStands(), referenceDataService.listAnimateurs())
+                .forEach(usage -> usages.put(usage.typologieId(), usage));
+        return typologies.stream()
+                .map(typologie -> TypologieListItem.of(typologie, usages.get(typologie.id())))
+                .toList();
     }
 
     @Tool(
@@ -908,6 +923,41 @@ public class StandMcpTools {
      * TypologieItem}, under the same keys, plus the warnings a write accepted
      * during a solve carries — the service type cannot take them.
      */
+    /**
+     * A game category as {@code lister_typologies} returns it: the referential
+     * row and what the Typologies screen counts beside it — how many hold it,
+     * wish for it and propose it, and the resulting badge. Counts only, never a
+     * name.
+     */
+    public record TypologieListItem(
+            String id,
+            String label,
+            boolean ninja,
+            Integer maxCreneauxParAnimateur,
+            String description,
+            Instant modifieLe,
+            int competents,
+            int polyvalents,
+            int souhaits,
+            int stands,
+            EtatTypologie etat) {
+
+        static TypologieListItem of(TypologieItem typologie, TypologieUsage usage) {
+            return new TypologieListItem(
+                    typologie.id(),
+                    typologie.label(),
+                    typologie.ninja(),
+                    typologie.maxCreneauxParAnimateur(),
+                    typologie.description(),
+                    typologie.modifieLe(),
+                    usage.competents(),
+                    usage.polyvalents(),
+                    usage.souhaits(),
+                    usage.stands(),
+                    usage.etat());
+        }
+    }
+
     public record TypologieView(
             String id,
             String label,

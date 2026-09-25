@@ -3355,7 +3355,7 @@
         }
       },
       "EtatReferentiels" : {
-        "required" : [ "animateurs", "creneaux", "stands", "statut" ],
+        "required" : [ "animateurs", "creneaux", "stands", "statut", "typologiesOrphelines" ],
         "type" : "object",
         "properties" : {
           "stands" : {
@@ -3367,6 +3367,10 @@
             "format" : "int32"
           },
           "creneaux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "typologiesOrphelines" : {
             "type" : "integer",
             "format" : "int32"
           },

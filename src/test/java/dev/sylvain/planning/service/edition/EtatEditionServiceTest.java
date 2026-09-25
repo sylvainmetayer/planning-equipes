@@ -109,6 +109,45 @@ class EtatEditionServiceTest {
         assertThat(etat.confirmations().confirmes()).isEqualTo(2);
     }
 
+    /**
+     * A game category a stand proposes and nobody holds leaves that stand to
+     * the polyvalents alone: the step is entered, and still worth a look.
+     */
+    @Test
+    void anOrphanTypologieTurnsTheReferentialLineToCheck() {
+        Facts f = filledFacts();
+        Facts facts = new Facts(
+                f.edition(),
+                f.stands(),
+                f.animateurs(),
+                f.creneaux(),
+                2,
+                f.collecteOuverte(),
+                f.declarationsEnAttente(),
+                f.declarationsTraitees(),
+                f.ouvertures(),
+                f.staffing(),
+                f.resolution(),
+                f.diagnostic(),
+                f.lastDataChange(),
+                f.solveEnCours(),
+                f.faisabilite(),
+                f.publication(),
+                f.confirmations(),
+                f.foireOuverte(),
+                f.demandesEnAttente(),
+                f.relecture(),
+                f.coherence(),
+                f.today());
+
+        EtatEditionView etat = EtatEditionService.assemble(facts);
+
+        assertThat(etat.referentiels().typologiesOrphelines()).isEqualTo(2);
+        assertThat(etat.referentiels().statut()).isEqualTo(Statut.ATTENTION);
+        assertThat(EtatEditionService.assemble(filledFacts()).referentiels().statut())
+                .isEqualTo(Statut.FAIT);
+    }
+
     @Test
     void aRunningSolveIsReportedOnTheResolutionLineAndNowhereElse() {
         Facts f = filledFacts();
@@ -117,6 +156,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -159,6 +199,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -194,6 +235,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -226,6 +268,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -282,6 +325,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -324,6 +368,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -359,6 +404,7 @@ class EtatEditionServiceTest {
                 0,
                 0,
                 0,
+                0,
                 true,
                 0,
                 0,
@@ -381,6 +427,7 @@ class EtatEditionServiceTest {
                 0,
                 0,
                 0,
+                0,
                 false,
                 2,
                 5,
@@ -400,6 +447,7 @@ class EtatEditionServiceTest {
                 NOTHING_TODAY);
         Facts fermee = new Facts(
                 f.edition(),
+                0,
                 0,
                 0,
                 0,
@@ -447,6 +495,7 @@ class EtatEditionServiceTest {
                 1,
                 1,
                 1,
+                0,
                 false,
                 0,
                 0,
@@ -489,6 +538,7 @@ class EtatEditionServiceTest {
                 1,
                 2,
                 1,
+                0,
                 false,
                 0,
                 0,
@@ -532,6 +582,7 @@ class EtatEditionServiceTest {
                 1,
                 2,
                 1,
+                0,
                 false,
                 0,
                 0,
@@ -576,6 +627,7 @@ class EtatEditionServiceTest {
                         f.stands(),
                         f.animateurs(),
                         f.creneaux(),
+                        f.typologiesOrphelines(),
                         f.collecteOuverte(),
                         today.declarations().size(),
                         f.declarationsTraitees(),
@@ -801,6 +853,7 @@ class EtatEditionServiceTest {
                         f.stands(),
                         f.animateurs(),
                         f.creneaux(),
+                        f.typologiesOrphelines(),
                         f.collecteOuverte(),
                         f.declarationsEnAttente(),
                         f.declarationsTraitees(),
@@ -865,6 +918,7 @@ class EtatEditionServiceTest {
                 f.stands(),
                 f.animateurs(),
                 f.creneaux(),
+                f.typologiesOrphelines(),
                 f.collecteOuverte(),
                 f.declarationsEnAttente(),
                 f.declarationsTraitees(),
@@ -887,6 +941,7 @@ class EtatEditionServiceTest {
     private static Facts emptyFacts() {
         return new Facts(
                 EDITION,
+                0,
                 0,
                 0,
                 0,
@@ -927,6 +982,7 @@ class EtatEditionServiceTest {
                 1,
                 2,
                 1,
+                0,
                 false,
                 0,
                 2,

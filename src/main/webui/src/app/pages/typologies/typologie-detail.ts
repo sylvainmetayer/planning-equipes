@@ -3,18 +3,35 @@
 
 import { DetailSection } from '../../shared/detail-dialog';
 import { Animateur, Stand, TypologieItem } from '../../core/models';
+import {
+  explicationEtat,
+  libelleEtat,
+  repartitionCompetents,
+  usagesTypologies,
+} from './usage-typologies';
 
 /**
  * A typologie is only ever meaningful through what references it: the stands
  * proposing it and the animateurs the administrator vetted on it. A typologie
  * nobody masters, or one no stand proposes, is exactly the kind of thing this
- * view is opened to spot — so both counts are spelled out, empty or not.
+ * view is opened to spot — so both counts are spelled out, empty or not, with
+ * the badge of the table when there is one.
+ *
+ * `typologies` is the whole referential, needed to tell the ninja category
+ * apart; left empty, the typologie alone is used.
  */
 export function buildTypologieDetail(
   typologie: TypologieItem,
   stands: readonly Stand[] = [],
   animateurs: readonly Animateur[] = [],
+  typologies: readonly TypologieItem[] = [],
 ): DetailSection[] {
+  const referentiel = typologies.some((candidate) => candidate.id === typologie.id)
+    ? typologies
+    : [typologie];
+  const usage = usagesTypologies(referentiel, stands, animateurs).find(
+    (candidate) => candidate.typologieId === typologie.id,
+  )!;
   const standsProposant = stands
     .filter((stand) => (stand.typologiesProposees ?? []).includes(typologie.id))
     .map((stand) => stand.nom || stand.id)
@@ -57,6 +74,22 @@ export function buildTypologieDetail(
     {
       title: $localize`:@@detail.typologie.usage:Utilisation`,
       rows: [
+        ...(usage.etat === 'NORMALE'
+          ? []
+          : [
+              {
+                label: $localize`:@@detail.typologie.etat:État`,
+                value: `${libelleEtat(usage.etat)} — ${explicationEtat(usage)}`,
+              },
+            ]),
+        {
+          label: $localize`:@@detail.typologie.competents:Compétents`,
+          value: `${usage.competents} (${repartitionCompetents(usage)})`,
+        },
+        {
+          label: $localize`:@@detail.typologie.souhaits:Souhaits`,
+          value: String(usage.souhaits),
+        },
         standsProposant.length > 0
           ? {
               label: $localize`:@@detail.typologie.stands:Stands proposant cette typologie (${standsProposant.length}:count:)`,

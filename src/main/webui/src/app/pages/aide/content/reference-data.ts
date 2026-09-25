@@ -67,6 +67,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.data.typologiesOrphelines:L'écran Typologies compte, pour chacune, les animateurs qui la maîtrisent (les polyvalents à part), ceux qui l'ont souhaitée et les stands qui la proposent. Un badge « Orpheline » signale une typologie proposée par un stand que personne ne maîtrise : seul un polyvalent peut alors tenir ce stand. « Fragile » veut dire une seule personne, « Inutilisée » aucun stand. Depuis le badge, voyez qui l'a souhaitée ou saisissez des appréciations dans la grille Compétences. L'État de l'édition compte les orphelines, avant tout calcul.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.data.bulk:Chaque écran permet de cocher plusieurs lignes pour les supprimer ou les modifier d'un geste. En modification groupée, un champ laissé vide veut dire « ne pas modifier » : les valeurs propres à chaque ligne sont préservées. Cela vaut aussi pour les horaires : une règle valable pour vingt stands se saisit une fois.`,
         },
         {

@@ -18,7 +18,13 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
   return {
     editionId: 'DEFAUT',
     editionNom: 'Édition par défaut',
-    referentiels: { stands: 0, animateurs: 0, creneaux: 0, statut: 'A_FAIRE' },
+    referentiels: {
+      stands: 0,
+      animateurs: 0,
+      creneaux: 0,
+      typologiesOrphelines: 0,
+      statut: 'A_FAIRE',
+    },
     // Nothing entered, nothing incoherent: the Référentiels line carries the « à faire ».
     coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
     collecte: {
@@ -78,7 +84,13 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
 /** Solved, published, acknowledged: every line done. */
 function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
   return etatVide({
-    referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
+    referentiels: {
+      stands: 12,
+      animateurs: 40,
+      creneaux: 30,
+      typologiesOrphelines: 0,
+      statut: 'FAIT',
+    },
     collecte: { ouverte: false, declarationsEnAttente: 0, declarationsTraitees: 8, statut: 'FAIT' },
     ouvertures: {
       anomalies: 0,
@@ -146,13 +158,46 @@ describe('buildLignes', () => {
     expect(referentiels.detail).toBe('0 stands · 0 animateurs · 0 créneaux');
 
     const withoutStand = etatVide({
-      referentiels: { stands: 0, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
+      referentiels: {
+        stands: 0,
+        animateurs: 0,
+        creneaux: 4,
+        typologiesOrphelines: 0,
+        statut: 'A_FAIRE',
+      },
     });
     expect(buildLignes(withoutStand)[0].lien!.route).toBe('/stands');
     const withoutAnimateur = etatVide({
-      referentiels: { stands: 3, animateurs: 0, creneaux: 4, statut: 'A_FAIRE' },
+      referentiels: {
+        stands: 3,
+        animateurs: 0,
+        creneaux: 4,
+        typologiesOrphelines: 0,
+        statut: 'A_FAIRE',
+      },
     });
     expect(buildLignes(withoutAnimateur)[0].lien!.route).toBe('/animateurs');
+  });
+
+  it('sends an entered referential with an orphan typologie to the Typologies screen, filtered', () => {
+    const withOrphans = etatVide({
+      referentiels: {
+        stands: 3,
+        animateurs: 5,
+        creneaux: 4,
+        typologiesOrphelines: 2,
+        statut: 'ATTENTION',
+      },
+    });
+    const [referentiels] = buildLignes(withOrphans);
+    expect(referentiels.statut).toBe('ATTENTION');
+    expect(referentiels.detail).toBe(
+      '3 stands · 5 animateurs · 4 créneaux · 2 typologie(s) orpheline(s)',
+    );
+    expect(referentiels.lien).toMatchObject({
+      route: '/typologies',
+      queryParams: { etat: 'orpheline' },
+    });
   });
 
   it('links every line to the screen that moves it, with the tab or the filter it needs', () => {
