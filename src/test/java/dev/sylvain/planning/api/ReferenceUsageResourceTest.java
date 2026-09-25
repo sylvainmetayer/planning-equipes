@@ -55,6 +55,9 @@ class ReferenceUsageResourceTest {
     @Inject
     ConsigneRepository consignes;
 
+    /** Drawn by the application on creation (ADR 0050): an ad hoc constraint is sent without an id. */
+    private String contrainteId;
+
     /**
      * One stand, one animateur and one timeslot, referenced once each way:
      * a filled seat, an {@code AFFECTATION_FORCEE} naming all three at once,
@@ -76,11 +79,11 @@ class ReferenceUsageResourceTest {
 
         persistence.persist(new PlanningEvenement(JOUR, List.of(animateur), List.of(pourvu, vacant, autreStand)));
 
-        ContrainteAdHoc contrainte = new ContrainteAdHoc("USAGE-C1", TypeContrainteAdHoc.AFFECTATION_FORCEE);
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(null, TypeContrainteAdHoc.AFFECTATION_FORCEE);
         contrainte.setStand(stand);
         contrainte.setCreneau(creneau);
         contrainte.getAnimateursConcernes().add(animateur);
-        referenceData.createContrainteAdHoc(contrainte);
+        contrainteId = referenceData.createContrainteAdHoc(contrainte).getId();
 
         lock("USAGE-V-STAND", TypeVerrouillage.STAND, verrou -> verrou.setStandId(STAND));
         lock("USAGE-V-ANIM", TypeVerrouillage.ANIMATEUR, verrou -> verrou.setAnimateurId(ANIMATEUR));
@@ -109,7 +112,10 @@ class ReferenceUsageResourceTest {
         persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
         consignes.delete(JOUR);
         List.of("USAGE-V-STAND", "USAGE-V-ANIM", "USAGE-V-CRENEAU").forEach(referenceData::deleteVerrouillage);
-        referenceData.deleteContrainteAdHoc("USAGE-C1");
+        if (contrainteId != null) {
+            referenceData.deleteContrainteAdHoc(contrainteId);
+            contrainteId = null;
+        }
         referenceData.deleteCreneaux(List.of(CRENEAU));
         referenceData.deleteStand(STAND);
         referenceData.deleteStand(STAND_LIBRE);

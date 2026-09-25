@@ -76,7 +76,8 @@ class ReferenceDataServiceStandTest {
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("STAND-SANS-TYPO")
                 .hasMessageContaining("au moins une typologie");
-        assertThat(referenceDataService.listStands()).noneMatch(s -> "STAND-SANS-TYPO".equals(s.getId()));
+        // Nothing written: an id sent is never kept (ADR 0050), so look for the name.
+        assertThat(referenceDataService.listStands()).noneMatch(s -> "Sans typologie".equals(s.getNom()));
     }
 
     @Test

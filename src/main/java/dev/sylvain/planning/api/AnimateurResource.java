@@ -249,8 +249,9 @@ public class AnimateurResource {
     }
 
     /**
-     * The grid as a CSV — ids of animateurs in rows, ids of typologies in
-     * columns, a level or nothing per cell. No prénom, no nom: the id is what
+     * The grid as a CSV — ids of animateurs in rows, typologies in columns
+     * (their code when they have one, their id otherwise), a level or nothing
+     * per cell. No prénom, no nom: the id is what
      * the import needs, and a file naming nobody travels lighter.
      */
     @GET
