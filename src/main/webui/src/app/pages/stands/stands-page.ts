@@ -23,7 +23,7 @@ import { resumerHoraires } from '../../core/horaire-stand';
 import { NotificationService } from '../../core/notification.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { RapportOuvertures, Stand } from '../../core/models';
+import { RapportOuvertures, Stand, TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -100,11 +100,11 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     super({
       rows: (store) => store.stands(),
       id: (stand) => stand.id,
-      champsFiltre: (stand) => [
+      champsFiltre: (stand, store) => [
         stand.id,
         stand.code,
         stand.nom,
-        ...(stand.typologiesProposees ?? []),
+        ...libellesTypologies(stand, store.typologies()),
         stand.emplacement?.nom,
         stand.emplacement?.id,
       ],
@@ -170,8 +170,9 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
     }
   }
 
+  /** The stand's game categories by label: its ids are generated (T1, T2…) and read as nothing. */
   protected typologiesLabel(stand: Stand): string {
-    return (stand.typologiesProposees ?? []).join(', ') || '—';
+    return libellesTypologies(stand, this.store.typologies()).join(', ') || '—';
   }
 
   protected effectifSuffix(stand: Stand): string {
@@ -265,4 +266,10 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       autoFocus: 'first-tabbable',
     });
   }
+}
+
+/** A stand's game categories by label, an unknown id kept as-is rather than dropped. */
+function libellesTypologies(stand: Stand, typologies: readonly TypologieItem[]): string[] {
+  const labels = new Map(typologies.map((typologie) => [typologie.id, typologie.label]));
+  return (stand.typologiesProposees ?? []).map((id) => labels.get(id) ?? id);
 }

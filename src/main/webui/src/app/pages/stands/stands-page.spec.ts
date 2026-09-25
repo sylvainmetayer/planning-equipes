@@ -316,12 +316,31 @@ describe('StandsPage', () => {
       expect(page.emplacementLabel(stand({ id: 'tir' }))).toBe('—');
     });
 
-    it('lists the typologies of a stand, comma separated', () => {
+    it('lists the typologies of a stand by label, comma separated', () => {
+      // The ids are generated (T1, T2…) and say nothing: the cell reads the label.
+      seedStore(referenceData, 'typologies', [
+        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", ninja: false },
+        { id: 'T2', code: 'STRATEGIE', label: 'Stratégie', ninja: false },
+      ]);
       const page = createPage();
 
-      expect(
-        page.typologiesLabel(stand({ id: 'tir', typologiesProposees: ['AMBIANCE', 'STRATEGIE'] })),
-      ).toBe('AMBIANCE, STRATEGIE');
+      expect(page.typologiesLabel(stand({ id: 'tir', typologiesProposees: ['T1', 'T2'] }))).toBe(
+        "Jeux d'ambiance, Stratégie",
+      );
+    });
+
+    it('finds a stand by the label of one of its typologies', () => {
+      seedStore(referenceData, 'typologies', [
+        { id: 'T1', code: 'AMBIANCE', label: "Jeux d'ambiance", ninja: false },
+      ]);
+      const page = createPage([
+        stand({ id: 'S1', typologiesProposees: ['T1'] }),
+        stand({ id: 'S2', typologiesProposees: [] }),
+      ]);
+
+      page.filtre.set('ambiance');
+
+      expect(page.standsFiltres().map((row) => row.id)).toEqual(['S1']);
     });
 
     it('names the emplacement of a stand', () => {
