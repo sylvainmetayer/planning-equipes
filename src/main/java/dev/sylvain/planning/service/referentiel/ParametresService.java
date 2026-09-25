@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
@@ -73,11 +74,31 @@ public class ParametresService {
      * #298, #299, #300). Not a problem fact, and deliberately not tracked by
      * {@link ReferenceDataChangeTracker}: it changes who gets written to at
      * night, never the data a solve reads.
+     *
+     * @throws BusinessError.Conflict when arming it while another edition is armed
      */
     public ParametresNotifications updateNotifications(ParametresNotifications parametres) {
         ParametresValidator.checkParametresNotifications(parametres);
-        repository.saveParametresNotifications(parametres);
+        if (parametres.actives()) {
+            repository.otherArmedEditionName().ifPresent(ParametresService::refuseSecondArmedEdition);
+        }
+        if (!repository.saveParametresNotifications(parametres)) {
+            // Lost a race against another save: the index saw what the read above did not.
+            refuseSecondArmedEdition(repository.otherArmedEditionName().orElse("?"));
+        }
         return parametres;
+    }
+
+    /**
+     * One armed edition on the whole instance: the scheduler serves every armed
+     * edition, so two of them sharing a date wrote twice the same night to the
+     * same people, each send idempotent on its own side. The refusal names the
+     * edition to disarm — an edition, never a person.
+     */
+    private static void refuseSecondArmedEdition(String editionArmee) {
+        throw new BusinessError.Conflict("Les envois automatiques sont déjà activés sur l'édition « " + editionArmee
+                + " ». Désactivez-les d'abord sur cette édition : une seule édition peut écrire aux animateurs "
+                + "chaque nuit.");
     }
 
     /**

@@ -901,6 +901,13 @@ drapeau « en cours »** : aucun job ne peut deviner que les animateurs de
 l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. La duplication
 d'une édition ne recopie pas ce réglage — une édition neuve naît muette.
 
+**Une seule édition armée sur l'instance.** Passer `actives` à `true` alors
+qu'une autre édition l'est déjà répond `409`, avec un message qui nomme
+l'édition armée : la tâche de nuit sert toutes les éditions armées, et deux
+d'entre elles partageant une date doublaient les rappels, chacun idempotent de
+son côté. L'index unique partiel de la table tient la règle même entre deux
+enregistrements simultanés.
+
 Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
 `NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).
 

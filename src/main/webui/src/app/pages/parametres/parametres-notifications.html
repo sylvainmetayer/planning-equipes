@@ -15,6 +15,7 @@
       >
         Activer les envois automatiques pour cette édition
       </mat-slide-toggle>
+      <app-status-message tone="error" [text]="refus() ?? ''" />
 
       <fieldset class="form-grid" [disabled]="!reglages.actives">
         <mat-form-field appearance="outline" subscriptSizing="dynamic">
