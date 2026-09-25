@@ -10,12 +10,14 @@ import ai.timefold.solver.core.config.solver.termination.TerminationCompositionS
 import ai.timefold.solver.core.config.solver.termination.TerminationConfig;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticMode;
 import dev.sylvain.planning.service.diagnostic.ConstraintDiagnosticService;
 import dev.sylvain.planning.service.referentiel.ParametresQualiteDefaults;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -204,6 +206,59 @@ final class SolverConfiguration {
             }
         });
         return poids;
+    }
+
+    /**
+     * The weighting a solve actually ran under, reduced to what departs from a
+     * default — see {@link Dosage}. Read from the prepared problem rather than
+     * from the edition: the weights {@code SolveRunner} handed the solver
+     * (scenario ones included), and the toggles the problem carried — a
+     * client's own {@code constraintsDesactivees} when it sent some. A weight
+     * changed while the solve runs was not handed to it, and is not charged to
+     * it.
+     */
+    Dosage dosageOf(PlanningEvenement ranWith) {
+        ConstraintWeightOverrides<HardMediumSoftScore> overrides = ranWith.getPonderationsContraintes();
+        Map<String, Boolean> etats = new HashMap<>();
+        if (ranWith.getConstraintsDesactivees() != null) {
+            ranWith.getConstraintsDesactivees().forEach(toggle -> etats.put(toggle.getNom(), toggle.isActif()));
+        }
+        Map<String, Integer> weights = new HashMap<>();
+        Map<String, Integer> instanceWeights = new HashMap<>();
+        List<String> disabled = new ArrayList<>();
+        List<String> enabled = new ArrayList<>();
+        for (ConstraintCatalog.ConstraintDefinition definition : ConstraintCatalog.definitions()) {
+            String name = definition.name();
+            int configured = configuredWeights.getOrDefault(name, 1);
+            int weight = appliedWeight(overrides, definition);
+            if (weight != configured) {
+                weights.put(name, weight);
+            }
+            if (configured != 1) {
+                instanceWeights.put(name, configured);
+            }
+            Boolean etat = etats.get(name);
+            if (etat != null && etat != definition.activeByDefault()) {
+                (etat ? enabled : disabled).add(name);
+            }
+        }
+        return new Dosage(weights, instanceWeights, disabled, enabled);
+    }
+
+    /** The weight {@code overrides} gives a rule, on its own level; 1 when it names none — the inverse of {@link #constraintWeightOverrides}. */
+    private static int appliedWeight(
+            ConstraintWeightOverrides<HardMediumSoftScore> overrides,
+            ConstraintCatalog.ConstraintDefinition definition) {
+        HardMediumSoftScore weight = overrides == null ? null : overrides.getConstraintWeight(definition.name());
+        if (weight == null) {
+            return 1;
+        }
+        return (int)
+                switch (definition.niveau()) {
+                    case HARD -> weight.hardScore();
+                    case MEDIUM -> weight.mediumScore();
+                    case SOFT -> weight.softScore();
+                };
     }
 
     /** {@link #effectiveConstraintWeights()} turned into what Timefold applies at solve time. */

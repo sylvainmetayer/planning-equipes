@@ -9,6 +9,7 @@ import dev.sylvain.planning.service.consigne.ConsigneRepository;
 import dev.sylvain.planning.service.consigne.ConsigneService;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -189,9 +190,9 @@ public class ScenarioImportService {
                 } else {
                     actif = definition.activeByDefault();
                 }
-                referenceDataService.setContrainteActive(definition.name(), actif);
+                referenceDataService.setContrainteActive(definition.name(), actif, WeightChangeOrigin.SCENARIO);
                 referenceDataService.setConstraintWeight(
-                        definition.name(), contraintes.poids().get(definition.name()));
+                        definition.name(), contraintes.poids().get(definition.name()), WeightChangeOrigin.SCENARIO);
             }
         });
     }

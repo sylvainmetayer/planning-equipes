@@ -12,7 +12,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { dosageLines, dosageSummary, dosageToken } from '../../core/dosage';
+import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { intlLocale } from '../../core/locale';
 import { KpiHistoriqueEntry } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -51,10 +54,12 @@ export class KpiPage {
     'modifications',
     'consignes',
     'duree',
+    'dosage',
     'actions',
   ];
 
   private readonly analysesApi = inject(AnalysesApi);
+  private readonly route = inject(ActivatedRoute);
   private readonly confirm = inject(ConfirmService);
 
   /**
@@ -76,6 +81,27 @@ export class KpiPage {
   // the operator just pressed « Actualiser », so nothing here passes for fresh.
   private readonly historyKept = retainedValue(this.history);
   protected readonly entries = computed(() => this.historyKept() ?? []);
+
+  /**
+   * « Résolutions sous le même dosage »: the token of the dosage the table is
+   * narrowed to, `null` for every row. In the URL as `?dosage=`, so a
+   * comparison at equal weights survives a refresh and can be shared.
+   */
+  protected readonly dosageFilter = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('dosage') || null,
+  );
+  /** The rows on screen: every row, or those solved under the dosage filtered on. */
+  protected readonly visibleEntries = computed(() => {
+    const token = this.dosageFilter();
+    const entries = this.entries();
+    return token === null
+      ? entries
+      : entries.filter((entry) => dosageToken(entry.kpi.dosage) === token);
+  });
+
+  constructor() {
+    keepViewInQueryParams(() => ({ dosage: optionalParam(this.dosageFilter()) }));
+  }
   protected readonly chargement = this.history.isLoading;
   /** A deletion refused server-side; the next refresh clears it. */
   private readonly actionError = signal('');
@@ -161,6 +187,30 @@ export class KpiPage {
     const journees = journeesSousConsigne ?? 0;
     const heures = heuresFermeesParConsigne ?? 0;
     return $localize`:@@kpi.consignes.valeur:${journees}:journees: journée(s) · ${arrondiHeures(heures)}:heures: h fermées`;
+  }
+
+  /** « défaut », « N règle(s) repondérée(s) », « inconnu » for a row older than the figure. */
+  protected dosageLabel(entry: KpiHistoriqueEntry): string {
+    return dosageSummary(entry.kpi.dosage);
+  }
+
+  /** The rules the dosage moves, one per line, for the tooltip. */
+  protected dosageDetail(entry: KpiHistoriqueEntry): string {
+    return dosageLines(entry.kpi.dosage).join('\n');
+  }
+
+  /** Whether the row's dosage is known, hence something to filter on. */
+  protected dosageKnown(entry: KpiHistoriqueEntry): boolean {
+    return dosageToken(entry.kpi.dosage) !== null;
+  }
+
+  /** Narrows the table to the solves run under this row's dosage. */
+  protected sameDosage(entry: KpiHistoriqueEntry): void {
+    this.dosageFilter.set(dosageToken(entry.kpi.dosage));
+  }
+
+  protected allDosages(): void {
+    this.dosageFilter.set(null);
   }
 
   protected dureeLabel(entry: KpiHistoriqueEntry): string {

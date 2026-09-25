@@ -11,9 +11,12 @@ import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 import org.eclipse.microprofile.config.Config;
 
 /**
@@ -29,7 +32,7 @@ public class ParametresService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
-    /** Only for the {@code planning.contraintes.*} block: the defaults an unconfigured edition solves with. */
+    /** The {@code planning.contraintes.*} block and the deployment weights: the defaults an unconfigured edition solves with. */
     private final Config config;
 
     /** The ceilings the operator set: a budget changed above them is refused when saved. */
@@ -169,9 +172,9 @@ public class ParametresService {
     }
 
     /**
-     * Enables or disables a constraint for the next solve. Nothing else is
-     * recorded: {@code constraint_toggle} is a state table, not a journal
-     * (migration V39).
+     * Enables or disables a constraint for the next solve, and records the
+     * change in the weight history when the effective state moved — asking
+     * for the state already in force writes nothing.
      *
      * <p>Disabling a legal constraint lets the solver return a plan with a
      * hard score of zero that nonetheless breaks the Code du travail, so the
@@ -179,17 +182,19 @@ public class ParametresService {
      * and {@code LegalDisableDialog}). That confirmation is deliberately all
      * there is: with no authenticated user, an author column could only ever
      * hold the constant "ui" — which is what had V39 drop the traceability
-     * columns of V16. What stands in for it is the state staying visible, on
-     * the Contraintes screen and on the Solveur one.</p>
+     * columns of V16. The history keeps an origin, never a person.</p>
      */
-    public void setContrainteActive(String nom, boolean actif) {
+    public void setContrainteActive(String nom, boolean actif, WeightChangeOrigin origin) {
         ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
         // Asking for exactly what the catalogue already says drops the row
         // rather than pinning it: the table then holds the decisions somebody
         // took, and nothing else — the same convention as a constraint weight
         // reset to its default.
         boolean parDefaut = definition != null && definition.activeByDefault() == actif;
-        repository.setEtatContrainte(nom, parDefaut ? null : actif);
+        repository.setEtatContrainte(nom, parDefaut ? null : actif, stored -> {
+            boolean avant = stored != null ? stored : defaultActive(nom);
+            return avant == actif ? null : WeightChange.of(nom, null, null, false, avant, actif, origin, null);
+        });
         changeTracker.markModified();
     }
 
@@ -204,13 +209,89 @@ public class ParametresService {
 
     /**
      * Sets one constraint's weight for this edition, or drops the override
-     * when {@code poids} is {@code null} (back to the configured default).
+     * when {@code poids} is {@code null} (back to the configured default), and
+     * records the change in the weight history when the effective weight
+     * moved: putting the same value back writes nothing, and so does dropping
+     * an override equal to the default.
      */
-    public void setConstraintWeight(String nom, Integer poids) {
+    public void setConstraintWeight(String nom, Integer poids, WeightChangeOrigin origin) {
         if (poids != null) {
             ParametresValidator.checkConstraintWeight(poids);
         }
-        repository.setConstraintWeight(nom, poids);
+        int defaut = configuredWeight(nom);
+        int apres = poids != null ? poids : defaut;
+        repository.setConstraintWeight(nom, poids, stored -> {
+            int avant = stored != null ? stored : defaut;
+            return avant == apres ? null : WeightChange.of(nom, avant, apres, poids == null, null, null, origin, null);
+        });
         changeTracker.markModified();
+    }
+
+    /**
+     * Opens the history of a duplicated edition — the current one — with one
+     * line per rule whose dosage it inherited from {@code sourceEditionId},
+     * rather than with the source's whole history: those changes were made to
+     * another edition.
+     */
+    public void recordInheritedDosage(String sourceEditionId) {
+        Map<String, Integer> poids = repository.getConstraintWeights();
+        Map<String, Boolean> etats = repository.getEtatsContraintes();
+        List<WeightChange> lines = new ArrayList<>();
+        for (String nom : new TreeSet<>(poids.keySet())) {
+            int defaut = configuredWeight(nom);
+            if (poids.get(nom) != defaut) {
+                lines.add(WeightChange.of(
+                        nom,
+                        defaut,
+                        poids.get(nom),
+                        false,
+                        null,
+                        null,
+                        WeightChangeOrigin.DUPLICATION,
+                        sourceEditionId));
+            }
+        }
+        for (String nom : new TreeSet<>(etats.keySet())) {
+            boolean defaut = defaultActive(nom);
+            if (etats.get(nom) != defaut) {
+                lines.add(WeightChange.of(
+                        nom,
+                        null,
+                        null,
+                        false,
+                        defaut,
+                        etats.get(nom),
+                        WeightChangeOrigin.DUPLICATION,
+                        sourceEditionId));
+            }
+        }
+        repository.recordHistory(lines);
+    }
+
+    /** The weight the next solve gives {@code nom} in this edition: its own, else the deployment's. */
+    public int effectiveWeight(String nom) {
+        Integer propre = repository.getConstraintWeights().get(nom);
+        return propre != null ? propre : configuredWeight(nom);
+    }
+
+    /** Whether the next solve enforces {@code nom} in this edition: its own choice, else the catalogue's. */
+    public boolean effectiveActive(String nom) {
+        Boolean propre = repository.getEtatsContraintes().get(nom);
+        return propre != null ? propre : defaultActive(nom);
+    }
+
+    /**
+     * {@code planning.constraint-weights.<nom>}, 1 when unset — the same read
+     * as {@code SolverConfiguration.readConfiguredWeights}, which the solve
+     * applies.
+     */
+    public int configuredWeight(String nom) {
+        return config.getOptionalValue("planning.constraint-weights." + nom, Integer.class)
+                .orElse(1);
+    }
+
+    private static boolean defaultActive(String nom) {
+        ConstraintDefinition definition = ConstraintCatalog.PAR_NOM.get(nom);
+        return definition == null || definition.activeByDefault();
     }
 }

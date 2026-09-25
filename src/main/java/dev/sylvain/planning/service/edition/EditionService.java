@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.IdGenerator;
+import dev.sylvain.planning.service.referentiel.ParametresService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -23,8 +24,16 @@ public class EditionService {
 
     private final IdGenerator ids;
 
+    /** Opens a duplicated edition's weight history with the dosage it inherited. */
+    private final ParametresService parametres;
+
     @Inject
-    public EditionService(EditionRepository repository, EditionContext editionContext, IdGenerator ids) {
+    public EditionService(
+            EditionRepository repository,
+            EditionContext editionContext,
+            IdGenerator ids,
+            ParametresService parametres) {
+        this.parametres = parametres;
         this.repository = repository;
         this.editionContext = editionContext;
         this.ids = ids;
@@ -80,6 +89,9 @@ public class EditionService {
         // groups over, and seeding a 'DEFAUT' one first would collide with it.
         Edition cree = createEmpty(target);
         repository.duplicate(sourceId, cree.getId(), avecAnimateurs);
+        // The copy starts its weight history with what it inherited — one
+        // line per rule off the default — rather than the source's own past.
+        editionContext.executeIn(cree.getId(), () -> parametres.recordInheritedDosage(sourceId));
         return cree;
     }
 

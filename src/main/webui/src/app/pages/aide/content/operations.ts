@@ -240,11 +240,11 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.comparateur:Comparateur A/B`,
-              text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les écarts aux règles, avec le sens de chaque différence écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille.`,
+              text: $localize`:@@aide.views.def.comparateur:Deux plannings côte à côte — deux instantanés, ou un instantané et le planning actuel — sur le score, la couverture, l'équité et les écarts aux règles, avec le sens de chaque différence écrit en toutes lettres. Les instantanés de toutes les éditions sont proposés : c'est ainsi qu'on compare une variante à l'édition nominale. L'écran prévient quand les deux plannings n'ont pas la même taille, et quand ils ont été calculés sous des dosages différents — des poids ou des activations de règles qui ne sont pas les mêmes : leurs scores ne se comparent alors pas à poids égaux, et il liste les règles en cause.`,
             },
             {
               term: $localize`:@@aide.views.term.kpi:Autopsie du planning`,
-              text: $localize`:@@aide.views.def.kpi:Une ligne par résolution terminée, toutes éditions confondues : score, couverture, dispersion des heures, nombre de modifications manuelles, durée. C'est la mémoire des campagnes passées. Rien n'y est nominatif, et l'historique survit à la suppression de l'édition qu'il décrit.`,
+              text: $localize`:@@aide.views.def.kpi:Une ligne par résolution terminée, toutes éditions confondues : score, couverture, dispersion des heures, nombre de modifications manuelles, durée, et le dosage sous lequel la résolution a été lancée — « défaut », « N règle(s) repondérée(s) », ou « inconnu » pour une ligne antérieure à cette mesure, le détail au survol. Le bouton de filtre d'une ligne ne garde que les résolutions calculées sous le même dosage, pour comparer à poids égaux. C'est la mémoire des campagnes passées. Rien n'y est nominatif, et l'historique survit à la suppression de l'édition qu'il décrit.`,
             },
           ],
         },

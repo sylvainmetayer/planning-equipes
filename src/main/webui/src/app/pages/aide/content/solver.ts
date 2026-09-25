@@ -106,6 +106,10 @@ export function buildSolverSections(): HelpSection[] {
               text: $localize`:@@aide.config.def.contraintes:Chaque règle du catalogue se désactive depuis la page Contraintes. À utiliser pour diagnostiquer — « sans cette règle, le planning devient-il faisable ? » — bien plus que pour produire : désactiver une contrainte dure produit un planning que la réalité refusera. En revanche, désactiver une règle souple qui ne mesure rien, faute de donnée saisie, rend le score lisible sans rien changer au résultat.`,
             },
             {
+              term: $localize`:@@aide.config.term.historique:Historique des réglages`,
+              text: $localize`:@@aide.config.def.historique:Le bouton d'historique d'une règle, sur la page Contraintes, montre chaque changement de son poids ou de son activation — valeur avant et après, défaut compris, date et origine : écran, assistant, import de scénario ou duplication d'édition — et, entre deux changements, les résolutions qui ont suivi avec leur score et le nombre d'écarts à cette règle, en liste datée et en petit graphique. Remettre la même valeur n'écrit rien. C'est une juxtaposition, pas une mesure d'effet : le référentiel a pu changer entre deux résolutions. L'historique appartient à l'édition et disparaît avec elle ; une édition dupliquée démarre avec le dosage hérité de sa source, pas avec l'historique de celle-ci.`,
+            },
+            {
               term: $localize`:@@aide.config.term.adhoc:Ajustements manuels`,
               text: $localize`:@@aide.config.def.adhoc:Exceptions saisies au cas par cas, avec une raison tracée : indisponibilité forcée, incompatibilité, affectation forcée. Elles sont traitées au même niveau que les contraintes dures, donc jamais contournées — et chacune retire des possibilités au solveur. Un ajustement mal posé bloque un planning aussi sûrement qu'un manque d'effectif.`,
             },

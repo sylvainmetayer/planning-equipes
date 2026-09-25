@@ -561,6 +561,11 @@ public class PlanningPersistenceService {
      * also records the snapshot it replaced — {@code null} included, which
      * means « nothing to compare » — while any other write leaves the last
      * solve's untouched.
+     *
+     * <p>A solve also clears the dosage the previous one left: the pipeline
+     * stamps the new one right after, best effort, and a stamp that failed must
+     * leave the plan's dosage unknown rather than the previous solve's
+     * ({@link PlanDosageRepository}).</p>
      */
     private void recordResolution(Connection connection, Long snapshotBeforeSolveId, boolean fromSolve)
             throws SQLException {
@@ -572,11 +577,13 @@ public class PlanningPersistenceService {
  ON CONFLICT (edition_id)
  DO UPDATE SET resolu_le = EXCLUDED.resolu_le,
  snapshot_avant_solve_id = CASE WHEN ? THEN EXCLUDED.snapshot_avant_solve_id
- ELSE planning_resolution.snapshot_avant_solve_id END""";
+ ELSE planning_resolution.snapshot_avant_solve_id END,
+ dosage = CASE WHEN ? THEN NULL ELSE planning_resolution.dosage END""";
         try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
             ps.setTimestamp(2, Timestamp.from(Instant.now()));
             ps.setObject(3, fromSolve ? snapshotBeforeSolveId : null, Types.BIGINT);
             ps.setBoolean(4, fromSolve);
+            ps.setBoolean(5, fromSolve);
             ps.executeUpdate();
         }
     }

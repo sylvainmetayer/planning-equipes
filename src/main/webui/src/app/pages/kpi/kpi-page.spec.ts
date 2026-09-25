@@ -8,6 +8,7 @@
 
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { KpiHistoriqueEntry, PlanningKpi } from '../../core/models';
@@ -79,6 +80,11 @@ type PageInternals = {
   fairnessLabel: (entry: KpiHistoriqueEntry) => string;
   modificationsLabel: (entry: KpiHistoriqueEntry) => string;
   dureeLabel: (entry: KpiHistoriqueEntry) => string;
+  dosageLabel: (entry: KpiHistoriqueEntry) => string;
+  dosageDetail: (entry: KpiHistoriqueEntry) => string;
+  visibleEntries: Signal<KpiHistoriqueEntry[]>;
+  sameDosage: (entry: KpiHistoriqueEntry) => void;
+  allDosages: () => void;
 };
 
 function createPage(): PageInternals {
@@ -99,9 +105,43 @@ describe('KpiPage', () => {
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
+        provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConfirmService, useValue: confirm },
       ],
+    });
+  });
+
+  describe('dosage', () => {
+    const neutre = { weights: {}, instanceWeights: {}, disabled: [], enabled: [] };
+    const repondere = { ...neutre, weights: { souhaitsIncompatibles: 5 } };
+
+    it('says default, a count of reweighted rules, or unknown for an older row', () => {
+      const page = createPage();
+      expect(page.dosageLabel(entry({ kpi: kpi({ dosage: neutre }) }))).toBe('défaut');
+      expect(page.dosageLabel(entry({ kpi: kpi({ dosage: repondere }) }))).toBe(
+        '1 règle(s) repondérée(s)',
+      );
+      expect(page.dosageLabel(entry())).toBe('inconnu');
+      expect(page.dosageDetail(entry({ kpi: kpi({ dosage: repondere }) }))).toBe(
+        'souhaitsIncompatibles : 5 (défaut 1)',
+      );
+    });
+
+    it('narrows the table to the solves under the same dosage, and back', async () => {
+      const a = entry({ id: 1, kpi: kpi({ dosage: neutre }) });
+      const b = entry({ id: 2, kpi: kpi({ dosage: repondere }) });
+      const c = entry({ id: 3, kpi: kpi({ dosage: { ...repondere } }) });
+      const inconnu = entry({ id: 4 });
+      analysesApi.kpiHistory.mockResolvedValue([a, b, c, inconnu]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.entries()).toHaveLength(4));
+
+      page.sameDosage(b);
+      expect(page.visibleEntries().map((each) => each.id)).toEqual([2, 3]);
+
+      page.allDosages();
+      expect(page.visibleEntries()).toHaveLength(4);
     });
   });
 

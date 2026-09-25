@@ -9,9 +9,11 @@ import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.Constraint
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService.ContributionAdHoc;
 import dev.sylvain.planning.service.analyse.ScoreReading;
 import dev.sylvain.planning.service.analyse.ViolationFormatter;
+import dev.sylvain.planning.service.analyse.WeightHistoryService;
 import dev.sylvain.planning.service.diagnostic.BlockerPlaybook;
 import dev.sylvain.planning.service.journal.CurrentAction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.WeightChangeOrigin;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -55,12 +57,16 @@ public class ConstraintResource {
 
     private final PlanningService planningService;
 
+    private final WeightHistoryService weightHistory;
+
     @Inject
     public ConstraintResource(
             ConstraintAnalysisStore analysisStore,
             ReferenceDataService referenceDataService,
             CurrentAction currentAction,
-            PlanningService planningService) {
+            PlanningService planningService,
+            WeightHistoryService weightHistory) {
+        this.weightHistory = weightHistory;
         this.analysisStore = analysisStore;
         this.referenceDataService = referenceDataService;
         this.currentAction = currentAction;
@@ -133,7 +139,7 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintToggleUpdate setActif(@PathParam("name") String name, ConstraintToggleUpdate update) {
         requireKnown(name);
-        referenceDataService.setContrainteActive(name, update.actif());
+        referenceDataService.setContrainteActive(name, update.actif(), WeightChangeOrigin.SCREEN);
         // One method, two actions: the history keys on the route, so without
         // this it would record « Contrainte activée » for a deactivation —
         // the one thing a journal must never do (issue #406).
@@ -154,9 +160,31 @@ public class ConstraintResource {
     @Consumes(MediaType.APPLICATION_JSON)
     public ConstraintPoidsUpdate setPoids(@PathParam("name") String name, ConstraintPoidsUpdate update) {
         requireKnown(name);
-        referenceDataService.setConstraintWeight(name, update.poids());
+        referenceDataService.setConstraintWeight(name, update.poids(), WeightChangeOrigin.SCREEN);
         return new ConstraintPoidsUpdate(
                 planningService.effectiveConstraintWeights().getOrDefault(name, 1));
+    }
+
+    /**
+     * Every change of weight or activation in the current edition, values
+     * included, beside the edition's solves and the dosage each ran under.
+     * Nothing nominative: the origin is typed, never a person.
+     */
+    @GET
+    @Path("/historique")
+    public WeightHistoryService.ConstraintHistory history() {
+        return weightHistory.all();
+    }
+
+    /**
+     * One rule's changes, and the edition's solves with the number of times
+     * that rule was broken in each. Answered for a rule that left the
+     * catalogue too: its history stays readable by name.
+     */
+    @GET
+    @Path("/{name}/historique")
+    public WeightHistoryService.ConstraintHistory history(@PathParam("name") String name) {
+        return weightHistory.forConstraint(name);
     }
 
     /** 404 rather than a silently stored row when the name matches no constraint of the catalogue. */

@@ -848,8 +848,9 @@ public class ReferenceDataService implements ReferenceData {
         return parametres.etatsContraintes();
     }
 
-    public void setContrainteActive(String nom, boolean actif) {
-        parametres.setContrainteActive(nom, actif);
+    /** @see ParametresService#setContrainteActive */
+    public void setContrainteActive(String nom, boolean actif, WeightChangeOrigin origin) {
+        parametres.setContrainteActive(nom, actif, origin);
     }
 
     @Override
@@ -857,7 +858,13 @@ public class ReferenceDataService implements ReferenceData {
         return parametres.constraintWeights();
     }
 
-    public void setConstraintWeight(String nom, Integer poids) {
-        parametres.setConstraintWeight(nom, poids);
+    /** @see ParametresService#setConstraintWeight */
+    public void setConstraintWeight(String nom, Integer poids, WeightChangeOrigin origin) {
+        parametres.setConstraintWeight(nom, poids, origin);
+    }
+
+    /** @see ParametresService#recordInheritedDosage */
+    public void recordInheritedDosage(String sourceEditionId) {
+        parametres.recordInheritedDosage(sourceEditionId);
     }
 }

@@ -358,6 +358,17 @@ Deux précisions sur l'écriture : les lancements de solveur capturent l'éditio
 ensuite ; et une section `edition:` dans un YAML importé **prime** sur
 l'argument, puisque le fichier désigne explicitement sa cible.
 
+## Historique de pondération
+
+`consulter_historique_ponderation` (lecture seule, cloisonné par édition) rend
+la même chose que `GET /api/constraints/{name}/historique` — ou, sans
+`contrainte`, que la vue globale : les changements de poids et d'activation,
+valeurs effectives avant et après, origine typée, puis les résolutions de
+l'édition avec le dosage sous lequel chacune a été lancée. Un réglage écrit par
+`modifier_poids_contrainte`, `activer_contrainte` ou `desactiver_contrainte` y
+apparaît avec l'origine `ASSISTANT` ; rien de nominatif, l'outil peut être
+appelé sans précaution particulière.
+
 ## Les résolutions construisent leur problème au démarrage
 
 `lancer_solveur` et `resoudre_incremental` passent par les soumissions

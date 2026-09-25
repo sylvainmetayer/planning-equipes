@@ -86,6 +86,21 @@
             }
           </div>
         }
+        @if (resultat.dosagesDifferents) {
+          <p class="locked-hint" i18n="@@comparateur.warning.dosages">
+            Les deux plans ont été calculés sous des dosages différents : leurs scores ne se comparent pas à poids
+            égaux.
+          </p>
+          @if (dosageDifferences().length > 0) {
+            <ul class="comparateur-dosages">
+              @for (difference of dosageDifferences(); track difference.name) {
+                <li>
+                  <strong>{{ difference.name }}</strong> : {{ difference.base }} → {{ difference.variante }}
+                </li>
+              }
+            </ul>
+          }
+        }
         @if (cotesPerimes().length > 0) {
           <p class="locked-hint" i18n="@@comparateur.warning.perimes">
             Instantané(s) périmé(s) ici : {{ cotesPerimes().join(', ') }}. Leur référentiel a changé depuis la capture :

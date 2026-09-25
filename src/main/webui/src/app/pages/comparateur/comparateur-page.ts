@@ -23,6 +23,7 @@ import { StatusMessage } from '../../shared/status-message';
 import { LigneMetrique, construireLignesMetriques } from './comparateur-metrics';
 import { errorMessage } from '../../core/error-message';
 import { bandeLabel, libelleDate } from '../../core/consigne-wording';
+import { DosageDifference, dosageDifferences } from '../../core/dosage';
 
 /** Value designating the currently persisted plan instead of a snapshot id. */
 const COURANT = 'courant';
@@ -183,6 +184,18 @@ export class ComparateurPage implements OnInit {
       ) ?? null
     );
   }
+
+  /**
+   * What the two weightings disagree on, rule by rule — shown only when the
+   * server says the plans were solved under different dosages, and empty
+   * when either dosage is unknown.
+   */
+  protected readonly dosageDifferences = computed((): DosageDifference[] => {
+    const resultat = this.comparaison();
+    const base = resultat?.base.kpi.dosage;
+    const variante = resultat?.variante.kpi.dosage;
+    return resultat?.dosagesDifferents && base && variante ? dosageDifferences(base, variante) : [];
+  });
 
   /** Column header of one side: its label, or the "current plan" wording it has none. */
   protected libelleCote(cote: CoteComparaison): string {

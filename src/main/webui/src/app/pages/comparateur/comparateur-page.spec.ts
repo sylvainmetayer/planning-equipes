@@ -98,6 +98,7 @@ function comparaison(overrides: Partial<ComparaisonSnapshots> = {}): Comparaison
     editionsDifferentes: false,
     volumetriesDifferentes: false,
     consignesDifferentes: false,
+    dosagesDifferents: false,
     diffViolations: [],
     ...overrides,
   };
@@ -586,6 +587,22 @@ describe('ComparateurPage rendering', () => {
     // Its violations are simply not measured: saying so is what keeps the
     // "0 violation" of that column from being read as good news.
     expect(text()).toContain('mode dégradé');
+  });
+
+  it('warns that two plans solved under different dosages do not compare at equal weights, and lists the rules', async () => {
+    const neutre = { weights: {}, instanceWeights: {}, disabled: [], enabled: [] };
+    await comparerAvec({
+      dosagesDifferents: true,
+      base: cote({ kpi: kpi({ dosage: neutre }) }),
+      variante: cote({
+        snapshotId: 8,
+        kpi: kpi({ dosage: { ...neutre, weights: { souhaitsIncompatibles: 5 } } }),
+      }),
+    });
+
+    expect(text()).toContain('dosages différents');
+    expect(text()).toContain('souhaitsIncompatibles');
+    expect(text()).toContain('1 → 5');
   });
 
   it('stays silent about all three caveats when none applies', async () => {

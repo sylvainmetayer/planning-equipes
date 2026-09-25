@@ -669,13 +669,17 @@ public class PlanSnapshotService {
                 }
                 ps.executeBatch();
             }
+            // The plan comes back with the dosage it was solved under, as its
+            // snapshot recorded it — or « unknown » for a snapshot older than
+            // that figure: the Comparateur must not read the replaced plan's.
             String resolution = """
- INSERT INTO planning_resolution (edition_id, resolu_le)
- VALUES (?, ?)
+ INSERT INTO planning_resolution (edition_id, resolu_le, dosage)
+ VALUES (?, ?, ?::jsonb)
  ON CONFLICT (edition_id)
- DO UPDATE SET resolu_le = EXCLUDED.resolu_le""";
+ DO UPDATE SET resolu_le = EXCLUDED.resolu_le, dosage = EXCLUDED.dosage""";
             try (PreparedStatement ps = scope.prepareScoped(connection, resolution)) {
                 ps.setTimestamp(2, Timestamp.from(Instant.now()));
+                ps.setString(3, writeDosage(detail.meta().kpi()));
                 ps.executeUpdate();
             }
         });
@@ -892,6 +896,17 @@ public class PlanSnapshotService {
     private String writeKpi(PlanningKpiService.PlanningKpi kpi) {
         try {
             return objectMapper.writeValueAsString(kpi);
+        } catch (Exception _) {
+            return null;
+        }
+    }
+
+    private String writeDosage(PlanningKpiService.PlanningKpi kpi) {
+        if (kpi == null || kpi.dosage() == null) {
+            return null;
+        }
+        try {
+            return objectMapper.writeValueAsString(kpi.dosage());
         } catch (Exception _) {
             return null;
         }

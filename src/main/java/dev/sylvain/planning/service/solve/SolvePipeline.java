@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import ai.timefold.solver.core.api.solver.Solver;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.analyse.Dosage;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.analyse.ScoreReading;
@@ -73,6 +74,9 @@ public class SolvePipeline {
 
     private final ValidationJourneeService validationService;
 
+    /** Where the dosage a plan was solved under is kept, next to the plan. */
+    private final PlanDosageRepository planDosage;
+
     /** Resolves the budget of a synchronous solve, the one form that is not a job. */
     private final SolveBudgetPolicy budgetPolicy;
 
@@ -89,8 +93,10 @@ public class SolvePipeline {
             PlanPublieService planPublieService,
             PublicationDiffService diffService,
             ValidationJourneeService validationService,
-            SolveBudgetPolicy budgetPolicy) {
+            SolveBudgetPolicy budgetPolicy,
+            PlanDosageRepository planDosage) {
         this.budgetPolicy = budgetPolicy;
+        this.planDosage = planDosage;
         this.snapshotService = snapshotService;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
@@ -230,18 +236,24 @@ public class SolvePipeline {
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
         PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), budget, attacheSolveur);
+        // What the solver was handed, never the edition as it stands at the
+        // end: a weight changed while the solve runs, or toggles a client sent
+        // in place of the edition's, must not be charged to this run in the
+        // KPI history nor in its plan's snapshots.
+        Dosage dosage = planningService.dosageOf(resolu);
         long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
         // Timefold also stops when its thread is interrupted — a pool being
         // shut down does that — and returns as if the budget were spent.
         // Either signal means the run was cut short by the server, not by the
         // problem, and its plan must not overwrite a better one.
         if (shutdownRequested.getAsBoolean() || Thread.currentThread().isInterrupted()) {
-            return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes);
+            return interrupted(probleme, resolu, replaced, scoreBefore, dureeSolveSecondes, dosage);
         }
         // Read before the persist overwrites it: what the plan in place held is
         // the only thing the days that moved can be compared against.
         Optional<Map<String, List<String>>> avant = assignmentsBeforePersist();
         persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
+        recordDosage(dosage);
         PlanningDiagnosticService.PlanningDiagnostic diagnostic = planningService.diagnose(resolu);
         analysisStore.store(diagnostic);
         // KPI history (issue #89): one row per finished solve, carrying the real
@@ -266,6 +278,19 @@ public class SolvePipeline {
     }
 
     /**
+     * Stamps the plan just persisted with the dosage its solve was launched
+     * under. Best effort, like the KPI row it feeds: an unknown dosage is an
+     * empty column on the Autopsie, never a failed solve.
+     */
+    private void recordDosage(Dosage dosage) {
+        try {
+            planDosage.record(dosage);
+        } catch (RuntimeException e) {
+            LOG.warn("The dosage of the persisted plan could not be recorded; the solve result is unaffected", e);
+        }
+    }
+
+    /**
      * The end of a run the server stopped under. Its best plan so far is
      * persisted only when it beats the plan in place — or when there is none
      * to lose — and nothing else a finished solve does (KPI row, end-of-solve
@@ -276,7 +301,8 @@ public class SolvePipeline {
             PlanningEvenement resolu,
             PlanSnapshotService.SnapshotMeta replaced,
             String scoreBefore,
-            long dureeSolveSecondes) {
+            long dureeSolveSecondes,
+            Dosage dosage) {
         // Cleared before touching the database: a connection pool refuses an
         // interrupted thread, and a plan worth keeping must be writable.
         Thread.interrupted();
@@ -285,6 +311,7 @@ public class SolvePipeline {
         Optional<Map<String, List<String>>> avant = kept ? assignmentsBeforePersist() : Optional.empty();
         if (kept) {
             persistenceService.persistAfterSolve(resolu, replaced == null ? null : replaced.id());
+            recordDosage(dosage);
             analysisStore.store(diagnostic);
             kpiHistoriqueService.recordAfterSolve(dureeSolveSecondes);
             LOG.infof(
