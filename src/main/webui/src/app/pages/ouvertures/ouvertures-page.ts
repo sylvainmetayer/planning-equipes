@@ -40,6 +40,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import { OpeningsComparisonView } from './comparaison-vue';
 import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
@@ -145,6 +146,8 @@ interface CelluleView {
   modifiee: boolean;
   partielle: boolean;
   fermee: boolean;
+  /** The column falls on a public holiday: tinted, never blocked. */
+  ferie: boolean;
   desactivee: boolean;
   libelle: string;
   infobulle: string | null;
@@ -192,6 +195,7 @@ interface LigneView {
     MatTooltipModule,
     RouterLink,
     OpeningsComparisonView,
+    PastilleFerie,
   ],
   templateUrl: './ouvertures-page.html',
   // horaires-stand.css: « Comparer » opens the stands' bulk edit, whose rule editor it styles.
@@ -337,6 +341,7 @@ export class OuverturesPage implements OnInit {
     const partielles = this.partielles();
     const modifies = new Set(this.standsModifies());
     const verrouille = this.editingLocked();
+    const feries = this.holidaysByDate();
     // Every stand is rendered once and the filter only hides rows: rebuilding
     // twenty-eight rows of sixty cells when the field empties is what lagged.
     const visibles = new Set(this.lignes().map((ligne) => ligne.standId));
@@ -364,6 +369,7 @@ export class OuverturesPage implements OnInit {
             modifiee: effectif !== (lues?.get(colonne.colonneId) ?? null),
             partielle,
             fermee: effectif === null,
+            ferie: feries.has(colonne.date),
             desactivee: verrouille,
             libelle: `${nom} · ${this.libelleJour(colonne.date)} ${libelleColonne(colonne)}`,
             infobulle: partielle ? this.infobullePartielle(ligne.standId, colonne.colonneId) : null,
@@ -388,9 +394,43 @@ export class OuverturesPage implements OnInit {
     () => new Map(this.colonnesJourneesTypes().map((colonne) => [colonne.colonneId, colonne])),
   );
 
+  /** Date → the public holiday's name, for the days of the report that fall on one. */
+  protected readonly holidaysByDate = computed(() => {
+    const feries = new Map<string, string>();
+    for (const jour of this.rapport()?.jours ?? []) {
+      if (jour.ferie) {
+        feries.set(jour.date, jour.ferie);
+      }
+    }
+    return feries;
+  });
+
+  /** Template → its dates that fall on a public holiday, « 14/07 Fête nationale », for its header. */
+  private readonly holidaysByJourneeType = computed(() => {
+    const feries = this.holidaysByDate();
+    const byJourneeType = new Map<number, string[]>();
+    for (const affectation of this.etatJourneesTypes()?.calendrier ?? []) {
+      const libelle = feries.get(affectation.date);
+      if (libelle) {
+        const liste = byJourneeType.get(affectation.journeeTypeId) ?? [];
+        liste.push(`${this.libelleJour(affectation.date)} ${libelle}`);
+        byJourneeType.set(affectation.journeeTypeId, liste);
+      }
+    }
+    return byJourneeType;
+  });
+
   /** Where a template column starts a new template, for the header's own row. */
   protected readonly journeesTypesEntetes = computed(() => {
-    const entetes: { journeeTypeId: number; nom: string; colonnes: number; dates: number }[] = [];
+    const feries = this.holidaysByJourneeType();
+    const entetes: {
+      journeeTypeId: number;
+      nom: string;
+      colonnes: number;
+      dates: number;
+      /** Its holiday dates, named, joined; empty when none. */
+      feries: string;
+    }[] = [];
     for (const colonne of this.colonnesJourneesTypes()) {
       const dernier = entetes.at(-1);
       if (dernier?.journeeTypeId === colonne.journeeTypeId) {
@@ -402,6 +442,7 @@ export class OuverturesPage implements OnInit {
         nom: colonne.nomJourneeType,
         colonnes: 1,
         dates: colonne.colonnes.length + colonne.datesSansColonne.length,
+        feries: (feries.get(colonne.journeeTypeId) ?? []).join(', '),
       });
     }
     return entetes;
@@ -444,6 +485,7 @@ export class OuverturesPage implements OnInit {
             modifiee: valeur !== lue,
             partielle: valeur === 'ecart',
             fermee: valeur === null,
+            ferie: false,
             desactivee: verrouille || colonne.colonnes.length === 0,
             libelle: `${nom} · ${colonne.nomJourneeType} ${libelleColonneJourneeType(colonne)}`,
             infobulle:

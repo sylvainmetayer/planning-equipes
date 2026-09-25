@@ -36,6 +36,7 @@ function rapport(): RapportOuvertures {
     heureFin: nocturne ? '00:00' : '20:00',
     minutes: nocturne ? 720 : 480,
     nombreCreneaux: ids.length,
+    ferie: null,
     creneaux: ids.map((id, rang) => ({
       id,
       tranche: 0,
@@ -419,6 +420,7 @@ describe('segmentsPartiels et aplatissement', () => {
           heureFin: '00:00',
           minutes: 600,
           nombreCreneaux: 2,
+          ferie: null,
           creneaux: [
             {
               id: 1,

@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.analyse;
 
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
@@ -134,7 +135,12 @@ public final class OuvertureStandsAnalyzer {
         }
     }
 
-    /** One event day, the amplitude the cells of that column are measured against, and its créneaux. */
+    /**
+     * One event day, the amplitude the cells of that column are measured against, and its créneaux.
+     *
+     * @param ferie the name of the public holiday falling that day ({@link JoursFeries}), {@code null} on
+     *              an ordinary day — so a screen marks it without computing Easter itself
+     */
     @Schema(requiredProperties = {"jour", "minutes", "nombreCreneaux"})
     public record JourAmplitude(
             LocalDate date,
@@ -143,7 +149,8 @@ public final class OuvertureStandsAnalyzer {
             LocalTime heureFin,
             int minutes,
             int nombreCreneaux,
-            List<ColonneCreneau> creneaux) {}
+            List<ColonneCreneau> creneaux,
+            String ferie) {}
 
     /** One open stretch of a cell, in wall-clock hours, with the headcount it asks for. */
     @Schema(requiredProperties = {"effectif", "heureDebut", "heureFin"})
@@ -278,7 +285,8 @@ public final class OuvertureStandsAnalyzer {
                     minuteToTime(fin),
                     minutes,
                     duJour.size(),
-                    colonnes.stream().map(TrancheCreneau::colonne).toList()));
+                    colonnes.stream().map(TrancheCreneau::colonne).toList(),
+                    JoursFeries.label(date).orElse(null)));
         });
 
         // The seats the solver would receive, grouped by stand then by day:

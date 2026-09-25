@@ -36,6 +36,7 @@ function rapport(): RapportOuvertures {
     heureFin: '20:00',
     minutes: 480,
     nombreCreneaux: 2,
+    ferie: null,
     creneaux: [
       {
         id: ids[0],
@@ -403,6 +404,42 @@ describe('OuverturesPage — saisie', () => {
       (root(lecture.fixture).querySelector('.axe-jour-select mat-select') as HTMLElement)
         .textContent,
     ).toContain('09/07');
+  });
+
+  it('marks a public holiday by name in the four views, never only with a colour', async () => {
+    const withHoliday = rapport();
+    withHoliday.jours[1].ferie = 'Assomption';
+    const libelles = (racine: HTMLElement) =>
+      [...racine.querySelectorAll('.pastille-ferie')].map((pastille) => pastille.textContent);
+
+    const lecture = mount({ rapport: withHoliday });
+    await lecture.fixture.whenStable();
+    const grille = root(lecture.fixture);
+    expect(libelles(grille)).toHaveLength(1);
+    expect(libelles(grille)[0]).toContain('Assomption — jour férié');
+    expect(grille.querySelectorAll('thead th.colonne-ferie')).toHaveLength(1);
+    // The column is tinted down its cells, one per stand.
+    expect(grille.querySelectorAll('tbody td.colonne-ferie')).toHaveLength(2);
+
+    const saisie = mount({ vue: 'saisie', rapport: withHoliday });
+    await saisie.fixture.whenStable();
+    expect(libelles(root(saisie.fixture))).toHaveLength(1);
+    expect(root(saisie.fixture).querySelectorAll('td.cellule-saisie.colonne-ferie')).toHaveLength(
+      4,
+    );
+
+    const byTemplate = mount({ vue: 'journees-types', rapport: withHoliday });
+    await byTemplate.fixture.whenStable();
+    expect(libelles(root(byTemplate.fixture))[0]).toContain('09/07 Assomption');
+
+    const journee = mount({ vue: 'journee', date: '2026-07-09', rapport: withHoliday });
+    await journee.fixture.whenStable();
+    expect(root(journee.fixture).querySelector('.ferie-bandeau')?.textContent).toContain(
+      'Assomption',
+    );
+    const ordinaire = mount({ vue: 'journee', date: '2026-07-08', rapport: withHoliday });
+    await ordinaire.fixture.whenStable();
+    expect(root(ordinaire.fixture).querySelector('.ferie-bandeau')).toBeNull();
   });
 
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {

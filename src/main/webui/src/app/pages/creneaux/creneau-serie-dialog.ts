@@ -13,7 +13,9 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { JourSemaine, RapportGrille, RapportRecurrence, RegleRecurrence } from '../../core/models';
 import { libelleJourSemaine } from '../../core/horaire-stand';
-import { summarizeVacationsByDay } from './jours-resume';
+import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
+import { JoursFeriesService } from '../../core/jours-feries.service';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 import {
   ErreurSerie,
   SerieDraft,
@@ -52,6 +54,7 @@ export interface CreneauSerieData {
     MatButtonModule,
     MatIconModule,
     MatProgressSpinnerModule,
+    PastilleFerie,
   ],
   templateUrl: './creneau-serie-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +65,8 @@ export class CreneauSerieDialog {
     inject<MatDialogRef<CreneauSerieDialog, RapportRecurrence | null>>(MatDialogRef);
   private readonly data = inject<CreneauSerieData>(MAT_DIALOG_DATA);
   private readonly creneauxApi = inject(CreneauxApi);
+  /** The public holidays of the preview's dates, marked beside them. */
+  private readonly feries = inject(JoursFeriesService);
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly joursSemaine: readonly JourSemaine[] = [
@@ -95,8 +100,12 @@ export class CreneauSerieDialog {
   });
   protected readonly resume = computed(() => {
     const apercu = this.apercu();
-    return apercu ? summarizeVacationsByDay(apercu.creneaux) : [];
+    return apercu ? summarizeVacationsByDay(apercu.creneaux, this.feries.byDate()) : [];
   });
+  /** « 14/07, 15/08 »: the dates of the preview that fall on a public holiday. */
+  protected readonly datesFeriees = computed(() =>
+    holidayDays(this.resume()).map((jour) => dayMonth(jour.date)),
+  );
   protected readonly anomalies = computed(() => {
     const apercu = this.apercu();
     return apercu ? trierAnomalies(apercu.controle.anomalies) : [];
@@ -141,6 +150,7 @@ export class CreneauSerieDialog {
     try {
       const apercu = await this.creneauxApi.previewRecurrence(regle satisfies RegleRecurrence);
       this.apercu.set(apercu);
+      void this.feries.load(apercu.creneaux.map((creneau) => creneau.date));
       this.signatureApercu.set(signatureSerie(this.draft()));
     } catch (error) {
       this.crud.reportError(error);

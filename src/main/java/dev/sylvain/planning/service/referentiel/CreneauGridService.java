@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
+import dev.sylvain.planning.domain.JoursFeries;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeJoursHoraire;
@@ -28,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -230,7 +232,9 @@ public class CreneauGridService {
             ParametresLegaux legaux,
             List<VerrouillagePlanning> verrouillages,
             List<FenetreRepas> fenetresRepas) {
-        List<GridAnomaly> anomalies = gridAnomalies(creneaux, legaux, verrouillages, fenetresRepas);
+        List<GridAnomaly> anomalies = new ArrayList<>(gridAnomalies(creneaux, legaux, verrouillages, fenetresRepas));
+        anomalies.addAll(holidayVacations(creneaux, animateurs));
+        anomalies.sort(ORDRE_ANOMALIES);
 
         List<Anomaly> ouvertures = openingAnomalies(creneaux, stands);
         FeasibilityReport faisabilite = stands.isEmpty() || creneaux.isEmpty()
@@ -282,10 +286,54 @@ public class CreneauGridService {
         anomalies.addAll(datesIsolees(dates));
         anomalies.addAll(verrouillagesWithoutVacation(creneaux, verrouillages));
 
-        anomalies.sort(Comparator.comparingInt(
-                        (GridAnomaly anomalie) -> anomalie.severite().ordinal())
-                .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN)
-                .thenComparing(GridAnomaly::message));
+        anomalies.sort(ORDRE_ANOMALIES);
+        return anomalies;
+    }
+
+    /** Worst first, then by date, then by wording: the order every report of the grid is read in. */
+    private static final Comparator<GridAnomaly> ORDRE_ANOMALIES = Comparator.comparingInt(
+                    (GridAnomaly anomalie) -> anomalie.severite().ordinal())
+            .thenComparing(anomalie -> anomalie.date() != null ? anomalie.date() : LocalDate.MIN)
+            .thenComparing(GridAnomaly::message);
+
+    /**
+     * The vacations falling on a public holiday, one line per such date — but
+     * only on a date where the edition counts at least one minor, judged on
+     * that date, who has not declared it off: a minor may not work a public
+     * holiday (art. L3164-6), so those seats are for adults only. An edition
+     * without minors available that day hears nothing, since a festival
+     * legitimately opens on 14 July. Never blocking: the hard rule
+     * already exists, this only says it before the solve.
+     *
+     * <p>A count of minors and never a name: the sentence is read on screens
+     * whose client keeps a log ({@code docs/rgpd.md} §7).</p>
+     */
+    static List<GridAnomaly> holidayVacations(List<Creneau> creneaux, List<Animateur> animateurs) {
+        Map<LocalDate, Integer> parDate = new TreeMap<>();
+        for (Creneau creneau : creneaux) {
+            if (JoursFeries.isFerieInFrance(creneau.getDate())) {
+                parDate.merge(creneau.getDate(), 1, Integer::sum);
+            }
+        }
+        List<GridAnomaly> anomalies = new ArrayList<>();
+        parDate.forEach((date, vacations) -> {
+            long mineurs = animateurs == null
+                    ? 0
+                    : animateurs.stream()
+                            .filter(animateur -> animateur.isMineurOn(date) && !animateur.isIndisponibleOn(date))
+                            .count();
+            if (mineurs == 0) {
+                return;
+            }
+            anomalies.add(new GridAnomaly(
+                    SeveriteGrille.AVERTISSEMENT,
+                    GridAnomalyType.VACATION_JOUR_FERIE,
+                    date,
+                    date + " (" + JoursFeries.label(date).orElse("jour férié") + ") : " + vacations
+                            + " vacation(s) tombent un jour férié, où seuls les majeurs peuvent siéger (art."
+                            + " L3164-6). L'édition compte " + mineurs
+                            + " animateur(s) mineur(s) disponible(s) ce jour-là."));
+        });
         return anomalies;
     }
 
@@ -534,7 +582,8 @@ public class CreneauGridService {
      */
     public static DiagnosticGrille diagnose(List<Creneau> creneaux) {
         if (creneaux.isEmpty()) {
-            return new DiagnosticGrille(0, null, null, false, "L'édition n'a aucun créneau : la grille est à créer.");
+            return new DiagnosticGrille(
+                    0, null, null, false, "L'édition n'a aucun créneau : la grille est à créer.", List.of());
         }
         List<LocalDate> dates = creneaux.stream()
                 .map(Creneau::getDate)
@@ -545,6 +594,9 @@ public class CreneauGridService {
         long relais = creneaux.stream().filter(Creneau::isCouverturePause).count();
         int dureeMediane =
                 mediane(creneaux.stream().map(Creneau::getDureeMinutes).sorted().toList());
+        List<JoursFeries.PublicHoliday> feries = dates.stream()
+                .flatMap(date -> JoursFeries.label(date).map(nom -> new JoursFeries.PublicHoliday(date, nom)).stream())
+                .toList();
 
         return new DiagnosticGrille(
                 creneaux.size(),
@@ -555,7 +607,12 @@ public class CreneauGridService {
                         + " min"
                         + (relais > 0
                                 ? ", dont " + relais + " relais repas à effectif réduit."
-                                : ", aucun relais repas."));
+                                : ", aucun relais repas.")
+                        + (feries.isEmpty()
+                                ? ""
+                                : " " + feries.size() + " date(s) de la grille tombent un jour férié, où les"
+                                        + " mineurs ne peuvent pas travailler."),
+                feries);
     }
 
     /* -------------------------------- Sorties ------------------------------- */
@@ -579,7 +636,12 @@ public class CreneauGridService {
         /** A pause-covering vacation outside every meal window: half the seats, and nobody can eat. */
         RELAIS_REPAS_HORS_FENETRE,
         /** Locks naming a vacation this grid does not hold — see issue #577. */
-        VERROUILLAGE_SANS_VACATION
+        VERROUILLAGE_SANS_VACATION,
+        /**
+         * Vacations on a public holiday, on a date where the edition has a minor:
+         * only adults may sit there. For information, never blocking.
+         */
+        VACATION_JOUR_FERIE
     }
 
     public record GridAnomaly(SeveriteGrille severite, GridAnomalyType type, LocalDate date, String message) {}
@@ -603,14 +665,18 @@ public class CreneauGridService {
     /**
      * @param contientCouverturePause whether at least one créneau is a meal relay,
      *                                staffed at half the usual headcount
+     * @param joursFeries             the dates of the grid falling on a public holiday, named — the
+     *                                grid check turns them into {@link GridAnomalyType#VACATION_JOUR_FERIE}
+     *                                when a minor is on the team that day
      */
-    @Schema(requiredProperties = {"contientCouverturePause", "nombreCreneaux"})
+    @Schema(requiredProperties = {"contientCouverturePause", "joursFeries", "nombreCreneaux"})
     public record DiagnosticGrille(
             int nombreCreneaux,
             LocalDate premiereDate,
             LocalDate derniereDate,
             boolean contientCouverturePause,
-            String explication) {}
+            String explication,
+            List<JoursFeries.PublicHoliday> joursFeries) {}
 
     /* -------------------------------- Outils -------------------------------- */
 

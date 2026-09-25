@@ -203,7 +203,8 @@ public class DiagnosticMcpTools {
                     + "REGLES_CHEVAUCHANTES : deux règles de même portée et de même mode qui se recouvrent, l'effectif le "
                     + "plus haut l'emporte ; REGLE_MASQUEE : une règle qu'aucun jour n'applique ; FENETRES_CHEVAUCHANTES : "
                     + "deux fenêtres d'une même règle qui se recouvrent à des effectifs différents). C'est ici qu'on voit "
-                    + "pourquoi un stand ne génère aucun poste. Filtrable sur un stand ; les totaux restent ceux de "
+                    + "pourquoi un stand ne génère aucun poste. Chaque jour porte ferie, le libellé du jour férié "
+                    + "qui tombe ce jour-là (null sinon). Filtrable sur un stand ; les totaux restent ceux de "
                     + "l'édition.",
             annotations =
                     @Tool.Annotations(

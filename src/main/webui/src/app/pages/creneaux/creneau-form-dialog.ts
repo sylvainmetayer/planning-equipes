@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -12,6 +19,8 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { Creneau } from '../../core/models';
+import { JoursFeriesService } from '../../core/jours-feries.service';
+import { PastilleFerie } from '../../shared/pastille-ferie';
 
 /** Sentinel `mat-select` value that reveals the "new group" name field. */
 
@@ -47,6 +56,7 @@ export interface CreneauFormData {
     MatCheckboxModule,
     MatIconModule,
     MatTooltipModule,
+    PastilleFerie,
   ],
   templateUrl: './creneau-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -62,6 +72,13 @@ export class CreneauFormDialog {
 
   protected readonly editingId = signal<number | null>(this.data.creneau?.id ?? null);
   protected readonly draft = signal<CreneauDraft>(toDraft(this.data.creneau));
+  private readonly feries = inject(JoursFeriesService);
+  /** The public holiday the typed date falls on, said under the field — never a refusal. */
+  protected readonly ferie = computed(() => this.feries.label(this.draft().date));
+
+  constructor() {
+    effect(() => void this.feries.load([this.draft().date]));
+  }
   protected readonly formTitle = computed(() => {
     const creneau = this.data.creneau;
     return creneau

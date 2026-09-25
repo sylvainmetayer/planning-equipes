@@ -2147,8 +2147,30 @@ sans stand ou sans créneau. Deux plafonds de durée s'y lisent : au-delà de
 L3121-16) un avertissement `VACATION_TROP_LONGUE`, au-delà de ce que laisse le
 repos quotidien une erreur `REPOS_QUOTIDIEN_IMPOSSIBLE`.
 
+**Jours fériés.** Le contrôle ajoute un avertissement `VACATION_JOUR_FERIE`,
+une ligne par date, quand des vacations tombent un jour férié **et** que
+l'édition compte au moins un animateur mineur **disponible** ce jour-là (âge
+jugé à la date, comme partout ; un mineur qui a déclaré ce jour indisponible
+n'est pas compté) : seuls les majeurs y siègent (art. L3164-6). Une édition
+sans mineur disponible ce jour-là n'en entend jamais parler — un festival
+ouvre légitimement le 14 juillet — et rien n'est bloqué : la contrainte dure
+existe déjà, le contrôle ne fait que la dire avant le calcul. Le message compte
+les mineurs, il ne les nomme pas.
+
+`GET /api/jours-feries?debut=AAAA-MM-JJ&fin=AAAA-MM-JJ` rend les fériés d'une
+plage, nommés (`[{ date, label }]`), pour les écrans de saisie qui ne lisent
+pas le rapport d'ouvertures — la table des créneaux, le calendrier des journées
+types, l'aperçu d'une série, le formulaire unitaire. C'est un fait calendaire :
+aucune édition n'y est lue, mais la route reste derrière la connexion
+d'administration. Deux ans au plus entre les bornes, `400` sur une plage
+inversée, trop longue ou une date illisible. Le périmètre est celui de
+`JoursFeries` — les onze jours de l'art. L3133-1 en métropole hors
+Alsace-Moselle — et **le client ne calcule jamais Pâques** : le libellé voyage
+avec la date, calculé au même endroit que la règle des mineurs.
+
 `GET /api/creneaux/diagnostic` décrit la grille en place — combien de
-vacations, sur quelles dates, avec combien de relais repas. Il suggérait aussi
+vacations, sur quelles dates, avec combien de relais repas, et lesquelles de
+ses dates sont fériées (`joursFeries`). Il suggérait aussi
 un mode, assorti d'un indice de confiance, puisque rien ne le prouvait : il n'y
 a plus qu'une lecture, donc plus de devinette.
 
@@ -2555,6 +2577,10 @@ l'édition les compte avec les autres (`ouvertures.informations`), sans qu'elles
 suffisent à passer la ligne « à vérifier ». L'éditeur de règles rejoue la même
 détection en direct (`core/horaire-stand.ts`), tenue d'accord avec le serveur
 par un jeu de cas partagé, `horaire-stand-anomalies.cas.json`.
+
+Un jour férié porte son libellé (`jours[].ferie`, « Fête nationale », `null`
+sinon) : les vues Consulter, Saisir, Journées types et Journée le marquent sans
+rien interdire.
 
 Chaque jour porte aussi ses **colonnes** (`jours[].creneaux`) : un créneau en
 un morceau, ou ses **tranches** quand une fenêtre d'un stand commence ou

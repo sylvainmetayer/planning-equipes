@@ -1,9 +1,14 @@
 package dev.sylvain.planning.domain;
 
 import java.time.LocalDate;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -36,7 +41,10 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class JoursFeries {
 
-    private static final Map<Integer, Set<LocalDate>> CACHE = new ConcurrentHashMap<>();
+    /** One public holiday and what it is called — « Fête nationale », « Lundi de Pentecôte ». */
+    public record PublicHoliday(LocalDate date, String label) {}
+
+    private static final Map<Integer, SortedMap<LocalDate, String>> CACHE = new ConcurrentHashMap<>();
 
     private JoursFeries() {}
 
@@ -45,31 +53,66 @@ public final class JoursFeries {
      * applicable in metropolitan France outside Alsace-Moselle.
      */
     public static boolean isFerieInFrance(LocalDate date) {
-        return date != null && joursFeries(date.getYear()).contains(date);
+        return date != null && byYear(date.getYear()).containsKey(date);
     }
 
     /** The public holidays of a given year; computed once per year and cached. */
     public static Set<LocalDate> joursFeries(int annee) {
+        return byYear(annee).keySet();
+    }
+
+    /**
+     * The name of the holiday falling on {@code date}, empty on any other day.
+     * The names live next to the computation so that a holiday added later — a
+     * regional one — cannot be computed without being named.
+     */
+    public static Optional<String> label(LocalDate date) {
+        return date == null
+                ? Optional.empty()
+                : Optional.ofNullable(byYear(date.getYear()).get(date));
+    }
+
+    /** The holidays between two dates, both included, in calendar order — across years when the range spans them. */
+    public static List<PublicHoliday> between(LocalDate debut, LocalDate fin) {
+        List<PublicHoliday> feries = new ArrayList<>();
+        if (debut == null || fin == null || fin.isBefore(debut)) {
+            return feries;
+        }
+        for (int annee = debut.getYear(); annee <= fin.getYear(); annee++) {
+            byYear(annee)
+                    .subMap(debut, fin.plusDays(1))
+                    .forEach((date, nom) -> feries.add(new PublicHoliday(date, nom)));
+        }
+        return feries;
+    }
+
+    private static SortedMap<LocalDate, String> byYear(int annee) {
         return CACHE.computeIfAbsent(annee, JoursFeries::compute);
     }
 
-    private static Set<LocalDate> compute(int annee) {
+    private static SortedMap<LocalDate, String> compute(int annee) {
         LocalDate paques = paques(annee);
-        Set<LocalDate> feries = new HashSet<>();
+        TreeMap<LocalDate, String> feries = new TreeMap<>();
         // Fixed dates (art. L3133-1).
-        feries.add(LocalDate.of(annee, 1, 1)); // Jour de l'an
-        feries.add(LocalDate.of(annee, 5, 1)); // Fête du Travail
-        feries.add(LocalDate.of(annee, 5, 8)); // Victoire 1945
-        feries.add(LocalDate.of(annee, 7, 14)); // Fête nationale
-        feries.add(LocalDate.of(annee, 8, 15)); // Assomption
-        feries.add(LocalDate.of(annee, 11, 1)); // Toussaint
-        feries.add(LocalDate.of(annee, 11, 11)); // Armistice 1918
-        feries.add(LocalDate.of(annee, 12, 25)); // Noël
-        // Movable feasts, derived from Easter (art. L3133-1 too).
-        feries.add(paques.plusDays(1)); // Lundi de Pâques
-        feries.add(paques.plusDays(39)); // Jeudi de l'Ascension
-        feries.add(paques.plusDays(50)); // Lundi de Pentecôte
-        return Set.copyOf(feries);
+        feries.put(LocalDate.of(annee, 1, 1), "Jour de l'an");
+        feries.put(LocalDate.of(annee, 5, 1), "Fête du Travail");
+        feries.put(LocalDate.of(annee, 5, 8), "Victoire 1945");
+        feries.put(LocalDate.of(annee, 7, 14), "Fête nationale");
+        feries.put(LocalDate.of(annee, 8, 15), "Assomption");
+        feries.put(LocalDate.of(annee, 11, 1), "Toussaint");
+        feries.put(LocalDate.of(annee, 11, 11), "Armistice 1918");
+        feries.put(LocalDate.of(annee, 12, 25), "Noël");
+        // Movable feasts, derived from Easter (art. L3133-1 too). Ascension can
+        // land on 1 or 8 May (2008: 1 May): the two names are then joined
+        // rather than one of them lost.
+        feries.merge(paques.plusDays(1), "Lundi de Pâques", JoursFeries::join);
+        feries.merge(paques.plusDays(39), "Ascension", JoursFeries::join);
+        feries.merge(paques.plusDays(50), "Lundi de Pentecôte", JoursFeries::join);
+        return Collections.unmodifiableSortedMap(feries);
+    }
+
+    private static String join(String premier, String second) {
+        return premier + " et " + second;
     }
 
     /**

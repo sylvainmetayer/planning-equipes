@@ -26,6 +26,7 @@ function jours(): RapportOuvertures['jours'] {
     heureFin: '18:00',
     minutes: 480,
     nombreCreneaux: 2,
+    ferie: null,
     creneaux: [
       {
         id: index * 10 + 1,

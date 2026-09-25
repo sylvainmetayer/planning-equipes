@@ -147,6 +147,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
+          text: $localize`:@@aide.creneaux.feries:Les jours fériés sont marqués partout où l'on pose une date — la table des créneaux, le calendrier des journées types, l'aperçu d'une série, le formulaire d'un créneau — avec leur nom : Fête nationale, Assomption… Rien n'est interdit, un festival ouvre légitimement le 14 juillet. Mais un mineur ne travaille pas un jour férié : quand l'édition en compte un ce jour-là, le contrôle de la grille le rappelle, pour qu'on y pense avant le calcul plutôt qu'au diagnostic. Seuls les onze jours du Code du travail en métropole sont connus, sans les fériés d'Alsace-Moselle ni d'outre-mer.`,
+        },
+        {
+          kind: 'paragraph',
           text: $localize`:@@aide.creneaux.enchainement:Deux créneaux qui se touchent s'enchaînent pour une même personne : rien n'impose d'écart entre deux vacations. Ce qui décide, c'est la longueur de la séquence ainsi formée — au-delà de six heures, elle doit une pause, prise comme un trou ou relayée par un collègue du stand.`,
         },
       ],
@@ -198,6 +202,10 @@ export function buildReferenceDataSections(): HelpSection[] {
         {
           kind: 'paragraph',
           text: $localize`:@@aide.ouvertures.chevauchements:Trois autres points sont signalés pour information, sans jamais bloquer l'enregistrement : deux règles d'un même stand qui se recouvrent (c'est alors l'effectif le plus haut qui compte), une règle qu'aucun jour n'applique parce qu'une règle plus précise ou une exception datée la remplace partout, deux fenêtres d'une même règle qui se recouvrent à des effectifs différents. L'éditeur de règles de la fiche stand les dit en direct sous la règle concernée, et indique quand une règle plus précise prime sur une autre, par exemple une fermeture le week-end sur une ouverture de tous les jours.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.ouvertures.feries:Un jour férié porte la pastille « Férié » en tête de colonne, et sa colonne est teintée ; la vue Journée l'annonce en bandeau. Son nom et ce qu'il change — les mineurs n'y travaillent pas, les heures y sont comptées fériées — se lisent au survol ou au clavier. C'est une information : rien n'empêche d'ouvrir ce jour-là.`,
         },
         {
           kind: 'paragraph',

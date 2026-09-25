@@ -218,5 +218,8 @@ export function trierAnomalies(anomalies: readonly AnomalieGrille[]): AnomalieGr
 
 /** Icon of a grid anomaly, so the list reads without colour alone. */
 export function gridAnomalyIcon(anomaly: AnomalieGrille): string {
+  if (anomaly.type === 'VACATION_JOUR_FERIE') {
+    return 'event_busy';
+  }
   return anomaly.severite === 'ERREUR' ? 'error' : 'warning';
 }

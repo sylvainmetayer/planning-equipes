@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Creneau } from '../../core/models';
-import { summarizeVacationsByDay } from './jours-resume';
+import { dayMonth, holidayDays, summarizeVacationsByDay } from './jours-resume';
 
 function creneau(overrides: Partial<Creneau> & { id: number }): Creneau {
   return {
@@ -33,5 +33,15 @@ describe('summarizeVacationsByDay', () => {
 
   it('returns an empty list for no vacations', () => {
     expect(summarizeVacationsByDay([])).toEqual([]);
+  });
+
+  it('names the public holiday of a day from the map it is given, and nothing else', () => {
+    const summary = summarizeVacationsByDay(
+      [creneau({ id: 1, date: '2026-07-13' }), creneau({ id: 2, date: '2026-07-14' })],
+      new Map([['2026-07-14', 'Fête nationale']]),
+    );
+
+    expect(summary.map((jour) => jour.ferie)).toEqual([null, 'Fête nationale']);
+    expect(holidayDays(summary).map((jour) => dayMonth(jour.date))).toEqual(['14/07']);
   });
 });

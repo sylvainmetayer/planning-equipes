@@ -31,6 +31,7 @@ function rapport(): RapportOuvertures {
     heureFin: creneaux.at(-1)!.heureFin,
     minutes: 600,
     nombreCreneaux: creneaux.length,
+    ferie: null,
     creneaux,
   });
   const cellule = (creneauId: number, effectif: number | null) => ({

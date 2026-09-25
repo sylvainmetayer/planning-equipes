@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.referentiel;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.FenetreRepas;
@@ -361,6 +362,61 @@ class CreneauGridServiceTest {
         assertThat(CreneauGridService.openingAnomalies(creneaux, List.of(stand)))
                 .extracting(Anomaly::type)
                 .noneMatch(AnomalyType::isInformational);
+    }
+
+    @Test
+    void aVacationOnAPublicHolidayIsReportedWhenAMinorIsOnTheTeamThatDay() {
+        List<Creneau> creneaux = List.of(
+                new Creneau(1L, 1, LocalDate.of(2026, 7, 13), LocalTime.of(9, 0), LocalTime.of(12, 0)),
+                new Creneau(2L, 2, LocalDate.of(2026, 7, 14), LocalTime.of(9, 0), LocalTime.of(12, 0)),
+                new Creneau(3L, 2, LocalDate.of(2026, 7, 14), LocalTime.of(14, 0), LocalTime.of(18, 0)));
+        // Seventeen on 14 July 2026.
+        Animateur mineur = new Animateur("M", "Prénom", "Nom", LocalDate.of(2009, 1, 1), false);
+
+        List<GridAnomaly> anomalies =
+                validate(creneaux, List.of(), List.of(mineur), LEGAUX, List.of()).anomalies().stream()
+                        .filter(anomalie -> anomalie.type() == GridAnomalyType.VACATION_JOUR_FERIE)
+                        .toList();
+
+        assertThat(anomalies).singleElement().satisfies(anomalie -> {
+            assertThat(anomalie.date()).isEqualTo(LocalDate.of(2026, 7, 14));
+            assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
+            assertThat(anomalie.message())
+                    .contains("Fête nationale")
+                    .contains("2 vacation(s)")
+                    .contains("1 animateur(s) mineur(s)")
+                    .doesNotContain("Prénom");
+        });
+    }
+
+    @Test
+    void aVacationOnAPublicHolidayIsSilentWithoutAMinorThatDay() {
+        List<Creneau> creneaux =
+                List.of(new Creneau(1L, 1, LocalDate.of(2026, 7, 14), LocalTime.of(9, 0), LocalTime.of(12, 0)));
+        // Eighteen on 1 July: an adult by the holiday — judged on the date, not today.
+        Animateur devenuMajeur = new Animateur("M", "P", "N", LocalDate.of(2008, 7, 1), false);
+        Animateur adulte = new Animateur("A", "P", "N", LocalDate.of(1990, 1, 1), false);
+
+        assertThat(CreneauGridService.holidayVacations(creneaux, List.of(devenuMajeur, adulte)))
+                .isEmpty();
+        assertThat(CreneauGridService.holidayVacations(creneaux, List.of())).isEmpty();
+    }
+
+    @Test
+    void aVacationOnAPublicHolidayCountsOnlyTheMinorsAvailableThatDay() {
+        List<Creneau> creneaux =
+                List.of(new Creneau(1L, 1, LocalDate.of(2026, 7, 14), LocalTime.of(9, 0), LocalTime.of(12, 0)));
+        Animateur absent = new Animateur("M1", "P", "N", LocalDate.of(2009, 1, 1), false);
+        absent.setJoursIndisponibles(Set.of(LocalDate.of(2026, 7, 14)));
+        Animateur present = new Animateur("M2", "P", "N", LocalDate.of(2010, 1, 1), false);
+
+        // The only minor has declared the holiday off: nobody the warning is about.
+        assertThat(CreneauGridService.holidayVacations(creneaux, List.of(absent)))
+                .isEmpty();
+        assertThat(CreneauGridService.holidayVacations(creneaux, List.of(absent, present)))
+                .singleElement()
+                .satisfies(
+                        anomalie -> assertThat(anomalie.message()).contains("1 animateur(s) mineur(s) disponible(s)"));
     }
 
     private static HoraireStand everyDay(int debut, int fin, Integer effectif) {

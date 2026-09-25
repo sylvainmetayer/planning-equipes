@@ -55,6 +55,7 @@ function rapport(patch: Partial<RapportOuvertures> = {}): RapportOuvertures {
         heureFin: '20:00',
         minutes: 600,
         nombreCreneaux: 1,
+        ferie: null,
         creneaux: [
           {
             id: 1,

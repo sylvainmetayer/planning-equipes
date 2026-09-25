@@ -152,11 +152,11 @@ export function affecterDates(
   dates: readonly string[],
   journeeTypeId: number,
 ): AffectationJourneeType[] {
-  const parDate = new Map(calendrier.map((affectation) => [affectation.date, affectation]));
+  const byDate = new Map(calendrier.map((affectation) => [affectation.date, affectation]));
   for (const date of dates) {
-    parDate.set(date, { date, journeeTypeId });
+    byDate.set(date, { date, journeeTypeId });
   }
-  return [...parDate.values()].sort((a, b) => a.date.localeCompare(b.date));
+  return [...byDate.values()].sort((a, b) => a.date.localeCompare(b.date));
 }
 
 export function retirerDate(

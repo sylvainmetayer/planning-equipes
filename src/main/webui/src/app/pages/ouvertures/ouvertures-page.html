@@ -136,9 +136,12 @@
               <tr>
                 <th scope="col" class="colonne-stand" rowspan="2" i18n="@@ouvertures.colonne.stand">Stand</th>
                 @for (jour of rapport()!.jours; track jour.date) {
-                  <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="columnsOfDay(jour.date).length">
+                  <th scope="colgroup" class="entete-jour-saisie" [class.colonne-ferie]="jour.ferie" [attr.colspan]="columnsOfDay(jour.date).length">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
+                    @if (jour.ferie) {
+                      <app-pastille-ferie [libelle]="jour.ferie" compact />
+                    }
                     @if (consigneByDate().get(jour.date); as consigne) {
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
@@ -153,7 +156,7 @@
               </tr>
               <tr>
                 @for (colonne of colonnes(); track colonne.colonneId) {
-                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0">
+                  <th scope="col" class="entete-creneau" [class.premier-du-jour]="colonne.rang === 0" [class.colonne-ferie]="holidaysByDate().has(colonne.date)">
                     @if (scissionActive() === colonne.colonneId) {
                       <!-- eslint-disable-next-line @angular-eslint/template/no-autofocus -- revealed on demand by the « couper » button: the field the user just asked for takes the focus, nothing is stolen on page load -->
                       <input type="time" class="scission-heure" autofocus
@@ -209,7 +212,8 @@
                     <td class="cellule-saisie" [class.premier-du-jour]="cellule.premierDuJour"
                         [class.cellule-modifiee]="cellule.modifiee"
                         [class.cellule-fermee]="cellule.fermee"
-                        [class.cellule-partielle]="cellule.partielle">
+                        [class.cellule-partielle]="cellule.partielle"
+                        [class.colonne-ferie]="cellule.ferie">
                       <input type="text" inputmode="numeric" autocomplete="off" maxlength="3"
                              [attr.data-cellule]="cellule.clef"
                              [attr.aria-label]="cellule.libelle"
@@ -267,6 +271,9 @@
                   <th scope="colgroup" class="entete-jour-saisie" [attr.colspan]="entete.colonnes">
                     <span class="entete-jour">{{ entete.nom }}</span>
                     <span class="entete-date" i18n="@@ouvertures.journeesTypes.dates">{{ entete.dates }} jour(s)</span>
+                    @if (entete.feries) {
+                      <app-pastille-ferie [libelle]="entete.feries" compact />
+                    }
                   </th>
                 }
               </tr>
@@ -354,6 +361,13 @@
               <mat-icon>chevron_right</mat-icon>
             </button>
           </div>
+          @if (jourCourant()?.ferie; as ferie) {
+            <p class="ferie-bandeau">
+              <ng-container i18n="@@ouvertures.journee.ferie">Jour férié :</ng-container>
+              <app-pastille-ferie [libelle]="ferie" />
+              <span i18n="@@ouvertures.journee.ferieConsequence">seuls les majeurs peuvent y siéger (L3164-6).</span>
+            </p>
+          }
           <ul class="axe-legende">
             <li><i class="axe-swatch axe-swatch-bloc"></i><ng-container i18n="@@ouvertures.journee.legende.bloc">Ouvert, avec l'effectif demandé</ng-container></li>
             <li><i class="axe-swatch axe-swatch-relais"></i><ng-container i18n="@@ouvertures.journee.legende.relais">Relais repas : sièges divisés par deux</ng-container></li>
@@ -429,11 +443,14 @@
               <tr>
                 <th scope="col" class="colonne-stand" i18n="@@ouvertures.colonne.stand">Stand</th>
                 @for (jour of rapport()!.jours; track jour.date) {
-                  <th scope="col"
+                  <th scope="col" [class.colonne-ferie]="jour.ferie"
                       [matTooltip]="libelleJour(jour.date) + ' · ' + heure(jour.heureDebut) + '→' + heure(jour.heureFin) + ' · ' + duree(jour.minutes)">
                     <span class="entete-jour">J{{ jour.jour }}</span>
                     <span class="entete-date">{{ libelleJour(jour.date) }}</span>
                     <span class="visually-hidden"> · {{ heure(jour.heureDebut) }}→{{ heure(jour.heureFin) }} · {{ duree(jour.minutes) }}</span>
+                    @if (jour.ferie) {
+                      <app-pastille-ferie [libelle]="jour.ferie" compact />
+                    }
                     @if (consigneByDate().get(jour.date); as consigne) {
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
@@ -458,7 +475,7 @@
                     }
                   </th>
                   @for (cellule of ligne.jours; track cellule.date) {
-                    <td [class]="classeCelluleConsigne(cellule)" [matTooltip]="infobulleCellule(cellule)"
+                    <td [class]="classeCelluleConsigne(cellule)" [class.colonne-ferie]="holidaysByDate().has(cellule.date)" [matTooltip]="infobulleCellule(cellule)"
                         [attr.aria-label]="libelleEtat(cellule)">
                       @if (cellule.etat === 'FERME') {
                         <span class="cellule-vide" aria-hidden="true">—</span>
