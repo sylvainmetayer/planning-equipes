@@ -348,7 +348,8 @@ complètes. Les points suivants sont connus et se consignent :
   outre avec son édition, donc disparaît au plus tard à la purge annuelle ;
 - **le résultat de chaque courriel envoyé à un animateur est conservé**
   (`envoi_mail`) : planning publié ou individuel, code d'accès, invitation à
-  déclarer, relance manuelle, rappel de la veille, relance de nuit. C'est une
+  déclarer, relance manuelle, rappel de la veille, relance de nuit,
+  sollicitation ou refus d'échange. C'est une
   donnée nouvelle par personne, et elle se consigne comme telle. Elle est
   minimisée sur le modèle des deux journaux ci-dessus : un **identifiant
   d'animateur**, le type d'envoi, le statut (parti, sans adresse, échec), la
@@ -357,7 +358,11 @@ complètes. Les points suivants sont connus et se consignent :
   réponse brute du serveur**, l'adresse se relisant sur la fiche au moment
   d'agir. Elle sert une seule finalité : distinguer une personne que personne
   n'a pu joindre d'une personne silencieuse, et ne pas réécrire à une adresse
-  refusée tant que la fiche n'a pas changé. **Ce n'est pas un suivi de
+  refusée tant qu'elle n'a pas changé. Pour le savoir, la fiche porte **la date
+  du dernier changement de son adresse** (`animateur.email_modifie_le`) : ce
+  n'est pas une donnée personnelle de plus — une date, sans l'adresse d'avant
+  ni celle d'après —, elle ne sort par aucune API ni aucun outil MCP, et elle
+  disparaît avec la fiche. **Ce n'est pas un suivi de
   lecture** : aucun pixel, aucun lien traqué, et « parti » veut dire accepté
   par le relais, jamais reçu ni lu. Les mineurs n'y ont rien de plus que les
   autres. Elle n'a pas de purge propre : elle disparaît avec la fiche de

@@ -15,6 +15,13 @@
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
+    @if (echecsTemporaires() > 0) {
+      <button matButton="outlined" type="button" class="renvoyer-echecs" [disabled]="renvoiEnCours()"
+              (click)="resendFailed()">
+        <mat-icon>forward_to_inbox</mat-icon>
+        <ng-container i18n="@@animateurs.renvoyer.bouton">Renvoyer les envois en échec</ng-container>
+      </button>
+    }
     <mat-form-field appearance="outline" subscriptSizing="dynamic" class="accuses-filter">
       <mat-label i18n="@@animateurs.accuses.label">Accusés</mat-label>
       <mat-select [ngModel]="accuses()" (ngModelChange)="accuses.set($event)">

@@ -12,6 +12,7 @@ import {
   ImportCsvDemande,
   ImportCsvRapport,
   RapportRelance,
+  RapportRenvoi,
   RapportSaisieCompetences,
   RelanceDemande,
   SaisieAnimateurCompetences,
@@ -48,6 +49,11 @@ export class AnimateursApi {
   remind(animateurIds: string[]): Promise<RapportRelance> {
     const demande: RelanceDemande = { animateurIds };
     return this.api.post<RapportRelance>('/api/animateurs/relances', demande);
+  }
+
+  /** « Renvoyer les envois en échec »: every mail whose last attempt failed for a temporary reason. */
+  resendFailed(): Promise<RapportRenvoi> {
+    return this.api.post<RapportRenvoi>('/api/animateurs/renvois', null);
   }
 
   downloadCsvExample(): Promise<string> {

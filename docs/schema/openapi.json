@@ -4151,7 +4151,7 @@
       },
       "InvitationReport" : {
         "type" : "object",
-        "required" : [ "envoyes" ],
+        "required" : [ "envoyes", "adresseRefusee" ],
         "properties" : {
           "envoyes" : {
             "type" : "integer",
@@ -4164,6 +4164,12 @@
             }
           },
           "echecs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "adresseRefusee" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -4443,7 +4449,7 @@
         "properties" : {
           "type" : {
             "type" : "string",
-            "enum" : [ "PLANNING_PUBLIE", "PLANNING_INDIVIDUEL", "CODE_ACCES", "INVITATION_DECLARATION", "RELANCE_MANUELLE", "RAPPEL_VEILLE", "RELANCE_NUIT" ]
+            "enum" : [ "PLANNING_PUBLIE", "PLANNING_INDIVIDUEL", "CODE_ACCES", "INVITATION_DECLARATION", "RELANCE_MANUELLE", "RAPPEL_VEILLE", "RELANCE_NUIT", "ECHANGE_SOLLICITATION", "ECHANGE_DECLINEE" ]
           },
           "statut" : {
             "type" : "string",
@@ -4970,6 +4976,18 @@
       "NiveauEffort" : {
         "type" : "string",
         "enum" : [ "NORMAL", "EPUISANT" ]
+      },
+      "NotResent" : {
+        "required" : [ "animateurId", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "animateurId" : {
+            "type" : "string"
+          },
+          "motif" : {
+            "$ref" : "#/components/schemas/ResendRefusal"
+          }
+        }
       },
       "NouvelleDeclaration" : {
         "type" : "object",
@@ -6289,7 +6307,7 @@
         }
       },
       "RapportPublication" : {
-        "required" : [ "envoyes", "snapshotId" ],
+        "required" : [ "envoyes", "snapshotId", "adresseRefusee" ],
         "type" : "object",
         "properties" : {
           "snapshotId" : {
@@ -6316,6 +6334,12 @@
             }
           },
           "differes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "adresseRefusee" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -6729,6 +6753,34 @@
             "uniqueItems" : true,
             "items" : {
               "type" : "string"
+            }
+          }
+        }
+      },
+      "ResendRefusal" : {
+        "type" : "string",
+        "enum" : [ "TYPE_NON_RENVOYABLE", "JAMAIS_PUBLIE", "SANS_POSTE", "DEJA_CONFIRME", "DEJA_RELANCE", "COLLECTE_FERMEE", "SANS_ADRESSE", "ADRESSE_REFUSEE" ]
+      },
+      "ResendReport" : {
+        "required" : [ "renvoyes", "echecs", "nonRenvoyables" ],
+        "type" : "object",
+        "properties" : {
+          "renvoyes" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "echecs" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "nonRenvoyables" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/NotResent"
             }
           }
         }
@@ -7311,7 +7363,7 @@
       },
       "StatutEnvoi" : {
         "type" : "string",
-        "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "EXCLU" ]
+        "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC", "ADRESSE_REFUSEE", "EXCLU" ]
       },
       "StatutMcp" : {
         "required" : [ "configuree" ],
@@ -8224,6 +8276,24 @@
           }
         },
         "summary" : "Relancer",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/renvois" : {
+      "post" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ResendReport"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Resend Failed",
         "tags" : [ "Animateur Resource" ]
       }
     },

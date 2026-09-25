@@ -75,7 +75,7 @@ describe('resumeRelance', () => {
     const resume = resumeRelance(rapport({ adresseRefusee: ['a'] }), nameOf);
 
     expect(resume.details).toContain(
-      'Adresse refusée au dernier envoi, fiche à corriger : Alice Martin',
+      'Adresse refusée au dernier envoi, adresse à corriger : Alice Martin',
     );
     expect(resume.detailsJournal).toContain('1 adresse(s) refusée(s)');
     expect(resume.detailsJournal).not.toContain('Alice');

@@ -130,6 +130,11 @@ class NotificationDispatcherTest {
             public void recordSent(String animateurId, MailKind kind) {
                 journal.add("ENVOYE " + animateurId + " " + kind);
             }
+
+            @Override
+            public boolean isAddressBlocked(String animateurId) {
+                return false;
+            }
         };
         expediteur = new NotificationDispatcher(
                 mails -> {
@@ -149,6 +154,48 @@ class NotificationDispatcherTest {
                         .mapToDouble(c -> c.count())
                         .sum())
                 .isEqualTo(1.0);
+    }
+
+    /**
+     * An address the relay refused for good: nothing is attempted, nothing is
+     * journalled — the last line stays the refusal — and nothing fails.
+     */
+    @Test
+    void aMailToABlockedAddressIsSkippedWithoutALine() {
+        List<String> journal = new ArrayList<>();
+        MailDeliveryLog blocking = new MailDeliveryLog(null) {
+            @Override
+            public void recordFailure(String animateurId, MailKind kind, Throwable failure) {
+                journal.add("ECHEC " + animateurId + " " + kind);
+            }
+
+            @Override
+            public void recordSent(String animateurId, MailKind kind) {
+                journal.add("ENVOYE " + animateurId + " " + kind);
+            }
+
+            @Override
+            public boolean isAddressBlocked(String animateurId) {
+                return "B1".equals(animateurId);
+            }
+        };
+        expediteur = new NotificationDispatcher(
+                mails -> envoyes.addAll(List.of(mails)),
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry),
+                blocking);
+
+        assertThatCode(() -> expediteur.surNotification(
+                        new Notification.TargetSolicited("B1", "bob@example.org", "Alice Dupont", 1)))
+                .doesNotThrowAnyException();
+        expediteur.surNotification(
+                new Notification.DemandeDeclinee("A1", "alice@example.org", "Bob Martin", "samedi 10h-12h"));
+
+        assertThat(envoyes)
+                .singleElement()
+                .satisfies(mail -> assertThat(mail.getTo()).containsExactly("alice@example.org"));
+        assertThat(journal).containsExactly("ENVOYE A1 ECHANGE_DECLINEE");
     }
 
     /** The {@code catch} covers the writing as much as the sending. */

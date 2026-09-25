@@ -57,6 +57,10 @@ class EditionDuplicationStructurelleTest {
                             + "link is never shared between two editions"),
             Map.entry("animateur.abonnement_token", "same, for the ICS subscription"),
             Map.entry(
+                    "animateur.email_modifie_le",
+                    "dates the address against the delivery journal, which a new edition starts without: "
+                            + "nothing to compare, so the now() default is exactly right"),
+            Map.entry(
                     "animateur.plan_notifie_id",
                     "names a snapshot of the source edition: a new edition has published nothing, so "
                             + "everybody in it is a first delivery, which is exactly what NULL says"),

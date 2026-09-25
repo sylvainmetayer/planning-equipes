@@ -146,7 +146,10 @@ public class DemandeEchangeService {
         }
         for (Map.Entry<String, Integer> sollicitation : parCible.entrySet()) {
             notifications.fire(new Notification.TargetSolicited(
-                    emailOf(sollicitation.getKey()), nomComplet(demandeurId), sollicitation.getValue()));
+                    sollicitation.getKey(),
+                    emailOf(sollicitation.getKey()),
+                    nomComplet(demandeurId),
+                    sollicitation.getValue()));
         }
         return demandes;
     }
@@ -248,7 +251,10 @@ public class DemandeEchangeService {
         checkFoireOpen();
         DemandeEchange demande = decidedByTarget(cibleId, demandeId, StatutDemandeEchange.REFUSEE_CIBLE);
         notifications.fire(new Notification.DemandeDeclinee(
-                emailOf(demande.getDemandeurId()), nomComplet(cibleId), libelleCreneau(demande)));
+                demande.getDemandeurId(),
+                emailOf(demande.getDemandeurId()),
+                nomComplet(cibleId),
+                libelleCreneau(demande)));
         return demande;
     }
 

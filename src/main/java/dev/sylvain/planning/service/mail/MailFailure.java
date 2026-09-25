@@ -17,7 +17,7 @@ import java.util.concurrent.TimeoutException;
  * <p>The split that matters is {@link #ADRESSE_REFUSEE} against
  * {@link #TEMPORAIRE}: the relay refused this recipient for good (a 5xx
  * reply), so writing again to the same address is pointless until somebody
- * edits the fiche — whereas a 4xx is the relay asking to try later, and the
+ * changes the address — whereas a 4xx is the relay asking to try later, and the
  * next reminder is allowed. The other three are about the relay itself, not
  * the person: every send fails the same way, and the fix is in the
  * deployment's configuration.</p>

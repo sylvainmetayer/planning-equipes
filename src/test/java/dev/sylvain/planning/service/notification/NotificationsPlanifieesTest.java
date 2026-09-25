@@ -273,9 +273,14 @@ class NotificationsPlanifieesTest {
         assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
     }
 
-    /** And the other way round: once the night wrote, the hand is refused. */
+    /**
+     * And the other way round: once the night's mail has <b>left</b>, the hand
+     * is refused. A night whose send failed does not count — the status stays
+     * {@code NON_VU} and the hand is accepted (see
+     * {@code EnvoiMailResourceTest.afterAFailedNightTheHandMayRemindAndTheNightDoesNotInsist}).
+     */
     @Test
-    void someoneRemindedByTheNightIsRefusedToTheHand() {
+    void someoneTheNightReachedIsRefusedToTheHand() {
         java.time.Instant plusTard = java.time.Instant.now().plus(java.time.Duration.ofHours(80));
         assertThat(relanceConfirmation.run(actives(), plusTard)).isEqualTo(1);
 

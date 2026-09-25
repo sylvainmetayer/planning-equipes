@@ -117,6 +117,16 @@ public class EspaceAccesService {
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
         }
+        // The relay refused this address for good on the last send: no code
+        // leaves for it until the organisation corrects it. Answered like the
+        // missing address above — the same 400, a sentence that invites to
+        // contact the organisation and says nothing the token's holder does
+        // not already know — and before the limiter, which counts sends.
+        if (deliveries.isAddressBlocked(animateurId)) {
+            throw new BusinessError.Invalid(
+                    "Le code ne peut pas être envoyé à l'adresse e-mail enregistrée pour vous : contactez "
+                            + "l'organisation pour la faire vérifier sur votre fiche.");
+        }
         // After the address check, before the send: a record without an address
         // consumes nothing, and every mail actually sent is counted.
         RateLimitVerdict verdict = limiteurDemandesCode.request(rateKey(animateurId));

@@ -15,6 +15,7 @@ participant PlanPublicationService as publication
 participant PlanSnapshotService as snapshots
 participant PlanningExportService as exports
 participant MailService as mails
+participant MailDeliveryLog as envois
 participant PublicationTraceRepository as traces
 participant NotifiedPlanRepository as reperes
 participant DemandeEchangeService as echanges
@@ -34,8 +35,11 @@ alt solve en cours, plan vide, personne de concerné, ou tout le monde exclu
 end
 publication -> snapshots : capturePubliee("Publication du …")
 note right of snapshots : cet instantané EST le plan publié,\nexclus compris ; la purge ne le touche jamais
+publication -> envois : blockedAddresses()
 loop chaque personne retenue
-  alt pas d'e-mail
+  alt adresse refusée par le relais au dernier envoi, inchangée depuis
+    publication -> publication : ADRESSE_REFUSEE, rien n'est tenté
+  else pas d'e-mail
     publication -> publication : SANS_EMAIL
   else
     publication -> exports : exportAnimateurPdfPublie(plan, animateurId)
@@ -57,5 +61,5 @@ note right of reperes : seuls les retenus avancent leur repère ;\nun différé 
 publication -> echanges : markAsCommunicated(demandes, maintenant)
 note right of echanges : les décisions d'échange partent avec\nla publication, pas au moment de la décision
 publication -> confirmations : reset(retenus dont le planning a changé)
-publication --> admin : RapportPublication (envoyés, sans e-mail, échecs, différés)
+publication --> admin : RapportPublication (envoyés, sans e-mail, échecs, différés, adresses refusées)
 @enduml

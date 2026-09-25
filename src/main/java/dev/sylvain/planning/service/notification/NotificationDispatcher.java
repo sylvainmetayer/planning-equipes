@@ -70,6 +70,17 @@ public class NotificationDispatcher {
      */
     void surNotification(@Observes Notification notification) {
         try {
+            if (notification instanceof Notification.ToAnimateur envoi
+                    && deliveries.isAddressBlocked(envoi.animateurId())) {
+                // The relay refused this address for good and it has not
+                // changed since: the same mail would earn the same refusal.
+                // Nothing was attempted, so nothing is journalled either —
+                // the last line stays the refusal the screens show.
+                Log.infof(
+                        "%s to animateur %s skipped: the relay refused their address on the last send",
+                        notification.getClass().getSimpleName(), envoi.animateurId());
+                return;
+            }
             redacteur.rediger(notification).ifPresent(courrier -> send(notification, courrier));
         } catch (RuntimeException e) {
             Log.errorf(

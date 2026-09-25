@@ -212,19 +212,23 @@ public class PlanPublicationService {
      *
      * @param sansEmail names of concerned people with no address on their fiche
      * @param echecs    names of concerned people whose mail did not leave
+     * @param adresseRefusee names of concerned people nothing was attempted
+     *                  for: the relay refused their address for good on the
+     *                  last send, and it has not changed since
      * @param differes  names of the people the admin took out of this send.
      *                  They keep the reference they really received, so they
      *                  come back in the next count with the écart accumulated
      *                  since — nothing is lost by deferring somebody
      */
-    @Schema(requiredProperties = {"envoyes", "snapshotId"})
+    @Schema(requiredProperties = {"envoyes", "snapshotId", "adresseRefusee"})
     public record RapportPublication(
             long snapshotId,
             Instant publieLe,
             int envoyes,
             List<String> sansEmail,
             List<String> echecs,
-            List<String> differes) {}
+            List<String> differes,
+            List<String> adresseRefusee) {}
 
     /* ------------------------------- Preview ------------------------------- */
 
@@ -476,13 +480,21 @@ public class PlanPublicationService {
         List<Destinataire> trace = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
+        List<String> adresseRefusee = new ArrayList<>();
+        Set<String> bloquees = deliveries.blockedAddresses();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
-            StatutEnvoi statut = send(planning, reference, referencesParAnimateur, destinataire);
+            StatutEnvoi statut = bloquees.contains(destinataire.animateurId())
+                    ? StatutEnvoi.ADRESSE_REFUSEE
+                    : send(planning, reference, referencesParAnimateur, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> echecs.add(destinataire.nomAffiche());
+                // Not attempted and not journalled: the last line of their
+                // delivery journal stays the refusal. Traced all the same, so
+                // their espace replays what the mail would have said.
+                case ADRESSE_REFUSEE -> adresseRefusee.add(destinataire.nomAffiche());
                 case EXCLU -> {
                     // Never an outcome of a send: excluded recipients are traced apart, unsent.
                 }
@@ -541,7 +553,8 @@ public class PlanPublicationService {
                 envoyes,
                 List.copyOf(sansEmail),
                 List.copyOf(echecs),
-                differes.stream().map(DestinatairePublication::nomAffiche).toList());
+                differes.stream().map(DestinatairePublication::nomAffiche).toList(),
+                List.copyOf(adresseRefusee));
     }
 
     private StatutEnvoi send(

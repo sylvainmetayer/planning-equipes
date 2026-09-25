@@ -4,7 +4,6 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.mail.LastDelivery;
 import dev.sylvain.planning.service.mail.MailDeliveryLog;
 import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
@@ -18,6 +17,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
@@ -108,10 +108,10 @@ public class RelanceManuelleService {
      *                                         nothing was ever asked of them
      * @param adresseRefusee                   the relay refused this address
      *                                         for good on the last send, and
-     *                                         the fiche has not changed since:
-     *                                         writing again would earn the same
-     *                                         refusal. Correcting the fiche
-     *                                         lifts it
+     *                                         the address has not changed
+     *                                         since: writing again would earn
+     *                                         the same refusal. Changing the
+     *                                         address lifts it
      */
     @Schema(
             requiredProperties = {
@@ -166,14 +166,14 @@ public class RelanceManuelleService {
         }
 
         Tri tri = new Tri();
-        Map<String, LastDelivery> derniersEnvois = deliveries.latestByAnimateur();
+        Set<String> bloquees = deliveries.blockedAddresses();
         Instant maintenant = Instant.now();
         for (String animateurId : retenus) {
             remindOne(
                     animateurId,
                     fiches.get(animateurId),
                     reponses.get(animateurId),
-                    derniersEnvois.get(animateurId),
+                    bloquees.contains(animateurId),
                     animateurId + "|" + publieLe,
                     maintenant,
                     tri);
@@ -217,8 +217,8 @@ public class RelanceManuelleService {
     /**
      * Reminds one animateur, or says in {@code tri} why not.
      *
-     * @param dernier the last mail to this person since their fiche last
-     *                changed; {@code null} when there is none
+     * @param adresseBloquee the relay refused this person's address for good
+     *                on the last send ({@code MailDeliveryLog.blockedAddresses})
      * @param cle the key both the manual and the nightly reminder claim for
      *            this person and this publication
      */
@@ -226,7 +226,7 @@ public class RelanceManuelleService {
             String animateurId,
             Animateur fiche,
             ConfirmationPlanningService.ConfirmationView reponse,
-            LastDelivery dernier,
+            boolean adresseBloquee,
             String cle,
             Instant maintenant,
             Tri tri) {
@@ -253,8 +253,8 @@ public class RelanceManuelleService {
             return;
         }
         // Insisting on an address the relay refused for good would only
-        // earn the same refusal; editing the fiche is what lifts this.
-        if (dernier != null && dernier.blocksReminder()) {
+        // earn the same refusal; changing the address is what lifts this.
+        if (adresseBloquee) {
             tri.adresseRefusee().add(animateurId);
             return;
         }

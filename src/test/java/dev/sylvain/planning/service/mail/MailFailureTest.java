@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 /**
  * The categories an organiser acts on, read from what the mailer throws. The
  * one split that changes behaviour is a permanent refusal against a temporary
- * one: the first stops the reminders until the fiche changes, the second does
+ * one: the first stops every send until the address changes, the second does
  * not.
  */
 class MailFailureTest {
@@ -51,13 +51,13 @@ class MailFailureTest {
     }
 
     @Test
-    void onlyARefusedAddressHoldsTheReminderBack() {
+    void onlyARefusedAddressBlocksFurtherSends() {
         java.time.Instant now = java.time.Instant.now();
-        assertThat(new LastDelivery("RELANCE_NUIT", "ECHEC", "ADRESSE_REFUSEE", now).blocksReminder())
+        assertThat(new LastDelivery("RELANCE_NUIT", "ECHEC", "ADRESSE_REFUSEE", now).blocksAddress())
                 .isTrue();
-        assertThat(new LastDelivery("RELANCE_NUIT", "ECHEC", "TEMPORAIRE", now).blocksReminder())
+        assertThat(new LastDelivery("RELANCE_NUIT", "ECHEC", "TEMPORAIRE", now).blocksAddress())
                 .isFalse();
-        assertThat(new LastDelivery("RELANCE_NUIT", "ENVOYE", null, now).blocksReminder())
+        assertThat(new LastDelivery("RELANCE_NUIT", "ENVOYE", null, now).blocksAddress())
                 .isFalse();
     }
 

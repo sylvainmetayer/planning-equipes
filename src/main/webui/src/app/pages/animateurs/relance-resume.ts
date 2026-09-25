@@ -61,7 +61,7 @@ export function resumeRelance(
   }
   if (rapport.adresseRefusee.length > 0) {
     details.push(
-      $localize`:@@animateurs.relancer.adresseRefusee:Adresse refusée au dernier envoi, fiche à corriger : ${noms(rapport.adresseRefusee)}:noms:`,
+      $localize`:@@animateurs.relancer.adresseRefusee:Adresse refusée au dernier envoi, adresse à corriger : ${noms(rapport.adresseRefusee)}:noms:`,
     );
   }
   if (rapport.echecs.length > 0) {

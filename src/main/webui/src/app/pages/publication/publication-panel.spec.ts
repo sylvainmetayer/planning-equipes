@@ -119,7 +119,8 @@ describe('PublicationPanel', () => {
     planningApi.publish.mockImplementation(
       () =>
         new Promise((resolve) => {
-          finish = () => resolve({ envoyes: 3, sansEmail: [], echecs: [], differes: [] });
+          finish = () =>
+            resolve({ envoyes: 3, sansEmail: [], echecs: [], differes: [], adresseRefusee: [] });
         }),
     );
     return { terminer: () => finish() };
@@ -289,6 +290,7 @@ describe('PublicationPanel', () => {
         sansEmail: [],
         echecs: [],
         differes: ['Bruno Petit'],
+        adresseRefusee: [],
       });
       const panel = await panelWith([
         recipient({}),

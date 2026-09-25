@@ -35,3 +35,11 @@ CREATE TABLE IF NOT EXISTS envoi_mail (
 -- La seule lecture : le dernier envoi de chaque animateur de l'édition.
 CREATE INDEX IF NOT EXISTS idx_envoi_mail_dernier
     ON envoi_mail (edition_id, animateur_id, envoye_le DESC, id DESC);
+
+-- Quand l'adresse de la fiche a changé pour la dernière fois : seul un
+-- changement d'ADRESSE lève le refus du relais, pas une modification de la
+-- fiche. Le « dernier envoi » d'une personne est le plus récent depuis cette
+-- date ; `modifie_le`, qui bouge à chaque enregistrement, levait le blocage
+-- quand on corrigeait une compétence. Pas une donnée personnelle : une date,
+-- sans l'adresse avant ni après.
+ALTER TABLE animateur ADD COLUMN IF NOT EXISTS email_modifie_le TIMESTAMPTZ NOT NULL DEFAULT now();

@@ -20,6 +20,7 @@ import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jboss.logging.Logger;
 
 /**
@@ -42,6 +43,10 @@ import org.jboss.logging.Logger;
  * recorded as an alert of the Notifications screen: the organiser is the one
  * who can pick up a phone, and dropping the person silently would be the worst
  * of the three possible behaviours.</p>
+ *
+ * <p>So is an animateur whose address the relay refused for good on the last
+ * send, while that address has not changed: the same mail would earn the same
+ * refusal, and the organiser gets the same alert, once per day.</p>
  */
 @ApplicationScoped
 public class RappelVeilleJob {
@@ -116,13 +121,14 @@ public class RappelVeilleJob {
             fiches.put(animateur.getId(), animateur);
         }
 
+        Set<String> bloquees = deliveries.blockedAddresses();
         int envoyes = 0;
         for (Map.Entry<String, List<PosteAffectation>> entree : parAnimateur.entrySet()) {
             Animateur fiche = fiches.get(entree.getKey());
             if (fiche == null) {
                 continue;
             }
-            envoyes += remind(fiche, demain, entree.getValue()) ? 1 : 0;
+            envoyes += remind(fiche, bloquees.contains(fiche.getId()), demain, entree.getValue()) ? 1 : 0;
         }
         LOG.debugf("Day-before reminders: %d sent for %s", envoyes, demain);
         return envoyes;
@@ -134,7 +140,7 @@ public class RappelVeilleJob {
      * @return true when a mail was actually fired — false when it had already
      *         gone out, or when there is nobody to write to
      */
-    private boolean remind(Animateur fiche, LocalDate demain, List<PosteAffectation> postes) {
+    private boolean remind(Animateur fiche, boolean adresseBloquee, LocalDate demain, List<PosteAffectation> postes) {
         String cle = fiche.getId() + "|" + demain;
         if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
             // Not a failure to retry: a fiche without an address stays without
@@ -151,6 +157,22 @@ public class RappelVeilleJob {
             if (premiere) {
                 deliveries.recordNoAddress(fiche.getId(), MailKind.RAPPEL_VEILLE);
             }
+            return false;
+        }
+        if (adresseBloquee) {
+            // The relay refused this address for good on the last send and it
+            // has not changed since: nothing is attempted, nothing journalled
+            // in envoi_mail, and the alert is left once for this day — the
+            // same claim as for a missing address, so an hourly run does not
+            // repeat it.
+            journal.claim(
+                    JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
+                    cle,
+                    fiche.getId(),
+                    "Rappel de la veille non envoyé : le relais a refusé l'adresse de la fiche au dernier envoi."
+                            + " Cette personne est affectée le " + NotificationWriter.JOUR.format(demain)
+                            + " et doit être prévenue à la main, ou son adresse corrigée.",
+                    JournalNotificationsRepository.Severite.WARNING);
             return false;
         }
         if (!journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE, cle, fiche.getId())) {

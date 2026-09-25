@@ -182,7 +182,8 @@ public class DisponibiliteMcpTools {
                         : new InvitationView(
                                 invitation.envoyes(),
                                 invitation.sansEmail().size(),
-                                invitation.echecs().size()));
+                                invitation.echecs().size(),
+                                invitation.adresseRefusee().size()));
     }
 
     /** The applied declaration and the coherence warnings, in codes (see {@link WarningCodes}). */
@@ -217,6 +218,8 @@ public class DisponibiliteMcpTools {
     /**
      * @param sansAdresse how many animateurs have no address on their fiche —
      *                    counted, never named
+     * @param adresseRefusee how many were skipped because the relay refused
+     *                    their address on the last send and it has not changed
      */
-    public record InvitationView(int envoyes, int sansAdresse, int echecs) {}
+    public record InvitationView(int envoyes, int sansAdresse, int echecs, int adresseRefusee) {}
 }

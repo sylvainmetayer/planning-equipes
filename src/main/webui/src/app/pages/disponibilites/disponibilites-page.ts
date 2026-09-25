@@ -157,13 +157,29 @@ export class DisponibilitesPage implements OnInit {
         variant: 'success',
       });
       if (reponse.invitation) {
+        const invitation = reponse.invitation;
+        const restes: string[] = [];
+        if (invitation.sansEmail.length + invitation.echecs.length > 0) {
+          restes.push(
+            $localize`:@@dispo.invitationRestes:Sans adresse : ${invitation.sansEmail.join(', ')}:sansEmail:. Échecs : ${invitation.echecs.join(', ')}:echecs:.`,
+          );
+        }
+        // Skipped, not failed: the relay refused these addresses on the last
+        // send, and nothing leaves for them until they are corrected.
+        if (invitation.adresseRefusee.length > 0) {
+          restes.push(
+            $localize`:@@dispo.invitationAdresseRefusee:Adresse refusée au dernier envoi, à corriger : ${invitation.adresseRefusee.join(', ')}:noms:.`,
+          );
+        }
         this.notifications.notify({
-          title: $localize`:@@dispo.invitationNotif:${reponse.invitation.envoyes}:envoyes: invitation(s) envoyée(s).`,
-          message:
-            reponse.invitation.sansEmail.length + reponse.invitation.echecs.length === 0
-              ? undefined
-              : $localize`:@@dispo.invitationRestes:Sans adresse : ${reponse.invitation.sansEmail.join(', ')}:sansEmail:. Échecs : ${reponse.invitation.echecs.join(', ')}:echecs:.`,
-          variant: reponse.invitation.echecs.length > 0 ? 'error' : 'success',
+          title: $localize`:@@dispo.invitationNotif:${invitation.envoyes}:envoyes: invitation(s) envoyée(s).`,
+          message: restes.length === 0 ? undefined : restes.join(' '),
+          variant:
+            invitation.echecs.length > 0
+              ? 'error'
+              : invitation.adresseRefusee.length > 0
+                ? 'warning'
+                : 'success',
           timeout: 8000,
         });
       }

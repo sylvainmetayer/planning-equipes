@@ -168,9 +168,18 @@ courriel parti en erreur, ni un échec en un autre.
 
 La catégorie se lit dans l'exception du client SMTP (`MailFailure.classify`,
 code de réponse 4xx / 5xx), et le « dernier envoi » d'une personne est le plus
-récent **depuis la dernière modification de sa fiche** : un envoi plus ancien
-ne dit rien de l'adresse qu'elle porte maintenant. C'est ce qui fait qu'une
-fiche corrigée lève d'elle-même le refus des relances.
+récent **depuis le dernier changement de son adresse**
+(`animateur.email_modifie_le`, que seul l'upsert de la fiche fait bouger, et
+seulement quand l'adresse change) : un envoi plus ancien ne dit rien de
+l'adresse qu'elle porte maintenant. C'est ce qui fait qu'une adresse corrigée
+lève d'elle-même le refus du relais, et qu'une autre modification de la fiche
+ne le lève pas.
+
+Le même journal dit **vers quelles adresses plus rien ne part**
+(`MailDeliveryLog.blockedAddresses`) : chaque envoi — publication, planning
+individuel, code d'accès, invitation, relances, rappel de la veille, et les
+notifications `ToAnimateur` dans `NotificationDispatcher` — lit cette règle au
+lieu de la recoder, et un envoi qu'elle saute n'écrit rien.
 
 ### Le texte des mails est dans des gabarits, pas dans le Java
 

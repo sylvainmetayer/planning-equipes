@@ -40,8 +40,19 @@ public class JournalNotificationsRepository {
         /** A J-1 reminder that could not leave: no address on the fiche. Key: {@code animateurId|date}. */
         RAPPEL_VEILLE_INJOIGNABLE,
 
-        /** Reminder of a silent animateur (issue #299). Key: {@code animateurId|publicationInstant}. */
+        /**
+         * Reminder of a silent animateur (issue #299), claimed by the night
+         * and by the hand alike. Key: {@code animateurId|publicationInstant}.
+         */
         RELANCE_CONFIRMATION,
+
+        /**
+         * The night has attempted this reminder, whatever became of it. Same
+         * key. Held apart from {@link #RELANCE_CONFIRMATION} because a failed
+         * send gives that one back — so « Relancer maintenant » stays possible
+         * — while the night must still not try again every hour.
+         */
+        RELANCE_NUIT_TENTEE,
 
         /**
          * A reminder that could not leave: no address on the fiche, or a send

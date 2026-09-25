@@ -234,6 +234,10 @@ Single Quarkus service, no separate solver microservice. Package root:
   instead of it: `service/mail/MailDeliveryLog` writes the `envoi_mail`
   journal (an id, a kind, an outcome, a failure category — never an address),
   rethrows exactly what the send threw, and swallows only its own failures.
+  It is also the one place that says which addresses no mail may leave for
+  (`blockedAddresses`: the relay refused them and they have not changed
+  since, `animateur.email_modifie_le`); every send reads it rather than
+  re-deriving the rule, and a skipped send writes no line.
 - **A mail's wording lives in a Qute template, never in Java.** One pair per
   mail under `src/main/resources/templates/mail/` — `<name>.txt` and
   `<name>.html`, the latter built on the shared `layout.html` (deployment logo,

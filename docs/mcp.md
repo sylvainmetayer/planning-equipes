@@ -528,8 +528,14 @@ revient dans `dejaRelancesPourCettePublication` au lieu de recevoir un second
 message. Le compte rendu ne porte que des ids : `envoyes`, `dejaConfirmes`,
 `sansEmail`, `dejaRelancesPourCettePublication`, `echecs` (un envoi qui a
 échoué est compté, pas avalé), `sansPoste` et `adresseRefusee` (le relais a
-refusé l'adresse au dernier envoi et la fiche n'a pas changé depuis : rien
-n'est renvoyé). Refusé si rien n'a jamais été
+refusé l'adresse au dernier envoi et elle n'a pas changé depuis : rien
+n'est renvoyé). La même règle vaut pour tous les envois : `publier_planning`
+compte à part (`adresseRefusee`) les personnes qu'il n'a pas tentées, avec le
+statut `ADRESSE_REFUSEE` dans `lister_destinataires_publication`, et
+`envoyer_planning_animateur` refuse de renvoyer vers une telle adresse. Le
+bouton « Renvoyer les envois en échec » de la page Animateurs n'a pas d'outil :
+il enverrait des courriels, et la liste des outils qui en envoient est tenue
+courte à dessein. Refusé si rien n'a jamais été
 publié ou si un id est inconnu — rien ne part alors, pas même aux ids valides.
 
 ## Décider ce que les animateurs ont demandé

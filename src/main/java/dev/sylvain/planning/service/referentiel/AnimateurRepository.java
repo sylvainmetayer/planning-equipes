@@ -385,8 +385,17 @@ public class AnimateurRepository {
         // Neither token is listed: a fresh row gets the database default, an
         // existing row keeps both. Rotation only happens through
         // regenerateAnimateurToken and regenerateAbonnementToken.
-        String miseAJourEmail =
-                conserverEmailSiAbsent ? "email = COALESCE(EXCLUDED.email, animateur.email)" : "email = EXCLUDED.email";
+        // email_modifie_le moves only when the address itself does — the
+        // same expression as the email clause, COALESCE included: it is what
+        // lifts the relay's refusal of an address, and saving a fiche whose
+        // address stayed put must not lift it. This is the only write of
+        // animateur.email; a fresh row takes the column's now() default.
+        String miseAJourEmail = conserverEmailSiAbsent
+                ? "email = COALESCE(EXCLUDED.email, animateur.email), email_modifie_le = CASE WHEN animateur.email"
+                        + " IS DISTINCT FROM COALESCE(EXCLUDED.email, animateur.email) THEN now()"
+                        + " ELSE animateur.email_modifie_le END"
+                : "email = EXCLUDED.email, email_modifie_le = CASE WHEN animateur.email IS DISTINCT FROM"
+                        + " EXCLUDED.email THEN now() ELSE animateur.email_modifie_le END";
         try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO animateur (edition_id, id, prenom, nom, date_naissance, manager, email)
                 VALUES (?, ?, ?, ?, ?, ?, ?)

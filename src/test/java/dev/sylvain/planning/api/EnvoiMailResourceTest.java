@@ -2,8 +2,11 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
 
 import dev.sylvain.planning.domain.Animateur;
@@ -12,18 +15,25 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.Stand;
+import dev.sylvain.planning.service.mail.MailMetrics;
+import dev.sylvain.planning.service.notification.Notification;
+import dev.sylvain.planning.service.notification.RappelVeilleJob;
 import dev.sylvain.planning.service.notification.RelanceConfirmationJob;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import io.quarkus.arc.ClientProxy;
+import io.quarkus.mailer.Mail;
+import io.quarkus.mailer.Mailer;
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusMock;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.response.ValidatableResponse;
 import io.vertx.ext.mail.SMTPException;
+import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -33,6 +43,8 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +59,7 @@ import org.junit.jupiter.api.Test;
  * What became of a mail to an animateur (the {@code envoi_mail} journal): a
  * send the relay refused is recorded with its category, the Animateurs page
  * reads « échec d'envoi » rather than « silencieux », and the reminders stop
- * insisting on a refused address until the fiche changes.
+ * insisting on a refused address until the address changes.
  *
  * <p>Alice holds a seat and has an address, Bruno holds one without an
  * address. The failures come from a {@link MailService} that throws what the
@@ -70,6 +82,12 @@ class EnvoiMailResourceTest {
 
     @Inject
     RelanceConfirmationJob relanceNuit;
+
+    @Inject
+    RappelVeilleJob rappelVeille;
+
+    @Inject
+    Event<Notification> notifications;
 
     @Inject
     MockMailbox mailbox;
@@ -102,6 +120,7 @@ class EnvoiMailResourceTest {
     @AfterEach
     void cleanUp() {
         execute("DELETE FROM plan_snapshot");
+        execute("DELETE FROM envoi_mail");
     }
 
     @Test
@@ -138,7 +157,7 @@ class EnvoiMailResourceTest {
     }
 
     @Test
-    void theManualReminderDoesNotInsistOnARefusedAddressUntilTheFicheChanges() {
+    void theManualReminderDoesNotInsistOnARefusedAddressUntilTheAddressChanges() {
         failWith(550);
         relancer("ENV-A").statusCode(200);
 
@@ -155,7 +174,7 @@ class EnvoiMailResourceTest {
     }
 
     @Test
-    void theNightDoesNotWriteToARefusedAddressAndACorrectedFicheRestoresIt() {
+    void theNightDoesNotWriteToARefusedAddressAndACorrectedAddressRestoresIt() {
         failWith(550);
         relancer("ENV-A").statusCode(200);
         Instant plusTard = Instant.now().plus(Duration.ofDays(10));
@@ -207,7 +226,282 @@ class EnvoiMailResourceTest {
                 .body("find { it.animateurId == 'ENV-A' }.dernierEnvoi", nullValue());
     }
 
+    /* ------------------------- Every send skips it ------------------------- */
+
+    @Test
+    void savingTheFicheWithTheSameAddressKeepsTheBlockAndChangingItLiftsIt() {
+        failWith(550);
+        relancer("ENV-A").statusCode(200);
+
+        Animateur alice = fiche("ENV-A");
+        alice.setPrenom("Alicia");
+        referenceData.updateAnimateur("ENV-A", alice);
+
+        relancer("ENV-A").statusCode(200).body("adresseRefusee", equalTo(List.of("ENV-A")));
+        given().when()
+                .get("/api/animateurs/confirmations")
+                .then()
+                .body("find { it.animateurId == 'ENV-A' }.dernierEnvoi.categorieEchec", equalTo("ADRESSE_REFUSEE"));
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+
+        giveEmail("ENV-A", "alice-corrigee@example.org");
+
+        relancer("ENV-A").statusCode(200).body("envoyes", equalTo(List.of("ENV-A")));
+    }
+
+    @Test
+    void thePublicationDoesNotAttemptARefusedAddressAndSaysSo() {
+        refuseAddress("ENV-A");
+        movePlan();
+
+        PlanPublicationService.RapportPublication rapport = publication.publier();
+
+        assertThat(rapport.adresseRefusee()).containsExactly("Alice Martin");
+        assertThat(rapport.echecs()).isEmpty();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+        given().when()
+                .get("/api/planning/publication/destinataires")
+                .then()
+                .statusCode(200)
+                .body("find { it.animateurId == 'ENV-A' }.statut", equalTo("ADRESSE_REFUSEE"));
+        // Nothing attempted, nothing journalled: the last line stays the refusal.
+        assertThat(journal("ENV-A")).last().isEqualTo("PLANNING_PUBLIE|ECHEC|ADRESSE_REFUSEE");
+    }
+
+    @Test
+    void theIndividualPlanningIsRefusedWithoutNamingAnybody() {
+        refuseAddress("ENV-A");
+
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/planning/envoi/animateur/ENV-A")
+                .then()
+                .statusCode(409)
+                .body("message", containsString("corrigez l'adresse"))
+                .body("message", not(containsString("Alice")));
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+    }
+
+    @Test
+    void theAccessCodeIsRefusedLikeAMissingAddress() {
+        refuseAddress("ENV-A");
+
+        given().contentType(ContentType.JSON)
+                .when()
+                .post("/api/espace-animateur/" + accessToken("ENV-A") + "/code")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("contactez l'organisation"));
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+        assertThat(journal("ENV-A")).last().isEqualTo("PLANNING_PUBLIE|ECHEC|ADRESSE_REFUSEE");
+    }
+
+    @Test
+    void theInvitationSkipsARefusedAddressAndListsItApart() {
+        refuseAddress("ENV-A");
+        try {
+            given().contentType(ContentType.JSON)
+                    .body("{\"collecteOuverte\":true,\"prevenirAnimateurs\":true}")
+                    .when()
+                    .put("/api/disponibilites/configuration")
+                    .then()
+                    .statusCode(200)
+                    .body("invitation.adresseRefusee", equalTo(List.of("Alice Martin")));
+            assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+        } finally {
+            given().contentType(ContentType.JSON)
+                    .body("{\"collecteOuverte\":false}")
+                    .when()
+                    .put("/api/disponibilites/configuration")
+                    .then()
+                    .statusCode(200);
+        }
+    }
+
+    @Test
+    void theDayBeforeReminderIsSkippedAndAlertedOnce() {
+        refuseAddress("ENV-A");
+        ZonedDateTime veille = JOUR.minusDays(1).atTime(19, 0).atZone(ZoneId.systemDefault());
+
+        rappelVeille.run(armed(), veille);
+        rappelVeille.run(armed(), veille.plusHours(1));
+
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+        assertThat(count("SELECT COUNT(*) FROM notification_planifiee WHERE type = 'RAPPEL_VEILLE_INJOIGNABLE'"
+                        + " AND animateur_id = 'ENV-A' AND libelle LIKE '%refusé%'"))
+                .isEqualTo(1);
+        assertThat(journal("ENV-A")).last().isEqualTo("PLANNING_PUBLIE|ECHEC|ADRESSE_REFUSEE");
+    }
+
+    @Test
+    void aSwapNotificationToARefusedAddressIsSkippedWithoutALine() {
+        refuseAddress("ENV-A");
+
+        notifications.fire(new Notification.TargetSolicited("ENV-A", EMAIL_ALICE, "Bruno Petit", 1));
+
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+        assertThat(journal("ENV-A"))
+                .containsExactly("PLANNING_PUBLIE|ENVOYE|null", "PLANNING_PUBLIE|ECHEC|ADRESSE_REFUSEE");
+    }
+
+    @Test
+    void aSwapNotificationIsJournalledOnceItLeaves() {
+        notifications.fire(new Notification.DemandeDeclinee("ENV-A", EMAIL_ALICE, "Bruno Petit", "samedi 14h-16h"));
+
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+        assertThat(journal("ENV-A")).last().isEqualTo("ECHANGE_DECLINEE|ENVOYE|null");
+    }
+
+    /* ------------------------------ The resend ----------------------------- */
+
+    @Test
+    void aTemporaryFailureIsSentAgainAndLeavesTheScreen() {
+        failWith(450);
+        relancer("ENV-A").statusCode(200).body("echecs", equalTo(List.of("ENV-A")));
+
+        renvoyer()
+                .statusCode(200)
+                .body("renvoyes", equalTo(List.of("ENV-A")))
+                .body("echecs", empty())
+                .body("nonRenvoyables", empty());
+
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+        assertThat(journal("ENV-A")).last().isEqualTo("RELANCE_MANUELLE|ENVOYE|null");
+        given().when().get("/api/animateurs/confirmations/synthese").then().body("echecsEnvoi", equalTo(0));
+    }
+
+    @Test
+    void aRefusedAddressIsNotSentAgain() {
+        failWith(550);
+        relancer("ENV-A").statusCode(200);
+
+        renvoyer().statusCode(200).body("renvoyes", empty()).body("nonRenvoyables", empty());
+
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+    }
+
+    @Test
+    void aFailedPlanningIsSentAgainAsThePublishedPlanning() {
+        insertLine("ENV-A", "PLANNING_PUBLIE", "TEMPORAIRE");
+
+        renvoyer().statusCode(200).body("renvoyes", equalTo(List.of("ENV-A")));
+
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+        assertThat(journal("ENV-A")).last().isEqualTo("PLANNING_INDIVIDUEL|ENVOYE|null");
+    }
+
+    @Test
+    void anAccessCodeIsNotResendable() {
+        insertLine("ENV-A", "CODE_ACCES", "TEMPORAIRE");
+
+        renvoyer()
+                .statusCode(200)
+                .body("renvoyes", empty())
+                .body("nonRenvoyables.animateurId", hasItem("ENV-A"))
+                .body("nonRenvoyables.find { it.animateurId == 'ENV-A' }.motif", equalTo("TYPE_NON_RENVOYABLE"));
+        assertThat(mailbox.getTotalMessagesSent()).isZero();
+    }
+
+    /* ---------------------- A failed night is not « déjà relancé » ---------------------- */
+
+    @Test
+    void afterAFailedNightTheHandMayRemindAndTheNightDoesNotInsist() {
+        failNextSendAtTheRelay(450);
+        Instant plusTard = Instant.now().plus(Duration.ofDays(10));
+
+        assertThat(relanceNuit.run(armed(), plusTard)).isZero();
+        assertThat(journal("ENV-A")).last().isEqualTo("RELANCE_NUIT|ECHEC|TEMPORAIRE");
+        given().when()
+                .get("/api/animateurs/confirmations")
+                .then()
+                .body("find { it.animateurId == 'ENV-A' }.statut", equalTo("NON_VU"));
+
+        // The next hourly run does not try the same publication again.
+        assertThat(relanceNuit.run(armed(), plusTard.plus(Duration.ofHours(1)))).isZero();
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).isEmpty();
+
+        relancer("ENV-A").statusCode(200).body("envoyes", equalTo(List.of("ENV-A")));
+        assertThat(mailbox.getMailsSentTo(EMAIL_ALICE)).hasSize(1);
+    }
+
     /* -------------------------------- Helpers ------------------------------ */
+
+    /**
+     * The next mail through {@link MailMetrics} — the notification path, the
+     * night's — fails the way the relay answered; the ones after it leave.
+     */
+    private void failNextSendAtTheRelay(int code) {
+        MailMetrics real = ClientProxy.unwrap(realMetrics);
+        QuarkusMock.installMockForType(
+                new MailMetrics(new SimpleMeterRegistry()) {
+                    private boolean failed;
+
+                    @Override
+                    public void send(Mailer mailer, String template, Mail mail) {
+                        if (!failed) {
+                            failed = true;
+                            throw new CompletionException(new SMTPException(
+                                    code + " refused", code, List.of(code + " refused"), code >= 500));
+                        }
+                        real.send(mailer, template, mail);
+                    }
+                },
+                MailMetrics.class);
+    }
+
+    @Inject
+    MailMetrics realMetrics;
+
+    /** A refusal of the relay on the last send, as the journal records it. */
+    private void refuseAddress(String animateurId) {
+        insertLine(animateurId, "PLANNING_PUBLIE", "ADRESSE_REFUSEE");
+    }
+
+    private void insertLine(String animateurId, String type, String categorie) {
+        execute("INSERT INTO envoi_mail (edition_id, animateur_id, type, statut, categorie_echec)"
+                + " SELECT edition_id, id, '" + type + "', 'ECHEC', '" + categorie + "' FROM animateur WHERE id = '"
+                + animateurId + "'");
+    }
+
+    /** Alice and Bruno swap stands: both are concerned by the next publication. */
+    private void movePlan() {
+        Animateur alice = fiche("ENV-A");
+        Animateur bruno = fiche("ENV-B");
+        Stand standUn = new Stand("ENV-S1", "Stand envoi un", Set.of(), 1, 1, false);
+        Stand standDeux = new Stand("ENV-S2", "Stand envoi deux", Set.of(), 1, 1, false);
+        Creneau creneau = new Creneau(9411L, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(16, 0));
+        PosteAffectation posteUn = new PosteAffectation("ENV-P1", standUn, creneau);
+        posteUn.setAnimateur(bruno);
+        PosteAffectation posteDeux = new PosteAffectation("ENV-P2", standDeux, creneau);
+        posteDeux.setAnimateur(alice);
+        persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteUn, posteDeux)));
+    }
+
+    private String accessToken(String animateurId) {
+        return fiche(animateurId).getAccessToken();
+    }
+
+    private long count(String sql) {
+        try (Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement();
+                ResultSet rs = statement.executeQuery(sql)) {
+            rs.next();
+            return rs.getLong(1);
+        } catch (SQLException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private static ValidatableResponse renvoyer() {
+        return given().when().post("/api/animateurs/renvois").then();
+    }
+
+    private Animateur fiche(String animateurId) {
+        return referenceData.listAnimateurs().stream()
+                .filter(candidat -> candidat.getId().equals(animateurId))
+                .findFirst()
+                .orElseThrow();
+    }
 
     /**
      * The next manual reminder fails the way the relay answered, {@code code}

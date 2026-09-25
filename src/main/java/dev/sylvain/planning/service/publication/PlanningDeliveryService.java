@@ -31,6 +31,13 @@ import java.util.List;
 @ApplicationScoped
 public class PlanningDeliveryService {
 
+    /**
+     * Names nobody, on purpose: it travels to whoever asked, MCP included, and
+     * the fiche carrying the button already says whose address it is.
+     */
+    static final String ADRESSE_REFUSEE = "Le relais a refusé l'adresse e-mail de cette fiche au dernier envoi : "
+            + "corrigez l'adresse avant de renvoyer.";
+
     private final PlanPublieService planPublieService;
 
     private final PlanningExportService planningExportService;
@@ -70,6 +77,9 @@ public class PlanningDeliveryService {
      * @throws BusinessError.NotFound when the id names nobody in the plan
      * @throws BusinessError.Invalid    when their fiche carries no address, or
      *         when nothing has been published yet
+     * @throws BusinessError.Conflict   when the relay refused their address for
+     *         good on the last send and it has not changed since: resending
+     *         would only earn the same refusal
      */
     public DeliveryReport sendToOneAnimateur(String animateurId) {
         if (planPublieService.jamaisPublie()) {
@@ -87,6 +97,9 @@ public class PlanningDeliveryService {
             // animateur that carries the button.
             throw new BusinessError.Invalid("L'animateur " + animateurId + " n'a pas d'adresse e-mail sur sa fiche.");
         }
+        if (deliveries.isAddressBlocked(animateurId)) {
+            throw new BusinessError.Conflict(ADRESSE_REFUSEE);
+        }
         try {
             send(planning, animateur);
         } catch (RuntimeException e) {
@@ -96,7 +109,25 @@ public class PlanningDeliveryService {
         return new DeliveryReport(1, List.of(), List.of());
     }
 
-    private static boolean hasAddress(Animateur animateur) {
+    /**
+     * The same send inside a batch that loaded the published plan once — the
+     * « Renvoyer les envois en échec » of the Animateurs page. The caller has
+     * checked the address, and that it is not blocked.
+     *
+     * @return {@code true} when it left; {@code false} when it failed, the
+     *         failure being journalled like any other
+     */
+    boolean resend(PlanningEvenement planning, Animateur animateur) {
+        try {
+            send(planning, animateur);
+            return true;
+        } catch (RuntimeException e) {
+            Log.errorf(e, "Failed to mail the planning of animateur %s again", animateur.getId());
+            return false;
+        }
+    }
+
+    static boolean hasAddress(Animateur animateur) {
         return animateur.getEmail() != null && !animateur.getEmail().isBlank();
     }
 

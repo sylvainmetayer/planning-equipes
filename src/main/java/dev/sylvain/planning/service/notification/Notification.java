@@ -24,7 +24,8 @@ public sealed interface Notification {
     /**
      * A notification written to one animateur, whose outcome is recorded in
      * the {@code envoi_mail} journal next to the send — by id, the address
-     * staying on the fiche.
+     * staying on the fiche. The dispatcher skips it while the relay's refusal
+     * of that address holds ({@code MailDeliveryLog.blockedAddresses}).
      */
     interface ToAnimateur {
         String animateurId();
@@ -35,12 +36,29 @@ public sealed interface Notification {
     /**
      * The colleague a demande targets is waiting for THEIR agreement — the
      * step that spares the admin from asking both sides.
+     *
+     * @param animateurId the colleague written to, who {@code emailCible} belongs to
      */
-    record TargetSolicited(String emailCible, String demandeurNomComplet, int nombre) implements Notification {}
+    record TargetSolicited(String animateurId, String emailCible, String demandeurNomComplet, int nombre)
+            implements Notification, ToAnimateur {
+        @Override
+        public MailKind kind() {
+            return MailKind.ECHANGE_SOLLICITATION;
+        }
+    }
 
-    /** The targeted colleague declined; the admin never had to arbitrate. */
-    record DemandeDeclinee(String emailDemandeur, String cibleNomComplet, String libelleCreneau)
-            implements Notification {}
+    /**
+     * The targeted colleague declined; the admin never had to arbitrate.
+     *
+     * @param animateurId the demandeur written to, who {@code emailDemandeur} belongs to
+     */
+    record DemandeDeclinee(String animateurId, String emailDemandeur, String cibleNomComplet, String libelleCreneau)
+            implements Notification, ToAnimateur {
+        @Override
+        public MailKind kind() {
+            return MailKind.ECHANGE_DECLINEE;
+        }
+    }
 
     /** One or more demandes reached the admin's desk — one notification per batch, not per demande. */
     record DemandesSoumises(String demandeurNomComplet, List<DemandeEchange> demandes) implements Notification {}
@@ -87,8 +105,9 @@ public sealed interface Notification {
     }
 
     /**
-     * A published planning nobody acknowledged (issue #299). Sent once and
-     * once only: the status moves to RELANCE, which is what stops the loop.
+     * A published planning nobody acknowledged (issue #299). Attempted once
+     * and once only per publication: the night's own key stops the loop, and
+     * the status moves to RELANCE only once the mail has left.
      */
     record RelanceConfirmation(String animateurId, String email, String prenom, String lienEspace)
             implements Notification, ToAnimateur {

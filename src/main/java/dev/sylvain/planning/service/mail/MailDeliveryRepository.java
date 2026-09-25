@@ -24,13 +24,14 @@ public class MailDeliveryRepository {
     }
 
     /**
-     * The last mail to each animateur <b>since their fiche last changed</b>.
+     * The last mail to each animateur <b>since their address last changed</b>.
      *
-     * <p>A send older than the fiche says nothing about the address it holds
-     * now: correcting the address is what lifts a failure, and a
-     * modification is the only thing the fiche records. So the join keeps the
-     * rows written at or after {@code animateur.modifie_le} and nothing
-     * else.</p>
+     * <p>A send older than the address says nothing about the one the fiche
+     * holds now: changing the address is what lifts a failure, and nothing
+     * else does — editing a skill or a date of birth leaves the refused
+     * address where it was. So the join keeps the rows written at or after
+     * {@code animateur.email_modifie_le}, which only an address change moves,
+     * and nothing else.</p>
      */
     public Map<String, LastDelivery> latestByAnimateur() {
         return scope.read("Failed to read the last mail sent to each animateur", connection -> {
@@ -39,7 +40,7 @@ public class MailDeliveryRepository {
                            m.animateur_id, m.type, m.statut, m.categorie_echec, m.envoye_le
                     FROM envoi_mail m
                     JOIN animateur a ON a.edition_id = m.edition_id AND a.id = m.animateur_id
-                    WHERE m.edition_id = ? AND m.envoye_le >= a.modifie_le
+                    WHERE m.edition_id = ? AND m.envoye_le >= a.email_modifie_le
                     ORDER BY m.animateur_id, m.envoye_le DESC, m.id DESC""");
                     ResultSet rs = ps.executeQuery()) {
                 Map<String, LastDelivery> latest = new LinkedHashMap<>();
@@ -53,6 +54,39 @@ public class MailDeliveryRepository {
                                     rs.getTimestamp("envoye_le").toInstant()));
                 }
                 return latest;
+            }
+        });
+    }
+
+    /**
+     * The id of the newest line written for this animateur, {@code 0} when
+     * there is none: a marker to tell, afterwards, which lines a send wrote.
+     */
+    public long lastId(String animateurId) {
+        return scope.read("Failed to read the last mail line of an animateur", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT COALESCE(MAX(id), 0) FROM envoi_mail WHERE edition_id = ? AND animateur_id = ?""")) {
+                ps.setString(2, animateurId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next() ? rs.getLong(1) : 0L;
+                }
+            }
+        });
+    }
+
+    /** Whether a line saying a {@code kind} mail left was written for this animateur after {@code afterId}. */
+    public boolean sentAfter(String animateurId, MailKind kind, long afterId) {
+        return scope.read("Failed to read whether a mail left", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, """
+                    SELECT 1 FROM envoi_mail
+                    WHERE edition_id = ? AND animateur_id = ? AND type = ? AND statut = 'ENVOYE' AND id > ?
+                    LIMIT 1""")) {
+                ps.setString(2, animateurId);
+                ps.setString(3, kind.name());
+                ps.setLong(4, afterId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
             }
         });
     }

@@ -43,6 +43,14 @@ public class PublicationTraceRepository {
         ECHEC,
 
         /**
+         * Not attempted: the relay refused this person's address for good on
+         * the last send, and it has not changed since. Correcting the address
+         * — or a phone call — is the way back; the individual resend is
+         * refused until then.
+         */
+        ADRESSE_REFUSEE,
+
+        /**
          * Concerned, and deliberately left out of that send (issue #503):
          * « on ne prévient pas Untel ce soir, on l'appelle d'abord ». Nothing
          * left for them, so their marker did not move and they come back in

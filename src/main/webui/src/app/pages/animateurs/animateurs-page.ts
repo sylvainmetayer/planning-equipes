@@ -71,6 +71,7 @@ import {
   keptByAcknowledgement,
 } from './confirmation-filter';
 import { resumeRelance } from './relance-resume';
+import { resumeRenvoi, temporaryFailures } from './renvoi-resume';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -223,6 +224,14 @@ export class AnimateursPage implements OnInit {
 
   /** The same answers in three numbers, for the head of the page; `null` until read, or when unreadable. */
   protected readonly synthese = signal<SyntheseConfirmations | null>(null);
+
+  /** How many people « Renvoyer les envois en échec » concerns; the button only shows above zero. */
+  protected readonly echecsTemporaires = computed(() =>
+    temporaryFailures(this.confirmations().values()),
+  );
+
+  /** True while a resend is under way: one click, one run. */
+  protected readonly renvoiEnCours = signal(false);
 
   /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
   protected readonly syntheseLabel = computed(() => {
@@ -494,6 +503,45 @@ export class AnimateursPage implements OnInit {
   }
 
   /**
+   * « Renvoyer les envois en échec »: sends again every mail whose last
+   * attempt failed for a temporary reason, each through the service that owns
+   * it. A refused address stays blocked until it changes. The answers are
+   * reloaded so a mail that left takes its row off the failures at once.
+   */
+  protected async resendFailed(): Promise<void> {
+    const count = this.echecsTemporaires();
+    const confirmed = await this.confirmDialog.ask({
+      title: $localize`:@@animateurs.renvoyer.titre:Renvoyer ${count}:count: envoi(s) en échec ?`,
+      message: $localize`:@@animateurs.renvoyer.message:Chaque courriel en échec passager repart : planning, relance ou invitation. Une adresse refusée par le serveur d'envoi n'est pas retentée tant qu'elle n'est pas corrigée.`,
+      confirmLabel: $localize`:@@animateurs.relancer.confirm:Envoyer`,
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.renvoiEnCours.set(true);
+    try {
+      const rapport = await this.animateursApi.resendFailed();
+      const noms = new Map(this.store.animateurs().map((each) => [each.id, nomAffiche(each)]));
+      const resume = resumeRenvoi(rapport, (id) => noms.get(id) || id);
+      this.notifications.notify({
+        title: resume.titre,
+        message: resume.details ?? '',
+        messageJournal: resume.detailsJournal ?? '',
+        variant: resume.variant,
+      });
+      await this.chargerConfirmations();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: errorMessage(error),
+        variant: 'error',
+      });
+    } finally {
+      this.renvoiEnCours.set(false);
+    }
+  }
+
+  /**
    * What the three states mean — none of it is guessable from the labels, and
    * two of the rules actively surprise people who assume otherwise.
    *
@@ -640,7 +688,7 @@ export class AnimateursPage implements OnInit {
     }
     const date = new Date(envoi.envoyeLe).toLocaleString(intlLocale());
     const cause = echecEnvoiCause(envoi.categorieEchec);
-    return $localize`:@@animateurs.form.dernierEnvoiEchec:Dernier envoi en échec le ${date}:date: : ${cause}:cause:. Enregistrer la fiche corrigée rétablit les relances.`;
+    return $localize`:@@animateurs.form.dernierEnvoiEchec:Dernier envoi en échec le ${date}:date: : ${cause}:cause:. Corriger l'adresse rétablit les envois.`;
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
@@ -683,9 +731,9 @@ export class AnimateursPage implements OnInit {
 function echecEnvoiCause(categorie: CategorieEchecEnvoi | null): string {
   switch (categorie) {
     case 'ADRESSE_REFUSEE':
-      return $localize`:@@animateurs.echecEnvoi.adresseRefusee:adresse refusée par le relais — corriger la fiche`;
+      return $localize`:@@animateurs.echecEnvoi.adresseRefusee:adresse refusée par le relais — corriger l'adresse`;
     case 'TEMPORAIRE':
-      return $localize`:@@animateurs.echecEnvoi.temporaire:échec temporaire, la prochaine relance repartira`;
+      return $localize`:@@animateurs.echecEnvoi.temporaire:échec temporaire, « Renvoyer les envois en échec » le retente`;
     case 'RELAIS_INJOIGNABLE':
       return $localize`:@@animateurs.echecEnvoi.relaisInjoignable:serveur d'envoi injoignable`;
     case 'AUTHENTIFICATION':

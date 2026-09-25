@@ -3,7 +3,6 @@ package dev.sylvain.planning.service.notification;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
-import dev.sylvain.planning.service.mail.LastDelivery;
 import dev.sylvain.planning.service.mail.MailDeliveryLog;
 import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
@@ -18,6 +17,7 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jboss.logging.Logger;
 
 /**
@@ -37,6 +37,13 @@ import org.jboss.logging.Logger;
  * status write fails, when two runs overlap, or when a republication resets
  * somebody in between — that reset means their planning changed, so the key
  * changes with it and a fresh reminder is legitimate.</p>
+ *
+ * <p>The status moves only <b>once the mail has left</b>, as it does for the
+ * hand ({@code RelanceManuelleService}). A send that failed leaves the person
+ * {@code NON_VU}, gives the shared key back so « Relancer maintenant » is
+ * accepted, and leaves an alert — while a key of the night's own
+ * ({@code RELANCE_NUIT_TENTEE}) stops the next hourly run from trying the
+ * same publication again.</p>
  *
  * <p>The delay is counted from the <b>publication</b>, not from the person: it
  * answers « cela fait trois jours que le planning est parti et je n'ai pas de
@@ -105,20 +112,20 @@ public class RelanceConfirmationJob {
             fiches.put(animateur.getId(), animateur);
         }
 
-        Map<String, LastDelivery> derniersEnvois = deliveries.latestByAnimateur();
+        Set<String> bloquees = deliveries.blockedAddresses();
         int envoyes = 0;
         for (String animateurId : silencieux) {
             Animateur fiche = fiches.get(animateurId);
             if (fiche == null) {
                 continue;
             }
-            envoyes += remind(fiche, derniersEnvois.get(animateurId), publication.publieLe(), maintenant) ? 1 : 0;
+            envoyes += remind(fiche, bloquees.contains(animateurId), publication.publieLe(), maintenant) ? 1 : 0;
         }
         LOG.debugf("Confirmation reminders: %d sent", envoyes);
         return envoyes;
     }
 
-    private boolean remind(Animateur fiche, LastDelivery dernierEnvoi, Instant publieLe, Instant maintenant) {
+    private boolean remind(Animateur fiche, boolean adresseBloquee, Instant publieLe, Instant maintenant) {
         // Keyed on the publication, so a later one — which only resets the
         // people whose planning really moved — may legitimately remind again.
         String cle = fiche.getId() + "|" + publieLe;
@@ -135,33 +142,54 @@ public class RelanceConfirmationJob {
             return false;
         }
         // The relay refused this address for good on the last send, and the
-        // fiche has not changed since: the same mail would earn the same
+        // address has not changed since: the same mail would earn the same
         // refusal. Nothing is claimed, so the reminder leaves on the first
-        // night after somebody corrects the fiche; the alert is left once.
-        if (dernierEnvoi != null && dernierEnvoi.blocksReminder()) {
+        // night after somebody corrects the address; the alert is left once.
+        if (adresseBloquee) {
             journal.claim(
                     JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
                     cle,
                     fiche.getId(),
                     "Relance de confirmation non envoyée : le relais a refusé l'adresse de la fiche au dernier"
-                            + " envoi. Corrigez la fiche pour rétablir la relance.",
+                            + " envoi. Corrigez l'adresse pour rétablir la relance.",
                     JournalNotificationsRepository.Severite.WARNING);
             return false;
         }
+        // The night's own attempt, whatever its outcome: the one thing that
+        // stops the next hourly run from trying this publication again.
+        if (!journal.claim(JournalNotificationsRepository.Type.RELANCE_NUIT_TENTEE, cle, fiche.getId())) {
+            return false;
+        }
+        // The key the hand claims too: whoever wins the insert writes.
         if (!journal.claim(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle, fiche.getId())) {
             return false;
         }
-        // The status is moved BEFORE the mail is fired, and that order is the
-        // safe one: the notification is best-effort and swallows its own
-        // failures, so a status written afterwards could be skipped by an
-        // exception the dispatcher never lets through — and the next run would
-        // write to the same person again.
-        confirmationService.recordReminder(fiche.getId(), maintenant);
-        notifications.fire(new Notification.RelanceConfirmation(
+        // The dispatcher is synchronous and swallows its own failures, so
+        // whether the mail left is read back from the delivery journal it
+        // wrote, rather than from an exception that never comes through.
+        boolean parti = deliveries.sentDuring(
                 fiche.getId(),
-                fiche.getEmail(),
-                fiche.getPrenom(),
-                liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));
+                MailKind.RELANCE_NUIT,
+                () -> notifications.fire(new Notification.RelanceConfirmation(
+                        fiche.getId(),
+                        fiche.getEmail(),
+                        fiche.getPrenom(),
+                        liens.espaceAnimateur(fiche.getAccessToken()).orElse(null))));
+        if (!parti) {
+            // Nothing reached them: the status stays NON_VU, and the shared
+            // key goes back so the hand is not refused as « déjà relancée ».
+            // RELANCE_NUIT_TENTEE stays, so the night does not insist.
+            journal.release(JournalNotificationsRepository.Type.RELANCE_CONFIRMATION, cle);
+            journal.claim(
+                    JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                    cle,
+                    fiche.getId(),
+                    "Relance de nuit non partie : l'envoi du courriel a échoué."
+                            + " « Relancer maintenant » reste possible.",
+                    JournalNotificationsRepository.Severite.ALERTE);
+            return false;
+        }
+        confirmationService.recordReminder(fiche.getId(), maintenant);
         return true;
     }
 }

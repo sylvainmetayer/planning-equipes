@@ -84,6 +84,7 @@ describe('resumePublication', () => {
       sansEmail: [],
       echecs: [],
       differes: [],
+      adresseRefusee: [],
     });
 
     expect(resume.titre).toContain('3');
@@ -98,6 +99,7 @@ describe('resumePublication', () => {
       sansEmail: ['Bruno Petit'],
       echecs: ['Chloé Durand'],
       differes: [],
+      adresseRefusee: [],
     });
 
     expect(resume.details).toContain('Bruno Petit');
@@ -116,9 +118,26 @@ describe('resumePublication', () => {
       sansEmail: [],
       echecs: [],
       differes: ['Bruno Petit'],
+      adresseRefusee: [],
     });
 
     expect(resume.details).toContain('Bruno Petit');
     expect(resume.details).toContain('prochaine publication');
+  });
+
+  it('names the people whose refused address was not attempted, and says what to do', () => {
+    const resume = resumePublication({
+      snapshotId: 7,
+      publieLe: '2026-08-25T12:30:00Z',
+      envoyes: 2,
+      sansEmail: [],
+      echecs: [],
+      differes: [],
+      adresseRefusee: ['Chloé Durand'],
+    });
+
+    expect(resume.details).toContain('Adresse refusée au dernier envoi');
+    expect(resume.details).toContain('Chloé Durand');
+    expect(resume.details).toContain("corrigez l'adresse");
   });
 });

@@ -59,7 +59,7 @@ public class ConfirmationPlanningService {
      * @param affecte holds at least one seat in the published plan — the only
      *                people the question is even asked of; the others show as
      *                "sans objet" rather than as silent
-     * @param dernierEnvoi the last mail sent to them since their fiche last
+     * @param dernierEnvoi the last mail sent to them since their address last
      *                changed, {@code null} when there is none. Kept beside
      *                {@code statut} rather than folded into it: « has
      *                answered » and « could be reached » are two questions,

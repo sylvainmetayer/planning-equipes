@@ -25,5 +25,11 @@ public enum MailKind {
     RAPPEL_VEILLE,
 
     /** The reminder of the unconfirmed, sent at night. */
-    RELANCE_NUIT
+    RELANCE_NUIT,
+
+    /** A colleague proposes them a swap and waits for their agreement. */
+    ECHANGE_SOLLICITATION,
+
+    /** The colleague they proposed a swap to declined it. */
+    ECHANGE_DECLINEE
 }

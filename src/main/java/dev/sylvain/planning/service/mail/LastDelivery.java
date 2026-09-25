@@ -5,7 +5,7 @@ import org.eclipse.microprofile.openapi.annotations.enums.SchemaType;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 
 /**
- * The last mail sent to one animateur since their fiche last changed: the
+ * The last mail sent to one animateur since their address last changed: the
  * {@code dernierEnvoi} of their acknowledgement line.
  *
  * @param type           a {@link MailKind} name
@@ -35,10 +35,12 @@ public record LastDelivery(
 
     /**
      * The relay refused this address for good: writing to it again before the
-     * fiche changes would earn the same refusal. A temporary failure does not
-     * count — the next reminder is allowed.
+     * address changes would earn the same refusal, so <b>no</b> mail leaves for
+     * it — publication, individual planning, access code, invitation,
+     * reminders and swap notifications alike. A temporary failure does not
+     * count: the next send is allowed.
      */
-    public boolean blocksReminder() {
+    public boolean blocksAddress() {
         return failed() && MailFailure.ADRESSE_REFUSEE.name().equals(categorieEchec);
     }
 }

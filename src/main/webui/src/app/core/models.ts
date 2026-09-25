@@ -2649,7 +2649,7 @@ export interface ConfirmationView {
   confirmeLe: string | null;
   relanceLe: string | null;
   /**
-   * The last mail sent to them since their fiche last changed, `null` when
+   * The last mail sent to them since their address last changed, `null` when
    * there is none. `ENVOYE` means accepted by the relay, never « received »:
    * only a failure is worth showing.
    */
@@ -2664,7 +2664,9 @@ export type TypeEnvoiMail =
   | 'INVITATION_DECLARATION'
   | 'RELANCE_MANUELLE'
   | 'RAPPEL_VEILLE'
-  | 'RELANCE_NUIT';
+  | 'RELANCE_NUIT'
+  | 'ECHANGE_SOLLICITATION'
+  | 'ECHANGE_DECLINEE';
 
 /** What became of a mail, as far as the server can know. */
 export type StatutEnvoiMail = 'ENVOYE' | 'SANS_EMAIL' | 'ECHEC';
@@ -2720,8 +2722,32 @@ export interface RapportRelance {
   dejaRelancesPourCettePublication: string[];
   echecs: string[];
   sansPoste: string[];
-  /** The relay refused their address on the last send and the fiche has not changed since. */
+  /** The relay refused their address on the last send and the address has not changed since. */
   adresseRefusee: string[];
+}
+
+/** Why a failed mail was not sent again by « Renvoyer les envois en échec ». */
+export type MotifNonRenvoi =
+  | 'TYPE_NON_RENVOYABLE'
+  | 'JAMAIS_PUBLIE'
+  | 'SANS_POSTE'
+  | 'DEJA_CONFIRME'
+  | 'DEJA_RELANCE'
+  | 'COLLECTE_FERMEE'
+  | 'SANS_ADRESSE'
+  | 'ADRESSE_REFUSEE';
+
+/** One person « Renvoyer les envois en échec » left alone, by id, and why. */
+export interface NonRenvoye {
+  animateurId: string;
+  motif: MotifNonRenvoi;
+}
+
+/** `POST /api/animateurs/renvois`: ids only, like the reminder's report. */
+export interface RapportRenvoi {
+  renvoyes: string[];
+  echecs: string[];
+  nonRenvoyables: NonRenvoye[];
 }
 
 /**
@@ -3001,6 +3027,8 @@ export interface InvitationReport {
   envoyes: number;
   sansEmail: string[];
   echecs: string[];
+  /** Skipped: the relay refused their address on the last send, and it has not changed since. */
+  adresseRefusee: string[];
 }
 
 /** `/api/disponibilites/configuration`: the collection window, closed by default. */
@@ -3087,6 +3115,8 @@ export interface RapportPublication {
   echecs: string[];
   /** Who the admin took out of this send: they come back in the next count. */
   differes: string[];
+  /** Not attempted: the relay refused their address on the last send, and it has not changed since. */
+  adresseRefusee: string[];
 }
 
 /** Outcome of mailing the individual plannings (`/api/planning/envoi/*`): display names, ready to show. */

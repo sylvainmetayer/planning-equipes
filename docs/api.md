@@ -784,9 +784,9 @@ publication.
 
 **« A répondu » et « a pu être joint » sont deux questions**, et le statut ne
 porte que la première. `dernierEnvoi`, à côté, dit ce qu'est devenu le dernier
-courriel envoyé à la personne **depuis la dernière modification de sa fiche**
+courriel envoyé à la personne **depuis le dernier changement de son adresse**
 (`statut` : `ENVOYE`, `SANS_EMAIL` ou `ECHEC`, avec `categorieEchec`) — `null`
-quand il n'y en a pas. Une personne non confirmée dont le dernier envoi est en
+quand il n'y en a pas. Modifier autre chose sur la fiche ne l'efface pas. Une personne non confirmée dont le dernier envoi est en
 échec compte dans `echecsEnvoi`, et **pas** parmi les relancés ni les
 silencieux : ce qu'elle appelle, c'est un appel ou une adresse corrigée, pas
 une relance de plus. `ENVOYE` veut dire accepté par le relais, jamais reçu :
@@ -831,11 +831,32 @@ porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
 échoué est **compté**, pas avalé : le geste est explicite, contrairement à
 la notification de nuit. Un échec **rend la clé** et laisse une alerte sur
 l'écran Notifications : le statut n'a pas bougé, la personne reste silencieuse,
-et réessayer est possible — de la main comme de la nuit. Une fiche sans adresse
+et réessayer est possible à la main. **La nuit suit la même règle** : le statut
+ne passe à `RELANCE` qu'une fois le courriel parti, et un échec rend la clé
+partagée — la main n'est donc pas refusée comme « déjà relancée » — tandis
+qu'une clé propre à la nuit (`RELANCE_NUIT_TENTEE`) l'empêche de réessayer la
+même publication à chaque passage horaire. Une fiche sans adresse
 laisse la même trace. **Une adresse que le relais a refusée pour de bon** (un
 refus 5xx au dernier envoi) revient dans `adresseRefusee`, sans rien envoyer,
-tant que la fiche n'a pas été modifiée — la nuit applique la même règle ; un
-échec temporaire (4xx) ne retient rien. Refusé `400` tant que rien n'a jamais été publié, ou si
+tant que l'adresse n'a pas changé ; un échec temporaire (4xx) ne retient rien.
+
+**Aucun courriel ne part vers une adresse refusée, quel qu'il soit.** La règle
+est lue à un seul endroit (`MailDeliveryLog.blockedAddresses`) et chaque envoi
+la dit dans sa propre forme : statut `ADRESSE_REFUSEE` dans la trace et liste
+`adresseRefusee` dans le compte rendu d'une publication, `409` sur le renvoi
+individuel du planning, `400` sur la demande de code d'accès (la même réponse
+qu'une fiche sans adresse), liste `adresseRefusee` dans le compte rendu de
+l'invitation à déclarer. Un envoi sauté n'écrit rien dans le journal des
+envois : la dernière ligne reste le refus. Seul un changement d'adresse lève
+le blocage.
+
+`POST /api/animateurs/renvois` renvoie les envois dont le dernier a échoué pour
+une raison **temporaire**, chacun par le service qui le possède — donc avec
+ses règles : un renvoi de relance passe par la relance manuelle et sa règle
+d'une relance par publication. Le compte rendu ne porte que des ids :
+`renvoyes`, `echecs`, et `nonRenvoyables` avec leur `motif` (un code d'accès
+ou une notification d'échange ne se renvoient pas). Toujours `200`, compte
+rendu vide quand il n'y a rien à renvoyer. Refusé `400` tant que rien n'a jamais été publié, ou si
 un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le
 précédaient.
 
