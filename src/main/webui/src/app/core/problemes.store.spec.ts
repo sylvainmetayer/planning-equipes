@@ -192,44 +192,41 @@ describe('ProblemesStore', () => {
         '/api/feasibility': report([]),
         '/api/constraints': { ...constraintsView(), contraintes: [] },
         '/api/pauses': {
-          ...{
-            journeesAnalysees: 1,
-            pausesDues: 1,
-            relaisManquants: 1,
-            message: '',
-            journees: [
-              {
-                animateurId: 'alice',
-                nomComplet: 'Alice Martin',
-                mineur: false,
-                date: '2026-08-01',
-                jour: 1,
-                sequences: [
-                  {
-                    debut: '13:00:00',
-                    fin: '20:00:00',
-                    minutes: 420,
-                    pausesDues: [
-                      {
-                        debut: '19:00:00',
-                        fin: '19:20:00',
-                        heureLimite: '19:00:00',
-                        dureeMinutes: 20,
-                        standId: 'tir',
-                        standNom: 'Tir',
-                        relais: [],
-                        relaisDisponible: false,
-                        simultanee: false,
-                      },
-                    ],
-                  },
-                ],
-                pausesPlanifiees: [],
-                coupuresRepas: [],
-              },
-            ],
-          },
+          journeesAnalysees: 1,
+          pausesDues: 1,
           relaisManquants: 0,
+          message: '',
+          journees: [
+            {
+              animateurId: 'alice',
+              nomComplet: 'Alice Martin',
+              mineur: false,
+              date: '2026-08-01',
+              jour: 1,
+              sequences: [
+                {
+                  debut: '13:00:00',
+                  fin: '20:00:00',
+                  minutes: 420,
+                  pausesDues: [
+                    {
+                      debut: '19:00:00',
+                      fin: '19:20:00',
+                      heureLimite: '19:00:00',
+                      dureeMinutes: 20,
+                      standId: 'tir',
+                      standNom: 'Tir',
+                      relais: [],
+                      relaisDisponible: false,
+                      simultanee: false,
+                    },
+                  ],
+                },
+              ],
+              pausesPlanifiees: [],
+              coupuresRepas: [],
+            },
+          ],
         },
       };
       await store.reload();

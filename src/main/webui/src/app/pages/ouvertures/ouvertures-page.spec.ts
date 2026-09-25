@@ -18,6 +18,14 @@ import { EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { OuverturesPage } from './ouvertures-page';
 
+/** The open segments of a fixture cell: none when closed, one hour out of two when partial. */
+function segments(effectif: number | null, partial: boolean) {
+  if (partial) {
+    return [{ heureDebut: '10:00', heureFin: '11:00', effectif: effectif ?? 1 }];
+  }
+  return effectif === null ? [] : [{ heureDebut: '10:00', heureFin: '12:00', effectif }];
+}
+
 /** Two stands, two days of two créneaux each (10-12 and 14-20), ids 1-2 then 3-4. */
 function rapport(): RapportOuvertures {
   const jour = (date: string, jour: number, ids: [number, number]) => ({
@@ -50,11 +58,7 @@ function rapport(): RapportOuvertures {
     effectif,
     partiel,
     // A partial cell of the fixture is open one hour out of two, at its headcount.
-    segments: partiel
-      ? [{ heureDebut: '10:00', heureFin: '11:00', effectif: effectif ?? 1 }]
-      : effectif === null
-        ? []
-        : [{ heureDebut: '10:00', heureFin: '12:00', effectif }],
+    segments: segments(effectif, partiel),
   });
   const jourStand = (date: string, creneaux: ReturnType<typeof cellule>[]) => ({
     date,

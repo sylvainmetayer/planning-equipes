@@ -81,6 +81,10 @@ type PageInternals = {
   dureeLabel: (entry: KpiHistoriqueEntry) => string;
 };
 
+function createPage(): PageInternals {
+  return TestBed.createComponent(KpiPage).componentInstance as unknown as PageInternals;
+}
+
 describe('KpiPage', () => {
   const analysesApi = { kpiHistory: vi.fn(), deleteKpiEntry: vi.fn() };
   const confirm = { ask: vi.fn() };
@@ -100,10 +104,6 @@ describe('KpiPage', () => {
       ],
     });
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(KpiPage).componentInstance as unknown as PageInternals;
-  }
 
   describe('loading state', () => {
     it('is loading while the history is in flight and idle once it lands', async () => {

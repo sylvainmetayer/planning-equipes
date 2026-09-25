@@ -13,7 +13,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { MatSlideToggle, MatSlideToggleChange } from '@angular/material/slide-toggle';
 import { provideRouter } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, type Mock, vi } from 'vitest';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { ConstraintView, ConstraintsView, ParametreContrainte } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
@@ -111,6 +111,32 @@ const AT_FLOOR = contrainte({
     lien: '/animateurs',
   },
 });
+
+function numberField(value: string): HTMLInputElement {
+  const field = document.createElement('input');
+  field.type = 'number';
+  field.value = value;
+  return field;
+}
+
+async function renderPivot(catalogue: Mock): Promise<HTMLElement> {
+  catalogue.mockResolvedValue({
+    ...view([contrainte({ name: 'repos' }), contrainte({ name: 'pause' })]),
+    pivotEcarts: [
+      { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-01', ecarts: 3 },
+      { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-02', ecarts: 1 },
+      { contrainte: 'pause', axe: 'JOUR', cle: '2026-07-02', ecarts: 2 },
+    ],
+  });
+  const fixture = TestBed.createComponent(ConstraintsPage);
+  const root = fixture.nativeElement as HTMLElement;
+  document.body.appendChild(root);
+  await vi.waitFor(() => {
+    fixture.detectChanges();
+    expect(root.querySelectorAll('td[data-ligne]').length).toBe(4);
+  });
+  return root;
+}
 
 describe('ConstraintsPage', () => {
   const constraintsApi = {
@@ -488,16 +514,9 @@ describe('ConstraintsPage', () => {
   // field. What it must never do is leave the user looking at a figure that
   // was not saved, so what is typed is normalised back into the element.
   describe('the weight field', () => {
-    function champ(value: string): HTMLInputElement {
-      const field = document.createElement('input');
-      field.type = 'number';
-      field.value = value;
-      return field;
-    }
-
     it('saves what was typed once brought back into the accepted range', async () => {
       const page = await createPage([contrainte({ poids: 4 })]);
-      const field = champ('12');
+      const field = numberField('12');
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
@@ -507,7 +526,7 @@ describe('ConstraintsPage', () => {
 
     it('clamps an out-of-range figure and shows the value actually sent', async () => {
       const page = await createPage([contrainte({ poids: 4 })]);
-      const field = champ('0');
+      const field = numberField('0');
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
@@ -519,7 +538,7 @@ describe('ConstraintsPage', () => {
     // refuses: it is asking for nothing, so nothing is saved.
     it('saves nothing and restores the stored weight when the field is emptied', async () => {
       const page = await createPage([contrainte({ poids: 4 })]);
-      const field = champ('');
+      const field = numberField('');
 
       await page.onPoidsChange(contrainte({ poids: 4 }), field);
 
@@ -566,27 +585,8 @@ describe('ConstraintsPage', () => {
   // RGAA 7.1 / 7.3: the pivot's cells open the detail this table exists to
   // give, so the keyboard reaches them — one tab stop, arrows inside, Enter.
   describe('the pivot as a keyboard grid', () => {
-    async function renderPivot(): Promise<HTMLElement> {
-      constraintsApi.catalogue.mockResolvedValue({
-        ...view([contrainte({ name: 'repos' }), contrainte({ name: 'pause' })]),
-        pivotEcarts: [
-          { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-01', ecarts: 3 },
-          { contrainte: 'repos', axe: 'JOUR', cle: '2026-07-02', ecarts: 1 },
-          { contrainte: 'pause', axe: 'JOUR', cle: '2026-07-02', ecarts: 2 },
-        ],
-      });
-      const fixture = TestBed.createComponent(ConstraintsPage);
-      const root = fixture.nativeElement as HTMLElement;
-      document.body.appendChild(root);
-      await vi.waitFor(() => {
-        fixture.detectChanges();
-        expect(root.querySelectorAll('td[data-ligne]').length).toBe(4);
-      });
-      return root;
-    }
-
     it('holds exactly one tab stop, on a cell named by its rule and its column', async () => {
-      const root = await renderPivot();
+      const root = await renderPivot(constraintsApi.catalogue);
 
       const stops = root.querySelectorAll('td[data-ligne][tabindex="0"]');
       expect(stops).toHaveLength(1);
@@ -596,7 +596,7 @@ describe('ConstraintsPage', () => {
     });
 
     it('moves with the arrows and opens the cell on Enter', async () => {
-      const root = await renderPivot();
+      const root = await renderPivot(constraintsApi.catalogue);
       const first = root.querySelector<HTMLElement>('td[data-ligne="0"][data-colonne="0"]')!;
       first.focus();
 

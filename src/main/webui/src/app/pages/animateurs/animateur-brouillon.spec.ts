@@ -46,10 +46,10 @@ describe('animateur-brouillon', () => {
     );
   });
 
-  it('restaure un brouillon de la même fiche', () => {
+  it('restores a draft of the same record', () => {
     const draft = { ...toDraft(RECORD), nom: 'Nothomb-Martin' };
 
-    expect(readAnimateurDraft(JSON.parse(JSON.stringify(draft)), 'a1')).toEqual(draft);
+    expect(readAnimateurDraft(structuredClone(draft), 'a1')).toEqual(draft);
   });
 
   it('ne restaure jamais le brouillon d’une autre fiche', () => {

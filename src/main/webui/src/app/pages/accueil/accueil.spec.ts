@@ -132,10 +132,10 @@ describe('buildLignes', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual([
       'A_FAIRE',
       'FAIT',
-      ...Array<string>(9).fill('A_FAIRE'),
+      ...new Array<string>(9).fill('A_FAIRE'),
     ]);
     expect(buildLignes(etatComplet()).map((ligne) => ligne.statut)).toEqual(
-      Array<string>(11).fill('FAIT'),
+      new Array<string>(11).fill('FAIT'),
     );
   });
 

@@ -60,6 +60,19 @@ class FakeApi {
   delete = vi.fn(async () => undefined);
 }
 
+/** What a finished solve reports when a test does not care about its payload. */
+const DEFAULT_JOB_RESULT = { score: '0hard/0medium/0soft' };
+
+/** 409 the server answers when something already covers this run. */
+function conflict(view: JobView): HttpErrorResponse {
+  return new HttpErrorResponse({ status: 409, error: view });
+}
+
+/** Answers "a job is running" for as many polls as a test needs. */
+function alwaysRunning(api: FakeApi, view: JobView = job()): void {
+  api.getResponse = vi.fn(async () => ({ status: 200, body: view }));
+}
+
 describe('SolverJobService', () => {
   let service: SolverJobService;
   let api: FakeApi;
@@ -97,9 +110,7 @@ describe('SolverJobService', () => {
   });
 
   /** Plays "a job is running", then "the solver is idle", so a job completes. */
-  async function runJobToCompletion(
-    result: unknown = { score: '0hard/0medium/0soft' },
-  ): Promise<void> {
+  async function runJobToCompletion(result: unknown = DEFAULT_JOB_RESULT): Promise<void> {
     api.activeResponses = [
       { status: 200, body: job() },
       { status: 204, body: null },
@@ -153,11 +164,6 @@ describe('SolverJobService', () => {
   });
 
   describe('file d’attente', () => {
-    /** 409 the server answers when something already covers this run. */
-    function conflit(view: JobView): HttpErrorResponse {
-      return new HttpErrorResponse({ status: 409, error: view });
-    }
-
     it('publie la file telle que le serveur la rapporte', async () => {
       api.activeResponses = [{ status: 200, body: job() }];
       api.file = [
@@ -221,14 +227,14 @@ describe('SolverJobService', () => {
       service.start();
       await vi.advanceTimersByTimeAsync(0);
 
-      api.postResult = conflit(job({ id: 'job-2', status: 'RUNNING' }));
+      api.postResult = conflict(job({ id: 'job-2', status: 'RUNNING' }));
       await expect(service.submitSolveFromReferenceData(120)).rejects.toThrow(/déjà en cours/);
 
       // Le 409 « en cours » a fait découvrir job-2 : c'est voulu, il tient
       // vraiment le solveur.
       expect(service.activeJob()?.id).toBe('job-2');
 
-      api.postResult = conflit(job({ id: 'job-3', status: 'QUEUED' }));
+      api.postResult = conflict(job({ id: 'job-3', status: 'QUEUED' }));
       await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow(
         /déjà planifiée/,
       );
@@ -241,7 +247,7 @@ describe('SolverJobService', () => {
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       notifications.notify.mockClear();
-      api.postResult = conflit(job({ id: 'job-3', status: 'QUEUED', editionNom: 'Canicule' }));
+      api.postResult = conflict(job({ id: 'job-3', status: 'QUEUED', editionNom: 'Canicule' }));
 
       await expect(service.submitSolveFromReferenceData(120, true)).rejects.toThrow();
 
@@ -382,11 +388,6 @@ describe('SolverJobService', () => {
   });
 
   describe('polling loop', () => {
-    /** Answers "a job is running" for as many polls as a test needs. */
-    function alwaysRunning(view: JobView = job()): void {
-      api.getResponse = vi.fn(async () => ({ status: 200, body: view }));
-    }
-
     it('stops querying the server once the loop is stopped', async () => {
       api.getResponse = vi.fn(async () => ({ status: 204, body: null }));
       service.start();
@@ -413,7 +414,7 @@ describe('SolverJobService', () => {
     });
 
     it('polls every two seconds while a job runs', async () => {
-      alwaysRunning();
+      alwaysRunning(api);
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       const afterStart = api.getResponse.mock.calls.length;
@@ -457,7 +458,7 @@ describe('SolverJobService', () => {
     });
 
     it('reloads the queue only when the identity of the active job changes', async () => {
-      alwaysRunning();
+      alwaysRunning(api);
       service.start();
       await vi.advanceTimersByTimeAsync(0);
       const afterFirstPoll = api.get.mock.calls.filter(([url]) => url === '/api/jobs/file').length;

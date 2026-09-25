@@ -113,11 +113,11 @@ describe('initObservability', () => {
   it('injects Cloudflare Web Analytics when a token is configured', async () => {
     await initObservability({ ...CONFIG, sentryDsn: '' });
 
-    const script = document.head.querySelector('script[data-cf-beacon]');
+    const script = document.head.querySelector<HTMLScriptElement>('script[data-cf-beacon]');
     expect(script).not.toBeNull();
     expect(script?.getAttribute('type')).toBe('module');
     expect(script?.getAttribute('src')).toBe('https://static.cloudflareinsights.com/beacon.min.js');
-    expect(script?.getAttribute('data-cf-beacon')).toBe(
+    expect(script?.dataset['cfBeacon']).toBe(
       JSON.stringify({ token: CONFIG.cloudflareWebAnalyticsToken }),
     );
   });

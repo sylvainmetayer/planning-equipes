@@ -79,6 +79,10 @@ const SYNTHESE_VIDE = {
   jamaisPublie: true,
 };
 
+function createPage(): PageInternals {
+  return TestBed.createComponent(AnimateursPage).componentInstance as unknown as PageInternals;
+}
+
 describe('AnimateursPage alert badges', () => {
   let referenceData: ReferenceDataStore;
   let problemes: ProblemesStore;
@@ -113,10 +117,6 @@ describe('AnimateursPage alert badges', () => {
     referenceData = TestBed.inject(ReferenceDataStore);
     problemes = TestBed.inject(ProblemesStore);
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(AnimateursPage).componentInstance as unknown as PageInternals;
-  }
 
   it('flags nobody while no diagnostic is loaded', () => {
     seedStore(referenceData, 'animateurs', [animateur('alice', ['2026-08-01'])]);
@@ -171,6 +171,10 @@ describe('AnimateursPage alert badges', () => {
   });
 });
 
+function person(id: string, overrides: Partial<Animateur> = {}): Animateur {
+  return { ...animateur(id, []), ...overrides };
+}
+
 describe('AnimateursPage table', () => {
   let referenceData: ReferenceDataStore;
   let fixture: ComponentFixture<AnimateursPage>;
@@ -185,10 +189,6 @@ describe('AnimateursPage table', () => {
     remind: ReturnType<typeof vi.fn>;
   };
   const editingLocked = signal(false);
-
-  function personne(id: string, overrides: Partial<Animateur> = {}): Animateur {
-    return { ...animateur(id, []), ...overrides };
-  }
 
   async function rendre(animateurs: Animateur[]): Promise<void> {
     seedStore(referenceData, 'animateurs', animateurs);
@@ -293,14 +293,14 @@ describe('AnimateursPage table', () => {
 
   it('renders one row per animateur, with the derived majority and no appreciation column', async () => {
     await rendre([
-      personne('alice', {
+      person('alice', {
         prenom: 'Amélie',
         nom: 'Nothomb',
         dateNaissance: '1990-05-04',
         manager: true,
         competences: { ambiance: 'REFERENT' },
       }),
-      personne('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' }),
+      person('bob', { prenom: 'Bob', nom: 'Ados', dateNaissance: '2015-01-01' }),
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Animateurs (2)');
@@ -314,16 +314,16 @@ describe('AnimateursPage table', () => {
   });
 
   it('says the majority is unknown rather than guessing it without a birth date', async () => {
-    await rendre([personne('alice', { dateNaissance: '' })]);
+    await rendre([person('alice', { dateNaissance: '' })]);
 
     expect(lignes()[0][3]).toBe('—');
   });
 
   it('sorts on the majority column, both ways', async () => {
     await rendre([
-      personne('mineur', { dateNaissance: '2015-01-01' }),
-      personne('inconnu', { dateNaissance: '' }),
-      personne('majeur', { dateNaissance: '1990-01-01' }),
+      person('mineur', { dateNaissance: '2015-01-01' }),
+      person('inconnu', { dateNaissance: '' }),
+      person('majeur', { dateNaissance: '1990-01-01' }),
     ]);
 
     await sort('Majeur');
@@ -334,7 +334,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('sorts the identifiers as numbers where they carry one, not as text', async () => {
-    await rendre([personne('A10'), personne('A2'), personne('A1')]);
+    await rendre([person('A10'), person('A2'), person('A1')]);
 
     await sort('Id');
     expect(lignes().map((row) => row[1])).toEqual(['A1', 'A2', 'A10']);
@@ -342,9 +342,9 @@ describe('AnimateursPage table', () => {
 
   it('sorts the name column on what the cell shows, first name included', async () => {
     await rendre([
-      personne('c', { prenom: 'Zoé', nom: 'Abadie' }),
-      personne('a', { prenom: 'Élodie', nom: 'Blanc' }),
-      personne('b', { prenom: 'Adrien', nom: 'Costa' }),
+      person('c', { prenom: 'Zoé', nom: 'Abadie' }),
+      person('a', { prenom: 'Élodie', nom: 'Blanc' }),
+      person('b', { prenom: 'Adrien', nom: 'Costa' }),
     ]);
 
     await sort('Nom');
@@ -352,7 +352,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('brings the managers up first, like the majority column', async () => {
-    await rendre([personne('a', { manager: false }), personne('b', { manager: true })]);
+    await rendre([person('a', { manager: false }), person('b', { manager: true })]);
 
     await sort('Manager');
     expect(lignes().map((row) => row[1])).toEqual(['b', 'a']);
@@ -360,9 +360,9 @@ describe('AnimateursPage table', () => {
 
   it('sorts the unavailability column on the number of days', async () => {
     await rendre([
-      personne('trois', { joursIndisponibles: ['2026-07-01', '2026-07-02', '2026-07-03'] }),
-      personne('aucune', { joursIndisponibles: [] }),
-      personne('une', { joursIndisponibles: ['2026-07-01'] }),
+      person('trois', { joursIndisponibles: ['2026-07-01', '2026-07-02', '2026-07-03'] }),
+      person('aucune', { joursIndisponibles: [] }),
+      person('une', { joursIndisponibles: ['2026-07-01'] }),
     ]);
 
     await sort('Indisponibilités');
@@ -401,10 +401,10 @@ describe('AnimateursPage table', () => {
       },
     ]);
     await rendre([
-      personne('confirme'),
-      personne('sansPoste'),
-      personne('relance'),
-      personne('silencieux'),
+      person('confirme'),
+      person('sansPoste'),
+      person('relance'),
+      person('silencieux'),
     ]);
     await fixture.whenStable();
 
@@ -431,8 +431,8 @@ describe('AnimateursPage table', () => {
       sansPoste: [],
     });
     await rendre([
-      personne('alice', { prenom: 'Alice', nom: 'Martin' }),
-      personne('bob', { prenom: 'Bob', nom: 'Durand' }),
+      person('alice', { prenom: 'Alice', nom: 'Martin' }),
+      person('bob', { prenom: 'Bob', nom: 'Durand' }),
     ]);
     (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
     await fixture.whenStable();
@@ -467,7 +467,7 @@ describe('AnimateursPage table', () => {
       dernierePublicationLe: '2026-07-01T10:00:00Z',
       jamaisPublie: false,
     });
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
     await fixture.whenStable();
 
     const synthese = racine().querySelector('.confirmations-synthese')!.textContent!;
@@ -478,7 +478,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('says the planning was never published rather than counting nobody', async () => {
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
     await fixture.whenStable();
 
     expect(racine().querySelector('.confirmations-synthese')!.textContent!.trim()).toBe(
@@ -487,7 +487,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('opens the acknowledgement tooltip without sorting the column it sits in', async () => {
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
 
     const aide = racine().querySelector('th .column-help') as HTMLButtonElement;
     aide.click();
@@ -497,7 +497,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('enters the table on arrow down from the quick filter', async () => {
-    await rendre([personne('alice'), personne('bob')]);
+    await rendre([person('alice'), person('bob')]);
 
     const champ = racine().querySelector('app-table-filter input') as HTMLInputElement;
     champ.focus();
@@ -510,13 +510,13 @@ describe('AnimateursPage table', () => {
     await fixture.whenStable();
 
     expect(touche.defaultPrevented).toBe(true);
-    expect((document.activeElement as HTMLElement).getAttribute('data-row-index')).toBe('0');
+    expect((document.activeElement as HTMLElement).dataset['rowIndex']).toBe('0');
   });
 
   it('narrows the table on the quick filter, and says when nothing matches', async () => {
     await rendre([
-      personne('alice', { prenom: 'Amélie', nom: 'Nothomb' }),
-      personne('bob', { prenom: 'Bob', nom: 'Ados' }),
+      person('alice', { prenom: 'Amélie', nom: 'Nothomb' }),
+      person('bob', { prenom: 'Bob', nom: 'Ados' }),
     ]);
 
     await filter('nothomb');
@@ -538,7 +538,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('ticks only the displayed rows on "tout sélectionner", and warns that the scope is filtered', async () => {
-    await rendre([personne('alice', { nom: 'Nothomb' }), personne('bob', { nom: 'Ados' })]);
+    await rendre([person('alice', { nom: 'Nothomb' }), person('bob', { nom: 'Ados' })]);
 
     await filter('nothomb');
     (racine().querySelector('thead mat-checkbox input') as HTMLInputElement).click();
@@ -552,7 +552,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('shows no bulk bar until something is ticked', async () => {
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
 
     expect(racine().querySelector('app-bulk-actions-bar')).toBeNull();
 
@@ -562,7 +562,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('flags an unavailability falling on a structurally understaffed day, for a screen reader too', async () => {
-    await rendre([personne('alice', { joursIndisponibles: ['2026-08-01'] })]);
+    await rendre([person('alice', { joursIndisponibles: ['2026-08-01'] })]);
     api.get.mockResolvedValue(report([cause('CRITIQUE', '2026-08-01')]));
     await TestBed.inject(ProblemesStore).reloadFeasibility();
     await fixture.whenStable();
@@ -572,14 +572,14 @@ describe('AnimateursPage table', () => {
   });
 
   it('offers the espace link only to the animateurs who have one', async () => {
-    await rendre([personne('alice', { accessToken: 'jeton-1' }), personne('bob')]);
+    await rendre([person('alice', { accessToken: 'jeton-1' }), person('bob')]);
 
     expect(action(0, 'Copier le lien de son espace animateur').disabled).toBe(false);
     expect(action(1, 'Copier le lien de son espace animateur').disabled).toBe(true);
   });
 
   it('greys out every writing action while a solve is running, but not the read-only ones', async () => {
-    await rendre([personne('alice', { accessToken: 'jeton-1' })]);
+    await rendre([person('alice', { accessToken: 'jeton-1' })]);
     editingLocked.set(true);
     await fixture.whenStable();
 
@@ -596,7 +596,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {
-    await rendre([personne('alice', { prenom: 'Amélie', nom: 'Nothomb' })]);
+    await rendre([person('alice', { prenom: 'Amélie', nom: 'Nothomb' })]);
     dialog.open.mockReturnValue({ afterClosed: () => of('edit') });
 
     action(0, 'Consulter le détail').click();
@@ -609,7 +609,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('regenerates an espace token only after an explicit confirmation', async () => {
-    await rendre([personne('alice', { accessToken: 'jeton-1' })]);
+    await rendre([person('alice', { accessToken: 'jeton-1' })]);
 
     action(0, 'Régénérer le lien de son espace').click();
     await fixture.whenStable();
@@ -624,10 +624,14 @@ describe('AnimateursPage table', () => {
   });
 
   it('reports the failure, and the link itself, when the clipboard refuses', async () => {
-    await rendre([personne('alice', { accessToken: 'jeton-1' })]);
+    await rendre([person('alice', { accessToken: 'jeton-1' })]);
     Object.defineProperty(navigator, 'clipboard', {
       configurable: true,
-      value: { writeText: vi.fn(async () => Promise.reject(new Error('denied'))) },
+      value: {
+        writeText: vi.fn(async () => {
+          throw new Error('denied');
+        }),
+      },
     });
 
     action(0, 'Copier le lien de son espace animateur').click();
@@ -649,7 +653,7 @@ describe('AnimateursPage table', () => {
   // case: the next sortable column carrying an icon or a checkbox is the one
   // that would bring the defect back.
   it('never lets a sortable header take its name from a control it contains', async () => {
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
 
     const triables = Array.from(
       racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'),
@@ -675,7 +679,7 @@ describe('AnimateursPage table', () => {
   });
 
   it('announces the acknowledgement header by its title, and the help by its explanation', async () => {
-    await rendre([personne('alice')]);
+    await rendre([person('alice')]);
 
     const entete = Array.from(
       racine().querySelectorAll<HTMLElement>('thead th[mat-sort-header]'),

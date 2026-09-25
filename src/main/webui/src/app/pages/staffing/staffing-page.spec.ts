@@ -150,6 +150,10 @@ type PageInternals = {
   staffing: { reload(): boolean };
 };
 
+function createPage(): PageInternals {
+  return TestBed.createComponent(StaffingPage).componentInstance as unknown as PageInternals;
+}
+
 describe('StaffingPage', () => {
   const analysesApi = { staffing: vi.fn() };
 
@@ -164,10 +168,6 @@ describe('StaffingPage', () => {
       ],
     });
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(StaffingPage).componentInstance as unknown as PageInternals;
-  }
 
   describe('loading state', () => {
     // The resource reports `loading` from the moment it exists, before its
@@ -443,15 +443,15 @@ describe('StaffingPage', () => {
     });
   });
 
-  describe('bottleneck per game category', () => {
-    /** Loads a page whose summary carries the given breakdown, and waits for it. */
-    async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<PageInternals> {
-      analysesApi.staffing.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
-      const page = createPage();
-      await vi.waitFor(() => expect(page.competence()).not.toBeNull());
-      return page;
-    }
+  /** Loads a page whose summary carries the given breakdown, and waits for it. */
+  async function pageWith(overrides: Partial<CompetenceStaffing>): Promise<PageInternals> {
+    analysesApi.staffing.mockResolvedValue(summary({ parCompetence: competence(overrides) }));
+    const page = createPage();
+    await vi.waitFor(() => expect(page.competence()).not.toBeNull());
+    return page;
+  }
 
+  describe('bottleneck per game category', () => {
     // The decision this pins: one payload, one round trip. The breakdown is
     // the same computation on the same seats, so it travels with them rather
     // than through an endpoint that would rebuild the whole problem.

@@ -186,7 +186,7 @@ describe('CompetencesPage', () => {
     expect(store.reload).toHaveBeenCalledWith(['animateurs', 'typologies']);
     expect(root(fixture).querySelectorAll('.cellule-competence')).toHaveLength(6);
     expect(cellule(fixture, 'A1', 'jeux').textContent!.trim()).toBe('R');
-    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'A1', 'jeux').dataset['niveau']).toBe('REFERENT');
     expect(cellule(fixture, 'B2', 'jeux').textContent!.trim()).toBe('');
     expect(cellule(fixture, 'A1', 'ateliers').classList.contains('cellule-souhait')).toBe(true);
     expect(cellule(fixture, 'A1', 'ateliers').getAttribute('aria-label')).toContain('souhaitée');
@@ -221,7 +221,7 @@ describe('CompetencesPage', () => {
 
     touche(cellule(fixture, 'B2', 'jeux'), '3');
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('REFERENT');
     expect(cellule(fixture, 'B2', 'jeux').classList.contains('cellule-modifiee')).toBe(true);
     expect(cellule(fixture, 'B2', 'jeux').closest('tr')!.classList.contains('ligne-modifiee')).toBe(
       true,
@@ -231,20 +231,20 @@ describe('CompetencesPage', () => {
 
     touche(cellule(fixture, 'A1', 'jeux'), '0');
     await fixture.whenStable();
-    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'A1', 'jeux').dataset['niveau']).toBe('');
     expect(bouton(fixture, 'Enregistrer').textContent).toContain('(2)');
 
     cellule(fixture, 'B2', 'ateliers').click();
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'ateliers').getAttribute('data-niveau')).toBe('DEBUTANT');
+    expect(cellule(fixture, 'B2', 'ateliers').dataset['niveau']).toBe('DEBUTANT');
     cellule(fixture, 'B2', 'ateliers').click();
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'ateliers').getAttribute('data-niveau')).toBe('AUTONOME');
+    expect(cellule(fixture, 'B2', 'ateliers').dataset['niveau']).toBe('AUTONOME');
 
     bouton(fixture, 'Annuler les modifications').click();
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
-    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
+    expect(cellule(fixture, 'A1', 'jeux').dataset['niveau']).toBe('REFERENT');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -414,7 +414,7 @@ describe('CompetencesPage', () => {
 
     expect(saveCompetencesGrid).toHaveBeenCalledOnce();
     expect(notify).toHaveBeenCalledWith(expect.objectContaining({ variant: 'warning' }));
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('DEBUTANT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('DEBUTANT');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -438,7 +438,7 @@ describe('CompetencesPage', () => {
     await fixture.whenStable();
 
     expect(saveCompetencesGrid).toHaveBeenCalledOnce();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('REFERENT');
     expect(cellule(fixture, 'B2', 'jeux').classList.contains('cellule-modifiee')).toBe(true);
   });
 
@@ -449,7 +449,7 @@ describe('CompetencesPage', () => {
     expect(cellule(fixture, 'B2', 'jeux').disabled).toBe(true);
     touche(cellule(fixture, 'B2', 'jeux'), '3');
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -523,18 +523,18 @@ describe('CompetencesPage', () => {
     boutonLigne(fixture, 'B2').click();
     await fixture.whenStable();
 
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('REFERENT');
     expect(cellule(fixture, 'B2', 'jeux').classList.contains('cellule-modifiee')).toBe(true);
     expect(bouton(fixture, 'Enregistrer').textContent).toContain('(1)');
 
     // The same move from the keyboard, once the row is back to what it said.
     bouton(fixture, 'Annuler les modifications').click();
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
 
     combinaison(cellule(fixture, 'B2', 'ateliers'), 'd', { ctrlKey: true });
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('REFERENT');
   });
 
   it('has nothing to take on the first displayed row, and says so from the keyboard', async () => {
@@ -550,7 +550,7 @@ describe('CompetencesPage', () => {
     expect(notify).toHaveBeenCalledWith(
       expect.objectContaining({ variant: 'warning', title: expect.stringContaining('au-dessus') }),
     );
-    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'A1', 'jeux').dataset['niveau']).toBe('REFERENT');
   });
 
   it('applies the active cell to its whole column, leaving the other columns alone', async () => {
@@ -564,11 +564,11 @@ describe('CompetencesPage', () => {
     boutonColonne(fixture, 'Ateliers').click();
     await fixture.whenStable();
 
-    expect(cellule(fixture, 'A1', 'ateliers').getAttribute('data-niveau')).toBe('DEBUTANT');
-    expect(cellule(fixture, 'B2', 'ateliers').getAttribute('data-niveau')).toBe('DEBUTANT');
+    expect(cellule(fixture, 'A1', 'ateliers').dataset['niveau']).toBe('DEBUTANT');
+    expect(cellule(fixture, 'B2', 'ateliers').dataset['niveau']).toBe('DEBUTANT');
     // « jeux » belongs to nobody's business here: Alice keeps her référent.
-    expect(cellule(fixture, 'A1', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'A1', 'jeux').dataset['niveau']).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
   });
 
   it('applies the column from the keyboard, and says when it changed nothing', async () => {
@@ -580,7 +580,7 @@ describe('CompetencesPage', () => {
     await fixture.whenStable();
     combinaison(active, 'ArrowDown', { ctrlKey: true, shiftKey: true });
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('REFERENT');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('REFERENT');
 
     // A second press has nothing left to do, and does not pretend otherwise.
     combinaison(active, 'ArrowDown', { ctrlKey: true, shiftKey: true });
@@ -597,7 +597,7 @@ describe('CompetencesPage', () => {
     combinaison(cellule(fixture, 'B2', 'jeux'), 'd', { ctrlKey: true, altKey: true });
     await fixture.whenStable();
 
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
@@ -610,6 +610,6 @@ describe('CompetencesPage', () => {
 
     combinaison(cellule(fixture, 'B2', 'jeux'), 'd', { ctrlKey: true });
     await fixture.whenStable();
-    expect(cellule(fixture, 'B2', 'jeux').getAttribute('data-niveau')).toBe('');
+    expect(cellule(fixture, 'B2', 'jeux').dataset['niveau']).toBe('');
   });
 });

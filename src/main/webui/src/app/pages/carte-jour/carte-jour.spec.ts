@@ -275,7 +275,7 @@ describe('instantCarte', () => {
     ])[0];
 
     const instant = instantCarte(journee, 11 * 60, [place, mairie]);
-    const vide = instant.marqueurs.find((marqueur) => marqueur.emplacementId === 'MAIRIE');
+    const vide = instant.marqueurs.find((marker) => marker.emplacementId === 'MAIRIE');
     expect(vide?.etat).toBe('sansStand');
     expect(instant.compteurs.emplacementsSansStand).toBe(1);
   });
@@ -287,7 +287,7 @@ describe('instantCarte', () => {
     ])[0];
 
     const instant = instantCarte(journee, 11 * 60, [place, mairie]);
-    expect(instant.marqueurs.map((marqueur) => marqueur.etat)).toEqual(['decouvert', 'pourvu']);
+    expect(instant.marqueurs.map((marker) => marker.etat)).toEqual(['decouvert', 'pourvu']);
   });
 
   it('answers an empty screen, not a crash, when there is no day to replay', () => {
@@ -312,25 +312,25 @@ describe('instantCarte', () => {
   });
 });
 
-describe('comptePastille', () => {
-  function marqueur(overrides: Partial<MarqueurJour>): MarqueurJour {
-    return {
-      emplacementId: 'PLACE',
-      nom: 'Place',
-      latitude: 46.65,
-      longitude: -0.25,
-      etat: 'pourvu',
-      stands: [],
-      ouverts: 0,
-      sieges: 0,
-      pourvus: 0,
-      resume: '',
-      ...overrides,
-    };
-  }
+function marker(overrides: Partial<MarqueurJour>): MarqueurJour {
+  return {
+    emplacementId: 'PLACE',
+    nom: 'Place',
+    latitude: 46.65,
+    longitude: -0.25,
+    etat: 'pourvu',
+    stands: [],
+    ouverts: 0,
+    sieges: 0,
+    pourvus: 0,
+    resume: '',
+    ...overrides,
+  };
+}
 
+describe('comptePastille', () => {
   it('writes the number of open stands, which is what the badge promises', () => {
-    expect(comptePastille(marqueur({ etat: 'partiel', ouverts: 2 }))).toBe('2');
+    expect(comptePastille(marker({ etat: 'partiel', ouverts: 2 }))).toBe('2');
   });
 
   it('writes zero on a closed place instead of the number of stands attached to it', () => {
@@ -341,12 +341,12 @@ describe('comptePastille', () => {
       600,
     );
     expect(
-      comptePastille(marqueur({ etat: 'ferme', ouverts: 0, stands: [ferme, ferme, ferme] })),
+      comptePastille(marker({ etat: 'ferme', ouverts: 0, stands: [ferme, ferme, ferme] })),
     ).toBe('0');
   });
 
   it('writes nothing on a place holding no stand at all that day', () => {
-    expect(comptePastille(marqueur({ etat: 'sansStand', ouverts: 0 }))).toBe('');
+    expect(comptePastille(marker({ etat: 'sansStand', ouverts: 0 }))).toBe('');
   });
 });
 

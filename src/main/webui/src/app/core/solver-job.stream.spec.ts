@@ -61,7 +61,7 @@ function job(overrides: Partial<JobView> = {}): JobView {
  * injected factory, and the production code path is the one exercised.
  */
 class FakeEventSource {
-  static instances: FakeEventSource[] = [];
+  static readonly instances: FakeEventSource[] = [];
 
   static get last(): FakeEventSource {
     const instance = FakeEventSource.instances.at(-1);
@@ -176,7 +176,7 @@ describe('SolverJobService — server-sent events', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    FakeEventSource.instances = [];
+    FakeEventSource.instances.length = 0;
     (globalThis as { EventSource?: unknown }).EventSource = FakeEventSource;
     api = new FakeApi();
     notifications = {

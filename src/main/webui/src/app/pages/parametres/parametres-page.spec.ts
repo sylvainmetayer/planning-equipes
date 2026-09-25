@@ -182,6 +182,17 @@ describe('ParametresPage ninja picker', () => {
   });
 });
 
+function text(element: HTMLElement): string {
+  return element.textContent!.replace(/\s+/g, ' ').trim();
+}
+
+/** A `File` jsdom can read: its own implementation has no `text()`. */
+function file(nom: string, contenu: string): File {
+  const created = new File([contenu], nom);
+  Object.defineProperty(created, 'text', { value: async () => contenu });
+  return created;
+}
+
 describe('ParametresPage rendering', () => {
   let fixture: ComponentFixture<ParametresPage>;
   let api: { get: ReturnType<typeof vi.fn> };
@@ -356,17 +367,6 @@ describe('ParametresPage rendering', () => {
     );
     expect(trouve, `carte « ${titre} » absente`).toBeDefined();
     return trouve as HTMLElement;
-  }
-
-  function text(element: HTMLElement): string {
-    return element.textContent!.replace(/\s+/g, ' ').trim();
-  }
-
-  /** A `File` jsdom can read: its own implementation has no `text()`. */
-  function file(nom: string, contenu: string): File {
-    const created = new File([contenu], nom);
-    Object.defineProperty(created, 'text', { value: async () => contenu });
-    return created;
   }
 
   it('locks the SQL dump replay while a solve runs', async () => {

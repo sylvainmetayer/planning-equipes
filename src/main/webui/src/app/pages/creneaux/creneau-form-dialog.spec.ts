@@ -85,7 +85,7 @@ describe('CreneauFormDialog', () => {
     await fixture.whenStable();
 
     const ngForm = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
-    expect(Object.keys(ngForm.controls).sort()).toEqual([
+    expect(Object.keys(ngForm.controls).sort((a, b) => a.localeCompare(b))).toEqual([
       'couverturePause',
       'date',
       'heureDebut',

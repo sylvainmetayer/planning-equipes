@@ -127,8 +127,8 @@ describe('brouillon-formulaire', () => {
 
       purgeExpiredDrafts(storage, NOON);
 
-      expect([...storage.entries.keys()].sort()).toEqual(
-        ['other.key', draftKey('stand', 's2', edition2026)].sort(),
+      expect([...storage.entries.keys()].sort((a, b) => a.localeCompare(b))).toEqual(
+        ['other.key', draftKey('stand', 's2', edition2026)].sort((a, b) => a.localeCompare(b)),
       );
     });
 

@@ -17,11 +17,11 @@ describe('buildPivot', () => {
     { contrainte: 'amplitude', axe: 'STAND', cle: 'ROUGE', ecarts: 7 },
   ];
 
-  const libelle = (cle: string) =>
-    cle === 'BLEU' ? 'Pavillon Bleu' : cle === 'ROUGE' ? 'Hall Rouge' : cle;
+  const labels: Record<string, string> = { BLEU: 'Pavillon Bleu', ROUGE: 'Hall Rouge' };
+  const label = (key: string) => labels[key] ?? key;
 
   it('keeps the days in chronological order, which is the only one that answers « est-ce le week-end »', () => {
-    const pivot = buildPivot(cellules, 'JOUR', libelle, (a, b) => a.cle.localeCompare(b.cle));
+    const pivot = buildPivot(cellules, 'JOUR', label, (a, b) => a.cle.localeCompare(b.cle));
 
     expect(pivot.colonnes.map((colonne) => colonne.cle)).toEqual(['2026-07-06', '2026-07-08']);
     expect(pivot.lignes.map((ligne) => ligne.contrainte)).toEqual(['amplitude', 'referent']);
@@ -31,7 +31,7 @@ describe('buildPivot', () => {
   });
 
   it('puts the rule in default most at the top, and the busiest key first when no order is given', () => {
-    const pivot = buildPivot(cellules, 'STAND', libelle);
+    const pivot = buildPivot(cellules, 'STAND', label);
 
     expect(pivot.colonnes.map((colonne) => colonne.libelle)).toEqual([
       'Hall Rouge',

@@ -26,6 +26,10 @@ import type { Edition } from '../../core/models';
 /** Reaches the protected handler the template binds the button to. */
 type PageInternals = { onResetDatabase: () => Promise<void> };
 
+function page(): PageInternals {
+  return TestBed.createComponent(DebugPage).componentInstance as unknown as PageInternals;
+}
+
 describe('DebugPage reset', () => {
   const api = { get: vi.fn(), post: vi.fn() };
   const planningApi = { reset: vi.fn() };
@@ -72,10 +76,6 @@ describe('DebugPage reset', () => {
       ],
     });
   });
-
-  function page(): PageInternals {
-    return TestBed.createComponent(DebugPage).componentInstance as unknown as PageInternals;
-  }
 
   function demande(): DemandeRecopie {
     return recopie.demander.mock.calls[0][0] as DemandeRecopie;

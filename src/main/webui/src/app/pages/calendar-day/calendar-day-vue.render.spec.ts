@@ -39,18 +39,14 @@ function stand(id: string, typologiesProposees: string[] = ['ambiance']): Stand 
   };
 }
 
-function animateur(
-  id: string,
-  prenom: string,
-  competences: Record<string, 'DEBUTANT'> = { ambiance: 'DEBUTANT' },
-) {
+function animateur(id: string, prenom: string, skills?: Record<string, 'DEBUTANT'>) {
   return {
     id,
     prenom,
     nom: 'X',
     dateNaissance: '2000-01-01',
     manager: false,
-    competences,
+    competences: skills ?? { ambiance: 'DEBUTANT' },
     souhaits: [],
     joursIndisponibles: [],
   } satisfies Animateur;
@@ -92,8 +88,7 @@ function mount(options: Options = {}) {
   // MatDialog.open always hands back a ref; the page reads `afterClosed()` on
   // it to reload when the repair assistant wrote to the plan (issue #71), so
   // the double has to honour that contract too.
-  const open = vi.fn((...args: unknown[]) => {
-    void args;
+  const open = vi.fn((..._args: unknown[]) => {
     return { afterClosed: () => of<unknown>(undefined) };
   });
   const get = vi.fn(async () => {
@@ -157,6 +152,12 @@ function lignes(fixture: ComponentFixture<CalendarDayView>) {
 
 const AMBIANCE = stand('Loup-Garou');
 const C1 = creneau({ id: 1 });
+
+function filterProblems(fixture: ComponentFixture<CalendarDayView>, active: boolean): void {
+  (
+    fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }
+  ).seulementProblemes.set(active);
+}
 
 describe('CalendarDayView rendering', () => {
   beforeEach(() => TestBed.resetTestingModule());
@@ -458,7 +459,7 @@ describe('CalendarDayView rendering', () => {
     await fixture.whenStable();
     expect(lignes(fixture)).toHaveLength(2);
 
-    filterProblemes(fixture, true);
+    filterProblems(fixture, true);
     await fixture.whenStable();
 
     const restantes = lignes(fixture);
@@ -474,19 +475,13 @@ describe('CalendarDayView rendering', () => {
     await fixture.whenStable();
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(1);
 
-    filterProblemes(fixture, true);
+    filterProblems(fixture, true);
     await fixture.whenStable();
 
     expect(root(fixture).querySelectorAll('.day-card')).toHaveLength(0);
     // The plan is not empty, the filters are: the wording says so.
     expect(text(fixture)).toContain('Aucune ligne ne correspond aux filtres');
   });
-
-  function filterProblemes(fixture: ComponentFixture<CalendarDayView>, actif: boolean): void {
-    (
-      fixture.componentInstance as unknown as { seulementProblemes: { set(value: boolean): void } }
-    ).seulementProblemes.set(actif);
-  }
 
   it('opens the explanation dialog on the seat that was clicked', async () => {
     const camille = animateur('a1', 'Camille');
@@ -575,7 +570,10 @@ describe('CalendarDayView rendering', () => {
         data: { targets: { id: string; label: string }[] };
       };
       const cibles = data.data.targets;
-      expect(cibles.map((cible) => cible.id).sort()).toEqual(['P2', 'P3']);
+      expect(cibles.map((target) => target.id).sort((a, b) => a.localeCompare(b))).toEqual([
+        'P2',
+        'P3',
+      ]);
       expect(cibles.find((cible) => cible.id === 'P3')!.label).toContain('siège libre');
       expect(cibles.find((cible) => cible.id === 'P2')!.label).toContain('Bob');
     });

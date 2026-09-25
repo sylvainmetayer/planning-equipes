@@ -6,6 +6,18 @@ import {
 } from './demande-echange-labels';
 import type { DemandeEchangeView, StatutDemandeEchange } from './models';
 
+function swapRequest(
+  status: StatutDemandeEchange,
+  decidedAt: string | null,
+  communicatedAt: string | null,
+): DemandeEchangeView {
+  return {
+    statut: status,
+    decideLe: decidedAt,
+    communiqueeLe: communicatedAt,
+  } as DemandeEchangeView;
+}
+
 describe('demande-echange-labels', () => {
   const statuts: StatutDemandeEchange[] = [
     'EN_ATTENTE_CIBLE',
@@ -26,40 +38,32 @@ describe('demande-echange-labels', () => {
   });
 
   it('donne à chaque statut un modificateur CSS, partagé entre les deux attentes et les deux refus', () => {
-    const classes = statuts.map(statutDemandeClasse);
+    const classes = statuts.map((status) => statutDemandeClasse(status));
     expect(classes).toEqual(['attente', 'attente', 'acceptee', 'refusee', 'refusee', 'annulee']);
   });
 
   describe('decisionNonCommuniquee', () => {
-    function demande(
-      statut: StatutDemandeEchange,
-      decideLe: string | null,
-      communiqueeLe: string | null,
-    ): DemandeEchangeView {
-      return { statut, decideLe, communiqueeLe } as DemandeEchangeView;
-    }
-
     const DECIDE_LE = '2026-07-10T09:00:00Z';
     const PUBLIE_LE = '2026-07-10T18:00:00Z';
 
     it("retient les deux décisions de l'organisation que la publication n'a pas portées", () => {
-      expect(decisionNonCommuniquee(demande('ACCEPTEE', DECIDE_LE, null))).toBe(true);
-      expect(decisionNonCommuniquee(demande('REFUSEE', DECIDE_LE, null))).toBe(true);
+      expect(decisionNonCommuniquee(swapRequest('ACCEPTEE', DECIDE_LE, null))).toBe(true);
+      expect(decisionNonCommuniquee(swapRequest('REFUSEE', DECIDE_LE, null))).toBe(true);
     });
 
     it('oublie une décision dès que la publication est partie', () => {
-      expect(decisionNonCommuniquee(demande('ACCEPTEE', DECIDE_LE, PUBLIE_LE))).toBe(false);
+      expect(decisionNonCommuniquee(swapRequest('ACCEPTEE', DECIDE_LE, PUBLIE_LE))).toBe(false);
     });
 
     // A withdrawal has no decision to announce. Since issue #540 the server
     // stamps `annuleLe` rather than `decideLe`, so one never reaches this
     // function any more; the statut test stays as a second lock, and the
     // fixture below still hands it the old shape on purpose.
-    it('ignore une demande retirée par son auteur, et celles qui attendent encore', () => {
-      expect(decisionNonCommuniquee(demande('ANNULEE', DECIDE_LE, null))).toBe(false);
-      expect(decisionNonCommuniquee(demande('REFUSEE_CIBLE', null, null))).toBe(false);
-      expect(decisionNonCommuniquee(demande('PROPOSEE', null, null))).toBe(false);
-      expect(decisionNonCommuniquee(demande('EN_ATTENTE_CIBLE', null, null))).toBe(false);
+    it('ignores a swap request withdrawn by its author, and those still waiting', () => {
+      expect(decisionNonCommuniquee(swapRequest('ANNULEE', DECIDE_LE, null))).toBe(false);
+      expect(decisionNonCommuniquee(swapRequest('REFUSEE_CIBLE', null, null))).toBe(false);
+      expect(decisionNonCommuniquee(swapRequest('PROPOSEE', null, null))).toBe(false);
+      expect(decisionNonCommuniquee(swapRequest('EN_ATTENTE_CIBLE', null, null))).toBe(false);
     });
   });
 });

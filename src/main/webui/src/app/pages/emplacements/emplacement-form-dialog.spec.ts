@@ -93,7 +93,12 @@ describe('EmplacementFormDialog', () => {
     await fixture.whenStable();
 
     const ngForm = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
-    expect(Object.keys(ngForm.controls).sort()).toEqual(['id', 'latitude', 'longitude', 'nom']);
+    expect(Object.keys(ngForm.controls).sort((a, b) => a.localeCompare(b))).toEqual([
+      'id',
+      'latitude',
+      'longitude',
+      'nom',
+    ]);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
   });
 

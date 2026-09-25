@@ -15,6 +15,10 @@ import { PlanSnapshotStore } from '../core/plan-snapshot.store';
 import { ConfirmService } from './confirm-dialog';
 import { InstantaneAvantAction } from './instantane-avant-action';
 
+function injectService(): InstantaneAvantAction {
+  return TestBed.inject(InstantaneAvantAction);
+}
+
 describe('InstantaneAvantAction', () => {
   const confirm = { ask: vi.fn() };
   const snapshots = { capturer: vi.fn() };
@@ -36,12 +40,8 @@ describe('InstantaneAvantAction', () => {
     });
   });
 
-  function service(): InstantaneAvantAction {
-    return TestBed.inject(InstantaneAvantAction);
-  }
-
   it('captures the plan when the offer is accepted', async () => {
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(confirm.ask).toHaveBeenCalledOnce();
     expect(snapshots.capturer).toHaveBeenCalledOnce();
@@ -51,21 +51,21 @@ describe('InstantaneAvantAction', () => {
   it('captures nothing when the offer is declined', async () => {
     confirm.ask.mockResolvedValue(false);
 
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(snapshots.capturer).not.toHaveBeenCalled();
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('names the snapshot after the action it precedes', async () => {
-    await service().proposer('rejouer un dump SQL');
+    await injectService().proposer('rejouer un dump SQL');
 
     expect(snapshots.capturer).toHaveBeenCalledWith(expect.stringContaining('rejouer un dump SQL'));
     expect(snapshots.capturer).toHaveBeenCalledWith(expect.stringContaining('Avant'));
   });
 
   it('names the action in the question it asks', async () => {
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(confirm.ask).toHaveBeenCalledWith(
       expect.objectContaining({ message: expect.stringContaining('vider la base') }),
@@ -78,13 +78,13 @@ describe('InstantaneAvantAction', () => {
   it('never rejects when the capture fails, so the action still runs', async () => {
     snapshots.capturer.mockRejectedValue(new Error('Instantané refusé par le serveur.'));
 
-    await expect(service().proposer('vider la base')).resolves.toBeUndefined();
+    await expect(injectService().proposer('vider la base')).resolves.toBeUndefined();
   });
 
   it('reports a failed capture as an error notification rather than swallowing it', async () => {
     snapshots.capturer.mockRejectedValue(new Error('Instantané refusé par le serveur.'));
 
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(notifications.notify).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({
@@ -95,7 +95,7 @@ describe('InstantaneAvantAction', () => {
   });
 
   it('says nothing when the capture succeeds', async () => {
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(notifications.notify).not.toHaveBeenCalled();
   });
@@ -103,7 +103,7 @@ describe('InstantaneAvantAction', () => {
   // The offer must not read as dangerous: it is the one reassuring step of a
   // flow whose next dialog already was.
   it('offers the capture without the danger styling of the action itself', async () => {
-    await service().proposer('vider la base');
+    await injectService().proposer('vider la base');
 
     expect(confirm.ask).toHaveBeenCalledWith(expect.not.objectContaining({ danger: true }));
   });
@@ -119,7 +119,7 @@ describe('InstantaneAvantAction', () => {
     );
 
     let finished = false;
-    const running = service()
+    const running = injectService()
       .proposer('vider la base')
       .then(() => {
         finished = true;

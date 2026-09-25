@@ -154,6 +154,20 @@ type PageInternals = {
   onTimefoldSolve: (reamorcage?: string) => Promise<void>;
 };
 
+/** A sentence of a reading, told apart by its words. */
+function phrase(texte: string): ScoreSentence {
+  return { sujet: 'VERDICT', niveau: 'INFO', texte, liens: [] };
+}
+
+function incrementalResult(): ResultatSolveIncremental {
+  return {
+    diagnostic: diagnostic({ hardScore: 0 }),
+    statistiques: statistiques(),
+    changements: [changement('tir'), changement('quilles')],
+    previousPlan: null,
+  };
+}
+
 describe('SolverPage', () => {
   const activeJob = signal<TrackedJob | null>(null);
   const solverBusy = signal(false);
@@ -285,11 +299,6 @@ describe('SolverPage', () => {
     for (const handler of handlers.get(type) ?? []) {
       handler(result);
     }
-  }
-
-  /** A sentence of a reading, told apart by its words. */
-  function phrase(texte: string): ScoreSentence {
-    return { sujet: 'VERDICT', niveau: 'INFO', texte, liens: [] };
   }
 
   /** A stored analysis carrying one sentence, analysed at `analysedAt`. */
@@ -468,21 +477,12 @@ describe('SolverPage', () => {
   });
 
   describe('applying an incremental result', () => {
-    function resultatIncremental(): ResultatSolveIncremental {
-      return {
-        diagnostic: diagnostic({ hardScore: 0 }),
-        statistiques: statistiques(),
-        changements: [changement('tir'), changement('quilles')],
-        previousPlan: null,
-      };
-    }
-
     // An incremental result wraps the diagnostic (issue #86) instead of being
     // one: both shapes have to land in the same state.
     it('unwraps the diagnostic an incremental result carries', () => {
       const page = createPage();
 
-      pushResult('SOLVE_INCREMENTAL', resultatIncremental());
+      pushResult('SOLVE_INCREMENTAL', incrementalResult());
 
       expect(page.hardScore()).toBe(0);
       expect(planningState.set).toHaveBeenCalledExactlyOnceWith(null);
@@ -491,7 +491,7 @@ describe('SolverPage', () => {
     it('keeps the crews that moved, with the statistics that frame them', () => {
       const page = createPage();
 
-      pushResult('SOLVE_INCREMENTAL', resultatIncremental());
+      pushResult('SOLVE_INCREMENTAL', incrementalResult());
 
       expect(page.incrementalStats()?.postesLiberes).toBe(20);
       expect(page.incrementalChangements().map((row) => row.standId)).toEqual(['tir', 'quilles']);
@@ -500,7 +500,7 @@ describe('SolverPage', () => {
     // The diff would otherwise describe a planning that no longer exists.
     it('clears the incremental diff as soon as a full solve replaces the plan', () => {
       const page = createPage();
-      pushResult('SOLVE_INCREMENTAL', resultatIncremental());
+      pushResult('SOLVE_INCREMENTAL', incrementalResult());
       expect(page.incrementalStats()).not.toBeNull();
 
       pushResult('SOLVE', diagnostic());
@@ -574,16 +574,16 @@ describe('SolverPage', () => {
     });
   });
 
+  /** Persisted-plan count the page reads at load and after every result. */
+  function persistedCount(assignments: number | null): void {
+    planningApi.persistedCount.mockResolvedValue(assignments === null ? {} : { assignments });
+  }
+
   /**
    * Where a full solve starts from (issue #174): said before the click, said
    * again in the recap, and the only cold start there is asks first.
    */
   describe('where the solve starts from', () => {
-    /** Persisted-plan count the page reads at load and after every result. */
-    function persistedCount(assignments: number | null): void {
-      planningApi.persistedCount.mockResolvedValue(assignments === null ? {} : { assignments });
-    }
-
     it('announces a cold start and disables « Recommencer de zéro » without a plan', async () => {
       persistedCount(0);
       const page = createPage();

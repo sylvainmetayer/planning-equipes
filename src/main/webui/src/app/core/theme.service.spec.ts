@@ -34,6 +34,11 @@ class FakeMediaQueryList {
   }
 }
 
+function createThemeService(): ThemeService {
+  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  return TestBed.inject(ThemeService);
+}
+
 describe('ThemeService', () => {
   let media: FakeMediaQueryList;
   const realMatchMedia = window.matchMedia;
@@ -61,27 +66,22 @@ describe('ThemeService', () => {
     document.documentElement.style.colorScheme = '';
   });
 
-  function service(): ThemeService {
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
-    return TestBed.inject(ThemeService);
-  }
-
   it('starts on "system" and resolves to what the machine asks for', () => {
     media.matches = true;
-    const theme = service();
+    const theme = createThemeService();
     expect(theme.preference()).toBe('system');
     expect(theme.scheme()).toBe('dark');
   });
 
   it('follows the machine changing its mind while the page is open', () => {
-    const theme = service();
+    const theme = createThemeService();
     expect(theme.scheme()).toBe('light');
     media.emit(true);
     expect(theme.scheme()).toBe('dark');
   });
 
   it('keeps an explicit choice when the machine changes its mind', () => {
-    const theme = service();
+    const theme = createThemeService();
     theme.set('light');
     media.emit(true);
     expect(theme.scheme()).toBe('light');
@@ -89,7 +89,7 @@ describe('ThemeService', () => {
   });
 
   it('persists the choice and writes it on the root element', () => {
-    const theme = service();
+    const theme = createThemeService();
     theme.set('dark');
     expect(localStorage.getItem(STORAGE_KEY)).toBe('dark');
     expect(document.documentElement.style.colorScheme).toBe('dark');
@@ -98,11 +98,11 @@ describe('ThemeService', () => {
   it('restores the stored choice on the next visit', () => {
     localStorage.setItem(STORAGE_KEY, 'dark');
     media.matches = false;
-    expect(service().scheme()).toBe('dark');
+    expect(createThemeService().scheme()).toBe('dark');
   });
 
   it('cycles système → clair → sombre → système', () => {
-    const theme = service();
+    const theme = createThemeService();
     expect(theme.cycle()).toBe('light');
     expect(theme.cycle()).toBe('dark');
     expect(theme.cycle()).toBe('system');
@@ -110,7 +110,7 @@ describe('ThemeService', () => {
   });
 
   it('drops its media listener with the injector', () => {
-    service();
+    createThemeService();
     expect(media.listenerCount).toBe(1);
     TestBed.resetTestingModule();
     expect(media.listenerCount).toBe(0);
@@ -122,7 +122,7 @@ describe('ThemeService', () => {
       configurable: true,
       writable: true,
     });
-    const theme = service();
+    const theme = createThemeService();
     expect(theme.scheme()).toBe('light');
     theme.set('dark');
     expect(theme.scheme()).toBe('dark');

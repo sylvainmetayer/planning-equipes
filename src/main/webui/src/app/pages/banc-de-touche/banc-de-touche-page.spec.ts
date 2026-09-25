@@ -52,6 +52,12 @@ type PageInternals = {
   reinitialiser: () => void;
 };
 
+/** `/banc-de-touche?creneau=7&stand=tir`, as the address bar would hold it. */
+function pathFor(queryParams: Record<string, string>): string {
+  const query = new URLSearchParams(queryParams).toString();
+  return query ? `/banc-de-touche?${query}` : '/banc-de-touche';
+}
+
 describe('BancDeTouchePage', () => {
   const analysesApi = { bench: vi.fn() };
   const store = { stands: signal([]), animateurs: signal([]), reload: vi.fn() };
@@ -63,12 +69,6 @@ describe('BancDeTouchePage', () => {
     store.reload.mockResolvedValue(undefined);
   });
 
-  /** `/banc-de-touche?creneau=7&stand=tir`, as the address bar would hold it. */
-  function chemin(queryParams: Record<string, string>): string {
-    const query = new URLSearchParams(queryParams).toString();
-    return query ? `/banc-de-touche?${query}` : '/banc-de-touche';
-  }
-
   function createPage(queryParams: Record<string, string> = {}): PageInternals {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
@@ -79,7 +79,10 @@ describe('BancDeTouchePage', () => {
         // The page restores its state from the address bar, which is what
         // `keepViewInQueryParams` writes — not from the router snapshot, frozen
         // at the last real navigation.
-        { provide: Location, useValue: { path: () => chemin(queryParams), replaceState: vi.fn() } },
+        {
+          provide: Location,
+          useValue: { path: () => pathFor(queryParams), replaceState: vi.fn() },
+        },
         {
           provide: ActivatedRoute,
           useValue: { snapshot: { queryParamMap: convertToParamMap(queryParams) } },

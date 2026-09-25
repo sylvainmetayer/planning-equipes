@@ -20,6 +20,24 @@ import { BrandingTitleStrategy } from './core/branding-title.strategy';
 class PageVide {}
 
 /**
+ * Every route of the tree, children included.
+ *
+ * <p>Does not descend into `loadChildren`: there is none today, and resolving
+ * one would mean loading the modules. The day one arrives, the "whole tree"
+ * guarantee stops holding without anything saying so.</p>
+ */
+function allRoutes(list: Routes): Routes {
+  return list.flatMap((route) => [route, ...allRoutes(route.children ?? [])]);
+}
+
+/** Where the legacy route `path` redirects, given these query params. */
+function redirectTarget(path: string, queryParams: Record<string, string>): string {
+  const route = allRoutes(routes).find((candidate) => candidate.path === path);
+  const redirectTo = route?.redirectTo as RedirectFunction;
+  return redirectTo({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
+}
+
+/**
  * Les titres de route étaient des chaînes en dur, moitié françaises moitié
  * anglaises, qu'aucun contrôle ne voyait : `check-i18n` ne lit que ce qui passe
  * par `$localize`. Ce n'est pas cosmétique — `admin-shell` annonce
@@ -34,17 +52,6 @@ class PageVide {}
  */
 describe('app.routes', () => {
   /**
-   * Toutes les routes de l'arbre, enfants compris.
-   *
-   * <p>Ne descend pas dans `loadChildren` : il n'y en a aucun aujourd'hui, et
-   * le résoudre demanderait de charger les modules. Le jour où il en arrive un,
-   * la garantie « tout l'arbre » cesse d'être vraie sans que rien ne le dise.</p>
-   */
-  function toutesLesRoutes(liste: Routes): Routes {
-    return liste.flatMap((route) => [route, ...toutesLesRoutes(route.children ?? [])]);
-  }
-
-  /**
    * Une route qui affiche un écran terminal doit porter un titre : sans lui
    * l'onglet ne montre que le nom du produit, et `admin-shell` n'annonce rien à
    * l'arrivée sur la page (son `annoncerNavigation` sort sur `if (titre)`).
@@ -54,17 +61,17 @@ describe('app.routes', () => {
    * nomment l'écran.</p>
    */
   it('donne un titre à toute route qui affiche un écran terminal', () => {
-    const sansTitre = toutesLesRoutes(routes)
+    const untitled = allRoutes(routes)
       .filter((route) => route.component !== undefined || route.loadComponent !== undefined)
       .filter((route) => route.children === undefined || route.children.length === 0)
       .filter((route) => route.title === undefined)
       .map((route) => route.path ?? '(vide)');
 
-    expect(sansTitre).toEqual([]);
+    expect(untitled).toEqual([]);
   });
 
   it('donne un titre traduisible et non vide à chaque route qui en porte un', () => {
-    const titrees = toutesLesRoutes(routes).filter((route) => route.title !== undefined);
+    const titrees = allRoutes(routes).filter((route) => route.title !== undefined);
 
     // Le compte exact plutôt qu'un plancher : un plancher laisse supprimer six
     // titres sans rien dire, et c'est ce chiffre-là que les descriptions de PR
@@ -105,14 +112,8 @@ describe('app.routes', () => {
    * the value translated when it changed along with the key.
    */
   describe('les anciennes adresses des rendus de la journée', () => {
-    function redirection(path: string, queryParams: Record<string, string>): string {
-      const route = toutesLesRoutes(routes).find((candidate) => candidate.path === path);
-      const redirectTo = route?.redirectTo as RedirectFunction;
-      return redirectTo({ queryParams } as unknown as ActivatedRouteSnapshot) as string;
-    }
-
     it('garde les filtres et renomme la clé du rail', () => {
-      expect(redirection('rail-jour', { vue: 'libres', stand: 'S1' })).toBe(
+      expect(redirectTarget('rail-jour', { vue: 'libres', stand: 'S1' })).toBe(
         '/journee?vue=rail&lignes=libres&stand=S1',
       );
     });
@@ -120,28 +121,28 @@ describe('app.routes', () => {
     it('traduit la vue « sans relais » des pauses en son filtre, et le jour en date', () => {
       // `/pauses` always wrote an ISO date in `jour`: that is the bookmark the
       // redirect has to read back, not a day number.
-      expect(redirection('pauses', { vue: 'sans-relais', jour: '2026-08-02' })).toBe(
+      expect(redirectTarget('pauses', { vue: 'sans-relais', jour: '2026-08-02' })).toBe(
         '/journee?vue=pauses&relais=sans&date=2026-08-02',
       );
     });
 
     it('mène au calendrier sans paramètre superflu', () => {
-      expect(redirection('day-calendar', {})).toBe('/journee?vue=calendrier');
+      expect(redirectTarget('day-calendar', {})).toBe('/journee?vue=calendrier');
     });
 
     // The two addresses carrying the most params: the map's cursor, and the
     // créneau and stand pair of the bench.
     it('garde le jour et le curseur de la carte', () => {
-      expect(redirection('carte-jour', { jour: '2026-08-02', t: '540' })).toBe(
+      expect(redirectTarget('carte-jour', { jour: '2026-08-02', t: '540' })).toBe(
         '/journee?vue=carte&jour=2026-08-02&t=540',
       );
     });
 
     it("mène aux onglets du diagnostic avec l'état de chacun", () => {
       expect(
-        redirection('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
+        redirectTarget('fragilite', { vue: 'COMPETENCES', filtre: 'CRITIQUES', q: 'Alice' }),
       ).toBe('/diagnostic?onglet=fragilite&vue=COMPETENCES&filtre=CRITIQUES&q=Alice');
-      expect(redirection('banc-de-touche', { creneau: '12', stand: 'S1' })).toBe(
+      expect(redirectTarget('banc-de-touche', { creneau: '12', stand: 'S1' })).toBe(
         '/diagnostic?onglet=banc&creneau=12&stand=S1',
       );
     });

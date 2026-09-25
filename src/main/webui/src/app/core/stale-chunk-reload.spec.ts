@@ -25,7 +25,9 @@ function fakeStorage(options: { broken?: boolean } = {}): Storage {
       }
       data.set(key, value);
     },
-    removeItem: (key: string) => void data.delete(key),
+    removeItem: (key: string) => {
+      data.delete(key);
+    },
     clear: () => data.clear(),
     key: () => null,
     get length() {

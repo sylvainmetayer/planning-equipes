@@ -5,9 +5,13 @@
 // no map yet, and bail out. What matters for the user is that a locked form
 // never hands out a draggable marker, whatever order those two things happen in.
 
-import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  provideZonelessChangeDetection,
+  signal,
+} from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { provideZonelessChangeDetection } from '@angular/core';
 import { describe, expect, it } from 'vitest';
 import { MapPicker } from './map-picker';
 

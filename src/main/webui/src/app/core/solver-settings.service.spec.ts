@@ -67,7 +67,7 @@ describe('SolverSettingsService', () => {
     const service = configure(api);
     await service.setSecondsLimit(-5);
     expect(service.secondsLimit()).toBe(DEFAULT_SOLVER_SECONDS_LIMIT);
-    await service.setSecondsLimit(NaN);
+    await service.setSecondsLimit(Number.NaN);
     expect(service.secondsLimit()).toBe(DEFAULT_SOLVER_SECONDS_LIMIT);
   });
 

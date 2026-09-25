@@ -485,36 +485,36 @@ describe('normaliserHoraire', () => {
   });
 });
 
-describe('horairesCopiedFrom — la journée type d’un stand reprise dans un autre', () => {
-  function modele(): Stand {
-    return {
-      id: 'PAVILLON',
-      nom: 'Pavillon',
-      typologiesProposees: ['STRATEGIE'],
-      effectifMin: 1,
-      effectifMax: 4,
-      reserveMajeurs: false,
-      horaires: [
-        { ...horaire({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] }) },
-      ],
-      ouvertures: [
-        {
-          id: 11,
-          date: '2026-07-10',
-          heureDebut: '10:00',
-          heureFin: '12:00',
-          motif: 'Inauguration',
-          effectif: 2,
-        },
-      ],
-      indisponibilites: [
-        { id: 12, date: '2026-07-11', heureDebut: '18:00', heureFin: null, motif: 'Concert' },
-      ],
-    } as Stand;
-  }
+function modelStand(): Stand {
+  return {
+    id: 'PAVILLON',
+    nom: 'Pavillon',
+    typologiesProposees: ['STRATEGIE'],
+    effectifMin: 1,
+    effectifMax: 4,
+    reserveMajeurs: false,
+    horaires: [
+      { ...horaire({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] }) },
+    ],
+    ouvertures: [
+      {
+        id: 11,
+        date: '2026-07-10',
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        motif: 'Inauguration',
+        effectif: 2,
+      },
+    ],
+    indisponibilites: [
+      { id: 12, date: '2026-07-11', heureDebut: '18:00', heureFin: null, motif: 'Concert' },
+    ],
+  } as Stand;
+}
 
+describe('horairesCopiedFrom — la journée type d’un stand reprise dans un autre', () => {
   it('copies the three lists, window effectifs included', () => {
-    const copie = horairesCopiedFrom(modele());
+    const copie = horairesCopiedFrom(modelStand());
 
     expect(copie.horaires).toHaveLength(1);
     expect(copie.horaires[0].fenetres).toEqual([
@@ -531,7 +531,7 @@ describe('horairesCopiedFrom — la journée type d’un stand reprise dans un a
   // A rule or an exception belongs to the stand it was read from: sent with
   // the source's id, the target would claim rows that are not its own.
   it('resets every id: these are new rows of the target stand', () => {
-    const copie = horairesCopiedFrom(modele());
+    const copie = horairesCopiedFrom(modelStand());
 
     expect(copie.horaires[0].id).toBeNull();
     expect(copie.ouvertures[0].id).toBeNull();
@@ -539,7 +539,7 @@ describe('horairesCopiedFrom — la journée type d’un stand reprise dans un a
   });
 
   it('never aliases the source: editing the copy must not write through', () => {
-    const source = modele();
+    const source = modelStand();
     const copie = horairesCopiedFrom(source);
 
     copie.horaires[0].fenetres[0].heureDebut = '09:00';
@@ -551,7 +551,7 @@ describe('horairesCopiedFrom — la journée type d’un stand reprise dans un a
 
   it('copies an empty schedule as an empty schedule', () => {
     expect(
-      horairesCopiedFrom({ ...modele(), horaires: [], ouvertures: [], indisponibilites: [] }),
+      horairesCopiedFrom({ ...modelStand(), horaires: [], ouvertures: [], indisponibilites: [] }),
     ).toEqual({
       horaires: [],
       ouvertures: [],

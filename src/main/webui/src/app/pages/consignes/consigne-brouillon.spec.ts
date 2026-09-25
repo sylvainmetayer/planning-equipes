@@ -66,10 +66,10 @@ describe('consigne-brouillon', () => {
     );
   });
 
-  it('restaure ce qu’il a écrit, lignes de stands comprises', () => {
+  it('restores what it wrote, stand rows included', () => {
     const draft = toConsigneDraft(form({ motif: 'Canicule', stands: [STAND] }), true);
 
-    expect(readConsigneDraft(JSON.parse(JSON.stringify(draft)))).toEqual(draft);
+    expect(readConsigneDraft(structuredClone(draft))).toEqual(draft);
   });
 
   it('refuse ce qu’un formulaire ne saurait tenir', () => {

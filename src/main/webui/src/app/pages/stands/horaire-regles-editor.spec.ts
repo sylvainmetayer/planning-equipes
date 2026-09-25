@@ -84,6 +84,15 @@ async function choisir(
   await fixture.whenStable();
 }
 
+/** Every control the editor renders, and what the host form registered. */
+function controls(fixture: ComponentFixture<Hote>): Element[] {
+  return Array.from(
+    (fixture.nativeElement as HTMLElement).querySelectorAll(
+      'input[matInput], mat-select, mat-checkbox',
+    ),
+  );
+}
+
 describe('HoraireReglesEditor', () => {
   let erreursConsole: unknown[][];
 
@@ -94,15 +103,6 @@ describe('HoraireReglesEditor', () => {
     );
   });
   afterEach(() => vi.restoreAllMocks());
-
-  /** Every control the editor renders, and what the host form registered. */
-  function controles(fixture: ComponentFixture<Hote>): Element[] {
-    return Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll(
-        'input[matInput], mat-select, mat-checkbox',
-      ),
-    );
-  }
 
   it('registers its controls with the host form, under the prefix, and never mutates the input', async () => {
     const fixture = monter();
@@ -115,7 +115,7 @@ describe('HoraireReglesEditor', () => {
     expect(nomsEnregistres(fixture)).toContain('bulkfenetresLigne0');
     // An unnamed ngModel throws NG01352 and registers nothing: the count is
     // what catches it, and this spec is the one that watches the bridge.
-    expect(nomsEnregistres(fixture)).toHaveLength(controles(fixture).length);
+    expect(nomsEnregistres(fixture)).toHaveLength(controls(fixture).length);
     expect(erreursConsole.filter((args) => JSON.stringify(args).includes('NG01352'))).toEqual([]);
     expect(fixture.componentInstance.recu).toHaveLength(1);
     expect(before).toHaveLength(0);

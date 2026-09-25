@@ -360,7 +360,7 @@ describe('colonnes', () => {
 
     const jours = buildTableauRepos(postes, [animateur('Ines')]).jours;
 
-    expect(jours.map((each) => each.initiale)).toEqual(Array(9).fill(''));
+    expect(jours.map((each) => each.initiale)).toEqual(new Array(9).fill(''));
     expect(jours.every((each) => !each.weekEnd)).toBe(true);
     // Nothing on the first column: the grid's own edge is already a boundary.
     expect(jours.filter((each) => each.debutSemaine).map((each) => each.jour)).toEqual([8]);

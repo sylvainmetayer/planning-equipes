@@ -235,13 +235,13 @@ describe('buildAnimateurHeatmap', () => {
   });
 });
 
+function planning(postes: PosteAffectation[]): PlanningEvenement {
+  return { postes } as unknown as PlanningEvenement;
+}
+
 describe('HeatmapPage grid', () => {
   let fixture: ComponentFixture<HeatmapPage>;
   let loadForDisplay: ReturnType<typeof vi.fn>;
-
-  function planning(postes: PosteAffectation[]): PlanningEvenement {
-    return { postes } as unknown as PlanningEvenement;
-  }
 
   /** Two animateurs over two days, so the grid has both rows and columns. */
   function planningDeuxAnimateurs(): PlanningEvenement {

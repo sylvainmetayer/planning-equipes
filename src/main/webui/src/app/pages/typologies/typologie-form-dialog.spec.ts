@@ -86,7 +86,7 @@ describe('TypologieFormDialog', () => {
     const { fixture } = monter(null);
     await fixture.whenStable();
 
-    expect(nomsEnregistres(fixture).sort()).toEqual([
+    expect(nomsEnregistres(fixture).sort((a, b) => a.localeCompare(b))).toEqual([
       'description',
       'id',
       'label',

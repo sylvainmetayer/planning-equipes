@@ -42,6 +42,10 @@ const trace = (overrides: Partial<ScoreTrace> = {}): ScoreTrace => ({
   ...overrides,
 });
 
+function createCard(): CardInternals {
+  return TestBed.createComponent(ScoreCurveCard).componentInstance as unknown as CardInternals;
+}
+
 describe('ScoreCurveCard', () => {
   const activeJob = signal<TrackedJob | null>(null);
   const editingLocked = signal(false);
@@ -66,10 +70,6 @@ describe('ScoreCurveCard', () => {
       providers: [provideZonelessChangeDetection(), { provide: SolverJobService, useValue: jobs }],
     });
   });
-
-  function createCard(): CardInternals {
-    return TestBed.createComponent(ScoreCurveCard).componentInstance as unknown as CardInternals;
-  }
 
   it('shows nothing at all when no solve has ever run', () => {
     const card = createCard();
