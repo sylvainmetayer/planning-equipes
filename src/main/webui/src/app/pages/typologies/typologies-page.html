@@ -23,11 +23,11 @@
     }
   </mat-card-actions>
   @if (orphelines() > 0) {
-    <div class="typologies-orphelines" role="status">
+    <output class="typologies-orphelines">
       <mat-icon aria-hidden="true">error</mat-icon>
-      <p i18n="@@typologies.orphelines.bandeau">Typologies proposées par des stands et maîtrisées par personne : {{ orphelines() }}</p>
+      <span class="typologies-orphelines-texte" i18n="@@typologies.orphelines.bandeau">Typologies proposées par des stands et maîtrisées par personne : {{ orphelines() }}</span>
       <button matButton type="button" (click)="showOrphelines()" i18n="@@typologies.orphelines.voir">Les afficher</button>
-    </div>
+    </output>
   }
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {

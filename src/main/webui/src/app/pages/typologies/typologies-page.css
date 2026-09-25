@@ -13,8 +13,7 @@
   color: var(--mat-sys-on-error-container);
 }
 
-.typologies-orphelines p {
-  margin: 0;
+.typologies-orphelines-texte {
   flex: 1;
 }
 
