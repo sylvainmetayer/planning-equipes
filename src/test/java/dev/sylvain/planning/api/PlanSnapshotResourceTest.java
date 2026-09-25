@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
@@ -10,6 +11,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +24,11 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class PlanSnapshotResourceTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
-    private void persistedPlan() throws InterruptedException {
+    private void persistedPlan() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -36,7 +38,7 @@ class PlanSnapshotResourceTest {
         assertThat(affectationCount()).isPositive();
     }
 
-    private void solve() throws InterruptedException {
+    private void solve() {
         attendreSolveurLibre();
         String jobId = given().when()
                 .post("/api/solve/async/reference-data?seconds=1")
@@ -73,7 +75,7 @@ class PlanSnapshotResourceTest {
     }
 
     @Test
-    void restaureLePlanApresUnAutreSolve() throws InterruptedException {
+    void restaureLePlanApresUnAutreSolve() {
         persistedPlan();
         long id = capture("Plan de référence");
         int attendu = affectationCount();
@@ -90,7 +92,7 @@ class PlanSnapshotResourceTest {
     }
 
     @Test
-    void chaqueSolveCaptureAutomatiquementLePlanPrecedent() throws InterruptedException {
+    void chaqueSolveCaptureAutomatiquementLePlanPrecedent() {
         persistedPlan();
         int avant = given().when()
                 .get("/api/planning/snapshots")
@@ -114,7 +116,7 @@ class PlanSnapshotResourceTest {
     }
 
     @Test
-    void restaurationRefuseeQuandLesReferencesOntDisparu() throws InterruptedException {
+    void restaurationRefuseeQuandLesReferencesOntDisparu() {
         persistedPlan();
         long id = capture("Avant remise à zéro");
 
@@ -131,7 +133,7 @@ class PlanSnapshotResourceTest {
     }
 
     @Test
-    void unInstantaneSurvitALaDisparitionDeSesCreneaux() throws InterruptedException {
+    void unInstantaneSurvitALaDisparitionDeSesCreneaux() {
         persistedPlan();
         long id = capture("Grille bientôt abandonnée");
 
@@ -159,7 +161,7 @@ class PlanSnapshotResourceTest {
      * described).
      */
     @Test
-    void restaurerMetAJourLAnalyseDeContraintes() throws InterruptedException {
+    void restaurerMetAJourLAnalyseDeContraintes() {
         persistedPlan();
         long id = capture("Plan à analyser");
         solve();
@@ -191,7 +193,7 @@ class PlanSnapshotResourceTest {
      * shape as every refused referential write — and nothing is written.
      */
     @Test
-    void restoreAnswers409WhileASolveRuns() throws InterruptedException {
+    void restoreAnswers409WhileASolveRuns() {
         persistedPlan();
         long id = capture("Pendant le solve");
         int avant = affectationCount();
@@ -226,7 +228,7 @@ class PlanSnapshotResourceTest {
      * first, not a second endpoint.
      */
     @Test
-    void restaurationRefuseeQuandLeReferentielABougeDepuisLaCapture() throws InterruptedException {
+    void restaurationRefuseeQuandLeReferentielABougeDepuisLaCapture() {
         persistedPlan();
         long id = capture("Avant de toucher au référentiel");
         int attendu = affectationCount();
@@ -266,7 +268,7 @@ class PlanSnapshotResourceTest {
      * {@code perime: false}, and the same one is {@code true} a toggle later.
      */
     @Test
-    void laListeAnnonceLaFraicheurDeChaqueInstantane() throws InterruptedException {
+    void laListeAnnonceLaFraicheurDeChaqueInstantane() {
         persistedPlan();
         long id = capture("Fraîcheur listée");
 
@@ -334,29 +336,25 @@ class PlanSnapshotResourceTest {
                 .statusCode(200);
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

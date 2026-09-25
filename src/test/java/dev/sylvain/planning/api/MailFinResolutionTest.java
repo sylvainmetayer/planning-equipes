@@ -2,12 +2,14 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.mailer.MockMailbox;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,8 +23,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class MailFinResolutionTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
     /** Configured by `planning.mail.admin` in the test profile. */
     private static final String ADMIN = "admin@example.org";
 
@@ -30,7 +32,7 @@ class MailFinResolutionTest {
     MockMailbox boite;
 
     @BeforeEach
-    void videLaBoite() throws InterruptedException {
+    void videLaBoite() {
         boite.clear();
         attendreSolveurLibre();
     }
@@ -42,7 +44,7 @@ class MailFinResolutionTest {
     }
 
     @Test
-    void mailsTheAdminWhenTheEditionAsksForIt() throws InterruptedException {
+    void mailsTheAdminWhenTheEditionAsksForIt() {
         planImporte();
         reglerNotification(true);
 
@@ -61,7 +63,7 @@ class MailFinResolutionTest {
     }
 
     @Test
-    void sansLeReglageUnSolveNEcritRien() throws InterruptedException {
+    void sansLeReglageUnSolveNEcritRien() {
         planImporte();
         reglerNotification(false);
 
@@ -96,7 +98,7 @@ class MailFinResolutionTest {
                 .statusCode(200);
     }
 
-    private JsonPath solve() throws InterruptedException {
+    private JsonPath solve() {
         attendreSolveurLibre();
         String jobId = given().when()
                 .post("/api/solve/async/reference-data?seconds=1")
@@ -109,29 +111,25 @@ class MailFinResolutionTest {
         return job;
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

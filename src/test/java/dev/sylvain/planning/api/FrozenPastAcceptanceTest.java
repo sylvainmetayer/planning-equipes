@@ -2,12 +2,14 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,8 +54,8 @@ class FrozenPastAcceptanceTest {
     private static final String J3 = "2027-07-14";
     private static final String J4 = "2027-07-15";
     private static final String MATIN = "10:00:00";
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @BeforeEach
     void anEditionFrozenBeforeItsFirstDay() {
@@ -66,7 +68,7 @@ class FrozenPastAcceptanceTest {
     }
 
     @AfterEach
-    void handTheClockBack() throws InterruptedException {
+    void handTheClockBack() {
         attendreSolveurLibre();
         given().contentType(ContentType.JSON)
                 .body("{\"dateDuJour\":null}")
@@ -78,7 +80,7 @@ class FrozenPastAcceptanceTest {
     }
 
     @Test
-    void theDaysAlreadyWorkedComeOutOfEverySolveAsTheyWentIn() throws InterruptedException {
+    void theDaysAlreadyWorkedComeOutOfEverySolveAsTheyWentIn() {
         // 1. Nominal: the whole week ahead, nothing past, zero hard.
         JsonPath nominal = solveComplet();
         assertThat(nominal.getInt("result.diagnostic.hardScore")).isZero();
@@ -96,10 +98,7 @@ class FrozenPastAcceptanceTest {
 
         // 3. A full solve: the past is reported, identical, and costs nothing —
         //    to the solve, and to the analysis the Contraintes screen reads.
-        JsonPath complet = solveComplet();
-        assertThat(complet.getInt("result.diagnostic.hardScore")).isZero();
-        assertThat(complet.getInt("result.reamorcage.postesPasses")).isEqualTo(postesPasses);
-        assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
+        assertSolvedKeepingThePast(solveComplet(), postesPasses, passeAttendu);
         assertThat(persistedHardScore()).isZero();
 
         // 4. An incremental solve re-opening the Monday: nothing to re-open.
@@ -119,10 +118,7 @@ class FrozenPastAcceptanceTest {
                 .post("/api/consignes")
                 .then()
                 .statusCode(200);
-        JsonPath sousConsigne = solveComplet();
-        assertThat(sousConsigne.getInt("result.diagnostic.hardScore")).isZero();
-        assertThat(sousConsigne.getInt("result.reamorcage.postesPasses")).isEqualTo(postesPasses);
-        assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
+        assertSolvedKeepingThePast(solveComplet(), postesPasses, passeAttendu);
         assertThat(seatShapes(J4)).isNotEqualTo(jeudiNominal);
 
         // 6. « Demain on réouvre en nominal »: lifted, solved, the Thursday
@@ -140,13 +136,21 @@ class FrozenPastAcceptanceTest {
         assertThat(persistedHardScore()).isZero();
     }
 
+    /** A full solve at zero hard that reports the past seats and leaves them as they were. */
+    private static void assertSolvedKeepingThePast(
+            JsonPath solve, int postesPasses, Map<String, List<String>> passeAttendu) {
+        assertThat(solve.getInt("result.diagnostic.hardScore")).isZero();
+        assertThat(solve.getInt("result.reamorcage.postesPasses")).isEqualTo(postesPasses);
+        assertThat(pastSeats(seatsByDay())).isEqualTo(passeAttendu);
+    }
+
     /**
      * « Le passé ne se modifie plus » : the drag-and-drop and the repair
      * refuse a seat of a day already worked, in the same words, while the
      * same gestures on a day still ahead go through.
      */
     @Test
-    void aMoveAndARepairOnAPastSeatAreRefusedAndAcceptedOnADayAhead() throws InterruptedException {
+    void aMoveAndARepairOnAPastSeatAreRefusedAndAcceptedOnADayAhead() {
         solveComplet();
         freezeClock(J3, "13:30");
         String siegePasse = firstSeatOn(J1);
@@ -177,7 +181,7 @@ class FrozenPastAcceptanceTest {
 
     /** After the last day, a solve — full or incremental — has nothing to plan and says so. */
     @Test
-    void aSolveWithEveryTimeslotAlreadyStartedIsRefused() throws InterruptedException {
+    void aSolveWithEveryTimeslotAlreadyStartedIsRefused() {
         solveComplet();
         freezeClock("2027-07-20", null);
 
@@ -195,7 +199,7 @@ class FrozenPastAcceptanceTest {
      * charged, but reported, on the full solve and on the incremental one.
      */
     @Test
-    void pastSeatsHoldingNobodyAreReportedAsAWarning() throws InterruptedException {
+    void pastSeatsHoldingNobodyAreReportedAsAWarning() {
         freezeClock(J3, "13:30");
 
         JsonPath complet = solveComplet();
@@ -368,13 +372,13 @@ class FrozenPastAcceptanceTest {
         return hardScore;
     }
 
-    private JsonPath solveComplet() throws InterruptedException {
+    private JsonPath solveComplet() {
         JsonPath job = solveCompletWhateverTheOutcome();
         assertThat(job.getString("status")).as(job.getString("error")).isEqualTo("COMPLETED");
         return job;
     }
 
-    private JsonPath solveCompletWhateverTheOutcome() throws InterruptedException {
+    private JsonPath solveCompletWhateverTheOutcome() {
         attendreSolveurLibre();
         String jobId = given().when()
                 .post("/api/solve/async/reference-data?seconds=5")
@@ -385,13 +389,13 @@ class FrozenPastAcceptanceTest {
         return pollUntilFinished(jobId);
     }
 
-    private JsonPath solveIncremental(String corps) throws InterruptedException {
+    private JsonPath solveIncremental(String corps) {
         JsonPath job = solveIncrementalWhateverTheOutcome(corps);
         assertThat(job.getString("status")).as(job.getString("error")).isEqualTo("COMPLETED");
         return job;
     }
 
-    private JsonPath solveIncrementalWhateverTheOutcome(String corps) throws InterruptedException {
+    private JsonPath solveIncrementalWhateverTheOutcome(String corps) {
         attendreSolveurLibre();
         String jobId = given().contentType(ContentType.JSON)
                 .body(corps)
@@ -416,29 +420,25 @@ class FrozenPastAcceptanceTest {
         throw new AssertionError("Nobody seated on " + date);
     }
 
-    private static void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private static void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private static JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private static JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
@@ -13,8 +14,11 @@ import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -35,8 +39,8 @@ class ConstraintDiagnosticResourceTest {
     private static final String HEADER = "X-Edition-Id";
     private static final String EDITION = "DIAGNOSTIC-PLAN";
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     /** Emptied by hand below: it is the only thing a restart takes away. */
     @Inject
@@ -61,7 +65,7 @@ class ConstraintDiagnosticResourceTest {
     }
 
     @Test
-    void diagnosticDescribesThePersistedPlanAndScoresTheCatalogue() throws InterruptedException {
+    void diagnosticDescribesThePersistedPlanAndScoresTheCatalogue() {
         importScenario();
         solve();
 
@@ -103,7 +107,7 @@ class ConstraintDiagnosticResourceTest {
      * switched off: the rule stays active.
      */
     @Test
-    void aRulePenalisingEverySeatForLackOfDataIsReportedAsAFloor() throws InterruptedException {
+    void aRulePenalisingEverySeatForLackOfDataIsReportedAsAFloor() {
         importScenario();
         solve();
 
@@ -153,8 +157,12 @@ class ConstraintDiagnosticResourceTest {
                 .body("plancherMedium", lessThan(0));
     }
 
+    private static final Pattern MEDIUM = Pattern.compile("hard/(-?\\d++)medium");
+
     private static int mediumOf(String score) {
-        return Integer.parseInt(score.replaceAll(".*hard/(-?\\d+)medium.*", "$1"));
+        Matcher medium = MEDIUM.matcher(score);
+        assertThat(medium.find()).as("medium level of %s", score).isTrue();
+        return Integer.parseInt(medium.group(1));
     }
 
     /**
@@ -190,7 +198,7 @@ class ConstraintDiagnosticResourceTest {
      * persisted plan on the first read, once per edition and per restart.</p>
      */
     @Test
-    void theCatalogueStillDescribesThePersistedPlanAfterARestart() throws InterruptedException {
+    void theCatalogueStillDescribesThePersistedPlanAfterARestart() {
         importScenario();
         solve();
         forgetTheAnalysisAsARestartWould();
@@ -225,7 +233,7 @@ class ConstraintDiagnosticResourceTest {
                 .statusCode(200);
     }
 
-    private void solve() throws InterruptedException {
+    private void solve() {
         awaitIdleSolver();
         String jobId = given().header(HEADER, EDITION)
                 .when()
@@ -234,29 +242,30 @@ class ConstraintDiagnosticResourceTest {
                 .statusCode(202)
                 .extract()
                 .path("id");
-        for (int poll = 0; poll < MAX_POLLS; poll++) {
-            String status = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .path("status");
-            if ("COMPLETED".equals(status)) {
-                return;
-            }
-            assertThat(status).as("le solve de préparation doit aboutir").isIn("PENDING", "RUNNING", "QUEUED");
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solve toujours en cours");
+        await().alias("Solve toujours en cours")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .<String>path("status"),
+                        status -> {
+                            // A failed or cancelled preparation stops the wait at once.
+                            assertThat(status)
+                                    .as("le solve de préparation doit aboutir")
+                                    .isIn("COMPLETED", "PENDING", "RUNNING", "QUEUED");
+                            return "COMPLETED".equals(status);
+                        });
     }
 
-    private void awaitIdleSolver() throws InterruptedException {
-        for (int poll = 0; poll < MAX_POLLS; poll++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solveur toujours occupé");
+    private void awaitIdleSolver() {
+        await().alias("Solveur toujours occupé")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 }

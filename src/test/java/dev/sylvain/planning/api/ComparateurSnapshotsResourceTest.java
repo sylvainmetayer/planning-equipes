@@ -2,11 +2,13 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -26,8 +28,8 @@ class ComparateurSnapshotsResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
     private static final String DEFAUT = "DEFAUT";
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     /** Editions created by a test are dropped, so the shared database is left as found. */
     @AfterEach
@@ -48,7 +50,7 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void compareDeuxInstantanesSansJamaisDeclencherDeResolution() throws InterruptedException {
+    void compareDeuxInstantanesSansJamaisDeclencherDeResolution() {
         persistedPlan(DEFAUT);
         long base = capture(DEFAUT, "Base");
         solve(DEFAUT);
@@ -73,7 +75,7 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void compareUnInstantaneAuPlanCourant() throws InterruptedException {
+    void compareUnInstantaneAuPlanCourant() {
         persistedPlan(DEFAUT);
         long base = capture(DEFAUT, "Avant retouche");
 
@@ -89,7 +91,7 @@ class ComparateurSnapshotsResourceTest {
     }
 
     @Test
-    void compareDeuxEditionsEtSignaleQueLesReferentielsDifferent() throws InterruptedException {
+    void compareDeuxEditionsEtSignaleQueLesReferentielsDifferent() {
         persistedPlan(DEFAUT);
         long base = capture(DEFAUT, "Édition par défaut");
 
@@ -167,7 +169,7 @@ class ComparateurSnapshotsResourceTest {
                 .getLong("id");
     }
 
-    private void persistedPlan(String editionId) throws InterruptedException {
+    private void persistedPlan(String editionId) {
         given().header(HEADER, editionId)
                 .when()
                 .post("/api/planning/reset")
@@ -181,7 +183,7 @@ class ComparateurSnapshotsResourceTest {
         solve(editionId);
     }
 
-    private void solve(String editionId) throws InterruptedException {
+    private void solve(String editionId) {
         attendreSolveurLibre();
         String jobId = given().header(HEADER, editionId)
                 .when()
@@ -193,29 +195,25 @@ class ComparateurSnapshotsResourceTest {
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

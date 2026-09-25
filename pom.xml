@@ -280,6 +280,14 @@
             <artifactId>rest-assured</artifactId>
             <scope>test</scope>
         </dependency>
+        <!-- Waits on the condition an asynchronous test actually expects
+             (a solve landing, a job leaving the queue) instead of a
+             Thread.sleep; version managed by the Quarkus BOM. -->
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>

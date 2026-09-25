@@ -2,9 +2,11 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -20,11 +22,11 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class CreneauAvailabilityResourceTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @Test
-    void listeLesAnimateursNonAffectesEtLaRaisonDeLeurAbsence() throws InterruptedException {
+    void listeLesAnimateursNonAffectesEtLaRaisonDeLeurAbsence() {
         long creneauId = persistedPlan();
 
         JsonPath banc = given().when()
@@ -44,7 +46,7 @@ class CreneauAvailabilityResourceTest {
 
     /** Every reason is a catalogued constraint, never a wording invented by the view. */
     @Test
-    void chaqueMotifPorteLeNomEtLeLibelleDuneContrainteCataloguee() throws InterruptedException {
+    void chaqueMotifPorteLeNomEtLeLibelleDuneContrainteCataloguee() {
         long creneauId = persistedPlan();
 
         JsonPath banc = given().when()
@@ -71,7 +73,7 @@ class CreneauAvailabilityResourceTest {
 
     /** A créneau that exists nowhere is the only genuinely bad request left. */
     @Test
-    void seulUnCreneauInexistantEstUn404() throws InterruptedException {
+    void seulUnCreneauInexistantEstUn404() {
         long creneauId = persistedPlan();
         String posteCible = given().when()
                 .get("/api/banc-de-touche/" + creneauId)
@@ -96,7 +98,7 @@ class CreneauAvailabilityResourceTest {
      * the very first render, with nothing the user could do about it.
      */
     @Test
-    void unCreneauSansSiegeDansLePlanRepond200AvecSonStatut() throws InterruptedException {
+    void unCreneauSansSiegeDansLePlanRepond200AvecSonStatut() {
         long creneauId = persistedPlan();
         long creneauSansSiege = creneauWithoutSeat(creneauId);
 
@@ -119,7 +121,7 @@ class CreneauAvailabilityResourceTest {
 
     /** Same for a stand the plan opened no seat for on that créneau. */
     @Test
-    void unStandSansSiegeSurLeCreneauRepond200AvecSonStatut() throws InterruptedException {
+    void unStandSansSiegeSurLeCreneauRepond200AvecSonStatut() {
         long creneauId = persistedPlan();
 
         given().when()
@@ -166,7 +168,7 @@ class CreneauAvailabilityResourceTest {
      * cannot know one before the answer tells it which are staffed.
      */
     @Test
-    void sansCreneauLeServeurEnChoisitUnQuiEstPourvu() throws InterruptedException {
+    void withoutATimeslotTheServerPicksOneThatIsFilled() {
         long creneauId = persistedPlan();
 
         JsonPath banc = given().when()
@@ -177,7 +179,7 @@ class CreneauAvailabilityResourceTest {
                 .jsonPath();
 
         assertThat(banc.getString("statut")).isEqualTo("EVALUATED");
-        assertThat(banc.getLong("creneauId")).isNotNull();
+        assertThat(banc.<Object>get("creneauId")).isNotNull();
         assertThat(banc.getList("creneauxAvecSieges.id", Long.class)).contains(banc.getLong("creneauId"));
         assertThat(creneauId).isPositive();
     }
@@ -208,7 +210,6 @@ class CreneauAvailabilityResourceTest {
         return ajoute;
     }
 
-    /** Loads the sample scenario, solves it once, and returns a créneau of the persisted plan. */
     /**
      * The bench is scored under the rules <b>currently in force</b>, not under
      * the defaults — and that is what the server-side preparation is for.
@@ -225,7 +226,7 @@ class CreneauAvailabilityResourceTest {
      * user-visible consequence, and the one a reader can judge.</p>
      */
     @Test
-    void leBancEstEvalueSousLesContraintesActivesDeLEdition() throws InterruptedException {
+    void leBancEstEvalueSousLesContraintesActivesDeLEdition() {
         long creneauId = persistedPlan();
         String regle = premierMotifDur(creneauId);
         assertThat(regle)
@@ -272,7 +273,8 @@ class CreneauAvailabilityResourceTest {
                 .orElse("");
     }
 
-    private long persistedPlan() throws InterruptedException {
+    /** Loads the sample scenario, solves it once, and returns a créneau of the persisted plan. */
+    private long persistedPlan() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -297,30 +299,25 @@ class CreneauAvailabilityResourceTest {
         return creneauId;
     }
 
-    private void waitForIdleSolver() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Le solveur ne s'est jamais libéré");
+    private void waitForIdleSolver() {
+        await().alias("Le solveur ne s'est jamais libéré")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            String status = job.getString("status");
-            if (!"RUNNING".equals(status) && !"QUEUED".equals(status)) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Le job " + jobId + " ne s'est jamais terminé");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Le job " + jobId + " ne s'est jamais terminé")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> !"RUNNING".equals(job.getString("status")) && !"QUEUED".equals(job.getString("status")));
     }
 }

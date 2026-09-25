@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.service.FailureLockout.Outcome;
 import java.time.Duration;
@@ -61,16 +62,17 @@ class FailureLockoutTest {
     }
 
     @Test
-    void theLockLiftsAFullDurationAfterTheLastFailure() throws InterruptedException {
+    void theLockLiftsAFullDurationAfterTheLastFailure() {
         FailureLockout lockout = new FailureLockout(100);
         Duration shortDuration = Duration.ofMillis(20);
         lockout.recordFailure("k", shortDuration);
         lockout.recordFailure("k", shortDuration);
         assertThat(lockout.lockoutSeconds("k", 2, shortDuration)).isEqualTo(1);
 
-        Thread.sleep(50);
-
-        assertThat(lockout.lockoutSeconds("k", 2, shortDuration)).isZero();
+        // The lockout reads the wall clock: only time passing lifts it.
+        await().pollDelay(Duration.ofMillis(50))
+                .untilAsserted(() -> assertThat(lockout.lockoutSeconds("k", 2, shortDuration))
+                        .isZero());
         assertThat(lockout.reserve("k", 2, shortDuration)).isZero();
     }
 

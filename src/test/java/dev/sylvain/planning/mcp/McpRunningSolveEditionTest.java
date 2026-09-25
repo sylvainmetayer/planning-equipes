@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -19,10 +20,12 @@ import dev.sylvain.planning.service.solve.PlanningService;
 import dev.sylvain.planning.service.solve.SolverJobService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -139,13 +142,12 @@ class McpRunningSolveEditionTest {
 
     /** Asserts nothing on purpose: called in the {@code finally}, it must not mask the real failure. */
     private void waitForFreeSolver() {
-        for (int attempt = 0; attempt < 240 && solverJobs.findActive().isPresent(); attempt++) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+        try {
+            await().atMost(Duration.ofSeconds(120))
+                    .pollInterval(Duration.ofMillis(500))
+                    .until(() -> solverJobs.findActive().isEmpty());
+        } catch (ConditionTimeoutException _) {
+            // Deliberately silent: a solver that never frees up shows as the refusal it causes.
         }
     }
 

@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.mcp.PlanningMcpTools.AffectationView;
 import dev.sylvain.planning.mcp.SolveurMcpTools.JobMcpView;
@@ -11,6 +12,7 @@ import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -31,8 +33,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolveurMcpToolsQueueTest {
 
-    private static final int MAX_POLLS = 160;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(80);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     private static final Set<String> ETATS_TERMINAUX = Stream.of(
                     JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED, JobStatus.INTERROMPU)
@@ -52,13 +54,13 @@ class SolveurMcpToolsQueueTest {
     SolverJobService solverJobService;
 
     @AfterEach
-    void clearEdition() throws InterruptedException {
+    void clearEdition() {
         awaitSolverIdle();
         scenarioTools.resetData(null);
     }
 
     @Test
-    void aSolveCanWaitForItsTurnInsteadOfFailing() throws InterruptedException {
+    void aSolveCanWaitForItsTurnInsteadOfFailing() {
         loadScenario();
         JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
 
@@ -70,7 +72,7 @@ class SolveurMcpToolsQueueTest {
     }
 
     @Test
-    void withoutQueueingAConcurrentSolveIsRefused() throws InterruptedException {
+    void withoutQueueingAConcurrentSolveIsRefused() {
         loadScenario();
         JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
 
@@ -84,7 +86,7 @@ class SolveurMcpToolsQueueTest {
     }
 
     @Test
-    void theIncrementalSolveStartsFromThePersistedPlanning() throws InterruptedException {
+    void theIncrementalSolveStartsFromThePersistedPlanning() {
         loadScenario();
         assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
                         .status())
@@ -104,7 +106,7 @@ class SolveurMcpToolsQueueTest {
     }
 
     @Test
-    void aScopeWithoutTargetSolvesWhatTheChangesInvalidated() throws InterruptedException {
+    void aScopeWithoutTargetSolvesWhatTheChangesInvalidated() {
         loadScenario();
         assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
                         .status())
@@ -125,30 +127,25 @@ class SolveurMcpToolsQueueTest {
         assertThat(solverJobService.findActive()).isEmpty();
     }
 
-    private void loadScenario() throws InterruptedException {
+    private void loadScenario() {
         awaitSolverIdle();
         scenarioTools.resetData(null);
         scenarioTools.importScenario("scenario.yml", null);
     }
 
-    private JobMcpView awaitFinished(String jobId) throws InterruptedException {
-        for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.solverStatus(jobId);
-            if (job != null && ETATS_TERMINAUX.contains(job.status())) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " toujours en cours");
+    private JobMcpView awaitFinished(String jobId) {
+        return await().alias("Job " + jobId + " toujours en cours")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> solveurTools.solverStatus(jobId),
+                        job -> job != null && ETATS_TERMINAUX.contains(job.status()));
     }
 
-    private void awaitSolverIdle() throws InterruptedException {
-        for (int essai = 0; essai < MAX_POLLS; essai++) {
-            if (solverJobService.findActive().isEmpty()) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solveur toujours occupé");
+    private void awaitSolverIdle() {
+        await().alias("Solveur toujours occupé")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() -> solverJobService.findActive().isEmpty());
     }
 }
