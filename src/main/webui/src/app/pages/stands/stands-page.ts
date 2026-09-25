@@ -151,6 +151,7 @@ export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
       },
       ressource: 'stands',
       libelle: () => $localize`:@@stands.entityLabel:Stand`,
+      name: (stand) => stand.nom,
       libellePluriel: labelStandsPluriel,
     });
     void this.problemes.reloadFeasibility();

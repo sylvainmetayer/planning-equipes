@@ -47,6 +47,7 @@ async function mountNetwork(
     'animateurs',
     ['A', 'B', 'C', 'D'].map((id) => ({ id, prenom: id, nom: 'Test' }) as Animateur),
   );
+  seedStore(referenceData, 'stands', [{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
   const fixture = TestBed.createComponent(AdHocConstraintsPage);
   await fixture.whenStable();
   return fixture.nativeElement as HTMLElement;
@@ -238,8 +239,8 @@ describe('AdHocConstraintsPage', () => {
       const liste = root.querySelector('.reseau-selection--arete');
       const boutons = [...(liste?.querySelectorAll<HTMLButtonElement>('li button') ?? [])];
       expect(boutons.map((bouton) => bouton.getAttribute('aria-label'))).toEqual([
-        "Modifier l'ajustement X1",
-        "Modifier l'ajustement X2",
+        "Modifier l'ajustement Incompatibilité (partout)",
+        "Modifier l'ajustement Incompatibilité (stand Bourse aux jeux)",
       ]);
 
       boutons[1].click();

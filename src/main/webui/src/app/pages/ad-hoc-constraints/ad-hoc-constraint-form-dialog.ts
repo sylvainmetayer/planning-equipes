@@ -9,7 +9,8 @@ import { MatSelectModule } from '@angular/material/select';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
+import { Animateur, ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
+import { animateurNames, labelsOf } from '../../core/reference-labels';
 
 const CONTRAINTE_TYPE_VALUES: TypeContrainteAdHoc[] = [
   'INDISPONIBILITE_FORCEE',
@@ -34,6 +35,22 @@ function contrainteTypeLabel(value: TypeContrainteAdHoc): string {
 
 function contrainteTypes(): { value: TypeContrainteAdHoc; label: string }[] {
   return CONTRAINTE_TYPE_VALUES.map((value) => ({ value, label: contrainteTypeLabel(value) }));
+}
+
+/**
+ * What an adjustment is called on screen, for want of a name: its type and the
+ * animateurs it concerns (« Incompatibilité — Jean Dupont, Marie Martin »).
+ * Its id is drawn per edition and tells a reader nothing. The names are
+ * personal data: this may be shown, never logged (docs/rgpd.md §7).
+ */
+export function adHocDescription(
+  contrainte: Pick<ContrainteAdHoc, 'type' | 'animateursConcernes'>,
+  animateurs: readonly Animateur[],
+): string {
+  const ids = (contrainte.animateursConcernes ?? []).map((animateur) => animateur.id);
+  const names = labelsOf(animateurNames(animateurs), ids);
+  const type = contrainteTypeLabel(contrainte.type);
+  return names.length ? `${type} — ${names.join(', ')}` : type;
 }
 
 interface ContrainteDraft {
@@ -86,11 +103,14 @@ export class AdHocConstraintFormDialog {
 
   protected readonly editingId = signal<string | null>(this.data.contrainte?.id ?? null);
   protected readonly draft = signal<ContrainteDraft>(toDraft(this.data.contrainte));
+  /** Describes the adjustment as it was loaded, since it has no name to show. */
   protected readonly formTitle = computed(() => {
-    const id = this.editingId();
-    return id
-      ? $localize`:@@adHoc.form.editTitle:Modifier l'ajustement ${id}:id:`
-      : $localize`:@@adHoc.form.newTitle:Nouvel ajustement manuel`;
+    const contrainte = this.data.contrainte;
+    if (!this.editingId() || !contrainte) {
+      return $localize`:@@adHoc.form.newTitle:Nouvel ajustement manuel`;
+    }
+    const description = adHocDescription(contrainte, this.store.animateurs());
+    return $localize`:@@adHoc.form.editTitle:Modifier l'ajustement : ${description}:description:`;
   });
 
   protected patch(patch: Partial<ContrainteDraft>): void {
@@ -117,6 +137,8 @@ export class AdHocConstraintFormDialog {
         contrainte,
         null,
         $localize`:@@adHoc.entityLabel:Ajustement`,
+        // Names animateurs: shown in the snack bar, the id in the notifications log.
+        { text: adHocDescription(contrainte, this.store.animateurs()), personal: true },
       )
     ) {
       this.dialogRef.close(true);

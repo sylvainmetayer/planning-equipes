@@ -153,6 +153,31 @@ describe('AnimateurFormDialog', () => {
     expect(champ(fixture, 'id').readOnly).toBe(true);
   });
 
+  // The id is drawn per edition and names nobody; a dialog title is never
+  // logged, so it may carry the identity.
+  it('titles itself after the animateur it was opened on, not the id', async () => {
+    const { fixture } = monter(animateur({ id: 'a42' }));
+    await fixture.whenStable();
+
+    expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
+      "Modifier l'animateur Amélie Nothomb",
+    );
+  });
+
+  // The snack bar may name the person; the log it is copied to must not.
+  it('hands the name to the save as personal data', async () => {
+    const { fixture, save } = monter(animateur({ id: 'a42' }));
+    await fixture.whenStable();
+
+    submit(fixture);
+    await fixture.whenStable();
+
+    expect(save).toHaveBeenCalledWith('animateurs', expect.anything(), 'a42', 'Animateur', {
+      text: 'Amélie Nothomb',
+      personal: true,
+    });
+  });
+
   it('starts blank on a creation, asking no identifier: the server draws it', async () => {
     const { fixture } = monter(null);
     await fixture.whenStable();

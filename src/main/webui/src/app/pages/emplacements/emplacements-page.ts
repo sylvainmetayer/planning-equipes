@@ -75,6 +75,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       },
       ressource: 'emplacements',
       libelle: () => $localize`:@@emplacements.entityLabel:Emplacement`,
+      name: (emplacement) => emplacement.nom,
       libellePluriel: labelEmplacementsPluriel,
     });
   }

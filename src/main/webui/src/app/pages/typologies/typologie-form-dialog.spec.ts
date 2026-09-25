@@ -100,7 +100,7 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
 
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe(
-      'Modifier la typologie ambiance',
+      'Modifier la typologie Ambiance',
     );
     expect(racine(fixture).querySelector('button[type="submit"]')!.textContent!).toContain(
       'Modifier la typologie',

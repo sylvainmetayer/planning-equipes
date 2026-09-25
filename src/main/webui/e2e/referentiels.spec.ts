@@ -320,7 +320,7 @@ test.describe('horaires de stand', () => {
     await admin.delete(`/api/stands/${standModeleId}`).catch(() => undefined);
   });
 
-  test('la fiche copie les horaires d’un autre stand, l’aperçu puis la page Ouvertures les reflètent', async ({
+  test('the form copies another stand’s opening hours, reflected by the preview then the Ouvertures page', async ({
     browser,
   }) => {
     const page = await pageAdmin(browser, admin);
@@ -331,7 +331,7 @@ test.describe('horaires de stand', () => {
     await ligne.getByRole('button', { name: 'Modifier' }).click();
     const formulaire = page
       .getByRole('dialog')
-      .filter({ hasText: `Modifier le stand ${SEED.standCible}` });
+      .filter({ hasText: 'Modifier le stand Stand E2E deux' });
     await expect(formulaire).toBeVisible();
     // The preview cell of the seeded day — open all day so far: no rule, no exception.
     const jourSeme = formulaire.locator('.apercu-jour').filter({ hasText: dayMonth(SEED.jour) });

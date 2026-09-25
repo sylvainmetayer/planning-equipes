@@ -251,6 +251,13 @@ describe('StandFormDialog', () => {
     expect(valeur('effectifMax')).toBe('4');
   });
 
+  it('titles itself after the stand it was opened on, not the id', async () => {
+    const { fixture } = mount(stand({ id: 's42', nom: 'Dixit' }));
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('h2')!.textContent!.trim()).toBe('Modifier le stand Dixit');
+  });
+
   it('shows the drawn identifier read-only on an edit, and asks none on a creation', async () => {
     const { fixture: existant } = mount(stand());
     await existant.whenStable();

@@ -33,6 +33,7 @@ import { ContrainteAdHoc, TypeContrainteAdHoc } from '../../core/models';
 import {
   AdHocConstraintFormData,
   AdHocConstraintFormDialog,
+  adHocDescription,
 } from './ad-hoc-constraint-form-dialog';
 import { FiltreTypesPaires, readFiltreTypes, ReseauPairesView } from './reseau-paires-vue';
 
@@ -234,6 +235,8 @@ export class AdHocConstraintsPage {
       'contraintes-ad-hoc',
       contrainte.id,
       $localize`:@@adHoc.entityLabel:Ajustement`,
+      // Names animateurs: in the confirmation and the snack bar, never in the log.
+      { name: { text: adHocDescription(contrainte, this.store.animateurs()), personal: true } },
     );
   }
 }

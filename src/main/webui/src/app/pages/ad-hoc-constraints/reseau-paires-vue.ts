@@ -119,18 +119,22 @@ export class ReseauPairesView {
     const views = new Map<string, EdgeView>();
     const partout = $localize`:@@adHoc.reseau.partout:partout`;
     for (const arete of this.reseau().aretes) {
+      const libelleType = this.typeLabel(arete.type);
       const ajustements = arete.contraintes.map((contrainte) => {
         const portee = this.porteeContrainte(contrainte);
+        const scope = portee || partout;
+        // The pair is already on screen: the type and the scope are what
+        // tell two adjustments of the same edge apart — not an id drawn per
+        // edition.
         return {
           contrainte,
           portee,
-          porteeAffichee: portee || partout,
-          modifierLabel: $localize`:@@adHoc.reseau.modifier.label:Modifier l'ajustement ${contrainte.id}:id:`,
+          porteeAffichee: scope,
+          modifierLabel: $localize`:@@adHoc.reseau.modifier.label:Modifier l'ajustement ${libelleType}:type: (${scope}:portee:)`,
         };
       });
       const sourceLabel = this.label(arete.source);
       const targetLabel = this.label(arete.target);
-      const libelleType = this.typeLabel(arete.type);
       views.set(arete.key, {
         arete,
         libelleType,

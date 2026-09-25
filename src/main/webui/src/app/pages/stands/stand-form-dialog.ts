@@ -127,10 +127,12 @@ export class StandFormDialog {
 
   protected readonly effectifInvalid = computed(() => effectifInvalide(this.draft()));
   protected readonly typologiesInvalides = computed(() => typologiesVides(this.draft()));
+  /** Names the stand as it was loaded: its id is drawn per edition and tells a reader nothing. */
   protected readonly formTitle = computed(() => {
     const id = this.editingId();
+    const name = this.data.stand?.nom?.trim() || id;
     return id
-      ? $localize`:@@stands.form.editTitle:Modifier le stand ${id}:id:`
+      ? $localize`:@@stands.form.editTitle:Modifier le stand ${name}:nom:`
       : $localize`:@@stands.form.newTitle:Nouveau stand`;
   });
   protected readonly submitLabel = computed(() =>
@@ -293,6 +295,7 @@ export class StandFormDialog {
         stand,
         this.editingId(),
         $localize`:@@stands.entityLabel:Stand`,
+        { text: stand.nom },
       )
     ) {
       this.formDraft.complete();

@@ -250,13 +250,17 @@ export class ParametresPage implements OnInit {
     }
     if (id === null) {
       if (courante) {
-        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label);
+        await this.crud.save('typologies', { ...courante, ninja: false }, courante.id, label, {
+          text: courante.label,
+        });
       }
       return;
     }
     const target = this.store.typologies().find((typologie) => typologie.id === id);
     if (target) {
-      await this.crud.save('typologies', { ...target, ninja: true }, target.id, label);
+      await this.crud.save('typologies', { ...target, ninja: true }, target.id, label, {
+        text: target.label,
+      });
     }
   }
 

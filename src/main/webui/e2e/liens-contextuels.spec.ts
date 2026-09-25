@@ -40,15 +40,15 @@ async function ficheOuverte(page: Page, url: string, titre: RegExp): Promise<voi
   await expect(page.getByRole('dialog')).toHaveCount(0);
 }
 
-test("« ?edit= » ouvre la fiche de l'animateur nommé, une seule fois", async ({ browser }) => {
+test('« ?edit= » opens the named animateur’s form, once only', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await ficheOuverte(page, `/animateurs?edit=${SEED.demandeur}`, /Modifier l'animateur E2E-A/);
+  await ficheOuverte(page, `/animateurs?edit=${SEED.demandeur}`, /Modifier l'animateur Alice E2E/);
   await page.context().close();
 });
 
-test('« ?edit= » ouvre la fiche du stand nommé', async ({ browser }) => {
+test('« ?edit= » opens the named stand’s form', async ({ browser }) => {
   const page = await pageAdmin(browser, admin);
-  await ficheOuverte(page, `/stands?edit=${SEED.standDemandeur}`, /Modifier le stand E2E-S1/);
+  await ficheOuverte(page, `/stands?edit=${SEED.standDemandeur}`, /Modifier le stand Stand E2E un/);
   await page.context().close();
 });
 

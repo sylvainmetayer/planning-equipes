@@ -36,6 +36,7 @@ import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableNavigation } from '../../core/table-navigation';
 import { TableSelection } from '../../core/table-selection';
@@ -379,7 +380,9 @@ export class CreneauxPage implements OnInit {
   }
 
   protected async remove(creneau: Creneau): Promise<void> {
-    await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`);
+    await this.crud.remove('creneaux', creneau.id, $localize`:@@creneaux.entityLabel:Créneau`, {
+      name: { text: creneauName(creneau) },
+    });
     await this.rechargerVerdict();
   }
 

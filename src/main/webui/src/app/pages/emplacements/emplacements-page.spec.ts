@@ -181,9 +181,11 @@ describe('EmplacementsPage', () => {
     it('deletes a single row on its own, without touching the selection', async () => {
       const page = createPage([emplacement('prairie')]);
 
-      await page.remove(emplacement('prairie'));
+      await page.remove(emplacement('prairie', { nom: 'Prairie du bas' }));
 
-      expect(crud.remove).toHaveBeenCalledWith('emplacements', 'prairie', expect.anything());
+      expect(crud.remove).toHaveBeenCalledWith('emplacements', 'prairie', expect.anything(), {
+        name: { text: 'Prairie du bas' },
+      });
       expect(crud.removeMany).not.toHaveBeenCalled();
     });
   });
