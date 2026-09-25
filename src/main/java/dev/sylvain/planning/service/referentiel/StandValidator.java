@@ -62,8 +62,8 @@ final class StandValidator {
         if (stand.getTypologiesProposees() == null
                 || stand.getTypologiesProposees().isEmpty()) {
             throw new BusinessError.Invalid(
-                    "Le stand « " + (stand.getId() != null ? stand.getId() : stand.getNom())
-                            + " » ne propose aucune typologie de jeu : "
+                    "Le stand " + CoherenceAnalyzer.standLabel(stand)
+                            + " ne propose aucune typologie de jeu : "
                             + "un stand est toujours rattaché à au moins une typologie. Choisissez-en une avant d'enregistrer.");
         }
     }
@@ -173,7 +173,7 @@ final class StandValidator {
                 if (a.getMode() != b.getMode() && a.daysOverlapWith(b)) {
                     throw new BusinessError.Invalid("Deux horaires de même portée (" + a.getJours()
                             + ") portant sur les mêmes jours ne peuvent pas être l'un une ouverture et l'autre une "
-                            + "fermeture pour le stand " + stand.getId()
+                            + "fermeture pour le stand " + CoherenceAnalyzer.standLabel(stand)
                             + " — utilisez une portée plus précise pour celui qui doit primer");
                 }
             }
@@ -257,7 +257,7 @@ final class StandValidator {
         conflits.retainAll(joursOuverture);
         if (!conflits.isEmpty()) {
             throw new BusinessError.Invalid("Un jour ne peut pas avoir à la fois une fermeture et une ouverture "
-                    + "pour le stand " + stand.getId() + " : " + conflits);
+                    + "pour le stand " + CoherenceAnalyzer.standLabel(stand) + " : " + conflits);
         }
     }
 }

@@ -167,8 +167,13 @@ public class TypologieService implements TypologieLibelles {
 
     public void delete(String id) {
         if (repository.typologieInUse(id)) {
+            String libelle = repository.listTypologies().stream()
+                    .filter(typologie -> typologie.id().equals(id))
+                    .map(typologie -> "« " + typologie.label() + " »")
+                    .findFirst()
+                    .orElse(id);
             throw new BusinessError.Invalid(
-                    "Typologie " + id + " utilisée par au moins un stand ou animateur — retirez-la d'abord");
+                    "Typologie " + libelle + " utilisée par au moins un stand ou animateur — retirez-la d'abord");
         }
         repository.deleteTypologie(id);
         changeTracker.markModified();

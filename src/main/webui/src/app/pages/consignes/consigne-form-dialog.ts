@@ -33,6 +33,7 @@ import {
   VacationRef,
 } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { labelsOf, standNames } from '../../core/reference-labels';
 import { errorText } from '../../core/resource-state';
 import { SolverJobService } from '../../core/solver-job.service';
 import {
@@ -184,6 +185,8 @@ export class ConsigneFormDialog {
   private readonly effectifMaxByStand = new Map(
     this.data.stands.map((stand) => [stand.id, stand.effectifMax]),
   );
+  /** Stand id → name, for the preview: the server names the stands by id. */
+  private readonly nomsStands = standNames(this.data.stands);
   /**
    * The rows as the form shows them: what the server proposed, merged over
    * what was already chosen. Written by every gesture on a stand, recomputed
@@ -495,6 +498,10 @@ export class ConsigneFormDialog {
 
   protected vacations(refs: VacationRef[]): string {
     return refs.map((ref) => bandeLabel(ref.heureDebut, ref.heureFin)).join(', ');
+  }
+
+  protected standsText(standIds: readonly string[]): string {
+    return labelsOf(this.nomsStands, standIds).join(', ');
   }
 
   protected windowsText(fenetres: FenetreConsigne[]): string {

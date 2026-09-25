@@ -217,6 +217,23 @@ describe('construireProblemes', () => {
     expect(probleme.details[2]).toContain('2');
   });
 
+  it('names the stands of a cause by their name, an unknown id kept as-is', () => {
+    const noms = new Map([['S1', 'Tir à l’arc']]);
+    const [probleme] = construireProblemes(
+      report([cause({ standIds: ['S1', 'S9'] })]),
+      [],
+      [],
+      null,
+      noms,
+    );
+    expect(probleme.details[1]).toContain('Tir à l’arc, S9');
+    const stands = probleme.liens.filter((lien) => lien.route === '/stands');
+    expect(stands.map((lien) => [lien.libelle, lien.queryParams?.['edit']])).toEqual([
+      ['Voir le stand Tir à l’arc', 'S1'],
+      ['Voir le stand S9', 'S9'],
+    ]);
+  });
+
   it('opens the créneau a cause names, then each stand up to three, then the openings', () => {
     const liens = liensDeCause(cause({ creneauId: '12', standIds: ['a', 'b', 'c', 'd'] }));
     expect(liens.map((lien) => [lien.route, lien.queryParams?.['edit']])).toEqual([

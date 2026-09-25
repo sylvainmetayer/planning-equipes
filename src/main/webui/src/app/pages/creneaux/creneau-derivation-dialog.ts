@@ -9,6 +9,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ReferenceDataStore } from '../../core/reference-data.store';
+import { labelsOf, standNames } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { DerivationRequest, RapportDerivation } from '../../core/models';
@@ -60,6 +62,9 @@ export class CreneauDerivationDialog {
   private readonly creneauxApi = inject(CreneauxApi);
   private readonly crud = inject(ReferenceCrudService);
   private readonly confirm = inject(ConfirmService);
+  /** Stand id → name: the preview names the stands at a cut by id. */
+  private readonly store = inject(ReferenceDataStore);
+  private readonly nomsStands = computed(() => standNames(this.store.stands()));
 
   protected readonly draft = signal<DerivationDraft>({
     dateDebut: this.data.dateDebut ?? '',
@@ -114,16 +119,18 @@ export class CreneauDerivationDialog {
   );
   protected readonly gridAnomalyIcon = gridAnomalyIcon;
 
-  /** The cuts of one day, `10:00 (A, B et 3 autres)`, for the preview. */
+  /** The cuts of one day, `10:00 (Bourse, Quiz et 3 autres)`, for the preview. */
   protected coupuresOf(date: string): string[] {
+    const noms = this.nomsStands();
     return (this.apercu()?.coupures ?? [])
       .filter((coupure) => coupure.date === date)
       .map((coupure) => {
         const reste = coupure.nombreStands - coupure.standIds.length;
+        const nommes = labelsOf(noms, coupure.standIds).join(', ');
         const stands =
           reste > 0
-            ? $localize`:@@creneaux.derivation.coupure.autres:${coupure.standIds.join(', ')}:stands: et ${reste}:reste: autre(s)`
-            : coupure.standIds.join(', ');
+            ? $localize`:@@creneaux.derivation.coupure.autres:${nommes}:stands: et ${reste}:reste: autre(s)`
+            : nommes;
         return `${coupure.heure.slice(0, 5)} (${stands})`;
       });
   }

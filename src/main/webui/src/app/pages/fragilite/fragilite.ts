@@ -12,6 +12,7 @@ import {
   RapportFragilite,
   SeveriteFragilite,
 } from '../../core/models';
+import { LabelIndex, labelsOf } from '../../core/reference-labels';
 import { correspondAuFiltre } from '../../core/text-filter';
 
 /** Which of the two questions the screen is showing. */
@@ -44,10 +45,15 @@ export function filtrerAnimateurs(
   );
 }
 
+/**
+ * `typologies` is the label of each typologie id, so the search finds a row by
+ * the name the screen shows; the ids stay searchable too.
+ */
 export function filtrerCompetences(
   rapport: RapportFragilite | null,
   filtre: FiltreFragilite,
   recherche: string,
+  typologies: LabelIndex = new Map(),
 ): CompetenceRare[] {
   return (rapport?.competencesRares ?? []).filter(
     (ligne) =>
@@ -57,8 +63,14 @@ export function filtrerCompetences(
         ligne.standNom,
         ligne.nom,
         ligne.typologies.join(' '),
+        labelsOf(typologies, ligne.typologies).join(' '),
       ]),
   );
+}
+
+/** The typologies of a row as the screen names them, an unknown id kept as-is. */
+export function typologiesAffichees(ligne: CompetenceRare, typologies: LabelIndex): string {
+  return labelsOf(typologies, ligne.typologies).join(', ');
 }
 
 /** CSS class driving a row's colour, so severity reads without the label. */

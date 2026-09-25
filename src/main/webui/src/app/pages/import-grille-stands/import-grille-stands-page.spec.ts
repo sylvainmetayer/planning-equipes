@@ -2,7 +2,7 @@
 // the very same body and asks first, and the report says what each column
 // and each row became.
 
-import { provideZonelessChangeDetection } from '@angular/core';
+import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,7 +10,7 @@ import { StandsApi } from '../../core/api/stands-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { ImportGrilleRapport } from '../../core/models';
+import { ImportGrilleRapport, Stand } from '../../core/models';
 import { ImportGrilleStandsPage } from './import-grille-stands-page';
 
 type PageInternals = {
@@ -56,7 +56,7 @@ function rapport(applied: boolean): ImportGrilleRapport {
       {
         line: 3,
         label: 'BOURSE',
-        standId: 'BOURSE',
+        standId: 'S7',
         action: 'UPDATED',
         reasons: [],
         cellulesOuvertes: 1,
@@ -89,7 +89,10 @@ describe('ImportGrilleStandsPage', () => {
     downloadGridExample: vi.fn(async () => 'ok'),
   };
   const confirm = { ask: vi.fn(async () => true) };
-  const store = { reload: vi.fn(async () => undefined) };
+  const store = {
+    reload: vi.fn(async () => undefined),
+    stands: signal([{ id: 'S7', nom: 'Bourse aux jeux' } as Stand]),
+  };
   const notifications = { notify: vi.fn() };
   let fixture: ComponentFixture<ImportGrilleStandsPage>;
   let page: PageInternals;
@@ -115,6 +118,10 @@ describe('ImportGrilleStandsPage', () => {
     fixture = TestBed.createComponent(ImportGrilleStandsPage);
     page = fixture.componentInstance as unknown as PageInternals;
     await fixture.whenStable();
+    // The stands are read once on entry, for their names; the tests below
+    // count the reload an import triggers.
+    expect(store.reload).toHaveBeenCalledExactlyOnceWith(['stands']);
+    store.reload.mockClear();
   });
 
   function racine(): HTMLElement {
@@ -146,6 +153,11 @@ describe('ImportGrilleStandsPage', () => {
     expect(text).toContain('1 créneau(x) sans colonne.');
     expect(racine().querySelectorAll('tbody tr')).toHaveLength(2);
     expect(racine().querySelector('tr[data-ligne="3"]')!.textContent).toContain('1 règle(s)');
+    // The stand the row matched, by name — never its generated id.
+    expect(racine().querySelector('tr[data-ligne="3"]')!.textContent).toContain(
+      '(Bourse aux jeux)',
+    );
+    expect(racine().querySelector('tr[data-ligne="3"]')!.textContent).not.toContain('S7');
     expect(racine().querySelector('tr[data-ligne="4"]')!.textContent).toContain(
       'Aucun stand « Inconnu »',
     );

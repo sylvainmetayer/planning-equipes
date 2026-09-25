@@ -184,19 +184,20 @@ public final class GrilleHorairesStands {
         for (SaisieCellule cellule : cellules) {
             Creneau creneau = connus.get(cellule.creneauId());
             if (creneau == null) {
-                throw new BusinessError.Invalid(
-                        "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
+                throw new BusinessError.Invalid("Créneau inconnu dans la grille du stand "
+                        + CoherenceAnalyzer.standLabel(stand) + " : " + cellule.creneauId());
             }
             if (cellule.effectif() != null && cellule.effectif() < 1) {
-                throw new BusinessError.Invalid("Effectif " + cellule.effectif() + " sur le stand " + stand.getId()
-                        + " : laissez la case vide pour fermer le stand sur ce créneau");
+                throw new BusinessError.Invalid(
+                        "Effectif " + cellule.effectif() + " sur le stand " + CoherenceAnalyzer.standLabel(stand)
+                                + " : laissez la case vide pour fermer le stand sur ce créneau");
             }
             int[] bornes = cellBounds(stand, creneau, cellule);
             List<int[]> duCreneau = parCreneau.computeIfAbsent(creneau.getId(), key -> new ArrayList<>());
             for (int[] autre : duCreneau) {
                 if (bornes[0] < autre[1] && autre[0] < bornes[1]) {
-                    throw new BusinessError.Invalid("Deux cases du stand " + stand.getId() + " se recouvrent sur le "
-                            + "créneau " + creneau.getId() + " (" + creneau.getDate() + ").");
+                    throw new BusinessError.Invalid("Deux cases du stand " + CoherenceAnalyzer.standLabel(stand)
+                            + " se recouvrent sur le " + "créneau " + creneauLabel(creneau) + ".");
                 }
             }
             duCreneau.add(new int[] {bornes[0], bornes[1], cellule.effectif() == null ? -1 : cellule.effectif()});
@@ -267,6 +268,11 @@ public final class GrilleHorairesStands {
         stand.setFenetresEffectives(null, null);
     }
 
+    /** A timeslot as a reader finds it on the grid: its day and its hours, not its database id. */
+    private static String creneauLabel(Creneau creneau) {
+        return "du " + creneau.getDate() + " " + creneau.getHeureDebut() + "-" + creneau.getHeureFin();
+    }
+
     /** A cell's bounds in minutes from its créneau's start: the whole créneau when it names none. */
     private static int[] cellBounds(Stand stand, Creneau creneau, SaisieCellule cellule) {
         int duree = creneau.getDureeMinutes();
@@ -274,14 +280,14 @@ public final class GrilleHorairesStands {
             return new int[] {0, duree};
         }
         if (cellule.heureDebut() == null || cellule.heureFin() == null) {
-            throw new BusinessError.Invalid("Une case du stand " + stand.getId() + " nomme une heure de début "
-                    + "sans fin, ou l'inverse, sur le créneau " + creneau.getId() + ".");
+            throw new BusinessError.Invalid(
+                    "Une case du stand " + CoherenceAnalyzer.standLabel(stand) + " nomme une heure de début "
+                            + "sans fin, ou l'inverse, sur le créneau " + creneauLabel(creneau) + ".");
         }
         int[] bornes = OuvertureStandsAnalyzer.boundsWithin(creneau, cellule.heureDebut(), cellule.heureFin());
         if (bornes[0] < 0 || bornes[1] > duree || bornes[0] >= bornes[1]) {
-            throw new BusinessError.Invalid("La case " + cellule.heureDebut() + "-" + cellule.heureFin()
-                    + " du stand " + stand.getId() + " sort du créneau " + creneau.getId() + " ("
-                    + creneau.getDate() + " " + creneau.getHeureDebut() + "-" + creneau.getHeureFin() + ").");
+            throw new BusinessError.Invalid("La case " + cellule.heureDebut() + "-" + cellule.heureFin() + " du stand "
+                    + CoherenceAnalyzer.standLabel(stand) + " sort du créneau " + creneauLabel(creneau) + ".");
         }
         return bornes;
     }

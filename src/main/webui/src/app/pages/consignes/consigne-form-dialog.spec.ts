@@ -9,7 +9,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ConsignesApi } from '../../core/api/consignes-api';
-import { LigneStandConsigne, PreselectionConsigne } from '../../core/models';
+import { LigneStandConsigne, PreselectionConsigne, Stand } from '../../core/models';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConsigneFormData, ConsigneFormDialog } from './consigne-form-dialog';
@@ -54,7 +54,7 @@ describe('ConsigneFormDialog — the stands list', () => {
   let dialog: DialogInternals;
   let requests: Array<{ date: string; resolve: (value: PreselectionConsigne) => void }>;
 
-  function mount(datesInitiales: string[]): void {
+  function mount(datesInitiales: string[], stands: Stand[] = []): void {
     requests = [];
     const api = {
       preselection: vi.fn(
@@ -70,7 +70,7 @@ describe('ConsigneFormDialog — the stands list', () => {
       datesInitiales,
       datesCandidates: ['2026-07-11', '2026-07-12'],
       prereglages: [],
-      stands: [],
+      stands,
       typologies: [],
       emplacements: [],
     };
@@ -132,6 +132,14 @@ describe('ConsigneFormDialog — the stands list', () => {
       ['A', false],
       ['C', true],
     ]);
+  });
+
+  it('names the preview stands by their name, an unknown id kept as-is', () => {
+    mount(['2026-07-11'], [{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
+    const texte = (
+      fixture.componentInstance as unknown as { standsText(ids: string[]): string }
+    ).standsText(['S1', 'S9']);
+    expect(texte).toBe('Bourse aux jeux, S9');
   });
 
   it('does not tick a deep-linked date the form does not offer, and says so', async () => {

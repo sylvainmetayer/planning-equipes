@@ -21,6 +21,7 @@ import { RouterLink } from '@angular/router';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { animateurNames, labelOf, labelsOf, standNames } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
 import {
   consumeQueryParam,
@@ -175,16 +176,21 @@ export class AdHocConstraintsPage {
     return contrainteTypeLabel(contrainte.type);
   }
 
+  /** Animateur id → « Prénom Nom »: the adjustment names its people by id only. */
+  private readonly nomsAnimateurs = computed(() => animateurNames(this.store.animateurs()));
+  private readonly nomsStands = computed(() => standNames(this.store.stands()));
+
   protected animateursLabel(contrainte: ContrainteAdHoc): string {
     const ids = (contrainte.animateursConcernes ?? []).map((animateur) => animateur.id);
-    return ids.length ? ids.join(', ') : '—';
+    return ids.length ? labelsOf(this.nomsAnimateurs(), ids).join(', ') : '—';
   }
 
   protected porteeLabel(contrainte: ContrainteAdHoc): string {
     const standId = contrainte.stand?.id;
+    const nom = standId ? labelOf(this.nomsStands(), standId) : '';
     const scope = [
       this.creneauScopeLabel(contrainte.creneau),
-      standId ? $localize`:@@adHoc.scope.stand:stand ${standId}:id:` : '',
+      standId ? $localize`:@@adHoc.scope.stand:stand ${nom}:nom:` : '',
     ]
       .filter(Boolean)
       .join(' · ');

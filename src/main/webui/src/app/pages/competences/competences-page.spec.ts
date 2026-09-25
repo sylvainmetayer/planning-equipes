@@ -453,6 +453,22 @@ describe('CompetencesPage', () => {
     expect(bouton(fixture, 'Enregistrer').disabled).toBe(true);
   });
 
+  it('heads a column with its label and code, never with the generated id', async () => {
+    const { fixture, store } = mount();
+    store.typologies.set([
+      { id: 'T1', code: 'JDS', label: 'Jeux de société', ninja: false },
+      { id: 'T2', label: 'Ateliers', ninja: false },
+    ]);
+    await fixture.whenStable();
+
+    const entetes = Array.from(root(fixture).querySelectorAll('th.colonne-typologie')).map(
+      (entete) => entete.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+    expect(entetes[0]).toContain('Jeux de société (JDS)');
+    expect(entetes[1]).toContain('Ateliers');
+    expect(entetes.join(' ')).not.toMatch(/\bT[12]\b/);
+  });
+
   it('reads the name filter and the chosen columns from the URL, an unknown typologie dropped', async () => {
     const { fixture } = mount({ query: { q: 'lefevre', typologies: 'ateliers,inconnue' } });
     await fixture.whenStable();

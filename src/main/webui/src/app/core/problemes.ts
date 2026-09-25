@@ -22,6 +22,7 @@ import {
   RapportPauses,
   TypeCauseInfaisabilite,
 } from './models';
+import { LabelIndex, labelOf, labelsOf } from './reference-labels';
 import { formatHeure } from './time-of-day';
 
 /** Display severity of the merged list, from the most to the least blocking. */
@@ -271,8 +272,14 @@ export function linksOfViolation(violation: ViolationReference): LienProbleme[] 
   return liens;
 }
 
-/** Screens a feasibility cause can be acted upon from, in the order one would try them. */
-export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
+/**
+ * Screens a feasibility cause can be acted upon from, in the order one would try them.
+ * `nomsStands` names the stands the cause lists by id; an unknown one keeps its id.
+ */
+export function liensDeCause(
+  cause: CauseInfaisabilite,
+  nomsStands: LabelIndex = new Map(),
+): LienProbleme[] {
   const liens: LienProbleme[] = [];
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
     // Straight to the fiche, open for editing: the reader came to fix it.
@@ -283,10 +290,11 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
     });
   }
   for (const standId of cause.standIds.slice(0, MAX_LIENS_STANDS)) {
+    const nom = labelOf(nomsStands, standId);
     liens.push({
       route: '/stands',
       queryParams: { edit: standId },
-      libelle: $localize`:@@problemes.lien.stand:Voir le stand ${standId}:stand:`,
+      libelle: $localize`:@@problemes.lien.stand:Voir le stand ${nom}:stand:`,
     });
   }
   if (cause.standIds.length > 0) {
@@ -319,7 +327,10 @@ export function liensDeCause(cause: CauseInfaisabilite): LienProbleme[] {
   return liens;
 }
 
-export function detailsDeCause(cause: CauseInfaisabilite): string[] {
+export function detailsDeCause(
+  cause: CauseInfaisabilite,
+  nomsStands: LabelIndex = new Map(),
+): string[] {
   const details: string[] = [];
   if (cause.creneauId !== null && cause.creneauId !== undefined) {
     const creneauId = String(cause.creneauId);
@@ -331,7 +342,7 @@ export function detailsDeCause(cause: CauseInfaisabilite): string[] {
     );
   }
   if (cause.standIds.length > 0) {
-    const stands = cause.standIds.join(', ');
+    const stands = labelsOf(nomsStands, cause.standIds).join(', ');
     details.push($localize`:@@problemes.detail.stands:Stands : ${stands}:stands:`);
   }
   if ((cause.contrainteIds ?? []).length > 0) {
@@ -372,13 +383,15 @@ function relatedDetails(contributions: ContributionAdHoc[]): string[] {
  * SOFT ones only report how many matches they scored.
  *
  * `contraintesAdHocEnCause` comes from the same diagnostic and attributes the
- * ad hoc rules' violations to the exceptions that caused them.
+ * ad hoc rules' violations to the exceptions that caused them. `nomsStands`
+ * names the stands a cause lists by id; an unknown one keeps its id.
  */
 export function construireProblemes(
   report: FeasibilityReport | null,
   contraintes: ConstraintView[] = [],
   contraintesAdHocEnCause: ContributionAdHoc[] = [],
   pauses: RapportPauses | null = null,
+  nomsStands: LabelIndex = new Map(),
 ): Probleme[] {
   const problemes: Probleme[] = [];
 
@@ -412,10 +425,10 @@ export function construireProblemes(
       source: 'FAISABILITE',
       titre: typeCauseLabel(cause.type),
       message: cause.message,
-      details: detailsDeCause(cause),
+      details: detailsDeCause(cause, nomsStands),
       references: [],
       actions: (cause.actions ?? []).map(actionOf),
-      liens: liensDeCause(cause),
+      liens: liensDeCause(cause, nomsStands),
     });
   });
 

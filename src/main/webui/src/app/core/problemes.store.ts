@@ -18,6 +18,8 @@ import { AnalysesApi } from './api/analyses-api';
 import { ConstraintsApi } from './api/constraints-api';
 import { CauseInfaisabilite, ConstraintsView, FeasibilityReport, RapportPauses } from './models';
 import { compterProblemes, construireProblemes } from './problemes';
+import { ReferenceDataStore } from './reference-data.store';
+import { standNames } from './reference-labels';
 import { errorMessage } from './error-message';
 
 @Injectable({ providedIn: 'root' })
@@ -59,12 +61,21 @@ export class ProblemesStore {
   /** True only once a report has actually been loaded and says so. */
   readonly infeasible = computed(() => this.report()?.feasible === false);
 
+  private readonly referentiel = inject(ReferenceDataStore);
+  /**
+   * The causes name their stands by id; this names them as the Stands screen
+   * does, from whatever the referential holds — an id the store does not know
+   * (not loaded yet, deleted since) stays on screen as it is.
+   */
+  private readonly nomsStands = computed(() => standNames(this.referentiel.stands()));
+
   readonly problemes = computed(() =>
     construireProblemes(
       this.report(),
       this.constraints()?.contraintes ?? [],
       this.constraints()?.contraintesAdHocEnCause ?? [],
       this.pauses(),
+      this.nomsStands(),
     ),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));

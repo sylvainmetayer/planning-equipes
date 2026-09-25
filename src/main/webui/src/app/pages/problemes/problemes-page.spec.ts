@@ -135,6 +135,12 @@ describe('ProblemesPage — « Que faire ? »', () => {
       if (url === '/api/pauses') {
         return PAUSES;
       }
+      if (url === '/api/stands') {
+        return [];
+      }
+      if (url === '/api/planning/volumetrie') {
+        return {};
+      }
       return CONSTRAINTS;
     }),
     getResponse: vi.fn(),
