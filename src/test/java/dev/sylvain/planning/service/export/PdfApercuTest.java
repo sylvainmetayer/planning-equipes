@@ -1,5 +1,7 @@
 package dev.sylvain.planning.service.export;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.Emplacement;
@@ -81,10 +83,17 @@ class PdfApercuTest {
                 null);
         Path dossier = Path.of("target", "apercu");
         Files.createDirectories(dossier);
-        Files.write(dossier.resolve("livret.pdf"), service.exportAnimateurPdf(planning, "A-1", FormatPlanning.LIVRET));
-        Files.write(
-                dossier.resolve("feuille.pdf"), service.exportAnimateurPdf(planning, "A-1", FormatPlanning.FEUILLE));
-        Files.write(dossier.resolve("global.pdf"), service.exportGlobalPdf(planning));
+        byte[] livret = service.exportAnimateurPdf(planning, "A-1", FormatPlanning.LIVRET);
+        byte[] feuille = service.exportAnimateurPdf(planning, "A-1", FormatPlanning.FEUILLE);
+        byte[] global = service.exportGlobalPdf(planning);
+        Files.write(dossier.resolve("livret.pdf"), livret);
+        Files.write(dossier.resolve("feuille.pdf"), feuille);
+        Files.write(dossier.resolve("global.pdf"), global);
+
+        assertThat(pages(livret)).as("livret").isPositive();
+        // The sheet is the one-glance layout: spilling onto a third page defeats it.
+        assertThat(pages(feuille)).as("feuille").isBetween(1, 2);
+        assertThat(pages(global)).as("global").isPositive();
 
         // The consignes come from CDI in production; handed over directly here
         // so the banner and the sun can be looked at.

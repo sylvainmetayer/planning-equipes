@@ -288,7 +288,7 @@ class DiagramsStructuralTest {
         Map<String, String> types = new LinkedHashMap<>();
         Matcher matcher = declaration.matcher(puml);
         while (matcher.find()) {
-            String name = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+            String name = matcher.group(matcher.group(1) != null ? 1 : 2);
             if (TYPE_NAME.matcher(name).matches()) {
                 types.put(matcher.group(3) != null ? matcher.group(3) : name, name);
             }
@@ -309,8 +309,8 @@ class DiagramsStructuralTest {
      */
     static List<String[]> calls(String puml) {
         Pattern message = Pattern.compile(
-                "^\\s*([\\w\\[\\]]+)\\s*([ox]?<{1,2})?-+(?:\\[[^\\]]*])?-*(>{1,2}[ox]?|[\\\\/]{1,2}[ox]?)?"
-                        + "\\s*([\\w\\[\\]]+)\\s*(?:\\+\\+|--|\\*\\*|!!)?\\s*:\\s*([a-z]\\w*)\\(",
+                "^\\s*+([\\w\\[\\]]++)\\s*+([ox]?<{1,2})?-++(?:\\[[^\\]]*+])?-*+(>{1,2}[ox]?|[\\\\/]{1,2}[ox]?)?"
+                        + "\\s*+([\\w\\[\\]]++)\\s*+(?:\\+\\+|--|\\*\\*|!!)?\\s*+:\\s*+([a-z]\\w*+)\\(",
                 Pattern.MULTILINE);
         List<String[]> calls = new ArrayList<>();
         Matcher matcher = message.matcher(puml);
@@ -318,7 +318,7 @@ class DiagramsStructuralTest {
             boolean left = matcher.group(2) != null;
             boolean right = matcher.group(3) != null;
             if (left != right) {
-                calls.add(new String[] {right ? matcher.group(4) : matcher.group(1), matcher.group(5)});
+                calls.add(new String[] {matcher.group(right ? 4 : 1), matcher.group(5)});
             }
         }
         return calls;
@@ -424,7 +424,8 @@ class DiagramsStructuralTest {
         List<String> supertypes = new ArrayList<>();
         while (named.find()) {
             for (String name : named.group(1).split(",")) {
-                String simple = name.trim().replaceAll(".*\\.", "");
+                String trimmed = name.trim();
+                String simple = trimmed.substring(trimmed.lastIndexOf('.') + 1);
                 if (!simple.isEmpty()) {
                     supertypes.add(simple);
                 }
@@ -505,7 +506,7 @@ class DiagramsStructuralTest {
         Set<String> states = new TreeSet<>();
         // Any arrow PlantUML accepts: -->, ->, -[#blue]->, -down->, -[dotted]->, and the same pointing left.
         Matcher transition = Pattern.compile(
-                        "^\\s*(\\[\\*]|\\w+)\\s*(<?)-+(?:\\[[^\\]]*]|[a-z]+)?-*(>?)\\s*(\\[\\*]|\\w+)",
+                        "^\\s*+(\\[\\*]|\\w++)\\s*+(<?)-++(?:\\[[^\\]]*+]|[a-z]++)?-*+(>?)\\s*+(\\[\\*]|\\w++)",
                         Pattern.MULTILINE)
                 .matcher(puml);
         while (transition.find()) {
@@ -647,8 +648,8 @@ class DiagramsStructuralTest {
     void everyFieldDrawnInAClassExists() throws IOException {
         Map<String, Path> types = declaredTypes();
         Set<String> missingFields = new TreeSet<>();
-        Pattern box = Pattern.compile("^\\s*" + TYPE_KEYWORD + "\\s+(\\w+)[^{\\n]*\\{([^}]*)}", Pattern.MULTILINE);
-        Pattern field = Pattern.compile("^\\s*[-+#~]?\\s*(\\w+)\\s*:", Pattern.MULTILINE);
+        Pattern box = Pattern.compile("^\\s*+" + TYPE_KEYWORD + "\\s++(\\w++)[^{\\n]*+\\{([^}]*+)}", Pattern.MULTILINE);
+        Pattern field = Pattern.compile("^\\s*+[-+#~]?\\s*+(\\w++)\\s*+:", Pattern.MULTILINE);
         Pattern constant = Pattern.compile("^\\s*([A-Z][A-Z0-9_]*)\\s*$", Pattern.MULTILINE);
         for (Path puml : diagrams()) {
             Matcher matcher = box.matcher(read(puml));
@@ -694,11 +695,11 @@ class DiagramsStructuralTest {
             return false;
         }
         String declared = javaSource.substring(header.start());
-        Matcher record = Pattern.compile("^record\\s+\\w+\\s*(?:<[^>]*>)?\\s*\\(([^)]*)\\)")
+        Matcher recordHeader = Pattern.compile("^record\\s++\\w++\\s*+(?:<[^>]*+>)?\\s*+\\(([^)]*+)\\)")
                 .matcher(declared);
-        if (record.find()
+        if (recordHeader.find()
                 && Pattern.compile("\\s" + Pattern.quote(field) + "\\s*(?:,|$)")
-                        .matcher(record.group(1).strip())
+                        .matcher(recordHeader.group(1).strip())
                         .find()) {
             return true;
         }

@@ -61,7 +61,7 @@ class BrandingConfigureeResourceTest {
     }
 
     @Test
-    void leDumpSqlSenTeteDuNomDuDeploiement() {
+    void theSqlDumpIsHeadedWithTheDeploymentName() {
         String dump = given().when()
                 .get("/api/database/export")
                 .then()
@@ -71,7 +71,6 @@ class BrandingConfigureeResourceTest {
 
         // The name travels all the way to the files an operator downloads,
         // not only to the UI.
-        assertThat(dump).startsWith("-- " + NOM + " database dump");
-        assertThat(dump).doesNotContain("Planning Équipes database dump");
+        assertThat(dump).startsWith("-- " + NOM + " database dump").doesNotContain("Planning Équipes database dump");
     }
 }

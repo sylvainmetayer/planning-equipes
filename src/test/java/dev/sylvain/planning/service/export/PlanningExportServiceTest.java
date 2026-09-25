@@ -37,15 +37,15 @@ import org.junit.jupiter.api.Test;
  */
 class PlanningExportServiceTest {
 
+    /** The édition the documents are about, named and dated as the espace names it (issue #608). */
+    private static final EtiquetteEdition EDITION =
+            new EtiquetteEdition("Édition de test", LocalDate.parse("2026-07-10"), LocalDate.parse("2026-07-12"));
+
     /**
      * A fixed provenance: these tests read the documents, not the database.
      * The two plans are dated apart on purpose — a document must carry the date
      * of the plan it renders, not of the other one (issue #245).
      */
-    /** The édition the documents are about, named and dated as the espace names it (issue #608). */
-    private static final EtiquetteEdition EDITION =
-            new EtiquetteEdition("Édition de test", LocalDate.parse("2026-07-10"), LocalDate.parse("2026-07-12"));
-
     private static final ExportProvenance PROVENANCE = new ExportProvenance() {
         @Override
         public Provenance courante() {
@@ -81,11 +81,6 @@ class PlanningExportServiceTest {
         writeSample("planning-sample-" + animateurId + ".pdf", pdf);
     }
 
-    /**
-     * An event day without any seat for the animateur is an explicit
-     * « Repos » day — but only for animateurs who hold at least one seat:
-     * someone absent from the plan is not "resting every day".
-     */
     /** The note under a date is read for the person's seats and their rest days alike (issue #4). */
     @Test
     void journeesModifieesCoverTheRestDaysToo() {
@@ -130,6 +125,11 @@ class PlanningExportServiceTest {
                 null);
     }
 
+    /**
+     * An event day without any seat for the animateur is an explicit
+     * « Repos » day — but only for animateurs who hold at least one seat:
+     * someone absent from the plan is not "resting every day".
+     */
     @Test
     void joursDeReposListsTheEventDaysWithoutAnyAssignment() {
         PlanningEvenement planning = new PlanningEvenement();
@@ -267,9 +267,10 @@ class PlanningExportServiceTest {
                 entries.add(entry.getName());
             }
         }
-        assertThat(entries).hasSize(planning.getAnimateurs().size() * 2);
-        assertThat(entries).anyMatch(name -> name.endsWith(".pdf"));
-        assertThat(entries).anyMatch(name -> name.endsWith(".ics"));
+        assertThat(entries)
+                .hasSize(planning.getAnimateurs().size() * 2)
+                .anyMatch(name -> name.endsWith(".pdf"))
+                .anyMatch(name -> name.endsWith(".ics"));
         writeSample("planning-sample-bundle.zip", zip);
     }
 
@@ -294,8 +295,7 @@ class PlanningExportServiceTest {
         // and standPremium (geocoded, see fakePlanning): exactly one VEVENT
         // should carry the LOCATION/GEO pair, proving the other two postes'
         // null-emplacement path stays untouched.
-        assertThat(ics).contains("LOCATION:Kiosque Central\r\n");
-        assertThat(ics).contains("GEO:48.8566;2.3522\r\n");
+        assertThat(ics).contains("LOCATION:Kiosque Central\r\n").contains("GEO:48.8566;2.3522\r\n");
         assertThat(countOccurrences(ics, "LOCATION:")).isEqualTo(1);
         assertThat(countOccurrences(ics, "GEO:")).isEqualTo(1);
     }
@@ -322,9 +322,10 @@ class PlanningExportServiceTest {
 
         String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
 
-        assertThat(ics).contains("DTSTART;TZID=Europe/Paris:20260710T160000");
-        assertThat(ics).contains("DTEND;TZID=Europe/Paris:20260710T190000");
-        assertThat(ics).doesNotContain("T134000");
+        assertThat(ics)
+                .contains("DTSTART;TZID=Europe/Paris:20260710T160000")
+                .contains("DTEND;TZID=Europe/Paris:20260710T190000")
+                .doesNotContain("T134000");
     }
 
     @Test
@@ -341,13 +342,14 @@ class PlanningExportServiceTest {
 
         String ics = service.exportAnimateurIcs(planning, "A-OSCAR");
 
-        assertThat(ics).contains("slot 1 - Pause de 19:00 à 19:30 (30 min)");
-        assertThat(ics).contains("slot 2\r\n");
-        assertThat(ics).doesNotContain("slot 2 - Pause");
+        assertThat(ics)
+                .contains("slot 1 - Pause de 19:00 à 19:30 (30 min)")
+                .contains("slot 2\r\n")
+                .doesNotContain("slot 2 - Pause");
     }
 
     @Test
-    void exportAnimateurPdfRendersAGeocodedStandWithoutError() throws IOException {
+    void exportAnimateurPdfRendersAGeocodedStandWithoutError() {
         PlanningEvenement planning = fakePlanning();
         String animateurId = planning.getAnimateurs().get(0).getId();
 
@@ -451,16 +453,16 @@ class PlanningExportServiceTest {
      * {@code NullPointerException}.
      */
     @Test
-    void unAnimateurSansJetonNaPasDeLienEspaceMaisNeFaitPasEchouerLExport() {
-        PlanningExportService service = exportsWithLinks("https://planning.example.org");
+    void anAnimateurWithoutATokenHasNoEspaceLinkAndDoesNotBreakTheExport() {
+        PlanningExportService withLinks = exportsWithLinks("https://planning.example.org");
         PlanningEvenement planning = new PlanningEvenement();
         Animateur withoutToken = new Animateur("SANS", "Sans", "Jeton", LocalDate.of(2000, 1, 1), false);
         Animateur withToken = new Animateur("AVEC", "Avec", "Jeton", LocalDate.of(2000, 1, 1), false);
         withToken.setAccessToken("jeton-1");
         planning.setAnimateurs(List.of(withoutToken, withToken));
 
-        assertThat(service.lienEspaceAnimateur(planning, "SANS")).isNull();
-        assertThat(service.lienEspaceAnimateur(planning, "AVEC"))
+        assertThat(withLinks.lienEspaceAnimateur(planning, "SANS")).isNull();
+        assertThat(withLinks.lienEspaceAnimateur(planning, "AVEC"))
                 .isEqualTo("https://planning.example.org/animateur/jeton-1");
     }
 }

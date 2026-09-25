@@ -52,7 +52,7 @@ class ConsigneScenarioFestivalHivernalTest {
     private static final String STAND_TEMOIN = "GRANDE-HALLE-OBSERVATOIRE-FABULEUX";
 
     @Test
-    void uneConsigneSurDeuxJoursNeToucheQueCesJoursEtResteFaisable() {
+    void aConsigneOnTwoDaysTouchesOnlyThoseDaysAndStaysFeasible() {
         PlanningService planningService = new PlanningService(
                 420L,
                 0L,
@@ -123,7 +123,7 @@ class ConsigneScenarioFestivalHivernalTest {
         Map<LocalDate, Long> seatsByDate = seatsByDate(postes);
         for (LocalDate date : siegesNominauxParDate.keySet()) {
             if (!date.equals(MERCREDI) && !date.equals(JEUDI)) {
-                assertThat(seatsByDate.get(date)).as(date.toString()).isEqualTo(siegesNominauxParDate.get(date));
+                assertThat(seatsByDate).as(date.toString()).containsEntry(date, siegesNominauxParDate.get(date));
             }
         }
         assertThat(seatsByDate.get(MERCREDI)).isLessThan(siegesNominauxParDate.get(MERCREDI));

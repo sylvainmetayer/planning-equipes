@@ -64,39 +64,35 @@ class PlanningIcsBrandingTest {
     }
 
     @Test
-    void leProdIdEtLUidPortentLaMarqueDuDeploiement() {
+    void theProdIdAndTheUidCarryTheDeploymentBrand() {
         String ics = icsFor("Festival Machin");
 
-        assertThat(ics).contains("PRODID:-//festival-machin//planning//FR");
-        assertThat(ics).contains("UID:42@festival-machin");
+        assertThat(ics).contains("PRODID:-//festival-machin//planning//FR").contains("UID:42@festival-machin");
     }
 
     @Test
-    void lesAccentsEtLesEspacesSontReduitsAvantDentrerDansLeFichier() {
+    void accentsAndSpacesAreReducedBeforeEnteringTheFile() {
         String ics = icsFor("Planning Équipes");
 
-        assertThat(ics).contains("PRODID:-//planning-equipes//planning//FR");
-        assertThat(ics).contains("UID:42@planning-equipes");
+        assertThat(ics).contains("PRODID:-//planning-equipes//planning//FR").contains("UID:42@planning-equipes");
     }
 
     @Test
-    void laPonctuationNeLaisseNiSegmentVideNiTiretDeBord() {
+    void punctuationLeavesNeitherAnEmptySegmentNorAnEdgeHyphen() {
         String ics = icsFor("  Festival  du  Jeu !  ");
 
         // Neither "festival--du--jeu-" nor a trailing hyphen: consecutive
         // separators collapse, and the edges are trimmed.
-        assertThat(ics).contains("PRODID:-//festival-du-jeu//planning//FR");
-        assertThat(ics).contains("UID:42@festival-du-jeu");
+        assertThat(ics).contains("PRODID:-//festival-du-jeu//planning//FR").contains("UID:42@festival-du-jeu");
     }
 
     @Test
-    void unNomSansAucuneLettreNiChiffreRetombeSurUnSlugUtilisable() {
+    void aNameWithoutAnyLetterOrDigitFallsBackOnAUsableSlug() {
         // An empty UID after the at-sign yields a file no client can file
         // away; a generic identifier beats nothing at all.
         String ics = icsFor("!!! ???");
 
-        assertThat(ics).contains("PRODID:-//planning//planning//FR");
-        assertThat(ics).contains("UID:42@planning");
+        assertThat(ics).contains("PRODID:-//planning//planning//FR").contains("UID:42@planning");
     }
 
     @Test

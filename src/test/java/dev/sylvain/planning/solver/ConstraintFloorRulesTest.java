@@ -38,8 +38,8 @@ class ConstraintFloorRulesTest {
                 .map(ConstraintCatalog.ConstraintDefinition::name)
                 .toList();
 
-        assertThat(nonHard).isNotEmpty();
         assertThat(nonHard)
+                .isNotEmpty()
                 .as("a medium/soft constraint without a floor rule cannot be read as a floor")
                 .allSatisfy(name ->
                         assertThat(ConstraintFloorRules.of(name)).as(name).isNotNull());
@@ -53,7 +53,9 @@ class ConstraintFloorRulesTest {
                 .collect(java.util.stream.Collectors.toSet());
 
         assertThat(ConstraintFloorRules.names()).isSubsetOf(nonHard);
-        assertThat(ConstraintCatalog.NOMS_DURS)
+        Set<String> hardNames = ConstraintCatalog.NOMS_DURS;
+        assertThat(hardNames)
+                .isNotEmpty()
                 .allSatisfy(name -> assertThat(ConstraintFloorRules.of(name))
                         .as("a hard rule is never a floor: it is respected or the plan is invalid")
                         .isNull());
@@ -111,6 +113,7 @@ class ConstraintFloorRulesTest {
                 "equilibrerCharge",
                 "equilibrerCreneauxPenibles");
         assertThat(gradient)
+                .isNotEmpty()
                 .allSatisfy(name -> assertThat(ConstraintFloorRules.of(name).denominator())
                         .as("%s penalises by a magnitude: its match count is an excess, not an item", name)
                         .isEqualTo(Denominator.NONE));

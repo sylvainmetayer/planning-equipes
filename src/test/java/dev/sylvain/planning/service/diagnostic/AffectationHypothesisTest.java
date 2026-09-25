@@ -76,9 +76,9 @@ class AffectationHypothesisTest {
         List<AffectationHypothesis> hypotheses =
                 rapide.hypotheses(fixture.planning, fixture.siegeLibre, fixture.candidats);
 
-        assertThat(hypotheses).anyMatch(AffectationHypothesis::degradesHardScore);
-        assertThat(hypotheses).anyMatch(hypothese -> !hypothese.degradesHardScore());
         assertThat(hypotheses)
+                .anyMatch(AffectationHypothesis::degradesHardScore)
+                .anyMatch(hypothese -> !hypothese.degradesHardScore())
                 .anyMatch(hypothese -> !hypothese.contraintesAggravees().isEmpty());
     }
 

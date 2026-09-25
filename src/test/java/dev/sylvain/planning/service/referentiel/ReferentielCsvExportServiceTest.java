@@ -57,29 +57,26 @@ class ReferentielCsvExportServiceTest {
                 SOURCE,
                 "/api/emplacements/import-csv",
                 "id;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;Esplanade;;\n");
-        importer(
-                SOURCE,
-                "/api/stands/import-csv",
-                "id;nom;typologies;effectifMin;effectifMax\n"
-                        + "EXP-S1;\"Stand un; et demi\";EXP-A|EXP-B;2;3\n"
-                        + "EXP-S2;Stand deux;EXP-B;1;1\n");
+        importer(SOURCE, "/api/stands/import-csv", """
+                id;nom;typologies;effectifMin;effectifMax
+                EXP-S1;"Stand un; et demi";EXP-A|EXP-B;2;3
+                EXP-S2;Stand deux;EXP-B;1;1
+                """);
         // The grid and the day templates the two new files carry: a meal
         // relay, a night vacation ending past midnight, and a template whose
         // shift line is full of the commas that break a naive reader.
-        importer(
-                SOURCE,
-                "/api/creneaux/import-csv",
-                "date;heureDebut;heureFin;couverturePause\n"
-                        + "2026-09-01;09:00;12:00;\n"
-                        + "2026-09-01;12:00;13:00;oui\n"
-                        + "2026-09-01;13:00;20:00;\n"
-                        + "2026-09-02;20:00;00:00;\n");
-        importer(
-                SOURCE,
-                "/api/journees-types/import-csv",
-                "nom;vacations;dates\n"
-                        + "Jour normal;\"09:00-12:00, 12:00-13:00 R, 13:00-20:00\";2026-09-01\n"
-                        + "Nocturne;\"20:00-00:00\";2026-09-02\n");
+        importer(SOURCE, "/api/creneaux/import-csv", """
+                date;heureDebut;heureFin;couverturePause
+                2026-09-01;09:00;12:00;
+                2026-09-01;12:00;13:00;oui
+                2026-09-01;13:00;20:00;
+                2026-09-02;20:00;00:00;
+                """);
+        importer(SOURCE, "/api/journees-types/import-csv", """
+                nom;vacations;dates
+                Jour normal;"09:00-12:00, 12:00-13:00 R, 13:00-20:00";2026-09-01
+                Nocturne;"20:00-00:00";2026-09-02
+                """);
         given().header(HEADER, SOURCE)
                 .contentType("application/json")
                 .body("""

@@ -107,11 +107,11 @@ class JourJResourceTest {
         // The morning seats keep the person that really held them.
         Map<String, String> apres = persistedOccupants();
         for (String poste : postesDuMatin) {
-            assertThat(apres.get(poste)).as("poste %s du matin", poste).isEqualTo(avant.get(poste));
+            assertThat(apres).as("poste %s du matin", poste).containsEntry(poste, avant.get(poste));
         }
         // And the afternoon ones they held are now empty.
         List<String> liberes = marquee.getList("postesLiberes.posteId", String.class);
-        assertThat(liberes).allSatisfy(poste -> assertThat(apres).doesNotContainKey(poste));
+        assertThat(liberes).isNotEmpty().allSatisfy(poste -> assertThat(apres).doesNotContainKey(poste));
     }
 
     @Test
@@ -434,11 +434,10 @@ class JourJResourceTest {
      * date. At one in the morning it is the one running — and the one somebody
      * may have failed to show up for. Keyed on the date column it was invisible
      * to this screen entirely.
-     */
-    /**
-     * A journée starts at its first timeslot. At one in the morning the journée
+     *
+     * <p>A journée starts at its first timeslot. At one in the morning the journée
      * under way is therefore still the one that opened the previous morning, and
-     * the screen names it without being told which day to look at.
+     * the screen names it without being told which day to look at.</p>
      */
     @Test
     void atOneInTheMorningTheJourneeIsStillTheOneThatOpenedYesterday() {

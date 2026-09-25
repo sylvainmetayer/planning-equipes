@@ -81,8 +81,7 @@ class PlanningIcsEditionTest {
     void writesNoNameAtAllWhenTheEditionCannotBeRead() {
         String ics = ics(EtiquetteEdition.INCONNUE);
 
-        assertThat(ics).doesNotContain("X-WR-CALNAME");
-        assertThat(ics).contains("X-WR-CALDESC:Généré le ");
+        assertThat(ics).doesNotContain("X-WR-CALNAME").contains("X-WR-CALDESC:Généré le ");
     }
 
     /** Two éditions, two calendars: the name is what tells them apart in the sidebar. */

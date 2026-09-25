@@ -365,7 +365,7 @@ class AffectationExplanationResourceTest {
     }
 
     @Test
-    void appliquerUneSuggestionNeChangeQueLePosteVise() {
+    void applyingASuggestionChangesOnlyTheTargetedSeat() {
         String solvedJson = solveScenario();
         JsonPath solved = JsonPath.from(solvedJson);
         String posteId = solved.getString("postes.find { it.animateur != null }.id");
@@ -379,8 +379,7 @@ class AffectationExplanationResourceTest {
                 .statusCode(204);
 
         Map<String, String> apres = occupantsPersistes();
-        assertThat(apres).containsEntry(posteId, remplacantId);
-        assertThat(apres).hasSameSizeAs(avant);
+        assertThat(apres).containsEntry(posteId, remplacantId).hasSameSizeAs(avant);
         apres.forEach((id, animateurId) -> {
             if (!id.equals(posteId)) {
                 assertThat(animateurId).as("poste %s inchangé", id).isEqualTo(avant.get(id));

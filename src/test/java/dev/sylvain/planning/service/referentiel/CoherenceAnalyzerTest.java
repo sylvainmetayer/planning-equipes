@@ -329,8 +329,11 @@ class CoherenceAnalyzerTest {
                 .get(0)
                 .message();
 
-        assertThat(message).contains("A-12");
-        assertThat(message).doesNotContain("Camille").doesNotContain("Durand").doesNotContain("2012-05-01");
+        assertThat(message)
+                .contains("A-12")
+                .doesNotContain("Camille")
+                .doesNotContain("Durand")
+                .doesNotContain("2012-05-01");
     }
 
     /** Same guarantee on the message that names the day the regime changes. */

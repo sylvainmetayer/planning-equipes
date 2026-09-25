@@ -160,9 +160,16 @@ class MailTemplatesTest {
                         List.of()));
 
         assertThat(content.text())
-                .startsWith(
-                        "Bonjour,\n\nVotre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :\n\n"
-                                + "- samedi : A remplace B\n- dimanche : libre\n\nLe planning à jour est en pièce jointe.\n")
+                .startsWith("""
+                        Bonjour,
+
+                        Votre planning a changé depuis le dernier envoi. Voici ce qui vous concerne :
+
+                        - samedi : A remplace B
+                        - dimanche : libre
+
+                        Le planning à jour est en pièce jointe.
+                        """)
                 .doesNotContain("Vos demandes d'échange")
                 .doesNotContain("Votre espace en ligne")
                 .endsWith("\nÀ bientôt,\nL'équipe d'organisation\n");

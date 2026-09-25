@@ -309,11 +309,13 @@ class CreneauTest {
      * créneau read a whole sliced event as a single timeslot.
      */
     @Test
-    void deuxCreneauxSansIdNeSontPasLeMeme() {
+    void twoTimeslotsWithoutAnIdAreNotTheSame() {
         Creneau matin = new Creneau(null, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0));
         Creneau apresMidi = new Creneau(null, 1, JOUR, LocalTime.of(14, 0), LocalTime.of(18, 0));
+        // Reflexivity still holds without an id: the same instance is the same timeslot.
+        Creneau memeInstance = matin;
 
-        assertThat(matin).isEqualTo(matin).isNotEqualTo(apresMidi);
+        assertThat(matin).isEqualTo(memeInstance).isNotEqualTo(apresMidi);
         assertThat(new Creneau(7L, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0)))
                 .isEqualTo(new Creneau(7L, 2, JOUR.plusDays(1), LocalTime.of(10, 0), LocalTime.of(11, 0)));
     }

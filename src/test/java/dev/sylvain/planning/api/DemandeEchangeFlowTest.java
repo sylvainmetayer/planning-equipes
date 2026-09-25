@@ -229,7 +229,7 @@ class DemandeEchangeFlowTest {
      * proposed.
      */
     @Test
-    void lAssistantProposeLesTroisFacadesDUnEchange() {
+    void theAssistantOffersTheThreeFacesOfASwap() {
         persistTwoSeatPlanningWithSpareColleague();
         String token = tokenOf("ECH-A");
 
@@ -250,21 +250,22 @@ class DemandeEchangeFlowTest {
 
         // Freed: nothing comes back, the créneau simply leaves Alice's hands.
         Map<String, Object> libere = suggestionOf(suggestions, "ECH-D", "LIBERE");
-        assertThat(libere.get("nomComplet")).isEqualTo("Denis Roux");
+        assertThat(libere).containsEntry("nomComplet", "Denis Roux");
         assertThat(libere.get("standCibleNom")).isNull();
         assertThat(libere.get("creneauCibleId")).isNull();
 
         // Croisé: Alice stays on duty that hour, on stand deux.
         Map<String, Object> croise = suggestionOf(suggestions, "ECH-B", "CROISE");
-        assertThat(croise.get("standCibleNom")).isEqualTo("Stand deux");
+        assertThat(croise).containsEntry("standCibleNom", "Stand deux");
         assertThat(croise.get("creneauCibleId")).isNull();
 
         // Dirigé: a seat on ANOTHER day comes back, dated and named — this is
         // what makes the button an exchange assistant and not a hand-over one.
         Map<String, Object> dirige = suggestionOf(suggestions, "ECH-D", "DIRIGE");
-        assertThat(dirige.get("creneauCibleId")).isEqualTo((int) CRENEAU_AUTRE_JOUR);
-        assertThat(dirige.get("dateCible")).isEqualTo(JOUR.plusDays(1).toString());
-        assertThat(dirige.get("standCibleNom")).isEqualTo("Stand deux");
+        assertThat(dirige)
+                .containsEntry("creneauCibleId", (int) CRENEAU_AUTRE_JOUR)
+                .containsEntry("dateCible", JOUR.plusDays(1).toString())
+                .containsEntry("standCibleNom", "Stand deux");
 
         // Being freed is listed before the trades that keep Alice at work.
         assertThat(rankOf(suggestions, "ECH-D", "LIBERE")).isLessThan(rankOf(suggestions, "ECH-B", "CROISE"));

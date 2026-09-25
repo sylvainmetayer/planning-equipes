@@ -125,7 +125,7 @@ class PlanningServicePosteGenerationTest {
      * change the volume of every edition already in the database.
      */
     @Test
-    void uneFenetreSansEffectifGenereToujoursEffectifMinSieges() {
+    void aWindowWithoutHeadcountAlwaysGeneratesEffectifMinSeats() {
         LocalDate jour = LocalDate.of(2026, 8, 14);
         Creneau apresMidi = new Creneau(5L, 1, jour, LocalTime.of(14, 0), LocalTime.of(20, 0));
         Stand stand = new Stand("STAND-E", "E", Set.of(), 3, 6, false);
@@ -133,8 +133,8 @@ class PlanningServicePosteGenerationTest {
 
         List<PosteAffectation> postes = ProblemBuilder.buildPostes(List.of(stand), List.of(apresMidi));
 
-        assertThat(postes).hasSize(3);
         assertThat(postes)
+                .hasSize(3)
                 .allSatisfy(poste -> assertThat(poste.getHeureDebutEffective()).isNull());
     }
 
@@ -162,7 +162,7 @@ class PlanningServicePosteGenerationTest {
      * calls up half of its staffing only, rounded up.
      */
     @Test
-    void vacationDeCouverturePauseNeGenereQueLaMoitieDesSieges() {
+    void aBreakCoverShiftGeneratesOnlyHalfTheSeats() {
         Stand quatre = new Stand("STAND-4", "Quatre", Set.of(), 4, 4, false);
         Stand trois = new Stand("STAND-3", "Trois", Set.of(), 3, 3, false);
         Creneau pause = new Creneau(20L, 1, LocalDate.of(2026, 8, 14), LocalTime.of(12, 0), LocalTime.of(13, 0));
@@ -171,8 +171,9 @@ class PlanningServicePosteGenerationTest {
         Map<String, Long> parStand = ProblemBuilder.buildPostes(List.of(quatre, trois), List.of(pause)).stream()
                 .collect(Collectors.groupingBy(p -> p.getStand().getId(), Collectors.counting()));
 
-        assertThat(parStand).containsEntry("STAND-4", 2L); // 4 / 2
-        assertThat(parStand).containsEntry("STAND-3", 2L); // ceil(3 / 2)
+        assertThat(parStand)
+                .containsEntry("STAND-4", 2L) // 4 / 2
+                .containsEntry("STAND-3", 2L); // ceil(3 / 2)
     }
 
     /**

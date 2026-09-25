@@ -258,7 +258,7 @@ class LanguagePolicyStructuralTest {
      */
     private static String prose(String raw) {
         return raw.replaceAll("(?m)^\\s*\\*", " ")
-                .replaceAll("\\{@\\w+\\s+[^}]*}", " ")
+                .replaceAll("\\{@\\w++\\s++[^}]*+}", " ")
                 .replaceAll("@\\w+", " ")
                 .replaceAll("<[^>]*>", " ")
                 .replaceAll("«[^»]*»", " ");

@@ -66,9 +66,11 @@ class JourneeTypeCsvImportServiceTest {
 
     @Test
     void thePreviewWritesNothingAndTheImportWritesTemplatesAndTheirCalendar() {
-        String fichier = "nom;vacations;dates\n"
-                + "Jour normal;\"09:00-12:00, 12:00-13:00 R, 13:00-20:00\";2026-07-10|2026-07-11\n"
-                + "Nocturne;\"14:00-20:00, 20:00-00:00\";2026-07-12\n";
+        String fichier = """
+                nom;vacations;dates
+                Jour normal;"09:00-12:00, 12:00-13:00 R, 13:00-20:00";2026-07-10|2026-07-11
+                Nocturne;"14:00-20:00, 20:00-00:00";2026-07-12
+                """;
 
         poster("/api/journees-types/import-csv/analyse", fichier)
                 .then()
@@ -121,13 +123,11 @@ class JourneeTypeCsvImportServiceTest {
     /** The calendar is merged, not replaced: a date the file does not name keeps what it had. */
     @Test
     void theCalendarIsMergedAndADateNamedTwiceChangesTemplate() {
-        poster(
-                        "/api/journees-types/import-csv",
-                        "nom;vacations;dates\n"
-                                + "Jour normal;\"09:00-20:00\";2026-07-10|2026-07-11\n"
-                                + "Nocturne;\"14:00-00:00\";2026-07-12\n")
-                .then()
-                .statusCode(200);
+        poster("/api/journees-types/import-csv", """
+                        nom;vacations;dates
+                        Jour normal;"09:00-20:00";2026-07-10|2026-07-11
+                        Nocturne;"14:00-00:00";2026-07-12
+                        """).then().statusCode(200);
 
         // A second file naming only one of those dates, for the other template.
         poster("/api/journees-types/import-csv/analyse", "nom;vacations;dates\nNocturne;\"14:00-00:00\";2026-07-11\n")
@@ -153,17 +153,17 @@ class JourneeTypeCsvImportServiceTest {
 
     @Test
     void badRowsAreRefusedOneByOneWithoutBlockingTheOthers() {
-        JsonPath rapport = poster(
-                        "/api/journees-types/import-csv/analyse",
-                        "nom;vacations;dates\n"
-                                + "Bonne;\"09:00-12:00\";2026-07-10\n"
-                                + ";\"09:00-12:00\";\n"
-                                + "Sans vacation;;\n"
-                                + "Illisible;\"neuf heures à midi\";\n"
-                                + "Nulle;\"09:00-09:00\";\n"
-                                + "Bonne;\"14:00-18:00\";\n"
-                                + "Autre;\"14:00-18:00\";2026-07-10\n"
-                                + "Date;\"14:00-18:00\";pas-une-date\n")
+        JsonPath rapport = poster("/api/journees-types/import-csv/analyse", """
+                        nom;vacations;dates
+                        Bonne;"09:00-12:00";2026-07-10
+                        ;"09:00-12:00";
+                        Sans vacation;;
+                        Illisible;"neuf heures à midi";
+                        Nulle;"09:00-09:00";
+                        Bonne;"14:00-18:00";
+                        Autre;"14:00-18:00";2026-07-10
+                        Date;"14:00-18:00";pas-une-date
+                        """)
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(1))
@@ -187,11 +187,11 @@ class JourneeTypeCsvImportServiceTest {
      */
     @Test
     void aShiftColumnFullOfCommasIsStillReadWithTheRightSeparator() {
-        poster(
-                        "/api/journees-types/import-csv/analyse",
-                        "nom;vacations;dates\n"
-                                + "A;\"09:00-10:00, 10:00-11:00, 11:00-12:00, 12:00-13:00\";\n"
-                                + "B;\"09:00-10:00, 10:00-11:00, 11:00-12:00, 12:00-13:00\";\n")
+        poster("/api/journees-types/import-csv/analyse", """
+                        nom;vacations;dates
+                        A;"09:00-10:00, 10:00-11:00, 11:00-12:00, 12:00-13:00";
+                        B;"09:00-10:00, 10:00-11:00, 11:00-12:00, 12:00-13:00";
+                        """)
                 .then()
                 .statusCode(200)
                 .body("separator", equalTo(";"))
@@ -202,11 +202,11 @@ class JourneeTypeCsvImportServiceTest {
     /** Same rule as the timeslot tab: a refused row claims neither its name nor its dates. */
     @Test
     void aRefusedRowClaimsNeitherItsNameNorItsDates() {
-        poster(
-                        "/api/journees-types/import-csv/analyse",
-                        "nom;vacations;dates\n"
-                                + "Jour normal;\"09:00-09:00\";2026-07-10\n"
-                                + "Jour normal;\"09:00-20:00\";2026-07-10\n")
+        poster("/api/journees-types/import-csv/analyse", """
+                        nom;vacations;dates
+                        Jour normal;"09:00-09:00";2026-07-10
+                        Jour normal;"09:00-20:00";2026-07-10
+                        """)
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(1))

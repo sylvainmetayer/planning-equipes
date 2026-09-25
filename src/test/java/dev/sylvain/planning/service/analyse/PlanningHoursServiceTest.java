@@ -89,9 +89,10 @@ class PlanningHoursServiceTest {
 
         // Comma, not dot: a French spreadsheet reads « 4.00 » as text, and the
         // column an organiser wants to sum then sums to zero.
-        assertThat(csv)
-                .isEqualTo("animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;apres 22h\n"
-                        + "Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00\n");
+        assertThat(csv).isEqualTo("""
+                        animateur;2026-W33;total;dimanche;jours feries;dont dimanches feries;apres 22h
+                        Ada Lovelace;4,00;4,00;0,00;0,00;0,00;0,00
+                        """);
     }
 
     // --- Payroll counters (issue #597) -------------------------------------

@@ -196,6 +196,7 @@ class JournalCoverageStructurelleTest {
             return "";
         }
 
+        @SuppressWarnings("unused") // the compiled twin of NEIGHBOUR_NOISE: its helper is the noise under test
         private static String helper() {
             return "attachment; filename=\"x.csv\"";
         }
@@ -437,7 +438,7 @@ class JournalCoverageStructurelleTest {
      */
     private static Set<String> codesQuotedBySources() throws IOException {
         Pattern cite = Pattern.compile(
-                "(?:recordSystemAction|recordAdminAction|currentAction\\.action)\\(\\s*[^)]*?\"([A-Z_]+)\"");
+                "(?:recordSystemAction|recordAdminAction|currentAction\\.action)\\((?:[^)\"]|\"(?![A-Z_]++\"))*+\"([A-Z_]+)\"");
         Set<String> codes = new TreeSet<>();
         try (Stream<Path> fichiers = Files.walk(Path.of("src/main/java/dev/sylvain/planning"))) {
             for (Path fichier :
@@ -577,7 +578,7 @@ class JournalCoverageStructurelleTest {
                 continue;
             }
             Matcher corps =
-                    Pattern.compile("\\G\\s*(?:throws\\s+[\\w.,\\s]+?)?\\s*\\{").matcher(squelette);
+                    Pattern.compile("\\G\\s*+(?:throws\\s++[\\w.,\\s]*+)?\\{").matcher(squelette);
             if (!corps.find(finParametres + 1)) {
                 continue;
             }

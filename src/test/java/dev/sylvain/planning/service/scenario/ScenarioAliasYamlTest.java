@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -36,14 +37,15 @@ class ScenarioAliasYamlTest {
 
     private static final int ANIMATEURS = 60;
 
+    /** A YAML alias reference, {@code *id1}, anywhere on a line. */
+    private static final Pattern ALIAS = Pattern.compile("\\*id\\d");
+
     @Test
-    void unScenarioAvecPlusDeCinquanteAliasEstLu() throws Exception {
+    void aScenarioWithMoreThanFiftyAliasesIsRead() throws Exception {
         String yamlAvecAlias = scenarioSharingOneListInstance();
 
-        long alias = yamlAvecAlias
-                .lines()
-                .filter(line -> line.matches(".*\\*id\\d+.*"))
-                .count();
+        long alias =
+                yamlAvecAlias.lines().filter(line -> ALIAS.matcher(line).find()).count();
         assertThat(alias)
                 .as("le dump doit bien porter des alias, sinon le test ne prouve rien")
                 .isGreaterThan(50);

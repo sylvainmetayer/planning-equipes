@@ -269,7 +269,7 @@ class CreneauGridServiceTest {
     // for nothing: the grid is the one place that reads the flag against the
     // legal parameters.
     @Test
-    void relaisRepasHorsFenetreEstSignale() {
+    void aMealRelayOutsideTheWindowIsReported() {
         Creneau relais = creneau("2026-07-06", "16:00", "17:00");
         relais.setCouverturePause(true);
         Creneau midi = creneau("2026-07-06", "12:00", "13:00");
@@ -283,12 +283,12 @@ class CreneauGridServiceTest {
         List<GridAnomaly> horsFenetre = anomalies.stream()
                 .filter(anomalie -> anomalie.type() == GridAnomalyType.RELAIS_REPAS_HORS_FENETRE)
                 .toList();
-        assertThat(horsFenetre).hasSize(2);
-        assertThat(horsFenetre).allSatisfy(anomalie -> {
-            assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
-            assertThat(anomalie.message()).contains("relais repas").contains("midi 12:00-14:00");
-        });
         assertThat(horsFenetre)
+                .hasSize(2)
+                .allSatisfy(anomalie -> {
+                    assertThat(anomalie.severite()).isEqualTo(SeveriteGrille.AVERTISSEMENT);
+                    assertThat(anomalie.message()).contains("relais repas").contains("midi 12:00-14:00");
+                })
                 .extracting(GridAnomaly::message)
                 .anyMatch(message -> message.contains("16:00-17:00"))
                 .anyMatch(message -> message.contains("23:00-00:00"));

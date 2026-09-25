@@ -204,6 +204,16 @@ class ImportScenarioConsignesTest {
 
         JsonPath etat = consignes();
         assertThat(etat.getList("consignes")).hasSize(1);
+        assertTheConsigneCameBackWhole(etat, idDuSoir);
+
+        assertThat(etat.getList("prereglages")).hasSize(1);
+        assertThat(etat.getString("prereglages[0].nom")).isEqualTo("Plan canicule");
+        assertThat(etat.getString("prereglages[0].repas.justification"))
+                .isEqualTo("Repas pris pendant la bande fermée");
+    }
+
+    /** The one consigne of the round trip, field by field. */
+    private static void assertTheConsigneCameBackWhole(JsonPath etat, Object idDuSoir) {
         assertThat(etat.getString("consignes[0].date")).isEqualTo(JOUR);
         assertThat(etat.getString("consignes[0].fermetureDebut")).isEqualTo("12:00:00");
         assertThat(etat.getString("consignes[0].fermetureFin")).isEqualTo("16:00:00");
@@ -217,11 +227,6 @@ class ImportScenarioConsignesTest {
         assertThat(etat.getString("consignes[0].repas.justification")).isEqualTo("Repas pris pendant la bande fermée");
         // The added créneau, under the id the import gave it — not the file's.
         assertThat(etat.getList("consignes[0].creneauxAjoutes")).containsExactly(idDuSoir);
-
-        assertThat(etat.getList("prereglages")).hasSize(1);
-        assertThat(etat.getString("prereglages[0].nom")).isEqualTo("Plan canicule");
-        assertThat(etat.getString("prereglages[0].repas.justification"))
-                .isEqualTo("Repas pris pendant la bande fermée");
     }
 
     /**
@@ -323,7 +328,6 @@ class ImportScenarioConsignesTest {
                 .body("prereglages", hasSize(0));
     }
 
-    /** A hand-written preset carries no id and a consigne on a past date is accepted: the import is not the screen. */
     /** An end written {@code 00:00} is « jusqu'à minuit », stored as the open end the tables know. */
     @Test
     void midnightAsAnEndInTheFileLandsAsAnOpenEnd() {
@@ -408,6 +412,7 @@ class ImportScenarioConsignesTest {
         given().header(HEADER, EDITION).when().get("/api/consignes").then().body("consignes", hasSize(0));
     }
 
+    /** A hand-written preset carries no id and a consigne on a past date is accepted: the import is not the screen. */
     @Test
     void aHandWrittenFileOnAPastDateIsImported() {
         importFile(BASE.replace("2033-07-08", "2020-07-08") + """

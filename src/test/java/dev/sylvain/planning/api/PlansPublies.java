@@ -23,7 +23,7 @@ final class PlansPublies {
     static void publier(PlanPublicationService publication) {
         try {
             publication.publier();
-        } catch (BusinessError.Conflict rienAAnnoncer) {
+        } catch (BusinessError.Conflict _) {
             // See javadoc: nothing to publish is not a failed fixture.
         }
     }
