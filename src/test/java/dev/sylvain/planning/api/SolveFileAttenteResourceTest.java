@@ -2,11 +2,13 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.equalTo;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,19 +28,19 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolveFileAttenteResourceTest {
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     /** The solver is a single shared resource: never hand it over still busy. */
     @BeforeEach
     @AfterEach
-    void solveurLibre() throws InterruptedException {
+    void solveurLibre() {
         clearQueue();
         attendreSolveurLibre();
     }
 
     @Test
-    void uneResolutionPlanifieeDemarreSeuleEtVoitCeQueLaPrecedenteAEcrit() throws InterruptedException {
+    void uneResolutionPlanifieeDemarreSeuleEtVoitCeQueLaPrecedenteAEcrit() {
         planImporte();
         String inProgress = lancerSolve(6);
 
@@ -71,7 +73,7 @@ class SolveFileAttenteResourceTest {
     }
 
     @Test
-    void planifierDeuxFoisLaMemeChoseSurLaMemeEditionEstRefuse() throws InterruptedException {
+    void planifierDeuxFoisLaMemeChoseSurLaMemeEditionEstRefuse() {
         planImporte();
         lancerSolve(6);
 
@@ -95,7 +97,7 @@ class SolveFileAttenteResourceTest {
     }
 
     @Test
-    void replanifierLEditionEnCoursDeResolutionResteAutorise() throws InterruptedException {
+    void replanifierLEditionEnCoursDeResolutionResteAutorise() {
         planImporte();
         String inProgress = lancerSolve(6);
 
@@ -117,7 +119,7 @@ class SolveFileAttenteResourceTest {
     }
 
     @Test
-    void uneResolutionRetireeDeLaFileNeDemarreJamais() throws InterruptedException {
+    void uneResolutionRetireeDeLaFileNeDemarreJamais() {
         planImporte();
         String inProgress = lancerSolve(4);
         String planifieId = given().contentType(ContentType.JSON)
@@ -138,7 +140,7 @@ class SolveFileAttenteResourceTest {
     }
 
     @Test
-    void sansEnFileUneSecondeResolutionResteRefusee() throws InterruptedException {
+    void sansEnFileUneSecondeResolutionResteRefusee() {
         planImporte();
         String inProgress = lancerSolve(4);
 
@@ -161,7 +163,7 @@ class SolveFileAttenteResourceTest {
                 .statusCode(200);
     }
 
-    private String lancerSolve(int secondes) throws InterruptedException {
+    private String lancerSolve(int secondes) {
         attendreSolveurLibre();
         String jobId = given().when()
                 .post("/api/solve/async/reference-data?seconds=" + secondes)
@@ -174,15 +176,11 @@ class SolveFileAttenteResourceTest {
     }
 
     /** Waits until the server reports this job as the one holding the solver. */
-    private void attendreJobActif(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath actif = jobActif();
-            if (actif != null && jobId.equals(actif.getString("id"))) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " never became active");
+    private void attendreJobActif(String jobId) {
+        await().alias("Job " + jobId + " never became active")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(this::jobActif, actif -> actif != null && jobId.equals(actif.getString("id")));
     }
 
     /** {@code null} when the solver is idle (204). */
@@ -207,29 +205,25 @@ class SolveFileAttenteResourceTest {
         }
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

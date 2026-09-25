@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasKey;
@@ -10,6 +11,7 @@ import static org.hamcrest.Matchers.notNullValue;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,18 +19,18 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolverJobResourceTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 500;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(500);
 
     // The solver is a single shared resource: a job left running by the
     // previous test would make the next submit return 409.
     @BeforeEach
-    void solverIsIdle() throws InterruptedException {
+    void solverIsIdle() {
         awaitIdleSolver();
     }
 
     @Test
-    void solveAsyncReturnsImmediatelyThenCompletes() throws InterruptedException {
+    void solveAsyncReturnsImmediatelyThenCompletes() {
         String planningJson = sampleplanning();
 
         String jobId = given().contentType("application/json")
@@ -58,7 +60,7 @@ class SolverJobResourceTest {
      * browser sends no planning at all.
      */
     @Test
-    void solveFromReferenceDataBuildsProblemServerSide() throws InterruptedException {
+    void solveFromReferenceDataBuildsProblemServerSide() {
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
@@ -93,7 +95,7 @@ class SolverJobResourceTest {
      * the snapshot holding it — the first one has nothing to name.
      */
     @Test
-    void aSolveNamesThePlanItReplaced() throws InterruptedException {
+    void aSolveNamesThePlanItReplaced() {
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
@@ -114,7 +116,7 @@ class SolverJobResourceTest {
         assertThat(second.getString("status")).isEqualTo("COMPLETED");
         assertThat(second.getLong("result.previousPlan.snapshotId")).isPositive();
         assertThat(second.getString("result.previousPlan.score")).isNotBlank();
-        assertThat(second.getBoolean("result.previousPlan.degraded")).isNotNull();
+        assertThat(second.<Boolean>get("result.previousPlan.degraded")).isNotNull();
         // Its reading ends on what changed against that plan.
         assertThat(second.getList("result.diagnostic.lecture.sujet", String.class))
                 .last()
@@ -136,7 +138,7 @@ class SolverJobResourceTest {
 
     /** A finished job stays in the journal until it is explicitly dropped. */
     @Test
-    void finishedJobIsReadableThenDroppedFromTheJournal() throws InterruptedException {
+    void finishedJobIsReadableThenDroppedFromTheJournal() {
         String planningJson = sampleplanning();
 
         String jobId = given().contentType("application/json")
@@ -166,7 +168,7 @@ class SolverJobResourceTest {
      * (rather than hanging or being killed) once the current run unwinds.
      */
     @Test
-    void cancelStopsARunningSolveJob() throws InterruptedException {
+    void cancelStopsARunningSolveJob() {
         String planningJson = sampleplanning();
 
         String jobId = given().contentType("application/json")
@@ -197,7 +199,7 @@ class SolverJobResourceTest {
      * end of the job, and that it carries the three levels separately.
      */
     @Test
-    void aSolveLeavesAReadableScoreCurveBehindIt() throws InterruptedException {
+    void aSolveLeavesAReadableScoreCurveBehindIt() {
         String jobId = given().contentType("application/json")
                 .body(sampleplanning())
                 .when()
@@ -242,7 +244,7 @@ class SolverJobResourceTest {
      * from {@code /api/jobs/active} without any browser-side state.
      */
     @Test
-    void secondSolverJobIsRefusedWhileOneIsRunning() throws InterruptedException {
+    void secondSolverJobIsRefusedWhileOneIsRunning() {
         String planningJson = sampleplanning();
 
         String jobId = given().contentType("application/json")
@@ -289,14 +291,12 @@ class SolverJobResourceTest {
     }
 
     /** Tests share one solver: wait for any job left running by another test. */
-    private void awaitIdleSolver() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void awaitIdleSolver() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
     private String sampleplanning() {
@@ -308,19 +308,17 @@ class SolverJobResourceTest {
                 .asString();
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

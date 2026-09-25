@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.solve;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
@@ -15,12 +16,14 @@ import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 import javax.sql.DataSource;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -45,8 +48,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolverJobRepriseTest {
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @Inject
     SolverJobService jobService;
@@ -62,14 +65,14 @@ class SolverJobRepriseTest {
 
     @BeforeEach
     @AfterEach
-    void solveurLibreEtTableVide() throws InterruptedException {
+    void solveurLibreEtTableVide() {
         clearQueue();
         attendreSolveurLibre();
         clearTable();
     }
 
     @Test
-    void uneFileEcriteAvantLeRedemarrageRepartEtVaAuBout() throws InterruptedException {
+    void uneFileEcriteAvantLeRedemarrageRepartEtVaAuBout() {
         planImporte();
         // What a server stopped mid-queue leaves behind: two runs planned, in
         // order. Different types on purpose — the same type twice on the same
@@ -150,7 +153,7 @@ class SolverJobRepriseTest {
     }
 
     @Test
-    void unJobOublieDisparaitAussiDeLaBase() throws InterruptedException {
+    void unJobOublieDisparaitAussiDeLaBase() {
         planImporte();
         String id = given().when()
                 .post("/api/solve/async/reference-data?seconds=1")
@@ -265,42 +268,38 @@ class SolverJobRepriseTest {
         }
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
     /** The persisted status, awaited on the same budget as {@link #pollUntilFinished}. */
-    private JobStatus pollUntilStatut(String jobId, JobStatus attendu) throws InterruptedException {
-        JobStatus vu = null;
-        for (int i = 0; i < MAX_POLLS; i++) {
-            vu = statut(jobId);
-            if (vu == attendu) {
-                return vu;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
+    private JobStatus pollUntilStatut(String jobId, JobStatus attendu) {
+        try {
+            return await().atMost(POLL_TIMEOUT)
+                    .pollInterval(POLL_INTERVAL)
+                    .until(() -> statut(jobId), vu -> vu == attendu);
+        } catch (ConditionTimeoutException _) {
+            // Handed back to the caller, whose assertion names what was seen instead.
+            return statut(jobId);
         }
-        return vu;
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED", "INTERROMPU").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED", "INTERROMPU")
+                                .contains(job.getString("status")));
     }
 }

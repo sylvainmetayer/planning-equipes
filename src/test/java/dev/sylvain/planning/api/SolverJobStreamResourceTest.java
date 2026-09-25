@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.RestAssured;
@@ -41,14 +42,14 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolverJobStreamResourceTest {
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
     private static final Duration RECEIVE_TIMEOUT = Duration.ofSeconds(15);
 
     private final List<StreamClient> clients = new ArrayList<>();
 
     @BeforeEach
-    void solverIdleBefore() throws InterruptedException {
+    void solverIdleBefore() {
         clearQueue();
         waitForIdleSolver();
     }
@@ -61,7 +62,7 @@ class SolverJobStreamResourceTest {
      * restarts the whole application — then fails to bind it.
      */
     @AfterEach
-    void closeStreamsThenWaitForIdleSolver() throws InterruptedException {
+    void closeStreamsThenWaitForIdleSolver() {
         clients.forEach(StreamClient::close);
         clients.clear();
         clearQueue();
@@ -250,14 +251,12 @@ class SolverJobStreamResourceTest {
         }
     }
 
-    private void waitForIdleSolver() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void waitForIdleSolver() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
     /** One parsed server-sent event: its name, its data, and its comment lines. */
@@ -302,7 +301,7 @@ class SolverJobStreamResourceTest {
         private void read() {
             try {
                 consume();
-            } catch (RuntimeException e) {
+            } catch (RuntimeException _) {
                 // Closing the stream from close() cancels the subscription
                 // under this thread's feet. Expected: it is how the reader is
                 // stopped, and letting it escape only prints a stack trace.

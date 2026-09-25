@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -37,15 +38,17 @@ class SlidingWindowCounterTest {
     }
 
     @Test
-    void theWindowReopensWithAnEmptyCount() throws InterruptedException {
+    void theWindowReopensWithAnEmptyCount() {
         SlidingWindowCounter counter = new SlidingWindowCounter();
         Duration court = Duration.ofMillis(20);
         counter.useDistinct("A1", "B", 1, court);
         assertThat(counter.useDistinct("A1", "C", 1, court).autorise()).isFalse();
 
-        Thread.sleep(50);
-
-        assertThat(counter.useDistinct("A1", "C", 1, court).autorise()).isTrue();
+        // The window reads the wall clock: only time passing reopens it.
+        await().pollDelay(Duration.ofMillis(50))
+                .untilAsserted(() -> assertThat(
+                                counter.useDistinct("A1", "C", 1, court).autorise())
+                        .isTrue());
     }
 
     /**

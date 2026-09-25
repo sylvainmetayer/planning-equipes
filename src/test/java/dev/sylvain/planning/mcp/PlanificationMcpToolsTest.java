@@ -2,6 +2,7 @@ package dev.sylvain.planning.mcp;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneDetailView;
 import dev.sylvain.planning.mcp.InstantaneMcpTools.InstantaneView;
@@ -14,6 +15,7 @@ import dev.sylvain.planning.service.solve.SolverJobService.JobStatus;
 import io.quarkiverse.mcp.server.ToolCallException;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -32,8 +34,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class PlanificationMcpToolsTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     /** PENDING and QUEUED are not the only non-terminal states: a job also sits PENDING while it starts. */
     private static final Set<String> ETATS_TERMINAUX = Stream.of(
@@ -66,13 +68,13 @@ class PlanificationMcpToolsTest {
      * nothing to do with it.
      */
     @AfterEach
-    void clearEdition() throws InterruptedException {
+    void clearEdition() {
         awaitSolverIdle();
         scenarioTools.resetData(null);
     }
 
     @Test
-    void captureCompareThenRestoreAPlanning() throws InterruptedException {
+    void captureCompareThenRestoreAPlanning() {
         InstantaneView capture = solveAndCapture();
         assertThat(capture.automatique()).isFalse();
         assertThat(instantaneTools.listSnapshots(null))
@@ -92,7 +94,7 @@ class PlanificationMcpToolsTest {
     }
 
     @Test
-    void readingASnapshotReturnsOnlyIds() throws InterruptedException {
+    void readingASnapshotReturnsOnlyIds() {
         InstantaneView capture = solveAndCapture();
 
         InstantaneDetailView detail = instantaneTools.getSnapshot(capture.id(), null, null, 5, null);
@@ -106,7 +108,7 @@ class PlanificationMcpToolsTest {
     }
 
     @Test
-    void lockThenUnlockAnAnimateurOfThePlanning() throws InterruptedException {
+    void lockThenUnlockAnAnimateurOfThePlanning() {
         solve();
         String animateurId = planningTools.listAffectations(null, null, null, false, null, null).affectations().stream()
                 .map(AffectationView::animateurId)
@@ -148,7 +150,7 @@ class PlanificationMcpToolsTest {
     }
 
     @Test
-    void capturingWithoutAPersistedPlanningIsRefused() throws InterruptedException {
+    void capturingWithoutAPersistedPlanningIsRefused() {
         awaitSolverIdle();
         scenarioTools.resetData(null);
 
@@ -165,7 +167,7 @@ class PlanificationMcpToolsTest {
                 .hasCauseInstanceOf(BusinessError.NotFound.class);
     }
 
-    private InstantaneView solveAndCapture() throws InterruptedException {
+    private InstantaneView solveAndCapture() {
         solve();
         InstantaneView capture = instantaneTools.captureSnapshot("Après le premier solve", null);
         assertThat(capture.nombreAffectations()).isPositive();
@@ -173,7 +175,7 @@ class PlanificationMcpToolsTest {
     }
 
     /** Loads the sample scenario and solves it once, so a plan is persisted. */
-    private void solve() throws InterruptedException {
+    private void solve() {
         awaitSolverIdle();
         scenarioTools.resetData(null);
         scenarioTools.importScenario("scenario.yml", null);
@@ -182,24 +184,19 @@ class PlanificationMcpToolsTest {
         assertThat(planningTools.planningState(null).affectationsPersistees()).isPositive();
     }
 
-    private JobMcpView awaitFinished(String jobId) throws InterruptedException {
-        for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.solverStatus(jobId);
-            if (job != null && ETATS_TERMINAUX.contains(job.status())) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " toujours en cours");
+    private JobMcpView awaitFinished(String jobId) {
+        return await().alias("Job " + jobId + " toujours en cours")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> solveurTools.solverStatus(jobId),
+                        job -> job != null && ETATS_TERMINAUX.contains(job.status()));
     }
 
-    private void awaitSolverIdle() throws InterruptedException {
-        for (int essai = 0; essai < MAX_POLLS; essai++) {
-            if (solverJobService.findActive().isEmpty()) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solveur toujours occupé");
+    private void awaitSolverIdle() {
+        await().alias("Solveur toujours occupé")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() -> solverJobService.findActive().isEmpty());
     }
 }

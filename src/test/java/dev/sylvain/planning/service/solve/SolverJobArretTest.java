@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
@@ -21,6 +22,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import io.quarkus.test.junit.QuarkusTestProfile;
 import io.quarkus.test.junit.TestProfile;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -28,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -61,6 +64,9 @@ class SolverJobArretTest {
     SolvePipeline pipeline;
 
     @Inject
+    SolverScoreTrace scoreTrace;
+
+    @Inject
     PlanningService planningService;
 
     @Inject
@@ -82,7 +88,7 @@ class SolverJobArretTest {
      */
     @Test
     @Order(1)
-    void aPartialPlanThatDoesNotBeatThePersistedOneIsDiscarded() throws InterruptedException {
+    void aPartialPlanThatDoesNotBeatThePersistedOneIsDiscarded() {
         Fixture fixture = new Fixture(2, 1);
         try {
             fixture.create();
@@ -106,11 +112,8 @@ class SolverJobArretTest {
                     ProblemeReamorce::planning,
                     30L,
                     solver -> Thread.ofVirtual().start(() -> {
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
+                        // Time passing is the point here, not a state to wait for.
+                        await().pollDelay(Duration.ofMillis(500)).until(() -> true);
                         solver.terminateEarly();
                     }),
                     () -> true));
@@ -134,7 +137,7 @@ class SolverJobArretTest {
      */
     @Test
     @Order(2)
-    void aSolveStoppedByTheContainerEndsInterrompuAndKeepsItsPlanWhenNothingWasStored() throws InterruptedException {
+    void aSolveStoppedByTheContainerEndsInterrompuAndKeepsItsPlanWhenNothingWasStored() {
         // Two seats, one animateur: infeasible, so the solve runs its whole
         // budget instead of stopping on feasibility before the shutdown.
         Fixture fixture = new Fixture(2, 1);
@@ -173,27 +176,36 @@ class SolverJobArretTest {
         return editionContext.executeIn(EDITION, travail);
     }
 
-    private void attendreFin(SolverJob job) throws InterruptedException {
-        for (int essai = 0; essai < 240 && !job.isFinished(); essai++) {
-            Thread.sleep(250);
-        }
-        assertThat(job.isFinished())
-                .as("job %s: %s %s", job.getId(), job.getStatus(), job.getError())
-                .isTrue();
+    private void attendreFin(SolverJob job) {
+        await().atMost(Duration.ofSeconds(60))
+                .pollInterval(Duration.ofMillis(250))
+                .untilAsserted(() -> assertThat(job.isFinished())
+                        .as("job %s: %s %s", job.getId(), job.getStatus(), job.getError())
+                        .isTrue());
     }
 
     /** Until the job holds a running solver, not just the RUNNING status it takes while building its problem. */
-    private void attendreDemarrage(SolverJob job) throws InterruptedException {
-        for (int essai = 0; essai < 240 && job.getStatus() != JobStatus.RUNNING; essai++) {
-            Thread.sleep(250);
-        }
-        assertThat(job.getStatus()).isEqualTo(JobStatus.RUNNING);
-        Thread.sleep(1500);
+    private void attendreDemarrage(SolverJob job) {
+        await().atMost(Duration.ofSeconds(60))
+                .pollInterval(Duration.ofMillis(250))
+                .untilAsserted(() -> assertThat(job.getStatus()).isEqualTo(JobStatus.RUNNING));
+        // The solver has announced an initialised best solution for this job: it holds a plan to keep.
+        await().atMost(Duration.ofSeconds(60))
+                .pollInterval(Duration.ofMillis(100))
+                .until(
+                        scoreTrace::snapshot,
+                        trace -> trace != null
+                                && job.getId().equals(trace.jobId())
+                                && !trace.points().isEmpty());
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
-            Thread.sleep(250);
+    private void attendreSolveurLibre() {
+        try {
+            await().atMost(Duration.ofSeconds(60))
+                    .pollInterval(Duration.ofMillis(250))
+                    .until(() -> solverJobs.findActive().isEmpty());
+        } catch (ConditionTimeoutException _) {
+            // Deliberately silent: a solver that never frees up shows as the refusal it causes.
         }
     }
 

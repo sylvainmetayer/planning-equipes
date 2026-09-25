@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.Score;
@@ -9,6 +10,7 @@ import ai.timefold.solver.core.api.solver.event.EventProducerId;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.solve.SolverScoreTrace.Point;
 import dev.sylvain.planning.service.solve.SolverScoreTrace.Trace;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -104,13 +106,13 @@ class SolverScoreTraceTest {
      * that looks like it is still climbing however long it has been stuck.
      */
     @Test
-    void aRunThatStopsImprovingKeepsReportingTimePassing() throws InterruptedException {
+    void aRunThatStopsImprovingKeepsReportingTimePassing() {
         trace.start("job-1", "edition-1");
         trace.recordEvent("job-1", event(0, -40, -10, -1000));
 
         long avant = trace.snapshot().dureeMs();
         // No further announcement: this is exactly what a plateau produces.
-        Thread.sleep(30);
+        await().atMost(Duration.ofSeconds(1)).until(() -> trace.snapshot().dureeMs() > avant);
 
         Trace apres = trace.snapshot();
         assertThat(apres.points()).hasSize(1);
@@ -118,16 +120,18 @@ class SolverScoreTraceTest {
     }
 
     @Test
-    void aFinishedRunStopsStretchingInsteadOfGrowingForever() throws InterruptedException {
+    void aFinishedRunStopsStretchingInsteadOfGrowingForever() {
         trace.start("job-1", "edition-1");
         trace.recordEvent("job-1", event(0, -40, -10, -1000));
         trace.finish("job-1");
 
         long fige = trace.snapshot().dureeMs();
-        Thread.sleep(30);
 
         // Frozen: a curve left on screen after a solve must not keep widening,
         // which would make its plateau grow for a run that is over.
+        await().during(Duration.ofMillis(30))
+                .atMost(Duration.ofSeconds(1))
+                .until(() -> trace.snapshot().dureeMs() == fige);
         assertThat(trace.snapshot().dureeMs()).isEqualTo(fige);
     }
 

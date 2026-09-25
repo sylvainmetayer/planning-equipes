@@ -2,10 +2,12 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -25,11 +27,11 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class SolveIncrementalResourceTest {
 
-    private static final int MAX_POLLS = 240;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @Test
-    void repartDuPlanPersisteEtNeBougeQueLePerimetreRouvert() throws InterruptedException {
+    void repartDuPlanPersisteEtNeBougeQueLePerimetreRouvert() {
         persistedPlan();
         List<Map<String, Object>> avant = affectationsPersistees();
         int hardBefore = persistedHardScore();
@@ -59,7 +61,7 @@ class SolveIncrementalResourceTest {
     }
 
     @Test
-    void sansPerimetreLeDiffNommeExactementLesEquipesQuiOntChange() throws InterruptedException {
+    void withoutAScopeTheDiffNamesExactlyTheTeamsThatChanged() {
         persistedPlan();
         List<Map<String, Object>> avant = affectationsPersistees();
         String target = premierAnimateurAffecte(avant);
@@ -77,12 +79,12 @@ class SolveIncrementalResourceTest {
         assertThat(changements).isNotEmpty();
         for (Map<String, Object> changement : changements) {
             assertThat(changement.get("standNom")).isNotNull();
-            assertThat(changement.get("avant")).isNotEqualTo(changement.get("apres"));
+            assertThat(changement).doesNotContainEntry("avant", changement.get("apres"));
         }
     }
 
     @Test
-    void sansPlanPersisteLaReplanificationEchoueAvecUnMessageExplicite() throws InterruptedException {
+    void sansPlanPersisteLaReplanificationEchoueAvecUnMessageExplicite() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -106,7 +108,7 @@ class SolveIncrementalResourceTest {
     /* ------------------------------- Helpers ------------------------------- */
 
     /** Runs an incremental solve to completion and returns its result. */
-    private JsonPath solveIncremental(String corps) throws InterruptedException {
+    private JsonPath solveIncremental(String corps) {
         attendreSolveurLibre();
         var statement = given().contentType(ContentType.JSON);
         if (corps != null) {
@@ -221,7 +223,7 @@ class SolveIncrementalResourceTest {
         return hardScore;
     }
 
-    private void persistedPlan() throws InterruptedException {
+    private void persistedPlan() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -237,29 +239,25 @@ class SolveIncrementalResourceTest {
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

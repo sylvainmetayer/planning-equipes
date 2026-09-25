@@ -2,11 +2,13 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import io.restassured.path.json.JsonPath;
 import io.restassured.specification.RequestSpecification;
+import java.time.Duration;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.AfterEach;
@@ -30,7 +32,8 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class ImpactPublicationTest {
 
-    private static final int MAX_POLLS = 120;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
     private static final String EDITION = "IMPACT-EDITION";
 
     @BeforeEach
@@ -70,7 +73,7 @@ class ImpactPublicationTest {
     }
 
     @Test
-    void theImpactIsAbsentBeforeAnyPublicationAndCountedAfter() throws InterruptedException {
+    void theImpactIsAbsentBeforeAnyPublicationAndCountedAfter() {
         edition()
                 .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -111,7 +114,7 @@ class ImpactPublicationTest {
      * two people no longer where the published plan put them.
      */
     @Test
-    void theRuleSeesThePublishedSeatsOfTheEdition() throws InterruptedException {
+    void theRuleSeesThePublishedSeatsOfTheEdition() {
         edition()
                 .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -199,7 +202,7 @@ class ImpactPublicationTest {
      * it as a set.
      */
     @Test
-    void twoPublishedSeatsOfOneLineHeldByTheSamePersonDoNotBreakTheNextSolve() throws InterruptedException {
+    void twoPublishedSeatsOfOneLineHeldByTheSamePersonDoNotBreakTheNextSolve() {
         edition()
                 .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -243,7 +246,7 @@ class ImpactPublicationTest {
         assertThat(apres.getString("error")).isNull();
     }
 
-    private JsonPath solve() throws InterruptedException {
+    private JsonPath solve() {
         attendreSolveurLibre();
         String jobId = edition()
                 .when()
@@ -252,29 +255,27 @@ class ImpactPublicationTest {
                 .statusCode(202)
                 .extract()
                 .path("id");
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = edition()
-                    .when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                assertThat(job.getString("status")).isEqualTo("COMPLETED");
-                return job;
-            }
-            Thread.sleep(250);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+        JsonPath job = await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> edition()
+                                .when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        polled -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(polled.getString("status")));
+        assertThat(job.getString("status")).isEqualTo("COMPLETED");
+        return job;
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(250);
-        }
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 }

@@ -317,6 +317,14 @@ Six familles :
   seule couche qui voit ce qu'un navigateur fait vraiment. Voir
   [plus bas](#tests-de-bout-en-bout-playwright) pour les lancer en local.
 
+Un test qui attend un traitement asynchrone (une résolution qui aboutit, un
+job qui quitte la file, le solveur qui se libère) passe par **Awaitility**
+(`await().atMost(…).until(…)`, dépendance de test gérée par le BOM Quarkus)
+sur la condition réellement attendue, jamais par `Thread.sleep` : l'attente
+s'arrête dès que la condition tient, et son échec dit ce qui manquait. Quand
+seul le temps doit passer — une fenêtre de limitation qui lit l'horloge
+murale —, `await().pollDelay(…)` le dit explicitement.
+
 ### La boucle sans conteneur
 
 `./mvnw test -Punit` ne joue que ce qui ne demande qu'une JVM : **1 405 tests

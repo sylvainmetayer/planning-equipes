@@ -2,9 +2,11 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
+import java.time.Duration;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -22,11 +24,11 @@ import org.junit.jupiter.api.Test;
 @QuarkusTest
 class KpiHistoriqueResourceTest {
 
-    private static final int MAX_POLLS = 120;
-    private static final long POLL_INTERVAL_MS = 250;
+    private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
+    private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
 
     @Test
-    void chaqueSolveEcritUneLigneDHistoriqueKpi() throws InterruptedException {
+    void everySolveWritesAKpiHistoryLine() {
         int avant = given().when()
                 .get("/api/kpi/historique")
                 .then()
@@ -44,7 +46,7 @@ class KpiHistoriqueResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        assertThat(historique.getList("$").size()).isGreaterThan(avant);
+        assertThat(historique.getList("$")).hasSizeGreaterThan(avant);
         // Newest first: the row of the solve just run.
         assertThat(historique.getInt("[0].kpi.postesTotal")).isPositive();
         assertThat(historique.getString("[0].editionId")).isNotBlank();
@@ -53,7 +55,7 @@ class KpiHistoriqueResourceTest {
     }
 
     @Test
-    void uneLigneSupprimeeDisparaitEtUnIdInconnuRepond404() throws InterruptedException {
+    void uneLigneSupprimeeDisparaitEtUnIdInconnuRepond404() {
         persistedPlan();
         long id = given().when()
                 .get("/api/kpi/historique")
@@ -67,7 +69,7 @@ class KpiHistoriqueResourceTest {
         given().when().delete("/api/kpi/historique/" + id).then().statusCode(404);
     }
 
-    private void persistedPlan() throws InterruptedException {
+    private void persistedPlan() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
@@ -83,29 +85,25 @@ class KpiHistoriqueResourceTest {
         assertThat(pollUntilFinished(jobId).getString("status")).isEqualTo("COMPLETED");
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            if (given().when().get("/api/jobs/active").then().extract().statusCode() == 204) {
-                return;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Solver still busy");
+    private void attendreSolveurLibre() {
+        await().alias("Solver still busy")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(() ->
+                        given().when().get("/api/jobs/active").then().extract().statusCode() == 204);
     }
 
-    private JsonPath pollUntilFinished(String jobId) throws InterruptedException {
-        for (int i = 0; i < MAX_POLLS; i++) {
-            JsonPath job = given().when()
-                    .get("/api/jobs/" + jobId)
-                    .then()
-                    .statusCode(200)
-                    .extract()
-                    .jsonPath();
-            if (List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status"))) {
-                return job;
-            }
-            Thread.sleep(POLL_INTERVAL_MS);
-        }
-        throw new AssertionError("Job " + jobId + " did not finish in time");
+    private JsonPath pollUntilFinished(String jobId) {
+        return await().alias("Job " + jobId + " did not finish in time")
+                .atMost(POLL_TIMEOUT)
+                .pollInterval(POLL_INTERVAL)
+                .until(
+                        () -> given().when()
+                                .get("/api/jobs/" + jobId)
+                                .then()
+                                .statusCode(200)
+                                .extract()
+                                .jsonPath(),
+                        job -> List.of("COMPLETED", "FAILED", "CANCELLED").contains(job.getString("status")));
     }
 }

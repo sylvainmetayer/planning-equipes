@@ -2,6 +2,7 @@ package dev.sylvain.planning.service.solve;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
@@ -14,10 +15,12 @@ import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -161,13 +164,12 @@ class PlanSnapshotServiceSolveGuardTest {
 
     /** Asserts nothing on purpose: called first in every {@code finally}, it must not mask the real failure. */
     private void attendreSolveurLibre() {
-        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException interrompu) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+        try {
+            await().atMost(Duration.ofSeconds(120))
+                    .pollInterval(Duration.ofMillis(500))
+                    .until(() -> solverJobs.findActive().isEmpty());
+        } catch (ConditionTimeoutException _) {
+            // Deliberately silent: a solver that never frees up shows as the refusal it causes.
         }
     }
 

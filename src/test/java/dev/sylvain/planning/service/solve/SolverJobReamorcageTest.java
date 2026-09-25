@@ -3,6 +3,7 @@ package dev.sylvain.planning.service.solve;
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
 import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import dev.sylvain.planning.domain.Animateur;
@@ -27,6 +28,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Set;
+import org.awaitility.core.ConditionTimeoutException;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -134,7 +136,7 @@ class SolverJobReamorcageTest {
      * incomparable to the solve's.
      */
     @Test
-    void aReseededSolveReportsItselfAndNeverLandsBelowTheSeed() throws InterruptedException {
+    void aReseededSolveReportsItselfAndNeverLandsBelowTheSeed() {
         Fixture fixture = new Fixture(2, 2);
         try {
             fixture.create();
@@ -172,7 +174,7 @@ class SolverJobReamorcageTest {
      * does not fake an early stop here.
      */
     @Test
-    void anInfeasibleSeedSpendsTheWholeBudget() throws InterruptedException {
+    void anInfeasibleSeedSpendsTheWholeBudget() {
         Fixture fixture = new Fixture(2, 1);
         try {
             fixture.create();
@@ -208,20 +210,21 @@ class SolverJobReamorcageTest {
         return editionContext.executeIn(EDITION, travail);
     }
 
-    private void attendreFin(SolverJob job) throws InterruptedException {
-        for (int essai = 0; essai < 240; essai++) {
-            if (List.of(JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED)
-                    .contains(job.getStatus())) {
-                return;
-            }
-            Thread.sleep(250);
-        }
-        throw new AssertionError("Job " + job.getId() + " did not finish: " + job.getStatus() + " " + job.getError());
+    private void attendreFin(SolverJob job) {
+        await().atMost(Duration.ofSeconds(60))
+                .pollInterval(Duration.ofMillis(250))
+                .untilAsserted(() -> assertThat(job.getStatus())
+                        .as("Job %s did not finish: %s", job.getId(), job.getError())
+                        .isIn(JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED));
     }
 
-    private void attendreSolveurLibre() throws InterruptedException {
-        for (int essai = 0; essai < 240 && solverJobs.findActive().isPresent(); essai++) {
-            Thread.sleep(250);
+    private void attendreSolveurLibre() {
+        try {
+            await().atMost(Duration.ofSeconds(60))
+                    .pollInterval(Duration.ofMillis(250))
+                    .until(() -> solverJobs.findActive().isEmpty());
+        } catch (ConditionTimeoutException _) {
+            // Deliberately silent: a solver that never frees up shows as the refusal it causes.
         }
     }
 
@@ -282,11 +285,7 @@ class SolverJobReamorcageTest {
         }
 
         void clean() {
-            try {
-                attendreSolveurLibre();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-            }
+            attendreSolveurLibre();
             editionContext.executeIn(EDITION, () -> {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
                 referenceData.deleteStand("WARM-S1");
