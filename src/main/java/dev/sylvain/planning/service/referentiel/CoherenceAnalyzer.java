@@ -6,6 +6,7 @@ import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.FenetreHoraire;
 import dev.sylvain.planning.domain.HoraireStand;
 import dev.sylvain.planning.domain.IndisponibiliteStand;
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.domain.OuvertureStand;
 import dev.sylvain.planning.domain.PastHorizon;
 import dev.sylvain.planning.domain.Stand;
@@ -633,5 +634,146 @@ public final class CoherenceAnalyzer {
                 .forEach(conflit -> avertissements.add(
                         new Avertissement(TypeAvertissement.AFFECTATION_FORCEE_SIEGE_VERROUILLE, conflit.message())));
         return List.copyOf(avertissements);
+    }
+
+    /* ------------------------------ Typologie ------------------------------ */
+
+    /**
+     * What a game category is worth to the planning, read on the referential
+     * alone — no plan, no solve. The Typologies screen computes the very same
+     * thing on its store ({@code pages/typologies/usage-typologies.ts}); both
+     * sides replay the case file {@code usage-typologies.cas.json}, so the badge
+     * of the screen and the count of the « État de l'édition » cannot disagree.
+     *
+     * <ul>
+     *   <li>{@code ORPHELINE}: a stand proposes it and nobody holds it — only a
+     *       polyvalent can take the stand;</li>
+     *   <li>{@code FRAGILE}: a stand proposes it and exactly one person holds it;</li>
+     *   <li>{@code INUTILISEE}: no stand proposes it — information, never an alert;</li>
+     *   <li>{@code SANS_COMPETENT_INUTILISEE}: neither a stand nor a holder — a
+     *       candidate for deletion;</li>
+     *   <li>{@code NORMALE}: nothing to say.</li>
+     * </ul>
+     */
+    public enum EtatTypologie {
+        ORPHELINE,
+        FRAGILE,
+        INUTILISEE,
+        SANS_COMPETENT_INUTILISEE,
+        NORMALE
+    }
+
+    /**
+     * The counts behind {@link EtatTypologie}, for one game category.
+     *
+     * @param competents  animateurs holding an appreciation on it, whatever the
+     *                    level — a polyvalent holding only the ninja category is
+     *                    <b>not</b> one (ADR 0017: a reinforcement, never a
+     *                    specialist)
+     * @param polyvalents the ninjas who could still take its stands without
+     *                    holding it — what « tenable seulement par les polyvalents »
+     *                    counts
+     * @param souhaits    animateurs who wished for it
+     * @param stands      stands proposing it
+     */
+    public record TypologieUsage(
+            String typologieId,
+            int competents,
+            int referents,
+            int autonomes,
+            int debutants,
+            int polyvalents,
+            int souhaits,
+            int stands,
+            EtatTypologie etat) {}
+
+    /**
+     * The usage of every game category of {@code typologies}, in their order.
+     *
+     * <p>Three choices, each held by a shared case. The ninja category is not
+     * proposed by stands but held by people, so it is judged on its holders
+     * alone: held, nothing to say; held by nobody, unused. An edition without
+     * any animateur raises no orphan: the Référentiels step already says the
+     * roster is empty, and a whole column of red would repeat it. A stand
+     * proposing several categories counts for each of them — one orphan among
+     * them stays one, even if the others keep the stand staffable.</p>
+     */
+    public static List<TypologieUsage> typologieUsages(
+            Collection<TypologieItem> typologies, Collection<Stand> stands, Collection<Animateur> animateurs) {
+        String ninjaId = typologies.stream()
+                .filter(TypologieItem::ninja)
+                .map(TypologieItem::id)
+                .findFirst()
+                .orElse(null);
+        List<TypologieUsage> usages = new ArrayList<>();
+        for (TypologieItem typologie : typologies) {
+            String id = typologie.id();
+            int referents = 0;
+            int autonomes = 0;
+            int debutants = 0;
+            int polyvalents = 0;
+            int souhaits = 0;
+            for (Animateur animateur : animateurs) {
+                Map<String, NiveauCompetence> competences =
+                        animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
+                if (competences.containsKey(id)) {
+                    NiveauCompetence niveau = competences.get(id);
+                    if (niveau == NiveauCompetence.REFERENT) {
+                        referents++;
+                    } else if (niveau == NiveauCompetence.AUTONOME) {
+                        autonomes++;
+                    } else {
+                        debutants++;
+                    }
+                } else if (ninjaId != null && competences.containsKey(ninjaId)) {
+                    polyvalents++;
+                }
+                if (animateur.getSouhaits() != null && animateur.getSouhaits().contains(id)) {
+                    souhaits++;
+                }
+            }
+            int competents = referents + autonomes + debutants;
+            int proposants = (int) stands.stream()
+                    .filter(stand -> stand.getTypologiesProposees() != null
+                            && stand.getTypologiesProposees().contains(id))
+                    .count();
+            usages.add(new TypologieUsage(
+                    id,
+                    competents,
+                    referents,
+                    autonomes,
+                    debutants,
+                    polyvalents,
+                    souhaits,
+                    proposants,
+                    etat(id.equals(ninjaId), competents, proposants, !animateurs.isEmpty())));
+        }
+        return List.copyOf(usages);
+    }
+
+    /** How many categories a stand proposes and nobody holds — the count of the Référentiels step. */
+    public static int countOrphanTypologies(
+            Collection<TypologieItem> typologies, Collection<Stand> stands, Collection<Animateur> animateurs) {
+        return (int) typologieUsages(typologies, stands, animateurs).stream()
+                .filter(usage -> usage.etat() == EtatTypologie.ORPHELINE)
+                .count();
+    }
+
+    private static EtatTypologie etat(boolean ninja, int competents, int stands, boolean rosterEntered) {
+        if (ninja) {
+            return competents > 0 ? EtatTypologie.NORMALE : EtatTypologie.INUTILISEE;
+        }
+        if (stands == 0) {
+            return competents == 0 && rosterEntered
+                    ? EtatTypologie.SANS_COMPETENT_INUTILISEE
+                    : EtatTypologie.INUTILISEE;
+        }
+        if (!rosterEntered) {
+            return EtatTypologie.NORMALE;
+        }
+        if (competents == 0) {
+            return EtatTypologie.ORPHELINE;
+        }
+        return competents == 1 ? EtatTypologie.FRAGILE : EtatTypologie.NORMALE;
     }
 }

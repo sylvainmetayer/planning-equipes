@@ -81,9 +81,8 @@ export interface ReferenceTableConfig<T> {
  *
  * <p>Two referential pages do <b>not</b> inherit from this. `animateurs` keys
  * its selection and its navigation on the <b>sorted</b> rows
- * (`sortedAnimateurs`) rather than the filtered ones, which this base does not
- * offer; an optional sort hook would cover it, and would be the right next step
- * if a fourth page ever needs one. `creneaux` generates, orders and groups its
+ * (`sortedAnimateurs`) rather than the filtered ones; {@link refine} now offers
+ * that hook, and moving it here is left for the day that page is touched. `creneaux` generates, orders and groups its
  * own rows, which is another page altogether.</p>
  *
  * <p>This is the application's first abstract base class using `inject()`. It
@@ -122,9 +121,11 @@ export abstract class ReferenceTablePage<T> {
 
   constructor(private readonly config: ReferenceTableConfig<T>) {
     this.lignesFiltrees = computed(() =>
-      config
-        .rows(this.store)
-        .filter((ligne) => correspondAuFiltre(this.filtre(), config.champsFiltre(ligne))),
+      this.refine(
+        config
+          .rows(this.store)
+          .filter((ligne) => correspondAuFiltre(this.filtre(), config.champsFiltre(ligne))),
+      ),
     );
     this.selection = new TableSelection<string>(
       computed(() => this.lignesFiltrees().map((ligne) => config.id(ligne))),
@@ -168,6 +169,16 @@ export abstract class ReferenceTablePage<T> {
         this.edit(ligne);
       }
     });
+  }
+
+  /**
+   * What a page does to its rows after the quick filter — a filter of its own,
+   * a sort. The selection and the keyboard navigation follow the result, as
+   * they follow the quick filter. Called lazily, from the computed rows, so an
+   * override may read the subclass's own signals.
+   */
+  protected refine(lignes: readonly T[]): readonly T[] {
+    return lignes;
   }
 
   /**

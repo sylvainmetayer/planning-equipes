@@ -66,9 +66,16 @@ public record EtatEditionView(
     @Schema(requiredProperties = {"termine"})
     public record EtatEvenement(LocalDate premierJour, LocalDate dernierJour, boolean termine) {}
 
-    /** How many rows each referential holds; a zero anywhere is a step still to do. */
-    @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut"})
-    public record EtatReferentiels(int stands, int animateurs, int creneaux, Statut statut) {}
+    /**
+     * How many rows each referential holds; a zero anywhere is a step still to do.
+     *
+     * @param typologiesOrphelines game categories a stand proposes and nobody
+     *                             holds, polyvalents aside — enough to make the
+     *                             step « à vérifier », since only a ninja can
+     *                             then take those stands
+     */
+    @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut", "typologiesOrphelines"})
+    public record EtatReferentiels(int stands, int animateurs, int creneaux, int typologiesOrphelines, Statut statut) {}
 
     /**
      * The coherence checklist of the referential, counted by severity: every

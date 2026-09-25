@@ -161,11 +161,22 @@ export class AnimateursPage implements OnInit {
       .map((id) => libelles.find((typologie) => typologie.id === id)?.label ?? id)
       .join(', ');
   });
+  /**
+   * A typologie id the list is narrowed to by wish: only the animateurs who
+   * asked for it. Set by the Typologies screen on a category nobody masters —
+   * « qui l'a souhaitée ? » is who to train first. The `souhait` query param.
+   */
+  protected readonly souhait = signal('');
+  protected readonly souhaitLabel = computed(() => {
+    const id = this.souhait();
+    return this.store.typologies().find((typologie) => typologie.id === id)?.label ?? id;
+  });
   protected readonly viewChanged = computed(
     () =>
       this.filtre().trim() !== '' ||
       this.accuses() !== 'tous' ||
       this.typologiesFiltrees().length > 0 ||
+      this.souhait() !== '' ||
       (this.sort().active !== '' && this.sort().direction !== ''),
   );
   protected readonly animateursFiltres = computed(() => {
@@ -186,6 +197,7 @@ export class AnimateursPage implements OnInit {
           neverReminded,
         ) &&
         this.matchesTypologieFilter(animateur) &&
+        (this.souhait() === '' || (animateur.souhaits ?? []).includes(this.souhait())) &&
         correspondAuFiltre(this.filtre(), [
           animateur.id,
           animateur.prenom,
@@ -354,6 +366,7 @@ export class AnimateursPage implements OnInit {
     this.silenceJours.set(accuses.jours);
     this.neverReminded.set(readNeverReminded(params.get('relance')));
     this.typologie.set(params.get('typologie') ?? '');
+    this.souhait.set(params.get('souhait')?.trim() ?? '');
     const chargement = this.crud.reload();
     void chargement.then((loaded) => {
       if (loaded) {
@@ -374,6 +387,7 @@ export class AnimateursPage implements OnInit {
       silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
       relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
       typologie: optionalParam(this.typologie()),
+      souhait: optionalParam(this.souhait()),
     }));
     // `?edit=<id>`: a link from a symptom (a problem, a warning) lands here
     // with the fiche to open. Followed rather than read once — the link often
@@ -516,10 +530,16 @@ export class AnimateursPage implements OnInit {
     this.typologie.set('');
   }
 
+  /** The wish chip's cross, the same way. */
+  protected clearSouhait(): void {
+    this.souhait.set('');
+  }
+
   /** Back to the whole referential, in the order the store holds it. */
   protected resetView(): void {
     this.filtre.set('');
     this.typologie.set('');
+    this.souhait.set('');
     this.sort.set(NO_SORT);
     this.accuses.set('tous');
     this.silenceJours.set(SILENCE_JOURS_DEFAUT);

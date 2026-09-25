@@ -9,7 +9,7 @@
 import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { provideRouter } from '@angular/router';
+import { Router, provideRouter } from '@angular/router';
 import { MatDialog } from '@angular/material/dialog';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
@@ -18,7 +18,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { TypologiesPage } from './typologies-page';
-import type { TypologieItem } from '../../core/models';
+import type { Animateur, Stand, TypologieItem } from '../../core/models';
 import { seedStore } from '../../core/testing/seed-store';
 
 /** Reaches the protected members the template binds to. */
@@ -278,5 +278,74 @@ describe('TypologiesPage table', () => {
     )!;
     // The tab the ninja picker lives on, not the page's default one (issue #606).
     expect(lien.getAttribute('href')).toBe('/parametres?onglet=edition');
+  });
+
+  describe('usage of each typologie', () => {
+    const typologies: TypologieItem[] = [
+      { id: 'echecs', label: 'Échecs' },
+      { id: 'cartes', label: 'Cartes' },
+      { id: 'des', label: 'Dés' },
+      { id: 'vide', label: 'Vide' },
+    ];
+
+    function seedUsage(): void {
+      seedStore(referenceData, 'stands', [
+        { id: 'S1', nom: 'Stand 1', typologiesProposees: ['echecs', 'cartes'] },
+        { id: 'S2', nom: 'Stand 2', typologiesProposees: ['des'] },
+      ] as Stand[]);
+      seedStore(referenceData, 'animateurs', [
+        { id: 'A1', competences: { cartes: 'REFERENT', des: 'AUTONOME' }, souhaits: ['echecs'] },
+        { id: 'A2', competences: { des: 'DEBUTANT' }, souhaits: ['echecs'] },
+      ] as unknown as Animateur[]);
+    }
+
+    async function withQuery(query: string): Promise<void> {
+      await TestBed.inject(Router).navigateByUrl('/?' + query);
+    }
+
+    it('counts the competent, the wishes and the stands, and badges what needs acting upon', async () => {
+      seedUsage();
+      await rendre(typologies);
+
+      expect(lignes().map((row) => [row[1], row[4], row[5], row[6], row[7]])).toEqual([
+        ['echecs', '0', '2', '1', 'error Orpheline'],
+        ['cartes', '1', '0', '1', 'warning Fragile'],
+        ['des', '2', '0', '1', ''],
+        ['vide', '0', '0', '0', 'info Sans compétent, inutilisée'],
+      ]);
+      expect(racine().querySelector('.typologies-orphelines')!.textContent).toContain(
+        'maîtrisées par personne : 1',
+      );
+    });
+
+    it('keeps only the orphans under ?etat=orpheline', async () => {
+      await withQuery('etat=orpheline');
+      seedUsage();
+      await rendre(typologies);
+
+      expect(lignes().map((row) => row[1])).toEqual(['echecs']);
+    });
+
+    it('keeps the orphans and the fragile ones when « à traiter » is ticked', async () => {
+      await withQuery('etat=orpheline,fragile');
+      seedUsage();
+      await rendre(typologies);
+
+      expect(lignes().map((row) => row[1])).toEqual(['echecs', 'cartes']);
+    });
+
+    it('sorts by the number of competent people', async () => {
+      await withQuery('sort=competents&dir=desc');
+      seedUsage();
+      await rendre(typologies);
+
+      expect(lignes().map((row) => row[1])).toEqual(['des', 'cartes', 'echecs', 'vide']);
+    });
+
+    it('shows no banner when no stand proposes an unmastered typologie', async () => {
+      await rendre(typologies);
+
+      expect(racine().querySelector('.typologies-orphelines')).toBeNull();
+    });
   });
 });

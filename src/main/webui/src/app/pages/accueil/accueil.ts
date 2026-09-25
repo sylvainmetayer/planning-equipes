@@ -67,7 +67,7 @@ function formatInstant(iso: string | null): string {
 }
 
 function referentiels(etat: EtatEdition): LigneEtat {
-  const { stands, animateurs, creneaux, statut } = etat.referentiels;
+  const { stands, animateurs, creneaux, typologiesOrphelines, statut } = etat.referentiels;
   // The first empty referential is where the entry starts, in the guide's
   // order: the créneaux first — nothing else has dates before them, and the
   // stands' openings are typed against them (ADR 0032).
@@ -77,11 +77,30 @@ function referentiels(etat: EtatEdition): LigneEtat {
   } else if (stands === 0) {
     route = '/stands';
   }
+  const detail = $localize`:@@accueil.detail.referentiels:${stands}:stands: stands · ${animateurs}:animateurs: animateurs · ${creneaux}:creneaux: créneaux`;
+  if (statut !== 'A_FAIRE' && typologiesOrphelines > 0) {
+    // Entered, and yet a stand proposes a typologie nobody masters: only a
+    // polyvalent can take it. The link opens the Typologies screen on them.
+    return {
+      id: 'referentiels',
+      titre: $localize`:@@accueil.ligne.referentiels:Référentiels saisis`,
+      statut,
+      detail:
+        detail +
+        ' · ' +
+        $localize`:@@accueil.detail.referentiels.orphelines:${typologiesOrphelines}:count: typologie(s) orpheline(s)`,
+      lien: {
+        route: '/typologies',
+        queryParams: { etat: 'orpheline' },
+        libelle: $localize`:@@accueil.lien.referentiels.orphelines:Voir les typologies orphelines`,
+      },
+    };
+  }
   return {
     id: 'referentiels',
     titre: $localize`:@@accueil.ligne.referentiels:Référentiels saisis`,
     statut,
-    detail: $localize`:@@accueil.detail.referentiels:${stands}:stands: stands · ${animateurs}:animateurs: animateurs · ${creneaux}:creneaux: créneaux`,
+    detail,
     lien: {
       route: statut === 'FAIT' ? '/stands' : route,
       libelle:

@@ -17,7 +17,13 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
   return {
     editionId: 'DEFAUT',
     editionNom: 'Année 2026',
-    referentiels: { stands: 12, animateurs: 40, creneaux: 30, statut: 'FAIT' },
+    referentiels: {
+      stands: 12,
+      animateurs: 40,
+      creneaux: 30,
+      typologiesOrphelines: 0,
+      statut: 'FAIT',
+    },
     coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
     collecte: {
       ouverte: true,
