@@ -353,8 +353,10 @@ public class EtatEditionService {
      */
     static EtatEvenement evenement(TodayFacts today) {
         JoursEvenement jours = new JoursEvenement(today.joursEvenement());
-        boolean termine = !jours.isEmpty() && jours.last().isBefore(today.aujourdhui());
-        return new EtatEvenement(jours.first(), jours.last(), termine);
+        // last() is null on an edition without a timeslot: read it once and test that.
+        LocalDate dernier = jours.last();
+        boolean termine = dernier != null && dernier.isBefore(today.aujourdhui());
+        return new EtatEvenement(jours.first(), dernier, termine);
     }
 
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {
