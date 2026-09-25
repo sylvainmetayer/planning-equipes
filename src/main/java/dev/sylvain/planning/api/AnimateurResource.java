@@ -1,6 +1,8 @@
 package dev.sylvain.planning.api;
 
 import dev.sylvain.planning.domain.Animateur;
+import dev.sylvain.planning.service.profile.AnimateurProfile;
+import dev.sylvain.planning.service.profile.AnimateurProfileService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
@@ -28,9 +30,9 @@ import jakarta.ws.rs.core.Response;
 import java.util.List;
 
 /**
- * CRUD of the animateurs, plus the rotation of their espace access token, the
- * read of who acknowledged the published planning — and the hand that reminds
- * the silent ones —, and the tabular import.
+ * CRUD of the animateurs, plus their fiche 360°, the rotation of their espace
+ * access token, the read of who acknowledged the published planning — and the
+ * hand that reminds the silent ones —, and the tabular import.
  */
 @Path("/animateurs")
 @Produces(MediaType.APPLICATION_JSON)
@@ -61,9 +63,26 @@ public class AnimateurResource {
         this.competencesGrille = competencesGrille;
     }
 
+    @Inject
+    AnimateurProfileService profileService;
+
     @GET
     public List<Animateur> listAnimateurs() {
         return referenceDataService.listAnimateurs();
+    }
+
+    /**
+     * The fiche 360° of one animateur: identity and legal regime, availability,
+     * appreciations and wishes, their line of the Équité and Fragilité
+     * reports, their seats of the persisted plan, and the follow-up — last
+     * publication, acknowledgement, pending swap requests and declaration, ad
+     * hoc constraints and locks naming them. Assembled from the services that
+     * own each figure; {@code 404} for an id the edition does not hold.
+     */
+    @GET
+    @Path("/{id}/fiche")
+    public AnimateurProfile profile(@PathParam("id") String id) {
+        return profileService.profile(id);
     }
 
     /**

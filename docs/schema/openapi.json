@@ -503,6 +503,77 @@
           }
         }
       },
+      "AnimateurProfile" : {
+        "required" : [ "animateur", "joursEvenement", "planCalcule", "equite", "competencesRares", "affectations", "echangesEnCours", "ajustements", "verrous" ],
+        "type" : "object",
+        "properties" : {
+          "animateur" : {
+            "$ref" : "#/components/schemas/Animateur"
+          },
+          "joursEvenement" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string",
+              "format" : "date",
+              "examples" : [ "2022-03-10" ]
+            }
+          },
+          "regimeDebut" : {
+            "$ref" : "#/components/schemas/LegalRegime"
+          },
+          "regimeFin" : {
+            "$ref" : "#/components/schemas/LegalRegime"
+          },
+          "planCalcule" : {
+            "type" : "boolean"
+          },
+          "equite" : {
+            "$ref" : "#/components/schemas/RapportEquite"
+          },
+          "fragilite" : {
+            "$ref" : "#/components/schemas/AnimateurFragilite"
+          },
+          "competencesRares" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/CompetenceRare"
+            }
+          },
+          "affectations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProfileSeat"
+            }
+          },
+          "confirmation" : {
+            "$ref" : "#/components/schemas/ConfirmationView"
+          },
+          "dernierePublicationLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "echangesEnCours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/DemandeEchangeView"
+            }
+          },
+          "ajustements" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProfileAdjustment"
+            }
+          },
+          "verrous" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/VerrouillagePlanning"
+            }
+          },
+          "declarationEnAttente" : {
+            "$ref" : "#/components/schemas/DeclarationAdminView"
+          }
+        }
+      },
       "AnimateurTypologie" : {
         "type" : "object",
         "properties" : {
@@ -1479,8 +1550,8 @@
         }
       },
       "ConfirmationView" : {
-        "required" : [ "affecte" ],
         "type" : "object",
+        "required" : [ "affecte" ],
         "properties" : {
           "animateurId" : {
             "type" : "string"
@@ -4197,6 +4268,22 @@
           }
         }
       },
+      "LegalRegime" : {
+        "type" : "object",
+        "required" : [ "date", "age", "regime" ],
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "age" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "regime" : {
+            "type" : "string"
+          }
+        }
+      },
       "Levee" : {
         "required" : [ "dates" ],
         "type" : "object",
@@ -5500,6 +5587,98 @@
           "hoursAvailable" : {
             "type" : "number",
             "format" : "double"
+          }
+        }
+      },
+      "ProfileAdjustment" : {
+        "type" : "object",
+        "required" : [ "id", "type", "autres" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "type" : {
+            "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "autres" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/ProfileColleague"
+            }
+          },
+          "raison" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ProfileColleague" : {
+        "type" : "object",
+        "required" : [ "id", "nom" ],
+        "properties" : {
+          "id" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
+      "ProfileSeat" : {
+        "type" : "object",
+        "required" : [ "posteId", "standId", "creneauId", "passe", "verrouille" ],
+        "properties" : {
+          "posteId" : {
+            "type" : "string"
+          },
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "creneauId" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "emplacementId" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "passe" : {
+            "type" : "boolean"
+          },
+          "verrouille" : {
+            "type" : "boolean"
           }
         }
       },
@@ -7819,6 +7998,32 @@
           }
         },
         "summary" : "Delete Animateur",
+        "tags" : [ "Animateur Resource" ]
+      }
+    },
+    "/api/animateurs/{id}/fiche" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AnimateurProfile"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Profile",
         "tags" : [ "Animateur Resource" ]
       }
     },
