@@ -14,6 +14,7 @@ import {
   KpiHistoriqueEntry,
   ModeMarge,
   PlanFormation,
+  WalkSequenceReport,
   RapportFragilite,
   RapportMarge,
   RapportIntendance,
@@ -29,6 +30,11 @@ export class AnalysesApi {
 
   breaks(): Promise<RapportPauses> {
     return this.api.get<RapportPauses>('/api/pauses');
+  }
+
+  /** The tight walks between two consecutive seats of the persisted plan. */
+  walks(): Promise<WalkSequenceReport> {
+    return this.api.get<WalkSequenceReport>('/api/planning/enchainements');
   }
 
   /**

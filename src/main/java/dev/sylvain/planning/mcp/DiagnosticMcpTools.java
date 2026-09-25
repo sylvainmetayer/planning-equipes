@@ -16,6 +16,7 @@ import dev.sylvain.planning.service.analyse.OuvertureStandsAnalyzer.RapportOuver
 import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.analyse.StaffingAnalyzer.StaffingSummary;
 import dev.sylvain.planning.service.analyse.StaffingService;
+import dev.sylvain.planning.service.analyse.WalkSequenceAnalyzer;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceFamily;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
@@ -68,6 +69,8 @@ public class DiagnosticMcpTools {
 
     private final CoherenceReferentielService coherenceService;
 
+    private final WalkSequenceAnalyzer walkSequenceAnalyzer;
+
     @Inject
     DiagnosticMcpTools(
             ReferenceDataService referenceDataService,
@@ -77,7 +80,8 @@ public class DiagnosticMcpTools {
             KpiHistoriqueService kpiHistoriqueService,
             PauseAnalyzer pauseAnalyzer,
             PlanningPersistenceService persistenceService,
-            CoherenceReferentielService coherenceService) {
+            CoherenceReferentielService coherenceService,
+            WalkSequenceAnalyzer walkSequenceAnalyzer) {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.margeService = margeService;
@@ -86,6 +90,49 @@ public class DiagnosticMcpTools {
         this.pauseAnalyzer = pauseAnalyzer;
         this.persistenceService = persistenceService;
         this.coherenceService = coherenceService;
+        this.walkSequenceAnalyzer = walkSequenceAnalyzer;
+    }
+
+    /**
+     * The same reading as {@code GET /api/planning/enchainements}: animateurs
+     * by id, stands and emplacements by id, nothing else about a person.
+     */
+    @Tool(
+            name = "analyser_enchainements",
+            description = "Les enchaînements serrés du planning persisté : deux postes consécutifs d'un même "
+                    + "animateur le même jour, sur deux emplacements géolocalisés différents, dont le battement ne "
+                    + "laisse pas le temps d'aller de l'un à l'autre à pied (distance à vol d'oiseau × facteur de "
+                    + "détour ÷ vitesse de marche, arrondi à la minute supérieure), ou ne le laisse qu'en mangeant la "
+                    + "pause légale (walkOnBreak). Pour chacun : ids de l'animateur, des postes, des stands et "
+                    + "des emplacements, heures, distance, trajet, battement et minutes manquantes au-delà de la "
+                    + "tolérance. Toutes les paires, battement nul compris, et le passé aussi. Lu sous les réglages "
+                    + "de trajet courants, sans lancer de résolution ; geolocated=false dit qu'aucun "
+                    + "trajet n'était calculable. Filtrable par date.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    WalkSequenceAnalyzer.WalkSequenceReport analyzeWalks(
+            @ToolArg(description = "Date (AAAA-MM-JJ) : ne garder que ce jour", required = false) String date,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        WalkSequenceAnalyzer.WalkSequenceReport rapport = walkSequenceAnalyzer.analyze(
+                persistenceService.loadPersistedPlanning(),
+                referenceDataService.getParametresQualite(),
+                referenceDataService.getParametresLegaux());
+        LocalDate jour = McpArgs.date(date, "date");
+        if (jour == null) {
+            return rapport;
+        }
+        return new WalkSequenceAnalyzer.WalkSequenceReport(
+                rapport.walkingSpeedKmH(),
+                rapport.detourFactor(),
+                rapport.toleranceMinutes(),
+                rapport.geolocated(),
+                rapport.walks().stream()
+                        .filter(walk -> jour.equals(walk.date()))
+                        .toList());
     }
 
     /**

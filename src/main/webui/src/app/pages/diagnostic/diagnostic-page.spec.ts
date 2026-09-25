@@ -30,6 +30,7 @@ describe('DiagnosticPage', () => {
     fragility: vi.fn(async () => null),
     bench: vi.fn(async () => null),
     breaks: vi.fn(async () => null),
+    walks: vi.fn(async () => null),
     trainingPlan: vi.fn(async () => null),
   };
 

@@ -211,3 +211,24 @@
   color: var(--app-accent);
   white-space: nowrap;
 }
+
+/* A walk between two vacations the gap does not leave time for: a chevron
+   centred on the gap, red when the walk does not fit, tertiary when it only
+   eats the legal break. */
+.timeline-walk {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(-0.5em);
+  padding-inline: 0.5em;
+  color: var(--mat-sys-tertiary);
+}
+
+.timeline-walk-tight,
+.timeline-walk-item-tight {
+  color: var(--mat-sys-error);
+}

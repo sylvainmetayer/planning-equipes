@@ -161,6 +161,11 @@ public final class ConstraintCatalog {
                     "Trop d'allers-retours entre emplacements dans la journée : relevez le plafond dans "
                             + "les paramètres légaux, ou baissez le poids."),
             Map.entry(
+                    "trajetInsuffisantEntrePostes",
+                    "Le battement ne laisse pas le temps de marcher d'un emplacement à l'autre : élargissez "
+                            + "le battement ou rapprochez les stands — ou ajustez la vitesse de marche, le facteur "
+                            + "de détour et la tolérance sur la page Paramètres."),
+            Map.entry(
                     "maxJoursConsecutifsTravailles",
                     "Trop de jours d'affilée : ouvrez des disponibilités sur d'autres personnes pour "
                             + "couvrir ces journées, ou baissez le poids de la règle si la série vous "
@@ -549,6 +554,17 @@ public final class ConstraintCatalog {
                     "Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont "
                             + "l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent.",
                     "Changements d'emplacement éloignés"),
+            new ConstraintDefinition(
+                    "trajetInsuffisantEntrePostes",
+                    Niveau.MEDIUM,
+                    CATEGORIE_QUALITE,
+                    "Entre deux postes d'un même animateur le même jour, séparés par un battement, sur deux "
+                            + "emplacements différents : le battement doit laisser le temps d'aller de l'un à "
+                            + "l'autre à pied (distance à vol d'oiseau × facteur de détour ÷ vitesse de marche). "
+                            + "Chaque minute manquante au-delà de la tolérance est pénalisée. Deux postes qui se "
+                            + "touchent restent l'affaire de eviterChangementEmplacementEloigne : une paire n'est "
+                            + "jamais jugée par les deux règles.",
+                    "Trajets trop courts entre deux postes"),
             new ConstraintDefinition(
                     "limiterEmplacementsParJour",
                     Niveau.MEDIUM,

@@ -758,7 +758,12 @@ final class ScenarioDomainMapper {
                 dto.typologiesDistinctesMax() != null
                         ? dto.typologiesDistinctesMax()
                         : defauts.typologiesDistinctesMax(),
-                dto.joursConsecutifsMax() != null ? dto.joursConsecutifsMax() : defauts.joursConsecutifsMax()));
+                dto.joursConsecutifsMax() != null ? dto.joursConsecutifsMax() : defauts.joursConsecutifsMax(),
+                dto.vitesseMarcheKmH() != null ? dto.vitesseMarcheKmH() : defauts.vitesseMarcheKmH(),
+                dto.facteurDetour() != null ? dto.facteurDetour() : defauts.facteurDetour(),
+                dto.toleranceTrajetMinutes() != null
+                        ? dto.toleranceTrajetMinutes()
+                        : defauts.toleranceTrajetMinutes()));
     }
 
     private static Optional<ParametresSolveur> parametresSolveur(ParametresSolveurDto dto) {

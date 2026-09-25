@@ -607,6 +607,7 @@ public final class CatalogueActions {
         outil("importer_scenario_yaml", SCENARIO_IMPORTE);
 
         outil("modifier_parametres_legaux", PARAMETRES_LEGAUX_MODIFIES);
+        outil("modifier_parametres_qualite", PARAMETRES_QUALITE_MODIFIES);
         outil("modifier_parametres_solveur", PARAMETRES_SOLVEUR_MODIFIES);
         outil("modifier_parametres_notifications", PARAMETRES_NOTIFICATIONS_MODIFIES);
         outil("activer_contrainte", CONTRAINTE_ACTIVEE);

@@ -38,3 +38,30 @@ export function distanceMetres(depuis: PointGeo, vers: PointGeo): number | null 
 export function formatDistance(metres: number): string {
   return metres < 1000 ? `${metres} m` : `${(metres / 1000).toFixed(1)} km`;
 }
+
+/** What turns a distance into a walk: the edition's quality settings, or their defaults. */
+export interface WalkingSettings {
+  vitesseMarcheKmH?: number;
+  facteurDetour?: number;
+}
+
+/** The server's defaults (`ParametresQualite`), used until the edition's own settings are read. */
+export const WALKING_DEFAULTS: Required<WalkingSettings> = {
+  vitesseMarcheKmH: 4,
+  facteurDetour: 1.3,
+};
+
+/**
+ * Walking minutes for a straight-line distance, rounded up — the arithmetic of
+ * `WalkingTime` on the server: distance × detour factor ÷ speed. Zero for no
+ * distance.
+ */
+export function walkingMinutes(metres: number, settings: WalkingSettings = {}): number {
+  const speed = settings.vitesseMarcheKmH ?? WALKING_DEFAULTS.vitesseMarcheKmH;
+  const factor = settings.facteurDetour ?? WALKING_DEFAULTS.facteurDetour;
+  if (metres <= 0 || speed <= 0) {
+    return 0;
+  }
+  const metresPerMinute = (speed * 1000) / 60;
+  return Math.ceil((metres * factor) / metresPerMinute - 1e-9);
+}

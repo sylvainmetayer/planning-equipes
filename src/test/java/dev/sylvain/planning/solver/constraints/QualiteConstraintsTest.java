@@ -361,6 +361,156 @@ class QualiteConstraintsTest extends ConstraintTestBase {
                 .penalizesBy(0);
     }
 
+    // --- trajetInsuffisantEntrePostes ---------------------------------------
+    //
+    // Two places 1 000 m apart: at 4 km/h with a detour factor of 1.3, the walk
+    // is 19.5 minutes, announced as 20.
+
+    private static final ParametresQualite TRAJET_PAR_DEFAUT = new ParametresQualite();
+
+    private final Emplacement lieuA = emplacement("LIEU-A", 46.6500, 2.2500);
+    private final Emplacement lieuB = emplacement("LIEU-B", 46.6500 + 0.0089932, 2.2500);
+
+    private static Creneau at(String id, int fromHour, int fromMinute, int toHour, int toMinute) {
+        return creneau(id, 1, D1, LocalTime.of(fromHour, fromMinute), LocalTime.of(toHour, toMinute));
+    }
+
+    @Test
+    void aTenMinuteGapForATwentyMinuteWalkCostsTheFiveMinutesBeyondTheTolerance() {
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(5);
+    }
+
+    @Test
+    void aGapLongEnoughForTheWalkCostsNothing() {
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B2", 14, 15, 18, 0), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void theToleranceIsASetting() {
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT.withTrajet(4.0, 1.3, 0),
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(10);
+    }
+
+    @Test
+    void aPairIsJudgedByOneRuleOnlyWhetherItsGapIsZeroOrPositive() {
+        Animateur a1 = referentMajeur("A1");
+        Stand standA = standWithEmplacement("S-A", lieuA);
+        Stand standB = standWithEmplacement("S-B", lieuB);
+        // Back to back, far apart: the neighbour rule's, never this one's.
+        PosteAffectation[] contigus = {
+            poste(standA, at("T-A", 10, 0, 14, 0), a1), poste(standB, at("T-C", 14, 0, 18, 0), a1)
+        };
+        verify("eviterChangementEmplacementEloigne")
+                .given(TRAJET_PAR_DEFAUT, contigus[0], contigus[1])
+                .penalizesBy(1);
+        verify("trajetInsuffisantEntrePostes")
+                .given(TRAJET_PAR_DEFAUT, contigus[0], contigus[1])
+                .penalizesBy(0);
+        // Ten minutes apart: this rule's, never the neighbour's.
+        PosteAffectation[] espaces = {
+            poste(standA, at("T-A", 10, 0, 14, 0), a1), poste(standB, at("T-B", 14, 10, 18, 0), a1)
+        };
+        verify("eviterChangementEmplacementEloigne")
+                .given(TRAJET_PAR_DEFAUT, espaces[0], espaces[1])
+                .penalizesBy(0);
+        verify("trajetInsuffisantEntrePostes")
+                .given(TRAJET_PAR_DEFAUT, espaces[0], espaces[1])
+                .penalizesBy(5);
+    }
+
+    @Test
+    void theSameEmplacementIsNeverATrip() {
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-A2", lieuA), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aStandWithoutEmplacementOrCoordinatesIsInert() {
+        Animateur a1 = referentMajeur("A1");
+        Emplacement sansCoordonnees = new Emplacement("SANS-GPS", "SANS-GPS", null, null);
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithStrategy("S-NU"), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1),
+                        poste(standWithEmplacement("S-X", sansCoordonnees), at("T-D", 18, 5, 20, 0), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void onlyConsecutiveSeatsArePaired() {
+        // A → (A, a few minutes later) → B: the walk that matters starts from
+        // the seat in between, and the A → B pair across it is not billed again.
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(standWithEmplacement("S-A2", lieuA), at("T-M", 14, 2, 14, 8), a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(13);
+    }
+
+    @Test
+    void twoPastSeatsAreHistory() {
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        postePasse(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        postePasse(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void twoDifferentAnimateursNeverMakeATrip() {
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), referentMajeur("A1")),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), referentMajeur("A2")))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aSeatWithoutHoursOnTheSameDayIsIgnoredRatherThanScored() {
+        // A timeslot with no date cannot answer debut(): the join must never
+        // ask it, on either side.
+        Animateur a1 = referentMajeur("A1");
+        verify("trajetInsuffisantEntrePostes")
+                .given(
+                        TRAJET_PAR_DEFAUT,
+                        poste(standWithEmplacement("S-A", lieuA), at("T-A", 10, 0, 14, 0), a1),
+                        poste(
+                                standWithEmplacement("S-X", lieuB),
+                                creneau("T-X", 1, null, LocalTime.of(14, 5), LocalTime.of(15, 0)),
+                                a1),
+                        poste(standWithEmplacement("S-B", lieuB), at("T-B", 14, 10, 18, 0), a1))
+                .penalizesBy(5);
+    }
+
     // --- limiterEmplacementsParJour (#82) ---------------------------------
     //
     // The cap travels as a ParametresQualite problem fact, so each test states

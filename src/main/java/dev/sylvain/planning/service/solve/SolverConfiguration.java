@@ -134,7 +134,10 @@ final class SolverConfiguration {
                         defauts.heureServiceMatinal(),
                         defauts.reposSouhaiteApresServiceTardifMinutes(),
                         defauts.typologiesDistinctesMax(),
-                        defauts.joursConsecutifsMax());
+                        defauts.joursConsecutifsMax(),
+                        defauts.vitesseMarcheKmH(),
+                        defauts.facteurDetour(),
+                        defauts.toleranceTrajetMinutes());
     }
 
     /**

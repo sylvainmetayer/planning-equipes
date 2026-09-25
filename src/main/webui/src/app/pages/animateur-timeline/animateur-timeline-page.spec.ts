@@ -503,7 +503,11 @@ function twoAnimateurPlanning(): PlanningEvenement {
 
 describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
-  let analysesApi: { typologies: ReturnType<typeof vi.fn>; breaks: ReturnType<typeof vi.fn> };
+  let analysesApi: {
+    typologies: ReturnType<typeof vi.fn>;
+    breaks: ReturnType<typeof vi.fn>;
+    walks: ReturnType<typeof vi.fn>;
+  };
   let planningApi: {
     exportForAnimateur: ReturnType<typeof vi.fn>;
     sendToAnimateur: ReturnType<typeof vi.fn>;
@@ -522,7 +526,7 @@ describe('AnimateurTimelinePage', () => {
   async function rendre(
     evenement: PlanningEvenement | null,
     options: { animateurEnParametre?: string | null; consignes?: ConsigneEdition[] } = {},
-    analyses: { breaks?: () => unknown } = {},
+    analyses: { breaks?: () => unknown; walks?: () => unknown } = {},
   ): Promise<void> {
     consignesStore = {
       reload: vi.fn(async () => undefined),
@@ -531,6 +535,7 @@ describe('AnimateurTimelinePage', () => {
     analysesApi = {
       typologies: vi.fn(async () => []),
       breaks: vi.fn(async () => analyses.breaks?.() ?? null),
+      walks: vi.fn(async () => analyses.walks?.() ?? null),
     };
     planningApi = {
       exportForAnimateur: vi.fn(async () => 'Téléchargement démarré.'),
@@ -770,6 +775,42 @@ describe('AnimateurTimelinePage', () => {
     expect(segment!.getAttribute('aria-label')).toContain("personne d'autre sur le stand");
     expect(racine().querySelector('.timeline-pause-item')?.textContent).toContain(
       'Pause 11:40 – 12:00',
+    );
+  });
+
+  it('draws a red chevron between two seats the walk does not fit, and lists it', async () => {
+    const evenement = twoAnimateurPlanning();
+    await rendre(
+      evenement,
+      {},
+      {
+        walks: () => ({
+          walkingSpeedKmH: 4,
+          detourFactor: 1.3,
+          toleranceMinutes: 5,
+          geolocated: true,
+          walks: [
+            {
+              animateurId: 'a1',
+              date: evenement.postes[0].creneau!.date,
+              end: '10:00:00',
+              start: '10:10:00',
+              distanceMetres: 1000,
+              walkMinutes: 20,
+              gapMinutes: 10,
+              missingMinutes: 5,
+              walkOnBreak: false,
+            },
+          ],
+        }),
+      },
+    );
+
+    const chevron = racine().querySelector('.timeline-walk');
+    expect(chevron).not.toBeNull();
+    expect(chevron!.classList.contains('timeline-walk-tight')).toBe(true);
+    expect(racine().querySelector('.timeline-walk-item')?.textContent).toContain(
+      '20 min à pied, 10 min de battement',
     );
   });
 

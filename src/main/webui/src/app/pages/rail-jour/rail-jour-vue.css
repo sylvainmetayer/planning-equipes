@@ -263,6 +263,26 @@
   outline-offset: 1px;
 }
 
+.rail-trajet {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  min-width: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Centred on the gap, even a zero-width one: the chevron sits on the seam. */
+  transform: translateX(-0.5em);
+  padding-inline: 0.5em;
+  color: var(--mat-sys-tertiary);
+  pointer-events: auto;
+}
+
+.rail-trajet-serre {
+  color: var(--mat-sys-error);
+}
+
 .rail-swatch-pause {
   background: var(--mat-sys-tertiary);
 }

@@ -106,6 +106,7 @@ class ConstraintFloorRulesTest {
                 "repartitionMineursParCreneau",
                 "eviterRoulementStandsPremium",
                 "limiterEmplacementsParJour",
+                "trajetInsuffisantEntrePostes",
                 "limiterTypologiesDistinctesParAnimateur",
                 "maxJoursConsecutifsTravailles",
                 "coupureRepasPlacementPrefere",

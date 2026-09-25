@@ -16,10 +16,16 @@ import { ApiService } from './api.service';
 import { protectionApplies } from './constraint-protection';
 import { AnalysesApi } from './api/analyses-api';
 import { ConstraintsApi } from './api/constraints-api';
-import { CauseInfaisabilite, ConstraintsView, FeasibilityReport, RapportPauses } from './models';
+import {
+  CauseInfaisabilite,
+  ConstraintsView,
+  FeasibilityReport,
+  WalkSequenceReport,
+  RapportPauses,
+} from './models';
 import { compterProblemes, construireProblemes } from './problemes';
 import { ReferenceDataStore } from './reference-data.store';
-import { standNames } from './reference-labels';
+import { animateurNames, standNames } from './reference-labels';
 import { errorMessage } from './error-message';
 
 @Injectable({ providedIn: 'root' })
@@ -32,6 +38,9 @@ export class ProblemesStore {
   /** The breaks of the persisted plan, for the relay-less ones; null until loaded or when the request failed. */
   private readonly _pauses = signal<RapportPauses | null>(null);
   readonly pauses = this._pauses.asReadonly();
+  /** The tight walks of the persisted plan; null until loaded or when the request failed. */
+  private readonly _walks = signal<WalkSequenceReport | null>(null);
+  readonly walks = this._walks.asReadonly();
   private readonly _loading = signal(false);
   readonly loading = this._loading.asReadonly();
   private readonly _error = signal('');
@@ -68,6 +77,8 @@ export class ProblemesStore {
    * (not loaded yet, deleted since) stays on screen as it is.
    */
   private readonly nomsStands = computed(() => standNames(this.referentiel.stands()));
+  /** The readings name their animateurs by id; the organiser reads names. */
+  private readonly nomsAnimateurs = computed(() => animateurNames(this.referentiel.animateurs()));
 
   readonly problemes = computed(() =>
     construireProblemes(
@@ -76,6 +87,8 @@ export class ProblemesStore {
       this.constraints()?.contraintesAdHocEnCause ?? [],
       this.pauses(),
       this.nomsStands(),
+      this.nomsAnimateurs(),
+      this.walks(),
     ),
   );
   readonly comptage = computed(() => compterProblemes(this.problemes()));
@@ -219,15 +232,18 @@ export class ProblemesStore {
   /** Reloads both sources, for the screens showing the full problem list. */
   async reload(): Promise<void> {
     this._loading.set(true);
-    const [feasibility, constraints, pauses] = await Promise.all([
+    const [feasibility, constraints, pauses, walks] = await Promise.all([
       this.api.get<FeasibilityReport>('/api/feasibility').catch((error: unknown) => error as Error),
       this.constraintsApi.catalogue().catch((error: unknown) => error as Error),
       // Without the breaks the list is merely shorter: never a failure of the screen.
       this.analysesApi.breaks().catch(() => null),
+      // Same for the tight walks.
+      this.analysesApi.walks().catch(() => null),
     ]);
     this._report.set(feasibility instanceof Error ? null : feasibility);
     this._constraints.set(constraints instanceof Error ? null : constraints);
     this._pauses.set(pauses && typeof pauses === 'object' && 'journees' in pauses ? pauses : null);
+    this._walks.set(walks && typeof walks === 'object' && 'walks' in walks ? walks : null);
     const failure = [feasibility, constraints].find(
       (result): result is Error => result instanceof Error,
     );

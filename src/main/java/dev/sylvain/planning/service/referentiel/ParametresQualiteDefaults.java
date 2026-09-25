@@ -30,7 +30,13 @@ public final class ParametresQualiteDefaults {
                 config.getOptionalValue("planning.contraintes.typologies-distinctes-max", Integer.class)
                         .orElse(ParametresQualite.TYPOLOGIES_DISTINCTES_MAX_PAR_DEFAUT),
                 config.getOptionalValue("planning.contraintes.jours-consecutifs-max", Integer.class)
-                        .orElse(ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT));
+                        .orElse(ParametresQualite.JOURS_CONSECUTIFS_MAX_PAR_DEFAUT),
+                config.getOptionalValue("planning.contraintes.vitesse-marche-km-h", Double.class)
+                        .orElse(ParametresQualite.VITESSE_MARCHE_KM_H_PAR_DEFAUT),
+                config.getOptionalValue("planning.contraintes.facteur-detour", Double.class)
+                        .orElse(ParametresQualite.FACTEUR_DETOUR_PAR_DEFAUT),
+                config.getOptionalValue("planning.contraintes.tolerance-trajet-minutes", Integer.class)
+                        .orElse(ParametresQualite.TOLERANCE_TRAJET_MINUTES_PAR_DEFAUT));
     }
 
     /**

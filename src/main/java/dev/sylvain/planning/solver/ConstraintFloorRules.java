@@ -205,6 +205,7 @@ public final class ConstraintFloorRules {
                     MissingData.NIVEAUX_COMPETENCE),
             rule("eviterRoulementStandsPremium", Denominator.NONE, null),
             rule("eviterChangementEmplacementEloigne", Denominator.CONSECUTIVE_PAIRS, null),
+            rule("trajetInsuffisantEntrePostes", Denominator.NONE, null),
             rule("limiterEmplacementsParJour", Denominator.NONE, null),
             rule("eviterEnchainementStandsEpuisants", Denominator.CONSECUTIVE_PAIRS, null),
             rule("eviterFermeturePuisOuverture", Denominator.NONE, null),

@@ -1,5 +1,8 @@
 package dev.sylvain.planning.scenario.dto;
 
+import jakarta.validation.constraints.DecimalMax;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import java.time.LocalTime;
@@ -17,7 +20,7 @@ import java.time.LocalTime;
  * <p>The two hours are <b>wholesale</b>: present, the section describes the
  * whole quality tuning, so an hour it leaves out is an hour the edition does
  * not have — which is exactly how {@code eviterFermeturePuisOuverture} is
- * neutralised. An export always writes the six fields, so a round trip is
+ * neutralised. An export always writes every field, so a round trip is
  * exact. The numbers keep the usual convention instead — what the file does
  * not carry keeps the importing edition's value — because no number of theirs
  * can mean « none ».</p>
@@ -28,4 +31,7 @@ public record ParametresQualiteDto(
         LocalTime heureServiceMatinal,
         @PositiveOrZero Integer reposSouhaiteApresServiceTardifMinutes,
         @Positive Integer typologiesDistinctesMax,
-        @Positive Integer joursConsecutifsMax) {}
+        @Positive Integer joursConsecutifsMax,
+        @Positive @DecimalMax("15") Double vitesseMarcheKmH,
+        @DecimalMin("1") @DecimalMax("5") Double facteurDetour,
+        @PositiveOrZero @Max(120) Integer toleranceTrajetMinutes) {}

@@ -13,8 +13,8 @@ import { StatusMessage } from '../../shared/status-message';
 /**
  * The organisational-quality thresholds of the edition: how many emplacements
  * and how many typologies one animateur may spread over, how many days in a row
- * they may work, and what counts as a late closing followed by an early
- * opening.
+ * they may work, what counts as a late closing followed by an early opening,
+ * and how fast one walks from an emplacement to another.
  *
  * <p>These used to be deployment configuration, identical for every edition and
  * shown nowhere (issue #591): an organiser for whom three typologies is normal
@@ -51,6 +51,9 @@ export class ParametresQualiteCard implements OnInit {
   protected readonly heureServiceTardif = signal('');
   protected readonly heureServiceMatinal = signal('');
   protected readonly restAfterLateServiceHours = signal<number | null>(null);
+  protected readonly walkingSpeed = signal<number | null>(null);
+  protected readonly detourFactor = signal<number | null>(null);
+  protected readonly walkingTolerance = signal<number | null>(null);
 
   private readonly constraintsApi = inject(ConstraintsApi);
 
@@ -81,10 +84,13 @@ export class ParametresQualiteCard implements OnInit {
     this.restAfterLateServiceHours.set(
       (parametres.reposSouhaiteApresServiceTardifMinutes ?? 0) / 60,
     );
+    this.walkingSpeed.set(parametres.vitesseMarcheKmH ?? null);
+    this.detourFactor.set(parametres.facteurDetour ?? null);
+    this.walkingTolerance.set(parametres.toleranceTrajetMinutes ?? null);
   }
 
   /**
-   * Saves the six thresholds as one record, like the legal card: the server
+   * Saves every threshold as one record, like the legal card: the server
    * replaces the whole row, so a partial save would silently reset what this
    * card did not show.
    */
@@ -93,6 +99,9 @@ export class ParametresQualiteCard implements OnInit {
     const typologies = this.typologiesDistinctesMax();
     const joursAffilee = this.joursConsecutifsMax();
     const reposHeures = this.restAfterLateServiceHours();
+    const speed = this.walkingSpeed();
+    const factor = this.detourFactor();
+    const tolerance = this.walkingTolerance();
     if (
       emplacements === null ||
       emplacements < 1 ||
@@ -101,7 +110,13 @@ export class ParametresQualiteCard implements OnInit {
       joursAffilee === null ||
       joursAffilee < 1 ||
       reposHeures === null ||
-      reposHeures < 0
+      reposHeures < 0 ||
+      speed === null ||
+      speed <= 0 ||
+      factor === null ||
+      factor < 1 ||
+      tolerance === null ||
+      tolerance < 0
     ) {
       return;
     }
@@ -125,6 +140,9 @@ export class ParametresQualiteCard implements OnInit {
           heureServiceTardif: this.heureServiceTardif() || null,
           heureServiceMatinal: this.heureServiceMatinal() || null,
           reposSouhaiteApresServiceTardifMinutes: Math.round(reposHeures * 60),
+          vitesseMarcheKmH: speed,
+          facteurDetour: factor,
+          toleranceTrajetMinutes: Math.round(tolerance),
         }),
       );
       this.saved.set(true);

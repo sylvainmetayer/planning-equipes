@@ -93,6 +93,7 @@ describe('JourneePage', () => {
     typologies: vi.fn(async () => []),
     breaks: vi.fn(async () => null),
     emplacements: vi.fn(async () => []),
+    walks: vi.fn(async () => null),
   };
   const journeesApi = {
     changements: vi.fn(

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
@@ -8,7 +8,13 @@ import { MatTableModule } from '@angular/material/table';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { labelEmplacementsPluriel } from '../../core/entity-labels';
 import { ReferenceTablePage } from '../../core/reference-table-page';
-import { distanceMetres, formatDistance } from '../../core/distance';
+import { ConstraintsApi } from '../../core/api/constraints-api';
+import {
+  distanceMetres,
+  formatDistance,
+  WALKING_DEFAULTS,
+  WalkingSettings,
+} from '../../core/distance';
 import { Emplacement } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
 import { TableFilter } from '../../shared/table-filter';
@@ -50,6 +56,9 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
   protected readonly emplacementsFiltres = this.lignesFiltrees;
 
   constructor() {
+    // Read by the detail's walking times: the defaults until the edition's own
+    // settings arrive, and for good if they cannot be read.
+    const walking = signal<WalkingSettings>(WALKING_DEFAULTS);
     super({
       rows: (store) => store.emplacements(),
       id: (emplacement) => emplacement.id,
@@ -63,7 +72,12 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       detail: (emplacement, store) => ({
         title: emplacement.nom || emplacement.id,
         subtitle: emplacement.id,
-        sections: buildEmplacementDetail(emplacement, store.stands()),
+        sections: buildEmplacementDetail(
+          emplacement,
+          store.stands(),
+          store.emplacements(),
+          walking(),
+        ),
       }),
       formulaire: (emplacement, dialog: MatDialog) => {
         dialog.open<EmplacementFormDialog, EmplacementFormData, boolean>(EmplacementFormDialog, {
@@ -78,6 +92,17 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       name: (emplacement) => emplacement.nom,
       libellePluriel: labelEmplacementsPluriel,
     });
+    const constraintsApi = inject(ConstraintsApi);
+    void (async () => {
+      try {
+        const settings = await constraintsApi.qualityParameters();
+        if (settings) {
+          walking.set(settings);
+        }
+      } catch {
+        // The defaults stay: a walking time slightly off beats no walking time.
+      }
+    })();
   }
 
   protected coordonneesLabel(emplacement: Emplacement): string {

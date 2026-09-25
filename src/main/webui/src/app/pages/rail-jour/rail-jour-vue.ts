@@ -32,7 +32,12 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { resumeDeplacement } from '../../shared/deplacement';
 import { openMoveDialog } from '../../shared/deplacement-dialog';
 import { OptionSelection } from '../../shared/selection-recherche';
-import { PlanningEvenement, TypologieItem, RapportPauses } from '../../core/models';
+import {
+  PlanningEvenement,
+  WalkSequenceReport,
+  RapportPauses,
+  TypologieItem,
+} from '../../core/models';
 import { correspondAuFiltre } from '../../core/text-filter';
 import { typologieColorClass, typologieLabel, typologieLabels } from '../../core/typologie-colors';
 import { RailBloc, RailJour, RailLigne, buildRailJours, compterStatuts } from './rail-jour';
@@ -84,6 +89,8 @@ export class RailJourView {
   readonly typologies = input<TypologieItem[]>([]);
   /** The breaks of the plan; null when the request failed — the rail still draws. */
   readonly pauses = input<RapportPauses | null>(null);
+  /** The tight walks of the plan; null when the request failed — the rail still draws. */
+  readonly walks = input<WalkSequenceReport | null>(null);
   /** The day number the page selected; the first day of the plan when null. */
   readonly jour = input<number | null>(null);
   /** The page's shared filters: a name, a stand, an animateur — each empty when unset. */
@@ -111,6 +118,7 @@ export class RailJourView {
       planning.animateurs ?? [],
       planning.contraintesAdHoc ?? [],
       this.pauses(),
+      this.walks(),
     );
   });
 

@@ -354,6 +354,49 @@ compte. Les deux plafonds y sont relevés de la pause qu'on prend dessous
 (`maxDailyAmplitude`) : une journée de 10 h 20 d'amplitude est 10 h de travail,
 donc une personne peut la couvrir.
 
+## Le temps de trajet entre deux postes
+
+`eviterChangementEmplacementEloigne` ne regarde que deux postes **qui se
+touchent** (fin de l'un = début de l'autre) et juge 300 m à vol d'oiseau sans
+notion de temps : un animateur qui finit à 14 h 00 au stand A et reprend à
+14 h 10 au stand B, à un kilomètre, n'était jamais examiné. `limiterEmplacementsParJour`
+compte les zones d'une journée sans en regarder l'ordre ni la distance.
+
+`trajetInsuffisantEntrePostes` comble ce trou. Le temps de marche entre deux
+emplacements géolocalisés vaut **distance à vol d'oiseau × facteur de détour ÷
+vitesse de marche**, arrondi à la minute supérieure : 1 000 m à 4 km/h avec un
+facteur 1,3 font 20 min. Pour deux postes **consécutifs** d'un même animateur
+le même jour, sur deux emplacements différents, séparés par un battement
+**strictement positif**, chaque minute qui manque au battement au-delà de la
+tolérance coûte un point medium — 10 min de battement pour 20 min de trajet et
+5 min de tolérance coûtent 5. Le solveur a une pente à descendre : élargir le
+battement, ou garder la personne au même endroit.
+
+Trois choix le cadrent :
+
+- **Pas de double compte.** Une paire à battement nul reste l'affaire de
+  `eviterChangementEmplacementEloigne`, inchangée ; la nouvelle règle la
+  refuse, sur la même clé (les heures des créneaux). Une paire est jugée par
+  l'une ou l'autre, jamais les deux. Et seules deux vacations **consécutives**
+  forment une paire : un poste intercalé porte le trajet qui compte.
+- **Pas de service d'itinéraire.** Ni OSRM ni Google : aucune dépendance
+  réseau, aucune donnée envoyée à un tiers, un calcul déterministe dans le
+  solveur. Le facteur de détour est le levier d'un site où l'on contourne.
+- **MEDIUM et dosable, pas HARD.** Un trajet serré est un inconfort, la vitesse
+  une estimation ; aucune base légale.
+
+Un stand sans emplacement, ou un emplacement sans coordonnées, rend la règle
+inerte : un trajet inconnu n'est ni court ni long.
+
+**La vérification des enchaînements** (`GET /api/planning/enchainements`,
+outil MCP `analyser_enchainements`) lit le plan persisté avec le même calcul
+mais un filet plus large : **toutes** les paires consécutives, battement nul
+compris, et le passé aussi. Elle signale en plus un battement qui est aussi la
+pause légale quand le trajet en mange une part — « trajet pris sur la pause » —
+sans que la règle de pause change. Le Rail et la timeline y posent un chevron,
+la page Problèmes une ligne d'avertissement avec le lien vers le Rail du jour,
+et la fiche d'un emplacement donne le temps de marche vers chacun des autres.
+
 ## Les seuils de qualité
 
 Les règles de « Qualité d'organisation » lisent leurs seuils dans
@@ -367,6 +410,9 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans
 | Heure d'un service matinal | 10:00 | `eviterFermeturePuisOuverture` |
 | Repos souhaité après un service tardif | 12 h | `eviterFermeturePuisOuverture` |
 | Jours travaillés d'affilée | 8 | `maxJoursConsecutifsTravailles` et sa forme dure |
+| Vitesse de marche | 4 km/h | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
+| Facteur de détour | 1,3 | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
+| Tolérance de trajet | 5 min | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
 
 Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
 page Paramètres, carte « Qualité d'organisation » ; le bloc
@@ -1430,6 +1476,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `experienceRequisePourStandsPremium` | MEDIUM | Qualité d'organisation | Un stand premium ne devrait pas être tenu par un animateur débutant sur sa typologie. |
 | `eviterRoulementStandsPremium` | MEDIUM | Qualité d'organisation | Sur un stand premium, limiter le nombre d'animateurs différents qui s'y relaient au-delà d'un équipage : on privilégie la continuité. |
 | `eviterChangementEmplacementEloigne` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter de faire basculer un animateur vers un stand dont l'emplacement est éloigné (> 300 m à vol d'oiseau) de celui du créneau précédent. |
+| `trajetInsuffisantEntrePostes` | MEDIUM | Qualité d'organisation | Entre deux postes d'un même animateur le même jour, séparés par un battement, sur deux emplacements différents : le battement doit laisser le temps d'aller de l'un à l'autre à pied (distance à vol d'oiseau × facteur de détour ÷ vitesse de marche). Chaque minute manquante au-delà de la tolérance est pénalisée. Deux postes qui se touchent restent l'affaire de eviterChangementEmplacementEloigne : une paire n'est jamais jugée par les deux règles. |
 | `limiterEmplacementsParJour` | MEDIUM | Qualité d'organisation | Sur une même journée, limiter le nombre d'emplacements distincts visités par un animateur (plafond réglable, 3 par défaut) : au-delà, la journée est dispersée quelles que soient les distances. |
 | `eviterEnchainementStandsEpuisants` | MEDIUM | Qualité d'organisation | Entre deux créneaux consécutifs, éviter d'enchaîner un animateur sur deux stands physiquement épuisants sans repos ni stand plus facile entre les deux. |
 | `eviterFermeturePuisOuverture` | MEDIUM | Qualité d'organisation | Après une vacation qui finit tard (22 h par défaut), éviter une reprise matinale le lendemain (10 h par défaut) : on souhaite alors 12 h de repos plutôt que le minimum légal. Préférence d'organisation, pas une obligation du Code du travail : seules les minutes au-dessus du repos quotidien légal sont comptées ici, celles en dessous restent l'affaire de reposQuotidienMinimal, qui les tient en dur. La règle est donc muette quand la loi exige déjà autant (un mineur, 12 h ; avant 16 ans, 14 h). |

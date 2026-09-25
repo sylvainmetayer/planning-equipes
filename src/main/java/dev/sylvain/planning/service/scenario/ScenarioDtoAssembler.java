@@ -355,7 +355,7 @@ final class ScenarioDtoAssembler {
     }
 
     /**
-     * The six thresholds, written whole or not at all: read wholesale on the
+     * The thresholds, written whole or not at all: read wholesale on the
      * way back in, a half-written section would say « no late hour » where the
      * edition simply had one.
      */
@@ -368,7 +368,10 @@ final class ScenarioDtoAssembler {
                         parametres.heureServiceMatinal(),
                         parametres.reposSouhaiteApresServiceTardifMinutes(),
                         parametres.typologiesDistinctesMax(),
-                        parametres.joursConsecutifsMax());
+                        parametres.joursConsecutifsMax(),
+                        parametres.vitesseMarcheKmH(),
+                        parametres.facteurDetour(),
+                        parametres.toleranceTrajetMinutes());
     }
 
     private static ParametresSolveurDto parametresSolveur(ParametresSolveur parametres) {

@@ -1,5 +1,5 @@
 // The quality-parameters card of the Paramètres page (issue #591): six
-// thresholds loaded whole and sent back whole, and the pair of service hours
+// thresholds (and the three walking settings) loaded whole and sent back whole, and the pair of service hours
 // refused half-filled.
 
 import { provideZonelessChangeDetection } from '@angular/core';
@@ -16,6 +16,7 @@ type CardInternals = {
   heureServiceTardif: { (): string; set: (value: string) => void };
   heureServiceMatinal: { (): string; set: (value: string) => void };
   restAfterLateServiceHours: () => number | null;
+  walkingSpeed: { (): number | null; set: (value: number | null) => void };
   error: () => string;
   save: () => Promise<void>;
 };
@@ -43,6 +44,9 @@ describe('ParametresQualiteCard', () => {
       reposSouhaiteApresServiceTardifMinutes: 720,
       typologiesDistinctesMax: 2,
       joursConsecutifsMax: 6,
+      vitesseMarcheKmH: 4,
+      facteurDetour: 1.3,
+      toleranceTrajetMinutes: 5,
     });
     TestBed.configureTestingModule({
       providers: [
@@ -74,7 +78,21 @@ describe('ParametresQualiteCard', () => {
       heureServiceTardif: '22:00',
       heureServiceMatinal: '10:00',
       reposSouhaiteApresServiceTardifMinutes: 720,
+      vitesseMarcheKmH: 4,
+      facteurDetour: 1.3,
+      toleranceTrajetMinutes: 5,
     });
+  });
+
+  it('refuses a walking speed of zero, which would make every trip endless', async () => {
+    const card = createCard();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    card.walkingSpeed.set(0);
+    await card.save();
+
+    expect(constraintsApi.saveQualityParameters).not.toHaveBeenCalled();
   });
 
   it('refuses one service hour without the other, which describes no pair', async () => {

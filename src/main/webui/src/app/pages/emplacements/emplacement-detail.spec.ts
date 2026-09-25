@@ -62,3 +62,39 @@ describe('buildEmplacementDetail', () => {
     expect(labels).not.toContain('Effet sur le planning');
   });
 });
+
+describe('buildEmplacementDetail — walking times', () => {
+  // About 1 000 m north of `place`.
+  const farAway: Emplacement = {
+    id: 'LOIN',
+    nom: 'Mairie',
+    latitude: 46.6487 + 0.0089932,
+    longitude: 2.2503,
+  };
+  const withoutCoordinates: Emplacement = {
+    id: 'X',
+    nom: 'Sans GPS',
+    latitude: null,
+    longitude: null,
+  };
+
+  it('gives the walk to every other geolocated place: 1 km at 4 km/h, detour 1.3, is 20 min', () => {
+    const sections = buildEmplacementDetail(place, [], [place, farAway, withoutCoordinates], {
+      vitesseMarcheKmH: 4,
+      facteurDetour: 1.3,
+    });
+
+    const marche = sections.find((section) => section.title.startsWith('Temps de marche'));
+    expect(marche?.rows).toEqual([{ label: 'Mairie', value: '1.0 km, 20 min à pied' }]);
+  });
+
+  it('gives none for a place without coordinates', () => {
+    const sections = buildEmplacementDetail(
+      withoutCoordinates,
+      [],
+      [place, farAway, withoutCoordinates],
+    );
+
+    expect(sections.some((section) => section.title.startsWith('Temps de marche'))).toBe(false);
+  });
+});
