@@ -81,13 +81,6 @@ public class ParametresService {
     }
 
     /**
-     * Every constraint the next solve will <b>not</b> enforce: the ones this
-     * edition switched off, plus the ones the catalogue ships off that nobody
-     * asked for (see {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}). One
-     * set, whatever the reason — callers that only want to know what applies
-     * have no business re-deriving the default.
-     */
-    /**
      * The quality thresholds of this edition — its row, or the deployment's
      * configuration while it has none (issue #591).
      */
@@ -108,11 +101,18 @@ public class ParametresService {
         return parametres;
     }
 
+    /**
+     * Every constraint the next solve will <b>not</b> enforce: the ones this
+     * edition switched off, plus the ones the catalogue ships off that nobody
+     * asked for (see {@code ConstraintCatalog.DESACTIVEES_PAR_DEFAUT}). One
+     * set, whatever the reason — callers that only want to know what applies
+     * have no business re-deriving the default.
+     */
     public Set<String> disabledContraintes() {
         Map<String, Boolean> etats = repository.getEtatsContraintes();
         Set<String> desactivees = new LinkedHashSet<>();
         for (ConstraintDefinition definition : ConstraintCatalog.definitions()) {
-            if (!etats.getOrDefault(definition.name(), definition.activeByDefault())) {
+            if (Boolean.FALSE.equals(etats.getOrDefault(definition.name(), definition.activeByDefault()))) {
                 desactivees.add(definition.name());
             }
         }
@@ -120,7 +120,7 @@ public class ParametresService {
         // is kept: it says something was switched off, and dropping it here
         // would quietly claim the opposite.
         etats.forEach((nom, actif) -> {
-            if (!actif && !ConstraintCatalog.PAR_NOM.containsKey(nom)) {
+            if (Boolean.FALSE.equals(actif) && !ConstraintCatalog.PAR_NOM.containsKey(nom)) {
                 desactivees.add(nom);
             }
         });

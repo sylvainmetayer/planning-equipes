@@ -302,6 +302,27 @@ public class FragiliteAnalyzer {
         }
     }
 
+    /** The line of a seat group held by one specialist at most. */
+    private static CompetenceRare scarceCompetence(
+            SeatGroup groupe, List<Animateur> specialistes, List<Animateur> renforts) {
+        Animateur seul = specialistes.isEmpty() ? null : specialistes.getFirst();
+        return new CompetenceRare(
+                groupe.stand.getId(),
+                groupe.stand.getNom(),
+                groupe.creneau.getId(),
+                groupe.creneau.getDate(),
+                groupe.creneau.getJour(),
+                groupe.debut,
+                groupe.fin,
+                typologies(groupe.stand),
+                specialistes.size(),
+                seul == null ? null : seul.getId(),
+                seul == null ? null : seul.nomAffiche(),
+                renforts.size(),
+                groupe.pourvus >= groupe.sieges,
+                severityOfScarcity(specialistes.size(), renforts.size()));
+    }
+
     public RapportFragilite analyze(PlanningEvenement planning) {
         List<Animateur> animateurs =
                 planning == null || planning.getAnimateurs() == null ? List.of() : planning.getAnimateurs();
@@ -325,28 +346,12 @@ public class FragiliteAnalyzer {
             List<Animateur> specialistes = specialists(animateurs, groupe);
             List<Animateur> renforts = reinforcements(animateurs, groupe, specialistes);
             remplacantsParGroupe.put(entree.getKey(), countSubstitutes(specialistes, renforts, groupe, busy));
-            if (specialistes.size() > 1) {
-                continue;
+            if (specialistes.size() <= 1) {
+                if (!specialistes.isEmpty()) {
+                    raresParAnimateur.merge(specialistes.getFirst().getId(), 1, Integer::sum);
+                }
+                rares.add(scarceCompetence(groupe, specialistes, renforts));
             }
-            Animateur seul = specialistes.isEmpty() ? null : specialistes.getFirst();
-            if (seul != null) {
-                raresParAnimateur.merge(seul.getId(), 1, Integer::sum);
-            }
-            rares.add(new CompetenceRare(
-                    groupe.stand.getId(),
-                    groupe.stand.getNom(),
-                    groupe.creneau.getId(),
-                    groupe.creneau.getDate(),
-                    groupe.creneau.getJour(),
-                    groupe.debut,
-                    groupe.fin,
-                    typologies(groupe.stand),
-                    specialistes.size(),
-                    seul == null ? null : seul.getId(),
-                    seul == null ? null : seul.nomAffiche(),
-                    renforts.size(),
-                    groupe.pourvus >= groupe.sieges,
-                    severityOfScarcity(specialistes.size(), renforts.size())));
         }
 
         rares.sort(ORDRE_RARES);
@@ -511,13 +516,9 @@ public class FragiliteAnalyzer {
         int libres = 0;
         for (List<Animateur> candidats : List.of(specialistes, renforts)) {
             for (Animateur candidat : candidats) {
-                if (groupe.occupants.containsKey(candidat.getId())) {
-                    continue;
+                if (!groupe.occupants.containsKey(candidat.getId()) && !isBusy(busy.get(candidat.getId()), plage)) {
+                    libres++;
                 }
-                if (isBusy(busy.get(candidat.getId()), plage)) {
-                    continue;
-                }
-                libres++;
             }
         }
         return libres;
@@ -587,11 +588,10 @@ public class FragiliteAnalyzer {
                 continue;
             }
             Interval plage = window(creneau.getDate(), poste.heureDebutEffectif(), poste.heureFinEffectif());
-            if (plage == null) {
-                continue;
+            if (plage != null) {
+                plages.computeIfAbsent(animateur.getId(), ignored -> new ArrayList<>())
+                        .add(plage);
             }
-            plages.computeIfAbsent(animateur.getId(), ignored -> new ArrayList<>())
-                    .add(plage);
         }
         return plages;
     }

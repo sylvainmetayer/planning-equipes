@@ -127,15 +127,11 @@ public final class ForcedAssignmentOnExcludedSeats {
                 .isPresent()) {
             return Optional.empty();
         }
-        List<Animateur> nommes = new ArrayList<>();
-        for (Animateur reference : contrainte.getAnimateursConcernes()) {
-            Animateur animateur = reference == null ? null : animateursParId.get(reference.getId());
-            if (animateur == null) {
-                // Somebody the referential does not know: nothing to compare with.
-                return Optional.empty();
-            }
-            nommes.add(animateur);
+        Optional<List<Animateur>> connus = namedAnimateurs(contrainte, animateursParId);
+        if (connus.isEmpty()) {
+            return Optional.empty();
         }
+        List<Animateur> nommes = connus.get();
         TreeSet<String> cassees = new TreeSet<>();
         TreeSet<LocalDate> dates = new TreeSet<>();
         boolean aVenir = false;
@@ -145,13 +141,9 @@ public final class ForcedAssignmentOnExcludedSeats {
                         .iterator();
                 sieges.hasNext(); ) {
             PosteAffectation siege = sieges.next();
-            for (Animateur animateur : nommes) {
-                List<Motif> motifs = EligibleAnimateurMoveFilter.motifs(siege, animateur, PAUSES_PAR_DEFAUT);
-                if (motifs.isEmpty()) {
-                    // One pair the solver could take: the exception is tenable.
-                    return Optional.empty();
-                }
-                motifs.stream().map(Motif::contrainte).forEach(cassees::add);
+            if (anyEligible(siege, nommes, cassees)) {
+                // One pair the solver could take: the exception is tenable.
+                return Optional.empty();
             }
             LocalDate date = siege.getCreneau().getDate();
             dates.add(date);
@@ -163,5 +155,35 @@ public final class ForcedAssignmentOnExcludedSeats {
             return Optional.empty();
         }
         return Optional.of(new Conflit(contrainte, List.copyOf(cassees), List.copyOf(dates)));
+    }
+
+    /** The animateurs the exception names, or nothing when one of them is unknown to the referential. */
+    private static Optional<List<Animateur>> namedAnimateurs(
+            ContrainteAdHoc contrainte, Map<String, Animateur> animateursParId) {
+        List<Animateur> nommes = new ArrayList<>();
+        for (Animateur reference : contrainte.getAnimateursConcernes()) {
+            Animateur animateur = reference == null ? null : animateursParId.get(reference.getId());
+            if (animateur == null) {
+                // Somebody the referential does not know: nothing to compare with.
+                return Optional.empty();
+            }
+            nommes.add(animateur);
+        }
+        return Optional.of(nommes);
+    }
+
+    /**
+     * Whether one of {@code nommes} may hold {@code siege}; the constraints that
+     * exclude the others seen before that one are added to {@code cassees}.
+     */
+    private static boolean anyEligible(PosteAffectation siege, List<Animateur> nommes, TreeSet<String> cassees) {
+        for (Animateur animateur : nommes) {
+            List<Motif> motifs = EligibleAnimateurMoveFilter.motifs(siege, animateur, PAUSES_PAR_DEFAUT);
+            if (motifs.isEmpty()) {
+                return true;
+            }
+            motifs.stream().map(Motif::contrainte).forEach(cassees::add);
+        }
+        return false;
     }
 }

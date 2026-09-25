@@ -719,12 +719,6 @@ public class ReferenceDataService implements ReferenceData {
     }
 
     /**
-     * Replaces the whole persisted reference dataset with the one carried by a
-     * (sample or solved) planning, so it becomes editable through the CRUD
-     * endpoints. Every referential at once, in a single transaction — which is
-     * why it belongs to the facade rather than to any one of them.
-     */
-    /**
      * Validates the stands a raw import carries, like every other write does
      * (issue #343): {@code /api/database/import} is the deliberate SQL back
      * door, this endpoint takes a domain object and must hold the same
@@ -741,6 +735,12 @@ public class ReferenceDataService implements ReferenceData {
                 .forEach(StandValidator::check);
     }
 
+    /**
+     * Replaces the whole persisted reference dataset with the one carried by a
+     * (sample or solved) planning, so it becomes editable through the CRUD
+     * endpoints. Every referential at once, in a single transaction — which is
+     * why it belongs to the facade rather than to any one of them.
+     */
     public void importFromPlanning(PlanningEvenement planning) {
         // Refused while a solve holds this edition's solver: the landing persist
         // would re-insert the referential this import just replaced, old créneaux

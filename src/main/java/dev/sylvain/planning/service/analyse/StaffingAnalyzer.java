@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -681,42 +682,11 @@ public class StaffingAnalyzer {
         Map<String, String> labels = new LinkedHashMap<>();
         referentiel.forEach(typologie -> labels.put(typologie.id(), typologie.label()));
 
-        Map<String, List<Siege>> parTypologie = new LinkedHashMap<>();
-        int siegesNonAttribues = 0;
-        int siegesReservesAuxPolyvalents = 0;
-        for (Siege siege : sieges) {
-            Set<String> offered = offeredTypologies(siege.stand());
-            if (offered.size() > 1) {
-                // Either pool staffs them: no single category can claim them.
-                siegesNonAttribues++;
-            } else if (offered.isEmpty()) {
-                // The opposite case, and the tightest demand there is: with no
-                // category at all, hasCompetenceFor() only answers yes for a
-                // polyvalent. The demand is the ninja category's own — same
-                // required population — so it joins that row when one exists.
-                siegesReservesAuxPolyvalents++;
-                if (ninja != null) {
-                    parTypologie.computeIfAbsent(ninja, id -> new ArrayList<>()).add(siege);
-                }
-            } else {
-                parTypologie
-                        .computeIfAbsent(offered.iterator().next(), id -> new ArrayList<>())
-                        .add(siege);
-            }
-        }
+        SeatAttribution attribution = SeatAttribution.of(sieges, ninja);
+        Map<String, List<Siege>> parTypologie = attribution.parTypologie;
 
         Map<String, Integer> specialistes = new LinkedHashMap<>();
-        int polyvalents = 0;
-        for (Animateur animateur : connus) {
-            Map<String, ?> competences = animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
-            // Declared competences only: a ninja is eligible everywhere, but
-            // counting them in every category would add one person to every
-            // pool at once. They are the shared reserve below instead.
-            competences.keySet().forEach(id -> specialistes.merge(id, 1, Integer::sum));
-            if (animateur.isNinja() || (ninja != null && competences.containsKey(ninja))) {
-                polyvalents++;
-            }
-        }
+        int polyvalents = countSpecialists(connus, ninja, specialistes);
 
         List<TypologieStaffing> lignes = new ArrayList<>();
         for (Map.Entry<String, List<Siege>> entree : parTypologie.entrySet()) {
@@ -756,8 +726,8 @@ public class StaffingAnalyzer {
         return new CompetenceStaffing(
                 List.copyOf(lignes),
                 polyvalents,
-                siegesNonAttribues,
-                siegesReservesAuxPolyvalents,
+                attribution.siegesNonAttribues,
+                attribution.siegesReservesAuxPolyvalents,
                 lignes.stream().mapToInt(TypologieStaffing::manque).sum(),
                 lignes.stream()
                         .filter(TypologieStaffing::ninja)
@@ -765,6 +735,61 @@ public class StaffingAnalyzer {
                         .sum(),
                 connus.size(),
                 ninja != null);
+    }
+
+    /** Each seat given to the one category that can claim it, when one can. */
+    private static final class SeatAttribution {
+        private final Map<String, List<Siege>> parTypologie = new LinkedHashMap<>();
+        private int siegesNonAttribues;
+        private int siegesReservesAuxPolyvalents;
+
+        static SeatAttribution of(List<Siege> sieges, String ninja) {
+            SeatAttribution attribution = new SeatAttribution();
+            for (Siege siege : sieges) {
+                attribution.attribute(siege, ninja);
+            }
+            return attribution;
+        }
+
+        private void attribute(Siege siege, String ninja) {
+            Set<String> offered = offeredTypologies(siege.stand());
+            if (offered.size() > 1) {
+                // Either pool staffs them: no single category can claim them.
+                siegesNonAttribues++;
+            } else if (offered.isEmpty()) {
+                // The opposite case, and the tightest demand there is: with no
+                // category at all, hasCompetenceFor() only answers yes for a
+                // polyvalent. The demand is the ninja category's own — same
+                // required population — so it joins that row when one exists.
+                siegesReservesAuxPolyvalents++;
+                if (ninja != null) {
+                    parTypologie.computeIfAbsent(ninja, id -> new ArrayList<>()).add(siege);
+                }
+            } else {
+                parTypologie
+                        .computeIfAbsent(offered.iterator().next(), id -> new ArrayList<>())
+                        .add(siege);
+            }
+        }
+    }
+
+    /**
+     * Counts, into {@code specialistes}, who declares each category, and
+     * returns how many polyvalents there are. Declared competences only: a
+     * ninja is eligible everywhere, but counting them in every category would
+     * add one person to every pool at once. They are the shared reserve
+     * instead.
+     */
+    private static int countSpecialists(List<Animateur> connus, String ninja, Map<String, Integer> specialistes) {
+        int polyvalents = 0;
+        for (Animateur animateur : connus) {
+            Map<String, ?> competences = animateur.getCompetences() == null ? Map.of() : animateur.getCompetences();
+            competences.keySet().forEach(id -> specialistes.merge(id, 1, Integer::sum));
+            if (animateur.isNinja() || (ninja != null && competences.containsKey(ninja))) {
+                polyvalents++;
+            }
+        }
+        return polyvalents;
     }
 
     /**
@@ -1086,6 +1111,42 @@ public class StaffingAnalyzer {
             grille[k] = ouverture + k * requis;
         }
 
+        WindowSweep balayage = sweep(sieges, ouverture, fermeture, grille);
+        int avant = balayage.avant();
+        int apres = balayage.apres();
+        int total = avant + apres;
+        for (int occupe : balayage.occupation()) {
+            total += occupe;
+        }
+        int parLaGrille = Math.ceilDiv(total, pas + 1);
+
+        // The seats that deny the break to whoever holds them, split by the
+        // side of the window their holder is then barred from.
+        List<Siege> bloquantsApres = sieges.stream()
+                .filter(siege -> siege.debut() >= ouverture
+                        && siege.fin() > fermeture
+                        && Math.min(siege.debut(), fermeture) - ouverture < requis)
+                .toList();
+        List<Siege> bloquantsAvant = sieges.stream()
+                .filter(siege -> siege.fin() <= fermeture
+                        && siege.debut() < ouverture
+                        && fermeture - Math.max(siege.fin(), ouverture) < requis)
+                .toList();
+        // pic() rather than the raw count: it is the number of distinct people
+        // the group really needs, and it stays exact on the degenerate window
+        // shorter than its own break, where two blocking seats may follow one
+        // another instead of overlapping.
+        return Math.max(parLaGrille, Math.max(avant + pic(bloquantsApres, 0), apres + pic(bloquantsAvant, 0)));
+    }
+
+    /**
+     * The staffing a meal window's sweep reads: the peak of seats live before
+     * the window opens, the peak of those still live after it closes, and the
+     * seats live at each instant of the window's grid.
+     */
+    private record WindowSweep(int avant, int apres, int[] occupation) {}
+
+    private static WindowSweep sweep(Collection<Siege> sieges, int ouverture, int fermeture, int[] grille) {
         List<int[]> evenements = new ArrayList<>(sieges.size() * 2);
         for (Siege siege : sieges) {
             evenements.add(new int[] {siege.debut(), 1});
@@ -1099,80 +1160,60 @@ public class StaffingAnalyzer {
         int courant = 0;
         int avant = 0;
         int apres = 0;
-        int[] occupation = new int[pas];
+        int[] occupation = new int[grille.length];
         for (int i = 0; i < evenements.size(); i++) {
             courant += evenements.get(i)[1];
             int instant = evenements.get(i)[0];
-            if (i + 1 < evenements.size() && evenements.get(i + 1)[0] == instant) {
-                // Not done with this instant yet: the count is only meaningful
-                // once every event sharing it has been applied.
-                continue;
-            }
-            int prochain = i + 1 < evenements.size() ? evenements.get(i + 1)[0] : Integer.MAX_VALUE;
-            if (instant < ouverture) {
-                avant = Math.max(avant, courant);
-            }
-            if (prochain > fermeture) {
-                apres = Math.max(apres, courant);
-            }
-            for (int k = 0; k < pas; k++) {
-                if (instant <= grille[k] && grille[k] < prochain) {
-                    occupation[k] = courant;
+            // Not done with this instant while the next event shares it: the
+            // count is only meaningful once every one of them has been applied.
+            boolean instantComplet = i + 1 == evenements.size() || evenements.get(i + 1)[0] != instant;
+            if (instantComplet) {
+                int prochain = i + 1 < evenements.size() ? evenements.get(i + 1)[0] : Integer.MAX_VALUE;
+                if (instant < ouverture) {
+                    avant = Math.max(avant, courant);
                 }
+                if (prochain > fermeture) {
+                    apres = Math.max(apres, courant);
+                }
+                markOccupation(occupation, grille, instant, prochain, courant);
             }
         }
+        return new WindowSweep(avant, apres, occupation);
+    }
 
-        int total = avant + apres;
-        for (int occupe : occupation) {
-            total += occupe;
-        }
-        int parLaGrille = Math.ceilDiv(total, pas + 1);
-
-        // The seats that deny the break to whoever holds them, split by the
-        // side of the window their holder is then barred from.
-        List<Siege> bloquantsApres = new ArrayList<>();
-        List<Siege> bloquantsAvant = new ArrayList<>();
-        for (Siege siege : sieges) {
-            if (siege.debut() >= ouverture
-                    && siege.fin() > fermeture
-                    && Math.min(siege.debut(), fermeture) - ouverture < requis) {
-                bloquantsApres.add(siege);
-            }
-            if (siege.fin() <= fermeture
-                    && siege.debut() < ouverture
-                    && fermeture - Math.max(siege.fin(), ouverture) < requis) {
-                bloquantsAvant.add(siege);
+    /** Records {@code courant} at every grid instant falling in {@code [instant, prochain)}. */
+    private static void markOccupation(int[] occupation, int[] grille, int instant, int prochain, int courant) {
+        for (int k = 0; k < grille.length; k++) {
+            if (instant <= grille[k] && grille[k] < prochain) {
+                occupation[k] = courant;
             }
         }
-        // pic() rather than the raw count: it is the number of distinct people
-        // the group really needs, and it stays exact on the degenerate window
-        // shorter than its own break, where two blocking seats may follow one
-        // another instead of overlapping.
-        return Math.max(parLaGrille, Math.max(avant + pic(bloquantsApres, 0), apres + pic(bloquantsAvant, 0)));
     }
 
     private static List<Siege> sieges(List<PosteAffectation> postes) {
         List<Siege> sieges = new ArrayList<>();
         for (PosteAffectation poste : postes) {
-            Creneau creneau = poste.getCreneau();
-            if (creneau == null || creneau.getDate() == null) {
-                continue;
-            }
-            LocalTime debut = poste.heureDebutEffectif();
-            if (debut == null) {
-                continue;
-            }
-            int duree = poste.getDureeEffectiveMinutes();
-            if (duree <= 0) {
-                continue;
-            }
-            int debutMinutes = debut.toSecondOfDay() / 60;
-            // A window running past midnight stays on its own day, with an end
-            // beyond 24 h — the peak of a night slot belongs to the evening it
-            // started, not to the next morning.
-            sieges.add(new Siege(creneau.getDate(), debutMinutes, debutMinutes + duree, poste.getStand()));
+            siege(poste).ifPresent(sieges::add);
         }
         return sieges;
+    }
+
+    /** The seat as the bounds read it, empty when it has no day, no start or no duration. */
+    private static Optional<Siege> siege(PosteAffectation poste) {
+        Creneau creneau = poste.getCreneau();
+        LocalTime debut = poste.heureDebutEffectif();
+        if (creneau == null || creneau.getDate() == null || debut == null) {
+            return Optional.empty();
+        }
+        int duree = poste.getDureeEffectiveMinutes();
+        if (duree <= 0) {
+            return Optional.empty();
+        }
+        int debutMinutes = debut.toSecondOfDay() / 60;
+        // A window running past midnight stays on its own day, with an end
+        // beyond 24 h — the peak of a night slot belongs to the evening it
+        // started, not to the next morning.
+        return Optional.of(new Siege(creneau.getDate(), debutMinutes, debutMinutes + duree, poste.getStand()));
     }
 
     private static Map<LocalDate, Integer> dayByDate(List<PosteAffectation> postes) {

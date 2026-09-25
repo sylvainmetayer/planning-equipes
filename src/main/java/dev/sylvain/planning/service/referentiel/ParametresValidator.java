@@ -65,8 +65,8 @@ final class ParametresValidator {
         // above. Giving more rest than the Code owes is the organiser's to
         // decide; giving less is not (issue #592).
         // One duration for the edition, floored at the adult's twenty minutes.
-        // A minor's thirty are floored higher still, by
-        // ParametresLegaux.dureePauseMinutes(true) rather than here: refusing
+        // A minor's thirty are floored higher still, by the minor's reading of
+        // ParametresLegaux#dureePauseMinutes rather than here: refusing
         // an edition that grants twenty-five would force it to give thirty to
         // everybody, which is not what art. L3162-3 asks for (ADR 0048).
         checkPlancher(

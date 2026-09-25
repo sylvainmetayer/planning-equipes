@@ -235,18 +235,7 @@ public class PauseAnalyzer {
             journees.add(journee(postesDuJour, fenetresRepas, declarations));
         }
         // 2. Each stand-day: the rotation, one break after the other.
-        Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
-        for (Journee journee : journees) {
-            for (SequenceDemandes sequence : journee.sequences) {
-                for (Demande demande : sequence.demandes) {
-                    String cle = demande.tenu.getStand().getId() + "|" + journee.date;
-                    parStandJour
-                            .computeIfAbsent(cle, ignored -> new ArrayList<>())
-                            .add(demande);
-                }
-            }
-        }
-        parStandJour.values().forEach(PauseAnalyzer::rotation);
+        demandsByStandDay(journees).values().forEach(PauseAnalyzer::rotation);
         // 3. The views, relays read on the placed breaks.
         List<JourneeAnimateurView> vues = new ArrayList<>();
         int pausesDues = 0;
@@ -255,10 +244,7 @@ public class PauseAnalyzer {
         int coupuresRepasManquantes = 0;
         for (Journee journee : journees) {
             JourneeAnimateurView vue = toView(journee, tenus);
-            if (vue.sequences().stream()
-                            .allMatch(sequence -> sequence.pausesDues().isEmpty())
-                    && vue.pausesPlanifiees().isEmpty()
-                    && vue.coupuresRepas().isEmpty()) {
+            if (owesNothing(vue)) {
                 continue;
             }
             vues.add(vue);
@@ -284,6 +270,30 @@ public class PauseAnalyzer {
                 coupuresRepasManquantes,
                 List.copyOf(vues),
                 buildMessage(pausesDues, relaisManquants, coupuresRepasManquantes));
+    }
+
+    /** The break demands of every animateur-day, grouped by the stand-day they are taken on. */
+    private static Map<String, List<Demande>> demandsByStandDay(List<Journee> journees) {
+        Map<String, List<Demande>> parStandJour = new LinkedHashMap<>();
+        for (Journee journee : journees) {
+            for (SequenceDemandes sequence : journee.sequences) {
+                for (Demande demande : sequence.demandes) {
+                    String cle = demande.tenu.getStand().getId() + "|" + journee.date;
+                    parStandJour
+                            .computeIfAbsent(cle, ignored -> new ArrayList<>())
+                            .add(demande);
+                }
+            }
+        }
+        return parStandJour;
+    }
+
+    /** A day with no break due, none placed and no meal break: nothing to show. */
+    private static boolean owesNothing(JourneeAnimateurView vue) {
+        return vue.sequences().stream()
+                        .allMatch(sequence -> sequence.pausesDues().isEmpty())
+                && vue.pausesPlanifiees().isEmpty()
+                && vue.coupuresRepas().isEmpty();
     }
 
     /** The days of one animateur only — what their own planning shows. */
@@ -556,18 +566,17 @@ public class PauseAnalyzer {
                 continue;
             }
             CoupureRepas coupure = CoupureRepas.of(postesDuJour, fenetre);
-            if (!coupure.due()) {
-                continue;
+            if (coupure.due()) {
+                vues.add(new CoupureRepasView(
+                        fenetre.libelle(),
+                        fenetre.debut(),
+                        fenetre.fin(),
+                        fenetre.dureeMinutes(),
+                        coupure.debut(),
+                        coupure.fin(),
+                        coupure.plusGrandTrouMinutes(),
+                        !coupure.manquante()));
             }
-            vues.add(new CoupureRepasView(
-                    fenetre.libelle(),
-                    fenetre.debut(),
-                    fenetre.fin(),
-                    fenetre.dureeMinutes(),
-                    coupure.debut(),
-                    coupure.fin(),
-                    coupure.plusGrandTrouMinutes(),
-                    !coupure.manquante()));
         }
         return List.copyOf(vues);
     }
@@ -671,11 +680,12 @@ public class PauseAnalyzer {
     }
 
     private static String buildMessage(int pausesDues, int relaisManquants, int coupuresRepasManquantes) {
-        String repas = coupuresRepasManquantes == 0
-                ? ""
-                : " " + coupuresRepasManquantes
-                        + (coupuresRepasManquantes > 1 ? " journées ne laissent" : " journée ne laisse")
-                        + " aucune place à la coupure repas dans sa fenêtre.";
+        String repas = "";
+        if (coupuresRepasManquantes != 0) {
+            repas = " " + coupuresRepasManquantes
+                    + (coupuresRepasManquantes > 1 ? " journées ne laissent" : " journée ne laisse")
+                    + " aucune place à la coupure repas dans sa fenêtre.";
+        }
         if (pausesDues == 0) {
             return "Aucune séquence ne dépasse la durée légale de travail continu : rien à organiser." + repas;
         }

@@ -80,7 +80,7 @@ public class JournalActionService {
     }
 
     /** Records an action carried out through a request, with the status it ended on. */
-    public void record(
+    public void recordAction(
             ActionJournalisee action,
             Acteur acteur,
             String acteurId,
@@ -199,7 +199,7 @@ public class JournalActionService {
             return identity == null || identity.isAnonymous() || identity.getPrincipal() == null
                     ? null
                     : identity.getPrincipal().getName();
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             // No active request (a scheduled job, a solver thread): there is
             // simply nobody to name.
             return null;

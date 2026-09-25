@@ -15,6 +15,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -24,6 +25,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
 /**
  * The referentials an edition is filled from, read from a CSV: typologies,
@@ -66,6 +69,8 @@ public class ReferentielCsvImportService {
 
     /** How a cell lists several values, as the animateur import already reads them — never a slash, a date uses it. */
     private static final String SEPARATEUR_MULTI = "[|;,\\n]";
+
+    private static final String DEJA_PLUS_HAUT = " » apparaît déjà plus haut dans le fichier.";
 
     private final TypologieService typologies;
 
@@ -198,45 +203,50 @@ public class ReferentielCsvImportService {
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            String id = colonnes.valeur(row, "id");
-            String libelle = colonnes.valeur(row, "libelle");
-            List<String> raisons = new ArrayList<>();
-            if (id.isBlank()) {
-                raisons.add("La colonne « id » est vide : c'est elle que les stands et les compétences citeront.");
-            }
-            if (libelle.isBlank()) {
-                raisons.add("La colonne « libelle » est vide : c'est le nom lu à l'écran.");
-            }
-            if (!id.isBlank() && !vus.add(id)) {
-                raisons.add("L'identifiant « " + id + " » apparaît déjà plus haut dans le fichier.");
-            }
-            if (!raisons.isEmpty()) {
-                lignes.add(new LigneImportee(
-                        row.line(), blankAsNull(id), blankAsNull(libelle), ActionImport.REFUSE, raisons, List.of()));
-                continue;
-            }
-            boolean existe = existantes.containsKey(id);
-            boolean ninja = readFlag(colonnes.valeur(row, "ninja"));
-            List<String> details = new ArrayList<>();
-            if (ninja) {
-                details.add("Marquée polyvalente : elle retire le drapeau à la typologie qui le portait.");
-            }
-            // The file carries id, libelle and ninja — no cap and no
-            // description column — so both are kept rather than erased: « une
-            // colonne retirée du fichier n'efface rien » (docs/import-export.md).
-            TypologieItem existante = existantes.get(id);
-            TypologieItem ecrite = new TypologieItem(
-                    id,
-                    libelle,
-                    ninja,
-                    existante == null ? null : existante.maxCreneauxParAnimateur(),
-                    existante == null ? null : existante.description(),
-                    null);
-            ecritures.add(service -> service.typologies.importer(ecrite));
-            lignes.add(new LigneImportee(
-                    row.line(), id, libelle, existe ? ActionImport.MIS_A_JOUR : ActionImport.CREE, List.of(), details));
+            lignes.add(analyseTypologie(row, colonnes, existantes, vus, ecritures));
         }
         return new Analyse(ImportTarget.TYPOLOGIES, table, lignes, ecritures, List.of());
+    }
+
+    private static LigneImportee analyseTypologie(
+            CsvParser.Row row,
+            Colonnes colonnes,
+            Map<String, TypologieItem> existantes,
+            Set<String> vus,
+            List<Ecriture> ecritures) {
+        String id = colonnes.valeur(row, "id");
+        String libelle = colonnes.valeur(row, "libelle");
+        List<String> raisons = new ArrayList<>();
+        if (id.isBlank()) {
+            raisons.add("La colonne « id » est vide : c'est elle que les stands et les compétences citeront.");
+        }
+        if (libelle.isBlank()) {
+            raisons.add("La colonne « libelle » est vide : c'est le nom lu à l'écran.");
+        }
+        checkDuplicateId(id, vus, raisons);
+        if (!raisons.isEmpty()) {
+            return refusedRow(row, id, libelle, raisons);
+        }
+        boolean existe = existantes.containsKey(id);
+        boolean ninja = readFlag(colonnes.valeur(row, "ninja"));
+        List<String> details = new ArrayList<>();
+        if (ninja) {
+            details.add("Marquée polyvalente : elle retire le drapeau à la typologie qui le portait.");
+        }
+        // The file carries id, libelle and ninja — no cap and no
+        // description column — so both are kept rather than erased: « une
+        // colonne retirée du fichier n'efface rien » (docs/import-export.md).
+        TypologieItem existante = existantes.get(id);
+        TypologieItem ecrite = new TypologieItem(
+                id,
+                libelle,
+                ninja,
+                existante == null ? null : existante.maxCreneauxParAnimateur(),
+                existante == null ? null : existante.description(),
+                null);
+        ecritures.add(service -> service.typologies.importer(ecrite));
+        return new LigneImportee(
+                row.line(), id, libelle, existe ? ActionImport.MIS_A_JOUR : ActionImport.CREE, List.of(), details);
     }
 
     private Analyse analyseEmplacements(CsvParser.Table table, Colonnes colonnes) {
@@ -246,55 +256,62 @@ public class ReferentielCsvImportService {
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            String id = colonnes.valeur(row, "id");
-            String nom = colonnes.valeur(row, "nom");
-            List<String> raisons = new ArrayList<>();
-            if (id.isBlank()) {
-                raisons.add("La colonne « id » est vide.");
-            }
-            if (nom.isBlank() && !existants.containsKey(id)) {
-                raisons.add("La colonne « nom » est vide, et l'emplacement n'existe pas encore.");
-            }
-            if (!id.isBlank() && !vus.add(id)) {
-                raisons.add("L'identifiant « " + id + " » apparaît déjà plus haut dans le fichier.");
-            }
-            Double latitude = null;
-            Double longitude = null;
-            try {
-                latitude = readCoordinate(colonnes.valeur(row, "latitude"), "latitude");
-                longitude = readCoordinate(colonnes.valeur(row, "longitude"), "longitude");
-            } catch (BusinessError.Invalid e) {
-                raisons.add(e.getMessage());
-            }
-            if (!raisons.isEmpty()) {
-                lignes.add(new LigneImportee(
-                        row.line(), blankAsNull(id), blankAsNull(nom), ActionImport.REFUSE, raisons, List.of()));
-                continue;
-            }
-            Emplacement existant = existants.get(id);
-            Emplacement ecrit = new Emplacement();
-            ecrit.setId(id);
-            ecrit.setNom(nom.isBlank() ? existant.getNom() : nom);
-            // An absent column, or an empty cell, never takes away what is there.
-            ecrit.setLatitude(latitude != null ? latitude : (existant == null ? null : existant.getLatitude()));
-            ecrit.setLongitude(longitude != null ? longitude : (existant == null ? null : existant.getLongitude()));
-            List<String> details = new ArrayList<>();
-            if (ecrit.getLatitude() == null || ecrit.getLongitude() == null) {
-                details.add("Sans coordonnées : l'emplacement ne pèsera pas sur les distances entre stands.");
-            }
-            ecritures.add(
-                    existant == null
-                            ? service -> service.emplacements.create(ecrit)
-                            : service -> service.emplacements.update(id, ecrit));
-            lignes.add(new LigneImportee(
-                    row.line(),
-                    id,
-                    ecrit.getNom(),
-                    existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
-                    List.of(),
-                    details));
+            lignes.add(analyseEmplacement(row, colonnes, existants, vus, ecritures));
         }
         return new Analyse(ImportTarget.EMPLACEMENTS, table, lignes, ecritures, List.of());
+    }
+
+    private static LigneImportee analyseEmplacement(
+            CsvParser.Row row,
+            Colonnes colonnes,
+            Map<String, Emplacement> existants,
+            Set<String> vus,
+            List<Ecriture> ecritures) {
+        String id = colonnes.valeur(row, "id");
+        String nom = colonnes.valeur(row, "nom");
+        List<String> raisons = new ArrayList<>();
+        checkIdAndName(id, nom, existants.containsKey(id), "l'emplacement", vus, raisons);
+        Double latitude = null;
+        Double longitude = null;
+        try {
+            latitude = readCoordinate(colonnes.valeur(row, "latitude"), "latitude");
+            longitude = readCoordinate(colonnes.valeur(row, "longitude"), "longitude");
+        } catch (BusinessError.Invalid e) {
+            raisons.add(e.getMessage());
+        }
+        if (!raisons.isEmpty()) {
+            return refusedRow(row, id, nom, raisons);
+        }
+        Emplacement existant = existants.get(id);
+        Emplacement ecrit = new Emplacement();
+        ecrit.setId(id);
+        ecrit.setNom(nom.isBlank() ? existant.getNom() : nom);
+        // An absent column, or an empty cell, never takes away what is there.
+        ecrit.setLatitude(readOrKept(latitude, existant, Emplacement::getLatitude));
+        ecrit.setLongitude(readOrKept(longitude, existant, Emplacement::getLongitude));
+        List<String> details = new ArrayList<>();
+        if (ecrit.getLatitude() == null || ecrit.getLongitude() == null) {
+            details.add("Sans coordonnées : l'emplacement ne pèsera pas sur les distances entre stands.");
+        }
+        ecritures.add(
+                existant == null
+                        ? service -> service.emplacements.create(ecrit)
+                        : service -> service.emplacements.update(id, ecrit));
+        return new LigneImportee(
+                row.line(),
+                id,
+                ecrit.getNom(),
+                existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
+                List.of(),
+                details);
+    }
+
+    /** The coordinate the file gives, else the one the emplacement already has, else none. */
+    private static Double readOrKept(Double lue, Emplacement existant, Function<Emplacement, Double> champ) {
+        if (lue != null) {
+            return lue;
+        }
+        return existant == null ? null : champ.apply(existant);
     }
 
     private Analyse analyseStands(CsvParser.Table table, Colonnes colonnes) {
@@ -307,87 +324,93 @@ public class ReferentielCsvImportService {
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            String id = colonnes.valeur(row, "id");
-            String nom = colonnes.valeur(row, "nom");
-            Stand existant = existants.get(id);
-            List<String> raisons = new ArrayList<>();
-            List<String> details = new ArrayList<>();
-            if (id.isBlank()) {
-                raisons.add("La colonne « id » est vide.");
-            }
-            if (nom.isBlank() && existant == null) {
-                raisons.add("La colonne « nom » est vide, et le stand n'existe pas encore.");
-            }
-            if (!id.isBlank() && !vus.add(id)) {
-                raisons.add("L'identifiant « " + id + " » apparaît déjà plus haut dans le fichier.");
-            }
-            List<String> typologiesLues = valeursMultiples(colonnes.valeur(row, "typologies"));
-            Set<String> typologiesStand = typologiesLues.isEmpty() && existant != null
-                    ? new LinkedHashSet<>(existant.getTypologiesProposees())
-                    : new LinkedHashSet<>(typologiesLues);
-            if (typologiesStand.isEmpty()) {
-                raisons.add("Aucune typologie : un stand est toujours rattaché à au moins une typologie de jeu.");
-            }
-            Integer effectifMin = null;
-            Integer effectifMax = null;
-            try {
-                effectifMin = readHeadcount(colonnes.valeur(row, "effectifmin"), "effectifMin");
-                effectifMax = readHeadcount(colonnes.valeur(row, "effectifmax"), "effectifMax");
-            } catch (BusinessError.Invalid e) {
-                raisons.add(e.getMessage());
-            }
-            if (!raisons.isEmpty()) {
-                lignes.add(new LigneImportee(
-                        row.line(), blankAsNull(id), blankAsNull(nom), ActionImport.REFUSE, raisons, List.of()));
-                continue;
-            }
-            int min = effectifMin != null
-                    ? effectifMin
-                    : (existant != null ? existant.getEffectifMin() : EFFECTIF_PAR_DEFAUT);
-            int max = effectifMax != null
-                    ? effectifMax
-                    : (existant != null ? existant.getEffectifMax() : EFFECTIF_PAR_DEFAUT);
-            if (max < min) {
-                lignes.add(new LigneImportee(
-                        row.line(),
-                        id,
-                        blankAsNull(nom),
-                        ActionImport.REFUSE,
-                        List.of("effectifMax (" + max + ") est inférieur à effectifMin (" + min + ")."),
-                        List.of()));
-                continue;
-            }
-            // Only now: a typologie is created on the strength of the stand that
-            // names it, so a row the checks above have refused must not leave one
-            // behind — nothing would reference it.
-            for (String typologie : typologiesStand) {
-                if (!typologiesConnues.contains(typologie) && aCreer.add(typologie)) {
-                    details.add(
-                            "La typologie « " + typologie + " » sera créée, son libellé reprenant son identifiant.");
-                }
-            }
-            if (existant == null && effectifMin == null && effectifMax == null) {
-                details.add(
-                        "Effectif non précisé : le stand tient à une personne, à ajuster sur la grille des ouvertures.");
-            }
-            Stand ecrit = existant == null ? new Stand() : copie(existant);
-            ecrit.setId(id);
-            ecrit.setNom(nom.isBlank() ? existant.getNom() : nom);
-            ecrit.setTypologiesProposees(typologiesStand);
-            ecrit.setEffectifMin(min);
-            ecrit.setEffectifMax(max);
-            boolean creation = existant == null;
-            ecritures.add(
-                    creation ? service -> service.stands.create(ecrit) : service -> service.stands.update(id, ecrit));
-            lignes.add(new LigneImportee(
-                    row.line(),
-                    id,
-                    ecrit.getNom(),
-                    creation ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
-                    List.of(),
-                    details));
+            lignes.add(analyseStand(row, colonnes, existants, typologiesConnues, aCreer, vus, ecritures));
         }
         return new Analyse(ImportTarget.STANDS, table, lignes, ecritures, List.copyOf(aCreer));
+    }
+
+    private static LigneImportee analyseStand(
+            CsvParser.Row row,
+            Colonnes colonnes,
+            Map<String, Stand> existants,
+            Set<String> typologiesConnues,
+            Set<String> aCreer,
+            Set<String> vus,
+            List<Ecriture> ecritures) {
+        String id = colonnes.valeur(row, "id");
+        String nom = colonnes.valeur(row, "nom");
+        Stand existant = existants.get(id);
+        List<String> raisons = new ArrayList<>();
+        List<String> details = new ArrayList<>();
+        checkIdAndName(id, nom, existant != null, "le stand", vus, raisons);
+        List<String> typologiesLues = valeursMultiples(colonnes.valeur(row, "typologies"));
+        Set<String> typologiesStand = new LinkedHashSet<>(
+                typologiesLues.isEmpty() && existant != null ? existant.getTypologiesProposees() : typologiesLues);
+        if (typologiesStand.isEmpty()) {
+            raisons.add("Aucune typologie : un stand est toujours rattaché à au moins une typologie de jeu.");
+        }
+        Integer effectifMin = null;
+        Integer effectifMax = null;
+        try {
+            effectifMin = readHeadcount(colonnes.valeur(row, "effectifmin"), "effectifMin");
+            effectifMax = readHeadcount(colonnes.valeur(row, "effectifmax"), "effectifMax");
+        } catch (BusinessError.Invalid e) {
+            raisons.add(e.getMessage());
+        }
+        if (!raisons.isEmpty()) {
+            return refusedRow(row, id, nom, raisons);
+        }
+        int min = headcountOrKept(effectifMin, existant, Stand::getEffectifMin);
+        int max = headcountOrKept(effectifMax, existant, Stand::getEffectifMax);
+        if (max < min) {
+            return new LigneImportee(
+                    row.line(),
+                    id,
+                    blankAsNull(nom),
+                    ActionImport.REFUSE,
+                    List.of("effectifMax (" + max + ") est inférieur à effectifMin (" + min + ")."),
+                    List.of());
+        }
+        // Only now: a typologie is created on the strength of the stand that
+        // names it, so a row the checks above have refused must not leave one
+        // behind — nothing would reference it.
+        announceNewTypologies(typologiesStand, typologiesConnues, aCreer, details);
+        if (existant == null && effectifMin == null && effectifMax == null) {
+            details.add(
+                    "Effectif non précisé : le stand tient à une personne, à ajuster sur la grille des ouvertures.");
+        }
+        Stand ecrit = existant == null ? new Stand() : copie(existant);
+        ecrit.setId(id);
+        ecrit.setNom(nom.isBlank() ? existant.getNom() : nom);
+        ecrit.setTypologiesProposees(typologiesStand);
+        ecrit.setEffectifMin(min);
+        ecrit.setEffectifMax(max);
+        boolean creation = existant == null;
+        ecritures.add(creation ? service -> service.stands.create(ecrit) : service -> service.stands.update(id, ecrit));
+        return new LigneImportee(
+                row.line(),
+                id,
+                ecrit.getNom(),
+                creation ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
+                List.of(),
+                details);
+    }
+
+    /** The headcount the file gives, else the stand's own, else the provisional default of a new stand. */
+    private static int headcountOrKept(Integer lu, Stand existant, ToIntFunction<Stand> champ) {
+        if (lu != null) {
+            return lu;
+        }
+        return existant != null ? champ.applyAsInt(existant) : EFFECTIF_PAR_DEFAUT;
+    }
+
+    private static void announceNewTypologies(
+            Set<String> typologiesStand, Set<String> typologiesConnues, Set<String> aCreer, List<String> details) {
+        for (String typologie : typologiesStand) {
+            if (!typologiesConnues.contains(typologie) && aCreer.add(typologie)) {
+                details.add("La typologie « " + typologie + " » sera créée, son libellé reprenant son identifiant.");
+            }
+        }
     }
 
     /**
@@ -411,56 +434,7 @@ public class ReferentielCsvImportService {
         List<Creneau> aMettreAJour = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            String dateLue = colonnes.valeur(row, "date");
-            String debutLu = colonnes.valeur(row, "heuredebut");
-            String finLue = colonnes.valeur(row, "heurefin");
-            List<String> raisons = new ArrayList<>();
-            LocalDate date = readEventDate(dateLue, raisons);
-            LocalTime debut = readTime(debutLu, "heureDebut", raisons);
-            LocalTime fin = readTime(finLue, "heureFin", raisons);
-            if (date != null && debut != null && debut.equals(fin)) {
-                raisons.add("Début et fin identiques (« " + debutLu.trim() + " ») : le créneau n'a pas de durée.");
-            }
-            String cle = date == null || debut == null || fin == null ? null : creneauKey(date, debut, fin);
-            if (cle != null && vus.contains(cle)) {
-                raisons.add("Ce créneau apparaît déjà plus haut dans le fichier.");
-            }
-            if (!raisons.isEmpty()) {
-                lignes.add(new LigneImportee(
-                        row.line(),
-                        blankAsNull(dateLue),
-                        libelleHoraire(debutLu, finLue),
-                        ActionImport.REFUSE,
-                        raisons,
-                        List.of()));
-                continue;
-            }
-            // Claimed only now: a row refused for another reason must not make
-            // the next one look like its duplicate.
-            vus.add(cle);
-            boolean couverturePause = readFlag(colonnes.valeur(row, "couverturepause"));
-            List<String> details = new ArrayList<>();
-            if (couverturePause) {
-                details.add("Relais repas : le stand n'ouvre que la moitié de son effectif, arrondie au supérieur.");
-            }
-            if (!fin.isAfter(debut)) {
-                details.add("Se termine le lendemain : la vacation passe minuit.");
-            }
-            Creneau existant = existants.get(cle);
-            Creneau ecrit = new Creneau(existant == null ? null : existant.getId(), 0, date, debut, fin);
-            ecrit.setCouverturePause(couverturePause);
-            if (existant == null) {
-                aCreer.add(ecrit);
-            } else {
-                aMettreAJour.add(ecrit);
-            }
-            lignes.add(new LigneImportee(
-                    row.line(),
-                    date.toString(),
-                    libelleHoraire(debutLu, finLue),
-                    existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
-                    List.of(),
-                    details));
+            lignes.add(analyseCreneau(row, colonnes, existants, vus, aCreer, aMettreAJour));
         }
         // One write for the whole file, not one per row: the grid marker the
         // toolbar reads would otherwise announce four hundred separate edits.
@@ -468,6 +442,64 @@ public class ReferentielCsvImportService {
                 ? List.of()
                 : List.of(service -> service.creneaux.importer(aCreer, aMettreAJour));
         return new Analyse(ImportTarget.CRENEAUX, table, lignes, ecritures, List.of());
+    }
+
+    private static LigneImportee analyseCreneau(
+            CsvParser.Row row,
+            Colonnes colonnes,
+            Map<String, Creneau> existants,
+            Set<String> vus,
+            List<Creneau> aCreer,
+            List<Creneau> aMettreAJour) {
+        String dateLue = colonnes.valeur(row, "date");
+        String debutLu = colonnes.valeur(row, "heuredebut");
+        String finLue = colonnes.valeur(row, "heurefin");
+        List<String> raisons = new ArrayList<>();
+        LocalDate date = readEventDate(dateLue, raisons);
+        LocalTime debut = readTime(debutLu, "heureDebut", raisons);
+        LocalTime fin = readTime(finLue, "heureFin", raisons);
+        if (date != null && debut != null && debut.equals(fin)) {
+            raisons.add("Début et fin identiques (« " + debutLu.trim() + " ») : le créneau n'a pas de durée.");
+        }
+        String cle = date == null || debut == null || fin == null ? null : creneauKey(date, debut, fin);
+        if (cle != null && vus.contains(cle)) {
+            raisons.add("Ce créneau apparaît déjà plus haut dans le fichier.");
+        }
+        if (!raisons.isEmpty()) {
+            return new LigneImportee(
+                    row.line(),
+                    blankAsNull(dateLue),
+                    libelleHoraire(debutLu, finLue),
+                    ActionImport.REFUSE,
+                    raisons,
+                    List.of());
+        }
+        // Claimed only now: a row refused for another reason must not make
+        // the next one look like its duplicate.
+        vus.add(cle);
+        boolean couverturePause = readFlag(colonnes.valeur(row, "couverturepause"));
+        List<String> details = new ArrayList<>();
+        if (couverturePause) {
+            details.add("Relais repas : le stand n'ouvre que la moitié de son effectif, arrondie au supérieur.");
+        }
+        if (!fin.isAfter(debut)) {
+            details.add("Se termine le lendemain : la vacation passe minuit.");
+        }
+        Creneau existant = existants.get(cle);
+        Creneau ecrit = new Creneau(existant == null ? null : existant.getId(), 0, date, debut, fin);
+        ecrit.setCouverturePause(couverturePause);
+        if (existant == null) {
+            aCreer.add(ecrit);
+        } else {
+            aMettreAJour.add(ecrit);
+        }
+        return new LigneImportee(
+                row.line(),
+                date.toString(),
+                libelleHoraire(debutLu, finLue),
+                existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
+                List.of(),
+                details);
     }
 
     /**
@@ -482,29 +514,59 @@ public class ReferentielCsvImportService {
      * (ADR 0032).</p>
      */
     private Analyse analyseJourneesTypes(CsvParser.Table table, Colonnes colonnes) {
-        Map<String, JourneeType> existants = new LinkedHashMap<>();
+        DayTemplateReader lecture = new DayTemplateReader();
         journeesTypes
                 .list()
-                .forEach(journeeType -> existants.putIfAbsent(nomNormalise(journeeType.getNom()), journeeType));
-        Map<LocalDate, String> calendrierActuel = new TreeMap<>();
+                .forEach(journeeType -> lecture.existants.putIfAbsent(nomNormalise(journeeType.getNom()), journeeType));
         Map<Long, String> nomsParId = new LinkedHashMap<>();
         journeesTypes.list().forEach(journeeType -> nomsParId.put(journeeType.getId(), journeeType.getNom()));
         journeesTypes
                 .calendrier()
                 .forEach(affectation ->
-                        calendrierActuel.put(affectation.date(), nomsParId.get(affectation.journeeTypeId())));
+                        lecture.calendrierActuel.put(affectation.date(), nomsParId.get(affectation.journeeTypeId())));
 
         List<LigneImportee> lignes = new ArrayList<>();
-        List<JourneeType> valides = new ArrayList<>();
-        Map<String, List<LocalDate>> datesParNom = new LinkedHashMap<>();
-        Map<LocalDate, String> revendiquees = new LinkedHashMap<>();
-        Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
+            lignes.add(lecture.read(row, colonnes));
+        }
+
+        List<Ecriture> ecritures = new ArrayList<>();
+        for (JourneeType journeeType : lecture.valides) {
+            ecritures.add(service -> {
+                if (journeeType.getId() == null) {
+                    service.journeesTypes.create(journeeType);
+                } else {
+                    service.journeesTypes.update(journeeType.getId(), journeeType);
+                }
+            });
+        }
+        if (!lecture.valides.isEmpty()) {
+            // Last, and only once: a template created above has no id until it
+            // is written, and the calendar is rewritten whole by its service.
+            Map<String, List<LocalDate>> datesParNom = lecture.datesParNom;
+            ecritures.add(service -> service.mergeCalendrier(datesParNom));
+        }
+        // Nothing the solver reads has moved — the grid is untouched until the
+        // calendar is applied — so the edition is not marked as modified.
+        return new Analyse(ImportTarget.JOURNEES_TYPES, table, lignes, ecritures, List.of(), false);
+    }
+
+    /** The day-template rows read so far: what the next row is checked against. */
+    private static final class DayTemplateReader {
+
+        private final Map<String, JourneeType> existants = new LinkedHashMap<>();
+        private final Map<LocalDate, String> calendrierActuel = new TreeMap<>();
+        private final List<JourneeType> valides = new ArrayList<>();
+        private final Map<String, List<LocalDate>> datesParNom = new LinkedHashMap<>();
+        private final Map<LocalDate, String> revendiquees = new LinkedHashMap<>();
+        private final Set<String> vus = new LinkedHashSet<>();
+
+        LigneImportee read(CsvParser.Row row, Colonnes colonnes) {
             String nom = colonnes.valeur(row, "nom");
             String vacationsLues = colonnes.valeur(row, "vacations");
             List<String> raisons = new ArrayList<>();
             if (!nom.isBlank() && vus.contains(nomNormalise(nom))) {
-                raisons.add("La journée type « " + nom.strip() + " » apparaît déjà plus haut dans le fichier.");
+                raisons.add("La journée type « " + nom.strip() + DEJA_PLUS_HAUT);
             }
             List<VacationType> vacations = List.of();
             try {
@@ -515,40 +577,11 @@ public class ReferentielCsvImportService {
             JourneeType existant = existants.get(nomNormalise(nom));
             JourneeType lue = new JourneeType(existant == null ? null : existant.getId(), nom, vacations);
             if (raisons.isEmpty()) {
-                try {
-                    // The same rules the screen and the scenario section obey —
-                    // a blank name, a zero-length shift, two identical shifts —
-                    // read against the rows already accepted rather than against
-                    // the database, so a file naming one template twice is caught
-                    // even when neither exists yet.
-                    JourneeTypeService.validate(lue, valides);
-                } catch (BusinessError.Invalid e) {
-                    raisons.add(e.getMessage());
-                }
+                validate(lue, raisons);
             }
-            List<LocalDate> dates = new ArrayList<>();
-            for (String cellule : valeursMultiples(colonnes.valeur(row, "dates"))) {
-                LocalDate date = readEventDate(cellule, raisons);
-                if (date == null) {
-                    continue;
-                }
-                String revendiquePar = revendiquees.get(date);
-                if (revendiquePar != null || dates.contains(date)) {
-                    raisons.add("Le " + date + " est déjà affecté à « "
-                            + (revendiquePar == null ? nom.strip() : revendiquePar) + " » dans ce fichier.");
-                } else {
-                    dates.add(date);
-                }
-            }
+            List<LocalDate> dates = readDates(colonnes.valeur(row, "dates"), nom, raisons);
             if (!raisons.isEmpty()) {
-                lignes.add(new LigneImportee(
-                        row.line(),
-                        blankAsNull(nom),
-                        blankAsNull(vacationsLues),
-                        ActionImport.REFUSE,
-                        raisons,
-                        List.of()));
-                continue;
+                return refusedRow(row, nom, vacationsLues, raisons);
             }
             // The name and the dates are claimed only now, for the reason the
             // timeslot tab gives: a row refused for something else must not
@@ -557,6 +590,47 @@ public class ReferentielCsvImportService {
             dates.forEach(date -> revendiquees.put(date, lue.getNom()));
             valides.add(lue);
             datesParNom.put(nomNormalise(lue.getNom()), dates);
+            return new LigneImportee(
+                    row.line(),
+                    lue.getNom(),
+                    VacationsLigne.format(lue.getVacations()),
+                    existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
+                    List.of(),
+                    details(lue, dates));
+        }
+
+        /**
+         * The same rules the screen and the scenario section obey — a blank
+         * name, a zero-length shift, two identical shifts — read against the
+         * rows already accepted rather than against the database, so a file
+         * naming one template twice is caught even when neither exists yet.
+         */
+        private void validate(JourneeType lue, List<String> raisons) {
+            try {
+                JourneeTypeService.validate(lue, valides);
+            } catch (BusinessError.Invalid e) {
+                raisons.add(e.getMessage());
+            }
+        }
+
+        private List<LocalDate> readDates(String cellule, String nom, List<String> raisons) {
+            List<LocalDate> dates = new ArrayList<>();
+            for (String valeur : valeursMultiples(cellule)) {
+                LocalDate date = readEventDate(valeur, raisons);
+                if (date != null) {
+                    String revendiquePar = revendiquees.get(date);
+                    if (revendiquePar != null || dates.contains(date)) {
+                        String titulaire = revendiquePar == null ? nom.strip() : revendiquePar;
+                        raisons.add("Le " + date + " est déjà affecté à « " + titulaire + " » dans ce fichier.");
+                    } else {
+                        dates.add(date);
+                    }
+                }
+            }
+            return dates;
+        }
+
+        private List<String> details(JourneeType lue, List<LocalDate> dates) {
             List<String> details = new ArrayList<>();
             if (dates.isEmpty()) {
                 details.add("Aucune date : la journée type existe, elle ne gouverne encore aucun jour.");
@@ -572,33 +646,32 @@ public class ReferentielCsvImportService {
                 }
             }
             details.add("Les créneaux ne bougent pas : appliquez le calendrier depuis l'écran Journées types.");
-            lignes.add(new LigneImportee(
-                    row.line(),
-                    lue.getNom(),
-                    VacationsLigne.format(lue.getVacations()),
-                    existant == null ? ActionImport.CREE : ActionImport.MIS_A_JOUR,
-                    List.of(),
-                    details));
+            return details;
         }
+    }
 
-        List<Ecriture> ecritures = new ArrayList<>();
-        for (JourneeType journeeType : valides) {
-            ecritures.add(service -> {
-                if (journeeType.getId() == null) {
-                    service.journeesTypes.create(journeeType);
-                } else {
-                    service.journeesTypes.update(journeeType.getId(), journeeType);
-                }
-            });
+    /** A refused row, named by the two cells the operator will look for in the spreadsheet. */
+    private static LigneImportee refusedRow(CsvParser.Row row, String cle, String libelle, List<String> raisons) {
+        return new LigneImportee(
+                row.line(), blankAsNull(cle), blankAsNull(libelle), ActionImport.REFUSE, raisons, List.of());
+    }
+
+    private static void checkDuplicateId(String id, Set<String> vus, List<String> raisons) {
+        if (!id.isBlank() && !vus.add(id)) {
+            raisons.add("L'identifiant « " + id + DEJA_PLUS_HAUT);
         }
-        if (!valides.isEmpty()) {
-            // Last, and only once: a template created above has no id until it
-            // is written, and the calendar is rewritten whole by its service.
-            ecritures.add(service -> service.mergeCalendrier(datesParNom));
+    }
+
+    /** The checks a fiche keyed by id shares: an id, a name unless the fiche exists, no id twice. */
+    private static void checkIdAndName(
+            String id, String nom, boolean existe, String fiche, Set<String> vus, List<String> raisons) {
+        if (id.isBlank()) {
+            raisons.add("La colonne « id » est vide.");
         }
-        // Nothing the solver reads has moved — the grid is untouched until the
-        // calendar is applied — so the edition is not marked as modified.
-        return new Analyse(ImportTarget.JOURNEES_TYPES, table, lignes, ecritures, List.of(), false);
+        if (nom.isBlank() && !existe) {
+            raisons.add("La colonne « nom » est vide, et " + fiche + " n'existe pas encore.");
+        }
+        checkDuplicateId(id, vus, raisons);
     }
 
     /**
@@ -675,8 +748,8 @@ public class ReferentielCsvImportService {
             raisons.add("La date est absente.");
             return null;
         }
-        LocalDate date =
-                AnimateurCsvImportService.parseDate(valeur, LocalDate.now().plusYears(ANNEES_A_VENIR));
+        LocalDate date = AnimateurCsvImportService.parseDate(
+                valeur, LocalDate.now(ZoneId.systemDefault()).plusYears(ANNEES_A_VENIR));
         if (date == null) {
             raisons.add("Date illisible « " + valeur + " » : attendu AAAA-MM-JJ, ou JJ/MM/AAAA.");
         }
@@ -724,7 +797,7 @@ public class ReferentielCsvImportService {
                 throw new BusinessError.Invalid(champ + " ne peut pas être négatif : « " + cellule.trim() + " ».");
             }
             return valeur;
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             throw new BusinessError.Invalid(champ + " n'est pas un nombre : « " + cellule.trim() + " ».");
         }
     }
@@ -735,7 +808,7 @@ public class ReferentielCsvImportService {
         }
         try {
             return Double.parseDouble(cellule.trim().replace(',', '.'));
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             throw new BusinessError.Invalid(champ + " n'est pas un nombre décimal : « " + cellule.trim() + " ».");
         }
     }
@@ -755,7 +828,7 @@ public class ReferentielCsvImportService {
     }
 
     private static String groupe(int valeur) {
-        return String.valueOf(valeur).replaceAll("(?<=\\d)(?=(\\d{3})+$)", " ");
+        return String.format(Locale.ROOT, "%,d", valeur).replace(',', ' ');
     }
 
     private static void refuseSpreadsheet(String fileName, String content) {

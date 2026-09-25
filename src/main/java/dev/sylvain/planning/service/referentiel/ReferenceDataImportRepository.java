@@ -15,6 +15,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,8 @@ import javax.sql.DataSource;
  */
 @ApplicationScoped
 public class ReferenceDataImportRepository {
+
+    private static final String WHERE_EDITION = " WHERE edition_id = ?";
 
     private final DataSource dataSource;
 
@@ -79,94 +82,127 @@ public class ReferenceDataImportRepository {
         Map<String, Stand> standsById = new LinkedHashMap<>();
         Map<Long, Creneau> creneauxById = new LinkedHashMap<>();
         if (planning.getPostes() != null) {
-            for (PosteAffectation poste : planning.getPostes()) {
-                if (poste.getStand() != null) {
-                    standsById.putIfAbsent(poste.getStand().getId(), poste.getStand());
-                }
-                if (poste.getCreneau() != null) {
-                    creneauxById.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
-                }
-            }
+            collectStandsAndTimeslots(planning.getPostes(), standsById, creneauxById);
         }
         List<Animateur> animateurs = planning.getAnimateurs() != null ? planning.getAnimateurs() : List.of();
         List<ContrainteAdHoc> contraintes =
                 planning.getContraintesAdHoc() != null ? planning.getContraintesAdHoc() : List.of();
 
         scope.write("Failed to import reference data from planning", connection -> {
-            // verrouillage_planning goes with the assignments it freezes: the
-            // reference dataset is being replaced, so the validated planning
-            // those locks protected no longer exists — and planning_resolution
-            // goes with it, so nothing keeps claiming "résolu le …" over an
-            // empty plan. Stands and animateurs, on the other hand, are
-            // DIFFED, not wiped: the file's rows are upserted (which keeps
-            // an existing animateur's access token, sessions and demandes
-            // alive) and only the rows absent from the file are deleted.
-            for (String table : List.of(
-                    "contrainte_animateur",
-                    "contrainte_ad_hoc",
-                    "verrouillage_planning",
-                    "validation_journee",
-                    "poste_affectation",
-                    "planning_resolution")) {
-                // Table names come from the literal list above, never from user input.
-                try (PreparedStatement ps =
-                        scope.prepareScoped(connection, "DELETE FROM " + table + " WHERE edition_id = ?")) {
-                    ps.executeUpdate();
-                }
-            }
-            try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ?")) {
-                ps.executeUpdate();
-            }
-            Map<Long, Long> idsRemap = new LinkedHashMap<>();
-            for (Creneau creneau : creneauxById.values()) {
-                Long ancienId = creneau.getId();
-                Long nouvelId = creneauRepository.insertCreneauTx(connection, creneau);
-                idsRemap.put(ancienId, nouvelId);
-            }
-            Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
-            for (Stand stand : standsById.values()) {
-                if (stand.getEmplacement() != null) {
-                    emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
-                }
-            }
-            for (Emplacement emplacement : emplacementsById.values()) {
-                emplacementRepository.upsertEmplacementTx(connection, emplacement);
-            }
+            wipeTx(connection);
+            Map<Long, Long> idsRemap = insertTimeslotsTx(connection, creneauxById.values());
+            upsertEmplacementsTx(connection, standsById.values());
             for (TypologieItem typologie : typologieRepository.derivedTypologies(standsById.values(), animateurs)) {
                 typologieRepository.upsertTypologieDerivee(connection, typologie);
             }
             for (Stand stand : standsById.values()) {
                 standRepository.upsertStand(connection, stand);
             }
-            for (Animateur animateur : animateurs) {
-                if (animateur != null && animateur.getId() != null) {
-                    animateurRepository.upsertAnimateur(connection, animateur, true);
-                }
-            }
+            Set<String> animateurIds = upsertAnimateursTx(connection, animateurs);
             // Rows the file does not carry are the only ones deleted — for
             // an animateur that also drops, by cascade, their demandes
             // d'échange, sessions and access code.
             deleteMissingTx(connection, "stand", standsById.keySet());
-            deleteMissingTx(
-                    connection,
-                    "animateur",
-                    animateurs.stream()
-                            .filter(animateur -> animateur != null && animateur.getId() != null)
-                            .map(Animateur::getId)
-                            .collect(Collectors.toSet()));
-            for (ContrainteAdHoc contrainte : contraintes) {
-                if (contrainte != null && contrainte.getId() != null) {
-                    if (contrainte.getCreneau() != null
-                            && contrainte.getCreneau().getId() != null) {
-                        Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
-                        if (nouvelId != null) {
-                            contrainte.getCreneau().setId(nouvelId);
-                        }
-                    }
-                    contrainteRepository.upsertContrainte(connection, contrainte);
-                }
-            }
+            deleteMissingTx(connection, "animateur", animateurIds);
+            upsertContraintesTx(connection, contraintes, idsRemap);
         });
+    }
+
+    private static void collectStandsAndTimeslots(
+            List<PosteAffectation> postes, Map<String, Stand> standsById, Map<Long, Creneau> creneauxById) {
+        for (PosteAffectation poste : postes) {
+            if (poste.getStand() != null) {
+                standsById.putIfAbsent(poste.getStand().getId(), poste.getStand());
+            }
+            if (poste.getCreneau() != null) {
+                creneauxById.putIfAbsent(poste.getCreneau().getId(), poste.getCreneau());
+            }
+        }
+    }
+
+    /**
+     * verrouillage_planning goes with the assignments it freezes: the
+     * reference dataset is being replaced, so the validated planning
+     * those locks protected no longer exists — and planning_resolution
+     * goes with it, so nothing keeps claiming "résolu le …" over an
+     * empty plan. Stands and animateurs, on the other hand, are
+     * DIFFED, not wiped: the file's rows are upserted (which keeps
+     * an existing animateur's access token, sessions and demandes
+     * alive) and only the rows absent from the file are deleted.
+     */
+    private void wipeTx(Connection connection) throws SQLException {
+        for (String table : List.of(
+                "contrainte_animateur",
+                "contrainte_ad_hoc",
+                "verrouillage_planning",
+                "validation_journee",
+                "poste_affectation",
+                "planning_resolution")) {
+            // Table names come from the literal list above, never from user input.
+            try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM " + table + WHERE_EDITION)) {
+                ps.executeUpdate();
+            }
+        }
+        try (PreparedStatement ps = scope.prepareScoped(connection, "DELETE FROM creneau WHERE edition_id = ?")) {
+            ps.executeUpdate();
+        }
+    }
+
+    /** Inserts the créneaux afresh; the map is each one's old id to its new one. */
+    private Map<Long, Long> insertTimeslotsTx(Connection connection, Collection<Creneau> creneaux) throws SQLException {
+        Map<Long, Long> idsRemap = new LinkedHashMap<>();
+        for (Creneau creneau : creneaux) {
+            Long ancienId = creneau.getId();
+            Long nouvelId = creneauRepository.insertCreneauTx(connection, creneau);
+            idsRemap.put(ancienId, nouvelId);
+        }
+        return idsRemap;
+    }
+
+    private void upsertEmplacementsTx(Connection connection, Collection<Stand> stands) throws SQLException {
+        Map<String, Emplacement> emplacementsById = new LinkedHashMap<>();
+        for (Stand stand : stands) {
+            if (stand.getEmplacement() != null) {
+                emplacementsById.putIfAbsent(stand.getEmplacement().getId(), stand.getEmplacement());
+            }
+        }
+        for (Emplacement emplacement : emplacementsById.values()) {
+            emplacementRepository.upsertEmplacementTx(connection, emplacement);
+        }
+    }
+
+    /** Upserts the identified animateurs, and returns their ids. */
+    private Set<String> upsertAnimateursTx(Connection connection, List<Animateur> animateurs) throws SQLException {
+        for (Animateur animateur : animateurs) {
+            if (animateur != null && animateur.getId() != null) {
+                animateurRepository.upsertAnimateur(connection, animateur, true);
+            }
+        }
+        return animateurs.stream()
+                .filter(animateur -> animateur != null && animateur.getId() != null)
+                .map(Animateur::getId)
+                .collect(Collectors.toSet());
+    }
+
+    /** Upserts the identified exceptions, their créneau renumbered onto the one just inserted. */
+    private void upsertContraintesTx(Connection connection, List<ContrainteAdHoc> contraintes, Map<Long, Long> idsRemap)
+            throws SQLException {
+        for (ContrainteAdHoc contrainte : contraintes) {
+            if (contrainte != null && contrainte.getId() != null) {
+                remapCreneau(contrainte, idsRemap);
+                contrainteRepository.upsertContrainte(connection, contrainte);
+            }
+        }
+    }
+
+    private static void remapCreneau(ContrainteAdHoc contrainte, Map<Long, Long> idsRemap) {
+        if (contrainte.getCreneau() == null || contrainte.getCreneau().getId() == null) {
+            return;
+        }
+        Long nouvelId = idsRemap.get(contrainte.getCreneau().getId());
+        if (nouvelId != null) {
+            contrainte.getCreneau().setId(nouvelId);
+        }
     }
 
     public ImportImpact countImportImpact() {
@@ -201,8 +237,7 @@ public class ReferenceDataImportRepository {
 
     /** COUNT(*) of one edition-scoped table from the literal list of {@link #countImportImpact}. */
     private int count(Connection connection, String table) throws SQLException {
-        try (PreparedStatement ps =
-                        scope.prepareScoped(connection, "SELECT COUNT(*) FROM " + table + " WHERE edition_id = ?");
+        try (PreparedStatement ps = scope.prepareScoped(connection, "SELECT COUNT(*) FROM " + table + WHERE_EDITION);
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             return rs.next() ? rs.getInt(1) : 0;
@@ -217,8 +252,7 @@ public class ReferenceDataImportRepository {
      */
     private void deleteMissingTx(Connection connection, String table, Set<String> idsConserves) throws SQLException {
         List<String> missing = new ArrayList<>();
-        try (PreparedStatement ps =
-                        scope.prepareScoped(connection, "SELECT id FROM " + table + " WHERE edition_id = ?");
+        try (PreparedStatement ps = scope.prepareScoped(connection, "SELECT id FROM " + table + WHERE_EDITION);
                 // nosemgrep: java.lang.security.audit.formatted-sql-string.formatted-sql-string
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {

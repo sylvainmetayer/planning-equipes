@@ -40,7 +40,7 @@ public final class CompactTime {
         }
         try {
             return LocalTime.parse(valeur);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Heure illisible « " + (texte == null ? "" : texte.strip())
                     + " » : attendu HH:MM, par exemple 09:00 ou 9h30.");
         }

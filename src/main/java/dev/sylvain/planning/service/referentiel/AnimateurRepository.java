@@ -32,6 +32,8 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class AnimateurRepository {
 
+    private static final String COL_ANIMATEUR_ID = "animateur_id";
+
     private final ConcurrentModificationGuard staleWrites;
 
     private final DataSource dataSource;
@@ -73,7 +75,7 @@ public class AnimateurRepository {
                             "SELECT animateur_id, typologie, niveau FROM animateur_competence WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Animateur animateur = byId.get(rs.getString("animateur_id"));
+                    Animateur animateur = byId.get(rs.getString(COL_ANIMATEUR_ID));
                     if (animateur != null) {
                         animateur
                                 .getCompetences()
@@ -85,7 +87,7 @@ public class AnimateurRepository {
                             connection, "SELECT animateur_id, jour FROM animateur_jour_indispo WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Animateur animateur = byId.get(rs.getString("animateur_id"));
+                    Animateur animateur = byId.get(rs.getString(COL_ANIMATEUR_ID));
                     if (animateur != null) {
                         animateur.getJoursIndisponibles().add(rs.getObject("jour", LocalDate.class));
                     }
@@ -95,7 +97,7 @@ public class AnimateurRepository {
                             connection, "SELECT animateur_id, typologie FROM animateur_souhait WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Animateur animateur = byId.get(rs.getString("animateur_id"));
+                    Animateur animateur = byId.get(rs.getString(COL_ANIMATEUR_ID));
                     if (animateur != null) {
                         animateur.getSouhaits().add(rs.getString("typologie"));
                     }

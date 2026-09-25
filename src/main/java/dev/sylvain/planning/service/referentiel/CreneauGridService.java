@@ -171,26 +171,33 @@ public class CreneauGridService {
                 }
                 retenues.addAll(dates);
             } else {
-                if (dateDebut == null || dateFin == null) {
-                    throw new BusinessError.Invalid(
-                            "La portée " + jours + " exige dateDebut et dateFin (bornes incluses).");
-                }
-                if (dateFin.isBefore(dateDebut)) {
-                    throw new BusinessError.Invalid(
-                            "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ").");
-                }
-                if (jours == TypeJoursHoraire.JOURS_SEMAINE && joursSemaine.isEmpty()) {
-                    throw new BusinessError.Invalid("La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
-                }
-                for (LocalDate date = dateDebut; !date.isAfter(dateFin); date = date.plusDays(1)) {
-                    if (jours != TypeJoursHoraire.JOURS_SEMAINE || joursSemaine.contains(date.getDayOfWeek())) {
-                        retenues.add(date);
-                    }
-                }
+                retenues.addAll(datesInRange());
             }
             retenues.removeAll(exclusions);
             if (retenues.isEmpty()) {
                 throw new BusinessError.Invalid("La règle ne couvre aucune date : sélecteur et exclusions s'annulent.");
+            }
+            return retenues;
+        }
+
+        /** The dates of a bounded selector, before exclusions. */
+        private List<LocalDate> datesInRange() {
+            if (dateDebut == null || dateFin == null) {
+                throw new BusinessError.Invalid(
+                        "La portée " + jours + " exige dateDebut et dateFin (bornes incluses).");
+            }
+            if (dateFin.isBefore(dateDebut)) {
+                throw new BusinessError.Invalid(
+                        "dateFin (" + dateFin + ") est antérieure à dateDebut (" + dateDebut + ").");
+            }
+            if (jours == TypeJoursHoraire.JOURS_SEMAINE && joursSemaine.isEmpty()) {
+                throw new BusinessError.Invalid("La portée JOURS_SEMAINE exige joursSemaine, ex. MONDAY,TUESDAY.");
+            }
+            List<LocalDate> retenues = new ArrayList<>();
+            for (LocalDate date = dateDebut; !date.isAfter(dateFin); date = date.plusDays(1)) {
+                if (jours != TypeJoursHoraire.JOURS_SEMAINE || joursSemaine.contains(date.getDayOfWeek())) {
+                    retenues.add(date);
+                }
             }
             return retenues;
         }
@@ -330,56 +337,62 @@ public class CreneauGridService {
     private static List<GridAnomaly> unitAnomalies(
             List<Creneau> creneaux, ParametresLegaux legaux, List<FenetreRepas> fenetresRepas) {
         List<GridAnomaly> anomalies = new ArrayList<>();
-        int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
         for (Creneau creneau : creneaux) {
-            if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.ERREUR,
-                        GridAnomalyType.CRENEAU_INCOMPLET,
-                        creneau.getDate(),
-                        "Créneau incomplet : date, heure de début et heure de fin sont requises."));
-                continue;
-            }
-            int duree = creneau.getDureeMinutes();
-            if (duree == 0) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.ERREUR,
-                        GridAnomalyType.DUREE_NULLE,
-                        creneau.getDate(),
-                        libelle(creneau) + " : durée nulle (début et fin identiques)."));
-                continue;
-            }
-            if (duree > legaux.getDureeVacationMaxMinutes()) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.AVERTISSEMENT,
-                        GridAnomalyType.VACATION_TROP_LONGUE,
-                        creneau.getDate(),
-                        libelle(creneau) + " : vacation de " + duree + " min, au-delà du maximum de "
-                                + legaux.getDureeVacationMaxMinutes()
-                                + " min. Cette vacation contiendra une pause à relayer : vérifiez qu'un"
-                                + " collègue tient une place sur le stand à ce moment-là, ou coupez la"
-                                + " journée en deux vacations."));
-            }
-            if (duree > amplitudeMaximaleLegale) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.ERREUR,
-                        GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE,
-                        creneau.getDate(),
-                        libelle(creneau) + " : vacation de " + duree + " min alors que le repos "
-                                + "quotidien minimal de " + legaux.getReposQuotidienMinimalMinutes()
-                                + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
-                                + " min. Toute affectation sur ce créneau violera une contrainte dure."));
-            }
-            if (creneau.isCouverturePause() && !insideMealWindow(creneau, fenetresRepas)) {
-                anomalies.add(new GridAnomaly(
-                        SeveriteGrille.AVERTISSEMENT,
-                        GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
-                        creneau.getDate(),
-                        libelle(creneau) + " : relais repas hors de toute fenêtre repas ("
-                                + libelleFenetresRepas(fenetresRepas)
-                                + "). L'effectif y est divisé par deux sans qu'aucune coupure"
-                                + " ne puisse s'y prendre."));
-            }
+            anomalies.addAll(unitAnomalies(creneau, legaux, fenetresRepas));
+        }
+        return anomalies;
+    }
+
+    /** One créneau's shape, then its duration against the legal ceilings. */
+    private static List<GridAnomaly> unitAnomalies(
+            Creneau creneau, ParametresLegaux legaux, List<FenetreRepas> fenetresRepas) {
+        if (creneau.getDate() == null || creneau.getHeureDebut() == null || creneau.getHeureFin() == null) {
+            return List.of(new GridAnomaly(
+                    SeveriteGrille.ERREUR,
+                    GridAnomalyType.CRENEAU_INCOMPLET,
+                    creneau.getDate(),
+                    "Créneau incomplet : date, heure de début et heure de fin sont requises."));
+        }
+        int duree = creneau.getDureeMinutes();
+        if (duree == 0) {
+            return List.of(new GridAnomaly(
+                    SeveriteGrille.ERREUR,
+                    GridAnomalyType.DUREE_NULLE,
+                    creneau.getDate(),
+                    libelle(creneau) + " : durée nulle (début et fin identiques)."));
+        }
+        List<GridAnomaly> anomalies = new ArrayList<>();
+        int amplitudeMaximaleLegale = MINUTES_PAR_JOUR - legaux.getReposQuotidienMinimalMinutes();
+        if (duree > legaux.getDureeVacationMaxMinutes()) {
+            anomalies.add(new GridAnomaly(
+                    SeveriteGrille.AVERTISSEMENT,
+                    GridAnomalyType.VACATION_TROP_LONGUE,
+                    creneau.getDate(),
+                    libelle(creneau) + " : vacation de " + duree + " min, au-delà du maximum de "
+                            + legaux.getDureeVacationMaxMinutes()
+                            + " min. Cette vacation contiendra une pause à relayer : vérifiez qu'un"
+                            + " collègue tient une place sur le stand à ce moment-là, ou coupez la"
+                            + " journée en deux vacations."));
+        }
+        if (duree > amplitudeMaximaleLegale) {
+            anomalies.add(new GridAnomaly(
+                    SeveriteGrille.ERREUR,
+                    GridAnomalyType.REPOS_QUOTIDIEN_IMPOSSIBLE,
+                    creneau.getDate(),
+                    libelle(creneau) + " : vacation de " + duree + " min alors que le repos "
+                            + "quotidien minimal de " + legaux.getReposQuotidienMinimalMinutes()
+                            + " min plafonne une journée travaillée à " + amplitudeMaximaleLegale
+                            + " min. Toute affectation sur ce créneau violera une contrainte dure."));
+        }
+        if (creneau.isCouverturePause() && !insideMealWindow(creneau, fenetresRepas)) {
+            anomalies.add(new GridAnomaly(
+                    SeveriteGrille.AVERTISSEMENT,
+                    GridAnomalyType.RELAIS_REPAS_HORS_FENETRE,
+                    creneau.getDate(),
+                    libelle(creneau) + " : relais repas hors de toute fenêtre repas ("
+                            + libelleFenetresRepas(fenetresRepas)
+                            + "). L'effectif y est divisé par deux sans qu'aucune coupure"
+                            + " ne puisse s'y prendre."));
         }
         return anomalies;
     }

@@ -108,41 +108,49 @@ public final class HoraireStandResolver {
         List<OuvertureStand> ouvertures = new ArrayList<>(stand.getOuvertures());
         boolean declaresOpenings = declaresOpenings(stand.getHoraires());
         for (LocalDate date : dates) {
-            if (joursAvecException.contains(date)) {
-                // Layer 1: the day is stated by hand, rules stay out of it.
-                continue;
-            }
-            JourResolu resolu = resolveDay(stand.getHoraires(), date);
-            if (resolu == null) {
-                if (declaresOpenings) {
-                    // Layer 3 with openings declared elsewhere: a day this stand
-                    // never mentions is a day it does not open. See
-                    // declaresOpenings below for why that reading, and not
-                    // the historical open-all-day, is the right one here.
-                    fermetures.add(
-                            new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE));
-                }
-                continue;
-            }
-            for (FenetreHoraire fenetre : resolu.fenetres()) {
-                if (resolu.mode() == ModeHoraire.OUVERTURE) {
-                    // The window's effectif rides along: it is the whole point
-                    // of a rule that a stand's staffing profile is stated once
-                    // and expanded onto every day it covers.
-                    ouvertures.add(new OuvertureStand(
-                            null,
-                            date,
-                            fenetre.getHeureDebut(),
-                            fenetre.getHeureFin(),
-                            resolu.motif(),
-                            fenetre.getEffectif()));
-                } else {
-                    fermetures.add(new IndisponibiliteStand(
-                            null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), resolu.motif()));
-                }
+            // Layer 1: a day stated by hand keeps the rules out of it.
+            if (!joursAvecException.contains(date)) {
+                resolveInto(stand, date, declaresOpenings, fermetures, ouvertures);
             }
         }
         stand.setFenetresEffectives(fermetures, ouvertures);
+    }
+
+    /** Expands the rules onto one day no dated exception states. */
+    private static void resolveInto(
+            Stand stand,
+            LocalDate date,
+            boolean declaresOpenings,
+            List<IndisponibiliteStand> fermetures,
+            List<OuvertureStand> ouvertures) {
+        JourResolu resolu = resolveDay(stand.getHoraires(), date);
+        if (resolu == null) {
+            if (declaresOpenings) {
+                // Layer 3 with openings declared elsewhere: a day this stand
+                // never mentions is a day it does not open. See
+                // declaresOpenings below for why that reading, and not
+                // the historical open-all-day, is the right one here.
+                fermetures.add(new IndisponibiliteStand(null, date, LocalTime.MIDNIGHT, null, MOTIF_JOUR_NON_DECLARE));
+            }
+            return;
+        }
+        for (FenetreHoraire fenetre : resolu.fenetres()) {
+            if (resolu.mode() == ModeHoraire.OUVERTURE) {
+                // The window's effectif rides along: it is the whole point
+                // of a rule that a stand's staffing profile is stated once
+                // and expanded onto every day it covers.
+                ouvertures.add(new OuvertureStand(
+                        null,
+                        date,
+                        fenetre.getHeureDebut(),
+                        fenetre.getHeureFin(),
+                        resolu.motif(),
+                        fenetre.getEffectif()));
+            } else {
+                fermetures.add(new IndisponibiliteStand(
+                        null, date, fenetre.getHeureDebut(), fenetre.getHeureFin(), resolu.motif()));
+            }
+        }
     }
 
     /**

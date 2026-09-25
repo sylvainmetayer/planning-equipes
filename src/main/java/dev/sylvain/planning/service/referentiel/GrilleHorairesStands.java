@@ -57,8 +57,9 @@ public final class GrilleHorairesStands {
 
     private GrilleHorairesStands() {}
 
-    /** One stand of a submitted grid: its cells, one per créneau of the edition. */
     /**
+     * One stand of a submitted grid: its cells, one per créneau of the edition.
+     *
      * @param modifieLe the stand's {@code modifie_le} as the grid read it, sent
      *                  back as the write's precondition (issue #362). This
      *                  screen rewrites a stand's whole schedule, so it is the
@@ -119,6 +120,48 @@ public final class GrilleHorairesStands {
      */
     public static LigneGrille apply(
             Stand stand, List<Creneau> creneaux, List<SaisieCellule> cellules, boolean aplatir) {
+        Map<Long, Creneau> connus = knownTimeslots(creneaux);
+        Map<Long, List<int[]>> parCreneau = typedCells(stand, connus, cellules);
+
+        // What each créneau becomes, in minutes from its day's midnight: each
+        // typed cell as the whole column at its headcount — or, for a partial
+        // cell whose value did not change, the segments the stand already had
+        // there — and the minutes no cell covers as they were. Read before the
+        // rewrite below empties the effective windows.
+        Map<Long, List<int[]>> segmentsParCreneau = new HashMap<>();
+        parCreneau.forEach((creneauId, cases) -> {
+            List<int[]> segments = timeslotSegments(stand, connus.get(creneauId), cases, aplatir);
+            if (!segments.isEmpty()) {
+                segmentsParCreneau.put(creneauId, segments);
+            }
+        });
+
+        IntSummaryStatistics effectifs = segmentsParCreneau.values().stream()
+                .flatMap(List::stream)
+                .mapToInt(segment -> segment[2])
+                .summaryStatistics();
+        int effectifMin = effectifs.getCount() > 0 ? effectifs.getMin() : stand.getEffectifMin();
+        int effectifMax = effectifs.getCount() > 0 ? effectifs.getMax() : stand.getEffectifMax();
+        stand.setEffectifMin(effectifMin);
+        stand.setEffectifMax(effectifMax);
+
+        rewriteSchedule(stand, connus, segmentsParCreneau, effectifMin);
+
+        HoraireCompaction.LigneCompactage compactage = HoraireCompaction.compact(List.of(stand), creneaux, true)
+                .stands()
+                .get(0);
+        return new LigneGrille(
+                stand.getId(),
+                stand.getHoraires().size(),
+                stand.getOuvertures().size() + stand.getIndisponibilites().size(),
+                effectifMin,
+                effectifMax,
+                compactage.compacte(),
+                compactage.raison());
+    }
+
+    /** The créneaux a cell may name: those with an id, a date and both hours. */
+    private static Map<Long, Creneau> knownTimeslots(List<Creneau> creneaux) {
         Map<Long, Creneau> connus = new HashMap<>();
         for (Creneau creneau : creneaux) {
             if (creneau.getId() != null
@@ -128,8 +171,15 @@ public final class GrilleHorairesStands {
                 connus.put(creneau.getId(), creneau);
             }
         }
-        // The typed cells, as {debut, fin, effectif} in minutes from their
-        // créneau's start (-1 for closed), grouped by créneau.
+        return connus;
+    }
+
+    /**
+     * The typed cells, as {debut, fin, effectif} in minutes from their
+     * créneau's start (-1 for closed), grouped by créneau.
+     */
+    private static Map<Long, List<int[]>> typedCells(
+            Stand stand, Map<Long, Creneau> connus, List<SaisieCellule> cellules) {
         Map<Long, List<int[]>> parCreneau = new HashMap<>();
         for (SaisieCellule cellule : cellules) {
             Creneau creneau = connus.get(cellule.creneauId());
@@ -151,52 +201,44 @@ public final class GrilleHorairesStands {
             }
             duCreneau.add(new int[] {bornes[0], bornes[1], cellule.effectif() == null ? -1 : cellule.effectif()});
         }
+        return parCreneau;
+    }
 
-        // What each créneau becomes, in minutes from its day's midnight: each
-        // typed cell as the whole column at its headcount — or, for a partial
-        // cell whose value did not change, the segments the stand already had
-        // there — and the minutes no cell covers as they were. Read before the
-        // rewrite below empties the effective windows.
-        Map<Long, List<int[]>> segmentsParCreneau = new HashMap<>();
-        parCreneau.forEach((creneauId, cases) -> {
-            Creneau creneau = connus.get(creneauId);
-            int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
-            List<Creneau.SegmentOuvert> actuels = creneau.segmentsOuverts(stand);
-            List<int[]> segments = new ArrayList<>();
-            cases.sort(Comparator.comparingInt(borne -> borne[0]));
-            int curseur = 0;
-            for (int[] borne : cases) {
-                if (borne[0] > curseur) {
-                    segments.addAll(clipped(actuels, curseur, borne[0], debutCreneau));
-                }
-                curseur = borne[1];
-                if (borne[2] < 0) {
-                    continue;
-                }
-                List<int[]> dedans = clipped(actuels, borne[0], borne[1], debutCreneau);
-                if (!aplatir && conserve(dedans, borne[0] + debutCreneau, borne[1] + debutCreneau, borne[2])) {
-                    segments.addAll(dedans);
-                } else {
-                    segments.add(new int[] {debutCreneau + borne[0], debutCreneau + borne[1], borne[2]});
-                }
+    /** What one créneau becomes from its typed cells, in minutes from its day's midnight. */
+    private static List<int[]> timeslotSegments(Stand stand, Creneau creneau, List<int[]> cases, boolean aplatir) {
+        int debutCreneau = creneau.getHeureDebut().toSecondOfDay() / 60;
+        List<Creneau.SegmentOuvert> actuels = creneau.segmentsOuverts(stand);
+        List<int[]> segments = new ArrayList<>();
+        cases.sort(Comparator.comparingInt(borne -> borne[0]));
+        int curseur = 0;
+        for (int[] borne : cases) {
+            if (borne[0] > curseur) {
+                segments.addAll(clipped(actuels, curseur, borne[0], debutCreneau));
             }
-            if (curseur < creneau.getDureeMinutes()) {
-                segments.addAll(clipped(actuels, curseur, creneau.getDureeMinutes(), debutCreneau));
+            curseur = borne[1];
+            if (borne[2] >= 0) {
+                segments.addAll(typedSegments(actuels, borne, debutCreneau, aplatir));
             }
-            if (!segments.isEmpty()) {
-                segmentsParCreneau.put(creneauId, segments);
-            }
-        });
+        }
+        if (curseur < creneau.getDureeMinutes()) {
+            segments.addAll(clipped(actuels, curseur, creneau.getDureeMinutes(), debutCreneau));
+        }
+        return segments;
+    }
 
-        IntSummaryStatistics effectifs = segmentsParCreneau.values().stream()
-                .flatMap(List::stream)
-                .mapToInt(segment -> segment[2])
-                .summaryStatistics();
-        int effectifMin = effectifs.getCount() > 0 ? effectifs.getMin() : stand.getEffectifMin();
-        int effectifMax = effectifs.getCount() > 0 ? effectifs.getMax() : stand.getEffectifMax();
-        stand.setEffectifMin(effectifMin);
-        stand.setEffectifMax(effectifMax);
+    /** One open typed cell: its current segments when kept, else the whole cell at its headcount. */
+    private static List<int[]> typedSegments(
+            List<Creneau.SegmentOuvert> actuels, int[] borne, int debutCreneau, boolean aplatir) {
+        List<int[]> dedans = clipped(actuels, borne[0], borne[1], debutCreneau);
+        if (!aplatir && conserve(dedans, borne[0] + debutCreneau, borne[1] + debutCreneau, borne[2])) {
+            return dedans;
+        }
+        return List.<int[]>of(new int[] {debutCreneau + borne[0], debutCreneau + borne[1], borne[2]});
+    }
 
+    /** Replaces the stand's rules, openings and closures with its windows, day by day. */
+    private static void rewriteSchedule(
+            Stand stand, Map<Long, Creneau> connus, Map<Long, List<int[]>> segmentsParCreneau, int effectifMin) {
         Map<LocalDate, List<Creneau>> parJour = new TreeMap<>();
         connus.values()
                 .forEach(creneau -> parJour.computeIfAbsent(creneau.getDate(), key -> new ArrayList<>())
@@ -223,18 +265,6 @@ public final class GrilleHorairesStands {
         stand.setOuvertures(ouvertures);
         stand.setIndisponibilites(fermetures);
         stand.setFenetresEffectives(null, null);
-
-        HoraireCompaction.LigneCompactage compactage = HoraireCompaction.compact(List.of(stand), creneaux, true)
-                .stands()
-                .get(0);
-        return new LigneGrille(
-                stand.getId(),
-                stand.getHoraires().size(),
-                stand.getOuvertures().size() + stand.getIndisponibilites().size(),
-                effectifMin,
-                effectifMax,
-                compactage.compacte(),
-                compactage.raison());
     }
 
     /** A cell's bounds in minutes from its créneau's start: the whole créneau when it names none. */

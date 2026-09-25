@@ -25,6 +25,8 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class TypologieService implements TypologieLibelles {
 
+    private static final String TYPOLOGY_ID = "typology id";
+
     private final TypologieRepository repository;
 
     private final ReferenceDataChangeTracker changeTracker;
@@ -60,7 +62,7 @@ public class TypologieService implements TypologieLibelles {
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = repository.saveTypologie(
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"),
+                        Ids.required(typologie.id(), TYPOLOGY_ID),
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
@@ -81,7 +83,7 @@ public class TypologieService implements TypologieLibelles {
         return repository.saveTypologie(
                 connection,
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"),
+                        Ids.required(typologie.id(), TYPOLOGY_ID),
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),
@@ -99,7 +101,7 @@ public class TypologieService implements TypologieLibelles {
     public TypologieItem importer(TypologieItem typologie) {
         TypologieItem ecrite = repository.saveTypologie(
                 new TypologieItem(
-                        Ids.required(typologie.id(), "typology id"),
+                        Ids.required(typologie.id(), TYPOLOGY_ID),
                         typologie.label(),
                         typologie.ninja(),
                         typologie.maxCreneauxParAnimateur(),

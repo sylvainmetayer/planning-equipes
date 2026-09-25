@@ -311,13 +311,12 @@ public class MargeAnalyzer {
                 continue;
             }
             LocalTime debut = poste.heureDebutEffectif();
-            if (debut == null) {
-                continue;
+            if (debut != null) {
+                long start = absolute(creneau.getDate(), debut);
+                occupation
+                        .computeIfAbsent(animateur.getId(), id -> new ArrayList<>())
+                        .add(new Interval(start, start + poste.getDureeEffectiveMinutes()));
             }
-            long start = absolute(creneau.getDate(), debut);
-            occupation
-                    .computeIfAbsent(animateur.getId(), id -> new ArrayList<>())
-                    .add(new Interval(start, start + poste.getDureeEffectiveMinutes()));
         }
         return occupation;
     }

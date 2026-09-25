@@ -84,13 +84,13 @@ public class KpiHistoriqueService {
      */
     public void recordAfterSolve(Long dureeSolveSecondes) {
         try {
-            record(kpiService.computeCurrent(dureeSolveSecondes));
+            recordKpi(kpiService.computeCurrent(dureeSolveSecondes));
         } catch (RuntimeException e) {
             LOG.warn("KPI history row could not be written; the solve result is unaffected", e);
         }
     }
 
-    void record(PlanningKpi kpi) {
+    void recordKpi(PlanningKpi kpi) {
         String editionId = editionContext.editionIdCourant();
         String editionNom = editionRepository.listEditions().stream()
                 .filter(edition -> editionId.equals(edition.getId()))

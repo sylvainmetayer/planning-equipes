@@ -29,9 +29,9 @@ public final class VacationsLigne {
                 continue;
             }
             boolean relais = false;
-            if (vacation.matches("(?i).*\\s[R]$") || vacation.matches("(?i).*\\(R\\)$")) {
+            if (vacation.matches("(?i).*\\sR$") || vacation.matches("(?i).*\\(R\\)$")) {
                 relais = true;
-                vacation = vacation.replaceAll("(?i)\\s*\\(?R\\)?$", "").strip();
+                vacation = withoutRelayMark(vacation);
             }
             int separateur = vacation.indexOf('-');
             if (separateur <= 0 || separateur == vacation.length() - 1) {
@@ -49,11 +49,21 @@ public final class VacationsLigne {
         return vacations;
     }
 
+    /**
+     * Drops the trailing {@code R} or {@code (R)} the caller has just matched;
+     * the whitespace before it goes with the final strip.
+     */
+    private static String withoutRelayMark(String vacation) {
+        int longueur = vacation.length();
+        int marque = vacation.regionMatches(true, longueur - 3, "(R)", 0, 3) ? 3 : 1;
+        return vacation.substring(0, longueur - marque).strip();
+    }
+
     /** The inverse: what {@link #parse} reads, for the views an assistant gets back. */
     public static String format(List<VacationType> vacations) {
         StringBuilder ligne = new StringBuilder();
         for (VacationType vacation : vacations) {
-            if (ligne.length() > 0) {
+            if (!ligne.isEmpty()) {
                 ligne.append(", ");
             }
             ligne.append(court(vacation.heureDebut())).append('-').append(court(vacation.heureFin()));
@@ -72,7 +82,7 @@ public final class VacationsLigne {
     private static LocalTime heure(String texte, String morceau) {
         try {
             return CompactTime.parse(texte);
-        } catch (BusinessError.Invalid e) {
+        } catch (BusinessError.Invalid _) {
             throw new BusinessError.Invalid("Vacation invalide « " + morceau.strip() + " » : heure « " + texte.strip()
                     + "» illisible, attendu HH:MM");
         }

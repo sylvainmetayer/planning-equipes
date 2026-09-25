@@ -48,6 +48,11 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class StandRepository {
 
+    private static final String COL_STAND_ID = "stand_id";
+    private static final String COL_HEURE_DEBUT = "heure_debut";
+    private static final String COL_HEURE_FIN = "heure_fin";
+    private static final String COL_MOTIF = "motif";
+
     private final ConcurrentModificationGuard staleWrites;
 
     private final DataSource dataSource;
@@ -99,7 +104,7 @@ public class StandRepository {
                             connection, "SELECT stand_id, typologie FROM stand_typologie WHERE edition_id = ?");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Stand stand = byId.get(rs.getString("stand_id"));
+                    Stand stand = byId.get(rs.getString(COL_STAND_ID));
                     if (stand != null) {
                         stand.getTypologiesProposees().add(rs.getString("typologie"));
                     }
@@ -112,15 +117,15 @@ public class StandRepository {
                     ORDER BY id""");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Stand stand = byId.get(rs.getString("stand_id"));
+                    Stand stand = byId.get(rs.getString(COL_STAND_ID));
                     if (stand != null) {
                         stand.getIndisponibilites()
                                 .add(new IndisponibiliteStand(
                                         rs.getLong("id"),
                                         rs.getObject("date_indisponibilite", LocalDate.class),
-                                        rs.getObject("heure_debut", LocalTime.class),
-                                        rs.getObject("heure_fin", LocalTime.class),
-                                        rs.getString("motif")));
+                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                        rs.getObject(COL_HEURE_FIN, LocalTime.class),
+                                        rs.getString(COL_MOTIF)));
                     }
                 }
             }
@@ -131,15 +136,15 @@ public class StandRepository {
                     ORDER BY id""");
                     ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Stand stand = byId.get(rs.getString("stand_id"));
+                    Stand stand = byId.get(rs.getString(COL_STAND_ID));
                     if (stand != null) {
                         stand.getOuvertures()
                                 .add(new OuvertureStand(
                                         rs.getLong("id"),
                                         rs.getObject("date_ouverture", LocalDate.class),
-                                        rs.getObject("heure_debut", LocalTime.class),
-                                        rs.getObject("heure_fin", LocalTime.class),
-                                        rs.getString("motif"),
+                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                        rs.getObject(COL_HEURE_FIN, LocalTime.class),
+                                        rs.getString(COL_MOTIF),
                                         rs.getObject("effectif", Integer.class)));
                     }
                 }
@@ -168,7 +173,7 @@ public class StandRepository {
                 ORDER BY stand_id, id""");
                 ResultSet rs = ps.executeQuery()) {
             while (rs.next()) {
-                Stand stand = standsById.get(rs.getString("stand_id"));
+                Stand stand = standsById.get(rs.getString(COL_STAND_ID));
                 if (stand == null) {
                     continue;
                 }
@@ -180,7 +185,7 @@ public class StandRepository {
                 horaire.setDateDebut(rs.getObject("date_debut", LocalDate.class));
                 horaire.setDateFin(rs.getObject("date_fin", LocalDate.class));
                 horaire.setDates(splitCsv(rs.getString("dates"), LocalDate::parse));
-                horaire.setMotif(rs.getString("motif"));
+                horaire.setMotif(rs.getString(COL_MOTIF));
                 stand.getHoraires().add(horaire);
                 horairesById.put(horaire.getId(), horaire);
             }
@@ -199,8 +204,8 @@ public class StandRepository {
                 if (horaire != null) {
                     horaire.getFenetres()
                             .add(new FenetreHoraire(
-                                    rs.getObject("heure_debut", LocalTime.class),
-                                    rs.getObject("heure_fin", LocalTime.class),
+                                    rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                    rs.getObject(COL_HEURE_FIN, LocalTime.class),
                                     rs.getObject("effectif", Integer.class)));
                 }
             }
@@ -242,14 +247,6 @@ public class StandRepository {
         return scope.exists("stand", id);
     }
 
-    /**
-     * Writes the stand, refusing a creation whose id is taken and an update
-     * based on an out-of-date read (issue #362): both are the write's own
-     * precondition, never a probe before it.
-     *
-     * @param failIfPresent true on a creation — an existing row is then a 409,
-     *                      not a silent replacement
-     */
     /** The write's own precondition said no: a taken id on a creation, a stale read otherwise. */
     private void refuse(boolean failIfPresent, String table, String id) {
         if (failIfPresent) {
@@ -258,6 +255,14 @@ public class StandRepository {
         staleWrites.refuseStale(table, id);
     }
 
+    /**
+     * Writes the stand, refusing a creation whose id is taken and an update
+     * based on an out-of-date read (issue #362): both are the write's own
+     * precondition, never a probe before it.
+     *
+     * @param failIfPresent true on a creation — an existing row is then a 409,
+     *                      not a silent replacement
+     */
     public void saveStand(Stand stand, boolean failIfPresent) {
         scope.write("Failed to save stand " + stand.getId(), connection -> {
             upsertStand(connection, stand, failIfPresent);
@@ -269,8 +274,10 @@ public class StandRepository {
         upsertStand(connection, stand, failIfPresent);
     }
 
-    /** Every stand of the list, in one transaction: all written, or none — what a grid save or an import promises. */
-    /** Several stands, one transaction, each with its own precondition. */
+    /**
+     * Every stand of the list, in one transaction: all written, or none — what
+     * a grid save or an import promises. Each stand keeps its own precondition.
+     */
     public void saveStands(List<Stand> stands) {
         scope.write("Failed to save " + stands.size() + " stands", connection -> {
             for (Stand stand : stands) {
@@ -461,9 +468,10 @@ public class StandRepository {
                     INSERT INTO stand_horaire_fenetre
                         (edition_id, horaire_id, position, heure_debut, heure_fin, effectif)
                     VALUES (?, ?, ?, ?, ?, ?)""")) {
+                // A parameter keeps its value across addBatch() until it is set again.
+                ins.setLong(2, horaireId);
                 int position = 0;
                 for (FenetreHoraire fenetre : horaire.getFenetres()) {
-                    ins.setLong(2, horaireId);
                     ins.setInt(3, position++);
                     ins.setObject(4, fenetre.getHeureDebut());
                     ins.setObject(5, fenetre.getHeureFin());

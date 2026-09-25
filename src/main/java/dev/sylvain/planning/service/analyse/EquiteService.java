@@ -123,11 +123,6 @@ public class EquiteService {
     }
 
     /**
-     * The whole table from a plan alone — no database, no solve. An empty
-     * plan gives no line and no synthesis; an animateur without a seat gives
-     * no line either, the table being about what people were given.
-     */
-    /**
      * Hours per animateur and per week, in travail effectif: the seats of one
      * day are read together so the breaks that day owes come off exactly once,
      * the way {@code LegalConstraints} and the Heures screen read them
@@ -155,6 +150,11 @@ public class EquiteService {
         }
     }
 
+    /**
+     * The whole table from a plan alone — no database, no solve. An empty
+     * plan gives no line and no synthesis; an animateur without a seat gives
+     * no line either, the table being about what people were given.
+     */
     public static RapportEquite compute(
             PlanningEvenement planning, ParametresLegaux parametres, Set<String> contraintesDesactivees) {
         LocalTime debutSoiree = parametres == null || parametres.getHeureDebutSoiree() == null
@@ -487,7 +487,7 @@ public class EquiteService {
             LocalDate date = creneau.getDate();
             if (date != null) {
                 joursTravailles.add(date);
-                if (date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY) {
+                if (DayOfWeek.SATURDAY.equals(date.getDayOfWeek()) || DayOfWeek.SUNDAY.equals(date.getDayOfWeek())) {
                     heuresWeekEnd += heures;
                 }
                 if (JoursFeries.isFerieInFrance(date)) {

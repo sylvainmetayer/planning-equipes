@@ -68,6 +68,15 @@ public class JourneeTypeRepository {
             WHERE d.edition_id = ?
             ORDER BY d.date_jour""";
 
+    private static final String UPDATE_JOURNEE_SQL = """
+            UPDATE journee_type
+            SET nom = ?, modifie_le = now()
+            WHERE edition_id = ? AND id = ?
+            AND (CAST(? AS timestamptz) IS NULL
+                 OR date_trunc('milliseconds', journee_type.modifie_le)
+                    = date_trunc('milliseconds', CAST(? AS timestamptz)))
+            RETURNING modifie_le""";
+
     public List<JourneeType> list() {
         return scope.read("Failed to list day templates", connection -> listTx(connection));
     }
@@ -169,14 +178,7 @@ public class JourneeTypeRepository {
     public void update(JourneeType journeeType) {
         scope.write("Failed to save day template " + journeeType.getId(), connection -> {
             // Not prepareScoped: an UPDATE's first placeholder belongs to its SET clause.
-            try (PreparedStatement ps = connection.prepareStatement("""
-                    UPDATE journee_type
-                    SET nom = ?, modifie_le = now()
-                    WHERE edition_id = ? AND id = ?
-                    AND (CAST(? AS timestamptz) IS NULL
-                         OR date_trunc('milliseconds', journee_type.modifie_le)
-                            = date_trunc('milliseconds', CAST(? AS timestamptz)))
-                    RETURNING modifie_le""")) {
+            try (PreparedStatement ps = connection.prepareStatement(UPDATE_JOURNEE_SQL)) {
                 ps.setString(1, journeeType.getNom());
                 ps.setString(2, scope.editionId());
                 ps.setLong(3, journeeType.getId());

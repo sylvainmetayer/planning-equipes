@@ -30,6 +30,8 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class TypologieRepository {
 
+    private static final String TABLE = "typologie";
+
     private final ConcurrentModificationGuard staleWrites;
 
     private final DataSource dataSource;
@@ -78,17 +80,17 @@ public class TypologieRepository {
     }
 
     public boolean typologieExists(String id) {
-        return scope.exists("typologie", id);
+        return scope.exists(TABLE, id);
     }
 
     /** Same probe inside a caller's transaction, where a typologie written a moment ago is visible. */
     boolean typologieExists(Connection connection, String id) throws SQLException {
-        return scope.exists(connection, "typologie", id);
+        return scope.exists(connection, TABLE, id);
     }
 
-    /** Writes the item and returns it stamped with the moment the database wrote it. */
     /**
-     * Writes it, refusing a creation whose id is taken and an update based on an
+     * Writes the item and returns it stamped with the moment the database wrote it,
+     * refusing a creation whose id is taken and an update based on an
      * out-of-date read (issue #362): both are the write's own precondition.
      *
      * @param failIfPresent true on a creation — an existing row is then a 409,
@@ -176,7 +178,7 @@ public class TypologieRepository {
             WriteStamp.bindPrecondition(ps, 7, !failIfPresent, typologie.modifieLe());
             Instant ecrit = WriteStamp.writtenOrRefused(ps);
             if (ecrit == null) {
-                refuse(failIfPresent, "typologie", typologie.id());
+                refuse(failIfPresent, TABLE, typologie.id());
             }
             return typologie.stamped(ecrit);
         }

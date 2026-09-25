@@ -44,7 +44,7 @@ class HeuresCoherentesTest {
      * amplitude is 14 h.
      */
     @Test
-    void lesQuatreLecturesDonnentLeMemeTotalPourUnAnimateur() {
+    void theFourReadingsGiveTheSameTotalForOneAnimateur() {
         Stand stand = new Stand("STAND", "Stand", Set.of(), 1, 1, false);
         Animateur alice = new Animateur("A-ALICE", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         List<PosteAffectation> postes = List.of(
@@ -74,7 +74,7 @@ class HeuresCoherentesTest {
                 .as("écran Équité")
                 .isCloseTo(attendu, within(0.001));
 
-        assertThat(PlanningKpiService.compute(
+        assertThat(PlanningKpiService.compute(new PlanningKpiService.KpiInputs(
                                 affectationsKpi(postes),
                                 null,
                                 Map.of(),
@@ -83,7 +83,7 @@ class HeuresCoherentesTest {
                                 null,
                                 null,
                                 null,
-                                EffectiveWork.breakMinutesPerAnimateur(postes, parametres))
+                                EffectiveWork.breakMinutesPerAnimateur(postes, parametres)))
                         .heuresTotal())
                 .as("KPI")
                 .isCloseTo(attendu, within(0.001));
