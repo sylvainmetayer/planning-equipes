@@ -34,8 +34,12 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class CreneauAvailabilityResource {
 
+    private final PlanningService planningService;
+
     @Inject
-    PlanningService planningService;
+    public CreneauAvailabilityResource(PlanningService planningService) {
+        this.planningService = planningService;
+    }
 
     /**
      * @param standId narrows the probed seat to one stand; ignored when

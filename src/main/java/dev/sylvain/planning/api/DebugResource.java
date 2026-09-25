@@ -41,14 +41,18 @@ import java.time.format.DateTimeParseException;
 @Path("/debug")
 public class DebugResource {
 
-    @Inject
-    MailService mailService;
+    private final MailService mailService;
+
+    private final AdminAddress adminAddress;
+
+    private final JourJClock clock;
 
     @Inject
-    AdminAddress adminAddress;
-
-    @Inject
-    JourJClock clock;
+    public DebugResource(MailService mailService, AdminAddress adminAddress, JourJClock clock) {
+        this.mailService = mailService;
+        this.adminAddress = adminAddress;
+        this.clock = clock;
+    }
 
     private static final DateTimeFormatter HEURE = DateTimeFormatter.ofPattern("HH:mm");
 

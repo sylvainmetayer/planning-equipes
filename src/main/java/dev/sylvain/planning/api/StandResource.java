@@ -34,13 +34,17 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class StandResource {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
     private static final ReferentielCsvImportReport.ImportTarget CIBLE = ReferentielCsvImportReport.ImportTarget.STANDS;
 
+    private final StandGrilleImportService grilleImport;
+
     @Inject
-    StandGrilleImportService grilleImport;
+    public StandResource(ReferenceDataService referenceDataService, StandGrilleImportService grilleImport) {
+        this.referenceDataService = referenceDataService;
+        this.grilleImport = grilleImport;
+    }
 
     @GET
     public List<Stand> listStands() {

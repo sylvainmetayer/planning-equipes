@@ -30,11 +30,15 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class PlanSnapshotResource {
 
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
+
+    private final SnapshotComparisonService comparaisonService;
 
     @Inject
-    SnapshotComparisonService comparaisonService;
+    public PlanSnapshotResource(PlanSnapshotService snapshotService, SnapshotComparisonService comparaisonService) {
+        this.snapshotService = snapshotService;
+        this.comparaisonService = comparaisonService;
+    }
 
     @GET
     public List<SnapshotMeta> list() {

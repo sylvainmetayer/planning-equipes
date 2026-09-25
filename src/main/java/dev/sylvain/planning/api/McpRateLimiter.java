@@ -111,11 +111,15 @@ public class McpRateLimiter {
      */
     private static final int MAX_ADDRESSES = 1_000;
 
-    @Inject
-    ConfigMcp config;
+    private final ConfigMcp config;
+
+    private final ConfigAdminLogin loginConfig;
 
     @Inject
-    ConfigAdminLogin loginConfig;
+    public McpRateLimiter(ConfigMcp config, ConfigAdminLogin loginConfig) {
+        this.config = config;
+        this.loginConfig = loginConfig;
+    }
 
     private final SlidingWindowCounter requests = SlidingWindowCounter.bounded(MAX_ADDRESSES);
 

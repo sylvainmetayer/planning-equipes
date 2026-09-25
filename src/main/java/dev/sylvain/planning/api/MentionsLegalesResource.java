@@ -42,11 +42,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Produces(MediaType.APPLICATION_JSON)
 public class MentionsLegalesResource {
 
-    @Inject
-    ConfigMentionsLegales mentions;
+    private final ConfigMentionsLegales mentions;
+
+    private final ConfigObservabilite observabilite;
 
     @Inject
-    ConfigObservabilite observabilite;
+    public MentionsLegalesResource(ConfigMentionsLegales mentions, ConfigObservabilite observabilite) {
+        this.mentions = mentions;
+        this.observabilite = observabilite;
+    }
 
     @GET
     public MentionsLegalesView get() {

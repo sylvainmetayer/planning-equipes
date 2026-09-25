@@ -63,19 +63,26 @@ public class McpResource {
 
     static final Duration DUREE_BLOCAGE = Duration.ofMinutes(5);
 
-    @Inject
-    ConfigMcp mcp;
+    private final ConfigMcp mcp;
 
-    @Inject
-    McpPrompts prompts;
+    private final McpPrompts prompts;
 
     /**
      * The admin password, read from the very property the embedded security
      * realm authenticates against — so this can never drift out of step with
      * the real credential, which a second copy of {@code ADMIN_PASSWORD} would.
      */
-    @ConfigProperty(name = "quarkus.security.users.embedded.users.admin")
-    Optional<String> motDePasseAdmin;
+    private final Optional<String> motDePasseAdmin;
+
+    @Inject
+    public McpResource(
+            ConfigMcp mcp,
+            McpPrompts prompts,
+            @ConfigProperty(name = "quarkus.security.users.embedded.users.admin") Optional<String> motDePasseAdmin) {
+        this.mcp = mcp;
+        this.prompts = prompts;
+        this.motDePasseAdmin = motDePasseAdmin;
+    }
 
     private int essaisRates;
     private Instant blocageJusqua;

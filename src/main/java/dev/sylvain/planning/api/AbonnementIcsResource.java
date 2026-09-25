@@ -42,14 +42,21 @@ import jakarta.ws.rs.core.Response;
 @Path("/abonnements")
 public class AbonnementIcsResource {
 
-    @Inject
-    EditionRequestScope editionRequestScope;
+    private final EditionRequestScope editionRequestScope;
+
+    private final PlanPublieService planPublieService;
+
+    private final PlanningExportService planningExportService;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PlanningExportService planningExportService;
+    public AbonnementIcsResource(
+            EditionRequestScope editionRequestScope,
+            PlanPublieService planPublieService,
+            PlanningExportService planningExportService) {
+        this.editionRequestScope = editionRequestScope;
+        this.planPublieService = planPublieService;
+        this.planningExportService = planningExportService;
+    }
 
     /**
      * The published planning of the token's owner, rebuilt on every call — a

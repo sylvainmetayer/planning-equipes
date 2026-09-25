@@ -29,8 +29,12 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class KpiResource {
 
+    private final KpiHistoriqueService kpiHistoriqueService;
+
     @Inject
-    KpiHistoriqueService kpiHistoriqueService;
+    public KpiResource(KpiHistoriqueService kpiHistoriqueService) {
+        this.kpiHistoriqueService = kpiHistoriqueService;
+    }
 
     @GET
     public List<KpiHistoriqueEntry> list() {

@@ -25,8 +25,12 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class VerrouillageResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public VerrouillageResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     /** Every lock, all groupes de créneaux included, most recent first. */
     @GET

@@ -23,11 +23,16 @@ import java.time.format.DateTimeFormatter;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlanningExportResource {
 
-    @Inject
-    PlanningExportService planningExportService;
+    private final PlanningExportService planningExportService;
+
+    private final PlanningPersistenceService persistenceService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
+    public PlanningExportResource(
+            PlanningExportService planningExportService, PlanningPersistenceService persistenceService) {
+        this.planningExportService = planningExportService;
+        this.persistenceService = persistenceService;
+    }
 
     /**
      * The whole planning in one PDF, for the organiser — the only export that

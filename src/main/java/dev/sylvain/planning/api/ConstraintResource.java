@@ -46,18 +46,26 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Produces(MediaType.APPLICATION_JSON)
 public class ConstraintResource {
 
-    @Inject
-    ConstraintAnalysisStore analysisStore;
+    private final ConstraintAnalysisStore analysisStore;
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
     /** Says which way the toggle went; see setActif. */
-    @Inject
-    CurrentAction currentAction;
+    private final CurrentAction currentAction;
+
+    private final PlanningService planningService;
 
     @Inject
-    PlanningService planningService;
+    public ConstraintResource(
+            ConstraintAnalysisStore analysisStore,
+            ReferenceDataService referenceDataService,
+            CurrentAction currentAction,
+            PlanningService planningService) {
+        this.analysisStore = analysisStore;
+        this.referenceDataService = referenceDataService;
+        this.currentAction = currentAction;
+        this.planningService = planningService;
+    }
 
     @GET
     public ConstraintsView list() {

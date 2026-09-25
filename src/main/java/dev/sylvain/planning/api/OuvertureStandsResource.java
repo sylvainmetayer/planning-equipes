@@ -29,8 +29,12 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class OuvertureStandsResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public OuvertureStandsResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     /** The grid as submitted: only the stands that were edited, each with all its cells. */
     public record SaisieGrille(List<GrilleHorairesStands.SaisieStand> stands) {}

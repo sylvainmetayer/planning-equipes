@@ -25,8 +25,12 @@ import jakarta.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHORIZATION)
 public class FoireOpenFilter implements ContainerRequestFilter {
 
+    private final DemandeEchangeService demandeEchangeService;
+
     @Inject
-    DemandeEchangeService demandeEchangeService;
+    public FoireOpenFilter(DemandeEchangeService demandeEchangeService) {
+        this.demandeEchangeService = demandeEchangeService;
+    }
 
     @Override
     public void filter(ContainerRequestContext contexte) {

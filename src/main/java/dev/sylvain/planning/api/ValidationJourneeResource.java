@@ -35,11 +35,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ValidationJourneeResource {
 
-    @Inject
-    ValidationJourneeService validationService;
+    private final ValidationJourneeService validationService;
+
+    private final ValidationPrerequisService prerequisService;
 
     @Inject
-    ValidationPrerequisService prerequisService;
+    public ValidationJourneeResource(
+            ValidationJourneeService validationService, ValidationPrerequisService prerequisService) {
+        this.validationService = validationService;
+        this.prerequisService = prerequisService;
+    }
 
     /**
      * What a screen posts to accept a day.

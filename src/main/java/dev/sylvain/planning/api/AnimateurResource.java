@@ -37,20 +37,29 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AnimateurResource {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final RelanceManuelleService relanceService;
+
+    private final AnimateurCsvImportService csvImport;
+
+    private final CompetencesGrilleService competencesGrille;
 
     @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    RelanceManuelleService relanceService;
-
-    @Inject
-    AnimateurCsvImportService csvImport;
-
-    @Inject
-    CompetencesGrilleService competencesGrille;
+    public AnimateurResource(
+            ReferenceDataService referenceDataService,
+            ConfirmationPlanningService confirmationService,
+            RelanceManuelleService relanceService,
+            AnimateurCsvImportService csvImport,
+            CompetencesGrilleService competencesGrille) {
+        this.referenceDataService = referenceDataService;
+        this.confirmationService = confirmationService;
+        this.relanceService = relanceService;
+        this.csvImport = csvImport;
+        this.competencesGrille = competencesGrille;
+    }
 
     @GET
     public List<Animateur> listAnimateurs() {

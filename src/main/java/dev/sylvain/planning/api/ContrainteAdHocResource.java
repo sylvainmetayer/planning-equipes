@@ -23,8 +23,12 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ContrainteAdHocResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public ContrainteAdHocResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     @GET
     public List<ContrainteAdHoc> listContraintesAdHoc() {

@@ -29,12 +29,16 @@ import java.util.Optional;
 @Produces(MediaType.APPLICATION_JSON)
 public class BrandingResource {
 
-    @Inject
-    ConfigBranding branding;
+    private final ConfigBranding branding;
 
     /** Same reader as the mail subjects and the PDFs: one fallback, not two. */
+    private final ProductName productName;
+
     @Inject
-    ProductName productName;
+    public BrandingResource(ConfigBranding branding, ProductName productName) {
+        this.branding = branding;
+        this.productName = productName;
+    }
 
     @GET
     public BrandingView get() {

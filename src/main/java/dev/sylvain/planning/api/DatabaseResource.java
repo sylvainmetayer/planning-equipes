@@ -21,8 +21,12 @@ import java.time.format.DateTimeFormatter;
 @Path("/database")
 public class DatabaseResource {
 
+    private final DatabaseDumpService databaseDumpService;
+
     @Inject
-    DatabaseDumpService databaseDumpService;
+    public DatabaseResource(DatabaseDumpService databaseDumpService) {
+        this.databaseDumpService = databaseDumpService;
+    }
 
     @GET
     @Path("/export")

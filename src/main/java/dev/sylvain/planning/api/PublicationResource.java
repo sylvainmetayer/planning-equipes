@@ -31,14 +31,21 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class PublicationResource {
 
-    @Inject
-    PlanPublicationService publicationService;
+    private final PlanPublicationService publicationService;
+
+    private final PlanPublieService planPublieService;
+
+    private final PublicationTraceRepository traceRepository;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PublicationTraceRepository traceRepository;
+    public PublicationResource(
+            PlanPublicationService publicationService,
+            PlanPublieService planPublieService,
+            PublicationTraceRepository traceRepository) {
+        this.publicationService = publicationService;
+        this.planPublieService = planPublieService;
+        this.traceRepository = traceRepository;
+    }
 
     /** Who would be written to and what they would read — sends nothing. */
     @GET

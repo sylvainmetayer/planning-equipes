@@ -33,11 +33,15 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class AffectationExplanationResource {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final DeplacementService deplacementService;
 
     @Inject
-    DeplacementService deplacementService;
+    public AffectationExplanationResource(PlanningService planningService, DeplacementService deplacementService) {
+        this.planningService = planningService;
+        this.deplacementService = deplacementService;
+    }
 
     /**
      * Constraint matches (violated and not) involving the given poste in the

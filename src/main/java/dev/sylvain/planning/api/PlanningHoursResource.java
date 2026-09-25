@@ -15,8 +15,12 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlanningHoursResource {
 
+    private final PlanningHoursService heuresPlanningService;
+
     @Inject
-    PlanningHoursService heuresPlanningService;
+    public PlanningHoursResource(PlanningHoursService heuresPlanningService) {
+        this.heuresPlanningService = heuresPlanningService;
+    }
 
     @POST
     @Produces(MediaType.APPLICATION_JSON)

@@ -29,8 +29,12 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class MargeResource {
 
+    private final MargeService margeService;
+
     @Inject
-    MargeService margeService;
+    public MargeResource(MargeService margeService) {
+        this.margeService = margeService;
+    }
 
     /**
      * @param mode {@code avant} (the default) or {@code apres}; an unknown

@@ -40,17 +40,25 @@ import java.util.Locale;
 @Priority(Priorities.AUTHENTICATION)
 public class SessionEspaceFilter implements ContainerRequestFilter {
 
-    @Inject
-    EspaceTokenFilter tokenFilter;
+    private final EspaceTokenFilter tokenFilter;
+
+    private final EspaceAccesService espaceAccesService;
+
+    private final RemoteUserAuthentication remoteUser;
+
+    private final EditionRequestScope editionRequestScope;
 
     @Inject
-    EspaceAccesService espaceAccesService;
-
-    @Inject
-    RemoteUserAuthentication remoteUser;
-
-    @Inject
-    EditionRequestScope editionRequestScope;
+    public SessionEspaceFilter(
+            EspaceTokenFilter tokenFilter,
+            EspaceAccesService espaceAccesService,
+            RemoteUserAuthentication remoteUser,
+            EditionRequestScope editionRequestScope) {
+        this.tokenFilter = tokenFilter;
+        this.espaceAccesService = espaceAccesService;
+        this.remoteUser = remoteUser;
+        this.editionRequestScope = editionRequestScope;
+    }
 
     @Override
     public void filter(ContainerRequestContext contexte) {

@@ -20,8 +20,12 @@ import jakarta.ws.rs.core.MediaType;
 @Path("/planning/typologies")
 public class TypologieAnalyseResource {
 
+    private final TypologieAnalyzer typologieAnalyzer;
+
     @Inject
-    TypologieAnalyzer typologieAnalyzer;
+    public TypologieAnalyseResource(TypologieAnalyzer typologieAnalyzer) {
+        this.typologieAnalyzer = typologieAnalyzer;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

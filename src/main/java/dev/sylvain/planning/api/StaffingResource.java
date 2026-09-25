@@ -31,8 +31,12 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class StaffingResource {
 
+    private final StaffingService staffingService;
+
     @Inject
-    StaffingService staffingService;
+    public StaffingResource(StaffingService staffingService) {
+        this.staffingService = staffingService;
+    }
 
     /**
      * Never an error on an empty edition: this only feeds a read-only screen,
