@@ -56,7 +56,7 @@ class FlywayMigrationsReadinessCheckTest {
     void theVerdictIsCachedForAShortWindowThenReadAgain() {
         var reads = new AtomicInteger();
         var clock = new AtomicLong(1_000L);
-        var check = new FlywayMigrationsReadinessCheck() {
+        var check = new FlywayMigrationsReadinessCheck(null) {
             @Override
             HealthCheckResponse readHistory() {
                 reads.incrementAndGet();

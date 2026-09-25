@@ -41,8 +41,12 @@ public class FlywayMigrationsReadinessCheck implements HealthCheck {
 
     private static final Logger LOG = Logger.getLogger(FlywayMigrationsReadinessCheck.class);
 
+    private final Flyway flyway;
+
     @Inject
-    Flyway flyway;
+    public FlywayMigrationsReadinessCheck(Flyway flyway) {
+        this.flyway = flyway;
+    }
 
     /** Monotonic, replaceable by a test. */
     LongSupplier nanoTime = System::nanoTime;
