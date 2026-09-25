@@ -31,11 +31,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class DemandeEchangeResource {
 
-    @Inject
-    DemandeEchangeService demandeEchangeService;
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final EspaceAnimateurService espaceAnimateurService;
 
     @Inject
-    EspaceAnimateurService espaceAnimateurService;
+    public DemandeEchangeResource(
+            DemandeEchangeService demandeEchangeService, EspaceAnimateurService espaceAnimateurService) {
+        this.demandeEchangeService = demandeEchangeService;
+        this.espaceAnimateurService = espaceAnimateurService;
+    }
 
     /** Every demande of the current edition, most recent first, all statuts. */
     @GET

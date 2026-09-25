@@ -40,17 +40,25 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Produces(MediaType.APPLICATION_JSON)
 public class ConfigResource {
 
-    @Inject
-    ConfigObservabilite observabilite;
+    private final ConfigObservabilite observabilite;
+
+    private final DevMode devMode;
+
+    private final ConfigAdmin admin;
+
+    private final String version;
 
     @Inject
-    DevMode devMode;
-
-    @Inject
-    ConfigAdmin admin;
-
-    @ConfigProperty(name = "quarkus.application.version")
-    String version;
+    public ConfigResource(
+            ConfigObservabilite observabilite,
+            DevMode devMode,
+            ConfigAdmin admin,
+            @ConfigProperty(name = "quarkus.application.version") String version) {
+        this.observabilite = observabilite;
+        this.devMode = devMode;
+        this.admin = admin;
+        this.version = version;
+    }
 
     @GET
     public ConfigView get() {

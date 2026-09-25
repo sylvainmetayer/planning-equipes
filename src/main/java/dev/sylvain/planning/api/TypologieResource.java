@@ -27,8 +27,12 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class TypologieResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public TypologieResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     private static final ReferentielCsvImportReport.ImportTarget CIBLE =
             ReferentielCsvImportReport.ImportTarget.TYPOLOGIES;

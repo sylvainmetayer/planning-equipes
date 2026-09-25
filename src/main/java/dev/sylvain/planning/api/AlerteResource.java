@@ -29,8 +29,12 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class AlerteResource {
 
+    private final AlerteService alerteService;
+
     @Inject
-    AlerteService alerteService;
+    public AlerteResource(AlerteService alerteService) {
+        this.alerteService = alerteService;
+    }
 
     /**
      * The edition's alerts, newest first.

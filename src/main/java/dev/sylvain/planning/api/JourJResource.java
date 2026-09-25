@@ -45,8 +45,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class JourJResource {
 
+    private final JourJService jourJService;
+
     @Inject
-    JourJService jourJService;
+    public JourJResource(JourJService jourJService) {
+        this.jourJService = jourJService;
+    }
 
     /** The whole screen: remaining timeslots, who is on duty, the holes, the absences. */
     @GET

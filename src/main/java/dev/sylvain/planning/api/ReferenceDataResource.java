@@ -42,17 +42,25 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ReferenceDataResource {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanningService planningService;
+
+    private final EditionService editionService;
+
+    private final ScenarioImportService scenarioImportService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    EditionService editionService;
-
-    @Inject
-    ScenarioImportService scenarioImportService;
+    public ReferenceDataResource(
+            ReferenceDataService referenceDataService,
+            PlanningService planningService,
+            EditionService editionService,
+            ScenarioImportService scenarioImportService) {
+        this.referenceDataService = referenceDataService;
+        this.planningService = planningService;
+        this.editionService = editionService;
+        this.scenarioImportService = scenarioImportService;
+    }
 
     @POST
     @Path("/import")

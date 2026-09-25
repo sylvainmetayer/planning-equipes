@@ -26,22 +26,30 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class FeasibilityResource {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
-    @Inject
-    FeasibilityAnalyzer feasibilityAnalyzer;
+    private final FeasibilityAnalyzer feasibilityAnalyzer;
 
-    @Inject
-    PlanningPersistenceService persistence;
+    private final PlanningPersistenceService persistence;
 
     /**
      * For its {@code pastHorizon()} alone: the moment the frozen past is judged
      * against (ADR 0044), which only the solver façade pairs with the
      * {@code planning.solver.passe-fige} kill-switch. No solve is started here.
      */
+    private final PlanningService planningService;
+
     @Inject
-    PlanningService planningService;
+    public FeasibilityResource(
+            ReferenceDataService referenceDataService,
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            PlanningPersistenceService persistence,
+            PlanningService planningService) {
+        this.referenceDataService = referenceDataService;
+        this.feasibilityAnalyzer = feasibilityAnalyzer;
+        this.persistence = persistence;
+        this.planningService = planningService;
+    }
 
     /**
      * Créneaux are read from the <em>active</em> group only, like

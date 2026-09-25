@@ -28,17 +28,25 @@ import jakarta.ws.rs.core.Response;
 @Produces(MediaType.APPLICATION_JSON)
 public class PauseResource {
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PauseAnalyzer pauseAnalyzer;
+
+    private final IntendanceRepasAnalyzer intendanceAnalyzer;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PauseAnalyzer pauseAnalyzer;
-
-    @Inject
-    IntendanceRepasAnalyzer intendanceAnalyzer;
+    public PauseResource(
+            PlanningPersistenceService persistenceService,
+            ReferenceDataService referenceDataService,
+            PauseAnalyzer pauseAnalyzer,
+            IntendanceRepasAnalyzer intendanceAnalyzer) {
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+        this.pauseAnalyzer = pauseAnalyzer;
+        this.intendanceAnalyzer = intendanceAnalyzer;
+    }
 
     @GET
     public RapportPauses analyze() {

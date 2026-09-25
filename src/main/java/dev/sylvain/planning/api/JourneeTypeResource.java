@@ -32,8 +32,12 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class JourneeTypeResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public JourneeTypeResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     /** Templates, calendar, and the dates whose créneaux no longer match their template. */
     @GET

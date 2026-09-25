@@ -49,14 +49,19 @@ public class JournalActionFilter implements ContainerResponseFilter {
     @Context
     ResourceInfo resourceInfo;
 
-    @Inject
-    JournalActionService journal;
+    private final JournalActionService journal;
+
+    private final CurrentAction currentAction;
+
+    private final EditionRequestScope requestScope;
 
     @Inject
-    CurrentAction currentAction;
-
-    @Inject
-    EditionRequestScope requestScope;
+    public JournalActionFilter(
+            JournalActionService journal, CurrentAction currentAction, EditionRequestScope requestScope) {
+        this.journal = journal;
+        this.currentAction = currentAction;
+        this.requestScope = requestScope;
+    }
 
     @Override
     public void filter(ContainerRequestContext requete, ContainerResponseContext reponse) {

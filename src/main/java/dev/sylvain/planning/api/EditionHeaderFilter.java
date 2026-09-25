@@ -37,8 +37,12 @@ import jakarta.ws.rs.ext.Provider;
 @PreMatching
 public class EditionHeaderFilter implements ContainerRequestFilter {
 
+    private final EditionRequestScope requestScope;
+
     @Inject
-    EditionRequestScope requestScope;
+    public EditionHeaderFilter(EditionRequestScope requestScope) {
+        this.requestScope = requestScope;
+    }
 
     @Override
     public void filter(ContainerRequestContext requestContext) {

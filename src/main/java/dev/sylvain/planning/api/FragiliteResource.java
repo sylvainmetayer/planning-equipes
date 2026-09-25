@@ -28,11 +28,15 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class FragiliteResource {
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final FragiliteAnalyzer fragiliteAnalyzer;
 
     @Inject
-    FragiliteAnalyzer fragiliteAnalyzer;
+    public FragiliteResource(PlanningPersistenceService persistenceService, FragiliteAnalyzer fragiliteAnalyzer) {
+        this.persistenceService = persistenceService;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
+    }
 
     /**
      * Returns an empty report rather than an error when nothing is persisted

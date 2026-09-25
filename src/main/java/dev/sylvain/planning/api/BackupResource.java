@@ -23,8 +23,12 @@ import jakarta.ws.rs.core.MediaType;
 @Produces(MediaType.APPLICATION_JSON)
 public class BackupResource {
 
+    private final BackupService backupService;
+
     @Inject
-    BackupService backupService;
+    public BackupResource(BackupService backupService) {
+        this.backupService = backupService;
+    }
 
     @GET
     public BackupState get() {

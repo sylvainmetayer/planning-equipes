@@ -43,8 +43,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class CreneauResource {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    public CreneauResource(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     @GET
     public List<Creneau> listCreneaux() {

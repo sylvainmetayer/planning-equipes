@@ -35,11 +35,16 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class DeclarationDisponibiliteResource {
 
-    @Inject
-    DeclarationDisponibiliteService declarationService;
+    private final DeclarationDisponibiliteService declarationService;
+
+    private final EspaceAnimateurService espaceAnimateurService;
 
     @Inject
-    EspaceAnimateurService espaceAnimateurService;
+    public DeclarationDisponibiliteResource(
+            DeclarationDisponibiliteService declarationService, EspaceAnimateurService espaceAnimateurService) {
+        this.declarationService = declarationService;
+        this.espaceAnimateurService = espaceAnimateurService;
+    }
 
     /** Every declaration of the current edition, most recent first, all statuts. */
     @GET

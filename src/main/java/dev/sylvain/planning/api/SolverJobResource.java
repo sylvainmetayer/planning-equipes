@@ -57,20 +57,29 @@ public class SolverJobResource {
      */
     private static final int GENERATION_ABSENTE = -1;
 
-    @Inject
-    SolverJobService solverJobService;
+    private final SolverJobService solverJobService;
+
+    private final JobStreamBroadcaster jobStream;
+
+    private final ConfigJobStream configJobStream;
+
+    private final SolverScoreTrace scoreTrace;
+
+    private final EditionContext editionContext;
 
     @Inject
-    JobStreamBroadcaster jobStream;
-
-    @Inject
-    ConfigJobStream configJobStream;
-
-    @Inject
-    SolverScoreTrace scoreTrace;
-
-    @Inject
-    EditionContext editionContext;
+    public SolverJobResource(
+            SolverJobService solverJobService,
+            JobStreamBroadcaster jobStream,
+            ConfigJobStream configJobStream,
+            SolverScoreTrace scoreTrace,
+            EditionContext editionContext) {
+        this.solverJobService = solverJobService;
+        this.jobStream = jobStream;
+        this.configJobStream = configJobStream;
+        this.scoreTrace = scoreTrace;
+        this.editionContext = editionContext;
+    }
 
     @Context
     Sse sse;

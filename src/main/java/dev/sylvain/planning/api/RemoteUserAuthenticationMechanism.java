@@ -41,8 +41,12 @@ import java.util.Set;
 @ApplicationScoped
 public class RemoteUserAuthenticationMechanism implements HttpAuthenticationMechanism {
 
+    private final RemoteUserAuthentication remoteUser;
+
     @Inject
-    RemoteUserAuthentication remoteUser;
+    public RemoteUserAuthenticationMechanism(RemoteUserAuthentication remoteUser) {
+        this.remoteUser = remoteUser;
+    }
 
     @Override
     public Uni<SecurityIdentity> authenticate(RoutingContext context, IdentityProviderManager identityProviderManager) {

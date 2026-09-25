@@ -28,11 +28,15 @@ import jakarta.ws.rs.ext.Provider;
 @Priority(Priorities.AUTHENTICATION)
 public class AbonnementTokenFilter implements ContainerRequestFilter {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final EditionRequestScope editionRequestScope;
 
     @Inject
-    EditionRequestScope editionRequestScope;
+    public AbonnementTokenFilter(ReferenceDataService referenceDataService, EditionRequestScope editionRequestScope) {
+        this.referenceDataService = referenceDataService;
+        this.editionRequestScope = editionRequestScope;
+    }
 
     @Override
     public void filter(ContainerRequestContext contexte) {

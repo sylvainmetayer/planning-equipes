@@ -45,11 +45,15 @@ public class HistoriqueResource {
     /** The one value of {@code nature}: the actions the catalogue flags as exports. */
     static final String NATURE_EXPORTS = "exports";
 
-    @Inject
-    JournalActionService journal;
+    private final JournalActionService journal;
+
+    private final ReferenceDataService referenceData;
 
     @Inject
-    ReferenceDataService referenceData;
+    public HistoriqueResource(JournalActionService journal, ReferenceDataService referenceData) {
+        this.journal = journal;
+        this.referenceData = referenceData;
+    }
 
     /**
      * The edition's most recent lines, newest first.

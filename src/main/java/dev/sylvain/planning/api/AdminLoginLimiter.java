@@ -59,12 +59,18 @@ public class AdminLoginLimiter {
     /** After the security headers, before anything handles the request. */
     private static final int PRIORITE = 250;
 
-    @Inject
-    ConfigAdminLogin config;
+    private final ConfigAdminLogin config;
 
     /** Read from the configuration so the two can never drift apart. */
-    @ConfigProperty(name = "quarkus.http.auth.form.cookie-name")
-    String nomCookieSession;
+    private final String nomCookieSession;
+
+    @Inject
+    public AdminLoginLimiter(
+            ConfigAdminLogin config,
+            @ConfigProperty(name = "quarkus.http.auth.form.cookie-name") String nomCookieSession) {
+        this.config = config;
+        this.nomCookieSession = nomCookieSession;
+    }
 
     /**
      * Hard ceiling on the number of tracked addresses.

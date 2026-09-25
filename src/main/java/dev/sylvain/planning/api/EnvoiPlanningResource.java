@@ -30,8 +30,12 @@ import jakarta.ws.rs.core.Response;
 @Consumes(MediaType.APPLICATION_JSON)
 public class EnvoiPlanningResource {
 
+    private final PlanningDeliveryService envoiPlanningService;
+
     @Inject
-    PlanningDeliveryService envoiPlanningService;
+    public EnvoiPlanningResource(PlanningDeliveryService envoiPlanningService) {
+        this.envoiPlanningService = envoiPlanningService;
+    }
 
     /**
      * Sends one animateur their planning; 400 without an address, 404 unknown,

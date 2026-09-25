@@ -23,8 +23,12 @@ import java.time.format.DateTimeParseException;
 @Produces(MediaType.APPLICATION_JSON)
 public class ChangementsJourneeResource {
 
+    private final ChangementsJourneeService changementsService;
+
     @Inject
-    ChangementsJourneeService changementsService;
+    public ChangementsJourneeResource(ChangementsJourneeService changementsService) {
+        this.changementsService = changementsService;
+    }
 
     /**
      * The day's changes against {@code reference} — {@code publication} or

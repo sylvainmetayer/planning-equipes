@@ -31,8 +31,12 @@ public class AuthResource {
     /** Must match {@code quarkus.http.auth.form.cookie-name}. */
     static final String COOKIE_SESSION = "planning-session";
 
+    private final SecurityIdentity identity;
+
     @Inject
-    SecurityIdentity identity;
+    public AuthResource(SecurityIdentity identity) {
+        this.identity = identity;
+    }
 
     /** Whether the caller holds a valid admin session, and under which name. */
     @GET

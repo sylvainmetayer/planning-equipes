@@ -56,32 +56,45 @@ public class EspaceAnimateurResource {
 
     static final String COOKIE_SESSION = "planning-espace";
 
-    @Inject
-    EspaceAccesService espaceAccesService;
+    private final EspaceAccesService espaceAccesService;
+
+    private final EspaceAnimateurService espaceAnimateurService;
+
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final DeclarationDisponibiliteService declarationService;
+
+    private final EditionRequestScope editionRequestScope;
+
+    private final PlanPublieService planPublieService;
+
+    private final PlanningExportService planningExportService;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    EspaceAnimateurService espaceAnimateurService;
-
-    @Inject
-    DemandeEchangeService demandeEchangeService;
-
-    @Inject
-    DeclarationDisponibiliteService declarationService;
-
-    @Inject
-    EditionRequestScope editionRequestScope;
-
-    @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PlanningExportService planningExportService;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
+    public EspaceAnimateurResource(
+            EspaceAccesService espaceAccesService,
+            EspaceAnimateurService espaceAnimateurService,
+            DemandeEchangeService demandeEchangeService,
+            DeclarationDisponibiliteService declarationService,
+            EditionRequestScope editionRequestScope,
+            PlanPublieService planPublieService,
+            PlanningExportService planningExportService,
+            ConfirmationPlanningService confirmationService,
+            ReferenceDataService referenceDataService) {
+        this.espaceAccesService = espaceAccesService;
+        this.espaceAnimateurService = espaceAnimateurService;
+        this.demandeEchangeService = demandeEchangeService;
+        this.declarationService = declarationService;
+        this.editionRequestScope = editionRequestScope;
+        this.planPublieService = planPublieService;
+        this.planningExportService = planningExportService;
+        this.confirmationService = confirmationService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /** Who I am, my persisted planning (with teammates) and the colleagues I can swap with. */
     @GET

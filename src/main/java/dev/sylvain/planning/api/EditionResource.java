@@ -32,14 +32,21 @@ import java.util.List;
 @Consumes(MediaType.APPLICATION_JSON)
 public class EditionResource {
 
-    @Inject
-    EditionService editionService;
+    private final EditionService editionService;
+
+    private final EtatEditionService etatEditionService;
+
+    private final CoherenceReferentielService coherenceService;
 
     @Inject
-    EtatEditionService etatEditionService;
-
-    @Inject
-    CoherenceReferentielService coherenceService;
+    public EditionResource(
+            EditionService editionService,
+            EtatEditionService etatEditionService,
+            CoherenceReferentielService coherenceService) {
+        this.editionService = editionService;
+        this.etatEditionService = etatEditionService;
+        this.coherenceService = coherenceService;
+    }
 
     @GET
     public List<Edition> list() {

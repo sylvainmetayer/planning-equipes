@@ -60,8 +60,12 @@ public class SecurityHeadersFilter {
     /** Quarkus' own management endpoints (Swagger UI, dev UI): no CSP, see the class javadoc. */
     private static final String PREFIXE_QUARKUS = "/q/";
 
+    private final ConfigSecurite config;
+
     @Inject
-    ConfigSecurite config;
+    public SecurityHeadersFilter(ConfigSecurite config) {
+        this.config = config;
+    }
 
     public void register(@Observes Filters filters) {
         filters.register(this::apply, PRIORITE);

@@ -28,20 +28,29 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class PlanningResource {
 
-    @Inject
-    SolvePipeline pipeline;
+    private final SolvePipeline pipeline;
+
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ProblemScaleService problemScaleService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ProblemScaleService problemScaleService;
+    public PlanningResource(
+            SolvePipeline pipeline,
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService,
+            ReferenceDataChangeTracker changeTracker,
+            ProblemScaleService problemScaleService) {
+        this.pipeline = pipeline;
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+        this.changeTracker = changeTracker;
+        this.problemScaleService = problemScaleService;
+    }
 
     /**
      * Lists the scenario files available in the {@code scenarios} folder so the

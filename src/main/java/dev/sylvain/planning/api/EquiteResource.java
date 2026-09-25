@@ -22,8 +22,12 @@ import jakarta.ws.rs.core.Response;
 @Path("/planning/equite")
 public class EquiteResource {
 
+    private final EquiteService equiteService;
+
     @Inject
-    EquiteService equiteService;
+    public EquiteResource(EquiteService equiteService) {
+        this.equiteService = equiteService;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)

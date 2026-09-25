@@ -37,8 +37,12 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @Consumes(MediaType.APPLICATION_JSON)
 public class ConsigneResource {
 
+    private final ConsigneService consignes;
+
     @Inject
-    ConsigneService consignes;
+    public ConsigneResource(ConsigneService consignes) {
+        this.consignes = consignes;
+    }
 
     /** The consignes, the presets and today's date, in one read. */
     @GET
