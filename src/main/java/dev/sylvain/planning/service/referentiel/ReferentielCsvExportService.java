@@ -176,7 +176,7 @@ public class ReferentielCsvExportService {
         StringBuilder csv = new StringBuilder();
         ligne(csv, "id", "code", "libelle", "ninja");
         for (TypologieItem typologie : typologies.list()) {
-            ligne(csv, typologie.id(), texte(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
+            ligne(csv, typologie.id(), text(typologie.code()), typologie.label(), typologie.ninja() ? "oui" : "");
         }
         return csv.toString();
     }
@@ -188,7 +188,7 @@ public class ReferentielCsvExportService {
             ligne(
                     csv,
                     emplacement.getId(),
-                    texte(emplacement.getCode()),
+                    text(emplacement.getCode()),
                     emplacement.getNom(),
                     decimal(emplacement.getLatitude()),
                     decimal(emplacement.getLongitude()));
@@ -204,7 +204,7 @@ public class ReferentielCsvExportService {
             ligne(
                     csv,
                     stand.getId(),
-                    texte(stand.getCode()),
+                    text(stand.getCode()),
                     stand.getNom(),
                     joint(new TreeSet<>(stand.getTypologiesProposees().stream()
                             .map(typologie -> typologieParId.getOrDefault(typologie, typologie))
@@ -283,7 +283,7 @@ public class ReferentielCsvExportService {
         return parId;
     }
 
-    private static String texte(String valeur) {
+    private static String text(String valeur) {
         return valeur == null ? "" : valeur;
     }
 
