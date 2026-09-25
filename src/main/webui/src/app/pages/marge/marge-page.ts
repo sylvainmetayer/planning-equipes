@@ -51,7 +51,7 @@ import { nextGridCell } from '../../core/grid-navigation';
  * The three readings of the page: the margin before and after a solve, and the
  * tension map that crosses the second with the fragility of the same plan.
  */
-export type VueMarge = ModeMarge | 'TENSION';
+export type MarginView = ModeMarge | 'TENSION';
 
 /**
  * « Marge disponible » (issue #499): the day × timeslot grid of what is left —
@@ -95,7 +95,7 @@ export class MargePage {
   private readonly planningApi = inject(PlanningApi);
   private readonly store = inject(ReferenceDataStore);
 
-  protected readonly mode = signal<VueMarge>('AVANT');
+  protected readonly mode = signal<MarginView>('AVANT');
   /** True as soon as the view differs from the one this page opens on. */
   protected readonly viewChanged = computed(() => this.mode() !== 'AVANT');
 
@@ -208,7 +208,7 @@ export class MargePage {
     return courante.ligne === ligne && courante.colonne === colonne;
   }
 
-  protected setMode(mode: VueMarge): void {
+  protected setMode(mode: MarginView): void {
     this.detail.set(null);
     if (mode === 'TENSION') {
       this.enterTension();
