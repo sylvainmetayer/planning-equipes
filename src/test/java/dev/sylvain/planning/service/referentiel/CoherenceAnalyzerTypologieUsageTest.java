@@ -79,7 +79,7 @@ class CoherenceAnalyzerTypologieUsageTest {
     }
 
     private static TypologieItem typologie(String id) {
-        return new TypologieItem(id, id, false, null, null, null);
+        return new TypologieItem(id, null, id, false, null, null, null);
     }
 
     private static List<TypologieItem> typologies(JsonNode noeuds) {
@@ -87,6 +87,7 @@ class CoherenceAnalyzerTypologieUsageTest {
         for (JsonNode noeud : noeuds) {
             typologies.add(new TypologieItem(
                     noeud.get("id").asText(),
+                    null,
                     noeud.get("id").asText(),
                     noeud.path("ninja").asBoolean(false),
                     null,

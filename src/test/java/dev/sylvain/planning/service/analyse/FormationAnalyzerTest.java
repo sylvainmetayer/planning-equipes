@@ -41,10 +41,10 @@ class FormationAnalyzerTest {
     private static final LocalDate JOUR_2 = JOUR_1.plusDays(1);
 
     private static final List<TypologieItem> TYPOLOGIES = List.of(
-            new TypologieItem("ESCAPE", "Escape game", false, null, null, null),
-            new TypologieItem("QUIZ", "Quiz", false, null, null, null),
-            new TypologieItem("JEUX", "Jeux", false, null, null, null),
-            new TypologieItem("NINJA", "Ninja", true, null, null, null));
+            new TypologieItem("ESCAPE", null, "Escape game", false, null, null, null),
+            new TypologieItem("QUIZ", null, "Quiz", false, null, null, null),
+            new TypologieItem("JEUX", null, "Jeux", false, null, null, null),
+            new TypologieItem("NINJA", null, "Ninja", true, null, null, null));
 
     /**
      * Three categories, each in shortage for its own reason. ESCAPE rests on
