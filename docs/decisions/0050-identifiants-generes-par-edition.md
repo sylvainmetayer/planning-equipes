@@ -2,7 +2,7 @@
 
 - **Statut** : accepté, implémenté
 - **Date** : septembre 2026
-- **Portée** : schéma (migration `V100`), référentiels, import de scénario et imports CSV, MCP, API
+- **Portée** : schéma (migrations `V100` et `V101`), référentiels, import de scénario et imports CSV, MCP, API
 - **Prolonge** : [0001](0001-cloisonnement-par-edition.md) (les clés `(edition_id, id)`)
 
 ## Contexte
@@ -173,6 +173,25 @@ ancien instantané ou une ligne du journal) devient un marqueur orphelin, `~`
 suivi d'une empreinte. Conservée telle quelle, elle aurait pu désigner le
 nouveau venu qui tire le même numéro, et elle était peut-être le nom même que
 cette migration retire.
+
+`V101` rattrape ce que `V100` avait laissé dans le journal. Sur l'espace
+animateur, une ligne dont l'appel ne rend rien prend pour objet l'animateur du
+jeton, sous une autre entité que `ANIMATEUR` (disponibilités, échanges,
+planning) ; quelques actions de l'administration visant un seul animateur font
+de même. Ces lignes gardaient l'ancien identifiant, donc parfois le nom même
+que la migration retire. `V100` ayant supprimé sa table de correspondance,
+`V101` ne peut pas la relire : quand l'animateur avait prouvé son identité,
+l'objet redevient l'acteur, que `V100` avait déjà réécrit ; sinon, la valeur
+devient un marqueur orphelin. Elle ne touche qu'une valeur qui ne désigne
+aucun animateur et n'a la forme ni d'un UUID ni d'un nombre. Corriger `V100`
+elle-même aurait été plus simple, mais une migration déjà versionnée ne se
+modifie pas.
+
+Une limite reste dans `V100` : un identifiant de la forme d'un identifiant
+généré mais de plus de 18 chiffres (`S` suivi de dix-neuf chiffres) fait
+échouer sa conversion en nombre, donc la migration entière. L'application et
+la restauration d'une sauvegarde bornent désormais cette forme à 18 chiffres ;
+`V100` ne peut plus l'être. Aucune base connue ne porte un tel identifiant.
 
 Les colonnes `edition_id` perdent leur valeur par défaut `'DEFAUT'`, qui
 désignait une édition renumérotée : une ligne écrite sans édition échoue au
