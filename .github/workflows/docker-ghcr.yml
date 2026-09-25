@@ -11,7 +11,7 @@ on:
 # to the repository's attestation store, the provenance and the SBOM of the
 # image it just pushed — see the two attest steps at the end of the job.
 permissions:
-  contents: write
+  contents: read
   packages: write
   id-token: write
   attestations: write
@@ -234,6 +234,11 @@ jobs:
       # Syft reads the pushed image rather than the source tree: what has to be
       # inventoried is what actually ships (the JVM layer, the Quarkus app and
       # every jar it bundles), not what a build might have produced.
+      #
+      # Never attached to the GitHub release: the repository has immutable
+      # releases on, and a release published from the web UI (before this job
+      # even starts) refuses any later asset. The SBOM travels with the image
+      # instead (`cosign attest` below) and as this run's artifact.
       - name: Generate the image SBOM
         id: sbom
         uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
@@ -243,7 +248,7 @@ jobs:
           output-file: sbom.cyclonedx.json
           upload-artifact: true
           artifact-name: sbom.cyclonedx.json
-          upload-release-assets: true
+          upload-release-assets: false
 
       # Signature and SBOM attached to the image itself, in GHCR. This is the
       # path that works today: GitHub's own attestation store (the two steps
