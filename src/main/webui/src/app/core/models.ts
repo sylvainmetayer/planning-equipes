@@ -357,6 +357,74 @@ export interface RapportOuvertures {
   anomalies: AnomalieOuverture[];
 }
 
+/** One window of a layer of the combined calendar, in minutes from the day's midnight (past 1440 after it). */
+export interface LayerWindow {
+  debutMinutes: number;
+  finMinutes: number;
+  /** The headcount asked; on a reopening, `null` when the consigne inherits it. */
+  effectif: number | null;
+}
+
+/** One timeslot of the grid on a day of the combined calendar. */
+export interface LayerTimeslot {
+  id: number | null;
+  heureDebut: string;
+  heureFin: string;
+  debutMinutes: number;
+  finMinutes: number;
+  couverturePause: boolean;
+  /** Created by the day's consigne for its reopenings. */
+  addedByConsigne: boolean;
+}
+
+/** The consigne of a day: the band it closes for every stand, and why. */
+export interface ConsigneLayer {
+  fermetureDebut: string;
+  fermetureFin: string | null;
+  debutMinutes: number;
+  finMinutes: number;
+  motif: string;
+  prereglage: string | null;
+}
+
+export interface LayerDay {
+  date: string;
+  jour: number;
+  /** The public holiday's name, `null` on an ordinary day. */
+  ferie: string | null;
+  vacations: LayerTimeslot[];
+  consigne: ConsigneLayer | null;
+}
+
+/** One stand on one day, layer by layer, before any solve. */
+export interface LayerCell {
+  date: string;
+  /** Which of the stand's own layers decided the day: none (open by default), a rule, a dated exception. */
+  source: SourceHoraire;
+  /** The rules that decided it, when `source` is `REGLE`. */
+  horaireIds: number[];
+  motif: string | null;
+  /** The stand's own windows, before the consigne. */
+  nominal: LayerWindow[];
+  /** The windows the consigne reopens this stand on. */
+  reopenings: LayerWindow[];
+  /** What is left once the consigne has run: what the seats are cut from. */
+  effective: LayerWindow[];
+}
+
+export interface LayerRow {
+  standId: string;
+  nom: string;
+  effectifMin: number;
+  jours: LayerCell[];
+}
+
+/** `GET /api/ouvertures-stands/couches`: stands × timeslots × consignes, before any solve. */
+export interface OpeningLayers {
+  jours: LayerDay[];
+  stands: LayerRow[];
+}
+
 /** One stand of the grid as submitted to `PUT /api/ouvertures-stands/grille`: all its cells. */
 export interface SaisieStandGrille {
   standId: string;

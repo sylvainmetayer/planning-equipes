@@ -154,7 +154,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   for every stand on a date, the compensation chosen, the presets; issue #4
   / ADR 0043), `/ouvertures` (« Ouvertures des stands » — `?vue=comparer&stands=a,b&ref=a` lays two
   to eight stands against a reference, read-only, over the pure
-  `comparaison-ouvertures.ts`; its copy opens the stands' bulk edit preset),
+  `comparaison-ouvertures.ts`; its copy opens the stands' bulk edit preset;
+  `?vue=calendrier` is the combined calendar, a week from `?du=`, the layers
+  of `?couches=` over the seats, over the pure `calendrier-couches.ts`),
   `/disponibilites` (what the animateurs
   declared), `/editions`, `/historique` (« Historique des actions »),
   `/nouveautes` (« Nouveautés » — what the running version brought, read from

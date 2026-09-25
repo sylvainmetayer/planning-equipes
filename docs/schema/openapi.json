@@ -1704,6 +1704,32 @@
           }
         }
       },
+      "ConsigneLayer" : {
+        "required" : [ "debutMinutes", "finMinutes", "fermetureDebut", "motif" ],
+        "type" : "object",
+        "properties" : {
+          "fermetureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "fermetureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "debutMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "prereglage" : {
+            "type" : "string"
+          }
+        }
+      },
       "ConsigneSnapshot" : {
         "type" : "object",
         "properties" : {
@@ -2761,7 +2787,7 @@
           "joursFeries" : {
             "type" : "array",
             "items" : {
-              "$ref" : "#/components/schemas/JourFerie"
+              "$ref" : "#/components/schemas/PublicHoliday"
             }
           }
         }
@@ -4139,17 +4165,6 @@
           }
         }
       },
-      "JourFerie" : {
-        "type" : "object",
-        "properties" : {
-          "date" : {
-            "$ref" : "#/components/schemas/LocalDate"
-          },
-          "libelle" : {
-            "type" : "string"
-          }
-        }
-      },
       "JourMarge" : {
         "required" : [ "cellules", "jour" ],
         "type" : "object",
@@ -4333,6 +4348,141 @@
           },
           "creeLe" : {
             "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "LayerCell" : {
+        "required" : [ "date", "source", "horaireIds", "nominal", "reopenings", "effective" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "source" : {
+            "$ref" : "#/components/schemas/SourceHoraire"
+          },
+          "horaireIds" : {
+            "type" : "array",
+            "items" : {
+              "type" : "integer",
+              "format" : "int64"
+            }
+          },
+          "motif" : {
+            "type" : "string"
+          },
+          "nominal" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerWindow"
+            }
+          },
+          "reopenings" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerWindow"
+            }
+          },
+          "effective" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerWindow"
+            }
+          }
+        }
+      },
+      "LayerDay" : {
+        "required" : [ "date", "jour", "vacations" ],
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "jour" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "ferie" : {
+            "type" : "string"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerTimeslot"
+            }
+          },
+          "consigne" : {
+            "$ref" : "#/components/schemas/ConsigneLayer"
+          }
+        }
+      },
+      "LayerRow" : {
+        "required" : [ "standId", "effectifMin", "jours" ],
+        "type" : "object",
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "nom" : {
+            "type" : "string"
+          },
+          "effectifMin" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerCell"
+            }
+          }
+        }
+      },
+      "LayerTimeslot" : {
+        "type" : "object",
+        "required" : [ "debutMinutes", "finMinutes", "couverturePause", "addedByConsigne" ],
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "heureDebut" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "heureFin" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "debutMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "couverturePause" : {
+            "type" : "boolean"
+          },
+          "addedByConsigne" : {
+            "type" : "boolean"
+          }
+        }
+      },
+      "LayerWindow" : {
+        "type" : "object",
+        "required" : [ "debutMinutes", "finMinutes" ],
+        "properties" : {
+          "debutMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "finMinutes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "effectif" : {
+            "type" : "integer",
+            "format" : "int32"
           }
         }
       },
@@ -4893,6 +5043,24 @@
           },
           "standCibleId" : {
             "type" : "string"
+          }
+        }
+      },
+      "OpeningLayers" : {
+        "required" : [ "jours", "stands" ],
+        "type" : "object",
+        "properties" : {
+          "jours" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerDay"
+            }
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/LayerRow"
+            }
           }
         }
       },
@@ -5807,6 +5975,17 @@
             "type" : "string"
           },
           "texte" : {
+            "type" : "string"
+          }
+        }
+      },
+      "PublicHoliday" : {
+        "type" : "object",
+        "properties" : {
+          "date" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "label" : {
             "type" : "string"
           }
         }
@@ -11328,7 +11507,7 @@
                 "schema" : {
                   "type" : "array",
                   "items" : {
-                    "$ref" : "#/components/schemas/JourFerie"
+                    "$ref" : "#/components/schemas/PublicHoliday"
                   }
                 }
               }
@@ -11530,6 +11709,37 @@
           }
         },
         "summary" : "Analyze",
+        "tags" : [ "Ouverture Stands Resource" ]
+      }
+    },
+    "/api/ouvertures-stands/couches" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "au",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "du",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/OpeningLayers"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Layers",
         "tags" : [ "Ouverture Stands Resource" ]
       }
     },

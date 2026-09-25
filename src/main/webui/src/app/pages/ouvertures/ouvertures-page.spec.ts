@@ -14,7 +14,7 @@ import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { EtatJourneesTypes, RapportOuvertures } from '../../core/models';
+import { OpeningLayers, EtatJourneesTypes, RapportOuvertures } from '../../core/models';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { OuverturesPage } from './ouvertures-page';
@@ -128,6 +128,42 @@ function etatJourneesTypes(): EtatJourneesTypes {
   };
 }
 
+/** The layers of the fixture's two days: a rule 10-20 at 2, no consigne; the timeslots of the report. */
+function layersOfReport(): OpeningLayers {
+  const jours = rapport().jours.map((jour) => ({
+    date: jour.date,
+    jour: jour.jour,
+    ferie: jour.ferie,
+    vacations: jour.creneaux.map((colonne) => ({
+      id: colonne.id,
+      heureDebut: colonne.heureDebut,
+      heureFin: colonne.heureFin,
+      debutMinutes: Number(colonne.heureDebut.slice(0, 2)) * 60,
+      finMinutes: Number(colonne.heureFin.slice(0, 2)) * 60,
+      couverturePause: false,
+      addedByConsigne: false,
+    })),
+    consigne: null,
+  }));
+  return {
+    jours,
+    stands: rapport().stands.map((ligne) => ({
+      standId: ligne.standId,
+      nom: ligne.nom,
+      effectifMin: ligne.effectifMin,
+      jours: jours.map((jour) => ({
+        date: jour.date,
+        source: 'REGLE' as const,
+        horaireIds: [1],
+        motif: null,
+        nominal: [{ debutMinutes: 600, finMinutes: 1200, effectif: 2 }],
+        reopenings: [],
+        effective: [{ debutMinutes: 600, finMinutes: 1200, effectif: 2 }],
+      })),
+    })),
+  };
+}
+
 function mount(
   options: {
     vue?: string;
@@ -140,6 +176,7 @@ function mount(
     confirme?: boolean;
     rapport?: RapportOuvertures;
     journeesTypes?: EtatJourneesTypes | null;
+    couches?: string;
   } = {},
 ) {
   const get = vi.fn(async () => options.rapport ?? rapport());
@@ -163,6 +200,7 @@ function mount(
       },
     ],
   }));
+  const layers = vi.fn(async () => layersOfReport());
   const ask = vi.fn(async () => options.confirme ?? true);
   const reloadStore = vi.fn(async () => undefined);
   const notify = vi.fn();
@@ -170,7 +208,10 @@ function mount(
   TestBed.configureTestingModule({
     providers: [
       provideZonelessChangeDetection(),
-      { provide: StandsApi, useValue: { openings: get, saveOpeningsGrid: put } },
+      {
+        provide: StandsApi,
+        useValue: { openings: get, saveOpeningsGrid: put, openingLayers: layers },
+      },
       {
         provide: ConsignesStore,
         useValue: {
@@ -213,6 +254,7 @@ function mount(
               ...(options.date ? { date: options.date } : {}),
               ...(options.stands ? { stands: options.stands } : {}),
               ...(options.ref ? { ref: options.ref } : {}),
+              ...(options.couches ? { couches: options.couches } : {}),
             }),
           },
         },
@@ -220,7 +262,7 @@ function mount(
     ],
   });
   const fixture = TestBed.createComponent(OuverturesPage);
-  return { fixture, get, put, ask, notify, etatJT, reloadStore };
+  return { fixture, get, put, ask, notify, etatJT, reloadStore, layers };
 }
 
 function root(fixture: ComponentFixture<OuverturesPage>): HTMLElement {
@@ -440,6 +482,38 @@ describe('OuverturesPage — saisie', () => {
     const ordinaire = mount({ vue: 'journee', date: '2026-07-08', rapport: withHoliday });
     await ordinaire.fixture.whenStable();
     expect(root(ordinaire.fixture).querySelector('.ferie-bandeau')).toBeNull();
+  });
+
+  it('lays the combined calendar from ?vue=calendrier, its layers carried by the address', async () => {
+    const { fixture, layers } = mount({ vue: 'calendrier', couches: 'stand,resultat' });
+    await fixture.whenStable();
+    await new Promise((resolve) => setTimeout(resolve));
+    await fixture.whenStable();
+    const racine = root(fixture);
+
+    expect(layers).toHaveBeenCalledWith('2026-07-08', '2026-07-09');
+    expect(racine.querySelectorAll('.couches-table tbody tr')).toHaveLength(2);
+    // Two days of two stands, each cell one button explaining itself.
+    const cellules = racine.querySelectorAll<HTMLButtonElement>('.couches-axe');
+    expect(cellules).toHaveLength(4);
+    expect(cellules[0].getAttribute('aria-label')).toContain('règle récurrente 10:00–20:00');
+    // Only the layers of the address: the stand's hours and the seats, no timeslot band.
+    expect(racine.querySelectorAll('.couches-nominale')).toHaveLength(4);
+    expect(racine.querySelectorAll('.couches-vacation')).toHaveLength(0);
+    expect(racine.querySelectorAll('.couches-bloc').length).toBeGreaterThan(0);
+
+    const creneaux = [
+      ...racine.querySelectorAll('.couches-choix mat-checkbox input'),
+    ][1] as HTMLInputElement;
+    creneaux.click();
+    await fixture.whenStable();
+    expect(racine.querySelectorAll('.couches-vacation').length).toBeGreaterThan(0);
+    const location = TestBed.inject(Location) as unknown as {
+      replaceState: ReturnType<typeof vi.fn>;
+    };
+    const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
+    expect(address).toContain('vue=calendrier');
+    expect(address).toMatch(/couches=stand(,|%2C)creneaux(,|%2C)resultat/);
   });
 
   it('renders one field per stand and créneau, filled from the report, partial cells marked', async () => {

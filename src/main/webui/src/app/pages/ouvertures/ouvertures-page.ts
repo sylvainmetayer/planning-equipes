@@ -43,6 +43,8 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
 import { OpeningsComparisonView } from './comparaison-vue';
+import { OpeningLayersView } from './couches-vue';
+import { Couche, readCouchesParam, writeCouchesParam } from './calendrier-couches';
 import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { labelOf, labelsOf } from '../../core/reference-labels';
@@ -107,7 +109,8 @@ import {
  * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
  * one by kind of day says a vacation once for every date its template governs.
  */
-export type OpeningsView = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'COMPARER';
+export type OpeningsView =
+  'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'CALENDRIER' | 'COMPARER';
 
 /** The `vue` query param of each view; the reading grid, the default, writes none. */
 const VIEW_PARAM: Record<OpeningsView, string | null> = {
@@ -115,6 +118,7 @@ const VIEW_PARAM: Record<OpeningsView, string | null> = {
   SAISIR: 'saisie',
   JOURNEES_TYPES: 'journees-types',
   JOURNEE: 'journee',
+  CALENDRIER: 'calendrier',
   COMPARER: 'comparer',
 };
 
@@ -127,6 +131,9 @@ function readOpeningsView(param: string | null): OpeningsView {
   }
   if (param === 'comparer') {
     return 'COMPARER';
+  }
+  if (param === 'calendrier') {
+    return 'CALENDRIER';
   }
   return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
 }
@@ -195,6 +202,7 @@ interface LigneView {
     MatTooltipModule,
     RouterLink,
     OpeningsComparisonView,
+    OpeningLayersView,
     PastilleFerie,
   ],
   templateUrl: './ouvertures-page.html',
@@ -266,6 +274,21 @@ export class OuverturesPage implements OnInit {
   /** The referential « Comparer » reads the rules from, and the bulk edit it opens writes through. */
   private readonly store = inject(ReferenceDataStore);
   private referentielCharge = false;
+
+  /* ----------------------------- combined calendar ----------------------------- */
+
+  /** `?couches=`: the layers the combined calendar shows; absent = all four. */
+  protected readonly couchesAffichees = signal<Couche[]>(
+    readCouchesParam(this.route.snapshot.queryParamMap.get('couches')),
+  );
+  /** `?du=`: the first day of the combined calendar's page; absent = the first day. */
+  protected readonly calendarFirstDay = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('du') || null,
+  );
+  /** The stands the filter keeps, for the combined calendar. */
+  protected readonly standIdsFiltres = computed<ReadonlySet<string>>(
+    () => new Set(this.lignes().map((ligne) => ligne.standId)),
+  );
 
   /* ------------------------------- day view ------------------------------- */
 
@@ -573,6 +596,8 @@ export class OuverturesPage implements OnInit {
       stands: this.view() === 'COMPARER' ? writeStandsParam(this.comparaisonStands()) : null,
       ref: this.view() === 'COMPARER' ? this.comparaisonReference() : null,
       ecarts: this.view() === 'COMPARER' && this.comparaisonEcarts() ? '1' : null,
+      couches: this.view() === 'CALENDRIER' ? writeCouchesParam(this.couchesAffichees()) : null,
+      du: this.view() === 'CALENDRIER' ? this.calendarFirstDay() : null,
     }));
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
