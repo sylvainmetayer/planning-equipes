@@ -77,8 +77,24 @@ function operationsDuContrat() {
 
 /** `{id}` and `{}` are the same placeholder; a trailing slash is not a route. */
 function normalise(chemin) {
-  const sansParams = chemin.replace(/\{[^}]*\}/g, '{}').replace(/\/+/g, '/');
+  const sansParams = neutralisePlaceholders(chemin).replace(/\/+/g, '/');
   return sansParams.length > 1 && sansParams.endsWith('/') ? sansParams.slice(0, -1) : sansParams;
+}
+
+/** `{anything}` → `{}`, in one linear pass; an unclosed `{` is kept as it is. */
+function neutralisePlaceholders(chemin) {
+  let result = '';
+  let index = 0;
+  while (index < chemin.length) {
+    const open = chemin.indexOf('{', index);
+    const close = open < 0 ? -1 : chemin.indexOf('}', open);
+    if (close < 0) {
+      return result + chemin.slice(index);
+    }
+    result += chemin.slice(index, open) + '{}';
+    index = close + 1;
+  }
+  return result;
 }
 
 /* ------------------------- resolving a URL expression -------------------- */
@@ -97,18 +113,7 @@ function candidats(expression, portee) {
     return [expression.text];
   }
   if (ts.isTemplateExpression(expression)) {
-    let formes = [expression.head.text];
-    for (const span of expression.templateSpans) {
-      const valeurs = candidats(span.expression, portee) ?? ['{}'];
-      const suite = [];
-      for (const forme of formes) {
-        for (const valeur of valeurs) {
-          suite.push(forme + valeur + span.literal.text);
-        }
-      }
-      formes = suite;
-    }
-    return formes;
+    return templateCandidates(expression, portee);
   }
   if (ts.isConditionalExpression(expression)) {
     const vrai = candidats(expression.whenTrue, portee);
@@ -116,30 +121,42 @@ function candidats(expression, portee) {
     return vrai && faux ? [...vrai, ...faux] : null;
   }
   if (ts.isIdentifier(expression)) {
-    const liaison = portee.get(expression.text);
-    if (liaison === undefined) {
-      return null;
-    }
-    return liaison;
+    return portee.get(expression.text) ?? null;
+  }
+  if (isUrlSearchParamsLiteral(expression)) {
+    const cles = expression.arguments[0].properties.map((propriete) => propriete.name.getText());
+    return [cles.map((cle) => `${cle}={}`).join('&')];
   }
   if (
+    // encodeURIComponent(x), String(x)…: one value, unknown.
+    ts.isCallExpression(expression) ||
+    ts.isPropertyAccessExpression(expression) ||
+    ts.isElementAccessExpression(expression)
+  ) {
+    return ['{}'];
+  }
+  return null;
+}
+
+/** Every combination of the values each span of a template literal can take. */
+function templateCandidates(expression, portee) {
+  let formes = [expression.head.text];
+  for (const span of expression.templateSpans) {
+    const valeurs = candidats(span.expression, portee) ?? ['{}'];
+    formes = formes.flatMap((forme) => valeurs.map((valeur) => forme + valeur + span.literal.text));
+  }
+  return formes;
+}
+
+/** `new URLSearchParams({ a, b })`, the one shape whose keys are known statically. */
+function isUrlSearchParamsLiteral(expression) {
+  return (
     ts.isNewExpression(expression) &&
     ts.isIdentifier(expression.expression) &&
     expression.expression.text === 'URLSearchParams' &&
     expression.arguments?.length === 1 &&
     ts.isObjectLiteralExpression(expression.arguments[0])
-  ) {
-    const cles = expression.arguments[0].properties.map((propriete) => propriete.name.getText());
-    return [cles.map((cle) => `${cle}={}`).join('&')];
-  }
-  if (ts.isCallExpression(expression)) {
-    // encodeURIComponent(x), String(x)…: one value, unknown.
-    return ['{}'];
-  }
-  if (ts.isPropertyAccessExpression(expression) || ts.isElementAccessExpression(expression)) {
-    return ['{}'];
-  }
-  return null;
+  );
 }
 
 /**
@@ -157,17 +174,22 @@ function porteeDe(methode) {
   const corps = methode.body;
   if (corps && ts.isBlock(corps)) {
     for (const instruction of corps.statements) {
-      if (!ts.isVariableStatement(instruction)) continue;
-      for (const declaration of instruction.declarationList.declarations) {
-        if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
-        const valeurs = candidats(declaration.initializer, portee);
-        if (valeurs !== null) {
-          portee.set(declaration.name.text, valeurs);
-        }
+      if (ts.isVariableStatement(instruction)) {
+        bindDeclarations(instruction.declarationList.declarations, portee);
       }
     }
   }
   return portee;
+}
+
+function bindDeclarations(declarations, portee) {
+  for (const declaration of declarations) {
+    if (!ts.isIdentifier(declaration.name) || !declaration.initializer) continue;
+    const valeurs = candidats(declaration.initializer, portee);
+    if (valeurs !== null) {
+      portee.set(declaration.name.text, valeurs);
+    }
+  }
 }
 
 function litterauxDuType(type) {
@@ -273,58 +295,79 @@ for (const nom of readdirSync(API_DIR).sort()) {
   );
 
   const visiter = (noeud) => {
-    // this.api.<verbe>(url, …)
-    if (
-      ts.isCallExpression(noeud) &&
-      ts.isPropertyAccessExpression(noeud.expression) &&
-      ts.isPropertyAccessExpression(noeud.expression.expression) &&
-      noeud.expression.expression.name.text === 'api' &&
-      noeud.expression.expression.expression.kind === ts.SyntaxKind.ThisKeyword
-    ) {
-      const verbe = VERBES[noeud.expression.name.text];
-      if (verbe === undefined) {
-        signaler(
-          fichier,
-          noeud,
-          `this.api.${noeud.expression.name.text} n'est pas un verbe connu de ce script`,
-        );
-      } else if (noeud.arguments.length === 0) {
-        signaler(fichier, noeud, `this.api.${noeud.expression.name.text} sans adresse`);
-      } else {
-        appels += 1;
-        const methode = methodeEnglobante(noeud);
-        const formes = candidats(noeud.arguments[0], methode ? porteeDe(methode) : new Map());
-        if (formes === null) {
-          signaler(
-            fichier,
-            noeud,
-            `adresse non résolue : « ${noeud.arguments[0].getText()} » — écrivez-la en littéral, ou typez ses segments`,
-          );
-        } else {
-          for (const forme of formes) {
-            confronter(fichier, noeud, verbe, forme);
-          }
-        }
-      }
+    if (isApiCall(noeud)) {
+      checkApiCall(fichier, noeud);
       return;
     }
-    // A template returned as a link, in a module without calls: path only.
-    if (
-      ts.isReturnStatement(noeud) &&
-      noeud.expression &&
-      (ts.isTemplateExpression(noeud.expression) || ts.isStringLiteral(noeud.expression)) &&
-      noeud.expression.getText().includes('/api/')
-    ) {
-      const methode = methodeEnglobante(noeud);
-      const formes = candidats(noeud.expression, methode ? porteeDe(methode) : new Map());
-      for (const forme of formes ?? []) {
-        liens += 1;
-        confronter(fichier, noeud, null, forme);
-      }
+    if (isReturnedLink(noeud)) {
+      checkReturnedLink(fichier, noeud);
     }
     ts.forEachChild(noeud, visiter);
   };
   visiter(fichier);
+}
+
+/** this.api.<verbe>(url, …) */
+function isApiCall(noeud) {
+  return (
+    ts.isCallExpression(noeud) &&
+    ts.isPropertyAccessExpression(noeud.expression) &&
+    ts.isPropertyAccessExpression(noeud.expression.expression) &&
+    noeud.expression.expression.name.text === 'api' &&
+    noeud.expression.expression.expression.kind === ts.SyntaxKind.ThisKeyword
+  );
+}
+
+function scopeOf(noeud) {
+  const methode = methodeEnglobante(noeud);
+  return methode ? porteeDe(methode) : new Map();
+}
+
+function checkApiCall(fichier, noeud) {
+  const verbe = VERBES[noeud.expression.name.text];
+  if (verbe === undefined) {
+    signaler(
+      fichier,
+      noeud,
+      `this.api.${noeud.expression.name.text} n'est pas un verbe connu de ce script`,
+    );
+    return;
+  }
+  if (noeud.arguments.length === 0) {
+    signaler(fichier, noeud, `this.api.${noeud.expression.name.text} sans adresse`);
+    return;
+  }
+  appels += 1;
+  const formes = candidats(noeud.arguments[0], scopeOf(noeud));
+  if (formes === null) {
+    signaler(
+      fichier,
+      noeud,
+      `adresse non résolue : « ${noeud.arguments[0].getText()} » — écrivez-la en littéral, ou typez ses segments`,
+    );
+    return;
+  }
+  for (const forme of formes) {
+    confronter(fichier, noeud, verbe, forme);
+  }
+}
+
+/** A template returned as a link, in a module without calls: path only. */
+function isReturnedLink(noeud) {
+  return (
+    ts.isReturnStatement(noeud) &&
+    noeud.expression &&
+    (ts.isTemplateExpression(noeud.expression) || ts.isStringLiteral(noeud.expression)) &&
+    noeud.expression.getText().includes('/api/')
+  );
+}
+
+function checkReturnedLink(fichier, noeud) {
+  const formes = candidats(noeud.expression, scopeOf(noeud));
+  for (const forme of formes ?? []) {
+    liens += 1;
+    confronter(fichier, noeud, null, forme);
+  }
 }
 
 if (ecarts.length > 0) {

@@ -26,6 +26,7 @@
  */
 const { readdirSync, readFileSync, statSync } = require('node:fs');
 const { join, relative } = require('node:path');
+const { byCodeUnit } = require('./code-unit-order');
 
 const ROOT = join(__dirname, '..', 'src', 'app');
 const SCANNED = ['pages', 'shell', 'shared', 'core'];
@@ -81,20 +82,20 @@ for (const dir of SCANNED) {
   for (const file of walk(join(ROOT, dir), [])) {
     const hits = literalsIn(file);
     if (hits.length > 0) {
-      offenders.set(relative(ROOT, file).replace(/\\/g, '/'), hits);
+      offenders.set(relative(ROOT, file).replaceAll('\\', '/'), hits);
     }
   }
 }
 
 if (process.argv.includes('--list')) {
-  console.log(JSON.stringify([...offenders.keys()].sort(), null, 2));
+  console.log(JSON.stringify([...offenders.keys()].sort(byCodeUnit), null, 2));
   process.exit(0);
 }
 
 const allowed = new Set(JSON.parse(readFileSync(EXCEPTIONS, 'utf8')));
 let failed = false;
 
-for (const [file, hits] of [...offenders].sort()) {
+for (const [file, hits] of [...offenders].sort(([a], [b]) => byCodeUnit(a, b))) {
   if (!allowed.has(file)) {
     failed = true;
     console.error(
@@ -105,7 +106,7 @@ for (const [file, hits] of [...offenders].sort()) {
     }
   }
 }
-for (const file of [...allowed].sort()) {
+for (const file of [...allowed].sort(byCodeUnit)) {
   if (!offenders.has(file)) {
     failed = true;
     console.error(

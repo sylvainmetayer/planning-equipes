@@ -33,8 +33,28 @@ const SOURCES = join(__dirname, '..', 'src');
  * decorative icon. Quoted attribute values are skipped whole, as a binding is
  * free to hold a `>`.
  */
-const ELEMENT =
-  /<(p|div|span|strong|em)\b((?:"[^"]*"|'[^']*'|[^>"'])*)>\s*(?:<mat-icon\b[^>]*>[^<]*<\/mat-icon>\s*)?\{\{\s*([^}]+?)\s*\}\}\s*<\/\1>/g;
+const OPENING_TAG = /<(p|div|span|strong|em)\b((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+/** What follows the opening tag: the optional icon, the interpolation, the closing tag. */
+const CONTENT =
+  /\s*(?:<mat-icon\b[^>]*>[^<]*<\/mat-icon>\s*)?\{\{([^}]+)\}\}\s*<\/(p|div|span|strong|em)>/y;
+
+/**
+ * Every such element of a template: its tag, its attributes, the interpolated
+ * expression without its blanks, and where it starts. The opening tag and the
+ * content are matched apart, which keeps each expression linear.
+ */
+function* elements(source) {
+  OPENING_TAG.lastIndex = 0;
+  let opening;
+  while ((opening = OPENING_TAG.exec(source)) !== null) {
+    CONTENT.lastIndex = OPENING_TAG.lastIndex;
+    const content = CONTENT.exec(source);
+    if (content && content[2] === opening[1]) {
+      yield { attributs: opening[2], expression: content[1].trim(), index: opening.index };
+      OPENING_TAG.lastIndex = CONTENT.lastIndex;
+    }
+  }
+}
 /** The last name the interpolation reads, pipes and fallbacks stripped. */
 function nomLu(expression) {
   const sansPipe = expression.split(/\s\|\s/)[0];
@@ -97,8 +117,7 @@ for (const file of walk(join(SOURCES, 'app'), []).sort()) {
   const name = relative(SOURCES, file);
   const source = readFileSync(file, 'utf8');
   annonces += (source.match(/<app-status-message\b/g) ?? []).length;
-  for (const match of source.matchAll(ELEMENT)) {
-    const [, , attributs, expression] = match;
+  for (const { attributs, expression, index } of elements(source)) {
     if (!ANNONCE.test(nomLu(expression))) continue;
     if (DEJA_ANNONCE.test(attributs)) continue;
     const cle = `${name} {{ ${expression} }}`;
@@ -106,7 +125,7 @@ for (const file of walk(join(SOURCES, 'app'), []).sort()) {
       exceptionsMortes.delete(cle);
       continue;
     }
-    muets.push(`${name}:${source.slice(0, match.index).split('\n').length} {{ ${expression} }}`);
+    muets.push(`${name}:${source.slice(0, index).split('\n').length} {{ ${expression} }}`);
   }
 }
 

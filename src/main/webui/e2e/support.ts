@@ -483,7 +483,7 @@ export function postesDe(planning: PlanningPersiste, animateurId: string): strin
   return planning.postes
     .filter((poste) => poste.animateur?.id === animateurId)
     .map((poste) => `${poste.stand?.id}@${poste.creneau?.id}`)
-    .sort();
+    .sort((gauche, droite) => (gauche < droite ? -1 : Number(gauche > droite)));
 }
 
 /**
@@ -617,9 +617,8 @@ async function rechercherMails(
   requeteur: APIRequestContext,
   email: string,
 ): Promise<RechercheMailpit | null> {
-  const reponse = await requeteur.get(
-    `${MAILPIT_URL}/api/v1/search?query=${encodeURIComponent(`to:"${email}"`)}`,
-  );
+  const query = encodeURIComponent('to:"' + email + '"');
+  const reponse = await requeteur.get(`${MAILPIT_URL}/api/v1/search?query=${query}`);
   return reponse.ok() ? ((await reponse.json()) as RechercheMailpit) : null;
 }
 
