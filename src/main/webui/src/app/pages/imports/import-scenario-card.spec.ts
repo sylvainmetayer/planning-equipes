@@ -60,6 +60,14 @@ describe('ImportScenarioCard', () => {
     await fixture.whenStable();
   }
 
+  it('sends the validator link to the YAML tab of the Débogage page', async () => {
+    const racine = await monter();
+    const lien = Array.from(racine.querySelectorAll('a')).find((each) =>
+      (each.textContent ?? '').includes('Valider un fichier'),
+    );
+    expect(lien?.getAttribute('href')).toBe('/debug?onglet=yaml');
+  });
+
   it('hands the picked file to the shared import, content and name', async () => {
     const racine = await monter();
 
