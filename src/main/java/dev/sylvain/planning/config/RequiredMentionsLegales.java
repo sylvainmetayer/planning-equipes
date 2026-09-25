@@ -45,8 +45,12 @@ import java.util.Optional;
 @ApplicationScoped
 public class RequiredMentionsLegales {
 
+    private final ConfigMentionsLegales mentions;
+
     @Inject
-    ConfigMentionsLegales mentions;
+    public RequiredMentionsLegales(ConfigMentionsLegales mentions) {
+        this.mentions = mentions;
+    }
 
     void checkAtStartup(@Observes StartupEvent startup) {
         // Dev and test run on the shipped empty defaults on purpose, exactly

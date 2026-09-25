@@ -21,11 +21,18 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class SimulatedClockPermission {
 
-    @Inject
-    DevMode devMode;
+    private final DevMode devMode;
 
-    @ConfigProperty(name = "planning.horloge-simulee.autorisee", defaultValue = "false")
-    boolean autoriseeParConfiguration;
+    private final boolean autoriseeParConfiguration;
+
+    @Inject
+    public SimulatedClockPermission(
+            DevMode devMode,
+            @ConfigProperty(name = "planning.horloge-simulee.autorisee", defaultValue = "false")
+                    boolean autoriseeParConfiguration) {
+        this.devMode = devMode;
+        this.autoriseeParConfiguration = autoriseeParConfiguration;
+    }
 
     public boolean isGranted() {
         return devMode.isActive() || autoriseeParConfiguration;

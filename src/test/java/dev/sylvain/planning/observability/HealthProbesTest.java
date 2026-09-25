@@ -70,11 +70,10 @@ class HealthProbesTest {
      */
     @Test
     void anUnreachableDatabaseMakesReadinessDownWithoutDetailWhileLivenessStaysUp() {
-        var unreachable = new FlywayMigrationsReadinessCheck();
-        unreachable.flyway = Flyway.configure()
+        var unreachable = new FlywayMigrationsReadinessCheck(Flyway.configure()
                 .dataSource("jdbc:postgresql://" + UNREACHABLE_HOST + ":1/nowhere", "nobody", "nothing")
                 .connectRetries(0)
-                .load();
+                .load());
         QuarkusMock.installMockForType(unreachable, FlywayMigrationsReadinessCheck.class, Readiness.Literal.INSTANCE);
 
         String body = given().when()
