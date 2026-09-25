@@ -7,6 +7,7 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
 import io.sentry.Sentry;
@@ -75,15 +76,6 @@ public class SolverJobService {
     /** Completed jobs are dropped from the registry after this delay. */
     private static final Duration COMPLETED_JOB_RETENTION = Duration.ofHours(1);
 
-    /**
-     * Default budget of an incremental re-solve (issue #86). An order of
-     * magnitude under a full solve's (900 s by default, 600 s on the reference
-     * scenario) because the effective problem is a fraction of the full one:
-     * most seats are pinned, and the whole point is a fast answer to a
-     * last-minute change.
-     */
-    static final long DUREE_INCREMENTALE_DEFAUT_SECONDES = 60L;
-
     public enum JobType {
         SOLVE,
         /** Incremental re-solve (issue #86) — its own type so the UI can name it. */
@@ -145,6 +137,12 @@ public class SolverJobService {
      */
     private final boolean replayAtStartup;
 
+    /** Turns a launch's requested duration and the edition's settings into the job's budget. */
+    private final SolveBudgetPolicy budgetPolicy;
+
+    /** The edition's solver settings, read on the request thread when a job is submitted. */
+    private final ReferenceData referenceData;
+
     @Inject
     public SolverJobService(
             SolverJobTasks tasks,
@@ -154,8 +152,12 @@ public class SolverJobService {
             JobStreamBroadcaster jobStream,
             SolverScoreTrace scoreTrace,
             SolverMetrics metrics,
+            SolveBudgetPolicy budgetPolicy,
+            ReferenceData referenceData,
             @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
                     boolean replayAtStartup) {
+        this.budgetPolicy = budgetPolicy;
+        this.referenceData = referenceData;
         this.tasks = tasks;
         this.editionContext = editionContext;
         this.editionRepository = editionRepository;
@@ -194,13 +196,9 @@ public class SolverJobService {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a
         // terminal state or interrupted.
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceData.getParametresSolveur());
         return submit(
-                JobType.SOLVE,
-                secondsLimit,
-                false,
-                null,
-                false,
-                tasks.solve(problem, secondsLimit, this::isShutdownRequested));
+                JobType.SOLVE, budget, false, null, false, tasks.solve(problem, budget, this::isShutdownRequested));
     }
 
     /**
@@ -260,8 +258,8 @@ public class SolverJobService {
      * was asked to.
      */
     public SolverJob submitSolveFromReferenceData(Long secondsLimit, boolean enFile, Reamorcage reamorcage) {
-        return submitReplayable(
-                JobType.SOLVE, secondsLimit, null, reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceData.getParametresSolveur());
+        return submitReplayable(JobType.SOLVE, budget, null, reamorcage == null ? Reamorcage.AUTO : reamorcage, enFile);
     }
 
     /**
@@ -285,15 +283,16 @@ public class SolverJobService {
      * not re-open (see
      * {@link PlanningService#buildIncrementalFromReferenceData}), and
      * re-fills only the rest — which is why a far shorter budget than a full
-     * solve is enough.
+     * solve is enough: {@link SolveBudgetPolicy#forIncremental} keeps its own
+     * duration, under the same ceiling and with the edition's plateau.
      *
      * <p>The problem is built <b>inside</b> the job, on the job's edition,
      * because it reads the persisted plan: building it on the request thread
      * would race with the previous job's persistence.</p>
      */
     public SolverJob submitSolveIncremental(Long secondsLimitDemande, ReplanificationScope scope, boolean enFile) {
-        Long secondsLimit = secondsLimitDemande != null ? secondsLimitDemande : DUREE_INCREMENTALE_DEFAUT_SECONDES;
-        return submitReplayable(JobType.SOLVE_INCREMENTAL, secondsLimit, scope, null, enFile);
+        SolveBudget budget = budgetPolicy.forIncremental(secondsLimitDemande, referenceData.getParametresSolveur());
+        return submitReplayable(JobType.SOLVE_INCREMENTAL, budget, scope, null, enFile);
     }
 
     /**
@@ -309,15 +308,15 @@ public class SolverJobService {
      * drift.</p>
      */
     private SolverJob submitReplayable(
-            JobType type, Long secondsLimit, ReplanificationScope scope, Reamorcage reamorcage, boolean enFile) {
+            JobType type, SolveBudget budget, ReplanificationScope scope, Reamorcage reamorcage, boolean enFile) {
         return submit(
                 type,
-                secondsLimit,
+                budget,
                 enFile,
                 scope,
                 reamorcage,
                 true,
-                tasks.replayable(type, secondsLimit, scope, reamorcage, this::isShutdownRequested));
+                tasks.replayable(type, budget, scope, reamorcage, this::isShutdownRequested));
     }
 
     /**
@@ -329,17 +328,17 @@ public class SolverJobService {
      */
     private synchronized SolverJob submit(
             JobType type,
-            Long secondsLimit,
+            SolveBudget budget,
             boolean enFile,
             ReplanificationScope scope,
             boolean rejouable,
             SolverJobTasks.JobTask task) {
-        return submit(type, secondsLimit, enFile, scope, null, rejouable, task);
+        return submit(type, budget, enFile, scope, null, rejouable, task);
     }
 
     private synchronized SolverJob submit(
             JobType type,
-            Long secondsLimit,
+            SolveBudget budget,
             boolean enFile,
             ReplanificationScope scope,
             Reamorcage reamorcage,
@@ -358,8 +357,7 @@ public class SolverJobService {
         if (actif.isPresent()) {
             refuseDuplicate(type, editionId);
         }
-        SolverJob job =
-                new SolverJob(type, secondsLimit, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
+        SolverJob job = new SolverJob(type, budget, editionId, nomEdition(editionId), scope, reamorcage, rejouable);
         jobs.put(job.getId(), job);
         if (actif.isPresent()) {
             job.markQueued();
@@ -810,7 +808,11 @@ public class SolverJobService {
     private SolverJobTasks.JobTask taskOrNothing(LigneJob ligne) {
         try {
             return tasks.replayable(
-                    ligne.type(), ligne.secondsLimit(), ligne.scope(), ligne.reamorcage(), this::isShutdownRequested);
+                    ligne.type(),
+                    new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds(), ligne.cappedFrom()),
+                    ligne.scope(),
+                    ligne.reamorcage(),
+                    this::isShutdownRequested);
         } catch (RuntimeException e) {
             LOG.warnf(e, "Solver job %s cannot be replayed; it comes back interrupted", ligne.id());
             return null;
@@ -886,7 +888,8 @@ public class SolverJobService {
 
         private final String id;
         private final JobType type;
-        private final Long secondsLimit;
+        /** What it was launched with — duration, plateau, and why they differ from the edition's, if they do. */
+        private final SolveBudget budget;
         /** Edition this job was submitted for, and the one its result is written to. */
         private final String editionId;
         /** Display name of that edition, resolved at submit time. */
@@ -913,7 +916,7 @@ public class SolverJobService {
         /** A new job, under a fresh random id. */
         private SolverJob(
                 JobType type,
-                Long secondsLimit,
+                SolveBudget budget,
                 String editionId,
                 String editionNom,
                 ReplanificationScope scope,
@@ -921,7 +924,7 @@ public class SolverJobService {
                 boolean rejouable) {
             this.id = UUID.randomUUID().toString();
             this.type = type;
-            this.secondsLimit = secondsLimit;
+            this.budget = budget == null ? SolveBudget.DEFAULT : budget;
             this.editionId = editionId;
             this.editionNom = editionNom;
             this.scope = scope;
@@ -938,7 +941,7 @@ public class SolverJobService {
         private SolverJob(LigneJob ligne) {
             this.id = ligne.id();
             this.type = ligne.type();
-            this.secondsLimit = ligne.secondsLimit();
+            this.budget = new SolveBudget(ligne.secondsLimit(), ligne.plateauSeconds(), ligne.cappedFrom());
             this.editionId = ligne.editionId();
             this.editionNom = ligne.editionNom();
             this.scope = ligne.scope();
@@ -1080,7 +1083,22 @@ public class SolverJobService {
         }
 
         public Long getSecondsLimit() {
-            return secondsLimit;
+            return budget.secondsLimit();
+        }
+
+        /** The feasible-plateau bailout the job runs under, {@code 0} for none; {@code null} on a legacy row. */
+        public Long getPlateauSeconds() {
+            return budget.plateauSeconds();
+        }
+
+        /** Why the budget is not what the edition stored — a ceiling lowered since — or {@code null}. */
+        public String getBudgetWarning() {
+            return budget.warning();
+        }
+
+        /** What the edition stored where a ceiling cut it, or {@code null}: the values behind {@link #getBudgetWarning()}. */
+        public SolveBudget.CappedFrom getCappedFrom() {
+            return budget.cappedFrom();
         }
 
         public String getEditionId() {

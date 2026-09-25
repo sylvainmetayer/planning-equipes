@@ -163,6 +163,16 @@ class DatabaseResourceTest {
                 .then()
                 .statusCode(200)
                 .body("dureeResolutionSecondes", equalTo(42));
+
+        // Back to the deployment's budget: the default edition's duration is
+        // now what a job launched without ?seconds= runs, and 42 s would slow
+        // down every solve test that comes after this one.
+        given().contentType(ContentType.JSON)
+                .body("{\"dureeResolutionSecondes\":null}")
+                .when()
+                .put("/api/parametres-solveur")
+                .then()
+                .statusCode(200);
     }
 
     @Test

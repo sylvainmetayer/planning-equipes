@@ -3621,6 +3621,7 @@
 .sections.parametresQualite = null
 .sections.parametresSolveur.dureeResolutionSecondes = 1800
 .sections.parametresSolveur.mailFinResolution = false
+.sections.parametresSolveur.plateauSecondes = null
 .sections.prereglagesConsigne = null
 .sections.typologies[0]  bee44b20a2d3d4b7
 .sections.typologies[1]  33795519190d2d21

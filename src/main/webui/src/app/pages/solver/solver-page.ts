@@ -49,7 +49,6 @@ import {
   extraireReamorcage,
   formatDuration,
 } from '../../core/solver-job.service';
-import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ValidationsStore } from '../../core/validations.store';
 import { ValidationBanner } from '../../shared/validation-banner';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -301,7 +300,6 @@ export class SolverPage implements OnInit {
   private readonly planningApi = inject(PlanningApi);
   private readonly planningState = inject(PlanningStateService);
   private readonly jobs = inject(SolverJobService);
-  private readonly solverSettings = inject(SolverSettingsService);
   private readonly confirm = inject(ConfirmService);
   private readonly modifiedForms = inject(ModifiedFormsRegistry);
   private readonly dialog = inject(MatDialog);
@@ -605,11 +603,9 @@ export class SolverPage implements OnInit {
       // uploaded, so even a very large scenario can be solved without hitting the
       // HTTP body limit (which would fail with a network error). A planned solve
       // builds it when it starts, not now — the edition can keep being prepared.
-      await this.jobs.submitSolveFromReferenceData(
-        this.solverSettings.secondsLimit(),
-        enFile,
-        reamorcage,
-      );
+      // No duration either: the server applies the edition's budget —
+      // duration, plateau and the instance's ceiling — to whoever launches.
+      await this.jobs.submitSolveFromReferenceData(undefined, enFile, reamorcage);
       this.output.set(
         enFile
           ? $localize`:@@solver.planned:Calcul planifié : il démarrera de lui-même sur cette édition dès que la tâche en cours sera terminée.`

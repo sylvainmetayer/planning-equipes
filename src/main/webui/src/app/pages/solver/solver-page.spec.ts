@@ -206,7 +206,14 @@ describe('SolverPage', () => {
     exportBundle: vi.fn(),
   };
   const planningState = { set: vi.fn(), require: vi.fn() };
-  const solverSettings = { refresh: vi.fn(), secondsLimit: () => 600 };
+  const solverSettings = {
+    refresh: vi.fn(),
+    secondsLimit: () => 600,
+    effectivePlateauSeconds: () => 0,
+    bounds: () => null,
+    dureeResolutionSecondes: () => null,
+    plateauSecondes: () => null,
+  };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn() };
   const modifiedForms = { unsavedEntries: vi.fn((): UnsavedEntry[] => []) };
@@ -656,7 +663,7 @@ describe('SolverPage', () => {
 
       await page.onTimefoldSolve();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
 
     it('asks before starting over from scratch, and does nothing when refused', async () => {
@@ -681,7 +688,7 @@ describe('SolverPage', () => {
 
       await page.onRecommencerDeZero();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUCUN');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUCUN');
     });
   });
 
@@ -758,7 +765,7 @@ describe('SolverPage', () => {
 
       await page.onTimefoldSolve();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
 
     // Two dialogs on one click would be one too many: the blocking question
@@ -805,7 +812,7 @@ describe('SolverPage', () => {
 
       await page.onTimefoldSolve();
 
-      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(600, false, 'AUTO');
+      expect(jobs.submitSolveFromReferenceData).toHaveBeenCalledWith(undefined, false, 'AUTO');
     });
 
     it('changes nothing when nothing is being typed', async () => {

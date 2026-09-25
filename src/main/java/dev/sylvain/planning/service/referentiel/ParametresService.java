@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.ParametresSolveur;
 import dev.sylvain.planning.service.ReferenceDataChangeTracker;
+import dev.sylvain.planning.service.solve.SolveBudgetPolicy;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.ConstraintCatalog.ConstraintDefinition;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -30,8 +32,16 @@ public class ParametresService {
     /** Only for the {@code planning.contraintes.*} block: the defaults an unconfigured edition solves with. */
     private final Config config;
 
+    /** The ceilings the operator set: a budget changed above them is refused when saved. */
+    private final SolveBudgetPolicy budgetPolicy;
+
     @Inject
-    public ParametresService(ParametresRepository repository, ReferenceDataChangeTracker changeTracker, Config config) {
+    public ParametresService(
+            ParametresRepository repository,
+            ReferenceDataChangeTracker changeTracker,
+            Config config,
+            SolveBudgetPolicy budgetPolicy) {
+        this.budgetPolicy = budgetPolicy;
         this.repository = repository;
         this.changeTracker = changeTracker;
         this.config = config;
@@ -52,16 +62,37 @@ public class ParametresService {
         return repository.getParametresSolveur();
     }
 
+    /** The instance's defaults and ceilings, shown beside the edition's budget. */
+    public SolverBudgetBounds solverBudgetBounds() {
+        return budgetPolicy.bounds();
+    }
+
     /**
-     * Saves the solver's default termination duration (Données tab). Not a
-     * problem fact and deliberately not tracked by
-     * {@link ReferenceDataChangeTracker}: it only changes how long a
-     * solve runs, not the reference data fed to it.
+     * Saves the edition's solve budget (Solveur page). Not a problem fact and
+     * deliberately not tracked by {@link ReferenceDataChangeTracker}: it only
+     * changes how long a solve runs, not the reference data fed to it.
      */
     public ParametresSolveur updateSolveur(ParametresSolveur parametres) {
-        ParametresValidator.checkParametresSolveur(parametres);
+        ParametresValidator.checkParametresSolveur(
+                parametres, repository.getParametresSolveur(), budgetPolicy.bounds());
         repository.saveParametresSolveur(parametres);
         return parametres;
+    }
+
+    /**
+     * Saves the budget a scenario file pins, keeping this edition's mail
+     * switch — a file carries no mail setting. A value above the instance's
+     * ceiling is stored as the file says, and launches run it capped with a
+     * warning: see {@link ParametresValidator#checkImportedParametresSolveur}.
+     */
+    public ParametresSolveur importSolveur(ParametresSolveur parametres) {
+        ParametresValidator.checkImportedParametresSolveur(parametres, budgetPolicy.bounds());
+        ParametresSolveur kept = new ParametresSolveur(
+                parametres.dureeResolutionSecondes(),
+                parametres.plateauSecondes(),
+                repository.getParametresSolveur().mailFinResolution());
+        repository.saveParametresSolveur(kept);
+        return kept;
     }
 
     public ParametresNotifications getNotifications() {

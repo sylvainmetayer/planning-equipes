@@ -101,7 +101,7 @@ public class EditionRepository {
                     "max_emplacements_distincts_par_jour, heure_service_tardif, heure_service_matinal, "
                             + "repos_souhaite_apres_service_tardif_minutes, typologies_distinctes_max, "
                             + "jours_consecutifs_max"),
-            new TableToCopy("parametres_solveur", "duree_resolution_secondes, mail_fin_resolution"),
+            new TableToCopy("parametres_solveur", "duree_resolution_secondes, plateau_secondes, mail_fin_resolution"),
             // Consigne presets (V90, issue #4) describe the event's shape —
             // « Plan canicule » is the same plan next year — so they travel;
             // the dated consignes made from them belong to one edition's days

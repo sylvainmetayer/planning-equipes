@@ -4107,6 +4107,18 @@
             "type" : "integer",
             "format" : "int64"
           },
+          "plateauSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "cappedFromSecondsLimit" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "cappedFromPlateauSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
           "reamorcage" : {
             "$ref" : "#/components/schemas/Reamorcage"
           },
@@ -5232,10 +5244,14 @@
         }
       },
       "ParametresSolveur" : {
-        "required" : [ "dureeResolutionSecondes", "mailFinResolution" ],
+        "required" : [ "mailFinResolution" ],
         "type" : "object",
         "properties" : {
           "dureeResolutionSecondes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plateauSecondes" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -7132,6 +7148,48 @@
             "items" : {
               "$ref" : "#/components/schemas/ConsigneSnapshot"
             }
+          }
+        }
+      },
+      "SolverBudgetBounds" : {
+        "type" : "object",
+        "required" : [ "defaultSecondsLimit", "defaultPlateauSeconds", "maxSecondsLimit", "maxPlateauSeconds" ],
+        "properties" : {
+          "defaultSecondsLimit" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "defaultPlateauSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "maxSecondsLimit" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "maxPlateauSeconds" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        }
+      },
+      "SolverSettingsView" : {
+        "required" : [ "mailFinResolution", "instance" ],
+        "type" : "object",
+        "properties" : {
+          "dureeResolutionSecondes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "plateauSecondes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "mailFinResolution" : {
+            "type" : "boolean"
+          },
+          "instance" : {
+            "$ref" : "#/components/schemas/SolverBudgetBounds"
           }
         }
       },
@@ -11926,7 +11984,9 @@
             "description" : "OK",
             "content" : {
               "application/json" : {
-                "schema" : { }
+                "schema" : {
+                  "$ref" : "#/components/schemas/SolverSettingsView"
+                }
               }
             }
           },
@@ -11944,7 +12004,7 @@
             "content" : {
               "application/json" : {
                 "schema" : {
-                  "$ref" : "#/components/schemas/ParametresSolveur"
+                  "$ref" : "#/components/schemas/SolverSettingsView"
                 }
               }
             }

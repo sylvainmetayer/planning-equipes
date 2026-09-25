@@ -73,6 +73,9 @@ public class SolvePipeline {
 
     private final ValidationJourneeService validationService;
 
+    /** Resolves the budget of a synchronous solve, the one form that is not a job. */
+    private final SolveBudgetPolicy budgetPolicy;
+
     @Inject
     public SolvePipeline(
             PlanSnapshotService snapshotService,
@@ -85,7 +88,9 @@ public class SolvePipeline {
             Event<Notification> notifications,
             PlanPublieService planPublieService,
             PublicationDiffService diffService,
-            ValidationJourneeService validationService) {
+            ValidationJourneeService validationService,
+            SolveBudgetPolicy budgetPolicy) {
+        this.budgetPolicy = budgetPolicy;
         this.snapshotService = snapshotService;
         this.planningService = planningService;
         this.persistenceService = persistenceService;
@@ -176,11 +181,12 @@ public class SolvePipeline {
      * calls.
      */
     public Resolution<PlanningEvenement> execute(PlanningEvenement probleme, Long secondsLimit) {
+        SolveBudget budget = budgetPolicy.forSolve(secondsLimit, referenceDataService.getParametresSolveur());
         return execute(
                 editionService.editionCourante().getNom(),
                 () -> probleme,
                 Function.identity(),
-                secondsLimit,
+                budget,
                 null,
                 () -> false);
     }
@@ -189,11 +195,10 @@ public class SolvePipeline {
     public Resolution<PlanningEvenement> execute(
             String editionNom,
             PlanningEvenement probleme,
-            Long secondsLimit,
+            SolveBudget budget,
             Consumer<Solver<PlanningEvenement>> attacheSolveur,
             BooleanSupplier shutdownRequested) {
-        return execute(
-                editionNom, () -> probleme, Function.identity(), secondsLimit, attacheSolveur, shutdownRequested);
+        return execute(editionNom, () -> probleme, Function.identity(), budget, attacheSolveur, shutdownRequested);
     }
 
     /**
@@ -214,7 +219,7 @@ public class SolvePipeline {
             String editionNom,
             Supplier<P> buildProblem,
             Function<P, PlanningEvenement> planningOf,
-            Long secondsLimit,
+            SolveBudget budget,
             Consumer<Solver<PlanningEvenement>> attacheSolveur,
             BooleanSupplier shutdownRequested) {
         // The net of issue #138: the plan about to be overwritten is
@@ -224,7 +229,7 @@ public class SolvePipeline {
         PlanningDiagnosticService.PlanningDiagnostic diagnosticBefore = diagnosticOfReplacedPlan(replaced, scoreBefore);
         P probleme = buildProblem.get();
         Instant debutSolve = Instant.now();
-        PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), secondsLimit, attacheSolveur);
+        PlanningEvenement resolu = planningService.solve(planningOf.apply(probleme), budget, attacheSolveur);
         long dureeSolveSecondes = Duration.between(debutSolve, Instant.now()).getSeconds();
         // Timefold also stops when its thread is interrupted — a pool being
         // shut down does that — and returns as if the budget were spent.

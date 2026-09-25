@@ -103,7 +103,7 @@ public class ScenarioImportService {
             ScenarioYamlReader.ScenarioSections sections = importe.sections();
             sections.parametresLegaux().ifPresent(referenceDataService::updateParametresLegaux);
             sections.parametresQualite().ifPresent(referenceDataService::updateParametresQualite);
-            sections.parametresSolveur().ifPresent(referenceDataService::updateParametresSolveur);
+            sections.parametresSolveur().ifPresent(referenceDataService::importParametresSolveur);
             referenceDataService.importFromPlanning(importe.planning());
             applyTypologies(sections);
             applyJourneesTypes(sections);

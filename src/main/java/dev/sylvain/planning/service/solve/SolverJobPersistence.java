@@ -45,6 +45,8 @@ public class SolverJobPersistence {
                     job.getType(),
                     job.getStatus(),
                     job.getSecondsLimit(),
+                    job.getPlateauSeconds(),
+                    job.getCappedFrom(),
                     job.getPerimetre(),
                     job.getReamorcage(),
                     job.isRejouable(),

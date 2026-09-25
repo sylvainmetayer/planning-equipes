@@ -90,6 +90,7 @@ dev/sylvain/planning/api/SecurityHeadersTest.java
 dev/sylvain/planning/api/SolveFileAttenteResourceTest.java
 dev/sylvain/planning/api/SolveIncrementalResourceTest.java
 dev/sylvain/planning/api/SolveSynchronePipelineTest.java
+dev/sylvain/planning/api/SolverBudgetResourceTest.java
 dev/sylvain/planning/api/SolverJobResourceTest.java
 dev/sylvain/planning/api/SolverJobStreamResourceTest.java
 dev/sylvain/planning/api/SpaCacheControlTest.java
@@ -109,6 +110,7 @@ dev/sylvain/planning/mcp/McpRateLimitTest.java
 dev/sylvain/planning/mcp/McpRequiredHeadersTest.java
 dev/sylvain/planning/mcp/McpRunningSolveEditionTest.java
 dev/sylvain/planning/mcp/McpWarnsWhileSolvingTest.java
+dev/sylvain/planning/mcp/ParametresSolveurMcpToolsTest.java
 dev/sylvain/planning/mcp/PlanificationMcpToolsTest.java
 dev/sylvain/planning/mcp/ReferentielMcpToolsTest.java
 dev/sylvain/planning/mcp/RefusMetierMcpToolsTest.java

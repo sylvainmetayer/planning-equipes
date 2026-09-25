@@ -1664,14 +1664,31 @@ export interface ReconnaissanceJourneesTypes {
 }
 
 /**
- * `/api/parametres-solveur`: the solver's default termination duration, set
- * from the Débogage tab. Persisted server-side (not localStorage) so every
- * browser reads and writes the same value.
+ * The edition's solve budget, as a `PUT /api/parametres-solveur` sends it.
+ * `null` follows the instance's default — « Revenir au défaut » writes it.
  */
 export interface ParametresSolveur {
-  dureeResolutionSecondes: number;
+  dureeResolutionSecondes: number | null;
+  /** Stop once a feasible planning has not improved for this long; 0 = never. */
+  plateauSecondes: number | null;
   /** Mails the outcome of a finished solve to the admin address (off by default). */
   mailFinResolution: boolean;
+}
+
+/** What the operator decided for every edition: the defaults a `null` resolves to, and the ceilings. */
+export interface SolverBudgetBounds {
+  defaultSecondsLimit: number;
+  defaultPlateauSeconds: number;
+  maxSecondsLimit: number;
+  maxPlateauSeconds: number;
+}
+
+/** `GET /api/parametres-solveur`: the edition's budget, with the instance's bounds it is read against. */
+export interface SolverSettingsView {
+  dureeResolutionSecondes: number | null;
+  plateauSecondes: number | null;
+  mailFinResolution: boolean;
+  instance: SolverBudgetBounds;
 }
 
 /**
@@ -1778,6 +1795,12 @@ export interface JobView {
   /** Display name of that edition, resolved server-side at submit time. */
   editionNom: string | null;
   secondsLimit: number | null;
+  /** The feasible-plateau bailout the job runs under, 0 for none. */
+  plateauSeconds?: number | null;
+  /** The duration the edition stored where the instance's ceiling (`secondsLimit`) cut it, or null. */
+  cappedFromSecondsLimit?: number | null;
+  /** The plateau the edition stored where the instance's ceiling (`plateauSeconds`) cut it, or null. */
+  cappedFromPlateauSeconds?: number | null;
   /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
   reamorcage?: Reamorcage | null;
   submittedAt: string;

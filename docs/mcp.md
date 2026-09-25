@@ -373,6 +373,18 @@ trois propriétés d'un coup :
   qu'une résolution tourne verra ses modifications prises en compte par la
   suivante.
 
+Le **budget** suit la même règle que l'écran ([api.md](api.md#budget-de-calcul)) :
+sans `secondes`, le job tourne la durée et l'arrêt sur plateau de l'édition,
+lus et réglés par `consulter_parametres_solveur` / `modifier_parametres_solveur`
+(un argument absent garde sa valeur, `revenirAuDefaut` rend les deux au défaut
+de l'instance). Au-dessus du plafond de l'instance, un `secondes` comme un
+réglage est refusé par une phrase qui cite ce plafond : un assistant qui
+demande trois heures ne doit pas en obtenir deux en croyant le budget épuisé.
+Une valeur enregistrée avant qu'on abaisse le plafond — ou importée d'un
+scénario — tourne au plafond, et `statut_solveur` le dit dans `avertissement` ;
+`modifier_parametres_solveur` la garde sans la refuser quand on ne change que
+l'autre moitié.
+
 `diagnostiquer_plan` ne passe pas par là du tout : il ne résout rien. Il
 recalcule le score du **plan persisté**, celui dont parlent `etat_planning` et
 `lister_affectations`. Il remplace un outil d'analyse qui lançait une résolution

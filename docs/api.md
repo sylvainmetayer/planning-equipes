@@ -139,6 +139,43 @@ par le serveur. Toute autre session voit le même job actif via
 `/api/jobs/active` et se voit refuser un second lancement en `409`, le corps
 portant le job en cours.
 
+### Budget de calcul
+
+La durée et l'arrêt sur plateau d'une résolution sont **décidés par le
+serveur, au lancement**, à partir de `GET /api/parametres-solveur` de
+l'édition : un `null` y suit le défaut du déploiement
+(`planning.solver.seconds-limit`, `planning.solver.unimproved-seconds-limit`),
+que la réponse expose sous `instance` avec les deux plafonds de l'exploitant
+(`SOLVER_SECONDS_LIMIT_MAX`, `SOLVER_UNIMPROVED_SECONDS_LIMIT_MAX`). L'écran
+n'envoie donc plus de `?seconds=` : quiconque lance — écran, script, MCP —
+obtient le même budget.
+
+Trois pièges :
+
+- **refuser n'est pas tronquer.** Une valeur au-dessus du plafond est refusée
+  en `400` qui cite le plafond, à l'enregistrement comme sur un `?seconds=` ou
+  un `secondes` MCP. Seule exception, voulue : une valeur **déjà enregistrée**
+  quand l'exploitant abaisse le plafond tourne au plafond, et le job le dit
+  (`cappedFromSecondsLimit` / `cappedFromPlateauSeconds` : la valeur coupée,
+  que l'écran met en phrase dans la langue du lecteur ; `avertissement` en
+  toutes lettres côté MCP) — l'édition n'a rien fait de mal.
+  Le plafond ne vaut donc que pour une moitié que l'écriture **change** : un
+  `PUT` qui renvoie la durée enregistrée telle quelle (l'interrupteur du mail
+  de fin le fait) passe, même au-dessus. Un scénario importé s'enregistre tel
+  qu'il est écrit, plafond compris, et tourne plafonné de la même façon ;
+- **le plateau reste conditionné à la faisabilité** (sous-terminaison
+  « faisable ET N secondes sans amélioration ») : il ne coupe jamais un calcul
+  qui a encore des places à pourvoir. Il s'applique quelle que soit la durée de
+  l'édition. Un `?seconds=` explicite sans plateau réglé par l'édition garde
+  son sens historique, « exactement cette durée » : c'est ce qui tient le
+  plateau de deux secondes du profil de test à l'écart des scénarios résolus
+  avec un budget explicite plus long ;
+- **un job garde le budget de son lancement.** Il est résolu à la soumission,
+  persisté avec la file (`plateau_seconds` à côté de `seconds_limit`) et rejoué
+  tel quel après un redémarrage ; un réglage changé pendant l'attente vaut
+  pour le suivant. La replanification incrémentale garde sa durée propre
+  (60 s sans `?seconds=`), sous le même plafond, avec le plateau de l'édition.
+
 ### Volumétrie du problème
 
 `GET /api/planning/volumetrie` (et l'outil MCP `volumes`) décrit le problème

@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.ParametresSolveur;
+import dev.sylvain.planning.service.solve.SolverBudgetBounds;
 import java.time.LocalTime;
 import org.junit.jupiter.api.Test;
 
@@ -53,6 +54,12 @@ class ParametresValidatorTest {
                 .doesNotThrowAnyException();
     }
 
+    /** Default 15 min and 5 min, at most 1 h and 30 min: the instance the budget tests are read against. */
+    private static final SolverBudgetBounds BOUNDS = new SolverBudgetBounds(900, 300, 3600, 1800);
+
+    /** An edition that never saved a budget: every half of a write is a change. */
+    private static final ParametresSolveur NOTHING_STORED = new ParametresSolveur();
+
     /**
      * The solve duration used to live in localStorage, which made it
      * inconsistent from one browser to the next; it is now persisted
@@ -60,17 +67,109 @@ class ParametresValidatorTest {
      * parameters.
      */
     @Test
-    void uneDureeDeResolutionNulleOuNegativeEstRefusee() {
+    void aZeroOrNegativeSolveDurationIsRefused() {
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(new ParametresSolveur(0)));
+                .isThrownBy(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(0), NOTHING_STORED, BOUNDS));
         assertThatIllegalArgumentException()
-                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(new ParametresSolveur(-1)));
+                .isThrownBy(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(-1), NOTHING_STORED, BOUNDS));
     }
 
     @Test
-    void uneDureeDeResolutionPositiveEstAcceptee() {
-        assertThatCode(() -> ParametresValidator.checkParametresSolveur(new ParametresSolveur(120)))
+    void aPositiveSolveDurationUnderTheCeilingIsAccepted() {
+        assertThatCode(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(120), NOTHING_STORED, BOUNDS))
                 .doesNotThrowAnyException();
+        assertThatCode(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(3600), NOTHING_STORED, BOUNDS))
+                .doesNotThrowAnyException();
+    }
+
+    /** Nothing set follows the instance: « Revenir au défaut » must always be accepted. */
+    @Test
+    void anUnsetBudgetIsAccepted() {
+        assertThatCode(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(), NOTHING_STORED, BOUNDS))
+                .doesNotThrowAnyException();
+    }
+
+    /** Refused, not trimmed, and the message names the ceiling so the organiser knows what is allowed. */
+    @Test
+    void aDurationAboveTheCeilingIsRefusedCitingIt() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() ->
+                        ParametresValidator.checkParametresSolveur(new ParametresSolveur(3601), NOTHING_STORED, BOUNDS))
+                .withMessageContaining("au plus 1 h");
+    }
+
+    /**
+     * A duration saved before the ceiling was lowered binds nothing it did not
+     * change: the mail switch, or a plateau changed on its own, still saves —
+     * launches already run the stored value capped, with a warning.
+     */
+    @Test
+    void aStoredValueAboveTheCeilingPassesWhileItIsNotChanged() {
+        ParametresSolveur stored = new ParametresSolveur(7200, 2400, false);
+        assertThatCode(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(7200, 2400, true), stored, BOUNDS))
+                .doesNotThrowAnyException();
+        assertThatCode(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(7200, 600, false), stored, BOUNDS))
+                .doesNotThrowAnyException();
+        // Changed, even downwards, it is a value entered now: the ceiling holds.
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(5400, 600, false), stored, BOUNDS))
+                .withMessageContaining("au plus 1 h");
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(7200, 2000, false), stored, BOUNDS))
+                .withMessageContaining("au plus 30 min");
+    }
+
+    /** A scenario file's budget is stored as it says, ceilings aside; the other rules still hold. */
+    @Test
+    void anImportedBudgetIgnoresTheCeilingsButNotTheOtherRules() {
+        assertThatCode(() -> ParametresValidator.checkImportedParametresSolveur(
+                        new ParametresSolveur(7200, 2400, false), BOUNDS))
+                .doesNotThrowAnyException();
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkImportedParametresSolveur(
+                        new ParametresSolveur(0, null, false), BOUNDS));
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkImportedParametresSolveur(
+                        new ParametresSolveur(600, 700, false), BOUNDS));
+    }
+
+    @Test
+    void aPlateauAboveItsCeilingIsRefusedCitingIt() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(3600, 2400, false), NOTHING_STORED, BOUNDS))
+                .withMessageContaining("au plus 30 min");
+    }
+
+    @Test
+    void aPlateauLongerThanTheDurationIsRefused() {
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(600, 700, false), NOTHING_STORED, BOUNDS))
+                .withMessageContaining("ne peut pas dépasser la durée");
+        // Against the instance's default duration when the edition sets none.
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(null, 1000, false), NOTHING_STORED, BOUNDS));
+    }
+
+    @Test
+    void aZeroPlateauMeansNeverAndANegativeOneIsRefused() {
+        assertThatCode(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(600, 0, false), NOTHING_STORED, BOUNDS))
+                .doesNotThrowAnyException();
+        assertThatIllegalArgumentException()
+                .isThrownBy(() -> ParametresValidator.checkParametresSolveur(
+                        new ParametresSolveur(600, -1, false), NOTHING_STORED, BOUNDS));
     }
 
     /**

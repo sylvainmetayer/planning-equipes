@@ -38,3 +38,30 @@ export function bestUnitFor(seconds: number): SolverDurationUnit {
   }
   return 'SECONDES';
 }
+
+/** « 2 h », « 15 min », « 90 s » — a budget said in the unit a person would say it in. */
+export function formatSeconds(seconds: number): string {
+  if (seconds !== 0 && seconds % SOLVER_DURATION_UNIT_FACTORS.HEURES === 0) {
+    return `${seconds / SOLVER_DURATION_UNIT_FACTORS.HEURES} h`;
+  }
+  if (seconds !== 0 && seconds % SOLVER_DURATION_UNIT_FACTORS.MINUTES === 0) {
+    return `${seconds / SOLVER_DURATION_UNIT_FACTORS.MINUTES} min`;
+  }
+  return `${seconds} s`;
+}
+
+/**
+ * What to send for one half of the budget: `null` — follow the instance —
+ * when the edition followed it and the draft still says the instance's value,
+ * so saving the duration alone never pins the plateau it was showing.
+ */
+export function budgetToSend(
+  stored: number | null,
+  draftSeconds: number,
+  instanceDefault: number | null,
+): number | null {
+  const rounded = Math.round(draftSeconds);
+  return stored === null && instanceDefault !== null && rounded === instanceDefault
+    ? null
+    : rounded;
+}

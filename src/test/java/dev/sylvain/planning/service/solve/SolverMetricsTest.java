@@ -126,7 +126,7 @@ class SolverMetricsTest {
         }
 
         @Override
-        JobTask solve(PlanningEvenement problem, Long secondsLimit, BooleanSupplier shutdownRequested) {
+        JobTask solve(PlanningEvenement problem, SolveBudget budget, BooleanSupplier shutdownRequested) {
             return job -> {
                 throw new IllegalStateException("simulated solver bug");
             };

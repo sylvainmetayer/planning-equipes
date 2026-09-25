@@ -107,6 +107,10 @@ public class SolverJobResource {
      * {@code PLAN_COURANT} insists on it, {@code AUCUN} starts cold. Cold is
      * the case that loses the plan already reached, hence not the default —
      * for a script as much as for the screen.</p>
+     *
+     * <p>Without {@code seconds}, the job runs the edition's budget — duration
+     * and plateau, {@code GET /api/parametres-solveur}. With it, that duration
+     * instead, refused in {@code 400} above the instance's ceiling.</p>
      */
     @POST
     @Path("/solve/async/reference-data")
@@ -484,6 +488,18 @@ public class SolverJobResource {
             String editionId,
             String editionNom,
             Long secondsLimit,
+            /** The feasible-plateau bailout the job runs under, 0 for none; null on a job queued before it was stored. */
+            Long plateauSeconds,
+            /**
+             * The duration the edition stored where the instance's ceiling cut
+             * it — a ceiling lowered since, or a scenario imported above it —
+             * or null when it ran as stored; the ceiling is secondsLimit.
+             * Values rather than a sentence, so the screen says it in its
+             * reader's language.
+             */
+            Long cappedFromSecondsLimit,
+            /** Same for the plateau, whose ceiling is plateauSeconds. */
+            Long cappedFromPlateauSeconds,
             /** Where a full solve was asked to start from (issue #174); null for an incremental job. */
             Reamorcage reamorcage,
             Instant submittedAt,
@@ -515,6 +531,9 @@ public class SolverJobResource {
                     job.getEditionId(),
                     job.getEditionNom(),
                     job.getSecondsLimit(),
+                    job.getPlateauSeconds(),
+                    job.getCappedFrom() == null ? null : job.getCappedFrom().secondsLimit(),
+                    job.getCappedFrom() == null ? null : job.getCappedFrom().plateauSeconds(),
                     job.getReamorcage(),
                     job.getSubmittedAt(),
                     job.getStartedAt(),

@@ -259,7 +259,7 @@ final class SolverConfiguration {
     }
 
     /**
-     * {@link #resolveSolverFactory(Long)}, for one problem: a problem large
+     * {@link #resolveSolverFactory(SolveBudget)}, for one problem: a problem large
      * enough for {@link LargeProblemConstruction}, or held to a hard run of days
      * ({@link HardRunCapSearch}), gets a factory of its own, built from the same
      * XML adapted by {@link #adaptToProblem} and with the same termination as the
@@ -267,36 +267,66 @@ final class SolverConfiguration {
      * depends on nothing else about the problem, so it is built once and kept,
      * like the shared one: an edition that holds the rule solves again and again.
      */
-    SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride, PlanningEvenement problem) {
+    SolverFactory<PlanningEvenement> resolveSolverFactory(SolveBudget budget, PlanningEvenement problem) {
         boolean large = LargeProblemConstruction.applies(problem);
         boolean hardRunCap = HardRunCapSearch.applies(problem);
         if (!large && !hardRunCap) {
-            return resolveSolverFactory(secondsLimitOverride);
+            return resolveSolverFactory(budget);
         }
-        boolean defaultBudget = secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit);
-        if (!large && defaultBudget) {
+        if (!large && isDefault(budget)) {
             SolverFactory<PlanningEvenement> cached = hardRunCapSolverFactory;
             if (cached == null) {
-                cached = adaptedSolverFactory(secondsLimitOverride, problem);
+                cached = adaptedSolverFactory(budget, problem);
                 hardRunCapSolverFactory = cached;
             }
             return cached;
         }
-        return adaptedSolverFactory(secondsLimitOverride, problem);
+        return adaptedSolverFactory(budget, problem);
     }
 
-    private SolverFactory<PlanningEvenement> adaptedSolverFactory(
-            Long secondsLimitOverride, PlanningEvenement problem) {
+    private SolverFactory<PlanningEvenement> adaptedSolverFactory(SolveBudget budget, PlanningEvenement problem) {
+        SolverConfig solverConfig = solverConfigFor(budget);
+        adaptToProblem(solverConfig, problem);
+        return SolverFactory.create(solverConfig);
+    }
+
+    /**
+     * The XML with the termination {@code budget} resolves to — the one place
+     * a budget becomes a {@link TerminationConfig}, read by the tests as well.
+     */
+    SolverConfig solverConfigFor(SolveBudget budget) {
         SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
-            applyTermination(solverConfig, defaultSecondsLimit, defaultUnimprovedSecondsLimit);
-        } else {
-            applyTermination(solverConfig, secondsLimitOverride, 0L);
+        applyTermination(solverConfig, secondsOf(budget), plateauOf(budget));
+        return solverConfig;
+    }
+
+    private long secondsOf(SolveBudget budget) {
+        return budget == null || budget.secondsLimit() == null ? defaultSecondsLimit : budget.secondsLimit();
+    }
+
+    /**
+     * The plateau of {@code budget}: its own when it names one, whatever the
+     * duration. Unnamed, it is the deployment's at the default duration and
+     * none under an explicit one — the reading {@link SolveBudget} documents,
+     * which keeps the test profile's two-second plateau off a scenario solved
+     * with a bigger explicit budget.
+     */
+    private long plateauOf(SolveBudget budget) {
+        if (budget != null && budget.plateauSeconds() != null) {
+            return Math.max(0, budget.plateauSeconds());
         }
-        adaptToProblem(solverConfig, problem);
-        return SolverFactory.create(solverConfig);
+        return secondsOf(budget) == defaultSecondsLimit ? defaultPlateauSeconds() : 0L;
+    }
+
+    private long defaultPlateauSeconds() {
+        return defaultUnimprovedSecondsLimit == null ? 0L : Math.max(0, defaultUnimprovedSecondsLimit);
+    }
+
+    /** Whether {@code budget} is the one the shared factory was built with. */
+    private boolean isDefault(SolveBudget budget) {
+        return secondsOf(budget) == defaultSecondsLimit && plateauOf(budget) == defaultPlateauSeconds();
     }
 
     /**
@@ -314,18 +344,10 @@ final class SolverConfiguration {
         }
     }
 
-    SolverFactory<PlanningEvenement> resolveSolverFactory(Long secondsLimitOverride) {
-        if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
+    SolverFactory<PlanningEvenement> resolveSolverFactory(SolveBudget budget) {
+        if (isDefault(budget)) {
             return solverFactory;
         }
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
-        solverConfig.setScoreDirectorFactoryConfig(
-                new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
-        // An explicit override means the caller wants exactly that many seconds;
-        // the ambient unimproved-time bailout (e.g. the test profile's 2s, far
-        // too tight for a large scenario solved with a bigger override) must not
-        // silently cut it short, so it is disabled rather than reused here.
-        applyTermination(solverConfig, secondsLimitOverride, 0L);
-        return SolverFactory.create(solverConfig);
+        return SolverFactory.create(solverConfigFor(budget));
     }
 }
