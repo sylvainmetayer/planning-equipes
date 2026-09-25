@@ -37,7 +37,10 @@ import org.junit.jupiter.api.Test;
 class ConstraintDiagnosticResourceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "DIAGNOSTIC-PLAN";
+    private static final String EDITION_NOM = "Diagnostic du plan";
+
+    /** The target edition, created before each test under an id the application draws (ADR 0050). */
+    private String edition;
 
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(120);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
@@ -51,17 +54,19 @@ class ConstraintDiagnosticResourceTest {
 
     @BeforeEach
     void createTargetEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Diagnostic du plan\"}")
+        edition = given().contentType("application/json")
+                .body("{\"nom\":\"" + EDITION_NOM + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
     void dropTargetEdition() {
-        given().when().delete("/api/editions/" + EDITION);
+        given().when().delete("/api/editions/" + edition);
     }
 
     @Test
@@ -69,7 +74,7 @@ class ConstraintDiagnosticResourceTest {
         importScenario();
         solve();
 
-        JsonPath diagnostic = given().header(HEADER, EDITION)
+        JsonPath diagnostic = given().header(HEADER, edition)
                 .when()
                 .post("/api/constraints/diagnostic")
                 .then()
@@ -87,7 +92,7 @@ class ConstraintDiagnosticResourceTest {
         assertThat(Set.copyOf(diagnostic.getList("contraintes.name"))).containsAll(scored);
 
         // Same plan, same analysis: nothing was solved, so nothing moved.
-        JsonPath again = given().header(HEADER, EDITION)
+        JsonPath again = given().header(HEADER, edition)
                 .when()
                 .post("/api/constraints/diagnostic")
                 .then()
@@ -111,7 +116,7 @@ class ConstraintDiagnosticResourceTest {
         importScenario();
         solve();
 
-        JsonPath diagnostic = given().header(HEADER, EDITION)
+        JsonPath diagnostic = given().header(HEADER, edition)
                 .when()
                 .post("/api/constraints/diagnostic")
                 .then()
@@ -148,7 +153,7 @@ class ConstraintDiagnosticResourceTest {
                 .isEqualTo(mediumOf(diagnostic.getString("scoreGlobal")) - diagnostic.getInt("plancherMedium"));
 
         // Same reading from the catalogue route, which serves the stored analysis.
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .get("/api/constraints")
                 .then()
@@ -172,7 +177,7 @@ class ConstraintDiagnosticResourceTest {
      */
     @Test
     void diagnosticWithoutAPersistedPlanReturnsTheEmptyView() {
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .post("/api/constraints/diagnostic")
                 .then()
@@ -203,7 +208,7 @@ class ConstraintDiagnosticResourceTest {
         solve();
         forgetTheAnalysisAsARestartWould();
 
-        JsonPath catalogue = given().header(HEADER, EDITION)
+        JsonPath catalogue = given().header(HEADER, edition)
                 .when()
                 .get("/api/constraints")
                 .then()
@@ -220,13 +225,13 @@ class ConstraintDiagnosticResourceTest {
 
     /** The one piece of state a restart takes away, taken away. */
     private void forgetTheAnalysisAsARestartWould() {
-        editionContext.executeIn(EDITION, () -> {
+        editionContext.executeIn(edition, () -> {
             analysisStore.clear();
         });
     }
 
     private void importScenario() {
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
@@ -235,7 +240,7 @@ class ConstraintDiagnosticResourceTest {
 
     private void solve() {
         awaitIdleSolver();
-        String jobId = given().header(HEADER, EDITION)
+        String jobId = given().header(HEADER, edition)
                 .when()
                 .post("/api/solve/async/reference-data?seconds=1")
                 .then()

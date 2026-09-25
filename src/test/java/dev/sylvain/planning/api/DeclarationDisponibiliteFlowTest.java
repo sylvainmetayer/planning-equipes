@@ -445,7 +445,8 @@ class DeclarationDisponibiliteFlowTest {
         creneauxCrees.forEach(referenceData::deleteCreneau);
         creneauxCrees.clear();
         referenceData.listTypologies().stream()
-                .filter(typologie -> typologie.code() != null && typologie.code().startsWith("DEC-"))
+                .filter(typologie ->
+                        typologie.code() != null && typologie.code().startsWith("DEC-"))
                 .map(TypologieItem::id)
                 .forEach(referenceData::deleteTypologie);
     }
