@@ -41,7 +41,9 @@ public class IdGenerator {
 
         Kind(String prefix) {
             this.prefix = prefix;
-            this.shape = Pattern.compile(prefix + "[1-9][0-9]*");
+            // At most 18 digits, the numbers a long holds — the bound V100
+            // renumbered by, so an id too long to count is never « generated ».
+            this.shape = Pattern.compile(prefix + "[1-9][0-9]{0,17}");
         }
 
         public String prefix() {
@@ -125,7 +127,7 @@ public class IdGenerator {
 
     /** The number of an id of {@code kind}'s shape — 12 for {@code S12}; -1 for any other id. */
     public static long numberOf(Kind kind, String id) {
-        if (!kind.hasGeneratedShape(id) || id.length() - kind.prefix().length() > 18) {
+        if (!kind.hasGeneratedShape(id)) {
             return -1;
         }
         return Long.parseLong(id.substring(kind.prefix().length()));

@@ -702,7 +702,8 @@ public class StandMcpTools {
         if (longitude != null) {
             emplacement.setLongitude(longitude);
         }
-        return toView(referenceDataService.updateEmplacement(id, emplacement));
+        // The id findEmplacement resolved: the caller may have named it by its code.
+        return toView(referenceDataService.updateEmplacement(emplacement.getId(), emplacement));
     }
 
     @Tool(
