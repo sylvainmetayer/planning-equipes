@@ -80,7 +80,7 @@ class ConstraintParametersStructuralTest {
      * besides, so following {@code LocalDateTime.of(…)} linked a rule to every
      * parameter its file reads anywhere.
      */
-    private static final Pattern APPEL = Pattern.compile("(?<![.\\w])(\\w+)\\s*\\(");
+    private static final Pattern APPEL = Pattern.compile("(?<![.\\w])(\\w++)\\s*+\\(");
 
     /**
      * Why the seven rules that read a break length name none: they all go

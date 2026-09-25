@@ -524,7 +524,6 @@ class FeasibilityAnalyzerTest {
         assertThat(report.causes()).isEmpty();
     }
 
-    /** A constraint targeting {@code a1} on {@code creneau}, the shape both contradiction tests need. */
     /** The playbook of a shortfall opens the bench on that very timeslot first, the skills of its stand next. */
     @Test
     void aShortfallCarriesItsPlaybookPositionedOnTheTimeslot() {
@@ -695,6 +694,7 @@ class FeasibilityAnalyzerTest {
         return seat;
     }
 
+    /** A constraint targeting {@code a1} on {@code creneau}, the shape both contradiction tests need. */
     private static ContrainteAdHoc contrainte(String id, TypeContrainteAdHoc type, Creneau creneau) {
         ContrainteAdHoc contrainte = new ContrainteAdHoc(id, type);
         contrainte.setCreneau(creneau);

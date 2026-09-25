@@ -332,8 +332,7 @@ class PlanningResourceTest {
                 entries.add(entry.getName());
             }
         }
-        assertThat(entries).hasSize(animateurs);
-        assertThat(entries).allMatch(name -> name.endsWith(".pdf"));
+        assertThat(entries).hasSize(animateurs).allMatch(name -> name.endsWith(".pdf"));
     }
 
     @Test

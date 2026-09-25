@@ -90,6 +90,7 @@ class PlanningDiagnosticPreparationTest {
 
         assertThat(diagnostic.contraintes())
                 .filteredOn(contrainte -> contrainte.name().equals(CONTRAINTE))
+                .isNotEmpty()
                 .allSatisfy(contrainte -> assertThat(contrainte.matchCount()).isZero());
     }
 

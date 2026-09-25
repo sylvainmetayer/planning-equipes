@@ -115,8 +115,9 @@ class EquiteResourceTest {
 
         assertThat(corps).startsWith((byte) 0xEF, (byte) 0xBB, (byte) 0xBF);
         String csv = new String(corps, java.nio.charset.StandardCharsets.UTF_8).substring(1);
-        assertThat(csv).startsWith("animateur;heuresTotal;2026-W28;");
-        assertThat(csv).contains("\nAlice Martin;3,00;3,00;0,00;3,00;0,00;1;");
+        assertThat(csv)
+                .startsWith("animateur;heuresTotal;2026-W28;")
+                .contains("\nAlice Martin;3,00;3,00;0,00;3,00;0,00;1;");
     }
 
     private static void declarerHeureDebutSoiree(String heure) {

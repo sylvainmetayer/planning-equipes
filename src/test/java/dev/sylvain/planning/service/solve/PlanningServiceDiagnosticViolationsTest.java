@@ -132,7 +132,6 @@ class PlanningServiceDiagnosticViolationsTest {
 
     // --- Floors (issue #495) --------------------------------------------------
 
-    /** Two seats on one stand and one timeslot, both filled: the smallest plan every seat rule evaluates twice. */
     /**
      * Twelve stands on one timeslot, two seats each: twelve stand × timeslot
      * groups and twenty-four filled seats, each animateur holding exactly one.

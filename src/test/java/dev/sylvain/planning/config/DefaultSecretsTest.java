@@ -35,11 +35,6 @@ class DefaultSecretsTest {
                 .doesNotThrowAnyException();
     }
 
-    /**
-     * Absent is not the same as left at the default: under Dev Services the
-     * datasource password is handed out at runtime and the key never appears in
-     * the configuration at all.
-     */
     /** Empty is not "nothing chosen": it is an empty password on the single account. */
     @Test
     void anEmptySecretRefusesTheBoot() {
@@ -63,6 +58,11 @@ class DefaultSecretsTest {
                 .hasMessageNotContaining("n'est pas défini");
     }
 
+    /**
+     * Absent is not the same as left at the default: under Dev Services the
+     * datasource password is handed out at runtime and the key never appears in
+     * the configuration at all.
+     */
     @Test
     void anAbsentSecretDoesNotBlock() {
         assertThatCode(() -> DefaultSecrets.check(null, null)).doesNotThrowAnyException();

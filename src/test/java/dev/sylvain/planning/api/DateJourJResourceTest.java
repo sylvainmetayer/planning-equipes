@@ -252,8 +252,10 @@ class DateJourJResourceTest {
                 .extract()
                 .jsonPath()
                 .getString("date"));
-        assertThat(lue).as("the machine's date, not the one the dump carried").isNotEqualTo(LocalDate.parse(JOUR));
-        assertThat(lue).isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
+        assertThat(lue)
+                .as("the machine's date, not the one the dump carried")
+                .isNotEqualTo(LocalDate.parse(JOUR))
+                .isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
     }
 
     /* ---------------------- What the mock actually moves -------------------- */
@@ -393,8 +395,9 @@ class DateJourJResourceTest {
         // Not "equals today": this suite may straddle midnight, and a test that
         // fails once a night is a test nobody believes.
         LocalDate lue = LocalDate.parse(etat.getString("date"));
-        assertThat(lue).isNotEqualTo(LocalDate.parse(JOUR));
-        assertThat(lue).isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
+        assertThat(lue)
+                .isNotEqualTo(LocalDate.parse(JOUR))
+                .isBetween(LocalDate.now().minusDays(1), LocalDate.now().plusDays(1));
     }
 
     /**

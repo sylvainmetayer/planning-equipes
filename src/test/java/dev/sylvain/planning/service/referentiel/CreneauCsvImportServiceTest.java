@@ -66,10 +66,12 @@ class CreneauCsvImportServiceTest {
 
     @Test
     void thePreviewWritesNothingAndTheImportFillsTheGrid() {
-        String fichier = "date;heureDebut;heureFin;couverturePause\n"
-                + "2026-07-10;09:00;12:00;\n"
-                + "2026-07-10;12:00;13:00;oui\n"
-                + "2026-07-10;13:00;20:00;\n";
+        String fichier = """
+                date;heureDebut;heureFin;couverturePause
+                2026-07-10;09:00;12:00;
+                2026-07-10;12:00;13:00;oui
+                2026-07-10;13:00;20:00;
+                """;
 
         poster("/api/creneaux/import-csv/analyse", fichier)
                 .then()
@@ -137,12 +139,12 @@ class CreneauCsvImportServiceTest {
 
     @Test
     void readsTheDateAndHourDialectsASpreadsheetWrites() {
-        poster(
-                        "/api/creneaux/import-csv",
-                        "date;heureDebut;heureFin\n"
-                                + "10/07/2026;9h;12h30\n"
-                                + "11.07.2026;09:00:00;12:00:00\n"
-                                + "12/07/26;9;12\n")
+        poster("/api/creneaux/import-csv", """
+                        date;heureDebut;heureFin
+                        10/07/2026;9h;12h30
+                        11.07.2026;09:00:00;12:00:00
+                        12/07/26;9;12
+                        """)
                 .then()
                 .statusCode(200)
                 .body("rejected", equalTo(0))
@@ -168,16 +170,16 @@ class CreneauCsvImportServiceTest {
 
     @Test
     void badRowsAreRefusedOneByOneWithoutBlockingTheOthers() {
-        JsonPath rapport = poster(
-                        "/api/creneaux/import-csv/analyse",
-                        "date;heureDebut;heureFin\n"
-                                + "2026-07-10;09:00;12:00\n"
-                                + ";09:00;12:00\n"
-                                + "pas-une-date;09:00;12:00\n"
-                                + "2026-07-10;midi;12:00\n"
-                                + "2026-07-10;09:00;\n"
-                                + "2026-07-10;14:00;14:00\n"
-                                + "2026-07-10;09:00;12:00\n")
+        JsonPath rapport = poster("/api/creneaux/import-csv/analyse", """
+                        date;heureDebut;heureFin
+                        2026-07-10;09:00;12:00
+                        ;09:00;12:00
+                        pas-une-date;09:00;12:00
+                        2026-07-10;midi;12:00
+                        2026-07-10;09:00;
+                        2026-07-10;14:00;14:00
+                        2026-07-10;09:00;12:00
+                        """)
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(1))
@@ -200,9 +202,11 @@ class CreneauCsvImportServiceTest {
      */
     @Test
     void aRefusedRowDoesNotTurnTheNextGoodOneIntoADuplicate() {
-        poster(
-                        "/api/creneaux/import-csv/analyse",
-                        "date;heureDebut;heureFin\n" + "2026-07-10;09:00;09:00\n" + "2026-07-10;09:00;12:00\n")
+        poster("/api/creneaux/import-csv/analyse", """
+                        date;heureDebut;heureFin
+                        2026-07-10;09:00;09:00
+                        2026-07-10;09:00;12:00
+                        """)
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(1))

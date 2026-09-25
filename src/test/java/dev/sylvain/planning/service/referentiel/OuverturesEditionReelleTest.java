@@ -254,7 +254,7 @@ class OuverturesEditionReelleTest {
     }
 
     /** Regenerates the frozen fingerprint; run by hand when a change is meant to move it. */
-    public static void main(String[] args) throws IOException {
+    public static void main() throws IOException {
         Edition edition = readEdition();
         HoraireStandResolver.apply(edition.stands(), edition.creneaux());
         Files.writeString(EMPREINTE, empreinte(edition), StandardCharsets.UTF_8);

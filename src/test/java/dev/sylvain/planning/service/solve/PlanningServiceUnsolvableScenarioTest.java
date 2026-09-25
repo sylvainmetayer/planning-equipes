@@ -73,7 +73,7 @@ class PlanningServiceUnsolvableScenarioTest {
     }
 
     @Test
-    void theFixtureIsAcceptedByTheImportValidator() throws IOException {
+    void theFixtureIsAcceptedByTheImportValidator() {
         assertThat(ScenarioValidator.validate(yaml())).isEmpty();
 
         PlanningEvenement planning = service().buildFromScenarioText(yaml()).planning();

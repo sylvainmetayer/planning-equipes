@@ -109,12 +109,11 @@ class DeplacementResourceTest {
 
         Map<String, String> apres = occupants(
                 given().when().get("/api/planning/persisted").then().extract().jsonPath());
-        assertThat(apres.get(sieges[0])).isEqualTo(avant.get(sieges[1]));
-        assertThat(apres.get(sieges[1])).isEqualTo(avant.get(sieges[0]));
+        assertThat(apres).containsEntry(sieges[0], avant.get(sieges[1])).containsEntry(sieges[1], avant.get(sieges[0]));
         // Nothing else moved: the rest of the plan is exactly what it was.
         avant.keySet().stream()
                 .filter(id -> !id.equals(sieges[0]) && !id.equals(sieges[1]))
-                .forEach(id -> assertThat(apres.get(id)).isEqualTo(avant.get(id)));
+                .forEach(id -> assertThat(apres).containsEntry(id, avant.get(id)));
     }
 
     @Test
@@ -139,7 +138,7 @@ class DeplacementResourceTest {
 
         Map<String, String> apres = occupants(
                 given().when().get("/api/planning/persisted").then().extract().jsonPath());
-        assertThat(apres.get(siege)).isEqualTo(libre);
+        assertThat(apres).containsEntry(siege, libre);
     }
 
     /** A forced unavailability is a hard rule: handing that seat to that person is refused, and named. */

@@ -117,11 +117,6 @@ class AuthentificationAdminTest {
     }
 
     /**
-     * A legal notice readable only once logged in would miss the reader it
-     * exists for: someone deciding whether to trust the site, or an animateur
-     * whose access link has expired and who needs to know whom to contact.
-     */
-    /**
      * The OpenAPI description and Swagger UI ship in production so the deployed
      * instance documents itself. Public, they would hand a map of every
      * endpoint and payload to anyone — and Swagger UI would offer to call them.
@@ -132,6 +127,11 @@ class AuthentificationAdminTest {
         given().when().get("/q/swagger-ui").then().statusCode(401);
     }
 
+    /**
+     * A legal notice readable only once logged in would miss the reader it
+     * exists for: someone deciding whether to trust the site, or an animateur
+     * whose access link has expired and who needs to know whom to contact.
+     */
     @Test
     void lesMentionsLegalesSontLisiblesSansSession() {
         given().when().get("/api/mentions-legales").then().statusCode(200);

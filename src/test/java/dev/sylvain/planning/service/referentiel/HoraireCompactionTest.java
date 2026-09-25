@@ -14,6 +14,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
@@ -105,18 +106,13 @@ class HoraireCompactionTest {
      * because every event day is stated (see {@code baseGroup}).
      */
     @Test
-    void leMotifMajoritaireDevientUneRegleTousLesJoursEtLAutreLaSurcharge() {
+    void theMajorityPatternBecomesAnEveryDayRuleAndTheOtherItsOverride() {
         Stand stand = stand("GIGAMIC");
         for (int jour = 0; jour < NOMBRE_JOURS; jour++) {
             LocalDate date = PREMIER_JOUR.plusDays(jour);
-            boolean weekend = date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
+            boolean weekend = EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY).contains(date.getDayOfWeek());
             stand.getOuvertures()
-                    .add(new OuvertureStand(
-                            null,
-                            date,
-                            weekend ? LocalTime.of(10, 0) : LocalTime.of(14, 0),
-                            LocalTime.of(20, 0),
-                            null));
+                    .add(new OuvertureStand(null, date, LocalTime.of(weekend ? 10 : 14, 0), LocalTime.of(20, 0), null));
         }
 
         HoraireCompaction.compact(List.of(stand), amplitudes(LocalTime.of(20, 0)), true);

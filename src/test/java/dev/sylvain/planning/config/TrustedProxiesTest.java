@@ -110,7 +110,8 @@ class TrustedProxiesTest {
      */
     @Test
     void aHostnameIsRefusedRatherThanResolved() {
-        assertThatThrownBy(() -> TrustedProxies.of(List.of("newt")))
+        List<String> hostname = List.of("newt");
+        assertThatThrownBy(() -> TrustedProxies.of(hostname))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("newt");
     }
@@ -123,12 +124,13 @@ class TrustedProxiesTest {
      */
     @Test
     void aMalformedEntryIsRefusedAtStartup() {
-        assertThatThrownBy(() -> TrustedProxies.of(List.of("172.18.0.0/33")))
+        List<String> prefixTooLong = List.of("172.18.0.0/33");
+        List<String> prefixNotANumber = List.of("172.18.0.0/seize");
+        List<String> octetTooLarge = List.of("172.18.0.999");
+        assertThatThrownBy(() -> TrustedProxies.of(prefixTooLong))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("0 et 32");
-        assertThatThrownBy(() -> TrustedProxies.of(List.of("172.18.0.0/seize")))
-                .isInstanceOf(IllegalArgumentException.class);
-        assertThatThrownBy(() -> TrustedProxies.of(List.of("172.18.0.999")))
-                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TrustedProxies.of(prefixNotANumber)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> TrustedProxies.of(octetTooLarge)).isInstanceOf(IllegalArgumentException.class);
     }
 }

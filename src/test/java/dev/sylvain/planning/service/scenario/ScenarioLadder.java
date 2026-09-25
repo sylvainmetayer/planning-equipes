@@ -290,7 +290,7 @@ final class ScenarioLadder {
                             .isGreaterThanOrEqualTo(endMinute(postes.get(i - 1)));
                 }
                 if (animateur.isMineurOn(date)) {
-                    assertMinorSeat(solved, animateur, poste);
+                    assertMinorSeat(animateur, poste);
                 }
             }
             Map<String, Set<LocalDate>> joursParSemaine = postes.stream()
@@ -341,7 +341,7 @@ final class ScenarioLadder {
         }
     }
 
-    private static void assertMinorSeat(PlanningEvenement solved, Animateur mineur, PosteAffectation poste) {
+    private static void assertMinorSeat(Animateur mineur, PosteAffectation poste) {
         LocalDate date = poste.getCreneau().getDate();
         assertThat(JoursFeries.isFerieInFrance(date))
                 .as("minor %s works on the public holiday %s", mineur.getId(), date)
@@ -351,7 +351,7 @@ final class ScenarioLadder {
                         "minor %s on the adults-only stand %s",
                         mineur.getId(), poste.getStand().getId())
                 .isFalse();
-        long debutNuit = epochMinute(date, isUnderSixteen(mineur, date) ? LocalTime.of(20, 0) : LocalTime.of(22, 0));
+        long debutNuit = epochMinute(date, LocalTime.of(isUnderSixteen(mineur, date) ? 20 : 22, 0));
         long finNuitPrecedente = epochMinute(date, LocalTime.of(6, 0));
         assertThat(startMinute(poste) >= finNuitPrecedente && endMinute(poste) <= debutNuit)
                 .as("minor %s works at night on %s", mineur.getId(), date)

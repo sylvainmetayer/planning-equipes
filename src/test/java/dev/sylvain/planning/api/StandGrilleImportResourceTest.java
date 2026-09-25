@@ -147,7 +147,7 @@ class StandGrilleImportResourceTest {
     }
 
     @Test
-    void unStandInconnuUneCaseIllisibleEtUneColonneSansCreneauSontDits() {
+    void anUnknownStandAnUnreadableCellAndAColumnWithoutTimeslotAreReported() {
         seedScenario();
         JsonPath avant = given().when()
                 .get("/api/ouvertures-stands")
@@ -174,8 +174,9 @@ class StandGrilleImportResourceTest {
                 .extract()
                 .jsonPath();
         List<String> motifs = rapport.getList("rows.reasons.flatten()", String.class);
-        assertThat(motifs).anySatisfy(motif -> assertThat(motif).contains("abc"));
-        assertThat(motifs).anySatisfy(motif -> assertThat(motif).contains("INCONNU"));
+        assertThat(motifs)
+                .anySatisfy(motif -> assertThat(motif).contains("abc"))
+                .anySatisfy(motif -> assertThat(motif).contains("INCONNU"));
     }
 
     @Test

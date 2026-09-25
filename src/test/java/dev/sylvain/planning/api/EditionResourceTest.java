@@ -113,11 +113,11 @@ class EditionResourceTest {
     }
 
     @Test
-    void uneBaseNeuveTientUneSeuleEditionParDefaut() {
+    void aFreshDatabaseHoldsASingleDefaultEdition() {
         assertThat(listEditions())
                 .filteredOn(edition -> DEFAUT.equals(edition.get("id")))
                 .singleElement()
-                .satisfies(edition -> assertThat(edition.get("defaut")).isEqualTo(true));
+                .satisfies(edition -> assertThat(edition).containsEntry("defaut", true));
     }
 
     @Test

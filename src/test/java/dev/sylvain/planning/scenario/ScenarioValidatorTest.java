@@ -49,13 +49,13 @@ class ScenarioValidatorTest {
             """;
 
     @Test
-    void unScenarioMinimalBienFormeNeRemonteAucuneErreur() throws IOException {
+    void unScenarioMinimalBienFormeNeRemonteAucuneErreur() {
         assertThat(ScenarioValidator.validate(MINIMAL)).isEmpty();
     }
 
     /** Issue #343: a stand without any typologie is refused, and the message says which entry. */
     @Test
-    void aStandWithoutTypologieIsReportedByItsEntry() throws IOException {
+    void aStandWithoutTypologieIsReportedByItsEntry() {
         String sansTypologie = MINIMAL.replace("typologiesProposees: [STRATEGIE]", "typologiesProposees: []");
 
         List<String> erreurs = ScenarioValidator.validate(sansTypologie);
@@ -68,17 +68,16 @@ class ScenarioValidatorTest {
     }
 
     @Test
-    void uneSectionObligatoireAbsenteEstSignalee() throws IOException {
+    void aMissingMandatorySectionIsReported() {
         String withoutStands = MINIMAL.replaceAll("(?s)stands:.*?animateurs:", "animateurs:");
 
         List<String> erreurs = ScenarioValidator.validate(withoutStands);
 
-        assertThat(erreurs).isNotEmpty();
-        assertThat(erreurs).anySatisfy(erreur -> assertThat(erreur).startsWith("stands:"));
+        assertThat(erreurs).isNotEmpty().anySatisfy(erreur -> assertThat(erreur).startsWith("stands:"));
     }
 
     @Test
-    void unIdentifiantVideEstSignale() throws IOException {
+    void unIdentifiantVideEstSignale() {
         List<String> erreurs = ScenarioValidator.validate(MINIMAL.replace("id: S1", "id: \"\""));
 
         assertThat(erreurs).anySatisfy(erreur -> assertThat(erreur).contains("stands[0].id"));
@@ -89,7 +88,7 @@ class ScenarioValidatorTest {
      * stand open with no mandatory seat), a negative effectif is not.
      */
     @Test
-    void unEffectifNegatifEstSignaleMaisPasUnEffectifNul() throws IOException {
+    void unEffectifNegatifEstSignaleMaisPasUnEffectifNul() {
         assertThat(ScenarioValidator.validate(MINIMAL.replace("effectifMin: 1", "effectifMin: 0")))
                 .isEmpty();
 
@@ -103,7 +102,7 @@ class ScenarioValidatorTest {
      * festival long. Absent is a violation, named by its entry.
      */
     @Test
-    void unStandSansEffectifEstSignale() throws IOException {
+    void unStandSansEffectifEstSignale() {
         assertThat(ScenarioValidator.validate(MINIMAL.replace("    effectifMin: 1\n", "")))
                 .anySatisfy(erreur -> assertThat(erreur).startsWith("stands[0].effectifMin:"));
 
@@ -116,7 +115,7 @@ class ScenarioValidatorTest {
      * scenario sections are validated recursively via {@code @Valid}.
      */
     @Test
-    void unParametreLegalNegatifEstSignale() throws IOException {
+    void unParametreLegalNegatifEstSignale() {
         String withLegaux = MINIMAL + """
                 parametresLegaux:
                   dureeVacationMaxMinutes: 0
@@ -180,7 +179,7 @@ class ScenarioValidatorTest {
      * names — is the import's to refuse, like every other cross-reference.
      */
     @Test
-    void aConsigneWithoutABandStartOrAMotifIsReported() throws IOException {
+    void aConsigneWithoutABandStartOrAMotifIsReported() {
         String consigne = """
                 consignes:
                   - date: 2026-07-08
@@ -203,7 +202,7 @@ class ScenarioValidatorTest {
     }
 
     @Test
-    void aPresetWithoutANameIsReported() throws IOException {
+    void aPresetWithoutANameIsReported() {
         String prereglage = """
                 prereglagesConsigne:
                   - fermetureDebut: "12:00"

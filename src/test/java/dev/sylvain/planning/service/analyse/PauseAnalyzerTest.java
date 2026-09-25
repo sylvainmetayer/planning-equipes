@@ -644,8 +644,9 @@ class PauseAnalyzerTest {
         var parAnimateur = analyzer.pausesByAnimateur(planning);
 
         assertThat(parAnimateur.keySet()).containsExactlyInAnyOrder("alice", "bob");
-        assertThat(parAnimateur.get("alice")).isEqualTo(analyzer.pausesAnimateur(planning, "alice"));
-        assertThat(parAnimateur.get("bob")).isEqualTo(analyzer.pausesAnimateur(planning, "bob"));
+        assertThat(parAnimateur)
+                .containsEntry("alice", analyzer.pausesAnimateur(planning, "alice"))
+                .containsEntry("bob", analyzer.pausesAnimateur(planning, "bob"));
         // Somebody who owes none is simply absent, and the caller falls back on an empty list.
         assertThat(parAnimateur).doesNotContainKey("repos");
     }

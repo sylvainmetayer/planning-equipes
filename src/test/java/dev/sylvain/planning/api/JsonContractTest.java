@@ -97,7 +97,7 @@ class JsonContractTest {
                             "dev.sylvain.planning.api." + simpleName, false, JsonContractTest.class.getClassLoader());
                     classes.add(type);
                     classes.addAll(List.of(type.getDeclaredClasses()));
-                } catch (ClassNotFoundException | NoClassDefFoundError ignored) {
+                } catch (ClassNotFoundException | NoClassDefFoundError _) {
                     // A file carrying no class of that name is simply skipped.
                 }
             }
@@ -216,11 +216,12 @@ class JsonContractTest {
     void theWalkReachesTheTypesTheApiReallyExposes() throws IOException {
         SortedMap<String, SortedSet<String>> contract = exposedKeys();
 
-        assertThat(contract).as("types reachable from the REST layer").hasSizeGreaterThan(40);
-        assertThat(contract.keySet())
+        assertThat(contract)
+                .as("types reachable from the REST layer")
+                .hasSizeGreaterThan(40)
                 .as("the walk must reach a domain type returned bare, a nested response record, "
                         + "and a type only ever reached through another one's property")
-                .contains("domain.Animateur", "api.AnimateurResource$AnimateurToken", "domain.FenetreHoraire");
+                .containsKeys("domain.Animateur", "api.AnimateurResource$AnimateurToken", "domain.FenetreHoraire");
         assertThat(contract.get("domain.Animateur"))
                 .as("the animateur carries the espace access token on the wire")
                 .isNotEmpty();

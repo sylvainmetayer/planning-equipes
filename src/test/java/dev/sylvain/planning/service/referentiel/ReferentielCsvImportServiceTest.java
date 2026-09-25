@@ -171,16 +171,16 @@ class ReferentielCsvImportServiceTest {
     }
 
     @Test
-    void lesLignesFautivesSontRefuseesUneParUneSansBloquerLesAutres() {
-        io.restassured.path.json.JsonPath rapport = poster(
-                        "/api/stands/import-csv/analyse",
-                        "id;nom;typologies;effectifMin;effectifMax\n"
-                                + "OK;Bon stand;JEU;1;2\n"
-                                + ";Sans id;JEU;;\n"
-                                + "DOUBLON;Un;JEU;;\n"
-                                + "DOUBLON;Deux;JEU;;\n"
-                                + "MAX;Inversé;JEU;4;2\n"
-                                + "NUM;Pas un nombre;JEU;deux;\n")
+    void faultyRowsAreRefusedOneByOneWithoutBlockingTheOthers() {
+        io.restassured.path.json.JsonPath rapport = poster("/api/stands/import-csv/analyse", """
+                        id;nom;typologies;effectifMin;effectifMax
+                        OK;Bon stand;JEU;1;2
+                        ;Sans id;JEU;;
+                        DOUBLON;Un;JEU;;
+                        DOUBLON;Deux;JEU;;
+                        MAX;Inversé;JEU;4;2
+                        NUM;Pas un nombre;JEU;deux;
+                        """)
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(2))

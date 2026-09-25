@@ -224,7 +224,7 @@ class ScenarioLadderMediumTest {
         Map<Creneau, Long> siegesSamedi = loaded.problem().getPostes().stream()
                 .filter(poste -> poste.getCreneau().getDate().equals(samedi))
                 .collect(Collectors.groupingBy(PosteAffectation::getCreneau, Collectors.counting()));
-        assertThat(siegesSamedi.get(samediVacations.get(1))).isEqualTo(siegesSamedi.get(samediVacations.get(0)));
+        assertThat(siegesSamedi).containsEntry(samediVacations.get(1), siegesSamedi.get(samediVacations.get(0)));
         loaded.creneaux().stream()
                 .filter(vacation -> vacation.getDate().getDayOfWeek().getValue() <= 5)
                 .collect(Collectors.groupingBy(Creneau::getDate))

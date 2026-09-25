@@ -174,19 +174,16 @@ class AnimateurCsvExempleTest {
         inEdition(() -> csvImport.apply(exampleRequest()));
         List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
 
-        assertThat(importes).hasSizeBetween(10, 15);
         assertThat(importes)
+                .hasSizeBetween(10, 15)
                 .anySatisfy(animateur -> assertThat(joursEvenement)
                         .allSatisfy(jour -> assertThat(animateur.isMineurOn(jour) && !animateur.isUnder16On(jour))
                                 .as("%s is 16 or 17 on %s", animateur.getId(), jour)
-                                .isTrue()));
-        assertThat(importes)
+                                .isTrue()))
                 .anySatisfy(animateur -> assertThat(joursEvenement)
                         .allSatisfy(
-                                jour -> assertThat(animateur.isMajeurOn(jour)).isTrue()));
-        assertThat(importes)
-                .anySatisfy(animateur -> assertThat(animateur.isManager()).isTrue());
-        assertThat(importes)
+                                jour -> assertThat(animateur.isMajeurOn(jour)).isTrue()))
+                .anySatisfy(animateur -> assertThat(animateur.isManager()).isTrue())
                 .anySatisfy(animateur -> assertThat(animateur.isManager()).isFalse());
         assertThat(importes.stream()
                         .flatMap(animateur -> animateur.getCompetences().values().stream())
@@ -195,15 +192,11 @@ class AnimateurCsvExempleTest {
         assertThat(importes)
                 .anySatisfy(animateur -> assertThat(animateur.getCompetences())
                         .hasSizeGreaterThan(1)
-                        .containsValue(NiveauCompetence.REFERENT));
-        assertThat(importes)
-                .anySatisfy(animateur -> assertThat(animateur.getSouhaits()).hasSizeGreaterThan(1));
-        assertThat(importes)
+                        .containsValue(NiveauCompetence.REFERENT))
+                .anySatisfy(animateur -> assertThat(animateur.getSouhaits()).hasSizeGreaterThan(1))
                 .anySatisfy(animateur ->
-                        assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1));
-        assertThat(importes)
-                .anySatisfy(animateur -> assertThat(animateur.getEmail()).contains("@"));
-        assertThat(importes)
+                        assertThat(animateur.getJoursIndisponibles()).hasSizeGreaterThan(1))
+                .anySatisfy(animateur -> assertThat(animateur.getEmail()).contains("@"))
                 .anySatisfy(animateur -> assertThat(animateur.getEmail()).isNull());
     }
 
@@ -224,7 +217,7 @@ class AnimateurCsvExempleTest {
         inEdition(() -> csvImport.apply(exampleRequest()));
         List<Animateur> importes = inEdition(() -> referenceData.listAnimateurs());
 
-        assertThat(importes).allSatisfy(animateur -> {
+        assertThat(importes).isNotEmpty().allSatisfy(animateur -> {
             assertThat(typologies).containsAll(animateur.getCompetences().keySet());
             assertThat(typologies).containsAll(animateur.getSouhaits());
             assertThat(joursEvenement).containsAll(animateur.getJoursIndisponibles());
@@ -259,8 +252,9 @@ class AnimateurCsvExempleTest {
     void exampleDatesAreIsoToSurviveASpreadsheet() {
         String exemple = exemple();
 
-        assertThat(exemple).doesNotContainPattern("(?<!\\d)\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4}(?!\\d)");
-        assertThat(exemple).containsPattern("\\d{4}-\\d{2}-\\d{2}");
+        assertThat(exemple)
+                .doesNotContainPattern("(?<!\\d)\\d{1,2}[/.-]\\d{1,2}[/.-]\\d{2,4}(?!\\d)")
+                .containsPattern("\\d{4}-\\d{2}-\\d{2}");
     }
 
     /**

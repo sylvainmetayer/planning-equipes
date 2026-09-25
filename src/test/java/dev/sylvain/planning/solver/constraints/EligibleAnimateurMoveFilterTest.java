@@ -55,7 +55,7 @@ class EligibleAnimateurMoveFilterTest extends ConstraintTestBase {
         try {
             verify(contrainte).given(poste, poste.getAnimateur(), parametres).penalizesBy(0);
             return false;
-        } catch (AssertionError pénalisé) {
+        } catch (AssertionError _) {
             return true;
         }
     }

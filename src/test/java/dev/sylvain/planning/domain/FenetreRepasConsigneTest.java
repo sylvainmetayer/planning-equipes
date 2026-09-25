@@ -41,14 +41,14 @@ class FenetreRepasConsigneTest {
     }
 
     @Test
-    void sansSurchargeLesFenetresDeLEditionRestentSeulesEtSansExclusion() {
+    void withoutAnOverrideTheEditionWindowsStandAloneWithoutExclusion() {
         List<FenetreRepas> fenetres = FenetreRepas.from(parametres(), List.of(consigne(null)));
 
-        assertThat(fenetres).hasSize(2);
         assertThat(fenetres)
+                .hasSize(2)
                 .allMatch(fenetre ->
-                        fenetre.date() == null && fenetre.datesExclues().isEmpty());
-        assertThat(fenetres).allMatch(fenetre -> fenetre.appliesTo(JOUR));
+                        fenetre.date() == null && fenetre.datesExclues().isEmpty())
+                .allMatch(fenetre -> fenetre.appliesTo(JOUR));
     }
 
     @Test
@@ -87,8 +87,7 @@ class FenetreRepasConsigneTest {
 
         List<FenetreRepas> fenetres = FenetreRepas.from(parametres(), List.of(consigne(repas)));
 
-        assertThat(fenetres).hasSize(2);
-        assertThat(fenetres).allMatch(f -> f.date() == null);
+        assertThat(fenetres).hasSize(2).allMatch(f -> f.date() == null);
         assertThat(fenetres.get(1).libelle()).isEqualTo(FenetreRepas.SOIR);
         assertThat(fenetres.get(1).appliesTo(JOUR)).isTrue();
     }

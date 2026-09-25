@@ -80,7 +80,7 @@ class PlanningPdfContenuTest {
             null);
 
     @Test
-    void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
+    void theIndividualPdfNamesTheAnimateurTheirStandsAndRestDays() throws IOException {
         PlanningEvenement planning = planning();
 
         String text = textOf(service.exportAnimateurPdf(planning, "A-ADA"));
@@ -92,8 +92,8 @@ class PlanningPdfContenuTest {
                 .contains("Éditeur Vedette")
                 .contains("Kiosque Central")
                 .contains("09:00")
-                .contains("Repos");
-        assertThat(text).doesNotContain("null");
+                .contains("Repos")
+                .doesNotContain("null");
         write("contenu-animateur.txt", text);
     }
 
@@ -181,7 +181,7 @@ class PlanningPdfContenuTest {
      * unnumbered sheet does not.
      */
     @Test
-    void leLivretEnchaineVueDEnsembleJourneesPuisEquipes() throws IOException {
+    void theBookletChainsOverviewThenDaysThenTeams() throws IOException {
         List<String> lignes = textOf(service.exportAnimateurPdf(planning(), "A-ADA"))
                 .lines()
                 .map(String::strip)
@@ -195,11 +195,11 @@ class PlanningPdfContenuTest {
                         "Vos journées",
                         "2 / 3",
                         "Avec qui, et où",
-                        "3 / 3");
-        // The four figures of the overview, hours first: what the animateur
-        // checks against what they agreed to.
-        assertThat(lignes).containsSubsequence("8", "heures travaillées", "1", "créneaux", "2", "stands");
-        assertThat(lignes).contains("Du vendredi 14 au samedi 15 août 2026 · 2 jours, dont 1 de repos");
+                        "3 / 3")
+                // The four figures of the overview, hours first: what the animateur
+                // checks against what they agreed to.
+                .containsSubsequence("8", "heures travaillées", "1", "créneaux", "2", "stands")
+                .contains("Du vendredi 14 au samedi 15 août 2026 · 2 jours, dont 1 de repos");
     }
 
     /**
@@ -224,14 +224,14 @@ class PlanningPdfContenuTest {
      * nobody reads.
      */
     @Test
-    void unPosteTresPeupleAfficheUnEffectifEtPasDeNoms() throws IOException {
+    void aCrowdedSeatShowsAHeadcountAndNoNames() throws IOException {
         String text = textOf(service.exportAnimateurPdf(planningFestival(), "A-ADA"));
 
         assertThat(text)
                 .contains("Avec 9 personnes")
                 .contains("Les vacations en nombre")
-                .contains("Montage");
-        assertThat(text).doesNotContain("Renfort 5");
+                .contains("Montage")
+                .doesNotContain("Renfort 5");
     }
 
     /** A worked day a consigne governs carries the sentence under its date, banner and all. */
@@ -296,7 +296,7 @@ class PlanningPdfContenuTest {
      * calendar week by week, then the teams and the places.
      */
     @Test
-    void laFeuilleRectoVersoDitLaMemeChoseSurDeuxPages() throws IOException {
+    void theDoubleSidedSheetSaysTheSameThingOnTwoPages() throws IOException {
         byte[] pdf = service.exportAnimateurPdf(planningFestival(), "A-ADA", FormatPlanning.FEUILLE);
 
         String text = textOf(pdf);
@@ -308,8 +308,8 @@ class PlanningPdfContenuTest {
                 .contains("Repères")
                 .contains("Avec qui, et où")
                 .contains("Vos coéquipiers sur les stands")
-                .contains("Avec 9 personnes");
-        assertThat(text).doesNotContain("null");
+                .contains("Avec 9 personnes")
+                .doesNotContain("null");
     }
 
     /** The team-mates on the same row are named, the animateur themselves is not. */
@@ -380,7 +380,7 @@ class PlanningPdfContenuTest {
      * seats nobody holds are written in plain sight.
      */
     @Test
-    void lePdfGlobalEnchaineSommaireEnsembleJourneeStandEtAnimateurs() throws IOException {
+    void theGlobalPdfChainsContentsOverviewDayStandAndAnimateurs() throws IOException {
         PlanningEvenement planning = planning();
 
         String text = textOf(service.exportGlobalPdf(planning));
@@ -400,8 +400,8 @@ class PlanningPdfContenuTest {
                 .contains("Stratèges Associés")
                 .contains("Ada Lovelace")
                 .contains("Alan Turing")
-                .contains("Aucun animateur affecté");
-        assertThat(text).doesNotContain("null");
+                .contains("Aucun animateur affecté")
+                .doesNotContain("null");
     }
 
     /** An animateur with neither prenom nor nom shows by id, never as "null null" nor blank. */
@@ -510,7 +510,7 @@ class PlanningPdfContenuTest {
 
         for (Map.Entry<String, byte[]> document : documents) {
             try (PdfReader reader = new PdfReader(document.getValue())) {
-                assertThat(reader.getInfo().get("Title")).isEqualTo(document.getKey());
+                assertThat(reader.getInfo()).containsEntry("Title", document.getKey());
                 PdfDictionary catalogue = reader.getCatalog();
                 assertThat(catalogue.getAsString(PdfName.LANG).toUnicodeString())
                         .isEqualTo("fr-FR");
@@ -621,11 +621,6 @@ class PlanningPdfContenuTest {
     }
 
     /**
-     * A wider planning: the same stand met twice with the same person, a
-     * hundred-strong set-up, and a day off — what the gathered team-mates and
-     * the « effectif rather than names » rule need to be read on.
-     */
-    /**
      * Three shifts a day for four weeks — the shape that used to be cut: the
      * more weeks the calendar holds, the shorter its rows, and a fixed height
      * dropped whatever came last in the box.
@@ -658,6 +653,11 @@ class PlanningPdfContenuTest {
                 LocalDate.of(2026, 8, 3), new ArrayList<>(List.of(ada, alan, grace, byron)), postes);
     }
 
+    /**
+     * A wider planning: the same stand met twice with the same person, a
+     * hundred-strong set-up, and a day off — what the gathered team-mates and
+     * the « effectif rather than names » rule need to be read on.
+     */
     private static PlanningEvenement planningFestival() {
         Stand strategie = new Stand("STAND-1", "Stratèges Associés", Set.of("STRATEGIE"), 1, 4, false);
         Stand montage = new Stand("STAND-M", "Montage du festival", Set.of("AMBIANCE"), 1, 20, false);

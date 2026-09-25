@@ -76,8 +76,7 @@ class ScenarioYamlWriterTest {
 
         assertThat(parsed.get("festival"))
                 .isInstanceOfSatisfying(
-                        Map.class,
-                        evenement -> assertThat(evenement.get("dateDebut")).isEqualTo("2026-08-14"));
+                        Map.class, evenement -> assertThat(evenement).containsEntry("dateDebut", "2026-08-14"));
 
         List<Map<String, Object>> creneaux = (List<Map<String, Object>>) parsed.get("creneaux");
         assertThat(creneaux).hasSize(1);

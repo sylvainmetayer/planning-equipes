@@ -245,10 +245,13 @@ class HistoriqueResourceTest {
         statuts.forEach((action, statut) -> {
             // Newest first: the first line of that action is the one just written.
             Map<String, Object> ligne = historique.getMap("find { it.action == '" + action + "' }");
-            assertThat(ligne).as("ligne d'historique de %s", action).isNotNull();
-            assertThat(ligne.get("acteur")).as(action).isEqualTo("ADMIN");
-            assertThat(ligne.get("resultat")).as(action).isEqualTo("SUCCES");
-            assertThat(ligne.get("statut")).as(action).isEqualTo(statut);
+            assertThat(ligne)
+                    .as("ligne d'historique de %s", action)
+                    .isNotNull()
+                    .as(action)
+                    .containsEntry("acteur", "ADMIN")
+                    .containsEntry("resultat", "SUCCES")
+                    .containsEntry("statut", statut);
             // What left, and when — never what was in it. The referentials'
             // archive names which ones it carried, the others name nothing.
             assertThat((List<?>) ligne.get("champs"))
@@ -314,10 +317,11 @@ class HistoriqueResourceTest {
                 .extract()
                 .jsonPath()
                 .getList("$");
-        assertThat(page).hasSize(4).allSatisfy(ligne -> assertThat(exportCodes).contains((String) ligne.get("action")));
         assertThat(page)
+                .hasSize(4)
+                .allSatisfy(ligne -> assertThat(exportCodes).contains((String) ligne.get("action")))
                 .as("l'export réussi, derrière des lignes plus récentes que la page")
-                .anySatisfy(ligne -> assertThat(ligne.get("champs")).isEqualTo(List.of("stands")));
+                .anySatisfy(ligne -> assertThat(ligne).containsEntry("champs", List.of("stands")));
 
         for (int i = 0; i < 3; i++) {
             given().when().delete("/api/animateurs/HIST-X" + i).then().statusCode(204);

@@ -64,8 +64,10 @@ class GrilleCompetencesTest {
 
         String csv = GrilleCompetences.csv(List.of(alice, bruno), List.of("jeux", "ateliers"));
 
-        assertThat(csv).isEqualTo("animateur;jeux;ateliers\nA1;REFERENT;\nB2;;\n");
-        assertThat(csv).doesNotContain("Alice").doesNotContain("Martin");
+        assertThat(csv)
+                .isEqualTo("animateur;jeux;ateliers\nA1;REFERENT;\nB2;;\n")
+                .doesNotContain("Alice")
+                .doesNotContain("Martin");
     }
 
     @Test

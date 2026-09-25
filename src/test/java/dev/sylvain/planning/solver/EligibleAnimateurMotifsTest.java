@@ -104,12 +104,6 @@ class EligibleAnimateurMotifsTest {
     }
 
     /**
-     * A minor is not refused on principle: on a short, daytime, non-holiday
-     * créneau of an unrestricted stand, nothing here stands in their way — the
-     * rules that could still stop them (adult supervision, daily totals) depend
-     * on the rest of the plan and are the score's business, not this filter's.
-     */
-    /**
      * A long créneau no longer caps a minor's stretch here: the break it owes
      * may be relayed by a colleague, which is a fact about the rest of the plan
      * and so the score's business (ADR 0048). Six hours count 5 h 30 of work
@@ -146,6 +140,12 @@ class EligibleAnimateurMotifsTest {
                 .isEmpty();
     }
 
+    /**
+     * A minor is not refused on principle: on a short, daytime, non-holiday
+     * créneau of an unrestricted stand, nothing here stands in their way — the
+     * rules that could still stop them (adult supervision, daily totals) depend
+     * on the rest of the plan and are the score's business, not this filter's.
+     */
     @Test
     void aMinorOnAnOrdinarySlotIsNotRefusedHere() {
         Creneau courtEtDeJour = new Creneau(1L, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(13, 0));

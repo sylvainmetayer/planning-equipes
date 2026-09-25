@@ -130,27 +130,27 @@ class ImportScenarioContraintesTest {
     }
 
     @Test
-    void laSectionDuFichierEteintLesReglesQuelleNomme() {
+    void theFileSectionSwitchesOffTheRulesItNames() {
         importer(AVEC_CONTRAINTES);
 
-        assertThat(contrainte("eviterRoulementStandsPremium").get("actif")).isEqualTo(false);
-        assertThat(contrainte("equilibrerCharge").get("actif")).isEqualTo(true);
+        assertThat(contrainte("eviterRoulementStandsPremium")).containsEntry("actif", false);
+        assertThat(contrainte("equilibrerCharge")).containsEntry("actif", true);
     }
 
     @Test
-    void laSectionDuFichierPoseLesPoidsQuelleDonne() {
+    void theFileSectionSetsTheWeightsItGives() {
         importer(AVEC_CONTRAINTES);
 
-        assertThat(contrainte("equilibrerCharge").get("poids")).isEqualTo(7);
-        assertThat(contrainte("maxJoursConsecutifsTravailles").get("poids")).isEqualTo(3);
+        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 7);
+        assertThat(contrainte("maxJoursConsecutifsTravailles")).containsEntry("poids", 3);
         // A rule the section does not weigh keeps the deployment default.
-        assertThat(contrainte("limiterEmplacementsParJour").get("poids")).isEqualTo(1);
+        assertThat(contrainte("limiterEmplacementsParJour")).containsEntry("poids", 1);
     }
 
     @Test
-    void unSecondImportRallumeCeQueLePremierAvaitEteint() {
+    void aSecondImportSwitchesBackOnWhatTheFirstSwitchedOff() {
         importer(AVEC_CONTRAINTES);
-        assertThat(contrainte("eviterRoulementStandsPremium").get("actif")).isEqualTo(false);
+        assertThat(contrainte("eviterRoulementStandsPremium")).containsEntry("actif", false);
 
         importer(AVEC_AUTRES_CONTRAINTES);
 
@@ -158,14 +158,14 @@ class ImportScenarioContraintesTest {
         // not named by the second, so it comes back active. Otherwise the
         // "same" scenario would keep solving a different problem depending on
         // what the destination edition happened to carry.
-        assertThat(contrainte("eviterRoulementStandsPremium").get("actif")).isEqualTo(true);
-        assertThat(contrainte("limiterEmplacementsParJour").get("actif")).isEqualTo(false);
+        assertThat(contrainte("eviterRoulementStandsPremium")).containsEntry("actif", true);
+        assertThat(contrainte("limiterEmplacementsParJour")).containsEntry("actif", false);
     }
 
     @Test
-    void unSecondImportRendLeurPoidsParDefautAuxReglesQuilNePesePas() {
+    void aSecondImportRestoresTheDefaultWeightOfTheRulesItDoesNotWeigh() {
         importer(AVEC_CONTRAINTES);
-        assertThat(contrainte("equilibrerCharge").get("poids")).isEqualTo(7);
+        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 7);
 
         importer(AVEC_AUTRES_CONTRAINTES);
 
@@ -173,12 +173,12 @@ class ImportScenarioContraintesTest {
         // not overwritten with a literal, so the weight is whatever
         // application.properties says — a uniformly neutral 1 since the two
         // business ratios moved to the scenarios that need them.
-        assertThat(contrainte("equilibrerCharge").get("poids")).isEqualTo(1);
-        assertThat(contrainte("maxJoursConsecutifsTravailles").get("poids")).isEqualTo(1);
+        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 1);
+        assertThat(contrainte("maxJoursConsecutifsTravailles")).containsEntry("poids", 1);
     }
 
     @Test
-    void unFichierSansSectionNeToucheARien() {
+    void aFileWithoutTheSectionTouchesNothing() {
         importer(AVEC_CONTRAINTES);
 
         importer(SANS_SECTION);
@@ -186,8 +186,8 @@ class ImportScenarioContraintesTest {
         // Absent is not empty: a file written before the section existed must
         // not wipe the settings of the edition receiving it. Only a file that
         // takes a position decides.
-        assertThat(contrainte("eviterRoulementStandsPremium").get("actif")).isEqualTo(false);
-        assertThat(contrainte("equilibrerCharge").get("poids")).isEqualTo(7);
+        assertThat(contrainte("eviterRoulementStandsPremium")).containsEntry("actif", false);
+        assertThat(contrainte("equilibrerCharge")).containsEntry("poids", 7);
     }
 
     @Test

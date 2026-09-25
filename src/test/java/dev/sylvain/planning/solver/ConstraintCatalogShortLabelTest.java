@@ -26,8 +26,8 @@ class ConstraintCatalogShortLabelTest {
     void everyRuleOfTheCatalogueHasAShortLabel() {
         List<ConstraintDefinition> definitions = ConstraintCatalog.definitions();
 
-        assertThat(definitions).isNotEmpty();
         assertThat(definitions)
+                .isNotEmpty()
                 .allSatisfy(definition -> assertThat(definition.libelleCourt())
                         .as(definition.name())
                         .isNotBlank()

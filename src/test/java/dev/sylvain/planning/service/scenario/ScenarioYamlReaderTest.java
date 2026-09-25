@@ -200,8 +200,10 @@ class ScenarioYamlReaderTest {
     void everyListedScenarioIsAYamlFileAndTheListIsSorted() {
         List<String> scenarios = ScenarioYamlReader.listScenarios();
 
-        assertThat(scenarios).isNotEmpty().isSorted();
-        assertThat(scenarios).allSatisfy(name -> assertThat(name).matches(".+\\.(yaml|yml)"));
+        assertThat(scenarios)
+                .isNotEmpty()
+                .isSorted()
+                .allSatisfy(name -> assertThat(name).matches(".+\\.(yaml|yml)"));
     }
 
     /**

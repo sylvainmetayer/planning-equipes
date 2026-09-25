@@ -69,7 +69,7 @@ class ContainerTestsInventoryTest {
      * matching would otherwise empty the inventory without a word.
      */
     @Test
-    void lInventaireDitBienCeQueLAnnotationDit() {
+    void theInventorySaysWhatTheAnnotationSays() {
         Set<String> nonAnnotees = new TreeSet<>();
         for (String line : listed()) {
             String name = line.replace(".java", "").replace('/', '.');
@@ -78,7 +78,7 @@ class ContainerTestsInventoryTest {
                 if (!classe.isAnnotationPresent(QuarkusTest.class)) {
                     nonAnnotees.add(line);
                 }
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException _) {
                 nonAnnotees.add(line + " (classe introuvable)");
             }
         }

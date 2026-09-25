@@ -13,7 +13,6 @@ import dev.sylvain.planning.scenario.ScenarioValidator;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.scenario.ScenarioYamlWriter;
-import java.io.IOException;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
@@ -149,7 +148,7 @@ class PlanningServiceScenarioAllerRetourTest {
      * had just written.
      */
     @Test
-    void anExportedScenarioCarriesNoAliasAndPassesTheValidator() throws IOException {
+    void anExportedScenarioCarriesNoAliasAndPassesTheValidator() {
         Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
         // Two animateurs with nothing off: the empty list is the same instance.
@@ -210,15 +209,14 @@ class PlanningServiceScenarioAllerRetourTest {
      * would cope.
      */
     @Test
-    void lesIdentifiantsSontExportesEnChaineCommeLeSchemaLeDeclare() {
+    void idsAreExportedAsStringsAsTheSchemaDeclares() {
         Creneau creneau = creneau(1L, LocalTime.of(9, 0), LocalTime.of(13, 0));
         Stand stand = stand("STAND-A");
 
         String yaml = ScenarioYamlWriter.buildScenarioYaml(
                 List.of(animateur("A1")), List.of(stand), List.of(creneau), List.of(poste("P1", stand, creneau)));
 
-        assertThat(yaml).contains("id: '1'").doesNotContain("id: 1\n");
-        assertThat(yaml).contains("creneauId: '1'");
+        assertThat(yaml).contains("id: '1'").doesNotContain("id: 1\n").contains("creneauId: '1'");
     }
 
     /**

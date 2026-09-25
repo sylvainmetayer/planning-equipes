@@ -16,6 +16,7 @@ import dev.sylvain.planning.service.scenario.ScenarioLadder.Loaded;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -39,7 +40,7 @@ class ScenarioLadderLargeTest {
     private static final long CEILING_SECONDS = 900L;
 
     private static boolean isWeekend(LocalDate date) {
-        return date.getDayOfWeek() == DayOfWeek.SATURDAY || date.getDayOfWeek() == DayOfWeek.SUNDAY;
+        return EnumSet.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY).contains(date.getDayOfWeek());
     }
 
     private static int standNumber(PosteAffectation poste) {
