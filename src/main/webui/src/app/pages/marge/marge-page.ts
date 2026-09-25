@@ -53,6 +53,13 @@ import { nextGridCell } from '../../core/grid-navigation';
  */
 export type MarginView = ModeMarge | 'TENSION';
 
+/** The `mode` query param of each reading; the default one leaves the URL bare. */
+const MODE_PARAMS: Readonly<Record<MarginView, string | null>> = {
+  AVANT: null,
+  APRES: 'apres',
+  TENSION: 'tension',
+};
+
 /**
  * « Marge disponible » (issue #499): the day × timeslot grid of what is left —
  * the animateurs available at that moment minus the seats still to staff.
@@ -147,13 +154,11 @@ export class MargePage {
   protected readonly detail = signal<CelluleTension | null>(null);
 
   /** Rows × columns of the grid on screen, whichever reading it is. */
-  private readonly dimensions = computed(() => {
-    const lignes =
-      this.mode() === 'TENSION'
-        ? this.tableTension().lignes.map((ligne) => ligne.cellules.length)
-        : this.table().lignes.map((ligne) => ligne.cellules.length);
-    return lignes;
-  });
+  private readonly dimensions = computed(() =>
+    (this.mode() === 'TENSION' ? this.tableTension() : this.table()).lignes.map(
+      (ligne) => ligne.cellules.length,
+    ),
+  );
 
   /**
    * The cell the grid hands the focus to (roving tabindex): one stop for the
@@ -180,9 +185,7 @@ export class MargePage {
 
   constructor() {
     this.seedStateFromQueryParams();
-    keepViewInQueryParams(() => ({
-      mode: this.mode() === 'AVANT' ? null : this.mode() === 'APRES' ? 'apres' : 'tension',
-    }));
+    keepViewInQueryParams(() => ({ mode: MODE_PARAMS[this.mode()] }));
   }
 
   private seedStateFromQueryParams(): void {
