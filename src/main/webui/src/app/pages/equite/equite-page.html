@@ -81,6 +81,7 @@
           <h2 class="equite-fiche-nom">
             <a class="equite-lien-fiche" [routerLink]="['/animateurs', choisie.animateurId]">{{ choisie.nom }}</a>
           </h2>
+          <div class="equite-fiche-corps">
           <table class="equite-fiche">
             <caption class="visually-hidden" i18n="@@equite.fiche.caption">Équité d'un animateur : un indicateur par ligne, sa valeur, son écart à la médiane et la synthèse de la colonne</caption>
             <thead>
@@ -137,6 +138,33 @@
               }
             </tbody>
           </table>
+          <div class="equite-fiche-radar">
+            <div class="equite-radar-options" role="group" aria-label="Axes ajoutés au radar" i18n-aria-label="@@equite.radar.options">
+              @for (axe of optionalAxes; track axe) {
+                <mat-checkbox [checked]="radarAxes().includes(axe)" (change)="toggleAxis(axe, $event.checked)">{{ libelleColonne(axe) }}</mat-checkbox>
+              }
+            </div>
+            <mat-form-field appearance="outline" class="equite-recherche" subscriptSizing="dynamic">
+              <mat-label i18n="@@equite.radar.compare.label">Comparer avec…</mat-label>
+              <input
+                matInput
+                [matAutocomplete]="autoCompare"
+                [ngModel]="comparedSearch()"
+                (ngModelChange)="onComparedSearch($event)"
+                i18n-placeholder="@@equite.fiche.placeholder"
+                placeholder="Nom, prénom, identifiant…"
+              />
+              <mat-autocomplete #autoCompare="matAutocomplete" (optionSelected)="chooseCompared($event.option.value)">
+                @for (ligne of comparedSuggestions(); track ligne.animateurId) {
+                  <mat-option [value]="ligne.animateurId">{{ ligne.nom }}</mat-option>
+                }
+              </mat-autocomplete>
+            </mat-form-field>
+            <app-equite-radar [report]="report" [row]="choisie" [second]="comparedRow()" [optionalAxes]="radarAxes()" />
+          </div>
+          </div>
+        } @else if (knownWithoutSeat()) {
+          <p class="empty-hint" i18n="@@equite.fiche.sansPoste">Cet animateur n'a aucun poste dans le planning enregistré : pas de radar à dessiner.</p>
         } @else {
           <p class="empty-hint" i18n="@@equite.fiche.aucun">
             Tapez un nom pour lire la fiche d'un animateur : ses indicateurs l'un sous l'autre, avec leur écart à la médiane.

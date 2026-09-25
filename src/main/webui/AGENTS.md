@@ -137,7 +137,7 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
   by typologie of jeu, under four renderings chosen on the page: the table, the
   compared bars, the typologie × jour heatmap and the cards; four filters narrow
-  the rows and every animateur is a link to their timeline), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median),
+  the rows and every animateur is a link to their timeline), `/equite` (« Équité » — one line per assigned animateur: evening, week-end and holiday hours, demanding seats, variety, honoured wishes, rest days, each with its distance to the median; `?vue=fiche&animateur=` reads one person, and puts next to their table a radar drawn by hand in SVG over the pure `radar.ts` — the person against the median and the min–max band, optional axes in `?axes=`, a second person in `?comparer=`),
   `/repos` (« Jours de repos » — who works, who
   rests, who was unavailable, under two renderings chosen by `?vue=grille|frise`:
   the animateur × day grid, whose cells print their hours only under
