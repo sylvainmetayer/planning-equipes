@@ -63,29 +63,36 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
         random.seed(seed)
 
     date_debut = datetime.strptime(date_debut_str, "%Y-%m-%d")
+    creneaux = generer_creneaux(date_debut, nb_jours)
+    stands = generer_stands(nb_stands)
 
-    data = {
+    return {
         "festival": {"dateDebut": date_debut_str},
-        "creneaux": [],
+        "creneaux": creneaux,
         "emplacements": [dict(emplacement) for emplacement in EMPLACEMENTS],
-        "stands": [],
-        "animateurs": [],
-        "postes": [],
+        "stands": stands,
+        "animateurs": generer_animateurs(date_debut, nb_jours, nb_animateurs),
+        "postes": generer_postes(stands, creneaux),
     }
 
-    # --- 1. CRÉNEAUX ---
+
+def generer_creneaux(date_debut, nb_jours):
+    creneaux = []
     for jour in range(1, nb_jours + 1):
         current_date = (date_debut + timedelta(days=jour - 1)).strftime("%Y-%m-%d")
         for suffixe, h_debut, h_fin in CRENEAUX_JOURNALIERS:
-            data["creneaux"].append({
+            creneaux.append({
                 "id": f"J{jour}-{suffixe}",
                 "jour": jour,
                 "date": current_date,
                 "heureDebut": h_debut,
                 "heureFin": h_fin,
             })
+    return creneaux
 
-    # --- 2. STANDS ---
+
+def generer_stands(nb_stands):
+    stands = []
     for i in range(1, nb_stands + 1):
         effectif_min = random.randint(2, 4)
         effectif_max = effectif_min + random.randint(0, 2)
@@ -100,14 +107,17 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
         }
         if random.random() < PART_STANDS_AVEC_EMPLACEMENT:
             stand["emplacementId"] = random.choice(EMPLACEMENTS)["id"]
-        data["stands"].append(stand)
+        stands.append(stand)
+    return stands
 
-    # --- 3. ANIMATEURS ---
+
+def generer_animateurs(date_debut, nb_jours, nb_animateurs):
     # Plage de dates pour des animateurs de 16 à 66 ans lors du festival.
     dob_start = datetime.strptime("1960-01-01", "%Y-%m-%d")
     dob_end = datetime.strptime("2010-12-31", "%Y-%m-%d")
     dob_delta_days = (dob_end - dob_start).days
 
+    animateurs = []
     for i in range(1, nb_animateurs + 1):
         manager = random.random() < PART_MANAGERS
         # Une à trois compétences distinctes, chacune avec son niveau.
@@ -116,18 +126,10 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
             typo: random.choice(NIVEAUX)
             for typo in random.sample(TYPOLOGIES, k=nb_competences)
         }
-
-        jours_indispos = []
-        nb_jours_indispo = random.randint(0, 3)
-        if nb_jours_indispo:
-            jours_indispos = sorted({
-                (date_debut + timedelta(days=random.randint(0, nb_jours - 1))).strftime("%Y-%m-%d")
-                for _ in range(nb_jours_indispo)
-            })
-
+        jours_indispos = tirer_jours_indisponibles(date_debut, nb_jours)
         random_dob = dob_start + timedelta(days=random.randint(0, dob_delta_days))
 
-        data["animateurs"].append({
+        animateurs.append({
             "id": f"A{i}",
             "prenom": random.choice(PRENOMS),
             "nom": random.choice(NOMS),
@@ -136,23 +138,33 @@ def generer_scenario(date_debut_str, nb_jours, nb_stands, nb_animateurs, seed=No
             "competences": competences,
             "joursIndisponibles": jours_indispos,
         })
+    return animateurs
 
-    # --- 4. POSTES ---
+
+def tirer_jours_indisponibles(date_debut, nb_jours):
+    nb_jours_indispo = random.randint(0, 3)
+    if not nb_jours_indispo:
+        return []
+    return sorted({
+        (date_debut + timedelta(days=random.randint(0, nb_jours - 1))).strftime("%Y-%m-%d")
+        for _ in range(nb_jours_indispo)
+    })
+
+
+def generer_postes(stands, creneaux):
     # Pour chaque stand et chaque créneau, on crée effectifMin postes vides
     # (animateurId non renseigné) : ce sont les sièges que le solveur remplit.
-    compteur_poste = 0
-    for stand in data["stands"]:
-        for creneau in data["creneaux"]:
+    postes = []
+    for stand in stands:
+        for creneau in creneaux:
             for _ in range(stand["effectifMin"]):
-                compteur_poste += 1
-                data["postes"].append({
-                    "id": f"P{compteur_poste}",
+                postes.append({
+                    "id": f"P{len(postes) + 1}",
                     "standId": stand["id"],
                     "creneauId": creneau["id"],
                     "animateurId": None,
                 })
-
-    return data
+    return postes
 
 
 def main():
