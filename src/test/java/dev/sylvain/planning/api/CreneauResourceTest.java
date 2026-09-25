@@ -295,22 +295,25 @@ class CreneauResourceTest {
             {"dateDebut":"2032-05-03","dateFin":"2032-05-04","heureFermeture":"20:00:00","remplacer":false}
             """;
 
-    private void standOuvertSur(String id, String fenetres) {
-        given().contentType("application/json")
+    /** Creates a stand open every day on {@code fenetres}, and returns the id the application gave it. */
+    private String standOuvertSur(String nom, String fenetres) {
+        return given().contentType("application/json")
                 .body("""
-                        {"id":"%s","nom":"%s","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
+                        {"nom":"%s","typologiesProposees":["STRATEGIE"],"effectifMin":1,"effectifMax":1,
                          "reserveMajeurs":false,
                          "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[%s]}]}
-                        """.formatted(id, id, fenetres))
+                        """.formatted(nom, fenetres))
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
     }
 
     @Test
-    void lApercuDeLaDerivationNEcritRienEtNommeLesCoupures() {
-        standOuvertSur(
+    void theDerivationPreviewWritesNothingAndNamesTheBreaks() {
+        String standId = standOuvertSur(
                 "DERIV-A", "{\"heureDebut\":\"10:00:00\",\"heureFin\":\"12:00:00\"},{\"heureDebut\":\"14:00:00\"}");
         int avant = countCreneaux();
 
@@ -323,17 +326,17 @@ class CreneauResourceTest {
                 .body("nombreGeneres", equalTo(4))
                 .body("creneaux[0].heureDebut", startsWith("10:00"))
                 .body("creneaux[1].heureFin", startsWith("20:00"))
-                .body("coupures[0].standIds", org.hamcrest.Matchers.hasItem("DERIV-A"))
+                .body("coupures[0].standIds", org.hamcrest.Matchers.hasItem(standId))
                 .body("joursSansFenetre", org.hamcrest.Matchers.empty())
                 .body("controle.nombreCreneaux", notNullValue());
 
         assertThat(countCreneaux()).isEqualTo(avant);
-        given().when().delete("/api/stands/DERIV-A").then().statusCode(204);
+        given().when().delete("/api/stands/" + standId).then().statusCode(204);
     }
 
     @Test
-    void laDerivationAjouteLesCreneauxOuRemplaceLaGrille() {
-        standOuvertSur("DERIV-B", "{\"heureDebut\":\"10:00:00\"}");
+    void theDerivationAddsTimeslotsOrReplacesTheGrid() {
+        String standId = standOuvertSur("DERIV-B", "{\"heureDebut\":\"10:00:00\"}");
         int avant = countCreneaux();
 
         given().contentType("application/json")
@@ -354,7 +357,7 @@ class CreneauResourceTest {
         // The whole grid is now the derived one: two days, one créneau each.
         assertThat(countCreneaux()).isEqualTo(2);
 
-        given().when().delete("/api/stands/DERIV-B").then().statusCode(204);
+        given().when().delete("/api/stands/" + standId).then().statusCode(204);
         for (Integer id :
                 given().when().get("/api/creneaux").then().extract().jsonPath().getList("id", Integer.class)) {
             given().when().delete("/api/creneaux/" + id).then().statusCode(204);

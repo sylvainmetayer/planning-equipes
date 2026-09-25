@@ -64,14 +64,14 @@ describe('buildTypologieDetail', () => {
   });
 
   it('shows the code next to the drawn id, and says so when there is none', () => {
-    const avecCode = buildTypologieDetail({ ...enfance, code: 'ENFANCE' }, [], []);
-    expect(avecCode[0].rows.find((row) => row.label === 'Code')?.value).toBe('ENFANCE');
+    const withCode = buildTypologieDetail({ ...enfance, code: 'ENFANCE' }, [], []);
+    expect(withCode[0].rows.find((row) => row.label === 'Code')?.value).toBe('ENFANCE');
 
-    const sansCode = buildTypologieDetail(enfance, [], [])[0].rows.find(
+    const withoutCode = buildTypologieDetail(enfance, [], [])[0].rows.find(
       (row) => row.label === 'Code',
     );
-    expect(sansCode?.value).toBe('Aucun');
-    expect(sansCode?.muted).toBe(true);
+    expect(withoutCode?.value).toBe('Aucun');
+    expect(withoutCode?.muted).toBe(true);
   });
 
   /**
