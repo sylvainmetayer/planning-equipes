@@ -547,6 +547,7 @@ describe('AdminShell', () => {
         '/kpi',
         '/marge',
         '/mcp-client',
+        '/repartition-heures',
         '/repos',
         '/timeline',
         '/typologies-planning',

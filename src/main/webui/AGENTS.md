@@ -145,7 +145,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   fits a month-long edition on a screen; `?date=` marks one day's column and
   puts the grid's tab stop on it), `/jour-j` (« Mode jour J » — the day-of screen:
   mark somebody absent, repair the seats they held), `/timeline` (« Timeline
-  animateur »), `/heatmap` (« Heatmap de charge »), `/marge` (« Marge
+  animateur »), `/heatmap` (« Heatmap de charge »), `/repartition-heures`
+  (« Répartition des heures » — a treemap of the seat-hours to staff, sized by
+  the need and coloured by its coverage in the Heatmap's colours but on
+  thresholds of its own (critique under 80 %, partiel 80–99 %, pourvu 100 %),
+  hand-squarified
+  over the pure `treemap.ts`; `?regroupement=typologie` files a stand offering
+  several typologies under their combination so the surfaces still add up,
+  `?semaine=`/`?date=` and `?emplacement=` narrow it, `?zoom=` keeps the group
+  on screen), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs
   available then minus the seats to staff, read either on the seats a solve
   would have to fill or on the plan persisted), `/kpi`, `/comparateur`

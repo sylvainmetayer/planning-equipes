@@ -246,6 +246,12 @@ export function buildNavGroups(devMode: boolean): NavGroup[] {
           avance: true,
         },
         {
+          path: '/repartition-heures',
+          label: $localize`:@@nav.link.repartitionHeures:Répartition des heures`,
+          icon: 'dashboard',
+          avance: true,
+        },
+        {
           path: '/marge',
           label: $localize`:@@nav.link.marge:Marge disponible`,
           icon: 'exposure',

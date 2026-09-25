@@ -334,6 +334,14 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/heatmap/heatmap-page').then((m) => m.HeatmapPage),
   },
   {
+    path: 'repartition-heures',
+    title: () => $localize`:@@route.repartitionHeures:Répartition des heures`,
+    loadComponent: () =>
+      import('./pages/repartition-heures/repartition-heures-page').then(
+        (m) => m.RepartitionHeuresPage,
+      ),
+  },
+  {
     path: 'marge',
     title: () => $localize`:@@route.marge:Marge disponible`,
     loadComponent: () => import('./pages/marge/marge-page').then((m) => m.MargePage),
