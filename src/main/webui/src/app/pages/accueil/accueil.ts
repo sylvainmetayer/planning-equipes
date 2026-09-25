@@ -6,6 +6,7 @@
 import { EtatEdition, StatutEtat } from '../../core/models';
 import { intlLocale } from '../../core/locale';
 import { libelleJour } from '../../core/horaire-stand';
+import { familyLabel } from '../../core/gel-referentiel-labels';
 
 /** One line of the checklist, ready to render. */
 export interface LigneEtat {
@@ -18,7 +19,7 @@ export interface LigneEtat {
   /** The screen the line leads to; absent on a line whose detail unfolds in place instead. */
   lien?: LienEtat;
   /** A detail this line unfolds below itself rather than on another screen. */
-  panneau?: 'coherence';
+  panneau?: 'coherence' | 'gel';
 }
 
 /** Where a line leads: the screen that moves the step forward. */
@@ -108,6 +109,27 @@ function referentiels(etat: EtatEdition): LigneEtat {
           ? $localize`:@@accueil.lien.referentiels.voir:Voir les stands`
           : $localize`:@@accueil.lien.referentiels.saisir:Saisir les référentiels`,
     },
+  };
+}
+
+/**
+ * The freeze of the referential (ADR 0052), beside the referentials it
+ * protects: which families are frozen, unfolded in place into one switch per
+ * family — freezing is a gesture of this screen, not of another one.
+ */
+function gel(etat: EtatEdition): LigneEtat {
+  const figees = etat.gel.familles.filter((famille) => famille.fige);
+  return {
+    id: 'gel',
+    titre: $localize`:@@accueil.ligne.gel:Gel du référentiel`,
+    statut: etat.gel.statut,
+    detail:
+      figees.length === 0
+        ? $localize`:@@accueil.detail.gel.aucun:Rien n'est figé : toute fiche reste modifiable`
+        : $localize`:@@accueil.detail.gel.figees:Figé : ${figees
+            .map((famille) => familyLabel(famille.famille))
+            .join(', ')}:familles:`,
+    panneau: 'gel',
   };
 }
 
@@ -394,6 +416,7 @@ function foire(etat: EtatEdition): LigneEtat {
 export function buildLignes(etat: EtatEdition): LigneEtat[] {
   return [
     referentiels(etat),
+    gel(etat),
     coherence(etat),
     collecte(etat),
     ouvertures(etat),

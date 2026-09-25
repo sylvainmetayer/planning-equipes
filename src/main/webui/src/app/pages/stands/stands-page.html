@@ -3,12 +3,15 @@
     <h1 mat-card-title i18n="@@stands.list.title">Stands ({{ store.stands().length }})</h1>
     <mat-card-subtitle i18n="@@stands.form.description">Un stand est doté d'un effectif à chaque créneau, entre son effectif minimum et maximum.</mat-card-subtitle>
   </mat-card-header>
+  <mat-card-content>
+    <app-gel-notice family="STANDS" />
+  </mat-card-content>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+    <button matButton="filled" type="button" [disabled]="standsLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <button matButton type="button" [disabled]="editingLocked() || compactageEnCours()"
+    <button matButton type="button" [disabled]="standsLocked() || compactageEnCours()"
             i18n-matTooltip="@@stands.compactage.tooltip"
             matTooltip="Réécrit les plages datées répétées en règles d'horaire équivalentes, avec un aperçu avant d'écrire."
             (click)="compacterHoraires()">
@@ -32,7 +35,7 @@
   </mat-card-actions>
   <mat-card-content class="table-wrapper">
     @if (selection.hasSelection()) {
-      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="standsLocked()"
                             [filtre]="!!filtre()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
       @if (comparaisonParams(); as params) {
@@ -102,7 +105,7 @@
           <button matIconButton i18n-matTooltip="@@common.edit" matTooltip="Modifier" i18n-aria-label="@@common.edit" aria-label="Modifier" [disabled]="editingLocked()" (click)="edit(stand)">
             <mat-icon>edit</mat-icon>
           </button>
-          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+          <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="standsLocked()"
                   (click)="remove(stand)">
             <mat-icon>delete</mat-icon>
           </button>

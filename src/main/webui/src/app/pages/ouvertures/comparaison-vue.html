@@ -56,12 +56,13 @@
     Choisissez de {{ min }} à {{ max }} stands, un par un ou par typologie : le premier sert de référence.
   </p>
 } @else {
+  <app-gel-notice family="STANDS" />
   <div class="comparaison-actions">
     <mat-checkbox [checked]="ecartsSeulement()" (change)="ecartsSeulement.set($event.checked)"
                   data-test="comparaison-ecarts" i18n="@@ouvertures.comparer.ecartsSeulement">
       Seulement les jours qui diffèrent
     </mat-checkbox>
-    <button matButton="tonal" type="button" [disabled]="editingLocked() || !copiable()" (click)="copyReference()"
+    <button matButton="tonal" type="button" [disabled]="copyLocked() || !copiable()" (click)="copyReference()"
             data-test="comparaison-copier">
       <mat-icon>content_copy</mat-icon>
       <ng-container i18n="@@ouvertures.comparer.copier">Copier les horaires de la référence vers…</ng-container>

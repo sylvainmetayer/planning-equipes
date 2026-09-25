@@ -106,6 +106,7 @@ public class StandGrilleImportService {
      * Writes the accepted rows, all in one transaction — a report announcing
      * forty stands after a rollback would be a lie nothing could catch up on.
      */
+    @RefusedWhileFrozen(ReferentialFamily.STANDS)
     public StandGrilleImportReport apply(StandGrilleImportRequest request) {
         solverJobs.refuseIfSolving();
         Analyse analyse = analyse(request);

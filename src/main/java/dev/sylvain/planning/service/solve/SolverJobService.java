@@ -8,6 +8,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.analyse.PlanningDiagnosticService;
 import dev.sylvain.planning.service.edition.EditionRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
+import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import dev.sylvain.planning.service.solve.SolverJobRepository.LigneJob;
 import io.quarkus.runtime.StartupEvent;
 import io.sentry.Sentry;
@@ -191,7 +192,13 @@ public class SolverJobService {
      * result: it is fetched from {@code /api/planning/persisted} by whichever
      * dedicated screen needs it, so the (possibly huge) job-polling payload
      * stays limited to the diagnostic.
+     *
+     * <p>Refused at submission while any family of the referential is frozen,
+     * for the reason {@link SolvePipeline#execute(PlanningEvenement, Long)}
+     * gives: the problem is the caller's, and its landing would overwrite
+     * what the freeze protects.</p>
      */
+    @RefusedWhileFrozen
     public SolverJob submitSolve(PlanningEvenement problem, Long secondsLimit) {
         // Not replayable: the problem came in the request body, which is not
         // stored. Never queued either, so a restart can only ever find it in a

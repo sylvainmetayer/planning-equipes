@@ -155,11 +155,14 @@
           cours d'exécution.
         </mat-card-subtitle>
       </mat-card-header>
+      <mat-card-content>
+        <app-gel-edition-notice operation="reset" />
+      </mat-card-content>
       <mat-card-actions class="card-actions">
         <button
           matButton="outlined"
           class="danger-action"
-          [disabled]="solverBusy() || resetting()"
+          [disabled]="solverBusy() || resetting() || gel.anyFrozen()"
           (click)="onResetDatabase()"
         >
           <mat-icon>delete_sweep</mat-icon>

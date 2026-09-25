@@ -1,7 +1,7 @@
 // Shared CRUD plumbing of the reference pages: persistence through the store,
 // snack bar feedback and delete confirmation, so each page only owns its form.
 
-import { Injectable, inject } from '@angular/core';
+import { Injectable, Injector, inject } from '@angular/core';
 import { ApiError, SessionExpireeError } from './api.service';
 import { Avertissement, estJournalisable } from './models';
 import { NotificationService } from './notification.service';
@@ -9,7 +9,8 @@ import { PlanningResolutionStore } from './planning-resolution.store';
 import { BulkResult, RecordId, ReferenceDataStore, SaveResult } from './reference-data.store';
 import { ReferenceUsageService } from './reference-usage.service';
 import { ConfirmService } from '../shared/confirm-dialog';
-import { errorMessage } from './error-message';
+import { errorMessage, isFrozenReferential } from './error-message';
+import { GelReferentielStore } from './gel-referentiel.store';
 import { intlLocale } from './locale';
 
 /** « (dernière écriture le 06/09/2026 à 17:34) », in the reader's own time zone. */
@@ -79,6 +80,7 @@ export interface RemoveOptions {
 @Injectable({ providedIn: 'root' })
 export class ReferenceCrudService {
   private readonly store = inject(ReferenceDataStore);
+  private readonly injector = inject(Injector);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly resolution = inject(PlanningResolutionStore);
@@ -434,6 +436,12 @@ export class ReferenceCrudService {
     // redirecting to /login, a toast on top would just be technical noise.
     if (error instanceof SessionExpireeError) {
       return;
+    }
+    if (isFrozenReferential(error)) {
+      // Another session froze the family since this screen loaded its
+      // padlocks: re-read them, so the form says it before the next click.
+      // Resolved lazily — only this refusal needs the store.
+      void this.injector.get(GelReferentielStore).reload();
     }
     this.notifications.notify({
       title: titreErreur(error),

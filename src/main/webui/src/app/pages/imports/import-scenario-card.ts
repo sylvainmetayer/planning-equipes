@@ -14,6 +14,7 @@ import { RouterLink } from '@angular/router';
 import { errorPrefix } from '../../core/error-message';
 import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
+import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
 
 /**
@@ -29,7 +30,14 @@ import { OutputPanel } from '../../shared/output-panel';
  */
 @Component({
   selector: 'app-import-scenario-card',
-  imports: [MatButtonModule, MatCardModule, MatIconModule, OutputPanel, RouterLink],
+  imports: [
+    GelEditionNotice,
+    MatButtonModule,
+    MatCardModule,
+    MatIconModule,
+    OutputPanel,
+    RouterLink,
+  ],
   templateUrl: './import-scenario-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

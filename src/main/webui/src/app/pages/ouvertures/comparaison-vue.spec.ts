@@ -7,8 +7,9 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { ConsignesStore } from '../../core/consignes.store';
-import { RapportOuvertures, Stand } from '../../core/models';
+import { EtatGel, RapportOuvertures, Stand } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { OpeningsComparisonView } from './comparaison-vue';
@@ -83,7 +84,7 @@ function stand(id: string, typologies: string[] = []): Stand {
   };
 }
 
-async function mount(standIds: string[], referenceId: string | null = null) {
+async function mount(standIds: string[], referenceId: string | null = null, gel: EtatGel[] = []) {
   const open = vi.fn(() => ({ afterClosed: () => of(true) }));
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
@@ -103,6 +104,7 @@ async function mount(standIds: string[], referenceId: string | null = null) {
       { provide: ConsignesStore, useValue: { consigneOf: () => null } },
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: MatDialog, useValue: { open } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
     ],
   });
   const fixture = TestBed.createComponent(OpeningsComparisonView);
@@ -181,5 +183,32 @@ describe('OpeningsComparisonView', () => {
     expect(config.data.stands.map((each) => each.id)).toEqual(['1', '3']);
     // Saved in the dialog: the page is asked to re-read the report.
     expect(emis).toHaveBeenCalledTimes(1);
+  });
+
+  it('closes the copy under a stands freeze, with its padlock: the bulk edit would be refused', async () => {
+    const { fixture, open } = await mount(['2', '1', '3'], '2', [
+      { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+    ]);
+    await fixture.whenStable();
+
+    const copy = root(fixture).querySelector<HTMLButtonElement>(
+      '[data-test="comparaison-copier"]',
+    )!;
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    expect(copy.disabled).toBe(true);
+    copy.click();
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('leaves the copy open under a timeslots-only freeze', async () => {
+    const { fixture } = await mount(['2', '1', '3'], '2', [
+      { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+    ]);
+    await fixture.whenStable();
+
+    expect(root(fixture).querySelector('app-gel-notice .gel-notice')).toBeNull();
+    expect(
+      root(fixture).querySelector<HTMLButtonElement>('[data-test="comparaison-copier"]')!.disabled,
+    ).toBe(false);
   });
 });

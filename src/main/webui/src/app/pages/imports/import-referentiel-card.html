@@ -4,6 +4,9 @@
     <mat-card-subtitle>{{ colonnes() }}</mat-card-subtitle>
   </mat-card-header>
   <mat-card-content>
+    @if (family(); as famille) {
+      <app-gel-notice [family]="famille" />
+    }
     <p class="empty-hint">{{ aide() }}</p>
     <div class="card-actions">
       <button matButton (click)="telechargerExemple()" [disabled]="telechargementEnCours()">

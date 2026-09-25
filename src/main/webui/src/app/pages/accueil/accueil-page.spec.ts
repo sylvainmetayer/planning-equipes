@@ -6,6 +6,8 @@
 import { provideZonelessChangeDetection, Signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { By } from '@angular/platform-browser';
+import { GelReferentielCard } from '../../shared/gel-referentiel-card';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { EditionsApi } from '../../core/api/editions-api';
 import { ConsignesStore } from '../../core/consignes.store';
@@ -22,6 +24,13 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       animateurs: 40,
       creneaux: 30,
       typologiesOrphelines: 0,
+      statut: 'FAIT',
+    },
+    gel: {
+      familles: [
+        { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-05-01T09:00:00Z' },
+        { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-05-01T09:00:00Z' },
+      ],
       statut: 'FAIT',
     },
     coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
@@ -147,7 +156,7 @@ describe('AccueilPage', () => {
     return element().textContent!.replace(/\s+/g, ' ');
   }
 
-  it('says it is reading while the first state is in flight, then lists the eleven lines', async () => {
+  it('says it is reading while the first state is in flight, then lists the twelve lines', async () => {
     const pending = deferred<EtatEdition>();
     editionsApi.etat.mockReturnValue(pending.promise);
     const page = createPage();
@@ -157,7 +166,7 @@ describe('AccueilPage', () => {
 
     pending.resolve(etat());
     await vi.waitFor(() => expect(page.chargement()).toBe(false));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(11);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
     expect(text()).toContain('Année 2026');
     expect(editionsApi.etat).toHaveBeenCalledOnce();
   });
@@ -176,7 +185,7 @@ describe('AccueilPage', () => {
     expect(ligne('collecte').textContent).toContain('3 déclaration(s) à appliquer ou refuser');
     expect(ligne('resolution').classList.contains('accueil-ligne-a_faire')).toBe(true);
     expect(ligne('resolution').textContent).toContain('À faire');
-    expect(text()).toContain('5 étape(s) faite(s) · 1 à vérifier · 5 à faire');
+    expect(text()).toContain('6 étape(s) faite(s) · 1 à vérifier · 5 à faire');
     expect(text()).not.toContain('pour information');
   });
 
@@ -196,7 +205,7 @@ describe('AccueilPage', () => {
     expect(ligne.classList.contains('accueil-ligne-attention')).toBe(false);
     expect(ligne.textContent).toContain('Pour information');
     expect(ligne.textContent).toContain('8 avertissement(s), rien de bloquant');
-    expect(text()).toContain('4 étape(s) faite(s) · 1 à vérifier · 1 pour information · 5 à faire');
+    expect(text()).toContain('5 étape(s) faite(s) · 1 à vérifier · 1 pour information · 5 à faire');
   });
 
   it('links every line to its screen, tab and filter included', async () => {
@@ -242,7 +251,7 @@ describe('AccueilPage', () => {
     editionsApi.etat.mockRejectedValueOnce(new Error('Serveur injoignable.'));
     page.recharger();
     await vi.waitFor(() => expect(page.erreur()).toContain('Serveur injoignable.'));
-    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(11);
+    expect(element().querySelectorAll('li.accueil-ligne')).toHaveLength(12);
   });
 
   // Both kinds of solve: « Corriger après un changement » rewrites the plan and
@@ -302,6 +311,24 @@ describe('AccueilPage', () => {
     } finally {
       setItem.mockRestore();
     }
+  });
+
+  // A switch moved in the unfolded panel: the « Gel du référentiel » line
+  // follows at once, not only once the panel is folded again.
+  it('refreshes the freeze line when a switch moves, the panel still open', async () => {
+    editionsApi.etat.mockResolvedValue(etat());
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    await fixture.whenStable();
+    element().querySelector<HTMLButtonElement>('li[data-ligne="gel"] button.accueil-lien')!.click();
+    await fixture.whenStable();
+    expect(editionsApi.etat).toHaveBeenCalledOnce();
+
+    const card = fixture.debugElement.query(By.directive(GelReferentielCard));
+    (card.componentInstance as GelReferentielCard).changed.emit('TYPOLOGIES_EMPLACEMENTS');
+
+    await vi.waitFor(() => expect(editionsApi.etat).toHaveBeenCalledTimes(2));
+    expect(element().querySelector('#accueil-gel-panneau')).not.toBeNull();
   });
 
   // The coherence line unfolds its detail below itself, read only then; each

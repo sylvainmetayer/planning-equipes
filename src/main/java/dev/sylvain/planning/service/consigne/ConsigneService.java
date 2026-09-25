@@ -872,15 +872,31 @@ public class ConsigneService {
                 throw new BusinessError.NotFound("Aucune consigne le " + date);
             }
         }
-        for (LocalDate date : new LinkedHashSet<>(dates)) {
-            ConsigneEdition consigne = existantes.get(date);
-            repository.delete(date);
-            if (!consigne.creneauxAjoutes().isEmpty()) {
-                referenceDataService.deleteCreneaux(consigne.creneauxAjoutes());
+        // Each date is its own transaction: when a later one fails, the ones
+        // before it are lifted all the same, and the Solveur screen must hear
+        // about them — the mark the plain bulk delete used to set in its own
+        // finally.
+        boolean leve = false;
+        try {
+            for (LocalDate date : new LinkedHashSet<>(dates)) {
+                ConsigneEdition consigne = existantes.get(date);
+                repository.delete(date);
+                leve = true;
+                if (!consigne.creneauxAjoutes().isEmpty()) {
+                    // The in-transaction variant, the consigne's own grid write: the
+                    // plain bulk delete is refused under a CRENEAUX freeze, and
+                    // lifting a consigne must stay open under one (ADR 0052).
+                    scope.write(
+                            "Failed to remove the timeslots a consigne added",
+                            connection -> referenceDataService.deleteCreneaux(connection, consigne.creneauxAjoutes()));
+                }
+            }
+            validations.withdrawDays(dates);
+        } finally {
+            if (leve) {
+                changeTracker.markModified();
             }
         }
-        validations.withdrawDays(dates);
-        changeTracker.markModified();
     }
 
     /* -------------------------------- presets -------------------------------- */

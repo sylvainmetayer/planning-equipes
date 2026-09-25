@@ -19,7 +19,7 @@ import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
-import { Emplacement } from '../../core/models';
+import { Emplacement, EtatGel } from '../../core/models';
 import { DetailDialog } from '../../shared/detail-dialog';
 import { EmplacementFormDialog } from './emplacement-form-dialog';
 import { EmplacementsPage } from './emplacements-page';
@@ -365,6 +365,8 @@ describe('EmplacementsPage table', () => {
     removeMany: vi.fn(async () => 0),
   };
   const editingLocked = signal(false);
+  /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
+  let gel: EtatGel[] = [];
 
   async function rendre(emplacements: Emplacement[]): Promise<void> {
     seedStore(referenceData, 'emplacements', emplacements);
@@ -393,11 +395,17 @@ describe('EmplacementsPage table', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     editingLocked.set(false);
+    gel = [];
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
     TestBed.configureTestingModule({
       providers: [
         provideZonelessChangeDetection(),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        {
+          provide: ApiService,
+          useValue: {
+            get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
+          },
+        },
         { provide: ReferenceCrudService, useValue: crud },
         { provide: SolverJobService, useValue: { solverBusy: () => false, editingLocked } },
         { provide: MatDialog, useValue: dialog },
@@ -459,6 +467,31 @@ describe('EmplacementsPage table', () => {
     expect(action(0, 'Modifier').disabled).toBe(true);
     expect(action(0, 'Supprimer').disabled).toBe(true);
     expect(action(0, 'Consulter le détail').disabled).toBe(false);
+  });
+
+  it('greys out creating and deleting under an emplacements freeze, but not the edits', async () => {
+    gel = [
+      {
+        famille: 'TYPOLOGIES_EMPLACEMENTS',
+        libelle: 'Typologies & emplacements',
+        fige: true,
+        figeLe: '2026-07-01T08:00:00Z',
+      },
+    ];
+    await rendre([emplacement('hall', { nom: 'Hall A' })]);
+    (racine().querySelector('tbody mat-checkbox input') as HTMLInputElement).click();
+    await fixture.whenStable();
+
+    expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    expect(action(0, 'Supprimer').disabled).toBe(true);
+    expect(action(0, 'Modifier').disabled).toBe(false);
+    const bulk = (libelle: string) =>
+      Array.from(racine().querySelectorAll<HTMLButtonElement>('app-bulk-actions-bar button')).find(
+        (each) => each.textContent!.includes(libelle),
+      )!;
+    // A name or coordinates set in bulk stay open; deleting the rows does not.
+    expect(bulk('Modifier la sélection').disabled).toBe(false);
+    expect(bulk('Supprimer la sélection').disabled).toBe(true);
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {

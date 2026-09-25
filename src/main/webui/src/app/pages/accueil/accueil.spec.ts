@@ -25,6 +25,13 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       typologiesOrphelines: 0,
       statut: 'A_FAIRE',
     },
+    gel: {
+      familles: [
+        { famille: 'STANDS', libelle: 'Stands', fige: false, figeLe: null },
+        { famille: 'CRENEAUX', libelle: 'Créneaux', fige: false, figeLe: null },
+      ],
+      statut: 'INFO',
+    },
     // Nothing entered, nothing incoherent: the Référentiels line carries the « à faire ».
     coherence: { bloquants: 0, aVerifier: 0, informations: 0, statut: 'FAIT' },
     collecte: {
@@ -84,6 +91,13 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
 /** Solved, published, acknowledged: every line done. */
 function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
   return etatVide({
+    gel: {
+      familles: [
+        { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-05-01T09:00:00Z' },
+        { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-05-01T09:00:00Z' },
+      ],
+      statut: 'FAIT',
+    },
     referentiels: {
       stands: 12,
       animateurs: 40,
@@ -125,9 +139,10 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
 }
 
 describe('buildLignes', () => {
-  it('lists the eleven steps of the cycle in the order of the guide', () => {
+  it('lists the twelve steps of the cycle in the order of the guide', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.id)).toEqual([
       'referentiels',
+      'gel',
       'coherence',
       'collecte',
       'ouvertures',
@@ -144,11 +159,12 @@ describe('buildLignes', () => {
   it('carries the state the server decided, line by line', () => {
     expect(buildLignes(etatVide()).map((ligne) => ligne.statut)).toEqual([
       'A_FAIRE',
+      'INFO',
       'FAIT',
       ...new Array<string>(9).fill('A_FAIRE'),
     ]);
     expect(buildLignes(etatComplet()).map((ligne) => ligne.statut)).toEqual(
-      new Array<string>(11).fill('FAIT'),
+      new Array<string>(12).fill('FAIT'),
     );
   });
 
@@ -324,7 +340,7 @@ describe('buildLignes', () => {
     const identiques = etatComplet({
       resolution: { ...etatComplet().resolution, scoreHorsPlancher: '0hard/0medium/-120soft' },
     });
-    expect(buildLignes(identiques)[5].detail).not.toContain('hors plancher');
+    expect(buildLignes(identiques)[6].detail).not.toContain('hors plancher');
 
     const withoutAnalysis = etatComplet({
       resolution: {
@@ -334,8 +350,8 @@ describe('buildLignes', () => {
         faisable: null,
       },
     });
-    expect(buildLignes(withoutAnalysis)[5].detail).not.toContain('score');
-    expect(buildLignes(withoutAnalysis)[5].detail).toContain('Résolue le ');
+    expect(buildLignes(withoutAnalysis)[6].detail).not.toContain('score');
+    expect(buildLignes(withoutAnalysis)[6].detail).toContain('Résolue le ');
   });
 
   it('counts what asks for attention on the lines that carry a figure', () => {
@@ -408,7 +424,7 @@ describe('summarizeLignes', () => {
         foire: { ouverte: false, demandesEnAttente: 0, statut: 'A_FAIRE' },
       }),
     );
-    expect(summarizeLignes(lignes)).toEqual({ faits: 9, attention: 1, info: 0, aFaire: 1 });
+    expect(summarizeLignes(lignes)).toEqual({ faits: 10, attention: 1, info: 0, aFaire: 1 });
   });
 });
 

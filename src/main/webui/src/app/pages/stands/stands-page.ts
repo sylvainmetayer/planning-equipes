@@ -25,6 +25,8 @@ import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceTablePage } from '../../core/reference-table-page';
 import { RapportOuvertures, Stand, TypologieItem } from '../../core/models';
 import { BulkActionsBar } from '../../shared/bulk-actions-bar';
+import { GelNotice } from '../../shared/gel-notice';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { TableFilter } from '../../shared/table-filter';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { StandBulkEditData, StandBulkEditDialog } from './stand-bulk-edit-dialog';
@@ -54,6 +56,7 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
     RouterLink,
     BulkActionsBar,
     TableFilter,
+    GelNotice,
   ],
   templateUrl: './stands-page.html',
   styleUrl: '../../../styles/horaires-stand.css',
@@ -62,6 +65,17 @@ import { StandFormData, StandFormDialog } from './stand-form-dialog';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class StandsPage extends ReferenceTablePage<Stand> implements OnInit {
+  private readonly gel = injectGelReferentiel();
+  /**
+   * What a STANDS freeze refuses as a whole (ADR 0052): creating, deleting,
+   * compacting the opening hours, and the bulk actions — a bulk edit sets the
+   * shared fields a freeze covers. The single edit stays open: a rename or a
+   * new location passes, and the form shows the frozen fields read-only.
+   */
+  protected readonly standsLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('STANDS'),
+  );
+
   protected readonly columns = [
     'select',
     'id',

@@ -11,6 +11,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
 import { DateMockService } from '../../core/date-mock.service';
 import { EditionStore } from '../../core/edition.store';
+import type { EtatGel } from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningApi } from '../../core/api/planning-api';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
@@ -24,12 +25,20 @@ import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { DebugPage } from './debug-page';
 
+/** What `GET /api/editions/courant/gel` answers when two families are frozen. */
+const FROZEN_STATES: EtatGel[] = [
+  { famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+  { famille: 'TYPOLOGIES_EMPLACEMENTS', libelle: 'Typologies', fige: false, figeLe: null },
+  { famille: 'COMPETENCES', libelle: 'Compétences', fige: false, figeLe: null },
+];
+
 describe('DebugPage — onglets', () => {
   let fixture: ComponentFixture<DebugPage>;
   let params: BehaviorSubject<ParamMap>;
 
   async function rendre(
-    options: { onglet?: string; dateModifiable?: boolean } = {},
+    options: { onglet?: string; dateModifiable?: boolean; gel?: EtatGel[] } = {},
   ): Promise<void> {
     params = new BehaviorSubject<ParamMap>(
       convertToParamMap(options.onglet ? { onglet: options.onglet } : {}),
@@ -40,7 +49,12 @@ describe('DebugPage — onglets', () => {
         provideZonelessChangeDetection(),
         {
           provide: ApiService,
-          useValue: { get: vi.fn(async () => ({ adminEmail: null })), post: vi.fn() },
+          useValue: {
+            get: vi.fn(async (url: string) =>
+              url === '/api/editions/courant/gel' ? (options.gel ?? []) : { adminEmail: null },
+            ),
+            post: vi.fn(),
+          },
         },
         {
           provide: DateMockService,
@@ -180,5 +194,34 @@ describe('DebugPage — onglets', () => {
 
     await cliquerOnglet('Données');
     expect(racine().querySelector('app-output-panel')).not.toBeNull();
+  });
+
+  function resetButton(): HTMLButtonElement {
+    const found = Array.from(racine().querySelectorAll('button')).find((each) =>
+      each.textContent!.includes('Vider la base de données'),
+    );
+    expect(found, 'bouton « Vider » absent').toBeDefined();
+    return found as HTMLButtonElement;
+  }
+
+  it('closes the reset and says why while a family of the referential is frozen', async () => {
+    await rendre({ onglet: 'donnees', gel: FROZEN_STATES });
+
+    expect(resetButton().disabled).toBe(true);
+    const notices = Array.from(racine().querySelectorAll('.gel-edition-notice'));
+    const reset = notices.find((each) => each.getAttribute('data-operation') === 'reset');
+    expect(reset).toBeDefined();
+    expect(reset!.textContent).toContain('« Stands » et « Créneaux »');
+    expect(reset!.textContent).toContain('vider la base est impossible');
+    expect(reset!.textContent).toContain('Lever le gel');
+    // The bundled scenarios below warn instead, their button left enabled.
+    expect(notices.some((each) => each.getAttribute('data-operation') === 'scenario')).toBe(true);
+  });
+
+  it('leaves the reset open, without a notice, while every family is open', async () => {
+    await rendre({ onglet: 'donnees' });
+
+    expect(resetButton().disabled).toBe(false);
+    expect(racine().querySelector('.gel-edition-notice')).toBeNull();
   });
 });

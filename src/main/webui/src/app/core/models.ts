@@ -3893,6 +3893,31 @@ export interface EtatReferentiels {
 }
 
 /**
+ * The four families of the referential an organiser can freeze once their
+ * preparation is over (ADR 0052) — the constant names are on the wire.
+ */
+export type FreezeFamily = 'STANDS' | 'CRENEAUX' | 'TYPOLOGIES_EMPLACEMENTS' | 'COMPETENCES';
+
+/** One family and whether it is frozen, from `GET /api/editions/courant/gel`. */
+export interface EtatGel {
+  famille: FreezeFamily;
+  /** How the server names the family, in French. */
+  libelle: string;
+  fige: boolean;
+  /** When it was frozen, `null` while it is open. */
+  figeLe: string | null;
+}
+
+/**
+ * The freeze block of the home checklist: `FAIT` once the stands and the
+ * timeslots are frozen, `INFO` otherwise — freezing is offered, never required.
+ */
+export interface EtatGelReferentiel {
+  familles: EtatGel[];
+  statut: StatutEtat;
+}
+
+/**
  * The coherence checklist of the referential, counted by severity — the detail
  * is `GET /api/editions/courant/coherence`.
  */
@@ -3989,6 +4014,7 @@ export interface EtatEdition {
   editionId: string;
   editionNom: string;
   referentiels: EtatReferentiels;
+  gel: EtatGelReferentiel;
   coherence: EtatCoherence;
   collecte: EtatCollecte;
   ouvertures: EtatOuvertures;

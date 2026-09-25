@@ -3350,6 +3350,9 @@
           "referentiels" : {
             "$ref" : "#/components/schemas/EtatReferentiels"
           },
+          "gel" : {
+            "$ref" : "#/components/schemas/EtatGelReferentiel"
+          },
           "coherence" : {
             "$ref" : "#/components/schemas/EtatCoherence"
           },
@@ -3413,6 +3416,39 @@
           "demandesEnAttente" : {
             "type" : "integer",
             "format" : "int32"
+          },
+          "statut" : {
+            "$ref" : "#/components/schemas/Statut"
+          }
+        }
+      },
+      "EtatGel" : {
+        "type" : "object",
+        "required" : [ "famille", "fige", "libelle" ],
+        "properties" : {
+          "famille" : {
+            "$ref" : "#/components/schemas/ReferentialFamily"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "fige" : {
+            "type" : "boolean"
+          },
+          "figeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "EtatGelReferentiel" : {
+        "required" : [ "familles", "statut" ],
+        "type" : "object",
+        "properties" : {
+          "familles" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/EtatGel"
+            }
           },
           "statut" : {
             "$ref" : "#/components/schemas/Statut"
@@ -6943,6 +6979,10 @@
             "format" : "int32"
           }
         }
+      },
+      "ReferentialFamily" : {
+        "type" : "string",
+        "enum" : [ "STANDS", "CRENEAUX", "TYPOLOGIES_EMPLACEMENTS", "COMPETENCES" ]
       },
       "ReferentielCsvImportReport" : {
         "required" : [ "accepted", "applied", "cible", "created", "rejected", "total", "updated" ],
@@ -10666,6 +10706,101 @@
           }
         },
         "summary" : "Etat",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/courant/gel" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/EtatGel"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Gel",
+        "tags" : [ "Edition Resource" ]
+      }
+    },
+    "/api/editions/courant/gel/{famille}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "famille",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/ReferentialFamily"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGel"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Lift",
+        "tags" : [ "Edition Resource" ]
+      },
+      "get" : {
+        "parameters" : [ {
+          "name" : "famille",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/ReferentialFamily"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGel"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Gel",
+        "tags" : [ "Edition Resource" ]
+      },
+      "put" : {
+        "parameters" : [ {
+          "name" : "famille",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "$ref" : "#/components/schemas/ReferentialFamily"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/EtatGel"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Freeze",
         "tags" : [ "Edition Resource" ]
       }
     },

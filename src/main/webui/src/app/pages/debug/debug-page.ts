@@ -25,6 +25,7 @@ import { PlanningApi } from '../../core/api/planning-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { TODAY_ANCHOR, DateMockService } from '../../core/date-mock.service';
 import { EditionStore } from '../../core/edition.store';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { NotificationService } from '../../core/notification.service';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { PlanningStateService } from '../../core/planning-state.service';
@@ -34,6 +35,7 @@ import { SolverJobService } from '../../core/solver-job.service';
 import { SolverSettingsService } from '../../core/solver-settings.service';
 import { ConfirmationRecopie } from '../../shared/confirmation-recopie';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
+import { GelEditionNotice } from '../../shared/gel-edition-notice';
 import { OutputPanel } from '../../shared/output-panel';
 import { versionUrl } from '../../core/version-link';
 import { APP_VERSION, REPO_URL } from '../../version';
@@ -78,6 +80,7 @@ export const CLEAR_KEYWORD = 'VIDER';
 @Component({
   selector: 'app-debug-page',
   imports: [
+    GelEditionNotice,
     NewWindowLink,
     FormsModule,
     MatCardModule,
@@ -125,6 +128,12 @@ export class DebugPage implements OnInit {
 
   /** The server-side solver lock: emptying the database under a solve would corrupt it. */
   protected readonly solverBusy = computed(() => this.jobs.solverBusy());
+
+  /**
+   * A frozen family of the referential (ADR 0052): the server refuses to empty
+   * an edition while any family is frozen, so the button says it before the click.
+   */
+  protected readonly gel = injectGelReferentiel();
 
   private readonly adminApi = inject(AdminApi);
   private readonly planningApi = inject(PlanningApi);
@@ -262,6 +271,11 @@ export class DebugPage implements OnInit {
         title: $localize`:@@dataSetup.lockedByJob:${description}:description: La configuration des données est verrouillée jusqu'à la fin.`,
         variant: 'warning',
       });
+      return;
+    }
+    // Same race for the freeze: another session may have frozen a family since
+    // this page read it — the server would refuse anyway, the notice says why.
+    if (this.gel.anyFrozen()) {
       return;
     }
     // The reset is scoped to the current edition (`clearDatabase` deletes

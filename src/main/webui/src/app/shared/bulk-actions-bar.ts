@@ -39,7 +39,7 @@ import { MatIconModule } from '@angular/material/icon';
         matButton
         type="button"
         class="danger-action"
-        [disabled]="disabled()"
+        [disabled]="disabled() || removeDisabled()"
         (click)="remove.emit()"
       >
         <mat-icon>delete</mat-icon>
@@ -56,6 +56,8 @@ export class BulkActionsBar {
   readonly count = input.required<number>();
   /** Mirrors the page's `editingLocked`: no bulk write while the solver reads the data. */
   readonly disabled = input(false);
+  /** Greys out the delete alone — a freeze refuses deleting rows it still lets the bulk edit change. */
+  readonly removeDisabled = input(false);
   /** False on the pages whose entities share no bulk-editable field (typologies). */
   readonly editable = input(true);
   /** True when a text filter is narrowing the table the selection was made in. */

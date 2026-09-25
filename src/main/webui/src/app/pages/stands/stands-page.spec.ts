@@ -23,7 +23,7 @@ import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { TableSelection } from '../../core/table-selection';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { CauseInfaisabilite, Emplacement, HoraireStand, Stand } from '../../core/models';
+import { CauseInfaisabilite, Emplacement, EtatGel, HoraireStand, Stand } from '../../core/models';
 import { DetailDialog } from '../../shared/detail-dialog';
 import { StandFormDialog } from './stand-form-dialog';
 import { StandsPage } from './stands-page';
@@ -492,6 +492,8 @@ describe('StandsPage table', () => {
   let dialog: { open: ReturnType<typeof vi.fn> };
   const causeParStandId = signal(new Map<string, CauseInfaisabilite>());
   const editingLocked = signal(false);
+  /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
+  let gel: EtatGel[] = [];
   const crud = {
     reload: vi.fn(async () => undefined),
     remove: vi.fn(async () => true),
@@ -534,6 +536,7 @@ describe('StandsPage table', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
     editingLocked.set(false);
+    gel = [];
     causeParStandId.set(new Map());
     crud.reportError.mockClear();
     dialog = { open: vi.fn(() => ({ afterClosed: () => of(undefined) })) };
@@ -541,7 +544,12 @@ describe('StandsPage table', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
-        { provide: ApiService, useValue: { get: vi.fn(async () => []) } },
+        {
+          provide: ApiService,
+          useValue: {
+            get: vi.fn(async (url: string) => (url === '/api/editions/courant/gel' ? gel : [])),
+          },
+        },
         {
           provide: StandsApi,
           useValue: {
@@ -655,6 +663,33 @@ describe('StandsPage table', () => {
     // The compaction rewrites every stand's horaires: it is a write like any other.
     expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
     expect(boutonCarte('Ajouter').disabled).toBe(true);
+  });
+
+  it('greys out what a stands freeze refuses as a whole, with its padlock, but not the edit', async () => {
+    gel = [{ famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' }];
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+    const page = fixture.componentInstance as unknown as PageInternals;
+    page.selection.toggle('s1');
+    await fixture.whenStable();
+
+    expect(racine().querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    expect(boutonCarte('Ajouter').disabled).toBe(true);
+    expect(boutonCarte('Compacter les horaires').disabled).toBe(true);
+    expect(action(0, 'Supprimer').disabled).toBe(true);
+    // A rename or a new location stays open: the form shows the frozen fields read-only.
+    expect(action(0, 'Modifier').disabled).toBe(false);
+    const bulk = Array.from(racine().querySelectorAll('app-bulk-actions-bar button')).filter(
+      (bouton) => (bouton as HTMLButtonElement).disabled,
+    );
+    expect(bulk.length).toBe(2);
+  });
+
+  it('leaves every action open while no freeze holds', async () => {
+    await rendre([stand({ id: 's1', nom: 'Loup-Garou' })]);
+
+    expect(racine().querySelector('app-gel-notice .gel-notice')).toBeNull();
+    expect(boutonCarte('Ajouter').disabled).toBe(false);
+    expect(action(0, 'Supprimer').disabled).toBe(false);
   });
 
   it('opens the read-only detail, and hands over to the form when the user asks to edit', async () => {

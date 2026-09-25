@@ -21,6 +21,8 @@ import { TableFilter } from '../../shared/table-filter';
 import { EmplacementBulkEditData, EmplacementBulkEditDialog } from './emplacement-bulk-edit-dialog';
 import { buildEmplacementDetail } from './emplacement-detail';
 import { EmplacementFormData, EmplacementFormDialog } from './emplacement-form-dialog';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 
 /** Mirrors `QualiteConstraints.DISTANCE_ELOIGNEE_METRES` on the server. */
 const SEUIL_ELOIGNEMENT_METRES = 300;
@@ -45,11 +47,18 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
     MatTooltipModule,
     BulkActionsBar,
     TableFilter,
+    GelNotice,
   ],
   templateUrl: './emplacements-page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
+  private readonly gel = injectGelReferentiel();
+  /** Creating or deleting a typologie or an emplacement is what a TYPOLOGIES_EMPLACEMENTS freeze refuses (ADR 0052). */
+  protected readonly creationLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
+  );
+
   protected readonly columns = ['select', 'id', 'code', 'nom', 'coordonnees', 'voisin', 'actions'];
 
   /** The template names the rows after the entity, as the other pages do. */

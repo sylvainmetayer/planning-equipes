@@ -266,6 +266,7 @@ public class JourneeTypeService {
     }
 
     /** Writes the plan: the calendar's vacations become the edition's grid. */
+    @RefusedWhileFrozen(ReferentialFamily.CRENEAUX)
     public Application apply() {
         solverJobs.refuseIfSolving();
         Plan plan = planCourant();

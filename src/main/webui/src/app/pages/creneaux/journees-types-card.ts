@@ -32,6 +32,7 @@ import {
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { JoursFeriesService } from '../../core/jours-feries.service';
 import { PastilleFerie } from '../../shared/pastille-ferie';
 import { JourneeTypeDialog, JourneeTypeDialogData } from './journee-type-dialog';
@@ -98,6 +99,12 @@ export class JourneesTypesCard implements OnInit {
   private readonly confirm = inject(ConfirmService);
   private readonly notifications = inject(NotificationService);
   private readonly feries = inject(JoursFeriesService);
+  /**
+   * Applying the calendar writes the grid of timeslots, which a CRENEAUX
+   * freeze refuses (ADR 0052); the templates and the calendar themselves
+   * stay open — the page's notice says why the one button is greyed.
+   */
+  private readonly gel = injectGelReferentiel();
 
   protected readonly etat = signal<EtatJourneesTypes | null>(null);
   protected readonly chargement = signal(false);
@@ -142,7 +149,11 @@ export class JourneesTypesCard implements OnInit {
       !this.verrouille(),
   );
   protected readonly peutAppliquer = computed(
-    () => this.calendrier().length > 0 && !this.ecriture() && !this.verrouille(),
+    () =>
+      this.calendrier().length > 0 &&
+      !this.ecriture() &&
+      !this.verrouille() &&
+      !this.gel.isFrozen('CRENEAUX'),
   );
 
   protected readonly libelleVacation = libelleVacation;

@@ -2,7 +2,7 @@
 
 import { Injectable, inject } from '@angular/core';
 import { ApiService } from '../api.service';
-import { CoherenceReport, Edition, EtatEdition } from '../models';
+import { CoherenceReport, Edition, EtatEdition, EtatGel, FreezeFamily } from '../models';
 
 @Injectable({ providedIn: 'root' })
 export class EditionsApi {
@@ -26,6 +26,21 @@ export class EditionsApi {
   /** The coherence checklist of the referential, line by line — read when its panel is unfolded. */
   coherence(): Promise<CoherenceReport> {
     return this.api.get<CoherenceReport>('/api/editions/courant/coherence');
+  }
+
+  /** The freeze of the referential, family by family (ADR 0052). */
+  gel(): Promise<EtatGel[]> {
+    return this.api.get<EtatGel[]>('/api/editions/courant/gel');
+  }
+
+  /** Freezes the family; freezing twice keeps the first date. */
+  freeze(famille: FreezeFamily): Promise<EtatGel> {
+    return this.api.put<EtatGel>(`/api/editions/courant/gel/${encodeURIComponent(famille)}`, {});
+  }
+
+  /** Lifts the freeze of the family. */
+  lift(famille: FreezeFamily): Promise<void> {
+    return this.api.delete(`/api/editions/courant/gel/${encodeURIComponent(famille)}`);
   }
 
   /**

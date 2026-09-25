@@ -7,7 +7,9 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.edition.EtatEditionService;
 import dev.sylvain.planning.service.edition.EtatEditionView;
+import dev.sylvain.planning.service.referentiel.GelReferentielService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.ReferentialFamily;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -35,12 +37,15 @@ import java.util.stream.Stream;
  * ("2025", "2026", "2026 canicule") gives an assistant nothing to recognise
  * the right one by, and editions are counted in units, not in thousands.</p>
  *
- * <p>{@code etat_edition} is the one tool here that works <em>inside</em> an
- * edition rather than on the list, hence the {@code @EditionCiblee} on the
- * class: its {@code edition} argument designates the edition to read, the
- * way every other tool's does. The other tools name their edition as a
- * plain argument, resolved by hand — the interceptor only reads
- * {@code @EditionArg}, so it leaves them alone.</p>
+ * <p>Three tools here work <em>inside</em> an edition rather than on the
+ * list — {@code etat_edition}, which reads it, and {@code figer_referentiel}
+ * and {@code lever_gel}, which freeze and lift a family of its referential —
+ * hence the {@code @EditionCiblee} on the class: their {@code edition}
+ * argument designates the edition to work in, the way every other tool's
+ * does. Dropping the annotation would silently point all three at the
+ * default edition. The other tools name their edition as a plain argument,
+ * resolved by hand — the interceptor only reads {@code @EditionArg}, so it
+ * leaves them alone.</p>
  */
 @RefusMetier
 @Journalise
@@ -50,6 +55,11 @@ public class EditionMcpTools {
 
     /** Argument names, as a refusal quotes them back to the caller. */
     private static final String ARG_EDITION = "edition";
+
+    private static final String ARG_FAMILLE = "famille";
+
+    private static final String FAMILLE_DESCRIPTION =
+            "Famille du référentiel : STANDS, CRENEAUX, TYPOLOGIES_EMPLACEMENTS ou COMPETENCES";
 
     private final EditionService editionService;
 
@@ -61,18 +71,22 @@ public class EditionMcpTools {
 
     private final EtatEditionService etatEditionService;
 
+    private final GelReferentielService gelService;
+
     @Inject
     EditionMcpTools(
             EditionService editionService,
             EditionContext editionContext,
             ReferenceDataService referenceDataService,
             McpEditions editions,
-            EtatEditionService etatEditionService) {
+            EtatEditionService etatEditionService,
+            GelReferentielService gelService) {
         this.editionService = editionService;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.editions = editions;
         this.etatEditionService = etatEditionService;
+        this.gelService = gelService;
     }
 
     @Tool(
@@ -123,7 +137,9 @@ public class EditionMcpTools {
                     + "(« à traiter aujourd'hui », jugé sur la date du jour du serveur) : déclarations de "
                     + "disponibilité en attente, demandes d'échange à arbitrer et celles en alerte, journées non "
                     + "relues des sept jours à venir (aujourd'hui compris), silencieux à relancer, données modifiées depuis la "
-                    + "résolution, personnes à prévenir — des comptes et des dates, jamais un nom. Chaque ligne porte un "
+                    + "résolution, personnes à prévenir — des comptes et des dates, jamais un nom ; et le bloc gel : les "
+                    + "familles du référentiel figées (stands, créneaux, typologies et emplacements, compétences) et "
+                    + "depuis quand. Chaque ligne porte un "
                     + "statut A_FAIRE, ATTENTION, INFO (des chiffres à lire, rien qui bloque) ou FAIT, et les "
                     + "chiffres qui le décident ; aucune donnée nominative. "
                     + "À appeler en premier pour savoir où en est l'organisateur, avant de choisir un outil plus fin.",
@@ -136,6 +152,51 @@ public class EditionMcpTools {
     EtatEditionView editionState(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return etatEditionService.etat();
+    }
+
+    @Tool(
+            name = "figer_referentiel",
+            description = "Fige une famille du référentiel de l'édition une fois sa préparation terminée : "
+                    + "STANDS (création, suppression, effectifs, réserve majeurs, typologies proposées, horaires), "
+                    + "CRENEAUX (création, suppression, date, heures, couverture de pause, journées types "
+                    + "appliquées, dérivation, séries), TYPOLOGIES_EMPLACEMENTS (création, suppression, quota par "
+                    + "typologie, typologie polyvalente) ou COMPETENCES (niveaux des animateurs déjà inscrits). "
+                    + "Toute écriture de ces champs est ensuite refusée (REFERENTIEL_FIGE), par tous les chemins, "
+                    + "jusqu'à lever_gel. Restent libres : disponibilités, souhaits, déclarations, ajustements, "
+                    + "verrous et consignes. Distinct de verrouiller, qui fige des sièges du planning. Idempotent : "
+                    + "une famille déjà figée garde sa date.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    GelReferentielService.EtatGel freezeReferential(
+            @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        ReferentialFamily cible = requireFamily(famille);
+        gelService.freeze(cible);
+        return gelService.etat(cible);
+    }
+
+    @Tool(
+            name = "lever_gel",
+            description = "Lève le gel d'une famille du référentiel (voir figer_referentiel) : ses fiches "
+                    + "redeviennent modifiables. À ne faire que sur demande explicite : après une publication, "
+                    + "toute modification fera bouger des plannings déjà envoyés — pour fermer un stand tard, "
+                    + "préférer une consigne (appliquer_consigne), ouverte même sous gel.",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = false,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    GelReferentielService.EtatGel liftFreeze(
+            @ToolArg(description = FAMILLE_DESCRIPTION) String famille,
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        ReferentialFamily cible = requireFamily(famille);
+        gelService.lift(cible);
+        return gelService.etat(cible);
     }
 
     @Tool(
@@ -249,6 +310,14 @@ public class EditionMcpTools {
             throw new BusinessError.Invalid(champ + " est requis : id ou nom de l'édition (voir lister_editions)");
         }
         return editions.solve(edition);
+    }
+
+    private static ReferentialFamily requireFamily(String famille) {
+        ReferentialFamily cible = McpArgs.enumeration(ReferentialFamily.class, famille, ARG_FAMILLE);
+        if (cible == null) {
+            throw new BusinessError.Invalid(ARG_FAMILLE + " est requis : " + FAMILLE_DESCRIPTION);
+        }
+        return cible;
     }
 
     private Edition find(String id) {

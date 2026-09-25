@@ -38,6 +38,8 @@ import { labelCreneauxPluriel } from '../../core/entity-labels';
 import { PlanningResolutionStore } from '../../core/planning-resolution.store';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { creneauName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -91,6 +93,7 @@ import { bilanGrille, gridAnomalyIcon, trierAnomalies } from './grille-creneaux'
     BulkActionsBar,
     JourneesTypesCard,
     PastilleFerie,
+    GelNotice,
   ],
   templateUrl: './creneaux-page.html',
   styleUrls: [
@@ -110,6 +113,11 @@ export class CreneauxPage implements OnInit {
   protected readonly jobs = inject(SolverJobService);
   /** Editing is disabled while a solve/analysis runs, to avoid corrupting the data it reads. */
   protected readonly editingLocked = this.jobs.editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /** Creating, deleting or generating créneaux is what a CRENEAUX freeze refuses (ADR 0052). */
+  protected readonly gridLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('CRENEAUX'),
+  );
 
   private readonly problemes = inject(ProblemesStore);
   private readonly crud = inject(ReferenceCrudService);

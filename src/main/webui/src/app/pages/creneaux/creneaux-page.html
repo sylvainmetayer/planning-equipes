@@ -1,5 +1,7 @@
 <h1 class="page-title" i18n="@@nav.link.creneaux">Créneaux</h1>
 
+<app-gel-notice family="CRENEAUX" />
+
 <app-journees-types [verrouille]="editingLocked()" (applique)="apresJourneesTypes()" />
 
 <mat-card appearance="outlined" class="page-card creneaux-liste-card">
@@ -8,17 +10,17 @@
     <mat-card-subtitle i18n="@@creneaux.form.description">Chaque stand est ouvert sur chaque créneau par défaut ; les fermetures se déclarent depuis la fiche du stand.</mat-card-subtitle>
   </mat-card-header>
   <mat-card-actions class="card-actions">
-    <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">
+    <button matButton="filled" type="button" [disabled]="gridLocked()" (click)="openCreate()">
       <mat-icon>add</mat-icon>
       <ng-container i18n="@@common.add">Ajouter</ng-container>
     </button>
-    <button matButton type="button" [disabled]="editingLocked()" (click)="openSerie()"
+    <button matButton type="button" [disabled]="gridLocked()" (click)="openSerie()"
             i18n-matTooltip="@@creneaux.serie.tooltip"
             matTooltip="Tous les créneaux d'une journée type, répétés sur les jours choisis, en une règle prévisualisée avant d'écrire.">
       <mat-icon>playlist_add</mat-icon>
       <ng-container i18n="@@creneaux.serie.action">Créer une série</ng-container>
     </button>
-    <button matButton type="button" [disabled]="editingLocked()" (click)="openDerivation()"
+    <button matButton type="button" [disabled]="gridLocked()" (click)="openDerivation()"
             i18n-matTooltip="@@creneaux.derivation.tooltip"
             matTooltip="La grille que les horaires des stands impliquent, prévisualisée avant d'écrire.">
       <mat-icon>storefront</mat-icon>
@@ -30,7 +32,7 @@
       <p class="grille-diagnostic">{{ diagnostic.explication }}</p>
     }
     @if (selection.hasSelection()) {
-      <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
+      <app-bulk-actions-bar [count]="selection.count()" [disabled]="gridLocked()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
     }
     @if (editingLocked()) {
@@ -103,7 +105,7 @@
                     (click)="edit(creneau)">
               <mat-icon>edit</mat-icon>
             </button>
-            <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="editingLocked()"
+            <button matIconButton i18n-matTooltip="@@common.delete" matTooltip="Supprimer" i18n-aria-label="@@common.delete" aria-label="Supprimer" class="danger-action" [disabled]="gridLocked()"
                     (click)="remove(creneau)">
               <mat-icon>delete</mat-icon>
             </button>

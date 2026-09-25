@@ -21,10 +21,12 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ConsignesStore } from '../../core/consignes.store';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 import { RapportOuvertures } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { correspondAuFiltre } from '../../core/text-filter';
+import { GelNotice } from '../../shared/gel-notice';
 import { StandBulkEditData, StandBulkEditDialog } from '../stands/stand-bulk-edit-dialog';
 import { describeException, describeRule } from '../stands/stand-detail';
 import {
@@ -61,6 +63,7 @@ import {
     MatRadioModule,
     MatSelectModule,
     MatTooltipModule,
+    GelNotice,
   ],
   templateUrl: './comparaison-vue.html',
   styleUrl: './comparaison-vue.css',
@@ -73,6 +76,11 @@ export class OpeningsComparisonView {
   private readonly consignes = inject(ConsignesStore);
   private readonly dialog = inject(MatDialog);
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
+  private readonly gel = injectGelReferentiel();
+  /** The copy is a bulk edit of the stands' hours, which a STANDS freeze refuses (ADR 0052). */
+  protected readonly copyLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('STANDS'),
+  );
 
   readonly rapport = input<RapportOuvertures | null>(null);
   /** The compared stands, in the order they were picked. The `stands` query param. */
@@ -258,7 +266,7 @@ export class OpeningsComparisonView {
    */
   protected copyReference(): void {
     const copie = this.copie();
-    if (!copie) {
+    if (!copie || this.copyLocked()) {
       return;
     }
     this.dialog

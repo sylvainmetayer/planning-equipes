@@ -10,6 +10,8 @@ import { MatInputModule } from '@angular/material/input';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { animateurName } from '../../core/reference-labels';
 import { SolverJobService } from '../../core/solver-job.service';
@@ -54,6 +56,7 @@ export interface AnimateurFormData {
     MatButtonModule,
     MatIconModule,
     MatTooltipModule,
+    GelNotice,
   ],
   templateUrl: './animateur-form-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -75,6 +78,14 @@ export class AnimateurFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.animateur?.id ?? null);
+  private readonly gel = injectGelReferentiel();
+  /**
+   * A COMPETENCES freeze (ADR 0052) covers the fiches already in the roster:
+   * a new animateur arrives with theirs, so the section stays open on a creation.
+   */
+  protected readonly competencesFrozen = computed(
+    () => this.editingId() !== null && this.gel.isFrozen('COMPETENCES'),
+  );
   private readonly initial = toDraft(this.data.animateur);
   protected readonly draft = signal<AnimateurDraft>(this.initial);
 

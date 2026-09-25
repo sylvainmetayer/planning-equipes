@@ -24,6 +24,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -86,6 +87,8 @@ public class ReferentielCsvImportService {
 
     private final ReferenceDataChangeTracker changeTracker;
 
+    private final GelReferentielService gel;
+
     @Inject
     public ReferentielCsvImportService(
             TypologieService typologies,
@@ -93,13 +96,15 @@ public class ReferentielCsvImportService {
             StandService stands,
             CreneauService creneaux,
             JourneeTypeService journeesTypes,
-            ReferenceDataChangeTracker changeTracker) {
+            ReferenceDataChangeTracker changeTracker,
+            GelReferentielService gel) {
         this.typologies = typologies;
         this.emplacements = emplacements;
         this.stands = stands;
         this.creneaux = creneaux;
         this.journeesTypes = journeesTypes;
         this.changeTracker = changeTracker;
+        this.gel = gel;
     }
 
     /* ------------------------------- Entry points ------------------------------- */
@@ -108,8 +113,17 @@ public class ReferentielCsvImportService {
         return analyse(cible, request).report(false);
     }
 
-    /** Writes what the preview announced, row by row, after reading the file again. */
+    /**
+     * Writes what the preview announced, row by row, after reading the file again.
+     *
+     * <p>Refused as a whole while the family the file targets is frozen, before
+     * any row is written: a file replaces a referential, it does not edit one
+     * field of a fiche (ADR 0052). The typologies a stand file would create
+     * are refused on their own write, which comes first. Day templates are no
+     * family: only their application reaches the grid.</p>
+     */
     public ReferentielCsvImportReport apply(ImportTarget cible, ReferentielCsvImportRequest request) {
+        frozenFamily(cible).ifPresent(family -> gel.refuseIfFrozen(family));
         Analyse analyse = analyse(cible, request);
         for (String code : analyse.typologiesACreer()) {
             typologies.importer(new TypologieItem(null, code, code, false, null, null, null));
@@ -123,6 +137,16 @@ public class ReferentielCsvImportService {
             changeTracker.markModified();
         }
         return analyse.report(true);
+    }
+
+    /** The family a file of this target writes, none for the day templates. */
+    static Optional<ReferentialFamily> frozenFamily(ImportTarget cible) {
+        return switch (cible) {
+            case TYPOLOGIES, EMPLACEMENTS -> Optional.of(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS);
+            case STANDS -> Optional.of(ReferentialFamily.STANDS);
+            case CRENEAUX -> Optional.of(ReferentialFamily.CRENEAUX);
+            case JOURNEES_TYPES -> Optional.empty();
+        };
     }
 
     /** The file the screen offers to download, so the shape is shown rather than described. */

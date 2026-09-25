@@ -42,6 +42,8 @@ import {
   repartitionCompetents,
   usagesTypologies,
 } from './usage-typologies';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 
 /**
  * Who references a typologie, counted before it can be deleted. Removing one
@@ -107,6 +109,7 @@ function usageVide(typologieId: string): UsageTypologie {
     RouterLink,
     BulkActionsBar,
     TableFilter,
+    GelNotice,
   ],
   templateUrl: './typologies-page.html',
   styleUrl: './typologies-page.css',
@@ -114,6 +117,12 @@ function usageVide(typologieId: string): UsageTypologie {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class TypologiesPage extends ReferenceTablePage<TypologieItem> {
+  private readonly gel = injectGelReferentiel();
+  /** Creating or deleting a typologie or an emplacement is what a TYPOLOGIES_EMPLACEMENTS freeze refuses (ADR 0052). */
+  protected readonly creationLocked = computed(
+    () => this.editingLocked() || this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
+  );
+
   protected readonly columns = [
     'select',
     'id',

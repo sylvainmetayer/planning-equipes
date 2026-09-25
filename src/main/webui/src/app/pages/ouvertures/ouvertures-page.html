@@ -35,7 +35,7 @@
     </mat-button-toggle-group>
     @if (view() === 'SAISIR' || view() === 'JOURNEES_TYPES') {
       <button matButton="filled" type="button" class="saisie-enregistrer"
-              [disabled]="editingLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
+              [disabled]="gridLocked() || enregistrement() || standsModifies().length === 0" (click)="enregistrer()">
         <mat-icon>save</mat-icon>
         <ng-container i18n="@@ouvertures.saisie.enregistrer">Enregistrer</ng-container>
         @if (standsModifies().length > 0) {
@@ -48,7 +48,7 @@
       </button>
       @if (view() === 'SAISIR') {
       <button matButton type="button" class="saisie-aligner" [matTooltip]="infobulleAligner()"
-              [disabled]="editingLocked() || enregistrement() || standsModifies().length > 0 || standsPartiels().length === 0"
+              [disabled]="gridLocked() || enregistrement() || standsModifies().length > 0 || standsPartiels().length === 0"
               (click)="alignerPartiels()">
         <mat-icon>auto_fix_high</mat-icon>
         <ng-container i18n="@@ouvertures.saisie.aligner">Aligner les fenêtres partielles</ng-container>
@@ -132,6 +132,7 @@
         <p class="empty-hint" i18n="@@ouvertures.saisie.hint">
           Une case par stand et par colonne : l'effectif, « - » ou 0 pour fermer, vide pour laisser tel quel. Flèches, Entrée et collage depuis un tableur. Une colonne se scinde depuis son en-tête.
         </p>
+        <app-gel-notice family="STANDS" />
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.saisie.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
@@ -151,7 +152,7 @@
                     @if (consigneByDate().get(jour.date); as consigne) {
                       <span class="entete-consigne" [matTooltip]="consigne.motif">{{ consigne.libelle }}</span><span class="visually-hidden"> — {{ consigne.motif }}</span>
                     }
-                    <button matIconButton type="button" class="recopier-jour" [disabled]="editingLocked()"
+                    <button matIconButton type="button" class="recopier-jour" [disabled]="gridLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierJour" matTooltip="Recopier ce jour sur tous les autres jours, pour les stands affichés"
                             i18n-aria-label="@@ouvertures.saisie.recopierJour" aria-label="Recopier ce jour sur tous les autres jours, pour les stands affichés"
                             (click)="recopierJour(jour.date)">
@@ -175,13 +176,13 @@
                         <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
                       }
                       <span class="colonne-actions">
-                        <button matIconButton type="button" class="scinder-colonne" [disabled]="editingLocked()"
+                        <button matIconButton type="button" class="scinder-colonne" [disabled]="gridLocked()"
                                 i18n-matTooltip="@@ouvertures.saisie.scinder" matTooltip="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
                                 i18n-aria-label="@@ouvertures.saisie.scinder" aria-label="Scinder cette colonne à une heure : deux colonnes, pour dire un effectif qui change en cours de créneau"
                                 (click)="scissionActive.set(colonne.colonneId)">
                           <mat-icon>call_split</mat-icon>
                         </button>
-                        <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
+                        <button matIconButton type="button" class="appliquer-colonne" [disabled]="gridLocked()"
                                 i18n-matTooltip="@@ouvertures.saisie.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
                                 i18n-aria-label="@@ouvertures.saisie.appliquerColonne" aria-label="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
                                 (click)="applyColonne(colonne.colonneId)">
@@ -200,14 +201,14 @@
                 <tr [class.ligne-modifiee]="ligne.modifiee" [class.ligne-masquee]="!ligne.visible">
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>
-                    <button matIconButton type="button" class="recopier-ligne" [disabled]="editingLocked()"
+                    <button matIconButton type="button" class="recopier-ligne" [disabled]="gridLocked()"
                             i18n-matTooltip="@@ouvertures.saisie.recopierLigne" matTooltip="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
                             i18n-aria-label="@@ouvertures.saisie.recopierLigne" aria-label="Recopier le jour de la case active (sinon le premier jour renseigné) sur tous les jours de ce stand"
                             (click)="recopierLigne(ligne.standId)">
                       <mat-icon>content_copy</mat-icon>
                     </button>
                     <button matIconButton type="button" class="dupliquer-ligne"
-                            [disabled]="editingLocked() || ligne.noLignePrecedente"
+                            [disabled]="gridLocked() || ligne.noLignePrecedente"
                             i18n-matTooltip="@@ouvertures.saisie.dupliquerLigne" matTooltip="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
                             i18n-aria-label="@@ouvertures.saisie.dupliquerLigne" aria-label="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
                             (click)="copyLignePrecedente(ligne.standId)">
@@ -264,6 +265,7 @@
             <ng-container i18n="@@ouvertures.journeesTypes.resumeHorsGrille">{{ resumeJourneesTypes().datesSansColonne }} date(s) dont un créneau est scindé restent à régler dans la grille par date.</ng-container>
           }
         </p>
+        <app-gel-notice family="STANDS" />
         @if (editingLocked()) {
           <p class="locked-hint" i18n="@@ouvertures.journeesTypes.locked">La saisie est verrouillée pendant que le solveur est en cours d'exécution.</p>
         }
@@ -291,7 +293,7 @@
                       <mat-icon inline aria-hidden="false" class="relais-repas-icon" [matTooltip]="relaisRepasTooltip" [attr.aria-label]="relaisRepasTooltip">restaurant</mat-icon>
                     }
                     <span class="colonne-actions">
-                      <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
+                      <button matIconButton type="button" class="appliquer-colonne" [disabled]="gridLocked()"
                               i18n-matTooltip="@@ouvertures.saisie.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
                               i18n-aria-label="@@ouvertures.saisie.appliquerColonne" aria-label="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"
                               (click)="applyColonne(colonne.colonneId)">
@@ -310,7 +312,7 @@
                   <th scope="row" class="colonne-stand">
                     <span class="stand-nom">{{ ligne.nom }}</span>
                     <button matIconButton type="button" class="dupliquer-ligne"
-                            [disabled]="editingLocked() || ligne.noLignePrecedente"
+                            [disabled]="gridLocked() || ligne.noLignePrecedente"
                             i18n-matTooltip="@@ouvertures.saisie.dupliquerLigne" matTooltip="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
                             i18n-aria-label="@@ouvertures.saisie.dupliquerLigne" aria-label="Reprendre la ligne du dessus dans celle-ci (Ctrl+D)"
                             (click)="copyLignePrecedente(ligne.standId)">

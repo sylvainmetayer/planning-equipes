@@ -17,7 +17,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Animateur } from '../../core/models';
+import { EditionsApi } from '../../core/api/editions-api';
+import { Animateur, EtatGel } from '../../core/models';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { noDraftStorage, fakeDialogRef, memoryStorage } from '../../core/testing/brouillon';
 import {
@@ -54,10 +55,13 @@ function monter(
     editingLocked?: boolean;
     saveOk?: boolean;
     storages?: { local: DraftStorage; session: DraftStorage };
+    /** What the freeze read answers; nothing frozen by default. */
+    gel?: EtatGel[];
   } = {},
 ) {
   const save = vi.fn(async () => options.saveOk ?? true);
   const close = vi.fn();
+  const gel = vi.fn(async () => options.gel ?? []);
   TestBed.resetTestingModule();
   TestBed.configureTestingModule({
     providers: [
@@ -68,6 +72,7 @@ function monter(
         useValue: { editingLocked: signal(options.editingLocked ?? false) },
       },
       { provide: ReferenceCrudService, useValue: { save } },
+      { provide: EditionsApi, useValue: { gel } },
       { provide: MatDialogRef, useValue: fakeDialogRef(close) },
       ...(options.storages
         ? [
@@ -78,7 +83,7 @@ function monter(
       { provide: MAT_DIALOG_DATA, useValue: { animateur: donnee } },
     ],
   });
-  return { fixture: TestBed.createComponent(AnimateurFormDialog), save, close };
+  return { fixture: TestBed.createComponent(AnimateurFormDialog), save, close, gel };
 }
 
 function racine(fixture: ComponentFixture<AnimateurFormDialog>): HTMLElement {
@@ -380,6 +385,29 @@ describe('AnimateurFormDialog', () => {
     expect(
       (racine(fixture).querySelector('button[type="submit"]') as HTMLButtonElement).disabled,
     ).toBe(true);
+  });
+
+  // The padlock's notice sits inside the frozen branch, so it cannot be what
+  // reads the freeze: on a fresh reload the form itself has to.
+  it('reads the freeze itself and shows the competences read-only on a fresh reload', async () => {
+    const { fixture, gel } = monter(animateur({ competences: { ambiance: 'REFERENT' } }), {
+      gel: [
+        {
+          famille: 'COMPETENCES',
+          libelle: 'Compétences',
+          fige: true,
+          figeLe: '2026-07-01T08:00:00Z',
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    expect(gel).toHaveBeenCalledOnce();
+    expect(racine(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    const addButton = Array.from(racine(fixture).querySelectorAll('button')).find((each) =>
+      each.textContent?.includes('Ajouter une appréciation'),
+    ) as HTMLButtonElement;
+    expect(addButton.disabled).toBe(true);
   });
 
   // An animateur holds ONE appreciation per typologie: two rows on the same one

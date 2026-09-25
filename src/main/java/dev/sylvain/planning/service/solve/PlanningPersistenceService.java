@@ -12,6 +12,7 @@ import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.referentiel.ForcedAssignmentOnLockedSchedule;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
+import dev.sylvain.planning.service.referentiel.RefusedWhileFrozen;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
@@ -126,8 +127,10 @@ public class PlanningPersistenceService {
      * migrations, not by a scenario. Used by the "Reset BDD" admin action to
      * start an edition from scratch — every other edition is left untouched,
      * which is why this is a scoped {@code DELETE} rather than the
-     * {@code TRUNCATE} it used to be.
+     * {@code TRUNCATE} it used to be. Refused while any family of the
+     * referential is frozen: a reset destroys what the freeze protects.
      */
+    @RefusedWhileFrozen
     public void clearDatabase() {
         // Refused while a solve holds this edition's solver, and the stakes are
         // higher here than for a single delete: the landing persist would put

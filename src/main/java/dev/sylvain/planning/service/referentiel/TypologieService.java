@@ -39,18 +39,22 @@ public class TypologieService implements TypologieLibelles {
 
     private final JdbcEditionScope scope;
 
+    private final GelReferentielService gel;
+
     @Inject
     public TypologieService(
             TypologieRepository repository,
             ReferenceDataChangeTracker changeTracker,
             ConcurrentModificationGuard staleWrites,
             IdGenerator ids,
-            JdbcEditionScope scope) {
+            JdbcEditionScope scope,
+            GelReferentielService gel) {
         this.repository = repository;
         this.changeTracker = changeTracker;
         this.staleWrites = staleWrites;
         this.ids = ids;
         this.scope = scope;
+        this.gel = gel;
     }
 
     public List<TypologieItem> list() {
@@ -74,6 +78,7 @@ public class TypologieService implements TypologieLibelles {
      * id the caller sent is ignored — it is what the returned item carries
      * that designates the new row.
      */
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     public TypologieItem create(TypologieItem typologie) {
         TypologieItem cree = scope.writeAndReturn(
                 "Failed to create typology " + typologie.label(), connection -> create(connection, typologie));
@@ -87,6 +92,7 @@ public class TypologieService implements TypologieLibelles {
      * once its transaction is committed — marking it here would survive a
      * rollback, and the Solveur screen would announce data that never changed.
      */
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     TypologieItem create(Connection connection, TypologieItem typologie) throws SQLException {
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
         Codes.refuseTaken(code, repository.idByCode(connection, code), null, "la typologie");
@@ -114,6 +120,7 @@ public class TypologieService implements TypologieLibelles {
      * file's id and, for a typologie without a code, make every re-import of
      * the same file create it once more. Any other id is a creation.</p>
      */
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     public TypologieItem importer(TypologieItem typologie) {
         boolean existe = typologie.id() != null && repository.typologieExists(typologie.id());
         if (!existe && !IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie.id())) {
@@ -140,12 +147,21 @@ public class TypologieService implements TypologieLibelles {
         return ecrite;
     }
 
+    /**
+     * Saves the game category as edited. Under a
+     * {@link ReferentialFamily#TYPOLOGIES_EMPLACEMENTS} freeze, refused only
+     * when the cap or the polyvalent flag moves — a label or a note stays
+     * open (ADR 0052).
+     */
     public TypologieItem update(String id, TypologieItem typologie) {
         if (!repository.typologieExists(id)) {
             throw new BusinessError.NotFound("Typologie inconnue : " + id);
         }
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
         Codes.refuseTaken(code, repository.idByCode(code), id, "la typologie");
+        gel.refuseIfFrozen(
+                ReferentialFamily.TYPOLOGIES_EMPLACEMENTS,
+                () -> GelReferentielService.changesFrozenTypologieFields(stored(id), typologie));
         TypologieItem misAJour = repository.saveTypologie(
                 new TypologieItem(
                         id,
@@ -165,6 +181,19 @@ public class TypologieService implements TypologieLibelles {
         return repository.idByCode(code);
     }
 
+    /**
+     * The row as stored — the before-image a freeze compares an edit against,
+     * read only under that freeze. The whole list, a few dozen rows: an edition
+     * has no more game categories than that, and no bulk edit writes them.
+     */
+    private TypologieItem stored(String id) {
+        return repository.listTypologies().stream()
+                .filter(item -> item.id().equals(id))
+                .findFirst()
+                .orElse(null);
+    }
+
+    @RefusedWhileFrozen(ReferentialFamily.TYPOLOGIES_EMPLACEMENTS)
     public void delete(String id) {
         if (repository.typologieInUse(id)) {
             String libelle = repository.listTypologies().stream()

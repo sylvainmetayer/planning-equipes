@@ -9,10 +9,11 @@ import { provideZonelessChangeDetection, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { Animateur } from '../../core/models';
+import { Animateur, EtatGel } from '../../core/models';
 import { AnimateurBulkEditDialog } from './animateur-bulk-edit-dialog';
 
 const TYPOLOGIES = [
@@ -45,7 +46,7 @@ const ANIMATEURS: Animateur[] = [
 
 function monter(
   animateurs: Animateur[],
-  options: { editingLocked?: boolean; saved?: number } = {},
+  options: { editingLocked?: boolean; saved?: number; gel?: EtatGel[] } = {},
 ) {
   const saveMany = vi.fn(async () => options.saved ?? animateurs.length);
   const close = vi.fn();
@@ -61,6 +62,7 @@ function monter(
       { provide: ReferenceCrudService, useValue: { saveMany } },
       { provide: MatDialogRef, useValue: { close } },
       { provide: MAT_DIALOG_DATA, useValue: { animateurs } },
+      { provide: EditionsApi, useValue: { gel: vi.fn(async () => options.gel ?? []) } },
     ],
   });
   return { fixture: TestBed.createComponent(AnimateurBulkEditDialog), saveMany, close };
@@ -137,6 +139,32 @@ describe('AnimateurBulkEditDialog', () => {
 
     await choisir(fixture, 'competenceMode', 'Ajouter');
     expect(typologie.getAttribute('aria-disabled')).toBe('false');
+  });
+
+  it('closes the appreciation under a competences freeze, and leaves the rest of the batch open', async () => {
+    const { fixture, saveMany } = monter(ANIMATEURS, {
+      gel: [
+        {
+          famille: 'COMPETENCES',
+          libelle: 'Compétences des animateurs',
+          fige: true,
+          figeLe: '2026-07-01T08:00:00Z',
+        },
+      ],
+    });
+    await fixture.whenStable();
+
+    expect(racine(fixture).querySelector('app-gel-notice .gel-notice')).not.toBeNull();
+    for (const name of ['competenceMode', 'competenceTypologie', 'competenceNiveau']) {
+      expect(
+        racine(fixture).querySelector(`mat-select[name="${name}"]`)!.getAttribute('aria-disabled'),
+        name,
+      ).toBe('true');
+    }
+    await choisir(fixture, 'manager', 'Oui');
+    submit(fixture);
+    await fixture.whenStable();
+    expect(payloads(saveMany).map((each) => each.manager)).toEqual([true, true]);
   });
 
   it('waits for a typologie before enabling an appreciation edit', async () => {

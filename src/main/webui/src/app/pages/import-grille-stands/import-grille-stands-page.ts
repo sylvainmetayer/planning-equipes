@@ -18,6 +18,8 @@ import { RouterLink } from '@angular/router';
 import { StandsApi } from '../../core/api/stands-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
+import { GelNotice } from '../../shared/gel-notice';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { standNames } from '../../core/reference-labels';
 import { ConfirmService } from '../../shared/confirm-dialog';
@@ -48,6 +50,7 @@ import {
     MatProgressBarModule,
     MatTooltipModule,
     RouterLink,
+    GelNotice,
   ],
   templateUrl: './import-grille-stands-page.html',
   styleUrl: '../../../styles/import-animateurs.css',
@@ -63,6 +66,7 @@ export class ImportGrilleStandsPage {
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
   private readonly store = inject(ReferenceDataStore);
+  private readonly gel = injectGelReferentiel();
 
   private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
 
@@ -93,7 +97,9 @@ export class ImportGrilleStandsPage {
       !this.rapport()?.applied &&
       (this.rapport()?.accepted ?? 0) > 0 &&
       !this.analyseEnCours() &&
-      !this.importEnCours(),
+      !this.importEnCours() &&
+      // A STANDS freeze refuses the whole file (ADR 0052): said before the click.
+      !this.gel.isFrozen('STANDS'),
   );
 
   /** Stand id → name: a row names its stand by id, and the file by its own label. */

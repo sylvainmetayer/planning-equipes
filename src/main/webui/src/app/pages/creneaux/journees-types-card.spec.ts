@@ -6,12 +6,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { MatDialog } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { EditionsApi } from '../../core/api/editions-api';
 import { JourneesTypesApi } from '../../core/api/journees-types-api';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { EtatJourneesTypes } from '../../core/models';
+import { EtatGel, EtatJourneesTypes } from '../../core/models';
 import { JourneesTypesCard } from './journees-types-card';
 
 const ETAT: EtatJourneesTypes = {
@@ -74,6 +75,8 @@ describe('JourneesTypesCard', () => {
   const dialog = { open: vi.fn(() => ({ afterClosed: () => of(null) })) };
   const notifications = { notify: vi.fn() };
   const confirm = { ask: vi.fn(async () => true) };
+  /** What `GET /api/editions/courant/gel` answers; nothing frozen unless a test says so. */
+  let gel: EtatGel[] = [];
 
   beforeEach(() => {
     for (const stub of Object.values(api)) {
@@ -81,6 +84,7 @@ describe('JourneesTypesCard', () => {
     }
     dialog.open.mockClear();
     notifications.notify.mockClear();
+    gel = [];
     api.etat.mockResolvedValue(ETAT);
     api.setCalendrier.mockImplementation(async (calendrier) => ({
       ...ETAT,
@@ -97,6 +101,7 @@ describe('JourneesTypesCard', () => {
         { provide: MatDialog, useValue: dialog },
         { provide: ConfirmService, useValue: confirm },
         { provide: NotificationService, useValue: notifications },
+        { provide: EditionsApi, useValue: { gel: vi.fn(async () => gel) } },
       ],
     });
   });
@@ -159,5 +164,36 @@ describe('JourneesTypesCard', () => {
       { data: { apercu: unknown } },
     ];
     expect(config.data.apercu).toBe(apercu);
+  });
+
+  it('greys out applying the calendar under a timeslots freeze, and leaves the calendar open', async () => {
+    gel = [
+      { famille: 'CRENEAUX', libelle: 'Créneaux', fige: true, figeLe: '2026-07-01T08:00:00Z' },
+    ];
+    const { fixture, card, racine } = await mount();
+    await fixture.whenStable();
+
+    const applyButton = Array.from(racine.querySelectorAll<HTMLButtonElement>('button')).find(
+      (each) => each.textContent?.includes('Appliquer le calendrier'),
+    )!;
+    expect(applyButton.disabled).toBe(true);
+    await card.appliquer();
+    expect(api.previewApplication).not.toHaveBeenCalled();
+    expect(dialog.open).not.toHaveBeenCalled();
+
+    // The templates and the calendar are not timeslots: writing them stays open.
+    await card.retirer('2027-07-12');
+    expect(api.setCalendrier).toHaveBeenCalledOnce();
+  });
+
+  it('leaves applying the calendar open under a stands freeze', async () => {
+    gel = [{ famille: 'STANDS', libelle: 'Stands', fige: true, figeLe: '2026-07-01T08:00:00Z' }];
+    const { fixture, racine } = await mount();
+    await fixture.whenStable();
+
+    const applyButton = Array.from(racine.querySelectorAll<HTMLButtonElement>('button')).find(
+      (each) => each.textContent?.includes('Appliquer le calendrier'),
+    )!;
+    expect(applyButton.disabled).toBe(false);
   });
 });

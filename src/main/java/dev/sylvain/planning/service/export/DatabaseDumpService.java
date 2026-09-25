@@ -88,6 +88,9 @@ public class DatabaseDumpService {
             // do — a restore that dropped them would hand the organiser back a
             // plan nobody had read.
             "validation_journee",
+            // The freeze of the referential: which families the organiser
+            // declared ready. A restore without it would reopen them unasked.
+            "gel_referentiel",
             // The edition's consignes (issue #4): a band closed on given dates,
             // the compensation chosen, and the créneaux they added — plus the
             // presets they are made from. They change which seats a solve is

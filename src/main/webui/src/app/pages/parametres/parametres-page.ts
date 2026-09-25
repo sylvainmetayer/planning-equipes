@@ -43,6 +43,9 @@ import { errorPrefix } from '../../core/error-message';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { OngletParametres, readOngletParametres } from './parametres';
 import { SingleKeyShortcutsToggle } from '../../shared/single-key-shortcuts-toggle';
+import { GelNotice } from '../../shared/gel-notice';
+import { GelReferentielCard } from '../../shared/gel-referentiel-card';
+import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 
 /**
  * Typed back before a SQL dump is replayed. Left untranslated on purpose: a
@@ -100,6 +103,8 @@ export const REPLACE_KEYWORD = 'REMPLACER';
     ParametresQualiteCard,
     ParametresNotificationsPanel,
     StatusMessage,
+    GelNotice,
+    GelReferentielCard,
   ],
   templateUrl: './parametres-page.html',
   styleUrl: './parametres.css',
@@ -127,6 +132,11 @@ export class ParametresPage implements OnInit {
    * available.
    */
   protected readonly editionLocked = computed(() => this.jobs.editingLocked());
+  /** The ninja typologie is one of the fields a TYPOLOGIES_EMPLACEMENTS freeze covers (ADR 0052). */
+  private readonly gel = injectGelReferentiel();
+  protected readonly typologiesFrozen = computed(() =>
+    this.gel.isFrozen('TYPOLOGIES_EMPLACEMENTS'),
+  );
   /** SQL dump replay rewrites the WHOLE database, every edition included: locked by any running job. */
   protected readonly transferLocked = computed(() => this.transferBusy() || this.solverBusy());
 
