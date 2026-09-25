@@ -139,6 +139,10 @@ réglages, dans `application.properties` :
   `/animateur/<jeton>` et les fichiers à empreinte, est replié en une seule
   valeur, `/{frontend}` (`match-patterns`).
 
+Le nombre de valeurs d'`uri` est donc borné par le nombre de routes (environ
+deux cents). Le plafond de l'extension, 100 par défaut, écarterait sans le dire
+toutes les routes au-delà de la centième : `max-uri-tags` le place à 500.
+
 `MetricsEndpointTest` appelle les deux routes à jeton, le lien d'espace et un
 chemin inconnu avec des jetons factices, puis vérifie qu'aucun n'apparaît dans
 la sortie, que chaque `uri` n'est fait que de segments littéraux et de
