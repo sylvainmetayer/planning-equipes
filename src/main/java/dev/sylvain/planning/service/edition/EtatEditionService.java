@@ -22,6 +22,7 @@ import dev.sylvain.planning.service.edition.EtatEditionView.EtatBesoin;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCoherence;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatCollecte;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatConfirmations;
+import dev.sylvain.planning.service.edition.EtatEditionView.EtatEvenement;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatFoire;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatOuvertures;
 import dev.sylvain.planning.service.edition.EtatEditionView.EtatProblemes;
@@ -40,6 +41,7 @@ import dev.sylvain.planning.service.publication.PlanPublicationService;
 import dev.sylvain.planning.service.publication.PlanPublicationService.ApercuPublication;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService;
 import dev.sylvain.planning.service.referentiel.CoherenceReferentielService.CoherenceReport;
+import dev.sylvain.planning.service.referentiel.JoursEvenement;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore;
 import dev.sylvain.planning.service.solve.ConstraintAnalysisStore.StoredAnalysis;
@@ -340,7 +342,19 @@ public class EtatEditionService {
                 publication(facts),
                 confirmations(facts),
                 foire(facts),
-                aTraiter(facts));
+                aTraiter(facts),
+                evenement(facts.today()));
+    }
+
+    /**
+     * The event's bounds, and whether it is over: its last day is behind
+     * today. The days are the ones carrying a timeslot, derived rather than
+     * stored: without any, the edition has no end to be past.
+     */
+    static EtatEvenement evenement(TodayFacts today) {
+        JoursEvenement jours = new JoursEvenement(today.joursEvenement());
+        boolean termine = !jours.isEmpty() && jours.last().isBefore(today.aujourdhui());
+        return new EtatEvenement(jours.first(), jours.last(), termine);
     }
 
     private static EtatReferentiels referentiels(Facts facts, boolean saisis) {

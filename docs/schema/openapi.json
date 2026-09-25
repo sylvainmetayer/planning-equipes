@@ -710,6 +710,21 @@
           }
         }
       },
+      "ArchiveAvailability" : {
+        "required" : [ "planResolu", "publie", "resolutionEnCours" ],
+        "type" : "object",
+        "properties" : {
+          "planResolu" : {
+            "type" : "boolean"
+          },
+          "publie" : {
+            "type" : "boolean"
+          },
+          "resolutionEnCours" : {
+            "type" : "boolean"
+          }
+        }
+      },
       "Avertissement" : {
         "type" : "object",
         "properties" : {
@@ -3080,6 +3095,24 @@
           },
           "aTraiter" : {
             "$ref" : "#/components/schemas/EtatATraiter"
+          },
+          "evenement" : {
+            "$ref" : "#/components/schemas/EtatEvenement"
+          }
+        }
+      },
+      "EtatEvenement" : {
+        "required" : [ "termine" ],
+        "type" : "object",
+        "properties" : {
+          "premierJour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "dernierJour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "termine" : {
+            "type" : "boolean"
           }
         }
       },
@@ -10121,6 +10154,87 @@
         },
         "summary" : "Suggestions Echange",
         "tags" : [ "Espace Animateur Resource" ]
+      }
+    },
+    "/api/exports/archive-evenement" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "equite",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "format",
+          "in" : "query",
+          "schema" : {
+            "type" : "string"
+          }
+        }, {
+          "name" : "heures",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "individuels",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "pdfGlobal",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "publication",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "referentiels",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        }, {
+          "name" : "scenario",
+          "in" : "query",
+          "schema" : {
+            "type" : "boolean"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/zip" : { }
+            }
+          }
+        },
+        "summary" : "Export",
+        "tags" : [ "Archive Evenement Resource" ]
+      }
+    },
+    "/api/exports/archive-evenement/disponibilite" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/ArchiveAvailability"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "Availability",
+        "tags" : [ "Archive Evenement Resource" ]
       }
     },
     "/api/feasibility" : {

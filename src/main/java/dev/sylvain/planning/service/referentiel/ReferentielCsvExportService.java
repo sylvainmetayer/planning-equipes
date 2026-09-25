@@ -144,20 +144,30 @@ public class ReferentielCsvExportService {
         }
         ByteArrayOutputStream sortie = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(sortie, StandardCharsets.UTF_8)) {
-            // Enum order, not the caller's: an archive whose entries move
-            // around between two downloads is one nobody can diff.
-            for (ExportTarget cible : ExportTarget.values()) {
-                if (!cibles.contains(cible)) {
-                    continue;
-                }
-                zip.putNextEntry(new ZipEntry(cible.fileName()));
-                zip.write((BOM + csv(cible)).getBytes(StandardCharsets.UTF_8));
-                zip.closeEntry();
-            }
+            writeEntries(cibles, zip, "");
         } catch (IOException e) {
             throw new IllegalStateException("Écriture de l'archive CSV impossible", e);
         }
         return sortie.toByteArray();
+    }
+
+    /**
+     * Writes the chosen referentials into a ZIP someone else holds, each
+     * entry under {@code prefix} — the entries of {@link #zip}, byte for byte,
+     * which is what lets the end-of-event archive carry them in a folder of
+     * its own without a second writer to drift from this one.
+     */
+    public void writeEntries(Set<ExportTarget> cibles, ZipOutputStream zip, String prefix) throws IOException {
+        // Enum order, not the caller's: an archive whose entries move
+        // around between two downloads is one nobody can diff.
+        for (ExportTarget cible : ExportTarget.values()) {
+            if (!cibles.contains(cible)) {
+                continue;
+            }
+            zip.putNextEntry(new ZipEntry(prefix + cible.fileName()));
+            zip.write((BOM + csv(cible)).getBytes(StandardCharsets.UTF_8));
+            zip.closeEntry();
+        }
     }
 
     /* ------------------------------ Referentials ------------------------------ */

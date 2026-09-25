@@ -280,6 +280,24 @@ complètes. Quatre points sont connus et se consignent :
   publication, adresse comprise ; il se traite avec les mêmes égards. Le registre doit le dire, et l'entrée n'est
   honnête que si l'externalisation chiffrée annoncée au socle existe
   réellement ;
+- **l'archive de fin d'événement sort une édition entière en un geste** :
+  depuis l'écran Exports, un seul ZIP peut réunir le planning global, les CSV
+  Équité et Heures, les six référentiels (animateurs compris, avec leurs dates
+  de naissance et leurs adresses), le scénario YAML de l'édition, la relecture
+  de publication et les plannings individuels — mineurs compris. Une fois
+  téléchargée, elle **échappe à toute conservation de l'application** : ni
+  `JOURNAL_RETENTION`, ni la purge annuelle du §5 ne l'atteignent, et sa garde
+  comme sa suppression reviennent à qui la détient. Trois bornes se consignent
+  telles quelles : elle ne couvre **que l'édition** de l'onglet (jamais le dump
+  SQL, qui emporte toutes les éditions et reste sur l'écran Paramètres) ; elle
+  ne contient **aucun jeton** — ni celui de l'espace, que les plannings
+  individuels de l'archive n'impriment pas (ni lien ni QR code), ni celui de
+  l'abonnement au calendrier, ce qu'un test vérifie ; et son manifeste
+  `LISEZMOI.txt` rappelle ce qu'elle contient, le responsable de traitement et
+  la durée de conservation déclarés (`LEGAL_RESPONSABLE_TRAITEMENT`,
+  `LEGAL_CONSERVATION`). C'est le geste naturel avant la purge annuelle d'une
+  édition terminée ; le registre le mentionne comme une **sortie de données**,
+  journalisée comme les autres ;
 - **une déclaration de disponibilités traitée survit à sa décision** : appliquée
   ou refusée, elle reste en base pour que l'organisation puisse dire *pourquoi*
   la fiche de quelqu'un affirme ce qu'elle affirme, et pour que l'animateur
@@ -340,7 +358,8 @@ complètes. Quatre points sont connus et se consignent :
   tout dump exporté, qui les gardent à leur propre rythme. Rien de plus n'y
   entre : l'action, la date, l'auteur, le code HTTP et, pour un téléchargement
   d'espace, l'identifiant de l'animateur ; pour l'archive des référentiels,
-  les noms des référentiels emportés ; jamais le contenu du fichier. Un
+  les noms des référentiels emportés ; pour l'archive de fin d'événement, les
+  noms des parties qu'elle portait ; jamais le contenu du fichier. Un
   téléchargement d'espace **refusé avant toute preuve d'identité** — lien
   inconnu, ou code reçu par e-mail jamais saisi — n'écrit **rien** : détenir le
   lien ne prouve pas qu'on est l'animateur, l'inscrire à son nom — souvent

@@ -1012,3 +1012,60 @@ de format : en **téléchargement** (une photo à l'instant du clic) ou en
 `UID` des événements sont stables d'un appel à l'autre, ce qui est la condition
 pour qu'un client d'agenda mette à jour ses rendez-vous au lieu d'en créer des
 doublons à chaque synchronisation.
+
+## Archive de fin d'événement
+
+`GET /api/exports/archive-evenement` (carte « Archive de fin d'événement » de
+l'écran Exports) écrit en un seul ZIP les exports d'une édition terminée, partie
+par partie. Chaque partie est **opt-in** par un paramètre booléen, comme
+l'archive des référentiels : n'en demander aucune est un `400`, pas un ZIP qui
+ne porterait que son manifeste.
+
+| Paramètre | Entrée du ZIP | Générateur | Tiré du plan |
+| --- | --- | --- | --- |
+| — | `LISEZMOI.txt` | le manifeste, toujours présent | — |
+| `pdfGlobal` | `planning-global.pdf` | celui de `GET /api/planning/export/pdf/global` | oui |
+| `equite` | `equite.csv` | celui de `GET /api/planning/equite/export` | oui |
+| `heures` | `heures.csv` | celui de `POST /api/planning/hours/export`, sur le plan persisté | oui |
+| `referentiels` | `referentiels/*.csv` | les six fichiers de `GET /api/reference-data/export-csv` | non |
+| `scenario` | `scenario.yaml` | celui de `GET /api/planning/export-scenario` | non |
+| `publication` | `publication.csv` | celui de `GET /api/planning/publication/export` | non |
+| `individuels` (+ `format=livret\|feuille`) | `plannings-individuels/` | le PDF et l'ICS de chaque animateur, ceux de `POST /api/planning/export/bundle/all` | oui |
+
+**Mêmes générateurs, jamais une copie.** Un fichier de l'archive est l'octet
+près celui que son écran aurait téléchargé au même instant — marque d'octets
+comprise pour les CSV — et `ArchiveEvenementResourceTest` le vérifie pour
+`equite.csv`, `heures.csv`, `referentiels/*.csv` et `scenario.yaml`. Le même
+test réimporte `scenario.yaml` dans une édition vide : c'est l'équivalent
+léger, cloisonné et réimportable, du dump SQL — qui **n'entre pas** dans
+l'archive, parce qu'il porte toutes les éditions et tous les jetons.
+
+**Une exception assumée : les plannings individuels n'impriment pas le lien de
+l'espace.** Le PDF qu'un animateur reçoit porte l'adresse de son espace en
+clair et en QR code, et cette adresse *est* son jeton d'accès ; une archive
+gardée un an n'a pas à en contenir cent cinquante. Ils sont donc rendus d'un
+plan dont les fiches ne portent aucun jeton — même mise en page, sans
+l'encadré. Aucune partie ne contient `accessToken` ni `abonnementToken`, ce que
+le test vérifie en cherchant les deux jetons d'une fiche dans chaque entrée.
+
+**Le manifeste** est un texte brut (CRLF, UTF-8), lisible sans l'application :
+l'édition, la date de génération, la version, la dernière résolution et son
+score (« inconnu » sans analyse en mémoire), la mention d'une résolution en
+cours — l'archive porte alors le dernier plan enregistré —, la dernière
+publication (« aucune publication »), le nombre de journées relues, la liste
+des fichiers et la mention RGPD (responsable de traitement et durée de
+conservation, `LEGAL_*`). Le nom du fichier est
+`archive-<édition>-<AAAA-MM-JJ>.zip`, le nom de l'édition réduit à des
+caractères sans accent.
+
+**Écrit en flux.** Tout ce qui peut refuser — le choix vide, le scénario d'une
+édition vide, les lectures du manifeste — se joue avant le premier octet ; les
+entrées s'écrivent ensuite une à une dans la réponse, les plannings individuels
+en dernier, un document à la fois. Une panne en cours d'écriture ne peut plus
+devenir un code d'erreur : elle coupe le téléchargement, et le ZIP tronqué ne
+s'ouvre pas.
+
+**Journalisé comme un export** (`EXPORT_ARCHIVE_EVENEMENT`), avec les noms des
+parties emportées, refus compris. La ligne est écrite par le filtre de réponse,
+donc quand la réponse part et avant le flux : un téléchargement coupé en route
+reste inscrit comme réussi.

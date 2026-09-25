@@ -355,9 +355,26 @@ public class PlanningExportService {
 
     /** The same bundle, the PDFs in the asked-for layout. */
     public byte[] exportAllBundleZip(PlanningEvenement planning, FormatPlanning format) {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (ZipOutputStream zip = new ZipOutputStream(output)) {
+            writeAllBundle(planning, format, zip, "");
+        } catch (IOException e) {
+            throw new RuntimeException("Unable to build ZIP export", e);
+        }
+        return output.toByteArray();
+    }
+
+    /**
+     * Writes the bundle of {@link #exportAllBundleZip(PlanningEvenement, FormatPlanning)}
+     * into a ZIP someone else holds, each entry under {@code prefix}: the
+     * end-of-event archive carries these files in a folder of its own, and
+     * writes them one at a time rather than holding a second ZIP in memory.
+     */
+    public void writeAllBundle(PlanningEvenement planning, FormatPlanning format, ZipOutputStream zip, String prefix)
+            throws IOException {
         Map<String, List<PauseAnalyzer.PauseAnimateurView>> parAnimateur = pauses.pausesByAnimateur(planning);
         Map<String, List<PauseAnalyzer.CoupureAnimateurView>> coupures = pauses.coupuresByAnimateur(planning);
-        return buildZip(
+        writeEntries(
                 planning,
                 List.of(
                         new NamedFileBuilder(
@@ -376,33 +393,40 @@ public class PlanningExportService {
                                                 id,
                                                 parAnimateur.getOrDefault(id, List.of()),
                                                 provenance.courante().edition())
-                                        .getBytes(StandardCharsets.UTF_8))));
+                                        .getBytes(StandardCharsets.UTF_8))),
+                zip,
+                prefix);
     }
 
     /** Bundles one or more files per animateur, named after the animateur, into a ZIP. */
     private byte[] buildZip(PlanningEvenement planning, List<NamedFileBuilder> fileBuilders) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (ZipOutputStream zip = new ZipOutputStream(output)) {
-            Set<String> usedFilenames = new LinkedHashSet<>();
-            for (Animateur animateur : planning.getAnimateurs()) {
-                String baseName =
-                        resolveAnimateurName(planning, animateur.getId()).replaceAll("[\\\\/\\r\\n\\\"]", "_");
-                for (NamedFileBuilder fileBuilder : fileBuilders) {
-                    String filename = baseName + fileBuilder.extension();
-                    int suffix = 2;
-                    while (!usedFilenames.add(filename)) {
-                        filename = baseName + "-" + suffix + fileBuilder.extension();
-                        suffix++;
-                    }
-                    zip.putNextEntry(new ZipEntry(filename));
-                    zip.write(fileBuilder.builder().build(animateur.getId()));
-                    zip.closeEntry();
-                }
-            }
+            writeEntries(planning, fileBuilders, zip, "");
         } catch (IOException e) {
             throw new RuntimeException("Unable to build ZIP export", e);
         }
         return output.toByteArray();
+    }
+
+    private static void writeEntries(
+            PlanningEvenement planning, List<NamedFileBuilder> fileBuilders, ZipOutputStream zip, String prefix)
+            throws IOException {
+        Set<String> usedFilenames = new LinkedHashSet<>();
+        for (Animateur animateur : planning.getAnimateurs()) {
+            String baseName = resolveAnimateurName(planning, animateur.getId()).replaceAll("[\\\\/\\r\\n\\\"]", "_");
+            for (NamedFileBuilder fileBuilder : fileBuilders) {
+                String filename = baseName + fileBuilder.extension();
+                int suffix = 2;
+                while (!usedFilenames.add(filename)) {
+                    filename = baseName + "-" + suffix + fileBuilder.extension();
+                    suffix++;
+                }
+                zip.putNextEntry(new ZipEntry(prefix + filename));
+                zip.write(fileBuilder.builder().build(animateur.getId()));
+                zip.closeEntry();
+            }
+        }
     }
 
     private record NamedFileBuilder(String extension, AnimateurFileBuilder builder) {}

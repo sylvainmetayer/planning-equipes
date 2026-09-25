@@ -16,6 +16,7 @@ dev/sylvain/planning/api/AdminLoginLimiterProxyNonFiableTest.java
 dev/sylvain/planning/api/AdminLoginLimiterTest.java
 dev/sylvain/planning/api/AffectationExplanationResourceTest.java
 dev/sylvain/planning/api/AnimateurResourceTest.java
+dev/sylvain/planning/api/ArchiveEvenementResourceTest.java
 dev/sylvain/planning/api/AuthentificationAdminTest.java
 dev/sylvain/planning/api/AuthentificationRemoteUserTest.java
 dev/sylvain/planning/api/AvertissementsEcritureTest.java

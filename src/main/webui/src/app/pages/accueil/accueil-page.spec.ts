@@ -68,6 +68,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       donneesModifiees: false,
       personnesAPrevenir: 0,
     },
+    evenement: { premierJour: null, dernierJour: null, termine: false },
     ...partial,
   };
 }
@@ -376,5 +377,23 @@ describe('AccueilPage', () => {
     expect(sujet.querySelector('.visually-hidden')!.textContent).toBe('Alerte : ');
     expect(sujet.querySelector('a')!.getAttribute('href')).toBe('/echanges?statut=a-arbitrer');
     expect(text()).toContain("À traiter aujourd'hui");
+  });
+
+  it('offers to archive the edition once its event is over, and only then', async () => {
+    editionsApi.etat.mockResolvedValueOnce(etat());
+    const page = createPage();
+    await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());
+    expect(element().querySelector('[data-bloc="archive"]')).toBeNull();
+
+    editionsApi.etat.mockResolvedValueOnce(
+      etat({
+        evenement: { premierJour: '2026-07-04', dernierJour: '2026-07-08', termine: true },
+      }),
+    );
+    page.recharger();
+    await vi.waitFor(() => expect(element().querySelector('[data-bloc="archive"]')).not.toBeNull());
+    const lien = element().querySelector('[data-bloc="archive"] a')!;
+    expect(lien.textContent).toContain("Archiver l'édition");
+    expect(lien.getAttribute('href')).toBe('/exports#archive-evenement');
   });
 });

@@ -21,6 +21,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
  * container. {@code null} on a nullable field means "not known", never
  * "zero": a score is {@code null} when no analysis of the persisted plan
  * exists in memory, which is what a restart leaves behind.</p>
+ *
  */
 public record EtatEditionView(
         String editionId,
@@ -36,7 +37,8 @@ public record EtatEditionView(
         EtatPublication publication,
         EtatConfirmations confirmations,
         EtatFoire foire,
-        EtatATraiter aTraiter) {
+        EtatATraiter aTraiter,
+        EtatEvenement evenement) {
 
     /**
      * The states a line of the checklist can be in, from the step still ahead
@@ -51,6 +53,18 @@ public record EtatEditionView(
         INFO,
         FAIT
     }
+
+    /**
+     * The event's bounds, derived from the timeslots and never stored — the
+     * first and last day carrying one, {@code null} both when there is none,
+     * for an edition without a timeslot has no bounds.
+     *
+     * @param termine the last day is behind the day {@code JourJClock} says it
+     *                is: the screen then offers to archive the edition. Never
+     *                true without bounds
+     */
+    @Schema(requiredProperties = {"termine"})
+    public record EtatEvenement(LocalDate premierJour, LocalDate dernierJour, boolean termine) {}
 
     /** How many rows each referential holds; a zero anywhere is a step still to do. */
     @Schema(requiredProperties = {"animateurs", "creneaux", "stands", "statut"})

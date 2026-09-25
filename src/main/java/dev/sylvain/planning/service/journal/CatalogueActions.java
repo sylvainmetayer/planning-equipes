@@ -118,6 +118,7 @@ public final class CatalogueActions {
     private static final String EXPORT_RELECTURE = "EXPORT_RELECTURE";
     private static final String EXPORT_COMPETENCES = "EXPORT_COMPETENCES";
     private static final String EXPORT_INTENDANCE = "EXPORT_INTENDANCE";
+    private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String SCENARIO_IMPORTE = "SCENARIO_IMPORTE";
     private static final String DONNEES_IMPORTEES = "DONNEES_IMPORTEES";
     private static final String BASE_IMPORTEE = "BASE_IMPORTEE";
@@ -308,6 +309,9 @@ public final class CatalogueActions {
         // not on one fiche.
         export(EXPORT_COMPETENCES, "Grille des compétences exportée en CSV", Entite.PLANNING);
         export(EXPORT_INTENDANCE, "Intendance des repas exportée en CSV", Entite.PLANNING);
+        // Several of the exports above in one ZIP: one line, naming the parts it
+        // carried, rather than one per file nobody downloaded on its own.
+        export(EXPORT_ARCHIVE_EVENEMENT, "Archive de fin d'événement exportée", Entite.PLANNING);
 
         /* ------------------ Imports and scenarios ------------------- */
         changesData(SCENARIO_IMPORTE, "Scénario importé", Entite.PLANNING);
@@ -476,6 +480,7 @@ public final class CatalogueActions {
         route("PublicationResource#exportCsv", EXPORT_RELECTURE);
         route("AnimateurResource#exportCompetencesGrid", EXPORT_COMPETENCES);
         route("PauseResource#exportIntendance", EXPORT_INTENDANCE);
+        route("ArchiveEvenementResource#export", EXPORT_ARCHIVE_EVENEMENT);
         route("DatabaseResource#importDump", BASE_IMPORTEE);
         route("ReferenceDataResource#importReferenceData", DONNEES_IMPORTEES);
         route("ReferenceDataResource#importScenario", SCENARIO_IMPORTE);
