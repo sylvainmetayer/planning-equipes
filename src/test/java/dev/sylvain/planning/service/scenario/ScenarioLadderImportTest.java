@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.solve.PlanningService;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,8 +196,10 @@ class ScenarioLadderImportTest {
         // The section designates its edition by name once its id is unknown:
         // one left over by an interrupted run would be landed in, not created.
         editionsNamed(GAMME_10_NOM).forEach(id -> given().when().delete("/api/editions/" + id));
-        String edition = given().contentType("text/plain")
-                .body(ScenarioLadder.yaml(name))
+        // UTF-8 said out loud: the edition is now found by its name, and a
+        // text/plain body defaults to ISO-8859-1, which mangles « — » and « é ».
+        String edition = given().contentType("text/plain; charset=UTF-8")
+                .body(ScenarioLadder.yaml(name).getBytes(StandardCharsets.UTF_8))
                 .when()
                 .post("/api/reference-data/import-scenario-fichier")
                 .then()
