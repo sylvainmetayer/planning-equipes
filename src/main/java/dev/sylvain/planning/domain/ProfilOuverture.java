@@ -148,21 +148,38 @@ public final class ProfilOuverture {
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
         List<int[]> fermetures = new ArrayList<>();
         for (IndisponibiliteStand indispo : stand.getIndisponibilitesEffectives()) {
-            if (!indispo.hasValidRange()) {
-                continue;
-            }
-            int decalageJour = decalageJourFenetre(creneau, indispo.getDate());
-            if (decalageJour < 0) {
-                continue;
-            }
-            int indispoDebut = decalageJour + indispo.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
-            int debut = Math.max(0, indispoDebut);
-            int fin = fenetreEndInSeconds(indispo.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
-            if (fin > debut) {
-                fermetures.add(new int[] {debut, fin});
+            int[] fermeture = clampedInSeconds(creneau, indispo, debutSlotSecondes, dureeSecondes, 2);
+            if (fermeture.length > 0) {
+                fermetures.add(fermeture);
             }
         }
         return fermetures;
+    }
+
+    private static final int[] NO_WINDOW = new int[0];
+
+    /**
+     * A dated window of the stand on the créneau's timeline, clamped to
+     * {@code [0, dureeSecondes]}: an array of {@code size} cells whose first
+     * two hold its start and end in seconds since the créneau's start, the
+     * others left for the caller. Empty when the window is invalid, bears on
+     * another day, or does not overlap the créneau.
+     */
+    private static int[] clampedInSeconds(
+            Creneau creneau, FenetreDateeStand fenetre, int debutSlotSecondes, int dureeSecondes, int size) {
+        int decalageJour = fenetre.hasValidRange() ? decalageJourFenetre(creneau, fenetre.getDate()) : -1;
+        if (decalageJour < 0) {
+            return NO_WINDOW;
+        }
+        int debut = Math.max(0, decalageJour + fenetre.getHeureDebut().toSecondOfDay() - debutSlotSecondes);
+        int fin = fenetreEndInSeconds(fenetre.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
+        if (fin <= debut) {
+            return NO_WINDOW;
+        }
+        int[] clamped = new int[size];
+        clamped[0] = debut;
+        clamped[1] = fin;
+        return clamped;
     }
 
     /**
@@ -247,19 +264,11 @@ public final class ProfilOuverture {
         int debutSlotSecondes = creneau.getHeureDebut().toSecondOfDay();
         List<int[]> ouvertures = new ArrayList<>();
         for (OuvertureStand ouverture : stand.getOuverturesEffectives()) {
-            if (!ouverture.hasValidRange()) {
-                continue;
-            }
-            int decalageJour = decalageJourFenetre(creneau, ouverture.getDate());
-            if (decalageJour < 0) {
-                continue;
-            }
-            int ouvertureDebut = decalageJour + ouverture.getHeureDebut().toSecondOfDay() - debutSlotSecondes;
-            int debut = Math.max(0, ouvertureDebut);
-            int fin = fenetreEndInSeconds(ouverture.getHeureFin(), decalageJour, debutSlotSecondes, dureeSecondes);
-            if (fin > debut) {
+            int[] fenetre = clampedInSeconds(creneau, ouverture, debutSlotSecondes, dureeSecondes, 3);
+            if (fenetre.length > 0) {
                 Integer effectif = ouverture.getEffectif();
-                ouvertures.add(new int[] {debut, fin, effectif != null ? effectif : stand.getEffectifMin()});
+                fenetre[2] = effectif != null ? effectif : stand.getEffectifMin();
+                ouvertures.add(fenetre);
             }
         }
         return ouvertures;
@@ -287,25 +296,32 @@ public final class ProfilOuverture {
         for (int i = 1; i < bornes.size(); i++) {
             int debut = bornes.get(i - 1);
             int fin = bornes.get(i);
-            if (fin <= debut) {
-                continue;
-            }
-            int effectif = Integer.MIN_VALUE;
-            for (int[] fenetre : fenetresSecondes) {
-                if (fenetre[0] <= debut && fenetre[1] >= fin) {
-                    effectif = Math.max(effectif, fenetre[2]);
-                }
-            }
-            if (effectif == Integer.MIN_VALUE) {
-                continue;
-            }
-            SegmentOuvert dernier = segments.isEmpty() ? null : segments.get(segments.size() - 1);
-            if (dernier != null && dernier.finMinutes() == debut / 60 && dernier.effectif() == effectif) {
-                segments.set(segments.size() - 1, new SegmentOuvert(dernier.debutMinutes(), fin / 60, effectif));
-            } else {
-                segments.add(new SegmentOuvert(debut / 60, fin / 60, effectif));
+            int effectif = fin > debut ? highestEffectifCovering(fenetresSecondes, debut, fin) : Integer.MIN_VALUE;
+            if (effectif != Integer.MIN_VALUE) {
+                appendSegment(segments, debut, fin, effectif);
             }
         }
         return segments;
+    }
+
+    /** The highest effectif among the windows covering {@code [debut, fin]}; {@code Integer.MIN_VALUE} when none does. */
+    private static int highestEffectifCovering(List<int[]> fenetresSecondes, int debut, int fin) {
+        int effectif = Integer.MIN_VALUE;
+        for (int[] fenetre : fenetresSecondes) {
+            if (fenetre[0] <= debut && fenetre[1] >= fin) {
+                effectif = Math.max(effectif, fenetre[2]);
+            }
+        }
+        return effectif;
+    }
+
+    /** A stretch in seconds, merged into the last segment when it touches it with the same effectif. */
+    private static void appendSegment(List<SegmentOuvert> segments, int debut, int fin, int effectif) {
+        SegmentOuvert dernier = segments.isEmpty() ? null : segments.get(segments.size() - 1);
+        if (dernier != null && dernier.finMinutes() == debut / 60 && dernier.effectif() == effectif) {
+            segments.set(segments.size() - 1, new SegmentOuvert(dernier.debutMinutes(), fin / 60, effectif));
+        } else {
+            segments.add(new SegmentOuvert(debut / 60, fin / 60, effectif));
+        }
     }
 }

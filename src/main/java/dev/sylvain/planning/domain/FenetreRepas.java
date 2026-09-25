@@ -97,29 +97,8 @@ public record FenetreRepas(
         List<FenetreRepas> datees = new ArrayList<>();
         for (ConsigneEdition consigne : consignes) {
             ConsigneEdition.RepasConsigne repas = consigne.repas();
-            if (repas == null || consigne.date() == null) {
-                continue;
-            }
-            int duree = repas.coupureMinutes() != null
-                    ? repas.coupureMinutes()
-                    : parametres == null ? 0 : parametres.getCoupureRepasMinutes();
-            // The edition's window steps aside only for a dated one that holds
-            // up: a restated window the break does not fit in (refused at
-            // entry, but a row may predate the rule) must not leave the date
-            // with no rule at all.
-            if (repas.midiDebut() != null || repas.midiFin() != null || repas.coupureMinutes() != null) {
-                LocalTime debut = repas.midiDebut() != null ? repas.midiDebut() : coalesce(parametres, true, true);
-                LocalTime fin = repas.midiFin() != null ? repas.midiFin() : coalesce(parametres, true, false);
-                if (add(datees, MIDI, debut, fin, duree, true, consigne.date())) {
-                    exclusions.computeIfAbsent(MIDI, k -> new LinkedHashSet<>()).add(consigne.date());
-                }
-            }
-            if (repas.soirDebut() != null || repas.soirFin() != null || repas.coupureMinutes() != null) {
-                LocalTime debut = repas.soirDebut() != null ? repas.soirDebut() : coalesce(parametres, false, true);
-                LocalTime fin = repas.soirFin() != null ? repas.soirFin() : coalesce(parametres, false, false);
-                if (add(datees, SOIR, debut, fin, duree, false, consigne.date())) {
-                    exclusions.computeIfAbsent(SOIR, k -> new LinkedHashSet<>()).add(consigne.date());
-                }
+            if (repas != null && consigne.date() != null) {
+                addDated(datees, exclusions, repas, parametres, consigne.date());
             }
         }
         if (datees.isEmpty() && exclusions.isEmpty()) {
@@ -138,6 +117,45 @@ public record FenetreRepas(
         }
         fenetres.addAll(datees);
         return List.copyOf(fenetres);
+    }
+
+    /**
+     * The dated windows one consigne restates on {@code date}, each recorded
+     * as an exclusion of the edition's window of the same service.
+     *
+     * <p>The edition's window steps aside only for a dated one that holds up:
+     * a restated window the break does not fit in (refused at entry, but a row
+     * may predate the rule) must not leave the date with no rule at all.</p>
+     */
+    private static void addDated(
+            List<FenetreRepas> datees,
+            Map<String, Set<LocalDate>> exclusions,
+            ConsigneEdition.RepasConsigne repas,
+            ParametresLegaux parametres,
+            LocalDate date) {
+        int duree = dureeCoupure(repas, parametres);
+        if (repas.midiDebut() != null || repas.midiFin() != null || repas.coupureMinutes() != null) {
+            LocalTime debut = repas.midiDebut() != null ? repas.midiDebut() : coalesce(parametres, true, true);
+            LocalTime fin = repas.midiFin() != null ? repas.midiFin() : coalesce(parametres, true, false);
+            if (add(datees, MIDI, debut, fin, duree, true, date)) {
+                exclusions.computeIfAbsent(MIDI, k -> new LinkedHashSet<>()).add(date);
+            }
+        }
+        if (repas.soirDebut() != null || repas.soirFin() != null || repas.coupureMinutes() != null) {
+            LocalTime debut = repas.soirDebut() != null ? repas.soirDebut() : coalesce(parametres, false, true);
+            LocalTime fin = repas.soirFin() != null ? repas.soirFin() : coalesce(parametres, false, false);
+            if (add(datees, SOIR, debut, fin, duree, false, date)) {
+                exclusions.computeIfAbsent(SOIR, k -> new LinkedHashSet<>()).add(date);
+            }
+        }
+    }
+
+    /** The break the consigne states, else the edition's, else none. */
+    private static int dureeCoupure(ConsigneEdition.RepasConsigne repas, ParametresLegaux parametres) {
+        if (repas.coupureMinutes() != null) {
+            return repas.coupureMinutes();
+        }
+        return parametres == null ? 0 : parametres.getCoupureRepasMinutes();
     }
 
     private static LocalTime coalesce(ParametresLegaux parametres, boolean midi, boolean debut) {
