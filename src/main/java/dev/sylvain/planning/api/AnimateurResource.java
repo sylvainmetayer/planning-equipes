@@ -49,22 +49,23 @@ public class AnimateurResource {
 
     private final CompetencesGrilleService competencesGrille;
 
+    private final AnimateurProfileService profileService;
+
     @Inject
     public AnimateurResource(
             ReferenceDataService referenceDataService,
             ConfirmationPlanningService confirmationService,
             RelanceManuelleService relanceService,
             AnimateurCsvImportService csvImport,
-            CompetencesGrilleService competencesGrille) {
+            CompetencesGrilleService competencesGrille,
+            AnimateurProfileService profileService) {
         this.referenceDataService = referenceDataService;
         this.confirmationService = confirmationService;
         this.relanceService = relanceService;
         this.csvImport = csvImport;
         this.competencesGrille = competencesGrille;
+        this.profileService = profileService;
     }
-
-    @Inject
-    AnimateurProfileService profileService;
 
     @GET
     public List<Animateur> listAnimateurs() {

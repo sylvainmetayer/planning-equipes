@@ -57,35 +57,49 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class AnimateurProfileService {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final EquiteService equiteService;
+
+    private final FragiliteAnalyzer fragiliteAnalyzer;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final PlanPublieService planPublieService;
+
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final DeclarationDisponibiliteService declarationService;
+
+    private final EspaceAnimateurService espaceService;
+
+    private final JourJClock clock;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    EquiteService equiteService;
-
-    @Inject
-    FragiliteAnalyzer fragiliteAnalyzer;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    DemandeEchangeService demandeEchangeService;
-
-    @Inject
-    DeclarationDisponibiliteService declarationService;
-
-    @Inject
-    EspaceAnimateurService espaceService;
-
-    @Inject
-    JourJClock clock;
+    public AnimateurProfileService(
+            ReferenceDataService referenceDataService,
+            PlanningPersistenceService persistenceService,
+            EquiteService equiteService,
+            FragiliteAnalyzer fragiliteAnalyzer,
+            ConfirmationPlanningService confirmationService,
+            PlanPublieService planPublieService,
+            DemandeEchangeService demandeEchangeService,
+            DeclarationDisponibiliteService declarationService,
+            EspaceAnimateurService espaceService,
+            JourJClock clock) {
+        this.referenceDataService = referenceDataService;
+        this.persistenceService = persistenceService;
+        this.equiteService = equiteService;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
+        this.confirmationService = confirmationService;
+        this.planPublieService = planPublieService;
+        this.demandeEchangeService = demandeEchangeService;
+        this.declarationService = declarationService;
+        this.espaceService = espaceService;
+        this.clock = clock;
+    }
 
     /** The fiche of {@code animateurId}; {@code 404} when the edition holds nobody by that id. */
     public AnimateurProfile profile(String animateurId) {
