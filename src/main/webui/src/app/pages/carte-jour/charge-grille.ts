@@ -230,7 +230,12 @@ export class ChargeGrille {
     return courante.ligne === ligne && courante.colonne === colonne;
   }
 
-  protected changerPortee(portee: PorteeCharge): void {
+  protected changerPortee(portee: PorteeCharge | undefined): void {
+    // The toggle group may emit `undefined` before any click: taking it for a
+    // scope would drop the `?charge=` the view opened on.
+    if (!portee) {
+      return;
+    }
     this.portee.set(portee);
   }
 

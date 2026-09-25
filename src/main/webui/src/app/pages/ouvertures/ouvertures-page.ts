@@ -516,7 +516,6 @@ export class OuverturesPage implements OnInit {
       ref: this.view() === 'COMPARER' ? this.comparaisonReference() : null,
       ecarts: this.view() === 'COMPARER' && this.comparaisonEcarts() ? '1' : null,
     }));
-    this.loadReferentialForComparison();
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
         clearTimeout(this.filtrePending);
@@ -526,6 +525,7 @@ export class OuverturesPage implements OnInit {
 
   ngOnInit(): void {
     void this.recharger();
+    this.loadReferentialForComparison();
   }
 
   /** The filter follows the field a beat after the last keystroke: typing « Village » re-lays the grid once, not seven times. */
