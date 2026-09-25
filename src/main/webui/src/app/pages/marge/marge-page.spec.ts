@@ -180,9 +180,8 @@ describe('MargePage', () => {
   it('announces the verdict as a polite status', async () => {
     await monter();
 
-    expect(racine().querySelector('[data-testid="marge-message"]')!.getAttribute('role')).toBe(
-      'status',
-    );
+    // An <output> carries the implicit status role.
+    expect(racine().querySelector('[data-testid="marge-message"]')!.tagName).toBe('OUTPUT');
   });
 
   it('lists the worst timeslot of each day under the grid', async () => {

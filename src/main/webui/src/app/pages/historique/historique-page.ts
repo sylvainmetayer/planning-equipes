@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -69,7 +70,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HistoriquePage {
+export class HistoriquePage implements OnInit {
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
 
@@ -110,8 +111,6 @@ export class HistoriquePage {
     this.nature.set(readNatureFilter(params.get('nature')));
     this.entite.set(params.get('entite') ?? '');
     this.recherche.set(params.get('q') ?? '');
-    void this.recharger();
-    void this.loadActionInventory();
     keepViewInQueryParams(() => ({
       acteur: this.acteur() === 'TOUS' ? null : this.acteur(),
       resultat: this.resultat() === 'TOUS' ? null : this.resultat(),
@@ -119,6 +118,11 @@ export class HistoriquePage {
       entite: optionalParam(this.entite()),
       q: optionalParam(this.recherche()),
     }));
+  }
+
+  ngOnInit(): void {
+    void this.recharger();
+    void this.loadActionInventory();
   }
 
   protected async recharger(): Promise<void> {

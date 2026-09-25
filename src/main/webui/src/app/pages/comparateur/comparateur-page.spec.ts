@@ -137,6 +137,12 @@ function ligne(overrides: Partial<LigneMetrique> = {}): LigneMetrique {
   };
 }
 
+function createPage(): PageInternals {
+  const fixture = TestBed.createComponent(ComparateurPage);
+  fixture.detectChanges();
+  return fixture.componentInstance as unknown as PageInternals;
+}
+
 describe('ComparateurPage', () => {
   const planningApi = { comparableSnapshots: vi.fn(), compareSnapshots: vi.fn() };
 
@@ -151,10 +157,6 @@ describe('ComparateurPage', () => {
       ],
     });
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(ComparateurPage).componentInstance as unknown as PageInternals;
-  }
 
   describe('loading state', () => {
     it('is loading while the pickers are in flight and idle once they land', async () => {

@@ -20,6 +20,12 @@ type CardInternals = {
   save: () => Promise<void>;
 };
 
+function createCard(): CardInternals {
+  const fixture = TestBed.createComponent(ParametresQualiteCard);
+  fixture.detectChanges();
+  return fixture.componentInstance as unknown as CardInternals;
+}
+
 describe('ParametresQualiteCard', () => {
   const constraintsApi = {
     qualityParameters: vi.fn(),
@@ -45,11 +51,6 @@ describe('ParametresQualiteCard', () => {
       ],
     });
   });
-
-  function createCard(): CardInternals {
-    return TestBed.createComponent(ParametresQualiteCard)
-      .componentInstance as unknown as CardInternals;
-  }
 
   it('loads every threshold and sends them all back, so a save never resets one it did not show', async () => {
     const card = createCard();

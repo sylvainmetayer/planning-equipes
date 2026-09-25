@@ -3,6 +3,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -55,7 +56,7 @@ const COURANT = 'courant';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ComparateurPage {
+export class ComparateurPage implements OnInit {
   protected readonly columns = ['metrique', 'base', 'variante', 'delta'];
   protected readonly columnsViolations = ['contrainte', 'baseViolations', 'varianteViolations'];
   protected readonly courant = COURANT;
@@ -88,7 +89,7 @@ export class ComparateurPage {
 
   private readonly planningApi = inject(PlanningApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.chargerInstantanes();
   }
 

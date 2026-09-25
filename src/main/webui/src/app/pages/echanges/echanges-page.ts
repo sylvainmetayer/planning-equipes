@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -78,7 +79,7 @@ interface DemandeRow extends DemandeEchangeView {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EchangesPage {
+export class EchangesPage implements OnInit {
   private readonly echangesApi = inject(EchangesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -149,6 +150,9 @@ export class EchangesPage {
       readToArbitrate(inject(ActivatedRoute).snapshot.queryParamMap.get('statut')),
     );
     keepViewInQueryParams(() => ({ statut: this.toArbitrateOnly() ? TO_ARBITRATE : null }));
+  }
+
+  ngOnInit(): void {
     void this.reload();
   }
 

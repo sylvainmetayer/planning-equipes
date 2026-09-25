@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -55,7 +56,7 @@ import {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class HoursPage {
+export class HoursPage implements OnInit {
   protected readonly output = signal('');
   protected readonly busy = signal(false);
   protected readonly exportBusy = signal(false);
@@ -159,8 +160,11 @@ export class HoursPage {
 
   constructor() {
     this.sort.set(readSort(this.route.snapshot.queryParamMap));
-    void this.load();
     keepViewInQueryParams(() => sortQueryParams(this.sort()));
+  }
+
+  ngOnInit(): void {
+    void this.load();
   }
 
   /** Back to the order the report came in. */
