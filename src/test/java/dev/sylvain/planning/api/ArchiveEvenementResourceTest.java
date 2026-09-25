@@ -55,7 +55,9 @@ class ArchiveEvenementResourceTest {
 
     private static final String ACCESS_TOKEN = "arch-access-0f3b9c1e-token";
     private static final String SUBSCRIPTION_TOKEN = "arch-abonnement-7d2a44e0-token";
-    private static final String LANDING_EDITION = "ARCHIVE-REIMPORT";
+
+    /** The edition the requests without a header resolve to — its id is drawn (ADR 0050). */
+    private String defaultEdition;
 
     @Inject
     PlanningPersistenceService persistence;
@@ -65,6 +67,12 @@ class ArchiveEvenementResourceTest {
 
     @BeforeEach
     void seed() throws SQLException {
+        defaultEdition = given().when()
+                .get("/api/editions/courant")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
         persistence.clearDatabase();
         Animateur alice = new Animateur("ARCH-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         alice.setEmail("alice.martin@example.org");
@@ -84,7 +92,7 @@ class ArchiveEvenementResourceTest {
                         "UPDATE animateur SET access_token = ?, abonnement_token = ? WHERE edition_id = ? AND id = ?")) {
             update.setString(1, ACCESS_TOKEN);
             update.setString(2, SUBSCRIPTION_TOKEN);
-            update.setString(3, "DEFAUT");
+            update.setString(3, defaultEdition);
             update.setString(4, "ARCH-A");
             assertThat(update.executeUpdate()).isEqualTo(1);
         }
@@ -99,7 +107,7 @@ class ArchiveEvenementResourceTest {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement delete =
                         connection.prepareStatement("DELETE FROM plan_snapshot WHERE edition_id = ?")) {
-            delete.setString(1, "DEFAUT");
+            delete.setString(1, defaultEdition);
             delete.executeUpdate();
         }
     }
@@ -173,14 +181,16 @@ class ArchiveEvenementResourceTest {
                         .extract()
                         .asByteArray())
                 .get("scenario.yaml");
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"" + LANDING_EDITION + "\",\"nom\":\"Réimport d'archive\"}")
+        String landingEdition = given().contentType(ContentType.JSON)
+                .body("{\"nom\":\"Réimport d'archive\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
         try {
-            given().header(EditionContext.HEADER, LANDING_EDITION)
+            given().header(EditionContext.HEADER, landingEdition)
                     .contentType("text/plain; charset=UTF-8")
                     .body(text(scenario))
                     .when()
@@ -189,7 +199,7 @@ class ArchiveEvenementResourceTest {
                     .log()
                     .ifValidationFails()
                     .statusCode(200);
-            given().header(EditionContext.HEADER, LANDING_EDITION)
+            given().header(EditionContext.HEADER, landingEdition)
                     .when()
                     .get("/api/animateurs")
                     .then()
@@ -198,7 +208,7 @@ class ArchiveEvenementResourceTest {
 
             // The stream is written for the edition of the request that asked
             // for it, not for the default one.
-            String manifest = text(unzip(given().header(EditionContext.HEADER, LANDING_EDITION)
+            String manifest = text(unzip(given().header(EditionContext.HEADER, landingEdition)
                             .when()
                             .get(ARCHIVE + "?referentiels=true")
                             .then()
@@ -206,9 +216,9 @@ class ArchiveEvenementResourceTest {
                             .extract()
                             .asByteArray())
                     .get("LISEZMOI.txt"));
-            assertThat(manifest).contains("Édition : Réimport d'archive (" + LANDING_EDITION + ")");
+            assertThat(manifest).contains("Édition : Réimport d'archive (" + landingEdition + ")");
         } finally {
-            given().when().delete("/api/editions/" + LANDING_EDITION);
+            given().when().delete("/api/editions/" + landingEdition);
         }
     }
 
