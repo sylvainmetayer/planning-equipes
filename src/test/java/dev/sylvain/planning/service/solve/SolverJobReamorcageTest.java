@@ -233,16 +233,18 @@ class SolverJobReamorcageTest {
     private final class Fixture {
         private final int sieges;
         private final int effectif;
-        private final Stand stand;
-        private final List<Animateur> animateurs;
+        /** Replaced by what the creation returns: the ids are drawn then (ADR 0050). */
+        private Stand stand;
+
+        private List<Animateur> animateurs;
         private Creneau creneau;
 
         Fixture(int sieges, int effectif) {
             this.sieges = sieges;
             this.effectif = effectif;
-            this.stand = new Stand("WARM-S1", "Stand warm", Set.of("STRATEGIE"), sieges, sieges, false);
+            this.stand = new Stand(null, "Stand warm", Set.of("STRATEGIE"), sieges, sieges, false);
             this.animateurs = java.util.stream.IntStream.range(0, effectif)
-                    .mapToObj(i -> new Animateur("WARM-A" + i, "Prenom", "Nom " + i, LocalDate.of(1990, 1, 1), false))
+                    .mapToObj(i -> new Animateur(null, "Prenom", "Nom " + i, LocalDate.of(1990, 1, 1), false))
                     .toList();
         }
 
@@ -261,8 +263,9 @@ class SolverJobReamorcageTest {
                     referenceData.createTypologie(
                             new TypologieItem(null, "STRATEGIE", "Stratégie", false, null, null, null));
                 }
-                referenceData.createStand(stand);
-                animateurs.forEach(referenceData::createAnimateur);
+                stand = referenceData.createStand(stand);
+                animateurs =
+                        animateurs.stream().map(referenceData::createAnimateur).toList();
                 creneau = referenceData.createCreneau(
                         new Creneau(null, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0)));
             });
@@ -283,7 +286,7 @@ class SolverJobReamorcageTest {
         /** This fixture's seats only: the edition may hold other tests' créneaux, on which the stand also opens. */
         List<PosteAffectation> postesDuProbleme(PlanningEvenement planning) {
             return planning.getPostes().stream()
-                    .filter(poste -> "WARM-S1".equals(poste.getStand().getId())
+                    .filter(poste -> stand.getId().equals(poste.getStand().getId())
                             && creneau.getId().equals(poste.getCreneau().getId()))
                     .toList();
         }
@@ -292,8 +295,13 @@ class SolverJobReamorcageTest {
             attendreSolveurLibre();
             editionContext.executeIn(edition, () -> {
                 persistence.persist(new PlanningEvenement(JOUR, List.of(), List.of()));
-                referenceData.deleteStand("WARM-S1");
-                animateurs.forEach(animateur -> referenceData.deleteAnimateur(animateur.getId()));
+                if (stand.getId() != null) {
+                    referenceData.deleteStand(stand.getId());
+                }
+                animateurs.stream()
+                        .map(Animateur::getId)
+                        .filter(java.util.Objects::nonNull)
+                        .forEach(referenceData::deleteAnimateur);
                 referenceData.deleteCreneaux(referenceData.listCreneaux().stream()
                         .map(Creneau::getId)
                         .toList());

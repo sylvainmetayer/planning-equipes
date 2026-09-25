@@ -32,6 +32,7 @@ class ReferenceDataResourceTypologiesTest {
     @Test
     void scenarioImportAppliesTheDeclaredTypologieLabels() {
         given().when().post("/api/planning/reset").then().statusCode(200);
+        forgetJeuxVideo();
 
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario-typologies.yaml")
@@ -106,6 +107,21 @@ class ReferenceDataResourceTypologiesTest {
     }
 
     /** The generated id of the typologie carrying {@code code} in the default edition. */
+    /**
+     * The reset keeps the typologies, and another test of this class relabels
+     * JEUX_VIDEO: the default label is only derived for a typologie the import
+     * has to create, so each test that checks it starts without one.
+     */
+    private static void forgetJeuxVideo() {
+        given().when()
+                .get("/api/typologies")
+                .then()
+                .extract()
+                .jsonPath()
+                .getList("findAll { it.code == 'JEUX_VIDEO' }.id", String.class)
+                .forEach(id -> given().when().delete("/api/typologies/" + id));
+    }
+
     private static String typologieIdByCode(String code) {
         List<Map<String, Object>> typologies = given().when()
                 .get("/api/typologies")
@@ -124,6 +140,7 @@ class ReferenceDataResourceTypologiesTest {
     @Test
     void scenarioFileImportAppliesTheDeclaredTypologieLabels() throws Exception {
         given().when().post("/api/planning/reset").then().statusCode(200);
+        forgetJeuxVideo();
 
         String yamlContent = Files.readString(Path.of("src/main/resources/scenarios/scenario-typologies.yaml"));
 
