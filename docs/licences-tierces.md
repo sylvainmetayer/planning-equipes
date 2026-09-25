@@ -32,7 +32,7 @@ Un composant sous double licence compte dans chacune des deux.
 | Licence | Dépendances Java | Paquets npm |
 | --- | ---: | ---: |
 | 0BSD | — | 1 |
-| Apache-2.0 | 197 | 4 |
+| Apache-2.0 | 198 | 4 |
 | BSD-2-Clause | 3 | 2 |
 | CC-BY-4.0 | — | 1 |
 | CC0-1.0 | 2 | — |
@@ -46,7 +46,7 @@ Un composant sous double licence compte dans chacune des deux.
 | MIT-0 | 1 | — |
 | MPL-2.0 | 1 | — |
 | Public Domain | 1 | — |
-| **Total** | **226** | **89** |
+| **Total** | **227** | **89** |
 
 ## Dépendances Java
 
@@ -106,9 +106,9 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.prometheus:simpleclient_tracer_common` | 0.16.0 | Apache-2.0 |
 | `io.prometheus:simpleclient_tracer_otel` | 0.16.0 | Apache-2.0 |
 | `io.prometheus:simpleclient_tracer_otel_agent` | 0.16.0 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-core` | 1.13.2 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-http` | 1.13.2 | Apache-2.0 |
-| `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 1.13.2 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-core` | 2.0.1 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-http` | 2.0.1 | Apache-2.0 |
+| `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 2.0.1 | Apache-2.0 |
 | `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.0 | Apache-2.0 |
 | `io.quarkus.arc:arc` | 3.38.3 | Apache-2.0 |
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
@@ -262,6 +262,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `org.jctools:jctools-core` | 4.0.5 | Apache-2.0 |
 | `org.jspecify:jspecify` | 1.0.0 | Apache-2.0 |
 | `org.latencyutils:LatencyUtils` | 2.0.3 | CC0-1.0 |
+| `org.mcpjava:mcp-server-api` | 1.0.0 | Apache-2.0 |
 | `org.postgresql:postgresql` | 42.7.13 | BSD-2-Clause |
 | `org.reactivestreams:reactive-streams` | 1.0.4 | MIT-0 |
 | `org.slf4j:slf4j-api` | 2.0.18 | MIT |
