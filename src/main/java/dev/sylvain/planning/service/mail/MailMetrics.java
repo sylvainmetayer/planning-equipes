@@ -30,12 +30,10 @@ public class MailMetrics {
 
     private static final String TEMPLATE_PREFIX = "mail/";
 
+    private final MeterRegistry registry;
+
+    /** Also built by hand in the unit tests, over a {@code SimpleMeterRegistry}. */
     @Inject
-    MeterRegistry registry;
-
-    MailMetrics() {}
-
-    /** For the unit tests, which build their services by hand. */
     public MailMetrics(MeterRegistry registry) {
         this.registry = registry;
     }

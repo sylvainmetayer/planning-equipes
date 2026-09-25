@@ -2,6 +2,7 @@ package dev.sylvain.planning.observability;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.awaitility.Awaitility.await;
 
 import io.quarkus.test.common.http.TestHTTPResource;
 import io.quarkus.test.junit.QuarkusTest;
@@ -9,6 +10,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -88,7 +90,7 @@ class MetricsEndpointTest {
      * is mounted under: that is how the extension writes it.
      */
     @Test
-    void noTokenEverReachesALabel() throws InterruptedException {
+    void noTokenEverReachesALabel() {
         List<String> tokens = List.of(
                 "espacetoken0a1b2c3d4e5f",
                 "espacetoken9f8e7d6c5b4a",
@@ -132,12 +134,9 @@ class MetricsEndpointTest {
     }
 
     /** A request is recorded once its response has ended, a moment after the client read it. */
-    private String awaitScrapeContaining(String expected) throws InterruptedException {
-        String body = scrape();
-        for (int i = 0; i < 40 && !body.contains(expected); i++) {
-            Thread.sleep(50);
-            body = scrape();
-        }
-        return body;
+    private String awaitScrapeContaining(String expected) {
+        return await().atMost(Duration.ofSeconds(2))
+                .pollInterval(Duration.ofMillis(50))
+                .until(this::scrape, body -> body.contains(expected));
     }
 }
