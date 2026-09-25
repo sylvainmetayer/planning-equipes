@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.Creneau;
 import dev.sylvain.planning.domain.PosteAffectation;
+import dev.sylvain.planning.domain.QuotaTypologie;
 import dev.sylvain.planning.domain.Stand;
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -80,5 +81,15 @@ class ViolationFormatterTest {
         assertThat(reference.animateurId()).isEqualTo("A1");
         assertThat(reference.standId()).isNull();
         assertThat(reference.creneauId()).isEqualTo(1L);
+    }
+
+    /** A cap names its game category by its label: its id is a number drawn by the edition (ADR 0050). */
+    @Test
+    void aCapNamesItsGameCategoryByItsLabel() {
+        assertThat(ViolationFormatter.describe(List.of(new QuotaTypologie("T3", "Hommes jeu", 4))))
+                .contains("« Hommes jeu »")
+                .doesNotContain("T3");
+        assertThat(ViolationFormatter.describe(List.of(new QuotaTypologie("T3", 4))))
+                .contains("« T3 »");
     }
 }

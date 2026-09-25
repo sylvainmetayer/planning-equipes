@@ -2,7 +2,9 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from './api.service';
 import { ProblemesStore } from './problemes.store';
-import type { CauseInfaisabilite, ConstraintsView, FeasibilityReport } from './models';
+import type { CauseInfaisabilite, ConstraintsView, FeasibilityReport, Stand } from './models';
+import { ReferenceDataStore } from './reference-data.store';
+import { seedStore } from './testing/seed-store';
 
 function cause(overrides: Partial<CauseInfaisabilite> = {}): CauseInfaisabilite {
   return {
@@ -110,6 +112,15 @@ describe('ProblemesStore', () => {
       expect(store.causes()).toHaveLength(1);
       expect(store.error()).toBe('');
       expect(store.loading()).toBe(false);
+    });
+
+    it('names the stands of a cause from the referential the store holds', async () => {
+      seedStore(TestBed.inject(ReferenceDataStore), 'stands', [
+        { id: 'tir', nom: 'Tir à l’arc' } as Stand,
+      ]);
+      api.responses = { '/api/feasibility': report([cause()]) };
+      await store.reloadFeasibility();
+      expect(store.problemes()[0].details).toContain('Stands : Tir à l’arc');
     });
 
     // The endpoint may be missing on an older server: badging pages must survive it.

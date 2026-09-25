@@ -1,5 +1,7 @@
 package dev.sylvain.planning.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 /**
  * Problem fact: how many créneaux one animateur may hold on one typologie of
  * jeu, over the <b>whole edition</b>.
@@ -22,11 +24,24 @@ public class QuotaTypologie {
 
     private int maxCreneaux;
 
+    /**
+     * The game category's label, for the sentence a broken cap is explained
+     * in: its id is a number drawn by the edition (ADR 0050), which tells a
+     * reader nothing. Server-side only, never on the wire.
+     */
+    @JsonIgnore
+    private String libelle;
+
     public QuotaTypologie() {}
 
     public QuotaTypologie(String typologie, int maxCreneaux) {
         this.typologie = typologie;
         this.maxCreneaux = maxCreneaux;
+    }
+
+    public QuotaTypologie(String typologie, String libelle, int maxCreneaux) {
+        this(typologie, maxCreneaux);
+        this.libelle = libelle;
     }
 
     public String getTypologie() {
@@ -35,6 +50,12 @@ public class QuotaTypologie {
 
     public void setTypologie(String typologie) {
         this.typologie = typologie;
+    }
+
+    /** The label when known, else the id: never an empty name. */
+    @JsonIgnore
+    public String getLibelle() {
+        return libelle != null ? libelle : typologie;
     }
 
     public int getMaxCreneaux() {

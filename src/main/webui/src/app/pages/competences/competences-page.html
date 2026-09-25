@@ -73,13 +73,13 @@
               <th scope="col" class="colonne-animateur" i18n="@@competences.colonne.animateur">Animateur</th>
               @for (typologie of colonnes(); track typologie.id) {
                 <th scope="col" class="colonne-typologie" [class.colonne-ninja]="typologie.ninja"
-                    [matTooltip]="typologie.id">
+                    [matTooltip]="typologie.code || typologie.label">
                   @if (typologie.ninja) {
                     <mat-icon class="ninja-icone" aria-hidden="true">all_inclusive</mat-icon>
                   }
-                  <span>{{ typologie.label || typologie.id }}</span>
-                  @if (typologie.label) {
-                    <span class="visually-hidden"> ({{ typologie.id }})</span>
+                  <span>{{ typologie.label || typologie.code || typologie.id }}</span>
+                  @if (typologie.label && typologie.code) {
+                    <span class="visually-hidden"> ({{ typologie.code }})</span>
                   }
                   <button matIconButton type="button" class="appliquer-colonne" [disabled]="editingLocked()"
                           i18n-matTooltip="@@competences.appliquerColonne" matTooltip="Appliquer cette colonne à toutes les lignes affichées, depuis la case active (Ctrl+Maj+Bas)"

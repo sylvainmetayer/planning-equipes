@@ -10,6 +10,7 @@ import {
   lireFiltre,
   readView,
   synthese,
+  typologiesAffichees,
 } from './fragilite';
 
 function animateur(partial: Partial<AnimateurFragilite>): AnimateurFragilite {
@@ -132,6 +133,21 @@ describe('filtrerCompetences', () => {
   it('cherche aussi sur la typologie et sur le nom du seul spécialiste', () => {
     expect(filtrerCompetences(source, 'TOUS', 'escape')).toHaveLength(2);
     expect(filtrerCompetences(source, 'TOUS', 'alice')).toHaveLength(1);
+  });
+
+  it('matches a typologie by the label the screen shows, not only by its id', () => {
+    const labels = new Map([['ESCAPE', 'Jeux de pièce']]);
+    expect(filtrerCompetences(source, 'TOUS', 'piece', labels)).toHaveLength(2);
+    expect(filtrerCompetences(source, 'TOUS', 'piece')).toHaveLength(0);
+  });
+});
+
+describe('typologiesAffichees', () => {
+  it('names each typologie by its label and keeps an unknown id', () => {
+    const ligne = competence({ typologies: ['ESCAPE', 'T9'] });
+    expect(typologiesAffichees(ligne, new Map([['ESCAPE', 'Escape game']]))).toBe(
+      'Escape game, T9',
+    );
   });
 });
 

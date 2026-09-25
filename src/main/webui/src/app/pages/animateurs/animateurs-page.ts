@@ -69,6 +69,7 @@ import {
   keptByAcknowledgement,
 } from './confirmation-filter';
 import { resumeRelance } from './relance-resume';
+import { typologieLabel, typologieLabels } from '../../core/typologie-colors';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -186,6 +187,7 @@ export class AnimateursPage implements OnInit {
     const confirmations = this.confirmations();
     const lastPublishedAt = this.synthese()?.dernierePublicationLe ?? null;
     const maintenant = new Date();
+    const typologies = typologieLabels(this.store.typologies());
     return this.store.animateurs().filter(
       (animateur) =>
         keptByAcknowledgement(
@@ -202,7 +204,11 @@ export class AnimateursPage implements OnInit {
           animateur.id,
           animateur.prenom,
           animateur.nom,
-          ...Object.keys(animateur.competences ?? {}),
+          // The label is what the screen shows; the id stays findable too.
+          ...Object.keys(animateur.competences ?? {}).flatMap((id) => [
+            id,
+            typologieLabel(typologies, id),
+          ]),
           // The acknowledgement label travels with the row so the existing
           // quick filter finds « relancé » or « silencieux » without a control
           // of its own (issue #293).

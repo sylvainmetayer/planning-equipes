@@ -135,8 +135,9 @@
                   <td>{{ ligne.line }}</td>
                   <td>
                     {{ ligne.label }}
-                    @if (ligne.standId && ligne.standId !== ligne.label) {
-                      <span class="import-identifiant">({{ ligne.standId }})</span>
+                    @let nom = nomStand(ligne);
+                    @if (nom) {
+                      <span class="import-identifiant">({{ nom }})</span>
                     }
                   </td>
                   <td>

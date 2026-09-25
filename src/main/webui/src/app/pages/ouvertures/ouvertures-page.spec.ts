@@ -663,7 +663,10 @@ describe('OuverturesPage — saisie', () => {
     bouton(fixture, 'Enregistrer').click();
     await fixture.whenStable();
     expect(ask).toHaveBeenCalledOnce();
-    expect((ask.mock.calls[0] as unknown as [{ message: string }])[0].message).toContain('B');
+    // Named as the grid names it, not by its id.
+    expect((ask.mock.calls[0] as unknown as [{ message: string }])[0].message).toMatch(
+      /^Stand B : /,
+    );
     expect(put).toHaveBeenCalledOnce();
   });
 
@@ -683,7 +686,7 @@ describe('OuverturesPage — saisie', () => {
     // One cell, one hour out of two at headcount 1: one hour of opening added.
     expect(message).toContain('1 stand(s), 1 case(s)');
     expect(message).toContain('1 h');
-    expect(message).toContain('B');
+    expect(message).toContain('(Stand B)');
     expect(put).toHaveBeenCalledWith([
       {
         standId: 'B',

@@ -64,6 +64,14 @@ public final class CoherenceAnalyzer {
 
     private static final String STAND_PREFIX = "Le stand ";
 
+    /**
+     * How a warning names a stand: its name, never its id — a number drawn by
+     * the edition (ADR 0050) that tells the reader nothing.
+     */
+    static String standLabel(Stand stand) {
+        return stand.getNom() != null && !stand.getNom().isBlank() ? "« " + stand.getNom() + " »" : stand.getId();
+    }
+
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
     private CoherenceAnalyzer() {}
@@ -343,7 +351,7 @@ public final class CoherenceAnalyzer {
             List<LocalDate> triees = horsEvenement.stream().distinct().sorted().toList();
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_EXCEPTION_HORS_EVENEMENT,
-                    STAND_PREFIX + apres.getId() + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
+                    STAND_PREFIX + standLabel(apres) + " porte " + horsEvenement.size() + " exception(s) datée(s) hors "
                             + "des jours de l'événement (" + jours.first() + " → " + jours.last() + "), sur "
                             + triees.size() + " date(s) : " + citer(triees)
                             + ". Aucun créneau ne les lira. Le stand est enregistré."));
@@ -366,7 +374,7 @@ public final class CoherenceAnalyzer {
                     .orElse(sansEffet.get(0));
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_FENETRE_SANS_EFFET,
-                    STAND_PREFIX + apres.getId() + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
+                    STAND_PREFIX + standLabel(apres) + " a " + sansEffet.size() + " fenêtre(s) qui ne recoupent aucun "
                             + "créneau de leur jour : " + citer(joursConcernes) + ". Par exemple le "
                             + premiere.date() + ", " + premiere.message()
                             + " Vérifiez les heures saisies contre la grille de créneaux. Le stand est enregistré."));
@@ -377,7 +385,7 @@ public final class CoherenceAnalyzer {
         if (!ouvertQuelquePart) {
             avertissements.add(new Avertissement(
                     TypeAvertissement.STAND_JAMAIS_OUVERT,
-                    STAND_PREFIX + apres.getId() + " n'est ouvert sur aucun des " + creneaux.size()
+                    STAND_PREFIX + standLabel(apres) + " n'est ouvert sur aucun des " + creneaux.size()
                             + " créneaux de l'édition : il n'ouvrira aucun poste et le solveur n'y placera personne. "
                             + "Le stand est enregistré."));
         }

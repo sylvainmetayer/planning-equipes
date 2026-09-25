@@ -5,7 +5,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { provideRouter, Router } from '@angular/router';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { Animateur, ContrainteAdHoc } from '../../core/models';
+import { Animateur, ContrainteAdHoc, Stand } from '../../core/models';
 import { ProblemesStore } from '../../core/problemes.store';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -88,6 +88,27 @@ describe('AdHocConstraintsPage', () => {
     seedStore(referenceData, 'contraintes', contraintes);
     TestBed.createComponent(AdHocConstraintsPage);
   }
+
+  it('names the people and the stand of an adjustment, an unknown id kept as-is', async () => {
+    seedStore(referenceData, 'animateurs', [
+      { id: 'A1', prenom: 'Alice', nom: 'Martin' } as Animateur,
+    ]);
+    seedStore(referenceData, 'stands', [{ id: 'S1', nom: 'Bourse aux jeux' } as Stand]);
+    seedStore(referenceData, 'contraintes', [
+      contrainte('AH1'),
+      { ...contrainte('AH2'), animateursConcernes: [{ id: 'A9' }], stand: { id: 'S9' } },
+    ]);
+    const fixture = TestBed.createComponent(AdHocConstraintsPage);
+    await fixture.whenStable();
+
+    const lignes = Array.from(
+      (fixture.nativeElement as HTMLElement).querySelectorAll('tr.mat-mdc-row'),
+    ).map((ligne) => ligne.textContent!.replace(/\s+/g, ' '));
+    expect(lignes[0]).toContain('Alice Martin');
+    expect(lignes[0]).toContain('stand Bourse aux jeux');
+    expect(lignes[1]).toContain('A9');
+    expect(lignes[1]).toContain('stand S9');
+  });
 
   /** `?ids=a,b`: the adjustments a problem named, side by side, until « Tout afficher ». */
   describe('the narrowing to the adjustments involved', () => {

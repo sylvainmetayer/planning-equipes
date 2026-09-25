@@ -246,7 +246,7 @@
                 <li i18n="@@consignes.apercu.vacationsSansSiege">Vacations sans siège : {{ vacations(jour.vacationsSansSiege) }}</li>
               }
               @if (jour.standsExceptionCoches.length > 0) {
-                <li i18n="@@consignes.apercu.exceptions">Stands aux horaires posés à la main, cochés : {{ jour.standsExceptionCoches.join(', ') }}</li>
+                <li i18n="@@consignes.apercu.exceptions">Stands aux horaires posés à la main, cochés : {{ standsText(jour.standsExceptionCoches) }}</li>
               }
               <li i18n="@@consignes.apercu.mineurs">{{ jour.mineursConcernes }} mineur(s) concerné(s) · {{ jour.majeursDisponibles }} majeur(s) disponible(s)</li>
               <li i18n="@@consignes.apercu.animateurs">{{ jour.animateursDansLaBande }} animateur(s) assis dans la bande · {{ jour.verrousTouches }} verrou(s) · {{ jour.contraintesTouchees }} ajustement(s) touché(s)</li>

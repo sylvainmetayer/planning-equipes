@@ -195,7 +195,7 @@
   "adHoc.form.newTitle": "New manual adjustment",
   "adHoc.scope.creneau": "time slot J{$jour} · {$date} {$heureDebut}–{$heureFin}",
   "adHoc.scope.creneauSupprime": "deleted time slot",
-  "adHoc.scope.stand": "stand {$id}",
+  "adHoc.scope.stand": "stand {$nom}",
   "adHoc.entityLabel": "Adjustment",
   "animateurs.form.description": "Minor/adult status is derived from the date of birth; a staff member is available unless a day is listed.",
   "animateurs.field.prenom": "First name",

@@ -19,8 +19,14 @@ import { StandsApi } from '../../core/api/stands-api';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
 import { ReferenceDataStore } from '../../core/reference-data.store';
+import { standNames } from '../../core/reference-labels';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { ImportGrilleAction, ImportGrilleDemande, ImportGrilleRapport } from '../../core/models';
+import {
+  ImportGrilleAction,
+  ImportGrilleDemande,
+  ImportGrilleLigne,
+  ImportGrilleRapport,
+} from '../../core/models';
 
 /**
  * Importing the stand matrix — one row per stand, one column per (date,
@@ -89,6 +95,23 @@ export class ImportGrilleStandsPage {
       !this.analyseEnCours() &&
       !this.importEnCours(),
   );
+
+  /** Stand id → name: a row names its stand by id, and the file by its own label. */
+  private readonly nomsStands = computed(() => standNames(this.store.stands()));
+
+  constructor() {
+    // The names of the report's stands; a failure only leaves them unnamed.
+    void this.store.reload(['stands']).catch(() => undefined);
+  }
+
+  /**
+   * The name of the stand a row matched, when it says more than the label the
+   * file used (a code, say); empty otherwise — never the generated id.
+   */
+  protected nomStand(ligne: ImportGrilleLigne): string {
+    const nom = ligne.standId ? this.nomsStands().get(ligne.standId) : undefined;
+    return nom && nom !== ligne.label ? nom : '';
+  }
 
   protected classeAction(action: ImportGrilleAction): string {
     return action === 'UPDATED' ? 'import-ligne-maj' : 'import-ligne-rejet';

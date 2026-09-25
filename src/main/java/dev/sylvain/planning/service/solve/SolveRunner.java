@@ -168,7 +168,8 @@ final class SolveRunner {
             // an edition capping nothing hands the solver an empty list.
             problem.setQuotasTypologies(referenceDataService.listTypologies().stream()
                     .filter(typologie -> typologie.maxCreneauxParAnimateur() != null)
-                    .map(typologie -> new QuotaTypologie(typologie.id(), typologie.maxCreneauxParAnimateur()))
+                    .map(typologie ->
+                            new QuotaTypologie(typologie.id(), typologie.label(), typologie.maxCreneauxParAnimateur()))
                     .toList());
         }
         // The published plan is the server's knowledge, never the caller's: a

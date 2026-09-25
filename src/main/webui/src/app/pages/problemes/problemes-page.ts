@@ -16,6 +16,7 @@ import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { intlLocale } from '../../core/locale';
 import { NiveauProbleme, niveauProblemeLabel } from '../../core/problemes';
 import { ProblemesStore } from '../../core/problemes.store';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ScoreReadingPanel } from '../../shared/lecture-score';
 import { LegalText } from '../../shared/legal-text';
@@ -57,6 +58,7 @@ export class ProblemesPage {
 
   protected readonly store = inject(ProblemesStore);
   protected readonly jobs = inject(SolverJobService);
+  private readonly referentiel = inject(ReferenceDataStore);
 
   /** Pre-labelled rows, so the template never calls a function per row. */
   protected readonly problemes = computed(() =>
@@ -97,6 +99,9 @@ export class ProblemesPage {
 
   constructor() {
     void this.store.reload();
+    // The causes name their stands by id: the referential gives them their
+    // names. A failure only leaves the ids on screen.
+    void this.referentiel.reload(['stands']).catch(() => undefined);
     // A solve started from anywhere (this browser or another) rewrites both
     // sources: refresh once it lands. Unregistered on destroy, like every
     // other lazy-loaded page's handler.

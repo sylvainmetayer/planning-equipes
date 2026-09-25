@@ -232,8 +232,8 @@ public class StandService {
                     saisie.cellules() == null ? List.of() : saisie.cellules();
             for (GrilleHorairesStands.SaisieCellule cellule : cellules) {
                 if (!idsEdition.contains(cellule.creneauId())) {
-                    throw new BusinessError.Invalid(
-                            "Créneau inconnu dans la grille du stand " + stand.getId() + " : " + cellule.creneauId());
+                    throw new BusinessError.Invalid("Créneau inconnu dans la grille du stand "
+                            + CoherenceAnalyzer.standLabel(stand) + " : " + cellule.creneauId());
                 }
             }
             lignes.add(GrilleHorairesStands.apply(stand, edition, cellules, saisie.aplatir()));

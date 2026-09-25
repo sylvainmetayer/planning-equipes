@@ -8,9 +8,10 @@ import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { CreneauxApi } from '../../core/api/creneaux-api';
 import { ReferenceCrudService } from '../../core/reference-crud.service';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
-import { RapportDerivation } from '../../core/models';
+import { RapportDerivation, Stand } from '../../core/models';
 import { CreneauDerivationDialog } from './creneau-derivation-dialog';
 
 function apercu(patch: Partial<RapportDerivation> = {}): RapportDerivation {
@@ -53,6 +54,10 @@ function monter(
       provideZonelessChangeDetection(),
       { provide: CreneauxApi, useValue: { previewDerivation: preview, derive: post } },
       { provide: ReferenceCrudService, useValue: { reportError: vi.fn() } },
+      {
+        provide: ReferenceDataStore,
+        useValue: { stands: signal([{ id: 'A', nom: 'Bourse aux jeux' } as Stand]) },
+      },
       { provide: SolverJobService, useValue: { editingLocked: signal(false) } },
       { provide: ConfirmService, useValue: { ask } },
       { provide: MatDialogRef, useValue: { close } },
@@ -110,6 +115,16 @@ describe('CreneauDerivationDialog', () => {
     expect(racine(fixture).textContent).toContain('2 coupure(s)');
     expect(racine(fixture).textContent).toContain('2026-07-07');
     expect(bouton(fixture, 'Écrire la grille').disabled).toBe(false);
+  });
+
+  it('names the stands at a cut by their name, an unknown id kept as-is', async () => {
+    const { fixture } = monter();
+    await fixture.whenStable();
+    bouton(fixture, 'Prévisualiser').click();
+    await fixture.whenStable();
+
+    const titre = racine(fixture).querySelector('.derivation-coupures')!.getAttribute('title');
+    expect(titre).toBe('10:00 (Bourse aux jeux, B et 3 autre(s)) · 12:00 (Bourse aux jeux)');
   });
 
   it('asks nothing when adding, writes, and closes with the report', async () => {

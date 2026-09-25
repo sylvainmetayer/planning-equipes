@@ -23,7 +23,12 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { DetailDialog } from '../../shared/detail-dialog';
 import { AnimateurFormDialog } from './animateur-form-dialog';
 import { AnimateursPage } from './animateurs-page';
-import type { Animateur, CauseInfaisabilite, FeasibilityReport } from '../../core/models';
+import type {
+  Animateur,
+  CauseInfaisabilite,
+  FeasibilityReport,
+  TypologieItem,
+} from '../../core/models';
 import { seedStore } from '../../core/testing/seed-store';
 
 function animateur(id: string, joursIndisponibles: string[]): Animateur {
@@ -527,6 +532,22 @@ describe('AnimateursPage table', () => {
     expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
       'Aucune ligne ne correspond au filtre.',
     );
+  });
+
+  it('finds an animateur by the label of a typologie they master, not only by its id', async () => {
+    seedStore(referenceData, 'typologies', [
+      { id: 'T1', label: 'Jeux de société', ninja: false } as TypologieItem,
+    ]);
+    await rendre([
+      person('alice', { prenom: 'Amélie', nom: 'Nothomb', competences: { T1: 'AUTONOME' } }),
+      person('bob', { prenom: 'Bob', nom: 'Ados' }),
+    ]);
+
+    await filter('societe');
+    expect(lignes().map((row) => row[1])).toEqual(['alice']);
+
+    await filter('T1');
+    expect(lignes().map((row) => row[1])).toEqual(['alice']);
   });
 
   it('says the referential is empty, not that the filter matched nothing', async () => {

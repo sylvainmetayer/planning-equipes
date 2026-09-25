@@ -4,10 +4,16 @@
 // report on screen, and that a failure shows a sentence and not a blank card.
 
 import { Location } from '@angular/common';
-import { provideZonelessChangeDetection, Signal } from '@angular/core';
+import { provideZonelessChangeDetection, Signal, signal } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter, Router } from '@angular/router';
-import { AnimateurFragilite, CompetenceRare, RapportFragilite } from '../../core/models';
+import {
+  AnimateurFragilite,
+  CompetenceRare,
+  RapportFragilite,
+  TypologieItem,
+} from '../../core/models';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { FragilitePage } from './fragilite-page';
@@ -25,6 +31,20 @@ function rapport(partial: Partial<RapportFragilite> = {}): RapportFragilite {
     aucunAnimateur: false,
     message: 'Douze groupes analysés.',
     ...partial,
+  };
+}
+
+/** The referential the page names typologies from; reloading it is a no-op here. */
+function referentiel(typologies: Partial<TypologieItem>[] = []): {
+  provide: typeof ReferenceDataStore;
+  useValue: unknown;
+} {
+  return {
+    provide: ReferenceDataStore,
+    useValue: {
+      typologies: signal(typologies as TypologieItem[]),
+      reload: vi.fn(async () => undefined),
+    },
   };
 }
 
@@ -59,6 +79,7 @@ describe('FragilitePage loading', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
+        referentiel(),
         { provide: Location, useValue: { path: () => '/fragilite', replaceState: vi.fn() } },
         {
           provide: ActivatedRoute,
@@ -92,6 +113,7 @@ describe('FragilitePage loading', () => {
       providers: [
         provideZonelessChangeDetection(),
         { provide: AnalysesApi, useValue: analysesApi },
+        referentiel(),
         {
           provide: Location,
           useValue: {
@@ -252,6 +274,7 @@ describe('FragilitePage contextual links', () => {
         provideZonelessChangeDetection(),
         provideRouter([]),
         { provide: AnalysesApi, useValue: analysesApi },
+        referentiel(),
       ],
     });
   });
@@ -278,5 +301,38 @@ describe('FragilitePage contextual links', () => {
     );
 
     expect(await hrefs('COMPETENCES')).toEqual([]);
+  });
+});
+
+describe('FragilitePage typologie names', () => {
+  const analysesApi = { fragility: vi.fn() };
+
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    TestBed.configureTestingModule({
+      providers: [
+        provideZonelessChangeDetection(),
+        provideRouter([]),
+        { provide: AnalysesApi, useValue: analysesApi },
+        referentiel([{ id: 'T1', label: 'Escape game' }]),
+      ],
+    });
+    analysesApi.fragility.mockResolvedValue(
+      rapport({
+        competencesRares: [competence({ typologies: ['T1', 'T9'] })],
+        totalCompetencesRares: 1,
+      }),
+    );
+  });
+
+  it('shows a scarce competence by typologie label, an unknown id kept as-is', async () => {
+    await TestBed.inject(Router).navigateByUrl('/?vue=COMPETENCES');
+    const fixture = TestBed.createComponent(FragilitePage);
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const cell = (fixture.nativeElement as HTMLElement).querySelector('tbody td:nth-of-type(2)');
+    expect(cell?.textContent).toContain('Escape game, T9');
+    expect(cell?.textContent).not.toContain('T1');
   });
 });

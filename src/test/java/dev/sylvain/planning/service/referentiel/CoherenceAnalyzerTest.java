@@ -570,6 +570,20 @@ class CoherenceAnalyzerTest {
                 .contains(JOUR_1.plusMonths(1).toString());
     }
 
+    /** A generated id tells the reader nothing (ADR 0050): the warning names the stand. */
+    @Test
+    void aWarningNamesTheStandRatherThanItsId() {
+        Stand ferme = new Stand("S12", "Buvette du parc", Set.of(), 1, 1, false);
+        ferme.setIndisponibilites(new ArrayList<>());
+        ferme.setOuvertures(new ArrayList<>());
+        ferme.setHoraires(
+                List.of(HoraireStand.everyDay(ModeHoraire.FERMETURE, new FenetreHoraire(LocalTime.of(0, 0), null))));
+
+        assertThat(surStand(null, ferme, troisJours()).get(0).message())
+                .startsWith("Le stand « Buvette du parc » ")
+                .doesNotContain("S12");
+    }
+
     @Test
     void aStandClosedEveryDayIsReportedAsNeverOpen() {
         Stand ferme = stand("FERME");

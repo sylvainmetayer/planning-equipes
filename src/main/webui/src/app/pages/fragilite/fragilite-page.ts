@@ -20,7 +20,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { AnimateurFragilite, CompetenceRare, SeveriteFragilite } from '../../core/models';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import { errorText, retainedValue } from '../../core/resource-state';
+import { typologieLabels } from '../../core/typologie-colors';
 import {
   keepViewInQueryParams,
   optionalParam,
@@ -38,6 +40,7 @@ import {
   lireFiltre,
   readView,
   synthese,
+  typologiesAffichees,
   VueFragilite,
 } from './fragilite';
 import { StatusMessage } from '../../shared/status-message';
@@ -83,6 +86,7 @@ export class FragilitePage {
 
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
+  private readonly referentiel = inject(ReferenceDataStore);
 
   private readonly fragilite = resource({ loader: () => this.analysesApi.fragility() });
   /** Kept across a failed refresh; the template shows the failure in its place, not a blank card. */
@@ -102,8 +106,10 @@ export class FragilitePage {
   protected readonly animateurs = computed<AnimateurFragilite[]>(() =>
     filtrerAnimateurs(this.rapport(), this.filtre(), this.recherche()),
   );
+  /** Typologie id → label: the report names typologies by id, which means nothing on screen. */
+  private readonly typologies = computed(() => typologieLabels(this.referentiel.typologies()));
   protected readonly competences = computed<CompetenceRare[]>(() =>
-    filtrerCompetences(this.rapport(), this.filtre(), this.recherche()),
+    filtrerCompetences(this.rapport(), this.filtre(), this.recherche(), this.typologies()),
   );
   /** True as soon as the screen shows something other than its default view. */
   protected readonly viewChanged = computed(
@@ -115,6 +121,8 @@ export class FragilitePage {
     // The address bar, not the router snapshot: this page is a tab of
     // « Diagnostic », created afresh every time the tab is opened, and the
     // snapshot still holds what the last real navigation parsed.
+    // The labels only: a failure leaves the ids on screen, never the report blank.
+    void this.referentiel.reload(['typologies']).catch(() => undefined);
     const params = currentViewParams();
     this.view.set(readView(params.get('vue')));
     this.filtre.set(lireFiltre(params.get('filtre')));
@@ -124,6 +132,10 @@ export class FragilitePage {
       filtre: this.filtre() === 'TOUS' ? null : this.filtre(),
       q: optionalParam(this.recherche()),
     }));
+  }
+
+  protected typologiesAffichees(ligne: CompetenceRare): string {
+    return typologiesAffichees(ligne, this.typologies());
   }
 
   protected recharger(): void {
