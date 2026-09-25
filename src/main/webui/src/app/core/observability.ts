@@ -31,30 +31,38 @@ export async function loadAppConfig(): Promise<AppConfig> {
 }
 
 /**
- * The espace animateur carries its access token in the URL path. That token is
+ * Two public pages carry a credential in their URL path: the espace animateur
+ * (`/animateur/<token>`) and the wall display (`/mural/<token>`). The first is
  * a unique, stable identifier of one named person — often a minor — so any
  * telemetry that reports "which page was viewed" would be reporting who was
- * viewing it, to a third party, with no basis for doing so.
+ * viewing it, to a third party, with no basis for doing so. The second opens
+ * the whole day's staffing, names included, to whoever holds it: handing it to
+ * an analytics or error-tracking provider would hand that provider the screen.
  *
  * <p>Hence the two guards below: audience measurement is not loaded at all on
  * those pages, and error reports have the token replaced before they leave the
- * browser. Checking `location.pathname` once at bootstrap is enough — the
- * espace is entered by its URL and no in-app navigation crosses into it.</p>
+ * browser. Checking `location.pathname` once at bootstrap is enough — both
+ * pages are entered by their URL and no in-app navigation crosses into them.</p>
  */
-const PREFIXE_ESPACE = '/animateur/';
+const TOKEN_PAGE_PREFIXES = ['/animateur/', '/mural/'];
 
 /**
- * Replaces the access token of an espace URL with a placeholder, leaving the
- * rest readable. Covers both shapes it takes: the page the browser is on
- * (`/animateur/…`) and the calls it makes (`/api/espace-animateur/…`), which
- * land in breadcrumbs.
+ * Replaces the token of an espace or wall-display URL with a placeholder,
+ * leaving the rest readable. Covers both shapes each takes: the page the
+ * browser is on (`/animateur/…`, `/mural/…`) and the calls it makes
+ * (`/api/espace-animateur/…`, `/api/mural/…`), which land in breadcrumbs. The
+ * admin routes `/api/affichage-mural/<id>` carry an id, not a token, and are
+ * left alone (the segment before `mural` is not a slash there).
  */
-export function masquerJetonEspace(valeur: string): string {
-  return valeur.replace(/\/(api\/espace-animateur|animateur)\/[^/?#\s"']+/g, '/$1/<jeton>');
+export function maskUrlToken(value: string): string {
+  return value.replace(
+    /\/(api\/espace-animateur|animateur|api\/mural|mural)\/[^/?#\s"']+/g,
+    '/$1/<jeton>',
+  );
 }
 
 /**
- * Applies {@link masquerJetonEspace} to every string of a report, however deep.
+ * Applies {@link maskUrlToken} to every string of a report, however deep.
  *
  * <p>Masking a handful of named fields was not enough, and the misses were the
  * likely ones: a route change inside the espace lands in a navigation
@@ -64,28 +72,31 @@ export function masquerJetonEspace(valeur: string): string {
  * the whole payload removes the question of whether the next SDK version puts
  * the URL somewhere new; reports are rare, so the cost is nil.</p>
  */
-export function masquerJetonPartout<T>(valeur: T): T {
-  if (typeof valeur === 'string') {
-    return masquerJetonEspace(valeur) as T;
+export function maskTokensEverywhere<T>(value: T): T {
+  if (typeof value === 'string') {
+    return maskUrlToken(value) as T;
   }
-  if (Array.isArray(valeur)) {
-    valeur.forEach((element, index) => {
-      valeur[index] = masquerJetonPartout(element);
+  if (Array.isArray(value)) {
+    value.forEach((element, index) => {
+      value[index] = maskTokensEverywhere(element);
     });
-    return valeur;
+    return value;
   }
-  if (valeur && typeof valeur === 'object') {
-    const objet = valeur as Record<string, unknown>;
-    for (const key of Object.keys(objet)) {
-      objet[key] = masquerJetonPartout(objet[key]);
+  if (value && typeof value === 'object') {
+    const record = value as Record<string, unknown>;
+    for (const key of Object.keys(record)) {
+      record[key] = maskTokensEverywhere(record[key]);
     }
-    return valeur;
+    return value;
   }
-  return valeur;
+  return value;
 }
 
-function estPageEspaceAnimateur(): boolean {
-  return typeof location !== 'undefined' && location.pathname.startsWith(PREFIXE_ESPACE);
+function isTokenPage(): boolean {
+  return (
+    typeof location !== 'undefined' &&
+    TOKEN_PAGE_PREFIXES.some((prefix) => location.pathname.startsWith(prefix))
+  );
 }
 
 /**
@@ -110,15 +121,15 @@ export async function initObservability(config: AppConfig): Promise<Provider[]> 
       environment: config.sentryEnvironment,
       release: APP_VERSION,
       // The SDK always attaches the full request URL, and records fetch/xhr
-      // calls as breadcrumbs — both carry the access token here.
-      beforeSend: (event) => masquerJetonPartout(event),
-      beforeBreadcrumb: (breadcrumb) => masquerJetonPartout(breadcrumb),
+      // calls as breadcrumbs — both carry the espace or wall token here.
+      beforeSend: (event) => maskTokensEverywhere(event),
+      beforeBreadcrumb: (breadcrumb) => maskTokensEverywhere(breadcrumb),
     });
     providers.push({ provide: ErrorHandler, useValue: Sentry.createErrorHandler() });
   }
   if (
     config.cloudflareWebAnalyticsToken &&
-    !estPageEspaceAnimateur() &&
+    !isTokenPage() &&
     !document.querySelector('script[data-cf-beacon]')
   ) {
     const script = document.createElement('script');

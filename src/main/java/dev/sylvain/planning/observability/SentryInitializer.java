@@ -24,6 +24,8 @@ import java.util.regex.Pattern;
  * often a minor, and it travels in the URL path — so an exception raised while
  * serving {@code /api/espace-animateur/{token}/…} would otherwise carry it
  * into an error tracker, in clear, for as long as that tracker keeps it. The
+ * wall display's token ({@code /api/mural/{token}}) is scrubbed the same way:
+ * it opens the whole day's staffing, names included, to whoever holds it. The
  * frontend does the same on its side.</p>
  */
 @ApplicationScoped
@@ -43,14 +45,17 @@ public class SentryInitializer {
     }
 
     /**
-     * Access token of an espace animateur URL, in the two shapes it takes.
-     * Mirrors {@code maskEspaceToken} on the frontend — the same promise is
-     * made to the reader of the privacy policy on both sides.
+     * Token of an espace animateur or wall-display URL, in the two shapes each
+     * takes (the page and the API call). Mirrors {@code maskUrlToken} on the
+     * frontend — the same promise is made to the reader of the privacy policy
+     * on both sides. {@code /api/affichage-mural/{id}} carries an id, not a
+     * token, and does not match: a hyphen, not a slash, precedes {@code mural}.
      */
-    private static final Pattern ESPACE_TOKEN = Pattern.compile("/(api/espace-animateur|animateur)/[^/?#\\s\"']+");
+    private static final Pattern URL_TOKEN =
+            Pattern.compile("/(api/espace-animateur|animateur|api/mural|mural)/[^/?#\\s\"']+");
 
-    static String maskToken(String valeur) {
-        return valeur == null ? null : ESPACE_TOKEN.matcher(valeur).replaceAll("/$1/<jeton>");
+    static String maskToken(String value) {
+        return value == null ? null : URL_TOKEN.matcher(value).replaceAll("/$1/<jeton>");
     }
 
     /** Masks the message of the event and of every exception it carries. */

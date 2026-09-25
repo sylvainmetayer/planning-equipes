@@ -179,6 +179,90 @@
           }
         }
       },
+      "AffichageMuralLink" : {
+        "required" : [ "id", "libelle", "fullNames", "restricted", "emplacements", "createdAt" ],
+        "type" : "object",
+        "properties" : {
+          "id" : {
+            "type" : "integer",
+            "format" : "int64"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "fullNames" : {
+            "type" : "boolean"
+          },
+          "restricted" : {
+            "type" : "boolean"
+          },
+          "emplacements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "createdAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          },
+          "lastAccessAt" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "AffichageMuralLinkRequest" : {
+        "type" : "object",
+        "properties" : {
+          "libelle" : {
+            "type" : "string"
+          },
+          "fullNames" : {
+            "type" : "boolean"
+          },
+          "emplacements" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          }
+        }
+      },
+      "AffichageMuralView" : {
+        "required" : [ "edition", "jour", "now", "stands", "alerts" ],
+        "type" : "object",
+        "properties" : {
+          "edition" : {
+            "type" : "string"
+          },
+          "libelle" : {
+            "type" : "string"
+          },
+          "jour" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "now" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "nextDay" : {
+            "$ref" : "#/components/schemas/LocalDate"
+          },
+          "stands" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MuralStand"
+            }
+          },
+          "alerts" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MuralAlert"
+            }
+          },
+          "consigne" : {
+            "$ref" : "#/components/schemas/MuralConsigne"
+          }
+        }
+      },
       "AlerteView" : {
         "type" : "object",
         "properties" : {
@@ -2240,6 +2324,18 @@
           },
           "satisfaite" : {
             "type" : "boolean"
+          }
+        }
+      },
+      "CreatedAffichageMuralLink" : {
+        "required" : [ "link", "token" ],
+        "type" : "object",
+        "properties" : {
+          "link" : {
+            "$ref" : "#/components/schemas/AffichageMuralLink"
+          },
+          "token" : {
+            "type" : "string"
           }
         }
       },
@@ -5290,6 +5386,96 @@
         "type" : "string",
         "enum" : [ "SIEGES_VIDES_NON_COUVRABLES", "SIEGE_IRREMPLACABLE", "STAND_SANS_SPECIALISTE", "MARGE_NULLE_AVEC_SIEGES_VIDES", "FRAGILES_AU_DELA_DE_LA_MARGE", "SIEGES_FRAGILES", "SPECIALISTE_UNIQUE_SANS_RENFORT" ]
       },
+      "MuralAlert" : {
+        "type" : "object",
+        "required" : [ "type", "standNom", "start", "end", "count" ],
+        "properties" : {
+          "type" : {
+            "$ref" : "#/components/schemas/MuralAlertType"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "start" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "count" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "nom" : {
+            "type" : "string"
+          }
+        }
+      },
+      "MuralAlertType" : {
+        "type" : "string",
+        "enum" : [ "EMPTY_SEATS", "BREAK_WITHOUT_RELAY" ]
+      },
+      "MuralConsigne" : {
+        "type" : "object",
+        "required" : [ "closedFrom" ],
+        "properties" : {
+          "closedFrom" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "closedUntil" : {
+            "$ref" : "#/components/schemas/LocalTime"
+          },
+          "motif" : {
+            "type" : "string"
+          }
+        }
+      },
+      "MuralShift" : {
+        "type" : "object",
+        "required" : [ "start", "end", "noms", "emptySeats" ],
+        "properties" : {
+          "start" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "end" : {
+            "$ref" : "#/components/schemas/LocalDateTime"
+          },
+          "noms" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "emptySeats" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
+      "MuralStand" : {
+        "type" : "object",
+        "required" : [ "standId", "standNom", "vacations" ],
+        "properties" : {
+          "standId" : {
+            "type" : "string"
+          },
+          "standNom" : {
+            "type" : "string"
+          },
+          "emplacementId" : {
+            "type" : "string"
+          },
+          "emplacementNom" : {
+            "type" : "string"
+          },
+          "vacations" : {
+            "type" : "array",
+            "items" : {
+              "$ref" : "#/components/schemas/MuralShift"
+            }
+          }
+        }
+      },
       "NewCarpoolRequest" : {
         "type" : "object",
         "properties" : {
@@ -6326,6 +6512,30 @@
           },
           "label" : {
             "type" : "string"
+          }
+        }
+      },
+      "QrCodeRequest" : {
+        "type" : "object",
+        "properties" : {
+          "link" : {
+            "type" : "string"
+          }
+        }
+      },
+      "QrCodeView" : {
+        "required" : [ "size", "rows" ],
+        "type" : "object",
+        "properties" : {
+          "size" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "rows" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
           }
         }
       },
@@ -8571,6 +8781,107 @@
         },
         "summary" : "Planning Ics",
         "tags" : [ "Abonnement Ics Resource" ]
+      }
+    },
+    "/api/affichage-mural" : {
+      "get" : {
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "type" : "array",
+                  "items" : {
+                    "$ref" : "#/components/schemas/AffichageMuralLink"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "summary" : "List",
+        "tags" : [ "Affichage Mural Resource" ]
+      },
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/AffichageMuralLinkRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/CreatedAffichageMuralLink"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Create",
+        "tags" : [ "Affichage Mural Resource" ]
+      }
+    },
+    "/api/affichage-mural/qr-code" : {
+      "post" : {
+        "requestBody" : {
+          "content" : {
+            "application/json" : {
+              "schema" : {
+                "$ref" : "#/components/schemas/QrCodeRequest"
+              }
+            }
+          },
+          "required" : true
+        },
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/QrCodeView"
+                }
+              }
+            }
+          },
+          "400" : {
+            "description" : "Bad Request"
+          }
+        },
+        "summary" : "Qr Code",
+        "tags" : [ "Affichage Mural Resource" ]
+      }
+    },
+    "/api/affichage-mural/{id}" : {
+      "delete" : {
+        "parameters" : [ {
+          "name" : "id",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "integer",
+            "format" : "int64"
+          }
+        } ],
+        "responses" : {
+          "204" : {
+            "description" : "No Content"
+          }
+        },
+        "summary" : "Revoke",
+        "tags" : [ "Affichage Mural Resource" ]
       }
     },
     "/api/alertes" : {
@@ -12626,6 +12937,32 @@
         },
         "summary" : "Get",
         "tags" : [ "Mentions Legales Resource" ]
+      }
+    },
+    "/api/mural/{token}" : {
+      "get" : {
+        "parameters" : [ {
+          "name" : "token",
+          "in" : "path",
+          "required" : true,
+          "schema" : {
+            "type" : "string"
+          }
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "OK",
+            "content" : {
+              "application/json" : {
+                "schema" : {
+                  "$ref" : "#/components/schemas/AffichageMuralView"
+                }
+              }
+            }
+          }
+        },
+        "summary" : "View",
+        "tags" : [ "Mural Resource" ]
       }
     },
     "/api/ouvertures-stands" : {

@@ -436,11 +436,12 @@ class DatabaseResourceTest {
                 .contains("DELETE FROM plan_snapshot")
                 .contains("DELETE FROM publication_destinataire")
                 .contains("DELETE FROM kpi_historique")
-                // And the six that must not travel stay out, in both directions.
+                // And the tables that must not travel stay out, in both directions.
                 .doesNotContain("horloge_jour_j")
                 .doesNotContain("backup_settings")
                 .doesNotContain("espace_acces")
                 .doesNotContain("espace_session")
+                .doesNotContain("lien_affichage_mural")
                 .doesNotContain("solver_job")
                 .doesNotContain("journal_action");
     }

@@ -1,7 +1,7 @@
-// The pure side of the Paramètres page: which of the four tabs a query param names.
+// The pure side of the Paramètres page: which of the five tabs a query param names.
 
-/** The four tabs, and the values of the `onglet` query param. */
-export type OngletParametres = 'legaux' | 'edition' | 'emails' | 'globaux';
+/** The five tabs, and the values of the `onglet` query param. */
+export type OngletParametres = 'legaux' | 'edition' | 'emails' | 'mural' | 'globaux';
 
 export const ONGLETS_PARAMETRES: readonly OngletParametres[] = [
   // The legal floor first: it is what an edition is checked against, and the
@@ -9,6 +9,8 @@ export const ONGLETS_PARAMETRES: readonly OngletParametres[] = [
   'legaux',
   'edition',
   'emails',
+  // The links of the control room's television (ADR 0053): per edition.
+  'mural',
   // Last, and apart: the whole database, every edition included.
   'globaux',
 ];

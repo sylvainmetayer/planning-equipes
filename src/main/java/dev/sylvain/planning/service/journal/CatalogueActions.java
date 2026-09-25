@@ -132,6 +132,8 @@ public final class CatalogueActions {
     private static final String SAUVEGARDE_BASCULEE = "SAUVEGARDE_BASCULEE";
     private static final String DATE_JOUR_J_FORCEE = "DATE_JOUR_J_FORCEE";
     private static final String CLE_MCP_REVELEE = "CLE_MCP_REVELEE";
+    private static final String AFFICHAGE_MURAL_CREE = "AFFICHAGE_MURAL_CREE";
+    private static final String AFFICHAGE_MURAL_REVOQUE = "AFFICHAGE_MURAL_REVOQUE";
     private static final String COLLECTE_CONFIGUREE = "COLLECTE_CONFIGUREE";
     private static final String DECLARATION_APPLIQUEE = "DECLARATION_APPLIQUEE";
     private static final String DECLARATION_REFUSEE = "DECLARATION_REFUSEE";
@@ -335,6 +337,11 @@ public final class CatalogueActions {
         action(SAUVEGARDE_BASCULEE, "Sauvegarde nocturne suspendue ou reprise", Entite.SAUVEGARDE);
         action(DATE_JOUR_J_FORCEE, "Date du jour forcée (débogage)", Entite.PARAMETRES);
         action(CLE_MCP_REVELEE, "Clé MCP révélée", Entite.PARAMETRES);
+        // A link that opens a screen without a session is a credential handed
+        // out: who made it and who closed it belong in the history. The screen's
+        // own reads, once a minute, do not — see MuralResource.
+        action(AFFICHAGE_MURAL_CREE, "Lien d'affichage mural créé", Entite.PARAMETRES);
+        action(AFFICHAGE_MURAL_REVOQUE, "Lien d'affichage mural révoqué", Entite.PARAMETRES);
 
         /* ---------- Availability, swaps, espace animateur ----------- */
         action(COLLECTE_CONFIGUREE, "Fenêtre de collecte des disponibilités configurée", Entite.DISPONIBILITE);
@@ -505,6 +512,8 @@ public final class CatalogueActions {
         route("BackupResource#setActive", SAUVEGARDE_BASCULEE);
         route("DebugResource#setDateJourJ", DATE_JOUR_J_FORCEE);
         route("McpResource#reveal", CLE_MCP_REVELEE);
+        route("AffichageMuralResource#create", AFFICHAGE_MURAL_CREE);
+        route("AffichageMuralResource#revoke", AFFICHAGE_MURAL_REVOQUE);
         route("AuthResource#logout", DECONNEXION);
 
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);
@@ -698,6 +707,7 @@ public final class CatalogueActions {
         untracked("ReferenceDataResource#fileScenarioTarget", "lit un fichier pour en annoncer la cible");
         untracked("ReferenceDataResource#validateScenarioFile", "valide un fichier, n'écrit rien");
         untracked("JourJResource#suggestions", "suggestions de remplacement, n'écrit rien");
+        untracked("AffichageMuralResource#qrCode", "dessine le QR code d'une adresse, n'écrit rien");
         untracked("DebugResource#throwTestException", "lève une exception pour vérifier la remontée d'erreurs");
     }
 

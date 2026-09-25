@@ -6,8 +6,8 @@ import { catchError } from 'rxjs/operators';
 
 /**
  * Sends the admin to /login whenever an API call answers 401 — the session is
- * missing or expired (issue #165). The espace animateur and the auth endpoints
- * are left alone: they are public by design, a 401 there would be a real error
+ * missing or expired (issue #165). The espace animateur, the wall display and
+ * the auth endpoints are left alone: they are public by design, a 401 there would be a real error
  * to surface, not a login redirect.
  *
  * The drafts are left alone: recovering an entry after the session expired
@@ -24,6 +24,7 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
         error.status === 401 &&
         request.url.startsWith('/api/') &&
         !request.url.startsWith('/api/espace-animateur/') &&
+        !request.url.startsWith('/api/mural/') &&
         !request.url.startsWith('/api/auth/')
       ) {
         void router.navigateByUrl('/login');

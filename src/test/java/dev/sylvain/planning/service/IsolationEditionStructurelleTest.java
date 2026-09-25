@@ -120,7 +120,9 @@ class IsolationEditionStructurelleTest {
             "prereglage_consigne",
             "prereglage_consigne_fenetre",
             "compteur_identifiant",
-            "gel_referentiel");
+            "gel_referentiel",
+            "lien_affichage_mural",
+            "lien_affichage_mural_emplacement");
 
     /**
      * The tables the backend queries <b>outside</b> any edition, and why. An
@@ -158,7 +160,7 @@ class IsolationEditionStructurelleTest {
             List.of("edition", "backup_settings", "horloge_jour_j", "kpi_historique", "solver_job", "creneau_remap");
 
     /**
-     * The five deliberately cross-edition statements, and why.
+     * The deliberately cross-edition statements, and why.
      *
      * <ul>
      *   <li>The espace animateur token arrives on a public URL, with no
@@ -168,6 +170,8 @@ class IsolationEditionStructurelleTest {
      *   <li>The ICS subscription token, for the very same reason: it reaches
      *       the server on a calendar client's bare {@code GET}, which carries
      *       no header anybody may trust.</li>
+     *   <li>The wall display token, for the same reason again: a television
+     *       opens it on a bare {@code GET}, and only its hash is looked up.</li>
      *   <li>The e-mail address collision is checked when the "trusted header"
      *       mode boots, which has no edition to consider and wants to know
      *       whether the collision exists anywhere at all.</li>
@@ -192,6 +196,9 @@ class IsolationEditionStructurelleTest {
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
             "SELECT edition_id, id, email FROM animateur WHERE access_token = ?",
             "SELECT edition_id, id FROM animateur WHERE abonnement_token = ?",
+            "SELECT l.edition_id, e.nom AS edition_nom, l.id, l.libelle, l.noms_complets, l.restreint"
+                    + " FROM lien_affichage_mural l JOIN edition e ON e.id = l.edition_id"
+                    + " WHERE l.token_hash = ? AND l.revoque_le IS NULL",
             "SELECT 1 FROM animateur WHERE lower(email) = lower(?) LIMIT 1",
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.kpi FROM plan_snapshot s"

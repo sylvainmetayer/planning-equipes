@@ -36,6 +36,7 @@ import { FeasibilityBanner } from '../../shared/feasibility-banner';
 import { InstantaneAvantAction } from '../../shared/instantane-avant-action';
 import { OutputPanel } from '../../shared/output-panel';
 import { StatusMessage } from '../../shared/status-message';
+import { AffichageMuralLinks } from './affichage-mural-links';
 import { ParametresLegauxCard } from './parametres-legaux';
 import { ParametresQualiteCard } from './parametres-qualite';
 import { ParametresNotificationsPanel } from './parametres-notifications';
@@ -55,7 +56,7 @@ import { injectGelReferentiel } from '../../core/gel-referentiel.store';
 export const REPLACE_KEYWORD = 'REMPLACER';
 
 /**
- * The settings page, four tabs instead of one long scroll (issue #606), the
+ * The settings page, five tabs instead of one long scroll (issue #606), the
  * same mechanics as Diagnostic and Imports — a toggle group, the tab carried
  * by `?onglet=`, the default tab writing nothing:
  *
@@ -70,6 +71,8 @@ export const REPLACE_KEYWORD = 'REMPLACER';
  * - "E-mails automatiques" — what the edition sends of its own accord: to the
  *   administrator at the end of a solve, to the animateurs as reminders and
  *   relances. Not "Notifications", which is the name of another page.
+ * - "Affichage mural" — the links that open the control room's television
+ *   without an admin session (ADR 0053): per edition, created and revoked here.
  * - "Globaux" — the SQL dump import/export and the automatic backup: both take
  *   the WHOLE database, every edition included, so neither belongs to any
  *   edition.
@@ -85,6 +88,7 @@ export const REPLACE_KEYWORD = 'REMPLACER';
 @Component({
   selector: 'app-parametres-page',
   imports: [
+    AffichageMuralLinks,
     SingleKeyShortcutsToggle,
     DatePipe,
     FormsModule,

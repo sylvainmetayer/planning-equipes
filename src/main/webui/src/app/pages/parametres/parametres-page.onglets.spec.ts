@@ -8,6 +8,7 @@ import { ActivatedRoute, convertToParamMap, ParamMap } from '@angular/router';
 import { BehaviorSubject } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
+import { AffichageMuralApi } from '../../core/api/affichage-mural-api';
 import { AdminApi } from '../../core/api/admin-api';
 import { ConstraintsApi } from '../../core/api/constraints-api';
 import { EditionStore } from '../../core/edition.store';
@@ -77,6 +78,7 @@ describe('ParametresPage — onglets', () => {
           },
         },
         { provide: ConstraintsApi, useValue: { legalParameters: vi.fn(async () => LEGAUX) } },
+        { provide: AffichageMuralApi, useValue: { list: vi.fn(async () => []) } },
         {
           provide: ReferenceCrudService,
           useValue: {
@@ -163,8 +165,14 @@ describe('ParametresPage — onglets', () => {
     await rendre();
   });
 
-  it('names its four tabs and opens on the legal parameters', () => {
-    expect(onglets()).toEqual(['Légaux', 'Édition', 'E-mails automatiques', 'Globaux']);
+  it('names its five tabs and opens on the legal parameters', () => {
+    expect(onglets()).toEqual([
+      'Légaux',
+      'Édition',
+      'E-mails automatiques',
+      'Affichage mural',
+      'Globaux',
+    ]);
     expect(textOf()).toContain('Paramètres légaux');
     expect(textOf()).toContain('Coupure repas');
     // And none of the other tabs' cards is on screen with them.
@@ -181,6 +189,9 @@ describe('ParametresPage — onglets', () => {
     await cliquerOnglet('E-mails automatiques');
     expect(textOf()).toContain("Prévenir par e-mail à la fin d'une résolution");
     expect(textOf()).toContain('Rappels et relances automatiques');
+
+    await cliquerOnglet('Affichage mural');
+    expect(textOf()).toContain('Aucun lien actif.');
 
     await cliquerOnglet('Globaux');
     expect(textOf()).toContain('Sauvegarde automatique');
@@ -223,7 +234,7 @@ describe('ParametresPage — onglets', () => {
 
   /** One page title, then the cards: the two section headings the tabs replaced are gone. */
   it('leaves a valid heading hierarchy in each tab', async () => {
-    for (const nom of ['Légaux', 'Édition', 'E-mails automatiques', 'Globaux']) {
+    for (const nom of ['Légaux', 'Édition', 'E-mails automatiques', 'Affichage mural', 'Globaux']) {
       await cliquerOnglet(nom);
       expect(racine().querySelectorAll('h1')).toHaveLength(1);
       expect(racine().querySelectorAll('h3')).toHaveLength(0);

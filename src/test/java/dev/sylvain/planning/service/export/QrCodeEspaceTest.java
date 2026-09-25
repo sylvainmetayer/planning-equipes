@@ -22,8 +22,8 @@ class QrCodeEspaceTest {
     private static final String LIEN = "https://planning.example.org/animateur/6f2a1d3e-88c4-4a11-9f0b-2c7d5e1a4b90";
 
     @Test
-    void leCodeSeRelitCommeLeLienQuilPorte() throws Exception {
-        BitMatrix matrice = QrCodeEspace.matrice(LIEN);
+    void theCodeReadsBackAsTheLinkItCarries() throws Exception {
+        BitMatrix matrice = QrCodeEspace.matrix(LIEN);
 
         assertThat(matrice).isNotNull();
         assertThat(relire(matrice)).isEqualTo(LIEN);
@@ -31,9 +31,9 @@ class QrCodeEspaceTest {
 
     /** No link, no code — and a document that prints its callout without one. */
     @Test
-    void sansLienIlNyAPasDeCode() {
-        assertThat(QrCodeEspace.matrice(null)).isNull();
-        assertThat(QrCodeEspace.matrice("  ")).isNull();
+    void noLinkMeansNoCode() {
+        assertThat(QrCodeEspace.matrix(null)).isNull();
+        assertThat(QrCodeEspace.matrix("  ")).isNull();
         assertThat(QrCodeEspace.bloc(null, 60f, Color.BLACK)).isNull();
     }
 

@@ -367,28 +367,8 @@ public class JourJService {
      * none is. See {@link #journee} for why the boundary is the first timeslot.
      */
     private static LocalDate currentDay(List<Creneau> creneaux, LocalDateTime maintenant) {
-        return creneaux.stream()
-                .filter(JourJService::horaireConnu)
-                .collect(Collectors.groupingBy(Creneau::getDate))
-                .entrySet()
-                .stream()
-                .filter(journee -> isUnderWay(journee.getValue(), maintenant))
-                .map(Map.Entry::getKey)
-                .max(Comparator.naturalOrder())
-                .orElseGet(maintenant::toLocalDate);
-    }
-
-    /** Whether that day's first timeslot has started and its last one has not ended. */
-    private static boolean isUnderWay(List<Creneau> duJour, LocalDateTime maintenant) {
-        LocalDateTime debut = duJour.stream()
-                .map(creneau -> window(creneau)[0])
-                .min(Comparator.naturalOrder())
-                .orElseThrow();
-        LocalDateTime fin = duJour.stream()
-                .map(creneau -> window(creneau)[1])
-                .max(Comparator.naturalOrder())
-                .orElseThrow();
-        return !debut.isAfter(maintenant) && fin.isAfter(maintenant);
+        return TimeslotWindows.currentDay(
+                creneaux.stream().filter(JourJService::horaireConnu).toList(), maintenant);
     }
 
     private static boolean horaireConnu(Creneau creneau) {
@@ -398,16 +378,9 @@ public class JourJService {
                 && creneau.getHeureFin() != null;
     }
 
-    /**
-     * The wall-clock window a timeslot really covers. A slot whose end hour is
-     * not after its start hour crosses midnight and ends the next day — the
-     * same normalisation {@code Creneau.chevaucheNuit} applies, and the reason
-     * everything below reasons in {@link LocalDateTime} rather than in hours.
-     */
+    /** The wall-clock window a timeslot really covers — see {@link TimeslotWindows#window(Creneau)}. */
     private static LocalDateTime[] window(Creneau creneau) {
-        LocalDateTime debut = creneau.getDate().atTime(creneau.getHeureDebut());
-        LocalDateTime fin = creneau.getDate().atTime(creneau.getHeureFin());
-        return new LocalDateTime[] {debut, fin.isAfter(debut) ? fin : fin.plusDays(1)};
+        return TimeslotWindows.window(creneau);
     }
 
     /** Whether the timeslot has not ended yet at {@code reference}. */
@@ -417,8 +390,7 @@ public class JourJService {
 
     /** Started but not over: the one nobody is standing at right now. */
     private static boolean isUnderWay(Creneau creneau, LocalDateTime reference) {
-        LocalDateTime[] fenetre = window(creneau);
-        return !fenetre[0].isAfter(reference) && fenetre[1].isAfter(reference);
+        return TimeslotWindows.isUnderWay(creneau, reference);
     }
 
     /**

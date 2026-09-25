@@ -5,9 +5,9 @@ import type { CompetencesPage } from './pages/competences/competences-page';
  * One route per functional block; every page is lazy-loaded. A `title` names
  * the page and nothing else: the product name is appended by
  * `core/branding-title.strategy.ts`, from the deployment's configuration. Admin pages live
- * under the admin shell (toolbar + drawer, behind the admin session); /login
- * and the espace animateur (issue #165) render standalone, without any admin
- * chrome or polling.
+ * under the admin shell (toolbar + drawer, behind the admin session); /login,
+ * the espace animateur (issue #165) and the wall display render standalone,
+ * without any admin chrome or polling.
  */
 /**
  * The four day screens and the four diagnostic screens became one page each:
@@ -439,6 +439,13 @@ export const routes: Routes = [
           import('./pages/espace-animateur/espace-aide-page').then((m) => m.EspaceAidePage),
       },
     ],
+  },
+  {
+    // The control room's television (ADR 0053): outside both shells, no
+    // session — the token in the URL opens this one read and nothing else.
+    path: 'mural/:jeton',
+    title: () => $localize`:@@route.mural:Affichage mural`,
+    loadComponent: () => import('./pages/mural/mural-page').then((m) => m.MuralPage),
   },
   {
     path: '',

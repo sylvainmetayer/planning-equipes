@@ -60,8 +60,14 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   route is the one on screen — the list of expert screens is that flag, never
   a second list, and the mode is a chrome preference (`core/nav-mode`), so it
   changes nothing about what a URL, the palette or a help link can reach. The
-  standalone routes `/login` and `/animateur/:jeton` (espace animateur, issue
-  #165) render outside it — no admin navigation, no polling. The espace has
+  standalone routes `/login`, `/animateur/:jeton` (espace animateur, issue
+  #165) and `/mural/:jeton` (« Affichage mural » — the control room's
+  television, opened by a dedicated token and no session, ADR 0053: the stands
+  of the day with the shift under way and the next one, over the pure
+  `pages/mural/mural.ts`; it reads the server every minute and keeps its last
+  state offline, turns its pages every fifteen seconds, and `?impression=1`
+  lays the whole day out for print) render outside it — no admin navigation,
+  no admin polling. The espace has
   five child routes of its own: `/animateur/:jeton` (« Mon planning » — three
   tabs chosen by `?onglet=jour|apercu|coequipiers`, the day on screen carried by
   `?jour=`: the day with its strip, its state band and its seat cards; the
@@ -82,11 +88,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   test mail, Mailpit, and the frozen date where the server allows it —, the
   database and the bundled scenarios, and the YAML validator),
   `/mcp-client`, `/notifications`,
-  `/parametres` (« Paramètres » — four tabs chosen by
-  `?onglet=legaux|edition|emails|globaux`: the legal parameters and the meal
-  break, the edition's own settings — ninja typologie, organisational-quality
+  `/parametres` (« Paramètres » — five tabs chosen by
+  `?onglet=legaux|edition|emails|mural|globaux`: the legal parameters and the
+  meal break, the edition's own settings — ninja typologie, organisational-quality
   thresholds, the pointers to what lives on its own screen —, the e-mails the
-  edition sends of itself, and the whole-database settings — nightly backup and
+  edition sends of itself, the wall display links — created, shown once with
+  their QR code, revoked —, and the whole-database settings — nightly backup and
   SQL dump), `/stands`, `/emplacements`,
   `/animateurs`, `/animateurs/:id` (« Fiche animateur » — one person on one
   page, seven foldable sections read in one call from

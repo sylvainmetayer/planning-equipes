@@ -4529,3 +4529,88 @@ export interface AnimateurProfile {
   verrous: VerrouillagePlanning[];
   declarationEnAttente: DeclarationAdminView | null;
 }
+
+/* ----------------------------- Wall display ----------------------------- */
+
+/** A live wall display link, as the admin lists it — never its token. */
+export interface AffichageMuralLink {
+  id: number;
+  libelle: string;
+  /** Full names on screen rather than the first name and an initial. */
+  fullNames: boolean;
+  /** Created for a few emplacements: the screen shows `emplacements` only, nothing once they are gone. */
+  restricted: boolean;
+  /** Emplacement ids a restricted link shows. */
+  emplacements: string[];
+  createdAt: string;
+  /** Last read by a screen, to the minute; `null` while none opened it. */
+  lastAccessAt: string | null;
+}
+
+export interface AffichageMuralLinkRequest {
+  libelle: string;
+  fullNames: boolean;
+  emplacements: string[];
+}
+
+/** A link just created: the only answer that ever carries its token. */
+export interface CreatedAffichageMuralLink {
+  link: AffichageMuralLink;
+  token: string;
+}
+
+export interface QrCodeRequest {
+  link: string;
+}
+
+/** A QR code as `size` rows of `size` characters, `'1'` for a dark module. */
+export interface QrCodeView {
+  size: number;
+  rows: string[];
+}
+
+export type MuralAlertType = 'EMPTY_SEATS' | 'BREAK_WITHOUT_RELAY';
+
+/** One shift of a stand; `end` falls on the next day for a shift crossing midnight. */
+export interface MuralShift {
+  start: string;
+  end: string;
+  noms: string[];
+  emptySeats: number;
+}
+
+export interface MuralStand {
+  standId: string;
+  standNom: string;
+  emplacementId: string | null;
+  emplacementNom: string | null;
+  vacations: MuralShift[];
+}
+
+export interface MuralAlert {
+  type: MuralAlertType;
+  standNom: string;
+  start: string;
+  end: string;
+  count: number;
+  nom: string | null;
+}
+
+export interface MuralConsigne {
+  closedFrom: string;
+  /** `null` for a band running until midnight. */
+  closedUntil: string | null;
+  motif: string | null;
+}
+
+/** The wall display of the day, read on the server's clock (`now`). */
+export interface AffichageMuralView {
+  edition: string;
+  libelle: string | null;
+  jour: string;
+  now: string;
+  nextDay: string | null;
+  stands: MuralStand[];
+  alerts: MuralAlert[];
+  consigne: MuralConsigne | null;
+}

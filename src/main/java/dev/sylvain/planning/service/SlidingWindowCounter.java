@@ -12,10 +12,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * The counter behind the application's rate limits: how many times a key was
  * used since the window opened, and how long is left before it reopens.
  *
- * <p>Written once rather than in each limiter. There are four of them now —
+ * <p>Written once rather than in each limiter. There are five of them now —
  * {@code CodeRequestLimiter} on the access codes, {@code DeclarationRateLimiter}
  * on the declarations and {@code ColleagueLookupLimiter} on a colleague's seats,
- * in the espace, and {@code McpRateLimiter} on the MCP transport — and they
+ * in the espace, {@code McpRateLimiter} on the MCP transport and
+ * {@code AffichageMuralRateLimiter} on the wall display — and they
  * guard very different abuses with the very same arithmetic. A hand-rolled copy
  * is how they would drift, and the MCP one had.</p>
  *
