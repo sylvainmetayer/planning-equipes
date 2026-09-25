@@ -56,7 +56,7 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 
 | Dépendance | Version | Licence |
 | --- | --- | --- |
-| `ai.timefold.solver:timefold-solver-core` | 2.5.0 | Apache-2.0 |
+| `ai.timefold.solver:timefold-solver-core` | 2.6.0 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:brotli4j` | 1.23.0 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:native-linux-x86_64` | 1.23.0 | Apache-2.0 |
 | `com.aayushatharva.brotli4j:service` | 1.23.0 | Apache-2.0 |
