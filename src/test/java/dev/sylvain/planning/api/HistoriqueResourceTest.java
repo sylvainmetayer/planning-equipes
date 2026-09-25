@@ -217,6 +217,13 @@ class HistoriqueResourceTest {
      */
     @Test
     void everyAdminDownloadLeavesAnExportLineThatChangesNoData() {
+        // The scenario export refuses an empty edition, and a class run
+        // before this one may have cleared it: bring the referential along
+        // rather than depend on the order the suite runs in.
+        given().when()
+                .post("/api/reference-data/import-scenario?name=scenario.yml")
+                .then()
+                .statusCode(200);
         String avant = Instant.now().toString();
         Map<String, String> telechargements = new LinkedHashMap<>();
         telechargements.put("/api/reference-data/export-csv?typologies=true&animateurs=true", "EXPORT_REFERENTIELS");
