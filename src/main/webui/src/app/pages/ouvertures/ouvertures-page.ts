@@ -4,6 +4,7 @@ import {
   DestroyRef,
   ElementRef,
   Injector,
+  OnInit,
   afterNextRender,
   computed,
   inject,
@@ -189,7 +190,7 @@ interface LigneView {
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class OuverturesPage {
+export class OuverturesPage implements OnInit {
   private readonly standsApi = inject(StandsApi);
   private readonly journeesTypesApi = inject(JourneesTypesApi);
   /** The consignes (issue #4): a day under one is marked, and its closed cells are not anomalies. */
@@ -486,6 +487,9 @@ export class OuverturesPage {
         clearTimeout(this.filtrePending);
       }
     });
+  }
+
+  ngOnInit(): void {
     void this.recharger();
   }
 
@@ -572,7 +576,12 @@ export class OuverturesPage {
   }
 
   /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
-  protected async changeView(view: VueOuvertures): Promise<void> {
+  protected async changeView(view: VueOuvertures | undefined): Promise<void> {
+    // The toggle group emits `undefined` on its first render, before any
+    // click: taking it for a view would forget the `?date=` being entered.
+    if (!view) {
+      return;
+    }
     if (view !== 'SAISIR' && this.standsModifies().length > 0) {
       const abandon = await this.confirm.ask({
         title: $localize`:@@ouvertures.saisie.quitterTitle:Abandonner les modifications ?`,

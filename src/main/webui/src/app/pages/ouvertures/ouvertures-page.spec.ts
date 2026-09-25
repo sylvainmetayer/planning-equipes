@@ -333,6 +333,20 @@ describe('OuverturesPage — saisie', () => {
     expect(page.saisieDate()).toBe('');
   });
 
+  it('keeps the ?date= being entered when the view toggle emits no view', async () => {
+    const { fixture } = mount({ vue: 'saisie', date: '2026-07-09' });
+    const page = fixture.componentInstance as unknown as {
+      changeView: (view: string | undefined) => Promise<void>;
+      saisieDate: () => string;
+      view: () => string;
+    };
+
+    await page.changeView(undefined);
+
+    expect(page.view()).toBe('SAISIR');
+    expect(page.saisieDate()).toBe('2026-07-09');
+  });
+
   it('wraps each grid in the scrolling box its sticky header needs', async () => {
     for (const [vue, grille] of [
       ['lecture', '.ouvertures-grille'],
