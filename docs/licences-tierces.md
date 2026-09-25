@@ -62,12 +62,12 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `com.aayushatharva.brotli4j:service` | 1.23.0 | Apache-2.0 |
 | `com.cronutils:cron-utils` | 9.2.1 | Apache-2.0 |
 | `com.fasterxml.jackson.core:jackson-annotations` | 2.22 | Apache-2.0 |
-| `com.fasterxml.jackson.core:jackson-core` | 2.22.0 | Apache-2.0 |
-| `com.fasterxml.jackson.core:jackson-databind` | 2.22.0 | Apache-2.0 |
+| `com.fasterxml.jackson.core:jackson-core` | 2.22.2 | Apache-2.0 |
+| `com.fasterxml.jackson.core:jackson-databind` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.dataformat:jackson-dataformat-yaml` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.0 | Apache-2.0 |
+| `com.fasterxml.jackson.datatype:jackson-datatype-jdk8` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml.jackson.datatype:jackson-datatype-jsr310` | 2.22.2 | Apache-2.0 |
-| `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.0 | Apache-2.0 |
+| `com.fasterxml.jackson.module:jackson-module-parameter-names` | 2.22.2 | Apache-2.0 |
 | `com.fasterxml:classmate` | 1.7.1 | Apache-2.0 |
 | `com.github.librepdf:openpdf` | 3.0.5 | LGPL-2.1 ou MPL-2.0 |
 | `com.github.victools:jsonschema-generator` | 4.38.0 | Apache-2.0 |
@@ -76,25 +76,25 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.agroal:agroal-api` | 3.2.1 | Apache-2.0 |
 | `io.agroal:agroal-narayana` | 3.2.1 | Apache-2.0 |
 | `io.agroal:agroal-pool` | 3.2.1 | Apache-2.0 |
-| `io.micrometer:micrometer-commons` | 1.17.0 | Apache-2.0 |
-| `io.micrometer:micrometer-core` | 1.17.0 | Apache-2.0 |
-| `io.micrometer:micrometer-observation` | 1.17.0 | Apache-2.0 |
-| `io.micrometer:micrometer-registry-prometheus-simpleclient` | 1.17.0 | Apache-2.0 |
-| `io.netty:netty-buffer` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec-dns` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec-haproxy` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec-http` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec-http2` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-codec-socks` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-common` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-handler` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-handler-proxy` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-resolver` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-resolver-dns` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-tcnative-classes` | 2.0.81.Final | Apache-2.0 |
-| `io.netty:netty-transport` | 4.1.137.Final | Apache-2.0 |
-| `io.netty:netty-transport-native-unix-common` | 4.1.137.Final | Apache-2.0 |
+| `io.micrometer:micrometer-commons` | 1.17.1 | Apache-2.0 |
+| `io.micrometer:micrometer-core` | 1.17.1 | Apache-2.0 |
+| `io.micrometer:micrometer-observation` | 1.17.1 | Apache-2.0 |
+| `io.micrometer:micrometer-registry-prometheus-simpleclient` | 1.17.1 | Apache-2.0 |
+| `io.netty:netty-buffer` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec-dns` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec-haproxy` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec-http` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec-http2` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-codec-socks` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-common` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-handler` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-handler-proxy` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-resolver` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-resolver-dns` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-tcnative-classes` | 2.0.84.Final | Apache-2.0 |
+| `io.netty:netty-transport` | 4.1.138.Final | Apache-2.0 |
+| `io.netty:netty-transport-native-unix-common` | 4.1.138.Final | Apache-2.0 |
 | `io.opentelemetry.instrumentation:opentelemetry-instrumentation-api` | 2.28.1 | Apache-2.0 |
 | `io.opentelemetry.semconv:opentelemetry-semconv` | 1.41.1 | Apache-2.0 |
 | `io.opentelemetry:opentelemetry-api` | 1.62.0 | Apache-2.0 |
@@ -110,67 +110,67 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.quarkiverse.mcp:quarkus-mcp-server-http` | 1.13.2 | Apache-2.0 |
 | `io.quarkiverse.mcp:quarkus-mcp-server-sse-client` | 1.13.2 | Apache-2.0 |
 | `io.quarkiverse.quinoa:quarkus-quinoa` | 2.9.0 | Apache-2.0 |
-| `io.quarkus.arc:arc` | 3.38.3 | Apache-2.0 |
+| `io.quarkus.arc:arc` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.gizmo:gizmo2` | 2.1.1 | Apache-2.0 |
-| `io.quarkus.qute:qute-core` | 3.38.3 | Apache-2.0 |
-| `io.quarkus.resteasy.reactive:resteasy-reactive` | 3.38.3 | Apache-2.0 |
-| `io.quarkus.resteasy.reactive:resteasy-reactive-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus.resteasy.reactive:resteasy-reactive-common-types` | 3.38.3 | Apache-2.0 |
-| `io.quarkus.resteasy.reactive:resteasy-reactive-jackson` | 3.38.3 | Apache-2.0 |
-| `io.quarkus.resteasy.reactive:resteasy-reactive-vertx` | 3.38.3 | Apache-2.0 |
+| `io.quarkus.qute:qute-core` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive-common-types` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive-jackson` | 3.39.4 | Apache-2.0 |
+| `io.quarkus.resteasy.reactive:resteasy-reactive-vertx` | 3.39.4 | Apache-2.0 |
 | `io.quarkus.security:quarkus-security` | 2.3.2 | Apache-2.0 |
-| `io.quarkus.vertx.utils:quarkus-vertx-utils` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-agroal` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-arc` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-bootstrap-runner` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-classloader-commons` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-core` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-credentials` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-datasource` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-datasource-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-development-mode-spi` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-devservices` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-elytron-security` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-elytron-security-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-elytron-security-properties-file` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-flyway` | 3.38.3 | Apache-2.0 |
+| `io.quarkus.vertx.utils:quarkus-vertx-utils` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-agroal` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-arc` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-bootstrap-runner` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-classloader-commons` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-core` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-credentials` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-datasource` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-datasource-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-development-mode-spi` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-devservices` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-elytron-security` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-elytron-security-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-elytron-security-properties-file` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-flyway` | 3.39.4 | Apache-2.0 |
 | `io.quarkus:quarkus-fs-util` | 1.4.2 | Apache-2.0 |
-| `io.quarkus:quarkus-ide-launcher` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-jackson` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-jdbc-postgresql` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-jsonp` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-mailer` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-micrometer` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-micrometer-registry-prometheus` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-mutiny` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-narayana-jta` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-netty` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-qute` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-rest` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-rest-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-rest-jackson` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-rest-jackson-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-scheduler` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-scheduler-api` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-scheduler-common` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-scheduler-kotlin` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-scheduler-spi` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-security` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-security-runtime-spi` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-smallrye-context-propagation` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-smallrye-health` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-smallrye-openapi` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-swagger-ui` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-tls-registry` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-tls-registry-spi` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-transaction-annotations` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-value-registry` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-vertx` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-vertx-http` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-vertx-latebound-mdc-provider` | 3.38.3 | Apache-2.0 |
-| `io.quarkus:quarkus-virtual-threads` | 3.38.3 | Apache-2.0 |
+| `io.quarkus:quarkus-ide-launcher` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-jackson` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-jdbc-postgresql` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-jsonp` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-mailer` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-micrometer` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-micrometer-registry-prometheus` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-mutiny` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-narayana-jta` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-netty` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-qute` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-jackson` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-rest-jackson-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-scheduler` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-scheduler-api` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-scheduler-common` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-scheduler-kotlin` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-scheduler-spi` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-security` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-security-runtime-spi` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-smallrye-context-propagation` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-smallrye-health` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-smallrye-openapi` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-swagger-ui` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-tls-registry` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-tls-registry-spi` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-transaction-annotations` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-value-registry` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-vertx` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-vertx-http` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-vertx-latebound-mdc-provider` | 3.39.4 | Apache-2.0 |
+| `io.quarkus:quarkus-virtual-threads` | 3.39.4 | Apache-2.0 |
 | `io.sentry:sentry` | 8.57.0 | MIT |
-| `io.smallrye.certs:smallrye-private-key-pem-parser` | 0.9.3 | Apache-2.0 |
+| `io.smallrye.certs:smallrye-private-key-pem-parser` | 0.9.4 | Apache-2.0 |
 | `io.smallrye.classfile:jdk-classfile-backport` | 26 | GPL-2.0-with-classpath-exception |
 | `io.smallrye.common:smallrye-common-annotation` | 2.19.0 | Apache-2.0 |
 | `io.smallrye.common:smallrye-common-classloader` | 2.19.0 | Apache-2.0 |
@@ -191,14 +191,14 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye.reactive:mutiny` | 3.3.0 | Apache-2.0 |
 | `io.smallrye.reactive:mutiny-smallrye-context-propagation` | 3.3.0 | Apache-2.0 |
 | `io.smallrye.reactive:mutiny-zero-flow-adapters` | 1.2.1 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-auth-common` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-bridge-common` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-core` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-mail-client` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-runtime` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-uri-template` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-web` | 3.23.0 | Apache-2.0 |
-| `io.smallrye.reactive:smallrye-mutiny-vertx-web-common` | 3.23.0 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-auth-common` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-bridge-common` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-core` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-mail-client` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-runtime` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-uri-template` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-web` | 3.23.1 | Apache-2.0 |
+| `io.smallrye.reactive:smallrye-mutiny-vertx-web-common` | 3.23.1 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-reactive-converter-api` | 3.0.3 | Apache-2.0 |
 | `io.smallrye.reactive:smallrye-reactive-converter-mutiny` | 3.0.3 | Apache-2.0 |
 | `io.smallrye:jandex` | 3.6.0 | Apache-2.0 |
@@ -212,15 +212,15 @@ exclus — rien de ce qu'ils apportent n'est distribué.
 | `io.smallrye:smallrye-health-provided-checks` | 4.3.0 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-core` | 4.3.5 | Apache-2.0 |
 | `io.smallrye:smallrye-open-api-model` | 4.3.5 | Apache-2.0 |
-| `io.vertx:vertx-auth-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-bridge-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-codegen` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-core` | 4.5.32 | Apache-2.0 ou EPL-2.0 |
-| `io.vertx:vertx-mail-client` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-uri-template` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-web` | 4.5.32 | Apache-2.0 ou EPL-2.0 |
-| `io.vertx:vertx-web-client` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
-| `io.vertx:vertx-web-common` | 4.5.32 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-auth-common` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-bridge-common` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-codegen` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-core` | 4.5.34 | Apache-2.0 ou EPL-2.0 |
+| `io.vertx:vertx-mail-client` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-uri-template` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-web` | 4.5.34 | Apache-2.0 ou EPL-2.0 |
+| `io.vertx:vertx-web-client` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
+| `io.vertx:vertx-web-common` | 4.5.34 | Apache-2.0 ou EPL-1.0 |
 | `jakarta.activation:jakarta.activation-api` | 2.1.4 | EDL-1.0 |
 | `jakarta.annotation:jakarta.annotation-api` | 3.0.0 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
 | `jakarta.authentication:jakarta.authentication-api` | 3.1.0 | EPL-2.0 ou GPL-2.0-with-classpath-exception |
