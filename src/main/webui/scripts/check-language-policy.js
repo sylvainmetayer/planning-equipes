@@ -424,7 +424,7 @@ if (inventaire) {
   nomsFautifs.forEach((entree) => {
     entree
       .split('[')[1]
-      .replace(']', '')
+      .replaceAll(']', '')
       .split(', ')
       .forEach((mot) => mots.set(mot, (mots.get(mot) ?? 0) + 1));
   });
