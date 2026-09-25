@@ -69,7 +69,6 @@ class ReferenceDataChangesTest {
                         "ANIMATEUR_CREE",
                         "ANIMATEUR_MODIFIE",
                         "ANIMATEUR_SUPPRIME",
-                        "COMPETENCES_IMPORTEES",
                         "STAND_CREE",
                         "STANDS_IMPORTES",
                         "OUVERTURES_SAISIES",

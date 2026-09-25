@@ -3,23 +3,19 @@ import {
   Component,
   ElementRef,
   computed,
-  effect,
   inject,
   OnInit,
   signal,
-  viewChild,
   ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
-import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AnimateursApi } from '../../core/api/animateurs-api';
-import { errorMessage } from '../../core/error-message';
 import {
   RecopieGrille,
   hasLignePrecedente,
@@ -37,9 +33,6 @@ import { ConfirmService } from '../../shared/confirm-dialog';
 import { TableFilter } from '../../shared/table-filter';
 import {
   Animateur,
-  ImportCompetencesAction,
-  ImportCompetencesDemande,
-  ImportCompetencesRapport,
   LigneSaisieCompetences,
   NiveauCompetence,
   RapportSaisieCompetences,
@@ -74,10 +67,9 @@ import {
  * screen then asks: reload, or overwrite.
  *
  * <p>The wishes an animateur declared are shown in the same cells, read-only,
- * so the appreciation is typed in sight of the wish. The grid also leaves and
- * comes back as a CSV of ids and levels: exported as it stands, imported
- * after a row-by-row preview — a blank cell of the file leaves the stored
- * appreciation alone, removing stays a gesture of this screen.</p>
+ * so the appreciation is typed in sight of the wish. This grid is the only
+ * way appreciations are entered in bulk: there is no file to export or
+ * import.</p>
  */
 @Component({
   selector: 'app-competences-page',
@@ -86,18 +78,13 @@ import {
     MatCardModule,
     MatFormFieldModule,
     MatIconModule,
-    MatProgressBarModule,
     MatSelectModule,
     MatTooltipModule,
     RouterLink,
     TableFilter,
   ],
   templateUrl: './competences-page.html',
-  styleUrls: [
-    './competences-page.css',
-    '../../../styles/import-animateurs.css',
-    '../../../styles/saisie-repetitive.css',
-  ],
+  styleUrls: ['./competences-page.css', '../../../styles/saisie-repetitive.css'],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partials.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -112,10 +99,6 @@ export class CompetencesPage implements OnInit {
   private readonly host = inject<ElementRef<HTMLElement>>(ElementRef);
   /** Typing is disabled while a solve runs: the server would refuse the save, and the landing persist would revert it. */
   protected readonly editingLocked = inject(SolverJobService).editingLocked;
-
-  private readonly fileInput = viewChild.required<ElementRef<HTMLInputElement>>('csvInput');
-  /** The import card, which only exists while the import is open; `read` since `#carteImport` is a MatCard. */
-  private readonly carteImport = viewChild('carteImport', { read: ElementRef });
 
   protected readonly chargement = signal(true);
   protected readonly enregistrement = signal(false);
@@ -179,49 +162,11 @@ export class CompetencesPage implements OnInit {
     this.colonnes().map((typologie) => typologie.id),
   );
 
-  /* --------------------------------- import ---------------------------------- */
-
-  protected readonly importOuvert = signal(false);
-  /** The file's text, held only for the lifetime of the screen. */
-  private readonly contenu = signal('');
-  private lastAnalysis = 0;
-  protected readonly fileName = signal('');
-  protected readonly rapportImport = signal<ImportCompetencesRapport | null>(null);
-  protected readonly erreurImport = signal('');
-  protected readonly analysisPending = signal(false);
-  protected readonly importPending = signal(false);
-  protected readonly downloadPending = signal(false);
-  protected readonly colonnesIgnorees = computed(() =>
-    (this.rapportImport()?.columns ?? []).filter((colonne) => colonne.typologieId === null),
-  );
-  protected readonly peutImporter = computed(
-    () =>
-      this.contenu() !== '' &&
-      this.rapportImport() !== null &&
-      !this.rapportImport()?.applied &&
-      (this.rapportImport()?.accepted ?? 0) > 0 &&
-      !this.analysisPending() &&
-      !this.importPending() &&
-      !this.editingLocked(),
-  );
-
   constructor() {
     keepViewInQueryParams(() => ({
       q: optionalParam(this.filtre()),
       typologies: optionalParam(this.typologiesChoisies().join(',')),
     }));
-    // The import card is appended under the grid, which is as long as the
-    // roster: on a real one, clicking « Importer un CSV » otherwise looks like
-    // nothing happened. It is shown when the signal turns, so the scroll waits
-    // for the element to exist rather than for a timer.
-    effect(() => {
-      const carte = this.carteImport();
-      if (carte) {
-        // jsdom has no scrollIntoView, and neither does an old browser: the
-        // card is open either way, this only brings it under the eye.
-        carte.nativeElement.scrollIntoView?.({ behavior: 'smooth', block: 'start' });
-      }
-    });
   }
 
   ngOnInit(): void {
@@ -627,135 +572,5 @@ export class CompetencesPage implements OnInit {
       ' ' +
       $localize`:@@competences.conflit.choix:Rechargez pour voir ce qui a changé, ou écrasez avec la saisie de cet écran.`
     );
-  }
-
-  /* ---------------------------------- CSV ------------------------------------ */
-
-  protected async exporter(): Promise<void> {
-    this.downloadPending.set(true);
-    try {
-      await this.animateursApi.downloadCompetencesGrid();
-    } catch (error) {
-      this.crud.reportError(error);
-    } finally {
-      this.downloadPending.set(false);
-    }
-  }
-
-  protected openImport(): void {
-    this.importOuvert.set(true);
-  }
-
-  protected chooseFile(): void {
-    this.fileInput().nativeElement.click();
-  }
-
-  protected async onFileChosen(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0] ?? null;
-    input.value = '';
-    if (!file) {
-      return;
-    }
-    this.lastAnalysis++;
-    this.rapportImport.set(null);
-    this.fileName.set(file.name);
-    this.contenu.set(await file.text());
-    await this.analyze();
-  }
-
-  /** The preview, numbered so only the answer to the last request is kept. */
-  protected async analyze(): Promise<void> {
-    if (this.fileName() === '') {
-      return;
-    }
-    const numero = ++this.lastAnalysis;
-    this.analysisPending.set(true);
-    this.erreurImport.set('');
-    try {
-      const rapport = await this.animateursApi.analyseCompetencesImport(this.demande());
-      if (numero === this.lastAnalysis) {
-        this.rapportImport.set(rapport);
-      }
-    } catch (error) {
-      if (numero === this.lastAnalysis) {
-        this.rapportImport.set(null);
-        this.erreurImport.set(errorMessage(error));
-      }
-    } finally {
-      if (numero === this.lastAnalysis) {
-        this.analysisPending.set(false);
-      }
-    }
-  }
-
-  protected async importer(): Promise<void> {
-    const rapport = this.rapportImport();
-    if (!rapport || !this.peutImporter()) {
-      return;
-    }
-    const confirme = await this.confirm.ask({
-      title: $localize`:@@competences.import.confirmer.titre:Confirmer l'import`,
-      message: $localize`:@@competences.import.confirmer.message:Mettre à jour les appréciations de ${rapport.accepted}:acceptees: fiche(s) depuis le fichier ? Rien n'est retiré, les fiches absentes du fichier ne sont pas touchées.`,
-    });
-    if (!confirme) {
-      return;
-    }
-    this.importPending.set(true);
-    this.erreurImport.set('');
-    try {
-      const applique = await this.animateursApi.applyCompetencesImport(this.demande());
-      this.rapportImport.set(applique);
-      this.notifications.notify({
-        title: $localize`:@@competences.import.succes.titre:Import terminé`,
-        message: $localize`:@@competences.import.succes.message:${applique.accepted}:fiches: fiche(s) mise(s) à jour.`,
-        variant: 'success',
-      });
-      await this.recharger(new Set(this.animateursModifies()));
-    } catch (error) {
-      this.erreurImport.set(errorMessage(error));
-    } finally {
-      this.importPending.set(false);
-    }
-  }
-
-  protected reinitialiserImport(): void {
-    this.lastAnalysis++;
-    this.analysisPending.set(false);
-    this.contenu.set('');
-    this.fileName.set('');
-    this.rapportImport.set(null);
-    this.erreurImport.set('');
-  }
-
-  protected fermerImport(): void {
-    this.reinitialiserImport();
-    this.importOuvert.set(false);
-  }
-
-  protected classeAction(action: ImportCompetencesAction): string {
-    switch (action) {
-      case 'UPDATED':
-        return 'import-ligne-maj';
-      case 'UNCHANGED':
-        return 'import-ligne-inchangee';
-      default:
-        return 'import-ligne-rejet';
-    }
-  }
-
-  protected iconeAction(action: ImportCompetencesAction): string {
-    switch (action) {
-      case 'UPDATED':
-        return 'edit';
-      case 'UNCHANGED':
-        return 'check';
-      default:
-        return 'block';
-    }
-  }
-
-  private demande(): ImportCompetencesDemande {
-    return { fileName: this.fileName(), content: this.contenu() };
   }
 }

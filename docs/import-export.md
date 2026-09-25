@@ -382,8 +382,8 @@ n'est conservé que si l'édition porte déjà le créneau correspondant.
 
 Trois règles valent pour les cinq :
 
-- **Une colonne absente, ou une case vide, n'efface rien.** C'est la doctrine de
-  la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
+- **Une colonne absente, ou une case vide, n'efface rien.** C'est la doctrine
+  de l'ancien import de la grille des compétences ([0030](decisions/0030-grille-competences-import-additif.md))
   appliquée à une fiche : un fichier de trois colonnes qui renomme des stands ne
   touche ni leurs horaires, ni leur emplacement, ni leurs indicateurs.
 - **Une ligne se reconnaît à son `code`**, et une ligne connue est mise à jour,
@@ -736,40 +736,11 @@ Endpoints dans [`api.md`](api.md#import-de-la-grille-des-stands).
 
 ## Grille des compétences
 
-Le troisième import partiel, depuis l'écran `/competences`, pour la matrice
-animateurs × typologies des appréciations. Il transpose lui aussi les règles de
-l'import des animateurs — deux appels, rejoué, en mémoire, écriture d'un seul
-tenant, sans suppression — et fixe sa sémantique dans la
-[décision 0030](decisions/0030-grille-competences-import-additif.md).
-
-Le format est celui de l'export, `GET /api/animateurs/competences/export`, qui
-rend la grille telle qu'elle est et se réimporte telle quelle :
-
-```text
-animateur;STRATEGIE;AMBIANCE;ENFANT
-A1;REFERENT;AUTONOME;
-A2;;DEBUTANT;REFERENT
-```
-
-- **une première colonne d'identifiants d'animateurs**, jamais de nom ni de
-  prénom : l'identifiant suffit à retrouver la fiche, et un fichier qui ne
-  nomme personne circule sans la précaution qu'un trombinoscope demande ;
-- **une colonne par typologie, nommée par son code** — l'export l'écrit ainsi
-  quand la typologie en a un, par son identifiant sinon ; l'identifiant et le
-  libellé sont acceptés aussi, casse et accents indifférents. Une colonne qui ne nomme
-  aucune typologie de l'édition est ignorée et listée, pas un motif de refus ;
-- **une case porte `DEBUTANT`, `AUTONOME` ou `REFERENT`** (casse et accents
-  indifférents, ou le chiffre 1, 2, 3 des touches de l'écran), **ou rien** ;
-- **une case vide laisse l'appréciation existante inchangée.** L'import ajoute
-  et met à jour, il ne retire jamais : retirer une appréciation reste un geste
-  de la grille à l'écran. Une ligne dont aucune case ne change rien est
-  rapportée « inchangée » et n'est pas écrite ;
-- **une ligne dont l'identifiant est inconnu est rejetée** — l'import ne crée
-  pas d'animateur — de même qu'une ligne portant un niveau illisible.
-
-Séparateur, BOM, guillemets et plafonds (1 000 000 de caractères, 2 000
-lignes) sont ceux de la grille des stands. Le fichier est lu en mémoire et
-n'est jamais écrit sur disque.
+La matrice animateurs × typologies des appréciations **ne s'échange plus par
+fichier** : ni export ni import CSV, elle se saisit exclusivement à l'écran
+`/competences` ([décision 0050](decisions/0050-identifiants-generes-par-edition.md), D6).
+Son import additif ([décision 0030](decisions/0030-grille-competences-import-additif.md))
+est retiré.
 
 La grille elle-même s'enregistre par `PUT /api/animateurs/competences/grille`,
 une ligne par fiche modifiée, chacune avec sa propre précondition de
@@ -778,7 +749,7 @@ la réponse est un compte rendu par ligne — écrite, périmée, refusée — e
 fiche refusée n'annule pas les autres. Deux choses refusent l'appel entier,
 faute de pouvoir tenir la ligne : un niveau qui n'est pas l'un des trois noms
 (la désérialisation le rejette avant le service) et un corps de plus de 2 000
-lignes, le plafond de l'import — la grille porte une ligne par animateur.
+lignes — la grille porte une ligne par animateur.
 
 ## Fixtures réalistes anonymisées
 

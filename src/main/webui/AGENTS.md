@@ -91,7 +91,8 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `GET /api/animateurs/{id}/fiche`, which narrows the Équité and Fragilité
   reports to that person rather than recomputing them; a read-out, the edit
   stays the Animateurs page's form), `/competences` (« Compétences » — the animateur × typologie
-  grid of appreciations, saved row by row, exported and imported as a CSV),
+  grid of appreciations, saved row by row — the only bulk entry, with no CSV
+  export or import),
   `/imports`, `/exports` (« Export » — the data the edition writes of itself:
   the CSV archive and the scenario file the import screen reads back, and the
   end-of-event archive — several of those exports in one ZIP the server

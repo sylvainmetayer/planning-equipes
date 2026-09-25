@@ -8,78 +8,12 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.junit.jupiter.api.Test;
 
-/** The pure half of the competences grid: how a cell reads, how the CSV is written, how a fiche is copied. */
+/** The pure half of the competences grid: how a fiche is copied with its appreciations replaced. */
 class GrilleCompetencesTest {
-
-    /* -------------------------------- cells -------------------------------- */
-
-    @Test
-    void aBlankCellSaysNothingRatherThanNoAppreciation() {
-        GrilleCompetences.CelluleCompetence lue = GrilleCompetences.cellule("   ");
-        assertThat(lue.vide()).isTrue();
-        assertThat(lue.lisible()).isTrue();
-        assertThat(lue.niveau()).isNull();
-        assertThat(GrilleCompetences.cellule(null).vide()).isTrue();
-    }
-
-    @Test
-    void aLevelReadsInAnyCaseWithOrWithoutAccents() {
-        assertThat(GrilleCompetences.cellule("référent").niveau()).isEqualTo(NiveauCompetence.REFERENT);
-        assertThat(GrilleCompetences.cellule("Debutant").niveau()).isEqualTo(NiveauCompetence.DEBUTANT);
-        assertThat(GrilleCompetences.cellule(" AUTONOME ").niveau()).isEqualTo(NiveauCompetence.AUTONOME);
-    }
-
-    /** The digits are the keys of the screen: 1, 2, 3 in the order of the enum. */
-    @Test
-    void theKeyboardDigitsReadAsLevels() {
-        assertThat(GrilleCompetences.level("1")).contains(NiveauCompetence.DEBUTANT);
-        assertThat(GrilleCompetences.level("2")).contains(NiveauCompetence.AUTONOME);
-        assertThat(GrilleCompetences.level("3")).contains(NiveauCompetence.REFERENT);
-        assertThat(GrilleCompetences.level("0")).isEmpty();
-        assertThat(GrilleCompetences.level("4")).isEmpty();
-    }
-
-    /** Neither "0" nor a dash removes anything: the file never removes, and a word that is no level is refused. */
-    @Test
-    void anythingElseIsUnreadable() {
-        for (String texte : List.of("expert", "0", "-", "oui", "12")) {
-            GrilleCompetences.CelluleCompetence lue = GrilleCompetences.cellule(texte);
-            assertThat(lue.lisible()).as(texte).isFalse();
-            assertThat(lue.vide()).as(texte).isFalse();
-        }
-    }
-
-    /* --------------------------------- CSV --------------------------------- */
-
-    @Test
-    void theCsvCarriesIdsOnlyOneLevelNamePerCell() {
-        Animateur alice = animateur("A1", Map.of("jeux", NiveauCompetence.REFERENT));
-        Animateur bruno = animateur("B2", Map.of());
-        bruno.setCompetences(null);
-
-        String csv = GrilleCompetences.csv(List.of(alice, bruno), List.of("jeux", "ateliers"));
-
-        assertThat(csv)
-                .isEqualTo("animateur;jeux;ateliers\nA1;REFERENT;\nB2;;\n")
-                .doesNotContain("Alice")
-                .doesNotContain("Martin");
-    }
-
-    @Test
-    void aFieldCarryingTheSeparatorIsQuoted() {
-        Animateur animateur = animateur("A;1", Map.of("jeux \"de rôle\"", NiveauCompetence.DEBUTANT));
-
-        String csv = GrilleCompetences.csv(List.of(animateur), List.of("jeux \"de rôle\""));
-
-        assertThat(csv).isEqualTo("animateur;\"jeux \"\"de rôle\"\"\"\n\"A;1\";DEBUTANT\n");
-    }
-
-    /* --------------------------------- copy -------------------------------- */
 
     @Test
     void theCopyReplacesTheAppreciationsAndCarriesEverythingElse() {

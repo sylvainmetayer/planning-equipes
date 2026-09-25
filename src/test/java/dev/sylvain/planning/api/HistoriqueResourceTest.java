@@ -238,7 +238,6 @@ class HistoriqueResourceTest {
         telechargements.put("/api/planning/export/pdf/global", "EXPORT_PDF_GLOBAL");
         telechargements.put("/api/planning/equite/export", "EXPORT_EQUITE");
         telechargements.put("/api/planning/publication/export", "EXPORT_RELECTURE");
-        telechargements.put("/api/animateurs/competences/export", "EXPORT_COMPETENCES");
         telechargements.put("/api/pauses/intendance/export", "EXPORT_INTENDANCE");
         telechargements.put("/api/formation/export", "EXPORT_FORMATION");
         telechargements.put("/api/database/export", "EXPORT_BASE");
@@ -376,6 +375,6 @@ class HistoriqueResourceTest {
                 .body("find { it.code == 'ANIMATEUR_CREE' }.export", equalTo(false))
                 .body("find { it.code == 'EXPORT_REFERENTIELS' }.export", equalTo(true))
                 .body("find { it.code == 'TELECHARGEMENT_ESPACE_PDF' }.export", equalTo(true))
-                .body("find { it.code == 'EXPORT_COMPETENCES' }.entite", equalTo("PLANNING"));
+                .body("find { it.code == 'EXPORT_EQUITE' }.entite", equalTo("PLANNING"));
     }
 }

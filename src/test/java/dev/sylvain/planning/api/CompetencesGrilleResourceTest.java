@@ -15,13 +15,13 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 /**
- * {@code /api/animateurs/competences/*}: the appreciation grid saved row by
- * row with its own precondition, exported as a CSV, and imported under the
- * partial contract — a blank cell leaves the stored appreciation alone.
+ * {@code PUT /api/animateurs/competences/grille}: the appreciation grid saved
+ * row by row with its own precondition — the only way appreciations are
+ * entered in bulk, the grid being no longer exchanged as a file.
  *
  * <p>Ids are generated (ADR 0050): the scenario's animateurs are found by
  * their e-mail and its typologies by their code, and the tests speak the ids
- * the API gives them — which is also what the grid and its CSV carry.</p>
+ * the API gives them — which is also what the grid carries.</p>
  */
 @QuarkusTest
 class CompetencesGrilleResourceTest {
@@ -234,133 +234,5 @@ class CompetencesGrilleResourceTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Trop de lignes"));
-    }
-
-    /* ---------------------------------- CSV --------------------------------- */
-
-    /** The export re-imports as is: every row is known and states nothing new, nothing is written by the preview. */
-    @Test
-    void theExportReimportsAsUnchanged() {
-        seedScenario();
-        String export = given().when()
-                .get("/api/animateurs/competences/export")
-                .then()
-                .statusCode(200)
-                .contentType(containsString("text/csv"))
-                .header("Content-Disposition", containsString("grille-competences.csv"))
-                .extract()
-                .asString();
-        // The byte order mark, so Excel reads the file as UTF-8 once on disk;
-        // the parser strips it, which the clean re-import below proves.
-        assertThat(export).startsWith("\uFEFFanimateur;");
-        // Columns headed by the typologies' codes, rows by the animateurs' ids.
-        assertThat(export.lines().findFirst().orElseThrow())
-                .contains("STRATEGIE")
-                .contains("HOMME_JEU");
-        assertThat(export).contains("\n" + a1 + ";").doesNotContain("Alice").doesNotContain("Referente");
-
-        JsonPath rapport = given().contentType("application/json")
-                .body(request(export))
-                .when()
-                .post("/api/animateurs/competences/import-grille/analyse")
-                .then()
-                .statusCode(200)
-                .body("applied", equalTo(false))
-                .body("rejected", equalTo(0))
-                .body("accepted", equalTo(0))
-                .extract()
-                .jsonPath();
-        assertThat(rapport.getInt("unchanged"))
-                .isEqualTo(rapport.getInt("total"))
-                .isPositive();
-        assertThat(rapport.getList("columns.typologieId", String.class)).doesNotContainNull();
-    }
-
-    /**
-     * The contract of the import: a blank cell leaves the stored appreciation
-     * alone, a level adds or replaces, an unknown animateur costs its row, an
-     * unknown column is ignored and listed — and the preview writes nothing.
-     */
-    @Test
-    void theImportAddsAndUpdatesWithoutRemoving() {
-        seedScenario();
-        // Columns named by code, the way the export heads them; the row by the id the API gave.
-        String csv = "animateur;STRATEGIE;HOMME_JEU;montage\n" + a2 + ";;REFERENT;x\nINCONNU;REFERENT;;\n";
-
-        given().contentType("application/json")
-                .body(request(csv))
-                .when()
-                .post("/api/animateurs/competences/import-grille/analyse")
-                .then()
-                .statusCode(200)
-                .body("applied", equalTo(false))
-                .body("accepted", equalTo(1))
-                .body("rejected", equalTo(1))
-                .body("columns[2].typologieId", nullValue())
-                .body("columns[2].reason", containsString("ignorée"))
-                .body("rows[0].action", equalTo("UPDATED"))
-                .body("rows[0].cellules", equalTo(1))
-                .body("rows[1].action", equalTo("REJECTED"))
-                .body("rows[1].reasons[0]", containsString("INCONNU"));
-        assertThat(competencesOf(a2)).as("the preview writes nothing").containsEntry(hommeJeu, "DEBUTANT");
-
-        given().contentType("application/json")
-                .body(request(csv))
-                .when()
-                .post("/api/animateurs/competences/import-grille")
-                .then()
-                .statusCode(200)
-                .body("applied", equalTo(true))
-                .body("accepted", equalTo(1));
-
-        assertThat(competencesOf(a2))
-                .as("the blank cell left STRATEGIE as it was")
-                .containsExactlyInAnyOrderEntriesOf(Map.of(strategie, "AUTONOME", hommeJeu, "REFERENT"));
-        assertThat(animateurs().getList("id", String.class)).doesNotContain("INCONNU");
-    }
-
-    @Test
-    void anUnknownLevelRefusesTheRowAndAnEmptyAcceptedSetRefusesTheWrite() {
-        seedScenario();
-        String csv = "animateur;STRATEGIE\n" + a1 + ";expert\n";
-
-        given().contentType("application/json")
-                .body(request(csv))
-                .when()
-                .post("/api/animateurs/competences/import-grille/analyse")
-                .then()
-                .statusCode(200)
-                .body("rejected", equalTo(1))
-                .body("rows[0].action", equalTo("REJECTED"))
-                .body("rows[0].reasons[0]", containsString("n'est pas un niveau"));
-
-        given().contentType("application/json")
-                .body(request(csv))
-                .when()
-                .post("/api/animateurs/competences/import-grille")
-                .then()
-                .statusCode(400)
-                .body("message", containsString("Aucune ligne acceptée"));
-        assertThat(competencesOf(a1)).containsEntry(strategie, "REFERENT");
-    }
-
-    @Test
-    void aFileNamingNoTypologieAndASpreadsheetAreRefused() {
-        seedScenario();
-        given().contentType("application/json")
-                .body(request("animateur;commentaire\n" + a1 + ";bonjour\n"))
-                .when()
-                .post("/api/animateurs/competences/import-grille/analyse")
-                .then()
-                .statusCode(400)
-                .body("message", containsString("Aucune colonne"));
-
-        given().contentType("application/json")
-                .body(Map.of("fileName", "grille.xlsx", "content", "PK not a csv"))
-                .when()
-                .post("/api/animateurs/competences/import-grille/analyse")
-                .then()
-                .statusCode(400)
-                .body("message", containsString("seul le CSV est lu"));
     }
 }

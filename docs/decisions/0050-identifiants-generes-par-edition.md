@@ -60,8 +60,8 @@ valeur, il méritera une notion explicite plutôt qu'une égalité d'identifiant
 ### D2 — Un code lisible pour les stands, les typologies et les emplacements
 
 Plusieurs fichiers **retrouvent une ligne par une clé lisible** : l'import des
-référentiels, la colonne `typologies` des stands, la grille des compétences,
-la grille des ouvertures et le fichier scénario. Un numéro rend ces fichiers
+référentiels, la colonne `typologies` des stands, la grille des ouvertures
+et le fichier scénario. Un numéro rend ces fichiers
 illisibles.
 
 Les stands, les typologies et les emplacements portent donc un **code**
@@ -129,6 +129,17 @@ la forme `E` suivi d'un nombre est refusé à la création et au renommage. Un
 nom purement numérique (« 2027 ») reste permis : il ne peut plus entrer en
 collision avec un identifiant.
 
+### D6 — La grille des compétences ne s'échange plus par fichier
+
+Son export ne portait, par construction, que des identifiants d'animateurs et
+des niveaux, sans aucun nom. Maintenant que chaque édition numérote à partir de
+1, un tel fichier réimporté dans une autre édition que la sienne aurait posé
+les niveaux sur d'autres personnes, et rien dans la ligne ne permettait de s'en
+apercevoir. Plutôt que de marquer le fichier de son édition, l'échange est
+retiré : la grille se saisit exclusivement à l'écran, où chaque ligne porte le
+nom de la personne. La décision [0030](0030-grille-competences-import-additif.md),
+qui fixait la sémantique de cet import, est abandonnée.
+
 ## La migration
 
 `V100` renumérote l'existant. Un identifiant qui a déjà la forme de son
@@ -177,8 +188,7 @@ lieu de se ranger dans une édition qui n'existe plus.
   comme après `V52`. Il faut sauvegarder juste avant la mise à jour.
 - Un fichier CSV conservé par un organisateur reste lisible. Son ancienne
   colonne `id` est lue comme un code quand l'édition n'a pas cet
-  identifiant. Pour la grille des compétences, l'en-tête d'une colonne peut
-  être un code, un identifiant ou un libellé.
+  identifiant.
 - Le navigateur garde l'identifiant de l'édition courante en stockage local.
   Après la migration, il désigne une édition qui n'existe plus : l'application
   retombe sur l'édition par défaut, et le journal local des notifications de

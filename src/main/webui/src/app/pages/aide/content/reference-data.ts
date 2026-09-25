@@ -230,7 +230,7 @@ export function buildReferenceDataSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.competences.csv:« Exporter en CSV » rend la grille telle quelle : une colonne « animateur » avec l'identifiant — jamais le nom —, puis une colonne par typologie, nommée par son code, et dans chaque case DEBUTANT, AUTONOME, REFERENT ou rien. « Importer un CSV » relit ce format, après un aperçu ligne par ligne. Le point qui compte : une case vide du fichier laisse l'appréciation telle qu'elle est. L'import ajoute et met à jour, il ne retire jamais — retirer une appréciation reste un geste de la grille.`,
+          text: $localize`:@@aide.competences.saisieEcran:La grille ne s'exporte ni ne s'importe en fichier : c'est à l'écran qu'elle se saisit et s'enregistre.`,
         },
       ],
       links: [

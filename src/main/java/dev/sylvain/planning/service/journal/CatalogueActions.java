@@ -41,7 +41,6 @@ public final class CatalogueActions {
     private static final String EMPLACEMENTS_IMPORTES = "EMPLACEMENTS_IMPORTES";
     private static final String STANDS_IMPORTES = "STANDS_IMPORTES";
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
-    private static final String COMPETENCES_IMPORTEES = "COMPETENCES_IMPORTEES";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
@@ -116,7 +115,6 @@ public final class CatalogueActions {
     private static final String EXPORT_SCENARIO = "EXPORT_SCENARIO";
     private static final String EXPORT_EQUITE = "EXPORT_EQUITE";
     private static final String EXPORT_RELECTURE = "EXPORT_RELECTURE";
-    private static final String EXPORT_COMPETENCES = "EXPORT_COMPETENCES";
     private static final String EXPORT_INTENDANCE = "EXPORT_INTENDANCE";
     private static final String EXPORT_ARCHIVE_EVENEMENT = "EXPORT_ARCHIVE_EVENEMENT";
     private static final String EXPORT_FORMATION = "EXPORT_FORMATION";
@@ -198,7 +196,6 @@ public final class CatalogueActions {
         changesData(EMPLACEMENTS_IMPORTES, "Emplacements importés depuis un fichier", Entite.EMPLACEMENT);
         changesData(STANDS_IMPORTES, "Stands importés depuis un fichier", Entite.STAND);
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
-        changesData(COMPETENCES_IMPORTEES, "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
@@ -307,7 +304,6 @@ public final class CatalogueActions {
         export(EXPORT_RELECTURE, "Relecture avant envoi exportée en CSV", Entite.PLANNING);
         // The whole grid, every animateur at once: it bears on the edition,
         // not on one fiche.
-        export(EXPORT_COMPETENCES, "Grille des compétences exportée en CSV", Entite.PLANNING);
         export(EXPORT_INTENDANCE, "Intendance des repas exportée en CSV", Entite.PLANNING);
         // Several of the exports above in one ZIP: one line, naming the parts it
         // carried, rather than one per file nobody downloaded on its own.
@@ -389,7 +385,6 @@ public final class CatalogueActions {
         route("AnimateurResource#regenerateAnimateurToken", ANIMATEUR_JETON_REGENERE);
         route("AnimateurResource#importCsvAnimateurs", ANIMATEURS_IMPORTES);
         route("AnimateurResource#saveCompetencesGrid", ANIMATEUR_COMPETENCES_GRILLE);
-        route("AnimateurResource#importCompetencesGrid", COMPETENCES_IMPORTEES);
         route("AnimateurResource#relancer", ANIMATEURS_RELANCES);
 
         route("StandResource#createStand", STAND_CREE);
@@ -478,7 +473,6 @@ public final class CatalogueActions {
         route("PlanningResource#exportScenario", EXPORT_SCENARIO);
         route("EquiteResource#exportCsv", EXPORT_EQUITE);
         route("PublicationResource#exportCsv", EXPORT_RELECTURE);
-        route("AnimateurResource#exportCompetencesGrid", EXPORT_COMPETENCES);
         route("PauseResource#exportIntendance", EXPORT_INTENDANCE);
         route("ArchiveEvenementResource#export", EXPORT_ARCHIVE_EVENEMENT);
         route("FormationResource#exportCsv", EXPORT_FORMATION);
@@ -648,7 +642,6 @@ public final class CatalogueActions {
         untracked("AffectationExplanationResource#suggererReparations", "suggestions, n'écrit rien");
         untracked("AffectationExplanationResource#simulateDeplacement", SIMULATION);
         untracked("AnimateurResource#analyseCsvAnimateurs", ANALYSE_FICHIER);
-        untracked("AnimateurResource#analyseCompetencesGrid", ANALYSE_FICHIER);
         untracked("StandResource#analyseGrille", ANALYSE_FICHIER);
         untracked("TypologieResource#analyseCsv", ANALYSE_FICHIER);
         untracked("EmplacementResource#analyseCsv", ANALYSE_FICHIER);

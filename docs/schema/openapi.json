@@ -1526,63 +1526,6 @@
           }
         }
       },
-      "CompetencesGrilleImportReport" : {
-        "required" : [ "accepted", "applied", "rejected", "total", "unchanged" ],
-        "type" : "object",
-        "properties" : {
-          "applied" : {
-            "type" : "boolean"
-          },
-          "separator" : {
-            "type" : "string"
-          },
-          "columns" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ImportedCompetencesColumn"
-            }
-          },
-          "total" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "accepted" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "unchanged" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "rejected" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "rows" : {
-            "type" : "array",
-            "items" : {
-              "$ref" : "#/components/schemas/ImportedCompetencesRow"
-            }
-          },
-          "warnings" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          }
-        }
-      },
-      "CompetencesGrilleImportRequest" : {
-        "type" : "object",
-        "properties" : {
-          "fileName" : {
-            "type" : "string"
-          },
-          "content" : {
-            "type" : "string"
-          }
-        }
-      },
       "CompteEntiteView" : {
         "type" : "object",
         "required" : [ "entite", "nombre" ],
@@ -3857,10 +3800,6 @@
         "type" : "string",
         "enum" : [ "CREATED", "UPDATED", "REJECTED" ]
       },
-      "ImportCompetencesAction" : {
-        "type" : "string",
-        "enum" : [ "UPDATED", "UNCHANGED", "REJECTED" ]
-      },
       "ImportGrilleAction" : {
         "type" : "string",
         "enum" : [ "UPDATED", "REJECTED" ]
@@ -3950,54 +3889,6 @@
           },
           "reason" : {
             "type" : "string"
-          }
-        }
-      },
-      "ImportedCompetencesColumn" : {
-        "type" : "object",
-        "required" : [ "index" ],
-        "properties" : {
-          "index" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "typologieId" : {
-            "type" : "string"
-          },
-          "reason" : {
-            "type" : "string"
-          }
-        }
-      },
-      "ImportedCompetencesRow" : {
-        "type" : "object",
-        "required" : [ "action", "cellules", "line" ],
-        "properties" : {
-          "line" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
-          "label" : {
-            "type" : "string"
-          },
-          "animateurId" : {
-            "type" : "string"
-          },
-          "action" : {
-            "$ref" : "#/components/schemas/ImportCompetencesAction"
-          },
-          "reasons" : {
-            "type" : "array",
-            "items" : {
-              "type" : "string"
-            }
-          },
-          "cellules" : {
-            "type" : "integer",
-            "format" : "int32"
           }
         }
       },
@@ -7941,20 +7832,6 @@
         "tags" : [ "Animateur Resource" ]
       }
     },
-    "/api/animateurs/competences/export" : {
-      "get" : {
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "text/csv" : { }
-            }
-          }
-        },
-        "summary" : "Export Competences Grid",
-        "tags" : [ "Animateur Resource" ]
-      }
-    },
     "/api/animateurs/competences/grille" : {
       "put" : {
         "requestBody" : {
@@ -7983,68 +7860,6 @@
           }
         },
         "summary" : "Save Competences Grid",
-        "tags" : [ "Animateur Resource" ]
-      }
-    },
-    "/api/animateurs/competences/import-grille" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CompetencesGrilleImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/CompetencesGrilleImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Import Competences Grid",
-        "tags" : [ "Animateur Resource" ]
-      }
-    },
-    "/api/animateurs/competences/import-grille/analyse" : {
-      "post" : {
-        "requestBody" : {
-          "content" : {
-            "application/json" : {
-              "schema" : {
-                "$ref" : "#/components/schemas/CompetencesGrilleImportRequest"
-              }
-            }
-          },
-          "required" : true
-        },
-        "responses" : {
-          "200" : {
-            "description" : "OK",
-            "content" : {
-              "application/json" : {
-                "schema" : {
-                  "$ref" : "#/components/schemas/CompetencesGrilleImportReport"
-                }
-              }
-            }
-          },
-          "400" : {
-            "description" : "Bad Request"
-          }
-        },
-        "summary" : "Analyse Competences Grid",
         "tags" : [ "Animateur Resource" ]
       }
     },

@@ -1,11 +1,8 @@
 // The competences grid, through the interface only: two cells typed from the
-// keyboard and saved, read back through the API; the CSV export; the import
-// previewed then written — one rejected row, one blank cell that removed
-// nothing; and the concurrent-modification guard applied row by row, with
-// « Recharger » writing nothing of this screen.
+// keyboard and saved, read back through the API; and the concurrent-modification
+// guard applied row by row, with « Recharger » writing nothing of this screen.
 //
-// Patterns: modification-concurrente.spec.ts for the other session,
-// import-csv-animateurs.spec.ts for the file drop and the report rows.
+// Pattern: modification-concurrente.spec.ts for the other session.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
 import { contexteAdmin, pageAdmin, seedReferentielSolveur, typologieId } from './support';
@@ -17,13 +14,8 @@ const IDS = { alice: 'E2E-CP1', bruno: 'E2E-CP2' } as const;
 const TYPOLOGIE_CODE = 'STRATEGIE';
 
 let admin: APIRequestContext;
-/**
- * Its id, which the application drew (`T8`…) and which the grid and the fiches
- * key on; the code is what the exported file's header says.
- */
+/** Its id, which the application drew (`T8`…) and which the grid and the fiches key on. */
 let TYPOLOGIE: string;
-/** A second typologie of the edition, read from the API so the spec does not pin the seed list. */
-let autreTypologie: string;
 
 interface AnimateurApi {
   id: string;
@@ -36,10 +28,6 @@ test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
   TYPOLOGIE = await typologieId(admin, TYPOLOGIE_CODE);
-  const typologies = (await (await admin.get('/api/typologies')).json()) as { id: string }[];
-  const autre = typologies.find((typologie) => typologie.id !== TYPOLOGIE);
-  expect(autre, 'the reference database seeds more than one typologie').toBeDefined();
-  autreTypologie = autre!.id;
 });
 
 test.beforeEach(async () => {
@@ -119,97 +107,6 @@ test("deux cases saisies au clavier, enregistrées, relues par l'API", async ({ 
     expect((await ficheEnBase(IDS.alice)).competences).toEqual({ [TYPOLOGIE]: 'REFERENT' });
     expect((await ficheEnBase(IDS.bruno)).competences).toEqual({ [TYPOLOGIE]: 'DEBUTANT' });
     await expect(page.getByRole('button', { name: /Enregistrer/ })).toBeDisabled();
-  } finally {
-    await page.context().close();
-  }
-});
-
-test("l'export CSV rend la grille en identifiants et niveaux, avec sa marque d'ordre", async ({
-  browser,
-}) => {
-  await autreSessionEcrit(IDS.alice, { [TYPOLOGIE]: 'AUTONOME' });
-  const page = await pageAdmin(browser, admin);
-  try {
-    await ouvrirLaGrille(page);
-
-    const [telechargement] = await Promise.all([
-      page.waitForEvent('download'),
-      page.getByRole('button', { name: 'Exporter en CSV' }).click(),
-    ]);
-    expect(telechargement.suggestedFilename()).toBe('grille-competences.csv');
-    const flux = await telechargement.createReadStream();
-    const morceaux: Buffer[] = [];
-    for await (const morceau of flux) {
-      morceaux.push(Buffer.from(morceau));
-    }
-    const contenu = Buffer.concat(morceaux).toString('utf-8');
-    expect(contenu.startsWith('\uFEFFanimateur;')).toBe(true);
-    // Headed by the code, which a reader recognises, not by the id.
-    expect(contenu.split('\n')[0]).toContain(TYPOLOGIE_CODE);
-    expect(contenu).toContain(`${IDS.alice};`);
-    expect(contenu).toContain('AUTONOME');
-    // Ids only: the file names nobody.
-    expect(contenu).not.toContain('Alice');
-    expect(contenu).not.toContain('Compétente');
-
-    // And the API answers the same document as text/csv.
-    const reponse = await admin.get('/api/animateurs/competences/export');
-    expect(reponse.headers()['content-type']).toContain('text/csv');
-    expect((await reponse.text()).startsWith('\uFEFFanimateur;')).toBe(true);
-  } finally {
-    await page.context().close();
-  }
-});
-
-test("l'import : aperçu, écriture, une ligne rejetée, une case vide qui ne retire rien", async ({
-  browser,
-}) => {
-  await autreSessionEcrit(IDS.alice, { [TYPOLOGIE]: 'DEBUTANT' });
-  const page = await pageAdmin(browser, admin);
-  try {
-    await ouvrirLaGrille(page);
-    await page.getByRole('button', { name: 'Importer un CSV' }).click();
-
-    await page.locator('input[type="file"]').setInputFiles({
-      name: 'competences.csv',
-      mimeType: 'text/csv',
-      buffer: Buffer.from(
-        [
-          `animateur;${TYPOLOGIE};${autreTypologie};commentaire`,
-          `${IDS.alice};;REFERENT;x`,
-          `E2E-CP-INCONNU;REFERENT;;`,
-          '',
-        ].join('\n'),
-        'utf-8',
-      ),
-    });
-
-    // The preview: shown, counted, and — the invariant — written nowhere.
-    await expect(page.locator('#contenu')).toContainText("Ce que l'import ferait");
-    await expect(page.locator('#contenu')).toContainText("Aucune écriture n'a eu lieu");
-    await expect(page.locator('#contenu')).toContainText('commentaire');
-    await expect(page.locator('tr[data-ligne="2"]')).toContainText('Mise à jour');
-    await expect(page.locator('tr[data-ligne="3"]')).toContainText('Rejetée');
-    await expect(page.locator('tr[data-ligne="3"]')).toContainText('E2E-CP-INCONNU');
-    expect((await ficheEnBase(IDS.alice)).competences).toEqual({ [TYPOLOGIE]: 'DEBUTANT' });
-
-    await page.getByRole('button', { name: 'Importer', exact: true }).click();
-    await page.getByRole('button', { name: 'Confirmer' }).click();
-    await expect(page.locator('#contenu')).toContainText('Ce qui a été importé');
-    await expect(page.locator('#contenu')).toContainText('une seule transaction');
-
-    // The blank cell left DEBUTANT alone; the level typed in the file landed; the unknown row created nobody.
-    expect((await ficheEnBase(IDS.alice)).competences).toEqual({
-      [TYPOLOGIE]: 'DEBUTANT',
-      [autreTypologie]: 'REFERENT',
-    });
-    const roster = (await (await admin.get('/api/animateurs')).json()) as { id: string }[];
-    expect(roster.some((animateur) => animateur.id === 'E2E-CP-INCONNU')).toBe(false);
-    // And the grid shows the imported cell without a reload.
-    await expect(cellule(page, IDS.alice, autreTypologie)).toHaveAttribute(
-      'data-niveau',
-      'REFERENT',
-    );
   } finally {
     await page.context().close();
   }
