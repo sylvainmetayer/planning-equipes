@@ -412,9 +412,12 @@ class EspacePlanPublieTest {
      * only when both are set.
      */
     @Test
-    void chaquePosteNommeLEmplacementDeSonStand() {
-        referenceData.createEmplacement(new Emplacement("PUBESP-E1", "Hall B", 47.2184, -1.5536));
-        rattacherEmplacement("PUBESP-S1", "PUBESP-E1");
+    void eachSeatNamesItsStandsLocation() {
+        // The location's id is drawn by the application (ADR 0050).
+        String hallId = referenceData
+                .createEmplacement(new Emplacement(null, "Hall B", 47.2184, -1.5536))
+                .getId();
+        rattacherEmplacement("PUBESP-S1", hallId);
         publication.publier();
 
         given().when()
@@ -426,11 +429,11 @@ class EspacePlanPublieTest {
                 .body("postes[0].emplacementLongitude", equalTo(-1.5536f));
 
         Emplacement hall = referenceData.listEmplacements().stream()
-                .filter(candidat -> candidat.getId().equals("PUBESP-E1"))
+                .filter(candidat -> candidat.getId().equals(hallId))
                 .findFirst()
                 .orElseThrow();
         hall.setNom("Hall C");
-        referenceData.updateEmplacement("PUBESP-E1", hall);
+        referenceData.updateEmplacement(hallId, hall);
 
         // The published plan is resolved against today's referential: what is
         // read is the label of now, not a copy frozen at publication time.
@@ -448,9 +451,11 @@ class EspacePlanPublieTest {
      * it, which is a decision nobody can take from a half-filled fiche.
      */
     @Test
-    void unEmplacementSansCoordonneesCompletesNEnSortAucune() {
-        referenceData.createEmplacement(new Emplacement("PUBESP-E2", "Chapiteau", 47.2184, null));
-        rattacherEmplacement("PUBESP-S1", "PUBESP-E2");
+    void aLocationWithoutCompleteCoordinatesSendsNone() {
+        String chapiteauId = referenceData
+                .createEmplacement(new Emplacement(null, "Chapiteau", 47.2184, null))
+                .getId();
+        rattacherEmplacement("PUBESP-S1", chapiteauId);
         publication.publier();
 
         given().when()
@@ -478,7 +483,7 @@ class EspacePlanPublieTest {
 
     /** Stepping out for a break supposes knowing where to come back to. */
     @Test
-    void laPauseNommeAussiLEmplacementDuStandTenu() {
+    void theBreakAlsoNamesTheLocationOfTheStandHeld() {
         Animateur alice = new Animateur("PUBESP-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
         Animateur bruno = new Animateur("PUBESP-B", "Bruno", "Petit", LocalDate.of(1992, 2, 2), false);
         Stand stand = new Stand("PUBESP-S1", "Stand espace un", Set.of(), 2, 2, false);
@@ -488,8 +493,10 @@ class EspacePlanPublieTest {
         PosteAffectation posteBruno = new PosteAffectation("PUBESP-P2", stand, longue);
         posteBruno.setAnimateur(bruno);
         persistence.persist(new PlanningEvenement(JOUR, List.of(alice, bruno), List.of(posteAlice, posteBruno)));
-        referenceData.createEmplacement(new Emplacement("PUBESP-E1", "Hall B", 47.2184, -1.5536));
-        rattacherEmplacement("PUBESP-S1", "PUBESP-E1");
+        String hallId = referenceData
+                .createEmplacement(new Emplacement(null, "Hall B", 47.2184, -1.5536))
+                .getId();
+        rattacherEmplacement("PUBESP-S1", hallId);
         publication.publier();
 
         given().when()
@@ -760,7 +767,7 @@ class EspacePlanPublieTest {
         }
     }
 
-    /** {@code clearDatabase()} keeps the emplacements — the ids below are reused from test to test. */
+    /** {@code clearDatabase()} keeps the emplacements — each test starts without any. */
     private void oublierEmplacements() {
         try (Connection connection = dataSource.getConnection();
                 Statement statement = connection.createStatement()) {

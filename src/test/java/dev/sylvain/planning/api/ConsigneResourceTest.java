@@ -45,6 +45,12 @@ class ConsigneResourceTest {
 
     private static final String JOUR = "2026-07-08";
     private static final String VEILLE = "2026-07-01";
+    private static final String NOM_COPIE = "Copie consignes";
+
+    /** The ids the import gave the two stands of the sample scenario, found by their code (ADR 0050). */
+    private String standStrat;
+
+    private String hommeJeu;
 
     @Inject
     ReferenceDataService referenceData;
@@ -73,6 +79,39 @@ class ConsigneResourceTest {
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
+        standStrat = standIdOfCode("STAND-STRAT");
+        hommeJeu = standIdOfCode("HOMME-JEU");
+    }
+
+    private static String standIdOfCode(String code) {
+        String id = given().when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.code == '" + code + "' }.id");
+        assertThat(id).as("stand of code %s", code).isNotNull();
+        return id;
+    }
+
+    private static String defaultEditionId() {
+        return given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.defaut == true }.id");
+    }
+
+    /** By name, since the duplicate's id is drawn: gone whether its test reached its own cleanup or not. */
+    private static void dropTheDuplicate() {
+        List<String> ids = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("findAll { it.nom == '" + NOM_COPIE + "' }.id");
+        ids.forEach(id -> given().when().delete("/api/editions/" + id));
     }
 
     @AfterEach
@@ -84,8 +123,7 @@ class ConsigneResourceTest {
                 .then()
                 .statusCode(200);
         given().when().post("/api/planning/reset").then().statusCode(200);
-        // The duplicate one test makes: gone whether that test reached its own cleanup or not.
-        given().when().delete("/api/editions/COPIE");
+        dropTheDuplicate();
     }
 
     private static Map<String, Object> demande(List<Map<String, Object>> ouvertures) {
@@ -127,7 +165,7 @@ class ConsigneResourceTest {
                 .body("creneauxDuJour", is(2))
                 .body("stands", hasSize(2))
                 // Homme-jeu first by name: its whole 14h-16h dated window is in the band.
-                .body("stands[0].standId", equalTo("HOMME-JEU"))
+                .body("stands[0].standId", equalTo(hommeJeu))
                 .body("stands[0].minutesPerdues", is(120))
                 .body("stands[0].exceptionDatee", is(true))
                 .body("stands[0].preCoche", is(false))
@@ -141,7 +179,7 @@ class ConsigneResourceTest {
     @Test
     void thePreviewCountsSeatsBeforeAndAfterWithoutWriting() {
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"))))
+                .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes/apercu")
                 .then()
@@ -160,7 +198,7 @@ class ConsigneResourceTest {
                 .body("[0].creneauxAAjouter[0].debut", equalTo("18:00:00"))
                 .body("[0].vacationsSansSiege", hasSize(0))
                 .body("[0].standsOuverts", is(1))
-                .body("[0].standsEntrants", equalTo(List.of("STAND-STRAT")))
+                .body("[0].standsEntrants", equalTo(List.of(standStrat)))
                 .body("[0].standsExceptionCoches", hasSize(0))
                 .body("[0].validationRetiree", is(false))
                 // No plan persisted: nobody is seated in the band yet.
@@ -173,7 +211,7 @@ class ConsigneResourceTest {
     @Test
     void layingDownWritesTheConsigneAndAddsTheEveningCreneau() {
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"))))
+                .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
                 .then()
@@ -201,7 +239,7 @@ class ConsigneResourceTest {
     @Test
     void changingADateKeepsTheCreneauItsWindowsStillNeedAndDropsTheOthers() {
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"))))
+                .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
                 .then()
@@ -211,17 +249,17 @@ class ConsigneResourceTest {
 
         // Same windows, one more stand: the evening créneau stays, id included.
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"), ouverture("HOMME-JEU"))))
+                .body(demande(List.of(ouverture(standStrat), ouverture(hommeJeu))))
                 .when()
                 .post("/api/consignes/apercu")
                 .then()
                 .statusCode(200)
                 .body("[0].dejaSousConsigne", is(true))
                 .body("[0].creneauxAAjouter", hasSize(0))
-                .body("[0].standsEntrants", equalTo(List.of("HOMME-JEU")))
+                .body("[0].standsEntrants", equalTo(List.of(hommeJeu)))
                 .body("[0].standsSortants", hasSize(0));
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"), ouverture("HOMME-JEU"))))
+                .body(demande(List.of(ouverture(standStrat), ouverture(hommeJeu))))
                 .when()
                 .post("/api/consignes")
                 .then()
@@ -244,7 +282,7 @@ class ConsigneResourceTest {
     @Test
     void liftingRemovesTheConsigneAndTheCreneauItAdded() {
         given().contentType("application/json")
-                .body(demande(List.of(ouverture("STAND-STRAT"))))
+                .body(demande(List.of(ouverture(standStrat))))
                 .when()
                 .post("/api/consignes")
                 .then()
@@ -380,7 +418,7 @@ class ConsigneResourceTest {
      */
     @Test
     void aConsigneMayRestateTheMealWindowsOfItsDayWithAReason() {
-        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        Map<String, Object> corps = demande(List.of(ouverture(standStrat)));
         Map<String, Object> repas = new HashMap<>();
         repas.put("soirDebut", "18:00");
         repas.put("soirFin", "20:00");
@@ -445,7 +483,7 @@ class ConsigneResourceTest {
                 .statusCode(200);
         given().when().get("/api/consignes").then().statusCode(200).body("consignes[0].fermetureFin", equalTo(null));
 
-        Map<String, Object> ouverture = ouverture("STAND-STRAT");
+        Map<String, Object> ouverture = ouverture(standStrat);
         ouverture.put("fin", "00:00");
         corps = demande(List.of(ouverture));
         corps.put("fenetres", List.of(Map.of("debut", "18:00", "fin", "00:00")));
@@ -497,7 +535,7 @@ class ConsigneResourceTest {
     /** A meal window the break does not fit in would leave the date with no rule at all: refused. */
     @Test
     void aRestatedMealWindowShorterThanTheBreakIsRefused() {
-        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        Map<String, Object> corps = demande(List.of(ouverture(standStrat)));
         Map<String, Object> repas = new HashMap<>();
         repas.put("soirDebut", "19:00");
         repas.put("soirFin", "19:30");
@@ -530,7 +568,7 @@ class ConsigneResourceTest {
         ConsigneRepository real = ClientProxy.unwrap(consigneRepository);
         QuarkusMock.installMockForType(new FailingOnThirdSave(real), ConsigneRepository.class);
 
-        Map<String, Object> corps = demande(List.of(ouverture("STAND-STRAT")));
+        Map<String, Object> corps = demande(List.of(ouverture(standStrat)));
         corps.put(
                 "dates",
                 List.of(
@@ -678,13 +716,15 @@ class ConsigneResourceTest {
                 .body("consignes[0].prereglage", equalTo("Plan canicule"));
 
         // The duplicate carries the preset, not the consigne.
-        given().contentType("application/json")
-                .body(Map.of("id", "COPIE", "nom", "Copie"))
+        String copie = given().contentType("application/json")
+                .body(Map.of("nom", NOM_COPIE))
                 .when()
-                .post("/api/editions/DEFAUT/dupliquer")
+                .post("/api/editions/" + defaultEditionId() + "/dupliquer")
                 .then()
-                .statusCode(200);
-        given().header("X-Edition-Id", "COPIE")
+                .statusCode(200)
+                .extract()
+                .path("id");
+        given().header("X-Edition-Id", copie)
                 .when()
                 .get("/api/consignes")
                 .then()
@@ -693,7 +733,7 @@ class ConsigneResourceTest {
                 .body("prereglages[0].nom", equalTo("Plan canicule"))
                 .body("prereglages[0].repas.soirFin", equalTo("22:00:00"))
                 .body("consignes", hasSize(0));
-        given().when().delete("/api/editions/COPIE").then().statusCode(204);
+        given().when().delete("/api/editions/" + copie).then().statusCode(204);
 
         given().when().delete("/api/consignes/prereglages/" + id).then().statusCode(204);
         given().when().get("/api/consignes/prereglages").then().statusCode(200).body("size()", is(0));

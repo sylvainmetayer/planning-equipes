@@ -2,6 +2,7 @@ package dev.sylvain.planning.api;
 
 import static io.restassured.RestAssured.given;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.tuple;
 
 import io.quarkus.test.junit.QuarkusTest;
 import java.util.List;
@@ -29,8 +30,11 @@ import org.junit.jupiter.api.Test;
 class ImportScenarioContraintesAdHocTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-AD-HOC";
-    private static final String EDITION_CIBLE = "IMPORT-AD-HOC-CIBLE";
+    private static final String NOM_EDITION = "Import contraintes ad hoc";
+    private static final String NOM_EDITION_CIBLE = "Édition cible ad hoc";
+
+    /** The landing edition of the running test, created by name: its id is generated (ADR 0050). */
+    private String edition;
 
     private static final String ENTETE = """
             festival:
@@ -98,7 +102,6 @@ class ImportScenarioContraintesAdHocTest {
     /** No {@code contraintesAdHoc:} section, and a target edition of its own. */
     private static final String VERS_AUTRE_EDITION = """
             edition:
-              id: IMPORT-AD-HOC-CIBLE
               nom: Édition cible ad hoc
 
             """ + ENTETE;
@@ -129,35 +132,51 @@ class ImportScenarioContraintesAdHocTest {
      */
     @BeforeEach
     void createTheLandingEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import contraintes ad hoc\"}")
+        dropEditionsNamed(NOM_EDITION, NOM_EDITION_CIBLE);
+        edition = given().contentType("application/json")
+                .body("{\"nom\":\"" + NOM_EDITION + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
     void dropTheLandingEditions() {
-        given().when().delete("/api/editions/" + EDITION);
-        given().when().delete("/api/editions/" + EDITION_CIBLE);
+        dropEditionsNamed(NOM_EDITION, NOM_EDITION_CIBLE);
+    }
+
+    /** By name: the target edition's id is only known from an import that may have failed half-way. */
+    private static void dropEditionsNamed(String... noms) {
+        List<Map<String, Object>> editions = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("");
+        for (Map<String, Object> existante : editions) {
+            if (List.of(noms).contains(existante.get("nom")) && !Boolean.TRUE.equals(existante.get("defaut"))) {
+                given().when().delete("/api/editions/" + existante.get("id"));
+            }
+        }
     }
 
     @Test
     void aScenarioWhoseExceptionsContradictEachOtherIsRefused() {
         String message = importer(CONTRADICTOIRE, 400).extract().asString();
 
-        assertThat(message).contains("INDISPO-1").contains("FORCE-1");
+        // The exceptions are named by the ids the edition gave them, not by the file's.
+        assertThat(message).containsPattern("contrainte C\\d+").contains("indisponible");
     }
 
     @Test
     void nothingOfARefusedScenarioIsWritten() {
         importer(CONTRADICTOIRE, 400);
 
-        // Refused before the first write: the landing edition holds nothing.
-        assertThat(contraintesAdHoc())
-                .extracting(contrainte -> contrainte.get("id"))
-                .doesNotContain("INDISPO-1", "FORCE-1");
+        // Refused before the first write: the landing edition, created empty, holds nothing.
+        assertThat(contraintesAdHoc()).isEmpty();
     }
 
     @Test
@@ -168,9 +187,10 @@ class ImportScenarioContraintesAdHocTest {
         importer(COHERENT, 200);
         assertThat(contraintesAdHoc()).hasSize(2);
 
-        importer(VERS_AUTRE_EDITION, 200);
+        String editionCible = importer(VERS_AUTRE_EDITION, 200).extract().path("editionId");
+        assertThat(editionCible).isNotNull().isNotEqualTo(edition);
 
-        assertThat(given().header(HEADER, EDITION_CIBLE)
+        assertThat(given().header(HEADER, editionCible)
                         .when()
                         .get("/api/contraintes-ad-hoc")
                         .then()
@@ -187,13 +207,19 @@ class ImportScenarioContraintesAdHocTest {
     void aConsistentScenarioGoesThrough() {
         importer(COHERENT, 200);
 
+        // The file's ids are local references: the exceptions are recognised by what they say.
         assertThat(contraintesAdHoc())
-                .extracting(contrainte -> contrainte.get("id"))
-                .containsExactlyInAnyOrder("INDISPO-1", "FORCE-1");
+                .extracting(contrainte -> contrainte.get("type"), contrainte -> contrainte.get("raison"))
+                .containsExactlyInAnyOrder(
+                        tuple("INDISPONIBILITE_FORCEE", "Formation"),
+                        tuple("AFFECTATION_FORCEE", "Promesse faite en juin"));
+        assertThat(contraintesAdHoc())
+                .extracting(contrainte -> (String) contrainte.get("id"))
+                .allMatch(id -> id.matches("C\\d+"));
     }
 
-    private static io.restassured.response.ValidatableResponse importer(String yaml, int statut) {
-        return given().header(HEADER, EDITION)
+    private io.restassured.response.ValidatableResponse importer(String yaml, int statut) {
+        return given().header(HEADER, edition)
                 .contentType("text/plain")
                 .body(yaml)
                 .when()
@@ -202,8 +228,8 @@ class ImportScenarioContraintesAdHocTest {
                 .statusCode(statut);
     }
 
-    private static List<Map<String, Object>> contraintesAdHoc() {
-        return given().header(HEADER, EDITION)
+    private List<Map<String, Object>> contraintesAdHoc() {
+        return given().header(HEADER, edition)
                 .when()
                 .get("/api/contraintes-ad-hoc")
                 .then()

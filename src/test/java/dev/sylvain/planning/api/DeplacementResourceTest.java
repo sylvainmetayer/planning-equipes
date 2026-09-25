@@ -154,14 +154,17 @@ class DeplacementResourceTest {
                 .filter(id -> !occupesCeCreneau.contains(id))
                 .findFirst()
                 .orElseThrow();
-        given().contentType("application/json")
+        // The ad hoc constraint's id is generated (ADR 0050): the response names it.
+        String indispo = given().contentType("application/json")
                 .body("""
-                        {"id":"DEPL-INDISPO","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("contrainte.id");
         try {
             given().contentType("application/json")
                     .when()
@@ -184,7 +187,7 @@ class DeplacementResourceTest {
                             .jsonPath()))
                     .isEqualTo(avant);
         } finally {
-            given().when().delete("/api/contraintes-ad-hoc/DEPL-INDISPO");
+            given().when().delete("/api/contraintes-ad-hoc/" + indispo);
         }
     }
 
@@ -289,14 +292,17 @@ class DeplacementResourceTest {
                 .filter(id -> !occupesCeCreneau.contains(id))
                 .findFirst()
                 .orElseThrow();
-        given().contentType("application/json")
+        // The ad hoc constraint's id is generated (ADR 0050): the response names it.
+        String indispo = given().contentType("application/json")
                 .body("""
-                        {"id":"DEPL-INDISPO-2","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%s}}""".formatted(libre, creneau))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("contrainte.id");
         try {
             given().when()
                     .post("/api/postes/" + siege + "/deplacement?animateur=" + libre)
@@ -324,7 +330,7 @@ class DeplacementResourceTest {
                         .statusCode(200);
             }
         } finally {
-            given().when().delete("/api/contraintes-ad-hoc/DEPL-INDISPO-2");
+            given().when().delete("/api/contraintes-ad-hoc/" + indispo);
         }
     }
 

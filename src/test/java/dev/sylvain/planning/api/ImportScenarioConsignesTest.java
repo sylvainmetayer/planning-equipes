@@ -30,7 +30,7 @@ import org.junit.jupiter.api.Test;
 class ImportScenarioConsignesTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-CONSIGNES";
+    private static final String NOM_EDITION = "Import consignes";
     private static final String JOUR = "2033-07-08";
 
     private static final String BASE = """
@@ -67,6 +67,9 @@ class ImportScenarioConsignesTest {
                 joursIndisponibles: []
             """;
 
+    /** The landing edition of the running test, created by name: its id is generated (ADR 0050). */
+    private String edition;
+
     @BeforeEach
     void createTheLandingEdition() {
         createEdition();
@@ -74,22 +77,37 @@ class ImportScenarioConsignesTest {
 
     @AfterEach
     void deleteTheLandingEdition() {
-        given().when().delete("/api/editions/" + EDITION);
+        given().when().delete("/api/editions/" + edition);
     }
 
-    private static void createEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import consignes\"}")
+    private void createEdition() {
+        edition = given().contentType("application/json")
+                .body("{\"nom\":\"" + NOM_EDITION + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
-    private static void importFile(String yaml) {
+    /** The id the landing edition gave the stand the file called {@code code}: a file id is a local reference. */
+    private String standId(String code) {
+        String id = given().header(HEADER, edition)
+                .when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.code == '" + code + "' }.id");
+        assertThat(id).as("stand of code %s", code).isNotNull();
+        return id;
+    }
+
+    private void importFile(String yaml) {
         // The charset is spelled out: RestAssured sends a text/plain body as
         // ISO-8859-1 by default, and the motif carries accents.
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .contentType("text/plain; charset=UTF-8")
                 .body(yaml)
                 .when()
@@ -98,8 +116,8 @@ class ImportScenarioConsignesTest {
                 .statusCode(200);
     }
 
-    private static JsonPath consignes() {
-        return given().header(HEADER, EDITION)
+    private JsonPath consignes() {
+        return given().header(HEADER, edition)
                 .when()
                 .get("/api/consignes")
                 .then()
@@ -108,8 +126,8 @@ class ImportScenarioConsignesTest {
                 .jsonPath();
     }
 
-    private static JsonPath creneaux() {
-        return given().header(HEADER, EDITION)
+    private JsonPath creneaux() {
+        return given().header(HEADER, edition)
                 .when()
                 .get("/api/creneaux")
                 .then()
@@ -127,7 +145,7 @@ class ImportScenarioConsignesTest {
     }
 
     /** The screen's gesture: a preset, then a consigne made from it, with an evening the grid did not have. */
-    private static void layDownAConsigneOnTheScreen() {
+    private void layDownAConsigneOnTheScreen() {
         Map<String, Object> prereglage = new HashMap<>();
         prereglage.put("nom", "Plan canicule");
         prereglage.put("fermetureDebut", "12:00");
@@ -135,7 +153,7 @@ class ImportScenarioConsignesTest {
         prereglage.put("motif", "Arrêté préfectoral canicule");
         prereglage.put("fenetres", List.of(Map.of("debut", "18:00", "fin", "20:00")));
         prereglage.put("repas", repas());
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .contentType("application/json")
                 .body(prereglage)
                 .when()
@@ -144,7 +162,7 @@ class ImportScenarioConsignesTest {
                 .statusCode(200);
 
         Map<String, Object> ouverture = new HashMap<>();
-        ouverture.put("standId", "STAND-A");
+        ouverture.put("standId", standId("STAND-A"));
         ouverture.put("debut", "18:00");
         ouverture.put("fin", "20:00");
         ouverture.put("effectif", 2);
@@ -157,7 +175,7 @@ class ImportScenarioConsignesTest {
         demande.put("fenetres", List.of(Map.of("debut", "18:00", "fin", "20:00")));
         demande.put("ouvertures", List.of(ouverture));
         demande.put("repas", repas());
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .contentType("application/json")
                 .body(demande)
                 .when()
@@ -167,8 +185,8 @@ class ImportScenarioConsignesTest {
                 .body("[0].creneauxAAjouter", hasSize(1));
     }
 
-    private static String export() {
-        return given().header(HEADER, EDITION)
+    private String export() {
+        return given().header(HEADER, edition)
                 .when()
                 .get("/api/planning/export-scenario")
                 .then()
@@ -191,7 +209,7 @@ class ImportScenarioConsignesTest {
                 .contains("justification: Repas pris pendant la bande fermée");
 
         // A fresh edition, which never saw the consigne.
-        given().when().delete("/api/editions/" + EDITION).then().statusCode(204);
+        given().when().delete("/api/editions/" + edition).then().statusCode(204);
         createEdition();
         assertThat(consignes().getList("consignes")).isEmpty();
 
@@ -213,7 +231,7 @@ class ImportScenarioConsignesTest {
     }
 
     /** The one consigne of the round trip, field by field. */
-    private static void assertTheConsigneCameBackWhole(JsonPath etat, Object idDuSoir) {
+    private void assertTheConsigneCameBackWhole(JsonPath etat, Object idDuSoir) {
         assertThat(etat.getString("consignes[0].date")).isEqualTo(JOUR);
         assertThat(etat.getString("consignes[0].fermetureDebut")).isEqualTo("12:00:00");
         assertThat(etat.getString("consignes[0].fermetureFin")).isEqualTo("16:00:00");
@@ -221,7 +239,7 @@ class ImportScenarioConsignesTest {
         assertThat(etat.getString("consignes[0].prereglage")).isEqualTo("Plan canicule");
         assertThat(etat.getList("consignes[0].fenetres")).hasSize(1);
         assertThat(etat.getList("consignes[0].ouvertures")).hasSize(1);
-        assertThat(etat.getString("consignes[0].ouvertures[0].standId")).isEqualTo("STAND-A");
+        assertThat(etat.getString("consignes[0].ouvertures[0].standId")).isEqualTo(standId("STAND-A"));
         assertThat(etat.getInt("consignes[0].ouvertures[0].effectif")).isEqualTo(2);
         assertThat(etat.getString("consignes[0].repas.soirDebut")).isEqualTo("18:00:00");
         assertThat(etat.getString("consignes[0].repas.justification")).isEqualTo("Repas pris pendant la bande fermée");
@@ -310,7 +328,7 @@ class ImportScenarioConsignesTest {
         layDownAConsigneOnTheScreen();
 
         importFile(BASE);
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .get("/api/consignes")
                 .then()
@@ -319,7 +337,7 @@ class ImportScenarioConsignesTest {
                 .body("prereglages", hasSize(1));
 
         importFile(BASE + "\nprereglagesConsigne: []\nconsignes: []\n");
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .get("/api/consignes")
                 .then()
@@ -356,7 +374,7 @@ class ImportScenarioConsignesTest {
                         fin: "00:00"
                 """);
 
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .get("/api/consignes")
                 .then()
@@ -380,7 +398,7 @@ class ImportScenarioConsignesTest {
                       midiDebut: "12:00"
                       justification: repas pris pendant la fermeture
                 """;
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .contentType("text/plain; charset=UTF-8")
                 .body(demiFenetre)
                 .when()
@@ -401,7 +419,7 @@ class ImportScenarioConsignesTest {
                       soirFin: "19:30"
                       justification: repas pris pendant la fermeture
                 """;
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .contentType("text/plain; charset=UTF-8")
                 .body(tropCourte)
                 .when()
@@ -409,7 +427,7 @@ class ImportScenarioConsignesTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("plus courte que la coupure"));
-        given().header(HEADER, EDITION).when().get("/api/consignes").then().body("consignes", hasSize(0));
+        given().header(HEADER, edition).when().get("/api/consignes").then().body("consignes", hasSize(0));
     }
 
     /** A hand-written preset carries no id and a consigne on a past date is accepted: the import is not the screen. */
@@ -431,7 +449,7 @@ class ImportScenarioConsignesTest {
                     prereglage: Plan canicule
                 """);
 
-        given().header(HEADER, EDITION)
+        given().header(HEADER, edition)
                 .when()
                 .get("/api/consignes")
                 .then()

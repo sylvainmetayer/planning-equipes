@@ -247,33 +247,39 @@ class DatabaseResourceTest {
         // needs the database this one found. Letting an assertion escape
         // mid-flight leaves them all resolving to an edition that no longer
         // exists, and one failure here becomes forty elsewhere.
+        // Every edition id is drawn by the application (ADR 0050): the default
+        // one is read, never assumed.
+        String defautInitial = defaultEdition();
+
         try {
             given().when().post("/api/planning/reset").then().statusCode(200);
 
-            // A dump whose only edition is "restauree" — DEFAUT is nowhere in it.
-            createEdition("restauree", "Édition restaurée");
-            makeDefaultEdition("restauree");
-            deleteEdition("DEFAUT");
+            // A dump whose only edition is the restored one — the initial default
+            // is nowhere in it.
+            String restauree = createEdition("Édition restaurée");
+            makeDefaultEdition(restauree);
+            deleteEdition(defautInitial);
             String dump = exportDump();
 
             // Read on the edition table alone: kpi_historique also carries an
             // edition_id, and no foreign key ties the two, so measurements taken
-            // before the deletion outlive it and the dump keeps naming DEFAUT
-            // further down.
+            // before the deletion outlive it and the dump keeps naming the
+            // initial default further down.
             List<String> editionRows = dump.lines()
                     .filter(line -> line.startsWith("INSERT INTO edition ("))
                     .toList();
-            assertThat(editionRows).isNotEmpty().noneMatch(line -> line.contains("'DEFAUT'"));
+            assertThat(editionRows).isNotEmpty().noneMatch(line -> line.contains("'" + defautInitial + "'"));
 
-            // Back to a database that only knows DEFAUT, and a request that caches it.
-            createEdition("DEFAUT", "Édition par défaut");
-            makeDefaultEdition("DEFAUT");
-            deleteEdition("restauree");
-            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("DEFAUT"));
+            // Back to a database that only knows another default edition, and a
+            // request that caches it.
+            String autre = createEdition("Édition par défaut");
+            makeDefaultEdition(autre);
+            deleteEdition(restauree);
+            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(autre));
 
             sqlRequest(dump).when().post("/api/database/import").then().statusCode(200);
 
-            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("restauree"));
+            given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(restauree));
         } catch (Throwable inFlight) {
             // Not a finally: a restore that fails in turn would replace the
             // assertion that actually diagnoses the defect. It travels as a
@@ -287,7 +293,7 @@ class DatabaseResourceTest {
         }
         restoreDatabase(etatInitial);
 
-        given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo("DEFAUT"));
+        given().when().get("/api/editions/courant").then().statusCode(200).body("id", equalTo(defautInitial));
     }
 
     private static void restoreDatabase(String dump) {
@@ -303,13 +309,26 @@ class DatabaseResourceTest {
                 .asString();
     }
 
-    private static void createEdition(String id, String nom) {
-        given().contentType(ContentType.JSON)
-                .body("{\"id\":\"" + id + "\",\"nom\":\"" + nom + "\"}")
+    /** Creates an edition and answers the id the application drew for it. */
+    private static String createEdition(String nom) {
+        return given().contentType(ContentType.JSON)
+                .body("{\"nom\":\"" + nom + "\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
+    }
+
+    /** The default edition of the test database, read rather than assumed. */
+    private static String defaultEdition() {
+        return given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.defaut == true }.id");
     }
 
     private static void makeDefaultEdition(String id) {
@@ -336,12 +355,15 @@ class DatabaseResourceTest {
      */
     @Test
     void thePublishedPlanAndItsRecipientsSurviveARestore() {
-        sqlRequest(
-                        "INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
-                                + "(\'DEFAUT\', 777, \'Plan du test\', 3, \'{\"postes\": []}\');\n"
-                                + "INSERT INTO publication_destinataire "
-                                + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
-                                + "(\'DEFAUT\', 888, 777, \'ani-test\', \'Camille Essai\', \'camille@example.test\', \'ENVOYE\');")
+        // Raw rows on purpose, with literal ids — but in the edition the
+        // requests below resolve to, whose id is drawn (ADR 0050).
+        String defaut = defaultEdition();
+        sqlRequest("INSERT INTO plan_snapshot (edition_id, id, libelle, nombre_affectations, contenu) VALUES "
+                        + "('" + defaut + "', 777, 'Plan du test', 3, '{\"postes\": []}');\n"
+                        + "INSERT INTO publication_destinataire "
+                        + "(edition_id, id, snapshot_id, animateur_id, nom_affiche, email, statut) VALUES "
+                        + "('" + defaut
+                        + "', 888, 777, 'ani-test', 'Camille Essai', 'camille@example.test', 'ENVOYE');")
                 .when()
                 .post("/api/database/import")
                 .then()
@@ -433,6 +455,7 @@ class DatabaseResourceTest {
     @Test
     void exportedDumpCarriesTheKpiHistoryBackAndForth() {
         given().when().post("/api/planning/reset").then().statusCode(200);
+        String defaut = defaultEdition();
 
         try {
             // An apostrophe on both sides of the row, deliberately: in the label
@@ -441,7 +464,7 @@ class DatabaseResourceTest {
             // branch of literal() that quotes it had never run in anger — and a
             // quote reaching the import unescaped cuts the statement in half.
             sqlRequest("INSERT INTO kpi_historique (id, edition_id, edition_nom, kpi, cree_le) VALUES "
-                            + "(4242, 'DEFAUT', 'Edition d''essai', "
+                            + "(4242, '" + defaut + "', 'Edition d''essai', "
                             + "'{\"heuresTotal\": 7.5, \"violationsParContrainte\": {\"repos d''une nuit\": 3}}', "
                             + "'2026-07-01T10:00:00Z');")
                     .when()
