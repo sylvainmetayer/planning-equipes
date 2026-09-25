@@ -22,8 +22,12 @@ import jakarta.ws.rs.core.Response;
 @Path("/formation")
 public class FormationResource {
 
+    private final FormationService formationService;
+
     @Inject
-    FormationService formationService;
+    public FormationResource(FormationService formationService) {
+        this.formationService = formationService;
+    }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
