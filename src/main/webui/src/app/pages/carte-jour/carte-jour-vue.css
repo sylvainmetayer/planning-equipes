@@ -230,3 +230,124 @@
   color: var(--app-accent);
   white-space: nowrap;
 }
+
+/* The marker: the badge, sized inline by the headcount, and the seats planned
+   written beside it. */
+.carte-jour-marqueur {
+  display: flex;
+  align-items: center;
+}
+
+.carte-jour-marqueur .carte-jour-pastille {
+  flex: 0 0 auto;
+}
+
+.carte-jour-pastille-sieges {
+  margin-left: 0.125rem;
+  padding: 0 0.25rem;
+  border-radius: var(--mat-sys-corner-extra-small);
+  background: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-label-small);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.carte-jour-infobulle-stands {
+  margin: 0.25rem 0 0;
+  padding-left: 1rem;
+}
+
+/* The load grid: people present / seats planned, per place and span. */
+.charge-grille-entete {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.charge-grille-legende {
+  margin: 0;
+}
+
+.charge-grille {
+  border-collapse: collapse;
+  font: var(--mat-sys-body-small);
+}
+
+.charge-grille th,
+.charge-grille td {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  text-align: center;
+  white-space: nowrap;
+}
+
+.charge-grille .charge-grille-lieu {
+  text-align: left;
+  font-weight: 600;
+  position: sticky;
+  left: 0;
+  background: var(--mat-sys-surface);
+}
+
+.charge-grille-note {
+  margin-left: 0.25rem;
+  font-weight: 400;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.charge-grille-cellule {
+  min-width: 3.5rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.charge-grille-cellule:focus-visible {
+  outline: 3px solid var(--app-accent);
+  outline-offset: -3px;
+}
+
+/* Density: one hue at four strengths over the surface. The container/on-container
+   pair keeps the printed number readable at every step, light and dark alike. */
+.charge-niveau-0 {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.charge-niveau-1 {
+  background: color-mix(in srgb, var(--mat-sys-primary-container) 30%, transparent);
+  color: var(--mat-sys-on-surface);
+}
+
+.charge-niveau-2 {
+  background: color-mix(in srgb, var(--mat-sys-primary-container) 55%, transparent);
+  color: var(--mat-sys-on-surface);
+}
+
+.charge-niveau-3 {
+  background: color-mix(in srgb, var(--mat-sys-primary-container) 80%, transparent);
+  color: var(--mat-sys-on-primary-container);
+}
+
+.charge-niveau-4 {
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+  font-weight: 700;
+}
+
+/* The span (or day) the map shows: framed, and named by aria-current on its header. */
+.charge-grille th.charge-grille-courante {
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.charge-grille td.charge-grille-courante {
+  box-shadow: inset 0 0 0 2px var(--mat-sys-primary);
+}
+
+.charge-grille-total th,
+.charge-grille-total td {
+  font-weight: 700;
+  border-top-width: 2px;
+}

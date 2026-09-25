@@ -4,6 +4,7 @@ import {
   MarqueurJour,
   buildJourneesCarte,
   comptePastille,
+  siegesPastille,
   etatStandInstant,
   formatMinutes,
   instantCarte,
@@ -329,13 +330,15 @@ function marker(overrides: Partial<MarqueurJour>): MarqueurJour {
 }
 
 describe('comptePastille', () => {
-  it('writes the number of open stands, which is what the badge promises', () => {
-    expect(comptePastille(marker({ etat: 'partiel', ouverts: 2 }))).toBe('2');
+  it('writes the number of people present, which is what the badge promises', () => {
+    expect(comptePastille(marker({ etat: 'partiel', ouverts: 2, pourvus: 5, sieges: 7 }))).toBe(
+      '5',
+    );
   });
 
   it('writes zero on a closed place instead of the number of stands attached to it', () => {
-    // The bug this pins: a place holding three stands, all closed, showed « 3 »
-    // on a grey badge whose own tooltip said no stand was open.
+    // A place holding three stands, all closed, must not show « 3 » on a grey
+    // badge whose own tooltip says no stand is open.
     const ferme = etatStandInstant(
       { standId: 'S1', nom: 'S1', emplacement: null, postes: [] },
       600,
@@ -343,6 +346,11 @@ describe('comptePastille', () => {
     expect(
       comptePastille(marker({ etat: 'ferme', ouverts: 0, stands: [ferme, ferme, ferme] })),
     ).toBe('0');
+  });
+
+  it('writes the planned seats beside the badge, and nothing when there are none', () => {
+    expect(siegesPastille(marker({ sieges: 7 }))).toBe('/7');
+    expect(siegesPastille(marker({ sieges: 0 }))).toBe('');
   });
 
   it('writes nothing on a place holding no stand at all that day', () => {

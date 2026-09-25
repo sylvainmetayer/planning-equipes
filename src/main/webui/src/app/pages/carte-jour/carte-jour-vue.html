@@ -47,9 +47,9 @@
           <li><span class="carte-jour-pastille etat-ferme"></span><ng-container i18n="@@carteJour.legend.ferme">Fermé à cette heure-là</ng-container></li>
           <li><span class="carte-jour-pastille etat-sansStand"></span><ng-container i18n="@@carteJour.legend.sansStand">Aucun stand rattaché ce jour-là</ng-container></li>
         </ul>
-        <p class="empty-hint" i18n="@@carteJour.hint">
-          Le chiffre d'une pastille est le nombre de stands ouverts à cet endroit, sa couleur celle du plus
-          préoccupant. Un clic sur une pastille ou une ligne de la liste met l'emplacement en évidence.
+        <p class="empty-hint" i18n="@@carteJour.hint.presents">
+          Chaque pastille donne les personnes présentes, puis les places prévues ; sa taille suit l'effectif,
+          sa couleur le stand le plus préoccupant. Un clic la met en évidence.
         </p>
 
         <app-carte-jour-map
@@ -57,7 +57,25 @@
           [selection]="selection()"
           [cadrage]="cadrage()"
           [ariaLabel]="carteAriaLabel()"
+          [presentsMax]="presentsMax()"
           (marqueurChoisi)="choisirEmplacement($event)"
+        />
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card appearance="outlined" class="page-card">
+      <mat-card-header>
+        <h2 mat-card-title i18n="@@carteJour.charge.title">Charge par emplacement</h2>
+      </mat-card-header>
+      <mat-card-content>
+        <app-charge-grille
+          [journee]="jour"
+          [journees]="jours()"
+          [emplacements]="emplacements()"
+          [minutes]="minutes()"
+          [(portee)]="charge"
+          (instantChoisi)="choisirInstant($event)"
+          (picChoisi)="choisirPic($event)"
         />
       </mat-card-content>
     </mat-card>

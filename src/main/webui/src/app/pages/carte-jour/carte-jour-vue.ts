@@ -8,6 +8,7 @@ import {
   input,
   linkedSignal,
   model,
+  output,
   signal,
   untracked,
   ViewEncapsulation,
@@ -20,6 +21,8 @@ import { RouterLink } from '@angular/router';
 import { Emplacement, PlanningEvenement } from '../../core/models';
 import { CarteJourMap } from './carte-jour-map';
 import { JourneeCarte, buildJourneesCarte, formatMinutes, instantCarte } from './carte-jour';
+import { ChargeGrille, PicDemande } from './charge-grille';
+import { PorteeCharge, grilleCharge } from './charge-emplacement';
 
 /** Step of the cursor, of the two arrow buttons and of the replay, in minutes. */
 const PAS_MINUTES = 15;
@@ -50,6 +53,7 @@ const CADENCE_MS = 700;
     MatSliderModule,
     RouterLink,
     CarteJourMap,
+    ChargeGrille,
   ],
   templateUrl: './carte-jour-vue.html',
   styleUrl: './carte-jour-vue.css',
@@ -67,7 +71,18 @@ export class CarteJourView {
   readonly stand = input('');
   /** Cursor position in minutes since midnight; null means "the day's opening hour". The `t` query param. */
   readonly minutesSelectionnees = model<number | null>(null, { alias: 't' });
+  /** What the load grid spans: the day, or the whole event. The `charge` query param. */
+  readonly charge = model<PorteeCharge>('jour');
+  /** A click on the event-wide grid asks the page for another day. */
+  readonly jourDemande = output<number>();
   protected readonly lecture = signal(false);
+
+  /**
+   * The instant a click on the event-wide grid asked for, kept until the page
+   * has switched to that day: switching day resets the cursor to the opening,
+   * and this is what the reset lands on instead.
+   */
+  private instantDemande: number | null = null;
 
   private minuterie?: ReturnType<typeof setInterval>;
 
@@ -118,6 +133,11 @@ export class CarteJourView {
     instantCarte(this.jourCourant(), this.minutes(), this.emplacements()),
   );
 
+  /** The fullest place of the day: the scale the markers grow against, stable while the cursor moves. */
+  protected readonly presentsMax = computed(
+    () => grilleCharge(this.jourCourant(), this.emplacements()).presentsMax,
+  );
+
   /** Changes with the day and nothing else: the map re-frames then, never on a cursor step. */
   protected readonly cadrage = computed(() => String(this.jourCourant()?.jour ?? ''));
 
@@ -165,7 +185,8 @@ export class CarteJourView {
       }
       untracked(() => {
         this.stopReplay();
-        this.minutesSelectionnees.set(null);
+        this.minutesSelectionnees.set(this.instantDemande);
+        this.instantDemande = null;
       });
     });
     // The replay must not outlive the view: a view left with the cursor
@@ -179,6 +200,23 @@ export class CarteJourView {
 
   protected decalerCurseur(pas: number): void {
     this.minutesSelectionnees.set(this.minutes() + pas * PAS_MINUTES);
+  }
+
+  /** A cell of the day's load grid: the cursor goes to the start of its span. */
+  protected choisirInstant(minutes: number): void {
+    this.stopReplay();
+    this.minutesSelectionnees.set(minutes);
+  }
+
+  /** A cell of the event-wide grid: that day, at its busiest span. */
+  protected choisirPic(pic: PicDemande): void {
+    this.stopReplay();
+    if (pic.jour === this.jourCourant()?.jour) {
+      this.minutesSelectionnees.set(pic.minutes);
+      return;
+    }
+    this.instantDemande = pic.minutes;
+    this.jourDemande.emit(pic.jour);
   }
 
   protected choisirEmplacement(emplacementId: string): void {
@@ -230,13 +268,17 @@ export class CarteJourView {
   /** Back to the day's opening and to no picked place; the page's reset calls it. */
   reinitialiser(): void {
     this.stopReplay();
+    this.charge.set('jour');
     this.minutesSelectionnees.set(null);
     this.selection.set(null);
   }
 
   /** True as soon as the cursor left the day's opening, or a place was picked. */
   readonly modifiee = computed(
-    () => this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) || this.selection() !== null,
+    () =>
+      this.minutes() !== (this.jourCourant()?.debutMinutes ?? 0) ||
+      this.selection() !== null ||
+      this.charge() !== 'jour',
   );
 
   /** Label of the slider's value bubble. Arrow-function field: the template must not rebuild it each pass. */

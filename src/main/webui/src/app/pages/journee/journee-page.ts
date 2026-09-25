@@ -29,6 +29,7 @@ import { ValidationBanner } from '../../shared/validation-banner';
 import { CalendarDayView } from '../calendar-day/calendar-day-vue';
 import { readInstant } from '../carte-jour/carte-jour';
 import { CarteJourView } from '../carte-jour/carte-jour-vue';
+import { PorteeCharge, readPorteeCharge } from '../carte-jour/charge-emplacement';
 import { PausesView } from '../pauses/pauses-vue';
 import { ChangementsReading, readReading, readReference } from './changements';
 import { ChangementsView } from './changements-vue';
@@ -122,6 +123,7 @@ export class JourneePage implements OnInit {
   /* The views' own state, read from the URL here and handed over two-way. */
   protected readonly lignesRail = signal<RailVue>('tous');
   protected readonly instantCarte = signal<number | null>(null);
+  protected readonly chargeCarte = signal<PorteeCharge>('jour');
   protected readonly withoutRelais = signal(false);
   protected readonly coupuresManquantes = signal(false);
   protected readonly seulementProblemes = signal(false);
@@ -241,6 +243,7 @@ export class JourneePage implements OnInit {
       this.animateur() !== '' ||
       this.lignesRail() !== 'tous' ||
       this.instantCarte() !== null ||
+      this.chargeCarte() !== 'jour' ||
       this.withoutRelais() ||
       this.coupuresManquantes() ||
       this.seulementProblemes() ||
@@ -275,6 +278,7 @@ export class JourneePage implements OnInit {
     this.animateur.set(params.get('animateur') ?? '');
     this.lignesRail.set(RailJourView.readLignes(params.get('lignes')));
     this.instantCarte.set(readInstant(params.get('t')));
+    this.chargeCarte.set(readPorteeCharge(params.get('charge')));
     this.withoutRelais.set(params.get('relais') === 'sans');
     this.coupuresManquantes.set(params.get('repas') === 'manquantes');
     this.seulementProblemes.set(params.get('problemes') === '1');
@@ -299,6 +303,7 @@ export class JourneePage implements OnInit {
       animateur: optionalParam(this.animateur()),
       lignes: this.lignesRail() === 'tous' ? null : this.lignesRail(),
       t: this.instantCarte() === null ? null : String(this.instantCarte()),
+      charge: this.chargeCarte() === 'jour' ? null : this.chargeCarte(),
       relais: this.withoutRelais() ? 'sans' : null,
       repas: this.coupuresManquantes() ? 'manquantes' : null,
       problemes: this.seulementProblemes() ? '1' : null,
@@ -376,6 +381,14 @@ export class JourneePage implements OnInit {
     this.navigation.select(key);
   }
 
+  /** The map's event-wide load grid asks for another day, by its number. */
+  protected selectJourNumero(numero: number): void {
+    const jour = this.jours().find((candidat) => candidat.jour === numero);
+    if (jour) {
+      this.navigation.select(jour.key);
+    }
+  }
+
   protected decalerJour(delta: number): void {
     const jours = this.jours();
     const index = jours.findIndex((jour) => jour.key === this.jourCourant()?.key);
@@ -391,6 +404,7 @@ export class JourneePage implements OnInit {
     this.animateur.set('');
     this.lignesRail.set('tous');
     this.instantCarte.set(null);
+    this.chargeCarte.set('jour');
     this.withoutRelais.set(false);
     this.coupuresManquantes.set(false);
     this.seulementProblemes.set(false);

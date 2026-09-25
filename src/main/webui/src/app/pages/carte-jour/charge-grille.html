@@ -1,0 +1,57 @@
+<div class="charge-grille-entete">
+  <mat-button-toggle-group
+    [value]="portee()"
+    (change)="changerPortee($event.value)"
+    i18n-aria-label="@@carteJour.charge.portee.label"
+    aria-label="Étendue de la grille de charge"
+    data-test="charge-portee">
+    <mat-button-toggle value="jour" i18n="@@carteJour.charge.portee.jour">Cette journée</mat-button-toggle>
+    <mat-button-toggle value="evenement" i18n="@@carteJour.charge.portee.evenement">Tout l'événement</mat-button-toggle>
+  </mat-button-toggle-group>
+  <p class="empty-hint charge-grille-legende">{{ legende() }}</p>
+</div>
+
+@if (lignes().length === 0) {
+  <p class="empty-hint" i18n="@@carteJour.charge.empty">Aucune place prévue ce jour-là : rien à compter.</p>
+} @else {
+  <div class="table-wrapper">
+    <table class="charge-grille" role="grid" data-test="charge-grille">
+      <caption class="visually-hidden">{{ caption() }}</caption>
+      <thead>
+        <tr>
+          <th scope="col" class="charge-grille-lieu" i18n="@@carteJour.charge.column.emplacement">Emplacement</th>
+          @for (colonne of colonnes(); track colonne.cle) {
+            <th scope="col" [class.charge-grille-courante]="colonne.courante"
+                [attr.aria-current]="colonne.courante ? 'time' : null">{{ colonne.libelle }}</th>
+          }
+        </tr>
+      </thead>
+      <tbody>
+        @for (ligne of lignes(); track ligne.cle; let indexLigne = $index) {
+          <tr [class.charge-grille-total]="ligne.total">
+            <th scope="row" class="charge-grille-lieu">
+              {{ ligne.nom }}
+              @if (ligne.note) {
+                <span class="charge-grille-note">({{ ligne.note }})</span>
+              }
+            </th>
+            @for (cellule of ligne.cellules; track cellule.cle; let indexColonne = $index) {
+              <td
+                class="charge-grille-cellule"
+                [class]="'charge-niveau-' + cellule.niveau"
+                [class.charge-grille-courante]="cellule.courante"
+                [attr.data-ligne]="indexLigne"
+                [attr.data-colonne]="indexColonne"
+                [tabindex]="isFocusedCell(indexLigne, indexColonne) ? 0 : -1"
+                (focus)="focusedCell.set({ ligne: indexLigne, colonne: indexColonne })"
+                (keydown)="onCellKeydown($event, indexLigne, indexColonne)"
+                (click)="openCell(indexLigne, indexColonne)"
+                [attr.aria-label]="cellule.aria"
+              >{{ cellule.texte }}</td>
+            }
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+}
