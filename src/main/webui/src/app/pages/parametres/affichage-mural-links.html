@@ -1,0 +1,126 @@
+<mat-card appearance="outlined" class="page-card">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@parametres.mural.title">Affichage mural</h2>
+    <mat-card-subtitle i18n="@@parametres.mural.subtitle">
+      Un lien pour la TV de la salle de contrôle : lecture seule, sans session admin, révocable.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <form class="form-grid" (ngSubmit)="create()">
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.mural.libelle">Libellé</mat-label>
+        <input matInput name="libelle" maxlength="120" required [(ngModel)]="libelle" />
+        <mat-hint i18n="@@parametres.mural.libelleAide">Par exemple « TV PC sécurité ».</mat-hint>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline" subscriptSizing="dynamic">
+        <mat-label i18n="@@parametres.mural.emplacements">Emplacements affichés</mat-label>
+        <mat-select name="emplacements" multiple [(ngModel)]="emplacements">
+          @for (emplacement of referenceData.emplacements(); track emplacement.id) {
+            <mat-option [value]="emplacement.id">{{ emplacement.nom }}</mat-option>
+          }
+        </mat-select>
+        <mat-hint i18n="@@parametres.mural.emplacementsAide">Aucun : toute l'édition.</mat-hint>
+      </mat-form-field>
+
+      <mat-slide-toggle name="fullNames" [(ngModel)]="fullNames" i18n="@@parametres.mural.nomsComplets">
+        Afficher les noms complets (sinon prénom et initiale)
+      </mat-slide-toggle>
+
+      <div>
+        <button matButton="filled" type="submit" [disabled]="busy() || !libelle.trim()">
+          <mat-icon>add_link</mat-icon>
+          <ng-container i18n="@@parametres.mural.creer">Créer le lien</ng-container>
+        </button>
+      </div>
+    </form>
+
+    @if (created(); as lien) {
+      <section class="mural-lien-cree" aria-live="polite">
+        <h3 i18n="@@parametres.mural.creeTitre">Lien « {{ lien.libelle }} »</h3>
+        <p class="locked-hint" i18n="@@parametres.mural.uneFois">
+          Cette adresse ne sera plus affichée : copiez-la maintenant.
+        </p>
+        <div class="mural-lien-adresse">
+          <code>{{ lien.url }}</code>
+          <button matButton type="button" (click)="copy(lien.url)">
+            <mat-icon>content_copy</mat-icon>
+            <ng-container i18n="@@parametres.mural.copier">Copier</ng-container>
+          </button>
+        </div>
+        @if (lien.qr; as qr) {
+          <svg
+            class="mural-lien-qr"
+            role="img"
+            aria-label="QR code du lien"
+            i18n-aria-label="@@parametres.mural.qrLabel"
+            [attr.viewBox]="'-2 -2 ' + (qr.size + 4) + ' ' + (qr.size + 4)"
+            shape-rendering="crispEdges"
+          >
+            <rect x="-2" y="-2" [attr.width]="qr.size + 4" [attr.height]="qr.size + 4" fill="#fff" />
+            <path [attr.d]="cheminQr(qr)" fill="#000" />
+          </svg>
+        }
+      </section>
+    }
+
+    @if (liens().length === 0) {
+      <p class="locked-hint" i18n="@@parametres.mural.aucun">Aucun lien actif.</p>
+    } @else {
+      <div class="table-wrapper">
+        <table mat-table [dataSource]="liens()">
+          <ng-container matColumnDef="libelle">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colLibelle">Libellé</th>
+            <td mat-cell *matCellDef="let lien">{{ lien.libelle }}</td>
+          </ng-container>
+          <ng-container matColumnDef="noms">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colNoms">Noms</th>
+            <td mat-cell *matCellDef="let lien">
+              @if (lien.fullNames) {
+                <ng-container i18n="@@parametres.mural.nomsCompletsCourt">Complets</ng-container>
+              } @else {
+                <ng-container i18n="@@parametres.mural.nomsAbreges">Prénom et initiale</ng-container>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="emplacements">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colEmplacements">Emplacements</th>
+            <td mat-cell *matCellDef="let lien">{{ emplacementsOf(lien) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colCreeLe">Créé le</th>
+            <td mat-cell *matCellDef="let lien">{{ lien.createdAt | date: 'short' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="lastAccessAt">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colDernierAcces">Dernier accès</th>
+            <td mat-cell *matCellDef="let lien">
+              @if (lien.lastAccessAt) {
+                {{ lien.lastAccessAt | date: 'short' }}
+              } @else {
+                <ng-container i18n="@@parametres.mural.jamais">Jamais</ng-container>
+              }
+            </td>
+          </ng-container>
+          <ng-container matColumnDef="actions">
+            <th mat-header-cell scope="col" *matHeaderCellDef i18n="@@parametres.mural.colActions">Actions</th>
+            <td mat-cell *matCellDef="let lien">
+              <button
+                matIconButton
+                type="button"
+                (click)="revoquer(lien)"
+                aria-label="Révoquer le lien"
+                i18n-aria-label="@@parametres.mural.revoquerAria"
+                matTooltip="Révoquer"
+                i18n-matTooltip="@@parametres.mural.revoquer"
+              >
+                <mat-icon>link_off</mat-icon>
+              </button>
+            </td>
+          </ng-container>
+          <tr mat-header-row *matHeaderRowDef="colonnes"></tr>
+          <tr mat-row *matRowDef="let row; columns: colonnes"></tr>
+        </table>
+      </div>
+    }
+  </mat-card-content>
+</mat-card>

@@ -27,7 +27,7 @@ import org.openpdf.text.pdf.PdfPTable;
  * squares, and drawing them keeps it sharp at any zoom and at any printer's
  * resolution, where an embedded bitmap would have to guess one.</p>
  */
-final class QrCodeEspace {
+public final class QrCodeEspace {
 
     /**
      * Correction level M — a quarter of the code may be lost and still read.
@@ -46,7 +46,7 @@ final class QrCodeEspace {
      * or the encoder refuses it — a document is still worth producing without
      * its QR code.
      */
-    static BitMatrix matrice(String lien) {
+    public static BitMatrix matrix(String lien) {
         if (lien == null || lien.isBlank()) {
             return null;
         }
@@ -72,7 +72,7 @@ final class QrCodeEspace {
      * without a code rather than without a link.
      */
     static PdfPTable bloc(String lien, float cote, Color encre) {
-        BitMatrix matrice = matrice(lien);
+        BitMatrix matrice = matrix(lien);
         if (matrice == null) {
             return null;
         }

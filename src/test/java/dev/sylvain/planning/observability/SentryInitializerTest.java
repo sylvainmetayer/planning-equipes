@@ -29,6 +29,16 @@ class SentryInitializerTest {
     }
 
     @Test
+    void masksTheWallDisplayTokenButNotTheAdminLinkId() {
+        assertThat(SentryInitializer.maskToken("GET /api/mural/Zx9-tok failed"))
+                .isEqualTo("GET /api/mural/<jeton> failed");
+        assertThat(SentryInitializer.maskToken("https://planning.example.org/mural/Zx9-tok"))
+                .isEqualTo("https://planning.example.org/mural/<jeton>");
+        assertThat(SentryInitializer.maskToken("DELETE /api/affichage-mural/12"))
+                .isEqualTo("DELETE /api/affichage-mural/12");
+    }
+
+    @Test
     void laisseIntactCeQuiNePorteAucunJeton() {
         assertThat(SentryInitializer.maskToken("Connexion à la base perdue")).isEqualTo("Connexion à la base perdue");
         assertThat(SentryInitializer.maskToken((String) null)).isNull();

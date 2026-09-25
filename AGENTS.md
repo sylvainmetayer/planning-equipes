@@ -186,6 +186,12 @@ Single Quarkus service, no separate solver microservice. Package root:
     against the last published plan or the pre-solve automatique snapshot,
     seat by seat on the natural key (stand, day, hours — ADR 0025) and person
     by person through `PublicationDiffService`, never a comparison of its own.
+  - `service/mural/` — the wall display of the control room (ADR 0053):
+    `AffichageMuralService` manages the links (a token handed out once,
+    stored as its SHA-256) and builds the view a token opens, on the
+    persisted plan and `JourJClock`, through the pure
+    `AffichageMuralViewBuilder` — the day under way, the shifts of each open
+    stand, the alerts.
   - `service/profile/` — the fiche 360° of one animateur
     (`AnimateurProfileService`): an assembler over `EquiteService`,
     `FragiliteAnalyzer`, `ConfirmationPlanningService` and the referential,
@@ -309,8 +315,8 @@ Single Quarkus service, no separate solver microservice. Package root:
 - HTTP security (issue #165): everything under `/api` requires the admin form
   login (single `admin` account from config) **except**
   `/api/espace-animateur/*` (its URL token is the credential and resolves the
-  edition by itself), `/api/abonnements/*`, `/api/auth/*` and `/api/config`;
-  `/mcp` keeps its own API-key mechanism.
+  edition by itself), `/api/abonnements/*`, `/api/mural/*`, `/api/auth/*` and
+  `/api/config`; `/mcp` keeps its own API-key mechanism.
   **`/api/abonnements/{token}/planning.ics` is the one route a URL alone
   opens** (issue #324): a calendar client subscribed to a feed carries no
   cookie and cannot answer a challenge, so the espace's e-mail-code session is
@@ -321,17 +327,24 @@ Single Quarkus service, no separate solver microservice. Package root:
   and do not bind `@AbonnementTokenRequired` to a second route: the perimeter
   of that token is "one document, read-only", and it is readable only as long
   as one route carries it. See
-  `docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md`. An **opt-in** header mode (`planning.auth.remote-user.*`,
+  `docs/decisions/0019-jeton-et-chemin-dedies-pour-l-abonnement-ics.md`.
+  **`/api/mural/{token}` is the second one**, on the same reasoning (ADR 0053):
+  the control room's television reads it every minute with a third token,
+  stored hashed in `lien_affichage_mural`, created and revoked by the admin,
+  good for that one read of one edition. The same two rules hold — the prefix
+  names that route alone, and `AffichageMuralSecurityTest` asserts the token
+  opens nothing else. An **opt-in** header mode (`planning.auth.remote-user.*`,
   off by default) lets an access proxy assert an already-authenticated
   address: `admin-email` gets the admin role, any other recognised address is
   an animateur whose espace opens without the e-mail code. It refuses to boot
   without a shared secret — a header is a claim, not a proof. Hardening for an
   Internet-facing deployment — browser security headers
-  (`SecurityHeadersFilter`), HTTP limits, the three rate limiters
+  (`SecurityHeadersFilter`), HTTP limits, the four rate limiters
   (`AdminLoginLimiter` on `/j_security_check`,
   `CodeRequestLimiter` on the espace access codes, `McpRateLimiter` on the
   `/mcp` transport, which carries two guards of its own — a rate ceiling on
-  every request and a lockout on a run of refused keys; the two address-keyed
+  every request and a lockout on a run of refused keys —, and
+  `AffichageMuralRateLimiter` on `/api/mural/`; the three address-keyed
   classes share `ClientAddress`, which reads `X-Forwarded-For` from the right
   and is the half that makes any of them count anything), the production compose
   stack and what is left to the reverse proxy — lives in `docs/securite.md`;

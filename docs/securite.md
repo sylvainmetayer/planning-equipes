@@ -17,7 +17,7 @@ compris — les en-têtes suivants :
 | En-tête | Valeur | Pourquoi ici |
 | --- | --- | --- |
 | `Content-Security-Policy` | `planning.securite.csp` (voir ci-dessous) | Le SPA ne charge aucun script tiers hormis la balise Cloudflare Web Analytics : tout ce qui serait injecté dans une page est refusé à l'exécution |
-| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur **et** celui de l'abonnement ICS voyagent **dans l'URL** ; sans cet en-tête ils partent dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
+| `Referrer-Policy` | `no-referrer` | Le jeton de l'espace animateur, celui de l'abonnement ICS **et** celui de l'affichage mural voyagent **dans l'URL** ; sans cet en-tête ils partent dans le `Referer` de chaque navigation sortante (lien d'attribution OpenStreetMap, lien vers le dépôt). Une exception pour les tuiles, ci-dessous |
 | `X-Frame-Options` | `DENY` | Rien n'est prévu pour être encadré, et détourner un clic dans une session qui peut réécrire tout le planning n'a pas de contrepartie |
 | `Cross-Origin-Opener-Policy` | `same-origin` | Isole la fenêtre de tout `window.opener` ouvert depuis un autre site |
 | `X-Content-Type-Options` | `nosniff` | Les exports (PDF, ICS, SQL, CSV) sont servis avec leur type ; qu'un navigateur en devine un autre n'apporte rien |
@@ -483,6 +483,96 @@ Côté application, la même exception est déclarée dans `application.properti
 (`quarkus.http.auth.permission.abonnement-ics`), et `AuthentificationAdminTest`
 vérifie à la fois qu'elle s'applique et qu'elle **ne déborde pas** du préfixe.
 
+## Affichage mural : un troisième jeton, pour un écran sans surveillance
+
+`GET /api/mural/{jeton}` est la route que lit la TV de la salle de contrôle, et
+la **seule** sous le préfixe `/api/mural/`, exempté de l'authentification admin
+comme l'est `/api/abonnements/`. Le raisonnement est celui de l'abonnement ICS,
+appliqué à un écran : une TV reste allumée des jours dans une pièce où passent
+des bénévoles, et une session admin laissée dessus — prolongée par le
+rafraîchissement de l'écran lui-même — y donnerait l'écriture sur tout le
+planning. Voir la
+[décision 0053](decisions/0053-affichage-mural-par-jeton-dedie.md).
+
+### Ce qu'il permet, exactement
+
+Une lecture, pour **une** édition : les stands ouverts du jour, qui les tient
+(prénom et initiale du nom, ou nom complet si le lien a été créé ainsi), les
+places libres, les pauses sans relais et la consigne du jour. Rien d'autre : pas
+le référentiel, pas les exports, pas l'espace animateur, aucune écriture. Ni
+téléphone, ni e-mail, ni âge, ni motif d'absence. Le jeton ne fonctionne sur
+aucune autre route, et un jeton d'espace ou d'abonnement ne fonctionne pas sur
+celle-ci : `AffichageMuralSecurityTest` le vérifie sous la vraie politique
+d'authentification.
+
+### Création, stockage, révocation
+
+L'administrateur crée les liens depuis **Paramètres → Affichage mural**, avec un
+libellé, l'option des noms complets et, au besoin, les emplacements affichés
+(une TV par zone). Le jeton — 256 bits d'aléa — n'est montré **qu'une fois**, à
+la création : la base n'en garde que l'empreinte SHA-256, comme les sessions de
+l'espace. Une copie de la base ne rouvre donc aucun écran, et une adresse perdue
+se remplace par un nouveau lien. La liste montre la date du dernier accès, à la
+minute près. Révoquer coupe l'écran à sa lecture suivante ; supprimer l'édition
+emporte ses liens. Un jeton inconnu et un jeton révoqué reçoivent le même `404`,
+avec la même phrase. Création et révocation sont journalisées ; les lectures ne
+le sont pas — une par minute et par écran n'est pas une trace.
+
+Les liens ne voyagent ni dans l'export SQL ni dans la duplication d'une édition :
+ce sont des accès de cette instance, pas des données du jeu. Revers attendu :
+**importer un dump SQL les supprime tous**, puisque l'import vide les éditions et
+que les liens partent avec elles en cascade — y compris pour une édition que le
+dump recrée à l'identique. Les liens se recréent depuis Paramètres après chaque
+import, et chaque TV se rouvre sur sa nouvelle adresse.
+
+### Débit, cache et journaux
+
+`AffichageMuralRateLimiter` porte deux gardes, et aucune ne compte les
+lectures valides d'une adresse :
+
+- **les lectures refusées, par adresse.** Seul un `404` — jeton inconnu ou
+  révoqué — compte. Au-delà du plafond, l'adresse reçoit `429` avec un
+  `Retry-After` pour tout jeton qu'elle n'a pas déjà lu avec succès, jusqu'à une
+  fenêtre après son dernier refus : essayer des jetons coûte du temps, et ne
+  touche plus la base ;
+- **les lectures, par lien valide** : un plafond large, qui borne ce qu'une
+  adresse fuitée peut tirer, un lien pouvant être ouvert sur plusieurs écrans.
+
+Un jeton déjà servi (retenu en mémoire par son empreinte, jamais en clair)
+passe donc même quand son adresse est verrouillée : du bruit venu de la même
+adresse ne coupe jamais un écran. C'est ce qui compte **derrière un proxy non
+déclaré** — `CONNEXION_PROXYS_FIABLES` vide, le défaut —, où toutes les requêtes
+portent l'adresse du proxy : un plafond sur toutes les requêtes laissait trente
+requêtes au hasard par minute, venues de n'importe où, éteindre toutes les TV de
+l'événement. Ce que la déclaration des proxys garde nécessaire : sans elle, un
+tel bruit verrouille l'adresse partagée, et un écran **nouveau** — ou le premier
+affichage après un redémarrage, qui vide la mémoire — attend la fin de la
+fenêtre. L'adresse se lit comme pour les autres plafonds.
+
+| Variable | Défaut | Usage |
+| --- | --- | --- |
+| `AFFICHAGE_MURAL_MAX_REFUS` | `30` | Lectures refusées tolérées par adresse avant le verrou ; `0` le coupe |
+| `AFFICHAGE_MURAL_MAX_LECTURES_PAR_LIEN` | `120` | Lectures servies par lien et par fenêtre ; `0` coupe le plafond |
+| `AFFICHAGE_MURAL_FENETRE` | `PT1M` | Durée du verrou (depuis le dernier refus) et de la fenêtre par lien |
+
+La réponse porte `Cache-Control: no-store` (elle nomme des personnes et change
+chaque minute) et, comme toutes les réponses, `X-Robots-Tag: noindex`. Le jeton
+voyage dans le chemin et revient **toutes les minutes** dans les journaux
+d'accès du reverse proxy : mêmes précautions que pour l'abonnement (voir la
+dernière section). Côté application, il ne part chez aucun tiers : la page
+`/mural/*` ne charge pas le beacon Cloudflare, et les rapports d'erreur des deux
+côtés remplacent le jeton de `/mural/…` et de `/api/mural/…` par `<jeton>`,
+comme celui de l'espace (`observabilite.md`).
+
+### La règle côté proxy d'accès
+
+| À configurer | Valeur |
+| --- | --- |
+| Exception d'authentification | `/api/mural/*` — et **ce préfixe seul**, en plus de la route SPA `/mural/*` qui ne porte aucune donnée |
+| Ce qu'il ne faut pas faire | élargir l'exception à `/api/affichage-mural/*` : c'est la gestion des liens, réservée à l'admin |
+
+Côté application : `quarkus.http.auth.permission.affichage-mural`.
+
 ## Analyse statique : les suppressions et leur justification
 
 Le job `code` de `securite.yml` (Semgrep OSS) fait échouer la CI sur toute
@@ -560,10 +650,10 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 | À faire | Pourquoi |
 | --- | --- |
 | Terminer le TLS et rediriger tout le trafic http vers https | HSTS et le flag `Secure` du cookie de l'espace ne s'activent que sur une visite HTTPS |
-| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, les deux plafonds par adresse ignorent `X-Forwarded-For` et comptent tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. **Obligatoire dès que `/mcp` sert** : ce plafond-là compte chaque requête, pas les seuls échecs. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
+| **Renseigner `CONNEXION_PROXYS_FIABLES`** avec les adresses de vos proxys inverses (littérales ou blocs CIDR) | Sans elle, les deux plafonds par adresse ignorent `X-Forwarded-For` et comptent tous les visiteurs derrière le proxy sur un seul compteur — sûr, mais le premier attaquant venu verrouille tout le monde. **Obligatoire dès que `/mcp` sert** : ce plafond-là compte chaque requête, pas les seuls échecs. **Obligatoire aussi dès qu'un lien d'affichage mural existe** : sans elle, quelques requêtes au hasard verrouillent l'adresse du proxy, et un écran nouvellement branché — ou relancé après un redémarrage de l'application — n'affiche rien jusqu'à la fin du verrou. `QUARKUS_HTTP_PROXY_TRUSTED_PROXIES` ne remplace pas ce réglage : il décide si l'en-tête est lu, jamais quel élément est retenu |
 | **Rendre l'origine injoignable autrement que par le proxy** (pare-feu, réseau) | Sans cela, `X-Forwarded-Proto` reste forgeable, et un attaquant qui joint l'origine directement est compté sur sa vraie adresse — ce qui est correct, mais le prive du bénéfice de la liste ci-dessus |
-| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP) ; le reste — exports, résolution, API — n'en a pas |
-| Journaliser sans les URL de l'espace animateur **ni celles de l'abonnement ICS**, ou purger ces journaux | Les deux jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, et l'abonnement y revient à chaque synchronisation d'un agenda |
+| Limiter le débit par adresse IP sur tout le site | Les plafonds de l'application sont ciblés (connexion admin, codes de l'espace, serveur MCP, affichage mural) ; le reste — exports, résolution, API — n'en a pas |
+| Journaliser sans les URL de l'espace animateur, **de l'abonnement ICS ni de l'affichage mural**, ou purger ces journaux | Les trois jetons voyagent **dans le chemin** : ils atterrissent tels quels dans les journaux d'accès, l'abonnement y revient à chaque synchronisation d'un agenda et l'affichage mural chaque minute |
 | Ne jamais router le port 9000 (métriques), ni le publier sur l'hôte | Il n'a pas d'authentification : il est protégé par le réseau, pas par un mot de passe. Un scraper hors de la pile passe par un tunnel ou un réseau privé, pas par le proxy public |
 | Réserver `/q/health/*` à la source de la supervision, si elle est connue | Rien de sensible n'y est lu, mais une sonde n'a pas à être joignable par le monde entier ; le `healthcheck` du compose passe par la boucle locale et n'en dépend pas |
 | Ne pas réintroduire le site dans un index (page d'accueil du proxy, sitemap, annuaire interne) | L'application dit trois fois qu'elle ne veut pas être référencée (voir ci-dessus) ; un lien depuis une page publique, lui, se remarque |
@@ -579,6 +669,8 @@ L'application ne peut pas s'en occuper à sa place, et ces points sont des
 - [ ] `PLANNING_MCP_API_KEY` laissée vide tant que le serveur MCP ne sert à
       personne — vide, `/mcp` répond `401` à tout ; renseignée, elle appelle
       `CONNEXION_PROXYS_FIABLES` avec elle (voir ci-dessus) ;
+- [ ] `CONNEXION_PROXYS_FIABLES` renseignée avant de créer un lien
+      d'affichage mural, derrière un proxy (voir ci-dessus) ;
 - [ ] `REMOTE_USER_ENABLED` laissé à `false` sauf déploiement derrière un
       proxy d'accès, auquel cas `REMOTE_USER_SECRET` est obligatoire (le
       démarrage échoue sans lui) ;

@@ -13,8 +13,8 @@ vi.mock('@sentry/angular', () => sentry);
 import {
   initObservability,
   loadAppConfig,
-  masquerJetonEspace,
-  masquerJetonPartout,
+  maskUrlToken,
+  maskTokensEverywhere,
 } from './observability';
 import { AppConfig } from './models';
 
@@ -122,6 +122,15 @@ describe('initObservability', () => {
     );
   });
 
+  it('never injects Cloudflare Web Analytics on a page carrying a token', async () => {
+    for (const path of ['/animateur/abc123', '/mural/abc123']) {
+      history.replaceState(null, '', path);
+      await initObservability({ ...CONFIG, sentryDsn: '' });
+      expect(document.head.querySelector('script[data-cf-beacon]')).toBeNull();
+    }
+    history.replaceState(null, '', '/');
+  });
+
   it('does not inject duplicate Cloudflare scripts', async () => {
     const config = { ...CONFIG, sentryDsn: '' };
 
@@ -132,34 +141,45 @@ describe('initObservability', () => {
   });
 });
 
-describe('masquerJetonEspace', () => {
-  it('remplace le jeton d’un lien d’espace, où qu’il apparaisse dans l’URL', () => {
-    expect(masquerJetonEspace('https://planning.example.org/animateur/a1b2c3d4/echanges')).toBe(
+describe('maskUrlToken', () => {
+  it('replaces the token of an espace link, wherever it appears in the URL', () => {
+    expect(maskUrlToken('https://planning.example.org/animateur/a1b2c3d4/echanges')).toBe(
       'https://planning.example.org/animateur/<jeton>/echanges',
     );
     // Les appels d'API portent le même jeton et atterrissent dans les fils
     // d'Ariane du rapport d'erreur : les masquer aussi, sinon le premier
     // masquage ne sert à rien.
-    expect(masquerJetonEspace('/api/espace-animateur/a1b2c3d4/postes')).toBe(
+    expect(maskUrlToken('/api/espace-animateur/a1b2c3d4/postes')).toBe(
       '/api/espace-animateur/<jeton>/postes',
     );
   });
 
-  it('laisse intacte une URL qui ne porte aucun jeton', () => {
-    expect(masquerJetonEspace('/mentions-legales')).toBe('/mentions-legales');
+  it('leaves a URL carrying no token untouched', () => {
+    expect(maskUrlToken('/mentions-legales')).toBe('/mentions-legales');
+    // The admin routes of the wall links carry an id, not a token.
+    expect(maskUrlToken('/api/affichage-mural/12')).toBe('/api/affichage-mural/12');
   });
 
-  it('masque chaque occurrence d’un message qui en contient plusieurs', () => {
+  it('replaces the token of a wall-display link, page and API call alike', () => {
+    expect(maskUrlToken('https://planning.example.org/mural/Zx9-tok')).toBe(
+      'https://planning.example.org/mural/<jeton>',
+    );
+    expect(maskUrlToken('GET /api/mural/Zx9-tok?x=1 failed')).toBe(
+      'GET /api/mural/<jeton>?x=1 failed',
+    );
+  });
+
+  it('masks every occurrence of a message carrying several', () => {
     // Un fil d'Ariane peut concaténer plusieurs URL : en laisser passer une
     // seule suffirait à identifier la personne.
-    expect(masquerJetonEspace('/animateur/aaa -> /animateur/bbb?x=1')).toBe(
+    expect(maskUrlToken('/animateur/aaa -> /animateur/bbb?x=1')).toBe(
       '/animateur/<jeton> -> /animateur/<jeton>?x=1',
     );
   });
 });
 
-describe('masquerJetonPartout', () => {
-  it('masque un fil d’Ariane de navigation, dont les champs ne s’appellent pas « url »', () => {
+describe('maskTokensEverywhere', () => {
+  it('masks a navigation breadcrumb, whose fields are not called « url »', () => {
     // Une navigation interne à l'espace produit `data.from` / `data.to` : ne
     // masquer que `data.url` laissait passer le jeton à chaque changement de page.
     const breadcrumb = {
@@ -167,13 +187,13 @@ describe('masquerJetonPartout', () => {
       data: { from: '/animateur/a1b2c3', to: '/animateur/a1b2c3/echanges' },
     };
 
-    expect(masquerJetonPartout(breadcrumb).data).toEqual({
+    expect(maskTokensEverywhere(breadcrumb).data).toEqual({
       from: '/animateur/<jeton>',
       to: '/animateur/<jeton>/echanges',
     });
   });
 
-  it('masque le message d’exception, là où atterrit l’erreur la plus fréquente', () => {
+  it('masks the exception message, where the most frequent error lands', () => {
     // Angular formule ses échecs HTTP ainsi : c'est l'erreur la plus probable
     // dans l'espace animateur, et elle porte l'URL appelée.
     const event = {
@@ -188,14 +208,14 @@ describe('masquerJetonPartout', () => {
       },
     };
 
-    expect(masquerJetonPartout(event).exception.values[0].value).toBe(
+    expect(maskTokensEverywhere(event).exception.values[0].value).toBe(
       'Http failure response for /api/espace-animateur/<jeton>/postes: 500 Server Error',
     );
   });
 
-  it('laisse le reste du rapport intact', () => {
+  it('leaves the rest of the report untouched', () => {
     const event = { level: 'error', extra: { compteur: 3, actif: true, vide: null } };
-    expect(masquerJetonPartout(event)).toEqual({
+    expect(maskTokensEverywhere(event)).toEqual({
       level: 'error',
       extra: { compteur: 3, actif: true, vide: null },
     });

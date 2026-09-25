@@ -40,9 +40,10 @@ Le verrou « un solveur à la fois » reste, lui, **global à l'instance**.
 
 ## Authentification
 
-Toute l'API est réservée à la session admin, avec cinq exceptions
+Toute l'API est réservée à la session admin, avec six exceptions
 volontaires : l'espace animateur (le jeton d'URL est la clé), l'abonnement ICS
-(`/api/abonnements/*`, voir plus bas), les routes de
+(`/api/abonnements/*`, voir plus bas), l'affichage mural (`/api/mural/*`, voir
+[Affichage mural](#affichage-mural)), les routes de
 session, `/api/config` et `/api/branding` — lus par le frontend avant son
 démarrage, page de connexion comprise — et `/api/mentions-legales`. Un appel
 non authentifié répond **401, jamais une redirection HTML**.
@@ -1553,6 +1554,54 @@ un réglage qui vit dans un processus disparaît au premier rechargement à chau
 Quand il est actif, la barre d'outils porte une icône d'avertissement sur tous
 les écrans, dont le lien mène directement au champ ; celle de l'espace animateur
 affiche la date figée, sans lien.
+
+## Affichage mural
+
+L'écran de la salle de contrôle (`/mural/:jeton`) lit `GET /api/mural/{jeton}`
+toutes les minutes, sans session : le jeton est la clé, et il n'ouvre que cette
+lecture ([décision 0053](decisions/0053-affichage-mural-par-jeton-dedie.md),
+[`securite.md`](securite.md)). Les liens se gèrent sous `/api/affichage-mural`,
+derrière la session admin.
+
+- **Le jeton n'est rendu qu'une fois**, dans la réponse `201` de la création :
+  la base n'en garde que l'empreinte, et la liste des liens ne le porte jamais.
+  Le QR code se demande donc **au moment de la création**
+  (`POST /api/affichage-mural/qr-code`, une grille de modules que l'écran dessine
+  en SVG, sans dépendance ajoutée) — plus tard, il n'y a plus d'adresse à coder.
+- **Un jeton inconnu et un jeton révoqué répondent le même `404`**, au mot près.
+- **Le plan lu est le plan persisté**, pas le plan publié : un remplacement du
+  Mode jour J apparaît à la lecture suivante, sans republication. Pendant une
+  résolution, c'est le dernier plan enregistré qui s'affiche.
+- **« Maintenant » est l'heure du serveur** (`JourJClock`, date figée comprise),
+  et la journée affichée suit la règle du Mode jour J : celle dont le premier
+  créneau a commencé et le dernier n'est pas fini — à 1 h du matin, la vacation
+  22 h–2 h est encore celle de la veille, et toujours « en cours ».
+- **Toute la journée voyage**, pas seulement la vacation en cours et la
+  suivante : l'écran choisit les deux contre `now`, qu'il avance du temps
+  écoulé depuis la lecture — une vacation se termine à l'écran à sa minute, sans
+  attendre la lecture suivante, et l'horloge de la TV n'est jamais lue. La
+  version imprimable (`?impression=1`) montre la journée entière.
+- **Une vacation, ce sont les sièges d'un stand qui partagent la même fenêtre**
+  (les heures effectives du siège) ; une fin qui n'est pas après le début tombe
+  le lendemain.
+- **Alertes** : les places libres d'une vacation en cours ou qui commence dans
+  les deux heures, et les pauses sans relais du jour pas encore finies — lues
+  dans le même rapport que l'écran Pauses. Ce rapport donne une pause en heures
+  nues : une pause plus tôt que le début de la séquence qui la porte tombe le
+  lendemain (la pause de 1 h d'une vacation 22 h–4 h), comme dans le PDF et le
+  flux ICS.
+- **Une consigne « jusqu'à minuit » n'a pas de fin** : `closedUntil` est alors
+  `null`, et l'écran écrit « minuit ».
+- **Un lien restreint à des emplacements le reste** : si ses emplacements sont
+  supprimés, l'écran n'affiche plus rien, jamais toute l'édition sans prévenir.
+- `lastAccessAt` est tamponné **au plus une fois par minute** : il dit qu'un
+  écran lit, pas combien de fois.
+- **Importer un dump SQL supprime tous les liens d'affichage mural.** Ils ne
+  voyagent pas dans l'export, et l'import vide la table `edition` : la
+  suppression en cascade emporte les liens de chaque édition, y compris celle
+  qu'un dump recrée à l'identique. Après un import, chaque écran affiche « lien
+  inconnu ou révoqué » : recréez les liens depuis Paramètres et rouvrez-les sur
+  les TV.
 
 ## Faisabilité et besoin en animateurs
 

@@ -18,6 +18,10 @@
     <mat-icon>forward_to_inbox</mat-icon>
     <ng-container i18n="@@parametres.onglet.emails">E-mails automatiques</ng-container>
   </mat-button-toggle>
+  <mat-button-toggle value="mural">
+    <mat-icon>tv</mat-icon>
+    <ng-container i18n="@@parametres.onglet.mural">Affichage mural</ng-container>
+  </mat-button-toggle>
   <mat-button-toggle value="globaux">
     <mat-icon>dns</mat-icon>
     <ng-container i18n="@@parametres.onglet.globaux">Globaux</ng-container>
@@ -135,6 +139,9 @@
     </mat-card>
 
     <app-parametres-notifications />
+  }
+  @case ('mural') {
+    <app-affichage-mural-links />
   }
   @case ('globaux') {
     <mat-card appearance="outlined" class="page-card">

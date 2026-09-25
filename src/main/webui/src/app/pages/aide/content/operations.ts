@@ -150,6 +150,42 @@ export function buildOperationsSections(): HelpSection[] {
       ],
     },
     {
+      id: 'affichage-mural',
+      icon: 'tv',
+      title: $localize`:@@aide.mural.title:Affichage mural`,
+      summary: $localize`:@@aide.mural.summary:Un écran pour la TV de la salle de contrôle : qui tient quel stand maintenant et ensuite, mis à jour chaque minute, sans session d'administration.`,
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.mural.intro:Paramètres, onglet « Affichage mural » : donnez un libellé au lien (« TV PC sécurité »), choisissez au besoin les emplacements à afficher — une TV par zone — et créez-le. L'adresse n'est montrée qu'une fois : copiez-la ou scannez le QR code avec l'appareil qui pilote la TV. Perdue, elle ne se retrouve pas : créez un autre lien et révoquez l'ancien.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.mural.ecran:L'écran regroupe les stands ouverts du jour par emplacement. Chaque tuile montre la vacation en cours et la suivante, avec les noms et, en rouge, chaque place libre ; un stand fermé à cet instant est estompé avec son heure de réouverture. En bas, les places à pourvoir dans les deux heures, les pauses sans relais et la consigne du jour. Quand tout ne tient pas, les pages tournent toutes les quinze secondes.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.mural.donnees:C'est le planning enregistré qui s'affiche, pas celui envoyé aux animateurs : un remplacement fait en Mode jour J apparaît à la minute suivante, sans republier. L'heure est celle du serveur, jamais celle de la TV. Si le réseau tombe, l'écran garde ce qu'il montrait et indique depuis quand il est hors ligne.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.mural.noms:Par défaut, l'écran montre le prénom et l'initiale du nom : tout le monde le voit dans la pièce. Le nom complet est une option du lien, à choisir à sa création. Ni téléphone, ni âge, ni motif d'absence n'y figurent jamais.`,
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@aide.mural.securite:Le lien n'ouvre que cet écran, pour cette édition, en lecture seule. La liste des liens donne la date du dernier accès ; révoquer un lien coupe l'écran à sa lecture suivante, et supprimer l'édition emporte ses liens. Pour une affiche grand format de la journée entière, ajoutez ?impression=1 à l'adresse et imprimez la page.`,
+        },
+      ],
+      links: [
+        {
+          route: '/parametres',
+          queryParams: { onglet: 'mural' },
+          label: $localize`:@@aide.link.affichageMural:Paramètres — Affichage mural`,
+        },
+        { route: '/jour-j', label: $localize`:@@nav.link.jourJ:Mode jour J` },
+      ],
+    },
+    {
       id: 'consulter',
       icon: 'calendar_month',
       title: $localize`:@@aide.views.title:Consulter le planning`,

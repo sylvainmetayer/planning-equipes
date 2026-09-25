@@ -27,11 +27,15 @@ pas — voir [Métriques](#métriques).
 ## Le point qui n'est pas négociable : le jeton de l'espace animateur
 
 L'URL de l'espace porte le jeton d'accès, **un identifiant unique de personne,
-souvent mineure**. Trois garde-fous :
+souvent mineure**. Celle de l'affichage mural porte aussi le sien, qui ouvre à
+qui le détient le planning nominatif du jour. Trois garde-fous, pour les deux :
 
-- le beacon Cloudflare **n'est pas chargé du tout** sur `/animateur/*` ;
-- les rapports d'erreur sont expurgés **des deux côtés**. Côté navigateur,
-  `masquerJetonPartout` parcourt le rapport **entier** (`beforeSend`,
+- le beacon Cloudflare **n'est pas chargé du tout** sur `/animateur/*` ni sur
+  `/mural/*` ;
+- les rapports d'erreur sont expurgés **des deux côtés**, pour les pages
+  (`/animateur/…`, `/mural/…`) comme pour les appels d'API
+  (`/api/espace-animateur/…`, `/api/mural/…`). Côté navigateur,
+  `maskTokensEverywhere` parcourt le rapport **entier** (`beforeSend`,
   `beforeBreadcrumb`) plutôt qu'une liste de champs : ne masquer que
   `request.url` et `data.url` laissait passer les deux cas les plus probables —
   un changement de page interne (`data.from` / `data.to`) et un échec HTTP dont

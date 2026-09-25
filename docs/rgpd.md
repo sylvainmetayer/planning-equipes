@@ -95,10 +95,10 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
-| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
-| Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
-| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, **les liens d'affichage mural de l'organisation (jeton haché, libellé, date du dernier accès)**, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
+| Traitements réalisés | Hébergement, planification et résolution, **affichage du planning de travail du jour sur un écran de la salle de contrôle (prénom et initiale par défaut)**, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
+| Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; **toute personne présente devant un écran d'affichage mural** ; le relais SMTP |
+| Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
 ### Bloc variable, par instance
 
@@ -154,7 +154,7 @@ pareil.
 | --- | --- |
 | Dump égaré : sauvegarde déposée en clair, envoyée par un canal non maîtrisé, oubliée sur une machine cédée | Ce qu'il contenait — un dump est **complet** : noms, dates de naissance de mineurs, adresses, jetons d'espace (`exploitation.md` §5) |
 | Accès non autorisé à l'administration | Depuis quand, ce qui a été consulté ou modifié, et si le mot de passe d'administration a servi ailleurs |
-| Fuite de jetons d'espace animateur ou d'abonnement au calendrier | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section). Un jeton d'abonnement fuité est **immédiatement exploitable sans second facteur**, et il apparaît dans ces journaux à chaque synchronisation d'un agenda, donc bien plus souvent que l'autre |
+| Fuite de jetons d'espace animateur, d'abonnement au calendrier ou d'affichage mural | Les jetons voyagent **dans le chemin de l'URL** : des journaux d'accès de reverse proxy partagés, indexés ou transmis sont une violation, pas une négligence sans suite (`securite.md`, dernière section). Un jeton d'abonnement fuité est **immédiatement exploitable sans second facteur**, et il apparaît dans ces journaux à chaque synchronisation d'un agenda, donc bien plus souvent que l'autre |
 | Base ou sauvegarde perdue sans copie | C'est une violation de **disponibilité** : elle se notifie, même sans le moindre accès d'un tiers |
 | Envoi d'un planning individuel à la mauvaise adresse | Violation aussi, à sa mesure — l'erreur de destinataire est le cas le plus fréquent en pratique |
 
@@ -272,6 +272,25 @@ complètes. Quatre points sont connus et se consignent :
   remplacement, dans l'espace, une mesure et non un confort : il se mentionne
   au registre à ce titre, et l'invitation à s'en servir fait partie de ce qu'on
   explique aux animateurs ;
+- **l'affichage mural montre des noms à quiconque passe devant l'écran** : qui
+  tient quel stand, maintenant et ensuite, pour la journée du jour. C'est son
+  objet, et il se consigne comme tel.
+
+  Ce qui le borne : par défaut, le **prénom et l'initiale du nom** — le nom
+  complet est une option choisie par l'organisation lien par lien ; ni
+  téléphone, ni adresse, ni âge, ni motif d'absence ; seulement la journée en
+  cours, et seulement les emplacements du lien s'il en est restreint. Le jeton
+  n'ouvre que cette lecture, il est **haché** en base, **révocable** depuis les
+  Paramètres, rattaché à une édition et purgé avec elle ; il ne voyage ni dans
+  l'export SQL ni dans l'archive de fin d'événement, et pas davantage chez les
+  outils d'observabilité : la mesure d'audience n'est pas chargée sur l'écran,
+  et le suivi d'erreurs le reçoit masqué, comme le jeton d'espace.
+
+  Ce qui ne le borne pas : l'écran lui-même. Une adresse photographiée sur la TV
+  ou relevée dans un journal d'accès montre la même chose ailleurs, jusqu'à sa
+  révocation ; la date du dernier accès, dans la liste des liens, est ce qui
+  permet de le remarquer. Si l'écran est visible du public, la politique de
+  confidentialité de l'instance doit le mentionner ;
 - **les sauvegardes sont un lieu de stockage à part entière** : depuis qu'elles
   sont automatiques, un dump complet — mineurs et jetons compris — existe en
   permanence sur le volume. L'export SQL de l'application est plus étroit — il

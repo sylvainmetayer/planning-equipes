@@ -121,3 +121,36 @@
   color: var(--mat-sys-on-surface-variant);
   font: var(--mat-sys-body-small);
 }
+
+/* Paramètres, tab « Affichage mural »: the address of a link just created,
+   shown once, with its QR code on a white square a phone camera can read in
+   either colour scheme. */
+.mural-lien-cree {
+  margin: 1rem 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.75rem;
+}
+
+.mural-lien-cree h3 {
+  font: var(--mat-sys-title-small);
+  margin: 0 0 0.25rem;
+}
+
+.mural-lien-adresse {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.mural-lien-adresse code {
+  overflow-wrap: anywhere;
+}
+
+.mural-lien-qr {
+  display: block;
+  width: 12rem;
+  height: 12rem;
+  margin-top: 0.75rem;
+}

@@ -148,7 +148,7 @@ public class DatabaseDumpService {
             "kpi_historique");
 
     /**
-     * The six tables deliberately left out, and why each one stays out.
+     * The eight tables deliberately left out, and why each one stays out.
      *
      * <p>They share a shape: none of them describes <em>the dataset</em>. They
      * describe the machine it runs on, or who is currently allowed to touch it,
@@ -165,6 +165,10 @@ public class DatabaseDumpService {
      *   <li>{@code espace_acces}, {@code espace_session} — code hashes,
      *       remaining attempts, live sessions. Restoring them would hand
      *       another instance credentials and reset a lockout counter.</li>
+     *   <li>{@code lien_affichage_mural}, {@code lien_affichage_mural_emplacement}
+     *       — the wall display links: token hashes, credentials of this
+     *       instance like the espace sessions. A restore elsewhere would reopen
+     *       screens nobody there handed out.</li>
      *   <li>{@code solver_job} — the queue, replayed at startup. A restore
      *       would make the receiving instance run somebody else's solves.</li>
      *   <li>{@code journal_action} — the audit trail. This one is out for the
@@ -175,7 +179,14 @@ public class DatabaseDumpService {
      * </ul>
      */
     static final List<String> DELIBERATELY_NOT_DUMPED = List.of(
-            "horloge_jour_j", "backup_settings", "espace_acces", "espace_session", "solver_job", "journal_action");
+            "horloge_jour_j",
+            "backup_settings",
+            "espace_acces",
+            "espace_session",
+            "lien_affichage_mural",
+            "lien_affichage_mural_emplacement",
+            "solver_job",
+            "journal_action");
 
     private static final Set<String> ALLOWED_TABLES = Set.copyOf(TABLES);
 
