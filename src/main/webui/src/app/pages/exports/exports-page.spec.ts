@@ -8,12 +8,18 @@ import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
 import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
+import { ArchiveEvenementApi } from '../../core/api/archive-evenement-api';
 import { PlanningApi } from '../../core/api/planning-api';
 import { ExportsPage } from './exports-page';
 
 describe('ExportsPage', () => {
   const api = { volumes: vi.fn(), telecharger: vi.fn() };
   const planningApi = { exportScenario: vi.fn() };
+  // The archive card has its own spec; here it only has to render.
+  const archiveApi = {
+    availability: vi.fn(async () => ({ planResolu: true, publie: true, resolutionEnCours: false })),
+    telecharger: vi.fn(),
+  };
 
   beforeEach(() => {
     api.volumes.mockReset();
@@ -36,6 +42,7 @@ describe('ExportsPage', () => {
         provideRouter([]),
         { provide: ExportCsvApi, useValue: api },
         { provide: PlanningApi, useValue: planningApi },
+        { provide: ArchiveEvenementApi, useValue: archiveApi },
       ],
     });
   });
@@ -65,7 +72,8 @@ describe('ExportsPage', () => {
   it('lists each referential with its file and its row count, all ticked to begin with', async () => {
     const { racine, page } = await monter();
 
-    const lignes = [...racine.querySelectorAll('.export-csv-liste li')];
+    const carteCsv = racine.querySelector('mat-card')!;
+    const lignes = [...carteCsv.querySelectorAll('.export-csv-liste li')];
     expect(lignes).toHaveLength(6);
     expect(lignes[0].textContent).toContain('Typologies');
     expect(lignes[0].textContent).toContain('typologies.csv');
@@ -74,7 +82,7 @@ describe('ExportsPage', () => {
     // screen: an off day only survives where the timeslot already exists.
     expect(lignes[3].textContent).toContain('creneaux.csv');
     expect(lignes[4].textContent).toContain('journees-types.csv');
-    expect(racine.querySelectorAll('mat-checkbox input:checked')).toHaveLength(6);
+    expect(carteCsv.querySelectorAll('mat-checkbox input:checked')).toHaveLength(6);
     expect(page.total()).toBe(42);
   });
 

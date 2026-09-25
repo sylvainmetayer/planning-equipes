@@ -1,6 +1,6 @@
 import { HttpErrorResponse } from '@angular/common/http';
 import { describe, expect, it } from 'vitest';
-import { ApiError, CODE_MODIFICATION_CONCURRENTE, toError } from './api.service';
+import { ApiError, CODE_MODIFICATION_CONCURRENTE, attachmentName, toError } from './api.service';
 
 describe('toError', () => {
   it('uses the server-provided message when the error body carries one', () => {
@@ -54,5 +54,15 @@ describe('toError — le code du corps', () => {
     const error = toError(response) as ApiError;
     expect(error.code).toBeNull();
     expect(error.modificationConcurrente).toBe(false);
+  });
+});
+
+describe('attachmentName', () => {
+  it('reads the name the server gave the file, and nothing when it gave none', () => {
+    expect(attachmentName('attachment; filename="archive-annee-2026-2026-09-25.zip"')).toBe(
+      'archive-annee-2026-2026-09-25.zip',
+    );
+    expect(attachmentName('attachment')).toBeNull();
+    expect(attachmentName(null)).toBeNull();
   });
 });

@@ -70,6 +70,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       donneesModifiees: false,
       personnesAPrevenir: 0,
     },
+    evenement: { premierJour: null, dernierJour: null, termine: false },
     ...partial,
   };
 }

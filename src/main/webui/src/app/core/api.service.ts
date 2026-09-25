@@ -80,6 +80,24 @@ export class ApiService {
     return this.saveAs(blob, filename, contentType);
   }
 
+  /**
+   * GETs a file and saves it under the name the server gave it in
+   * `Content-Disposition`, `fallback` when it gave none: a name carrying the
+   * edition and the day is the server's to decide, not one more copy of that
+   * rule here.
+   */
+  async downloadGetNamedByServer(
+    url: string,
+    fallback: string,
+    contentType: string,
+  ): Promise<string> {
+    const response = await this.run(
+      this.http.get(url, { responseType: 'blob', observe: 'response' }),
+    );
+    const filename = attachmentName(response.headers.get('Content-Disposition')) ?? fallback;
+    return this.saveAs(response.body ?? new Blob(), filename, contentType);
+  }
+
   private async run<T>(request: Observable<T>): Promise<T> {
     try {
       return await firstValueFrom(request);
@@ -98,6 +116,12 @@ export class ApiService {
     URL.revokeObjectURL(objectUrl);
     return $localize`:@@api.downloaded:${filename}:filename: téléchargé (${contentType}:contentType:).`;
   }
+}
+
+/** The `filename="…"` of a `Content-Disposition` header, `null` when there is none. */
+export function attachmentName(header: string | null): string | null {
+  const match = header ? /filename="([^"]+)"/.exec(header) : null;
+  return match ? match[1] : null;
 }
 
 /**

@@ -16,6 +16,7 @@ import { RouterLink } from '@angular/router';
 import { ExportCsvApi } from '../../core/api/export-csv-api';
 import { CIBLES_EXPORT_CSV } from '../../core/api/imports-api';
 import { PlanningApi } from '../../core/api/planning-api';
+import { ArchiveEvenementCard } from './archive-evenement-card';
 import { errorMessage, errorPrefix } from '../../core/error-message';
 import { ExportCsvTarget, VolumesExportCsv } from '../../core/models';
 
@@ -40,10 +41,14 @@ interface LigneExport {
  * and a team replaying its calendar takes only the timeslots and the day
  * templates. The scenario file carries the whole edition at once — which is
  * what the imports' « Scénario » tab reads back.</p>
+ *
+ * <p>The third card, the end-of-event archive, takes several exports of the
+ * edition — these two among them — at once, for whoever closes the edition.</p>
  */
 @Component({
   selector: 'app-exports-page',
   imports: [
+    ArchiveEvenementCard,
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,

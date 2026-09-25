@@ -261,3 +261,21 @@
   margin: 0 0 0.25rem;
   padding-left: 1.25rem;
 }
+
+/* The event is over: the link to the end-of-event archive. */
+.accueil-archive {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+  margin: 0 0 1rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.accueil-archive-texte {
+  flex: 1 1 16rem;
+  margin: 0;
+}

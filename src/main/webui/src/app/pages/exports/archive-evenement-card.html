@@ -1,0 +1,65 @@
+<mat-card appearance="outlined" class="page-card" id="archive-evenement">
+  <mat-card-header>
+    <h2 mat-card-title i18n="@@exports.archive.title">Archive de fin d'événement</h2>
+    <mat-card-subtitle i18n="@@exports.archive.subtitle">
+      Les exports de l'édition dans un seul ZIP, avec un manifeste qui dit de quel plan ils viennent.
+    </mat-card-subtitle>
+  </mat-card-header>
+  <mat-card-content>
+    <p class="empty-hint" i18n="@@exports.archive.rgpd">
+      L'archive contient des données personnelles, dont celles de mineurs : une fois téléchargée, sa conservation vous revient.
+    </p>
+    @if (chargement() && !etat()) {
+      <mat-progress-bar mode="indeterminate" />
+    }
+    @if (erreurChargement()) {
+      <p class="field-error" role="alert">{{ erreurChargement() }}</p>
+    }
+    <ul class="export-csv-liste">
+      <li>
+        <mat-checkbox [checked]="true" [disabled]="true">LISEZMOI.txt</mat-checkbox>
+        <span class="export-csv-fichier" i18n="@@exports.archive.manifeste">manifeste, toujours présent</span>
+      </li>
+      @for (ligne of lignes(); track ligne.part) {
+        <li [attr.data-part]="ligne.part">
+          <mat-checkbox
+            [checked]="isSelected(ligne.part) && ligne.indisponible === null"
+            [disabled]="ligne.indisponible !== null"
+            (change)="basculer(ligne.part, $event.checked)">
+            {{ ligne.libelle }}
+          </mat-checkbox>
+          <span class="export-csv-fichier">{{ ligne.fichier }}</span>
+          @if (ligne.indisponible) {
+            <span class="export-csv-total">{{ ligne.indisponible }}</span>
+          }
+        </li>
+      }
+    </ul>
+    @if (individuelsPris()) {
+      <mat-checkbox [checked]="feuille()" (change)="feuille.set($event.checked)">
+        <ng-container i18n="@@exports.archive.feuille">Feuilles recto-verso plutôt que livrets</ng-container>
+      </mat-checkbox>
+    }
+    @if (etat()?.resolutionEnCours) {
+      <p class="empty-hint" role="status" i18n="@@exports.archive.resolutionEnCours">
+        Une résolution est en cours : l'archive portera le dernier plan enregistré.
+      </p>
+    }
+    <div class="card-actions">
+      <button matButton="filled" (click)="telecharger()" [disabled]="!peutTelecharger()">
+        <mat-icon>inventory_2</mat-icon>
+        <span i18n="@@exports.archive.telecharger">Télécharger l'archive</span>
+      </button>
+    </div>
+    @if (telechargement()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="empty-hint" role="status" i18n="@@exports.archive.enCours">Préparation de l'archive…</p>
+    }
+    @if (message()) {
+      <p class="empty-hint" role="status">{{ message() }}</p>
+    }
+    @if (erreur()) {
+      <p class="field-error" role="alert">{{ erreur() }}</p>
+    }
+  </mat-card-content>
+</mat-card>

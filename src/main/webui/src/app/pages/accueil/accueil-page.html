@@ -51,6 +51,16 @@
         </ul>
       </section>
     }
+    @if (etatEdition()?.evenement?.termine) {
+      <div class="accueil-archive" data-bloc="archive">
+        <mat-icon aria-hidden="true">inventory_2</mat-icon>
+        <p class="accueil-archive-texte" i18n="@@accueil.archive.texte">L'événement est terminé : gardez-en une archive avant de purger l'édition.</p>
+        <a matButton routerLink="/exports" fragment="archive-evenement">
+          <ng-container i18n="@@accueil.archive.lien">Archiver l'édition</ng-container>
+          <mat-icon iconPositionEnd>arrow_forward</mat-icon>
+        </a>
+      </div>
+    }
     @if (etatEdition()) {
       @if (bilan(); as bilan) {
         <p class="accueil-bilan">

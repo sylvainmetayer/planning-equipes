@@ -93,7 +93,10 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   stays the Animateurs page's form), `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
   `/imports`, `/exports` (« Export » — the data the edition writes of itself:
-  the CSV archive and the scenario file the import screen reads back),
+  the CSV archive and the scenario file the import screen reads back, and the
+  end-of-event archive — several of those exports in one ZIP the server
+  streams, `pages/exports/archive-evenement-card`, which the home screen links
+  to once the event's last day is past),
   `/publication` (« Publication » — what reaches real people: the planning
   documents to print or archive, and the mailing to every animateur whose
   schedule changed; a screen of its own under Solveur since issue #320, so the

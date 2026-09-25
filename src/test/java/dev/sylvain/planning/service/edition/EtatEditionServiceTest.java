@@ -980,6 +980,31 @@ class EtatEditionServiceTest {
                 1);
     }
 
+    /**
+     * The archive link appears once the last day carrying a timeslot is
+     * behind today — not on it, and never for an edition with no timeslot,
+     * which has no end to be past.
+     */
+    @Test
+    void theEventIsOverOnlyOnceItsLastDayIsBehindToday() {
+        assertThat(EtatEditionService.evenement(todayWithDays(List.of())))
+                .isEqualTo(new EtatEditionView.EtatEvenement(null, null, false));
+        assertThat(EtatEditionService.evenement(todayWithDays(List.of(JOUR.minusDays(3), JOUR))))
+                .isEqualTo(new EtatEditionView.EtatEvenement(JOUR.minusDays(3), JOUR, false));
+        assertThat(EtatEditionService.evenement(todayWithDays(List.of(JOUR.plusDays(1))))
+                        .termine())
+                .isFalse();
+        assertThat(EtatEditionService.evenement(todayWithDays(List.of(JOUR.minusDays(3), JOUR.minusDays(1))))
+                        .termine())
+                .isTrue();
+        assertThat(EtatEditionService.assemble(emptyFacts()).evenement().termine())
+                .isFalse();
+    }
+
+    private static TodayFacts todayWithDays(List<LocalDate> jours) {
+        return new TodayFacts(JOUR, JOUR.atTime(9, 0).toInstant(ZoneOffset.UTC), List.of(), List.of(), 7, jours);
+    }
+
     private static Creneau creneau(long id) {
         return new Creneau(id, 1, JOUR, LocalTime.of(9, 0), LocalTime.of(12, 0));
     }

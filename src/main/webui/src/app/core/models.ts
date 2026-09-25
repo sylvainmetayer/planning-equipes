@@ -3304,6 +3304,21 @@ export type VolumesExportCsv = Partial<Record<ExportCsvTarget, number>>;
 export type ExportCsvTarget =
   'TYPOLOGIES' | 'EMPLACEMENTS' | 'STANDS' | 'CRENEAUX' | 'JOURNEES_TYPES' | 'ANIMATEURS';
 
+/**
+ * One part of the end-of-event archive, named as its query flag: the manifest
+ * `LISEZMOI.txt` is always there and is not one of them.
+ */
+export type ArchivePart =
+  'pdfGlobal' | 'equite' | 'heures' | 'referentiels' | 'scenario' | 'publication' | 'individuels';
+
+/** What would come out empty right now: the screen greys those parts out. */
+export interface ArchiveAvailability {
+  planResolu: boolean;
+  publie: boolean;
+  /** A solve holds the edition: the archive carries the last persisted plan. */
+  resolutionEnCours: boolean;
+}
+
 /* ---- Referential CSV imports (typologies, emplacements, stands, grid, day templates) ---- */
 
 /**
@@ -3560,6 +3575,17 @@ export interface EtatEdition {
   confirmations: EtatConfirmations;
   foire: EtatFoire;
   aTraiter: EtatATraiter;
+  evenement: EtatEvenement;
+}
+
+/**
+ * The event's bounds, derived from the timeslots: `null` both without any.
+ * `termine` once the last day is behind today — the screen then offers the archive.
+ */
+export interface EtatEvenement {
+  premierJour: string | null;
+  dernierJour: string | null;
+  termine: boolean;
 }
 
 /**
