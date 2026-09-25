@@ -26,8 +26,19 @@ const CORE = join(__dirname, '..', 'src', 'app', 'core');
  * `x: WritableSignal<…> = signal(…)`, and `x: WritableSignal<…>;` assigned in
  * the constructor. The first version of this check read the first form only.
  */
-const PUBLIC_SIGNAL =
-  /^ {2}(?:readonly |protected |protected readonly |public |public readonly )?\w+(?:\s*:\s*WritableSignal<[^;=]*>\s*;|(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(])/;
+const MEMBER = /^ {2}(?:public |protected )?(?:readonly )?\w+/;
+/** After the member's name: `: WritableSignal<…>;`, assigned in the constructor. */
+const DECLARED_WRITABLE = /^\s*:\s*WritableSignal<[^;=]*>\s*;/;
+/** After the member's name: an optional `: WritableSignal<…>`, then `= signal(` or `= linkedSignal(`. */
+const ASSIGNED_SIGNAL = /^(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(]/;
+const PUBLIC_SIGNAL = {
+  test(line) {
+    const member = MEMBER.exec(line);
+    if (!member) return false;
+    const rest = line.slice(member[0].length);
+    return DECLARED_WRITABLE.test(rest) || ASSIGNED_SIGNAL.test(rest);
+  },
+};
 const PRIVATE_SIGNAL =
   /^ {2}private readonly _(\w+)(?:\s*:\s*WritableSignal<[^;=]*>)?\s*=\s*(?:signal|linkedSignal)[<(]/gm;
 

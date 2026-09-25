@@ -27,6 +27,7 @@
 const { readFileSync, existsSync } = require('node:fs');
 const { readdirSync, statSync } = require('node:fs');
 const { join, relative, dirname } = require('node:path');
+const { byCodeUnit } = require('./code-unit-order');
 
 const APP = join(__dirname, '..', 'src', 'app');
 const ROUTES = join(APP, 'app.routes.ts');
@@ -61,7 +62,7 @@ function composantsRoutes() {
   for (const [, chemin] of source.matchAll(/import\('\.\/((?:pages|shell)\/[\w/-]+)'\)/g)) {
     if (!chemin.endsWith('-shell')) chemins.add(chemin);
   }
-  return [...chemins].sort();
+  return [...chemins].sort(byCodeUnit);
 }
 
 /**

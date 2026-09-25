@@ -42,6 +42,7 @@
  */
 const { readFileSync } = require('node:fs');
 const { join } = require('node:path');
+const { byCodeUnit } = require('./code-unit-order');
 
 const RACINE = join(__dirname, '..');
 const SCHEMA = join(RACINE, '../../../docs/schema/openapi.json');
@@ -62,10 +63,19 @@ function interfacesDuFront() {
     const proprietes = noeud.members
       .filter(ts.isPropertySignature)
       .map((membre) => membre.name.getText())
-      .sort();
+      .sort(byCodeUnit);
     interfaces.set(noeud.name.text, proprietes);
   });
   return interfaces;
+}
+
+/** `Xxx12` → `Xxx`; `null` when the name does not end with a digit. */
+function withoutNumericSuffix(nom) {
+  let fin = nom.length;
+  while (fin > 0 && nom[fin - 1] >= '0' && nom[fin - 1] <= '9') {
+    fin -= 1;
+  }
+  return fin < nom.length ? nom.slice(0, fin) : null;
 }
 
 /** Les schémas objets du contrat, et le nom de leurs propriétés. */
@@ -74,7 +84,7 @@ function schemasDuContrat(chemin) {
   const schemas = new Map();
   for (const [nom, definition] of Object.entries(contrat.components?.schemas ?? {})) {
     if (definition.properties) {
-      schemas.set(nom, Object.keys(definition.properties).sort());
+      schemas.set(nom, Object.keys(definition.properties).sort(byCodeUnit));
     }
   }
   return schemas;
@@ -93,10 +103,10 @@ const { renommes, horsContrat } = JSON.parse(readFileSync(MAPPING, 'utf8'));
 // ci-dessous ne réagit que si les deux formes diffèrent — deux records de même
 // forme échangeraient le nom nu sans un bruit.
 for (const nom of contrat.keys()) {
-  const jumeau = /^(.*?)\d+$/.exec(nom);
-  if (jumeau && contrat.has(jumeau[1])) {
+  const jumeau = withoutNumericSuffix(nom);
+  if (jumeau !== null && contrat.has(jumeau)) {
     ecarts.push(
-      `${nom} est un nom de collision : le contrat porte déjà « ${jumeau[1]} », et SmallRye a suffixé ` +
+      `${nom} est un nom de collision : le contrat porte déjà « ${jumeau} », et SmallRye a suffixé ` +
         'le second de deux types homonymes. Renommez-en un côté serveur — le suffixe change de ' +
         "propriétaire d'une génération à l'autre.",
     );

@@ -28,6 +28,7 @@
  * honest — would then fail on the clock rather than on the content.
  */
 const { readFileSync, writeFileSync } = require('node:fs');
+const { byCodeUnit } = require('./code-unit-order');
 const { join } = require('node:path');
 
 const ROOT = join(__dirname, '..', '..', '..', '..');
@@ -45,13 +46,67 @@ const OUTPUT = join(ROOT, 'docs', 'licences-tierces.md');
  * Public License (LGPL), Version 2.1`) to `LGPL-2.1`: a new one shows up as a
  * parse failure below, not as a silently mangled line.
  */
-const MAVEN_LINE =
-  /^\s*((?:\([^()]*\)\s*)+)(.+?)\s+\(([^\s:]+):([^\s:]+):([^\s:)]+)(?:\s+-\s+([^)]*))?\)\s*$/;
+// The GAV group closing a line, `(group:artifact:version)` or
+// `(group:artifact:version - url)`, then nothing but blanks.
+const GAV_TAIL = /^\(([^\s:]+):([^\s:]+):([^\s:)]+)(?:\s+-\s[^)]*)?\)\s*$/;
+const LICENCE = /\([^()]*\)/y;
+const BLANKS = /\s*/y;
+const LINE_TERMINATOR = /[\n\r\u2028\u2029]/;
+const isBlank = (ch) => ch !== undefined && /\s/.test(ch);
+
+/**
+ * The shortest name from `start` on that a run of blanks and the GAV group
+ * follow, with that group — `(.+?)\s+\(…\)\s*$` read left to right.
+ */
+function nameAndGav(line, start) {
+  for (let end = start + 1; end < line.length; end += 1) {
+    if (LINE_TERMINATOR.test(line[end - 1])) return null;
+    if (!isBlank(line[end])) continue;
+    let open = end;
+    while (isBlank(line[open])) open += 1;
+    const gav = line[open] === '(' ? GAV_TAIL.exec(line.slice(open)) : null;
+    if (gav) return [line.slice(start, end), gav[1], gav[2], gav[3]];
+  }
+  return null;
+}
+
+/**
+ * `[licenceBlock, name, group, artifact, version]` of a report line, or `null`:
+ * the leading `(…)` licence groups, the name, the trailing GAV group. Tried in
+ * the order a backtracking regex would — most licence groups first, then the
+ * blanks after the last one given back one by one — so a line reads exactly as
+ * `^\s*((?:\([^()]*\)\s*)+)(.+?)\s+\(…\)\s*$` read it, without its
+ * exponential worst case.
+ */
+function parseMavenLine(line) {
+  BLANKS.lastIndex = 0;
+  BLANKS.exec(line);
+  const blockStart = BLANKS.lastIndex;
+  // Each licence group's end, before and after the blanks that follow it.
+  const groups = [];
+  let position = blockStart;
+  for (;;) {
+    LICENCE.lastIndex = position;
+    if (!LICENCE.exec(line)) break;
+    const closed = LICENCE.lastIndex;
+    BLANKS.lastIndex = closed;
+    BLANKS.exec(line);
+    position = BLANKS.lastIndex;
+    groups.push({ closed, blanksEnd: position });
+  }
+  for (let count = groups.length; count > 0; count -= 1) {
+    const { closed, blanksEnd } = groups[count - 1];
+    for (let blockEnd = blanksEnd; blockEnd >= closed; blockEnd -= 1) {
+      const rest = nameAndGav(line, blockEnd);
+      if (rest) return [line.slice(blockStart, blockEnd), ...rest];
+    }
+  }
+  return null;
+}
 
 /** Byte order, not `localeCompare`: the file must not depend on the ICU data of whoever regenerates it. */
 function byId(a, b) {
-  if (a.id === b.id) return 0;
-  return a.id < b.id ? -1 : 1;
+  return byCodeUnit(a.id, b.id);
 }
 
 function fail(message) {
@@ -76,7 +131,7 @@ function readJavaDependencies() {
     // The first line announces the total; blank lines separate nothing.
     if (line.trim() === '' || line.startsWith('Lists of ')) continue;
 
-    const match = MAVEN_LINE.exec(line);
+    const match = parseMavenLine(line);
     if (!match) {
       fail(
         `ligne illisible dans ${MAVEN_REPORT} :\n  ${line.trim()}\n` +
@@ -85,7 +140,7 @@ function readJavaDependencies() {
       );
     }
 
-    const [, licenceBlock, name, group, artifact, version] = match;
+    const [licenceBlock, name, group, artifact, version] = match;
     const licences = [...licenceBlock.matchAll(/\(([^()]*)\)/g)].map((each) => each[1].trim());
     dependencies.push({ id: `${group}:${artifact}`, name, version, licences });
   }
@@ -156,7 +211,7 @@ function countByLicence(dependencies) {
 function summaryTable(java, npm) {
   const javaCounts = countByLicence(java);
   const npmCounts = countByLicence(npm);
-  const licences = [...new Set([...javaCounts.keys(), ...npmCounts.keys()])].sort();
+  const licences = [...new Set([...javaCounts.keys(), ...npmCounts.keys()])].sort(byCodeUnit);
 
   const rows = licences.map((licence) => {
     const cell = (count) => (count ? String(count) : '—');

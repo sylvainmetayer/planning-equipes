@@ -137,12 +137,41 @@ const sansAccents = (texte) =>
  * français (« Légal (…) ») ne doit pas passer pour français.
  */
 const prose = (brut) =>
-  brut
-    .replace(/^\s*\*/gm, ' ')
-    .replace(/\{@\w+\s+[^}]*\}/g, ' ')
-    .replace(/@\w+/g, ' ')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/«[^»]*»/g, ' ');
+  blankSpans(
+    blankSpans(
+      blankSpans(brut.replace(/^[^\S\r\n]*\*/gm, ' '), '{@', '}', (inner) =>
+        /^\w+\s/.test(inner),
+      ).replace(/@\w+/g, ' '),
+      '<',
+      '>',
+    ),
+    '«',
+    '»',
+  );
+
+/**
+ * `texte` with every `open…close` span holding no `close` of its own — and
+ * accepted by `accepts` — replaced by a blank: what `/open[^close]*close/g`
+ * did, without rescanning to the end of the text for every `open` left
+ * unclosed.
+ */
+function blankSpans(texte, open, close, accepts = () => true) {
+  let out = '';
+  let from = 0;
+  let start = texte.indexOf(open);
+  while (start >= 0) {
+    const end = texte.indexOf(close, start + open.length);
+    if (end < 0) break;
+    if (accepts(texte.slice(start + open.length, end))) {
+      out += texte.slice(from, start) + ' ';
+      from = end + close.length;
+      start = texte.indexOf(open, from);
+    } else {
+      start = texte.indexOf(open, start + 1);
+    }
+  }
+  return out + texte.slice(from);
+}
 
 /**
  * Français ou anglais, à la majorité des mots-outils — la règle du test Java,
@@ -160,7 +189,7 @@ function estFrancais(texte) {
   for (const brut of prose(texte)
     .toLowerCase()
     .match(/[\p{L}']+/gu) ?? []) {
-    const mot = brut.replace(/'/g, '');
+    const mot = brut.replaceAll("'", '');
     if (OUTILS_FR.has(mot)) fr++;
     if (OUTILS_EN.has(mot)) en++;
     if (/[\u00e0-\u00ff]/.test(mot)) fr++;
@@ -231,6 +260,11 @@ function releverLesLignesModifiees() {
     encoding: 'utf8',
     maxBuffer: 64 * 1024 * 1024,
   });
+  return addedRanges(diff);
+}
+
+/** The ranges each `+++ b/…` file of a `-U0` diff gained, for the sources this check reads. */
+function addedRanges(diff) {
   const parFichier = new Map();
   let courant = null;
   for (const ligne of diff.split('\n')) {
@@ -395,9 +429,8 @@ if (inventaire) {
       .forEach((mot) => mots.set(mot, (mots.get(mot) ?? 0) + 1));
   });
   const classement = [...mots].sort((a, b) => b[1] - a[1]).slice(0, 10);
-  console.log(
-    `  mots les plus fréquents : ${classement.map(([m, n]) => `${m} (${n})`).join(', ')}`,
-  );
+  const frequents = classement.map(([m, n]) => m + ' (' + n + ')').join(', ');
+  console.log(`  mots les plus fréquents : ${frequents}`);
   process.exit(0);
 }
 

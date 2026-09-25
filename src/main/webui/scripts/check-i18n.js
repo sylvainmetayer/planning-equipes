@@ -61,10 +61,17 @@ function placeholders(message) {
 function extraire(webui = WEBUI) {
   const sortie = mkdtempSync(join(tmpdir(), 'planning-i18n-'));
   try {
-    execFileSync('npx', ['ng', 'extract-i18n', '--format=json', `--output-path=${sortie}`], {
-      cwd: webui,
-      stdio: ['ignore', 'ignore', 'inherit'],
-    });
+    // The workspace's own Angular CLI, run by this very Node: nothing is
+    // looked up on the PATH.
+    const ng = require.resolve('@angular/cli/bin/ng.js', { paths: [webui] });
+    execFileSync(
+      process.execPath,
+      [ng, 'extract-i18n', '--format=json', `--output-path=${sortie}`],
+      {
+        cwd: webui,
+        stdio: ['ignore', 'ignore', 'inherit'],
+      },
+    );
     return JSON.parse(readFileSync(join(sortie, 'messages.json'), 'utf8')).translations;
   } finally {
     rmSync(sortie, { recursive: true, force: true });
@@ -124,7 +131,7 @@ function etatDeLaBase(base) {
       // Un générateur que la base n'a pas encore n'est pas son affaire :
       // extraire `base`, c'est compiler les sources que `base` avait.
       if (existsSync(join(webui, generateur))) {
-        execFileSync('node', [generateur], { cwd: webui, stdio: 'ignore' });
+        execFileSync(process.execPath, [generateur], { cwd: webui, stdio: 'ignore' });
       }
     }
     return {
@@ -158,23 +165,37 @@ function lister(titre, ids, detail) {
   }
 }
 
-/** Quoted spans: « … » on the French side, “ … ” or " … " on the English one. */
-const CITATION_FR = /«\s*([^«»]+?)\s*»/g;
-const CITATION_EN = /[«“"]\s*([^«»“”"]+?)\s*[»”"]/g;
+/**
+ * Quoted spans: « … » on the French side, “ … ” or " … " on the English one.
+ * The blanks inside the quotes are trimmed in code rather than by `\s*` on
+ * both sides of a lazy group, which backtracks.
+ */
+const CITATION_FR = /«([^«»]+)»/g;
+const CITATION_EN = /[«“"]([^«»“”"]+)[»”"]/g;
 
 function citations(message, motif) {
-  return [...message.matchAll(motif)].map((found) => found[1]);
+  return [...message.matchAll(motif)].map((found) => found[1].trim());
+}
+
+/** `texte` without its trailing blanks and `.:?!` — `/[ .:?!]+$/` without the retries. */
+function withoutTrailingPunctuation(texte) {
+  let fin = texte.length;
+  while (fin > 0 && ' .:?!'.includes(texte[fin - 1])) {
+    fin -= 1;
+  }
+  return texte.slice(0, fin);
 }
 
 /** Same string modulo spacing, apostrophe shape, case and trailing punctuation. */
 function comparable(texte) {
-  return texte
-    .replace(/[\u2019\u2018]/g, "'")
-    .replace(/[\u00a0\u202f]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-    .toLowerCase()
-    .replace(/[ .:?!]+$/, '');
+  return withoutTrailingPunctuation(
+    texte
+      .replace(/[\u2019\u2018]/g, "'")
+      .replace(/[\u00a0\u202f]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase(),
+  );
 }
 
 /**
@@ -206,17 +227,14 @@ function libellesDivergents(source, anglais) {
     if (!(id in anglais)) {
       continue;
     }
-    const citeesEn = citations(anglais[id], CITATION_EN).map(comparable);
+    const citeesEn = new Set(citations(anglais[id], CITATION_EN).map(comparable));
     for (const citee of citations(message, CITATION_FR)) {
       if (citee.trim().split(/\s+/).length < 2) {
         continue;
       }
       const candidats = (libelles.get(comparable(citee)) ?? []).filter((autre) => autre !== id);
       const attendus = candidats.filter((autre) => autre in anglais).map((autre) => anglais[autre]);
-      if (
-        attendus.length === 0 ||
-        attendus.some((attendu) => citeesEn.includes(comparable(attendu)))
-      ) {
+      if (attendus.length === 0 || attendus.some((attendu) => citeesEn.has(comparable(attendu)))) {
         continue;
       }
       rapport.set(id, [...(rapport.get(id) ?? []), { citee, attendus }]);
