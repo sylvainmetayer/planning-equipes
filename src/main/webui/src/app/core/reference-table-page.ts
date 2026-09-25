@@ -33,8 +33,11 @@ export interface ReferenceTableConfig<T> {
   /** Identity of a row, and the key the selection and the URL use. */
   id: (row: T) => string;
 
-  /** What the quick filter matches on — the fields a row is looked up by. */
-  champsFiltre: (row: T) => readonly ChampFiltrable[];
+  /**
+   * What the quick filter matches on — the fields a row is looked up by. The
+   * store is there for what a row only names by id, a stand's game categories.
+   */
+  champsFiltre: (row: T, store: ReferenceDataStore) => readonly ChampFiltrable[];
 
   /** Read-only detail shown by {@link ReferenceTablePage.consult}. */
   detail: (row: T, store: ReferenceDataStore) => DetailData;
@@ -124,7 +127,9 @@ export abstract class ReferenceTablePage<T> {
       this.refine(
         config
           .rows(this.store)
-          .filter((ligne) => correspondAuFiltre(this.filtre(), config.champsFiltre(ligne))),
+          .filter((ligne) =>
+            correspondAuFiltre(this.filtre(), config.champsFiltre(ligne, this.store)),
+          ),
       ),
     );
     this.selection = new TableSelection<string>(
