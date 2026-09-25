@@ -86,7 +86,11 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   thresholds, the pointers to what lives on its own screen —, the e-mails the
   edition sends of itself, and the whole-database settings — nightly backup and
   SQL dump), `/stands`, `/emplacements`,
-  `/animateurs`, `/competences` (« Compétences » — the animateur × typologie
+  `/animateurs`, `/animateurs/:id` (« Fiche animateur » — one person on one
+  page, seven foldable sections read in one call from
+  `GET /api/animateurs/{id}/fiche`, which narrows the Équité and Fragilité
+  reports to that person rather than recomputing them; a read-out, the edit
+  stays the Animateurs page's form), `/competences` (« Compétences » — the animateur × typologie
   grid of appreciations, saved row by row, exported and imported as a CSV),
   `/imports`, `/exports` (« Export » — the data the edition writes of itself:
   the CSV archive and the scenario file the import screen reads back),

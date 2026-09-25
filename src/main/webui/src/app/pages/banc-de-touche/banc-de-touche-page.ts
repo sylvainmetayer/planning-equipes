@@ -16,7 +16,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatTooltipModule } from '@angular/material/tooltip';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { WorkInProgressBanner } from '../../shared/work-in-progress-banner';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { ReferenceDataStore } from '../../core/reference-data.store';
@@ -50,6 +50,7 @@ import { StatusMessage } from '../../shared/status-message';
 @Component({
   selector: 'app-banc-de-touche-page',
   imports: [
+    RouterLink,
     StatusMessage,
     FormsModule,
     MatButtonModule,

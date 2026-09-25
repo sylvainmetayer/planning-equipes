@@ -3977,3 +3977,78 @@ export interface ConsigneSnapshot {
   fermetureFin: string | null;
   motif: string;
 }
+
+/* ------------- Fiche 360° of one animateur (`/api/animateurs/{id}/fiche`) ------------- */
+
+/** The three regimes of the Code du travail, derived from the birth date on one date. */
+export type RegimeLegal = 'MOINS_DE_16' | 'MINEUR' | 'MAJEUR';
+
+/** The legal regime on one date, derived from the birth date — never stored. */
+export interface LegalRegime {
+  date: string;
+  age: number;
+  regime: RegimeLegal;
+}
+
+/** One seat of the persisted plan, as the fiche lists it. */
+export interface ProfileSeat {
+  posteId: string;
+  standId: string;
+  standNom: string | null;
+  creneauId: number;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  emplacementId: string | null;
+  emplacementNom: string | null;
+  /** Already started at the current horizon: listed, dimmed. */
+  passe: boolean;
+  /** A lock of the edition covers it. */
+  verrouille: boolean;
+}
+
+/** Another animateur named by an ad hoc constraint. */
+export interface ProfileColleague {
+  id: string;
+  nom: string;
+}
+
+/** One ad hoc constraint naming the animateur, its references spelled out. */
+export interface ProfileAdjustment {
+  id: string;
+  type: TypeContrainteAdHoc;
+  creneauId: number | null;
+  date: string | null;
+  heureDebut: string | null;
+  heureFin: string | null;
+  standId: string | null;
+  standNom: string | null;
+  autres: ProfileColleague[];
+  raison: string | null;
+}
+
+/**
+ * Everything the application knows about one animateur. The equity part is the
+ * Équité report narrowed to this person's line (none without a seat), its
+ * syntheses those of the whole plan; the fragility part is their line of the
+ * Fragilité report — nothing is computed twice.
+ */
+export interface AnimateurProfile {
+  animateur: Animateur;
+  /** ISO dates carrying a timeslot. */
+  joursEvenement: string[];
+  regimeDebut: LegalRegime | null;
+  regimeFin: LegalRegime | null;
+  /** The persisted plan holds at least one assigned seat. */
+  planCalcule: boolean;
+  equite: RapportEquite;
+  fragilite: AnimateurFragilite | null;
+  competencesRares: CompetenceRare[];
+  affectations: ProfileSeat[];
+  confirmation: ConfirmationView | null;
+  dernierePublicationLe: string | null;
+  echangesEnCours: DemandeEchangeView[];
+  ajustements: ProfileAdjustment[];
+  verrous: VerrouillagePlanning[];
+  declarationEnAttente: DeclarationAdminView | null;
+}

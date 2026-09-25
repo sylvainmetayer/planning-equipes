@@ -1,0 +1,117 @@
+/* Fiche animateur: seven foldable sections, each a native <details> so the
+   keyboard and the screen reader get the disclosure for free. */
+
+.fiche-section {
+  border-top: 1px solid var(--mat-sys-outline-variant);
+  padding: 0.5rem 0 0.75rem;
+}
+
+.fiche-section > summary {
+  cursor: pointer;
+  list-style-position: outside;
+}
+
+.fiche-section > summary h2 {
+  display: inline;
+  font: var(--mat-sys-title-medium);
+  color: var(--app-accent);
+}
+
+.fiche-section h3 {
+  font: var(--mat-sys-title-small);
+  margin: 1rem 0 0.25rem;
+}
+
+.fiche-introuvable,
+.fiche-alerte {
+  color: var(--mat-sys-error);
+}
+
+/* The event days in one strip: a chip per day, the off ones marked. */
+.fiche-frise {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0.5rem 0;
+  padding: 0;
+}
+
+.fiche-jour {
+  display: flex;
+  flex-direction: column;
+  min-width: 5.5rem;
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 0.5rem;
+  font: var(--mat-sys-body-small);
+}
+
+.fiche-jour-date {
+  font-weight: 500;
+}
+
+.fiche-jour-off,
+.fiche-jour-force {
+  border-color: var(--mat-sys-error);
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+.fiche-table {
+  border-collapse: collapse;
+  margin: 0.5rem 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.fiche-table th,
+.fiche-table td {
+  padding: 0.3rem 0.75rem 0.3rem 0;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.fiche-table thead th {
+  font: var(--mat-sys-label-large);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.fiche-ecart-positif {
+  color: var(--app-positive);
+}
+
+.fiche-ecart-negatif {
+  color: var(--mat-sys-error);
+}
+
+/* A seat already started: still listed, dimmed. */
+.fiche-passe {
+  opacity: 0.55;
+}
+
+.fiche-liste {
+  margin: 0.25rem 0;
+  padding-left: 1.25rem;
+}
+
+.fiche-severite {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0 0.5rem;
+  border-radius: 0.75rem;
+  font: var(--mat-sys-label-medium);
+  background: var(--mat-sys-surface-container-high);
+}
+
+.fiche-severite-critique,
+.fiche-severite-elevee {
+  background: var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+}
+
+@media (max-width: 40rem) {
+  .fiche-table {
+    width: 100%;
+  }
+}

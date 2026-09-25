@@ -201,6 +201,12 @@ const adminRoutes: Routes = [
     loadComponent: () => import('./pages/animateurs/animateurs-page').then((m) => m.AnimateursPage),
   },
   {
+    path: 'animateurs/:id',
+    title: () => $localize`:@@route.animateurFiche:Fiche animateur`,
+    loadComponent: () =>
+      import('./pages/animateur-fiche/animateur-fiche-page').then((m) => m.AnimateurFichePage),
+  },
+  {
     path: 'competences',
     title: () => $localize`:@@route.competences:Compétences`,
     loadComponent: () =>

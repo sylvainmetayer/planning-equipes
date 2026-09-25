@@ -71,7 +71,9 @@ describe('buildHelpSections', () => {
    * were written. The guide itself is the one exception — a reader who is on
    * it has already arrived.
    */
-  it('links every admin screen at least once, the guide itself apart', () => {
+  // A route carrying a parameter (the fiche of one animateur) names nobody
+  // until a person is chosen: the guide says how to reach it instead.
+  it('links every admin screen at least once, the guide and the per-person routes apart', () => {
     const linked = new Set(
       sections
         .flatMap((section) => section.links)
@@ -79,7 +81,9 @@ describe('buildHelpSections', () => {
         .filter((route): route is string => route !== undefined)
         .map((route) => route.slice(1)),
     );
-    expect(adminPaths().filter((path) => path !== 'aide' && !linked.has(path))).toEqual([]);
+    expect(
+      adminPaths().filter((path) => path !== 'aide' && !path.includes(':') && !linked.has(path)),
+    ).toEqual([]);
   });
 
   it('answers « who changed this? » with the action history, and its limits', () => {

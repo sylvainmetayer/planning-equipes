@@ -1,5 +1,6 @@
-/* Animateurs page: the acknowledgement synthesis and filters of the bar, the
-   competence rows of the form dialog. */
+/* Animateurs page: the acknowledgement synthesis and filters of the bar. The
+   form dialog's competence rows live in styles/animateur-form.css, shared with
+   the fiche page that opens the same dialog. */
 
 .confirmations-synthese {
   margin: 0 1rem 0.75rem;
@@ -12,20 +13,4 @@
 
 .accuses-jours {
   width: 6rem;
-}
-
-.competence-row {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.competence-row mat-form-field {
-  flex: 1 1 12rem;
-}
-
-@media (max-width: 740px) {
-  .competence-row {
-    flex-wrap: wrap;
-  }
 }

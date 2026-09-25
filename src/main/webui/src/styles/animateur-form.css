@@ -1,0 +1,18 @@
+/* The animateur form dialog's competence rows, loaded by the two pages that
+   open it: the Animateurs list and the fiche of one animateur. */
+
+.competence-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.competence-row mat-form-field {
+  flex: 1 1 12rem;
+}
+
+@media (max-width: 740px) {
+  .competence-row {
+    flex-wrap: wrap;
+  }
+}
