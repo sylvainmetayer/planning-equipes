@@ -60,25 +60,35 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class CoherenceReferentielService {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
-    @Inject
-    StaffingService staffingService;
+    private final StaffingService staffingService;
 
     /** Resolves the stands the write-time warnings are replayed on, without the consigne layer. */
-    @Inject
-    CoherenceService coherence;
+    private final CoherenceService coherence;
 
     /** Behind {@code Instance} like {@link CoherenceService}'s: the plain-Java harnesses have no database. */
-    @Inject
-    Instance<ConstraintAnalysisStore> analyses;
+    private final Instance<ConstraintAnalysisStore> analyses;
+
+    private final Instance<PlanningPersistenceService> plan;
+
+    private final Instance<PlanningService> planning;
 
     @Inject
-    Instance<PlanningPersistenceService> plan;
-
-    @Inject
-    Instance<PlanningService> planning;
+    public CoherenceReferentielService(
+            ReferenceDataService referenceDataService,
+            StaffingService staffingService,
+            CoherenceService coherence,
+            Instance<ConstraintAnalysisStore> analyses,
+            Instance<PlanningPersistenceService> plan,
+            Instance<PlanningService> planning) {
+        this.referenceDataService = referenceDataService;
+        this.staffingService = staffingService;
+        this.coherence = coherence;
+        this.analyses = analyses;
+        this.plan = plan;
+        this.planning = planning;
+    }
 
     /** The families the checklist is grouped by, in reading order. */
     public enum CoherenceFamily {

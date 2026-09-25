@@ -72,16 +72,20 @@ public class CreneauGridService {
     /** Minutes in a day, for the durations of créneaux that cross midnight. */
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
-    @Inject
-    FeasibilityAnalyzer feasibilityAnalyzer;
+    private final FeasibilityAnalyzer feasibilityAnalyzer;
 
     /**
      * Only for the constraint states: the grid report estimates how many seats
      * the team could hold, and that estimate changes with the supervision of
      * minors (issue #595).
      */
+    private final ParametresService parametres;
+
     @Inject
-    ParametresService parametres;
+    public CreneauGridService(FeasibilityAnalyzer feasibilityAnalyzer, ParametresService parametres) {
+        this.feasibilityAnalyzer = feasibilityAnalyzer;
+        this.parametres = parametres;
+    }
 
     /* ------------------------------ Generation ------------------------------ */
 

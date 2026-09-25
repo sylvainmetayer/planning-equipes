@@ -26,6 +26,12 @@ class VerrouillageMcpToolsTest {
         private final List<VerrouillagePlanning> verrouillages = new ArrayList<>();
         private final List<String> supprimes = new ArrayList<>();
 
+        ReferentielFictif() {
+            super(
+                    null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null,
+                    null, null, null, null);
+        }
+
         @Override
         public List<VerrouillagePlanning> listVerrouillages() {
             return List.copyOf(verrouillages);

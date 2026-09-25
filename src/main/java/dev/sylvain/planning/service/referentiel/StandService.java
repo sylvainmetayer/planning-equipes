@@ -26,26 +26,37 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class StandService {
 
-    @Inject
-    StandRepository repository;
+    private final StandRepository repository;
+
+    private final CreneauService creneaux;
+
+    private final TypologieService typologies;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final SolverJobService solverJobs;
+
+    private final ConsigneRepository consignes;
 
     @Inject
-    CreneauService creneaux;
-
-    @Inject
-    TypologieService typologies;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    ConsigneRepository consignes;
+    public StandService(
+            StandRepository repository,
+            CreneauService creneaux,
+            TypologieService typologies,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites,
+            SolverJobService solverJobs,
+            ConsigneRepository consignes) {
+        this.repository = repository;
+        this.creneaux = creneaux;
+        this.typologies = typologies;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+        this.solverJobs = solverJobs;
+        this.consignes = consignes;
+    }
 
     /**
      * Stands as entered: the recurring {@link HoraireStand} rules and the dated

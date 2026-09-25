@@ -39,7 +39,7 @@ class CreneauGridServiceTest {
 
     private static final ParametresLegaux LEGAUX = new ParametresLegaux();
 
-    private final CreneauGridService service = new CreneauGridService();
+    private final CreneauGridService service = new CreneauGridService(null, null);
 
     /* ------------------------------ Generation ------------------------------ */
 

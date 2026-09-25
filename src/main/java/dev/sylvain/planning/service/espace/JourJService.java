@@ -74,26 +74,37 @@ public class JourJService {
     /** Recorded against the exception when no admin session names the author. */
     private static final String AUTEUR_INCONNU = "jour-j";
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final dev.sylvain.planning.service.consigne.ConsigneService consigneService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final PlanningService planningService;
+
+    private final SolverJobService solverJobs;
+
+    private final SecurityIdentity identity;
+
+    private final JourJClock clock;
 
     @Inject
-    dev.sylvain.planning.service.consigne.ConsigneService consigneService;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    PlanningService planningService;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    SecurityIdentity identity;
-
-    @Inject
-    JourJClock clock;
+    public JourJService(
+            ReferenceDataService referenceDataService,
+            dev.sylvain.planning.service.consigne.ConsigneService consigneService,
+            PlanningPersistenceService persistenceService,
+            PlanningService planningService,
+            SolverJobService solverJobs,
+            SecurityIdentity identity,
+            JourJClock clock) {
+        this.referenceDataService = referenceDataService;
+        this.consigneService = consigneService;
+        this.persistenceService = persistenceService;
+        this.planningService = planningService;
+        this.solverJobs = solverJobs;
+        this.identity = identity;
+        this.clock = clock;
+    }
 
     /* -------------------------------- Reads -------------------------------- */
 

@@ -47,18 +47,23 @@ public class NotificationWriter {
      */
     static final DateTimeFormatter JOUR = DateTimeFormatter.ofPattern("EEEE d MMMM", Locale.FRENCH);
 
-    @Inject
-    AdminAddress adminAddress;
+    private final AdminAddress adminAddress;
 
-    @Inject
-    ApplicationLinks liens;
+    private final ApplicationLinks liens;
 
     /** Every subject opens with the deployment's own name, never the vendor's. */
-    @Inject
-    ProductName productName;
+    private final ProductName productName;
+
+    private final MailTemplates templates;
 
     @Inject
-    MailTemplates templates;
+    public NotificationWriter(
+            AdminAddress adminAddress, ApplicationLinks liens, ProductName productName, MailTemplates templates) {
+        this.adminAddress = adminAddress;
+        this.liens = liens;
+        this.productName = productName;
+        this.templates = templates;
+    }
 
     public Optional<MailDraft> rediger(Notification notification) {
         return switch (notification) {

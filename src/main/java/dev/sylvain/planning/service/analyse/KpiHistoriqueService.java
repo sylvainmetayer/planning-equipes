@@ -43,17 +43,13 @@ public class KpiHistoriqueService {
 
     private static final Logger LOG = Logger.getLogger(KpiHistoriqueService.class);
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
-    @Inject
-    EditionRepository editionRepository;
+    private final EditionRepository editionRepository;
 
-    @Inject
-    PlanningKpiService kpiService;
+    private final PlanningKpiService kpiService;
 
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
@@ -61,8 +57,21 @@ public class KpiHistoriqueService {
      * persisted record may be a {@code LocalDate}/{@code Instant} instead of
      * having to be flattened to a {@code String} to keep a bare mapper happy.
      */
+    private final ObjectMapper objectMapper;
+
     @Inject
-    ObjectMapper objectMapper;
+    public KpiHistoriqueService(
+            DataSource dataSource,
+            EditionContext editionContext,
+            EditionRepository editionRepository,
+            PlanningKpiService kpiService,
+            ObjectMapper objectMapper) {
+        this.dataSource = dataSource;
+        this.editionContext = editionContext;
+        this.editionRepository = editionRepository;
+        this.kpiService = kpiService;
+        this.objectMapper = objectMapper;
+    }
 
     /** One history row: where it came from (labels survive deletions) and the KPI. */
     @Schema(requiredProperties = {"id"})

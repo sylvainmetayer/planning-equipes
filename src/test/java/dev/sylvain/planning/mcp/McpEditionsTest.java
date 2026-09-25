@@ -65,7 +65,7 @@ class McpEditionsTest {
     }
 
     private static McpEditions editions(Edition... connues) {
-        return new McpEditions(new EditionService() {
+        return new McpEditions(new EditionService(null, null) {
             @Override
             public List<Edition> listEditions() {
                 return List.of(connues);

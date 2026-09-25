@@ -45,17 +45,25 @@ import java.util.Map;
 @ApplicationScoped
 public class ChangementsJourneeService {
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final PlanPublieService planPublieService;
+
+    private final PlanSnapshotService snapshotService;
+
+    private final PublicationDiffService diffService;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PlanSnapshotService snapshotService;
-
-    @Inject
-    PublicationDiffService diffService;
+    public ChangementsJourneeService(
+            PlanningPersistenceService persistenceService,
+            PlanPublieService planPublieService,
+            PlanSnapshotService snapshotService,
+            PublicationDiffService diffService) {
+        this.persistenceService = persistenceService;
+        this.planPublieService = planPublieService;
+        this.snapshotService = snapshotService;
+        this.diffService = diffService;
+    }
 
     /**
      * The changes of {@code jour} against {@code reference}.

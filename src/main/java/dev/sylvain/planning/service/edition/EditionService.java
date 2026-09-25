@@ -15,11 +15,15 @@ import java.util.Objects;
 @ApplicationScoped
 public class EditionService {
 
-    @Inject
-    EditionRepository repository;
+    private final EditionRepository repository;
+
+    private final EditionContext editionContext;
 
     @Inject
-    EditionContext editionContext;
+    public EditionService(EditionRepository repository, EditionContext editionContext) {
+        this.repository = repository;
+        this.editionContext = editionContext;
+    }
 
     public List<Edition> listEditions() {
         return repository.listEditions();

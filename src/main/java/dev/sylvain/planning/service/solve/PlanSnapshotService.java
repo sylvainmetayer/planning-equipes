@@ -52,32 +52,24 @@ public class PlanSnapshotService {
      * them. Five covers an afternoon of trial and error without letting the
      * JSONB column grow without bound — a 3 500-seat plan is roughly 1 MB.
      */
-    @ConfigProperty(name = "planning.snapshots.automatiques-conservees", defaultValue = "5")
-    int automatiquesConservees;
+    private final int automatiquesConservees;
 
     /** Label of an automatique snapshot, in the server's zone — it names a moment for a human. */
     private static final DateTimeFormatter LIBELLE_AUTO_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
 
-    @Inject
-    JdbcEditionScope scope;
+    private final JdbcEditionScope scope;
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
 
-    @Inject
-    ConstraintAnalysisStore analysisStore;
+    private final ConstraintAnalysisStore analysisStore;
 
-    @Inject
-    PlanningKpiService kpiService;
+    private final PlanningKpiService kpiService;
 
-    @Inject
-    SolverJobService solverJobs;
+    private final SolverJobService solverJobs;
 
-    @Inject
-    ConsigneRepository consigneRepository;
+    private final ConsigneRepository consigneRepository;
 
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: it carries
@@ -85,8 +77,30 @@ public class PlanSnapshotService {
      * persisted record may be a {@code LocalDate}/{@code Instant} instead of
      * having to be flattened to a {@code String} to keep a bare mapper happy.
      */
+    private final ObjectMapper objectMapper;
+
     @Inject
-    ObjectMapper objectMapper;
+    public PlanSnapshotService(
+            @ConfigProperty(name = "planning.snapshots.automatiques-conservees", defaultValue = "5")
+                    int automatiquesConservees,
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            PlanningPersistenceService persistenceService,
+            ConstraintAnalysisStore analysisStore,
+            PlanningKpiService kpiService,
+            SolverJobService solverJobs,
+            ConsigneRepository consigneRepository,
+            ObjectMapper objectMapper) {
+        this.automatiquesConservees = automatiquesConservees;
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.persistenceService = persistenceService;
+        this.analysisStore = analysisStore;
+        this.kpiService = kpiService;
+        this.solverJobs = solverJobs;
+        this.consigneRepository = consigneRepository;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * One seat of a snapshotted plan, carrying everything needed to put it back

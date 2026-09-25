@@ -48,36 +48,50 @@ public class NotificationsPlanifieesService {
 
     private static final Logger LOG = Logger.getLogger(NotificationsPlanifieesService.class);
 
-    @Inject
-    EditionRepository editionRepository;
+    private final EditionRepository editionRepository;
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
-    @Inject
-    ParametresService parametresService;
+    private final ParametresService parametresService;
 
-    @Inject
-    RappelVeilleJob rappelVeille;
+    private final RappelVeilleJob rappelVeille;
 
-    @Inject
-    RelanceConfirmationJob relanceConfirmation;
+    private final RelanceConfirmationJob relanceConfirmation;
 
-    @Inject
-    AlerteEchangeJob alerteEchange;
+    private final AlerteEchangeJob alerteEchange;
 
-    @Inject
-    Scheduler scheduler;
+    private final Scheduler scheduler;
 
     /** Applies the history's retention, once a night (issue #406). */
+    private final JournalActionService journal;
+
+    private final String zone;
+
+    private final String cron;
+
     @Inject
-    JournalActionService journal;
-
-    @ConfigProperty(name = "planning.notifications.zone")
-    String zone;
-
-    @ConfigProperty(name = "planning.notifications.cron")
-    String cron;
+    public NotificationsPlanifieesService(
+            EditionRepository editionRepository,
+            EditionContext editionContext,
+            ParametresService parametresService,
+            RappelVeilleJob rappelVeille,
+            RelanceConfirmationJob relanceConfirmation,
+            AlerteEchangeJob alerteEchange,
+            Scheduler scheduler,
+            JournalActionService journal,
+            @ConfigProperty(name = "planning.notifications.zone") String zone,
+            @ConfigProperty(name = "planning.notifications.cron") String cron) {
+        this.editionRepository = editionRepository;
+        this.editionContext = editionContext;
+        this.parametresService = parametresService;
+        this.rappelVeille = rappelVeille;
+        this.relanceConfirmation = relanceConfirmation;
+        this.alerteEchange = alerteEchange;
+        this.scheduler = scheduler;
+        this.journal = journal;
+        this.zone = zone;
+        this.cron = cron;
+    }
 
     @Scheduled(
             identity = JOB_IDENTITY,

@@ -55,23 +55,33 @@ public class ReferentielCsvExportService {
      */
     private static final String BOM = "﻿";
 
-    @Inject
-    TypologieService typologies;
+    private final TypologieService typologies;
+
+    private final EmplacementService emplacements;
+
+    private final StandService stands;
+
+    private final AnimateurService animateurs;
+
+    private final CreneauService creneaux;
+
+    private final JourneeTypeService journeesTypes;
 
     @Inject
-    EmplacementService emplacements;
-
-    @Inject
-    StandService stands;
-
-    @Inject
-    AnimateurService animateurs;
-
-    @Inject
-    CreneauService creneaux;
-
-    @Inject
-    JourneeTypeService journeesTypes;
+    public ReferentielCsvExportService(
+            TypologieService typologies,
+            EmplacementService emplacements,
+            StandService stands,
+            AnimateurService animateurs,
+            CreneauService creneaux,
+            JourneeTypeService journeesTypes) {
+        this.typologies = typologies;
+        this.emplacements = emplacements;
+        this.stands = stands;
+        this.animateurs = animateurs;
+        this.creneaux = creneaux;
+        this.journeesTypes = journeesTypes;
+    }
 
     /** One referential of the edition, as the matching import tab would read it. */
     public enum ExportTarget {

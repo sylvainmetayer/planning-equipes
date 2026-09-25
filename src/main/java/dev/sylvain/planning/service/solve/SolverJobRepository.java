@@ -32,16 +32,20 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class SolverJobRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
 
     /**
      * The CDI-managed mapper, not a bare {@code new ObjectMapper()}: the
      * perimeter carries {@code LocalDate}s, which need the JSR-310 module
      * Quarkus already registers on this one.
      */
+    private final ObjectMapper objectMapper;
+
     @Inject
-    ObjectMapper objectMapper;
+    public SolverJobRepository(DataSource dataSource, ObjectMapper objectMapper) {
+        this.dataSource = dataSource;
+        this.objectMapper = objectMapper;
+    }
 
     /**
      * One persisted job. Mirrors the in-memory

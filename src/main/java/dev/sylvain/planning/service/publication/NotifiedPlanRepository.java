@@ -33,11 +33,15 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class NotifiedPlanRepository {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public NotifiedPlanRepository(DataSource dataSource, JdbcEditionScope scope) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     /**
      * The marker of every animateur that carries one, by id. An id missing

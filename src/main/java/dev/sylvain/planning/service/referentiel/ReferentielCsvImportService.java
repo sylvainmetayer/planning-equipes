@@ -67,23 +67,33 @@ public class ReferentielCsvImportService {
     /** How a cell lists several values, as the animateur import already reads them — never a slash, a date uses it. */
     private static final String SEPARATEUR_MULTI = "[|;,\\n]";
 
-    @Inject
-    TypologieService typologies;
+    private final TypologieService typologies;
+
+    private final EmplacementService emplacements;
+
+    private final StandService stands;
+
+    private final CreneauService creneaux;
+
+    private final JourneeTypeService journeesTypes;
+
+    private final ReferenceDataChangeTracker changeTracker;
 
     @Inject
-    EmplacementService emplacements;
-
-    @Inject
-    StandService stands;
-
-    @Inject
-    CreneauService creneaux;
-
-    @Inject
-    JourneeTypeService journeesTypes;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
+    public ReferentielCsvImportService(
+            TypologieService typologies,
+            EmplacementService emplacements,
+            StandService stands,
+            CreneauService creneaux,
+            JourneeTypeService journeesTypes,
+            ReferenceDataChangeTracker changeTracker) {
+        this.typologies = typologies;
+        this.emplacements = emplacements;
+        this.stands = stands;
+        this.creneaux = creneaux;
+        this.journeesTypes = journeesTypes;
+        this.changeTracker = changeTracker;
+    }
 
     /* ------------------------------- Entry points ------------------------------- */
 

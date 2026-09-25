@@ -43,20 +43,29 @@ import java.util.UUID;
 @ApplicationScoped
 public class ScenarioImportService {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final EditionService editionService;
+
+    private final EditionContext editionContext;
+
+    private final PlanningService planningService;
+
+    private final ConsigneRepository consigneRepository;
 
     @Inject
-    EditionService editionService;
-
-    @Inject
-    EditionContext editionContext;
-
-    @Inject
-    PlanningService planningService;
-
-    @Inject
-    ConsigneRepository consigneRepository;
+    public ScenarioImportService(
+            ReferenceDataService referenceDataService,
+            EditionService editionService,
+            EditionContext editionContext,
+            PlanningService planningService,
+            ConsigneRepository consigneRepository) {
+        this.referenceDataService = referenceDataService;
+        this.editionService = editionService;
+        this.editionContext = editionContext;
+        this.planningService = planningService;
+        this.consigneRepository = consigneRepository;
+    }
 
     /**
      * Imports one of the scenarios bundled under

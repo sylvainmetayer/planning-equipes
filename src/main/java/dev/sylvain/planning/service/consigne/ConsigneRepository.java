@@ -30,8 +30,12 @@ public class ConsigneRepository {
     private static final String COL_HEURE_DEBUT = "heure_debut";
     private static final String COL_HEURE_FIN = "heure_fin";
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ConsigneRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /* ------------------------------ consignes ------------------------------ */
 

@@ -30,8 +30,7 @@ import org.eclipse.microprofile.config.inject.ConfigProperty;
 @ApplicationScoped
 public class PgDump {
 
-    @Inject
-    BackupConfiguration configuration;
+    private final BackupConfiguration configuration;
 
     /**
      * Optional, all three: with dev services the datasource is configured at
@@ -39,14 +38,23 @@ public class PgDump {
      * before this class ever ran. A deployment missing them fails at the first
      * backup instead, where the message is recorded and shown.
      */
-    @ConfigProperty(name = "quarkus.datasource.jdbc.url")
-    Optional<String> jdbcUrl;
+    private final Optional<String> jdbcUrl;
 
-    @ConfigProperty(name = "quarkus.datasource.username")
-    Optional<String> username;
+    private final Optional<String> username;
 
-    @ConfigProperty(name = "quarkus.datasource.password")
-    Optional<String> password;
+    private final Optional<String> password;
+
+    @Inject
+    public PgDump(
+            BackupConfiguration configuration,
+            @ConfigProperty(name = "quarkus.datasource.jdbc.url") Optional<String> jdbcUrl,
+            @ConfigProperty(name = "quarkus.datasource.username") Optional<String> username,
+            @ConfigProperty(name = "quarkus.datasource.password") Optional<String> password) {
+        this.configuration = configuration;
+        this.jdbcUrl = jdbcUrl;
+        this.username = username;
+        this.password = password;
+    }
 
     /**
      * Writes a compressed dump of the whole database at {@code target}.

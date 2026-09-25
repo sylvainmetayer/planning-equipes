@@ -20,20 +20,29 @@ import java.util.List;
 @ApplicationScoped
 public class CreneauService {
 
-    @Inject
-    CreneauRepository repository;
+    private final CreneauRepository repository;
+
+    private final ParametresService parametres;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    ParametresService parametres;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
-
-    @Inject
-    SolverJobService solverJobs;
+    public CreneauService(
+            CreneauRepository repository,
+            ParametresService parametres,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites,
+            SolverJobService solverJobs) {
+        this.repository = repository;
+        this.parametres = parametres;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+        this.solverJobs = solverJobs;
+    }
 
     public List<Creneau> list() {
         return repository.listCreneaux();

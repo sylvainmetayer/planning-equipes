@@ -111,17 +111,13 @@ public class SolverJobService {
         CANCELLED
     }
 
-    @Inject
-    SolverJobTasks tasks;
+    private final SolverJobTasks tasks;
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
-    @Inject
-    EditionRepository editionRepository;
+    private final EditionRepository editionRepository;
 
-    @Inject
-    SolverJobPersistence persistence;
+    private final SolverJobPersistence persistence;
 
     /**
      * Announces every transition below to the open {@code /api/jobs/stream}
@@ -129,8 +125,7 @@ public class SolverJobService {
      * one: a subscriber reads this service back to build its snapshot, and a
      * hand-over must look atomic from outside — see {@link #finishAndChain}.
      */
-    @Inject
-    JobStreamBroadcaster jobStream;
+    private final JobStreamBroadcaster jobStream;
 
     /**
      * Records the score curve of the running solve (issue #304). Fed by the
@@ -138,16 +133,33 @@ public class SolverJobService {
      * {@code GET /api/jobs/score} and by the {@code score} events of
      * {@code /api/jobs/stream}.
      */
-    @Inject
-    SolverScoreTrace scoreTrace;
+    private final SolverScoreTrace scoreTrace;
 
     /**
      * Whether the queue is replayed at startup. On by default — that is the
      * whole point — but switched off under {@code %test}, where a job left
      * queued by a previous run would start a real solve as the next test boots.
      */
-    @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
-    boolean replayAtStartup;
+    private final boolean replayAtStartup;
+
+    @Inject
+    public SolverJobService(
+            SolverJobTasks tasks,
+            EditionContext editionContext,
+            EditionRepository editionRepository,
+            SolverJobPersistence persistence,
+            JobStreamBroadcaster jobStream,
+            SolverScoreTrace scoreTrace,
+            @ConfigProperty(name = "planning.jobs.reprise-au-demarrage", defaultValue = "true")
+                    boolean replayAtStartup) {
+        this.tasks = tasks;
+        this.editionContext = editionContext;
+        this.editionRepository = editionRepository;
+        this.persistence = persistence;
+        this.jobStream = jobStream;
+        this.scoreTrace = scoreTrace;
+        this.replayAtStartup = replayAtStartup;
+    }
 
     private final Map<String, SolverJob> jobs = new ConcurrentHashMap<>();
     /** FIFO of jobs waiting for the solver. Guarded by this service's monitor. */

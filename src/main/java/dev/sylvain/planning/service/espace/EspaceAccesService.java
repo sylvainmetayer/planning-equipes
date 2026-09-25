@@ -50,23 +50,33 @@ public class EspaceAccesService {
 
     private final SecureRandom random = new SecureRandom();
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
+
+    private final EditionContext editionContext;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final MailService mailService;
+
+    private final CodeRequestLimiter limiteurDemandesCode;
 
     @Inject
-    JdbcEditionScope scope;
-
-    @Inject
-    EditionContext editionContext;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    MailService mailService;
-
-    @Inject
-    CodeRequestLimiter limiteurDemandesCode;
+    public EspaceAccesService(
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            EditionContext editionContext,
+            ReferenceDataService referenceDataService,
+            MailService mailService,
+            CodeRequestLimiter limiteurDemandesCode) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.editionContext = editionContext;
+        this.referenceDataService = referenceDataService;
+        this.mailService = mailService;
+        this.limiteurDemandesCode = limiteurDemandesCode;
+    }
 
     /** What the "send me a code" call tells the interface. */
     public record CodeEnvoye(String emailMasque) {}

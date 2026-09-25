@@ -30,14 +30,21 @@ public class ConstraintAnalysisStore {
 
     public record StoredAnalysis(Instant analysedAt, PlanningDiagnostic diagnostic) {}
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
+
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistenceService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
+    public ConstraintAnalysisStore(
+            EditionContext editionContext,
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService) {
+        this.editionContext = editionContext;
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+    }
 
     private final Map<String, StoredAnalysis> latestByEdition = new ConcurrentHashMap<>();
 

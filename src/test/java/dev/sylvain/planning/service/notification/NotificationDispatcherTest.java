@@ -24,20 +24,17 @@ import org.junit.jupiter.api.Test;
 class NotificationDispatcherTest {
 
     private final List<Mail> envoyes = new ArrayList<>();
+    private final NotificationWriter redacteur = new NotificationWriter(
+            new AdminAddress(Optional.of("admin@example.org")),
+            new ApplicationLinks(Optional.of("https://planning.example.org")),
+            ProductName.neutral(),
+            MailTemplates.standalone(ProductName.neutral()));
     private NotificationDispatcher expediteur;
 
     @BeforeEach
-    void construireExpediteur() {
-        NotificationWriter redacteur = new NotificationWriter();
-        redacteur.adminAddress = new AdminAddress(Optional.of("admin@example.org"));
-        redacteur.liens = new ApplicationLinks(Optional.of("https://planning.example.org"));
-        redacteur.productName = ProductName.neutral();
-        redacteur.templates = MailTemplates.standalone(ProductName.neutral());
-
-        expediteur = new NotificationDispatcher();
-        expediteur.redacteur = redacteur;
-        expediteur.templates = MailTemplates.standalone(ProductName.neutral());
-        expediteur.mailer = mails -> envoyes.addAll(List.of(mails));
+    void buildDispatcher() {
+        expediteur = new NotificationDispatcher(
+                mails -> envoyes.addAll(List.of(mails)), redacteur, MailTemplates.standalone(ProductName.neutral()));
     }
 
     private static Notification oneSubmission() {
@@ -70,23 +67,28 @@ class NotificationDispatcherTest {
      * operation the notification describes — that operation already happened.
      */
     @Test
-    void unEchecDEnvoiEstAvaleSansCasserLOperation() {
-        expediteur.mailer = mails -> {
-            throw new IllegalStateException("SMTP down");
-        };
+    void aFailedSendIsSwallowedWithoutBreakingTheOperation() {
+        expediteur = new NotificationDispatcher(
+                mails -> {
+                    throw new IllegalStateException("SMTP down");
+                },
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()));
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
     }
 
     /** The {@code catch} covers the writing as much as the sending. */
     @Test
-    void unEchecDeRedactionEstAvaleAussi() {
-        expediteur.redacteur = new NotificationWriter() {
+    void aFailedWritingIsSwallowedToo() {
+        NotificationWriter failing = new NotificationWriter(null, null, null, null) {
             @Override
             public Optional<MailDraft> rediger(Notification notification) {
                 throw new IllegalStateException("rédaction impossible");
             }
         };
+        expediteur = new NotificationDispatcher(
+                mails -> envoyes.addAll(List.of(mails)), failing, MailTemplates.standalone(ProductName.neutral()));
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
         assertThat(envoyes).isEmpty();

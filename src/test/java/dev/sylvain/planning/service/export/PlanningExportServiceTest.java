@@ -64,7 +64,8 @@ class PlanningExportServiceTest {
             new AnimateurFeuillePdf(new PdfTheme(), Map::of),
             new GlobalPlanningPdf(new PdfTheme(), Map::of),
             new PlanningIcs(),
-            PROVENANCE);
+            PROVENANCE,
+            null);
     private final AtomicInteger posteSequence = new AtomicInteger();
 
     @Test
@@ -434,7 +435,8 @@ class PlanningExportServiceTest {
                 new AnimateurFeuillePdf(new PdfTheme(), Map::of),
                 new GlobalPlanningPdf(new PdfTheme(), Map::of),
                 new PlanningIcs(),
-                PROVENANCE);
+                PROVENANCE,
+                null);
     }
 
     private Set<String> typologies(String... typologies) {

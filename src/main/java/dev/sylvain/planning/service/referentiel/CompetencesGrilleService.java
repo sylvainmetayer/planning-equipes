@@ -56,23 +56,33 @@ public class CompetencesGrilleService {
 
     private static final String ZIP_SIGNATURE = "PK";
 
-    @Inject
-    AnimateurService animateurs;
+    private final AnimateurService animateurs;
+
+    private final TypologieService typologies;
+
+    private final AnimateurRepository repository;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final SolverJobService solverJobs;
+
+    private final CurrentAction currentAction;
 
     @Inject
-    TypologieService typologies;
-
-    @Inject
-    AnimateurRepository repository;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    SolverJobService solverJobs;
-
-    @Inject
-    CurrentAction currentAction;
+    public CompetencesGrilleService(
+            AnimateurService animateurs,
+            TypologieService typologies,
+            AnimateurRepository repository,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobs,
+            CurrentAction currentAction) {
+        this.animateurs = animateurs;
+        this.typologies = typologies;
+        this.repository = repository;
+        this.changeTracker = changeTracker;
+        this.solverJobs = solverJobs;
+        this.currentAction = currentAction;
+    }
 
     /* ---------------------------------- screen --------------------------------- */
 

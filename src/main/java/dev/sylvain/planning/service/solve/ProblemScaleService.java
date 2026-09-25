@@ -48,11 +48,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class ProblemScaleService {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final ReferenceData referenceDataService;
 
     @Inject
-    ReferenceData referenceDataService;
+    public ProblemScaleService(PlanningService planningService, ReferenceData referenceDataService) {
+        this.planningService = planningService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /**
      * @param animateurCount       Timefold's value count

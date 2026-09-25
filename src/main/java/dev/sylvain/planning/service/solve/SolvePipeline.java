@@ -51,38 +51,53 @@ public class SolvePipeline {
 
     private static final Logger LOG = Logger.getLogger(SolvePipeline.class);
 
-    @Inject
-    PlanSnapshotService snapshotService;
+    private final PlanSnapshotService snapshotService;
+
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final KpiHistoriqueService kpiHistoriqueService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final EditionService editionService;
+
+    private final Event<Notification> notifications;
+
+    private final PlanPublieService planPublieService;
+
+    private final PublicationDiffService diffService;
+
+    private final ValidationJourneeService validationService;
 
     @Inject
-    PlanningService planningService;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    KpiHistoriqueService kpiHistoriqueService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    EditionService editionService;
-
-    @Inject
-    Event<Notification> notifications;
-
-    @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PublicationDiffService diffService;
-
-    @Inject
-    ValidationJourneeService validationService;
+    public SolvePipeline(
+            PlanSnapshotService snapshotService,
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService,
+            ConstraintAnalysisStore analysisStore,
+            KpiHistoriqueService kpiHistoriqueService,
+            ReferenceDataService referenceDataService,
+            EditionService editionService,
+            Event<Notification> notifications,
+            PlanPublieService planPublieService,
+            PublicationDiffService diffService,
+            ValidationJourneeService validationService) {
+        this.snapshotService = snapshotService;
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+        this.analysisStore = analysisStore;
+        this.kpiHistoriqueService = kpiHistoriqueService;
+        this.referenceDataService = referenceDataService;
+        this.editionService = editionService;
+        this.notifications = notifications;
+        this.planPublieService = planPublieService;
+        this.diffService = diffService;
+        this.validationService = validationService;
+    }
 
     /**
      * What a solve produced.

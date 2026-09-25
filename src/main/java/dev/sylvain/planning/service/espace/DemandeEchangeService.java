@@ -50,34 +50,46 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class DemandeEchangeService {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
 
-    @Inject
-    JdbcEditionScope scope;
+    private final JdbcEditionScope scope;
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
 
-    @Inject
-    SolverJobService solverJobs;
+    private final SolverJobService solverJobs;
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
     /**
      * Notifications are fired as facts, not sent: their best-effort delivery
      * policy lives in {@code NotificationDispatcher}, so a broken SMTP server
      * can never roll back a demande that was really submitted.
      */
+    private final Event<Notification> notifications;
+
     @Inject
-    Event<Notification> notifications;
+    public DemandeEchangeService(
+            DataSource dataSource,
+            JdbcEditionScope scope,
+            EditionContext editionContext,
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService,
+            SolverJobService solverJobs,
+            ReferenceDataService referenceDataService,
+            Event<Notification> notifications) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+        this.editionContext = editionContext;
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+        this.solverJobs = solverJobs;
+        this.referenceDataService = referenceDataService;
+        this.notifications = notifications;
+    }
 
     /**
      * One demande as typed in the espace animateur, before any validation.

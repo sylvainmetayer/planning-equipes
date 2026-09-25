@@ -63,47 +63,65 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class EspaceAnimateurService {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanPublieService planPublieService;
+
+    private final PlanningExportService exportService;
+
+    private final ConsigneService consigneService;
+
+    private final EtiquetteEditionService etiquetteService;
+
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final PlanningService planningService;
+
+    private final DeclarationDisponibiliteService declarationService;
+
+    private final TypologieService typologieService;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final PauseAnalyzer pauseAnalyzer;
+
+    private final ColleagueLookupLimiter colleagueLookups;
+
+    private final PublicationTraceRepository traceRepository;
+
+    private final JourJClock clock;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PlanningExportService exportService;
-
-    @Inject
-    ConsigneService consigneService;
-
-    @Inject
-    EtiquetteEditionService etiquetteService;
-
-    @Inject
-    DemandeEchangeService demandeEchangeService;
-
-    @Inject
-    PlanningService planningService;
-
-    @Inject
-    DeclarationDisponibiliteService declarationService;
-
-    @Inject
-    TypologieService typologieService;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    PauseAnalyzer pauseAnalyzer;
-
-    @Inject
-    ColleagueLookupLimiter colleagueLookups;
-
-    @Inject
-    PublicationTraceRepository traceRepository;
-
-    @Inject
-    JourJClock clock;
+    public EspaceAnimateurService(
+            ReferenceDataService referenceDataService,
+            PlanPublieService planPublieService,
+            PlanningExportService exportService,
+            ConsigneService consigneService,
+            EtiquetteEditionService etiquetteService,
+            DemandeEchangeService demandeEchangeService,
+            PlanningService planningService,
+            DeclarationDisponibiliteService declarationService,
+            TypologieService typologieService,
+            ConfirmationPlanningService confirmationService,
+            PauseAnalyzer pauseAnalyzer,
+            ColleagueLookupLimiter colleagueLookups,
+            PublicationTraceRepository traceRepository,
+            JourJClock clock) {
+        this.referenceDataService = referenceDataService;
+        this.planPublieService = planPublieService;
+        this.exportService = exportService;
+        this.consigneService = consigneService;
+        this.etiquetteService = etiquetteService;
+        this.demandeEchangeService = demandeEchangeService;
+        this.planningService = planningService;
+        this.declarationService = declarationService;
+        this.typologieService = typologieService;
+        this.confirmationService = confirmationService;
+        this.pauseAnalyzer = pauseAnalyzer;
+        this.colleagueLookups = colleagueLookups;
+        this.traceRepository = traceRepository;
+        this.clock = clock;
+    }
 
     /**
      * Too many distinct colleagues looked up in the window (see

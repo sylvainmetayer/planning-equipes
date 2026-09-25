@@ -35,17 +35,13 @@ import java.util.Set;
 @ApplicationScoped
 public class CoherenceService {
 
-    @Inject
-    CreneauService creneaux;
+    private final CreneauService creneaux;
 
-    @Inject
-    StandService stands;
+    private final StandService stands;
 
-    @Inject
-    AnimateurService animateurs;
+    private final AnimateurService animateurs;
 
-    @Inject
-    VerrouillageService verrouillages;
+    private final VerrouillageService verrouillages;
 
     /**
      * Read for one thing only: which seats of the persisted plan the animateurs
@@ -54,23 +50,38 @@ public class CoherenceService {
      * harnesses, which have no database — the lock check is then simply not
      * run, never guessed at.
      */
-    @Inject
-    Instance<PlanningPersistenceService> plan;
+    private final Instance<PlanningPersistenceService> plan;
 
     /**
      * The latest score analysis, read for the lock warning alone and behind the
      * same indirection as {@link #plan}, for the same reason.
      */
-    @Inject
-    Instance<ConstraintAnalysisStore> analyses;
+    private final Instance<ConstraintAnalysisStore> analyses;
 
     /**
      * The moment the past is judged against (ADR 0044), behind the same
      * indirection: a rule left on a day already worked is history, and the
      * warnings say nothing about it.
      */
+    private final Instance<PlanningService> planning;
+
     @Inject
-    Instance<PlanningService> planning;
+    public CoherenceService(
+            CreneauService creneaux,
+            StandService stands,
+            AnimateurService animateurs,
+            VerrouillageService verrouillages,
+            Instance<PlanningPersistenceService> plan,
+            Instance<ConstraintAnalysisStore> analyses,
+            Instance<PlanningService> planning) {
+        this.creneaux = creneaux;
+        this.stands = stands;
+        this.animateurs = animateurs;
+        this.verrouillages = verrouillages;
+        this.plan = plan;
+        this.analyses = analyses;
+        this.planning = planning;
+    }
 
     /** The event's span, derived from the créneaux — an {@code Edition} stores none. */
     public JoursEvenement joursEvenement() {

@@ -37,14 +37,21 @@ public class AlerteEchangeJob {
 
     private static final Logger LOG = Logger.getLogger(AlerteEchangeJob.class);
 
-    @Inject
-    DemandeEchangeService demandeEchangeService;
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final JournalNotificationsRepository journal;
+
+    private final Event<Notification> notifications;
 
     @Inject
-    JournalNotificationsRepository journal;
-
-    @Inject
-    Event<Notification> notifications;
+    public AlerteEchangeJob(
+            DemandeEchangeService demandeEchangeService,
+            JournalNotificationsRepository journal,
+            Event<Notification> notifications) {
+        this.demandeEchangeService = demandeEchangeService;
+        this.journal = journal;
+        this.notifications = notifications;
+    }
 
     /**
      * Alerts about the requests that have just crossed the configured age.

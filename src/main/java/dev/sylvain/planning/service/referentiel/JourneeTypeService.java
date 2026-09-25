@@ -36,20 +36,29 @@ public class JourneeTypeService {
 
     static final int NOM_LONGUEUR_MAX = 80;
 
-    @Inject
-    JourneeTypeRepository repository;
+    private final JourneeTypeRepository repository;
+
+    private final CreneauRepository creneaux;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConsigneRepository consignes;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    CreneauRepository creneaux;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConsigneRepository consignes;
-
-    @Inject
-    SolverJobService solverJobs;
+    public JourneeTypeService(
+            JourneeTypeRepository repository,
+            CreneauRepository creneaux,
+            ReferenceDataChangeTracker changeTracker,
+            ConsigneRepository consignes,
+            SolverJobService solverJobs) {
+        this.repository = repository;
+        this.creneaux = creneaux;
+        this.changeTracker = changeTracker;
+        this.consignes = consignes;
+        this.solverJobs = solverJobs;
+    }
 
     /* ------------------------------ Templates ------------------------------ */
 

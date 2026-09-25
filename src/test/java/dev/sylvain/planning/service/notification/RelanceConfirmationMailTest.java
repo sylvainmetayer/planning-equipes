@@ -30,11 +30,11 @@ class RelanceConfirmationMailTest {
 
     @BeforeEach
     void buildTheNightPath() {
-        writer = new NotificationWriter();
-        writer.adminAddress = new AdminAddress(Optional.empty());
-        writer.liens = new ApplicationLinks(Optional.of("https://planning.example.org"));
-        writer.productName = ProductName.neutral();
-        writer.templates = templates;
+        writer = new NotificationWriter(
+                new AdminAddress(Optional.empty()),
+                new ApplicationLinks(Optional.of("https://planning.example.org")),
+                ProductName.neutral(),
+                templates);
     }
 
     @Test

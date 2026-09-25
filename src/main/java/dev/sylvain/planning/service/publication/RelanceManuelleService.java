@@ -55,23 +55,33 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class RelanceManuelleService {
 
-    @Inject
-    PlanPublieService planPublieService;
+    private final PlanPublieService planPublieService;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final JournalNotificationsRepository journal;
+
+    private final ApplicationLinks liens;
+
+    private final MailService mailService;
 
     @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    JournalNotificationsRepository journal;
-
-    @Inject
-    ApplicationLinks liens;
-
-    @Inject
-    MailService mailService;
+    public RelanceManuelleService(
+            PlanPublieService planPublieService,
+            ConfirmationPlanningService confirmationService,
+            ReferenceDataService referenceDataService,
+            JournalNotificationsRepository journal,
+            ApplicationLinks liens,
+            MailService mailService) {
+        this.planPublieService = planPublieService;
+        this.confirmationService = confirmationService;
+        this.referenceDataService = referenceDataService;
+        this.journal = journal;
+        this.liens = liens;
+        this.mailService = mailService;
+    }
 
     /**
      * Who was written to, and who was not and why — ids only in every list,

@@ -74,20 +74,29 @@ public class StandGrilleImportService {
 
     private static final String ZIP_SIGNATURE = "PK";
 
-    @Inject
-    StandService stands;
+    private final StandService stands;
+
+    private final CreneauService creneaux;
+
+    private final StandRepository repository;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final SolverJobService solverJobs;
 
     @Inject
-    CreneauService creneaux;
-
-    @Inject
-    StandRepository repository;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    SolverJobService solverJobs;
+    public StandGrilleImportService(
+            StandService stands,
+            CreneauService creneaux,
+            StandRepository repository,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobs) {
+        this.stands = stands;
+        this.creneaux = creneaux;
+        this.repository = repository;
+        this.changeTracker = changeTracker;
+        this.solverJobs = solverJobs;
+    }
 
     public StandGrilleImportReport preview(StandGrilleImportRequest request) {
         return analyse(request).report(false);

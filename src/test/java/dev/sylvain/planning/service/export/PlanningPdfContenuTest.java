@@ -76,7 +76,8 @@ class PlanningPdfContenuTest {
             new AnimateurFeuillePdf(new PdfTheme(), TYPOLOGIES),
             new GlobalPlanningPdf(new PdfTheme(), TYPOLOGIES),
             new PlanningIcs(),
-            PROVENANCE);
+            PROVENANCE,
+            null);
 
     @Test
     void lePdfIndividuelNommeLAnimateurSesStandsEtSesRepos() throws IOException {
@@ -537,7 +538,8 @@ class PlanningPdfContenuTest {
                     public Provenance publiee() {
                         return new Provenance(EDITION, null, Nature.PUBLICATION);
                     }
-                });
+                },
+                null);
     }
 
     private static String pageTextOf(byte[] pdf, int page) throws IOException {

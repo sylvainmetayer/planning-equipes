@@ -22,8 +22,12 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class BackupRepository {
 
+    private final DataSource dataSource;
+
     @Inject
-    DataSource dataSource;
+    public BackupRepository(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
 
     public boolean isActive() {
         try (Connection connection = dataSource.getConnection();

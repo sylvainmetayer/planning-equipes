@@ -38,8 +38,12 @@ public class ConcurrentModificationGuard {
             "typologie", "Cette typologie",
             "contrainte_ad_hoc", "Cet ajustement manuel");
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ConcurrentModificationGuard(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /**
      * Refuses a write whose precondition did not match.

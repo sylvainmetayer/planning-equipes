@@ -44,11 +44,15 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class JdbcEditionScope {
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final EditionContext editionContext;
 
     @Inject
-    EditionContext editionContext;
+    public JdbcEditionScope(DataSource dataSource, EditionContext editionContext) {
+        this.dataSource = dataSource;
+        this.editionContext = editionContext;
+    }
 
     /** Work on a borrowed connection that yields a result. */
     @FunctionalInterface

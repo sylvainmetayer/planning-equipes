@@ -83,61 +83,82 @@ import java.util.Set;
 @ApplicationScoped
 public class EtatEditionService {
 
-    @Inject
-    EditionService editionService;
+    private final EditionService editionService;
 
-    @Inject
-    EditionContext editionContext;
+    private final EditionContext editionContext;
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
-    @Inject
-    DeclarationDisponibiliteService declarationService;
+    private final DeclarationDisponibiliteService declarationService;
 
-    @Inject
-    StaffingService staffingService;
+    private final StaffingService staffingService;
 
-    @Inject
-    FeasibilityAnalyzer feasibilityAnalyzer;
+    private final FeasibilityAnalyzer feasibilityAnalyzer;
 
     /**
      * For its {@code pastHorizon()} alone — see the note above on never
      * touching the solver: reading the moment the frozen past is judged against
      * (ADR 0044) starts nothing and waits for nothing.
      */
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final SolverJobService solverJobService;
+
+    private final PlanPublicationService publicationService;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final ValidationPrerequisService prerequisService;
+
+    private final CoherenceReferentielService coherenceService;
+
+    private final JourJClock jourJClock;
 
     @Inject
-    ConstraintAnalysisStore analysisStore;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    SolverJobService solverJobService;
-
-    @Inject
-    PlanPublicationService publicationService;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    DemandeEchangeService demandeEchangeService;
-
-    @Inject
-    ValidationPrerequisService prerequisService;
-
-    @Inject
-    CoherenceReferentielService coherenceService;
-
-    @Inject
-    JourJClock jourJClock;
+    public EtatEditionService(
+            EditionService editionService,
+            EditionContext editionContext,
+            ReferenceDataService referenceDataService,
+            DeclarationDisponibiliteService declarationService,
+            StaffingService staffingService,
+            FeasibilityAnalyzer feasibilityAnalyzer,
+            PlanningService planningService,
+            ConstraintAnalysisStore analysisStore,
+            PlanningPersistenceService persistenceService,
+            ReferenceDataChangeTracker changeTracker,
+            SolverJobService solverJobService,
+            PlanPublicationService publicationService,
+            ConfirmationPlanningService confirmationService,
+            DemandeEchangeService demandeEchangeService,
+            ValidationPrerequisService prerequisService,
+            CoherenceReferentielService coherenceService,
+            JourJClock jourJClock) {
+        this.editionService = editionService;
+        this.editionContext = editionContext;
+        this.referenceDataService = referenceDataService;
+        this.declarationService = declarationService;
+        this.staffingService = staffingService;
+        this.feasibilityAnalyzer = feasibilityAnalyzer;
+        this.planningService = planningService;
+        this.analysisStore = analysisStore;
+        this.persistenceService = persistenceService;
+        this.changeTracker = changeTracker;
+        this.solverJobService = solverJobService;
+        this.publicationService = publicationService;
+        this.confirmationService = confirmationService;
+        this.demandeEchangeService = demandeEchangeService;
+        this.prerequisService = prerequisService;
+        this.coherenceService = coherenceService;
+        this.jourJClock = jourJClock;
+    }
 
     /**
      * How far ahead « journées proches » looks, in days, today included —

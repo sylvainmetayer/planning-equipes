@@ -23,8 +23,12 @@ public class SolverJobPersistence {
 
     private static final Logger LOG = Logger.getLogger(SolverJobPersistence.class);
 
+    private final SolverJobRepository repository;
+
     @Inject
-    SolverJobRepository repository;
+    public SolverJobPersistence(SolverJobRepository repository) {
+        this.repository = repository;
+    }
 
     /** Every row, for the replay at startup. */
     List<LigneJob> list() {

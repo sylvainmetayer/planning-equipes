@@ -44,23 +44,33 @@ public class RelanceConfirmationJob {
 
     private static final Logger LOG = Logger.getLogger(RelanceConfirmationJob.class);
 
-    @Inject
-    ConfirmationPlanningService confirmationService;
+    private final ConfirmationPlanningService confirmationService;
+
+    private final PlanPublieService planPublieService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final ApplicationLinks liens;
+
+    private final JournalNotificationsRepository journal;
+
+    private final Event<Notification> notifications;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    ApplicationLinks liens;
-
-    @Inject
-    JournalNotificationsRepository journal;
-
-    @Inject
-    Event<Notification> notifications;
+    public RelanceConfirmationJob(
+            ConfirmationPlanningService confirmationService,
+            PlanPublieService planPublieService,
+            ReferenceDataService referenceDataService,
+            ApplicationLinks liens,
+            JournalNotificationsRepository journal,
+            Event<Notification> notifications) {
+        this.confirmationService = confirmationService;
+        this.planPublieService = planPublieService;
+        this.referenceDataService = referenceDataService;
+        this.liens = liens;
+        this.journal = journal;
+        this.notifications = notifications;
+    }
 
     /**
      * Reminds whoever has been silent for longer than the configured delay.

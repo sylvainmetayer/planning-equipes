@@ -37,11 +37,9 @@ public class JournalActionService {
     /** What one page of the screen shows when the caller does not say. */
     static final int LIMITE_DEFAUT = 200;
 
-    @Inject
-    JournalActionRepository repository;
+    private final JournalActionRepository repository;
 
-    @Inject
-    SecurityIdentity identity;
+    private final SecurityIdentity identity;
 
     /**
      * How long a line is kept. Ninety days by default: long enough to answer
@@ -49,8 +47,17 @@ public class JournalActionService {
      * enough that a journal nobody reads does not become a personal-data
      * store of its own (RGPD, limitation de conservation).
      */
-    @ConfigProperty(name = "planning.journal.retention", defaultValue = "P90D")
-    Duration retention;
+    private final Duration retention;
+
+    @Inject
+    public JournalActionService(
+            JournalActionRepository repository,
+            SecurityIdentity identity,
+            @ConfigProperty(name = "planning.journal.retention", defaultValue = "P90D") Duration retention) {
+        this.repository = repository;
+        this.identity = identity;
+        this.retention = retention;
+    }
 
     /** A day at the very least: below that the nightly sweep would empty the table it purges. */
     static final Duration RETENTION_MINIMALE = Duration.ofDays(1);

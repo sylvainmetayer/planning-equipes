@@ -20,14 +20,19 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class EmplacementRepository {
 
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    DataSource dataSource;
-
-    @Inject
-    JdbcEditionScope scope;
+    public EmplacementRepository(
+            ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+        this.staleWrites = staleWrites;
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     public List<Emplacement> listEmplacements() {
         List<Emplacement> emplacements = new ArrayList<>();

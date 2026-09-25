@@ -30,11 +30,7 @@ class IntendanceRepasAnalyzerTest {
     private static final List<FenetreRepas> MIDI =
             List.of(new FenetreRepas(FenetreRepas.MIDI, LocalTime.of(12, 0), LocalTime.of(14, 0), 60, true));
 
-    private final IntendanceRepasAnalyzer analyzer = new IntendanceRepasAnalyzer();
-
-    IntendanceRepasAnalyzerTest() {
-        analyzer.pauseAnalyzer = new PauseAnalyzer();
-    }
+    private final IntendanceRepasAnalyzer analyzer = new IntendanceRepasAnalyzer(new PauseAnalyzer());
 
     @Test
     void comptelesPersonnesEnCoupureHeureParHeureEtParEmplacement() {

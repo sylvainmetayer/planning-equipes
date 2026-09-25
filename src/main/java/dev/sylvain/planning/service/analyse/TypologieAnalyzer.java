@@ -48,11 +48,15 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 @ApplicationScoped
 public class TypologieAnalyzer {
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    ReferenceDataService referenceDataService;
+    public TypologieAnalyzer(PlanningPersistenceService persistenceService, ReferenceDataService referenceDataService) {
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /** The reading over the persisted plan and the current referential. */
     public RapportTypologies rapport() {

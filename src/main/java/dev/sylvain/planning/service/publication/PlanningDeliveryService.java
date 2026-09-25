@@ -29,14 +29,19 @@ import java.util.List;
 @ApplicationScoped
 public class PlanningDeliveryService {
 
-    @Inject
-    PlanPublieService planPublieService;
+    private final PlanPublieService planPublieService;
+
+    private final PlanningExportService planningExportService;
+
+    private final MailService mailService;
 
     @Inject
-    PlanningExportService planningExportService;
-
-    @Inject
-    MailService mailService;
+    public PlanningDeliveryService(
+            PlanPublieService planPublieService, PlanningExportService planningExportService, MailService mailService) {
+        this.planPublieService = planPublieService;
+        this.planningExportService = planningExportService;
+        this.mailService = mailService;
+    }
 
     /**
      * Outcome of a send: {@code sansEmail} and {@code echecs} carry display

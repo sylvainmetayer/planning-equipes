@@ -29,17 +29,25 @@ import java.util.List;
 @ApplicationScoped
 public class MargeService {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final MargeAnalyzer margeAnalyzer;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    MargeAnalyzer margeAnalyzer;
+    public MargeService(
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService,
+            ReferenceDataService referenceDataService,
+            MargeAnalyzer margeAnalyzer) {
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+        this.margeAnalyzer = margeAnalyzer;
+    }
 
     /** Never fails on an empty edition: this feeds a read-only screen a new user opens before entering anything. */
     public RapportMarge analyzeEdition(Mode mode) {

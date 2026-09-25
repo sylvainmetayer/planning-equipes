@@ -13,17 +13,19 @@ import io.quarkus.test.junit.TestProfile;
 import io.sentry.Sentry;
 import io.sentry.SentryEvent;
 import jakarta.annotation.Priority;
-import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Alternative;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.stream.Stream;
+import javax.sql.DataSource;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -71,10 +73,17 @@ class BackupServiceTest {
      * No {@code @Priority}: selected by {@link Profil} alone.
      */
     @Alternative
-    @ApplicationScoped
+    // Singleton, not normal-scoped: a client proxy would need a no-args
+    // constructor, which the constructor-injected parent no longer has.
+    @Singleton
     public static class DatabaseOutage extends BackupRepository {
         static boolean readFails;
         static boolean writeFails;
+
+        @Inject
+        public DatabaseOutage(DataSource dataSource) {
+            super(dataSource);
+        }
 
         @Override
         public boolean isActive() {
@@ -100,8 +109,15 @@ class BackupServiceTest {
      */
     @Alternative
     @Priority(1)
-    @ApplicationScoped
+    // Singleton, not normal-scoped: a client proxy would need a no-args
+    // constructor, which the constructor-injected parent no longer has.
+    @Singleton
     public static class PgDumpStub extends PgDump {
+        @Inject
+        public PgDumpStub(BackupConfiguration configuration) {
+            super(configuration, Optional.empty(), Optional.empty(), Optional.empty());
+        }
+
         @Override
         public void dumpTo(Path target) throws IOException {
             if (dumpFails) {

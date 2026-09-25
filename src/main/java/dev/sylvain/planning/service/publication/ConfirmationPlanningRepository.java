@@ -28,8 +28,12 @@ public class ConfirmationPlanningRepository {
 
     private static final String COL_ANIMATEUR_ID = "animateur_id";
 
+    private final JdbcEditionScope scope;
+
     @Inject
-    JdbcEditionScope scope;
+    public ConfirmationPlanningRepository(JdbcEditionScope scope) {
+        this.scope = scope;
+    }
 
     /** One stored answer. {@code confirmeLe} and {@code relanceLe} coexist: a reminder can be answered. */
     public record Confirmation(String animateurId, StatutConfirmation statut, Instant confirmeLe, Instant relanceLe) {}

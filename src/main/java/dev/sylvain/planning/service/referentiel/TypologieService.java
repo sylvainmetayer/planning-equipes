@@ -25,14 +25,21 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class TypologieService implements TypologieLibelles {
 
-    @Inject
-    TypologieRepository repository;
+    private final TypologieRepository repository;
+
+    private final ReferenceDataChangeTracker changeTracker;
+
+    private final ConcurrentModificationGuard staleWrites;
 
     @Inject
-    ReferenceDataChangeTracker changeTracker;
-
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    public TypologieService(
+            TypologieRepository repository,
+            ReferenceDataChangeTracker changeTracker,
+            ConcurrentModificationGuard staleWrites) {
+        this.repository = repository;
+        this.changeTracker = changeTracker;
+        this.staleWrites = staleWrites;
+    }
 
     public List<TypologieItem> list() {
         return repository.listTypologies();

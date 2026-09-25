@@ -68,8 +68,12 @@ public class IntendanceRepasAnalyzer {
         return emplacement;
     }
 
+    private final PauseAnalyzer pauseAnalyzer;
+
     @Inject
-    PauseAnalyzer pauseAnalyzer;
+    public IntendanceRepasAnalyzer(PauseAnalyzer pauseAnalyzer) {
+        this.pauseAnalyzer = pauseAnalyzer;
+    }
 
     /**
      * One emplacement of one window, on one day.

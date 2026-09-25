@@ -113,11 +113,15 @@ public class EditionRepository {
 
     record TableToCopy(String nom, String colonnes) {}
 
-    @Inject
-    DataSource dataSource;
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    JdbcEditionScope scope;
+    public EditionRepository(DataSource dataSource, JdbcEditionScope scope) {
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     public List<Edition> listEditions() {
         List<Edition> editions = new ArrayList<>();

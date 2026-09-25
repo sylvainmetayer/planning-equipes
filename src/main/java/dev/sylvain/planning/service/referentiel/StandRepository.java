@@ -48,14 +48,18 @@ import javax.sql.DataSource;
 @ApplicationScoped
 public class StandRepository {
 
-    @Inject
-    ConcurrentModificationGuard staleWrites;
+    private final ConcurrentModificationGuard staleWrites;
+
+    private final DataSource dataSource;
+
+    private final JdbcEditionScope scope;
 
     @Inject
-    DataSource dataSource;
-
-    @Inject
-    JdbcEditionScope scope;
+    public StandRepository(ConcurrentModificationGuard staleWrites, DataSource dataSource, JdbcEditionScope scope) {
+        this.staleWrites = staleWrites;
+        this.dataSource = dataSource;
+        this.scope = scope;
+    }
 
     public List<Stand> listStands() {
         Map<String, Stand> byId = new LinkedHashMap<>();

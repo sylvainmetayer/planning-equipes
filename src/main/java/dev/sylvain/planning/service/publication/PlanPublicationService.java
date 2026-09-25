@@ -63,53 +63,73 @@ public class PlanPublicationService {
     /** Label of the snapshot a publication leaves behind, in the server's zone. */
     private static final DateTimeFormatter LIBELLE_FORMAT = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-    @Inject
-    PlanningPersistenceService persistenceService;
+    private final PlanningPersistenceService persistenceService;
+
+    private final PlanPublieService planPublieService;
+
+    private final PlanSnapshotService snapshotService;
+
+    private final PublicationDiffService diffService;
+
+    private final PublicationTraceRepository traceRepository;
+
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final dev.sylvain.planning.service.consigne.ConsigneService consigneService;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanningExportService planningExportService;
+
+    private final MailService mailService;
+
+    private final SolverJobService solverJobService;
+
+    private final ValidationPrerequisService prerequisService;
+
+    private final EditionContext editionContext;
+
+    private final ConfirmationPlanningService confirmationService;
+
+    private final NotifiedPlanRepository notifiedPlans;
+
+    private final dev.sylvain.planning.service.journal.JournalActionService journal;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PlanSnapshotService snapshotService;
-
-    @Inject
-    PublicationDiffService diffService;
-
-    @Inject
-    PublicationTraceRepository traceRepository;
-
-    @Inject
-    DemandeEchangeService demandeEchangeService;
-
-    @Inject
-    dev.sylvain.planning.service.consigne.ConsigneService consigneService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PlanningExportService planningExportService;
-
-    @Inject
-    MailService mailService;
-
-    @Inject
-    SolverJobService solverJobService;
-
-    @Inject
-    ValidationPrerequisService prerequisService;
-
-    @Inject
-    EditionContext editionContext;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
-
-    @Inject
-    NotifiedPlanRepository notifiedPlans;
-
-    @Inject
-    dev.sylvain.planning.service.journal.JournalActionService journal;
+    public PlanPublicationService(
+            PlanningPersistenceService persistenceService,
+            PlanPublieService planPublieService,
+            PlanSnapshotService snapshotService,
+            PublicationDiffService diffService,
+            PublicationTraceRepository traceRepository,
+            DemandeEchangeService demandeEchangeService,
+            dev.sylvain.planning.service.consigne.ConsigneService consigneService,
+            ReferenceDataService referenceDataService,
+            PlanningExportService planningExportService,
+            MailService mailService,
+            SolverJobService solverJobService,
+            ValidationPrerequisService prerequisService,
+            EditionContext editionContext,
+            ConfirmationPlanningService confirmationService,
+            NotifiedPlanRepository notifiedPlans,
+            dev.sylvain.planning.service.journal.JournalActionService journal) {
+        this.persistenceService = persistenceService;
+        this.planPublieService = planPublieService;
+        this.snapshotService = snapshotService;
+        this.diffService = diffService;
+        this.traceRepository = traceRepository;
+        this.demandeEchangeService = demandeEchangeService;
+        this.consigneService = consigneService;
+        this.referenceDataService = referenceDataService;
+        this.planningExportService = planningExportService;
+        this.mailService = mailService;
+        this.solverJobService = solverJobService;
+        this.prerequisService = prerequisService;
+        this.editionContext = editionContext;
+        this.confirmationService = confirmationService;
+        this.notifiedPlans = notifiedPlans;
+        this.journal = journal;
+    }
 
     /**
      * One person the next publication would write to, with the exact sentences

@@ -76,31 +76,42 @@ public class DeclarationDisponibiliteService {
     /** Same reasoning for the free word: a sentence to the organisation, not a file. */
     static final int MAX_COMMENTAIRE = 2000;
 
-    @Inject
-    DeclarationDisponibiliteRepository repository;
+    private final DeclarationDisponibiliteRepository repository;
 
-    @Inject
-    DeclarationRateLimiter rateLimiter;
+    private final DeclarationRateLimiter rateLimiter;
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
 
-    @Inject
-    TypologieService typologieService;
+    private final TypologieService typologieService;
 
-    @Inject
-    MailService mailService;
+    private final MailService mailService;
 
-    @Inject
-    ApplicationLinks liens;
+    private final ApplicationLinks liens;
 
     /**
      * Fired as a fact, never sent from here: the best-effort delivery policy
      * lives in {@code NotificationDispatcher}, so a broken SMTP server cannot
      * roll back a declaration that was really submitted.
      */
+    private final Event<Notification> notifications;
+
     @Inject
-    Event<Notification> notifications;
+    public DeclarationDisponibiliteService(
+            DeclarationDisponibiliteRepository repository,
+            DeclarationRateLimiter rateLimiter,
+            ReferenceDataService referenceDataService,
+            TypologieService typologieService,
+            MailService mailService,
+            ApplicationLinks liens,
+            Event<Notification> notifications) {
+        this.repository = repository;
+        this.rateLimiter = rateLimiter;
+        this.referenceDataService = referenceDataService;
+        this.typologieService = typologieService;
+        this.mailService = mailService;
+        this.liens = liens;
+        this.notifications = notifications;
+    }
 
     /**
      * Too many declarations in the window (see {@link DeclarationRateLimiter}).
