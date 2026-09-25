@@ -53,25 +53,36 @@ import java.util.List;
 @ApplicationScoped
 public class PublicationMcpTools {
 
-    @Inject
-    PlanPublicationService publicationService;
+    private final PlanPublicationService publicationService;
+
+    private final PlanPublieService planPublieService;
+
+    private final PublicationTraceRepository traceRepository;
+
+    private final PlanningDeliveryService deliveryService;
+
+    private final RelanceManuelleService relanceService;
+
+    private final ConfirmationPlanningService confirmationService;
 
     @Inject
-    PlanPublieService planPublieService;
-
-    @Inject
-    PublicationTraceRepository traceRepository;
-
-    @Inject
-    PlanningDeliveryService deliveryService;
-
-    @Inject
-    RelanceManuelleService relanceService;
-
-    @Inject
-    ConfirmationPlanningService confirmationService;
+    PublicationMcpTools(
+            PlanPublicationService publicationService,
+            PlanPublieService planPublieService,
+            PublicationTraceRepository traceRepository,
+            PlanningDeliveryService deliveryService,
+            RelanceManuelleService relanceService,
+            ConfirmationPlanningService confirmationService) {
+        this.publicationService = publicationService;
+        this.planPublieService = planPublieService;
+        this.traceRepository = traceRepository;
+        this.deliveryService = deliveryService;
+        this.relanceService = relanceService;
+        this.confirmationService = confirmationService;
+    }
 
     @Tool(
+            name = "etat_publication",
             description = "État de la publication du planning : quand la dernière publication est partie, si "
                     + "quelque chose a déjà été publié, et qui serait concerné par la prochaine — avec, pour chaque "
                     + "animateur, ce que son courriel lui annoncerait. N'envoie rien. C'est ici que se lit la date de "
@@ -82,7 +93,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatPublicationView etat_publication(
+    EtatPublicationView publicationState(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ApercuPublication apercu = publicationService.apercu();
         return new EtatPublicationView(
@@ -95,6 +106,7 @@ public class PublicationMcpTools {
     }
 
     @Tool(
+            name = "publier_planning",
             description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
                     + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
                     + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
@@ -108,7 +120,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    RapportPublicationView publier_planning(
+    RapportPublicationView publishPlanning(
             @ToolArg(
                             description = "Ids des animateurs dont le message est différé ; absent = prévenir tout le "
                                     + "monde",
@@ -126,6 +138,7 @@ public class PublicationMcpTools {
     }
 
     @Tool(
+            name = "lister_destinataires_publication",
             description = "Trace d'une publication : qui a été prévenu, avec quel statut d'envoi et de quoi il a "
                     + "été informé. Par défaut la dernière publication ; une liste vide veut dire que rien n'a jamais "
                     + "été publié. Les animateurs y sont désignés par id seul.",
@@ -135,7 +148,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<DestinataireView> lister_destinataires_publication(
+    List<DestinataireView> listPublicationRecipients(
             @ToolArg(description = "Id de l'instantané publié ; omis, la dernière publication", required = false)
                     Long snapshotId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -147,6 +160,7 @@ public class PublicationMcpTools {
     }
 
     @Tool(
+            name = "envoyer_planning_animateur",
             description = "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
                     + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu "
                     + "ou si la fiche ne porte pas d'adresse.",
@@ -156,7 +170,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    EnvoiView envoyer_planning_animateur(
+    EnvoiView sendAnimateurPlanning(
             @ToolArg(description = "Id de l'animateur") String animateurId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         // No try/catch around the refusals any more: the service words them by
@@ -173,6 +187,7 @@ public class PublicationMcpTools {
     }
 
     @Tool(
+            name = "relancer_animateurs",
             description = "Relance maintenant les animateurs désignés qui n'ont pas accusé réception de leur "
                     + "planning publié, sans attendre la relance automatique de nuit. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
@@ -186,7 +201,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = true))
-    RapportRelanceView relancer_animateurs(
+    RapportRelanceView remindAnimateurs(
             @ToolArg(description = "Ids des animateurs à relancer") List<String> animateurIds,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         RapportRelance rapport = relanceService.relancer(animateurIds);
@@ -200,6 +215,7 @@ public class PublicationMcpTools {
     }
 
     @Tool(
+            name = "synthese_confirmations",
             description = "Accusés de réception du planning publié en trois nombres — confirmés, relancés, "
                     + "silencieux — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
                     + "dernière publication. N'envoie rien. jamaisPublie vrai veut dire que la question n'a encore "
@@ -210,7 +226,7 @@ public class PublicationMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    SyntheseConfirmationsView synthese_confirmations(
+    SyntheseConfirmationsView summarizeConfirmations(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         SyntheseConfirmations synthese = confirmationService.synthese();
         return new SyntheseConfirmationsView(

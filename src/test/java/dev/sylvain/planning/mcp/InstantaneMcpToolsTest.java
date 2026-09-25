@@ -37,14 +37,13 @@ class InstantaneMcpToolsTest {
             null);
 
     private static InstantaneMcpTools tools(SnapshotDetail detail) {
-        InstantaneMcpTools tools = new InstantaneMcpTools();
-        tools.snapshotService = new PlanSnapshotService() {
+        PlanSnapshotService snapshotService = new PlanSnapshotService() {
             @Override
             public SnapshotDetail load(long id) {
                 return id == META.id() ? detail : null;
             }
         };
-        return tools;
+        return new InstantaneMcpTools(snapshotService, null);
     }
 
     private static AffectationSnapshot affectation(String posteId, String standId, String animateurId) {
@@ -57,66 +56,65 @@ class InstantaneMcpToolsTest {
     }
 
     @Test
-    void filtreParStandEtParAnimateur() {
+    void filtersByStandAndByAnimateur() {
         InstantaneMcpTools tools = tools(detail(
                 List.of(affectation("P1", "S1", "A1"), affectation("P2", "S2", "A1"), affectation("P3", "S1", "A2"))));
 
-        InstantaneDetailView parStand = tools.consulter_instantane(7, "S1", null, null, null);
+        InstantaneDetailView parStand = tools.getSnapshot(7, "S1", null, null, null);
         assertThat(parStand.affectations()).extracting(view -> view.posteId()).containsExactly("P1", "P3");
 
-        InstantaneDetailView parAnimateur = tools.consulter_instantane(7, null, "A1", null, null);
+        InstantaneDetailView parAnimateur = tools.getSnapshot(7, null, "A1", null, null);
         assertThat(parAnimateur.affectations())
                 .extracting(view -> view.posteId())
                 .containsExactly("P1", "P2");
 
-        InstantaneDetailView croise = tools.consulter_instantane(7, "S1", "A2", null, null);
+        InstantaneDetailView croise = tools.getSnapshot(7, "S1", "A2", null, null);
         assertThat(croise.affectations()).extracting(view -> view.posteId()).containsExactly("P3");
     }
 
     @Test
-    void leTotalCompteLesAffectationsFiltreesPasCellesRenvoyees() {
+    void theTotalCountsTheFilteredAffectationsNotTheReturnedOnes() {
         InstantaneMcpTools tools = tools(detail(IntStream.range(0, 500)
                 .mapToObj(index -> affectation("P" + index, "S1", "A" + index))
                 .toList()));
 
-        InstantaneDetailView vue = tools.consulter_instantane(7, null, null, null, null);
+        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, null);
 
         assertThat(vue.affectations()).hasSize(InstantaneMcpTools.LIMITE_AFFECTATIONS_DEFAUT);
         assertThat(vue.affectationsTotal()).isEqualTo(500);
     }
 
     @Test
-    void uneLimiteExpliciteEstRespectee() {
+    void anExplicitLimitIsHonoured() {
         InstantaneMcpTools tools = tools(detail(
                 List.of(affectation("P1", "S1", "A1"), affectation("P2", "S1", "A2"), affectation("P3", "S1", "A3"))));
 
-        assertThat(tools.consulter_instantane(7, null, null, 2, null).affectations())
-                .hasSize(2);
+        assertThat(tools.getSnapshot(7, null, null, 2, null).affectations()).hasSize(2);
     }
 
     @Test
-    void uneLimiteNonPositiveEstRefusee() {
+    void aNonPositiveLimitIsRefused() {
         InstantaneMcpTools tools = tools(detail(List.of(affectation("P1", "S1", "A1"))));
 
-        assertThatThrownBy(() -> tools.consulter_instantane(7, null, null, 0, null))
+        assertThatThrownBy(() -> tools.getSnapshot(7, null, null, 0, null))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("limite");
     }
 
     @Test
-    void unInstantaneInconnuEstUneErreurPasUneVueVide() {
+    void anUnknownSnapshotIsAnErrorNotAnEmptyView() {
         InstantaneMcpTools tools = tools(detail(List.of()));
 
-        assertThatThrownBy(() -> tools.consulter_instantane(999, null, null, null, null))
+        assertThatThrownBy(() -> tools.getSnapshot(999, null, null, null, null))
                 .isInstanceOf(BusinessError.NotFound.class)
                 .hasMessageContaining("999");
     }
 
     @Test
-    void unPosteNonPourvuGardeUnAnimateurNul() {
+    void anUnfilledPosteKeepsANullAnimateur() {
         InstantaneMcpTools tools = tools(detail(List.of(affectation("P1", "S1", null))));
 
-        InstantaneDetailView vue = tools.consulter_instantane(7, null, null, null, null);
+        InstantaneDetailView vue = tools.getSnapshot(7, null, null, null, null);
 
         assertThat(vue.affectations())
                 .singleElement()

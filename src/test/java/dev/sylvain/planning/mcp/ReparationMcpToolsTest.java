@@ -56,14 +56,14 @@ class ReparationMcpToolsTest {
     @AfterEach
     void clearEdition() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
     }
 
     @Test
-    void suggereDesCandidatsPuisEnApplique() throws InterruptedException {
+    void suggestsCandidatesThenAppliesOne() throws InterruptedException {
         AffectationView poste = premierPostePourvu();
 
-        SuggestionsView suggestions = planningTools.suggerer_reparations(poste.posteId(), 5, null);
+        SuggestionsView suggestions = planningTools.suggestRepairs(poste.posteId(), 5, null);
 
         assertThat(suggestions.posteId()).isEqualTo(poste.posteId());
         assertThat(suggestions.animateurActuelId()).isEqualTo(poste.animateurId());
@@ -73,15 +73,15 @@ class ReparationMcpToolsTest {
     }
 
     @Test
-    void affecterUnPosteLeFaitChangerDeMainSansRelancerDeResolution() throws InterruptedException {
+    void assigningAPosteHandsItOverWithoutASolve() throws InterruptedException {
         AffectationView poste = premierPostePourvu();
 
-        var reaffectation = planningTools.affecter_poste(poste.posteId(), null, null);
+        var reaffectation = planningTools.assignPoste(poste.posteId(), null, null);
 
         assertThat(reaffectation.animateurPrecedentId()).isEqualTo(poste.animateurId());
         assertThat(reaffectation.animateurId()).isNull();
         assertThat(planningTools
-                        .lister_affectations(null, null, null, null, null, null)
+                        .listAffectations(null, null, null, null, null, null)
                         .affectations())
                 .filteredOn(vue -> vue.posteId().equals(poste.posteId()))
                 .singleElement()
@@ -90,25 +90,26 @@ class ReparationMcpToolsTest {
     }
 
     @Test
-    void affecterUnPosteVerrouilleEstRefuse() throws InterruptedException {
+    void assigningALockedPosteIsRefused() throws InterruptedException {
         AffectationView poste = premierPostePourvu();
         VerrouillageView verrou = verrouillageTools
-                .verrouiller("ANIMATEUR", poste.animateurId(), null, null, null, null, null)
+                .lock("ANIMATEUR", poste.animateurId(), null, null, null, null, null)
                 .verrouillage();
 
-        assertThatThrownBy(() -> planningTools.affecter_poste(poste.posteId(), null, null))
+        String posteId = poste.posteId();
+        assertThatThrownBy(() -> planningTools.assignPoste(posteId, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("verrouillé");
 
-        verrouillageTools.deverrouiller(verrou.id(), null);
+        verrouillageTools.unlock(verrou.id(), null);
     }
 
     @Test
-    void suggererSurUnPosteInconnuEstRefuse() throws InterruptedException {
+    void suggestingOnAnUnknownPosteIsRefused() throws InterruptedException {
         premierPostePourvu();
 
-        assertThatThrownBy(() -> planningTools.suggerer_reparations("POSTE-INCONNU", null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("POSTE-INCONNU", null, null))
                 .isInstanceOf(RuntimeException.class);
     }
 
@@ -118,10 +119,10 @@ class ReparationMcpToolsTest {
      * a tool result in error (issue #529) instead of « Internal error ».
      */
     @Test
-    void suggererSansPlanningPersisteLeDit() {
-        scenarioTools.reinitialiser_donnees(null);
+    void suggestingWithoutAPersistedPlanningSaysSo() {
+        scenarioTools.resetData(null);
 
-        assertThatThrownBy(() -> planningTools.suggerer_reparations("P1", null, null))
+        assertThatThrownBy(() -> planningTools.suggestRepairs("P1", null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining("résolution");
@@ -129,11 +130,11 @@ class ReparationMcpToolsTest {
 
     private AffectationView premierPostePourvu() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
-        scenarioTools.importer_scenario("scenario.yml", null);
-        JobMcpView job = solveurTools.lancer_solveur(1L, null, null, null);
+        scenarioTools.resetData(null);
+        scenarioTools.importScenario("scenario.yml", null);
+        JobMcpView job = solveurTools.startSolver(1L, null, null, null);
         assertThat(awaitFinished(job.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
-        return planningTools.lister_affectations(null, null, null, null, null, null).affectations().stream()
+        return planningTools.listAffectations(null, null, null, null, null, null).affectations().stream()
                 .filter(vue -> vue.animateurId() != null)
                 .findFirst()
                 .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
@@ -141,7 +142,7 @@ class ReparationMcpToolsTest {
 
     private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.solverStatus(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

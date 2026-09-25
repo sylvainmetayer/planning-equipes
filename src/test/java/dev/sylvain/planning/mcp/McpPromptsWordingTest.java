@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.mcp.McpPrompts.PromptExpose;
 import io.quarkiverse.mcp.server.Tool;
-import java.lang.reflect.Method;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -34,7 +33,7 @@ class McpPromptsWordingTest {
     private static List<String> outilsSortants() throws Exception {
         List<String> sortants = OutilsMcp.all().stream()
                 .filter(outil -> outil.getAnnotation(Tool.class).annotations().openWorldHint())
-                .map(Method::getName)
+                .map(FeatureNames::of)
                 .toList();
         assertThat(sortants).as("outils qui sortent de l'application").isNotEmpty();
         return sortants;
@@ -60,8 +59,8 @@ class McpPromptsWordingTest {
 
     /** The one prompt whose whole subject is an outgoing send says so upfront. */
     @Test
-    void lePromptDePublicationAnnonceQuIlEnvoieDesCourriels() {
-        String texte = prompts.publier_le_planning(null).content().asText().text();
+    void thePublicationPromptAnnouncesThatItSendsMail() {
+        String texte = prompts.publishThePlanning(null).content().asText().text();
 
         assertThat(texte).contains("envoie des courriels");
         assertThat(texte.indexOf("envoie des courriels"))
@@ -76,8 +75,8 @@ class McpPromptsWordingTest {
      * string concatenation would escape it.
      */
     @Test
-    void chaqueOutilCiteParUnPromptExiste() throws Exception {
-        List<String> connus = OutilsMcp.all().stream().map(Method::getName).toList();
+    void everyToolAPromptCitesExists() throws Exception {
+        List<String> connus = OutilsMcp.all().stream().map(FeatureNames::of).toList();
 
         for (PromptExpose expose : prompts.catalogue()) {
             for (String mot : expose.texte().split("[^a-z0-9_]+")) {
@@ -113,18 +112,18 @@ class McpPromptsWordingTest {
     }
 
     @Test
-    void chaqueNouveauPromptPorteLEditionQuOnLuiDonne() {
-        assertThat(prompts.traiter_les_declarations_de_disponibilite("Canicule 2026")
+    void everyNewPromptCarriesTheEditionItIsGiven() {
+        assertThat(prompts.handleAvailabilityDeclarations("Canicule 2026")
                         .content()
                         .asText()
                         .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.publier_le_planning("Canicule 2026")
+        assertThat(prompts.publishThePlanning("Canicule 2026")
                         .content()
                         .asText()
                         .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.traiter_les_demandes_dechange("Canicule 2026")
+        assertThat(prompts.handleDemandesEchange("Canicule 2026")
                         .content()
                         .asText()
                         .text())

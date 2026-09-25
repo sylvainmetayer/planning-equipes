@@ -18,8 +18,12 @@ import jakarta.inject.Inject;
 @ApplicationScoped
 public class RunningSolveProbe {
 
+    private final SolverJobService solverJobs;
+
     @Inject
-    SolverJobService solverJobs;
+    RunningSolveProbe(SolverJobService solverJobs) {
+        this.solverJobs = solverJobs;
+    }
 
     public boolean holdsCurrentEdition() {
         return solverJobs.activeJobForCurrentEdition().isPresent();

@@ -39,16 +39,24 @@ import java.util.List;
 @ApplicationScoped
 public class EchangeMcpTools {
 
-    @Inject
-    DemandeEchangeService demandeEchangeService;
+    private final DemandeEchangeService demandeEchangeService;
+
+    private final EspaceAnimateurService espaceAnimateurService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    EspaceAnimateurService espaceAnimateurService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
+    EchangeMcpTools(
+            DemandeEchangeService demandeEchangeService,
+            EspaceAnimateurService espaceAnimateurService,
+            ReferenceDataService referenceDataService) {
+        this.demandeEchangeService = demandeEchangeService;
+        this.espaceAnimateurService = espaceAnimateurService;
+        this.referenceDataService = referenceDataService;
+    }
 
     @Tool(
+            name = "lister_demandes_echange",
             description = "Liste les demandes d'échange de l'édition, de la plus récente à la plus ancienne. "
                     + "Filtrable par statut : EN_ATTENTE_CIBLE (le collègue visé n'a pas encore répondu), PROPOSEE "
                     + "(en attente de décision de l'organisation), ACCEPTEE, REFUSEE, ANNULEE. Les animateurs y sont "
@@ -59,7 +67,7 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<DemandeView> lister_demandes_echange(
+    List<DemandeView> listDemandesEchange(
             @ToolArg(description = "Statut pour filtrer, par exemple PROPOSEE", required = false) String statut,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StatutDemandeEchange filtre =
@@ -72,6 +80,7 @@ public class EchangeMcpTools {
     }
 
     @Tool(
+            name = "consulter_foire_echanges",
             description = "Consulte la fenêtre de la foire aux échanges : l'interrupteur, ses dates éventuelles, "
                     + "et si elle accepte quelque chose aujourd'hui. Une foire fermée rend les espaces animateurs "
                     + "consultables mais non modifiables.",
@@ -81,12 +90,13 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    FoireView consulter_foire_echanges(
+    FoireView getFoireEchanges(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return foireView();
     }
 
     @Tool(
+            name = "configurer_foire_echanges",
             description = "Ouvre ou ferme la foire aux échanges, et la borne éventuellement par des dates. "
                     + "L'interrupteur est le maître : une fenêtre datée dont l'interrupteur est éteint n'accepte rien. "
                     + "N'envoie aucun courriel.",
@@ -96,7 +106,7 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    FoireView configurer_foire_echanges(
+    FoireView configureFoireEchanges(
             @ToolArg(description = "Foire ouverte ou fermée") boolean ouverte,
             @ToolArg(description = "Début de la foire (AAAA-MM-JJ)", required = false) String debut,
             @ToolArg(description = "Fin de la foire (AAAA-MM-JJ)", required = false) String fin,
@@ -107,6 +117,7 @@ public class EchangeMcpTools {
     }
 
     @Tool(
+            name = "analyser_impact_echange",
             description = "Chiffre l'impact d'une demande d'échange sur le planning persisté d'aujourd'hui : "
                     + "score avant et après, delta, et contraintes dures qu'elle casserait. Recalculé à la demande — la "
                     + "prévalidation stockée ne décrit que le planning du moment où la demande a été envoyée. Ne "
@@ -117,7 +128,7 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ImpactEchangeView analyser_impact_echange(
+    ImpactEchangeView analyzeEchangeImpact(
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         EchangeSimulation simulation = demandeEchangeService.impact(id);
@@ -137,6 +148,7 @@ public class EchangeMcpTools {
     }
 
     @Tool(
+            name = "accepter_demande_echange",
             description = "Accepte une demande d'échange : l'échange est appliqué au planning persisté tel qu'il "
                     + "a été simulé, puis figé par des verrouillages ANIMATEUR_CRENEAU pour qu'une résolution ne le "
                     + "défasse pas. Vérifier analyser_impact_echange d'abord : une demande acceptable à l'envoi peut "
@@ -147,7 +159,7 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    DemandeView accepter_demande_echange(
+    DemandeView acceptDemandeEchange(
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -155,6 +167,7 @@ public class EchangeMcpTools {
     }
 
     @Tool(
+            name = "refuser_demande_echange",
             description = "Refuse une demande d'échange : le planning n'est pas touché. Le commentaire est ce "
                     + "que le demandeur lira à la prochaine publication.",
             annotations =
@@ -163,7 +176,7 @@ public class EchangeMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    DemandeView refuser_demande_echange(
+    DemandeView refuseDemandeEchange(
             @ToolArg(description = "Id de la demande") String id,
             @ToolArg(description = "Commentaire pour le demandeur", required = false) String commentaire,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {

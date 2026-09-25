@@ -67,6 +67,9 @@ class JournalCoverageStructurelleTest {
     private static final Pattern DECLARATION =
             Pattern.compile("^\\s*(?:public\\s+|private\\s+|protected\\s+)?[\\w.<>,\\[\\]\\s]+?\\s+(\\w+)\\s*\\(");
 
+    /** The published name declared on a {@code @Tool(name = "…")} annotation. */
+    private static final Pattern TOOL_NAME = Pattern.compile("@Tool\\(\\s*name\\s*=\\s*\"(\\w+)\"");
+
     @Test
     void everyWritingRouteIsEitherJournalledOrExcludedWithAReason() throws IOException {
         List<String> orphelines = new ArrayList<>();
@@ -690,9 +693,12 @@ class JournalCoverageStructurelleTest {
                     }
                     int fin = annotationEnd(lignes, i);
                     String annotation = String.join(" ", lignes.subList(i, Math.min(fin + 1, lignes.size())));
-                    String methode = methodAfter(lignes, fin);
-                    if (methode != null && !annotation.contains("readOnlyHint = true")) {
-                        outils.add(methode);
+                    // The published name, declared on the annotation; the method
+                    // name is the Java one and names no journal entry.
+                    Matcher nom = TOOL_NAME.matcher(annotation);
+                    String outil = nom.find() ? nom.group(1) : methodAfter(lignes, fin);
+                    if (outil != null && !annotation.contains("readOnlyHint = true")) {
+                        outils.add(outil);
                     }
                 }
             }

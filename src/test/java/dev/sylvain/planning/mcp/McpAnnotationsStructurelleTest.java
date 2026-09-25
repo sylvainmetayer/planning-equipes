@@ -130,16 +130,16 @@ class McpAnnotationsStructurelleTest {
             "relancer_animateurs");
 
     @Test
-    void chaqueOutilDeclareSesAnnotations() throws Exception {
+    void everyToolDeclaresItsAnnotations() throws Exception {
         for (Method outil : OutilsMcp.all()) {
-            if (correspond(outil.getName(), SORTIE_EXTERIEURE)) {
+            if (correspond(FeatureNames.of(outil), SORTIE_EXTERIEURE)) {
                 continue;
             }
             assertThat(annotations(outil).openWorldHint())
                     .as(
                             "l'outil %s doit déclarer @Tool.Annotations : sans le bloc, il est annoncé destructif"
                                     + " et ouvert sur le monde extérieur",
-                            outil.getName())
+                            FeatureNames.of(outil))
                     .isFalse();
         }
     }
@@ -150,21 +150,21 @@ class McpAnnotationsStructurelleTest {
      * nothing else may.
      */
     @Test
-    void seulsLesOutilsQuiEnvoientDuCourrielSortentDeLApplication() throws Exception {
+    void onlyTheToolsThatSendMailLeaveTheApplication() throws Exception {
         for (Method outil : OutilsMcp.all()) {
             assertThat(annotations(outil).openWorldHint())
                     .as(
                             "openWorldHint de %s : vrai pour les seuls outils qui envoient du courriel"
                                     + " (voir SORTIE_EXTERIEURE)",
-                            outil.getName())
-                    .isEqualTo(correspond(outil.getName(), SORTIE_EXTERIEURE));
+                            FeatureNames.of(outil))
+                    .isEqualTo(correspond(FeatureNames.of(outil), SORTIE_EXTERIEURE));
         }
     }
 
     @Test
-    void lesAnnotationsSaccordentAvecLeNomDeLoutil() throws Exception {
+    void theAnnotationsAgreeWithTheToolName() throws Exception {
         for (Method outil : OutilsMcp.all()) {
-            String nom = outil.getName();
+            String nom = FeatureNames.of(outil);
             Tool.Annotations declarees = annotations(outil);
             if (correspond(nom, LECTURE)) {
                 assertThat(declarees.readOnlyHint())
@@ -201,13 +201,13 @@ class McpAnnotationsStructurelleTest {
      * whatever its name looks like.
      */
     @Test
-    void aucunOutilDEcritureNeSeDeclareEnLectureSeule() throws Exception {
+    void noWriteToolDeclaresItselfReadOnly() throws Exception {
         for (Method outil : OutilsMcp.all()) {
             if (annotations(outil).readOnlyHint()) {
-                assertThat(correspond(outil.getName(), LECTURE))
+                assertThat(correspond(FeatureNames.of(outil), LECTURE))
                         .as(
                                 "%s se déclare en lecture seule sans être reconnu comme un outil de lecture",
-                                outil.getName())
+                                FeatureNames.of(outil))
                         .isTrue();
             }
         }

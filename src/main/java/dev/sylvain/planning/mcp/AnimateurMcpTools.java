@@ -11,6 +11,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +30,7 @@ import java.util.Set;
  * "majeur"/"mineur" status derived from the birth date, and non-identifying
  * planning attributes (compétences, souhaits, indisponibilités) are returned.
  *
- * <p>That is also why {@link #modifier_animateur} is a <em>merge</em>, not the
+ * <p>That is also why {@link #updateAnimateur} ({@code modifier_animateur}) is a <em>merge</em>, not the
  * whole-entity replacement {@code PUT /api/animateurs/{id}} performs: an
  * assistant that cannot read nom/prénom/dateNaissance could not send them
  * back either, so a replacement would silently wipe them on every edit.
@@ -41,10 +42,15 @@ import java.util.Set;
 @ApplicationScoped
 public class AnimateurMcpTools {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    AnimateurMcpTools(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     @Tool(
+            name = "lister_animateurs",
             description = "Liste les animateurs. Ne renvoie aucune donnée personnelle identifiante (pas de nom, "
                     + "prénom, ni date de naissance) : uniquement l'id, le statut majeur/mineur, et les attributs de "
                     + "planification (compétences, souhaits, jours indisponibles). Sans limite, renvoie tout l'effectif ; "
@@ -55,7 +61,7 @@ public class AnimateurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    AnimateursView lister_animateurs(
+    AnimateursView listAnimateurs(
             @ToolArg(description = "Nombre maximum d'animateurs renvoyés (défaut : tous)", required = false)
                     Integer limite,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
@@ -70,6 +76,7 @@ public class AnimateurMcpTools {
     }
 
     @Tool(
+            name = "consulter_animateur",
             description = "Consulte un animateur par son id. Ne renvoie aucune donnée personnelle identifiante.",
             annotations =
                     @Tool.Annotations(
@@ -77,13 +84,14 @@ public class AnimateurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    AnimateurView consulter_animateur(
+    AnimateurView getAnimateur(
             @ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toView(find(id), dateReference());
     }
 
     @Tool(
+            name = "creer_animateur",
             description = "Crée un animateur. Prénom, nom et date de naissance sont obligatoires (refus 400 nommant "
                     + "chaque champ manquant) : la date de naissance est la seule source du statut mineur/majeur "
                     + "utilisé par les contraintes légales. Ces données personnelles ne sont jamais relues par MCP.",
@@ -94,7 +102,7 @@ public class AnimateurMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenAnimateurView creer_animateur(
+    WrittenAnimateurView createAnimateur(
             @ToolArg(description = "Id de l'animateur (unique)") String id,
             @ToolArg(
                             description =
@@ -125,6 +133,7 @@ public class AnimateurMcpTools {
     }
 
     @Tool(
+            name = "modifier_animateur",
             description = "Modifie un animateur. Seuls les champs fournis sont modifiés : les champs omis — dont "
                     + "les données personnelles que MCP ne peut pas lire — conservent leur valeur en base.",
             annotations =
@@ -133,7 +142,7 @@ public class AnimateurMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    WrittenAnimateurView modifier_animateur(
+    WrittenAnimateurView updateAnimateur(
             @ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = "Statut manager", required = false) Boolean manager,
             @ToolArg(
@@ -171,6 +180,7 @@ public class AnimateurMcpTools {
     }
 
     @Tool(
+            name = "supprimer_animateur",
             description = "Supprime un animateur. Ses postes dans le planning enregistré ne sont pas "
                     + "supprimés : ils sont vidés et redeviennent des places non pourvues, à repourvoir "
                     + "à la prochaine résolution. Refusé (409) tant qu'une résolution est en cours sur cette édition, "
@@ -181,7 +191,7 @@ public class AnimateurMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_animateur(
+    SuppressionResult deleteAnimateur(
             @ToolArg(description = "Id de l'animateur") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         referenceDataService.deleteAnimateur(id);
@@ -208,7 +218,7 @@ public class AnimateurMcpTools {
                 .map(Creneau::getDate)
                 .filter(Objects::nonNull)
                 .min(LocalDate::compareTo)
-                .orElse(LocalDate.now());
+                .orElseGet(() -> LocalDate.now(ZoneId.systemDefault()));
     }
 
     private WrittenAnimateurView written(WrittenAnimateur ecrit) {
@@ -229,10 +239,6 @@ public class AnimateurMcpTools {
                 animateur.getModifieLe());
     }
 
-    /**
-     * @param statut         "majeur" or "mineur", computed at the date of the first timeslot of the active group
-     * @param moinsDe16Ans   the third regime of French labour law, derived from the same reference date
-     */
     /** @param total animateurs in the edition, which may exceed the number returned */
     public record AnimateursView(int total, List<AnimateurView> animateurs) {}
 
@@ -250,6 +256,10 @@ public class AnimateurMcpTools {
         }
     }
 
+    /**
+     * @param statut         "majeur" or "mineur", computed at the date of the first timeslot of the active group
+     * @param moinsDe16Ans   the third regime of French labour law, derived from the same reference date
+     */
     public record AnimateurView(
             String id,
             String statut,

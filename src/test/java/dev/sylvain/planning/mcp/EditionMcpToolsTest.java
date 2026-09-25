@@ -61,44 +61,44 @@ class EditionMcpToolsTest {
     }
 
     @Test
-    void ecrireDansLEditionDesigneeNeTouchePasLesAutres() {
-        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
+    void writingInTheDesignatedEditionLeavesTheOthersAlone() {
+        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
 
         CreneauView cree = creneauTools
-                .creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST)
+                .createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST)
                 .creneau();
 
-        assertThat(creneauTools.lister_creneaux(EDITION_TEST))
+        assertThat(creneauTools.listCreneaux(EDITION_TEST))
                 .extracting(CreneauView::id)
                 .contains(cree.id());
-        assertThat(creneauTools.lister_creneaux(null))
+        assertThat(creneauTools.listCreneaux(null))
                 .as("l'édition courante ne doit rien avoir reçu")
                 .extracting(CreneauView::date)
                 .doesNotContain(DATE_TEST);
     }
 
     @Test
-    void uneEditionInconnueEchoueAuLieuDeRetomberSurLaCourante() {
-        assertThatThrownBy(() -> creneauTools.lister_creneaux("edition-qui-nexiste-pas"))
+    void anUnknownEditionFailsInsteadOfFallingBackOnTheCurrentOne() {
+        assertThatThrownBy(() -> creneauTools.listCreneaux("edition-qui-nexiste-pas"))
                 .isInstanceOf(ToolCallException.class)
                 .hasMessageContaining("Édition inconnue")
                 .hasMessageContaining("lister_editions");
     }
 
     @Test
-    void uneEditionPeutEtreDesigneeParSonNom() {
-        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, "Édition de test MCP");
+    void anEditionCanBeDesignatedByItsName() {
+        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, "Édition de test MCP");
 
-        assertThat(creneauTools.lister_creneaux(EDITION_TEST)).hasSize(1);
+        assertThat(creneauTools.listCreneaux(EDITION_TEST)).hasSize(1);
     }
 
     @Test
-    void listerEditionsDonneDeQuoiReconnaitreChacune() {
-        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+    void listEditionsGivesEnoughToRecogniseEachOne() {
+        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
-        List<EditionView> editions = editionTools.lister_editions();
+        List<EditionView> editions = editionTools.listEditions();
 
         assertThat(editions).extracting(EditionView::id).contains(EDITION_TEST);
         EditionView test = editions.stream()
@@ -116,7 +116,7 @@ class EditionMcpToolsTest {
                 .as("exactement une édition est celle où travaillent les outils sans argument edition")
                 .hasSize(1)
                 .first()
-                .isEqualTo(editionTools.edition_courante());
+                .isEqualTo(editionTools.currentEdition());
     }
 
     /**
@@ -126,9 +126,9 @@ class EditionMcpToolsTest {
      */
     @Test
     void etatEditionReadsTheDesignatedEditionAndNamesNobody() {
-        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
+        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
 
-        EtatEditionView vide = editionTools.etat_edition(EDITION_TEST);
+        EtatEditionView vide = editionTools.editionState(EDITION_TEST);
 
         assertThat(vide.editionId()).isEqualTo(EDITION_TEST);
         assertThat(vide.editionNom()).isEqualTo("Édition de test MCP");
@@ -137,11 +137,11 @@ class EditionMcpToolsTest {
         assertThat(vide.resolution().solveEnCours()).isFalse();
         assertThat(vide.publication().jamaisPublie()).isTrue();
 
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
-        assertThat(editionTools.etat_edition(EDITION_TEST).referentiels().creneaux())
+        assertThat(editionTools.editionState(EDITION_TEST).referentiels().creneaux())
                 .isEqualTo(1);
-        assertThat(editionTools.etat_edition(null).editionId())
+        assertThat(editionTools.editionState(null).editionId())
                 .as("sans argument, l'édition courante")
                 .isNotEqualTo(EDITION_TEST);
         for (var composant : EtatEditionView.class.getRecordComponents()) {
@@ -154,15 +154,15 @@ class EditionMcpToolsTest {
     }
 
     @Test
-    void dupliquerUneEditionRecopieSesDonneesSansToucherALoriginale() {
-        editionTools.creer_edition(EDITION_TEST, "Édition de test MCP");
-        creneauTools.creer_creneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
+    void duplicatingAnEditionCopiesItsDataWithoutTouchingTheOriginal() {
+        editionTools.createEdition(EDITION_TEST, "Édition de test MCP");
+        creneauTools.createCreneau("2027-01-04", "09:00", "12:00", null, EDITION_TEST);
 
-        EditionView copie = editionTools.dupliquer_edition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP", null);
+        EditionView copie = editionTools.duplicateEdition(EDITION_TEST, EDITION_COPIE, "Copie de test MCP", null);
 
         assertThat(copie.nombreCreneaux()).isEqualTo(1);
-        creneauTools.creer_creneau("2027-01-05", "09:00", "12:00", null, EDITION_COPIE);
-        assertThat(creneauTools.lister_creneaux(EDITION_TEST))
+        creneauTools.createCreneau("2027-01-05", "09:00", "12:00", null, EDITION_COPIE);
+        assertThat(creneauTools.listCreneaux(EDITION_TEST))
                 .as("la copie vit sa vie : l'originale ne bouge plus")
                 .hasSize(1);
     }
@@ -206,9 +206,9 @@ class EditionMcpToolsTest {
     }
 
     @Test
-    void supprimerLEditionCouranteEstRefuse() {
-        String courante = editionTools.edition_courante().id();
+    void deletingTheCurrentEditionIsRefused() {
+        String courante = editionTools.currentEdition().id();
 
-        assertThatThrownBy(() -> editionTools.supprimer_edition(courante)).isInstanceOf(ToolCallException.class);
+        assertThatThrownBy(() -> editionTools.deleteEdition(courante)).isInstanceOf(ToolCallException.class);
     }
 }

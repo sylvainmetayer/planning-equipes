@@ -43,9 +43,8 @@ class SolveurMcpToolsTest {
 
     @Test
     void reportsOnlyTheHardConstraintsActuallyViolated() {
-        SolveurMcpTools tools = new SolveurMcpTools();
-        tools.analysisStore = new ConstraintAnalysisStore();
-        tools.referenceDataService = emptyReferential();
+        ConstraintAnalysisStore analysisStore = new ConstraintAnalysisStore();
+        SolveurMcpTools tools = new SolveurMcpTools(null, null, analysisStore, emptyReferential());
 
         ConstraintDiagnostic hardViole = new ConstraintDiagnostic(
                 "posteDoitEtrePourvu",
@@ -59,7 +58,7 @@ class SolveurMcpToolsTest {
                 "animateurDisponible", "0hard/0medium/0soft", 0, List.of(), null, null, List.of());
         ConstraintDiagnostic mediumViole = new ConstraintDiagnostic(
                 "equilibrerCharge", "0hard/-5medium/0soft", 5, List.of(), null, null, List.of());
-        tools.analysisStore.record(new PlanningDiagnostic(
+        analysisStore.record(new PlanningDiagnostic(
                 "-2hard/-5medium/0soft",
                 2,
                 List.of(hardViole, hardRespecte, mediumViole),
@@ -71,7 +70,7 @@ class SolveurMcpToolsTest {
                 0,
                 List.of()));
 
-        List<ViolationHardView> violations = tools.expliquer_echec_contraintes_dures(null);
+        List<ViolationHardView> violations = tools.explainHardContraintesFailure(null);
 
         assertThat(violations).hasSize(1);
         assertThat(violations.get(0).contrainte()).isEqualTo("posteDoitEtrePourvu");
@@ -80,11 +79,10 @@ class SolveurMcpToolsTest {
     }
 
     @Test
-    void renvoieUneListeVideSansAnalysePrealable() {
-        SolveurMcpTools tools = new SolveurMcpTools();
-        tools.analysisStore = new ConstraintAnalysisStore();
+    void returnsAnEmptyListWithoutAPriorAnalysis() {
+        SolveurMcpTools tools = new SolveurMcpTools(null, null, new ConstraintAnalysisStore(), null);
 
-        assertThat(tools.expliquer_echec_contraintes_dures(null)).isEmpty();
+        assertThat(tools.explainHardContraintesFailure(null)).isEmpty();
     }
 
     /** A reward — two animateurs of an affinity sharing a stand — is no problem: no action however often it matched. */

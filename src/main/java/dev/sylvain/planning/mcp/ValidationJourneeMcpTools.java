@@ -33,13 +33,18 @@ import java.util.List;
 @ApplicationScoped
 public class ValidationJourneeMcpTools {
 
-    @Inject
-    ValidationJourneeService validationService;
+    private final ValidationJourneeService validationService;
+
+    private final ValidationPrerequisService prerequisService;
 
     @Inject
-    ValidationPrerequisService prerequisService;
+    ValidationJourneeMcpTools(ValidationJourneeService validationService, ValidationPrerequisService prerequisService) {
+        this.validationService = validationService;
+        this.prerequisService = prerequisService;
+    }
 
     @Tool(
+            name = "lister_validations_journee",
             description = "Liste les journées relues et acceptées, et l'avancement de la relecture "
                     + "(« 3 journées sur 12 »). Une validation dit qu'un humain a relu la journée ; elle ne fige "
                     + "rien — figer, c'est verrouiller (verrouiller).",
@@ -49,7 +54,7 @@ public class ValidationJourneeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    AvancementValidations lister_validations_journee(
+    AvancementValidations listJourneeValidations(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ProgressionValidations progression = prerequisService.progression();
         return new AvancementValidations(
@@ -61,6 +66,7 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
+            name = "consulter_prerequis_validation",
             description = "Ce qu'il faut regarder avant d'accepter une journée : écarts durs, sièges vides, pauses "
                     + "sans relais, postes irremplaçables, comptés sur cette seule journée. Ne bloque rien : une "
                     + "journée peut être validée malgré un prérequis non satisfait.",
@@ -70,7 +76,7 @@ public class ValidationJourneeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    PrerequisJourneeView consulter_prerequis_validation(
+    PrerequisJourneeView getValidationPrerequisites(
             @ToolArg(description = "Journée à relire (AAAA-MM-JJ)") String jour,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         PrerequisJournee lu = prerequisService.prerequis(McpArgs.date(jour, "jour"));
@@ -85,6 +91,7 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
+            name = "ajouter_validation_journee",
             description = "Marque une journée entière « relue et acceptée ». poserVerrou fige en plus la journée "
                     + "pour les prochaines résolutions — facultatif, et faux par défaut. Relire une journée déjà "
                     + "acceptée remplace la validation précédente. Pendant une résolution de l'édition, la "
@@ -98,7 +105,7 @@ public class ValidationJourneeMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ResultatValidationView ajouter_validation_journee(
+    ResultatValidationView addJourneeValidation(
             @ToolArg(description = "Journée relue (AAAA-MM-JJ)") String jour,
             @ToolArg(description = "Commentaire de relecture, libre", required = false) String commentaire,
             @ToolArg(description = "Poser aussi un verrouillage de journée", required = false) Boolean poserVerrou,
@@ -109,6 +116,7 @@ public class ValidationJourneeMcpTools {
     }
 
     @Tool(
+            name = "retirer_validation_journee",
             description = "Retire une validation : la journée redevient à relire. Le verrouillage éventuellement posé "
                     + "avec elle reste en place — c'est un mécanisme distinct (deverrouiller).",
             annotations =
@@ -117,7 +125,7 @@ public class ValidationJourneeMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    SuppressionResult retirer_validation_journee(
+    SuppressionResult removeJourneeValidation(
             @ToolArg(description = "Id de la validation") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         validationService.withdraw(id);

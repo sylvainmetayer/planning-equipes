@@ -120,18 +120,22 @@ class PublicationMcpToolsTest {
      * hold what the REST ones carry alongside the id.
      */
     @Test
-    void aucuneVueDePublicationNePorteDeNomNiDAdresse() {
+    void noPublicationViewCarriesANameOrAnAddress() {
         assertThat(DestinatairePublicationView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
+                .isNotEmpty()
                 .doesNotContain("nom", "nomaffiche", "email");
         assertThat(DestinataireView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
+                .isNotEmpty()
                 .doesNotContain("nom", "nomaffiche", "email");
         assertThat(RapportRelanceView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
+                .isNotEmpty()
                 .doesNotContain("nom", "nomaffiche", "email");
         assertThat(SyntheseConfirmationsView.class.getRecordComponents())
                 .extracting(composant -> composant.getName().toLowerCase())
+                .isNotEmpty()
                 .doesNotContain("nom", "nomaffiche", "email");
     }
 }

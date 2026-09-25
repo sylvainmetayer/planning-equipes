@@ -32,14 +32,13 @@ class PlanningMcpToolsSyntheseTest {
     private static PlanningMcpTools tools(List<PosteAffectation> postes) {
         PlanningEvenement planning = new PlanningEvenement();
         planning.setPostes(postes);
-        PlanningMcpTools tools = new PlanningMcpTools();
-        tools.persistenceService = new PlanningPersistenceService() {
+        PlanningPersistenceService persistenceService = new PlanningPersistenceService() {
             @Override
             public PlanningEvenement loadPersistedPlanning() {
                 return planning;
             }
         };
-        return tools;
+        return new PlanningMcpTools(null, null, persistenceService, null, null, null, null, null, null);
     }
 
     private static PosteAffectation poste(String id, Stand stand, LocalDate date, String animateurId) {
@@ -56,7 +55,7 @@ class PlanningMcpToolsSyntheseTest {
     }
 
     @Test
-    void laSyntheseCompteLesPostesPourvusParStandEtParJour() {
+    void theSummaryCountsTheFilledPostesPerStandAndPerDay() {
         Stand echecs = stand("S1", "Échecs");
         Stand tir = stand("S2", "Tir à l'arc");
         PlanningMcpTools tools = tools(List.of(
@@ -65,7 +64,7 @@ class PlanningMcpToolsSyntheseTest {
                 poste("P3", tir, SAMEDI, "A2"),
                 poste("P4", tir, DIMANCHE, "A1")));
 
-        var synthese = tools.synthese_affectations(null);
+        var synthese = tools.summarizeAffectations(null);
 
         assertThat(synthese.postesTotal()).isEqualTo(4);
         assertThat(synthese.postesPourvus()).isEqualTo(3);
@@ -80,10 +79,10 @@ class PlanningMcpToolsSyntheseTest {
     }
 
     @Test
-    void laSyntheseNommeLesStandsMaisJamaisLesAnimateurs() {
+    void theSummaryNamesTheStandsButNeverTheAnimateurs() {
         PlanningMcpTools tools = tools(List.of(poste("P1", stand("S1", "Échecs"), SAMEDI, "A1")));
 
-        var synthese = tools.synthese_affectations(null);
+        var synthese = tools.summarizeAffectations(null);
 
         assertThat(synthese.parStand())
                 .singleElement()
@@ -92,8 +91,8 @@ class PlanningMcpToolsSyntheseTest {
     }
 
     @Test
-    void unPlanningVideDonneUneSyntheseAZero() {
-        var synthese = tools(List.of()).synthese_affectations(null);
+    void anEmptyPlanningGivesAZeroSummary() {
+        var synthese = tools(List.of()).summarizeAffectations(null);
 
         assertThat(synthese.postesTotal()).isZero();
         assertThat(synthese.parStand()).isEmpty();
@@ -101,35 +100,35 @@ class PlanningMcpToolsSyntheseTest {
     }
 
     @Test
-    void listerLesAffectationsPlafonneMaisAnnonceLeTotal() {
+    void listingTheAffectationsCapsButAnnouncesTheTotal() {
         Stand echecs = stand("S1", "Échecs");
         List<PosteAffectation> postes = new ArrayList<>(IntStream.range(0, 500)
                 .mapToObj(index -> poste("P" + index, echecs, SAMEDI, "A" + index))
                 .toList());
 
-        AffectationsView vue = tools(postes).lister_affectations(null, null, null, null, null, null);
+        AffectationsView vue = tools(postes).listAffectations(null, null, null, null, null, null);
 
         assertThat(vue.affectations()).hasSize(PlanningMcpTools.LIMITE_AFFECTATIONS_DEFAUT);
         assertThat(vue.total()).isEqualTo(500);
     }
 
     @Test
-    void leTotalCompteLesPostesFiltresPasTousLesPostes() {
+    void theTotalCountsTheFilteredPostesNotAllPostes() {
         PlanningMcpTools tools = tools(List.of(
                 poste("P1", stand("S1", "Échecs"), SAMEDI, "A1"),
                 poste("P2", stand("S2", "Tir à l'arc"), SAMEDI, null)));
 
-        assertThat(tools.lister_affectations("S1", null, null, null, null, null).total())
+        assertThat(tools.listAffectations("S1", null, null, null, null, null).total())
                 .isEqualTo(1);
-        assertThat(tools.lister_affectations(null, null, null, true, null, null).total())
+        assertThat(tools.listAffectations(null, null, null, true, null, null).total())
                 .isEqualTo(1);
     }
 
     @Test
-    void uneLimiteNonPositiveEstRefusee() {
+    void aNonPositiveLimitIsRefused() {
         PlanningMcpTools tools = tools(List.of(poste("P1", stand("S1", "Échecs"), SAMEDI, "A1")));
 
-        assertThatThrownBy(() -> tools.lister_affectations(null, null, null, null, -1, null))
+        assertThatThrownBy(() -> tools.listAffectations(null, null, null, null, -1, null))
                 .isInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("limite");
     }

@@ -45,20 +45,20 @@ class McpEditionStructurelleTest {
     private static final String OUTILS_DEDITION = EditionMcpTools.class.getName();
 
     @Test
-    void chaqueOutilQuiTravailleDansUneEditionLaisseLaDesigner() throws Exception {
+    void everyToolWorkingInAnEditionLetsItBeDesignated() throws Exception {
         for (Method outil : OutilsMcp.all()) {
-            if (HORS_EDITION.contains(outil.getName())
+            if (HORS_EDITION.contains(FeatureNames.of(outil))
                     || outil.getDeclaringClass().getName().equals(OUTILS_DEDITION)) {
                 continue;
             }
             assertThat(argumentEdition(outil))
-                    .as("l'outil %s doit porter un argument @EditionArg (issue #181)", outil.getName())
+                    .as("l'outil %s doit porter un argument @EditionArg (issue #181)", FeatureNames.of(outil))
                     .isNotNull();
         }
     }
 
     @Test
-    void largumentEditionEstFacultatifEtDecritDeLaMemeFaconPartout() throws Exception {
+    void theEditionArgumentIsOptionalAndDescribedTheSameEverywhere() throws Exception {
         for (Method outil : OutilsMcp.all()) {
             Parameter edition = argumentEdition(outil);
             if (edition == null) {
@@ -66,16 +66,16 @@ class McpEditionStructurelleTest {
             }
             ToolArg description = edition.getAnnotation(ToolArg.class);
             assertThat(description)
-                    .as("l'argument edition de %s doit être déclaré comme argument d'outil", outil.getName())
+                    .as("l'argument edition de %s doit être déclaré comme argument d'outil", FeatureNames.of(outil))
                     .isNotNull();
             assertThat(description.required())
                     .as(
                             "l'argument edition de %s doit rester facultatif : sans lui, l'édition courante"
                                     + " (comportement d'avant #181)",
-                            outil.getName())
+                            FeatureNames.of(outil))
                     .isFalse();
             assertThat(description.description())
-                    .as("description de l'argument edition de %s", outil.getName())
+                    .as("description de l'argument edition de %s", FeatureNames.of(outil))
                     .isEqualTo(EditionArg.DESCRIPTION);
         }
     }

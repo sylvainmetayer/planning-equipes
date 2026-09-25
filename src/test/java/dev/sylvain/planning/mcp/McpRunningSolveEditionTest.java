@@ -91,11 +91,11 @@ class McpRunningSolveEditionTest {
 
             // The warning: named edition held → warned; the neighbour → nothing.
             assertThat(standTools
-                            .creer_typologie("RUN-T1", "Pendant le calcul", held)
+                            .createTypologie("RUN-T1", "Pendant le calcul", held)
                             .avertissements())
                     .contains(CODE);
             assertThat(standTools
-                            .creer_typologie("RUN-T2", "À côté du calcul", NEIGHBOUR)
+                            .createTypologie("RUN-T2", "À côté du calcul", NEIGHBOUR)
                             .avertissements())
                     .doesNotContain(CODE);
 

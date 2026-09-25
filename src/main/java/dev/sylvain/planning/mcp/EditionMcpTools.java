@@ -48,22 +48,35 @@ import java.util.stream.Stream;
 @ApplicationScoped
 public class EditionMcpTools {
 
-    @Inject
-    EditionService editionService;
+    /** Argument names, as a refusal quotes them back to the caller. */
+    private static final String ARG_EDITION = "edition";
+
+    private final EditionService editionService;
+
+    private final EditionContext editionContext;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final McpEditions editions;
+
+    private final EtatEditionService etatEditionService;
 
     @Inject
-    EditionContext editionContext;
-
-    @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    McpEditions editions;
-
-    @Inject
-    EtatEditionService etatEditionService;
+    EditionMcpTools(
+            EditionService editionService,
+            EditionContext editionContext,
+            ReferenceDataService referenceDataService,
+            McpEditions editions,
+            EtatEditionService etatEditionService) {
+        this.editionService = editionService;
+        this.editionContext = editionContext;
+        this.referenceDataService = referenceDataService;
+        this.editions = editions;
+        this.etatEditionService = etatEditionService;
+    }
 
     @Tool(
+            name = "lister_editions",
             description = "Liste les éditions (« Année 2025 », « Année 2026 », un plan canicule…) : "
                     + "l'édition est la partition dans laquelle vivent stands, animateurs, créneaux et paramètres, "
                     + "et deux éditions ne voient jamais les données l'une de l'autre. Chaque ligne indique laquelle "
@@ -76,7 +89,7 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<EditionView> lister_editions() {
+    List<EditionView> listEditions() {
         String courante = editionContext.editionIdCourant();
         return editionService.listEditions().stream()
                 .map(edition -> view(edition, courante))
@@ -84,6 +97,7 @@ public class EditionMcpTools {
     }
 
     @Tool(
+            name = "edition_courante",
             description = "Nomme l'édition dans laquelle travaillent tous les autres outils quand leur argument "
                     + "« edition » n'est pas précisé. À appeler avant toute écriture si l'utilisateur a plusieurs "
                     + "éditions : rien d'autre n'indique laquelle est en train d'être modifiée.",
@@ -93,12 +107,13 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EditionView edition_courante() {
+    EditionView currentEdition() {
         String courante = editionContext.editionIdCourant();
         return view(editionService.editionCourante(), courante);
     }
 
     @Tool(
+            name = "etat_edition",
             description = "État de l'édition : la checklist du cycle, calculée — référentiels saisis, cohérence "
                     + "du référentiel (anomalies bloquantes, à vérifier, pour information ; le détail par "
                     + "lister_anomalies_referentiel), collecte "
@@ -118,12 +133,13 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EtatEditionView etat_edition(
+    EtatEditionView editionState(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return etatEditionService.etat();
     }
 
     @Tool(
+            name = "creer_edition",
             description = "Crée une édition vide. Pour repartir d'une édition existante (stands, animateurs, "
                     + "paramètres), utiliser dupliquer_edition à la place.",
             annotations =
@@ -132,13 +148,14 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    EditionView creer_edition(
+    EditionView createEdition(
             @ToolArg(description = "Id de la nouvelle édition, repris tel quel dans les URLs (ex. « 2027 »)") String id,
             @ToolArg(description = "Nom affiché (ex. « Année 2027 »)") String nom) {
         return view(editionService.create(new Edition(id, nom, false, null)), editionContext.editionIdCourant());
     }
 
     @Tool(
+            name = "dupliquer_edition",
             description = "Duplique une édition dans une nouvelle : stands, typologies, emplacements, créneaux, "
                     + "horaires et paramètres sont recopiés, jamais le planning résolu. C'est la façon de préparer "
                     + "une variante (« plan canicule ») sans toucher à l'originale : depuis l'issue #172, une "
@@ -151,23 +168,25 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = false,
                             openWorldHint = false))
-    EditionView dupliquer_edition(
+    EditionView duplicateEdition(
             @ToolArg(description = "Édition à copier : son id ou son nom (voir lister_editions)") String source,
             @ToolArg(description = "Id de l'édition à créer") String id,
             @ToolArg(description = "Nom affiché de l'édition à créer") String nom,
             @ToolArg(
                             description = "Reprendre les animateurs et ce qui les concerne (compétences, "
                                     + "indisponibilités, souhaits, ajustements manuels). Par défaut true.",
-                            required = false)
-                    Boolean avec_animateurs) {
+                            required = false,
+                            name = "avec_animateurs")
+                    Boolean avecAnimateurs) {
         String sourceId = requireEdition(source, "source");
         return view(
                 editionService.duplicate(
-                        sourceId, new Edition(id, nom, false, null), avec_animateurs == null || avec_animateurs),
+                        sourceId, new Edition(id, nom, false, null), avecAnimateurs == null || avecAnimateurs),
                 editionContext.editionIdCourant());
     }
 
     @Tool(
+            name = "renommer_edition",
             description = "Renomme une édition. Seul le nom affiché change : l'id, lui, est repris dans les URLs "
                     + "et les configurations, il n'est pas modifiable.",
             annotations =
@@ -176,14 +195,15 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EditionView renommer_edition(
+    EditionView renameEdition(
             @ToolArg(description = "Édition à renommer : son id ou son nom") String edition,
             @ToolArg(description = "Nouveau nom affiché") String nom) {
-        String id = requireEdition(edition, "edition");
+        String id = requireEdition(edition, ARG_EDITION);
         return view(editionService.renommer(id, new Edition(id, nom, false, null)), editionContext.editionIdCourant());
     }
 
     @Tool(
+            name = "definir_edition_par_defaut",
             description = "Désigne l'édition par défaut : celle dans laquelle travaille tout appelant qui n'en "
                     + "précise aucune, y compris les outils MCP sans argument « edition ».",
             annotations =
@@ -192,14 +212,15 @@ public class EditionMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    EditionView definir_edition_par_defaut(
+    EditionView setDefaultEdition(
             @ToolArg(description = "Édition à rendre par défaut : son id ou son nom") String edition) {
-        String id = requireEdition(edition, "edition");
+        String id = requireEdition(edition, ARG_EDITION);
         editionService.setAsDefault(id);
         return view(find(id), editionContext.editionIdCourant());
     }
 
     @Tool(
+            name = "supprimer_edition",
             description = "Supprime une édition ET tout ce qu'elle contient : stands, animateurs, créneaux, "
                     + "contraintes, planning résolu. Destructif et irréversible, à ne lancer que sur demande explicite. "
                     + "L'édition par défaut, l'édition courante et la dernière édition restante sont refusées.",
@@ -209,9 +230,8 @@ public class EditionMcpTools {
                             destructiveHint = true,
                             idempotentHint = false,
                             openWorldHint = false))
-    SuppressionResult supprimer_edition(
-            @ToolArg(description = "Édition à supprimer : son id ou son nom") String edition) {
-        String id = requireEdition(edition, "edition");
+    SuppressionResult deleteEdition(@ToolArg(description = "Édition à supprimer : son id ou son nom") String edition) {
+        String id = requireEdition(edition, ARG_EDITION);
         editionService.delete(id);
         return new SuppressionResult(id, true);
     }

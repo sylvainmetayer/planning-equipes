@@ -42,19 +42,28 @@ import java.util.List;
 @ApplicationScoped
 public class ScenarioMcpTools {
 
-    @Inject
-    PlanningService planningService;
+    private final PlanningService planningService;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ScenarioImportService scenarioImportService;
+
+    private final EditionService editionService;
 
     @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ScenarioImportService scenarioImportService;
-
-    @Inject
-    EditionService editionService;
+    ScenarioMcpTools(
+            PlanningService planningService,
+            PlanningPersistenceService persistenceService,
+            ScenarioImportService scenarioImportService,
+            EditionService editionService) {
+        this.planningService = planningService;
+        this.persistenceService = persistenceService;
+        this.scenarioImportService = scenarioImportService;
+        this.editionService = editionService;
+    }
 
     @Tool(
+            name = "lister_scenarios",
             description = "Liste les scénarios livrés avec l'application, importables par leur nom.",
             annotations =
                     @Tool.Annotations(
@@ -62,11 +71,12 @@ public class ScenarioMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<String> lister_scenarios() {
+    List<String> listScenarios() {
         return planningService.listScenarios();
     }
 
     @Tool(
+            name = "importer_scenario",
             description = "Importe un scénario livré dans les données de référence : remplace stands, créneaux, "
                     + "animateurs et postes existants. Applique aussi les paramètres légaux/découpage/solveur et le "
                     + "découpage automatique que le scénario épingle éventuellement. Opération destructive.",
@@ -76,13 +86,14 @@ public class ScenarioMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    ImportResult importer_scenario(
+    ImportResult importScenario(
             @ToolArg(description = "Nom du scénario (voir lister_scenarios)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importBundled(nom));
     }
 
     @Tool(
+            name = "importer_scenario_yaml",
             description = "Importe un scénario fourni sous forme de contenu YAML (même format que l'export). "
                     + "Opération destructive : remplace les données de référence existantes.",
             annotations =
@@ -91,13 +102,14 @@ public class ScenarioMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    ImportResult importer_scenario_yaml(
+    ImportResult importScenarioYaml(
             @ToolArg(description = "Contenu YAML du scénario") String yaml,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return toImportResult(scenarioImportService.importYaml(yaml));
     }
 
     @Tool(
+            name = "valider_scenario_yaml",
             description = "Valide la structure d'un scénario YAML sans rien importer. Renvoie la liste des erreurs "
                     + "trouvées, vide si le fichier est valide.",
             annotations =
@@ -106,7 +118,7 @@ public class ScenarioMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ValidationResult valider_scenario_yaml(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
+    ValidationResult validateScenarioYaml(@ToolArg(description = "Contenu YAML du scénario") String yaml) {
         if (yaml == null || yaml.isBlank()) {
             return new ValidationResult(false, List.of("Le fichier est vide."));
         }
@@ -119,6 +131,7 @@ public class ScenarioMcpTools {
     }
 
     @Tool(
+            name = "reinitialiser_donnees",
             description = "Vide entièrement UNE ÉDITION : stands, créneaux, animateurs, affectations et "
                     + "contraintes ad hoc de l'édition ciblée, les autres éditions n'y touchent pas. Opération "
                     + "destructive et irréversible, à ne lancer que sur demande explicite.",
@@ -128,8 +141,7 @@ public class ScenarioMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    ResetResult reinitialiser_donnees(
-            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+    ResetResult resetData(@ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         persistenceService.clearDatabase();
         Edition videe = editionService.editionCourante();
         return new ResetResult(

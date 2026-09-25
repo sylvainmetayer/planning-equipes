@@ -50,10 +50,10 @@ class McpPromptsResourcesTest {
      * checked, since the order is written by hand.
      */
     @Test
-    void leCatalogueCouvreExactementLesPromptsDeclares() {
+    void theCatalogueCoversExactlyTheDeclaredPrompts() {
         List<String> declares = Arrays.stream(McpPrompts.class.getDeclaredMethods())
                 .filter(methode -> methode.isAnnotationPresent(Prompt.class))
-                .map(Method::getName)
+                .map(FeatureNames::of)
                 .toList();
 
         assertThat(prompts.catalogue()).extracting(PromptExpose::nom).containsExactlyInAnyOrderElementsOf(declares);
@@ -74,18 +74,18 @@ class McpPromptsResourcesTest {
     }
 
     @Test
-    void chaquePromptPorteLEditionQuOnLuiDonne() {
-        assertThat(prompts.diagnostiquer_contraintes_dures("Canicule 2026")
+    void everyPromptCarriesTheEditionItIsGiven() {
+        assertThat(prompts.diagnoseHardContraintes("Canicule 2026")
                         .content()
                         .asText()
                         .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.verifier_avant_resolution("Canicule 2026")
+        assertThat(prompts.checkBeforeSolving("Canicule 2026")
                         .content()
                         .asText()
                         .text())
                 .contains("Canicule 2026");
-        assertThat(prompts.resoudre_sans_perdre_le_planning("Canicule 2026")
+        assertThat(prompts.solveWithoutLosingThePlanning("Canicule 2026")
                         .content()
                         .asText()
                         .text())
@@ -98,28 +98,21 @@ class McpPromptsResourcesTest {
      * try to fill by guessing.
      */
     @Test
-    void sansEditionLePromptResteUnePhraseComplete() {
-        String texte =
-                prompts.verifier_avant_resolution(null).content().asText().text();
+    void withoutAnEditionThePromptStaysACompleteSentence() {
+        String texte = prompts.checkBeforeSolving(null).content().asText().text();
 
         assertThat(texte)
                 .contains("l'édition par défaut")
                 .doesNotContain("«  »")
                 .doesNotContain("null");
-        assertThat(prompts.diagnostiquer_contraintes_dures("  ")
-                        .content()
-                        .asText()
-                        .text())
+        assertThat(prompts.diagnoseHardContraintes("  ").content().asText().text())
                 .doesNotContain("«  »")
                 .doesNotContain("null");
     }
 
     @Test
-    void lePromptDeDiagnosticRappelleQueLesAnimateursRestentAnonymes() {
-        assertThat(prompts.diagnostiquer_contraintes_dures(null)
-                        .content()
-                        .asText()
-                        .text())
+    void theDiagnosticPromptRecallsThatAnimateursStayAnonymous() {
+        assertThat(prompts.diagnoseHardContraintes(null).content().asText().text())
                 .contains("id")
                 .contains("nominative");
     }
@@ -172,11 +165,11 @@ class McpPromptsResourcesTest {
      * but never reaches a client fails here rather than in a conversation.
      */
     @Test
-    void lesPromptsEtLesRessourcesSontAnnoncesParLeServeur() {
+    void thePromptsAndResourcesAreAnnouncedByTheServer() {
         for (Method methode : McpPrompts.class.getDeclaredMethods()) {
             if (methode.isAnnotationPresent(Prompt.class)) {
-                assertThat(promptManager.getPrompt(methode.getName()))
-                        .as("le prompt %s doit être annoncé", methode.getName())
+                assertThat(promptManager.getPrompt(FeatureNames.of(methode)))
+                        .as("le prompt %s doit être annoncé", FeatureNames.of(methode))
                         .isNotNull();
             }
         }

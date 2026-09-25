@@ -54,15 +54,15 @@ class SolveurMcpToolsQueueTest {
     @AfterEach
     void clearEdition() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
+        scenarioTools.resetData(null);
     }
 
     @Test
-    void uneResolutionPeutAttendreSonTourAuLieuDEchouer() throws InterruptedException {
+    void aSolveCanWaitForItsTurnInsteadOfFailing() throws InterruptedException {
         loadScenario();
-        JobMcpView premier = solveurTools.lancer_solveur(4L, null, null, null);
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
 
-        JobMcpView enFile = solveurTools.lancer_solveur(1L, true, null, null);
+        JobMcpView enFile = solveurTools.startSolver(1L, true, null, null);
 
         assertThat(enFile.status()).isEqualTo(JobStatus.QUEUED.name());
         assertThat(enFile.id()).isNotEqualTo(premier.id());
@@ -70,59 +70,55 @@ class SolveurMcpToolsQueueTest {
     }
 
     @Test
-    void sansMiseEnFileUneResolutionConcurrenteEstRefusee() throws InterruptedException {
+    void withoutQueueingAConcurrentSolveIsRefused() throws InterruptedException {
         loadScenario();
-        JobMcpView premier = solveurTools.lancer_solveur(4L, null, null, null);
+        JobMcpView premier = solveurTools.startSolver(4L, null, null, null);
 
-        assertThatThrownBy(() -> solveurTools.lancer_solveur(1L, false, null, null))
+        assertThatThrownBy(() -> solveurTools.startSolver(1L, false, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Conflict.class)
                 .hasMessageContaining(premier.id())
                 .hasMessageContaining("enFile");
 
-        solveurTools.arreter_solveur(premier.id());
+        solveurTools.stopSolver(premier.id());
     }
 
     @Test
-    void laResolutionIncrementaleRepartDuPlanningPersiste() throws InterruptedException {
+    void theIncrementalSolveStartsFromThePersistedPlanning() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools
-                                .lancer_solveur(1L, null, null, null)
-                                .id())
+        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
-        int affectations = planningTools.etat_planning(null).affectationsPersistees();
-        String animateurId =
-                planningTools.lister_affectations(null, null, null, false, null, null).affectations().stream()
-                        .map(AffectationView::animateurId)
-                        .filter(id -> id != null)
-                        .findFirst()
-                        .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
+        int affectations = planningTools.planningState(null).affectationsPersistees();
+        String animateurId = planningTools.listAffectations(null, null, null, false, null, null).affectations().stream()
+                .map(AffectationView::animateurId)
+                .filter(id -> id != null)
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("le solve n'a pourvu aucun poste"));
 
-        JobMcpView incremental = solveurTools.resoudre_incremental(List.of(animateurId), null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.solveIncremental(List.of(animateurId), null, null, 1L, null, null);
 
         assertThat(incremental.type()).isEqualTo("SOLVE_INCREMENTAL");
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
-        assertThat(planningTools.etat_planning(null).affectationsPersistees()).isEqualTo(affectations);
+        assertThat(planningTools.planningState(null).affectationsPersistees()).isEqualTo(affectations);
     }
 
     @Test
-    void unPerimetreSansCibleResoutCeQueLesChangementsOntInvalide() throws InterruptedException {
+    void aScopeWithoutTargetSolvesWhatTheChangesInvalidated() throws InterruptedException {
         loadScenario();
-        assertThat(awaitFinished(solveurTools
-                                .lancer_solveur(1L, null, null, null)
-                                .id())
+        assertThat(awaitFinished(solveurTools.startSolver(1L, null, null, null).id())
                         .status())
                 .isEqualTo(JobStatus.COMPLETED.name());
 
-        JobMcpView incremental = solveurTools.resoudre_incremental(null, null, null, 1L, null, null);
+        JobMcpView incremental = solveurTools.solveIncremental(null, null, null, 1L, null, null);
 
         assertThat(awaitFinished(incremental.id()).status()).isEqualTo(JobStatus.COMPLETED.name());
     }
 
     @Test
-    void unJourMalFormeDansLePerimetreEstRefuseAvantToutLancement() {
-        assertThatThrownBy(() -> solveurTools.resoudre_incremental(null, List.of("15/08/2026"), null, 1L, null, null))
+    void aMalformedDayInTheScopeIsRefusedBeforeAnyStart() {
+        List<String> dates = List.of("15/08/2026");
+        assertThatThrownBy(() -> solveurTools.solveIncremental(null, dates, null, 1L, null, null))
                 .isInstanceOf(ToolCallException.class)
                 .hasCauseInstanceOf(BusinessError.Invalid.class)
                 .hasMessageContaining("AAAA-MM-JJ");
@@ -131,13 +127,13 @@ class SolveurMcpToolsQueueTest {
 
     private void loadScenario() throws InterruptedException {
         awaitSolverIdle();
-        scenarioTools.reinitialiser_donnees(null);
-        scenarioTools.importer_scenario("scenario.yml", null);
+        scenarioTools.resetData(null);
+        scenarioTools.importScenario("scenario.yml", null);
     }
 
     private JobMcpView awaitFinished(String jobId) throws InterruptedException {
         for (int essai = 0; essai < MAX_POLLS; essai++) {
-            JobMcpView job = solveurTools.statut_solveur(jobId);
+            JobMcpView job = solveurTools.solverStatus(jobId);
             if (job != null && ETATS_TERMINAUX.contains(job.status())) {
                 return job;
             }

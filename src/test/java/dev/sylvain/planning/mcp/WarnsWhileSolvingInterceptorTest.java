@@ -60,14 +60,12 @@ class WarnsWhileSolvingInterceptorTest {
     }
 
     private static WarnsWhileSolvingInterceptor interceptor(boolean held) {
-        WarnsWhileSolvingInterceptor interceptor = new WarnsWhileSolvingInterceptor();
-        interceptor.runningSolve = new RunningSolveProbe() {
+        return new WarnsWhileSolvingInterceptor(new RunningSolveProbe(null) {
             @Override
             public boolean holdsCurrentEdition() {
                 return held;
             }
-        };
-        return interceptor;
+        });
     }
 
     private static InvocationContext context(Callable<Object> body) throws Exception {

@@ -59,7 +59,7 @@ class McpWarnsWhileSolvingTest {
     /** A solve holds the edition of the call, for the length of one test. */
     private static void solveHoldsTheEdition() {
         QuarkusMock.installMockForType(
-                new RunningSolveProbe() {
+                new RunningSolveProbe(null) {
                     @Override
                     public boolean holdsCurrentEdition() {
                         return true;
@@ -73,13 +73,13 @@ class McpWarnsWhileSolvingTest {
         solveHoldsTheEdition();
         try {
             assertWarned(() -> standTools
-                    .creer_typologie("RES-T1", "Pendant un calcul", null)
+                    .createTypologie("RES-T1", "Pendant un calcul", null)
                     .avertissements());
             assertWarned(() -> standTools
-                    .modifier_typologie("RES-T1", "Renommée pendant un calcul", null, null)
+                    .updateTypologie("RES-T1", "Renommée pendant un calcul", null, null)
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.supprimer_typologie("RES-T1", null).avertissements());
+            assertWarned(() -> standTools.deleteTypologie("RES-T1", null).avertissements());
         }
     }
 
@@ -88,24 +88,24 @@ class McpWarnsWhileSolvingTest {
         solveHoldsTheEdition();
         try {
             assertWarned(() -> standTools
-                    .creer_emplacement("RES-E1", "Préau", 45.0, 4.0, null)
+                    .createEmplacement("RES-E1", "Préau", 45.0, 4.0, null)
                     .avertissements());
             assertWarned(() -> standTools
-                    .modifier_emplacement("RES-E1", "Préau nord", 45.0, 4.0, null, null)
+                    .updateEmplacement("RES-E1", "Préau nord", 45.0, 4.0, null, null)
                     .avertissements());
         } finally {
-            assertWarned(() -> standTools.supprimer_emplacement("RES-E1", null).avertissements());
+            assertWarned(() -> standTools.deleteEmplacement("RES-E1", null).avertissements());
         }
     }
 
     /** A creation is not refused during a solve (its landing does not touch it): it warns instead. */
     @Test
     void aStandCreationWarnsDuringASolve() {
-        standTools.creer_typologie("RES-T2", "Stratégie", null);
+        standTools.createTypologie("RES-T2", "Stratégie", null);
         solveHoldsTheEdition();
         try {
             assertWarned(() -> standTools
-                    .creer_stand("RES-S1", "Stand", List.of("RES-T2"), 1, 1, false, false, null, null, null)
+                    .createStand("RES-S1", "Stand", List.of("RES-T2"), 1, 1, false, false, null, null, null)
                     .avertissements());
         } finally {
             referenceData.deleteStand("RES-S1");
@@ -123,18 +123,17 @@ class McpWarnsWhileSolvingTest {
                 .orElseThrow();
         solveHoldsTheEdition();
         try {
+            assertWarned(
+                    () -> parametresTools.updateParametresSolveur(duree, null).avertissements());
             assertWarned(() ->
-                    parametresTools.modifier_parametres_solveur(duree, null).avertissements());
-            assertWarned(() -> contrainteTools
-                    .modifier_poids_contrainte(contrainte, 3, null)
-                    .avertissements());
-            assertWarned(() ->
-                    contrainteTools.desactiver_contrainte(contrainte, null).avertissements());
+                    contrainteTools.updateContrainteWeight(contrainte, 3, null).avertissements());
+            assertWarned(
+                    () -> contrainteTools.disableContrainte(contrainte, null).avertissements());
         } finally {
             assertWarned(
-                    () -> contrainteTools.activer_contrainte(contrainte, null).avertissements());
+                    () -> contrainteTools.enableContrainte(contrainte, null).avertissements());
             assertWarned(() -> contrainteTools
-                    .modifier_poids_contrainte(contrainte, null, null)
+                    .updateContrainteWeight(contrainte, null, null)
                     .avertissements());
         }
     }
@@ -143,10 +142,10 @@ class McpWarnsWhileSolvingTest {
     void locksWarnDuringASolve() {
         solveHoldsTheEdition();
         String id = verrouillageTools
-                .verrouiller("JOUR", null, null, null, "2031-07-14", null, null)
+                .lock("JOUR", null, null, null, "2031-07-14", null, null)
                 .verrouillage()
                 .id();
-        assertWarned(() -> verrouillageTools.deverrouiller(id, null).avertissements());
+        assertWarned(() -> verrouillageTools.unlock(id, null).avertissements());
     }
 
     /**
@@ -161,13 +160,13 @@ class McpWarnsWhileSolvingTest {
         try {
             solveHoldsTheEdition();
             // No stand yet: the timeslot raises nothing of its own.
-            WrittenCreneauView matin = creneauTools.creer_creneau("2031-08-01", "10:00", "12:00", null, ed);
+            WrittenCreneauView matin = creneauTools.createCreneau("2031-08-01", "10:00", "12:00", null, ed);
             assertThat(matin.avertissements()).containsExactly(CODE);
             Long creneauId = matin.creneau().id();
 
             // Open 14:00-16:00 only, over a grid with nothing there.
             assertThat(standTools
-                            .creer_stand_complet(
+                            .createCompleteStand(
                                     "RES-SC",
                                     "Stand complet",
                                     List.of("RES-WTY"),
@@ -192,11 +191,11 @@ class McpWarnsWhileSolvingTest {
                     .contains(CODE)
                     .hasSizeGreaterThan(1);
             assertThat(creneauTools
-                            .creer_creneau("2031-08-01", "20:00", "21:00", null, ed)
+                            .createCreneau("2031-08-01", "20:00", "21:00", null, ed)
                             .avertissements())
                     .contains("CRENEAU_HORS_OUVERTURE_STANDS", CODE);
             assertThat(animateurTools
-                            .creer_animateur(
+                            .createAnimateur(
                                     "RES-AN",
                                     "2020-01-01",
                                     "Prénom",
@@ -210,23 +209,21 @@ class McpWarnsWhileSolvingTest {
                     .contains("MINEUR_PENDANT_EVENEMENT", CODE);
             // Forced onto a day the animateur is off: a warning, not a refusal.
             assertThat(parametresTools
-                            .creer_contrainte_ad_hoc(
+                            .createContrainteAdHoc(
                                     "RES-CA", "AFFECTATION_FORCEE", List.of("RES-AN"), creneauId, "RES-SC", null, ed)
                             .avertissements())
                     .contains("AFFECTATION_FORCEE_JOUR_INDISPONIBLE", CODE);
-            assertWarned(() ->
-                    parametresTools.supprimer_contrainte_ad_hoc("RES-CA", ed).avertissements());
+            assertWarned(
+                    () -> parametresTools.deleteContrainteAdHoc("RES-CA", ed).avertissements());
             assertWarned(() -> parametresTools
-                    .modifier_parametres_legaux(null, null, null, null, null, null, null, null, null, null, null, ed)
+                    .updateParametresLegaux(null, null, null, null, null, null, null, null, null, null, null, ed)
                     .avertissements());
-            WrittenVerrouillageView verrou =
-                    verrouillageTools.verrouiller("JOUR", null, null, null, "2031-08-01", null, ed);
+            WrittenVerrouillageView verrou = verrouillageTools.lock("JOUR", null, null, null, "2031-08-01", null, ed);
             assertThat(verrou.avertissements()).contains(CODE);
-            assertWarned(() -> verrouillageTools
-                    .deverrouiller(verrou.verrouillage().id(), ed)
-                    .avertissements());
+            assertWarned(() ->
+                    verrouillageTools.unlock(verrou.verrouillage().id(), ed).avertissements());
             assertWarned(() -> validationTools
-                    .ajouter_validation_journee("2031-08-01", null, false, ed)
+                    .addJourneeValidation("2031-08-01", null, false, ed)
                     .avertissements());
         } finally {
             editions.delete(ed);
@@ -237,16 +234,16 @@ class McpWarnsWhileSolvingTest {
     @Test
     void withoutASolveNothingIsSaid() {
         try {
-            assertThat(standTools.creer_typologie("RES-T3", "Au calme", null).avertissements())
+            assertThat(standTools.createTypologie("RES-T3", "Au calme", null).avertissements())
                     .doesNotContain(CODE);
             assertThat(standTools
-                            .creer_emplacement("RES-E3", "Cour", null, null, null)
+                            .createEmplacement("RES-E3", "Cour", null, null, null)
                             .avertissements())
                     .doesNotContain(CODE);
-            assertThat(standTools.supprimer_emplacement("RES-E3", null).avertissements())
+            assertThat(standTools.deleteEmplacement("RES-E3", null).avertissements())
                     .doesNotContain(CODE);
         } finally {
-            assertThat(standTools.supprimer_typologie("RES-T3", null).avertissements())
+            assertThat(standTools.deleteTypologie("RES-T3", null).avertissements())
                     .doesNotContain(CODE);
         }
     }

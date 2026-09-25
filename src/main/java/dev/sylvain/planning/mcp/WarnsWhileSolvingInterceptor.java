@@ -25,8 +25,12 @@ import jakarta.interceptor.InvocationContext;
 @Priority(Interceptor.Priority.APPLICATION + 20)
 public class WarnsWhileSolvingInterceptor {
 
+    private final RunningSolveProbe runningSolve;
+
     @Inject
-    RunningSolveProbe runningSolve;
+    WarnsWhileSolvingInterceptor(RunningSolveProbe runningSolve) {
+        this.runningSolve = runningSolve;
+    }
 
     @AroundInvoke
     Object warnWhileSolving(InvocationContext context) throws Exception {

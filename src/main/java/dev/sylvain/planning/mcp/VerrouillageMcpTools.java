@@ -31,10 +31,15 @@ import java.util.List;
 @ApplicationScoped
 public class VerrouillageMcpTools {
 
+    private final ReferenceDataService referenceDataService;
+
     @Inject
-    ReferenceDataService referenceDataService;
+    VerrouillageMcpTools(ReferenceDataService referenceDataService) {
+        this.referenceDataService = referenceDataService;
+    }
 
     @Tool(
+            name = "lister_verrouillages",
             description = "Liste les verrouillages du planning : ce que le solveur n'a plus le droit de déplacer. Un "
                     + "verrouillage conserve ce que la dernière résolution a produit ; pour imposer ou interdire une "
                     + "affectation avant le calcul, c'est une contrainte ad hoc (creer_contrainte_ad_hoc). "
@@ -45,7 +50,7 @@ public class VerrouillageMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<VerrouillageView> lister_verrouillages(
+    List<VerrouillageView> listVerrouillages(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.listVerrouillages().stream()
                 .map(VerrouillageMcpTools::toView)
@@ -61,6 +66,7 @@ public class VerrouillageMcpTools {
      * readable message.
      */
     @Tool(
+            name = "verrouiller",
             description = "Fige une partie du planning pour les prochaines résolutions. Le type détermine la cible "
                     + "attendue : ANIMATEUR (animateurId), STAND (standId), CRENEAU (creneauId), JOUR (jour), "
                     + "ANIMATEUR_CRENEAU (animateurId + creneauId). Verrouiller une cible déjà verrouillée ne crée pas "
@@ -73,7 +79,7 @@ public class VerrouillageMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    WrittenVerrouillageView verrouiller(
+    WrittenVerrouillageView lock(
             @ToolArg(description = "ANIMATEUR | STAND | CRENEAU | JOUR | ANIMATEUR_CRENEAU") String type,
             @ToolArg(description = "Id de l'animateur (types ANIMATEUR et ANIMATEUR_CRENEAU)", required = false)
                     String animateurId,
@@ -112,6 +118,7 @@ public class VerrouillageMcpTools {
      * existed would let it believe the planning is free to move.
      */
     @Tool(
+            name = "deverrouiller",
             description = "Retire un verrouillage : la partie du planning qu'il figeait redevient déplaçable.",
             annotations =
                     @Tool.Annotations(
@@ -120,7 +127,7 @@ public class VerrouillageMcpTools {
                             idempotentHint = false,
                             openWorldHint = false))
     @WarnsWhileSolving
-    SuppressionResult deverrouiller(
+    SuppressionResult unlock(
             @ToolArg(description = "Id du verrouillage") String id,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         boolean connu = referenceDataService.listVerrouillages().stream()

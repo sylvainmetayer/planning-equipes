@@ -446,7 +446,7 @@ class EditionResourceTest {
     }
 
     @Test
-    void supprimerLEditionCouranteEstRefuse() {
+    void deletingTheCurrentEditionIsRefused() {
         createEdition("ANNEE-2026", "Année 2026");
 
         given().header(HEADER, "ANNEE-2026")

@@ -45,16 +45,20 @@ import java.util.Set;
 @Priority(Interceptor.Priority.APPLICATION + 10)
 public class JournalOutilInterceptor {
 
-    @Inject
-    JournalActionService journal;
+    private final JournalActionService journal;
+
+    private final CurrentAction currentAction;
 
     @Inject
-    CurrentAction currentAction;
+    JournalOutilInterceptor(JournalActionService journal, CurrentAction currentAction) {
+        this.journal = journal;
+        this.currentAction = currentAction;
+    }
 
     @AroundInvoke
     Object journaliser(InvocationContext context) throws Exception {
         Optional<ActionJournalisee> action = context.getMethod().isAnnotationPresent(Tool.class)
-                ? CatalogueActions.forTool(context.getMethod().getName())
+                ? CatalogueActions.forTool(FeatureNames.of(context.getMethod()))
                 : Optional.empty();
         if (action.isEmpty()) {
             return context.proceed();

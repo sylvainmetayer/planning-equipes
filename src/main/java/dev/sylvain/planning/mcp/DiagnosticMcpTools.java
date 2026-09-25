@@ -48,26 +48,37 @@ import java.util.List;
 @ApplicationScoped
 public class DiagnosticMcpTools {
 
-    @Inject
-    ReferenceDataService referenceDataService;
+    private final ReferenceDataService referenceDataService;
+
+    private final StaffingService staffingService;
+
+    private final MargeService margeService;
+
+    private final KpiHistoriqueService kpiHistoriqueService;
+
+    private final PauseAnalyzer pauseAnalyzer;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final CoherenceReferentielService coherenceService;
 
     @Inject
-    StaffingService staffingService;
-
-    @Inject
-    MargeService margeService;
-
-    @Inject
-    KpiHistoriqueService kpiHistoriqueService;
-
-    @Inject
-    PauseAnalyzer pauseAnalyzer;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    CoherenceReferentielService coherenceService;
+    DiagnosticMcpTools(
+            ReferenceDataService referenceDataService,
+            StaffingService staffingService,
+            MargeService margeService,
+            KpiHistoriqueService kpiHistoriqueService,
+            PauseAnalyzer pauseAnalyzer,
+            PlanningPersistenceService persistenceService,
+            CoherenceReferentielService coherenceService) {
+        this.referenceDataService = referenceDataService;
+        this.staffingService = staffingService;
+        this.margeService = margeService;
+        this.kpiHistoriqueService = kpiHistoriqueService;
+        this.pauseAnalyzer = pauseAnalyzer;
+        this.persistenceService = persistenceService;
+        this.coherenceService = coherenceService;
+    }
 
     /**
      * The same computation as {@code GET /api/staffing}, through the same
@@ -77,6 +88,7 @@ public class DiagnosticMcpTools {
      * reduced effectif during meal windows both change the count.
      */
     @Tool(
+            name = "analyser_effectifs",
             description = "Combien d'animateurs il faut au minimum pour couvrir l'événement, et pourquoi : pic "
                     + "simultané, pic avec pause, charge horaire de la semaine la plus chargée, rotation sur les jours "
                     + "(nul ne travaille plus de six jours par semaine ISO), coupure repas (une grille qui ne s'arrête "
@@ -94,7 +106,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    StaffingSummary analyser_effectifs(
+    StaffingSummary analyzeEffectifs(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return staffingService.analyzeEdition();
     }
@@ -107,6 +119,7 @@ public class DiagnosticMcpTools {
      * one opening window fewer actually turns on.
      */
     @Tool(
+            name = "analyser_marge",
             description = "La marge disponible, jour par jour et tranche horaire par tranche horaire : animateurs "
                     + "disponibles à ce moment-là moins sièges à pourvoir. Les tranches sont les créneaux de la grille, "
                     + "donc lisibles aussi bien en amplitudes qu'en vacations. Deux modes : « avant » (par défaut) "
@@ -125,7 +138,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportMarge analyser_marge(
+    RapportMarge analyzeMargin(
             @ToolArg(
                             description = "« avant » (défaut) : capacité brute contre besoin ; « apres » : les "
                                     + "personnes réellement libres sur le planning persisté",
@@ -136,6 +149,7 @@ public class DiagnosticMcpTools {
     }
 
     @Tool(
+            name = "analyser_ouvertures_stands",
             description = "Quand chaque stand est réellement ouvert, jour par jour, après application de ses "
                     + "horaires récurrents et de ses plages datées : amplitude couverte, postes générés, et les anomalies "
                     + "(STAND_JAMAIS_OUVERT, FENETRE_SANS_EFFET, SEGMENT_TROP_COURT ; et, pour information seulement, "
@@ -150,7 +164,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    RapportOuvertures analyser_ouvertures_stands(
+    RapportOuvertures analyzeStandOpenings(
             @ToolArg(description = "Id de stand pour ne détailler que celui-là", required = false) String standId,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(
@@ -185,6 +199,7 @@ public class DiagnosticMcpTools {
             List<CoherenceIssueView> anomalies) {}
 
     @Tool(
+            name = "lister_anomalies_referentiel",
             description = "La checklist de cohérence du référentiel : toutes les anomalies déjà détectées ailleurs, "
                     + "recalculées sur toute l'édition — avertissements de saisie rejoués sur chaque animateur, "
                     + "créneau, stand et verrouillage (codes TypeAvertissement), anomalies d'ouverture des stands, "
@@ -200,7 +215,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    CoherenceListView lister_anomalies_referentiel(
+    CoherenceListView listReferenceDataAnomalies(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         CoherenceReport rapport = coherenceService.report();
         return new CoherenceListView(
@@ -221,6 +236,7 @@ public class DiagnosticMcpTools {
      * An {@code edition} argument would suggest a filter that does not exist.
      */
     @Tool(
+            name = "lister_kpi_historique",
             description = "Historique des KPI, une ligne par résolution terminée, toutes éditions confondues et de "
                     + "la plus récente à la plus ancienne : score, couverture des postes, heures et violations par "
                     + "contrainte. Sert à comparer une édition à la précédente.",
@@ -230,7 +246,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<KpiHistoriqueEntry> lister_kpi_historique() {
+    List<KpiHistoriqueEntry> listKpiHistory() {
         return kpiHistoriqueService.list();
     }
 
@@ -241,6 +257,7 @@ public class DiagnosticMcpTools {
      * nothing else could ever clean up.
      */
     @Tool(
+            name = "supprimer_kpi_historique",
             description = "Supprime une ligne de l'historique des KPI, désignée par l'id que renvoie "
                     + "lister_kpi_historique. Sert à retirer une résolution ratée qui fausse la comparaison entre "
                     + "éditions ; l'historique est le seul endroit où elle est stockée, la ligne est perdue.",
@@ -250,7 +267,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = true,
                             idempotentHint = true,
                             openWorldHint = false))
-    SuppressionResult supprimer_kpi_historique(@ToolArg(description = "Id de la ligne d'historique") long id) {
+    SuppressionResult deleteKpiHistory(@ToolArg(description = "Id de la ligne d'historique") long id) {
         if (!kpiHistoriqueService.delete(id)) {
             throw new BusinessError.NotFound("Ligne d'historique KPI inconnue : " + id);
         }
@@ -258,6 +275,7 @@ public class DiagnosticMcpTools {
     }
 
     @Tool(
+            name = "analyser_usages_suppression",
             description = "Ce qu'une suppression emporterait avec elle : pour les ids donnés, le nombre "
                     + "d'affectations du planning enregistré, de contraintes ad hoc et de verrouillages qui les citent. "
                     + "Les compteurs sont agrégés sur toute la sélection, comme la question posée avant une suppression "
@@ -268,7 +286,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    UsagesView analyser_usages_suppression(
+    UsagesView analyzeDeletionUsages(
             @ToolArg(description = "Ids d'animateurs", required = false) List<String> animateurIds,
             @ToolArg(description = "Ids de stands", required = false) List<String> standIds,
             @ToolArg(description = "Ids de créneaux", required = false) List<String> creneauIds,
@@ -280,6 +298,7 @@ public class DiagnosticMcpTools {
     }
 
     @Tool(
+            name = "previsualiser_import",
             description = "Ce qu'un import de scénario écraserait dans l'édition : nombre d'animateurs, de stands, "
                     + "de postes déjà planifiés, de demandes d'échange et de verrouillages. À appeler avant "
                     + "importer_scenario, qui remplace tout sans prévenir.",
@@ -289,7 +308,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    ImportImpact previsualiser_import(
+    ImportImpact previewImport(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return referenceDataService.countImportImpact();
     }
@@ -304,6 +323,7 @@ public class DiagnosticMcpTools {
      * animateur's display name for the screens.
      */
     @Tool(
+            name = "analyser_pauses",
             description = "La rotation des pauses légales du planning persisté : pour chaque animateur et chaque "
                     + "jour, les séquences de travail ininterrompu, la pause due (20 min à la sixième heure, 30 min à "
                     + "4 h 30 pour un mineur) posée de telle heure à telle heure — une personne à la fois par stand, au "
@@ -320,7 +340,7 @@ public class DiagnosticMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    PausesView analyser_pauses(
+    PausesView analyzePauses(
             @ToolArg(description = "Date (AAAA-MM-JJ) : ne garder que ce jour", required = false) String date,
             @ToolArg(description = "Id de stand : ne garder que les pauses tenues sur ce stand", required = false)
                     String standId,
@@ -341,41 +361,20 @@ public class DiagnosticMcpTools {
             if (jour != null && !jour.equals(journee.date())) {
                 continue;
             }
-            List<SequencePausesView> sequences = new ArrayList<>();
-            for (PauseAnalyzer.SequenceView sequence : journee.sequences()) {
-                List<PauseDueMcpView> dues = sequence.pausesDues().stream()
-                        .filter(pause -> standId == null || standId.equals(pause.standId()))
-                        .filter(pause -> !sansRelais || !pause.relaisDisponible())
-                        .map(pause -> new PauseDueMcpView(
-                                pause.debut(),
-                                pause.fin(),
-                                pause.heureLimite(),
-                                pause.dureeMinutes(),
-                                pause.standId(),
-                                pause.relais().stream()
-                                        .map(PauseAnalyzer.RelaisView::animateurId)
-                                        .toList(),
-                                pause.relaisDisponible(),
-                                pause.simultanee()))
-                        .toList();
-                if (!dues.isEmpty() || planifieesVisibles) {
-                    sequences.add(new SequencePausesView(sequence.debut(), sequence.fin(), sequence.minutes(), dues));
-                }
-            }
+            List<SequencePausesView> sequences = visibleSequences(journee, standId, sansRelais, planifieesVisibles);
             boolean planifiees = planifieesVisibles
                     && (!journee.pausesPlanifiees().isEmpty()
                             || !journee.coupuresRepas().isEmpty());
-            if (sequences.isEmpty() && !planifiees) {
-                continue;
+            if (!sequences.isEmpty() || planifiees) {
+                journees.add(new JourneePausesView(
+                        journee.animateurId(),
+                        journee.mineur(),
+                        journee.date(),
+                        journee.jour(),
+                        sequences,
+                        planifieesVisibles ? journee.pausesPlanifiees() : List.of(),
+                        planifieesVisibles ? journee.coupuresRepas() : List.of()));
             }
-            journees.add(new JourneePausesView(
-                    journee.animateurId(),
-                    journee.mineur(),
-                    journee.date(),
-                    journee.jour(),
-                    sequences,
-                    planifieesVisibles ? journee.pausesPlanifiees() : List.of(),
-                    planifieesVisibles ? journee.coupuresRepas() : List.of()));
         }
         int pausesDues = 0;
         int relaisManquants = 0;
@@ -395,6 +394,39 @@ public class DiagnosticMcpTools {
                 rapport.coupuresRepasManquantes(),
                 journees,
                 rapport.message());
+    }
+
+    /**
+     * The sequences of one day the filters keep: a sequence stays when a due
+     * pause survives them, or when the planned breaks are shown anyway.
+     */
+    private static List<SequencePausesView> visibleSequences(
+            PauseAnalyzer.JourneeAnimateurView journee,
+            String standId,
+            boolean sansRelais,
+            boolean planifieesVisibles) {
+        List<SequencePausesView> sequences = new ArrayList<>();
+        for (PauseAnalyzer.SequenceView sequence : journee.sequences()) {
+            List<PauseDueMcpView> dues = sequence.pausesDues().stream()
+                    .filter(pause -> standId == null || standId.equals(pause.standId()))
+                    .filter(pause -> !sansRelais || !pause.relaisDisponible())
+                    .map(pause -> new PauseDueMcpView(
+                            pause.debut(),
+                            pause.fin(),
+                            pause.heureLimite(),
+                            pause.dureeMinutes(),
+                            pause.standId(),
+                            pause.relais().stream()
+                                    .map(PauseAnalyzer.RelaisView::animateurId)
+                                    .toList(),
+                            pause.relaisDisponible(),
+                            pause.simultanee()))
+                    .toList();
+            if (!dues.isEmpty() || planifieesVisibles) {
+                sequences.add(new SequencePausesView(sequence.debut(), sequence.fin(), sequence.minutes(), dues));
+            }
+        }
+        return sequences;
     }
 
     /**

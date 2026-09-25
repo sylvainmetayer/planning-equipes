@@ -30,16 +30,24 @@ import java.util.stream.Collectors;
 @ApplicationScoped
 public class ContrainteMcpTools {
 
-    @Inject
-    ConstraintAnalysisStore analysisStore;
+    private final ConstraintAnalysisStore analysisStore;
+
+    private final ReferenceDataService referenceDataService;
+
+    private final PlanningService planningService;
 
     @Inject
-    ReferenceDataService referenceDataService;
-
-    @Inject
-    PlanningService planningService;
+    ContrainteMcpTools(
+            ConstraintAnalysisStore analysisStore,
+            ReferenceDataService referenceDataService,
+            PlanningService planningService) {
+        this.analysisStore = analysisStore;
+        this.referenceDataService = referenceDataService;
+        this.planningService = planningService;
+    }
 
     @Tool(
+            name = "lister_contraintes",
             description = "Liste le catalogue métier des contraintes du solveur : niveau (HARD/MEDIUM/SOFT), "
                     + "description, si elle est active, et son score/nombre de correspondances lors de la dernière analyse. "
                     + "Une règle qui a pénalisé la quasi-totalité de ce qu'elle évalue porte ratioPlancher et "
@@ -50,7 +58,7 @@ public class ContrainteMcpTools {
                             destructiveHint = false,
                             idempotentHint = true,
                             openWorldHint = false))
-    List<ContrainteView> lister_contraintes(
+    List<ContrainteView> listContraintes(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         StoredAnalysis analysis = analysisStore.latest();
         Map<String, ConstraintDiagnostic> byName = analysis == null
@@ -67,6 +75,7 @@ public class ContrainteMcpTools {
     }
 
     @Tool(
+            name = "activer_contrainte",
             description = "Active une contrainte pour le prochain solve (annule une désactivation précédente).",
             annotations =
                     @Tool.Annotations(
@@ -75,13 +84,14 @@ public class ContrainteMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ToggleResult activer_contrainte(
+    ToggleResult enableContrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, true);
     }
 
     @Tool(
+            name = "desactiver_contrainte",
             description =
                     "Désactive une contrainte pour le prochain solve. Le solveur l'ignorera jusqu'à réactivation.",
             annotations =
@@ -91,7 +101,7 @@ public class ContrainteMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    ToggleResult desactiver_contrainte(
+    ToggleResult disableContrainte(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return setActive(nom, false);
@@ -108,6 +118,7 @@ public class ContrainteMcpTools {
      * rather than a per-deployment one.</p>
      */
     @Tool(
+            name = "modifier_poids_contrainte",
             description = "Change le poids d'une contrainte pour la prochaine résolution, dans cette édition "
                     + "seulement : à niveau égal, une contrainte de poids 3 pèse trois fois une contrainte de poids 1. "
                     + "Sans poids, l'édition revient au poids configuré par défaut. Ne touche pas au niveau "
@@ -119,7 +130,7 @@ public class ContrainteMcpTools {
                             idempotentHint = true,
                             openWorldHint = false))
     @WarnsWhileSolving
-    PoidsResult modifier_poids_contrainte(
+    PoidsResult updateContrainteWeight(
             @ToolArg(description = "Nom technique de la contrainte (voir lister_contraintes)") String nom,
             @ToolArg(description = "Poids strictement positif ; omis, rétablit le poids par défaut", required = false)
                     Integer poids,
