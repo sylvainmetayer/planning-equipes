@@ -128,15 +128,10 @@ public class PlanningExportService {
         // espace, the folded sheet the organisation prints by the hundred.
         DocumentAnimateur document = format == FormatPlanning.FEUILLE ? feuilleAnimateur : pdfAnimateur;
         return document.render(
-                nom,
-                animateurPostes,
-                coequipiers,
-                joursRepos,
-                pausesDuJour,
-                coupuresDuJour,
+                new DocumentAnimateur.Contenu(
+                        nom, animateurPostes, coequipiers, joursRepos, pausesDuJour, coupuresDuJour, notes),
                 lien,
-                provenanceDuPlan,
-                notes);
+                provenanceDuPlan);
     }
 
     /**
@@ -434,8 +429,21 @@ public class PlanningExportService {
      * same name.
      */
     public static String planningFileName(String nomAffiche, String extension) {
-        String sansAccroc = nomAffiche.replaceAll("[^\\p{L}\\p{N}]+", "-").replaceAll("^-+|-+$", "");
+        String sansAccroc = trimHyphens(nomAffiche.replaceAll("[^\\p{L}\\p{N}]+", "-"));
         return "planning-" + (sansAccroc.isEmpty() ? "animateur" : sansAccroc) + "." + extension;
+    }
+
+    /** The text without its leading and trailing hyphens — a loop, where a regex anchored at the end backtracks. */
+    static String trimHyphens(String text) {
+        int start = 0;
+        int end = text.length();
+        while (start < end && text.charAt(start) == '-') {
+            start++;
+        }
+        while (end > start && text.charAt(end - 1) == '-') {
+            end--;
+        }
+        return text.substring(start, end);
     }
 
     public static String resolveAnimateurName(PlanningEvenement planning, String animateurId) {

@@ -18,6 +18,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -71,7 +72,8 @@ public class PlanningResource {
     @Produces("application/x-yaml")
     public Response exportScenario() {
         String yaml = planningService.exportScenarioYaml();
-        String filename = "scenario-" + LocalDate.now().format(DateTimeFormatter.ISO_LOCAL_DATE) + ".yaml";
+        String filename =
+                "scenario-" + LocalDate.now(ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE) + ".yaml";
         return Response.ok(yaml)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .build();

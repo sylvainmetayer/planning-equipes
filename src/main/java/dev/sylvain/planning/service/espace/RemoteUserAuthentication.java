@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Locale;
 import java.util.Optional;
-import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 /**
  * Opt-in authentication by a header an access proxy injects — Pangolin's
@@ -65,7 +65,7 @@ public class RemoteUserAuthentication {
      *               {@code ContainerRequestContext} (the espace-animateur
      *               guard), which share no header API
      */
-    public Optional<String> trustedEmail(Function<String, String> header) {
+    public Optional<String> trustedEmail(UnaryOperator<String> header) {
         if (!config.enabled()
                 || config.secret().isEmpty()
                 || config.secret().get().isBlank()) {

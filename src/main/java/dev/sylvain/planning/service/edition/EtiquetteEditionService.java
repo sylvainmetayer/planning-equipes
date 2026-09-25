@@ -30,7 +30,7 @@ public class EtiquetteEditionService {
             Edition edition = editions.editionCourante();
             JoursEvenement jours = JoursEvenement.of(referenceData.listCreneaux());
             return new EtiquetteEdition(edition == null ? null : edition.getNom(), jours.first(), jours.last());
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             return EtiquetteEdition.INCONNUE;
         }
     }

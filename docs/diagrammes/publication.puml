@@ -51,7 +51,7 @@ end
 loop chaque personne exclue
   publication -> publication : EXCLU, action PUBLICATION_DIFFEREE au journal
 end
-publication -> traces : record(snapshotId, destinataires)
+publication -> traces : recordRecipients(snapshotId, destinataires)
 publication -> reperes : mark(retenus, snapshotId)
 note right of reperes : seuls les retenus avancent leur repère ;\nun différé le garde (décision 0047)
 publication -> echanges : markAsCommunicated(demandes, maintenant)

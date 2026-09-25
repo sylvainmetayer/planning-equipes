@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -64,6 +65,11 @@ import org.eclipse.microprofile.openapi.annotations.media.Schema;
 public class ConsigneService {
 
     static final String MOTIF_EXCEPTION_DATEE = "Horaires posés à la main ce jour-là";
+
+    /** Which meal window a message is about, as the sentence names it. */
+    private static final String MIDI = "de midi";
+
+    private static final String SOIR = "du soir";
 
     private static final int MINUTES_PAR_JOUR = 24 * 60;
 
@@ -312,33 +318,43 @@ public class ConsigneService {
         });
         List<LigneStandConsigne> lignes = new ArrayList<>();
         for (Stand stand : stands) {
-            int perdues = 0;
-            Integer herite = null;
-            for (Creneau creneau : duJour) {
-                for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
-                    int[] absolu = absolu(creneau, segment);
-                    int recouvrement = Math.min(absolu[1], bande[1]) - Math.max(absolu[0], bande[0]);
-                    if (recouvrement > 0) {
-                        perdues += recouvrement;
-                        herite = herite == null ? segment.effectif() : Math.max(herite, segment.effectif());
-                    }
-                }
-            }
-            boolean exception =
-                    HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.EXCEPTION;
-            lignes.add(new LigneStandConsigne(
-                    stand.getId(),
-                    stand.getNom(),
-                    perdues,
-                    herite != null ? herite : stand.getEffectifMin(),
-                    exception,
-                    exception ? MOTIF_EXCEPTION_DATEE : null,
-                    perdues > 0 && !exception,
-                    actuelles.getOrDefault(stand.getId(), List.of())));
+            lignes.add(ligne(stand, date, duJour, bande, actuelles.getOrDefault(stand.getId(), List.of())));
         }
         lignes.sort(Comparator.comparing(LigneStandConsigne::standNom, String.CASE_INSENSITIVE_ORDER)
                 .thenComparing(LigneStandConsigne::standId));
         return new Preselection(date, duJour.size(), lignes);
+    }
+
+    /**
+     * One stand's line of the preselection: the minutes the band takes from
+     * it on {@code date}, the highest headcount it takes away, and the
+     * openings a consigne already on that date gives it.
+     */
+    private static LigneStandConsigne ligne(
+            Stand stand, LocalDate date, List<Creneau> duJour, int[] bande, List<Ouverture> actuelles) {
+        int perdues = 0;
+        Integer herite = null;
+        for (Creneau creneau : duJour) {
+            for (Creneau.SegmentOuvert segment : creneau.segmentsOuverts(stand)) {
+                int[] absolu = absolu(creneau, segment);
+                int recouvrement = Math.min(absolu[1], bande[1]) - Math.max(absolu[0], bande[0]);
+                if (recouvrement > 0) {
+                    perdues += recouvrement;
+                    herite = herite == null ? segment.effectif() : Math.max(herite, segment.effectif());
+                }
+            }
+        }
+        boolean exception =
+                HoraireStandResolver.sourceOfDay(stand, date) == HoraireStandResolver.SourceHoraire.EXCEPTION;
+        return new LigneStandConsigne(
+                stand.getId(),
+                stand.getNom(),
+                perdues,
+                herite != null ? herite : stand.getEffectifMin(),
+                exception,
+                exception ? MOTIF_EXCEPTION_DATEE : null,
+                perdues > 0 && !exception,
+                actuelles);
     }
 
     /* --------------------------------- preview --------------------------------- */
@@ -530,15 +546,7 @@ public class ConsigneService {
         ConsigneResolver.apply(apres, List.of(appliquee), grilleApres);
         List<PosteAffectation> postesApres = ProblemBuilder.buildPostes(apres, grilleApres);
 
-        Set<Long> avecSiegeAvant = new HashSet<>();
-        postesAvant.forEach(poste -> avecSiegeAvant.add(poste.getCreneau().getId()));
-        Set<Long> avecSiegeApres = new HashSet<>();
-        postesApres.forEach(poste -> avecSiegeApres.add(poste.getCreneau().getId()));
-        List<VacationRef> sansSiege = nominale.stream()
-                .filter(c -> avecSiegeAvant.contains(c.getId()) && !avecSiegeApres.contains(c.getId()))
-                .sorted(Comparator.comparing(Creneau::getHeureDebut))
-                .map(ConsigneService::ref)
-                .toList();
+        List<VacationRef> sansSiege = seatlessTimeslots(nominale, postesAvant, postesApres);
 
         Set<String> ouverts = new LinkedHashSet<>();
         demandee.ouvertures().forEach(ouverture -> ouverts.add(ouverture.standId()));
@@ -557,49 +565,15 @@ public class ConsigneService {
                 .map(Stand::getId)
                 .toList();
 
-        int mineurs = 0;
-        int majeurs = 0;
-        for (Animateur animateur : contexte.animateurs()) {
-            if (animateur.isIndisponibleOn(date)) {
-                continue;
-            }
-            if (animateur.isMineurOn(date)) {
-                mineurs++;
-            } else {
-                majeurs++;
-            }
-        }
+        List<Animateur> disponibles = contexte.animateurs().stream()
+                .filter(animateur -> !animateur.isIndisponibleOn(date))
+                .toList();
+        int mineurs = (int) disponibles.stream()
+                .filter(animateur -> animateur.isMineurOn(date))
+                .count();
+        int majeurs = disponibles.size() - mineurs;
 
         int[] bande = ConsigneResolver.minutes(demandee.fermetureDebut(), demandee.fermetureFin());
-        int verrous = 0;
-        for (VerrouillagePlanning verrouillage : contexte.verrouillages()) {
-            if (verrouillage.vacation() != null
-                    && date.equals(verrouillage.vacation().date())
-                    && chevauche(
-                            verrouillage.vacation().heureDebut(),
-                            verrouillage.vacation().heureFin(),
-                            bande)) {
-                verrous++;
-            }
-        }
-        int contraintes = 0;
-        for (ContrainteAdHoc contrainte : contexte.contraintes()) {
-            Creneau creneau = contrainte.getCreneau();
-            if (creneau != null
-                    && date.equals(creneau.getDate())
-                    && chevauche(creneau.getHeureDebut(), creneau.getHeureFin(), bande)) {
-                contraintes++;
-            }
-        }
-        Set<String> dansLaBande = new HashSet<>();
-        for (PosteAffectation poste : contexte.persiste().getPostes()) {
-            if (poste.getAnimateur() != null
-                    && poste.getCreneau() != null
-                    && date.equals(poste.getCreneau().getDate())
-                    && chevauche(poste.heureDebutEffectif(), poste.heureFinEffectif(), bande)) {
-                dansLaBande.add(poste.getAnimateur().getId());
-            }
-        }
 
         return new ApercuJour(
                 date,
@@ -623,9 +597,67 @@ public class ConsigneService {
                 mineurs,
                 majeurs,
                 contexte.joursValides().contains(date),
-                verrous,
-                contraintes,
-                dansLaBande.size());
+                locksInBand(contexte.verrouillages(), date, bande),
+                adHocConstraintsInBand(contexte.contraintes(), date, bande),
+                animateursInBand(contexte.persiste(), date, bande));
+    }
+
+    /** The nominal timeslots that had seats and have none once the consigne is laid. */
+    private static List<VacationRef> seatlessTimeslots(
+            List<Creneau> nominale, List<PosteAffectation> postesAvant, List<PosteAffectation> postesApres) {
+        Set<Long> avecSiegeAvant = new HashSet<>();
+        postesAvant.forEach(poste -> avecSiegeAvant.add(poste.getCreneau().getId()));
+        Set<Long> avecSiegeApres = new HashSet<>();
+        postesApres.forEach(poste -> avecSiegeApres.add(poste.getCreneau().getId()));
+        return nominale.stream()
+                .filter(c -> avecSiegeAvant.contains(c.getId()) && !avecSiegeApres.contains(c.getId()))
+                .sorted(Comparator.comparing(Creneau::getHeureDebut))
+                .map(ConsigneService::ref)
+                .toList();
+    }
+
+    /** The locks whose shift on {@code date} crosses the band. */
+    private static int locksInBand(List<VerrouillagePlanning> verrouillages, LocalDate date, int[] bande) {
+        int verrous = 0;
+        for (VerrouillagePlanning verrouillage : verrouillages) {
+            if (verrouillage.vacation() != null
+                    && date.equals(verrouillage.vacation().date())
+                    && chevauche(
+                            verrouillage.vacation().heureDebut(),
+                            verrouillage.vacation().heureFin(),
+                            bande)) {
+                verrous++;
+            }
+        }
+        return verrous;
+    }
+
+    /** The ad hoc constraints whose timeslot on {@code date} crosses the band. */
+    private static int adHocConstraintsInBand(List<ContrainteAdHoc> contraintesAdHoc, LocalDate date, int[] bande) {
+        int contraintes = 0;
+        for (ContrainteAdHoc contrainte : contraintesAdHoc) {
+            Creneau creneau = contrainte.getCreneau();
+            if (creneau != null
+                    && date.equals(creneau.getDate())
+                    && chevauche(creneau.getHeureDebut(), creneau.getHeureFin(), bande)) {
+                contraintes++;
+            }
+        }
+        return contraintes;
+    }
+
+    /** How many animateurs the persisted plan seats inside the band on {@code date}. */
+    private static int animateursInBand(PlanningEvenement persiste, LocalDate date, int[] bande) {
+        Set<String> dansLaBande = new HashSet<>();
+        for (PosteAffectation poste : persiste.getPostes()) {
+            if (poste.getAnimateur() != null
+                    && poste.getCreneau() != null
+                    && date.equals(poste.getCreneau().getDate())
+                    && chevauche(poste.heureDebutEffectif(), poste.heureFinEffectif(), bande)) {
+                dansLaBande.add(poste.getAnimateur().getId());
+            }
+        }
+        return dansLaBande.size();
     }
 
     /* ------------------------------ the grid plan ------------------------------ */
@@ -693,16 +725,14 @@ public class ConsigneService {
                 couverts.stream().sorted(Comparator.comparingInt(c -> c[0])).toList();
         List<int[]> manquants = new ArrayList<>();
         int curseur = debut;
-        for (int[] couvert : tries) {
-            if (couvert[1] <= curseur || couvert[0] >= fin) {
-                continue;
-            }
-            if (couvert[0] > curseur) {
-                manquants.add(new int[] {curseur, Math.min(couvert[0], fin)});
-            }
-            curseur = Math.max(curseur, couvert[1]);
-            if (curseur >= fin) {
-                break;
+        Iterator<int[]> suivants = tries.iterator();
+        while (curseur < fin && suivants.hasNext()) {
+            int[] couvert = suivants.next();
+            if (couvert[1] > curseur && couvert[0] < fin) {
+                if (couvert[0] > curseur) {
+                    manquants.add(new int[] {curseur, Math.min(couvert[0], fin)});
+                }
+                curseur = Math.max(curseur, couvert[1]);
             }
         }
         if (curseur < fin) {
@@ -925,40 +955,54 @@ public class ConsigneService {
             checkedMotif(consigne.motif());
             checkFenetres(consigne.fenetres(), consigne.fermetureDebut(), consigne.fermetureFin(), "La consigne");
             checkRepas(consigne.repas(), coupureEdition, "La consigne du " + consigne.date());
-            Set<String> vues = new HashSet<>();
-            Set<String> inconnus = new LinkedHashSet<>();
-            for (Ouverture ouverture : consigne.ouvertures()) {
-                String id = ouverture.standId();
-                if (id == null || id.isBlank()) {
-                    throw new BusinessError.Invalid("Une ouverture désigne un stand");
-                }
-                Stand stand = stands.get(id);
-                if (stand == null) {
-                    inconnus.add(id);
-                    continue;
-                }
-                checkFenetre(
-                        ouverture.fenetre(),
-                        consigne.fermetureDebut(),
-                        consigne.fermetureFin(),
-                        "L'ouverture de " + stand.getNom());
-                if (!vues.add(id + "|" + ouverture.debut() + "|" + ouverture.fin())) {
-                    throw new BusinessError.Invalid("Le stand " + stand.getNom()
-                            + " est ouvert deux fois sur la même fenêtre le " + consigne.date());
-                }
-                if (ouverture.effectif() != null) {
-                    if (ouverture.effectif() <= 0) {
-                        throw new BusinessError.Invalid("L'effectif de " + stand.getNom() + " doit être positif");
-                    }
-                    if (ouverture.effectif() > stand.getEffectifMax()) {
-                        throw new BusinessError.Invalid("L'effectif de " + stand.getNom() + " dépasse son maximum ("
-                                + stand.getEffectifMax() + ")");
-                    }
-                }
+            checkOuvertures(consigne, stands);
+        }
+    }
+
+    /**
+     * Refuses an opening that names no stand, is laid twice on one window or
+     * states a headcount the stand cannot take; the stands this edition does
+     * not know are refused together, once every opening has been read.
+     */
+    private static void checkOuvertures(ConsigneEdition consigne, Map<String, Stand> stands) {
+        Set<String> vues = new HashSet<>();
+        Set<String> inconnus = new LinkedHashSet<>();
+        for (Ouverture ouverture : consigne.ouvertures()) {
+            String id = ouverture.standId();
+            if (id == null || id.isBlank()) {
+                throw new BusinessError.Invalid("Une ouverture désigne un stand");
             }
-            if (!inconnus.isEmpty()) {
-                throw new BusinessError.Invalid("Stand inconnu dans cette édition : " + String.join(", ", inconnus));
+            Stand stand = stands.get(id);
+            if (stand == null) {
+                inconnus.add(id);
+            } else {
+                checkOuverture(consigne, ouverture, stand, vues);
             }
+        }
+        if (!inconnus.isEmpty()) {
+            throw new BusinessError.Invalid("Stand inconnu dans cette édition : " + String.join(", ", inconnus));
+        }
+    }
+
+    private static void checkOuverture(ConsigneEdition consigne, Ouverture ouverture, Stand stand, Set<String> vues) {
+        checkFenetre(
+                ouverture.fenetre(),
+                consigne.fermetureDebut(),
+                consigne.fermetureFin(),
+                "L'ouverture de " + stand.getNom());
+        if (!vues.add(stand.getId() + "|" + ouverture.debut() + "|" + ouverture.fin())) {
+            throw new BusinessError.Invalid(
+                    "Le stand " + stand.getNom() + " est ouvert deux fois sur la même fenêtre le " + consigne.date());
+        }
+        if (ouverture.effectif() == null) {
+            return;
+        }
+        if (ouverture.effectif() <= 0) {
+            throw new BusinessError.Invalid("L'effectif de " + stand.getNom() + " doit être positif");
+        }
+        if (ouverture.effectif() > stand.getEffectifMax()) {
+            throw new BusinessError.Invalid(
+                    "L'effectif de " + stand.getNom() + " dépasse son maximum (" + stand.getEffectifMax() + ")");
         }
     }
 
@@ -996,31 +1040,35 @@ public class ConsigneService {
         if (repas.justification().strip().length() > 500) {
             throw new BusinessError.Invalid(sujet + " : justification trop longue (500 caractères au plus)");
         }
-        if ((repas.midiDebut() == null) != (repas.midiFin() == null)) {
-            throw new BusinessError.Invalid(sujet + " : la fenêtre repas de midi requiert ses deux bornes, ou aucune");
-        }
-        if ((repas.soirDebut() == null) != (repas.soirFin() == null)) {
-            throw new BusinessError.Invalid(sujet + " : la fenêtre repas du soir requiert ses deux bornes, ou aucune");
-        }
-        if (repas.midiDebut() != null && !repas.midiDebut().isBefore(repas.midiFin())) {
-            throw new BusinessError.Invalid(sujet + " : la fenêtre repas de midi doit finir après son début");
-        }
-        if (repas.soirDebut() != null && !repas.soirDebut().isBefore(repas.soirFin())) {
-            throw new BusinessError.Invalid(sujet + " : la fenêtre repas du soir doit finir après son début");
-        }
+        checkBothBounds(repas.midiDebut(), repas.midiFin(), sujet, MIDI);
+        checkBothBounds(repas.soirDebut(), repas.soirFin(), sujet, SOIR);
+        checkEndsAfterStart(repas.midiDebut(), repas.midiFin(), sujet, MIDI);
+        checkEndsAfterStart(repas.soirDebut(), repas.soirFin(), sujet, SOIR);
         if (repas.coupureMinutes() != null && repas.coupureMinutes() <= 0) {
             throw new BusinessError.Invalid(sujet + " : la coupure repas doit durer un nombre positif de minutes");
         }
         int coupure = repas.coupureMinutes() != null ? repas.coupureMinutes() : coupureEditionMinutes;
-        if (repas.midiDebut() != null && minutesBetween(repas.midiDebut(), repas.midiFin()) < coupure) {
+        checkHoldsBreak(repas.midiDebut(), repas.midiFin(), coupure, sujet, MIDI);
+        checkHoldsBreak(repas.soirDebut(), repas.soirFin(), coupure, sujet, SOIR);
+    }
+
+    private static void checkBothBounds(LocalTime debut, LocalTime fin, String sujet, String quand) {
+        if ((debut == null) != (fin == null)) {
             throw new BusinessError.Invalid(
-                    sujet + " : la fenêtre repas de midi (" + libelle(repas.midiDebut(), repas.midiFin())
-                            + ") est plus courte que la coupure de " + coupure + " min qu'elle doit contenir");
+                    sujet + " : la fenêtre repas " + quand + " requiert ses deux bornes, ou aucune");
         }
-        if (repas.soirDebut() != null && minutesBetween(repas.soirDebut(), repas.soirFin()) < coupure) {
-            throw new BusinessError.Invalid(
-                    sujet + " : la fenêtre repas du soir (" + libelle(repas.soirDebut(), repas.soirFin())
-                            + ") est plus courte que la coupure de " + coupure + " min qu'elle doit contenir");
+    }
+
+    private static void checkEndsAfterStart(LocalTime debut, LocalTime fin, String sujet, String quand) {
+        if (debut != null && !debut.isBefore(fin)) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas " + quand + " doit finir après son début");
+        }
+    }
+
+    private static void checkHoldsBreak(LocalTime debut, LocalTime fin, int coupure, String sujet, String quand) {
+        if (debut != null && minutesBetween(debut, fin) < coupure) {
+            throw new BusinessError.Invalid(sujet + " : la fenêtre repas " + quand + " (" + libelle(debut, fin)
+                    + ") est plus courte que la coupure de " + coupure + " min qu'elle doit contenir");
         }
     }
 

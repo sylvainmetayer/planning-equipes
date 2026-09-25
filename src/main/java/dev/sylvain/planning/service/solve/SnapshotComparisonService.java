@@ -94,8 +94,6 @@ public class SnapshotComparisonService {
      * @param volumetriesDifferentes the two plans do not hold the same number of
      *                               seats, so absolute scores are not directly
      *                               comparable whatever the editions
-     */
-    /**
      * @param consignesDifferentes the two sides were not captured under the
      *                             same consignes (issue #4): a difference in
      *                             seats or hours then comes from a band an
@@ -146,7 +144,7 @@ public class SnapshotComparisonService {
         long id;
         try {
             id = Long.parseLong(selecteur.trim());
-        } catch (NumberFormatException e) {
+        } catch (NumberFormatException _) {
             return null;
         }
         SnapshotDetail detail = snapshotService.loadAllEditions(id);

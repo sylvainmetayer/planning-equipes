@@ -1,7 +1,5 @@
 package dev.sylvain.planning.service.export;
 
-import dev.sylvain.planning.domain.PosteAffectation;
-import dev.sylvain.planning.service.analyse.PauseAnalyzer;
 import dev.sylvain.planning.service.referentiel.TypologieLibelles;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -64,27 +62,8 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
 
     @Override
     public byte[] render(
-            String animateurName,
-            List<PosteAffectation> postes,
-            Map<String, List<String>> teammatesByPoste,
-            List<PlanningExportService.JourRepos> joursRepos,
-            List<PauseAnalyzer.PauseAnimateurView> pauses,
-            List<PauseAnalyzer.CoupureAnimateurView> coupures,
-            String lienEspaceAnimateur,
-            ExportProvenance.Provenance provenance,
-            Map<LocalDate, String> journeesModifiees) {
-        return render(
-                AnimateurPlanningView.build(
-                        animateurName,
-                        postes,
-                        teammatesByPoste,
-                        joursRepos,
-                        pauses,
-                        coupures,
-                        journeesModifiees,
-                        TypologiePalette.of(typologies)),
-                lienEspaceAnimateur,
-                provenance);
+            DocumentAnimateur.Contenu contenu, String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
+        return render(contenu.view(TypologiePalette.of(typologies)), lienEspaceAnimateur, provenance);
     }
 
     byte[] render(AnimateurPlanningView view, String lienEspaceAnimateur, ExportProvenance.Provenance provenance) {
@@ -116,8 +95,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
 
     private PdfPTable entete(AnimateurPlanningView view, String lien, String edition) {
         PdfPTable qr = QrCodeEspace.bloc(lien, 48f, theme.headline());
-        PdfPTable table =
-                qr == null ? new PdfPTable(new float[] {346f, 436f}) : new PdfPTable(new float[] {330f, 396f, 56f});
+        PdfPTable table = new PdfPTable(qr == null ? new float[] {346f, 436f} : new float[] {330f, 396f, 56f});
         table.setTotalWidth(LARGEUR);
         table.setLockedWidth(true);
         table.setSpacingAfter(10f);
@@ -209,7 +187,7 @@ public class AnimateurFeuillePdf implements DocumentAnimateur {
             table.addCell(entete);
         }
 
-        float hauteur = Math.min(120f, Math.max(52f, 330f / semaines));
+        float hauteur = Math.clamp(330f / semaines, 52f, 120f);
         for (int semaine = 0; semaine < semaines; semaine++) {
             for (int index = 0; index < SEMAINE.size(); index++) {
                 LocalDate date = premierLundi.plusWeeks(semaine).plusDays(index);

@@ -10,6 +10,7 @@ import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 
 /**
  * The source of "today" for the mode jour J screen, the espace animateur's
@@ -121,7 +122,7 @@ public class JourJClock {
      */
     public LocalDate today() {
         LocalDate fige = mockedDate();
-        return fige != null ? fige : LocalDate.now();
+        return fige != null ? fige : LocalDate.now(ZoneId.systemDefault());
     }
 
     /**
@@ -131,7 +132,7 @@ public class JourJClock {
      */
     public LocalTime now() {
         LocalTime fige = mocked().heure();
-        return fige != null ? fige : LocalTime.now().withNano(0);
+        return fige != null ? fige : LocalTime.now(ZoneId.systemDefault()).withNano(0);
     }
 
     /**
@@ -145,11 +146,13 @@ public class JourJClock {
     public LocalDateTime dateTime() {
         Horloge fige = mocked();
         if (fige.date() == null) {
-            return LocalDateTime.now().withNano(0);
+            return LocalDateTime.now(ZoneId.systemDefault()).withNano(0);
         }
         return LocalDateTime.of(
                 fige.date(),
-                fige.heure() != null ? fige.heure() : LocalTime.now().withNano(0));
+                fige.heure() != null
+                        ? fige.heure()
+                        : LocalTime.now(ZoneId.systemDefault()).withNano(0));
     }
 
     /**

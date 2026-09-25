@@ -84,7 +84,7 @@ public record PreviousPlan(long snapshotId, String score, boolean degraded) {
         }
         try {
             return HardMediumSoftScore.parseScore(score);
-        } catch (IllegalArgumentException e) {
+        } catch (IllegalArgumentException _) {
             return null;
         }
     }

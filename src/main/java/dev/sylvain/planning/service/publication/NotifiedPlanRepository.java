@@ -83,9 +83,9 @@ public class NotifiedPlanRepository {
  WHERE edition_id = ? AND id = ?""";
         scope.write("Failed to move the notified plan markers", connection -> {
             try (PreparedStatement ps = connection.prepareStatement(sql)) {
+                ps.setLong(1, snapshotId);
+                ps.setString(2, scope.editionId());
                 for (String animateurId : ids) {
-                    ps.setLong(1, snapshotId);
-                    ps.setString(2, scope.editionId());
                     ps.setString(3, animateurId);
                     ps.addBatch();
                 }

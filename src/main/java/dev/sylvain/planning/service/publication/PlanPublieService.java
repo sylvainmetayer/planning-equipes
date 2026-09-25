@@ -146,24 +146,33 @@ public class PlanPublieService {
             PlanSnapshotService.SnapshotDetail detail, Map<String, String> nomsDeStand) {
         Map<String, List<Vacation>> parAnimateur = new LinkedHashMap<>();
         for (PlanSnapshotService.AffectationSnapshot affectation : detail.affectations()) {
-            if (affectation.animateurId() == null || affectation.standId() == null || affectation.date() == null) {
-                continue;
+            Vacation vacation = vacation(affectation, nomsDeStand);
+            if (vacation != null) {
+                parAnimateur
+                        .computeIfAbsent(affectation.animateurId(), unused -> new ArrayList<>())
+                        .add(vacation);
             }
-            LocalTime debut = heure(affectation.heureDebutEffective(), affectation.heureDebut());
-            LocalTime fin = heure(affectation.heureFinEffective(), affectation.heureFin());
-            if (debut == null || fin == null) {
-                continue;
-            }
-            parAnimateur
-                    .computeIfAbsent(affectation.animateurId(), unused -> new ArrayList<>())
-                    .add(new Vacation(
-                            LocalDate.parse(affectation.date()),
-                            debut,
-                            fin,
-                            affectation.standId(),
-                            nomsDeStand.getOrDefault(affectation.standId(), affectation.standId())));
         }
         return parAnimateur;
+    }
+
+    /** The vacation one snapshot row describes, {@code null} for an empty seat or a row missing its day or hours. */
+    private static Vacation vacation(
+            PlanSnapshotService.AffectationSnapshot affectation, Map<String, String> nomsDeStand) {
+        if (affectation.animateurId() == null || affectation.standId() == null || affectation.date() == null) {
+            return null;
+        }
+        LocalTime debut = heure(affectation.heureDebutEffective(), affectation.heureDebut());
+        LocalTime fin = heure(affectation.heureFinEffective(), affectation.heureFin());
+        if (debut == null || fin == null) {
+            return null;
+        }
+        return new Vacation(
+                LocalDate.parse(affectation.date()),
+                debut,
+                fin,
+                affectation.standId(),
+                nomsDeStand.getOrDefault(affectation.standId(), affectation.standId()));
     }
 
     /** The narrowed window when a stand closure recorded one, the vacation's own otherwise. */

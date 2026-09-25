@@ -5,7 +5,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Locale;
+import java.util.Objects;
 import org.jboss.logging.Logger;
 
 /**
@@ -94,6 +96,41 @@ public record MailBranding(
         return dot < 0 || dot == resource.length() - 1
                 ? "png"
                 : resource.substring(dot + 1).toLowerCase(Locale.ROOT);
+    }
+
+    /** Compares the logo by its bytes, which the generated record method would compare by identity. */
+    @Override
+    public boolean equals(Object other) {
+        return other instanceof MailBranding that
+                && Arrays.equals(logo, that.logo)
+                && Objects.equals(logoContentType, that.logoContentType)
+                && Objects.equals(logoExtension, that.logoExtension)
+                && Objects.equals(headline, that.headline)
+                && Objects.equals(muted, that.muted)
+                && Objects.equals(accent, that.accent)
+                && Objects.equals(highlight, that.highlight)
+                && Objects.equals(pill, that.pill)
+                && Objects.equals(organisation, that.organisation);
+    }
+
+    @Override
+    public int hashCode() {
+        return 31 * Arrays.hashCode(logo)
+                + Objects.hash(logoContentType, logoExtension, headline, muted, accent, highlight, pill, organisation);
+    }
+
+    /** Names the logo by its size: its bytes are no use in a log line. */
+    @Override
+    public String toString() {
+        return "MailBranding[logo=" + (logo == null ? "null" : logo.length + " bytes")
+                + ", logoContentType=" + logoContentType
+                + ", logoExtension=" + logoExtension
+                + ", headline=" + headline
+                + ", muted=" + muted
+                + ", accent=" + accent
+                + ", highlight=" + highlight
+                + ", pill=" + pill
+                + ", organisation=" + organisation + "]";
     }
 
     private static String contentType(String extension) {

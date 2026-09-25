@@ -32,6 +32,7 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -325,7 +326,7 @@ public class EspaceAnimateurService {
                 .orElseThrow(() -> new BusinessError.Invalid("Animateur inconnu : " + animateurId));
 
         PlanningEvenement planning = planPublieService.planPublie();
-        Map<String, List<String>> coequipiers = exportService.teammatesByPoste(planning, animateurId);
+        Map<String, List<String>> coequipiers = PlanningExportService.teammatesByPoste(planning, animateurId);
         List<PosteAnimateurView> postes = postesOf(planning, animateurId, coequipiers, typologieService.labelsById());
 
         List<ColleagueView> collegues = animateurs.stream()
@@ -334,7 +335,7 @@ public class EspaceAnimateurService {
                 .sorted(Comparator.comparing(ColleagueView::nomComplet, String.CASE_INSENSITIVE_ORDER))
                 .toList();
 
-        List<LocalDate> joursRepos = exportService.daysOff(planning, animateurId).stream()
+        List<LocalDate> joursRepos = PlanningExportService.daysOff(planning, animateurId).stream()
                 .map(PlanningExportService.JourRepos::date)
                 .toList();
 
@@ -353,13 +354,13 @@ public class EspaceAnimateurService {
                 animateur.getPrenom(),
                 animateur.getNom(),
                 publication == null ? null : publication.publieLe(),
-                foire.openOn(LocalDate.now()),
+                foire.openOn(LocalDate.now(ZoneId.systemDefault())),
                 postes,
                 joursRepos,
                 collegues,
                 (confirmation == null ? StatutConfirmation.NON_VU : confirmation.statut()).name(),
                 confirmation == null ? null : confirmation.confirmeLe(),
-                foire.ouvertureAVenir(LocalDate.now()),
+                foire.ouvertureAVenir(LocalDate.now(ZoneId.systemDefault())),
                 foire.fin(),
                 referenceDataService.abonnementToken(animateurId),
                 pauseAnalyzer.pausesAnimateur(planning, animateurId),

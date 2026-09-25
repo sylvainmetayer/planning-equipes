@@ -9,6 +9,7 @@ import jakarta.enterprise.event.Event;
 import jakarta.inject.Inject;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.OptionalLong;
 import org.jboss.logging.Logger;
 
 /**
@@ -56,29 +57,11 @@ public class AlerteEchangeJob {
         int nouvelles = 0;
         long joursMax = 0;
         for (DemandeEchange demande : demandeEchangeService.pendingDemandes()) {
-            Instant depuis = waitingSince(demande);
-            if (depuis == null) {
-                continue;
+            OptionalLong jours = alertIfStale(demande, seuil, maintenant);
+            if (jours.isPresent()) {
+                nouvelles++;
+                joursMax = Math.max(joursMax, jours.getAsLong());
             }
-            Duration attente = Duration.between(depuis, maintenant);
-            if (attente.compareTo(seuil) < 0) {
-                continue;
-            }
-            long jours = attente.toDays();
-            // The id alone: a second run finds the row and stays quiet, however
-            // much older the demande has become in the meantime.
-            if (!journal.claim(
-                    JournalNotificationsRepository.Type.ALERTE_ECHANGE,
-                    demande.getId(),
-                    null,
-                    "Une demande d'échange attend une décision depuis " + jours
-                            + (jours > 1 ? " jours." : " jour.")
-                            + " À trancher depuis l'écran Échanges.",
-                    JournalNotificationsRepository.Severite.WARNING)) {
-                continue;
-            }
-            nouvelles++;
-            joursMax = Math.max(joursMax, jours);
         }
         if (nouvelles > 0) {
             // One mail for the batch, not one per demande: an organiser opening
@@ -87,6 +70,34 @@ public class AlerteEchangeJob {
             LOG.debugf("Stale swap requests: %d newly alerted", nouvelles);
         }
         return nouvelles;
+    }
+
+    /**
+     * Claims the alert on one demande waiting past {@code seuil}, and says for
+     * how many days it has waited — empty when it is not waiting on the
+     * organisation, not waiting long enough, or already alerted about.
+     */
+    private OptionalLong alertIfStale(DemandeEchange demande, Duration seuil, Instant maintenant) {
+        Instant depuis = waitingSince(demande);
+        if (depuis == null) {
+            return OptionalLong.empty();
+        }
+        Duration attente = Duration.between(depuis, maintenant);
+        if (attente.compareTo(seuil) < 0) {
+            return OptionalLong.empty();
+        }
+        long jours = attente.toDays();
+        // The id alone: a second run finds the row and stays quiet, however
+        // much older the demande has become in the meantime.
+        boolean nouvelle = journal.claim(
+                JournalNotificationsRepository.Type.ALERTE_ECHANGE,
+                demande.getId(),
+                null,
+                "Une demande d'échange attend une décision depuis " + jours
+                        + (jours > 1 ? " jours." : " jour.")
+                        + " À trancher depuis l'écran Échanges.",
+                JournalNotificationsRepository.Severite.WARNING);
+        return nouvelle ? OptionalLong.of(jours) : OptionalLong.empty();
     }
 
     /**

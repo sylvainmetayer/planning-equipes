@@ -10,6 +10,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.text.Normalizer;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -71,11 +72,10 @@ public class PlanningIcs {
      * that is not a letter or a digit becomes a hyphen.
      */
     private static String slug(String productName) {
-        String slug = Normalizer.normalize(productName, Normalizer.Form.NFD)
+        String slug = PlanningExportService.trimHyphens(Normalizer.normalize(productName, Normalizer.Form.NFD)
                 .replaceAll("\\p{M}+", "")
                 .toLowerCase(Locale.ROOT)
-                .replaceAll("[^a-z0-9]+", "-")
-                .replaceAll("(^-+)|(-+$)", "");
+                .replaceAll("[^a-z0-9]+", "-"));
         return slug.isEmpty() ? DEFAULT_SLUG : slug;
     }
 
@@ -86,7 +86,7 @@ public class PlanningIcs {
      */
     private static String calendrierDescription(String nomCalendrier) {
         String genere =
-                "Généré le " + PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneOffset.systemDefault()));
+                "Généré le " + PdfTheme.GENERATED_AT_FORMAT.format(Instant.now().atZone(ZoneId.systemDefault()));
         return nomCalendrier == null || nomCalendrier.isBlank() ? genere : nomCalendrier + " — " + genere;
     }
 

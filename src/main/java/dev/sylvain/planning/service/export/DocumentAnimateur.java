@@ -20,17 +20,26 @@ import java.util.Map;
 interface DocumentAnimateur {
 
     /**
+     * What one animateur's document says, whichever layout prints it.
+     *
      * @param teammatesByPoste  who else holds a seat on the same stand, window by window
      * @param journeesModifiees what a consigne says of a date (issue #4), empty on an ordinary édition
      */
-    byte[] render(
+    record Contenu(
             String animateurName,
             List<PosteAffectation> postes,
             Map<String, List<String>> teammatesByPoste,
             List<PlanningExportService.JourRepos> joursRepos,
             List<PauseAnalyzer.PauseAnimateurView> pauses,
             List<PauseAnalyzer.CoupureAnimateurView> coupures,
-            String lienEspaceAnimateur,
-            ExportProvenance.Provenance provenance,
-            Map<LocalDate, String> journeesModifiees);
+            Map<LocalDate, String> journeesModifiees) {
+
+        /** The view both layouts render, built the one way that keeps them saying the same thing. */
+        AnimateurPlanningView view(TypologiePalette palette) {
+            return AnimateurPlanningView.build(
+                    animateurName, postes, teammatesByPoste, joursRepos, pauses, coupures, journeesModifiees, palette);
+        }
+    }
+
+    byte[] render(Contenu contenu, String lienEspaceAnimateur, ExportProvenance.Provenance provenance);
 }

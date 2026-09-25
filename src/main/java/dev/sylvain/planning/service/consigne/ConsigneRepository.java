@@ -26,6 +26,10 @@ import java.util.Set;
 @ApplicationScoped
 public class ConsigneRepository {
 
+    private static final String COL_DATE_JOUR = "date_jour";
+    private static final String COL_HEURE_DEBUT = "heure_debut";
+    private static final String COL_HEURE_FIN = "heure_fin";
+
     @Inject
     JdbcEditionScope scope;
 
@@ -42,7 +46,7 @@ public class ConsigneRepository {
                     FROM consigne_edition WHERE edition_id = ? ORDER BY date_jour""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        LocalDate date = rs.getObject("date_jour", LocalDate.class);
+                        LocalDate date = rs.getObject(COL_DATE_JOUR, LocalDate.class);
                         consignesByDate.put(
                                 date,
                                 new ConsigneEdition(
@@ -69,10 +73,10 @@ public class ConsigneRepository {
                     WHERE edition_id = ? ORDER BY date_jour, position""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        fenetres.computeIfAbsent(rs.getObject("date_jour", LocalDate.class), d -> new ArrayList<>())
+                        fenetres.computeIfAbsent(rs.getObject(COL_DATE_JOUR, LocalDate.class), d -> new ArrayList<>())
                                 .add(new ConsigneEdition.Fenetre(
-                                        rs.getObject("heure_debut", LocalTime.class),
-                                        rs.getObject("heure_fin", LocalTime.class)));
+                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                        rs.getObject(COL_HEURE_FIN, LocalTime.class)));
                     }
                 }
             }
@@ -87,11 +91,11 @@ public class ConsigneRepository {
                         int effectif = rs.getInt("effectif");
                         Integer effectifOuNull = rs.wasNull() ? null : effectif;
                         ouvertures
-                                .computeIfAbsent(rs.getObject("date_jour", LocalDate.class), d -> new ArrayList<>())
+                                .computeIfAbsent(rs.getObject(COL_DATE_JOUR, LocalDate.class), d -> new ArrayList<>())
                                 .add(new ConsigneEdition.Ouverture(
                                         rs.getString("stand_id"),
-                                        rs.getObject("heure_debut", LocalTime.class),
-                                        rs.getObject("heure_fin", LocalTime.class),
+                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                        rs.getObject(COL_HEURE_FIN, LocalTime.class),
                                         effectifOuNull));
                     }
                 }
@@ -102,7 +106,7 @@ public class ConsigneRepository {
                     WHERE edition_id = ? ORDER BY date_jour, creneau_id""")) {
                 try (ResultSet rs = ps.executeQuery()) {
                     while (rs.next()) {
-                        creneaux.computeIfAbsent(rs.getObject("date_jour", LocalDate.class), d -> new ArrayList<>())
+                        creneaux.computeIfAbsent(rs.getObject(COL_DATE_JOUR, LocalDate.class), d -> new ArrayList<>())
                                 .add(rs.getLong("creneau_id"));
                     }
                 }
@@ -232,8 +236,8 @@ public class ConsigneRepository {
         try (PreparedStatement ps = scope.prepareScoped(connection, """
                 INSERT INTO consigne_edition_creneau (edition_id, date_jour, creneau_id)
                 VALUES (?, ?, ?) ON CONFLICT DO NOTHING""")) {
+            ps.setObject(2, date);
             for (Long id : creneauIds) {
-                ps.setObject(2, date);
                 ps.setLong(3, id);
                 ps.addBatch();
             }
@@ -298,8 +302,8 @@ public class ConsigneRepository {
                     while (rs.next()) {
                         fenetres.computeIfAbsent(rs.getString("prereglage_id"), id -> new ArrayList<>())
                                 .add(new ConsigneEdition.Fenetre(
-                                        rs.getObject("heure_debut", LocalTime.class),
-                                        rs.getObject("heure_fin", LocalTime.class)));
+                                        rs.getObject(COL_HEURE_DEBUT, LocalTime.class),
+                                        rs.getObject(COL_HEURE_FIN, LocalTime.class)));
                     }
                 }
             }
@@ -322,8 +326,7 @@ public class ConsigneRepository {
 
     /** Writes the preset, replacing the one of the same id. */
     public void savePrereglage(PrereglageConsigne prereglage) {
-        scope.write("Failed to save the consigne preset " + prereglage.id(), connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        String sql = """
                     INSERT INTO prereglage_consigne (edition_id, id, nom, fermeture_debut, fermeture_fin, motif,
                                                      modifie_le, repas_midi_debut, repas_midi_fin, repas_soir_debut,
                                                      repas_soir_fin, repas_coupure_minutes, repas_justification)
@@ -339,7 +342,9 @@ public class ConsigneRepository {
                         repas_soir_debut = EXCLUDED.repas_soir_debut,
                         repas_soir_fin = EXCLUDED.repas_soir_fin,
                         repas_coupure_minutes = EXCLUDED.repas_coupure_minutes,
-                        repas_justification = EXCLUDED.repas_justification""")) {
+                        repas_justification = EXCLUDED.repas_justification""";
+        scope.write("Failed to save the consigne preset " + prereglage.id(), connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setString(2, prereglage.id());
                 ps.setString(3, prereglage.nom());
                 ps.setObject(4, prereglage.fermetureDebut());

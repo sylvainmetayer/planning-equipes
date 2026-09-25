@@ -53,7 +53,7 @@ planning -> runner : solve(problème, secondes, onSolverReady)
 runner -> tasks : « onSolverReady » reçoit le Solver
 tasks -> trace : follow(jobId, editionId, solver)
 loop à chaque meilleure solution
-  trace -> trace : record(...)
+  trace -> trace : recordEvent(...)
   front -> resource : GET /api/jobs/score
   resource --> front : courbe de score
 end
@@ -68,7 +68,7 @@ else fin normale ou arrêt demandé
   persistence -> db : réécrit les affectations
   pipeline -> planning : diagnose(plan)
   note right : ConstraintDiagnosticService,\npas l'API réservée de Timefold
-  pipeline -> analyses : record(diagnostic)
+  pipeline -> analyses : store(diagnostic)
   pipeline -> kpi : recordAfterSolve(durée)
   pipeline -> pipeline : announce(édition, diagnostic)
   note right : Notification.ResolutionTerminee,\nsi le mail de fin est demandé

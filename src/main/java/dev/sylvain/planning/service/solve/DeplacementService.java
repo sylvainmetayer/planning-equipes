@@ -89,7 +89,7 @@ public class DeplacementService {
         // empty screen, never a reason to undo a move already written.
         try {
             analysisStore.refreshFromPersistedPlan();
-        } catch (RuntimeException e) {
+        } catch (RuntimeException _) {
             // Deliberately swallowed, see above.
         }
         return simulation;

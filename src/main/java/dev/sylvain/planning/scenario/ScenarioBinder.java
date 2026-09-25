@@ -223,7 +223,9 @@ public final class ScenarioBinder {
 
     private static String firstLine(Throwable e) {
         String message = e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage();
-        return message.lines().findFirst().orElse(message).replaceAll("\\s*\\(through reference chain.*", "");
+        String line = message.lines().findFirst().orElse(message);
+        int chain = line.indexOf("(through reference chain");
+        return chain < 0 ? line : line.substring(0, chain).stripTrailing();
     }
 
     private static ObjectMapper mapper() {
@@ -253,7 +255,7 @@ public final class ScenarioBinder {
             }
             try {
                 return LocalDate.parse(value.toString());
-            } catch (DateTimeParseException e) {
+            } catch (DateTimeParseException _) {
                 // A Jackson exception rather than a bare one: Jackson attaches
                 // the path to it, so the author learns which stand, which day.
                 throw InvalidFormatException.from(
@@ -283,7 +285,7 @@ public final class ScenarioBinder {
             }
             try {
                 return LocalTime.parse(value.toString(), HEURE);
-            } catch (DateTimeParseException e) {
+            } catch (DateTimeParseException _) {
                 throw InvalidFormatException.from(
                         parser, "« " + value + " » n'est pas une heure (attendu 9:30)", value, LocalTime.class);
             }

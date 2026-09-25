@@ -128,7 +128,7 @@ public class DebugResource {
         }
         try {
             return LocalTime.parse(heure).withSecond(0).withNano(0);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Heure illisible : « " + heure + " » (attendu HH:mm).");
         }
     }
@@ -139,7 +139,7 @@ public class DebugResource {
         }
         try {
             return LocalDate.parse(date);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Date illisible : « " + date + " » (attendu AAAA-MM-JJ).");
         }
     }

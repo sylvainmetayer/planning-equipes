@@ -107,7 +107,7 @@ class ConstraintAnalysisStoreRestartTest {
         PersistenceStub persistence = new PersistenceStub();
         ConstraintAnalysisStore store = storeAfterRestart(persistence);
 
-        store.record(store.planningService.diagnosePersistedPlan());
+        store.store(store.planningService.diagnosePersistedPlan());
         int loadsAfterRecording = persistence.loads.get();
         store.latest();
 

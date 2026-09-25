@@ -104,7 +104,7 @@ public class ValidationJourneeResource {
         }
         try {
             return LocalDate.parse(jour);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Journée illisible : " + jour + " (attendu AAAA-MM-JJ)");
         }
     }

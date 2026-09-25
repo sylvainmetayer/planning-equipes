@@ -202,41 +202,48 @@ public class ScenarioImportService {
      * it the first time.</p>
      */
     private void applyConsignes(ScenarioYamlReader.ScenarioSections sections) {
-        sections.prereglagesConsigne().ifPresent(prereglages -> {
-            for (PrereglageConsigne existant : consigneRepository.listPrereglages()) {
-                consigneRepository.deletePrereglage(existant.id());
+        sections.prereglagesConsigne().ifPresent(this::replacePrereglages);
+        sections.consignes().ifPresent(this::replaceConsignes);
+    }
+
+    private void replacePrereglages(List<PrereglageConsigne> prereglages) {
+        for (PrereglageConsigne existant : consigneRepository.listPrereglages()) {
+            consigneRepository.deletePrereglage(existant.id());
+        }
+        for (PrereglageConsigne prereglage : prereglages) {
+            consigneRepository.savePrereglage(prereglage.id() != null ? prereglage : withGeneratedId(prereglage));
+        }
+    }
+
+    /**
+     * Replaces the edition's consignes by the file's, creating the timeslots
+     * they added that the grid does not hold yet — each one once, however
+     * many consignes name it.
+     */
+    private void replaceConsignes(List<ScenarioYamlReader.ConsigneScenario> consignes) {
+        for (var existante : consigneRepository.list()) {
+            consigneRepository.delete(existante.date());
+        }
+        Map<ConsigneService.VacationRef, Long> idsParCle = new HashMap<>();
+        for (Creneau creneau : referenceDataService.listCreneaux()) {
+            idsParCle.put(
+                    new ConsigneService.VacationRef(creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()),
+                    creneau.getId());
+        }
+        for (ScenarioYamlReader.ConsigneScenario entree : consignes) {
+            List<Long> ids = new ArrayList<>();
+            for (ConsigneService.VacationRef cle : entree.creneauxAjoutes()) {
+                ids.add(idsParCle.computeIfAbsent(cle, this::createCreneau));
             }
-            for (PrereglageConsigne prereglage : prereglages) {
-                consigneRepository.savePrereglage(prereglage.id() != null ? prereglage : withGeneratedId(prereglage));
-            }
-        });
-        sections.consignes().ifPresent(consignes -> {
-            for (var existante : consigneRepository.list()) {
-                consigneRepository.delete(existante.date());
-            }
-            Map<ConsigneService.VacationRef, Long> idsParCle = new HashMap<>();
-            for (Creneau creneau : referenceDataService.listCreneaux()) {
-                idsParCle.put(
-                        new ConsigneService.VacationRef(
-                                creneau.getDate(), creneau.getHeureDebut(), creneau.getHeureFin()),
-                        creneau.getId());
-            }
-            for (ScenarioYamlReader.ConsigneScenario entree : consignes) {
-                List<Long> ids = new ArrayList<>();
-                for (ConsigneService.VacationRef cle : entree.creneauxAjoutes()) {
-                    Long id = idsParCle.get(cle);
-                    if (id == null) {
-                        id = referenceDataService
-                                .writeCreneau(new Creneau(null, 0, cle.date(), cle.heureDebut(), cle.heureFin()))
-                                .creneau()
-                                .getId();
-                        idsParCle.put(cle, id);
-                    }
-                    ids.add(id);
-                }
-                consigneRepository.save(entree.consigne().withCreneauxAjoutes(ids));
-            }
-        });
+            consigneRepository.save(entree.consigne().withCreneauxAjoutes(ids));
+        }
+    }
+
+    private Long createCreneau(ConsigneService.VacationRef cle) {
+        return referenceDataService
+                .writeCreneau(new Creneau(null, 0, cle.date(), cle.heureDebut(), cle.heureFin()))
+                .creneau()
+                .getId();
     }
 
     /** A preset written by hand carries no id; the screen would have drawn one, so does the import. */

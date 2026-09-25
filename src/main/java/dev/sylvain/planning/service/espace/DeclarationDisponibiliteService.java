@@ -20,6 +20,7 @@ import jakarta.inject.Inject;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -134,7 +135,7 @@ public class DeclarationDisponibiliteService {
 
     /** True when animateurs may submit a declaration right now. */
     public boolean isCollecteOuverte() {
-        return repository.fenetre().openOn(LocalDate.now());
+        return repository.fenetre().openOn(LocalDate.now(ZoneId.systemDefault()));
     }
 
     /**
@@ -211,29 +212,35 @@ public class DeclarationDisponibiliteService {
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
                 sansEmail.add(animateur.nomAffiche());
-                continue;
-            }
-            Optional<String> lien = liens.espaceDisponibilites(animateur.getAccessToken());
-            if (lien.isEmpty()) {
-                // NOT « sans adresse » — theirs is right there. Reported with
-                // its real cause: an operator told « no address » adds an
-                // address that already exists and the invitation still does not
-                // leave. The fix is « Régénérer le lien » on their fiche.
-                echecs.add(animateur.nomAffiche() + " (aucun lien d'espace : jeton d'accès manquant)");
-                continue;
-            }
-            try {
-                mailService.sendInvitationDeclaration(
-                        animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
+            } else if (inviteOne(animateur, fenetre, echecs)) {
                 envoyes++;
-            } catch (RuntimeException e) {
-                // The address is what the operator needs to act; the name is
-                // enough for the report and nothing nominative is logged.
-                Log.errorf(e, "Failed to mail the declaration invitation to animateur %s", animateur.getId());
-                echecs.add(animateur.nomAffiche() + " (échec de l'envoi)");
             }
         }
         return new InvitationReport(envoyes, sansEmail, echecs);
+    }
+
+    /** Invites one animateur who has an address; {@code false}, and a line in {@code echecs}, when it did not leave. */
+    private boolean inviteOne(Animateur animateur, FenetreCollecte fenetre, List<String> echecs) {
+        Optional<String> lien = liens.espaceDisponibilites(animateur.getAccessToken());
+        if (lien.isEmpty()) {
+            // NOT « sans adresse » — theirs is right there. Reported with
+            // its real cause: an operator told « no address » adds an
+            // address that already exists and the invitation still does not
+            // leave. The fix is « Régénérer le lien » on their fiche.
+            echecs.add(animateur.nomAffiche() + " (aucun lien d'espace : jeton d'accès manquant)");
+            return false;
+        }
+        try {
+            mailService.sendInvitationDeclaration(
+                    animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
+            return true;
+        } catch (RuntimeException e) {
+            // The address is what the operator needs to act; the name is
+            // enough for the report and nothing nominative is logged.
+            Log.errorf(e, "Failed to mail the declaration invitation to animateur %s", animateur.getId());
+            echecs.add(animateur.nomAffiche() + " (échec de l'envoi)");
+            return false;
+        }
     }
 
     /* ------------------------------- Animateur ------------------------------- */

@@ -26,6 +26,8 @@ import java.util.Optional;
 @ApplicationScoped
 public class ConfirmationPlanningRepository {
 
+    private static final String COL_ANIMATEUR_ID = "animateur_id";
+
     @Inject
     JdbcEditionScope scope;
 
@@ -43,9 +45,9 @@ public class ConfirmationPlanningRepository {
                 Map<String, Confirmation> confirmations = new LinkedHashMap<>();
                 while (rs.next()) {
                     confirmations.put(
-                            rs.getString("animateur_id"),
+                            rs.getString(COL_ANIMATEUR_ID),
                             new Confirmation(
-                                    rs.getString("animateur_id"),
+                                    rs.getString(COL_ANIMATEUR_ID),
                                     StatutConfirmation.valueOf(rs.getString("statut")),
                                     instant(rs.getTimestamp("confirme_le")),
                                     instant(rs.getTimestamp("relance_le"))));
@@ -72,7 +74,7 @@ public class ConfirmationPlanningRepository {
                         return Optional.<Confirmation>empty();
                     }
                     return Optional.of(new Confirmation(
-                            rs.getString("animateur_id"),
+                            rs.getString(COL_ANIMATEUR_ID),
                             StatutConfirmation.valueOf(rs.getString("statut")),
                             instant(rs.getTimestamp("confirme_le")),
                             instant(rs.getTimestamp("relance_le"))));
@@ -90,13 +92,14 @@ public class ConfirmationPlanningRepository {
      * A reminder already sent stays visible in {@code relance_le}.</p>
      */
     public void confirmer(String animateurId, Instant confirmeLe) {
-        scope.write("Failed to record the planning confirmation of an animateur", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        String sql = """
                     INSERT INTO confirmation_planning (edition_id, animateur_id, statut, confirme_le)
                     VALUES (?, ?, 'CONFIRME', ?)
                     ON CONFLICT (edition_id, animateur_id)
                     DO UPDATE SET statut = 'CONFIRME',
-                    confirme_le = COALESCE(confirmation_planning.confirme_le, EXCLUDED.confirme_le)""")) {
+                    confirme_le = COALESCE(confirmation_planning.confirme_le, EXCLUDED.confirme_le)""";
+        scope.write("Failed to record the planning confirmation of an animateur", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setString(2, animateurId);
                 ps.setTimestamp(3, Timestamp.from(confirmeLe));
                 ps.executeUpdate();
@@ -110,13 +113,14 @@ public class ConfirmationPlanningRepository {
      * between the nightly job and a click cannot lose the answer.
      */
     public void recordReminder(String animateurId, Instant relanceLe) {
-        scope.write("Failed to record a confirmation reminder", connection -> {
-            try (PreparedStatement ps = scope.prepareScoped(connection, """
+        String sql = """
                     INSERT INTO confirmation_planning (edition_id, animateur_id, statut, relance_le)
                     VALUES (?, ?, 'RELANCE', ?)
                     ON CONFLICT (edition_id, animateur_id)
                     DO UPDATE SET statut = 'RELANCE', relance_le = EXCLUDED.relance_le
-                    WHERE confirmation_planning.statut <> 'CONFIRME'""")) {
+                    WHERE confirmation_planning.statut <> 'CONFIRME'""";
+        scope.write("Failed to record a confirmation reminder", connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, sql)) {
                 ps.setString(2, animateurId);
                 ps.setTimestamp(3, Timestamp.from(relanceLe));
                 ps.executeUpdate();

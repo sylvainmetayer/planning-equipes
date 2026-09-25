@@ -92,7 +92,7 @@ class RemoteUserAuthenticationTest {
             boolean enabled, String header, String secretHeader, Optional<String> secret, Optional<String> adminEmail)
             implements ConfigRemoteUser {}
 
-    private static java.util.function.Function<String, String> headers(Map<String, String> valeurs) {
+    private static java.util.function.UnaryOperator<String> headers(Map<String, String> valeurs) {
         return valeurs::get;
     }
 }

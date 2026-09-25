@@ -42,7 +42,7 @@ public class ChangementsJourneeResource {
     private static LocalDate jourDemande(String jour) {
         try {
             return LocalDate.parse(jour);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Journée illisible : " + jour + " (attendu AAAA-MM-JJ)");
         }
     }

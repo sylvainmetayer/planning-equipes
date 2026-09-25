@@ -178,15 +178,14 @@ public class PublicationDiffService {
             }
             List<ChangementVacation> changements = changements(
                     publie.getOrDefault(animateurId, List.of()), courant.getOrDefault(animateurId, List.of()));
-            if (changements.isEmpty()) {
-                continue;
+            if (!changements.isEmpty()) {
+                resultat.add(new ChangementAnimateur(
+                        animateurId,
+                        identite.nomAffiche(),
+                        identite.email(),
+                        jamaisPublie || !publie.containsKey(animateurId),
+                        changements));
             }
-            resultat.add(new ChangementAnimateur(
-                    animateurId,
-                    identite.nomAffiche(),
-                    identite.email(),
-                    jamaisPublie || !publie.containsKey(animateurId),
-                    changements));
         }
         resultat.sort(Comparator.comparing(ChangementAnimateur::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(resultat);
@@ -313,12 +312,10 @@ public class PublicationDiffService {
         Map<String, List<Vacation>> retraitsParCle = grouper(retraits.values(), cle);
         Map<String, List<Vacation>> ajoutsParCle = grouper(ajouts.values(), cle);
         for (Map.Entry<String, List<Vacation>> entree : ajoutsParCle.entrySet()) {
-            List<Vacation> candidatsRetraits = retraitsParCle.get(entree.getKey());
-            if (candidatsRetraits == null || candidatsRetraits.isEmpty()) {
-                continue;
-            }
+            List<Vacation> candidatsRetraits = retraitsParCle.getOrDefault(entree.getKey(), List.of());
             List<Vacation> candidatsAjouts = entree.getValue();
-            if (exigerUnicite && (candidatsAjouts.size() != 1 || candidatsRetraits.size() != 1)) {
+            boolean uniques = candidatsAjouts.size() == 1 && candidatsRetraits.size() == 1;
+            if (candidatsRetraits.isEmpty() || (exigerUnicite && !uniques)) {
                 continue;
             }
             int apparies = Math.min(candidatsAjouts.size(), candidatsRetraits.size());

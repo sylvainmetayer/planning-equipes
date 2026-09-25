@@ -192,9 +192,14 @@ public class ChangementsJourneeService {
     }
 
     private static SeatLine line(Cell cell, Holder avant, Holder apres) {
-        SeatChangeType type = avant == null
-                ? SeatChangeType.NOUVEAU
-                : apres == null ? SeatChangeType.RETIRE : SeatChangeType.REMPLACE;
+        SeatChangeType type;
+        if (avant == null) {
+            type = SeatChangeType.NOUVEAU;
+        } else if (apres == null) {
+            type = SeatChangeType.RETIRE;
+        } else {
+            type = SeatChangeType.REMPLACE;
+        }
         return new SeatLine(
                 cell.standId(), cell.standNom(), cell.date(), cell.debut(), cell.fin(), null, null, avant, apres, type);
     }

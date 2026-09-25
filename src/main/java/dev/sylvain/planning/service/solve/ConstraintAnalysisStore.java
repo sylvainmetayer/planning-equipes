@@ -41,7 +41,7 @@ public class ConstraintAnalysisStore {
 
     private final Map<String, StoredAnalysis> latestByEdition = new ConcurrentHashMap<>();
 
-    public void record(PlanningDiagnostic diagnostic) {
+    public void store(PlanningDiagnostic diagnostic) {
         if (diagnostic != null) {
             latestByEdition.put(editionId(), new StoredAnalysis(Instant.now(), diagnostic));
         }
@@ -91,7 +91,7 @@ public class ConstraintAnalysisStore {
      */
     public StoredAnalysis refreshFromPersistedPlan() {
         clear();
-        record(planningService.diagnosePersistedPlan());
+        store(planningService.diagnosePersistedPlan());
         // The stored value, not latest(): a plan-less edition would otherwise
         // send that one straight back here to derive what has just been found
         // not to exist.
@@ -127,7 +127,7 @@ public class ConstraintAnalysisStore {
             if (persistenceService.countPersistedAssignments() == 0) {
                 return null;
             }
-            record(planningService.diagnosePersistedPlan());
+            store(planningService.diagnosePersistedPlan());
         } catch (RuntimeException e) {
             LOG.warn("The persisted plan could not be analysed; the screens show no analysis yet", e);
             return null;

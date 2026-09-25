@@ -487,12 +487,12 @@ public class PlanningPersistenceService {
      */
     public void reaffecterPostes(Map<String, String> animateurParPoste) {
         scope.write("Failed to move the seats", connection -> {
-            for (Map.Entry<String, String> entree : animateurParPoste.entrySet()) {
-                // Not prepareScoped: the SET clause claims placeholder 1.
-                try (PreparedStatement ps = connection.prepareStatement(
-                        "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+            // Not prepareScoped: the SET clause claims placeholder 1.
+            try (PreparedStatement ps = connection.prepareStatement(
+                    "UPDATE poste_affectation SET animateur_id = ? WHERE edition_id = ? AND id = ?")) {
+                ps.setString(2, editionId());
+                for (Map.Entry<String, String> entree : animateurParPoste.entrySet()) {
                     ps.setString(1, entree.getValue());
-                    ps.setString(2, editionId());
                     ps.setString(3, entree.getKey());
                     if (ps.executeUpdate() == 0) {
                         throw new SQLException("Aucun poste " + entree.getKey() + " dans cette édition");

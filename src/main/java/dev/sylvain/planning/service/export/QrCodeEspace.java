@@ -61,7 +61,7 @@ final class QrCodeEspace {
                                     EncodeHintType.ERROR_CORRECTION, CORRECTION,
                                     EncodeHintType.MARGIN, MARGE_MODULES,
                                     EncodeHintType.CHARACTER_SET, StandardCharsets.UTF_8.name()));
-        } catch (WriterException | IllegalArgumentException e) {
+        } catch (WriterException | IllegalArgumentException _) {
             return null;
         }
     }

@@ -170,10 +170,10 @@ final class ScenarioDomainMapper {
             Creneau creneau = reference.creneauxParId().get(posteDto.creneauId());
 
             PosteAffectation poste = new PosteAffectation(posteDto.id(), stand, creneau);
-            // Mirrors buildPostes(): a hand-authored poste can still name a
-            // créneau the stand is only partially open for (IndisponibiliteStand /
-            // OuvertureStand), so narrow its effective window the same way instead
-            // of silently using the créneau's full amplitude.
+            // Mirrors what buildPostes does: a hand-authored seat can still name
+            // a timeslot the stand is only partially open for, through an
+            // IndisponibiliteStand or an OuvertureStand, so its effective window
+            // is narrowed the same way instead of taking the whole opening span.
             List<int[]> segments = creneau.segmentsOuvertsMinutes(stand);
             if (segments.size() == 1) {
                 int[] segment = segments.get(0);
@@ -307,35 +307,43 @@ final class ScenarioDomainMapper {
     private static List<HoraireStand> horaires(List<HoraireStandDto> horairesDto) {
         List<HoraireStand> horaires = new ArrayList<>();
         for (HoraireStandDto dto : horairesDto) {
-            HoraireStand horaire = new HoraireStand();
-            if (dto.mode() == null) {
-                throw new BusinessError.Invalid("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
-            }
-            horaire.setMode(dto.mode());
-            horaire.setJours(dto.jours() == null ? TypeJoursHoraire.TOUS : dto.jours());
-            if (dto.joursSemaine() != null) {
-                horaire.setJoursSemaine(new TreeSet<DayOfWeek>(dto.joursSemaine()));
-            }
-            horaire.setDateDebut(dto.dateDebut());
-            horaire.setDateFin(dto.dateFin());
-            if (dto.dates() != null) {
-                horaire.setDates(new TreeSet<LocalDate>(dto.dates()));
-            }
-            if (dto.fenetres() == null || dto.fenetres().isEmpty()) {
-                throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
-            }
-            List<FenetreHoraire> fenetres = new ArrayList<>();
-            for (FenetreHoraireDto fenetre : dto.fenetres()) {
-                if (fenetre.heureDebut() == null) {
-                    throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
-                }
-                fenetres.add(new FenetreHoraire(fenetre.heureDebut(), fenetre.heureFin(), fenetre.effectif()));
-            }
-            horaire.setFenetres(fenetres);
-            horaire.setMotif(dto.motif());
-            horaires.add(horaire);
+            horaires.add(horaire(dto));
         }
         return horaires;
+    }
+
+    private static HoraireStand horaire(HoraireStandDto dto) {
+        HoraireStand horaire = new HoraireStand();
+        if (dto.mode() == null) {
+            throw new BusinessError.Invalid("Champ manquant: stands.horaires.mode (OUVERTURE ou FERMETURE)");
+        }
+        horaire.setMode(dto.mode());
+        horaire.setJours(dto.jours() == null ? TypeJoursHoraire.TOUS : dto.jours());
+        if (dto.joursSemaine() != null) {
+            horaire.setJoursSemaine(new TreeSet<DayOfWeek>(dto.joursSemaine()));
+        }
+        horaire.setDateDebut(dto.dateDebut());
+        horaire.setDateFin(dto.dateFin());
+        if (dto.dates() != null) {
+            horaire.setDates(new TreeSet<LocalDate>(dto.dates()));
+        }
+        horaire.setFenetres(fenetresHoraire(dto.fenetres()));
+        horaire.setMotif(dto.motif());
+        return horaire;
+    }
+
+    private static List<FenetreHoraire> fenetresHoraire(List<FenetreHoraireDto> dtos) {
+        if (dtos == null || dtos.isEmpty()) {
+            throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres (au moins une fenêtre)");
+        }
+        List<FenetreHoraire> fenetres = new ArrayList<>();
+        for (FenetreHoraireDto fenetre : dtos) {
+            if (fenetre.heureDebut() == null) {
+                throw new BusinessError.Invalid("Champ manquant: stands.horaires.fenetres.heureDebut");
+            }
+            fenetres.add(new FenetreHoraire(fenetre.heureDebut(), fenetre.heureFin(), fenetre.effectif()));
+        }
+        return fenetres;
     }
 
     private static Animateur animateur(AnimateurDto dto) {
@@ -371,53 +379,57 @@ final class ScenarioDomainMapper {
     private static List<ContrainteAdHoc> contraintesAdHoc(List<ContrainteAdHocDto> dtos, ReferenceScenario reference) {
         List<ContrainteAdHoc> contraintes = new ArrayList<>();
         for (ContrainteAdHocDto dto : dtos) {
-            String id = dto.id();
-            if (id == null || id.isBlank()) {
-                throw new BusinessError.Invalid("Chaque contrainte ad hoc doit porter un id non vide.");
-            }
-            if (dto.type() == null) {
-                // The column is NOT NULL: letting it through would fail in SQL,
-                // after the parameter sections were already written.
-                throw new BusinessError.Invalid("La contrainte ad hoc " + id + " ne dit pas son type ("
-                        + String.join(
-                                ", ",
-                                Arrays.stream(TypeContrainteAdHoc.values())
-                                        .map(Enum::name)
-                                        .toList())
-                        + ").");
-            }
-            ContrainteAdHoc contrainte = new ContrainteAdHoc(id, dto.type());
-            if (dto.animateurs() != null) {
-                for (String animateurId : dto.animateurs()) {
-                    contrainte
-                            .getAnimateursConcernes()
-                            .add(reference.animateurs().stream()
-                                    .filter(animateur -> animateur.getId().equals(animateurId))
-                                    .findFirst()
-                                    .orElseThrow(() -> new BusinessError.Invalid("La contrainte ad hoc " + id
-                                            + " vise l'animateur " + animateurId + ", absent du scénario.")));
-                }
-            }
-            if (dto.creneauId() != null) {
-                Creneau creneau = reference.creneauxParId().get(dto.creneauId());
-                if (creneau == null) {
-                    throw new BusinessError.Invalid("La contrainte ad hoc " + id + " vise le créneau " + dto.creneauId()
-                            + ", absent du scénario.");
-                }
-                contrainte.setCreneau(creneau);
-            }
-            if (dto.standId() != null) {
-                Stand stand = reference.standsById().get(dto.standId());
-                if (stand == null) {
-                    throw new BusinessError.Invalid(
-                            "La contrainte ad hoc " + id + " vise le stand " + dto.standId() + ", absent du scénario.");
-                }
-                contrainte.setStand(stand);
-            }
-            contrainte.setRaison(dto.raison());
-            contraintes.add(contrainte);
+            contraintes.add(contrainteAdHoc(dto, reference));
         }
         return contraintes;
+    }
+
+    private static ContrainteAdHoc contrainteAdHoc(ContrainteAdHocDto dto, ReferenceScenario reference) {
+        String id = dto.id();
+        if (id == null || id.isBlank()) {
+            throw new BusinessError.Invalid("Chaque contrainte ad hoc doit porter un id non vide.");
+        }
+        if (dto.type() == null) {
+            // The column is NOT NULL: letting it through would fail in SQL,
+            // after the parameter sections were already written.
+            throw new BusinessError.Invalid("La contrainte ad hoc " + id + " ne dit pas son type ("
+                    + String.join(
+                            ", ",
+                            Arrays.stream(TypeContrainteAdHoc.values())
+                                    .map(Enum::name)
+                                    .toList())
+                    + ").");
+        }
+        ContrainteAdHoc contrainte = new ContrainteAdHoc(id, dto.type());
+        if (dto.animateurs() != null) {
+            for (String animateurId : dto.animateurs()) {
+                contrainte
+                        .getAnimateursConcernes()
+                        .add(reference.animateurs().stream()
+                                .filter(animateur -> animateur.getId().equals(animateurId))
+                                .findFirst()
+                                .orElseThrow(() -> new BusinessError.Invalid("La contrainte ad hoc " + id
+                                        + " vise l'animateur " + animateurId + ", absent du scénario.")));
+            }
+        }
+        if (dto.creneauId() != null) {
+            Creneau creneau = reference.creneauxParId().get(dto.creneauId());
+            if (creneau == null) {
+                throw new BusinessError.Invalid(
+                        "La contrainte ad hoc " + id + " vise le créneau " + dto.creneauId() + ", absent du scénario.");
+            }
+            contrainte.setCreneau(creneau);
+        }
+        if (dto.standId() != null) {
+            Stand stand = reference.standsById().get(dto.standId());
+            if (stand == null) {
+                throw new BusinessError.Invalid(
+                        "La contrainte ad hoc " + id + " vise le stand " + dto.standId() + ", absent du scénario.");
+            }
+            contrainte.setStand(stand);
+        }
+        contrainte.setRaison(dto.raison());
+        return contrainte;
     }
 
     /* ------------------------------ sections ------------------------------ */
@@ -481,35 +493,9 @@ final class ScenarioDomainMapper {
             }
             checkBande(dto.fermetureDebut(), dto.fermetureFin(), entree);
             String motif = requiredName(dto.motif(), entree + ".motif");
-            List<ConsigneEdition.Ouverture> ouvertures = new ArrayList<>();
-            if (dto.ouvertures() != null) {
-                for (OuvertureConsigneDto ouverture : dto.ouvertures()) {
-                    if (ouverture.standId() == null || !standsDuFichier.contains(ouverture.standId())) {
-                        throw new BusinessError.Invalid(entree + " ouvre le stand « " + ouverture.standId()
-                                + " », que la section stands du fichier ne déclare pas.");
-                    }
-                    ouvertures.add(new ConsigneEdition.Ouverture(
-                            ouverture.standId(),
-                            required(ouverture.debut(), entree + ".ouvertures.debut"),
-                            ConsigneEdition.openEnd(ouverture.fin()),
-                            ouverture.effectif()));
-                }
-            }
-            List<ConsigneService.VacationRef> creneauxAjoutes = new ArrayList<>();
-            if (dto.creneauxAjoutes() != null) {
-                for (CreneauAjouteDto ajoute : dto.creneauxAjoutes()) {
-                    ConsigneService.VacationRef cle = new ConsigneService.VacationRef(
-                            required(ajoute.date(), entree + ".creneauxAjoutes.date"),
-                            required(ajoute.heureDebut(), entree + ".creneauxAjoutes.heureDebut"),
-                            required(ajoute.heureFin(), entree + ".creneauxAjoutes.heureFin"));
-                    if (!creneauxDuFichier.contains(cle)) {
-                        throw new BusinessError.Invalid(entree + " dit avoir ajouté le créneau du " + cle.date()
-                                + " " + cle.heureDebut() + "-" + cle.heureFin()
-                                + ", que la section creneaux du fichier ne liste pas.");
-                    }
-                    creneauxAjoutes.add(cle);
-                }
-            }
+            List<ConsigneEdition.Ouverture> ouvertures = ouverturesConsigne(dto.ouvertures(), entree, standsDuFichier);
+            List<ConsigneService.VacationRef> creneauxAjoutes =
+                    creneauxAjoutes(dto.creneauxAjoutes(), entree, creneauxDuFichier);
             consignes.add(new ConsigneScenario(
                     new ConsigneEdition(
                             date,
@@ -526,6 +512,49 @@ final class ScenarioDomainMapper {
                     creneauxAjoutes));
         }
         return Optional.of(consignes);
+    }
+
+    /** The openings of one consigne, each naming a stand the file declares. */
+    private static List<ConsigneEdition.Ouverture> ouverturesConsigne(
+            List<OuvertureConsigneDto> dtos, String entree, Set<String> standsDuFichier) {
+        List<ConsigneEdition.Ouverture> ouvertures = new ArrayList<>();
+        if (dtos == null) {
+            return ouvertures;
+        }
+        for (OuvertureConsigneDto ouverture : dtos) {
+            if (ouverture.standId() == null || !standsDuFichier.contains(ouverture.standId())) {
+                throw new BusinessError.Invalid(entree + " ouvre le stand « " + ouverture.standId()
+                        + " », que la section stands du fichier ne déclare pas.");
+            }
+            ouvertures.add(new ConsigneEdition.Ouverture(
+                    ouverture.standId(),
+                    required(ouverture.debut(), entree + ".ouvertures.debut"),
+                    ConsigneEdition.openEnd(ouverture.fin()),
+                    ouverture.effectif()));
+        }
+        return ouvertures;
+    }
+
+    /** The timeslots one consigne added, each one the file lists, as day-and-hours keys. */
+    private static List<ConsigneService.VacationRef> creneauxAjoutes(
+            List<CreneauAjouteDto> dtos, String entree, Set<ConsigneService.VacationRef> creneauxDuFichier) {
+        List<ConsigneService.VacationRef> creneauxAjoutes = new ArrayList<>();
+        if (dtos == null) {
+            return creneauxAjoutes;
+        }
+        for (CreneauAjouteDto ajoute : dtos) {
+            ConsigneService.VacationRef cle = new ConsigneService.VacationRef(
+                    required(ajoute.date(), entree + ".creneauxAjoutes.date"),
+                    required(ajoute.heureDebut(), entree + ".creneauxAjoutes.heureDebut"),
+                    required(ajoute.heureFin(), entree + ".creneauxAjoutes.heureFin"));
+            if (!creneauxDuFichier.contains(cle)) {
+                throw new BusinessError.Invalid(entree + " dit avoir ajouté le créneau du " + cle.date()
+                        + " " + cle.heureDebut() + "-" + cle.heureFin()
+                        + ", que la section creneaux du fichier ne liste pas.");
+            }
+            creneauxAjoutes.add(cle);
+        }
+        return creneauxAjoutes;
     }
 
     /**

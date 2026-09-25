@@ -108,7 +108,7 @@ public class JourJResource {
         }
         try {
             return LocalDate.parse(date);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Date illisible : « " + date + " » (attendu AAAA-MM-JJ).");
         }
     }
@@ -119,7 +119,7 @@ public class JourJResource {
         }
         try {
             return LocalDateTime.parse(maintenant);
-        } catch (DateTimeParseException e) {
+        } catch (DateTimeParseException _) {
             throw new BusinessError.Invalid("Moment illisible : « " + maintenant + " » (attendu AAAA-MM-JJTHH:MM).");
         }
     }

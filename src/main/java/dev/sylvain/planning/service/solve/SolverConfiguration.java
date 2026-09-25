@@ -16,7 +16,6 @@ import dev.sylvain.planning.service.referentiel.ParametresQualiteDefaults;
 import dev.sylvain.planning.service.referentiel.ReferenceData;
 import dev.sylvain.planning.solver.ConstraintCatalog;
 import dev.sylvain.planning.solver.PlanningConstraintProvider;
-import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +36,9 @@ import org.eclipse.microprofile.config.Config;
  */
 final class SolverConfiguration {
 
+    /** The classpath resource every solver this class builds starts from. */
+    private static final String SOLVER_CONFIG_XML = "solver/solverConfig.xml";
+
     private final SolverFactory<PlanningEvenement> solverFactory;
 
     /**
@@ -44,7 +46,7 @@ final class SolverConfiguration {
      * plan's score. Breaking a score down per constraint goes through
      * {@link ConstraintDiagnosticService}.
      */
-    private final SolutionManager<PlanningEvenement, ?> solutionManager;
+    private final SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager;
 
     /** The factory of an edition held to a hard run of days, at the default budget; built on first use. */
     private volatile SolverFactory<PlanningEvenement> hardRunCapSolverFactory;
@@ -81,7 +83,7 @@ final class SolverConfiguration {
             Integer maxEmplacementsParJour,
             ReferenceData referenceDataService,
             Config config) {
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         applyTermination(solverConfig, secondsLimit, unimprovedSecondsLimit);
@@ -96,7 +98,7 @@ final class SolverConfiguration {
         this.configuredWeights = readConfiguredWeights(config);
     }
 
-    SolutionManager<PlanningEvenement, ?> solutionManager() {
+    SolutionManager<PlanningEvenement, HardMediumSoftScore> solutionManager() {
         return solutionManager;
     }
 
@@ -108,18 +110,6 @@ final class SolverConfiguration {
         return parametresQualite;
     }
 
-    /**
-     * The {@code planning.contraintes.*} block, read once at startup like the
-     * weights: {@code application.properties} does not change at runtime. Since
-     * issue #591 these are stored per edition too, and what this reads is the
-     * <b>default</b> an edition starts from — what it solves with until someone
-     * opens the Paramètres screen.
-     *
-     * <p>An hour left blank in the configuration reads as absent, not as
-     * midnight: that is how a deployment neutralises the rule without editing
-     * the catalogue, and {@code LocalTime.parse("")} would otherwise fail the
-     * boot.</p>
-     */
     /**
      * The {@code planning.contraintes.*} block, read once at startup like the
      * weights: {@code application.properties} does not change at runtime. Since
@@ -143,15 +133,6 @@ final class SolverConfiguration {
                         defauts.reposSouhaiteApresServiceTardifMinutes(),
                         defauts.typologiesDistinctesMax(),
                         defauts.joursConsecutifsMax());
-    }
-
-    /** A {@code HH:mm} property, {@code null} when unset or left blank. */
-    private static LocalTime readHeure(Config config, String propriete) {
-        return config.getOptionalValue(propriete, String.class)
-                .map(String::strip)
-                .filter(valeur -> !valeur.isEmpty())
-                .map(LocalTime::parse)
-                .orElse(null);
     }
 
     /**
@@ -306,7 +287,7 @@ final class SolverConfiguration {
 
     private SolverFactory<PlanningEvenement> adaptedSolverFactory(
             Long secondsLimitOverride, PlanningEvenement problem) {
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
@@ -337,7 +318,7 @@ final class SolverConfiguration {
         if (secondsLimitOverride == null || secondsLimitOverride.equals(defaultSecondsLimit)) {
             return solverFactory;
         }
-        SolverConfig solverConfig = SolverConfig.createFromXmlResource("solver/solverConfig.xml");
+        SolverConfig solverConfig = SolverConfig.createFromXmlResource(SOLVER_CONFIG_XML);
         solverConfig.setScoreDirectorFactoryConfig(
                 new ScoreDirectorFactoryConfig().withConstraintProviderClass(PlanningConstraintProvider.class));
         // An explicit override means the caller wants exactly that many seconds;

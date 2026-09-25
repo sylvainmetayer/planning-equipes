@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import dev.sylvain.planning.domain.ParametresLegaux;
 import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PlanningEvenement;
+import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EmptyReferenceData;
 import dev.sylvain.planning.service.analyse.FeasibilityAnalyzer;
 import dev.sylvain.planning.service.solve.PlanningService;
@@ -13,6 +14,8 @@ import java.io.IOException;
 import java.util.List;
 import org.eclipse.microprofile.config.ConfigProvider;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 /**
  * Reading a scenario file, with no database and no container: the reader is pure
@@ -199,5 +202,37 @@ class ScenarioYamlReaderTest {
 
         assertThat(scenarios).isNotEmpty().isSorted();
         assertThat(scenarios).allSatisfy(name -> assertThat(name).matches(".+\\.(yaml|yml)"));
+    }
+
+    /**
+     * Every listed scenario resolves to itself: the file-name whitelist the
+     * reader applies must accept whatever the folder holds, or a file dropped
+     * there would show in the dropdown and then be refused.
+     */
+    @Test
+    void everyListedScenarioPassesThePathCheck() {
+        assertThat(ScenarioYamlReader.listScenarios())
+                .allSatisfy(name -> assertThat(
+                                ScenarioYamlReader.checkedResourcePath(ScenarioYamlReader.scenarioPath(name)))
+                        .isEqualTo(ScenarioYamlReader.SCENARIOS_DIR + "/" + name));
+    }
+
+    /** A name cannot climb out of the scenarios folder, by the name or by the path. */
+    @ParameterizedTest
+    @ValueSource(strings = {"../application.properties", "a/b.yaml", "..\\x.yaml", ".hidden.yaml", "..", "x\0.yaml"})
+    void aNameThatLeavesTheScenariosFolderIsRefused(String name) {
+        assertThatThrownBy(() -> ScenarioYamlReader.scenarioPath(name))
+                .isInstanceOf(BusinessError.Invalid.class)
+                .hasMessageContaining("Nom de scénario invalide");
+        assertThatThrownBy(() -> ScenarioYamlReader.readScenario(ScenarioYamlReader.SCENARIOS_DIR + "/" + name))
+                .isInstanceOf(BusinessError.Invalid.class);
+    }
+
+    /** The path handed to the reader must itself sit under the scenarios folder. */
+    @ParameterizedTest
+    @ValueSource(
+            strings = {"application.properties", "db/migration/V1__init.sql", "scenarios/../application.properties"})
+    void aPathOutsideTheScenariosFolderIsRefusedWhenRead(String path) {
+        assertThatThrownBy(() -> ScenarioYamlReader.readScenario(path)).isInstanceOf(BusinessError.Invalid.class);
     }
 }

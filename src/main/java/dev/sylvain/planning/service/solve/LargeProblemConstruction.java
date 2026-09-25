@@ -61,7 +61,7 @@ final class LargeProblemConstruction {
         if (problem == null || problem.getPostes() == null || problem.getAnimateurs() == null) {
             return false;
         }
-        return (long) problem.getPostes().size() * (problem.getAnimateurs().size() + 1L) >= THRESHOLD;
+        return problem.getPostes().size() * (problem.getAnimateurs().size() + 1L) >= THRESHOLD;
     }
 
     /** Replaces the first construction heuristic phase of {@code solverConfig} with the sampled one. */

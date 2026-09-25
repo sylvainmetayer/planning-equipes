@@ -52,16 +52,25 @@ public final class ScenarioYaml {
 
     /**
      * SnakeYAML's own integer pattern, minus its last alternative
-     * {@code [-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+} — the sexagesimal one.
+     * {@code [-+]?[1-9][0-9_]*(?::[0-5]?[0-9])+} — the sexagesimal one. Its
+     * other alternatives are kept one pattern each, registered in their
+     * original order: the resolver tries every pattern of a tag, so a list is
+     * the same alternation, each branch simple enough to read. The {@code _*}
+     * SnakeYAML puts after a radix prefix is dropped, since the digit class
+     * that follows already takes underscores.
      */
-    private static final Pattern INT_WITHOUT_SEXAGESIMAL =
-            Pattern.compile("^(?:[-+]?0b_*[0-1_]+|[-+]?0_*[0-7_]+|[-+]?(?:0|[1-9][0-9_]*)|[-+]?0x_*[0-9a-fA-F_]+)$");
+    private static final List<Pattern> INT_WITHOUT_SEXAGESIMAL = List.of(
+            Pattern.compile("^[-+]?0b[01_]+$"),
+            Pattern.compile("^[-+]?0[0-7_]+$"),
+            Pattern.compile("^[-+]?(?:0|[1-9][\\d_]*)$"),
+            Pattern.compile("^[-+]?0x[\\da-fA-F_]+$"));
 
     /** Same idea for floats: {@code [-+]?[0-9][0-9_]*(?::[0-5]?[0-9])+\.[0-9_]*} is dropped. */
-    private static final Pattern FLOAT_WITHOUT_SEXAGESIMAL =
-            Pattern.compile("^(?:[-+]?(?:[0-9][0-9_]*)\\.[0-9_]*(?:[eE][-+]?[0-9]+)?"
-                    + "|\\.[0-9_]+(?:[eE][-+][0-9]+)?"
-                    + "|[-+]?\\.(?:inf|Inf|INF)|\\.(?:nan|NaN|NAN))$");
+    private static final List<Pattern> FLOAT_WITHOUT_SEXAGESIMAL = List.of(
+            Pattern.compile("^[-+]?\\d[\\d_]*\\.[\\d_]*(?:[eE][-+]?\\d+)?$"),
+            Pattern.compile("^\\.[\\d_]+(?:[eE][-+]\\d+)?$"),
+            Pattern.compile("^[-+]?\\.(?:inf|Inf|INF)$"),
+            Pattern.compile("^\\.(?:nan|NaN|NAN)$"));
 
     private ScenarioYaml() {}
 
@@ -144,8 +153,8 @@ public final class ScenarioYaml {
         @Override
         protected void addImplicitResolvers() {
             addImplicitResolver(Tag.BOOL, BOOL, "yYnNtTfFoO");
-            addImplicitResolver(Tag.INT, INT_WITHOUT_SEXAGESIMAL, "-+0123456789");
-            addImplicitResolver(Tag.FLOAT, FLOAT_WITHOUT_SEXAGESIMAL, "-+0123456789.");
+            INT_WITHOUT_SEXAGESIMAL.forEach(pattern -> addImplicitResolver(Tag.INT, pattern, "-+0123456789"));
+            FLOAT_WITHOUT_SEXAGESIMAL.forEach(pattern -> addImplicitResolver(Tag.FLOAT, pattern, "-+0123456789."));
             addImplicitResolver(Tag.MERGE, MERGE, "<");
             addImplicitResolver(Tag.NULL, NULL, "~nN\0");
             addImplicitResolver(Tag.NULL, EMPTY, null);

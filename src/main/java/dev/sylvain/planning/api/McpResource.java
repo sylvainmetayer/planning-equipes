@@ -70,13 +70,6 @@ public class McpResource {
     McpPrompts prompts;
 
     /**
-     * The Pangolin access-proxy token, set server-side so the operator can
-     * reveal it from the MCP page instead of copying it in by hand each time
-     * a client needs configuring. Both empty by default: nothing to reveal
-     * unless the deployment actually sits behind Pangolin.
-     */
-
-    /**
      * The admin password, read from the very property the embedded security
      * realm authenticates against — so this can never drift out of step with
      * the real credential, which a second copy of {@code ADMIN_PASSWORD} would.
@@ -123,7 +116,7 @@ public class McpResource {
         }
         String attendu = motDePasseAdmin.orElse("");
         String presente = demande == null || demande.motDePasse() == null ? "" : demande.motDePasse();
-        if (attendu.isBlank() || !equal(attendu, presente)) {
+        if (attendu.isBlank() || !constantTimeEquals(attendu, presente)) {
             if (++essaisRates >= MAX_ESSAIS) {
                 blocageJusqua = Instant.now().plus(DUREE_BLOCAGE);
                 essaisRates = 0;
@@ -145,7 +138,7 @@ public class McpResource {
     }
 
     /** Constant-time comparison: a wrong password must not leak its correct prefix through timing. */
-    private static boolean equal(String attendu, String presente) {
+    private static boolean constantTimeEquals(String attendu, String presente) {
         return MessageDigest.isEqual(
                 attendu.getBytes(StandardCharsets.UTF_8), presente.getBytes(StandardCharsets.UTF_8));
     }

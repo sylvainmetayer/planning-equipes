@@ -37,6 +37,7 @@ import java.util.TreeSet;
 import java.util.function.Supplier;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 /**
@@ -57,6 +58,8 @@ import java.util.stream.Stream;
  */
 public final class ScenarioYamlReader {
 
+    private static final String PARAMETRES_LEGAUX_PAR_DEFAUT = "parametresLegauxParDefaut";
+
     private ScenarioYamlReader() {}
 
     /** Classpath folder holding every selectable scenario file. */
@@ -64,6 +67,13 @@ public final class ScenarioYamlReader {
 
     /** Default scenario loaded when the caller does not pick one. */
     public static final String DEFAULT_SCENARIO = "scenario-complet.yaml";
+
+    /**
+     * What a scenario file name may be: letters, digits, spaces, dots, dashes
+     * and underscores, never starting with a dot. No separator can match, so a
+     * name that passes cannot designate anything outside {@link #SCENARIOS_DIR}.
+     */
+    private static final Pattern SCENARIO_FILE_NAME = Pattern.compile("[\\p{L}\\p{N}_][\\p{L}\\p{N} ._-]*");
 
     /**
      * Resolves a scenario name to its classpath path. Shared by every scenario
@@ -76,10 +86,38 @@ public final class ScenarioYamlReader {
      */
     public static String scenarioPath(String scenarioName) {
         String name = (scenarioName == null || scenarioName.isBlank()) ? DEFAULT_SCENARIO : scenarioName;
-        if (name.contains("/") || name.contains("\\") || name.contains("..")) {
+        return SCENARIOS_DIR + "/" + checkedFileName(name);
+    }
+
+    /**
+     * The file name itself when it is one {@link #SCENARIO_FILE_NAME} accepts
+     * and holds no {@code ..}; a {@link BusinessError.Invalid} otherwise.
+     */
+    private static String checkedFileName(String name) {
+        if (name.contains("..") || !SCENARIO_FILE_NAME.matcher(name).matches()) {
             throw new BusinessError.Invalid("Nom de scénario invalide: " + name);
         }
-        return SCENARIOS_DIR + "/" + name;
+        return name;
+    }
+
+    /**
+     * The classpath resource a scenario path designates, checked again at the
+     * point of reading rather than trusted from {@link #scenarioPath}: the file
+     * name must pass {@link #checkedFileName}, and the normalised path must
+     * still be a direct child of {@link #SCENARIOS_DIR}.
+     */
+    static String checkedResourcePath(String scenarioPath) {
+        String prefix = SCENARIOS_DIR + "/";
+        if (scenarioPath == null || !scenarioPath.startsWith(prefix)) {
+            throw new BusinessError.Invalid("Nom de scénario invalide: " + scenarioPath);
+        }
+        String fileName = checkedFileName(scenarioPath.substring(prefix.length()));
+        Path root = Path.of(SCENARIOS_DIR);
+        Path resolved = root.resolve(fileName).normalize();
+        if (!resolved.startsWith(root) || resolved.getNameCount() != 2) {
+            throw new BusinessError.Invalid("Nom de scénario invalide: " + fileName);
+        }
+        return prefix + resolved.getFileName();
     }
 
     /**
@@ -134,9 +172,10 @@ public final class ScenarioYamlReader {
 
     /** A bundled scenario file, bound. Shared by every accessor of a named scenario. */
     public static ScenarioDto readScenario(String scenarioPath) throws IOException {
-        InputStream inputStream = ScenarioYamlReader.class.getClassLoader().getResourceAsStream(scenarioPath);
+        String resource = checkedResourcePath(scenarioPath);
+        InputStream inputStream = ScenarioYamlReader.class.getClassLoader().getResourceAsStream(resource);
         if (inputStream == null) {
-            throw new IOException("Fichier de scénario non trouvé: " + scenarioPath);
+            throw new IOException("Fichier de scénario non trouvé: " + resource);
         }
         try (inputStream) {
             return ScenarioBinder.bind(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
@@ -166,7 +205,7 @@ public final class ScenarioYamlReader {
     /** The whole problem a scenario describes — see {@link ScenarioDomainMapper#planning}. */
     public static PlanningEvenement buildPlanning(
             ScenarioDto scenario, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
-        Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
+        Objects.requireNonNull(parametresLegauxParDefaut, PARAMETRES_LEGAUX_PAR_DEFAUT);
         return ScenarioDomainMapper.planning(scenario, parametresLegauxParDefaut);
     }
 
@@ -184,7 +223,7 @@ public final class ScenarioYamlReader {
      */
     public static ScenarioImporte buildFromScenarioText(
             String yamlContent, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
-        Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
+        Objects.requireNonNull(parametresLegauxParDefaut, PARAMETRES_LEGAUX_PAR_DEFAUT);
         ScenarioDto scenario = bind(yamlContent);
         PlanningEvenement planning;
         try {
@@ -329,7 +368,7 @@ public final class ScenarioYamlReader {
      */
     public static ScenarioImporte loadScenario(
             String scenarioName, Supplier<ParametresLegaux> parametresLegauxParDefaut) {
-        Objects.requireNonNull(parametresLegauxParDefaut, "parametresLegauxParDefaut");
+        Objects.requireNonNull(parametresLegauxParDefaut, PARAMETRES_LEGAUX_PAR_DEFAUT);
         try {
             ScenarioDto scenario = readScenario(scenarioPath(scenarioName));
             return new ScenarioImporte(

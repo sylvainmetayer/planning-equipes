@@ -114,15 +114,16 @@ class PlanningPdfContenuTest {
 
         byte[] pdf = new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
                 .render(
-                        "Ada Lovelace",
-                        postesAda,
-                        Map.of(),
-                        repos,
-                        List.of(),
-                        List.of(),
+                        new DocumentAnimateur.Contenu(
+                                "Ada Lovelace",
+                                postesAda,
+                                Map.of(),
+                                repos,
+                                List.of(),
+                                List.of(),
+                                Map.of(LocalDate.of(2026, 8, 15), "Horaires modifiés — Canicule")),
                         null,
-                        PROVENANCE.publiee(),
-                        Map.of(LocalDate.of(2026, 8, 15), "Horaires modifiés — Canicule"));
+                        PROVENANCE.publiee());
 
         String text = textOf(pdf);
         assertThat(text).contains("Repos");
@@ -234,7 +235,7 @@ class PlanningPdfContenuTest {
 
     /** A worked day a consigne governs carries the sentence under its date, banner and all. */
     @Test
-    void uneJourneeTravailleeSousConsignePorteSonBandeau() throws IOException {
+    void aWorkedDayUnderConsigneCarriesItsBanner() throws IOException {
         PlanningEvenement planning = planning();
         List<PosteAffectation> postesAda = planning.getPostes().stream()
                 .filter(poste -> poste.getAnimateur() != null
@@ -243,15 +244,16 @@ class PlanningPdfContenuTest {
 
         byte[] pdf = new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
                 .render(
-                        "Ada Lovelace",
-                        postesAda,
-                        Map.of(),
-                        PlanningExportService.daysOff(planning, "A-ADA"),
-                        List.of(),
-                        List.of(),
+                        new DocumentAnimateur.Contenu(
+                                "Ada Lovelace",
+                                postesAda,
+                                Map.of(),
+                                PlanningExportService.daysOff(planning, "A-ADA"),
+                                List.of(),
+                                List.of(),
+                                Map.of(LocalDate.of(2026, 8, 14), "Horaires modifiés — arrêté préfectoral · canicule")),
                         null,
-                        PROVENANCE.publiee(),
-                        Map.of(LocalDate.of(2026, 8, 14), "Horaires modifiés — arrêté préfectoral · canicule"));
+                        PROVENANCE.publiee());
 
         assertThat(textOf(pdf).lines().map(String::strip).toList())
                 .containsSubsequence("Vendredi 14 août", "Horaires modifiés — arrêté préfectoral · canicule", "09:00");
@@ -263,22 +265,25 @@ class PlanningPdfContenuTest {
      * scan, and a reader who wants to see where the code leads, both need it.
      */
     @Test
-    void leCartoucheDeLEspaceFermeLaPremierePageQuandElleALaPlace() throws IOException {
+    void theEspaceBandClosesTheFirstPageWhenItFits() throws IOException {
         PlanningEvenement planning = planning();
         byte[] pdf = new AnimateurPlanningPdf(new PdfTheme(), TYPOLOGIES)
                 .render(
-                        "Ada Lovelace",
-                        planning.getPostes().stream()
-                                .filter(poste -> poste.getAnimateur() != null
-                                        && "A-ADA".equals(poste.getAnimateur().getId()))
-                                .toList(),
-                        Map.of(),
-                        PlanningExportService.daysOff(planning, "A-ADA"),
-                        List.of(),
-                        List.of(),
+                        new DocumentAnimateur.Contenu(
+                                "Ada Lovelace",
+                                planning.getPostes().stream()
+                                        .filter(poste -> poste.getAnimateur() != null
+                                                && "A-ADA"
+                                                        .equals(poste.getAnimateur()
+                                                                .getId()))
+                                        .toList(),
+                                Map.of(),
+                                PlanningExportService.daysOff(planning, "A-ADA"),
+                                List.of(),
+                                List.of(),
+                                Map.of()),
                         "https://planning.example.org/animateur/jeton-1",
-                        PROVENANCE.publiee(),
-                        Map.of());
+                        PROVENANCE.publiee());
 
         assertThat(pageTextOf(pdf, 1))
                 .contains("VOTRE ESPACE EN LIGNE")

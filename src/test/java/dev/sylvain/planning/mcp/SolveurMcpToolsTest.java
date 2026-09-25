@@ -58,7 +58,7 @@ class SolveurMcpToolsTest {
                 "animateurDisponible", "0hard/0medium/0soft", 0, List.of(), null, null, List.of());
         ConstraintDiagnostic mediumViole = new ConstraintDiagnostic(
                 "equilibrerCharge", "0hard/-5medium/0soft", 5, List.of(), null, null, List.of());
-        analysisStore.record(new PlanningDiagnostic(
+        analysisStore.store(new PlanningDiagnostic(
                 "-2hard/-5medium/0soft",
                 2,
                 List.of(hardViole, hardRespecte, mediumViole),

@@ -484,17 +484,22 @@ public class EtatEditionService {
         // the rules since this process started. Saying « aucun problème
         // signalé » there acknowledges a measurement that never ran.
         boolean reglesAnalysees = facts.resolution() == null || facts.diagnostic() != null;
-        Statut statut;
+        return new EtatProblemes(
+                bloquants,
+                avertissements,
+                reglesAnalysees,
+                statutProblemes(referentielsSaisis, bloquants, avertissements, reglesAnalysees));
+    }
+
+    private static Statut statutProblemes(
+            boolean referentielsSaisis, int bloquants, int avertissements, boolean reglesAnalysees) {
         if (!referentielsSaisis) {
-            statut = Statut.A_FAIRE;
-        } else if (bloquants > 0 || !reglesAnalysees) {
-            statut = Statut.ATTENTION;
-        } else if (avertissements > 0) {
-            statut = Statut.INFO;
-        } else {
-            statut = Statut.FAIT;
+            return Statut.A_FAIRE;
         }
-        return new EtatProblemes(bloquants, avertissements, reglesAnalysees, statut);
+        if (bloquants > 0 || !reglesAnalysees) {
+            return Statut.ATTENTION;
+        }
+        return avertissements > 0 ? Statut.INFO : Statut.FAIT;
     }
 
     private static boolean isMedium(String constraintName) {

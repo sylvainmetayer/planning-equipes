@@ -23,6 +23,7 @@ import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -292,8 +293,7 @@ public class PlanPublicationService {
                     changement.animateurId(),
                     destinataire(
                             changement.animateurId(),
-                            changement.nomAffiche(),
-                            changement.email(),
+                            new Identite(changement.nomAffiche(), changement.email()),
                             changement.premiereDiffusion(),
                             changement.changements(),
                             lignesDemandes,
@@ -301,26 +301,15 @@ public class PlanPublicationService {
                             confirmations));
         }
         for (Map.Entry<String, List<String>> entree : decisions.entrySet()) {
-            if (byAnimateur.containsKey(entree.getKey())) {
-                continue;
-            }
             Identite identite = identites.get(entree.getKey());
-            if (identite == null) {
+            if (byAnimateur.containsKey(entree.getKey()) || identite == null) {
                 continue;
             }
             List<String> lignesDemandes = new ArrayList<>(entree.getValue());
             lignesDemandes.addAll(enCours.getOrDefault(entree.getKey(), List.of()));
             byAnimateur.put(
                     entree.getKey(),
-                    destinataire(
-                            entree.getKey(),
-                            identite.nomAffiche(),
-                            identite.email(),
-                            false,
-                            List.of(),
-                            lignesDemandes,
-                            differes,
-                            confirmations));
+                    destinataire(entree.getKey(), identite, false, List.of(), lignesDemandes, differes, confirmations));
         }
         List<DestinatairePublication> destinataires = new ArrayList<>(byAnimateur.values());
         destinataires.sort(
@@ -340,8 +329,7 @@ public class PlanPublicationService {
      */
     private DestinatairePublication destinataire(
             String animateurId,
-            String nomAffiche,
-            String email,
+            Identite identite,
             boolean premiereDiffusion,
             List<ChangementVacation> changements,
             List<String> demandes,
@@ -357,8 +345,8 @@ public class PlanPublicationService {
         ConfirmationPlanningRepository.Confirmation confirmation = confirmations.get(animateurId);
         return new DestinatairePublication(
                 animateurId,
-                nomAffiche,
-                email,
+                identite.nomAffiche(),
+                identite.email(),
                 premiereDiffusion,
                 changements.stream().map(ChangementVacation::libelle).toList(),
                 demandes,
@@ -451,8 +439,8 @@ public class PlanPublicationService {
                         .map(DestinatairePublication::animateurId)
                         .collect(Collectors.toSet()));
         PlanningEvenement reference = planPublieService.planPublie();
-        PlanSnapshotService.SnapshotMeta meta =
-                snapshotService.capturePubliee("Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now()));
+        PlanSnapshotService.SnapshotMeta meta = snapshotService.capturePubliee(
+                "Publication du " + LIBELLE_FORMAT.format(ZonedDateTime.now(ZoneId.systemDefault())));
         if (meta == null) {
             throw new BusinessError.Conflict("Aucun planning résolu à publier.");
         }
@@ -469,6 +457,9 @@ public class PlanPublicationService {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> echecs.add(destinataire.nomAffiche());
+                case EXCLU -> {
+                    // Never an outcome of a send: excluded recipients are traced apart, unsent.
+                }
             }
             trace.add(new Destinataire(
                     meta.id(),
@@ -494,7 +485,7 @@ public class PlanPublicationService {
                     differe.premiereDiffusion()));
             journal.recordAdminAction("PUBLICATION_DIFFEREE", differe.animateurId());
         }
-        traceRepository.record(meta.id(), trace);
+        traceRepository.recordRecipients(meta.id(), trace);
         // The marker moves for the people this publication addressed, and for
         // them only. Somebody it had nothing to say to was told nothing, so
         // claiming they know this plan would turn their next message from
@@ -540,18 +531,19 @@ public class PlanPublicationService {
             Animateur animateur = animateur(destinataire.animateurId());
             mailService.sendPlanningPublie(
                     destinataire.email(),
-                    animateur == null ? null : animateur.getPrenom(),
-                    planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
                     pdf,
                     PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
-                    destinataire.premiereDiffusion(),
-                    destinataire.changements(),
-                    destinataire.demandes(),
-                    consigneService.lignesJourneesModifiees(datesConcernees(
-                            planning,
-                            reference,
-                            referencesParAnimateur.get(destinataire.animateurId()),
-                            destinataire.animateurId())));
+                    new MailService.PlanningPublie(
+                            animateur == null ? null : animateur.getPrenom(),
+                            planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
+                            destinataire.premiereDiffusion(),
+                            destinataire.changements(),
+                            destinataire.demandes(),
+                            consigneService.lignesJourneesModifiees(datesConcernees(
+                                    planning,
+                                    reference,
+                                    referencesParAnimateur.get(destinataire.animateurId()),
+                                    destinataire.animateurId()))));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());
