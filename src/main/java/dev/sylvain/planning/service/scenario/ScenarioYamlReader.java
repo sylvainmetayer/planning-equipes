@@ -237,8 +237,15 @@ public final class ScenarioYamlReader {
 
     /** A bundled scenario, read but not built — see {@link #parseScenarioText}. */
     public static ScenarioDto readBundledScenario(String scenarioName) {
+        String name = scenarioName == null || scenarioName.isBlank() ? DEFAULT_SCENARIO : scenarioName;
+        // Only a file the classpath folder actually lists: the name comes from
+        // a request, and a closed list is the one check no path trick gets past.
+        String bundled = listScenarios().stream()
+                .filter(name::equals)
+                .findFirst()
+                .orElseThrow(() -> new BusinessError.Invalid("Scénario inconnu : " + name));
         try {
-            return readScenario(scenarioPath(scenarioName));
+            return readScenario(SCENARIOS_DIR + "/" + bundled);
         } catch (IOException e) {
             throw new RuntimeException("Erreur lors du chargement du scénario YAML", e);
         }
