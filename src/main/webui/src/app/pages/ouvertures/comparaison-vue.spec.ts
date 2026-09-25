@@ -11,7 +11,7 @@ import { ConsignesStore } from '../../core/consignes.store';
 import { RapportOuvertures, Stand } from '../../core/models';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import { SolverJobService } from '../../core/solver-job.service';
-import { ComparaisonOuverturesVue } from './comparaison-vue';
+import { OpeningsComparisonView } from './comparaison-vue';
 
 function rapport(): RapportOuvertures {
   const ligne = (standId: string, soir: number | null) => ({
@@ -104,7 +104,7 @@ async function mount(standIds: string[], referenceId: string | null = null) {
       { provide: MatDialog, useValue: { open } },
     ],
   });
-  const fixture = TestBed.createComponent(ComparaisonOuverturesVue);
+  const fixture = TestBed.createComponent(OpeningsComparisonView);
   fixture.componentRef.setInput('rapport', rapport());
   fixture.componentRef.setInput('standIds', standIds);
   fixture.componentRef.setInput('referenceId', referenceId);
@@ -112,11 +112,11 @@ async function mount(standIds: string[], referenceId: string | null = null) {
   return { fixture, open };
 }
 
-function root(fixture: ComponentFixture<ComparaisonOuverturesVue>): HTMLElement {
+function root(fixture: ComponentFixture<OpeningsComparisonView>): HTMLElement {
   return fixture.nativeElement as HTMLElement;
 }
 
-describe('ComparaisonOuverturesVue', () => {
+describe('OpeningsComparisonView', () => {
   it('asks for two stands before comparing anything', async () => {
     const { fixture } = await mount(['1']);
     expect(root(fixture).querySelector('[data-test="comparaison-vide"]')).not.toBeNull();
@@ -125,9 +125,9 @@ describe('ComparaisonOuverturesVue', () => {
 
   it('frames a differing cell and names the difference in words', async () => {
     const { fixture } = await mount(['1', '3']);
-    const ecart = root(fixture).querySelector('.comparaison-case-ecart')!;
-    expect(ecart.textContent).toContain('effectif');
-    expect(ecart.textContent).toContain('effectif 2 au lieu de 3');
+    const gapCell = root(fixture).querySelector('.comparaison-case-ecart')!;
+    expect(gapCell.textContent).toContain('effectif');
+    expect(gapCell.textContent).toContain('effectif 2 au lieu de 3');
     expect(
       root(fixture).querySelector('[data-test="comparaison-synthese"]')!.textContent,
     ).toContain('diffère sur 1 jour(s)');
@@ -156,9 +156,9 @@ describe('ComparaisonOuverturesVue', () => {
 
   it('adds every stand of a game category at once', async () => {
     const { fixture } = await mount([]);
-    (
-      fixture.componentInstance as unknown as { ajouterTypologie(id: string): void }
-    ).ajouterTypologie('buvette');
+    (fixture.componentInstance as unknown as { addGameCategory(id: string): void }).addGameCategory(
+      'buvette',
+    );
     await fixture.whenStable();
     expect(fixture.componentInstance.standIds()).toEqual(['1', '2', '3']);
   });

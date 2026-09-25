@@ -9,8 +9,8 @@ import {
 } from '../../core/models';
 import {
   MAX_STANDS_COMPARES,
-  ajouterStands,
-  cleRegle,
+  addStands,
+  ruleKey,
   comparer,
   readStandsParam,
   reglesComparees,
@@ -110,7 +110,7 @@ describe('comparer', () => {
 
     expect(comparaison.jours.every((jour) => !jour.ecart)).toBe(true);
     expect(comparaison.synthese).toEqual([
-      { standId: '2', nom: 'Buvette 2', joursEnEcart: 0, premierEcart: null },
+      { standId: '2', nom: 'Buvette 2', daysWithGap: 0, firstGap: null },
     ]);
   });
 
@@ -125,13 +125,13 @@ describe('comparer', () => {
     expect(cases.map((each) => each.ecarts)).toEqual([['OUVERTURE'], ['HEURES'], [], ['EFFECTIF']]);
     expect(cases[0].description).toBe('fermé là où la référence ouvre 10:00–12:00');
     expect(cases[1].description).toBe('ouvert 14:00–16:00 au lieu de 14:00–18:00');
-    expect(cases[1].texte).toBe('14:00–16:00 ×3');
+    expect(cases[1].text).toBe('14:00–16:00 ×3');
     expect(cases[3].description).toBe('effectif 2 au lieu de 3');
     // The reference itself never differs from itself.
     expect(comparaison.jours[0].colonnes[0].cases[0]).toMatchObject({
       reference: true,
       ecarts: [],
-      texte: '2',
+      text: '2',
     });
   });
 
@@ -147,14 +147,14 @@ describe('comparer', () => {
       {
         standId: '2',
         nom: 'Buvette 2',
-        joursEnEcart: 1,
-        premierEcart: 'le 2026-07-09 de 14:00 – 18:00, effectif 2 au lieu de 3',
+        daysWithGap: 1,
+        firstGap: 'le 2026-07-09 de 14:00 – 18:00, effectif 2 au lieu de 3',
       },
       {
         standId: '3',
         nom: 'Buvette 3',
-        joursEnEcart: 2,
-        premierEcart: 'le 2026-07-08 de 14:00 – 18:00, effectif 2 au lieu de 3',
+        daysWithGap: 2,
+        firstGap: 'le 2026-07-08 de 14:00 – 18:00, effectif 2 au lieu de 3',
       },
     ]);
     expect(comparaison.jours.map((jour) => jour.ecart)).toEqual([true, true]);
@@ -168,7 +168,7 @@ describe('comparer', () => {
     );
     expect(comparaison.jours).toHaveLength(2);
     expect(comparaison.jours[0].ecart).toBe(false);
-    expect(comparaison.jours[0].colonnes[0].cases[1].texte).toBe('—');
+    expect(comparaison.jours[0].colonnes[0].cases[1].text).toBe('—');
   });
 
   it('sets aside a stand the report no longer knows, and hands the reference on', () => {
@@ -230,16 +230,16 @@ function stand(id: string, overrides: Partial<Stand> = {}): Stand {
 describe('reglesComparees', () => {
   it('matches a rule by what it does, not by its id, its reason or the order of its days', () => {
     expect(
-      cleRegle(
+      ruleKey(
         horaire({ id: 1, motif: 'a', jours: 'JOURS_SEMAINE', joursSemaine: ['MONDAY', 'FRIDAY'] }),
       ),
     ).toBe(
-      cleRegle(
+      ruleKey(
         horaire({ id: 9, motif: 'b', jours: 'JOURS_SEMAINE', joursSemaine: ['FRIDAY', 'MONDAY'] }),
       ),
     );
-    expect(cleRegle(horaire())).not.toBe(
-      cleRegle(horaire({ fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 2 }] })),
+    expect(ruleKey(horaire())).not.toBe(
+      ruleKey(horaire({ fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 2 }] })),
     );
   });
 
@@ -286,7 +286,7 @@ describe('selection', () => {
   });
 
   it('refuses past eight stands, and says how many were left out', () => {
-    const ajout = ajouterStands(['1', '2', '3', '4', '5', '6'], ['2', '7', '8', '9', '10']);
+    const ajout = addStands(['1', '2', '3', '4', '5', '6'], ['2', '7', '8', '9', '10']);
     expect(ajout.selection).toEqual(['1', '2', '3', '4', '5', '6', '7', '8']);
     expect(ajout.refuses).toBe(2);
   });

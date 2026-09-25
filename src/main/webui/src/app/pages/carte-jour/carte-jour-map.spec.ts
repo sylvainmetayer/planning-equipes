@@ -89,12 +89,12 @@ describe('CarteJourMap', () => {
       }),
     ]);
 
-    const texte = (selecteur: string) =>
+    const text = (selecteur: string) =>
       Array.from(fixture.nativeElement.querySelectorAll(selecteur) as NodeListOf<HTMLElement>).map(
         (element) => element.textContent,
       );
-    expect(texte('.carte-jour-pastille')).toEqual(expect.arrayContaining(['0', '5']));
-    expect(texte('.carte-jour-pastille-sieges')).toEqual(['/7']);
+    expect(text('.carte-jour-pastille')).toEqual(expect.arrayContaining(['0', '5']));
+    expect(text('.carte-jour-pastille-sieges')).toEqual(['/7']);
 
     fixture.destroy();
   });

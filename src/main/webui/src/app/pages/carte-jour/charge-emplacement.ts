@@ -129,7 +129,7 @@ function placeOf(stand: StandJour, referentiel: Map<string, Emplacement>): Lieu 
  * Places come alphabetically, the stands with no emplacement last in a row of
  * their own — counted, never dropped.
  */
-export function chargeParEmplacement(
+export function loadByEmplacement(
   journee: JourneeCarte | null,
   minutes: number,
   emplacements: readonly Emplacement[] = [],
@@ -209,7 +209,7 @@ export function grilleCharge(
   }
   const colonnes: { debut: number; fin: number; charges: ChargeEmplacement[] }[] = [];
   spansOfDay(journee).forEach(([debut, fin]) => {
-    const charges = chargeParEmplacement(journee, debut, emplacements);
+    const charges = loadByEmplacement(journee, debut, emplacements);
     if (charges.every((charge) => charge.sieges === 0)) {
       return;
     }
@@ -223,7 +223,7 @@ export function grilleCharge(
 
   // Every column lists the same places in the same order: they come from the
   // day's stands, not from the instant.
-  const lieux = chargeParEmplacement(journee, journee.debutMinutes, emplacements);
+  const lieux = loadByEmplacement(journee, journee.debutMinutes, emplacements);
   const lignes: LigneCharge[] = lieux.map((lieu, index) => ({
     emplacementId: lieu.emplacementId,
     nom: lieu.nom,

@@ -4,8 +4,8 @@
       <mat-label i18n="@@ouvertures.comparer.ajouterStand">Ajouter un stand</mat-label>
       <input matInput name="comparaisonRecherche" [matAutocomplete]="propositionsStands" [disabled]="complet()"
              [ngModel]="recherche()" (ngModelChange)="recherche.set($event)" data-test="comparaison-recherche" />
-      <mat-autocomplete #propositionsStands="matAutocomplete" [displayWith]="aucunTexte"
-                        (optionSelected)="ajouter($event.option.value)">
+      <mat-autocomplete #propositionsStands="matAutocomplete" [displayWith]="noText"
+                        (optionSelected)="addStand($event.option.value)">
         @for (ligne of propositions(); track ligne.standId) {
           <mat-option [value]="ligne.standId">{{ ligne.nom || ligne.standId }}</mat-option>
         }
@@ -14,7 +14,7 @@
     <mat-form-field appearance="outline" class="comparaison-typologie">
       <mat-label i18n="@@ouvertures.comparer.ajouterTypologie">Ajouter une typologie</mat-label>
       <mat-select name="comparaisonTypologie" [disabled]="complet()" [value]="null"
-                  (selectionChange)="ajouterTypologie($event.value)">
+                  (selectionChange)="addGameCategory($event.value)">
         @for (typologie of typologies(); track typologie.id) {
           <mat-option [value]="typologie.id">{{ typologie.label || typologie.id }}</mat-option>
         }
@@ -61,7 +61,7 @@
                   data-test="comparaison-ecarts" i18n="@@ouvertures.comparer.ecartsSeulement">
       Seulement les jours qui diffèrent
     </mat-checkbox>
-    <button matButton="tonal" type="button" [disabled]="editingLocked() || !copiable()" (click)="copierReference()"
+    <button matButton="tonal" type="button" [disabled]="editingLocked() || !copiable()" (click)="copyReference()"
             data-test="comparaison-copier">
       <mat-icon>content_copy</mat-icon>
       <ng-container i18n="@@ouvertures.comparer.copier">Copier les horaires de la référence vers…</ng-container>
@@ -71,8 +71,8 @@
   <h2 class="comparaison-titre" i18n="@@ouvertures.comparer.synthese.title">Synthèse</h2>
   <ul class="comparaison-synthese" data-test="comparaison-synthese">
     @for (ligne of comparaison().synthese; track ligne.standId) {
-      <li [class.comparaison-synthese-ecart]="ligne.joursEnEcart > 0">
-        <strong>{{ ligne.nom }}</strong> : {{ libelleSynthese(ligne.joursEnEcart, ligne.premierEcart) }}
+      <li [class.comparaison-synthese-ecart]="ligne.daysWithGap > 0">
+        <strong>{{ ligne.nom }}</strong> : {{ libelleSynthese(ligne.daysWithGap, ligne.firstGap) }}
       </li>
     }
   </ul>
@@ -101,9 +101,9 @@
                 <td [class.comparaison-case-ecart]="cellule.ecarts.length > 0"
                     [class.comparaison-case-fermee]="cellule.effectif === null"
                     [matTooltip]="cellule.description">
-                  <span>{{ cellule.texte }}</span>
+                  <span>{{ cellule.text }}</span>
                   @for (type of cellule.ecarts; track type) {
-                    <span class="comparaison-ecart-type">{{ libelleEcart(type) }}</span>
+                    <span class="comparaison-ecart-type">{{ gapLabel(type) }}</span>
                   }
                   @if (cellule.description) {
                     <span class="visually-hidden"> — {{ cellule.description }}</span>
@@ -136,7 +136,7 @@
           <ul>
             @for (regle of stand.regles; track $index) {
               <li [class.comparaison-regle-ecart]="!regle.chezReference">
-                {{ texteRegle(regle.horaire) }}
+                {{ ruleText(regle.horaire) }}
                 @if (!regle.chezReference) {
                   <span class="comparaison-ecart-type" i18n="@@ouvertures.comparer.regles.enPlus">absente de la référence</span>
                 }
@@ -147,7 +147,7 @@
         @for (manquante of stand.reglesManquantes; track $index) {
           <p class="comparaison-regle-ecart comparaison-regle-manquante">
             <span class="comparaison-ecart-type" i18n="@@ouvertures.comparer.regles.manquante">manque</span>
-            {{ texteRegle(manquante) }}
+            {{ ruleText(manquante) }}
           </p>
         }
         @if (stand.exceptions.length > 0) {

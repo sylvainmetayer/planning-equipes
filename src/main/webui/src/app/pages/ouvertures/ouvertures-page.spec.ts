@@ -948,10 +948,10 @@ describe('OuverturesPage — grille par journée type', () => {
     const location = TestBed.inject(Location) as unknown as {
       replaceState: ReturnType<typeof vi.fn>;
     };
-    const adresse = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
-    expect(adresse).toContain('vue=comparer');
-    expect(adresse).toMatch(/stands=A(,|%2C)B/);
-    expect(adresse).toContain('ref=B');
+    const address = String(location.replaceState.mock.calls.at(-1)?.[0] ?? '');
+    expect(address).toContain('vue=comparer');
+    expect(address).toMatch(/stands=A(,|%2C)B/);
+    expect(address).toContain('ref=B');
   });
 
   it('never loads the referential for the other views', async () => {
