@@ -59,7 +59,10 @@ test('une édition amorcée lit ses référentiels et sa publication, et chaque 
   await page.goto('/');
 
   const referentiels = page.locator('li[data-ligne="referentiels"]');
-  await expect(referentiels).toContainText('Fait');
+  // Filled, but not done: the seed's stands offer game categories nobody
+  // among its two animateurs masters, and an orphan category is worth a look.
+  await expect(referentiels).toContainText('À vérifier');
+  await expect(referentiels).toContainText(/typologie\(s\) orpheline\(s\)/);
   // The reference database carries stands of its own; the seed adds its two animateurs.
   await expect(referentiels).toContainText(/\d{1,6} stands · 2 animateurs/);
   // seedPlanning publishes what it seeds: nobody is left to warn.
