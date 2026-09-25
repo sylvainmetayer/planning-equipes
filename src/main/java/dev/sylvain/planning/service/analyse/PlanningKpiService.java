@@ -13,6 +13,7 @@ import dev.sylvain.planning.service.solve.PlanSnapshotService.AffectationSnapsho
 import dev.sylvain.planning.service.solve.PlanningPersistenceService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
@@ -101,6 +103,12 @@ public class PlanningKpiService {
      *                          when that solve was launched (see {@link Dosage});
      *                          {@code null} when unknown — a line or a snapshot
      *                          older than the figure, a plan never solved
+     * @param couvertureParJour seats and staffed seats per day of the plan,
+     *                          keyed by ISO date — what the Autopsie's replay
+     *                          draws as a day × coverage band. Counts seats,
+     *                          never people. {@code null} on a line older than
+     *                          the figure, and on a snapshot recomputed in
+     *                          degraded mode
      * @param lecture           the reading of the score (see
      *                          {@link ScoreReading}) of the analysis these
      *                          figures were taken from — what the Comparateur
@@ -142,7 +150,8 @@ public class PlanningKpiService {
             Integer journeesSousConsigne,
             Double heuresFermeesParConsigne,
             List<ScoreReading.ScoreSentence> lecture,
-            Dosage dosage) {
+            Dosage dosage,
+            Map<String, DayCoverage> couvertureParJour) {
 
         /** The same figures carrying {@code lecture}, the reading of the analysis they were taken from. */
         public PlanningKpi withReading(List<ScoreReading.ScoreSentence> lecture) {
@@ -171,7 +180,8 @@ public class PlanningKpiService {
                     journeesSousConsigne,
                     heuresFermeesParConsigne,
                     lecture,
-                    dosage);
+                    dosage,
+                    couvertureParJour);
         }
 
         /** The same figures, stamped with the dosage the plan was solved under. */
@@ -201,12 +211,29 @@ public class PlanningKpiService {
                     journeesSousConsigne,
                     heuresFermeesParConsigne,
                     lecture,
-                    dosage);
+                    dosage,
+                    couvertureParJour);
         }
     }
 
-    /** One staffed-or-empty seat reduced to what the KPI need: who, for how long. */
-    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {}
+    /**
+     * One day of the plan: how many seats it asks for, how many are staffed.
+     * Nothing nominative, which keeps it fit for the Autopsie's unlimited
+     * retention.
+     */
+    @Schema(requiredProperties = {"postes", "pourvus"})
+    public record DayCoverage(int postes, int pourvus) {}
+
+    /**
+     * One staffed-or-empty seat reduced to what the KPI need: who, for how
+     * long, and on which day — {@code null} when the caller does not know it.
+     */
+    record AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes, LocalDate date) {
+
+        AffectationKpi(String standId, String creneauId, String animateurId, Integer dureeMinutes) {
+            this(standId, creneauId, animateurId, dureeMinutes, null);
+        }
+    }
 
     /**
      * KPI of the currently persisted plan. Score and violations come from the
@@ -224,7 +251,8 @@ public class PlanningKpiService {
                     poste.getStand().getId(),
                     String.valueOf(poste.getCreneau().getId()),
                     poste.getAnimateur() == null ? null : poste.getAnimateur().getId(),
-                    poste.getDureeEffectiveMinutes()));
+                    poste.getDureeEffectiveMinutes(),
+                    poste.getCreneau().getDate()));
         }
         ConstraintAnalysisStore.StoredAnalysis analysis = analysisStore.latest();
         PlanningDiagnostic diagnostic = analysis == null ? null : analysis.diagnostic();
@@ -391,7 +419,8 @@ public class PlanningKpiService {
                 inputs.journeesSousConsigne(),
                 inputs.heuresFermeesParConsigne(),
                 null,
-                null);
+                null,
+                tally.couvertureParJour());
     }
 
     /** The seats counted once: distinct stands and créneaux, the filled ones, and the hours per animateur. */
@@ -399,8 +428,21 @@ public class PlanningKpiService {
         private final Set<String> stands = new LinkedHashSet<>();
         private final Set<String> creneaux = new LinkedHashSet<>();
         private final Map<String, Double> heuresParAnimateur = new LinkedHashMap<>();
+        /** Per ISO date: seats, staffed seats. Sorted, so the band reads in calendar order. */
+        private final Map<String, int[]> parJour = new TreeMap<>();
+
         private int pourvus;
         private boolean heuresIncompletes;
+
+        /** {@code null} when no seat said its day: unmeasured, not an empty plan. */
+        Map<String, DayCoverage> couvertureParJour() {
+            if (parJour.isEmpty()) {
+                return null;
+            }
+            Map<String, DayCoverage> couverture = new LinkedHashMap<>();
+            parJour.forEach((date, compte) -> couverture.put(date, new DayCoverage(compte[0], compte[1])));
+            return couverture;
+        }
 
         static SeatTally of(List<AffectationKpi> affectations) {
             SeatTally tally = new SeatTally();
@@ -411,6 +453,13 @@ public class PlanningKpiService {
         private void add(AffectationKpi affectation) {
             stands.add(affectation.standId());
             creneaux.add(affectation.creneauId());
+            if (affectation.date() != null) {
+                int[] jour = parJour.computeIfAbsent(affectation.date().toString(), date -> new int[2]);
+                jour[0]++;
+                if (affectation.animateurId() != null) {
+                    jour[1]++;
+                }
+            }
             if (affectation.animateurId() == null) {
                 return;
             }

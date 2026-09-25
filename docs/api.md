@@ -1019,6 +1019,19 @@ Trois pièges :
   réglage, sans prétendre isoler son effet : le référentiel a pu bouger entre
   deux résolutions.
 
+### Couverture par jour de l'Autopsie
+
+Chaque ligne de `GET /api/kpi/historique` écrite depuis cette version porte
+`kpi.couvertureParJour` : par date ISO, `{ postes, pourvus }` — des sièges,
+jamais des personnes, ce qui garde la ligne compatible avec la conservation
+illimitée de l'Autopsie. Les sommes des jours valent `postesTotal` et
+`postesPourvus`. Une ligne antérieure n'a pas la clé (`null`) : le rejeu de
+la page Autopsie affiche alors « non mesurée », jamais une journée vide. Un
+instantané recalculé en mode dégradé ne la porte pas non plus. Aucune
+migration : la colonne `kpi` est un `jsonb`, et `lister_kpi_historique` (MCP)
+la rend telle quelle — une trentaine de petits objets par ligne pour une
+édition d'un mois.
+
 ### Le plancher : signalé par règle, jamais appliqué
 
 Chaque entrée non dure porte `postesEvalues` — le nombre d'éléments que la

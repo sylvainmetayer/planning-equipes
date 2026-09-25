@@ -5,6 +5,7 @@ import {
   inject,
   resource,
   signal,
+  ViewEncapsulation,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -15,6 +16,9 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { ActivatedRoute } from '@angular/router';
 import { AnalysesApi } from '../../core/api/analyses-api';
 import { dosageLines, dosageSummary, dosageToken } from '../../core/dosage';
+import { EditionStore } from '../../core/edition.store';
+import { RejeuPanel } from './rejeu-panel';
+import { clampRank, resolutionsOfEdition } from './rejeu';
 import { keepViewInQueryParams, optionalParam } from '../../core/view-query-params';
 import { intlLocale } from '../../core/locale';
 import { KpiHistoriqueEntry } from '../../core/models';
@@ -39,8 +43,11 @@ import { errorText, retainedValue } from '../../core/resource-state';
     MatTableModule,
     MatTooltipModule,
     StatusMessage,
+    RejeuPanel,
   ],
   templateUrl: './kpi-page.html',
+  styleUrl: './kpi-page.css',
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class KpiPage {
@@ -60,6 +67,7 @@ export class KpiPage {
 
   private readonly analysesApi = inject(AnalysesApi);
   private readonly route = inject(ActivatedRoute);
+  private readonly editionStore = inject(EditionStore);
   private readonly confirm = inject(ConfirmService);
 
   /**
@@ -90,17 +98,69 @@ export class KpiPage {
   protected readonly dosageFilter = signal<string | null>(
     this.route.snapshot.queryParamMap.get('dosage') || null,
   );
-  /** The rows on screen: every row, or those solved under the dosage filtered on. */
+  /**
+   * The edition the replay walks and the table narrows to: `?edition=` when
+   * the operator chose one, `*` for every edition — no replay then — and,
+   * absent, the edition being worked in.
+   */
+  private readonly editionChoice = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('edition') || null,
+  );
+  protected readonly replayEdition = computed(() => {
+    const choice = this.editionChoice();
+    if (choice === ALL_EDITIONS) {
+      return null;
+    }
+    return choice ?? this.editionStore.courant()?.id ?? null;
+  });
+  /** The rank the replay points at, 0-based; `null` for the latest. `?rang=` is 1-based, as said on screen. */
+  protected readonly replayRank = signal<number | null>(
+    readRank(this.route.snapshot.queryParamMap.get('rang')),
+  );
+  private readonly replayResolutions = computed(() => {
+    const edition = this.replayEdition();
+    return edition === null ? [] : resolutionsOfEdition(this.entries(), edition);
+  });
+  /** The row the replay points at, highlighted in the table. */
+  protected readonly pointedId = computed(() => {
+    const resolutions = this.replayResolutions();
+    return resolutions[clampRank(this.replayRank(), resolutions.length)]?.id ?? null;
+  });
+
+  /** The rows on screen: the replayed edition's (every one's without replay), narrowed to a dosage if asked. */
   protected readonly visibleEntries = computed(() => {
     const token = this.dosageFilter();
-    const entries = this.entries();
-    return token === null
-      ? entries
-      : entries.filter((entry) => dosageToken(entry.kpi.dosage) === token);
+    const edition = this.replayEdition();
+    return this.entries().filter(
+      (entry) =>
+        (edition === null || entry.editionId === edition) &&
+        (token === null || dosageToken(entry.kpi.dosage) === token),
+    );
   });
 
   constructor() {
-    keepViewInQueryParams(() => ({ dosage: optionalParam(this.dosageFilter()) }));
+    keepViewInQueryParams(() => ({
+      dosage: optionalParam(this.dosageFilter()),
+      edition: optionalParam(this.editionChoice()),
+      rang: this.replayRank() === null ? null : String((this.replayRank() ?? 0) + 1),
+    }));
+  }
+
+  /** A new edition replays from its latest solve. */
+  protected chooseReplayEdition(editionId: string | null): void {
+    this.editionChoice.set(editionId ?? ALL_EDITIONS);
+    this.replayRank.set(null);
+  }
+
+  /** A click on a row puts the replay's cursor on it — in its own edition when the table shows them all. */
+  protected pointAt(entry: KpiHistoriqueEntry): void {
+    if (this.replayEdition() !== entry.editionId) {
+      this.editionChoice.set(entry.editionId);
+    }
+    const rank = resolutionsOfEdition(this.entries(), entry.editionId).findIndex(
+      (resolution) => resolution.id === entry.id,
+    );
+    this.replayRank.set(rank < 0 ? null : rank);
   }
   protected readonly chargement = this.history.isLoading;
   /** A deletion refused server-side; the next refresh clears it. */
@@ -216,6 +276,15 @@ export class KpiPage {
   protected dureeLabel(entry: KpiHistoriqueEntry): string {
     return entry.kpi.dureeSolveSecondes === null ? '—' : `${entry.kpi.dureeSolveSecondes} s`;
   }
+}
+
+/** `?edition=*`: every edition in the table, and no replay. */
+const ALL_EDITIONS = '*';
+
+/** `?rang=` is 1-based, the way the screen counts; a hand-edited value falls back to the latest solve. */
+function readRank(value: string | null): number | null {
+  const rank = value === null ? NaN : Number.parseInt(value, 10);
+  return Number.isFinite(rank) && rank >= 1 ? rank - 1 : null;
 }
 
 function arrondiHeures(heures: number): string {

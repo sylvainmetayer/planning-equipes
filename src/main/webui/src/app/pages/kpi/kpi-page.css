@@ -1,0 +1,160 @@
+/*
+ * The Autopsie page: its table, and the « Rejeu » panel above it — small
+ * multiples drawn by hand in SVG on the live score curve's coordinate space
+ * (pages/solver/score-curve.ts), a cursor, and a card for the pointed solve.
+ * Theme tokens only: the same file serves light and dark.
+ */
+
+.kpi-ligne {
+  cursor: pointer;
+}
+
+.kpi-ligne-pointee td {
+  background: var(--mat-sys-secondary-container);
+}
+
+.kpi-rejeu {
+  margin-block: 0.5rem 1.5rem;
+}
+
+.rejeu-titre {
+  font: var(--mat-sys-title-medium);
+  margin-block: 0 0.5rem;
+}
+
+.rejeu-barre {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.rejeu-edition {
+  flex: 1 1 16rem;
+  max-width: 24rem;
+}
+
+.rejeu-slider {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+}
+
+.rejeu-position {
+  display: block;
+  margin-block: 0.5rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.rejeu-multiples {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.75rem;
+  margin: 0.5rem 0 1rem;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.rejeu-multiples:focus-visible {
+  outline: 2px solid var(--mat-sys-primary);
+  outline-offset: 2px;
+}
+
+.rejeu-multiple-entete {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font: var(--mat-sys-body-small);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rejeu-courbe {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  cursor: pointer;
+  background: var(--mat-sys-surface-container-low);
+  border-radius: 4px;
+}
+
+.rejeu-ligne {
+  fill: none;
+  stroke: var(--mat-sys-primary);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.rejeu-point {
+  fill: var(--mat-sys-primary);
+}
+
+.rejeu-curseur {
+  stroke: var(--mat-sys-tertiary);
+  stroke-width: 2;
+  vector-effect: non-scaling-stroke;
+}
+
+.rejeu-carte {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+}
+
+.rejeu-mesures {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  margin: 0;
+}
+
+.rejeu-mesures dt {
+  font: var(--mat-sys-label-medium);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rejeu-mesures dd {
+  margin: 0;
+  font: var(--mat-sys-body-large);
+}
+
+.rejeu-delta-titre {
+  font: var(--mat-sys-label-large);
+  margin-block: 0.75rem 0.25rem;
+}
+
+.rejeu-delta {
+  margin: 0;
+  padding-left: 1.25rem;
+  font: var(--mat-sys-body-medium);
+}
+
+.rejeu-regle-etat {
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.rejeu-bande {
+  display: flex;
+  gap: 2px;
+  height: 1.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.rejeu-jour {
+  flex: 1 1 0;
+  min-width: 4px;
+  background: var(--mat-sys-primary);
+  border-radius: 2px;
+  transition: opacity 300ms ease;
+}
+
+.rejeu-jour-incomplet {
+  background: var(--mat-sys-error);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rejeu-jour {
+    transition: none;
+  }
+}

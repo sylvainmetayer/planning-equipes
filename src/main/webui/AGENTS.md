@@ -156,7 +156,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   on screen), `/marge` (« Marge
   disponible » — the day × timeslot grid of what is left: the animateurs
   available then minus the seats to staff, read either on the seats a solve
-  would have to fill or on the plan persisted), `/kpi`, `/comparateur`
+  would have to fill or on the plan persisted), `/kpi` (« Autopsie du
+planning » — the table of every solve, and above it the « Rejeu » of one
+edition's solves: small multiples drawn by hand over the pure
+`pages/kpi/rejeu.ts`, a cursor and a play button that never runs under
+`prefers-reduced-motion`; `?edition=` — `*` for every edition — `?rang=`
+and `?dosage=` in the URL), `/comparateur`
   (« Comparateur A/B » of two snapshots), `/instantanes` (« Instantanés »),
   `/verrouillages`, `/consignes` (« Consignes » — a band an arrêté closes
   for every stand on a date, the compensation chosen, the presets; issue #4

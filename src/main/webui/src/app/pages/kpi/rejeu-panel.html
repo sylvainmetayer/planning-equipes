@@ -1,0 +1,144 @@
+<section class="kpi-rejeu" aria-labelledby="rejeu-titre">
+  <h2 id="rejeu-titre" class="rejeu-titre" i18n="@@rejeu.title">Rejeu</h2>
+  <div class="rejeu-barre">
+    <mat-form-field appearance="outline" subscriptSizing="dynamic" class="rejeu-edition">
+      <mat-label i18n="@@rejeu.edition.label">Édition rejouée</mat-label>
+      <mat-select [value]="editionId() ?? ''" (valueChange)="chooseEdition($event)">
+        <mat-option value="" i18n="@@rejeu.edition.all">Toutes les éditions (sans rejeu)</mat-option>
+        @for (edition of editions(); track edition.editionId) {
+          <mat-option [value]="edition.editionId">{{ edition.editionNom }} ({{ edition.count }})</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+    @if (resolutions().length > 1) {
+      <button
+        matIconButton
+        type="button"
+        i18n-aria-label="@@rejeu.previous"
+        aria-label="Résolution précédente"
+        [disabled]="current() === 0"
+        (click)="step(-1)"
+      >
+        <mat-icon>skip_previous</mat-icon>
+      </button>
+      <mat-slider class="rejeu-slider" [min]="0" [max]="resolutions().length - 1" [step]="1">
+        <input
+          #pouce
+          matSliderThumb
+          [value]="current()"
+          (input)="moveTo(+pouce.value)"
+          [attr.aria-label]="sliderLabel"
+          [attr.aria-valuetext]="positionLabel()"
+        />
+      </mat-slider>
+      <button
+        matIconButton
+        type="button"
+        i18n-aria-label="@@rejeu.next"
+        aria-label="Résolution suivante"
+        [disabled]="current() >= resolutions().length - 1"
+        (click)="step(1)"
+      >
+        <mat-icon>skip_next</mat-icon>
+      </button>
+      <button matButton type="button" [disabled]="reducedMotion" (click)="togglePlay()">
+        <mat-icon>{{ playing() ? 'pause' : 'play_arrow' }}</mat-icon>
+        @if (playing()) {
+          <ng-container i18n="@@rejeu.pause">Pause</ng-container>
+        } @else {
+          <ng-container i18n="@@rejeu.play">Lecture</ng-container>
+        }
+      </button>
+    }
+  </div>
+
+  @if (editionId() === null) {
+    <p class="empty-hint" i18n="@@rejeu.chooseEdition">Choisissez une édition pour rejouer ses résolutions.</p>
+  } @else if (resolutions().length === 0) {
+    <p class="empty-hint" i18n="@@rejeu.empty">Aucune résolution enregistrée pour cette édition.</p>
+  } @else {
+    <output class="rejeu-position">{{ positionLabel() }}</output>
+    @if (reducedMotion && resolutions().length > 1) {
+      <p class="calendar-meta" i18n="@@rejeu.reducedMotion">Lecture automatique désactivée : ce navigateur demande de limiter les animations.</p>
+    }
+    <fieldset class="rejeu-multiples" tabindex="0" (keydown)="onKeydown($event)" i18n-aria-label="@@rejeu.multiples" aria-label="Frise des résolutions : flèches gauche et droite pour déplacer le curseur">
+      @for (serie of series(); track serie.figure) {
+        <div class="rejeu-multiple">
+          <div class="rejeu-multiple-entete">
+            <span>{{ figureLabel(serie.figure) }}</span>
+            <strong>{{ figureAtCursor(serie.figure) }}</strong>
+          </div>
+          <svg
+            class="rejeu-courbe"
+            [attr.viewBox]="'-6 -6 ' + (width + 12) + ' ' + (height + 12)"
+            preserveAspectRatio="none"
+            aria-hidden="true"
+            (click)="onCurveClick($event)"
+          >
+            @if (serie.polyline) {
+              <polyline class="rejeu-ligne" [attr.points]="serie.polyline" />
+              @if (showMarks()) {
+                @for (point of serie.points; track point.rank) {
+                  <circle class="rejeu-point" [attr.cx]="point.x" [attr.cy]="point.y" r="3" />
+                }
+              }
+            }
+            <line class="rejeu-curseur" [attr.x1]="cursorX()" y1="-6" [attr.x2]="cursorX()" [attr.y2]="height + 6" />
+          </svg>
+        </div>
+      }
+    </fieldset>
+
+    @if (pointed(); as entry) {
+      <div class="rejeu-carte">
+        <dl class="rejeu-mesures">
+          <div><dt i18n="@@kpi.column.score">Score</dt><dd>{{ entry.kpi.score ?? '—' }}</dd></div>
+          <div><dt i18n="@@kpi.column.couverture">Couverture</dt><dd>{{ coverageLabel(entry) }}</dd></div>
+          <div><dt i18n="@@kpi.column.duree">Durée</dt><dd>{{ dureeLabel(entry) }}</dd></div>
+          <div><dt i18n="@@kpi.column.consignes">Consignes</dt><dd>{{ consignesLabel(entry) }}</dd></div>
+          <div><dt i18n="@@kpi.column.dosage">Dosage</dt><dd>{{ dosageLabel(entry) }}</dd></div>
+        </dl>
+        @if (delta(); as delta) {
+          <p class="rejeu-delta-titre" i18n="@@rejeu.delta.title">Depuis la résolution précédente</p>
+          <ul class="rejeu-delta">
+            <li i18n="@@rejeu.delta.postes">{{ signed(delta.postesPourvus) }} postes pourvus</li>
+            <li i18n="@@rejeu.delta.hard">dur {{ signed(delta.scoreHard) }}</li>
+            @if (delta.mediumNetOfFloor) {
+              <li i18n="@@rejeu.delta.mediumNet">medium hors plancher {{ signed(delta.scoreMedium) }}</li>
+            } @else {
+              <li i18n="@@rejeu.delta.medium">medium {{ signed(delta.scoreMedium) }}</li>
+            }
+            <li i18n="@@rejeu.delta.soft">souple {{ signed(delta.scoreSoft) }}</li>
+            <li i18n="@@rejeu.delta.fairness">σ des heures {{ signed(delta.heuresEcartType, 1) }}</li>
+            @for (rule of delta.rules; track rule.name) {
+              <li>
+                <code>{{ rule.name }}</code> : {{ rule.before }} → {{ rule.after }}
+                @if (ruleKindLabel(rule.kind); as kind) {
+                  <span class="rejeu-regle-etat">({{ kind }})</span>
+                }
+              </li>
+            }
+          </ul>
+        } @else {
+          <p class="calendar-meta" i18n="@@rejeu.delta.first">Première résolution de l'édition : rien à comparer.</p>
+        }
+        <p class="rejeu-delta-titre" i18n="@@rejeu.band.title">Couverture par jour</p>
+        @if (band(); as band) {
+          <ul class="rejeu-bande">
+            @for (day of band; track day.date) {
+              <li
+                class="rejeu-jour"
+                [style.opacity]="0.25 + day.ratio * 0.75"
+                [class.rejeu-jour-incomplet]="day.ratio < 1"
+                [attr.aria-label]="dayLabel(day)"
+                [title]="dayLabel(day)"
+              ></li>
+            }
+          </ul>
+        } @else {
+          <p class="calendar-meta" i18n="@@rejeu.band.unmeasured">Couverture par jour non mesurée à cette date.</p>
+        }
+      </div>
+    }
+  }
+</section>

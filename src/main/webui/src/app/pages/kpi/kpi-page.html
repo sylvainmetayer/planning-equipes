@@ -17,6 +17,13 @@
       <mat-progress-bar mode="indeterminate" />
     }
     <app-status-message [text]="error()" tone="error" />
+    <app-rejeu-panel
+      [entries]="entries()"
+      [editionId]="replayEdition()"
+      [rank]="replayRank()"
+      (editionIdChange)="chooseReplayEdition($event)"
+      (rankChange)="replayRank.set($event)"
+    />
     @if (dosageFilter()) {
       <div class="calendar-toolbar">
         <p class="calendar-meta" i18n="@@kpi.dosage.filtered">Résolutions calculées sous le même dosage.</p>
@@ -144,7 +151,14 @@
           </td>
         </ng-container>
         <tr mat-header-row *matHeaderRowDef="columns"></tr>
-        <tr mat-row *matRowDef="let row; columns: columns"></tr>
+        <tr
+          mat-row
+          *matRowDef="let row; columns: columns"
+          class="kpi-ligne"
+          [class.kpi-ligne-pointee]="row.id === pointedId()"
+          [attr.aria-current]="row.id === pointedId() ? 'true' : null"
+          (click)="pointAt(row)"
+        ></tr>
       </table>
     </div>
     @if (entries().length === 0 && !chargement()) {

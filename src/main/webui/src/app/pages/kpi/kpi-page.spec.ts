@@ -11,6 +11,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AnalysesApi } from '../../core/api/analyses-api';
+import { EditionStore } from '../../core/edition.store';
 import { KpiHistoriqueEntry, PlanningKpi } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { KpiPage } from './kpi-page';
@@ -85,6 +86,11 @@ type PageInternals = {
   visibleEntries: Signal<KpiHistoriqueEntry[]>;
   sameDosage: (entry: KpiHistoriqueEntry) => void;
   allDosages: () => void;
+  replayEdition: Signal<string | null>;
+  replayRank: Signal<number | null>;
+  pointedId: Signal<number | null>;
+  chooseReplayEdition: (editionId: string | null) => void;
+  pointAt: (entry: KpiHistoriqueEntry) => void;
 };
 
 function createPage(): PageInternals {
@@ -94,11 +100,13 @@ function createPage(): PageInternals {
 describe('KpiPage', () => {
   const analysesApi = { kpiHistory: vi.fn(), deleteKpiEntry: vi.fn() };
   const confirm = { ask: vi.fn() };
+  let courant: { id: string } | null = null;
 
   beforeEach(() => {
     analysesApi.kpiHistory.mockReset();
     analysesApi.deleteKpiEntry.mockReset();
     confirm.ask.mockReset();
+    courant = null;
     analysesApi.kpiHistory.mockResolvedValue([]);
     analysesApi.deleteKpiEntry.mockResolvedValue(undefined);
     confirm.ask.mockResolvedValue(true);
@@ -106,9 +114,56 @@ describe('KpiPage', () => {
       providers: [
         provideZonelessChangeDetection(),
         provideRouter([]),
+        { provide: EditionStore, useValue: { courant: () => courant } },
         { provide: AnalysesApi, useValue: analysesApi },
         { provide: ConfirmService, useValue: confirm },
       ],
+    });
+  });
+
+  describe('replay', () => {
+    const e26a = entry({ id: 1, editionId: 'E26', creeLe: '2026-09-01T10:00:00Z' });
+    const e26b = entry({ id: 2, editionId: 'E26', creeLe: '2026-09-02T10:00:00Z' });
+    const e25 = entry({ id: 3, editionId: 'E25', creeLe: '2025-09-01T10:00:00Z' });
+
+    it('replays the edition being worked in by default, and narrows the table to it', async () => {
+      courant = { id: 'E26' };
+      analysesApi.kpiHistory.mockResolvedValue([e26b, e25, e26a]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.entries()).toHaveLength(3));
+
+      expect(page.replayEdition()).toBe('E26');
+      expect(page.visibleEntries().map((each) => each.id)).toEqual([2, 1]);
+      // The latest solve is pointed at, and highlighted in the table.
+      expect(page.pointedId()).toBe(2);
+    });
+
+    it('shows every edition, and replays none, when « toutes » is chosen', async () => {
+      courant = { id: 'E26' };
+      analysesApi.kpiHistory.mockResolvedValue([e26b, e25, e26a]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.entries()).toHaveLength(3));
+
+      page.chooseReplayEdition(null);
+
+      expect(page.replayEdition()).toBeNull();
+      expect(page.visibleEntries()).toHaveLength(3);
+      expect(page.pointedId()).toBeNull();
+    });
+
+    it('moves the cursor to a clicked row, switching to its edition when needed', async () => {
+      courant = { id: 'E26' };
+      analysesApi.kpiHistory.mockResolvedValue([e26b, e25, e26a]);
+      const page = createPage();
+      await vi.waitFor(() => expect(page.entries()).toHaveLength(3));
+
+      page.pointAt(e26a);
+      expect(page.replayRank()).toBe(0);
+      expect(page.pointedId()).toBe(1);
+
+      page.pointAt(e25);
+      expect(page.replayEdition()).toBe('E25');
+      expect(page.pointedId()).toBe(3);
     });
   });
 
