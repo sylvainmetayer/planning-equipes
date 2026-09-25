@@ -310,9 +310,9 @@ describe('CarteJourView', () => {
 
     const focusables = grille().querySelectorAll('td[tabindex="0"]');
     expect(focusables.length).toBe(1);
-    const premiere = focusables[0] as HTMLElement;
-    premiere.focus();
-    premiere.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    const first = focusables[0] as HTMLElement;
+    first.focus();
+    first.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     await fixture.whenStable();
     expect(document.activeElement?.getAttribute('data-colonne')).toBe('1');
   });

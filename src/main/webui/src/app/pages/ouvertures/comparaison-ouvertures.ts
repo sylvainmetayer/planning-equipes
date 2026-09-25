@@ -30,7 +30,7 @@ export const MAX_STANDS_COMPARES = 8;
  * How a cell differs from the reference's, most telling first: open against
  * closed says everything, and then neither hours nor headcount are compared.
  */
-export type TypeEcart = 'OUVERTURE' | 'HEURES' | 'EFFECTIF';
+export type GapKind = 'OUVERTURE' | 'HEURES' | 'EFFECTIF';
 
 /** One stand in one column. */
 export interface CaseComparee {
@@ -40,8 +40,8 @@ export interface CaseComparee {
   /** Closed when null. */
   effectif: number | null;
   /** What the cell prints: the headcount, the stretches of a partial cell, or « — » when closed. */
-  texte: string;
-  ecarts: TypeEcart[];
+  text: string;
+  ecarts: GapKind[];
   /** The difference in words, empty when there is none. */
   description: string;
 }
@@ -66,8 +66,8 @@ export interface JourCompare {
 export interface SyntheseStandComparee {
   standId: string;
   nom: string;
-  joursEnEcart: number;
-  premierEcart: string | null;
+  daysWithGap: number;
+  firstGap: string | null;
 }
 
 export interface Comparaison {
@@ -92,22 +92,22 @@ export function comparer(
   standIds: readonly string[],
   referenceId: string | null,
 ): Comparaison {
-  const lignesParId = new Map((rapport?.stands ?? []).map((ligne) => [ligne.standId, ligne]));
+  const rowsById = new Map((rapport?.stands ?? []).map((ligne) => [ligne.standId, ligne]));
   const uniques = Array.from(new Set(standIds));
   const lignes = uniques
-    .map((id) => lignesParId.get(id))
+    .map((id) => rowsById.get(id))
     .filter((ligne): ligne is LigneStandOuverture => ligne !== undefined);
-  const inconnus = rapport ? uniques.filter((id) => !lignesParId.has(id)) : [];
+  const inconnus = rapport ? uniques.filter((id) => !rowsById.has(id)) : [];
   const reference = lignes.find((ligne) => ligne.standId === referenceId) ?? lignes[0] ?? null;
-  const stands = lignes.map((ligne) => ({ standId: ligne.standId, nom: nomDe(ligne) }));
+  const stands = lignes.map((ligne) => ({ standId: ligne.standId, nom: nameOf(ligne) }));
   if (!rapport || !reference) {
     return { referenceId: null, stands, jours: [], synthese: [], inconnus };
   }
 
   const jours: JourCompare[] = rapport.jours.map((jour) => {
     const colonnes = jour.creneaux.map((colonne) => {
-      const cellules = lignes.map((ligne) => lireCellule(ligne, jour.date, colonne));
-      const celluleReference = lireCellule(reference, jour.date, colonne);
+      const cellules = lignes.map((ligne) => cellOf(ligne, jour.date, colonne));
+      const celluleReference = cellOf(reference, jour.date, colonne);
       const cases = lignes.map((ligne, index) =>
         caseComparee(ligne, ligne === reference, cellules[index], celluleReference, colonne),
       );
@@ -129,34 +129,34 @@ export function comparer(
   const synthese = lignes
     .filter((ligne) => ligne !== reference)
     .map((ligne) => {
-      let joursEnEcart = 0;
-      let premierEcart: string | null = null;
+      let daysWithGap = 0;
+      let firstGap: string | null = null;
       jours.forEach((jour) => {
-        let ecartDuJour = false;
+        let dayHasGap = false;
         jour.colonnes.forEach((colonne) => {
           const cellule = colonne.cases.find((each) => each.standId === ligne.standId)!;
           if (cellule.ecarts.length === 0) {
             return;
           }
-          ecartDuJour = true;
-          premierEcart ??= $localize`:@@ouvertures.comparer.premierEcart:le ${jour.date}:date: de ${colonne.libelle}:colonne:, ${cellule.description}:ecart:`;
+          dayHasGap = true;
+          firstGap ??= $localize`:@@ouvertures.comparer.premierEcart:le ${jour.date}:date: de ${colonne.libelle}:colonne:, ${cellule.description}:ecart:`;
         });
-        if (ecartDuJour) {
-          joursEnEcart++;
+        if (dayHasGap) {
+          daysWithGap++;
         }
       });
-      return { standId: ligne.standId, nom: nomDe(ligne), joursEnEcart, premierEcart };
+      return { standId: ligne.standId, nom: nameOf(ligne), daysWithGap, firstGap };
     });
 
   return { referenceId: reference.standId, stands, jours, synthese, inconnus };
 }
 
-function nomDe(ligne: LigneStandOuverture): string {
+function nameOf(ligne: LigneStandOuverture): string {
   return ligne.nom || ligne.standId;
 }
 
 /** A stand's cell in one column; a cell the report does not carry is a closed one. */
-function lireCellule(
+function cellOf(
   ligne: LigneStandOuverture,
   date: string,
   colonne: ColonneCreneau,
@@ -174,7 +174,7 @@ function lireCellule(
  * The open stretches of a cell, empty when closed. A cell open over its whole
  * column may carry no segment at all: it is then one stretch, the column.
  */
-function segmentsDe(
+function segmentsOf(
   cellule: CelluleCreneauOuverture | null,
   colonne: ColonneCreneau,
 ): SegmentCellule[] {
@@ -201,14 +201,14 @@ function effectifs(segments: SegmentCellule[]): string {
   return segments.map((segment) => segment.effectif).join(', ');
 }
 
-function texteCellule(cellule: CelluleCreneauOuverture | null, colonne: ColonneCreneau): string {
+function cellText(cellule: CelluleCreneauOuverture | null, colonne: ColonneCreneau): string {
   if (!cellule || cellule.effectif === null) {
     return '—';
   }
   if (!cellule.partiel) {
     return String(cellule.effectif);
   }
-  return segmentsDe(cellule, colonne)
+  return segmentsOf(cellule, colonne)
     .map((segment) => `${plage(segment)} ×${segment.effectif}`)
     .join(' ; ');
 }
@@ -222,29 +222,29 @@ function caseComparee(
 ): CaseComparee {
   const base = {
     standId: ligne.standId,
-    nom: nomDe(ligne),
+    nom: nameOf(ligne),
     reference,
     effectif: cellule?.effectif ?? null,
-    texte: texteCellule(cellule, colonne),
+    text: cellText(cellule, colonne),
   };
   if (reference) {
     return { ...base, ecarts: [], description: '' };
   }
-  const { ecarts, description } = ecartsEntre(
-    segmentsDe(cellule, colonne),
-    segmentsDe(celluleReference, colonne),
+  const { ecarts, description } = gapsBetween(
+    segmentsOf(cellule, colonne),
+    segmentsOf(celluleReference, colonne),
   );
   return { ...base, ecarts, description };
 }
 
 /** What separates a cell from the reference's, and the sentence that says it. */
-export function ecartsEntre(
+export function gapsBetween(
   segments: SegmentCellule[],
   reference: SegmentCellule[],
-): { ecarts: TypeEcart[]; description: string } {
+): { ecarts: GapKind[]; description: string } {
   const ouvert = segments.length > 0;
-  const referenceOuverte = reference.length > 0;
-  if (ouvert !== referenceOuverte) {
+  const referenceOpen = reference.length > 0;
+  if (ouvert !== referenceOpen) {
     return {
       ecarts: ['OUVERTURE'],
       description: ouvert
@@ -255,7 +255,7 @@ export function ecartsEntre(
   if (!ouvert) {
     return { ecarts: [], description: '' };
   }
-  const ecarts: TypeEcart[] = [];
+  const ecarts: GapKind[] = [];
   const morceaux: string[] = [];
   if (heures(segments) !== heures(reference)) {
     ecarts.push('HEURES');
@@ -279,7 +279,7 @@ export function ecartsEntre(
  * one: its mode, its days and its windows — not its id, which differs from one
  * stand to the next, nor its reason, which is free text.
  */
-export function cleRegle(horaire: HoraireStand): string {
+export function ruleKey(horaire: HoraireStand): string {
   const jours = (() => {
     switch (horaire.jours) {
       case 'JOURS_SEMAINE':
@@ -338,15 +338,15 @@ export function reglesComparees(
   standIds: readonly string[],
   referenceId: string | null,
 ): ReglesStand[] {
-  const parId = new Map(stands.map((stand) => [stand.id, stand]));
-  const reference = referenceId ? parId.get(referenceId) : undefined;
-  const clesReference = new Set((reference?.horaires ?? []).map(cleRegle));
+  const byId = new Map(stands.map((stand) => [stand.id, stand]));
+  const reference = referenceId ? byId.get(referenceId) : undefined;
+  const referenceKeys = new Set((reference?.horaires ?? []).map(ruleKey));
   return standIds
-    .map((id) => parId.get(id))
+    .map((id) => byId.get(id))
     .filter((stand): stand is Stand => stand !== undefined)
     .map((stand) => {
-      const estReference = stand.id === referenceId;
-      const cles = new Set((stand.horaires ?? []).map(cleRegle));
+      const isReference = stand.id === referenceId;
+      const keys = new Set((stand.horaires ?? []).map(ruleKey));
       const exceptions: ExceptionComparee[] = [
         ...(stand.ouvertures ?? []).map((exception) => ({
           date: exception.date,
@@ -366,14 +366,14 @@ export function reglesComparees(
       return {
         standId: stand.id,
         nom: stand.nom || stand.id,
-        reference: estReference,
+        reference: isReference,
         regles: (stand.horaires ?? []).map((horaire) => ({
           horaire,
-          chezReference: estReference || clesReference.has(cleRegle(horaire)),
+          chezReference: isReference || referenceKeys.has(ruleKey(horaire)),
         })),
-        reglesManquantes: estReference
+        reglesManquantes: isReference
           ? []
-          : (reference?.horaires ?? []).filter((horaire) => !cles.has(cleRegle(horaire))),
+          : (reference?.horaires ?? []).filter((horaire) => !keys.has(ruleKey(horaire))),
         exceptions,
       };
     });
@@ -400,7 +400,7 @@ export function writeStandsParam(ids: readonly string[]): string | null {
  * category's — capped at eight. Returns the new selection and how many had to
  * be left out, which the view says rather than dropping them silently.
  */
-export function ajouterStands(
+export function addStands(
   selection: readonly string[],
   ajouts: readonly string[],
 ): { selection: string[]; refuses: number } {

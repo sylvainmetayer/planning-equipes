@@ -41,7 +41,7 @@ import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
-import { ComparaisonOuverturesVue } from './comparaison-vue';
+import { OpeningsComparisonView } from './comparaison-vue';
 import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
 import { ReferenceDataStore } from '../../core/reference-data.store';
 import {
@@ -105,10 +105,10 @@ import {
  * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
  * one by kind of day says a vacation once for every date its template governs.
  */
-export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'COMPARER';
+export type OpeningsView = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'COMPARER';
 
 /** The `vue` query param of each view; the reading grid, the default, writes none. */
-const PARAM_VUE: Record<VueOuvertures, string | null> = {
+const PARAM_VUE: Record<OpeningsView, string | null> = {
   CONSULTER: null,
   SAISIR: 'saisie',
   JOURNEES_TYPES: 'journees-types',
@@ -116,7 +116,7 @@ const PARAM_VUE: Record<VueOuvertures, string | null> = {
   COMPARER: 'comparer',
 };
 
-function lireVue(param: string | null): VueOuvertures {
+function lireVue(param: string | null): OpeningsView {
   if (param === 'saisie') {
     return 'SAISIR';
   }
@@ -190,7 +190,7 @@ interface LigneView {
     MatSelectModule,
     MatTooltipModule,
     RouterLink,
-    ComparaisonOuverturesVue,
+    OpeningsComparisonView,
   ],
   templateUrl: './ouvertures-page.html',
   // horaires-stand.css: « Comparer » opens the stands' bulk edit, whose rule editor it styles.
@@ -240,7 +240,7 @@ export class OuverturesPage implements OnInit {
   /** What the filter field holds, before the grid follows it: sixty-five rows of sixty cells are not re-laid on every keystroke. */
   protected readonly rechercheSaisie = signal(this.recherche());
   private filtrePending: ReturnType<typeof setTimeout> | null = null;
-  protected readonly view = signal<VueOuvertures>(
+  protected readonly view = signal<OpeningsView>(
     lireVue(this.route.snapshot.queryParamMap.get('vue')),
   );
 
@@ -611,7 +611,7 @@ export class OuverturesPage implements OnInit {
   }
 
   /** Leaving the entry view with unsaved cells asks first: they would silently survive, invisible, until the next reload. */
-  protected async changeView(view: VueOuvertures | undefined): Promise<void> {
+  protected async changeView(view: OpeningsView | undefined): Promise<void> {
     // The toggle group emits `undefined` on its first render, before any
     // click: taking it for a view would forget the `?date=` being entered.
     if (!view) {

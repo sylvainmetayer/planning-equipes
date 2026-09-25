@@ -4,7 +4,7 @@ import { buildJourneesCarte, instantCarte } from './carte-jour';
 import {
   TAILLE_PASTILLE_MAX,
   TAILLE_PASTILLE_MIN,
-  chargeParEmplacement,
+  loadByEmplacement,
   grilleCharge,
   grilleChargeEvenement,
   niveauDensite,
@@ -95,9 +95,9 @@ function journee() {
   ])[0];
 }
 
-describe('chargeParEmplacement', () => {
+describe('loadByEmplacement', () => {
   it('counts on a place the filled seats covering the instant, stand by stand', () => {
-    const charges = chargeParEmplacement(journee(), 16 * 60 + 30, [PLACE, HALLE]);
+    const charges = loadByEmplacement(journee(), 16 * 60 + 30, [PLACE, HALLE]);
     const place = charges.find((charge) => charge.emplacementId === 'PLACE')!;
     expect(place.presents).toBe(2);
     expect(place.sieges).toBe(2);
@@ -109,20 +109,20 @@ describe('chargeParEmplacement', () => {
 
   it('counts an empty seat as a seat and nobody, and a window as half-open', () => {
     const place = (minutes: number) =>
-      chargeParEmplacement(journee(), minutes).find((c) => c.emplacementId === 'PLACE')!;
+      loadByEmplacement(journee(), minutes).find((c) => c.emplacementId === 'PLACE')!;
     expect(place(10 * 60)).toMatchObject({ presents: 2, sieges: 3 });
     // Closing at 12:00 means gone at 12:00.
     expect(place(12 * 60)).toMatchObject({ presents: 0, sieges: 0 });
   });
 
   it('keeps the stands with no emplacement in a row of their own, last', () => {
-    const charges = chargeParEmplacement(journee(), 10 * 60, [PLACE, HALLE]);
+    const charges = loadByEmplacement(journee(), 10 * 60, [PLACE, HALLE]);
     expect(charges.map((charge) => charge.emplacementId)).toEqual(['HALLE', 'PLACE', null]);
     expect(charges[2]).toMatchObject({ nom: 'Sans emplacement', presents: 1, situe: false });
   });
 
   it('says a place without coordinates is off the map, and still counts it', () => {
-    const halle = chargeParEmplacement(journee(), 15 * 60, [PLACE, HALLE]).find(
+    const halle = loadByEmplacement(journee(), 15 * 60, [PLACE, HALLE]).find(
       (charge) => charge.emplacementId === 'HALLE',
     )!;
     expect(halle).toMatchObject({ situe: false, presents: 1, sieges: 2 });
@@ -132,7 +132,7 @@ describe('chargeParEmplacement', () => {
     const jour = journee();
     for (const minutes of [10 * 60, 11 * 60 + 45, 14 * 60, 16 * 60, 17 * 60 + 59]) {
       const carte = instantCarte(jour, minutes, [PLACE, HALLE]);
-      const charges = chargeParEmplacement(jour, minutes, [PLACE, HALLE]);
+      const charges = loadByEmplacement(jour, minutes, [PLACE, HALLE]);
       carte.marqueurs.forEach((marqueur) => {
         const charge = charges.find((each) => each.emplacementId === marqueur.emplacementId)!;
         expect(charge.presents).toBe(marqueur.pourvus);
@@ -142,7 +142,7 @@ describe('chargeParEmplacement', () => {
   });
 
   it('has nothing to count without a plan', () => {
-    expect(chargeParEmplacement(null, 600)).toEqual([]);
+    expect(loadByEmplacement(null, 600)).toEqual([]);
   });
 });
 
@@ -161,7 +161,7 @@ describe('grilleCharge', () => {
     const grille = grilleCharge(jour, [PLACE, HALLE]);
     grille.tranches.forEach((tranche, colonne) => {
       for (let minutes = tranche.debutMinutes; minutes < tranche.finMinutes; minutes += 15) {
-        const charges = chargeParEmplacement(jour, minutes, [PLACE, HALLE]);
+        const charges = loadByEmplacement(jour, minutes, [PLACE, HALLE]);
         grille.lignes.forEach((ligne, index) => {
           expect(ligne.cellules[colonne]).toEqual({
             presents: charges[index].presents,
