@@ -1142,9 +1142,32 @@ public class StaffingAnalyzer {
     /**
      * The staffing a meal window's sweep reads: the peak of seats live before
      * the window opens, the peak of those still live after it closes, and the
-     * seats live at each instant of the window's grid.
+     * seats live at each instant of the window's grid. A class rather than a
+     * record: it carries an array and is only ever read, never compared.
      */
-    private record WindowSweep(int avant, int apres, int[] occupation) {}
+    private static final class WindowSweep {
+        private final int avant;
+        private final int apres;
+        private final int[] occupation;
+
+        WindowSweep(int avant, int apres, int[] occupation) {
+            this.avant = avant;
+            this.apres = apres;
+            this.occupation = occupation;
+        }
+
+        int avant() {
+            return avant;
+        }
+
+        int apres() {
+            return apres;
+        }
+
+        int[] occupation() {
+            return occupation;
+        }
+    }
 
     private static WindowSweep sweep(Collection<Siege> sieges, int ouverture, int fermeture, int[] grille) {
         List<int[]> evenements = new ArrayList<>(sieges.size() * 2);
