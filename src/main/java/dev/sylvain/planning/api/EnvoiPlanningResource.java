@@ -39,7 +39,8 @@ public class EnvoiPlanningResource {
 
     /**
      * Sends one animateur their planning; 400 without an address, 404 unknown,
-     * 500 when the send itself failed — that last one carries the service's
+     * 409 while the relay's refusal of their address holds (it has not
+     * changed since), 500 when the send itself failed — that last one carries the service's
      * message, because the operator's next move is to read it.
      */
     @POST

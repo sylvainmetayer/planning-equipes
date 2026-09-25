@@ -110,6 +110,7 @@ class IsolationEditionStructurelleTest {
             "confirmation_planning",
             "parametres_notifications",
             "notification_planifiee",
+            "envoi_mail",
             "journal_action",
             "consigne_edition",
             "consigne_edition_fenetre",
@@ -154,7 +155,7 @@ class IsolationEditionStructurelleTest {
             List.of("edition", "backup_settings", "horloge_jour_j", "kpi_historique", "solver_job", "creneau_remap");
 
     /**
-     * The five deliberately cross-edition statements, and why.
+     * The deliberately cross-edition statements, and why.
      *
      * <ul>
      *   <li>The espace animateur token arrives on a public URL, with no
@@ -183,6 +184,12 @@ class IsolationEditionStructurelleTest {
      *       is a property of the table, not of an edition. Writing every other
      *       statement of that repository through {@code prepareScoped} is what
      *       keeps the exception to this one line.</li>
+     *   <li>{@code ParametresRepository.otherArmedEditionName} looks for the
+     *       edition whose nightly sends are armed, among all of them: the rule
+     *       it serves — one armed edition on the whole instance, since the
+     *       scheduler serves every armed edition — is by nature cross-edition.
+     *       It reads an edition name, and the write it guards stays
+     *       edition-scoped.</li>
      * </ul>
      */
     private static final List<String> EXCEPTIONS_ASSUMEES = List.of(
@@ -195,7 +202,9 @@ class IsolationEditionStructurelleTest {
             "SELECT s.id, s.libelle, s.automatique, s.score, s.nombre_affectations, s.cree_le, s.edition_id,"
                     + " s.publie_le, e.nom AS edition_nom, e.reference_modifie_le, s.consignes , s.contenu, s.kpi"
                     + " FROM plan_snapshot s LEFT JOIN edition e ON e.id = s.edition_id WHERE s.id = ?",
-            "DELETE FROM journal_action WHERE survenu_le < ?");
+            "DELETE FROM journal_action WHERE survenu_le < ?",
+            "SELECT p.edition_id, e.nom FROM parametres_notifications p JOIN edition e ON e.id = p.edition_id"
+                    + " WHERE p.actives");
 
     /**
      * The call sites whose SQL the scan cannot resolve, keyed by

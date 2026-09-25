@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.time.LocalTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import javax.sql.DataSource;
 
 /**
@@ -36,6 +37,12 @@ public class ParametresRepository {
         this.dataSource = dataSource;
         this.scope = scope;
     }
+
+    /** PostgreSQL's {@code unique_violation}: the only one this table can raise is the armed-edition index. */
+    private static final String UNIQUE_VIOLATION = "23505";
+
+    private static final String ARMED_EDITIONS = "SELECT p.edition_id, e.nom FROM parametres_notifications p"
+            + " JOIN edition e ON e.id = p.edition_id WHERE p.actives";
 
     public ParametresLegaux getParametresLegaux() {
         try (Connection connection = dataSource.getConnection();
@@ -230,7 +237,38 @@ public class ParametresRepository {
         }
     }
 
-    public void saveParametresNotifications(ParametresNotifications parametres) {
+    /**
+     * The name of the edition, other than the current one, whose scheduled
+     * notifications are armed — at most one, since
+     * {@code idx_parametres_notifications_actives_unique}.
+     *
+     * <p>Deliberately cross-edition: the rule it serves is "one armed edition
+     * on the whole instance", which no statement scoped to one edition can
+     * see. It reads an edition name and nothing else.</p>
+     */
+    public Optional<String> otherArmedEditionName() {
+        String courante = scope.editionId();
+        try (Connection connection = dataSource.getConnection();
+                PreparedStatement ps = connection.prepareStatement(ARMED_EDITIONS);
+                ResultSet rs = ps.executeQuery()) {
+            while (rs.next()) {
+                if (!rs.getString("edition_id").equals(courante)) {
+                    return Optional.of(rs.getString("nom"));
+                }
+            }
+            return Optional.empty();
+        } catch (SQLException e) {
+            throw new IllegalStateException("Failed to read the armed edition", e);
+        }
+    }
+
+    /**
+     * Saves the settings, answering {@code false} when the database refused
+     * them because another edition is armed — the unique index is the net
+     * behind the service's own check, which two concurrent saves could both
+     * pass.
+     */
+    public boolean saveParametresNotifications(ParametresNotifications parametres) {
         try (Connection connection = dataSource.getConnection();
                 PreparedStatement ps = scope.prepareScoped(connection, """
                         INSERT INTO parametres_notifications (edition_id, actives, heure_rappel_veille,
@@ -246,7 +284,11 @@ public class ParametresRepository {
             ps.setInt(4, parametres.delaiRelanceHeures());
             ps.setInt(5, parametres.ancienneteEchangeJours());
             ps.executeUpdate();
+            return true;
         } catch (SQLException e) {
+            if (UNIQUE_VIOLATION.equals(e.getSQLState())) {
+                return false;
+            }
             throw new IllegalStateException("Failed to save notification parameters", e);
         }
     }

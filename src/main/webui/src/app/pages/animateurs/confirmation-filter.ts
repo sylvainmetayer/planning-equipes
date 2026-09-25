@@ -1,12 +1,12 @@
 // The acknowledgement filters of the Animateurs page (issue #504), as a pure
-// function of one row's answer: « jamais confirmés » and « silencieux depuis
-// N jours ». Kept apart from the page so the rule — and the day arithmetic —
+// function of one row's answer: « jamais confirmés », « silencieux depuis
+// N jours » and « échec d'envoi ». Kept apart from the page so the rule — and the day arithmetic —
 // is pinned down without rendering a table.
 
 import type { ConfirmationView } from '../../core/models';
 
 /** What the « Accusés » select of the page offers. */
-export type ModeAccuses = 'tous' | 'jamais' | 'silence';
+export type ModeAccuses = 'tous' | 'jamais' | 'silence' | 'echec';
 
 /** The number of days the « silencieux depuis » control opens on. */
 export const SILENCE_JOURS_DEFAUT = 3;
@@ -15,8 +15,9 @@ const JOUR_MS = 24 * 60 * 60 * 1000;
 
 /**
  * Reads the two URL params. `silence` wins when it carries a positive whole
- * number of days; `confirmation=jamais` otherwise; anything else is the
- * default, never an error — an old link degrades to the whole table.
+ * number of days; `confirmation=jamais` or `confirmation=echec` otherwise;
+ * anything else is the default, never an error — an old link degrades to the
+ * whole table.
  */
 export function readModeAccuses(
   confirmation: string | null,
@@ -26,8 +27,8 @@ export function readModeAccuses(
   if (Number.isInteger(jours) && jours > 0) {
     return { mode: 'silence', jours };
   }
-  if (confirmation === 'jamais') {
-    return { mode: 'jamais', jours: SILENCE_JOURS_DEFAUT };
+  if (confirmation === 'jamais' || confirmation === 'echec') {
+    return { mode: confirmation, jours: SILENCE_JOURS_DEFAUT };
   }
   return { mode: 'tous', jours: SILENCE_JOURS_DEFAUT };
 }
@@ -41,6 +42,21 @@ export function readNeverReminded(relance: string | null): boolean {
 }
 
 /**
+ * Asked, not confirmed, and the last mail to them did not leave: somebody
+ * nobody could reach, which is not the same as somebody who stays silent — the
+ * gesture is a phone call or a corrected address, not another reminder. A
+ * fiche without an address is « sans e-mail », never a failure.
+ */
+export function sendFailed(confirmation: ConfirmationView | undefined): boolean {
+  return (
+    !!confirmation &&
+    confirmation.affecte &&
+    confirmation.statut !== 'CONFIRME' &&
+    confirmation.dernierEnvoi?.statut === 'ECHEC'
+  );
+}
+
+/**
  * Whether one animateur stays on screen under the chosen mode.
  *
  * Both modes only keep people the question was asked of — a seat in the
@@ -49,7 +65,10 @@ export function readNeverReminded(relance: string | null): boolean {
  * reminder when one went out) be older than N days: somebody reminded
  * yesterday is not yet worth a second gesture.
  *
- * « Jamais relancés », on top of either mode, drops whoever a reminder already
+ * « Échec d'envoi » keeps the people {@link sendFailed} designates, and they
+ * are no longer counted among the silent.
+ *
+ * « Jamais relancés », on top of any mode, drops whoever a reminder already
  * reached: what the home screen counts as « silencieux à relancer » is the
  * silent nobody has chased yet, and its link opens exactly that list.
  *
@@ -76,6 +95,13 @@ export function keptByAcknowledgement(
   }
   if (mode === 'jamais') {
     return true;
+  }
+  if (mode === 'echec') {
+    return sendFailed(confirmation);
+  }
+  // Nobody could reach them: not silent, and not for the same gesture.
+  if (sendFailed(confirmation)) {
+    return false;
   }
   const dernierEnvoi = confirmation.relanceLe ?? dernierePublicationLe;
   if (!dernierEnvoi) {

@@ -202,7 +202,8 @@ public class ParametresMcpTools {
             description = "Modifie les paramètres des notifications planifiées. Seuls les champs fournis sont "
                     + "modifiés. actives=true ARME DES ENVOIS DE COURRIELS automatiques nocturnes (rappel de la veille, "
                     + "relance des non-confirmés, alerte sur les échanges sans réponse) : cet outil n'envoie rien "
-                    + "lui-même, il autorise le planificateur à le faire. L'heure du rappel ne peut pas dépasser "
+                    + "lui-même, il autorise le planificateur à le faire. Une seule édition peut être armée à la fois : armer "
+                    + "une seconde édition est refusé tant que la première n'est pas désarmée. L'heure du rappel ne peut pas dépasser "
                     + "23:00 — plus tard, la tâche horaire passerait par-dessus et le rappel ne partirait jamais.",
             annotations =
                     @Tool.Annotations(

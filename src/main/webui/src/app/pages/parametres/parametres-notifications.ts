@@ -7,9 +7,11 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { AdminApi } from '../../core/api/admin-api';
+import { ApiError } from '../../core/api.service';
 import { ParametresNotifications } from '../../core/models';
 import { errorMessage } from '../../core/error-message';
 import { NotificationService } from '../../core/notification.service';
+import { StatusMessage } from '../../shared/status-message';
 
 /**
  * Latest sending time the hourly job can honour — mirrors
@@ -43,6 +45,7 @@ const HEURE_RAPPEL_MAX = '23:00';
     MatIconModule,
     MatInputModule,
     MatSlideToggleModule,
+    StatusMessage,
   ],
   templateUrl: './parametres-notifications.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -53,6 +56,12 @@ export class ParametresNotificationsPanel implements OnInit {
 
   protected readonly parametres = signal<ParametresNotifications | null>(null);
   protected readonly enregistrement = signal(false);
+  /**
+   * The server's refusal to arm this edition while another one is armed (a
+   * 409 naming it). Kept on the card rather than in a passing snack-bar: the
+   * way out is on another edition, and the sentence says which.
+   */
+  protected readonly refus = signal<string | null>(null);
 
   ngOnInit(): void {
     void this.charger();
@@ -130,6 +139,7 @@ export class ParametresNotificationsPanel implements OnInit {
       return;
     }
     this.enregistrement.set(true);
+    this.refus.set(null);
     try {
       this.parametres.set(await this.adminApi.saveNotificationSettings(parametres));
       this.notifications.notify({
@@ -138,6 +148,10 @@ export class ParametresNotificationsPanel implements OnInit {
         timeout: 4000,
       });
     } catch (error) {
+      if (error instanceof ApiError && error.status === 409) {
+        this.refus.set(error.message);
+        return;
+      }
       this.notifications.notify({
         title: $localize`:@@crud.error:Erreur`,
         message: errorMessage(error),

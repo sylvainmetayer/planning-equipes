@@ -777,9 +777,20 @@ normal sur une page rafraîchie. Confirmer avant toute publication répond `409`
 `GET /api/animateurs/confirmations` — une ligne par animateur, `NON_VU`
 compris, pour la colonne de la page Animateurs.
 
-`GET /api/animateurs/confirmations/synthese` — les mêmes réponses en trois
-nombres (confirmés, relancés, silencieux), comptés parmi les personnes qui ont
-un poste sur le plan publié, avec la date de cette publication.
+`GET /api/animateurs/confirmations/synthese` — les mêmes réponses en quatre
+nombres (confirmés, relancés, silencieux, échecs d'envoi), comptés parmi les
+personnes qui ont un poste sur le plan publié, avec la date de cette
+publication.
+
+**« A répondu » et « a pu être joint » sont deux questions**, et le statut ne
+porte que la première. `dernierEnvoi`, à côté, dit ce qu'est devenu le dernier
+courriel envoyé à la personne **depuis le dernier changement de son adresse**
+(`statut` : `ENVOYE`, `SANS_EMAIL` ou `ECHEC`, avec `categorieEchec`) — `null`
+quand il n'y en a pas. Modifier autre chose sur la fiche ne l'efface pas. Une personne non confirmée dont le dernier envoi est en
+échec compte dans `echecsEnvoi`, et **pas** parmi les relancés ni les
+silencieux : ce qu'elle appelle, c'est un appel ou une adresse corrigée, pas
+une relance de plus. `ENVOYE` veut dire accepté par le relais, jamais reçu :
+l'écran ne l'affiche pas comme une preuve.
 
 Trois statuts, et l'absence de ligne en base **vaut** `NON_VU` : la remise à
 zéro est une suppression, il n'y a donc jamais deux façons d'écrire « cette
@@ -816,12 +827,36 @@ qui ferme cette porte-là — une personne déjà en `RELANCE` est refusée, et 
 une republication qui bouge réellement son emploi du temps la remet à `NON_VU`,
 ce qui rouvre la relance. Le compte rendu ne
 porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
-`dejaRelancesPourCettePublication`, `echecs`, `sansPoste` — et un envoi
+`dejaRelancesPourCettePublication`, `echecs`, `sansPoste`, `adresseRefusee` — et un envoi
 échoué est **compté**, pas avalé : le geste est explicite, contrairement à
 la notification de nuit. Un échec **rend la clé** et laisse une alerte sur
 l'écran Notifications : le statut n'a pas bougé, la personne reste silencieuse,
-et réessayer est possible — de la main comme de la nuit. Une fiche sans adresse
-laisse la même trace. Refusé `400` tant que rien n'a jamais été publié, ou si
+et réessayer est possible à la main. **La nuit suit la même règle** : le statut
+ne passe à `RELANCE` qu'une fois le courriel parti, et un échec rend la clé
+partagée — la main n'est donc pas refusée comme « déjà relancée » — tandis
+qu'une clé propre à la nuit (`RELANCE_NUIT_TENTEE`) l'empêche de réessayer la
+même publication à chaque passage horaire. Une fiche sans adresse
+laisse la même trace. **Une adresse que le relais a refusée pour de bon** (un
+refus 5xx au dernier envoi) revient dans `adresseRefusee`, sans rien envoyer,
+tant que l'adresse n'a pas changé ; un échec temporaire (4xx) ne retient rien.
+
+**Aucun courriel ne part vers une adresse refusée, quel qu'il soit.** La règle
+est lue à un seul endroit (`MailDeliveryLog.blockedAddresses`) et chaque envoi
+la dit dans sa propre forme : statut `ADRESSE_REFUSEE` dans la trace et liste
+`adresseRefusee` dans le compte rendu d'une publication, `409` sur le renvoi
+individuel du planning, `400` sur la demande de code d'accès (la même réponse
+qu'une fiche sans adresse), liste `adresseRefusee` dans le compte rendu de
+l'invitation à déclarer. Un envoi sauté n'écrit rien dans le journal des
+envois : la dernière ligne reste le refus. Seul un changement d'adresse lève
+le blocage.
+
+`POST /api/animateurs/renvois` renvoie les envois dont le dernier a échoué pour
+une raison **temporaire**, chacun par le service qui le possède — donc avec
+ses règles : un renvoi de relance passe par la relance manuelle et sa règle
+d'une relance par publication. Le compte rendu ne porte que des ids :
+`renvoyes`, `echecs`, et `nonRenvoyables` avec leur `motif` (un code d'accès
+ou une notification d'échange ne se renvoient pas). Toujours `200`, compte
+rendu vide quand il n'y a rien à renvoyer. Refusé `400` tant que rien n'a jamais été publié, ou si
 un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le
 précédaient.
 
@@ -900,6 +935,13 @@ droit de faire **sur cette édition**.
 drapeau « en cours »** : aucun job ne peut deviner que les animateurs de
 l'édition 2025 ne sont pas ceux qu'il faut prévenir pour demain. La duplication
 d'une édition ne recopie pas ce réglage — une édition neuve naît muette.
+
+**Une seule édition armée sur l'instance.** Passer `actives` à `true` alors
+qu'une autre édition l'est déjà répond `409`, avec un message qui nomme
+l'édition armée : la tâche de nuit sert toutes les éditions armées, et deux
+d'entre elles partageant une date doublaient les rappels, chacun idempotent de
+son côté. L'index unique partiel de la table tient la règle même entre deux
+enregistrements simultanés.
 
 Le rythme de la machine, lui, n'est pas dans l'API : `NOTIFICATIONS_CRON` et
 `NOTIFICATIONS_TIMEZONE` (voir [`exploitation.md`](exploitation.md)).

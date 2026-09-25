@@ -610,12 +610,13 @@ public class EtatEditionService {
         Statut statut;
         if (synthese.jamaisPublie()) {
             statut = Statut.A_FAIRE;
-        } else if (synthese.silencieux() > 0 || synthese.relances() > 0) {
+        } else if (synthese.silencieux() > 0 || synthese.relances() > 0 || synthese.echecsEnvoi() > 0) {
             statut = Statut.ATTENTION;
         } else {
             statut = Statut.FAIT;
         }
-        return new EtatConfirmations(synthese.confirmes(), synthese.relances(), synthese.silencieux(), statut);
+        return new EtatConfirmations(
+                synthese.confirmes(), synthese.relances(), synthese.silencieux(), synthese.echecsEnvoi(), statut);
     }
 
     /**

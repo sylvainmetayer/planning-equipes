@@ -59,7 +59,7 @@ function etatVide(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'A_FAIRE',
     },
-    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    confirmations: { confirmes: 0, relances: 0, silencieux: 0, echecsEnvoi: 0, statut: 'A_FAIRE' },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
     aTraiter: {
       aujourdhui: '2026-07-10',
@@ -118,7 +118,7 @@ function etatComplet(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'FAIT',
     },
-    confirmations: { confirmes: 40, relances: 0, silencieux: 0, statut: 'FAIT' },
+    confirmations: { confirmes: 40, relances: 0, silencieux: 0, echecsEnvoi: 0, statut: 'FAIT' },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'FAIT' },
     ...partial,
   });
@@ -248,7 +248,13 @@ describe('buildLignes', () => {
 
   it('filters the animateurs on the silent ones as soon as somebody has not answered', () => {
     const etat = etatComplet({
-      confirmations: { confirmes: 30, relances: 4, silencieux: 6, statut: 'ATTENTION' },
+      confirmations: {
+        confirmes: 30,
+        relances: 4,
+        silencieux: 6,
+        echecsEnvoi: 0,
+        statut: 'ATTENTION',
+      },
     });
     const confirmations = buildLignes(etat).find((ligne) => ligne.id === 'confirmations')!;
     expect(confirmations.lien).toEqual({

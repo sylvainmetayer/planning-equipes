@@ -44,6 +44,7 @@ dev/sylvain/planning/api/DeclarationRateLimitTest.java
 dev/sylvain/planning/api/DemandeEchangeFlowTest.java
 dev/sylvain/planning/api/DeplacementResourceTest.java
 dev/sylvain/planning/api/EditionResourceTest.java
+dev/sylvain/planning/api/EnvoiMailResourceTest.java
 dev/sylvain/planning/api/EnvoiPlanningResourceTest.java
 dev/sylvain/planning/api/EquiteResourceTest.java
 dev/sylvain/planning/api/EspaceAccesTest.java
@@ -74,6 +75,7 @@ dev/sylvain/planning/api/OpenApiResourceTest.java
 dev/sylvain/planning/api/OuvertureStandsResourceTest.java
 dev/sylvain/planning/api/PangolinHeaderFilterTest.java
 dev/sylvain/planning/api/ParametresLegauxResourceTest.java
+dev/sylvain/planning/api/ParametresNotificationsResourceTest.java
 dev/sylvain/planning/api/PauseResourceTest.java
 dev/sylvain/planning/api/PlanSnapshotResourceTest.java
 dev/sylvain/planning/api/PlanningResourceTest.java

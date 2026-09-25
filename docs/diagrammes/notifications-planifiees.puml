@@ -15,6 +15,7 @@ participant RappelVeilleJob as veille
 participant RelanceConfirmationJob as relance
 participant AlerteEchangeJob as alerte
 participant JournalNotificationsRepository as journal
+participant MailDeliveryLog as envois
 participant NotificationDispatcher as dispatcher
 participant NotificationWriter as redacteur
 boundary "SMTP" as smtp
@@ -35,9 +36,14 @@ loop chaque édition
 end
 
 group dans chaque tâche, pour chaque destinataire
+  veille -> envois : blockedAddresses()
+  note right of envois : adresses refusées par le relais\nau dernier envoi, inchangées depuis
   alt pas d'e-mail sur la fiche
     veille -> journal : claim(RAPPEL_VEILLE_INJOIGNABLE, …, libellé, sévérité)
     note right : une alerte pour le coordinateur,\nréservée elle aussi : dite une seule fois
+  else adresse refusée par le relais
+    veille -> journal : claim(RAPPEL_VEILLE_INJOIGNABLE, …, libellé, sévérité)
+    note right : rien n'est tenté ni noté dans envoi_mail :\nla dernière ligne reste le refus
   else
     veille -> journal : claim(RAPPEL_VEILLE, clé, animateurId)
     note right of journal : (edition_id, type, clé) unique :\nun second passage ne réserve rien

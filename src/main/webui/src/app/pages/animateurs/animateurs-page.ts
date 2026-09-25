@@ -28,6 +28,7 @@ import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
 import {
   Animateur,
+  CategorieEchecEnvoi,
   ConfirmationView,
   StatutConfirmation,
   SyntheseConfirmations,
@@ -65,10 +66,12 @@ import {
   ModeAccuses,
   SILENCE_JOURS_DEFAUT,
   readModeAccuses,
+  sendFailed,
   readNeverReminded,
   keptByAcknowledgement,
 } from './confirmation-filter';
 import { resumeRelance } from './relance-resume';
+import { resumeRenvoi, temporaryFailures } from './renvoi-resume';
 
 /**
  * Animateurs CRUD. Minor/adult status is never stored: it is derived from the
@@ -222,6 +225,14 @@ export class AnimateursPage implements OnInit {
   /** The same answers in three numbers, for the head of the page; `null` until read, or when unreadable. */
   protected readonly synthese = signal<SyntheseConfirmations | null>(null);
 
+  /** How many people « Renvoyer les envois en échec » concerns; the button only shows above zero. */
+  protected readonly echecsTemporaires = computed(() =>
+    temporaryFailures(this.confirmations().values()),
+  );
+
+  /** True while a resend is under way: one click, one run. */
+  protected readonly resendInProgress = signal(false);
+
   /** « Confirmés 12 · Relancés 3 · Silencieux 5 — Dernière publication le … », or nothing to say yet. */
   protected readonly syntheseLabel = computed(() => {
     const synthese = this.synthese();
@@ -231,6 +242,9 @@ export class AnimateursPage implements OnInit {
     const publication = libelleDernierePublication(synthese, intlLocale());
     if (synthese.jamaisPublie) {
       return publication;
+    }
+    if (synthese.echecsEnvoi > 0) {
+      return $localize`:@@animateurs.syntheseAvecEchecs:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: · Échecs d'envoi ${synthese.echecsEnvoi}:echecs: — ${publication}:publication:`;
     }
     return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: — ${publication}:publication:`;
   });
@@ -383,7 +397,8 @@ export class AnimateursPage implements OnInit {
     keepViewInQueryParams(() => ({
       ...sortQueryParams(this.sort()),
       q: optionalParam(this.filtre()),
-      confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
+      confirmation:
+        this.accuses() === 'jamais' || this.accuses() === 'echec' ? this.accuses() : null,
       silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
       relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
       typologie: optionalParam(this.typologie()),
@@ -488,6 +503,45 @@ export class AnimateursPage implements OnInit {
   }
 
   /**
+   * « Renvoyer les envois en échec »: sends again every mail whose last
+   * attempt failed for a temporary reason, each through the service that owns
+   * it. A refused address stays blocked until it changes. The answers are
+   * reloaded so a mail that left takes its row off the failures at once.
+   */
+  protected async resendFailed(): Promise<void> {
+    const count = this.echecsTemporaires();
+    const confirmed = await this.confirmDialog.ask({
+      title: $localize`:@@animateurs.renvoyer.titre:Renvoyer ${count}:count: envoi(s) en échec ?`,
+      message: $localize`:@@animateurs.renvoyer.message:Chaque courriel en échec passager repart : planning, relance ou invitation. Une adresse refusée par le serveur d'envoi n'est pas retentée tant qu'elle n'est pas corrigée.`,
+      confirmLabel: $localize`:@@animateurs.relancer.confirm:Envoyer`,
+    });
+    if (!confirmed) {
+      return;
+    }
+    this.resendInProgress.set(true);
+    try {
+      const rapport = await this.animateursApi.resendFailed();
+      const noms = new Map(this.store.animateurs().map((each) => [each.id, nomAffiche(each)]));
+      const resume = resumeRenvoi(rapport, (id) => noms.get(id) || id);
+      this.notifications.notify({
+        title: resume.titre,
+        message: resume.details ?? '',
+        messageJournal: resume.detailsJournal ?? '',
+        variant: resume.variant,
+      });
+      await this.chargerConfirmations();
+    } catch (error) {
+      this.notifications.notify({
+        title: $localize`:@@crud.error:Erreur`,
+        message: errorMessage(error),
+        variant: 'error',
+      });
+    } finally {
+      this.resendInProgress.set(false);
+    }
+  }
+
+  /**
    * What the three states mean — none of it is guessable from the labels, and
    * two of the rules actively surprise people who assume otherwise.
    *
@@ -504,6 +558,9 @@ export class AnimateursPage implements OnInit {
     if (!confirmation?.affecte) {
       return '';
     }
+    if (sendFailed(confirmation)) {
+      return $localize`:@@animateurs.confirmation.echecEnvoi:Échec d'envoi`;
+    }
     return CONFIRMATION_LABELS[confirmation.statut]();
   }
 
@@ -514,6 +571,11 @@ export class AnimateursPage implements OnInit {
    */
   protected confirmationDate(animateur: Animateur): string | null {
     const confirmation = this.confirmations().get(animateur.id);
+    if (sendFailed(confirmation) && confirmation?.dernierEnvoi) {
+      const date = new Date(confirmation.dernierEnvoi.envoyeLe).toLocaleString(intlLocale());
+      const cause = echecEnvoiCause(confirmation.dernierEnvoi.categorieEchec);
+      return $localize`:@@animateurs.confirmation.echecLe:Échec d'envoi le ${date}:date: : ${cause}:cause:`;
+    }
     if (confirmation?.confirmeLe) {
       const date = new Date(confirmation.confirmeLe).toLocaleString(intlLocale());
       return $localize`:@@animateurs.confirmation.confirmeLe:Confirmé le ${date}:date:`;
@@ -597,12 +659,36 @@ export class AnimateursPage implements OnInit {
   }
 
   private openDialog(animateur: Animateur | null): void {
-    this.dialog.open<AnimateurFormDialog, AnimateurFormData, boolean>(AnimateurFormDialog, {
-      data: { animateur },
-      width: '44rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
+    const ref = this.dialog.open<AnimateurFormDialog, AnimateurFormData, boolean>(
+      AnimateurFormDialog,
+      {
+        data: { animateur, dernierEnvoiEchec: animateur ? this.lastSendFailure(animateur) : null },
+        width: '44rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
+    // A saved fiche lifts its send failure: the column must say so at once.
+    ref.afterClosed().subscribe((saved) => {
+      if (saved) {
+        void this.chargerConfirmations();
+      }
     });
+  }
+
+  /**
+   * « Dernier envoi en échec », with its date and cause, for the fiche — for
+   * anybody, seat or not: an access code that bounced is worth the same
+   * warning as a reminder.
+   */
+  private lastSendFailure(animateur: Animateur): string | null {
+    const envoi = this.confirmations().get(animateur.id)?.dernierEnvoi;
+    if (envoi?.statut !== 'ECHEC') {
+      return null;
+    }
+    const date = new Date(envoi.envoyeLe).toLocaleString(intlLocale());
+    const cause = echecEnvoiCause(envoi.categorieEchec);
+    return $localize`:@@animateurs.form.dernierEnvoiEchec:Dernier envoi en échec le ${date}:date: : ${cause}:cause:. Corriger l'adresse rétablit les envois.`;
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
@@ -641,6 +727,22 @@ export class AnimateursPage implements OnInit {
  * Called from a method, never at module scope: `$localize` only resolves once
  * `main.ts` has loaded the translations.
  */
+/** Why the last mail did not leave, in the organiser's words. */
+function echecEnvoiCause(categorie: CategorieEchecEnvoi | null): string {
+  switch (categorie) {
+    case 'ADRESSE_REFUSEE':
+      return $localize`:@@animateurs.echecEnvoi.adresseRefusee:adresse refusée par le relais — corriger l'adresse`;
+    case 'TEMPORAIRE':
+      return $localize`:@@animateurs.echecEnvoi.temporaire:échec temporaire, « Renvoyer les envois en échec » le retente`;
+    case 'RELAIS_INJOIGNABLE':
+      return $localize`:@@animateurs.echecEnvoi.relaisInjoignable:serveur d'envoi injoignable`;
+    case 'AUTHENTIFICATION':
+      return $localize`:@@animateurs.echecEnvoi.authentification:identifiants du serveur d'envoi refusés`;
+    default:
+      return $localize`:@@animateurs.echecEnvoi.autre:cause inconnue`;
+  }
+}
+
 const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
   NON_VU: () => $localize`:@@animateurs.confirmation.nonVu:Silencieux`,
   CONFIRME: () => $localize`:@@animateurs.confirmation.confirme:Confirmé`,
@@ -719,7 +821,11 @@ function rankConfirmation(
   const confirmation = confirmations.get(animateur.id);
   if (!confirmation?.affecte) {
     // Nothing was asked of them: last, because there is nothing to chase.
-    return 3;
+    return 4;
+  }
+  if (sendFailed(confirmation)) {
+    // Nobody could reach them: first, because a reminder will not.
+    return -1;
   }
   return CONFIRMATION_RANKS[confirmation.statut];
 }

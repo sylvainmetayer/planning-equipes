@@ -60,8 +60,8 @@ export function libelleDernierePublication(
 
 /**
  * Folds a publication report into a one-line title plus optional details
- * naming who was skipped (no address) or failed — the admin acts on names,
- * not counts.
+ * naming who was skipped (no address, refused address) or failed — the admin
+ * acts on names, not counts.
  */
 export function resumePublication(rapport: RapportPublication): {
   titre: string;
@@ -77,6 +77,13 @@ export function resumePublication(rapport: RapportPublication): {
   if (rapport.echecs.length > 0) {
     details.push(
       $localize`:@@publication.resume.echecs:Échec de l'envoi : ${rapport.echecs.join(', ')}:noms:`,
+    );
+  }
+  // Not attempted: the relay refused these addresses on the last send, and
+  // nothing leaves for them until the address is corrected.
+  if (rapport.adresseRefusee.length > 0) {
+    details.push(
+      $localize`:@@publication.resume.adresseRefusee:Adresse refusée au dernier envoi, non prévenu(s) — corrigez l'adresse ou appelez : ${rapport.adresseRefusee.join(', ')}:noms:`,
     );
   }
   // Said in the same breath as the sends, and not as a warning: deferring

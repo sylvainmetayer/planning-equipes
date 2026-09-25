@@ -110,8 +110,10 @@ public class PublicationMcpTools {
             description = "Publie le planning persisté : il est capturé comme instantané publié, puis chaque "
                     + "animateur concerné reçoit son planning par courriel. ENVOIE DES COURRIELS. Refusé si une "
                     + "résolution est en cours, s'il n'y a rien de résolu à publier, ou si personne n'est concerné — "
-                    + "consulter etat_publication d'abord. Les personnes sans adresse et les échecs d'envoi sont "
-                    + "comptés ici et détaillés par id par lister_destinataires_publication. L'argument exclusions "
+                    + "consulter etat_publication d'abord. Les personnes sans adresse, les échecs d'envoi et les "
+                    + "adresses refusées par le relais au dernier envoi (rien n'y est tenté tant que l'adresse n'a "
+                    + "pas changé) sont comptés ici et détaillés par id par lister_destinataires_publication. "
+                    + "L'argument exclusions "
                     + "diffère le message des ids qu'il nomme : ces personnes ne reçoivent rien et restent à "
                     + "prévenir à la publication suivante, avec l'écart accumulé depuis leur dernier message.",
             annotations =
@@ -134,7 +136,8 @@ public class PublicationMcpTools {
                 rapport.envoyes(),
                 rapport.sansEmail().size(),
                 rapport.echecs().size(),
-                rapport.differes().size());
+                rapport.differes().size(),
+                rapport.adresseRefusee().size());
     }
 
     @Tool(
@@ -162,8 +165,9 @@ public class PublicationMcpTools {
     @Tool(
             name = "envoyer_planning_animateur",
             description = "Renvoie à un animateur son planning tel qu'il a été publié — pas le planning de "
-                    + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu "
-                    + "ou si la fiche ne porte pas d'adresse.",
+                    + "travail en cours. ENVOIE UN COURRIEL. Échoue si rien n'a jamais été publié, si l'id est inconnu, "
+                    + "si la fiche ne porte pas d'adresse, ou si le relais a refusé cette adresse au dernier envoi "
+                    + "et qu'elle n'a pas changé depuis.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,
@@ -192,7 +196,9 @@ public class PublicationMcpTools {
                     + "planning publié, sans attendre la relance automatique de nuit. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
                     + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
-                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites. "
+                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites, tout "
+                    + "comme celles dont l'adresse a été refusée par le relais au dernier envoi (adresseRefusee) "
+                    + "tant que leur adresse n'a pas changé. "
                     + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Consulter synthese_confirmations "
                     + "ou lister_animateurs d'abord.",
             annotations =
@@ -211,13 +217,14 @@ public class PublicationMcpTools {
                 rapport.sansEmail(),
                 rapport.dejaRelancesPourCettePublication(),
                 rapport.echecs(),
-                rapport.sansPoste());
+                rapport.sansPoste(),
+                rapport.adresseRefusee());
     }
 
     @Tool(
             name = "synthese_confirmations",
-            description = "Accusés de réception du planning publié en trois nombres — confirmés, relancés, "
-                    + "silencieux — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
+            description = "Accusés de réception du planning publié en quatre nombres — confirmés, relancés, "
+                    + "silencieux, échecs d'envoi (le dernier courriel n'est pas parti : à appeler ou à corriger) — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
                     + "dernière publication. N'envoie rien. jamaisPublie vrai veut dire que la question n'a encore "
                     + "été posée à personne.",
             annotations =
@@ -233,6 +240,7 @@ public class PublicationMcpTools {
                 synthese.confirmes(),
                 synthese.relances(),
                 synthese.silencieux(),
+                synthese.echecsEnvoi(),
                 synthese.dernierePublicationLe(),
                 synthese.jamaisPublie());
     }
@@ -296,7 +304,7 @@ public class PublicationMcpTools {
     /**
      * One line of a publication's trace.
      *
-     * @param statut     ENVOYE, SANS_EMAIL, ECHEC ou EXCLU — the counts of
+     * @param statut     ENVOYE, SANS_EMAIL, ECHEC, ADRESSE_REFUSEE ou EXCLU — the counts of
      *                   {@code publier_planning}, named by id
      * @param changements what that person was told, exactly as their mail
      *                    worded it
@@ -310,9 +318,18 @@ public class PublicationMcpTools {
      *                    them by id
      * @param differes    how many were deliberately left out of this send;
      *                    the same tool names them by id, with the statut EXCLU
+     * @param adresseRefusee how many were not written to because the relay
+     *                    refused their address on the last send; statut
+     *                    ADRESSE_REFUSEE in the same tool
      */
     public record RapportPublicationView(
-            long snapshotId, Instant publieLe, int envoyes, int sansAdresse, int echecs, int differes) {}
+            long snapshotId,
+            Instant publieLe,
+            int envoyes,
+            int sansAdresse,
+            int echecs,
+            int differes,
+            int adresseRefusee) {}
 
     public record EnvoiView(boolean envoye, String echec) {}
 
@@ -331,12 +348,18 @@ public class PublicationMcpTools {
             List<String> sansEmail,
             List<String> dejaRelancesPourCettePublication,
             List<String> echecs,
-            List<String> sansPoste) {}
+            List<String> sansPoste,
+            List<String> adresseRefusee) {}
 
     /**
      * @param dernierePublicationLe the publication the answers are about;
      *                              {@code null} when nothing was ever published
      */
     public record SyntheseConfirmationsView(
-            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
+            int confirmes,
+            int relances,
+            int silencieux,
+            int echecsEnvoi,
+            Instant dernierePublicationLe,
+            boolean jamaisPublie) {}
 }

@@ -40,7 +40,6 @@
     "ActionHistorique": "ActionView",
     "NouvelleDemandeEchange": "NouvelleDemande",
     "ImpactImport": "ImportImpact",
-    "CompteRenduEnvoi": "InvitationReport",
     "FichierSauvegarde": "BackupFile",
     "ExecutionSauvegarde": "BackupRun",
     "EtatSauvegarde": "BackupState",
@@ -80,9 +79,13 @@
     "ChangementSiege": "SeatLine",
     "TitulaireSiege": "Holder",
     "ChangementAnimateur": "AnimateurLine",
-    "ChangementAnimateurLigne": "AnimateurChange"
+    "ChangementAnimateurLigne": "AnimateurChange",
+    "DernierEnvoi": "LastDelivery",
+    "NonRenvoye": "NotResent",
+    "RapportRenvoi": "ResendReport"
   },
   "horsContrat": {
+    "CompteRenduEnvoi": "L'envoi individuel répond par une Response dont le corps, DeliveryReport, n'a pas de schéma publié ; il était rattaché à InvitationReport pour la forme, qui porte désormais adresseRefusee alors que l'envoi individuel refuse en 409 une adresse refusée.",
     "ConstraintDiagnostic": "ConstraintResource réemballe le diagnostic dans ses propres vues ; ce type-ci est la forme du front, sans schéma équivalent.",
     "PlanningDiagnostic": "Même raison que ConstraintDiagnostic.",
     "AffectationExplanation": "Idem : l'explication est réemballée par la resource.",

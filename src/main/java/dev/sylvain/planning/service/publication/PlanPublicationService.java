@@ -8,6 +8,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
 import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
@@ -83,6 +85,8 @@ public class PlanPublicationService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final SolverJobService solverJobService;
 
     private final ValidationPrerequisService prerequisService;
@@ -107,6 +111,7 @@ public class PlanPublicationService {
             ReferenceDataService referenceDataService,
             PlanningExportService planningExportService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             SolverJobService solverJobService,
             ValidationPrerequisService prerequisService,
             EditionContext editionContext,
@@ -123,6 +128,7 @@ public class PlanPublicationService {
         this.referenceDataService = referenceDataService;
         this.planningExportService = planningExportService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.solverJobService = solverJobService;
         this.prerequisService = prerequisService;
         this.editionContext = editionContext;
@@ -206,19 +212,23 @@ public class PlanPublicationService {
      *
      * @param sansEmail names of concerned people with no address on their fiche
      * @param echecs    names of concerned people whose mail did not leave
+     * @param adresseRefusee names of concerned people nothing was attempted
+     *                  for: the relay refused their address for good on the
+     *                  last send, and it has not changed since
      * @param differes  names of the people the admin took out of this send.
      *                  They keep the reference they really received, so they
      *                  come back in the next count with the écart accumulated
      *                  since — nothing is lost by deferring somebody
      */
-    @Schema(requiredProperties = {"envoyes", "snapshotId"})
+    @Schema(requiredProperties = {"envoyes", "snapshotId", "adresseRefusee"})
     public record RapportPublication(
             long snapshotId,
             Instant publieLe,
             int envoyes,
             List<String> sansEmail,
             List<String> echecs,
-            List<String> differes) {}
+            List<String> differes,
+            List<String> adresseRefusee) {}
 
     /* ------------------------------- Preview ------------------------------- */
 
@@ -470,13 +480,21 @@ public class PlanPublicationService {
         List<Destinataire> trace = new ArrayList<>();
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
+        List<String> adresseRefusee = new ArrayList<>();
+        Set<String> bloquees = deliveries.blockedAddresses();
         int envoyes = 0;
         for (DestinatairePublication destinataire : retenus) {
-            StatutEnvoi statut = send(planning, reference, referencesParAnimateur, destinataire);
+            StatutEnvoi statut = bloquees.contains(destinataire.animateurId())
+                    ? StatutEnvoi.ADRESSE_REFUSEE
+                    : send(planning, reference, referencesParAnimateur, destinataire);
             switch (statut) {
                 case ENVOYE -> envoyes++;
                 case SANS_EMAIL -> sansEmail.add(destinataire.nomAffiche());
                 case ECHEC -> echecs.add(destinataire.nomAffiche());
+                // Not attempted and not journalled: the last line of their
+                // delivery journal stays the refusal. Traced all the same, so
+                // their espace replays what the mail would have said.
+                case ADRESSE_REFUSEE -> adresseRefusee.add(destinataire.nomAffiche());
                 case EXCLU -> {
                     // Never an outcome of a send: excluded recipients are traced apart, unsent.
                 }
@@ -535,7 +553,8 @@ public class PlanPublicationService {
                 envoyes,
                 List.copyOf(sansEmail),
                 List.copyOf(echecs),
-                differes.stream().map(DestinatairePublication::nomAffiche).toList());
+                differes.stream().map(DestinatairePublication::nomAffiche).toList(),
+                List.copyOf(adresseRefusee));
     }
 
     private StatutEnvoi send(
@@ -544,26 +563,30 @@ public class PlanPublicationService {
             Map<String, List<Vacation>> referencesParAnimateur,
             DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
+            deliveries.recordNoAddress(destinataire.animateurId(), MailKind.PLANNING_PUBLIE);
             return StatutEnvoi.SANS_EMAIL;
         }
         try {
             byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, destinataire.animateurId());
             Animateur animateur = animateur(destinataire.animateurId());
-            mailService.sendPlanningPublie(
-                    destinataire.email(),
-                    pdf,
-                    PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
-                    new MailService.PlanningPublie(
-                            animateur == null ? null : animateur.getPrenom(),
-                            planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
-                            destinataire.premiereDiffusion(),
-                            destinataire.changements(),
-                            destinataire.demandes(),
-                            consigneService.lignesJourneesModifiees(datesConcernees(
-                                    planning,
-                                    reference,
-                                    referencesParAnimateur.get(destinataire.animateurId()),
-                                    destinataire.animateurId()))));
+            deliveries.send(
+                    destinataire.animateurId(),
+                    MailKind.PLANNING_PUBLIE,
+                    () -> mailService.sendPlanningPublie(
+                            destinataire.email(),
+                            pdf,
+                            PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
+                            new MailService.PlanningPublie(
+                                    animateur == null ? null : animateur.getPrenom(),
+                                    planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
+                                    destinataire.premiereDiffusion(),
+                                    destinataire.changements(),
+                                    destinataire.demandes(),
+                                    consigneService.lignesJourneesModifiees(datesConcernees(
+                                            planning,
+                                            reference,
+                                            referencesParAnimateur.get(destinataire.animateurId()),
+                                            destinataire.animateurId())))));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());

@@ -48,6 +48,7 @@
     Adresse des notifications envoyées à l'animateur (code d'accès, échanges, rappels).
   </mat-hint>
 </mat-form-field>
+<app-status-message class="span-2" [text]="dernierEnvoiEchec" tone="warning" />
 @if (moinsDe16Ans()) {
   <p class="form-warning" i18n="@@animateurs.warning.moinsDe16Ans">
     Cet animateur a moins de 16 ans. Le planning appliquera automatiquement les règles renforcées (7 h par jour,

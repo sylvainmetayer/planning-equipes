@@ -43,6 +43,7 @@ public final class CatalogueActions {
     private static final String ANIMATEUR_COMPETENCES_GRILLE = "ANIMATEUR_COMPETENCES_GRILLE";
     private static final String COMPETENCES_IMPORTEES = "COMPETENCES_IMPORTEES";
     private static final String ANIMATEURS_RELANCES = "ANIMATEURS_RELANCES";
+    private static final String ENVOIS_RENVOYES = "ENVOIS_RENVOYES";
     private static final String STAND_CREE = "STAND_CREE";
     private static final String STAND_MODIFIE = "STAND_MODIFIE";
     private static final String STAND_SUPPRIME = "STAND_SUPPRIME";
@@ -201,6 +202,7 @@ public final class CatalogueActions {
         changesData(ANIMATEUR_COMPETENCES_GRILLE, "Grille des compétences enregistrée", Entite.ANIMATEUR);
         changesData(COMPETENCES_IMPORTEES, "Grille des compétences importée depuis un fichier", Entite.ANIMATEUR);
         action(ANIMATEURS_RELANCES, "Animateurs relancés à la main", Entite.ANIMATEUR);
+        action(ENVOIS_RENVOYES, "Envois en échec renvoyés", Entite.ANIMATEUR);
 
         /* -------------------------- Stands -------------------------- */
         changesData(STAND_CREE, "Stand ajouté", Entite.STAND);
@@ -393,6 +395,7 @@ public final class CatalogueActions {
         route("AnimateurResource#saveCompetencesGrid", ANIMATEUR_COMPETENCES_GRILLE);
         route("AnimateurResource#importCompetencesGrid", COMPETENCES_IMPORTEES);
         route("AnimateurResource#relancer", ANIMATEURS_RELANCES);
+        route("AnimateurResource#resendFailed", ENVOIS_RENVOYES);
 
         route("StandResource#createStand", STAND_CREE);
         route("StandResource#updateStand", STAND_MODIFIE);

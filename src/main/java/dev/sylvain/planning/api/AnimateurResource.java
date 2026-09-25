@@ -4,6 +4,7 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.service.profile.AnimateurProfile;
 import dev.sylvain.planning.service.profile.AnimateurProfileService;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
+import dev.sylvain.planning.service.publication.FailedMailResendService;
 import dev.sylvain.planning.service.publication.RelanceManuelleService;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportReport;
 import dev.sylvain.planning.service.referentiel.AnimateurCsvImportRequest;
@@ -45,6 +46,8 @@ public class AnimateurResource {
 
     private final RelanceManuelleService relanceService;
 
+    private final FailedMailResendService resendService;
+
     private final AnimateurCsvImportService csvImport;
 
     private final CompetencesGrilleService competencesGrille;
@@ -56,12 +59,14 @@ public class AnimateurResource {
             ReferenceDataService referenceDataService,
             ConfirmationPlanningService confirmationService,
             RelanceManuelleService relanceService,
+            FailedMailResendService resendService,
             AnimateurCsvImportService csvImport,
             CompetencesGrilleService competencesGrille,
             AnimateurProfileService profileService) {
         this.referenceDataService = referenceDataService;
         this.confirmationService = confirmationService;
         this.relanceService = relanceService;
+        this.resendService = resendService;
         this.csvImport = csvImport;
         this.competencesGrille = competencesGrille;
         this.profileService = profileService;
@@ -125,6 +130,22 @@ public class AnimateurResource {
     @Path("/relances")
     public RelanceManuelleService.RapportRelance relancer(RelanceDemande demande) {
         return relanceService.relancer(demande == null ? null : demande.animateurIds());
+    }
+
+    /**
+     * « Renvoyer les envois en échec »: sends again every mail to an animateur
+     * whose last one failed for a temporary reason — relay down, « try
+     * later » — each through the service that owns it, so it keeps that
+     * service's rules. A refused address stays blocked until it changes. The
+     * report carries ids only: sent again, failed again, and left alone with
+     * the reason. Always {@code 200}, with an empty report when there is
+     * nothing to resend.
+     */
+    @POST
+    @Path("/renvois")
+    @Consumes(MediaType.WILDCARD)
+    public FailedMailResendService.ResendReport resendFailed() {
+        return resendService.resendFailed();
     }
 
     /**

@@ -154,6 +154,33 @@ vivent maintenant à deux endroits : `MailService` pour la seconde,
 (`Notification`, interface scellée), `NotificationWriter` le rédige par `switch`
 exhaustif, et le `catch` n'est écrit qu'une fois.
 
+### Le résultat d'un envoi se note à côté, sans changer qui échoue
+
+Chaque courriel à un animateur laisse son résultat dans `envoi_mail` (parti,
+sans adresse, échec et sa catégorie), par `service/mail/MailDeliveryLog`.
+L'enregistrement se fait **à côté** de l'envoi, jamais à la place d'une des
+deux politiques : `MailDeliveryLog.send` enveloppe un appel à `MailService`,
+note l'échec puis **relance l'exception telle quelle** ; `NotificationDispatcher`
+note le résultat des notifications adressées à un animateur
+(`Notification.ToAnimateur`) et garde son unique `catch`. Et le journal avale
+ses **propres** pannes : une ligne impossible à écrire ne transforme ni un
+courriel parti en erreur, ni un échec en un autre.
+
+La catégorie se lit dans l'exception du client SMTP (`MailFailure.classify`,
+code de réponse 4xx / 5xx), et le « dernier envoi » d'une personne est le plus
+récent **depuis le dernier changement de son adresse**
+(`animateur.email_modifie_le`, que seul l'upsert de la fiche fait bouger, et
+seulement quand l'adresse change) : un envoi plus ancien ne dit rien de
+l'adresse qu'elle porte maintenant. C'est ce qui fait qu'une adresse corrigée
+lève d'elle-même le refus du relais, et qu'une autre modification de la fiche
+ne le lève pas.
+
+Le même journal dit **vers quelles adresses plus rien ne part**
+(`MailDeliveryLog.blockedAddresses`) : chaque envoi — publication, planning
+individuel, code d'accès, invitation, relances, rappel de la veille, et les
+notifications `ToAnimateur` dans `NotificationDispatcher` — lit cette règle au
+lieu de la recoder, et un envoi qu'elle saute n'écrit rien.
+
 ### Le texte des mails est dans des gabarits, pas dans le Java
 
 Chaque mail est une paire de gabarits Qute sous

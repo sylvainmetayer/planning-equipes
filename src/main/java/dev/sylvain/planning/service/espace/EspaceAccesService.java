@@ -5,6 +5,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,6 +62,8 @@ public class EspaceAccesService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final CodeRequestLimiter limiteurDemandesCode;
 
     @Inject
@@ -69,12 +73,14 @@ public class EspaceAccesService {
             EditionContext editionContext,
             ReferenceDataService referenceDataService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             CodeRequestLimiter limiteurDemandesCode) {
         this.dataSource = dataSource;
         this.scope = scope;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.limiteurDemandesCode = limiteurDemandesCode;
     }
 
@@ -111,6 +117,16 @@ public class EspaceAccesService {
                     "Aucune adresse e-mail n'est enregistrée pour vous : contactez l'organisation "
                             + "pour la faire ajouter à votre fiche.");
         }
+        // The relay refused this address for good on the last send: no code
+        // leaves for it until the organisation corrects it. Answered like the
+        // missing address above — the same 400, a sentence that invites to
+        // contact the organisation and says nothing the token's holder does
+        // not already know — and before the limiter, which counts sends.
+        if (deliveries.isAddressBlocked(animateurId)) {
+            throw new BusinessError.Invalid(
+                    "Le code ne peut pas être envoyé à l'adresse e-mail enregistrée pour vous : contactez "
+                            + "l'organisation pour la faire vérifier sur votre fiche.");
+        }
         // After the address check, before the send: a record without an address
         // consumes nothing, and every mail actually sent is counted.
         RateLimitVerdict verdict = limiteurDemandesCode.request(rateKey(animateurId));
@@ -137,7 +153,10 @@ public class EspaceAccesService {
         // valid code behind that the animateur never received? It does — but a
         // replaced code is strictly safer than the previous one, and the next
         // request will replace it again. The send failure itself propagates.
-        mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code);
+        deliveries.send(
+                animateurId,
+                MailKind.CODE_ACCES,
+                () -> mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code));
         return new CodeEnvoye(mask(animateur.getEmail()));
     }
 

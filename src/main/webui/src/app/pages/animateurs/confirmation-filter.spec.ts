@@ -9,6 +9,7 @@ import {
   readModeAccuses,
   readNeverReminded,
   keptByAcknowledgement,
+  sendFailed,
 } from './confirmation-filter';
 
 const PUBLICATION = '2026-07-01T10:00:00Z';
@@ -22,6 +23,7 @@ function reponse(patch: Partial<ConfirmationView> = {}): ConfirmationView {
     affecte: true,
     confirmeLe: null,
     relanceLe: null,
+    dernierEnvoi: null,
     ...patch,
   };
 }
@@ -124,5 +126,53 @@ describe('« jamais relancés »', () => {
   it('leaves the default mode showing everybody', () => {
     const relance = reponse({ statut: 'RELANCE', relanceLe: '2026-06-01T10:00:00Z' });
     expect(keptByAcknowledgement('tous', 3, relance, PUBLICATION, MAINTENANT, true)).toBe(true);
+  });
+});
+
+describe("« échec d'envoi »", () => {
+  const echec = reponse({
+    dernierEnvoi: {
+      type: 'RELANCE_MANUELLE',
+      statut: 'ECHEC',
+      categorieEchec: 'ADRESSE_REFUSEE',
+      envoyeLe: '2026-07-03T10:00:00Z',
+    },
+  });
+
+  it('is read from `confirmation=echec`', () => {
+    expect(readModeAccuses('echec', null).mode).toBe('echec');
+  });
+
+  it('keeps the people the last mail did not reach, and nobody else', () => {
+    expect(keptByAcknowledgement('echec', 3, echec, PUBLICATION, MAINTENANT)).toBe(true);
+    expect(keptByAcknowledgement('echec', 3, reponse(), PUBLICATION, MAINTENANT)).toBe(false);
+    const parti = reponse({
+      dernierEnvoi: {
+        type: 'PLANNING_PUBLIE',
+        statut: 'ENVOYE',
+        categorieEchec: null,
+        envoyeLe: PUBLICATION,
+      },
+    });
+    expect(keptByAcknowledgement('echec', 3, parti, PUBLICATION, MAINTENANT)).toBe(false);
+  });
+
+  it('is not a silence: nobody could reach them', () => {
+    expect(keptByAcknowledgement('silence', 3, echec, PUBLICATION, MAINTENANT)).toBe(false);
+    // Still somebody who never confirmed.
+    expect(keptByAcknowledgement('jamais', 3, echec, PUBLICATION, MAINTENANT)).toBe(true);
+  });
+
+  it('never marks the confirmed, nor a fiche without an address', () => {
+    expect(sendFailed({ ...echec, statut: 'CONFIRME' })).toBe(false);
+    const noAddress = reponse({
+      dernierEnvoi: {
+        type: 'PLANNING_PUBLIE',
+        statut: 'SANS_EMAIL',
+        categorieEchec: null,
+        envoyeLe: PUBLICATION,
+      },
+    });
+    expect(sendFailed(noAddress)).toBe(false);
   });
 });

@@ -75,6 +75,7 @@ const SYNTHESE_VIDE = {
   confirmes: 0,
   relances: 0,
   silencieux: 0,
+  echecsEnvoi: 0,
   dernierePublicationLe: null,
   jamaisPublie: true,
 };
@@ -187,6 +188,7 @@ describe('AnimateursPage table', () => {
     confirmations: ReturnType<typeof vi.fn>;
     syntheseConfirmations: ReturnType<typeof vi.fn>;
     remind: ReturnType<typeof vi.fn>;
+    resendFailed: ReturnType<typeof vi.fn>;
   };
   const editingLocked = signal(false);
 
@@ -262,7 +264,9 @@ describe('AnimateursPage table', () => {
         dejaRelancesPourCettePublication: [],
         echecs: [],
         sansPoste: [],
+        adresseRefusee: [],
       })),
+      resendFailed: vi.fn(async () => ({ renvoyes: [], echecs: [], nonRenvoyables: [] })),
     };
     TestBed.configureTestingModule({
       providers: [
@@ -377,6 +381,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'relance',
@@ -384,6 +389,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'silencieux',
@@ -391,6 +397,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'sansPoste',
@@ -398,6 +405,7 @@ describe('AnimateursPage table', () => {
         affecte: false,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
     ]);
     await rendre([
@@ -429,6 +437,7 @@ describe('AnimateursPage table', () => {
       dejaRelancesPourCettePublication: [],
       echecs: [],
       sansPoste: [],
+      adresseRefusee: [],
     });
     await rendre([
       person('alice', { prenom: 'Alice', nom: 'Martin' }),
@@ -459,11 +468,68 @@ describe('AnimateursPage table', () => {
     expect(racine().querySelector('app-bulk-actions-bar')).toBeNull();
   });
 
+  // « Renvoyer les envois en échec »: only there when something can be sent
+  // again, and a refused address is not something that can.
+
+  it('offers the resend only when a temporary failure is on the table', async () => {
+    const echec = (categorieEchec: string) => ({
+      statut: 'NON_VU',
+      affecte: true,
+      confirmeLe: null,
+      relanceLe: null,
+      dernierEnvoi: {
+        type: 'RELANCE_NUIT',
+        statut: 'ECHEC',
+        categorieEchec,
+        envoyeLe: '2026-07-01T20:00:00Z',
+      },
+    });
+    animateursApi.confirmations.mockResolvedValue([
+      { animateurId: 'alice', nomAffiche: 'Alice Martin', ...echec('ADRESSE_REFUSEE') },
+    ]);
+    await rendre([person('alice', { prenom: 'Alice', nom: 'Martin' })]);
+    expect(racine().querySelector('.renvoyer-echecs')).toBeNull();
+
+    animateursApi.confirmations.mockResolvedValue([
+      { animateurId: 'alice', nomAffiche: 'Alice Martin', ...echec('ADRESSE_REFUSEE') },
+      { animateurId: 'bob', nomAffiche: 'Bob Durand', ...echec('TEMPORAIRE') },
+    ]);
+    await rendre([
+      person('alice', { prenom: 'Alice', nom: 'Martin' }),
+      person('bob', { prenom: 'Bob', nom: 'Durand' }),
+    ]);
+    const bouton = racine().querySelector('.renvoyer-echecs') as HTMLButtonElement;
+    expect(bouton.textContent).toContain('Renvoyer les envois en échec');
+
+    bouton.click();
+    await fixture.whenStable();
+    // Mails leave: nothing happens on a click that was not confirmed.
+    expect(animateursApi.resendFailed).not.toHaveBeenCalled();
+    expect(confirm.ask.mock.calls.at(-1)![0].title).toContain('1');
+
+    animateursApi.resendFailed.mockResolvedValue({
+      renvoyes: ['bob'],
+      echecs: [],
+      nonRenvoyables: [],
+    });
+    confirm.ask.mockResolvedValue(true);
+    const chargements = animateursApi.confirmations.mock.calls.length;
+    bouton.click();
+    await fixture.whenStable();
+    expect(animateursApi.resendFailed).toHaveBeenCalledOnce();
+    const dernier = notify.mock.calls.at(-1)![0];
+    expect(dernier.title).toBe('1 envoi(s) reparti(s)');
+    expect(dernier.variant).toBe('success');
+    // Reloaded, so a mail that left takes its row off the failures at once.
+    expect(animateursApi.confirmations.mock.calls.length).toBe(chargements + 1);
+  });
+
   it('heads the page with the three counts and the last publication', async () => {
     animateursApi.syntheseConfirmations.mockResolvedValue({
       confirmes: 12,
       relances: 3,
       silencieux: 5,
+      echecsEnvoi: 0,
       dernierePublicationLe: '2026-07-01T10:00:00Z',
       jamaisPublie: false,
     });

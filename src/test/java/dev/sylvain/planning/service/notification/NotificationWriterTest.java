@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
 import java.time.ZoneId;
@@ -120,8 +121,8 @@ class NotificationWriterTest {
     // --- Solicited and declined (targeted colleague) -----------------------
 
     @Test
-    void leCollegueCibleEstRenvoyeVersSonEspace() {
-        MailDraft courrier = rediger(new Notification.TargetSolicited("bob@example.org", "Alice Dupont", 2));
+    void theSolicitedColleagueIsSentToTheirEspace() {
+        MailDraft courrier = rediger(new Notification.TargetSolicited("B1", "bob@example.org", "Alice Dupont", 2));
 
         assertThat(courrier.destinataire()).isEqualTo("bob@example.org");
         assertThat(courrier.sujet()).contains("Alice Dupont").contains("des échanges de créneaux");
@@ -129,14 +130,28 @@ class NotificationWriterTest {
     }
 
     @Test
-    void unDeclinDitAuDemandeurQuIlPeutProposerAilleurs() {
+    void aDeclineTellsTheRequesterTheyMayProposeElsewhere() {
         MailDraft courrier =
-                rediger(new Notification.DemandeDeclinee("alice@example.org", "Bob Martin", "samedi 10h-12h"));
+                rediger(new Notification.DemandeDeclinee("A1", "alice@example.org", "Bob Martin", "samedi 10h-12h"));
 
         assertThat(courrier.corps())
                 .contains("Bob Martin a décliné")
                 .contains("(créneau samedi 10h-12h)")
                 .contains("proposer l'échange à quelqu'un d'autre");
+    }
+
+    /** Both are written to one animateur, so their outcome lands in the delivery journal by id. */
+    @Test
+    void bothSwapMailsNameTheAnimateurTheyAreWrittenTo() {
+        Notification.ToAnimateur sollicitation =
+                new Notification.TargetSolicited("B1", "bob@example.org", "Alice Dupont", 1);
+        Notification.ToAnimateur declin =
+                new Notification.DemandeDeclinee("A1", "alice@example.org", "Bob Martin", "samedi 10h-12h");
+
+        assertThat(sollicitation.animateurId()).isEqualTo("B1");
+        assertThat(sollicitation.kind()).isEqualTo(MailKind.ECHANGE_SOLLICITATION);
+        assertThat(declin.animateurId()).isEqualTo("A1");
+        assertThat(declin.kind()).isEqualTo(MailKind.ECHANGE_DECLINEE);
     }
 
     // --- End of a solve (admin) --------------------------------------------

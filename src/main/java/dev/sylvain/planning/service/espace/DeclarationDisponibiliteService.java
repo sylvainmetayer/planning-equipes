@@ -6,6 +6,8 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.Avertissement;
@@ -86,6 +88,8 @@ public class DeclarationDisponibiliteService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final ApplicationLinks liens;
 
     /**
@@ -102,6 +106,7 @@ public class DeclarationDisponibiliteService {
             ReferenceDataService referenceDataService,
             TypologieService typologieService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             ApplicationLinks liens,
             Event<Notification> notifications) {
         this.repository = repository;
@@ -109,6 +114,7 @@ public class DeclarationDisponibiliteService {
         this.referenceDataService = referenceDataService;
         this.typologieService = typologieService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.liens = liens;
         this.notifications = notifications;
     }
@@ -197,9 +203,13 @@ public class DeclarationDisponibiliteService {
      * Outcome of the invitation mails, in the shape
      * {@link PlanningDeliveryService.DeliveryReport} already uses: names ready
      * to be shown to the admin as-is.
+     *
+     * @param adresseRefusee not attempted: the relay refused their address for
+     *                       good on the last send, and it has not changed since
      */
-    @Schema(requiredProperties = {"envoyes"})
-    public record InvitationReport(int envoyes, List<String> sansEmail, List<String> echecs) {}
+    @Schema(requiredProperties = {"envoyes", "adresseRefusee"})
+    public record InvitationReport(
+            int envoyes, List<String> sansEmail, List<String> echecs, List<String> adresseRefusee) {}
 
     /**
      * Mails every animateur their own espace link, inviting them to declare.
@@ -220,14 +230,57 @@ public class DeclarationDisponibiliteService {
         int envoyes = 0;
         List<String> sansEmail = new ArrayList<>();
         List<String> echecs = new ArrayList<>();
+        List<String> adresseRefusee = new ArrayList<>();
+        Set<String> bloquees = deliveries.blockedAddresses();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
                 sansEmail.add(animateur.nomAffiche());
+                deliveries.recordNoAddress(animateur.getId(), MailKind.INVITATION_DECLARATION);
+            } else if (bloquees.contains(animateur.getId())) {
+                // Skipped, and nothing journalled: the last line stays the refusal.
+                adresseRefusee.add(animateur.nomAffiche());
             } else if (inviteOne(animateur, fenetre, echecs)) {
                 envoyes++;
             }
         }
-        return new InvitationReport(envoyes, sansEmail, echecs);
+        return new InvitationReport(envoyes, sansEmail, echecs, adresseRefusee);
+    }
+
+    /**
+     * Whether an invitation may still leave: the switch is on — as for the
+     * first invitation, which may leave before the window starts — and the
+     * window is not over.
+     */
+    public boolean invitationsAllowed() {
+        FenetreCollecte fenetre = repository.fenetre();
+        return fenetre.ouverte()
+                && (fenetre.fin() == null
+                        || !LocalDate.now(ZoneId.systemDefault()).isAfter(fenetre.fin()));
+    }
+
+    /**
+     * Sends the invitation again to one animateur whose last one did not
+     * leave — the « Renvoyer les envois en échec » of the Animateurs page.
+     *
+     * @return {@code true} when it left; {@code false} when invitations are no
+     *         longer {@linkplain #invitationsAllowed allowed}, the fiche is gone or carries no address, or the send failed
+     *         (journalled like any other)
+     */
+    public boolean inviteAgain(String animateurId) {
+        if (!invitationsAllowed()) {
+            return false;
+        }
+        FenetreCollecte fenetre = repository.fenetre();
+        Optional<Animateur> fiche = referenceDataService.listAnimateurs().stream()
+                .filter(animateur -> animateur.getId().equals(animateurId))
+                .findFirst();
+        if (fiche.isEmpty()
+                || fiche.get().getEmail() == null
+                || fiche.get().getEmail().isBlank()
+                || deliveries.isAddressBlocked(animateurId)) {
+            return false;
+        }
+        return inviteOne(fiche.get(), fenetre, new ArrayList<>());
     }
 
     /** Invites one animateur who has an address; {@code false}, and a line in {@code echecs}, when it did not leave. */
@@ -242,8 +295,11 @@ public class DeclarationDisponibiliteService {
             return false;
         }
         try {
-            mailService.sendInvitationDeclaration(
-                    animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
+            deliveries.send(
+                    animateur.getId(),
+                    MailKind.INVITATION_DECLARATION,
+                    () -> mailService.sendInvitationDeclaration(
+                            animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin()));
             return true;
         } catch (RuntimeException e) {
             // The address is what the operator needs to act; the name is
