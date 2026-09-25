@@ -41,6 +41,9 @@ import { dayNavigation } from '../../core/day-navigation';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { JourneeStandsVue, buildJourneeStands, pasHoraire } from './journee-stands';
+import { ComparaisonOuverturesVue } from './comparaison-vue';
+import { readStandsParam, writeStandsParam } from './comparaison-ouvertures';
+import { ReferenceDataStore } from '../../core/reference-data.store';
 import {
   ColonneJourneeType,
   accesGrilleJourneesTypes,
@@ -102,7 +105,7 @@ import {
  * on time (ADR 0032 and 0033). The two entry grids write the same cells: the
  * one by kind of day says a vacation once for every date its template governs.
  */
-export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE';
+export type VueOuvertures = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'COMPARER';
 
 /** The `vue` query param of each view; the reading grid, the default, writes none. */
 const PARAM_VUE: Record<VueOuvertures, string | null> = {
@@ -110,6 +113,7 @@ const PARAM_VUE: Record<VueOuvertures, string | null> = {
   SAISIR: 'saisie',
   JOURNEES_TYPES: 'journees-types',
   JOURNEE: 'journee',
+  COMPARER: 'comparer',
 };
 
 function lireVue(param: string | null): VueOuvertures {
@@ -118,6 +122,9 @@ function lireVue(param: string | null): VueOuvertures {
   }
   if (param === 'journees-types') {
     return 'JOURNEES_TYPES';
+  }
+  if (param === 'comparer') {
+    return 'COMPARER';
   }
   return param === 'journee' ? 'JOURNEE' : 'CONSULTER';
 }
@@ -183,9 +190,15 @@ interface LigneView {
     MatSelectModule,
     MatTooltipModule,
     RouterLink,
+    ComparaisonOuverturesVue,
   ],
   templateUrl: './ouvertures-page.html',
-  styleUrls: ['../../../styles/ouvertures.css', '../../../styles/saisie-repetitive.css'],
+  // horaires-stand.css: « Comparer » opens the stands' bulk edit, whose rule editor it styles.
+  styleUrls: [
+    '../../../styles/ouvertures.css',
+    '../../../styles/saisie-repetitive.css',
+    '../../../styles/horaires-stand.css',
+  ],
   // Global by design (AGENTS.md): loaded with the route, unscoped like the partial it was.
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -230,6 +243,24 @@ export class OuverturesPage implements OnInit {
   protected readonly view = signal<VueOuvertures>(
     lireVue(this.route.snapshot.queryParamMap.get('vue')),
   );
+
+  /* ----------------------------- compare view ----------------------------- */
+
+  /** `?stands=a,b,c`: the stands « Comparer » lays side by side. */
+  protected readonly comparaisonStands = signal<string[]>(
+    readStandsParam(this.route.snapshot.queryParamMap.get('stands')),
+  );
+  /** `?ref=`: the reference among them; absent = the first one. */
+  protected readonly comparaisonReference = signal<string | null>(
+    this.route.snapshot.queryParamMap.get('ref') || null,
+  );
+  /** `?ecarts=1`: only the days where a stand differs. */
+  protected readonly comparaisonEcarts = signal(
+    this.route.snapshot.queryParamMap.get('ecarts') === '1',
+  );
+  /** The referential « Comparer » reads the rules from, and the bulk edit it opens writes through. */
+  private readonly store = inject(ReferenceDataStore);
+  private referentielCharge = false;
 
   /* ------------------------------- day view ------------------------------- */
 
@@ -481,7 +512,11 @@ export class OuverturesPage implements OnInit {
       date: this.dateQueryParam(),
       q: this.recherche().trim() || null,
       stand: this.onlyStand() || null,
+      stands: this.view() === 'COMPARER' ? writeStandsParam(this.comparaisonStands()) : null,
+      ref: this.view() === 'COMPARER' ? this.comparaisonReference() : null,
+      ecarts: this.view() === 'COMPARER' && this.comparaisonEcarts() ? '1' : null,
     }));
+    this.loadReferentialForComparison();
     inject(DestroyRef).onDestroy(() => {
       if (this.filtrePending !== null) {
         clearTimeout(this.filtrePending);
@@ -598,6 +633,22 @@ export class OuverturesPage implements OnInit {
       this.saisieDate.set('');
     }
     this.view.set(view);
+    this.loadReferentialForComparison();
+  }
+
+  /**
+   * « Comparer » reads the stands' rules and their game categories, and its
+   * copy opens the bulk edit, which needs the timeslots and the emplacements:
+   * loaded once, the first time the view is shown, and never for the others.
+   */
+  private loadReferentialForComparison(): void {
+    if (this.view() !== 'COMPARER' || this.referentielCharge) {
+      return;
+    }
+    this.referentielCharge = true;
+    void this.store
+      .reload(['stands', 'typologies', 'creneaux', 'emplacements'])
+      .catch((error: unknown) => this.crud.reportError(error));
   }
 
   /** A partial cell says what it holds, and that saving it as shown keeps it. */

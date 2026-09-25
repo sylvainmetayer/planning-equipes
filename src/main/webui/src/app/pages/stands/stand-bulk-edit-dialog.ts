@@ -29,6 +29,22 @@ import {
 
 export interface StandBulkEditData {
   stands: Stand[];
+  /**
+   * Opens the dialog on « Remplacer par ceux d'un stand » with this stand as
+   * the model — how the openings comparator hands its reference over. The
+   * user still reads, can change, and has to confirm: nothing is written
+   * before « Enregistrer ».
+   */
+  modele?: Stand;
+}
+
+/** The empty patch, or the copy of a model's schedule when the caller named one. */
+function patchInitial(data: StandBulkEditData): StandBulkPatch {
+  const vide = patchStandVide();
+  if (!data.modele) {
+    return vide;
+  }
+  return { ...vide, horaires: { ...vide.horaires, mode: 'DEPUIS_STAND', source: data.modele } };
 }
 
 /**
@@ -86,7 +102,7 @@ export class StandBulkEditDialog {
   private readonly data = inject<StandBulkEditData>(MAT_DIALOG_DATA);
   private readonly crud = inject(ReferenceCrudService);
 
-  protected readonly patch = signal<StandBulkPatch>(patchStandVide());
+  protected readonly patch = signal<StandBulkPatch>(patchInitial(this.data));
   protected readonly rienAModifier = computed(() => patchStandEstVide(this.patch()));
   protected readonly enCours = signal(false);
 

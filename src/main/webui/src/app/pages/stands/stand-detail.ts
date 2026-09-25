@@ -92,11 +92,11 @@ export function buildStandDetail(
         // view is opened to check.
         ...(stand.horaires ?? []).map((horaire, index) => ({
           label: $localize`:@@detail.stand.regle:Règle ${index + 1}:numero:`,
-          value: decrireHoraire(horaire),
+          value: describeRule(horaire),
         })),
-        ...(stand.ouvertures ?? []).map((ouverture) => decrireExceptionRow(ouverture, true)),
+        ...(stand.ouvertures ?? []).map((ouverture) => describeException(ouverture, true)),
         ...(stand.indisponibilites ?? []).map((indisponibilite) =>
-          decrireExceptionRow(indisponibilite, false),
+          describeException(indisponibilite, false),
         ),
       ],
     },
@@ -155,7 +155,7 @@ function anomalyLabel(anomalie: AnomalieOuverture): string {
  * windows it opens or closes — the three parts a rule is made of, in the order
  * the editor asks for them.
  */
-function decrireHoraire(horaire: HoraireStand): string {
+export function describeRule(horaire: HoraireStand): string {
   const mode =
     horaire.mode === 'OUVERTURE'
       ? $localize`:@@detail.stand.mode.ouverture:Ouverture`
@@ -182,7 +182,7 @@ export function describeDays(horaire: HoraireStand): string {
   }
 }
 
-function decrireExceptionRow(
+export function describeException(
   exception: OuvertureStand | IndisponibiliteStand,
   ouverture: boolean,
 ): DetailRow {

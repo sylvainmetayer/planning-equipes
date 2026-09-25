@@ -35,6 +35,12 @@
       <app-bulk-actions-bar [count]="selection.count()" [disabled]="editingLocked()"
                             [filtre]="!!filtre()"
                             (edit)="editSelection()" (remove)="removeSelection()" (clear)="selection.clear()" />
+      @if (comparaisonParams(); as params) {
+        <a matButton routerLink="/ouvertures" [queryParams]="params" data-test="stands-comparer">
+          <mat-icon>compare</mat-icon>
+          <ng-container i18n="@@stands.comparerOuvertures">Comparer les ouvertures</ng-container>
+        </a>
+      }
     }
     <table mat-table [dataSource]="standsFiltres()">
       <caption class="visually-hidden" i18n="@@stands.table.caption">Stands du référentiel : nom, effectifs, typologies, emplacement et actions</caption>

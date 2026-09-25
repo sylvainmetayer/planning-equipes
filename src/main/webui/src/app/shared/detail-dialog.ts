@@ -13,6 +13,7 @@ import { MatChipsModule } from '@angular/material/chips';
 import { MAT_DIALOG_DATA, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatTooltipModule } from '@angular/material/tooltip';
+import { RouterLink } from '@angular/router';
 import { SolverJobService } from '../core/solver-job.service';
 
 /** One labelled value. `chips` renders a list of short values instead of `value`. */
@@ -31,10 +32,20 @@ export interface DetailSection {
   rows: DetailRow[];
 }
 
+/** A screen the detail leads to, e.g. the openings comparator from a stand. */
+export interface DetailLink {
+  label: string;
+  icon: string;
+  path: string;
+  queryParams: Record<string, string>;
+}
+
 export interface DetailData {
   title: string;
   subtitle?: string;
   sections: DetailSection[];
+  /** Offered beside « Modifier »; following it closes the dialog. */
+  link?: DetailLink;
 }
 
 /** `'edit'` when the user asked to edit: the caller opens its own form dialog. */
@@ -42,7 +53,14 @@ export type DetailResult = 'edit' | null;
 
 @Component({
   selector: 'app-detail-dialog',
-  imports: [MatDialogModule, MatButtonModule, MatChipsModule, MatIconModule, MatTooltipModule],
+  imports: [
+    MatDialogModule,
+    MatButtonModule,
+    MatChipsModule,
+    MatIconModule,
+    MatTooltipModule,
+    RouterLink,
+  ],
   template: `
     <h2 mat-dialog-title>{{ data.title }}</h2>
     <mat-dialog-content>
@@ -77,6 +95,12 @@ export type DetailResult = 'edit' | null;
     </mat-dialog-content>
     <mat-dialog-actions align="end">
       <button matButton mat-dialog-close type="button">{{ closeLabel }}</button>
+      @if (data.link; as link) {
+        <a matButton [routerLink]="link.path" [queryParams]="link.queryParams" mat-dialog-close>
+          <mat-icon>{{ link.icon }}</mat-icon>
+          {{ link.label }}
+        </a>
+      }
       <button
         matButton="filled"
         type="button"
