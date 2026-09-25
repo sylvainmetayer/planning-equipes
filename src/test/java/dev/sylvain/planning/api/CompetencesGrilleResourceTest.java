@@ -18,16 +18,50 @@ import org.junit.jupiter.api.Test;
  * {@code /api/animateurs/competences/*}: the appreciation grid saved row by
  * row with its own precondition, exported as a CSV, and imported under the
  * partial contract — a blank cell leaves the stored appreciation alone.
+ *
+ * <p>Ids are generated (ADR 0050): the scenario's animateurs are found by
+ * their e-mail and its typologies by their code, and the tests speak the ids
+ * the API gives them — which is also what the grid and its CSV carry.</p>
  */
 @QuarkusTest
 class CompetencesGrilleResourceTest {
 
-    private static void seedScenario() {
+    /** Ids of the scenario's three animateurs, of its two typologies, as this run's import gave them. */
+    private String a1;
+
+    private String a2;
+    private String a3;
+    private String strategie;
+    private String hommeJeu;
+
+    private void seedScenario() {
         given().when().post("/api/planning/reset").then().statusCode(200);
         given().when()
                 .post("/api/reference-data/import-scenario?name=scenario.yml")
                 .then()
                 .statusCode(200);
+        a1 = animateurIdOfEmail("A1@example.org");
+        a2 = animateurIdOfEmail("A2@example.org");
+        a3 = animateurIdOfEmail("A3@example.org");
+        strategie = typologieIdOfCode("STRATEGIE");
+        hommeJeu = typologieIdOfCode("HOMME_JEU");
+    }
+
+    private static String animateurIdOfEmail(String email) {
+        String id = animateurs().getString("find { it.email == '" + email + "' }.id");
+        assertThat(id).as("animateur of e-mail %s", email).isNotNull();
+        return id;
+    }
+
+    private static String typologieIdOfCode(String code) {
+        String id = given().when()
+                .get("/api/typologies")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.code == '" + code + "' }.id");
+        assertThat(id).as("typologie of code %s", code).isNotNull();
+        return id;
     }
 
     private static Map<String, Object> request(String contenu) {
@@ -66,24 +100,24 @@ class CompetencesGrilleResourceTest {
     @Test
     void aSavedRowIsReadBackAsTyped() {
         seedScenario();
-        String stamp = stampOf("A1");
+        String stamp = stampOf(a1);
         assertThat(stamp).as("the grid reads the stamp it will send back").isNotNull();
 
         given().contentType("application/json")
-                .body(Map.of("animateurs", List.of(row("A1", stamp, Map.of("HOMME_JEU", "REFERENT")))))
+                .body(Map.of("animateurs", List.of(row(a1, stamp, Map.of(hommeJeu, "REFERENT")))))
                 .when()
                 .put("/api/animateurs/competences/grille")
                 .then()
                 .statusCode(200)
                 .body("animateurs.size()", equalTo(1))
-                .body("animateurs[0].animateurId", equalTo("A1"))
+                .body("animateurs[0].animateurId", equalTo(a1))
                 .body("animateurs[0].resultat", equalTo("WRITTEN"))
                 .body("animateurs[0].modifieLe", notNullValue())
                 .body("animateurs[0].message", nullValue());
 
-        assertThat(competencesOf("A1")).containsExactlyEntriesOf(Map.of("HOMME_JEU", "REFERENT"));
+        assertThat(competencesOf(a1)).containsExactlyEntriesOf(Map.of(hommeJeu, "REFERENT"));
         // The identity travelled untouched.
-        assertThat(animateurs().getString("find { it.id == 'A1' }.nom")).isEqualTo("Referente");
+        assertThat(animateurs().getString("find { it.id == '" + a1 + "' }.nom")).isEqualTo("Referente");
     }
 
     /**
@@ -95,16 +129,16 @@ class CompetencesGrilleResourceTest {
     @Test
     void aFicheWrittenSinceTheReadIsRefusedAloneAndTheOthersAreWritten() {
         seedScenario();
-        String stampA1 = stampOf("A1");
-        String stampA2 = stampOf("A2");
+        String stampA1 = stampOf(a1);
+        String stampA2 = stampOf(a2);
 
-        Map<String, Object> fiche = animateurs().getMap("find { it.id == 'A2' }");
+        Map<String, Object> fiche = animateurs().getMap("find { it.id == '" + a2 + "' }");
         fiche.put("nom", "Renommé ailleurs");
         fiche.put("modifieLe", null);
         given().contentType("application/json")
                 .body(fiche)
                 .when()
-                .put("/api/animateurs/A2")
+                .put("/api/animateurs/" + a2)
                 .then()
                 .statusCode(200);
 
@@ -112,8 +146,8 @@ class CompetencesGrilleResourceTest {
                 .body(Map.of(
                         "animateurs",
                         List.of(
-                                row("A1", stampA1, Map.of("STRATEGIE", "AUTONOME")),
-                                row("A2", stampA2, Map.of("STRATEGIE", "REFERENT")))))
+                                row(a1, stampA1, Map.of(strategie, "AUTONOME")),
+                                row(a2, stampA2, Map.of(strategie, "REFERENT")))))
                 .when()
                 .put("/api/animateurs/competences/grille")
                 .then()
@@ -124,21 +158,21 @@ class CompetencesGrilleResourceTest {
                 .body("animateurs[1].modifieLe", notNullValue())
                 .extract()
                 .jsonPath();
-        assertThat(competencesOf("A1")).containsExactlyEntriesOf(Map.of("STRATEGIE", "AUTONOME"));
-        assertThat(competencesOf("A2"))
+        assertThat(competencesOf(a1)).containsExactlyEntriesOf(Map.of(strategie, "AUTONOME"));
+        assertThat(competencesOf(a2))
                 .as("nothing of the stale row is written")
-                .containsEntry("STRATEGIE", "AUTONOME")
-                .containsEntry("HOMME_JEU", "DEBUTANT");
-        assertThat(rapport.getString("animateurs[1].modifieLe")).isEqualTo(stampOf("A2"));
+                .containsEntry(strategie, "AUTONOME")
+                .containsEntry(hommeJeu, "DEBUTANT");
+        assertThat(rapport.getString("animateurs[1].modifieLe")).isEqualTo(stampOf(a2));
 
         given().contentType("application/json")
-                .body(Map.of("animateurs", List.of(row("A2", null, Map.of("STRATEGIE", "REFERENT")))))
+                .body(Map.of("animateurs", List.of(row(a2, null, Map.of(strategie, "REFERENT")))))
                 .when()
                 .put("/api/animateurs/competences/grille")
                 .then()
                 .statusCode(200)
                 .body("animateurs[0].resultat", equalTo("WRITTEN"));
-        assertThat(competencesOf("A2")).containsExactlyEntriesOf(Map.of("STRATEGIE", "REFERENT"));
+        assertThat(competencesOf(a2)).containsExactlyEntriesOf(Map.of(strategie, "REFERENT"));
     }
 
     /** An unknown typologie or an unknown animateur costs its own row, not the request. */
@@ -150,9 +184,9 @@ class CompetencesGrilleResourceTest {
                 .body(Map.of(
                         "animateurs",
                         List.of(
-                                row("A3", stampOf("A3"), Map.of("INCONNUE", "REFERENT")),
-                                row("ZZ", null, Map.of("STRATEGIE", "REFERENT")),
-                                row("A1", stampOf("A1"), Map.of()))))
+                                row(a3, stampOf(a3), Map.of("INCONNUE", "REFERENT")),
+                                row("ZZ", null, Map.of(strategie, "REFERENT")),
+                                row(a1, stampOf(a1), Map.of()))))
                 .when()
                 .put("/api/animateurs/competences/grille")
                 .then()
@@ -163,8 +197,8 @@ class CompetencesGrilleResourceTest {
                 .body("animateurs[1].message", containsString("ZZ"))
                 .body("animateurs[2].resultat", equalTo("WRITTEN"));
 
-        assertThat(competencesOf("A3")).containsExactlyEntriesOf(Map.of("STRATEGIE", "DEBUTANT"));
-        assertThat(competencesOf("A1")).isEmpty();
+        assertThat(competencesOf(a3)).containsExactlyEntriesOf(Map.of(strategie, "DEBUTANT"));
+        assertThat(competencesOf(a1)).isEmpty();
     }
 
     @Test
@@ -220,10 +254,11 @@ class CompetencesGrilleResourceTest {
         // The byte order mark, so Excel reads the file as UTF-8 once on disk;
         // the parser strips it, which the clean re-import below proves.
         assertThat(export).startsWith("\uFEFFanimateur;");
+        // Columns headed by the typologies' codes, rows by the animateurs' ids.
         assertThat(export.lines().findFirst().orElseThrow())
                 .contains("STRATEGIE")
                 .contains("HOMME_JEU");
-        assertThat(export).contains("\nA1;").doesNotContain("Alice").doesNotContain("Referente");
+        assertThat(export).contains("\n" + a1 + ";").doesNotContain("Alice").doesNotContain("Referente");
 
         JsonPath rapport = given().contentType("application/json")
                 .body(request(export))
@@ -250,7 +285,8 @@ class CompetencesGrilleResourceTest {
     @Test
     void theImportAddsAndUpdatesWithoutRemoving() {
         seedScenario();
-        String csv = "animateur;STRATEGIE;HOMME_JEU;montage\nA2;;REFERENT;x\nINCONNU;REFERENT;;\n";
+        // Columns named by code, the way the export heads them; the row by the id the API gave.
+        String csv = "animateur;STRATEGIE;HOMME_JEU;montage\n" + a2 + ";;REFERENT;x\nINCONNU;REFERENT;;\n";
 
         given().contentType("application/json")
                 .body(request(csv))
@@ -267,7 +303,7 @@ class CompetencesGrilleResourceTest {
                 .body("rows[0].cellules", equalTo(1))
                 .body("rows[1].action", equalTo("REJECTED"))
                 .body("rows[1].reasons[0]", containsString("INCONNU"));
-        assertThat(competencesOf("A2")).as("the preview writes nothing").containsEntry("HOMME_JEU", "DEBUTANT");
+        assertThat(competencesOf(a2)).as("the preview writes nothing").containsEntry(hommeJeu, "DEBUTANT");
 
         given().contentType("application/json")
                 .body(request(csv))
@@ -278,16 +314,16 @@ class CompetencesGrilleResourceTest {
                 .body("applied", equalTo(true))
                 .body("accepted", equalTo(1));
 
-        assertThat(competencesOf("A2"))
+        assertThat(competencesOf(a2))
                 .as("the blank cell left STRATEGIE as it was")
-                .containsExactlyInAnyOrderEntriesOf(Map.of("STRATEGIE", "AUTONOME", "HOMME_JEU", "REFERENT"));
+                .containsExactlyInAnyOrderEntriesOf(Map.of(strategie, "AUTONOME", hommeJeu, "REFERENT"));
         assertThat(animateurs().getList("id", String.class)).doesNotContain("INCONNU");
     }
 
     @Test
     void anUnknownLevelRefusesTheRowAndAnEmptyAcceptedSetRefusesTheWrite() {
         seedScenario();
-        String csv = "animateur;STRATEGIE\nA1;expert\n";
+        String csv = "animateur;STRATEGIE\n" + a1 + ";expert\n";
 
         given().contentType("application/json")
                 .body(request(csv))
@@ -306,14 +342,14 @@ class CompetencesGrilleResourceTest {
                 .then()
                 .statusCode(400)
                 .body("message", containsString("Aucune ligne acceptée"));
-        assertThat(competencesOf("A1")).containsEntry("STRATEGIE", "REFERENT");
+        assertThat(competencesOf(a1)).containsEntry(strategie, "REFERENT");
     }
 
     @Test
     void aFileNamingNoTypologieAndASpreadsheetAreRefused() {
         seedScenario();
         given().contentType("application/json")
-                .body(request("animateur;commentaire\nA1;bonjour\n"))
+                .body(request("animateur;commentaire\n" + a1 + ";bonjour\n"))
                 .when()
                 .post("/api/animateurs/competences/import-grille/analyse")
                 .then()
