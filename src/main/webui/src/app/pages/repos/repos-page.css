@@ -74,12 +74,19 @@
 /* The name and the two figures the screen is read for stay put while the day
    columns scroll under them: over thirty days, « Repos » and « Série » left at
    the far right were two numbers nobody ever scrolled to. Widths are fixed
-   because the sticky offsets are computed from them. */
+   because the sticky offsets are computed from them.
+   Those offsets are arithmetic on the widths, so the widths have to be the
+   rendered ones — hence `border-box`, the padding included. `max-width` would
+   not do the job: a table cell ignores it in the automatic layout, and one
+   long name would then widen the column and slide the two frozen figures over
+   it. What is bounded is therefore the *content* (`.repos-row-texte`), which
+   the column's declared width is then always wide enough to hold. */
 .repos-table .repos-row-header,
 .repos-table .repos-colle-repos,
 .repos-table .repos-colle-serie {
   position: sticky;
   z-index: 1;
+  box-sizing: border-box;
   background: var(--mat-sys-surface);
 }
 
@@ -103,18 +110,6 @@
   width: 3.75rem;
   min-width: 3.75rem;
   padding-inline: 0.375rem;
-}
-
-/* The offsets above are arithmetic on these widths, so the widths have to be
-   the rendered ones — hence `border-box`, the padding included.
-   `max-width` would not do the job: a table cell ignores it in the automatic
-   layout, and one long name would then widen the column and slide the two
-   frozen figures over it. What is bounded is therefore the *content*, below,
-   which the column's declared width is then always wide enough to hold. */
-.repos-table .repos-row-header,
-.repos-table .repos-colle-repos,
-.repos-table .repos-colle-serie {
-  box-sizing: border-box;
 }
 
 .repos-row-texte {

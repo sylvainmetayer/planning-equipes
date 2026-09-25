@@ -140,14 +140,14 @@
       </button>
     </div>
     @if (bilan(); as bilan) {
-      <div class="ouvertures-synthese controle-bilan" role="status">
+      <output class="ouvertures-synthese controle-bilan">
         <span [class.synthese-alerte]="bilan.erreurs > 0"><strong>{{ bilan.erreurs }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.erreurs">erreur(s)</ng-container></span>
         <span [class.synthese-partiel]="bilan.avertissements > 0"><strong>{{ bilan.avertissements }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.avertissements">avertissement(s)</ng-container></span>
         <span><strong>{{ bilan.ouvertures }}</strong>&nbsp;<ng-container i18n="@@creneaux.controle.ouvertures">anomalie(s) d'ouverture de stand</ng-container></span>
         @if (controle()!.faisabilite; as faisabilite) {
           <span [class.synthese-alerte]="!faisabilite.feasible">{{ faisabilite.message }}</span>
         }
-      </div>
+      </output>
       @if (anomaliesGrille().length === 0 && controle()!.ouvertures.length === 0) {
         <p class="empty-hint" i18n="@@creneaux.controle.rien">Rien à signaler sur la grille.</p>
       }

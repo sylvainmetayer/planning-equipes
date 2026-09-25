@@ -33,12 +33,12 @@
           <output class="carte-jour-heure" data-test="carte-jour-heure">{{ instant().heure }}</output>
         </div>
 
-        <p class="carte-jour-compteurs" role="status" data-test="carte-jour-compteurs">
+        <output class="carte-jour-compteurs status-paragraph" data-test="carte-jour-compteurs">
           {{ compteursLabel() }}
           @if (alerteLabel()) {
             <span class="carte-jour-alerte"> — {{ alerteLabel() }}</span>
           }
-        </p>
+        </output>
 
         <ul class="carte-jour-legende">
           <li><span class="carte-jour-pastille etat-pourvu"></span><ng-container i18n="@@carteJour.legend.pourvu">Ouvert, toutes les places pourvues</ng-container></li>

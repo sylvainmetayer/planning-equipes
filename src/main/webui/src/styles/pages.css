@@ -234,7 +234,7 @@ tr.mat-mdc-row.row-selected {
   max-height: 24rem;
   overflow: auto;
   white-space: pre-wrap;
-  word-break: break-word;
+  overflow-wrap: anywhere;
   font-family: 'Roboto Mono', ui-monospace, monospace;
   font-size: 0.8125rem;
 }
@@ -266,6 +266,14 @@ tr.mat-mdc-row.row-selected {
   font: var(--mat-sys-headline-small);
   color: var(--mat-sys-on-surface);
   margin: 0 0 1rem;
+}
+
+/* An <output> standing in for a status paragraph: the implicit live region of
+   role="status", with the block box and margins the replaced <p> had from the
+   user-agent sheet. Zero specificity, so a page's own class still sets them. */
+:where(output.status-paragraph) {
+  display: block;
+  margin-block: 1em;
 }
 
 /* Available to assistive technology, invisible on screen — table captions and

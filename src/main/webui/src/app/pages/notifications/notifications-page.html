@@ -55,24 +55,21 @@
       <h2 class="notification-jour">{{ journee.libelle }}</h2>
       <div class="notification-list">
         @for (notification of journee.notifications; track notification.id) {
-          <div
+          <button
+            type="button"
             class="notification-item notification-item-{{ notification.severity }}"
             [class.notification-item-unread]="!notification.read"
-            role="button"
-            tabindex="0"
             (click)="notifications.markRead(notification.id)"
-            (keydown.enter)="notifications.markRead(notification.id)"
-            (keydown.space)="notifications.markRead(notification.id)"
           >
             <mat-icon class="notification-icon">{{ icon(notification.severity) }}</mat-icon>
-            <div class="notification-body">
+            <span class="notification-body">
               <span class="notification-title">{{ notification.title }}</span>
               @if (notification.message) {
                 <span class="notification-message">{{ notification.message }}</span>
               }
-            </div>
+            </span>
             <span class="notification-timestamp">{{ formattedTime(notification.timestamp) }}</span>
-          </div>
+          </button>
         }
       </div>
       }

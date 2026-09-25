@@ -55,7 +55,7 @@
     </ul>
 
     @if (!loading() && !error() && lignes().length > 0) {
-      <p class="repos-compteurs" role="status">{{ compteursLabel() }}</p>
+      <output class="repos-compteurs status-paragraph">{{ compteursLabel() }}</output>
       @if (vue() === 'grille') {
         <p class="empty-hint" i18n="@@repos.keyboardHint">
           Dans la grille : les flèches déplacent la sélection, Origine et Fin vont au début et à la fin de la ligne.

@@ -44,15 +44,12 @@
   white-space: nowrap;
 }
 
-.espace-toolbar .app-logo {
-  height: 2.5rem;
-  width: auto;
-}
-
 /* Un logo de déploiement peut être un bandeau très large : sans plafond, il
    mange la barre et ne laisse qu'une initiale au nom de la personne
    connectée. */
 .espace-toolbar .app-logo {
+  height: 2.5rem;
+  width: auto;
   max-width: 35vw;
   object-fit: contain;
   object-position: left center;
@@ -608,10 +605,13 @@ app-espace-animateur-shell {
 
 /* ---------- Échange request form ---------- */
 
+/* The swap request form stacks until it has the room; the row is restored
+   past 40rem, further down. */
 .espace-form-champs {
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
   gap: 0.75rem;
 }
 
@@ -718,12 +718,6 @@ app-espace-animateur-shell {
   gap: 0.4rem;
   margin: 0 0 1rem;
   color: var(--mat-sys-on-surface-variant);
-}
-
-/* Le formulaire de demande d'échange s'empile tant qu'il n'a pas la place. */
-.espace-form-champs {
-  flex-direction: column;
-  align-items: stretch;
 }
 
 @media (min-width: 40rem) {

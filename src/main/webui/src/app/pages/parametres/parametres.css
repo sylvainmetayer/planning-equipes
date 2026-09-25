@@ -56,7 +56,7 @@
 
 .parametres-faits dd {
   margin: 0;
-  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 @media (max-width: 600px) {
@@ -87,13 +87,17 @@
   color: var(--mat-sys-on-surface-variant);
 }
 
+.parametres-sauvegardes th,
 .parametres-sauvegardes td {
   padding: 0.35rem 1rem 0.35rem 0;
   border-bottom: 1px solid var(--mat-sys-outline-variant);
   white-space: nowrap;
 }
 
-.parametres-sauvegardes td:first-child {
+/* The file name heads its row, drawn like the cells beside it. */
+.parametres-sauvegardes th {
+  font-weight: normal;
+  text-align: left;
   font-family: var(--mat-sys-body-medium-font, monospace);
 }
 

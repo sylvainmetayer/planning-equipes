@@ -136,14 +136,14 @@
       </mat-select>
     </mat-form-field>
     @if (resumeStandModele(); as resume) {
-      <p class="empty-hint" role="status">{{ resume }}</p>
+      <output class="empty-hint status-paragraph">{{ resume }}</output>
     }
   }
   <!-- Outside the mode, because the copy is not the only way there: lowering the
        maximum alone puts a window already in place beyond it, and the server
        refuses those stands one by one. -->
   @if (standsBeyondMaximum().length) {
-    <p class="form-warning" role="status">{{ effectifDepasseMessage() }}</p>
+    <output class="form-warning status-paragraph">{{ effectifDepasseMessage() }}</output>
   }
 </div>
 </fieldset>

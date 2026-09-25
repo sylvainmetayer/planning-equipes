@@ -10,7 +10,7 @@
     </div>
 
     @if (jourCourant()) {
-      <p class="rail-compteurs" role="status">{{ compteursLabel() }}</p>
+      <output class="rail-compteurs status-paragraph">{{ compteursLabel() }}</output>
       <p class="empty-hint" i18n="@@railJour.keyboardHint">
         Dans le rail : Tab entre dans la grille, les flèches haut et bas passent d'un animateur à l'autre,
         Origine et Fin vont à la première et à la dernière ligne. Chaque ligne annonce sa journée en entier.

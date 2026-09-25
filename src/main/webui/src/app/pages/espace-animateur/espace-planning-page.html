@@ -84,10 +84,10 @@
     ressemble pas aux autres jours.
   -->
   @for (consigne of consignes(); track consigne.date) {
-    <section class="espace-consigne" role="status">
+    <output class="espace-consigne">
       <mat-icon inline>gavel</mat-icon>
       <span i18n="@@espace.planning.consigne">Horaires modifiés le {{ consigne.date | date: 'EEEE d MMMM' }} : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
-    </section>
+    </output>
   }
 
   <!--
@@ -201,7 +201,7 @@
         -->
         @if (jour.date === repere()?.aujourdhui) {
           @if (repere(); as maintenant) {
-            <p class="espace-maintenant-poste" role="status">
+            <output class="espace-maintenant-poste status-paragraph">
               @if (maintenant.enCours; as poste) {
                 <mat-icon inline>play_circle</mat-icon>
                 <span i18n="@@espace.planning.maintenantEnCours">En ce moment : {{ poste.standNom }}, {{ heure(poste.heureDebut) }}–{{ heure(poste.heureFin) }}</span>
@@ -215,7 +215,7 @@
                 <mat-icon inline>done_all</mat-icon>
                 <span i18n="@@espace.planning.maintenantFini">Plus aucun poste à venir.</span>
               }
-            </p>
+            </output>
             @for (pause of maintenant.remainingPauses; track pause.standId + '-' + pause.heureLimite) {
               <p class="espace-maintenant-pause">
                 <mat-icon inline>free_breakfast</mat-icon>
@@ -226,10 +226,10 @@
         }
 
         @if (consigneOfDay(); as consigne) {
-          <p class="espace-consigne" role="status">
+          <output class="espace-consigne status-paragraph">
             <mat-icon inline>gavel</mat-icon>
             <span i18n="@@espace.planning.consigneDuJour">Horaires modifiés : {{ consigne.motif }} (fermé de {{ consigne.bande }})</span>
-          </p>
+          </output>
         }
 
         @if (jour.repos || jour.postes.length === 0) {
@@ -536,9 +536,9 @@
               <span i18n="@@espace.planning.abonnementCopier">Copier l'adresse</span>
             </button>
             @if (abonnementCopie()) {
-              <p class="espace-abonnement-copie" role="status" i18n="@@espace.planning.abonnementCopie">
+              <output class="espace-abonnement-copie status-paragraph" i18n="@@espace.planning.abonnementCopie">
                 Adresse copiée : collez-la dans « S'abonner à un agenda » de votre application.
-              </p>
+              </output>
             }
             @if (rotationADemander()) {
               <div class="espace-abonnement-revocation">

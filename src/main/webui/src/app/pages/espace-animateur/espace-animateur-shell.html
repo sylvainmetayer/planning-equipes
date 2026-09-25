@@ -9,12 +9,12 @@
        d'administration : Débogage n'est pas une page de cet espace. -->
   @if (espace.view()?.dateDuJourFigee; as dateFigee) {
     @let heureFigee = espace.view()?.heureDuJourFigee?.slice(0, 5) ?? '';
-    <span class="espace-date-figee" role="status"
+    <output class="espace-date-figee"
           [matTooltip]="infobulleHorloge(dateFigee, heureFigee)"
           [attr.aria-label]="infobulleHorloge(dateFigee, heureFigee)">
       <mat-icon inline>hourglass_disabled</mat-icon>
       <span>{{ dateFigee | date: 'dd/MM' }} {{ heureFigee }}</span>
-    </span>
+    </output>
   }
   @if (espace.view(); as vue) {
     <span class="espace-identite">{{ vue.prenom }} {{ vue.nom }}</span>
@@ -48,7 +48,10 @@
       <span i18n="@@nav.link.accessibilite">Accessibilité</span>
     </a>
   </mat-menu>
-  <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
+  <!-- The action is said in a hidden span rather than an aria-label, so the
+       visible « EN » / « FR » stays part of the accessible name (WCAG 2.5.3). -->
+  <button matButton (click)="toggleLocale()">
+    <span class="visually-hidden" i18n="@@shell.switchLanguage">Changer de langue</span>
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>
 </mat-toolbar>
