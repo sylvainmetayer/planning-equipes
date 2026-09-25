@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import dev.sylvain.planning.service.analyse.PlanningKpiService.AffectationKpi;
 import dev.sylvain.planning.service.analyse.PlanningKpiService.PlanningKpi;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,58 @@ class PlanningKpiServiceTest {
         // -3 medium of which -2 is a floor: -1 is what a solve can still move.
         assertThat(kpi.plancherMedium()).isEqualTo(-2);
         assertThat(kpi.scoreMediumHorsPlancher()).isEqualTo(-1);
+    }
+
+    /** The replay's day × coverage band: every seat counted once, on its day. */
+    @Test
+    void coverageByDayAddsUpToTheWholePlan() {
+        LocalDate lundi = LocalDate.of(2026, 7, 6);
+        LocalDate mardi = lundi.plusDays(1);
+        List<AffectationKpi> affectations = List.of(
+                new AffectationKpi("S1", "1", "A1", 120, lundi),
+                new AffectationKpi("S2", "1", null, 120, lundi),
+                new AffectationKpi("S1", "2", "A2", 120, mardi),
+                new AffectationKpi("S2", "2", "A1", 120, mardi),
+                new AffectationKpi("S3", "2", null, 120, mardi));
+
+        PlanningKpi kpi = PlanningKpiService.compute(affectations, null, Map.of(), null, null, null);
+
+        assertThat(kpi.couvertureParJour())
+                .containsExactly(
+                        Map.entry("2026-07-06", new PlanningKpiService.DayCoverage(2, 1)),
+                        Map.entry("2026-07-07", new PlanningKpiService.DayCoverage(3, 2)));
+        assertThat(kpi.couvertureParJour().values().stream()
+                        .mapToInt(PlanningKpiService.DayCoverage::postes)
+                        .sum())
+                .isEqualTo(kpi.postesTotal());
+        assertThat(kpi.couvertureParJour().values().stream()
+                        .mapToInt(PlanningKpiService.DayCoverage::pourvus)
+                        .sum())
+                .isEqualTo(kpi.postesPourvus());
+    }
+
+    /** Seats that did not say their day — a degraded snapshot — leave the figure unmeasured, not empty. */
+    @Test
+    void coverageByDayIsUnmeasuredWhenNoSeatKnowsItsDay() {
+        PlanningKpi kpi =
+                PlanningKpiService.compute(List.of(seat("S1", "1", "A1", 60)), null, Map.of(), null, null, null);
+
+        assertThat(kpi.couvertureParJour()).isNull();
+    }
+
+    /** A line of the Autopsie written before the figure existed still reads, with the figure absent. */
+    @Test
+    void aRowWrittenBeforeTheFigureStillReads() throws Exception {
+        String ancienne = """
+                {"score":"0hard/-3medium/0soft","scoreHard":0,"scoreMedium":-3,"scoreSoft":0,
+                 "postesTotal":4,"postesPourvus":3,"animateursAffectes":2,"standsDistincts":2,
+                 "creneauxDistincts":2,"heuresIncompletes":false,"violationsParContrainte":{}}""";
+
+        PlanningKpi kpi = new com.fasterxml.jackson.databind.ObjectMapper().readValue(ancienne, PlanningKpi.class);
+
+        assertThat(kpi.postesTotal()).isEqualTo(4);
+        assertThat(kpi.couvertureParJour()).isNull();
+        assertThat(kpi.dosage()).isNull();
     }
 
     /**

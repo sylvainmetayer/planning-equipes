@@ -3267,6 +3267,14 @@ export interface PlanningKpi {
   lecture?: ScoreSentence[] | null;
   /** The weighting the plan was solved under, taken at launch; null when unknown (an older row). */
   dosage?: Dosage | null;
+  /** Seats and staffed seats per day, keyed by ISO date; null on a row older than the figure. */
+  couvertureParJour?: Record<string, DayCoverage> | null;
+}
+
+/** One day of a plan: how many seats it asks for, how many are staffed — never who. */
+export interface DayCoverage {
+  postes: number;
+  pourvus: number;
 }
 
 /**

@@ -2309,6 +2309,20 @@
           }
         }
       },
+      "DayCoverage" : {
+        "type" : "object",
+        "required" : [ "postes", "pourvus" ],
+        "properties" : {
+          "postes" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "pourvus" : {
+            "type" : "integer",
+            "format" : "int32"
+          }
+        }
+      },
       "DayOfWeek" : {
         "type" : "string",
         "enum" : [ "MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY", "SATURDAY", "SUNDAY" ]
@@ -5619,6 +5633,12 @@
           },
           "dosage" : {
             "$ref" : "#/components/schemas/Dosage"
+          },
+          "couvertureParJour" : {
+            "type" : "object",
+            "additionalProperties" : {
+              "$ref" : "#/components/schemas/DayCoverage"
+            }
           }
         }
       },
