@@ -40,6 +40,7 @@ class ScenarioLadderImportTest {
     private static final String EDITION_NOM = "Gamme de scénarios";
     /** The name the {@code edition:} section of rung 10 designates its edition by. */
     private static final String GAMME_10_NOM = "Gamme 10 — journées types";
+
     private static final long CEILING_SECONDS = 120L;
 
     /**

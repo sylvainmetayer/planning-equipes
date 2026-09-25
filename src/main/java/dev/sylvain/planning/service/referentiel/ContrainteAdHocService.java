@@ -57,10 +57,13 @@ public class ContrainteAdHocService {
      */
     public ContrainteAdHoc create(ContrainteAdHoc contrainte) {
         requireKnownOrNew(contrainte);
-        refuseContradiction(contrainte);
+        // Drawn before the contradiction check, which compares the candidate
+        // with every other ajustement by id: an ajustement without one would
+        // be checked against nothing. A refusal burns the number, never reused.
         if (contrainte.getId() == null) {
             contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
         }
+        refuseContradiction(contrainte);
         nameVacation(contrainte);
         if (contrainte.getCreeLe() == null) {
             contrainte.setCreeLe(Instant.now());
@@ -94,6 +97,9 @@ public class ContrainteAdHocService {
         List<String> messages = new ArrayList<>();
         for (ContrainteAdHoc contrainte : contraintes) {
             requireKnownOrNew(contrainte);
+            if (contrainte.getId() == null) {
+                contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
+            }
             ContrainteAdHocContradictions.detect(contrainte, deja, creneaux).stream()
                     .map(Contradiction::message)
                     .filter(message -> !messages.contains(message))
@@ -104,9 +110,6 @@ public class ContrainteAdHocService {
             throw new BusinessError.Invalid(String.join(" ", messages));
         }
         for (ContrainteAdHoc contrainte : contraintes) {
-            if (contrainte.getId() == null) {
-                contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
-            }
             nameVacation(contrainte);
             if (contrainte.getCreeLe() == null) {
                 contrainte.setCreeLe(Instant.now());
