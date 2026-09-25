@@ -540,6 +540,65 @@ export interface RapportMarge {
   message: string;
 }
 
+/* ------------------ Tension (`/api/marge/tension`) ------------------ */
+
+/** Four levels, worst first — named rules, never a weighted score. */
+export type GraviteTension = 'CRITIQUE' | 'ELEVEE' | 'SURVEILLEE' | 'CALME';
+
+/** Why a cell sits at its level; the screen words each one. */
+export type MotifTension =
+  | 'SIEGES_VIDES_NON_COUVRABLES'
+  | 'SIEGE_IRREMPLACABLE'
+  | 'STAND_SANS_SPECIALISTE'
+  | 'MARGE_NULLE_AVEC_SIEGES_VIDES'
+  | 'FRAGILES_AU_DELA_DE_LA_MARGE'
+  | 'SIEGES_FRAGILES'
+  | 'SPECIALISTE_UNIQUE_SANS_RENFORT';
+
+/** One cell of the tension map: the « après » margin and the fragility of that timeslot. */
+export interface CelluleTension {
+  date?: string | null;
+  jour: number;
+  debut: string;
+  fin: string;
+  creneauId: number;
+  marge: number;
+  siegesVides: number;
+  /** Filled seats whose withdrawal leaves at most one substitute. */
+  siegesFragiles: number;
+  /** Every irreplaceable seat of the timeslot, never capped. */
+  siegesIrremplacables: number;
+  competencesRaresSansSpecialiste: number;
+  animateursIrremplacables: string[];
+  standsSpecialisteUnique: string[];
+  standsSansSpecialiste: string[];
+  /** Started already (ADR 0044): greyed out, no grade. */
+  passee: boolean;
+  gravite?: GraviteTension | null;
+  motifs: MotifTension[];
+}
+
+export interface JourTension {
+  date?: string | null;
+  jour: number;
+  cellules: CelluleTension[];
+  /** The worst cell still ahead; `null` when the whole day is past. */
+  pireCellule?: CelluleTension | null;
+}
+
+/** What `GET /api/marge/tension` returns — computed without any solve. */
+export interface RapportTension {
+  tranches: TrancheMarge[];
+  jours: JourTension[];
+  pireCellule?: CelluleTension | null;
+  animateursTotal: number;
+  cellulesCritiques: number;
+  /** False: no ninja typologie, so « no reinforcement » is the rule, not a finding. */
+  ninjaConfigure: boolean;
+  referentielsManquants: ReferentielManquant[];
+  message: string;
+}
+
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;

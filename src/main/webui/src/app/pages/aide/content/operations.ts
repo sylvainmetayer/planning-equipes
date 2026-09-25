@@ -195,6 +195,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.marge:Journée croisée avec la tranche horaire, et dans chaque case les animateurs disponibles moins les sièges à pourvoir. Rouge en dessous de zéro, vert au-dessus. « Avant résolution » compare la capacité brute aux sièges à pourvoir et répond donc sans aucun calcul ; « après résolution » ne compte libre que celui qui n'est pas déjà en poste et qu'aucune règle dure n'écarte, face aux seuls sièges restés vides. La lecture est optimiste : une case négative l'est vraiment, une case confortable ne garantit rien.`,
             },
             {
+              term: $localize`:@@aide.views.term.tension:Tension`,
+              text: $localize`:@@aide.views.def.tension:Troisième lecture de la Marge, quand un planning est enregistré : la marge après résolution croisée avec la fragilité. Critique : des sièges vides que personne ne peut tenir, un siège qu'aucun autre ne pourrait reprendre, ou un stand sans spécialiste — la case est alors hachurée. Élevée : marge nulle avec des sièges vides, ou plus de sièges fragiles (un remplaçant au plus) que de monde à revendre. Surveillée : des sièges fragiles mais assez de marge, ou un stand à spécialiste unique sans polyvalent en renfort. Calme sinon. Le badge « 2 ⚠ » compte les sièges fragiles ; une case ouvre ses raisons, avec le banc de touche, la timeline de la personne irremplaçable et la fragilité du stand. Une tranche déjà commencée est grisée.`,
+            },
+            {
               term: $localize`:@@aide.views.term.timeline:Timeline animateur`,
               text: $localize`:@@aide.views.def.timeline:Le planning d'une personne : stands, amplitude journalière, vacations et pauses. C'est la vue à envoyer à l'intéressé, exportable en PDF ou en ICS.`,
             },

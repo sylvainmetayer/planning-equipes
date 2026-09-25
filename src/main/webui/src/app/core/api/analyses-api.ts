@@ -18,6 +18,7 @@ import {
   RapportMarge,
   RapportIntendance,
   RapportPauses,
+  RapportTension,
   StaffingSummary,
   TypologieItem,
 } from '../models';
@@ -71,6 +72,11 @@ export class AnalysesApi {
    */
   margin(mode: ModeMarge): Promise<RapportMarge> {
     return this.api.get<RapportMarge>(`/api/marge?mode=${mode === 'APRES' ? 'apres' : 'avant'}`);
+  }
+
+  /** The « après » margin crossed with the fragility of the same plan, cell by cell. */
+  tension(): Promise<RapportTension> {
+    return this.api.get<RapportTension>('/api/marge/tension');
   }
 
   /**

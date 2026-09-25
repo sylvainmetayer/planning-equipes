@@ -3,6 +3,7 @@ package dev.sylvain.planning.api;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.RapportMarge;
 import dev.sylvain.planning.service.analyse.MargeService;
+import dev.sylvain.planning.service.analyse.TensionAnalyzer.RapportTension;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
@@ -44,5 +45,16 @@ public class MargeResource {
     @GET
     public RapportMarge analyze(@QueryParam("mode") @DefaultValue("avant") String mode) {
         return margeService.analyzeEdition("apres".equalsIgnoreCase(mode) ? Mode.APRES : Mode.AVANT);
+    }
+
+    /**
+     * The « Tension » reading: the « après » margin crossed with the fragility
+     * of the same persisted plan, each cell rated on four named levels. An
+     * empty grid, with its message, when nothing is persisted.
+     */
+    @GET
+    @Path("/tension")
+    public RapportTension tension() {
+        return margeService.tension();
     }
 }

@@ -9,7 +9,13 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ActivatedRoute, Router, convertToParamMap } from '@angular/router';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiService } from '../../core/api.service';
-import { CelluleMarge, ModeMarge, RapportMarge } from '../../core/models';
+import {
+  CelluleMarge,
+  CelluleTension,
+  ModeMarge,
+  RapportMarge,
+  RapportTension,
+} from '../../core/models';
 import { MargePage } from './marge-page';
 
 /** Reaches the protected members the template binds to / user actions call. */
@@ -68,16 +74,65 @@ const VIDE: RapportMarge = {
   message: 'Aucun siège à couvrir : vérifiez les horaires des stands et la grille de créneaux.',
 };
 
+const CRITIQUE: CelluleTension = {
+  date: '2026-07-10',
+  jour: 1,
+  debut: '09:00:00',
+  fin: '12:00:00',
+  creneauId: 1,
+  marge: 3,
+  siegesVides: 1,
+  siegesFragiles: 2,
+  siegesIrremplacables: 1,
+  competencesRaresSansSpecialiste: 0,
+  animateursIrremplacables: ['alice'],
+  standsSpecialisteUnique: ['S1'],
+  standsSansSpecialiste: [],
+  passee: false,
+  gravite: 'CRITIQUE',
+  motifs: ['SIEGE_IRREMPLACABLE'],
+};
+
+const TENSION: RapportTension = {
+  tranches: [{ debut: '09:00:00', fin: '12:00:00' }],
+  jours: [{ date: '2026-07-10', jour: 1, cellules: [CRITIQUE], pireCellule: CRITIQUE }],
+  pireCellule: CRITIQUE,
+  animateursTotal: 3,
+  cellulesCritiques: 1,
+  ninjaConfigure: false,
+  referentielsManquants: [],
+  message: '1 tranche(s) critique(s), à commencer par J1 09:00-12:00.',
+};
+
 describe('MargePage', () => {
   let fixture: ComponentFixture<MargePage>;
   let get: ReturnType<typeof vi.fn>;
   let navigate: ReturnType<typeof vi.fn>;
   let replaceState: ReturnType<typeof vi.fn>;
 
-  async function monter(queryParams: Record<string, string> = {}, reponse?: RapportMarge) {
-    get = vi.fn(
-      async (chemin: string) => reponse ?? rapport(chemin.includes('apres') ? 'APRES' : 'AVANT'),
-    );
+  async function monter(
+    queryParams: Record<string, string> = {},
+    reponse?: RapportMarge,
+    affectations = 0,
+  ) {
+    get = vi.fn(async (chemin: string) => {
+      if (chemin.includes('persisted/count')) {
+        return { assignments: affectations };
+      }
+      if (chemin.includes('tension')) {
+        return TENSION;
+      }
+      if (chemin === '/api/animateurs') {
+        return [{ id: 'alice', prenom: 'Alice', nom: 'Martin' }];
+      }
+      if (chemin === '/api/stands') {
+        return [{ id: 'S1', nom: 'Stand des échecs' }];
+      }
+      if (chemin.startsWith('/api/') && !chemin.includes('marge')) {
+        return [];
+      }
+      return reponse ?? rapport(chemin.includes('apres') ? 'APRES' : 'AVANT');
+    });
     navigate = vi.fn(async () => true);
     replaceState = vi.fn();
     TestBed.resetTestingModule();
@@ -283,5 +338,69 @@ describe('MargePage', () => {
     await fixture.whenStable();
 
     expect(racine().querySelectorAll('td.marge-cell[tabindex="0"]')).toHaveLength(1);
+  });
+
+  describe('the tension reading', () => {
+    it('is offered only once a plan is persisted', async () => {
+      await monter();
+      const bouton = racine().querySelector('mat-button-toggle[value="TENSION"] button');
+      expect(
+        bouton!.hasAttribute('disabled') || bouton!.getAttribute('aria-disabled') === 'true',
+      ).toBe(true);
+
+      await monter({}, undefined, 12);
+      const actif = racine().querySelector('mat-button-toggle[value="TENSION"] button');
+      expect(actif!.getAttribute('aria-disabled')).not.toBe('true');
+    });
+
+    it('opens from ?mode=tension and grades each cell, a hatched critical one with its fragile-seat badge', async () => {
+      const page = await monter({ mode: 'tension' }, undefined, 12);
+
+      expect(page.mode()).toBe('TENSION');
+      expect(get).toHaveBeenCalledWith('/api/marge/tension');
+      const cellule = racine().querySelector('td.tension-cell') as HTMLElement;
+      expect(cellule.classList).toContain('tension-cell-critique');
+      expect(cellule.textContent).toContain('+3');
+      expect(cellule.querySelector('.tension-badge')!.textContent).toContain('2');
+      expect(cellule.getAttribute('aria-label')).toContain('Critique');
+      expect(racine().querySelector('[data-testid="marge-message"]')!.textContent).toContain(
+        'critique',
+      );
+    });
+
+    it('lists the reasons of a cell beside the grid, with the screens that settle them', async () => {
+      await monter({ mode: 'tension' }, undefined, 12);
+
+      (racine().querySelector('td.tension-cell') as HTMLElement).click();
+      await fixture.whenStable();
+
+      const detail = racine().querySelector('[data-testid="tension-detail"]') as HTMLElement;
+      expect(detail.textContent).toContain("1 siège(s) que personne d'autre ne pourrait reprendre");
+      expect(detail.textContent).toContain('Alice Martin');
+      expect(detail.textContent).toContain('Stand des échecs');
+      expect(detail.textContent).toContain('Aucune typologie ninja');
+
+      const timeline = Array.from(detail.querySelectorAll('button')).find((each) =>
+        each.textContent!.includes('Alice Martin'),
+      )!;
+      timeline.click();
+      expect(navigate).toHaveBeenCalledWith(['/timeline'], {
+        queryParams: { animateur: 'alice' },
+      });
+    });
+
+    it('recalls the worst cell of each day under the grid', async () => {
+      await monter({ mode: 'tension' }, undefined, 12);
+
+      expect(racine().querySelector('[data-testid="tension-synthese"]')!.textContent).toContain(
+        'Critique · +3',
+      );
+    });
+
+    it('writes the reading to the URL', async () => {
+      await monter({ mode: 'tension' }, undefined, 12);
+
+      expect(replaceState).toHaveBeenLastCalledWith('/marge?mode=tension');
+    });
   });
 });

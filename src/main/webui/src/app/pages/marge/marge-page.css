@@ -116,3 +116,80 @@
     flex-direction: column;
   }
 }
+
+/* The « Tension » reading: four grades, worst in the error colour with a
+   hatching on top, so a critical cell is told apart without the colour
+   (WCAG 1.4.1) — its label, read by the tooltip and the screen reader, says
+   the grade in words too. */
+
+.tension-cell-critique {
+  background:
+    repeating-linear-gradient(
+      45deg,
+      transparent 0 4px,
+      light-dark(rgb(0 0 0 / 12%), rgb(255 255 255 / 14%)) 4px 6px
+    ),
+    var(--mat-sys-error-container);
+  color: var(--mat-sys-on-error-container);
+  font-weight: 700;
+}
+
+.tension-cell-elevee {
+  background: light-dark(#fbdee2, #4a1820);
+  color: light-dark(#68202b, #f1cad0);
+  font-weight: 600;
+}
+
+.tension-cell-surveillee {
+  background: var(--mat-sys-tertiary-container);
+  color: var(--mat-sys-on-tertiary-container);
+}
+
+.tension-cell-calme {
+  background: var(--mat-sys-surface-container-high);
+  color: var(--mat-sys-on-surface);
+}
+
+.tension-cell-passee {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.45;
+}
+
+.tension-cell-vide {
+  color: var(--mat-sys-on-surface-variant);
+  opacity: 0.5;
+}
+
+.tension-badge {
+  margin-left: 0.25rem;
+  font: var(--mat-sys-label-small);
+}
+
+.tension-detail {
+  margin: 1rem 0 0;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: var(--mat-sys-corner-medium);
+  background: var(--mat-sys-surface-container-low);
+}
+
+.tension-detail-titre {
+  margin: 0 0 0.5rem;
+  font: var(--mat-sys-title-small);
+}
+
+.tension-motifs,
+.tension-liens {
+  margin: 0 0 0.5rem;
+  padding-left: 1.1rem;
+}
+
+.tension-lien {
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--mat-sys-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}

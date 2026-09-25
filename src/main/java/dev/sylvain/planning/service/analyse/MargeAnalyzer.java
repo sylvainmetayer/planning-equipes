@@ -172,7 +172,8 @@ public class MargeAnalyzer {
             int cellulesDeficitaires,
             CelluleMarge pireCellule,
             List<ReferentielManquant> referentielsManquants,
-            String message) {}
+            String message)
+            implements MarginReading {}
 
     /** Identity of a cell: one day, one pair of hours. */
     private record CelluleKey(LocalDate date, LocalTime debut, LocalTime fin) {}

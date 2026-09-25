@@ -92,6 +92,15 @@ class McpConfidentialiteStructurelleTest {
         assertThat(classe)
                 .as("l'outil %s ne doit pas exposer un Avertissement en phrase : passer par WarningCodes", outil)
                 .isNotEqualTo(Avertissement.class);
+        // A sealed return type (one tool answering several shapes) is walked
+        // through every shape it permits: declaring the interface must not be
+        // the way around the rule.
+        if (classe.isSealed()) {
+            for (Class<?> permise : classe.getPermittedSubclasses()) {
+                checkType(permise, outil, visites);
+            }
+            return;
+        }
         if (!classe.isRecord()) {
             return;
         }
