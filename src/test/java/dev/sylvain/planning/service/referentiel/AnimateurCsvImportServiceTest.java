@@ -258,7 +258,7 @@ class AnimateurCsvImportServiceTest {
      * The rule the fiche form and the MCP tool apply — no fiche without a
      * first name, a last name and a birth date — holds per row here, so the
      * CSV is not a way around it. Read on the fiche as it would stand, not on
-     * the cell: a row matched by its id whose fiche already carries both
+     * the cell: a row matched by its address whose fiche already carries both
      * names keeps them, exactly like the birth date.
      */
     @Test
@@ -267,22 +267,22 @@ class AnimateurCsvImportServiceTest {
         existant.setPrenom("Amélie");
         existant.setNom("Durand");
         existant.setDateNaissance(LocalDate.of(1990, 3, 12));
-        // The row designates the fiche by the id the edition drew for it.
-        String amelieId =
-                inEdition(() -> referenceData.createAnimateur(existant)).getId();
+        existant.setEmail("amelie@example.org");
+        inEdition(() -> referenceData.createAnimateur(existant));
+        // The row designates the fiche by its address; an id is never read.
         String csv = """
-                identifiant;prenom;nom;date de naissance;email
-                %s;;;;amelie@example.org
-                bruno;;;04/06/1988;bruno@example.org
-                ;Carla;;01/01/1990;
-                ;;Santos;01/01/1990;
-                """.formatted(amelieId);
+                prenom;nom;date de naissance;email
+                ;;;amelie@example.org
+                ;;04/06/1988;bruno@example.org
+                Carla;;01/01/1990;
+                ;Santos;01/01/1990;
+                """;
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
 
         assertThat(ligne(rapport, 2).action()).isEqualTo(AnimateurCsvImportReport.ImportAction.UPDATED);
         assertThat(ligne(rapport, 2).reasons()).isEmpty();
-        assertThat(motif(rapport, 3)).contains("Prénom absent").contains("Nom absent");
+        assertThat(motif(rapport, 3)).contains("ne nomme personne");
         assertThat(motif(rapport, 4)).contains("Nom absent").doesNotContain("Prénom absent");
         assertThat(motif(rapport, 5)).contains("Prénom absent").doesNotContain("Nom absent");
         assertThat(rapport.rejected()).isEqualTo(3);
@@ -534,9 +534,9 @@ class AnimateurCsvImportServiceTest {
     /* -------------------------------- Mapping ------------------------------- */
 
     @Test
-    void unMappingManuelPrimeSurLesEnTetes() {
+    void manualMappingOverridesHeaders() {
         String csv = "colonne A;colonne B;colonne C\nDurand;Amélie;12/03/1990\n";
-        AnimateurCsvMapping mapping = new AnimateurCsvMapping(null, 1, 0, 2, null, null, null, null, null);
+        AnimateurCsvMapping mapping = new AnimateurCsvMapping(1, 0, 2, null, null, null, null, null);
         AnimateurCsvImportRequest demande = new AnimateurCsvImportRequest("a.csv", csv, mapping, false, false);
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.apply(demande));
@@ -553,8 +553,8 @@ class AnimateurCsvImportServiceTest {
      * with an error and no way to correct what caused it.
      */
     @Test
-    void unMappingQuiNeNommePersonneRendUnRapportEtRefuseALEcriture() {
-        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, null, 0, null, null, null, null, null);
+    void mappingNamingNobodyReportsAndRefusesToWrite() {
+        AnimateurCsvMapping sansIdentite = new AnimateurCsvMapping(null, null, 0, null, null, null, null, null);
         AnimateurCsvImportRequest demande =
                 new AnimateurCsvImportRequest("a.csv", "date de naissance\n01/01/1990\n", sansIdentite, false, false);
 
@@ -602,20 +602,18 @@ class AnimateurCsvImportServiceTest {
                 .contains("128 au maximum");
     }
 
-    /** Same guard on the other three columns the database bounds. */
+    /** Same guard on the other two columns the database bounds. */
     @Test
-    void unIdentifiantOuUneAdresseTropLongsSontRejetes() {
-        String csv = "id;prenom;nom;date de naissance;email\n"
-                + "x".repeat(65) + ";Amélie;Durand;12/03/1990;court@example.org\n"
-                + "B;Bruno;Lefèvre;04/06/1988;" + "z".repeat(250) + "@example.org\n"
-                + "C;" + "y".repeat(129) + ";Petit;01/01/1990;\n";
+    void anAddressOrAFirstNameTooLongIsRejected() {
+        String csv = "prenom;nom;date de naissance;email\n"
+                + "Bruno;Lefèvre;04/06/1988;" + "z".repeat(250) + "@example.org\n"
+                + "y".repeat(129) + ";Petit;01/01/1990;\n";
 
         AnimateurCsvImportReport rapport = inEdition(() -> csvImport.preview(demande(csv)));
 
         assertThat(rapport.accepted()).isZero();
-        assertThat(motif(rapport, 2)).contains("Identifiant trop long").contains("64 au maximum");
-        assertThat(motif(rapport, 3)).contains("Adresse e-mail trop longue").contains("255 au maximum");
-        assertThat(motif(rapport, 4)).contains("Prénom trop long").contains("128 au maximum");
+        assertThat(motif(rapport, 2)).contains("Adresse e-mail trop longue").contains("255 au maximum");
+        assertThat(motif(rapport, 3)).contains("Prénom trop long").contains("128 au maximum");
     }
 
     /**
@@ -641,10 +639,7 @@ class AnimateurCsvImportServiceTest {
         assertThat(ecrit.accepted()).isEqualTo(1);
         assertThat(inEdition(() -> referenceData.listAnimateurs()))
                 .singleElement()
-                .satisfies(anime -> {
-                    assertThat(anime.getId()).matches("A\\d+");
-                    assertThat(anime.getId().length()).isLessThanOrEqualTo(AnimateurCsvImportService.MAX_ID);
-                });
+                .satisfies(anime -> assertThat(anime.getId()).matches("A\\d+"));
     }
 
     /* ------------------------------- Encoding ------------------------------ */

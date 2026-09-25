@@ -163,8 +163,8 @@ class ReferentielCsvImportServiceTest {
                 .extract()
                 .path("stand.id");
 
-        // Designated by its generated id, as an exported file does.
-        poster("/api/stands/import-csv", "id;nom;typologies\n" + stand + ";Stand renommé;JEU\n")
+        // No code: the line designates the stand by its name.
+        poster("/api/stands/import-csv", "code;nom;typologies\n;Stand neuf;JEU\n")
                 .then()
                 .statusCode(200)
                 .body("updated", equalTo(1));
@@ -173,7 +173,7 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/stands")
                 .then()
-                .body("find { it.id == '" + stand + "' }.nom", equalTo("Stand renommé"))
+                .body("find { it.id == '" + stand + "' }.nom", equalTo("Stand neuf"))
                 // Neither the headcount nor the schedule was in the file: both stayed.
                 .body("find { it.id == '" + stand + "' }.effectifMin", equalTo(3))
                 .body("find { it.id == '" + stand + "' }.effectifMax", equalTo(5))
@@ -183,9 +183,9 @@ class ReferentielCsvImportServiceTest {
     @Test
     void faultyRowsAreRefusedOneByOneWithoutBlockingTheOthers() {
         io.restassured.path.json.JsonPath rapport = poster("/api/stands/import-csv/analyse", """
-                        id;nom;typologies;effectifMin;effectifMax
+                        code;nom;typologies;effectifMin;effectifMax
                         OK;Bon stand;JEU;1;2
-                        ;Sans id;JEU;;
+                        ;;JEU;;
                         DOUBLON;Un;JEU;;
                         DOUBLON;Deux;JEU;;
                         MAX;Inversé;JEU;4;2
@@ -200,7 +200,7 @@ class ReferentielCsvImportServiceTest {
 
         List<Map<String, Object>> refusees = rapport.getList("rows.findAll { it.action == 'REFUSE' }");
         assertThat(refusees).hasSize(4);
-        assertThat(rapport.getString("rows.find { it.line == 3 }.raisons[0]")).contains("id");
+        assertThat(rapport.getString("rows.find { it.line == 3 }.raisons[0]")).contains("Ni code ni nom");
         assertThat(rapport.getString("rows.find { it.line == 5 }.raisons[0]")).contains("déjà plus haut");
         assertThat(rapport.getString("rows.find { it.line == 6 }.raisons[0]")).contains("inférieur");
         assertThat(rapport.getString("rows.find { it.line == 7 }.raisons[0]")).contains("nombre");
@@ -213,15 +213,17 @@ class ReferentielCsvImportServiceTest {
      * nothing would ever reference.
      */
     @Test
-    void uneLigneRefuseeNeCreePasLaTypologieQuElleCitait() {
-        poster("/api/stands/import-csv/analyse", "id;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
+    void aRefusedLineDoesNotCreateTheTypologieItNamed() {
+        poster(
+                        "/api/stands/import-csv/analyse",
+                        "code;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
                 .then()
                 .statusCode(200)
                 .body("accepted", equalTo(0))
                 .body("rejected", equalTo(1))
                 .body("typologiesCreees", hasSize(0));
 
-        poster("/api/stands/import-csv", "id;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
+        poster("/api/stands/import-csv", "code;nom;typologies;effectifMin;effectifMax\nKO;Refusé;MAUVAISE;4;2\n")
                 .then()
                 .statusCode(200)
                 .body("created", equalTo(0));
@@ -230,16 +232,51 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("findAll { it.id == 'MAUVAISE' }", hasSize(0));
+                .body("findAll { it.code == 'MAUVAISE' }", hasSize(0));
     }
 
     @Test
-    void unFichierSansLesColonnesAttenduesEstRefuseEnLesNommant() {
+    void aFileWithoutTheAwaitedColumnsIsRefusedNamingThem() {
         poster("/api/typologies/import-csv/analyse", "identifiant;nom\nA;B\n")
                 .then()
                 .statusCode(400)
-                .body("message", containsString("id"))
+                .body("message", containsString("code"))
                 .body("message", containsString("libelle"));
+    }
+
+    /**
+     * Ids are drawn per edition (ADR 0050): the same number names another row
+     * elsewhere, so an {@code id} column is never read. A file exported before
+     * that carries its codes under {@code id}; the refusal says how to reuse it.
+     */
+    @Test
+    void anIdColumnIsNotReadAndTheRefusalSaysToRenameIt() {
+        poster("/api/typologies/import-csv/analyse", "id;libelle\nJEU;Jeux\n")
+                .then()
+                .statusCode(400)
+                .body("message", containsString("renommez simplement la colonne « id » en « code »"));
+    }
+
+    /** A line without code updates the row carrying its name, and keeps that row's code. */
+    @Test
+    void aLineWithoutCodeUpdatesTheRowNamedAlike() {
+        poster("/api/typologies/import-csv", "code;libelle\nJEU;Jeux\n").then().statusCode(200);
+
+        poster("/api/emplacements/import-csv", "code;nom;latitude;longitude\nPAV;Pavillon;;\n")
+                .then()
+                .statusCode(200);
+        poster("/api/emplacements/import-csv", "code;nom;latitude;longitude\n;pavillon;46,65;-0,24\n;Esplanade;;\n")
+                .then()
+                .statusCode(200)
+                .body("updated", equalTo(1))
+                .body("created", equalTo(1));
+
+        given().header(HEADER, EDITION)
+                .when()
+                .get("/api/emplacements")
+                .then()
+                .body("find { it.code == 'PAV' }.latitude", equalTo(46.65f))
+                .body("findAll { it.nom == 'Esplanade' }", hasSize(1));
     }
 
     @Test

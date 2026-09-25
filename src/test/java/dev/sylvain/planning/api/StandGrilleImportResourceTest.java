@@ -68,7 +68,7 @@ class StandGrilleImportResourceTest {
     }
 
     @Test
-    void uneCelluleModifieeEstEcriteEtRelueDansLaGrille() {
+    void anEditedCellIsWrittenAndReadBackInTheGrid() {
         seedScenario();
         JsonPath avant = given().when()
                 .get("/api/ouvertures-stands")
@@ -76,11 +76,11 @@ class StandGrilleImportResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        String standId = avant.getString("stands[0].standId");
+        String stand = avant.getString("stands[0].nom");
         String date = avant.getString("jours[0].date");
         String debut = avant.getString("jours[0].creneaux[0].heureDebut").substring(0, 5);
         String fin = avant.getString("jours[0].creneaux[0].heureFin").substring(0, 5);
-        String csv = "stand;" + date + "\n;" + debut + "-" + fin + "\n" + standId + ";7\n";
+        String csv = "stand;" + date + "\n;" + debut + "-" + fin + "\n" + stand + ";7\n";
 
         given().contentType("application/json")
                 .body(request(csv))
@@ -105,7 +105,7 @@ class StandGrilleImportResourceTest {
 
     /** The workbook's own columns are narrower than the créneaux: each writes a window at its bounds. */
     @Test
-    void uneColonnePlusEtroiteQueSonCreneauEcritSaTrancheEtLaisseLeReste() {
+    void aColumnNarrowerThanItsTimeslotWritesItsSliceAndLeavesTheRest() {
         seedScenario();
         JsonPath avant = given().when()
                 .get("/api/ouvertures-stands")
@@ -113,13 +113,13 @@ class StandGrilleImportResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        String standId = avant.getString("stands[0].standId");
+        String stand = avant.getString("stands[0].nom");
         String date = avant.getString("jours[0].date");
         String debut = avant.getString("jours[0].creneaux[0].heureDebut").substring(0, 5);
         Integer avantEffectif = avant.get("stands[0].jours[0].creneaux[0].effectif");
         // The first hour of the first créneau only.
         String finTranche = java.time.LocalTime.parse(debut).plusHours(1).toString();
-        String csv = "stand;" + date + "\n;" + debut + "-" + finTranche + "\n" + standId + ";7\n";
+        String csv = "stand;" + date + "\n;" + debut + "-" + finTranche + "\n" + stand + ";7\n";
 
         given().contentType("application/json")
                 .body(request(csv))
@@ -155,11 +155,11 @@ class StandGrilleImportResourceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        String standId = avant.getString("stands[0].standId");
+        String stand = avant.getString("stands[0].nom");
         String date = avant.getString("jours[0].date");
         String debut = avant.getString("jours[0].creneaux[0].heureDebut").substring(0, 5);
         String fin = avant.getString("jours[0].creneaux[0].heureFin").substring(0, 5);
-        String csv = "stand;" + date + ";" + date + "\n;" + debut + "-" + fin + ";03:00-04:00\n" + standId
+        String csv = "stand;" + date + ";" + date + "\n;" + debut + "-" + fin + ";03:00-04:00\n" + stand
                 + ";abc;1\nINCONNU;2;\n";
 
         JsonPath rapport = given().contentType("application/json")

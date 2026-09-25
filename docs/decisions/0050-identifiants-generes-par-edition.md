@@ -66,17 +66,18 @@ illisibles.
 
 Les stands, les typologies et les emplacements portent donc un **code**
 facultatif (`STRATEGIE`, `JEU-LIBRE`, `PAVILLON`), unique dans l'édition.
-C'est lui que les fichiers citent, et partout où l'on attend une typologie,
-un stand ou un emplacement, l'id et le code sont acceptés. Un code ne peut
+C'est lui que les fichiers citent. Dans l'API, les outils MCP et le fichier
+scénario, partout où l'on attend une typologie, un stand ou un emplacement,
+l'id et le code sont acceptés ; un CSV ne lit que le code (D7). Un code ne peut
 pas avoir la forme d'un identifiant de son référentiel (`S4` pour un stand),
 ce qui rend « un id ou un code » toujours univoque. Il ne peut pas non plus
 contenir les séparateurs des fichiers (`,`, `;`, `|`, un saut de ligne).
 
 Les **animateurs** n'ont pas de code : un code choisi à la main
 réintroduirait l'identifiant nominatif que cette décision retire. Un fichier
-les rapproche par leur identifiant, puis par leur adresse e-mail, puis par
-leurs nom et prénom, et refuse une ligne ambiguë en nommant les candidats par
-leur identifiant. Les contraintes ad hoc n'ont pas de code non plus : aucun
+scénario les rapproche d'abord par leur identifiant, sous condition (D3) ; un
+CSV par leur adresse e-mail, puis par leurs nom et prénom (D7). Une ligne
+ambiguë est refusée en nommant les candidats par leur identifiant. Les contraintes ad hoc n'ont pas de code non plus : aucun
 fichier ne les cite par une clé.
 
 ### D3 — Dans un fichier scénario, un identifiant est une référence locale
@@ -139,6 +140,33 @@ apercevoir. Plutôt que de marquer le fichier de son édition, l'échange est
 retiré : la grille se saisit exclusivement à l'écran, où chaque ligne porte le
 nom de la personne. La décision [0030](0030-grille-competences-import-additif.md),
 qui fixait la sémantique de cet import, est abandonnée.
+
+### D7 — Un CSV ne lit ni n'écrit d'identifiant
+
+Le raisonnement de D6 vaut pour tous les CSV : un identifiant lu dans un
+fichier venu d'une autre édition désigne quelqu'un ou quelque chose d'autre.
+Là où D3 protège le fichier scénario par une vérification d'identité, un CSV
+de trois colonnes n'a pas toujours de quoi vérifier. Les imports CSV
+**ignorent donc toute colonne d'identifiant**, et les exports et les fichiers
+d'exemple n'en écrivent plus :
+
+- une typologie, un emplacement ou un stand se désigne par son **code**,
+  sinon par son **nom** (son libellé, pour une typologie) quand une seule ligne
+  de l'édition le porte ; deux homonymes refusent la ligne en demandant un
+  code, un nom inconnu crée une ligne ;
+- un animateur se désigne par son **adresse e-mail**, puis par ses **nom et
+  prénom** ;
+- une typologie citée par un stand ou un animateur l'est par son code, ou
+  par son libellé quand elle n'a pas de code et qu'il n'est porté que par
+  elle — c'est ce que l'export écrit ;
+- la grille des ouvertures nomme un stand par son code, sinon par son nom.
+
+Un fichier exporté avant cette décision porte ses codes dans une colonne
+`id` : sans colonne `code`, il est refusé avec la consigne de renommer
+l'en-tête, plutôt que de lire des valeurs qui peuvent désormais être des
+identifiants générés. Accepter l'identifiant « quand il existe dans
+l'édition » a été écarté : c'est exactement le cas où il désigne la mauvaise
+ligne sans que rien ne le signale.
 
 ## La migration
 

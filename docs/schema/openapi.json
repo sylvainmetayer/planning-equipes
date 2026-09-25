@@ -392,10 +392,6 @@
       "AnimateurCsvMapping" : {
         "type" : "object",
         "properties" : {
-          "id" : {
-            "type" : "integer",
-            "format" : "int32"
-          },
           "prenom" : {
             "type" : "integer",
             "format" : "int32"

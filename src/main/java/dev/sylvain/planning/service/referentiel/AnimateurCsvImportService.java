@@ -125,8 +125,8 @@ public class AnimateurCsvImportService {
     public static final String EXEMPLE_FICHIER = "exemple-animateurs.csv";
 
     /**
-     * The widths {@code animateur} is declared with — {@code id VARCHAR(64)},
-     * {@code prenom} / {@code nom VARCHAR(128)} (V1__init.sql) and
+     * The widths {@code animateur} is declared with — {@code prenom} /
+     * {@code nom VARCHAR(128)} (V1__init.sql) and
      * {@code email VARCHAR(255)} (V41).
      *
      * <p>They are checked <b>at the row</b> rather than left to Postgres. A
@@ -136,8 +136,6 @@ public class AnimateurCsvImportService {
      * answers 500. That accident is precisely what this preview exists to
      * catch, so it is caught here, with the row and its measurement.</p>
      */
-    static final int MAX_ID = 64;
-
     static final int MAX_NOM = 128;
 
     static final int MAX_EMAIL = 255;
@@ -252,7 +250,7 @@ public class AnimateurCsvImportService {
         AnimateurCsvImportReport report = analysis.report();
         if (!nameableMapping(report.mapping())) {
             throw new BusinessError.Invalid("Le mapping doit désigner au moins une colonne parmi "
-                    + "l'identifiant, le prénom et le nom : sans elles, une ligne ne nomme personne.");
+                    + "le prénom, le nom et l'adresse e-mail : sans elles, une ligne ne nomme personne.");
         }
         if (request.replaceAnimateurs() && report.rejected() > 0) {
             throw new BusinessError.Invalid("Remplacement complet demandé mais " + report.rejected()
@@ -417,7 +415,7 @@ public class AnimateurCsvImportService {
             AnimateurCsvMapping mapping,
             Set<LocalDate> joursEvenement) {
         List<Animateur> existants = animateurs.listAnimateurs();
-        Index index = new Index(existants, pendingDeclarations(), typologies.idsByKey());
+        Index index = new Index(existants, pendingDeclarations(), typologies.idsByCodeOrLabel());
         Dates dates = new Dates(LocalDate.now(ZoneId.systemDefault()), joursEvenement);
 
         List<AnimateurCsvImportReport.ImportedRow> rows = new ArrayList<>();
@@ -457,7 +455,7 @@ public class AnimateurCsvImportService {
         if (!nameableMapping(mapping)) {
             warnings.add(
                     0,
-                    "Aucune colonne n'est associée à l'identifiant, au prénom ni au nom : "
+                    "Aucune colonne n'est associée au prénom, au nom ni à l'adresse e-mail : "
                             + "associez-les ci-dessus, sinon aucune ligne ne nomme personne.");
         }
         AnimateurCsvImportReport report = new AnimateurCsvImportReport(
@@ -483,9 +481,13 @@ public class AnimateurCsvImportService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    /** A row can only name somebody through one of these three columns. */
+    /**
+     * A row can only name somebody through one of these three columns: an id
+     * is never read (ADR 0050), the same number naming somebody else in
+     * another edition.
+     */
     private static boolean nameableMapping(AnimateurCsvMapping mapping) {
-        return mapping.id() != null || mapping.prenom() != null || mapping.nom() != null;
+        return mapping.prenom() != null || mapping.nom() != null || mapping.email() != null;
     }
 
     private List<String> warnings(AnimateurCsvImportRequest request, List<Animateur> existants, List<String> toDelete) {
@@ -531,10 +533,9 @@ public class AnimateurCsvImportService {
                 + "au planning, code d'accès à l'espace animateur, compétences et souhaits.";
     }
 
-    /** The three lookups a row is resolved by, built once for the whole file. */
+    /** The lookups a row is resolved by, built once for the whole file. */
     private static final class Index {
 
-        private final Map<String, Animateur> parId = new LinkedHashMap<>();
         private final Map<String, List<Animateur>> parEmail = new LinkedHashMap<>();
         private final Map<String, List<Animateur>> parNom = new LinkedHashMap<>();
         private final Set<String> enAttente;
@@ -546,7 +547,6 @@ public class AnimateurCsvImportService {
             this.enAttente = enAttente;
             this.typologies = typologies;
             for (Animateur animateur : existants) {
-                parId.put(animateur.getId(), animateur);
                 if (animateur.getEmail() != null && !animateur.getEmail().isBlank()) {
                     parEmail.computeIfAbsent(
                                     animateur.getEmail().trim().toLowerCase(Locale.ROOT), key -> new ArrayList<>())
@@ -586,27 +586,21 @@ public class AnimateurCsvImportService {
         List<String> warnings = new ArrayList<>();
         checkWidth(row, table, reasons);
 
-        String idCell = cell(row, mapping.id());
         String prenom = cell(row, mapping.prenom());
         String nom = cell(row, mapping.nom());
         String email = cell(row, mapping.email());
-        String label = label(prenom, nom, idCell, email);
-        checkLength("Identifiant trop long", idCell, MAX_ID, reasons);
+        String label = label(prenom, nom, email);
         checkLength("Prénom trop long", prenom, MAX_NOM, reasons);
         checkLength("Nom trop long", nom, MAX_NOM, reasons);
         checkLength("Adresse e-mail trop longue", email, MAX_EMAIL, reasons);
 
-        Resolution resolution = resolve(idCell, email, prenom, nom, label, index, reasons);
-        if (!idCell.isEmpty() && !index.parId.containsKey(idCell)) {
-            warnings.add("L'identifiant « " + idCell + " » n'existe pas dans cette édition : il est ignoré, la ligne "
-                    + "est rapprochée par son adresse e-mail ou son nom.");
-        }
+        Resolution resolution = resolve(email, prenom, nom, label, index, reasons);
         Animateur existant = resolution.existant();
         Integer precedente = resolution.identity() == null ? null : seen.get(resolution.identity());
         if (precedente != null) {
             reasons.add("Doublon dans le fichier : la même personne est déjà décrite ligne " + precedente + ".");
         }
-        checkNames(prenom, nom, idCell, existant, reasons);
+        checkNames(prenom, nom, email, existant, reasons);
 
         int motifsAvantDate = reasons.size();
         LocalDate dateNaissance = readBirthDate(row, mapping, existant, dates.today(), reasons, warnings);
@@ -683,15 +677,16 @@ public class AnimateurCsvImportService {
                 null);
     }
 
-    private static void checkNames(String prenom, String nom, String idCell, Animateur existant, List<String> reasons) {
-        if (prenom.isEmpty() && nom.isEmpty() && idCell.isEmpty()) {
+    private static void checkNames(String prenom, String nom, String email, Animateur existant, List<String> reasons) {
+        if (prenom.isEmpty() && nom.isEmpty() && (email.isEmpty() || existant == null)) {
             // Checked on the cells rather than on the label, which falls back to
             // the e-mail: a row carrying nothing but an address would otherwise
-            // create a nameless fiche.
-            reasons.add("La ligne ne nomme personne : prénom, nom et identifiant sont vides.");
+            // create a nameless fiche. It may still update the fiche it names.
+            reasons.add("La ligne ne nomme personne : prénom et nom sont vides, et son adresse e-mail "
+                    + "ne désigne aucune fiche de l'édition.");
         } else {
             // The fiche as it would stand after the row, not the cell: a row
-            // matched by id or e-mail may leave the names blank when the fiche
+            // matched by e-mail may leave the names blank when the fiche
             // already carries them, exactly as it may leave the birth date.
             checkPresent("Prénom absent", effective(prenom, existant == null ? null : existant.getPrenom()), reasons);
             checkPresent("Nom absent", effective(nom, existant == null ? null : existant.getNom()), reasons);
@@ -737,7 +732,7 @@ public class AnimateurCsvImportService {
 
     /**
      * A cell longer than the column that will hold it, refused with its
-     * measurement — see {@link #MAX_ID}. The wording points at the mapping
+     * measurement — see {@link #MAX_NOM}. The wording points at the mapping
      * rather than at the person: a 214-character « nom » is a column picked by
      * mistake, never a name.
      */
@@ -763,28 +758,26 @@ public class AnimateurCsvImportService {
         }
     }
 
-    private static String label(String prenom, String nom, String idCell, String email) {
+    private static String label(String prenom, String nom, String email) {
         String complet = (prenom + " " + nom).trim();
-        if (!complet.isEmpty()) {
-            return complet;
-        }
-        return !idCell.isEmpty() ? idCell : email;
+        return !complet.isEmpty() ? complet : email;
     }
 
     /** Which fiche the row lands on, and the key that makes it a duplicate of another row. */
     private record Resolution(Animateur existant, String identity) {}
 
+    /**
+     * The fiche a row lands on: by e-mail, then by name — never by id, which is
+     * drawn per edition and names somebody else in another one (ADR 0050).
+     */
     private static Resolution resolve(
-            String idCell, String email, String prenom, String nom, String label, Index index, List<String> reasons) {
-        if (!idCell.isEmpty() && index.parId.containsKey(idCell)) {
-            return new Resolution(index.parId.get(idCell), idCell);
-        }
+            String email, String prenom, String nom, String label, Index index, List<String> reasons) {
         if (!email.isEmpty()) {
             String key = email.toLowerCase(Locale.ROOT);
             List<Animateur> candidats = index.parEmail.getOrDefault(key, List.of());
             if (candidats.size() > 1) {
                 reasons.add("Plusieurs animateurs portent l'adresse « " + email + " » (" + ids(candidats)
-                        + ") : ajoutez une colonne identifiant pour trancher.");
+                        + ") : corrigez l'adresse de l'une des fiches pour trancher.");
                 return new Resolution(null, "email:" + key);
             }
             if (candidats.size() == 1) {
@@ -798,7 +791,7 @@ public class AnimateurCsvImportService {
         List<Animateur> candidats = index.parNom.getOrDefault(key, List.of());
         if (candidats.size() > 1) {
             reasons.add("Plusieurs animateurs se nomment « " + label + " » (" + ids(candidats)
-                    + ") : ajoutez une colonne identifiant ou adresse e-mail pour trancher.");
+                    + ") : ajoutez une colonne adresse e-mail pour trancher.");
             return new Resolution(null, "nom:" + key);
         }
         if (candidats.size() == 1) {

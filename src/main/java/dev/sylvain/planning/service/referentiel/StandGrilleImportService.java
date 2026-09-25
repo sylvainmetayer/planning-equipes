@@ -124,12 +124,16 @@ public class StandGrilleImportService {
      */
     public String exemple() {
         List<Creneau> edition = creneaux.list();
-        OuvertureStandsAnalyzer.RapportOuvertures rapport =
-                OuvertureStandsAnalyzer.analyze(stands.listSolved(), edition);
+        List<Stand> tous = stands.listSolved();
+        OuvertureStandsAnalyzer.RapportOuvertures rapport = OuvertureStandsAnalyzer.analyze(tous, edition);
+        // A row names its stand by code, else by name — never by id, drawn per
+        // edition (ADR 0050): the file must read back in any edition.
+        Map<String, String> libelles = new HashMap<>();
+        tous.forEach(stand -> libelles.put(stand.getId(), stand.getCode() != null ? stand.getCode() : stand.getNom()));
         StringBuilder csv = new StringBuilder();
         appendHeaders(csv, rapport.jours());
         for (OuvertureStandsAnalyzer.LigneStand ligne : rapport.stands()) {
-            appendStand(csv, ligne);
+            appendStand(csv, ligne, libelles.getOrDefault(ligne.standId(), ligne.standId()));
         }
         return csv.toString();
     }
@@ -149,8 +153,8 @@ public class StandGrilleImportService {
         csv.append('\n').append(bandes).append('\n');
     }
 
-    private static void appendStand(StringBuilder csv, OuvertureStandsAnalyzer.LigneStand ligne) {
-        csv.append(csv(ligne.standId()));
+    private static void appendStand(StringBuilder csv, OuvertureStandsAnalyzer.LigneStand ligne, String libelle) {
+        csv.append(csv(libelle));
         for (OuvertureStandsAnalyzer.CelluleJour jour : ligne.jours()) {
             for (OuvertureStandsAnalyzer.CelluleCreneau cellule : jour.creneaux()) {
                 csv.append(';').append(cellule.effectif() == null ? "" : cellule.effectif());
@@ -350,7 +354,9 @@ public class StandGrilleImportService {
         private final List<Creneau> edition;
         private final List<GrilleCsv.Colonne> colonnes;
         private final ColumnMapping lues;
-        private final Map<String, Stand> parId = new LinkedHashMap<>();
+        /** A stand by its code: what a row names it by first — never by its id (ADR 0050). */
+        private final Map<String, Stand> parCode = new LinkedHashMap<>();
+
         private final Map<String, List<Stand>> parNom = new HashMap<>();
         private final Map<String, Map<Long, Integer>> actuelles;
         private final Map<String, Integer> dejaVus = new HashMap<>();
@@ -367,21 +373,16 @@ public class StandGrilleImportService {
             this.lues = lues;
             this.actuelles = actuelles;
             for (Stand stand : tous) {
-                parId.put(stand.getId(), stand);
+                if (stand.getCode() != null) {
+                    parCode.put(stand.getCode(), stand);
+                }
                 parNom.computeIfAbsent(normalise(stand.getNom()), key -> new ArrayList<>())
                         .add(stand);
-            }
-            // A code names a stand as surely as its id (ADR 0050): read after
-            // the ids, so that an id always wins over a code spelled the same way.
-            for (Stand stand : tous) {
-                if (stand.getCode() != null) {
-                    parId.putIfAbsent(stand.getCode(), stand);
-                }
             }
         }
 
         ImportedGrilleRow read(GrilleCsv.Ligne ligne) {
-            Stand stand = resolve(ligne.stand(), parId, parNom);
+            Stand stand = resolve(ligne.stand(), parCode, parNom);
             if (stand == null) {
                 List<Stand> candidats = parNom.getOrDefault(normalise(ligne.stand()), List.of());
                 return rejected(ligne, null, List.of(unknownStandReason(ligne.stand(), candidats)), 0);
@@ -390,8 +391,8 @@ public class StandGrilleImportService {
                 return rejected(
                         ligne,
                         stand.getId(),
-                        List.of("Le stand " + stand.getId() + " est déjà décrit ligne " + dejaVus.get(stand.getId())
-                                + " : cette ligne est ignorée."),
+                        List.of("Le stand « " + stand.getNom() + " » est déjà décrit ligne "
+                                + dejaVus.get(stand.getId()) + " : cette ligne est ignorée."),
                         0);
             }
             // The créneaux the file has no column for keep their cell, in one
@@ -461,9 +462,8 @@ public class StandGrilleImportService {
 
         private static String unknownStandReason(String texte, List<Stand> candidats) {
             if (candidats.size() > 1) {
-                return "Ce nom désigne " + candidats.size() + " stands ("
-                        + String.join(", ", candidats.stream().map(Stand::getId).toList())
-                        + ") : nommez le stand par son code ou son identifiant.";
+                return "Ce nom désigne " + candidats.size()
+                        + " stands : donnez un code à chacun et nommez la ligne par ce code.";
             }
             return "Aucun stand « " + texte + " » dans l'édition : créez le stand d'abord, "
                     + "l'import ne crée pas de stand (typologies et emplacement lui manqueraient).";
@@ -515,10 +515,10 @@ public class StandGrilleImportService {
         return cellules;
     }
 
-    private static Stand resolve(String texte, Map<String, Stand> parId, Map<String, List<Stand>> parNom) {
-        Stand parIdentifiant = parId.get(texte.trim());
-        if (parIdentifiant != null) {
-            return parIdentifiant;
+    private static Stand resolve(String texte, Map<String, Stand> parCode, Map<String, List<Stand>> parNom) {
+        Stand parLeCode = parCode.get(texte.trim());
+        if (parLeCode != null) {
+            return parLeCode;
         }
         List<Stand> candidats = parNom.getOrDefault(normalise(texte), List.of());
         return candidats.size() == 1 ? candidats.get(0) : null;

@@ -205,6 +205,26 @@ public class TypologieService implements TypologieLibelles {
         return byIdOrCode(repository.listTypologies());
     }
 
+    /**
+     * The id of every game category by its code, and by its label when no
+     * other one shares it: how a spreadsheet names a category. Read by the CSV
+     * imports only, which never read an id (ADR 0050, D7) — ids are drawn per
+     * edition, so a file's {@code T3} would name another category elsewhere.
+     */
+    public Map<String, String> idsByCodeOrLabel() {
+        List<TypologieItem> referentiel = repository.listTypologies();
+        Map<String, String> parCle = new LinkedHashMap<>();
+        referentiel.stream()
+                .filter(typologie -> typologie.code() != null)
+                .forEach(typologie -> parCle.put(typologie.code(), typologie.id()));
+        Map<String, Long> occurrences =
+                referentiel.stream().collect(Collectors.groupingBy(TypologieItem::label, Collectors.counting()));
+        referentiel.stream()
+                .filter(typologie -> typologie.label() != null && occurrences.get(typologie.label()) == 1)
+                .forEach(typologie -> parCle.putIfAbsent(typologie.label(), typologie.id()));
+        return parCle;
+    }
+
     /** {@link #resolveIds(Set)} against an index {@link #idsByKey} already read. */
     public static Set<String> resolveIds(Collection<String> valeurs, Map<String, String> parCle) {
         if (valeurs == null) {

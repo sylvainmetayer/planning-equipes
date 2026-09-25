@@ -29,7 +29,7 @@ import { ImportGrilleAction, ImportGrilleDemande, ImportGrilleRapport } from '..
  *
  * <p>Same contract as the animateur import: the file is posted as text, twice
  * on purpose (the write re-reads and re-checks it), never written to disk on
- * either side. What differs is the identity (a stand, by id or exact name)
+ * either side. What differs is the identity (a stand, by code or exact name)
  * and what a column that matches nothing does: it is ignored and listed, not
  * a reason to refuse the file.</p>
  */

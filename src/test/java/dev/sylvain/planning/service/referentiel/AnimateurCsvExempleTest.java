@@ -67,17 +67,9 @@ class AnimateurCsvExempleTest {
 
     private static final String FICHIER = AnimateurCsvImportService.EXEMPLE_FICHIER;
 
-    /** The nine columns the example is expected to hand to the import, in file order. */
+    /** The eight columns the example is expected to hand to the import, in file order. */
     private static final List<String> ENTETE = List.of(
-            "identifiant",
-            "prénom",
-            "nom",
-            "date de naissance",
-            "email",
-            "manager",
-            "compétences",
-            "souhaits",
-            "jours indisponibles");
+            "prénom", "nom", "date de naissance", "email", "manager", "compétences", "souhaits", "jours indisponibles");
 
     @Inject
     AnimateurCsvImportService csvImport;
@@ -153,17 +145,16 @@ class AnimateurCsvExempleTest {
     /**
      * The example is also what an operator sees the mapping editor prefilled
      * from. Headers that no longer match any alias would still import — after
-     * nine manual corrections nobody should have to make.
+     * eight manual corrections nobody should have to make.
      */
     @Test
-    void exampleHeaderMapsOnItsOwnOntoTheNineFields() {
+    void exampleHeaderMapsOnItsOwnOntoTheEightFields() {
         CsvParser.Table table = CsvParser.parse(exemple());
 
         assertThat(table.separator()).isEqualTo(';');
         assertThat(table.columns()).isEqualTo(ENTETE);
         AnimateurCsvMapping mapping = AnimateurCsvMapping.propose(table.columns());
         assertThat(List.of(
-                        mapping.id(),
                         mapping.prenom(),
                         mapping.nom(),
                         mapping.dateNaissance(),
@@ -172,7 +163,7 @@ class AnimateurCsvExempleTest {
                         mapping.competences(),
                         mapping.souhaits(),
                         mapping.joursIndisponibles()))
-                .containsExactly(0, 1, 2, 3, 4, 5, 6, 7, 8);
+                .containsExactly(0, 1, 2, 3, 4, 5, 6, 7);
     }
 
     /**

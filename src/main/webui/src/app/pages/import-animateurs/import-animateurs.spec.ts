@@ -52,16 +52,17 @@ describe('mapping predicates', () => {
     expect(mappingVideOuNul(withColonne(mappingVide(), 'email', 0))).toBe(false);
   });
 
-  it('requires an id, a first name or a last name for a row to name somebody', () => {
+  it('requires a first name, a last name or an e-mail for a row to name somebody', () => {
     expect(mappingNommeQuelquun(null)).toBe(false);
     expect(mappingNommeQuelquun(withColonne(mappingVide(), 'dateNaissance', 0))).toBe(false);
     expect(mappingNommeQuelquun(withColonne(mappingVide(), 'nom', 0))).toBe(true);
-    expect(mappingNommeQuelquun(withColonne(mappingVide(), 'id', 0))).toBe(true);
+    expect(mappingNommeQuelquun(withColonne(mappingVide(), 'email', 0))).toBe(true);
   });
 
-  it('offers the nine fields of an animateur fiche', () => {
-    expect(CHAMPS_IMPORT).toHaveLength(9);
-    expect(new Set(CHAMPS_IMPORT).size).toBe(9);
+  it('offers the eight fields of an animateur fiche, never an id', () => {
+    expect(CHAMPS_IMPORT).toHaveLength(8);
+    expect(new Set(CHAMPS_IMPORT).size).toBe(8);
+    expect(CHAMPS_IMPORT as readonly string[]).not.toContain('id');
   });
 });
 
