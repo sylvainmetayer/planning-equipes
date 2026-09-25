@@ -175,14 +175,26 @@ public class EditionService {
         return homonymes.stream().findFirst();
     }
 
-    /** The name an edition the section does not find is created under: its nom, else its id. */
+    /**
+     * The name an edition the section does not find is created under: its
+     * nom, else its id — unless that id has an edition id's shape: it then
+     * names an edition of another database, and « E5 » is no name to create
+     * one under (see {@link #requireName}).
+     */
     private static String nameToCreate(String id, String nom) {
         String nomCible = nom == null ? "" : nom.trim();
-        String nomCree = nomCible.isEmpty() ? (id == null ? "" : id.trim()) : nomCible;
-        if (nomCree.isEmpty()) {
+        if (!nomCible.isEmpty()) {
+            return nomCible;
+        }
+        String idCible = id == null ? "" : id.trim();
+        if (IdGenerator.looksLikeEditionId(idCible)) {
+            throw new BusinessError.Invalid("Aucune édition « " + idCible + " » ici, et la section edition ne donne"
+                    + " pas de nom pour la créer : ajoutez-lui un nom.");
+        }
+        if (idCible.isEmpty()) {
             throw new BusinessError.Invalid("La section edition doit donner le nom de l'édition cible.");
         }
-        return nomCree;
+        return idCible;
     }
 
     /** Result of {@link #resolveForImport}: the edition to import into, and whether it was just created. */

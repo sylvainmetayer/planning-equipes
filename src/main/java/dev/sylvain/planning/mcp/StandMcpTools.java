@@ -16,6 +16,7 @@ import dev.sylvain.planning.service.referentiel.CoherenceAnalyzer.TypologieUsage
 import dev.sylvain.planning.service.referentiel.HoraireCompaction;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.referentiel.TypologieItem;
+import dev.sylvain.planning.service.referentiel.TypologieService;
 import dev.sylvain.planning.service.referentiel.WrittenStand;
 import io.quarkiverse.mcp.server.Tool;
 import io.quarkiverse.mcp.server.ToolArg;
@@ -138,7 +139,9 @@ public class StandMcpTools {
         Stand stand = new Stand();
         stand.setNom(nom);
         stand.setCode(code);
-        stand.setTypologiesProposees(typologyIds(typologiesProposees));
+        // Ids or codes: StandService resolves them on the write.
+        stand.setTypologiesProposees(
+                typologiesProposees == null ? new LinkedHashSet<>() : new LinkedHashSet<>(typologiesProposees));
         stand.setEffectifMin(effectifMin == null ? 1 : effectifMin);
         stand.setEffectifMax(effectifMax == null ? Math.max(1, stand.getEffectifMin()) : effectifMax);
         stand.setReserveMajeurs(Boolean.TRUE.equals(reserveMajeurs));
@@ -273,13 +276,8 @@ public class StandMcpTools {
         if (typologies == null || typologies.isEmpty() || !autorise) {
             return List.of();
         }
-        Set<String> connues = new HashSet<>();
-        referenceDataService.listTypologies().forEach(typologie -> {
-            connues.add(typologie.id());
-            if (typologie.code() != null) {
-                connues.add(typologie.code());
-            }
-        });
+        Set<String> connues =
+                new HashSet<>(referenceDataService.typologyIdsByKey().keySet());
         List<TypologieItem> manquantes = new ArrayList<>();
         for (String typologie : typologies) {
             // A value shaped like a typologie id names one that does not
@@ -299,22 +297,10 @@ public class StandMcpTools {
      * validation to refuse, or for {@link #missingTypologies} to create.
      */
     private Set<String> typologyIds(List<String> valeurs) {
-        Set<String> ids = new LinkedHashSet<>();
         if (valeurs == null) {
-            return ids;
+            return new LinkedHashSet<>();
         }
-        List<TypologieItem> referentiel = referenceDataService.listTypologies();
-        for (String valeur : valeurs) {
-            ids.add(referentiel.stream()
-                    .filter(typologie -> typologie.id().equals(valeur))
-                    .findFirst()
-                    .or(() -> referentiel.stream()
-                            .filter(typologie -> valeur.equals(typologie.code()))
-                            .findFirst())
-                    .map(TypologieItem::id)
-                    .orElse(valeur));
-        }
-        return ids;
+        return TypologieService.resolveIds(valeurs, referenceDataService.typologyIdsByKey());
     }
 
     /** @return the emplacement to write with the stand, or {@code null} when it exists or was not named. */
@@ -409,7 +395,8 @@ public class StandMcpTools {
             stand.setCode(code);
         }
         if (typologiesProposees != null) {
-            stand.setTypologiesProposees(typologyIds(typologiesProposees));
+            // Ids or codes: StandService resolves them on the write.
+            stand.setTypologiesProposees(new LinkedHashSet<>(typologiesProposees));
         }
         if (effectifMin != null) {
             stand.setEffectifMin(effectifMin);

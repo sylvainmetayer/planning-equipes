@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -210,7 +211,8 @@ public class ReferentielCsvImportService {
      * @param id     the existing row designated, {@code null} for a creation
      * @param code   the code to write, {@code null} for none
      * @param cle    what the report shows for the line
-     * @param refus  why the line designates nothing, {@code null} when it does
+     * @param refus  why the line cannot be written — it designates nothing, or
+     *               gives its row a code another row holds — {@code null} when it can
      * @param note   what the report should add about how the line was matched
      */
     private record RowKey(String id, String code, String cle, String refus, String note) {
@@ -225,7 +227,13 @@ public class ReferentielCsvImportService {
             String codeLu = colonnes.valeur(row, "code");
             if (!idLu.isBlank() && codesParId.containsKey(idLu)) {
                 String code = codeLu.isBlank() ? codesParId.get(idLu) : codeLu;
-                return new RowKey(idLu, code, idLu, null, null);
+                // Said on the preview rather than discovered by the write,
+                // which would stop the import halfway through the file.
+                String titulaire = code == null ? null : idsParCode.get(code);
+                String refus = titulaire != null && !titulaire.equals(idLu)
+                        ? "Le code « " + code + " » est déjà porté par " + titulaire + " dans cette édition."
+                        : null;
+                return new RowKey(idLu, code, idLu, refus, null);
             }
             String code = codeLu.isBlank() && !kind.hasGeneratedShape(idLu) ? idLu : codeLu;
             String note = !idLu.isBlank() && !idLu.equals(code)
@@ -241,12 +249,27 @@ public class ReferentielCsvImportService {
             return new RowKey(idsParCode.get(code), code, code, null, note);
         }
 
-        /** The same row twice in one file is a mistake whichever way it is named. */
-        String cible() {
+        /**
+         * Claims the row this line writes, and its code, against the lines
+         * above: the same row twice in one file is a mistake whichever way it
+         * is named, and so is one code given to two rows — the second write
+         * would be refused halfway through the import.
+         *
+         * @return {@code false} when a line above already claimed either
+         */
+        boolean claim(Set<String> vus) {
+            List<String> cles = new ArrayList<>();
             if (id != null) {
-                return "id:" + id;
+                cles.add("id:" + id);
             }
-            return code != null ? "code:" + code : "ligne:" + System.identityHashCode(this);
+            if (code != null) {
+                cles.add("code:" + code);
+            }
+            if (cles.stream().anyMatch(vus::contains)) {
+                return false;
+            }
+            vus.addAll(cles);
+            return true;
         }
     }
 
@@ -404,19 +427,22 @@ public class ReferentielCsvImportService {
 
     private Analyse analyseStands(CsvParser.Table table, Colonnes colonnes) {
         Coded<Stand> existants = Coded.of(stands.list(), Stand::getId, Stand::getCode);
-        Map<String, String> typologiesParCle = new LinkedHashMap<>();
-        typologies.list().forEach(typologie -> {
-            if (typologie.code() != null) {
-                typologiesParCle.putIfAbsent(typologie.code(), typologie.id());
-            }
-            typologiesParCle.put(typologie.id(), typologie.id());
-        });
+        Map<String, String> typologiesParCle = typologies.idsByKey();
         Set<String> aCreer = new TreeSet<>();
+        // Read once, when the first stand is written: every typologie this
+        // import creates is written before any stand (see apply).
+        Map<String, String> typologiesEcrites = new HashMap<>();
         List<LigneImportee> lignes = new ArrayList<>();
         List<Ecriture> ecritures = new ArrayList<>();
         Set<String> vus = new LinkedHashSet<>();
         for (CsvParser.Row row : table.rows()) {
-            lignes.add(analyseStand(row, colonnes, existants, typologiesParCle, aCreer, vus, ecritures));
+            lignes.add(analyseStand(
+                    row,
+                    colonnes,
+                    existants,
+                    typologiesParCle,
+                    new StandWrites(aCreer, typologiesEcrites, ecritures),
+                    vus));
         }
         return new Analyse(ImportTarget.STANDS, table, lignes, ecritures, List.copyOf(aCreer));
     }
@@ -426,9 +452,8 @@ public class ReferentielCsvImportService {
             Colonnes colonnes,
             Coded<Stand> existants,
             Map<String, String> typologiesParCle,
-            Set<String> aCreer,
-            Set<String> vus,
-            List<Ecriture> ecritures) {
+            StandWrites ecritures,
+            Set<String> vus) {
         RowKey cle = existants.key(row, colonnes, IdGenerator.Kind.STAND);
         String nom = colonnes.valeur(row, "nom");
         Stand existant = cle.id() == null ? null : existants.parId().get(cle.id());
@@ -475,7 +500,7 @@ public class ReferentielCsvImportService {
         // Only now: a typologie is created on the strength of the stand that
         // names it, so a row the checks above have refused must not leave one
         // behind — nothing would reference it.
-        announceNewTypologies(typologiesStand, typologiesParCle.keySet(), aCreer, details);
+        announceNewTypologies(typologiesStand, typologiesParCle.keySet(), ecritures.aCreer(), details);
         if (existant == null && effectifMin == null && effectifMax == null) {
             details.add(
                     "Effectif non précisé : le stand tient à une personne, à ajuster sur la grille des ouvertures.");
@@ -490,8 +515,12 @@ public class ReferentielCsvImportService {
         // The typologies are named by code or id in the file; the ones this
         // import creates only have an id once written, so the names are
         // resolved when the line is written, after them.
-        ecritures.add(service -> {
-            ecrit.setTypologiesProposees(service.typologyIds(typologiesStand));
+        Map<String, String> typologiesEcrites = ecritures.typologiesEcrites();
+        ecritures.ecritures().add(service -> {
+            if (typologiesEcrites.isEmpty()) {
+                typologiesEcrites.putAll(service.typologies.idsByKey());
+            }
+            ecrit.setTypologiesProposees(TypologieService.resolveIds(typologiesStand, typologiesEcrites));
             if (id == null) {
                 service.stands.create(ecrit);
             } else {
@@ -524,19 +553,11 @@ public class ReferentielCsvImportService {
         }
     }
 
-    /** The typologies a stand line names, by id or by code, as ids — read when the line is written. */
-    private Set<String> typologyIds(Set<String> noms) {
-        Map<String, String> parCle = new LinkedHashMap<>();
-        typologies.list().forEach(typologie -> {
-            if (typologie.code() != null) {
-                parCle.putIfAbsent(typologie.code(), typologie.id());
-            }
-            parCle.put(typologie.id(), typologie.id());
-        });
-        Set<String> ids = new LinkedHashSet<>();
-        noms.forEach(nom -> ids.add(parCle.getOrDefault(nom, nom)));
-        return ids;
-    }
+    /**
+     * Where a stand line leaves what it decides: the typologies to create, the
+     * index they are resolved against once written, and the write itself.
+     */
+    private record StandWrites(Set<String> aCreer, Map<String, String> typologiesEcrites, List<Ecriture> ecritures) {}
 
     /**
      * The timeslot grid, matched on {@code (date, heure de début, heure de
@@ -785,7 +806,7 @@ public class ReferentielCsvImportService {
     private static void checkKey(RowKey cle, Set<String> vus, List<String> raisons) {
         if (cle.refus() != null) {
             raisons.add(cle.refus());
-        } else if (!vus.add(cle.cible())) {
+        } else if (!cle.claim(vus)) {
             raisons.add("« " + cle.cle() + DEJA_PLUS_HAUT);
         }
     }

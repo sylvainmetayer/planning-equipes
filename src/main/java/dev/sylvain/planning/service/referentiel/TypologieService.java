@@ -9,6 +9,7 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -104,10 +105,22 @@ public class TypologieService implements TypologieLibelles {
      * The write of an import: the row the file designates when it carries an
      * id the edition knows, a new one otherwise. No precondition — a file
      * replaces a referential, it does not edit a fiche.
+     *
+     * <p>A new row keeps an id of the typologie shape it arrives with: the
+     * scenario import has already decided it (kept from the file, or drawn —
+     * see {@code ScenarioIdRemap}), and drawing another would both lose the
+     * file's id and, for a typologie without a code, make every re-import of
+     * the same file create it once more. Any other id is a creation.</p>
      */
     public TypologieItem importer(TypologieItem typologie) {
-        if (typologie.id() == null || !repository.typologieExists(typologie.id())) {
+        boolean existe = typologie.id() != null && repository.typologieExists(typologie.id());
+        if (!existe && !IdGenerator.Kind.TYPOLOGIE.hasGeneratedShape(typologie.id())) {
             return create(typologie);
+        }
+        if (!existe) {
+            // Never lower, so a no-op for an id the remap drew; for one it
+            // kept, the counter was raised already — belt and braces.
+            ids.raise(IdGenerator.Kind.TYPOLOGIE, IdGenerator.numberOf(IdGenerator.Kind.TYPOLOGIE, typologie.id()));
         }
         String code = Codes.normalise(typologie.code(), IdGenerator.Kind.TYPOLOGIE);
         Codes.refuseTaken(code, repository.idByCode(code), typologie.id(), "la typologie");
@@ -178,18 +191,33 @@ public class TypologieService implements TypologieLibelles {
         if (valeurs == null || valeurs.isEmpty()) {
             return valeurs;
         }
-        Map<String, String> parCle = byIdOrCode(repository.listTypologies());
+        return resolveIds(valeurs, idsByKey());
+    }
+
+    /**
+     * The edition's typologies, each under its id and under its code, mapped
+     * to its id — read once, for a caller resolving several lists (a whole
+     * file, an animateur's competences and wishes).
+     */
+    public Map<String, String> idsByKey() {
+        return byIdOrCode(repository.listTypologies());
+    }
+
+    /** {@link #resolveIds(Set)} against an index {@link #idsByKey} already read. */
+    public static Set<String> resolveIds(Collection<String> valeurs, Map<String, String> parCle) {
+        if (valeurs == null) {
+            return null;
+        }
         return valeurs.stream()
                 .map(valeur -> parCle.getOrDefault(valeur, valeur))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    /** Same, for the keys of a competence map. */
-    public <V> Map<String, V> resolveKeys(Map<String, V> valeurs) {
-        if (valeurs == null || valeurs.isEmpty()) {
-            return valeurs;
+    /** Same, for the keys of a competence map, against an index {@link #idsByKey} already read. */
+    public static <V> Map<String, V> resolveKeys(Map<String, V> valeurs, Map<String, String> parCle) {
+        if (valeurs == null) {
+            return null;
         }
-        Map<String, String> parCle = byIdOrCode(repository.listTypologies());
         Map<String, V> resolues = new LinkedHashMap<>();
         valeurs.forEach((cle, valeur) -> resolues.put(parCle.getOrDefault(cle, cle), valeur));
         return resolues;
