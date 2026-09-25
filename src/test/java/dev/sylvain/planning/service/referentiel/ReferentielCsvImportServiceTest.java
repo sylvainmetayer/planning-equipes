@@ -24,16 +24,19 @@ import org.junit.jupiter.api.Test;
 class ReferentielCsvImportServiceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-CSV-REF";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String EDITION;
 
     @BeforeEach
     void creerLEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import CSV référentiels\"}")
+        EDITION = given().contentType("application/json")
+                .body("{\"nom\":\"Import CSV référentiels\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
@@ -58,8 +61,8 @@ class ReferentielCsvImportServiceTest {
     }
 
     @Test
-    void lApercuNEcritRienEtLImportEcritLesTroisReferentiels() {
-        String typologies = "id;libelle\nAMBIANCE;Jeux d'ambiance\nSTRATEGIE;Jeux de stratégie\n";
+    void thePreviewWritesNothingAndTheImportWritesTheThreeReferentials() {
+        String typologies = "code;libelle\nAMBIANCE;Jeux d'ambiance\nSTRATEGIE;Jeux de stratégie\n";
 
         poster("/api/typologies/import-csv/analyse", typologies)
                 .then()
@@ -73,7 +76,7 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("findAll { it.id == 'AMBIANCE' }", hasSize(0));
+                .body("findAll { it.code == 'AMBIANCE' }", hasSize(0));
 
         poster("/api/typologies/import-csv", typologies)
                 .then()
@@ -84,7 +87,9 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("find { it.id == 'AMBIANCE' }.label", equalTo("Jeux d'ambiance"));
+                .body("find { it.code == 'AMBIANCE' }.label", equalTo("Jeux d'ambiance"))
+                // The code is what the file names; the id is drawn by the application.
+                .body("find { it.code == 'AMBIANCE' }.id", org.hamcrest.Matchers.matchesPattern("T\\d+"));
 
         // Replayed, the same file updates instead of creating.
         poster("/api/typologies/import-csv", typologies)
@@ -93,7 +98,9 @@ class ReferentielCsvImportServiceTest {
                 .body("created", equalTo(0))
                 .body("updated", equalTo(2));
 
-        poster("/api/emplacements/import-csv", "id;nom;latitude;longitude\nPAV;Pavillon;46,65;-0,24\nEXT;Esplanade;;\n")
+        poster(
+                        "/api/emplacements/import-csv",
+                        "code;nom;latitude;longitude\nPAV;Pavillon;46,65;-0,24\nEXT;Esplanade;;\n")
                 .then()
                 .statusCode(200)
                 .body("created", equalTo(2))
@@ -102,13 +109,13 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/emplacements")
                 .then()
-                .body("find { it.id == 'PAV' }.latitude", equalTo(46.65f))
-                .body("find { it.id == 'EXT' }.latitude", org.hamcrest.Matchers.nullValue());
+                .body("find { it.code == 'PAV' }.latitude", equalTo(46.65f))
+                .body("find { it.code == 'EXT' }.latitude", org.hamcrest.Matchers.nullValue());
     }
 
     @Test
-    void unStandSansEffectifTientAUnePersonneEtSaTypologieAbsenteEstCreeeEnLAnnoncant() {
-        poster("/api/stands/import-csv/analyse", "id;nom;typologies\nS1;Stand un;INCONNUE\n")
+    void aStandWithoutHeadcountHoldsOnePersonAndItsMissingTypologieIsCreatedAndAnnounced() {
+        poster("/api/stands/import-csv/analyse", "code;nom;typologies\nSTAND-UN;Stand un;INCONNUE\n")
                 .then()
                 .statusCode(200)
                 .body("typologiesCreees", hasSize(1))
@@ -116,7 +123,7 @@ class ReferentielCsvImportServiceTest {
                 .body("rows[0].details[0]", containsString("INCONNUE"))
                 .body("rows[0].details[1]", containsString("une personne"));
 
-        poster("/api/stands/import-csv", "id;nom;typologies\nS1;Stand un;INCONNUE\n")
+        poster("/api/stands/import-csv", "code;nom;typologies\nSTAND-UN;Stand un;INCONNUE\n")
                 .then()
                 .statusCode(200)
                 .body("created", equalTo(1));
@@ -125,14 +132,14 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/stands")
                 .then()
-                .body("find { it.id == 'S1' }.effectifMin", equalTo(1))
-                .body("find { it.id == 'S1' }.effectifMax", equalTo(1))
-                .body("find { it.id == 'S1' }.typologiesProposees", hasSize(1));
+                .body("find { it.code == 'STAND-UN' }.effectifMin", equalTo(1))
+                .body("find { it.code == 'STAND-UN' }.effectifMax", equalTo(1))
+                .body("find { it.code == 'STAND-UN' }.typologiesProposees", hasSize(1));
         given().header(HEADER, EDITION)
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("find { it.id == 'INCONNUE' }.label", equalTo("INCONNUE"));
+                .body("find { it.code == 'INCONNUE' }.label", equalTo("INCONNUE"));
     }
 
     /**
@@ -140,21 +147,24 @@ class ReferentielCsvImportServiceTest {
      * renaming a stand must not take its opening hours with it.
      */
     @Test
-    void uneColonneAbsenteNEffacePasCeQueLaFicheDejaPorte() {
+    void aColumnLeftOutOfTheFileKeepsWhatTheFicheAlreadyHolds() {
         // The fiche goes through the plain CRUD, which demands a known typologie.
-        poster("/api/typologies/import-csv", "id;libelle\nJEU;Jeux\n").then().statusCode(200);
-        given().header(HEADER, EDITION)
+        poster("/api/typologies/import-csv", "code;libelle\nJEU;Jeux\n").then().statusCode(200);
+        String stand = given().header(HEADER, EDITION)
                 .contentType("application/json")
                 .body("""
-                        {"id":"S9","nom":"Stand neuf","typologiesProposees":["JEU"],"effectifMin":3,"effectifMax":5,
+                        {"nom":"Stand neuf","typologiesProposees":["JEU"],"effectifMin":3,"effectifMax":5,
                          "horaires":[{"mode":"OUVERTURE","jours":"TOUS","fenetres":[{"heureDebut":"10:00:00"}]}]}
                         """)
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
 
-        poster("/api/stands/import-csv", "id;nom;typologies\nS9;Stand renommé;JEU\n")
+        // Designated by its generated id, as an exported file does.
+        poster("/api/stands/import-csv", "id;nom;typologies\n" + stand + ";Stand renommé;JEU\n")
                 .then()
                 .statusCode(200)
                 .body("updated", equalTo(1));
@@ -163,11 +173,11 @@ class ReferentielCsvImportServiceTest {
                 .when()
                 .get("/api/stands")
                 .then()
-                .body("find { it.id == 'S9' }.nom", equalTo("Stand renommé"))
+                .body("find { it.id == '" + stand + "' }.nom", equalTo("Stand renommé"))
                 // Neither the headcount nor the schedule was in the file: both stayed.
-                .body("find { it.id == 'S9' }.effectifMin", equalTo(3))
-                .body("find { it.id == 'S9' }.effectifMax", equalTo(5))
-                .body("find { it.id == 'S9' }.horaires", hasSize(1));
+                .body("find { it.id == '" + stand + "' }.effectifMin", equalTo(3))
+                .body("find { it.id == '" + stand + "' }.effectifMax", equalTo(5))
+                .body("find { it.id == '" + stand + "' }.horaires", hasSize(1));
     }
 
     @Test

@@ -24,7 +24,8 @@ import org.junit.jupiter.api.Test;
 class ImportScenarioJourneesTypesTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-MODE-GRILLE";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String EDITION;
 
     private static final String ENTETE = """
             festival:
@@ -80,12 +81,14 @@ class ImportScenarioJourneesTypesTest {
 
     @BeforeEach
     void creerLEditionDAtterrissage() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import mode grille\"}")
+        EDITION = given().contentType("application/json")
+                .body("{\"nom\":\"Import mode grille\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach

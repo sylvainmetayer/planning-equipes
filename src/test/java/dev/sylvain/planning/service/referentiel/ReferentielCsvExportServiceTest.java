@@ -30,35 +30,31 @@ import org.junit.jupiter.api.Test;
 class ReferentielCsvExportServiceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String SOURCE = "EXPORT-CSV-SRC";
-    private static final String CIBLE = "EXPORT-CSV-DST";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String SOURCE;
+    /** Drawn likewise: the edition the archive is replayed into. */
+    private static String CIBLE;
 
     /** Every referential, as the screen sends them when nothing is unticked. */
     private static final String TOUT =
             "typologies=true&emplacements=true&stands=true" + "&creneaux=true&journeesTypes=true&animateurs=true";
 
     @BeforeEach
-    void creerLesEditions() {
-        for (String edition : new String[] {SOURCE, CIBLE}) {
-            given().contentType("application/json")
-                    .body("{\"id\":\"" + edition + "\",\"nom\":\"Export CSV " + edition + "\"}")
-                    .when()
-                    .post("/api/editions")
-                    .then()
-                    .statusCode(200);
-        }
+    void createTheEditions() {
+        SOURCE = createEdition("Export CSV source");
+        CIBLE = createEdition("Export CSV cible");
         // A complete referential, carrying what breaks a naive CSV: a
         // semicolon inside a name, accents, several values per cell.
         importer(
                 SOURCE,
                 "/api/typologies/import-csv",
-                "id;libelle;ninja\nEXP-A;Jeux d'ambiance;\nEXP-B;Stratégie;oui\n");
+                "code;libelle;ninja\nEXP-A;Jeux d'ambiance;\nEXP-B;Stratégie;oui\n");
         importer(
                 SOURCE,
                 "/api/emplacements/import-csv",
-                "id;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;Esplanade;;\n");
+                "code;nom;latitude;longitude\nEXP-P;Pavillon;46.65;-0.24\nEXP-E;Esplanade;;\n");
         importer(SOURCE, "/api/stands/import-csv", """
-                id;nom;typologies;effectifMin;effectifMax
+                code;nom;typologies;effectifMin;effectifMax
                 EXP-S1;"Stand un; et demi";EXP-A|EXP-B;2;3
                 EXP-S2;Stand deux;EXP-B;1;1
                 """);
@@ -80,7 +76,7 @@ class ReferentielCsvExportServiceTest {
         given().header(HEADER, SOURCE)
                 .contentType("application/json")
                 .body("""
-                        {"id":"EXP-A1","prenom":"Camille","nom":"Ferrand","dateNaissance":"1985-04-12",
+                        {"prenom":"Camille","nom":"Ferrand","dateNaissance":"1985-04-12",
                          "email":"camille@example.org","manager":true,
                          "competences":{"EXP-A":"REFERENT","EXP-B":"AUTONOME"},
                          "souhaits":["EXP-B"],"joursIndisponibles":["2026-09-01","2026-09-02"]}
@@ -89,6 +85,17 @@ class ReferentielCsvExportServiceTest {
                 .post("/api/animateurs")
                 .then()
                 .statusCode(200);
+    }
+
+    private static String createEdition(String nom) {
+        return given().contentType("application/json")
+                .body("{\"nom\":\"" + nom + "\"}")
+                .when()
+                .post("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
@@ -156,7 +163,7 @@ class ReferentielCsvExportServiceTest {
      * refills another, and not a single row is refused.
      */
     @Test
-    void ceQuiSortSeReimporteSansUneSeuleCorrection() {
+    void whatComesOutIsReimportedWithoutASingleCorrection() {
         Map<String, String> entrees = archive(SOURCE, TOUT);
 
         // The BOM opens each entry for a spreadsheet; the import strips it itself.
@@ -193,31 +200,38 @@ class ReferentielCsvExportServiceTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath();
-        assertThat(copie.getString("find { it.id == 'EXP-A1' }.prenom")).isEqualTo("Camille");
-        assertThat(copie.getString("find { it.id == 'EXP-A1' }.competences.EXP-A"))
-                .isEqualTo("REFERENT");
-        assertThat(copie.getList("find { it.id == 'EXP-A1' }.joursIndisponibles"))
-                .hasSize(2);
-        assertThat(copie.getBoolean("find { it.id == 'EXP-A1' }.manager")).isTrue();
+        // The ids are the target's own: the fiche is found by its name, and
+        // the compétence by the code its typologie carries on both sides.
+        String typologieA = given().header(HEADER, CIBLE)
+                .when()
+                .get("/api/typologies")
+                .then()
+                .extract()
+                .path("find { it.code == 'EXP-A' }.id");
+        String camille = "find { it.prenom == 'Camille' }";
+        assertThat(copie.getString(camille + ".nom")).isEqualTo("Ferrand");
+        assertThat(copie.getString(camille + ".competences." + typologieA)).isEqualTo("REFERENT");
+        assertThat(copie.getList(camille + ".joursIndisponibles")).hasSize(2);
+        assertThat(copie.getBoolean(camille + ".manager")).isTrue();
 
         // The name carrying a semicolon crossed over whole.
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/stands")
                 .then()
-                .body("find { it.id == 'EXP-S1' }.nom", equalTo("Stand un; et demi"))
-                .body("find { it.id == 'EXP-S1' }.typologiesProposees.size()", equalTo(2))
-                .body("find { it.id == 'EXP-S1' }.effectifMax", equalTo(3));
+                .body("find { it.code == 'EXP-S1' }.nom", equalTo("Stand un; et demi"))
+                .body("find { it.code == 'EXP-S1' }.typologiesProposees.size()", equalTo(2))
+                .body("find { it.code == 'EXP-S1' }.effectifMax", equalTo(3));
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/typologies")
                 .then()
-                .body("find { it.id == 'EXP-B' }.ninja", equalTo(true));
+                .body("find { it.code == 'EXP-B' }.ninja", equalTo(true));
         given().header(HEADER, CIBLE)
                 .when()
                 .get("/api/emplacements")
                 .then()
-                .body("find { it.id == 'EXP-P' }.latitude", equalTo(46.65f));
+                .body("find { it.code == 'EXP-P' }.latitude", equalTo(46.65f));
 
         // The grid crossed over whole, meal relay and night vacation included.
         given().header(HEADER, CIBLE)
@@ -262,7 +276,7 @@ class ReferentielCsvExportServiceTest {
     }
 
     @Test
-    void lesVolumesDisentCeQueChaqueReferentielEcrirait() {
+    void theVolumesSayWhatEachReferentialWouldWrite() {
         given().header(HEADER, SOURCE)
                 .when()
                 .get("/api/reference-data/export-csv/volumes")

@@ -30,7 +30,8 @@ import org.junit.jupiter.api.Test;
 class ImportScenarioContraintesTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-CONTRAINTES";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String EDITION;
 
     private static final String ENTETE = """
             festival:
@@ -88,12 +89,14 @@ class ImportScenarioContraintesTest {
 
     @BeforeEach
     void creerLEditionDAtterrissage() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import contraintes\"}")
+        EDITION = given().contentType("application/json")
+                .body("{\"nom\":\"Import contraintes\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach

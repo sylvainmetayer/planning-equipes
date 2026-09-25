@@ -25,16 +25,19 @@ import org.junit.jupiter.api.Test;
 class CreneauCsvImportServiceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-CSV-CRENEAUX";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String EDITION;
 
     @BeforeEach
     void createTheEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import CSV créneaux\"}")
+        EDITION = given().contentType("application/json")
+                .body("{\"nom\":\"Import CSV créneaux\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
