@@ -315,7 +315,7 @@ class ReferenceDataServiceStandTest {
 
     /** The rules must survive a round-trip through the database, windows and scope included. */
     @Test
-    void lesHorairesSontRelusTelsQuEcrits() {
+    void openingHoursAreReadBackAsWritten() {
         Stand stand = stand("STAND-HOR-9");
         HoraireStand weekend = new HoraireStand(
                 null,
@@ -327,10 +327,11 @@ class ReferenceDataServiceStandTest {
         weekend.setJoursSemaine(Set.of(DayOfWeek.SATURDAY, DayOfWeek.SUNDAY));
         weekend.setMotif("Week-end");
         stand.setHoraires(List.of(weekend));
-        referenceDataService.createStand(stand);
+        // The id is generated on creation (ADR 0050).
+        String id = referenceDataService.createStand(stand).getId();
 
         Stand relu = referenceDataService.listStands().stream()
-                .filter(candidat -> candidat.getId().equals("STAND-HOR-9"))
+                .filter(candidat -> candidat.getId().equals(id))
                 .findFirst()
                 .orElseThrow();
 
@@ -348,7 +349,7 @@ class ReferenceDataServiceStandTest {
 
     /** A `DATES` scope round-trips through the comma-separated column V37 stores it in. */
     @Test
-    void lesDatesDUnHoraireSontReluesTellesQuEcrites() {
+    void theDatesOfAnOpeningRuleAreReadBackAsWritten() {
         Stand stand = stand("STAND-HOR-10");
         HoraireStand surDates = new HoraireStand(
                 null,
@@ -357,10 +358,10 @@ class ReferenceDataServiceStandTest {
                 List.of(new FenetreHoraire(LocalTime.of(14, 0), null)));
         surDates.setDates(Set.of(JOUR, JOUR.plusDays(5)));
         stand.setHoraires(List.of(surDates));
-        referenceDataService.createStand(stand);
+        String id = referenceDataService.createStand(stand).getId();
 
         Stand relu = referenceDataService.listStands().stream()
-                .filter(candidat -> candidat.getId().equals("STAND-HOR-10"))
+                .filter(candidat -> candidat.getId().equals(id))
                 .findFirst()
                 .orElseThrow();
 
@@ -380,16 +381,16 @@ class ReferenceDataServiceStandTest {
      * not this test's business.</p>
      */
     @Test
-    void listStandsResolusEtendLesReglesSansLesPersister() {
+    void solvedStandsExpandTheRulesWithoutPersistingThem() {
         Stand stand = stand("STAND-HOR-11");
         stand.setHoraires(
                 List.of(HoraireStand.everyDay(ModeHoraire.OUVERTURE, new FenetreHoraire(LocalTime.of(14, 0), null))));
-        referenceDataService.createStand(stand);
+        String id = referenceDataService.createStand(stand).getId();
         Creneau creneau = referenceDataService.createCreneau(
                 new Creneau(null, 1, JOUR, LocalTime.of(10, 0), LocalTime.of(20, 0)));
         try {
-            Stand brut = find(referenceDataService.listStands(), "STAND-HOR-11");
-            Stand resolu = find(referenceDataService.listSolvedStands(), "STAND-HOR-11");
+            Stand brut = find(referenceDataService.listStands(), id);
+            Stand resolu = find(referenceDataService.listSolvedStands(), id);
 
             assertThat(brut.getOuvertures()).isEmpty();
             assertThat(brut.getOuverturesEffectives()).isEmpty();

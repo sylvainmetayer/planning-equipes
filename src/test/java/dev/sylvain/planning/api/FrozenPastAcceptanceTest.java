@@ -229,8 +229,17 @@ class FrozenPastAcceptanceTest {
 
     /** A consigne on the Thursday: 12h-16h closed for everybody, one stand reopened 18h-20h. */
     private static Map<String, Object> consigne() {
+        // The scenario's STAND-CULTURE is a reference local to the file: the
+        // imported stand carries it as its code, under a generated id (ADR 0050).
+        String standCulture = given().when()
+                .get("/api/stands")
+                .then()
+                .statusCode(200)
+                .extract()
+                .path("find { it.code == 'STAND-CULTURE' }.id");
+        assertThat(standCulture).as("the scenario's STAND-CULTURE").isNotNull();
         Map<String, Object> ouverture = new HashMap<>();
-        ouverture.put("standId", "STAND-CULTURE");
+        ouverture.put("standId", standCulture);
         ouverture.put("debut", "18:00");
         ouverture.put("fin", "20:00");
         Map<String, Object> corps = new HashMap<>();
