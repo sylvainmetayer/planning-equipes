@@ -108,7 +108,7 @@ import {
 export type OpeningsView = 'CONSULTER' | 'SAISIR' | 'JOURNEES_TYPES' | 'JOURNEE' | 'COMPARER';
 
 /** The `vue` query param of each view; the reading grid, the default, writes none. */
-const PARAM_VUE: Record<OpeningsView, string | null> = {
+const VIEW_PARAM: Record<OpeningsView, string | null> = {
   CONSULTER: null,
   SAISIR: 'saisie',
   JOURNEES_TYPES: 'journees-types',
@@ -116,7 +116,7 @@ const PARAM_VUE: Record<OpeningsView, string | null> = {
   COMPARER: 'comparer',
 };
 
-function lireVue(param: string | null): OpeningsView {
+function readOpeningsView(param: string | null): OpeningsView {
   if (param === 'saisie') {
     return 'SAISIR';
   }
@@ -241,7 +241,7 @@ export class OuverturesPage implements OnInit {
   protected readonly rechercheSaisie = signal(this.recherche());
   private filtrePending: ReturnType<typeof setTimeout> | null = null;
   protected readonly view = signal<OpeningsView>(
-    lireVue(this.route.snapshot.queryParamMap.get('vue')),
+    readOpeningsView(this.route.snapshot.queryParamMap.get('vue')),
   );
 
   /* ----------------------------- compare view ----------------------------- */
@@ -508,7 +508,7 @@ export class OuverturesPage implements OnInit {
 
   constructor() {
     keepViewInQueryParams(() => ({
-      vue: PARAM_VUE[this.view()],
+      vue: VIEW_PARAM[this.view()],
       date: this.dateQueryParam(),
       q: this.recherche().trim() || null,
       stand: this.onlyStand() || null,
