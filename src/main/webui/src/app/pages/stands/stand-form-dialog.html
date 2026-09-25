@@ -96,10 +96,10 @@
       <mat-hint i18n="@@stands.copieHoraires.hint">Règles, exceptions datées et effectifs de fenêtre, sans enregistrer.</mat-hint>
     </mat-form-field>
     @if (copieMessage(); as message) {
-      <p class="empty-hint stand-copie-statut" role="status">{{ message }}</p>
+      <output class="empty-hint stand-copie-statut status-paragraph">{{ message }}</output>
     }
     @if (copieAvertissement(); as avertissement) {
-      <p class="form-warning stand-copie-avertissement" role="status">{{ avertissement }}</p>
+      <output class="form-warning stand-copie-avertissement status-paragraph">{{ avertissement }}</output>
     }
   }
   <app-horaire-regles-editor [horaires]="draft().horaires" [effectifMax]="effectifMaxDeclare()" [effectifMin]="effectifMinDeclare()"

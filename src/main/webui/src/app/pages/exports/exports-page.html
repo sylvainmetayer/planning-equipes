@@ -50,7 +50,7 @@
       <mat-progress-bar mode="indeterminate" />
     }
     @if (message()) {
-      <p class="empty-hint" role="status">{{ message() }}</p>
+      <output class="empty-hint status-paragraph">{{ message() }}</output>
     }
     @if (erreur()) {
       <p class="field-error" role="alert">{{ erreur() }}</p>
@@ -79,7 +79,7 @@
       <mat-progress-bar mode="indeterminate" />
     }
     @if (messageScenario()) {
-      <p class="empty-hint" role="status">{{ messageScenario() }}</p>
+      <output class="empty-hint status-paragraph">{{ messageScenario() }}</output>
     }
   </mat-card-content>
 </mat-card>

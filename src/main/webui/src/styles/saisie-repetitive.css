@@ -10,6 +10,10 @@
  * already is, so it travels in their chunks and nowhere else.
  */
 
+/* Hidden until wanted: sixty column headers and a hundred and fifty rows each
+   wearing an arrow would be noise, and the rule is the one « scinder » already
+   follows: the control appears under the pointer, and the keyboard reveals it
+   by focusing it — Tab reaches it, and the shortcuts dialog names both moves. */
 .dupliquer-ligne,
 .appliquer-colonne {
   --mdc-icon-button-state-layer-size: 1.25rem;
@@ -17,6 +21,8 @@
   height: 1.25rem;
   padding: 0;
   vertical-align: middle;
+  opacity: 0;
+  transition: opacity 120ms;
 }
 
 .dupliquer-ligne mat-icon,
@@ -24,16 +30,6 @@
   font-size: 0.85rem;
   width: 0.85rem;
   height: 0.85rem;
-}
-
-/* Sixty column headers and a hundred and fifty rows each wearing an arrow
-   would be noise, and the rule is the one « scinder » already follows: the
-   control appears under the pointer, and the keyboard reveals it by focusing
-   it — Tab reaches it, and the shortcuts dialog names both moves. */
-.dupliquer-ligne,
-.appliquer-colonne {
-  opacity: 0;
-  transition: opacity 120ms;
 }
 
 tr:hover .dupliquer-ligne,

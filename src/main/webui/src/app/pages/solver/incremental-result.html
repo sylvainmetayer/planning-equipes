@@ -31,9 +31,9 @@
       }
     </div>
     @if ((stats().postesPassesVides ?? 0) > 0) {
-      <p class="calendar-meta solver-passes-vides" role="status" i18n="@@solver.incremental.passesVides">
+      <output class="calendar-meta solver-passes-vides status-paragraph" i18n="@@solver.incremental.passesVides">
         {{ stats().postesPassesVides }} sièges passés sont restés vides.
-      </p>
+      </output>
     }
     @if (changements().length === 0) {
       <p class="calendar-meta" i18n="@@solver.incremental.aucunChangement">

@@ -8,7 +8,7 @@
   @if (syntheseLabel(); as synthese) {
     <!-- The three counts of the acknowledgement column, and the publication
          they answer: what the organiser reads before deciding whom to chase. -->
-    <p class="confirmations-synthese" role="status">{{ synthese }}</p>
+    <output class="confirmations-synthese status-paragraph">{{ synthese }}</output>
   }
   <mat-card-actions class="card-actions">
     <button matButton="filled" type="button" [disabled]="editingLocked()" (click)="openCreate()">

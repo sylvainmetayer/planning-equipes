@@ -300,11 +300,28 @@
   min-width: 0;
 }
 
+/*
+ * `top` pins the column row under the day row (see `--entete-jour-hauteur`
+ * below). A column can be cut at an hour from its header; the control only
+ * shows on hover or focus, sixty headers wearing a scissor icon would be noise.
+ *
+ * The column's own actions — cut it, or apply it to every displayed row — sit
+ * in an overlay rather than in the flow. Sixty columns pay for what a header
+ * reserves, and two buttons of 1.25rem in the flow made the grid a fifth wider
+ * on a twelve-day edition. The right padding reserves the width of one, which
+ * is what the split button alone already cost; hovering lays the pair over the
+ * end of the label, where the tooltip says what they do. Same reasoning as
+ * `.recopier-jour` on the day header, which `.entete-jour-saisie` pays once a
+ * day rather than once a column.
+ */
 .grille-saisie .entete-creneau {
+  top: var(--entete-jour-hauteur);
+  padding-right: 1.45rem;
   font-weight: 400;
   font-size: 0.72rem;
   color: var(--mat-sys-on-surface-variant);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .grille-saisie .premier-du-jour {
@@ -312,6 +329,8 @@
 }
 
 .grille-saisie .entete-jour-saisie {
+  box-sizing: border-box;
+  height: var(--entete-jour-hauteur);
   border-left: 2px solid var(--mat-sys-outline);
   padding-right: 1.6rem;
 }
@@ -335,15 +354,6 @@
   --entete-jour-hauteur: 2.5rem;
 }
 
-.grille-saisie .entete-jour-saisie {
-  box-sizing: border-box;
-  height: var(--entete-jour-hauteur);
-}
-
-.grille-saisie .entete-creneau {
-  top: var(--entete-jour-hauteur);
-}
-
 .grille-saisie .recopier-jour,
 .grille-saisie .recopier-ligne {
   --mdc-icon-button-state-layer-size: 1.5rem;
@@ -357,12 +367,6 @@
   position: absolute;
   top: 0.15rem;
   right: 0.1rem;
-}
-
-/* A column can be cut at an hour from its header; the control only shows on
-   hover or focus, sixty headers wearing a scissor icon would be noise. */
-.grille-saisie .entete-creneau {
-  white-space: nowrap;
 }
 
 /**
@@ -384,20 +388,6 @@
   padding: 0;
   vertical-align: middle;
   opacity: 0;
-}
-
-/*
- * The column's own actions — cut it, or apply it to every displayed row — sit
- * in an overlay rather than in the flow. Sixty columns pay for what a header
- * reserves, and two buttons of 1.25rem in the flow made the grid a fifth wider
- * on a twelve-day edition. The padding below reserves the width of one, which
- * is what the split button alone already cost; hovering lays the pair over the
- * end of the label, where the tooltip says what they do. Same reasoning as
- * `.recopier-jour` on the day header, which `.entete-jour-saisie` pays once a
- * day rather than once a column.
- */
-.grille-saisie .entete-creneau {
-  padding-right: 1.45rem;
 }
 
 .grille-saisie .colonne-actions {

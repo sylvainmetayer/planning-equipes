@@ -61,7 +61,7 @@
         </mat-select>
       </mat-form-field>
       @if (lookupRefusal(); as refus) {
-        <p class="espace-suggestions-vide" role="status">{{ refus }}</p>
+        <output class="espace-suggestions-vide status-paragraph">{{ refus }}</output>
       }
       @if (cibleId() && postesCollegue().length > 0) {
         <mat-form-field appearance="outline" subscriptSizing="dynamic">

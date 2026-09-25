@@ -174,18 +174,18 @@
             </p>
 
             @if (etat.alertRecipientMissing) {
-              <p class="locked-hint" role="status" i18n="@@parametres.sauvegarde.alerteSansDestinataire">
+              <output class="locked-hint status-paragraph" i18n="@@parametres.sauvegarde.alerteSansDestinataire">
                 Aucune adresse d'administration n'est configurée (variable MAIL_ADMIN) : une sauvegarde en échec
                 ne sera signalée par aucun e-mail, seulement sur cet écran.
-              </p>
+              </output>
             }
 
             @if (etat.lastRun.attemptedAt) {
               @if (etat.lastRun.succeeded) {
-                <p class="calendar-meta" role="status" i18n="@@parametres.sauvegarde.derniereOk">
+                <output class="calendar-meta status-paragraph" i18n="@@parametres.sauvegarde.derniereOk">
                   Dernière sauvegarde réussie le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
                   {{ etat.lastRun.file }}
-                </p>
+                </output>
               } @else {
                 <p class="locked-hint" role="alert" i18n="@@parametres.sauvegarde.derniereEchec">
                   La dernière sauvegarde a échoué le {{ etat.lastRun.attemptedAt | date: 'd MMMM y à HH:mm' }} :
@@ -208,7 +208,7 @@
                 <tbody>
                   @for (fichier of fichiersSauvegarde(); track fichier.name) {
                     <tr>
-                      <td>{{ fichier.name }}</td>
+                      <th scope="row">{{ fichier.name }}</th>
                       <td>{{ fichier.createdAt | date: 'd MMM y, HH:mm' }}</td>
                       <td>{{ tailleLisible(fichier.sizeBytes) }}</td>
                     </tr>
@@ -258,7 +258,7 @@
           <ng-container i18n="@@dataTransfer.importSql">Importer un dump SQL</ng-container>
         </button>
         <input
-          #sqlInput
+          #sqlInput i18n-aria-label="@@dataTransfer.importSql" aria-label="Importer un dump SQL"
           type="file"
           accept=".sql,application/sql,text/plain"
           hidden

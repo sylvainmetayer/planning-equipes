@@ -175,7 +175,7 @@
           <span i18n="@@importCsv.fichier.aideDetaillee">Tous les détails dans l'aide</span>
         </a>
       </div>
-      <input #csvInput type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFileChosen($event)" />
+      <input #csvInput i18n-aria-label="@@importCsv.fichier.choisir" aria-label="Choisir un fichier CSV" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values,text/plain" hidden (change)="onFileChosen($event)" />
       @if (fileName()) {
         <p class="empty-hint">
           <span i18n="@@importCsv.fichier.nom">Fichier chargé :</span> {{ fileName() }}

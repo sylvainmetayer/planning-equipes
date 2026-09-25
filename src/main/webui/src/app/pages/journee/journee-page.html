@@ -105,10 +105,10 @@
       </div>
     }
     @if (comparableView() && comparaisonIgnoree()) {
-      <p class="journee-comparaison-ignoree" role="status">
+      <output class="journee-comparaison-ignoree status-paragraph">
         <mat-icon inline aria-hidden="true">info</mat-icon>
         {{ comparaisonIgnoree() }}
-      </p>
+      </output>
     }
 
     <div class="journee-filtres">

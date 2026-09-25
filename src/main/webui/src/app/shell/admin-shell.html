@@ -30,7 +30,10 @@
       <span class="theme-auto-dot" aria-hidden="true"></span>
     }
   </button>
-  <button matButton (click)="toggleLocale()" i18n-aria-label="@@shell.switchLanguage" aria-label="Changer de langue">
+  <!-- The action is said in a hidden span rather than an aria-label, so the
+       visible « EN » / « FR » stays part of the accessible name (WCAG 2.5.3). -->
+  <button matButton (click)="toggleLocale()">
+    <span class="visually-hidden" i18n="@@shell.switchLanguage">Changer de langue</span>
     {{ locale === 'fr' ? 'EN' : 'FR' }}
   </button>
   <button matIconButton (click)="logout()" i18n-aria-label="@@shell.logout" aria-label="Se déconnecter">
