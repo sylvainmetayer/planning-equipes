@@ -47,6 +47,7 @@ class DeclarationDisponibiliteFlowTest {
 
     private static final LocalDate JOUR_UN = LocalDate.of(2026, 7, 10);
     private static final LocalDate JOUR_DEUX = LocalDate.of(2026, 7, 11);
+    private static final String EMAIL_ALICE = "dec-alice@example.org";
 
     @Inject
     ReferenceDataService referenceData;
@@ -59,6 +60,12 @@ class DeclarationDisponibiliteFlowTest {
 
     private String session;
 
+    /** Ids drawn by the application (ADR 0050), captured when the fixture is created. */
+    private String aliceId;
+
+    private String typologieUn;
+    private String typologieDeux;
+
     /** Database-generated: the créneau ids are only known once inserted. */
     private final List<Long> creneauxCrees = new ArrayList<>();
 
@@ -66,8 +73,12 @@ class DeclarationDisponibiliteFlowTest {
     void seedReferential() {
         RestAssured.requestSpecification = null;
         removeFixture();
-        referenceData.createTypologie(new TypologieItem("DEC-T1", "Jeux de plateau"));
-        referenceData.createTypologie(new TypologieItem("DEC-T2", "Jeux d'ambiance"));
+        typologieUn = referenceData
+                .createTypologie(new TypologieItem(null, "DEC-T1", "Jeux de plateau", false, null, null, null))
+                .id();
+        typologieDeux = referenceData
+                .createTypologie(new TypologieItem(null, "DEC-T2", "Jeux d'ambiance", false, null, null, null))
+                .id();
         creneauxCrees.add(referenceData
                 .createCreneau(new Creneau(null, 1, JOUR_UN, LocalTime.of(10, 0), LocalTime.of(12, 0)))
                 .getId());
@@ -75,12 +86,12 @@ class DeclarationDisponibiliteFlowTest {
                 .createCreneau(new Creneau(null, 2, JOUR_DEUX, LocalTime.of(10, 0), LocalTime.of(12, 0)))
                 .getId());
 
-        Animateur alice = new Animateur("DEC-A", "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
-        alice.setEmail("dec-alice@example.org");
-        referenceData.createAnimateur(alice);
+        Animateur alice = new Animateur(null, "Alice", "Martin", LocalDate.of(1990, 1, 1), false);
+        alice.setEmail(EMAIL_ALICE);
+        aliceId = referenceData.createAnimateur(alice).getId();
 
         mailbox.clear();
-        session = EspaceSessions.open(mailbox, tokenOf("DEC-A"), "dec-alice@example.org");
+        session = EspaceSessions.open(mailbox, aliceToken(), EMAIL_ALICE);
         RestAssured.requestSpecification =
                 new RequestSpecBuilder().addCookie("planning-espace", session).build();
         closeWindow();
@@ -94,11 +105,11 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void horsFenetreLaDeclarationEstRefuseeEtRienNEstEnregistre() {
+    void outsideTheWindowADeclarationIsRefusedAndNothingIsStored() {
         // Nobody ever opened the window: it is closed, unlike the foire au
         // planning, which is open until somebody closes it.
         given().when()
-                .get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .get("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("collecteOuverte", is(false))
@@ -107,9 +118,9 @@ class DeclarationDisponibiliteFlowTest {
                 .body("joursEvenement", hasItems("2026-07-10", "2026-07-11"));
 
         given().contentType(ContentType.JSON)
-                .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"DEC-T1\"]}")
+                .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"" + typologieUn + "\"]}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(400);
 
@@ -117,7 +128,7 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void unJourHorsFenetreDeCollecteRefuseAussi() {
+    void aDayOutsideTheCollectionRangeIsRefusedToo() {
         // The window is open as a switch but bounded to days already past: a
         // date range that does not cover today collects nothing.
         openWindow(LocalDate.now().minusDays(10), LocalDate.now().minusDays(5), false);
@@ -125,20 +136,20 @@ class DeclarationDisponibiliteFlowTest {
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[]}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(400);
     }
 
     @Test
-    void uneDeclarationResteEnAttenteEtNeTouchePasAuReferentiel() {
+    void aDeclarationStaysPendingAndLeavesTheReferentialUntouched() {
         openWindow(null, null, false);
 
         given().contentType(ContentType.JSON)
-                .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"DEC-T1\"],"
+                .body("{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[\"" + typologieUn + "\"],"
                         + "\"commentaire\":\"je pars dimanche midi\"}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("enAttente.statut", equalTo("EN_ATTENTE"))
@@ -146,7 +157,7 @@ class DeclarationDisponibiliteFlowTest {
                 .body("enAttente.souhaitsLabels[0]", equalTo("Jeux de plateau"));
 
         // The whole point: the fiche has not moved.
-        Animateur alice = animateur("DEC-A");
+        Animateur alice = alice();
         assertThat(alice.getJoursIndisponibles()).isEmpty();
         assertThat(alice.getSouhaits()).isEmpty();
 
@@ -156,11 +167,11 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void unRenvoiRemplaceLaPrecedenteEnAttente() {
+    void aResubmissionReplacesThePendingOne() {
         openWindow(null, null, false);
 
-        String premiereId = declarer("[\"2026-07-10\"]", "[\"DEC-T1\"]");
-        String secondeId = declarer("[\"2026-07-11\"]", "[\"DEC-T2\"]");
+        String premiereId = declarer("[\"2026-07-10\"]", souhaits(typologieUn));
+        String secondeId = declarer("[\"2026-07-11\"]", souhaits(typologieDeux));
 
         assertThat(secondeId).isNotEqualTo(premiereId);
         // One row, not two: the admin never arbitrates two contradictory
@@ -170,8 +181,8 @@ class DeclarationDisponibiliteFlowTest {
                 .get("/api/disponibilites")
                 .then()
                 .statusCode(200)
-                .body("find { it.animateurId == 'DEC-A' }.id", equalTo(secondeId))
-                .body("find { it.animateurId == 'DEC-A' }.joursIndisponibles[0]", equalTo("2026-07-11"));
+                .body("find { it.animateurId == '" + aliceId + "' }.id", equalTo(secondeId))
+                .body("find { it.animateurId == '" + aliceId + "' }.joursIndisponibles[0]", equalTo("2026-07-11"));
 
         // And a single notification: five corrections in a row are one item on
         // the desk, so they are one mail.
@@ -179,9 +190,9 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void lApplicationEcritSurLaFicheEtRendLesDonneesPerimees() {
+    void applyingWritesTheFicheAndMarksTheDataStale() {
         openWindow(null, null, false);
-        String id = declarer("[\"2026-07-10\",\"2026-07-11\"]", "[\"DEC-T1\",\"DEC-T2\"]");
+        String id = declarer("[\"2026-07-10\",\"2026-07-11\"]", souhaits(typologieUn, typologieDeux));
         Instant avantApplication = changeTracker.lastModifiedAt();
 
         given().contentType(ContentType.JSON)
@@ -191,9 +202,9 @@ class DeclarationDisponibiliteFlowTest {
                 .statusCode(200)
                 .body("statut", equalTo("APPLIQUEE"));
 
-        Animateur alice = animateur("DEC-A");
+        Animateur alice = alice();
         assertThat(alice.getJoursIndisponibles()).containsExactlyInAnyOrder(JOUR_UN, JOUR_DEUX);
-        assertThat(alice.getSouhaits()).containsExactlyInAnyOrder("DEC-T1", "DEC-T2");
+        assertThat(alice.getSouhaits()).containsExactlyInAnyOrder(typologieUn, typologieDeux);
 
         // Applied through the façade like the screen does, so the marker the
         // staleness indicator reads really moved…
@@ -217,7 +228,7 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void unRefusNeTouchePasAuReferentielEtRouvreLaVoieAUneCorrection() {
+    void aRefusalLeavesTheReferentialAloneAndOpensTheWayToACorrection() {
         openWindow(null, null, false);
         String id = declarer("[\"2026-07-10\"]", "[]");
 
@@ -230,14 +241,14 @@ class DeclarationDisponibiliteFlowTest {
                 .body("statut", equalTo("REFUSEE"))
                 .body("commentaireAdmin", equalTo("le 10 est le jour du montage"));
 
-        assertThat(animateur("DEC-A").getJoursIndisponibles()).isEmpty();
+        assertThat(alice().getJoursIndisponibles()).isEmpty();
 
         // The refusal is visible in the espace, and a corrected version goes
         // through: the refused one moved to the history.
         String corrigee = declarer("[\"2026-07-11\"]", "[]");
         assertThat(corrigee).isNotEqualTo(id);
         given().when()
-                .get("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .get("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .body("enAttente.id", equalTo(corrigee))
@@ -245,20 +256,20 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void unJourEtrangerALEvenementEtUneTypologieInconnueSontRefuses() {
+    void aDayForeignToTheEventAndAnUnknownGameCategoryAreRefused() {
         openWindow(null, null, false);
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[\"2030-01-01\"],\"souhaits\":[]}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(400);
 
         given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":[],\"souhaits\":[\"DEC-INCONNUE\"]}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(400);
 
@@ -287,9 +298,9 @@ class DeclarationDisponibiliteFlowTest {
     }
 
     @Test
-    void unRefusConcurrentNEcritPasLaFicheQuandMeme() {
+    void aConcurrentRefusalStillNeverWritesTheFiche() {
         openWindow(null, null, false);
-        String id = declarer("[\"2026-07-10\"]", "[\"DEC-T1\"]");
+        String id = declarer("[\"2026-07-10\"]", souhaits(typologieUn));
 
         given().contentType(ContentType.JSON)
                 .body("{\"commentaire\":\"pas ce jour-là\"}")
@@ -307,17 +318,17 @@ class DeclarationDisponibiliteFlowTest {
                 .then()
                 .statusCode(400);
 
-        assertThat(animateur("DEC-A").getJoursIndisponibles())
+        assertThat(alice().getJoursIndisponibles())
                 .as("a refused declaration must never have touched the fiche")
                 .isEmpty();
-        assertThat(animateur("DEC-A").getSouhaits()).isEmpty();
+        assertThat(alice().getSouhaits()).isEmpty();
     }
 
     @Test
-    void deuxEnvoisSimultanesLaissentUneSeuleProposition() throws Exception {
+    void twoSimultaneousSubmissionsLeaveASingleProposal() throws Exception {
         openWindow(null, null, false);
         String corps = "{\"joursIndisponibles\":[\"2026-07-10\"],\"souhaits\":[]}";
-        String url = "/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites";
+        String url = "/api/espace-animateur/" + aliceToken() + "/disponibilites";
 
         // Two tabs, or one retried request: the espace's own « envoi en cours »
         // guard is per component and stops neither. The pair used to break the
@@ -356,11 +367,16 @@ class DeclarationDisponibiliteFlowTest {
         return given().contentType(ContentType.JSON)
                 .body("{\"joursIndisponibles\":" + jours + ",\"souhaits\":" + souhaits + "}")
                 .when()
-                .post("/api/espace-animateur/" + tokenOf("DEC-A") + "/disponibilites")
+                .post("/api/espace-animateur/" + aliceToken() + "/disponibilites")
                 .then()
                 .statusCode(200)
                 .extract()
                 .path("enAttente.id");
+    }
+
+    /** A JSON array of typologie ids, as the espace sends its wishes. */
+    private static String souhaits(String... typologieIds) {
+        return "[\"" + String.join("\",\"", typologieIds) + "\"]";
     }
 
     private void openWindow(LocalDate debut, LocalDate fin, boolean prevenir) {
@@ -393,7 +409,7 @@ class DeclarationDisponibiliteFlowTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("findAll { it.animateurId == 'DEC-A' }.id", String.class);
+                .getList("findAll { it.animateurId == '" + aliceId + "' }.id", String.class);
     }
 
     private List<Mail> mailsToAdmin() {
@@ -404,28 +420,33 @@ class DeclarationDisponibiliteFlowTest {
         return mailbox.getMailsSentTo(address);
     }
 
-    private Animateur animateur(String id) {
+    private Animateur alice() {
         return referenceData.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(id))
+                .filter(candidat -> candidat.getId().equals(aliceId))
                 .findFirst()
                 .orElseThrow();
     }
 
-    private String tokenOf(String animateurId) {
-        return animateur(animateurId).getAccessToken();
+    private String aliceToken() {
+        return alice().getAccessToken();
     }
 
-    /** Leaves the shared database as it was found — every id is prefixed DEC-. */
+    /**
+     * Leaves the shared database as it was found. The ids are drawn by the
+     * application, so the fixture is found by what the test chose: Alice's
+     * address and the typologies' {@code DEC-} codes — which also sweeps what
+     * an interrupted earlier run left behind.
+     */
     private void removeFixture() {
         referenceData.listAnimateurs().stream()
+                .filter(candidat -> EMAIL_ALICE.equals(candidat.getEmail()))
                 .map(Animateur::getId)
-                .filter(id -> id.startsWith("DEC-"))
                 .forEach(referenceData::deleteAnimateur);
         creneauxCrees.forEach(referenceData::deleteCreneau);
         creneauxCrees.clear();
         referenceData.listTypologies().stream()
+                .filter(typologie -> typologie.code() != null && typologie.code().startsWith("DEC-"))
                 .map(TypologieItem::id)
-                .filter(id -> id.startsWith("DEC-"))
                 .forEach(referenceData::deleteTypologie);
     }
 }

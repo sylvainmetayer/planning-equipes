@@ -191,14 +191,16 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         long afternoonCreneauId = afternoonCreneauId();
-        given().contentType("application/json")
+        String forcedAssignment = given().contentType("application/json")
                 .body("""
-                        {"id":"FORCE-APRES-MIDI","type":"AFFECTATION_FORCEE",
+                        {"type":"AFFECTATION_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, afternoonCreneauId))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("contrainte.id");
         Map<String, String> avant = persistedOccupants();
 
         given().contentType("application/json")
@@ -209,7 +211,7 @@ class JourJResourceTest {
                 .statusCode(400)
                 // Both exceptions are named: the one already recorded, and the
                 // one the absence would have written.
-                .body("message", containsString("FORCE-APRES-MIDI"))
+                .body("message", containsString(forcedAssignment))
                 .body("message", containsString("absence-jour-j-" + absent));
 
         assertThat(forcedUnavailabilities()).isEmpty();
@@ -356,7 +358,7 @@ class JourJResourceTest {
         String surPlace = firstAnimateurOnDuty();
         given().contentType("application/json")
                 .body("""
-                        {"id":"INDISPO-MATIN","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, matin))
                 .when()
                 .post("/api/contraintes-ad-hoc")
@@ -384,7 +386,7 @@ class JourJResourceTest {
         String surPlace = firstAnimateurOnDuty();
         given().contentType("application/json")
                 .body("""
-                        {"id":"INDISPO-APRES-MIDI","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(surPlace, afternoonCreneauId()))
                 .when()
                 .post("/api/contraintes-ad-hoc")
@@ -407,14 +409,16 @@ class JourJResourceTest {
         solveScenario();
         String absent = firstAnimateurOnDuty();
         long apresMidi = afternoonCreneauId();
-        given().contentType("application/json")
+        String handWritten = given().contentType("application/json")
                 .body("""
-                        {"id":"INDISPO-SAISIE-A-LA-MAIN","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"creneau":{"id":%d}}""".formatted(absent, apresMidi))
                 .when()
                 .post("/api/contraintes-ad-hoc")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("contrainte.id");
         markAbsent(absent, null, ENTRE_LES_DEUX, 200);
         assertThat(forcedUnavailabilities()).hasSize(2);
 
@@ -426,7 +430,7 @@ class JourJResourceTest {
 
         List<Map<String, Object>> restantes = forcedUnavailabilities();
         assertThat(restantes).hasSize(1);
-        assertThat((String) restantes.getFirst().get("id")).isEqualTo("INDISPO-SAISIE-A-LA-MAIN");
+        assertThat((String) restantes.getFirst().get("id")).isEqualTo(handWritten);
     }
 
     /**
