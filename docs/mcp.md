@@ -674,6 +674,20 @@ et `etat` — `ORPHELINE` (proposée par un stand, maîtrisée par personne),
 quoi se lit par id avec `lister_animateurs`. La définition est celle que
 `etat_edition` compte dans `referentiels.typologiesOrphelines`.
 
+## Le plan de formation se lit par id
+
+`plan_formation` rend l'onglet « À former » du Diagnostic : pour chaque
+typologie que `analyser_effectifs` dit en manque ou que la fragilité du planning
+persisté montre tenue par un seul spécialiste ou aucun, les chiffres de ces deux
+analyses — `manque`, `competencesRares`, `groupesSansSpecialiste`,
+`postesIrremplacables` —, les `joursTension`, et les candidats classés
+(jours en tension disponibles, puis souhait, puis niveau). Un candidat est un
+animateur `DEBUTANT` ou `AUTONOME` sur la typologie, jamais un `REFERENT`, un
+polyvalent ni une personne sans la compétence. Là où l'écran et l'export CSV
+nomment les candidats, l'outil ne rend que leur `animateurId`. Rien n'est
+résolu ni simulé ; sans planning persisté, `planPersiste` vaut `false` et seule
+la partie besoin parle.
+
 ## Une grille est faite de vacations, et ça ne se demande plus
 
 `valider_creneaux`, `previsualiser_creneaux_recurrents`,

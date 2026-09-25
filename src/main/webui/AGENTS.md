@@ -126,11 +126,12 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `pages/calendar-day`, `pages/rail-jour`, `pages/carte-jour` and
   `pages/pauses`, and `pages/journee/changements-vue`, are its components, not
   routes), `/constraints`,
-  `/diagnostic` (« Diagnostic » — the four analyses as tabs chosen by
-  `?onglet=problemes|besoin|fragilite|banc`: the problems, the staffing need,
-  the fragility, the bench; the tab components under `pages/problemes`,
-  `pages/staffing`, `pages/fragilite` and `pages/banc-de-touche` keep their own
-  view state in the URL next to the page's key), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
+  `/diagnostic` (« Diagnostic » — the five analyses as tabs chosen by
+  `?onglet=problemes|besoin|fragilite|former|banc`: the problems, the staffing
+  need, the fragility, who to train, the bench; the tab components under
+  `pages/problemes`, `pages/staffing`, `pages/fragilite`, `pages/formation` and
+  `pages/banc-de-touche` keep their own view state in the URL next to the
+  page's key), `/echanges`, `/hours`, `/intendance` (« Intendance des repas » — the meal
   breaks counted rather than named: how many people are out, hour by hour and
   per emplacement, « combien de sandwichs et où les porter »), `/typologies-planning` (« Planning par typologie » — the persisted plan read
   by typologie of jeu, under four renderings chosen on the page: the table, the

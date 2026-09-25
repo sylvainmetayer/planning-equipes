@@ -1,0 +1,96 @@
+<mat-card appearance="outlined" class="page-card">
+  @if (entete()) {
+    <mat-card-header>
+      <h1 mat-card-title i18n="@@formation.title">À former</h1>
+      <mat-card-subtitle i18n="@@formation.subtitle">Qui former, typologie par typologie, là où le besoin ou la fragilité signale un manque.</mat-card-subtitle>
+    </mat-card-header>
+  }
+  <mat-card-actions class="card-actions">
+    <button matButton type="button" [disabled]="chargement()" (click)="recharger()">
+      <mat-icon>refresh</mat-icon>
+      <ng-container i18n="@@common.refresh">Actualiser</ng-container>
+    </button>
+    <button matButton type="button" [disabled]="chargement() || exportBusy() || !rapport()?.typologies?.length"
+            (click)="exporter()">
+      <mat-icon>download</mat-icon>
+      <ng-container i18n="@@formation.export">Exporter en CSV</ng-container>
+    </button>
+  </mat-card-actions>
+  <mat-card-content>
+    <app-output-panel [text]="output()" />
+    @if (chargement() && !rapport()) {
+      <mat-progress-bar mode="indeterminate" />
+      <p class="empty-hint" i18n="@@formation.loading">Lecture du plan de formation…</p>
+    } @else if (erreur()) {
+      <app-status-message [text]="erreur()" tone="error" />
+    } @else if (rapport(); as plan) {
+      @if (plan.aucunAnimateur) {
+        <p class="empty-hint" i18n="@@formation.aucunAnimateur">Aucun animateur saisi : personne à former pour l'instant.</p>
+      } @else if (plan.aucuneCompetence) {
+        <p class="empty-hint">
+          <ng-container i18n="@@formation.aucuneCompetence">Aucune appréciation n'est saisie : sans compétence déclarée, personne n'est candidat.</ng-container>
+          <a routerLink="/competences" i18n="@@formation.versCompetences">Saisir les compétences</a>
+        </p>
+      } @else if (plan.typologies.length === 0) {
+        <p class="empty-hint" i18n="@@formation.aucunDeficit">Aucune typologie en déficit : ni le besoin ni la fragilité ne signalent de manque.</p>
+      } @else {
+        @if (!plan.planPersiste) {
+          <p class="formation-degrade" role="status" i18n="@@formation.sansPlan">Sans planning persisté, seul le besoin en animateurs est lu : jours en tension et postes irremplaçables viendront après une résolution.</p>
+        }
+        <p class="formation-tri" i18n="@@formation.tri">Candidats classés par jours en tension disponibles, puis souhait, puis niveau (autonome avant débutant).</p>
+        @for (ligne of plan.typologies; track ligne.typologie) {
+          <section class="formation-typologie">
+            <h2>
+              <a routerLink="/typologies" [queryParams]="{ edit: ligne.typologie }">{{ ligne.label || ligne.typologie }}</a>
+            </h2>
+            <p class="formation-deficit">{{ resumeDeficit(ligne) }}</p>
+            @if (ligne.joursTension.length > 0) {
+              <p class="formation-jours">
+                <ng-container i18n="@@formation.joursTension">Jours en tension :</ng-container>
+                @for (jour of ligne.joursTension; track jour; let dernier = $last) {
+                  {{ libelleJour(jour) }}@if (!dernier) {, }
+                }
+              </p>
+            }
+            @if (ligne.candidats.length === 0) {
+              <p class="formation-recrutement">
+                <ng-container i18n="@@formation.recrutement">Aucun candidat : recrutement.</ng-container>
+                <a routerLink="/diagnostic" [queryParams]="{ onglet: 'besoin' }" i18n="@@formation.versBesoin">Voir le besoin en animateurs</a>
+              </p>
+            } @else {
+              <table class="formation-candidats">
+                <caption class="visually-hidden" i18n="@@formation.table.caption">Candidats à former : animateur, niveau, souhait et jours en tension disponibles</caption>
+                <thead>
+                  <tr>
+                    <th scope="col" i18n="@@formation.column.animateur">Animateur</th>
+                    <th scope="col" i18n="@@formation.column.niveau">Niveau</th>
+                    <th scope="col" i18n="@@formation.column.souhait">Souhait</th>
+                    <th scope="col" i18n="@@formation.column.jours">Jours en tension disponibles</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (candidat of ligne.candidats; track candidat.animateurId) {
+                    <tr>
+                      <td>
+                        <a routerLink="/competences" [queryParams]="{ q: candidat.nom || candidat.animateurId, typologies: ligne.typologie }">{{ candidat.nom || candidat.animateurId }}</a>
+                      </td>
+                      <td>{{ libelleNiveau(candidat.niveau) }}</td>
+                      <td>
+                        @if (candidat.souhait) {
+                          <ng-container i18n="@@common.oui">Oui</ng-container>
+                        } @else {
+                          <ng-container i18n="@@common.non">Non</ng-container>
+                        }
+                      </td>
+                      <td>{{ candidat.joursTensionDisponibles }} / {{ ligne.joursTension.length }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            }
+          </section>
+        }
+      }
+    }
+  </mat-card-content>
+</mat-card>

@@ -1,4 +1,4 @@
-// The page over the four analyses: which tab the URL names, that switching
+// The page over the five analyses: which tab the URL names, that switching
 // writes the tab back, and that a tab's own view state lives next to it.
 
 import { Location } from '@angular/common';
@@ -30,6 +30,7 @@ describe('DiagnosticPage', () => {
     fragility: vi.fn(async () => null),
     bench: vi.fn(async () => null),
     breaks: vi.fn(async () => null),
+    trainingPlan: vi.fn(async () => null),
   };
 
   beforeEach(() => {
@@ -91,6 +92,15 @@ describe('DiagnosticPage', () => {
     expect(racine().querySelector('app-problemes-page')).not.toBeNull();
     expect(racine().querySelectorAll('h1')).toHaveLength(1);
     expect(analysesApi.staffing).not.toHaveBeenCalled();
+  });
+
+  it('opens the « À former » tab from ?onglet=former, under the page heading alone', async () => {
+    const page = await monter({ onglet: 'former' });
+
+    expect(page.onglet()).toBe('former');
+    expect(racine().querySelector('app-formation-page')).not.toBeNull();
+    expect(racine().querySelectorAll('h1')).toHaveLength(1);
+    expect(analysesApi.trainingPlan).toHaveBeenCalled();
   });
 
   it("opens on the tab the URL names, and keeps that tab's own state next to it", async () => {

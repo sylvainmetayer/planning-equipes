@@ -323,7 +323,76 @@ public class FragiliteAnalyzer {
                 severityOfScarcity(specialistes.size(), renforts.size()));
     }
 
+    /**
+     * Everything {@link #analyze} finds, <b>untruncated</b>: every seat of
+     * every animateur and every scarcity row. The screen's report caps both
+     * lists ({@link #MAX_POSTES_DETAILLES}, {@link #MAX_COMPETENCES_RARES}) for
+     * the page's sake; a reader that aggregates — the training plan, the
+     * tension map — must count all of them, or a large edition reads calmer
+     * than it is.
+     *
+     * @param animateurs        one line per animateur holding a seat, worst
+     *                          first, {@code postes} complete and
+     *                          {@code postesNonDetailles} zero
+     * @param competencesRares  every scarcity row, worst first
+     */
+    public record FragiliteFindings(
+            List<AnimateurFragilite> animateurs,
+            List<CompetenceRare> competencesRares,
+            int groupesAnalyses,
+            int groupesDejaSousEffectif,
+            boolean ninjaConfigure,
+            boolean aucunAnimateur) {}
+
+    /** The screen's report: {@link #findings} with its two lists capped. */
     public RapportFragilite analyze(PlanningEvenement planning) {
+        FragiliteFindings findings = findings(planning);
+        List<CompetenceRare> rares = findings.competencesRares();
+        List<AnimateurFragilite> lignes = findings.animateurs().stream()
+                .map(ligne -> new AnimateurFragilite(
+                        ligne.animateurId(),
+                        ligne.nom(),
+                        ligne.ninja(),
+                        ligne.affectations(),
+                        ligne.postesEffondres(),
+                        ligne.postesIrremplacables(),
+                        ligne.competencesRares(),
+                        ligne.severite(),
+                        List.copyOf(ligne.postes()
+                                .subList(
+                                        0,
+                                        Math.min(
+                                                MAX_POSTES_DETAILLES,
+                                                ligne.postes().size()))),
+                        Math.max(0, ligne.postes().size() - MAX_POSTES_DETAILLES)))
+                .toList();
+        int groupesSansSpecialiste =
+                (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
+        int animateursIrremplacables = (int) lignes.stream()
+                .filter(ligne -> ligne.postesIrremplacables() > 0)
+                .count();
+        return new RapportFragilite(
+                lignes,
+                List.copyOf(rares.subList(0, Math.min(MAX_COMPETENCES_RARES, rares.size()))),
+                rares.size(),
+                groupesSansSpecialiste,
+                findings.groupesAnalyses(),
+                findings.groupesDejaSousEffectif(),
+                animateursIrremplacables,
+                findings.ninjaConfigure(),
+                findings.aucunAnimateur(),
+                findings.aucunAnimateur()
+                        ? MESSAGE_SANS_ANIMATEUR
+                        : buildMessage(
+                                findings.groupesAnalyses(),
+                                lignes,
+                                animateursIrremplacables,
+                                rares.size(),
+                                groupesSansSpecialiste));
+    }
+
+    /** What {@link #analyze} reports, before any list is capped. */
+    public FragiliteFindings findings(PlanningEvenement planning) {
         List<Animateur> animateurs =
                 planning == null || planning.getAnimateurs() == null ? List.of() : planning.getAnimateurs();
         List<PosteAffectation> postes =
@@ -355,32 +424,13 @@ public class FragiliteAnalyzer {
         }
 
         rares.sort(ORDRE_RARES);
-        int groupesSansSpecialiste =
-                (int) rares.stream().filter(rare -> rare.specialistes() == 0).count();
-
-        List<AnimateurFragilite> lignes = animateurLines(animateurs, groupes, remplacantsParGroupe, raresParAnimateur);
-        int animateursIrremplacables = (int) lignes.stream()
-                .filter(ligne -> ligne.postesIrremplacables() > 0)
-                .count();
-
-        return new RapportFragilite(
-                lignes,
-                List.copyOf(rares.subList(0, Math.min(MAX_COMPETENCES_RARES, rares.size()))),
-                rares.size(),
-                groupesSansSpecialiste,
+        return new FragiliteFindings(
+                animateurLines(animateurs, groupes, remplacantsParGroupe, raresParAnimateur),
+                List.copyOf(rares),
                 groupes.size(),
                 dejaSousEffectif,
-                animateursIrremplacables,
                 ninjaConfigure,
-                animateurs.isEmpty(),
-                animateurs.isEmpty()
-                        ? MESSAGE_SANS_ANIMATEUR
-                        : buildMessage(
-                                groupes.size(),
-                                lignes,
-                                animateursIrremplacables,
-                                rares.size(),
-                                groupesSansSpecialiste));
+                animateurs.isEmpty());
     }
 
     private List<AnimateurFragilite> animateurLines(
@@ -442,8 +492,8 @@ public class FragiliteAnalyzer {
                     irremplacables,
                     rares,
                     severityOfAnimateur(irremplacables, rares),
-                    List.copyOf(fragiles.subList(0, Math.min(MAX_POSTES_DETAILLES, fragiles.size()))),
-                    Math.max(0, fragiles.size() - MAX_POSTES_DETAILLES)));
+                    List.copyOf(fragiles),
+                    0));
         }
         lignes.sort(ORDRE_ANIMATEURS);
         return List.copyOf(lignes);

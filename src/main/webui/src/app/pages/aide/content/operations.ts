@@ -219,6 +219,10 @@ export function buildOperationsSections(): HelpSection[] {
               text: $localize`:@@aide.views.def.fragilite:Qui est irremplaçable. Pour chaque personne, les créneaux qui passeraient sous l'effectif minimum si elle se désiste — et, colonne décisive, ceux que personne d'autre ne pourrait reprendre ce jour-là. La seconde vue liste les stands tenus par une seule personne compétente, ce qui désigne où recruter ou former. Les polyvalents « ninja » y sont comptés à part, en renforts.`,
             },
             {
+              term: $localize`:@@aide.views.term.former:À former`,
+              text: $localize`:@@aide.views.def.former:Qui former, typologie par typologie. Une typologie y figure quand le Besoin en animateurs la dit en manque, ou quand la Fragilité y trouve un stand tenu par un seul spécialiste ou aucun ; les chiffres sont ceux de ces deux onglets, jamais recalculés. Les candidats sont les débutants et les autonomes de la typologie — ni un référent, ni un polyvalent, ni quelqu'un sans la compétence —, classés par jours en tension où ils sont disponibles, puis souhait, puis niveau. Une typologie sans candidat relève du recrutement. Sans planning persisté, seul le besoin parle. L'onglet s'exporte en CSV ; monter un niveau reste un geste de la grille Compétences.`,
+            },
+            {
               term: $localize`:@@aide.views.term.banc:Banc de touche`,
               text: $localize`:@@aide.views.def.banc:Pour un créneau, qui n'est affecté nulle part — et, pour chacun, ce qui l'empêcherait de prendre la place libre : indisponible ce jour-là, repos légal, plafond d'heures atteint, appréciation manquante. Toutes les raisons applicables sont affichées, pas seulement la première : c'est ce qui dit si lever un obstacle suffirait. La vue est en lecture seule ; pour agir, passez par l'assistant de réparation.`,
             },
@@ -271,6 +275,11 @@ export function buildOperationsSections(): HelpSection[] {
         },
         { route: '/intendance', label: $localize`:@@nav.link.intendance:Intendance des repas` },
         { route: '/publication', label: $localize`:@@nav.link.publication:Publication` },
+        {
+          route: '/diagnostic',
+          queryParams: { onglet: 'former' },
+          label: $localize`:@@aide.link.former:À former`,
+        },
         {
           route: '/diagnostic',
           queryParams: { onglet: 'banc' },

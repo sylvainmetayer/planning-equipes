@@ -12,6 +12,7 @@ import { MatIconModule } from '@angular/material/icon';
 import { ActivatedRoute } from '@angular/router';
 import { keepViewInQueryParams } from '../../core/view-query-params';
 import { BancDeTouchePage } from '../banc-de-touche/banc-de-touche-page';
+import { FormationPage } from '../formation/formation-page';
 import { FragilitePage } from '../fragilite/fragilite-page';
 import { ProblemesPage } from '../problemes/problemes-page';
 import { StaffingPage } from '../staffing/staffing-page';
@@ -19,8 +20,9 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
 
 /**
  * « Diagnostic » : why the plan does not hold, and what would happen if — the
- * problems, the staffing need, the fragility and the bench, as four tabs of
- * one screen instead of four screens with four headings and four « Actualiser ».
+ * problems, the staffing need, the fragility, who to train and the bench, as
+ * five tabs of one screen instead of five screens with five headings and five
+ * « Actualiser ».
  *
  * <p>Each tab is the screen it was, hosted without its heading; its own view
  * state (the fragility filters, the bench's créneau and stand) still lives in
@@ -37,6 +39,7 @@ import { OngletDiagnostic, readOnglet } from './diagnostic';
     ProblemesPage,
     StaffingPage,
     FragilitePage,
+    FormationPage,
     BancDeTouchePage,
   ],
   templateUrl: './diagnostic-page.html',

@@ -13,6 +13,7 @@ import {
   EntreeHistorique,
   KpiHistoriqueEntry,
   ModeMarge,
+  PlanFormation,
   RapportFragilite,
   RapportMarge,
   RapportIntendance,
@@ -52,6 +53,16 @@ export class AnalysesApi {
 
   fragility(): Promise<RapportFragilite> {
     return this.api.get<RapportFragilite>('/api/fragilite');
+  }
+
+  /** Who to train, typologie by typologie — the « À former » tab. */
+  trainingPlan(): Promise<PlanFormation> {
+    return this.api.get<PlanFormation>('/api/formation');
+  }
+
+  /** The same tab as a CSV, names included, like the Équité export. */
+  exportTrainingPlan(): Promise<string> {
+    return this.api.downloadGet('/api/formation/export', 'plan-formation.csv', 'text/csv');
   }
 
   /**

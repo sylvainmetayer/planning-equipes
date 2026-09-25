@@ -1,0 +1,45 @@
+/* The « À former » tab: one section per typologie in shortage, its deficit in
+   one line and its candidates in a plain table. */
+
+.formation-tri,
+.formation-jours,
+.formation-deficit {
+  margin: 0.25rem 0;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.formation-degrade {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  background: var(--mat-sys-surface-container-high);
+}
+
+.formation-typologie {
+  margin-top: 1.25rem;
+}
+
+.formation-typologie h2 {
+  margin: 0 0 0.25rem;
+  font: var(--mat-sys-title-medium);
+}
+
+.formation-recrutement {
+  color: var(--mat-sys-error);
+}
+
+.formation-candidats {
+  border-collapse: collapse;
+  margin-top: 0.5rem;
+}
+
+.formation-candidats th,
+.formation-candidats td {
+  padding: 0.25rem 0.75rem 0.25rem 0;
+  text-align: left;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+}
+
+.formation-candidats td:last-child {
+  font-variant-numeric: tabular-nums;
+}

@@ -1,6 +1,10 @@
 package dev.sylvain.planning.mcp;
 
+import dev.sylvain.planning.domain.NiveauCompetence;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.analyse.FormationAnalyzer.PlanFormation;
+import dev.sylvain.planning.service.analyse.FormationAnalyzer.TypologieAFormer;
+import dev.sylvain.planning.service.analyse.FormationService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService;
 import dev.sylvain.planning.service.analyse.KpiHistoriqueService.KpiHistoriqueEntry;
 import dev.sylvain.planning.service.analyse.MargeAnalyzer.Mode;
@@ -54,6 +58,8 @@ public class DiagnosticMcpTools {
 
     private final MargeService margeService;
 
+    private final FormationService formationService;
+
     private final KpiHistoriqueService kpiHistoriqueService;
 
     private final PauseAnalyzer pauseAnalyzer;
@@ -67,6 +73,7 @@ public class DiagnosticMcpTools {
             ReferenceDataService referenceDataService,
             StaffingService staffingService,
             MargeService margeService,
+            FormationService formationService,
             KpiHistoriqueService kpiHistoriqueService,
             PauseAnalyzer pauseAnalyzer,
             PlanningPersistenceService persistenceService,
@@ -74,6 +81,7 @@ public class DiagnosticMcpTools {
         this.referenceDataService = referenceDataService;
         this.staffingService = staffingService;
         this.margeService = margeService;
+        this.formationService = formationService;
         this.kpiHistoriqueService = kpiHistoriqueService;
         this.pauseAnalyzer = pauseAnalyzer;
         this.persistenceService = persistenceService;
@@ -109,6 +117,35 @@ public class DiagnosticMcpTools {
     StaffingSummary analyzeEffectifs(
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         return staffingService.analyzeEdition();
+    }
+
+    /**
+     * The same computation as {@code GET /api/formation}, through the same
+     * {@link FormationService}, with the candidates reduced to their ids: the
+     * screen and the CSV name them, an assistant reads who they are through
+     * the tools that anonymise.
+     */
+    @Tool(
+            name = "plan_formation",
+            description = "Plan de formation suggéré, typologie par typologie : pour chaque typologie en déficit — "
+                    + "manque signalé par analyser_effectifs, ou au moins un couple stand × créneau tenu par un seul "
+                    + "spécialiste ou aucun dans la fragilité du planning persisté —, les chiffres de ces deux "
+                    + "analyses (manque, competencesRares, groupesSansSpecialiste, postesIrremplacables), les jours "
+                    + "en tension, et les candidats à former : animateurs DEBUTANT ou AUTONOME sur la typologie, "
+                    + "jamais un REFERENT, un polyvalent ni une personne sans la compétence. Tri affiché : jours en "
+                    + "tension où le candidat est disponible, puis souhait, puis niveau (AUTONOME avant DEBUTANT). "
+                    + "Une typologie sans candidat relève du recrutement. Ids seulement, aucun nom. Lecture seule, "
+                    + "aucune résolution ni simulation ; sans planning persisté, seule la partie besoin parle "
+                    + "(planPersiste = false).",
+            annotations =
+                    @Tool.Annotations(
+                            readOnlyHint = true,
+                            destructiveHint = false,
+                            idempotentHint = true,
+                            openWorldHint = false))
+    PlanFormationView suggestTrainingPlan(
+            @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
+        return PlanFormationView.of(formationService.plan());
     }
 
     /**
@@ -460,6 +497,60 @@ public class DiagnosticMcpTools {
             List<SequencePausesView> sequences,
             List<PauseAnalyzer.PausePlanifieeView> pausesPlanifiees,
             List<PauseAnalyzer.CoupureRepasView> coupuresRepas) {}
+
+    /** {@link PlanFormation} without a name: the candidates by id. */
+    public record PlanFormationView(
+            List<TypologieAFormerView> typologies,
+            boolean planPersiste,
+            boolean aucuneCompetence,
+            boolean aucunAnimateur) {
+
+        static PlanFormationView of(PlanFormation plan) {
+            return new PlanFormationView(
+                    plan.typologies().stream().map(TypologieAFormerView::of).toList(),
+                    plan.planPersiste(),
+                    plan.aucuneCompetence(),
+                    plan.aucunAnimateur());
+        }
+    }
+
+    /** {@link TypologieAFormer}, its candidates by id. */
+    public record TypologieAFormerView(
+            String typologie,
+            String label,
+            boolean ninja,
+            int manque,
+            int specialistes,
+            int competencesRares,
+            int groupesSansSpecialiste,
+            int postesIrremplacables,
+            List<LocalDate> joursTension,
+            List<CandidatFormationView> candidats) {
+
+        static TypologieAFormerView of(TypologieAFormer ligne) {
+            return new TypologieAFormerView(
+                    ligne.typologie(),
+                    ligne.label(),
+                    ligne.ninja(),
+                    ligne.manque(),
+                    ligne.specialistes(),
+                    ligne.competencesRares(),
+                    ligne.groupesSansSpecialiste(),
+                    ligne.postesIrremplacables(),
+                    ligne.joursTension(),
+                    ligne.candidats().stream()
+                            .map(candidat -> new CandidatFormationView(
+                                    candidat.animateurId(),
+                                    candidat.niveau(),
+                                    candidat.souhait(),
+                                    candidat.joursTensionDisponibles()))
+                            .toList());
+        }
+    }
+
+    /** One candidate, by id. */
+    public record CandidatFormationView(
+            String animateurId, NiveauCompetence niveau, boolean souhait, int joursTensionDisponibles) {}
 
     /**
      * @param journeesAnalysees animateur-days holding at least one seat, over the whole plan — not

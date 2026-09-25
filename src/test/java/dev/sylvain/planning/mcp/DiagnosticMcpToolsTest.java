@@ -303,6 +303,25 @@ class DiagnosticMcpToolsTest {
      * warning on an animateur dates their majority — nor the date.
      */
     @Test
+    void theTrainingPlanNamesItsCandidatesByIdOnly() throws Exception {
+        loadScenario();
+
+        DiagnosticMcpTools.PlanFormationView plan = diagnosticTools.suggestTrainingPlan(null);
+        String json = objectMapper.writeValueAsString(plan);
+
+        assertThat(json).doesNotContain("\"nom\"");
+        for (Animateur animateur : referenceDataService.listAnimateurs()) {
+            assertThat(json).doesNotContain(animateur.nomAffiche());
+        }
+        assertThat(plan.typologies())
+                .allSatisfy(ligne -> assertThat(ligne.candidats())
+                        .allSatisfy(candidat -> assertThat(candidat.niveau())
+                                .isIn(
+                                        dev.sylvain.planning.domain.NiveauCompetence.DEBUTANT,
+                                        dev.sylvain.planning.domain.NiveauCompetence.AUTONOME)));
+    }
+
+    @Test
     void theCoherenceChecklistCrossesAsCodesAndIdsOnly() throws Exception {
         loadScenario();
         referenceDataService.listAnimateurs().stream().findFirst().ifPresent(animateur -> {

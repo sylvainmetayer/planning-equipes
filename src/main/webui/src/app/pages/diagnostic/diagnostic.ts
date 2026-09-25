@@ -1,12 +1,13 @@
-// The pure side of the Diagnostic page: which of the four tabs a query param names.
+// The pure side of the Diagnostic page: which of the five tabs a query param names.
 
-/** The four tabs, and the values of the `onglet` query param. */
-export type OngletDiagnostic = 'problemes' | 'besoin' | 'fragilite' | 'banc';
+/** The five tabs, and the values of the `onglet` query param. */
+export type OngletDiagnostic = 'problemes' | 'besoin' | 'fragilite' | 'former' | 'banc';
 
 export const ONGLETS_DIAGNOSTIC: readonly OngletDiagnostic[] = [
   'problemes',
   'besoin',
   'fragilite',
+  'former',
   'banc',
 ];
 
