@@ -22,17 +22,25 @@ import java.util.Objects;
 @ApplicationScoped
 public class FormationService {
 
-    @Inject
-    StaffingService staffingService;
+    private final StaffingService staffingService;
+
+    private final FragiliteAnalyzer fragiliteAnalyzer;
+
+    private final PlanningPersistenceService persistenceService;
+
+    private final ReferenceDataService referenceDataService;
 
     @Inject
-    FragiliteAnalyzer fragiliteAnalyzer;
-
-    @Inject
-    PlanningPersistenceService persistenceService;
-
-    @Inject
-    ReferenceDataService referenceDataService;
+    public FormationService(
+            StaffingService staffingService,
+            FragiliteAnalyzer fragiliteAnalyzer,
+            PlanningPersistenceService persistenceService,
+            ReferenceDataService referenceDataService) {
+        this.staffingService = staffingService;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
+        this.persistenceService = persistenceService;
+        this.referenceDataService = referenceDataService;
+    }
 
     /** Never fails on an empty edition: this feeds a read-only tab opened before any solve. */
     public PlanFormation plan() {

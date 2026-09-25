@@ -41,20 +41,21 @@ public class MargeService {
 
     private final MargeAnalyzer margeAnalyzer;
 
+    private final FragiliteAnalyzer fragiliteAnalyzer;
+
     @Inject
     public MargeService(
             PlanningService planningService,
             PlanningPersistenceService persistenceService,
             ReferenceDataService referenceDataService,
-            MargeAnalyzer margeAnalyzer) {
+            MargeAnalyzer margeAnalyzer,
+            FragiliteAnalyzer fragiliteAnalyzer) {
         this.planningService = planningService;
         this.persistenceService = persistenceService;
         this.referenceDataService = referenceDataService;
         this.margeAnalyzer = margeAnalyzer;
+        this.fragiliteAnalyzer = fragiliteAnalyzer;
     }
-
-    @Inject
-    FragiliteAnalyzer fragiliteAnalyzer;
 
     /**
      * The « Tension » reading: the « après » margin and the fragility of the
