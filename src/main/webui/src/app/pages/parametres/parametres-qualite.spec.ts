@@ -47,6 +47,7 @@ describe('ParametresQualiteCard', () => {
       vitesseMarcheKmH: 4,
       facteurDetour: 1.3,
       toleranceTrajetMinutes: 5,
+      toleranceArriveeGroupeeMinutes: 30,
     });
     TestBed.configureTestingModule({
       providers: [
@@ -81,6 +82,7 @@ describe('ParametresQualiteCard', () => {
       vitesseMarcheKmH: 4,
       facteurDetour: 1.3,
       toleranceTrajetMinutes: 5,
+      toleranceArriveeGroupeeMinutes: 30,
     });
   });
 

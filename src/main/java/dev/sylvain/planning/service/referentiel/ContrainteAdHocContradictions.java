@@ -44,7 +44,12 @@ import java.util.TreeSet;
  *   <li>two AFFECTATION_FORCEE putting an INCOMPATIBILITE pair on the same
  *       créneau. Same <em>créneau</em>, not same stand: the incompatibility
  *       rule joins on the créneau alone, so two forced seats on two stands of
- *       that créneau are just as infeasible.</li>
+ *       that créneau are just as infeasible;</li>
+ *   <li>an ARRIVEE_GROUPEE two of whose members form an unscoped INCOMPATIBILITE pair.
+ *       The one rule of this list that is not certainly unsatisfiable — the
+ *       grouped arrival is soft — refused all the same because the
+ *       combination describes nothing an organiser wants: aligning two
+ *       people's days while refusing to have them work together.</li>
  * </ul>
  *
  * <p>Everything else is left to the solver. A forced assignment naming two
@@ -68,7 +73,8 @@ public final class ContrainteAdHocContradictions {
         PAIRE_INCOMPATIBLE_ET_AFFINE,
         AFFECTATION_FORCEE_SUR_INDISPONIBILITE,
         AFFECTATIONS_FORCEES_SIMULTANEES,
-        AFFECTATIONS_FORCEES_INCOMPATIBLES
+        AFFECTATIONS_FORCEES_INCOMPATIBLES,
+        ARRIVEE_GROUPEE_INCOMPATIBLE
     }
 
     /**
@@ -120,6 +126,7 @@ public final class ContrainteAdHocContradictions {
                 contradictoryPairDeclaration(candidate, other).ifPresent(contradictions::add);
                 forcedSeatOnUnavailability(candidate, other, creneauxById).ifPresent(contradictions::add);
                 simultaneousForcedSeats(candidate, other, creneauxById).ifPresent(contradictions::add);
+                groupedArrivalOfIncompatiblePair(candidate, other).ifPresent(contradictions::add);
             }
             contradictions.addAll(forcedSeatsOfAnIncompatiblePairIndexed(
                     candidate, known, forceesParAnimateurSeul, incompatibilitesParAnimateur, creneauxById));
@@ -257,6 +264,7 @@ public final class ContrainteAdHocContradictions {
             contradictoryPairDeclaration(candidate, other).ifPresent(contradictions::add);
             forcedSeatOnUnavailability(candidate, other, creneaux).ifPresent(contradictions::add);
             simultaneousForcedSeats(candidate, other, creneaux).ifPresent(contradictions::add);
+            groupedArrivalOfIncompatiblePair(candidate, other).ifPresent(contradictions::add);
         }
         contradictions.addAll(forcedSeatsOfAnIncompatiblePair(candidate, others, creneaux));
         return List.copyOf(contradictions);
@@ -292,6 +300,51 @@ public final class ContrainteAdHocContradictions {
                         + " (" + other.getType()
                         + ") : une même paire ne peut pas être déclarée à la fois incompatible et en affinité."
                         + " Supprimez d'abord la contrainte existante."));
+    }
+
+    /* ------------------------------------------------------------------ */
+    /* Rule 5 — a grouped arrival holding an incompatible pair             */
+    /* ------------------------------------------------------------------ */
+
+    /**
+     * An ARRIVEE_GROUPEE whose members include both animateurs of an
+     * <b>unscoped</b> INCOMPATIBILITE, whichever of the two was entered last.
+     * The pair is the one {@code AdHocConstraints} evaluates: the first two ids
+     * of the incompatibility. An incompatibility limited to a stand or to a
+     * timeslot leaves the pair free to work the same hours elsewhere, which is
+     * all the car asks: only one that holds everywhere is at odds with
+     * aligning their days.
+     */
+    private static Optional<Contradiction> groupedArrivalOfIncompatiblePair(
+            ContrainteAdHoc candidate, ContrainteAdHoc other) {
+        ContrainteAdHoc groupe;
+        ContrainteAdHoc incompatibilite;
+        if (candidate.getType() == TypeContrainteAdHoc.ARRIVEE_GROUPEE
+                && other.getType() == TypeContrainteAdHoc.INCOMPATIBILITE) {
+            groupe = candidate;
+            incompatibilite = other;
+        } else if (candidate.getType() == TypeContrainteAdHoc.INCOMPATIBILITE
+                && other.getType() == TypeContrainteAdHoc.ARRIVEE_GROUPEE) {
+            groupe = other;
+            incompatibilite = candidate;
+        } else {
+            return Optional.empty();
+        }
+        if (incompatibilite.getStand() != null || incompatibilite.getCreneau() != null) {
+            return Optional.empty();
+        }
+        Set<String> pair = animateurPair(incompatibilite);
+        if (pair.isEmpty() || !animateurIds(groupe).containsAll(pair)) {
+            return Optional.empty();
+        }
+        return Optional.of(new Contradiction(
+                TypeContradiction.ARRIVEE_GROUPEE_INCOMPATIBLE,
+                List.of(other.getId(), candidate.getId()),
+                "La paire d'animateurs " + String.join(" / ", new TreeSet<>(pair))
+                        + " est à la fois dans l'arrivée groupée " + groupe.getId()
+                        + " et déclarée incompatible par " + incompatibilite.getId()
+                        + " : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler"
+                        + " ensemble. Supprimez d'abord l'une des deux."));
     }
 
     /* ------------------------------------------------------------------ */

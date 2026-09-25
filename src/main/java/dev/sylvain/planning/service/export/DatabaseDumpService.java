@@ -122,6 +122,7 @@ public class DatabaseDumpService {
             // plan no longer had a justification.
             "animateur_souhait",
             "declaration_disponibilite",
+            "declaration_coequipier",
             "confirmation_planning",
             // The ledger of what the scheduled jobs have already sent. Read
             // JournalNotificationsRepository's javadoc for why this one is not

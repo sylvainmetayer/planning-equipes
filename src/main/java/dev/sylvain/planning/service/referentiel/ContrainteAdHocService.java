@@ -1,7 +1,9 @@
 package dev.sylvain.planning.service.referentiel;
 
+import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.TypeContrainteAdHoc;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.ConcurrentModificationGuard;
 import dev.sylvain.planning.service.IdGenerator;
@@ -12,11 +14,21 @@ import jakarta.inject.Inject;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /** The hand-entered constraints (affinités, incompatibilités, …) the solver reads as problem facts. */
 @ApplicationScoped
 public class ContrainteAdHocService {
+
+    /**
+     * The single refusal of an edit or a delete aimed at a grouped arrival a
+     * validated covoiturage stands behind — REST, MCP and every other caller
+     * of this service read the same sentence.
+     */
+    public static final String CARPOOL_BACKED =
+            "Cette arrivée groupée vient d'une demande de covoiturage : annulez-la depuis "
+                    + "Disponibilités > Covoiturage, qui prévient le groupe.";
 
     private final ContrainteAdHocRepository repository;
 
@@ -64,6 +76,7 @@ public class ContrainteAdHocService {
         if (contrainte.getId() == null) {
             contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
         }
+        checkShape(contrainte);
         refuseContradiction(contrainte);
         nameVacation(contrainte);
         if (contrainte.getCreeLe() == null) {
@@ -101,6 +114,7 @@ public class ContrainteAdHocService {
             if (contrainte.getId() == null) {
                 contrainte.setId(ids.next(IdGenerator.Kind.CONTRAINTE));
             }
+            checkShape(contrainte);
             ContrainteAdHocContradictions.detect(contrainte, deja, creneaux).stream()
                     .map(Contradiction::message)
                     .filter(message -> !messages.contains(message))
@@ -130,6 +144,22 @@ public class ContrainteAdHocService {
             throw new BusinessError.Invalid("Ajustement inconnu : " + contrainte.getId()
                     + ". Un nouvel ajustement s'envoie sans identifiant : l'application en attribue un.");
         }
+        if (contrainte.getId() != null) {
+            refuseIfCarpoolBacked(contrainte.getId());
+        }
+    }
+
+    /**
+     * A grouped arrival a validated covoiturage stands behind is the
+     * Covoiturage tab's: cancelling it there tells the group and records the
+     * decision on their demands, while an edit or a delete from anywhere else
+     * would leave them believing in a car that no longer exists. A grouped
+     * arrival written by hand stays editable like any other ajustement.
+     */
+    private void refuseIfCarpoolBacked(String id) {
+        if (repository.isCarpoolBacked(id)) {
+            throw new BusinessError.Conflict(CARPOOL_BACKED);
+        }
     }
 
     /**
@@ -152,7 +182,12 @@ public class ContrainteAdHocService {
         scope.setHeureFin(creneau.getHeureFin());
     }
 
+    /**
+     * Deletes one ajustement, unless it is a grouped arrival a validated
+     * covoiturage stands behind — see {@link #refuseIfCarpoolBacked}.
+     */
     public void delete(String id) {
+        refuseIfCarpoolBacked(id);
         repository.deleteContrainte(id);
         changeTracker.markModified();
     }
@@ -168,12 +203,41 @@ public class ContrainteAdHocService {
      * would be a poor way to spend an afternoon.</p>
      */
     public void checkNoContradiction(List<ContrainteAdHoc> contraintes, List<Creneau> creneaux) {
+        contraintes.forEach(ContrainteAdHocService::checkShape);
         List<Contradiction> contradictions = ContrainteAdHocContradictions.detectAll(contraintes, creneaux);
         if (contradictions.isEmpty()) {
             return;
         }
         String detail = contradictions.stream().map(Contradiction::message).collect(Collectors.joining(" "));
         throw new BusinessError.Invalid("Les contraintes ad hoc de ce scénario se contredisent : " + detail);
+    }
+
+    /**
+     * The one type whose shape is refused outright: a grouped arrival is a
+     * car, two to four distinct people, and it names neither a timeslot nor a
+     * stand — the rule reads whole days, so a scope would be silently
+     * ignored.
+     */
+    static void checkShape(ContrainteAdHoc contrainte) {
+        if (contrainte.getType() != TypeContrainteAdHoc.ARRIVEE_GROUPEE) {
+            return;
+        }
+        long membres = contrainte.getAnimateursConcernes() == null
+                ? 0
+                : contrainte.getAnimateursConcernes().stream()
+                        .filter(Objects::nonNull)
+                        .map(Animateur::getId)
+                        .filter(Objects::nonNull)
+                        .distinct()
+                        .count();
+        if (membres < 2 || membres > 4) {
+            throw new BusinessError.Invalid("Une arrivée groupée réunit de 2 à 4 animateurs distincts : "
+                    + contrainte.getId() + " en compte " + membres + ".");
+        }
+        if (contrainte.getCreneau() != null || contrainte.getStand() != null) {
+            throw new BusinessError.Invalid("Une arrivée groupée porte sur des journées entières : "
+                    + contrainte.getId() + " ne doit viser ni créneau ni stand.");
+        }
     }
 
     /**

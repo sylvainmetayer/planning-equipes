@@ -54,6 +54,7 @@ export class ParametresQualiteCard implements OnInit {
   protected readonly walkingSpeed = signal<number | null>(null);
   protected readonly detourFactor = signal<number | null>(null);
   protected readonly walkingTolerance = signal<number | null>(null);
+  protected readonly carpoolTolerance = signal<number | null>(null);
 
   private readonly constraintsApi = inject(ConstraintsApi);
 
@@ -87,6 +88,7 @@ export class ParametresQualiteCard implements OnInit {
     this.walkingSpeed.set(parametres.vitesseMarcheKmH ?? null);
     this.detourFactor.set(parametres.facteurDetour ?? null);
     this.walkingTolerance.set(parametres.toleranceTrajetMinutes ?? null);
+    this.carpoolTolerance.set(parametres.toleranceArriveeGroupeeMinutes ?? null);
   }
 
   /**
@@ -102,6 +104,7 @@ export class ParametresQualiteCard implements OnInit {
     const speed = this.walkingSpeed();
     const factor = this.detourFactor();
     const tolerance = this.walkingTolerance();
+    const carpool = this.carpoolTolerance();
     if (
       emplacements === null ||
       emplacements < 1 ||
@@ -116,7 +119,9 @@ export class ParametresQualiteCard implements OnInit {
       factor === null ||
       factor < 1 ||
       tolerance === null ||
-      tolerance < 0
+      tolerance < 0 ||
+      carpool === null ||
+      carpool < 0
     ) {
       return;
     }
@@ -143,6 +148,7 @@ export class ParametresQualiteCard implements OnInit {
           vitesseMarcheKmH: speed,
           facteurDetour: factor,
           toleranceTrajetMinutes: Math.round(tolerance),
+          toleranceArriveeGroupeeMinutes: Math.round(carpool),
         }),
       );
       this.saved.set(true);

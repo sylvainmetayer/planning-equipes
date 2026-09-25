@@ -1,0 +1,13 @@
+{#include mail/layout}
+{#body}
+{#if prenom}
+<p style="margin:0 0 12px;">Bonjour {prenom},</p>
+{/if}
+<p style="margin:0 0 12px;">L'organisation a validé votre arrivée groupée avec {coequipiers}.</p>
+<p style="margin:0 0 12px;">Le planning cherchera à vous donner les mêmes jours, avec des arrivées et des départs proches. Ce n'est pas une garantie de travailler sur le même stand.</p>
+<p style="margin:0{#if lienEspace} 0 12px{/if};">Ce groupe est désormais celui de l'organisation : pour le modifier ou le retirer, adressez-vous à elle.</p>
+{#if lienEspace}
+<p style="margin:0;">Votre covoiturage, dans votre espace : <a href="{lienEspace}" style="color:{accent};">{lienEspace}</a></p>
+{/if}
+{/body}
+{/include}

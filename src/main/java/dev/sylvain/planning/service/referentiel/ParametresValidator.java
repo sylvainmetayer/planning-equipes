@@ -133,7 +133,15 @@ final class ParametresValidator {
         }
         checkFenetre(parametres.heureServiceTardif(), parametres.heureServiceMatinal(), "Les heures de service");
         checkTrajet(parametres);
+        if (parametres.toleranceArriveeGroupeeMinutes() < 0
+                || parametres.toleranceArriveeGroupeeMinutes() > TOLERANCE_ARRIVEE_GROUPEE_MAX_MINUTES) {
+            throw new BusinessError.Invalid("La tolérance d'une arrivée groupée doit valoir entre 0 et "
+                    + TOLERANCE_ARRIVEE_GROUPEE_MAX_MINUTES + " minutes.");
+        }
     }
+
+    /** Largest grouped-arrival tolerance accepted: beyond four hours, nobody is waiting for anybody. */
+    static final int TOLERANCE_ARRIVEE_GROUPEE_MAX_MINUTES = 240;
 
     /** Fastest walking pace accepted, in km/h: beyond it, nobody is walking any more. */
     static final double VITESSE_MARCHE_MAX_KM_H = 15.0;

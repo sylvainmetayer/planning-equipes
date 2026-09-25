@@ -373,6 +373,16 @@ public class CoherenceReferentielService {
                     conflit.message(),
                     conflit.dates()));
         }
+        // A car whose members declared different days off: the write warned,
+        // the checklist keeps saying so while it stands.
+        for (ContrainteAdHoc contrainte : contraintes) {
+            CoherenceAnalyzer.divergentGroupedArrival(contrainte, sources.animateurs(), sources.creneaux())
+                    .ifPresent(avertissement -> issues.add(warning(
+                            CoherenceFamily.AJUSTEMENTS,
+                            avertissement,
+                            CoherenceSubject.CONTRAINTE_AD_HOC,
+                            contrainte.getId())));
+        }
         boolean forcees = contraintes.stream()
                 .anyMatch(contrainte ->
                         contrainte != null && contrainte.getType() == TypeContrainteAdHoc.AFFECTATION_FORCEE);

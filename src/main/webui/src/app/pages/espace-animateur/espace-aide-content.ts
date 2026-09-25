@@ -14,7 +14,7 @@
 import { HelpBlock } from '../../shared/help-blocks';
 
 /** Tab of the espace a section sends the reader to, when there is one. */
-export type EspaceAideCible = 'planning' | 'echanges' | 'disponibilites';
+export type EspaceHelpTarget = 'planning' | 'echanges' | 'disponibilites' | 'covoiturage';
 
 export interface EspaceAideSection {
   /** Anchor id, also used as the `track` key. */
@@ -26,7 +26,7 @@ export interface EspaceAideSection {
   resume: string;
   blocks: HelpBlock[];
   /** Where to act on what the section describes. */
-  cible?: EspaceAideCible;
+  cible?: EspaceHelpTarget;
 }
 
 /**
@@ -54,6 +54,7 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             $localize`:@@espace.aide.espace.item3:Demander un échange de créneau, tant que la foire au planning est ouverte.`,
             $localize`:@@espace.aide.espace.item4:Répondre aux demandes d'échange qu'un collègue vous adresse.`,
             $localize`:@@espace.aide.espace.item5:Déclarer vos jours d'indisponibilité et vos souhaits, quand la collecte est ouverte.`,
+            $localize`:@@espace.aide.espace.item6:Demander à venir avec un à trois coéquipiers en covoiturage, pendant la même collecte.`,
           ],
         },
         {
@@ -368,6 +369,42 @@ export function buildEspaceAideSections(): EspaceAideSection[] {
             $localize`:@@espace.aide.dispo.item3:Vos compétences ne se déclarent pas ici : elles restent décidées avec l'organisation.`,
             $localize`:@@espace.aide.dispo.item4:Collecte fermée, l'onglet reste consultable mais n'accepte plus d'envoi. Prévenez alors directement l'organisation.`,
           ],
+        },
+      ],
+    },
+    {
+      id: 'covoiturage',
+      icon: 'directions_car',
+      question: $localize`:@@espace.aide.covoiturage.question:Je viens en voiture avec d'autres animateurs : comment le dire ?`,
+      resume: $localize`:@@espace.aide.covoiturage.resume:Dans l'onglet « Covoiturage », pendant la collecte : « Je viens avec… », un à trois coéquipiers.`,
+      cible: 'covoiturage',
+      blocks: [
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.covoiturage.intro:« Je viens avec… » dit à l'organisation que vous arrivez et repartez ensemble. C'est un souhait, pas une garantie : si l'organisation le valide, le planning cherche à vous donner les mêmes jours, avec des heures d'arrivée et de départ proches (à quelques minutes près). Il ne vous place pas pour autant sur le même stand.`,
+        },
+        {
+          kind: 'steps',
+          items: [
+            $localize`:@@espace.aide.covoiturage.etape1:Ouvrez l'onglet « Covoiturage » tant que la collecte des disponibilités est ouverte. En dehors, l'onglet montre où en est votre demande mais n'accepte plus d'envoi.`,
+            $localize`:@@espace.aide.covoiturage.etape2:Cherchez vos coéquipiers par leur nom : de un à trois, jamais vous-même.`,
+            $localize`:@@espace.aide.covoiturage.etape3:Envoyez. La demande part seule : elle ne change rien à votre déclaration de disponibilités, et votre déclaration ne la change pas.`,
+          ],
+        },
+        {
+          kind: 'list',
+          items: [
+            $localize`:@@espace.aide.covoiturage.item1:Chacun de vos coéquipiers peut faire la même demande depuis son espace : l'organisation voit alors que le groupe est « confirmé par tous ».`,
+            $localize`:@@espace.aide.covoiturage.item2:Tant qu'elle est « en attente », un nouvel envoi remplace votre demande ; retirer tous les noms et envoyer la retire.`,
+            $localize`:@@espace.aide.covoiturage.item3:L'organisation valide l'arrivée groupée, ou l'écarte en disant parfois pourquoi. Dans les deux cas, vous êtes prévenu par e-mail et l'onglet l'affiche.`,
+            $localize`:@@espace.aide.covoiturage.item4:Écartée, votre demande n'empêche rien : vous pouvez en envoyer une nouvelle tant que la collecte est ouverte.`,
+            $localize`:@@espace.aide.covoiturage.item5:Validée, elle appartient à l'organisation : pour la modifier ou la retirer, adressez-vous à elle.`,
+            $localize`:@@espace.aide.covoiturage.item6:L'organisation peut annuler une arrivée groupée déjà validée, en disant parfois pourquoi : chaque membre est prévenu par e-mail et l'onglet l'affiche. Une nouvelle demande est alors possible tant que la collecte est ouverte ; sinon, adressez-vous à l'organisation.`,
+          ],
+        },
+        {
+          kind: 'paragraph',
+          text: $localize`:@@espace.aide.covoiturage.planning:Une fois le planning publié, « Mon planning » indique jour par jour si vos horaires sont les mêmes que ceux de votre covoiturage.`,
         },
       ],
     },

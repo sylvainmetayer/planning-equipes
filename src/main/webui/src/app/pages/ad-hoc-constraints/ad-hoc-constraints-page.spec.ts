@@ -111,6 +111,57 @@ describe('AdHocConstraintsPage', () => {
     expect(lignes[1]).toContain('stand S9');
   });
 
+  describe('a grouped arrival from a carpool request', () => {
+    function groupedArrival(id: string, issueDeCovoiturage: boolean): ContrainteAdHoc {
+      return {
+        id,
+        type: 'ARRIVEE_GROUPEE',
+        animateursConcernes: [{ id: 'A1' }, { id: 'A2' }],
+        creneau: null,
+        stand: null,
+        raison: '',
+        issueDeCovoiturage,
+      };
+    }
+
+    function actionsOf(root: HTMLElement, id: string): HTMLElement {
+      return [...root.querySelectorAll<HTMLElement>('tr.mat-mdc-row')].find((ligne) =>
+        ligne.textContent?.includes(id),
+      )!;
+    }
+
+    it('disables Modifier and Supprimer and links to the Covoiturage tab, a hand-made one not', async () => {
+      seedStore(referenceData, 'contraintes', [
+        groupedArrival('C1', true),
+        groupedArrival('C2', false),
+      ]);
+      const fixture = TestBed.createComponent(AdHocConstraintsPage);
+      await fixture.whenStable();
+      const root = fixture.nativeElement as HTMLElement;
+
+      const issue = actionsOf(root, 'C1');
+      const boutons = [...issue.querySelectorAll('button')];
+      expect(boutons).toHaveLength(2);
+      expect(boutons.every((bouton) => bouton.disabled)).toBe(true);
+      expect(boutons[0].getAttribute('aria-label')).toContain('Disponibilités > Covoiturage');
+      const lien = issue.querySelector('a') as HTMLAnchorElement;
+      expect(lien.getAttribute('href')).toBe('/disponibilites?onglet=covoiturage');
+
+      const main = actionsOf(root, 'C2');
+      expect([...main.querySelectorAll('button')].some((bouton) => bouton.disabled)).toBe(false);
+      expect(main.querySelector('a')).toBeNull();
+    });
+
+    it('opens no form for it from the edit deep link', async () => {
+      await TestBed.inject(Router).navigateByUrl('/?edit=C1');
+      createPage([groupedArrival('C1', true)]);
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(dialog.open).not.toHaveBeenCalled();
+    });
+  });
+
   /** `?ids=a,b`: the adjustments a problem named, side by side, until « Tout afficher ». */
   describe('the narrowing to the adjustments involved', () => {
     type Internals = {

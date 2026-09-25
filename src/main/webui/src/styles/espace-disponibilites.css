@@ -194,3 +194,41 @@
   flex-wrap: wrap;
   gap: 0.5rem;
 }
+
+/* « Confirmé par tous » on a covoiturage every member declared the same way. */
+.dispo-covoiturage-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+/* A validated car, shown and no longer chosen: a plain list, nothing to press. */
+.espace-dispo-covoiturage-valide {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.espace-dispo-covoiturage-valide .espace-dispo-souhait {
+  cursor: default;
+}
+
+/* The two tabs of the admin screen: the declarations, the covoiturage requests. */
+.dispo-onglets {
+  margin: 1rem 0;
+  flex-wrap: wrap;
+}
+
+.dispo-onglets .mat-icon {
+  margin-right: 0.25rem;
+  vertical-align: middle;
+}
+
+/* How many covoiturage requests wait, on the tab itself. */
+.dispo-onglet-compte {
+  margin-left: 0.25rem;
+}

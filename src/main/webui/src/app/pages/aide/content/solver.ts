@@ -415,7 +415,11 @@ export function buildSolverSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.adHoc.term.affinite:Affinité (paire à privilégier)`,
-              text: $localize`:@@aide.adHoc.def.affinite:Le seul type qui n'est pas une règle dure : une préférence, récompensée chaque fois que les deux personnes tiennent un poste sur le même stand au même créneau. Elle ne force rien.`,
+              text: $localize`:@@aide.adHoc.def.affinite:Pas une règle dure : une préférence, récompensée chaque fois que les deux personnes tiennent un poste sur le même stand au même créneau. Elle ne force rien.`,
+            },
+            {
+              term: $localize`:@@aide.adHoc.term.arriveeGroupee:Arrivée groupée (covoiturage)`,
+              text: $localize`:@@aide.adHoc.def.arriveeGroupee:De 2 à 4 personnes qui arrivent et repartent ensemble. Une préférence, pas une règle dure : le solveur cherche à leur donner les mêmes jours, et des premières arrivées et derniers départs à la tolérance près — réglage « Tolérance d'une arrivée groupée », 30 min par défaut, page Paramètres, onglet Édition ; au-delà, chaque minute d'écart et chaque jour où un membre travaille sans les autres coûtent. Chacun peut tenir un stand différent. Ni créneau ni stand. Elle naît le plus souvent d'une demande « Je viens avec… » envoyée depuis l'onglet Covoiturage de l'espace et validée sur la page Disponibilités, onglet Covoiturage ; elle se crée aussi à la main ici. Celle qui vient d'une demande validée ne se modifie ni ne se supprime ici : ses boutons sont grisés et mènent à Disponibilités, onglet Covoiturage, où l'annuler prévient le groupe ; celle écrite à la main reste modifiable. Elle est refusée si deux de ses membres forment une incompatibilité sans stand ni créneau : on ne fait pas arriver ensemble deux personnes qu'on refuse de faire travailler ensemble.`,
             },
           ],
         },
@@ -425,7 +429,7 @@ export function buildSolverSections(): HelpSection[] {
         },
         {
           kind: 'paragraph',
-          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard. Quatre situations sont refusées :`,
+          text: $localize`:@@aide.adHoc.contradictions:Deux ajustements qui ne peuvent pas tenir ensemble sont refusés à l'enregistrement, avec un message qui les nomme tous les deux — plutôt qu'un planning déclaré infaisable plusieurs minutes plus tard. Cinq situations sont refusées :`,
         },
         {
           kind: 'list',
@@ -433,7 +437,8 @@ export function buildSolverSections(): HelpSection[] {
             $localize`:@@aide.adHoc.refus1:la même paire déclarée à la fois incompatible et en affinité ;`,
             $localize`:@@aide.adHoc.refus2:une affectation forcée dont tout le périmètre est couvert par une indisponibilité forcée visant chacun des animateurs qu'elle nomme ;`,
             $localize`:@@aide.adHoc.refus3:deux affectations forcées qui fixent la même personne sur des périmètres se chevauchant dans le temps ;`,
-            $localize`:@@aide.adHoc.refus4:deux affectations forcées qui placent sur un même créneau deux personnes déclarées incompatibles.`,
+            $localize`:@@aide.adHoc.refus4:deux affectations forcées qui placent sur un même créneau deux personnes déclarées incompatibles ;`,
+            $localize`:@@aide.adHoc.refus5:une arrivée groupée dont deux membres sont déclarés incompatibles.`,
           ],
         },
         {

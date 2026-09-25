@@ -23,6 +23,7 @@ dev/sylvain/planning/api/AuthentificationRemoteUserTest.java
 dev/sylvain/planning/api/AvertissementsEcritureTest.java
 dev/sylvain/planning/api/BrandingConfigureeResourceTest.java
 dev/sylvain/planning/api/BrandingResourceTest.java
+dev/sylvain/planning/api/CarpoolFlowTest.java
 dev/sylvain/planning/api/ChangementsJourneeResourceTest.java
 dev/sylvain/planning/api/CodeRequestLimiterTest.java
 dev/sylvain/planning/api/ColleagueLookupRateLimitTest.java
@@ -101,6 +102,7 @@ dev/sylvain/planning/api/ValidationJourneeResourceTest.java
 dev/sylvain/planning/api/VerrouillageResourceTest.java
 dev/sylvain/planning/api/WalkingTimeResourceTest.java
 dev/sylvain/planning/api/WeightHistoryResourceTest.java
+dev/sylvain/planning/mcp/CarpoolBackedAdHocMcpTest.java
 dev/sylvain/planning/mcp/DiagnosticMcpToolsTest.java
 dev/sylvain/planning/mcp/DiagnosticPlanMcpToolsTest.java
 dev/sylvain/planning/mcp/EditionMcpToolsTest.java

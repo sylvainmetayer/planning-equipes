@@ -699,6 +699,28 @@ bien ». Les trois réglages du calcul — vitesse de marche, facteur de détour
 tolérance — se lisent et se règlent avec les autres seuils de qualité par
 `consulter_parametres_qualite` / `modifier_parametres_qualite`.
 
+## Les covoiturages se lisent par id
+
+`lister_demandes_covoiturage` rend les « Je viens avec… » envoyés depuis
+l'onglet Covoiturage de l'espace pendant la collecte — des demandes à part de la
+déclaration de disponibilités, qu'`appliquer_declaration_disponibilite` et
+`refuser_declaration_disponibilite` ne touchent pas : membres, statut,
+`confirmedByAll`, jours où les indisponibilités déclarées divergent, et
+l'ajustement créé par la validation — tout par id. Le motif d'un écart, texte
+libre saisi par l'admin, n'est pas rendu, pas plus que celui d'une annulation.
+La validation, l'écart et l'annulation restent des gestes d'écran (page
+Disponibilités, onglet Covoiturage), parce qu'ils préviennent les animateurs
+par e-mail ; un assistant crée directement un `ARRIVEE_GROUPEE` par
+`creer_contrainte_ad_hoc`. En revanche, `supprimer_contrainte_ad_hoc` sur une
+arrivée groupée qu'une demande validée soutient rend un **résultat en erreur**
+portant la phrase du refus (« … annulez-la depuis Disponibilités >
+Covoiturage, qui prévient le groupe. ») : le même appel de service que l'écran
+Ajustements manuels, donc le même refus ; une arrivée groupée écrite à la main
+se supprime comme avant.
+`analyser_arrivees_groupees` rend, pour chaque groupe du planning persisté et
+jour par jour, qui travaille, qui manque, et l'écart des arrivées et des
+départs ; la tolérance se règle par `modifier_parametres_qualite`.
+
 ## L'équité se lit par id
 
 `equite_planning` rend le tableau de l'écran Équité sur le planning persisté :

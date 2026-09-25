@@ -154,6 +154,12 @@
         <mat-icon>event_available</mat-icon>
         <span i18n="@@espace.nav.disponibilites">Mes disponibilités</span>
       </a>
+      <a matButton [routerLink]="['/animateur', jeton(), 'covoiturage']" routerLinkActive="espace-nav-active"
+         #rlaCovoiturage="routerLinkActive"
+         [attr.aria-current]="rlaCovoiturage.isActive ? 'page' : null">
+        <mat-icon>directions_car</mat-icon>
+        <span i18n="@@espace.nav.covoiturage">Covoiturage</span>
+      </a>
       <!-- Taille de son contenu, là où les deux premiers se partagent le reste :
            « Aide » est un mot court, et trois onglets à parts égales rognaient
            les deux libellés utiles sur un téléphone étroit. -->

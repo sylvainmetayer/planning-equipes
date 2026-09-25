@@ -13,12 +13,18 @@
 }
 <mat-form-field appearance="outline">
   <mat-label i18n="@@adHoc.field.type">Type</mat-label>
-  <mat-select name="type" [disabled]="editingLocked()" [ngModel]="draft().type" (ngModelChange)="patch({ type: $event })">
+  <mat-select name="type" [disabled]="editingLocked()" [ngModel]="draft().type" (ngModelChange)="changeType($event)">
     @for (type of types; track type.value) {
       <mat-option [value]="type.value">{{ type.label }}</mat-option>
     }
   </mat-select>
 </mat-form-field>
+@if (draft().type === 'ARRIVEE_GROUPEE') {
+<p class="span-2" i18n="@@adHoc.arriveeGroupee.aide">
+  De 2 à 4 animateurs qui arrivent et repartent ensemble, aux mêmes jours et à la tolérance près (page Paramètres).
+  Ni créneau ni stand : chacun peut tenir un stand différent.
+</p>
+} @else {
 <mat-form-field appearance="outline">
   <mat-label i18n="@@adHoc.field.creneau">Créneau (facultatif)</mat-label>
   <mat-select name="creneauId" [disabled]="editingLocked()"
@@ -40,6 +46,7 @@
     }
   </mat-select>
 </mat-form-field>
+}
 <mat-form-field appearance="outline" class="span-2">
   <mat-label i18n="@@adHoc.field.animateurs">Animateurs concernés</mat-label>
   <mat-select name="animateurIds" multiple [disabled]="editingLocked()"

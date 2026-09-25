@@ -28,6 +28,8 @@
           <span i18n="@@railJour.legend.pause">Pause légale, telle que la rotation la pose</span></li>
         <li><span class="rail-swatch rail-swatch-pause-alerte"></span>
           <span i18n="@@railJour.legend.pauseAlerte">Pause sans relais sur le stand, ou en même temps qu'une autre</span></li>
+        <li><mat-icon inline class="rail-covoiturage-icon rail-covoiturage-desaligne" aria-hidden="true">directions_car</mat-icon>
+          <span i18n="@@railJour.legend.covoiturage">Voiture : membre d'une arrivée groupée (covoiturage), en rouge un jour où le groupe n'arrive ou ne repart pas ensemble</span></li>
         <li><mat-icon inline class="rail-trajet-serre" aria-hidden="true">double_arrow</mat-icon>
           <span i18n="@@railJour.legend.trajet">Chevron rouge : le battement ne laisse pas le temps de marcher jusqu'au stand suivant ; chevron neutre : le trajet est pris sur la pause</span></li>
         @for (item of legende(); track item.id) {
@@ -85,6 +87,10 @@
                   }
                   @if (ligne.chevauchement) {
                     <mat-icon inline class="rail-chevauchement-icon" [title]="chevauchementLabel" aria-hidden="true">warning</mat-icon>
+                  }
+                  @if (ligne.covoiturage; as covoiturage) {
+                    <mat-icon inline class="rail-covoiturage-icon" [class.rail-covoiturage-desaligne]="covoiturage.desaligne"
+                              [title]="covoiturage.label" aria-hidden="true">directions_car</mat-icon>
                   }
                 </th>
                 <td

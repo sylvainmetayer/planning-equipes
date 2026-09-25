@@ -3,8 +3,10 @@ package dev.sylvain.planning.solver.constraints;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
 import dev.sylvain.planning.domain.Creneau;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.Stand;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import java.time.LocalTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 
@@ -184,5 +186,113 @@ class AdHocConstraintsTest extends ConstraintTestBase {
                         poste(standStrat, creneauMatin, a2),
                         contrainte("C1", TypeContrainteAdHoc.AFFECTATION_FORCEE, creneauMatin, null, a1))
                 .penalizesBy(1);
+    }
+
+    // --- arriveeGroupee -------------------------------------------------------
+
+    private static final ParametresQualite TOLERANCE_30 = new ParametresQualite();
+
+    private static ContrainteAdHoc groupe(Animateur... membres) {
+        return contrainte("G1", TypeContrainteAdHoc.ARRIVEE_GROUPEE, null, null, membres);
+    }
+
+    private static Creneau hours(String id, int jour, java.time.LocalDate date, int from, int fromMin, int to) {
+        return creneau(id, jour, date, LocalTime.of(from, fromMin), LocalTime.of(to, 0));
+    }
+
+    @Test
+    void aGroupWorkingTheSameDaysWithinTheToleranceCostsNothingEvenOnDifferentStands() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2),
+                        poste(standStrat, hours("G-A1", 1, D1, 9, 0, 17), a1),
+                        poste(standWithStrategy("AUTRE"), hours("G-A2", 1, D1, 9, 20, 17), a2))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aMemberArrivingFortyFiveMinutesAfterTheOtherCostsTheFifteenBeyondTheTolerance() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2),
+                        poste(standStrat, hours("G-B1", 1, D1, 9, 0, 17), a1),
+                        poste(standWithStrategy("AUTRE"), hours("G-B2", 1, D1, 9, 45, 17), a2))
+                .penalizesBy(15);
+    }
+
+    @Test
+    void aMemberWhoDoesNotWorkADayTheOtherWorksCostsTheFlatRate() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2),
+                        poste(standStrat, hours("G-C1", 1, D1, 9, 0, 17), a1),
+                        poste(standStrat, hours("G-C2", 2, D2, 9, 0, 17), a1),
+                        poste(standWithStrategy("AUTRE"), hours("G-C3", 1, D1, 9, 0, 17), a2))
+                .penalizesBy(AdHocConstraints.FORFAIT_JOUR_SANS_COEQUIPIER_MINUTES);
+    }
+
+    @Test
+    void aBreakInTheMiddleOfTheDayChangesNothing() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2),
+                        poste(standStrat, hours("G-D1", 1, D1, 9, 0, 12), a1),
+                        poste(standStrat, hours("G-D2", 1, D1, 14, 0, 18), a1),
+                        poste(standWithStrategy("AUTRE"), hours("G-D3", 1, D1, 9, 0, 18), a2))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void aPastDayIsNoLongerCharged() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2),
+                        postePasse(standStrat, hours("G-E1", 1, D1, 9, 0, 17), a1),
+                        postePasse(standWithStrategy("AUTRE"), hours("G-E2", 1, D1, 11, 0, 17), a2))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void theToleranceIsASetting() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30.withToleranceArriveeGroupee(60),
+                        groupe(a1, a2),
+                        poste(standStrat, hours("G-F1", 1, D1, 9, 0, 17), a1),
+                        poste(standWithStrategy("AUTRE"), hours("G-F2", 1, D1, 9, 45, 17), a2))
+                .penalizesBy(0);
+    }
+
+    @Test
+    void everyPairOfAThreeCarIsCharged() {
+        Animateur a1 = referentMajeur("A1");
+        Animateur a2 = referentMajeur("A2");
+        Animateur a3 = referentMajeur("A3");
+        // A3 arrives 45 minutes after the two others: pairs (A1, A3) and (A2, A3).
+        verify("arriveeGroupee")
+                .given(
+                        TOLERANCE_30,
+                        groupe(a1, a2, a3),
+                        poste(standStrat, hours("G-H1", 1, D1, 9, 0, 17), a1),
+                        poste(standWithStrategy("B"), hours("G-H2", 1, D1, 9, 0, 17), a2),
+                        poste(standWithStrategy("C"), hours("G-H3", 1, D1, 9, 45, 17), a3))
+                .penalizesBy(30);
     }
 }

@@ -40,6 +40,14 @@ public class ContrainteAdHoc {
      */
     private Instant modifieLe;
 
+    /**
+     * Read-only: a validated covoiturage demand points at this grouped
+     * arrival, so it is changed or removed from the Covoiturage tab — which
+     * tells the group — and refused anywhere else. Derived on read, never
+     * written: whatever a caller sends here is ignored.
+     */
+    private boolean issueDeCovoiturage;
+
     public ContrainteAdHoc() {}
 
     public ContrainteAdHoc(String id, TypeContrainteAdHoc type) {
@@ -61,6 +69,14 @@ public class ContrainteAdHoc {
 
     public void setModifieLe(Instant modifieLe) {
         this.modifieLe = modifieLe;
+    }
+
+    public boolean isIssueDeCovoiturage() {
+        return issueDeCovoiturage;
+    }
+
+    public void setIssueDeCovoiturage(boolean issueDeCovoiturage) {
+        this.issueDeCovoiturage = issueDeCovoiturage;
     }
 
     public TypeContrainteAdHoc getType() {

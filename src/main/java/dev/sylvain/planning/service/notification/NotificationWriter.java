@@ -71,6 +71,9 @@ public class NotificationWriter {
             case Notification.DemandeDeclinee n -> demandeDeclinee(n);
             case Notification.DemandesSoumises n -> demandesSoumises(n);
             case Notification.DeclarationSoumise n -> declarationSoumise(n);
+            case Notification.CarpoolValidated n -> carpoolValidated(n);
+            case Notification.CarpoolSetAside n -> carpoolSetAside(n);
+            case Notification.CarpoolCancelled n -> carpoolCancelled(n);
             case Notification.ResolutionTerminee n -> resolutionTerminee(n);
             case Notification.RappelVeille n -> rappelVeille(n);
             case Notification.RelanceConfirmation n -> relanceConfirmation(n);
@@ -95,6 +98,60 @@ public class NotificationWriter {
                         "joursIndisponibles", n.joursIndisponibles(),
                         "souhaits", n.souhaits(),
                         "lien", liens.disponibilitesScreen().orElse(null))));
+    }
+
+    /**
+     * Each member of a validated covoiturage hears it from the organisation:
+     * the group now binds them all, and changing it is no longer theirs to do.
+     */
+    private Optional<MailDraft> carpoolValidated(Notification.CarpoolValidated n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/covoiturage-valide",
+                productName.subject("votre arrivée groupée est validée"),
+                MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "coequipiers", String.join(", ", n.teammates()),
+                        "lienEspace", n.espaceLink())));
+    }
+
+    /** The one who asked hears it was set aside, and why when the admin said. */
+    private Optional<MailDraft> carpoolSetAside(Notification.CarpoolSetAside n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/covoiturage-ecarte",
+                productName.subject("votre demande de covoiturage n'a pas été retenue"),
+                MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "motif", blankToNull(n.reason()),
+                        "lienEspace", n.espaceLink())));
+    }
+
+    /**
+     * Each member hears the grouped arrival is cancelled, with whom it was,
+     * why when the admin said, and whether a new request is still theirs to
+     * send.
+     */
+    private Optional<MailDraft> carpoolCancelled(Notification.CarpoolCancelled n) {
+        if (withoutRecipient(n.email())) {
+            return Optional.empty();
+        }
+        return Optional.of(draft(
+                n.email(),
+                "mail/covoiturage-annule",
+                productName.subject("votre arrivée groupée est annulée"),
+                MailTemplates.values(
+                        "prenom", blankToNull(n.prenom()),
+                        "coequipiers", String.join(", ", n.teammates()),
+                        "motif", blankToNull(n.reason()),
+                        "collecteOuverte", n.collectionOpen(),
+                        "lienEspace", n.espaceLink())));
     }
 
     /**

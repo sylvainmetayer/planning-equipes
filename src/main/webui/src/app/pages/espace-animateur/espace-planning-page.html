@@ -232,6 +232,17 @@
           </output>
         }
 
+        @if (carpoolOfDay(); as covoiturage) {
+          <output class="espace-consigne status-paragraph">
+            <mat-icon inline>directions_car</mat-icon>
+            @if (covoiturage.aligned) {
+              <span i18n="@@espace.planning.covoiturage.aligne">Même horaire que votre covoiturage.</span>
+            } @else {
+              <span i18n="@@espace.planning.covoiturage.desaligne">Horaires différents de votre covoiturage ce jour.</span>
+            }
+          </output>
+        }
+
         @if (jour.repos || jour.postes.length === 0) {
           <p class="espace-repos">
             <mat-icon inline>self_improvement</mat-icon>

@@ -17,21 +17,39 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { DisponibilitesApi } from '../../core/api/disponibilites-api';
 import { errorMessage } from '../../core/error-message';
-import { ConfigurationCollecte, DeclarationAdminView } from '../../core/models';
+import {
+  ConfigurationCollecte,
+  DeclarationAdminView,
+  TeammateRequestView,
+} from '../../core/models';
 import { NotificationService } from '../../core/notification.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { keepViewInQueryParams } from '../../core/view-query-params';
-import { PENDING, oldestFirst, readPendingOnly } from './declarations-filter';
+import {
+  DisponibilitesTab,
+  PENDING,
+  oldestFirst,
+  readDisponibilitesTab,
+  readPendingOnly,
+} from './declarations-filter';
+
+/** Longest reason « Écarter » accepts — the server's own bound. */
+const REASON_MAX = 500;
 
 /**
  * Admin review of the self-service declarations (issue #291): the collection
- * window on top, the proposals waiting below.
+ * window on top, then two tabs chosen by `?onglet=` — the declarations of
+ * availability, and the covoiturage requests (« Je viens avec… »), sent from
+ * their own tab of the espace and decided one by one, never with a
+ * declaration.
  *
  * <p>The decision is deliberately <b>all or nothing</b>: there is no way to
  * accept a day and drop another. Applying writes the whole proposal onto the
@@ -45,6 +63,7 @@ import { PENDING, oldestFirst, readPendingOnly } from './declarations-filter';
     DatePipe,
     FormsModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatCheckboxModule,
     MatFormFieldModule,
@@ -106,11 +125,52 @@ export class DisponibilitesPage implements OnInit {
     this.declarations().filter((declaration) => declaration.statut !== 'EN_ATTENTE'),
   );
 
+  /** Which tab is on screen; the declarations, the default, write nothing to the URL. */
+  protected readonly tab = signal<DisponibilitesTab>('declarations');
+
+  /** « Je viens avec… »: the covoiturage requests, sent and decided apart from the declarations. */
+  protected readonly carpools = signal<TeammateRequestView[]>([]);
+  protected readonly pendingCarpools = computed(() =>
+    this.carpools().filter((carpool) => carpool.status === 'EN_ATTENTE'),
+  );
+  protected readonly decidedCarpools = computed(() =>
+    this.carpools().filter((carpool) => carpool.status !== 'EN_ATTENTE'),
+  );
+  /**
+   * The demands that carry « Annuler l'arrivée groupée »: one per validated
+   * grouped arrival — the most recent of the demands validated against it —
+   * since cancelling one cancels them all.
+   */
+  protected readonly cancellableCarpoolIds = computed(() => {
+    const byGroup = new Map<string, string>();
+    for (const carpool of this.carpools()) {
+      if (
+        carpool.status === 'VALIDEE' &&
+        carpool.contrainteId &&
+        !byGroup.has(carpool.contrainteId)
+      ) {
+        byGroup.set(carpool.contrainteId, carpool.id);
+      }
+    }
+    return new Set(byGroup.values());
+  });
+
   constructor() {
-    this.pendingOnly.set(
-      readPendingOnly(inject(ActivatedRoute).snapshot.queryParamMap.get('statut')),
-    );
-    keepViewInQueryParams(() => ({ statut: this.pendingOnly() ? PENDING : null }));
+    const route = inject(ActivatedRoute);
+    this.pendingOnly.set(readPendingOnly(route.snapshot.queryParamMap.get('statut')));
+    // Followed rather than read once, like Paramètres: a link to this very
+    // route with another `onglet` reuses the component.
+    route.queryParamMap.pipe(takeUntilDestroyed()).subscribe((params) => {
+      this.tab.set(readDisponibilitesTab(params.get('onglet')));
+    });
+    keepViewInQueryParams(() => ({
+      onglet: this.tab() === 'declarations' ? null : this.tab(),
+      statut: this.pendingOnly() ? PENDING : null,
+    }));
+  }
+
+  protected changeTab(tab: DisponibilitesTab): void {
+    this.tab.set(tab);
   }
 
   ngOnInit(): void {
@@ -120,6 +180,9 @@ export class DisponibilitesPage implements OnInit {
   protected async reload(): Promise<void> {
     this.chargement.set(true);
     try {
+      // The covoiturages are a tab of their own, read beside: without them
+      // the declarations still read.
+      void this.loadCarpools();
       const [declarations, configuration] = await Promise.all([
         this.disponibilitesApi.declarations(),
         this.disponibilitesApi.configuration(),
@@ -132,6 +195,15 @@ export class DisponibilitesPage implements OnInit {
       this.report(error);
     } finally {
       this.chargement.set(false);
+    }
+  }
+
+  private async loadCarpools(): Promise<void> {
+    try {
+      const carpools = await this.disponibilitesApi.carpools();
+      this.carpools.set(Array.isArray(carpools) ? carpools : []);
+    } catch {
+      this.carpools.set([]);
     }
   }
 
@@ -225,6 +297,122 @@ export class DisponibilitesPage implements OnInit {
       this.report(error);
     } finally {
       this.decisionEnCours.set(null);
+    }
+  }
+
+  /**
+   * « Valider l'arrivée groupée »: creates the `ARRIVEE_GROUPEE` exception
+   * naming the car's members. Refused, with the server's sentence, when two of
+   * them are declared incompatible.
+   */
+  protected async validateCarpool(carpool: TeammateRequestView): Promise<void> {
+    const membres = this.membersLabel(carpool);
+    const confirmed = await this.confirm.ask({
+      title: $localize`:@@dispo.covoiturage.validerTitre:Valider l'arrivée groupée de ${membres}:membres: ?`,
+      message: $localize`:@@dispo.covoiturage.validerMessage:Un ajustement « arrivée groupée » sera créé : mêmes jours, arrivées et départs à la tolérance près. Il s'annule ensuite depuis cet onglet.`,
+      confirmLabel: $localize`:@@dispo.covoiturage.valider:Valider l'arrivée groupée`,
+    });
+    if (!confirmed || this.solveStartedMeanwhile()) {
+      return;
+    }
+    this.decisionEnCours.set(carpool.id);
+    try {
+      const reponse = await this.disponibilitesApi.validateCarpool(carpool.id);
+      this.notifications.notify({
+        title: $localize`:@@dispo.covoiturage.validee:Arrivée groupée créée, ses membres sont prévenus. Régénérez le planning pour qu'il en tienne compte.`,
+        message:
+          (reponse.avertissements ?? []).map((avertissement) => avertissement.message).join(' ') ||
+          undefined,
+        variant: (reponse.avertissements ?? []).length > 0 ? 'warning' : 'success',
+        timeout: 8000,
+      });
+      await this.reload();
+    } catch (error) {
+      this.report(error);
+    } finally {
+      this.decisionEnCours.set(null);
+    }
+  }
+
+  /**
+   * « Écarter »: the request is filed without any effect, with an optional
+   * reason the animateur reads in their espace and in the mail telling them.
+   * Nothing is written to the referential, so a running solve does not block it.
+   */
+  protected async setCarpoolAside(carpool: TeammateRequestView): Promise<void> {
+    const reason = await PromptDialog.ask(this.dialog, {
+      title: $localize`:@@dispo.covoiturage.ecarterTitre:Écarter le covoiturage de ${this.membersLabel(carpool)}:membres: ?`,
+      message: $localize`:@@dispo.covoiturage.ecarterMessage:Aucun ajustement n'est créé. Le demandeur est prévenu par e-mail et peut envoyer une nouvelle demande tant que la collecte est ouverte.`,
+      label: $localize`:@@dispo.covoiturage.ecarterMotif:Motif (facultatif, lu par l'animateur dans son espace)`,
+      confirmLabel: $localize`:@@dispo.covoiturage.ecarter:Écarter`,
+      optional: true,
+      maxLength: REASON_MAX,
+    });
+    if (reason === null) {
+      return;
+    }
+    this.decisionEnCours.set(carpool.id);
+    try {
+      await this.disponibilitesApi.setCarpoolAside(carpool.id, reason || null);
+      this.notifications.notify({
+        title: $localize`:@@dispo.covoiturage.ecartee:Covoiturage écarté, rien n'a été créé. Le demandeur est prévenu.`,
+        variant: 'success',
+        timeout: 5000,
+      });
+      await this.reload();
+    } catch (error) {
+      this.report(error);
+    } finally {
+      this.decisionEnCours.set(null);
+    }
+  }
+
+  /**
+   * « Annuler l'arrivée groupée »: deletes the exception a validation created
+   * or joined, files every demand validated against it as cancelled with the
+   * optional reason, and tells each member by mail. The one way to undo a
+   * validated car: the Ajustements manuels screen refuses to touch it.
+   */
+  protected async cancelCarpool(carpool: TeammateRequestView): Promise<void> {
+    const reason = await PromptDialog.ask(this.dialog, {
+      title: $localize`:@@dispo.covoiturage.annulerTitre:Annuler l'arrivée groupée de ${this.membersLabel(carpool)}:membres: ?`,
+      message: $localize`:@@dispo.covoiturage.annulerMessage:L'ajustement « arrivée groupée » est supprimé. Chaque membre est prévenu par e-mail ; une nouvelle demande reste possible tant que la collecte est ouverte.`,
+      label: $localize`:@@dispo.covoiturage.annulerMotif:Motif (facultatif, lu par les membres dans leur espace)`,
+      confirmLabel: $localize`:@@dispo.covoiturage.annuler:Annuler l'arrivée groupée`,
+      optional: true,
+      maxLength: REASON_MAX,
+    });
+    if (reason === null || this.solveStartedMeanwhile()) {
+      return;
+    }
+    this.decisionEnCours.set(carpool.id);
+    try {
+      await this.disponibilitesApi.cancelCarpool(carpool.id, reason || null);
+      this.notifications.notify({
+        title: $localize`:@@dispo.covoiturage.annulee:Arrivée groupée annulée, ses membres sont prévenus. Régénérez le planning pour qu'il en tienne compte.`,
+        variant: 'success',
+        timeout: 8000,
+      });
+      await this.reload();
+    } catch (error) {
+      this.report(error);
+    } finally {
+      this.decisionEnCours.set(null);
+    }
+  }
+
+  protected membersLabel(carpool: TeammateRequestView): string {
+    return carpool.members.map((membre) => membre.fullName).join(', ');
+  }
+
+  protected carpoolStatusLabel(carpool: TeammateRequestView): string {
+    switch (carpool.status) {
+      case 'VALIDEE':
+        return $localize`:@@dispo.covoiturage.statut.validee:Arrivée groupée validée`;
+      case 'ANNULEE':
+        return $localize`:@@dispo.covoiturage.statut.annulee:Annulée`;
+      default:
+        return $localize`:@@dispo.covoiturage.statut.ecartee:Écarté`;
     }
   }
 

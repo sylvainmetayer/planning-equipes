@@ -102,6 +102,18 @@ export function buildAnimateurSideSections(): HelpSection[] {
               text: $localize`:@@aide.dispo.def.remplacement:Un animateur qui se corrige remplace sa proposition en attente, il n'en empile pas une seconde : vous n'aurez jamais deux versions contradictoires à arbitrer. Vous n'êtes prévenu qu'à l'arrivée d'une proposition, pas à chaque correction qu'il y apporte avant que vous ne la traitiez.`,
             },
             {
+              term: $localize`:@@aide.dispo.term.covoiturage:Covoiturage : un onglet à part`,
+              text: $localize`:@@aide.dispo.def.covoiturage:Pendant la même fenêtre, l'espace de chaque animateur porte un onglet « Covoiturage » : « Je viens avec… », de un à trois coéquipiers, jamais soi-même. La demande est envoyée et décidée à part de la déclaration — appliquer ou refuser une déclaration ne la touche jamais. Elle arrive sur l'onglet « Covoiturage » de cette page (le nombre en attente s'affiche sur l'onglet), une carte par demande : « Confirmé par tous » quand chaque membre a nommé exactement le même groupe, et le nombre de jours où leurs indisponibilités déclarées divergent — ces jours-là, ils ne pourront pas arriver ensemble.`,
+            },
+            {
+              term: $localize`:@@aide.dispo.term.covoiturageDecision:Valider ou écarter un covoiturage`,
+              text: $localize`:@@aide.dispo.def.covoiturageDecision:Chaque demande se décide seule. « Valider l'arrivée groupée » crée un ajustement manuel « Arrivée groupée » qui nomme le demandeur et ses coéquipiers ; les demandes des autres membres qui nomment le même groupe sont validées avec elle, et un groupe identique déjà présent est rejoint plutôt que doublé. Le planning n'en tient compte qu'à la prochaine résolution. « Écarter » n'écrit rien : un motif facultatif (500 caractères au plus) est lu par l'animateur dans son espace, et il peut envoyer une nouvelle demande tant que la collecte est ouverte. Dans les deux cas, les personnes concernées reçoivent un e-mail — chaque membre pour une validation, le demandeur pour un écart ; un envoi qui échoue n'annule pas la décision. Une fois validé, le groupe ne se modifie plus depuis l'espace, ni depuis la page Ajustements manuels : il s'annule d'ici.`,
+            },
+            {
+              term: $localize`:@@aide.dispo.term.covoiturageAnnulation:Annuler une arrivée groupée validée`,
+              text: $localize`:@@aide.dispo.def.covoiturageAnnulation:Dans « Déjà traitées », un groupe validé porte « Annuler l'arrivée groupée ». Un motif facultatif (500 caractères au plus, jamais recopié dans le journal ni rendu à l'assistant) est lu par chaque membre dans son espace. L'ajustement « Arrivée groupée » est supprimé, toutes les demandes validées avec lui passent « Annulée » et restent dans l'historique avec le motif, et chaque membre reçoit un e-mail qui nomme les autres : il peut envoyer une nouvelle demande si la collecte est ouverte, sinon il est invité à s'adresser à vous. Un envoi qui échoue n'annule pas l'annulation. Le planning n'en tient compte qu'à la prochaine résolution. Tant qu'une demande validée s'appuie sur une arrivée groupée, la page Ajustements manuels la montre sans permettre de la modifier ni de la supprimer : c'est ici que le groupe est prévenu.`,
+            },
+            {
               term: $localize`:@@aide.dispo.term.competences:Ce qui ne se déclare pas`,
               text: $localize`:@@aide.dispo.def.competences:Les compétences restent décidées avec vous : une compétence auto-déclarée alimente des règles dures — qui a le droit de tenir quel stand — là où une indisponibilité ou un souhait se rattrapent. Un animateur qui déclare un jour hors des dates de l'événement, ou une typologie inexistante, est refusé à l'envoi.`,
             },
@@ -112,6 +124,10 @@ export function buildAnimateurSideSections(): HelpSection[] {
         { route: '/disponibilites', label: $localize`:@@nav.link.disponibilites:Disponibilités` },
         { route: '/animateurs', label: $localize`:@@nav.link.animateurs:Animateurs` },
         { route: '/creneaux', label: $localize`:@@nav.link.creneaux:Créneaux` },
+        {
+          route: '/ad-hoc-constraints',
+          label: $localize`:@@nav.link.adHocConstraints:Ajustements manuels`,
+        },
       ],
     },
     {

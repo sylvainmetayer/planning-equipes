@@ -163,8 +163,8 @@ app-espace-animateur-shell {
   color: var(--mat-sys-on-surface);
 }
 
-/* Four tabs — « Mon planning », « Mes échanges », « Mes disponibilités »,
-   « Aide » — no longer fit one row of a narrow phone, and equal shares turned
+/* Five tabs — « Mon planning », « Mes échanges », « Mes disponibilités »,
+   « Covoiturage », « Aide » — no longer fit one row of a narrow phone, and equal shares turned
    each of them into two letters: two rows of real touch targets beat one row
    of ellipses. Full width to the finger; at their own size from 40rem. */
 .espace-nav {

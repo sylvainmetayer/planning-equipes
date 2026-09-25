@@ -132,6 +132,8 @@ export function adjustmentTypeLabel(type: TypeContrainteAdHoc): string {
       return $localize`:@@adHoc.type.affectationForcee:Affectation forcée`;
     case 'AFFINITE':
       return $localize`:@@adHoc.type.affinite:Affinité (paire à privilégier)`;
+    case 'ARRIVEE_GROUPEE':
+      return $localize`:@@adHoc.type.arriveeGroupee:Arrivée groupée (covoiturage, 2 à 4 animateurs)`;
   }
 }
 

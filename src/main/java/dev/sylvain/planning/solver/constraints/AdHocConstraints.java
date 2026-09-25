@@ -4,11 +4,18 @@ import ai.timefold.solver.core.api.score.HardMediumSoftScore;
 import ai.timefold.solver.core.api.score.stream.Constraint;
 import ai.timefold.solver.core.api.score.stream.ConstraintFactory;
 import ai.timefold.solver.core.api.score.stream.Joiners;
+import ai.timefold.solver.core.api.score.stream.bi.BiConstraintStream;
 import ai.timefold.solver.core.api.score.stream.uni.UniConstraintStream;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ContrainteAdHoc;
+import dev.sylvain.planning.domain.ParametresQualite;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.domain.TypeContrainteAdHoc;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 /**
  * One-off administrative exceptions. The prescriptive ones
@@ -17,17 +24,156 @@ import dev.sylvain.planning.domain.TypeContrainteAdHoc;
  * optimiser can never silently work around them. AFFINITE is the one
  * deliberate exception: a soft reward — hard, a preferred pair would be a
  * forced assignment in disguise, colliding with load balancing and individual
- * availability (issue #80).
+ * availability (issue #80). ARRIVEE_GROUPEE is soft too, for the same reason:
+ * a shared car is a comfort that yields to the load balance, the wishes and
+ * every legal rule — a minor who must leave before 22:00 misaligns the group,
+ * never the other way round.
  */
 public final class AdHocConstraints {
+
+    /**
+     * What a day costs a pair of a grouped arrival when one of them works and
+     * the other does not: two hours, the order of a badly misaligned day,
+     * so that « the same days » weighs as much as « the same hours ».
+     */
+    static final int FORFAIT_JOUR_SANS_COEQUIPIER_MINUTES = 120;
 
     public Constraint[] define(ConstraintFactory constraintFactory) {
         return new Constraint[] {
             indisponibiliteForcee(constraintFactory),
             incompatibiliteAdHoc(constraintFactory),
             affectationForcee(constraintFactory),
-            affiniteAdHoc(constraintFactory)
+            affiniteAdHoc(constraintFactory),
+            arriveeGroupee(constraintFactory)
         };
+    }
+
+    /**
+     * Two to four animateurs who arrive and leave together
+     * ({@link TypeContrainteAdHoc#ARRIVEE_GROUPEE}): for every pair of the
+     * group and every day, the minutes their day's first start — and, apart,
+     * their day's last end — differ beyond the tolerance
+     * ({@code ParametresQualite.toleranceArriveeGroupeeMinutes}); and a flat
+     * {@link #FORFAIT_JOUR_SANS_COEQUIPIER_MINUTES} for a day one works and
+     * the other does not. No stand, no emplacement: the members may hold
+     * anything, only the two ends of their day are read.
+     *
+     * <p>Per pair and per day, in minutes, to give the solver a slope rather
+     * than a wall — the philosophy of {@code dureeHebdomadaireMaxDeuxSemaines}.
+     * The day's two ends come from {@link QualiteConstraints#journees}, the
+     * tuple {@code eviterFermeturePuisOuverture} already reads, so the effective
+     * windows are folded once and the meal or legal breaks in the middle of the
+     * day change nothing.</p>
+     *
+     * <p>Driven by the (few) ad hoc facts, joined on the member ids: with no
+     * grouped arrival recorded, the stream is empty. A day whose seats are all
+     * past is not charged (ADR 0044). The {@code ContrainteAdHoc} stays in the
+     * match, so the diagnostic attributes the cost to the exception that
+     * asked for it.</p>
+     */
+    private Constraint arriveeGroupee(ConstraintFactory constraintFactory) {
+        BiConstraintStream<ContrainteAdHoc, MemberPair> paires = ConstraintToggleSupport.actif(
+                        constraintFactory.forEach(ContrainteAdHoc.class), "arriveeGroupee")
+                .filter(AdHocConstraints::isGroupedArrival)
+                .join(ParametresQualite.class)
+                .map((contrainte, parametres) -> contrainte, AdHocConstraints::orderedPairs)
+                .flattenLast(liste -> liste);
+        BiConstraintStream<ContrainteAdHoc, PairGap> decales = paires.filter(
+                        (contrainte, paire) -> paire.first().compareTo(paire.second()) < 0)
+                .join(
+                        QualiteConstraints.journees(constraintFactory),
+                        Joiners.equal((contrainte, paire) -> paire.first(), AdHocConstraints::journeeAnimateurId))
+                .join(
+                        QualiteConstraints.journees(constraintFactory),
+                        Joiners.equal(
+                                (contrainte, paire, journeePremier) -> paire.second(),
+                                AdHocConstraints::journeeAnimateurId),
+                        Joiners.equal(
+                                (contrainte, paire, journeePremier) -> journeePremier.jour(),
+                                QualiteConstraints.Journee::jour))
+                .filter((contrainte, paire, journeePremier, journeeSecond) ->
+                        (journeePremier.reproachable() || journeeSecond.reproachable())
+                                && misalignment(paire, journeePremier, journeeSecond) > 0)
+                .map(
+                        (contrainte, paire, journeePremier, journeeSecond) -> contrainte,
+                        (contrainte, paire, journeePremier, journeeSecond) -> new PairGap(
+                                paire.first(),
+                                paire.second(),
+                                journeePremier.date(),
+                                misalignment(paire, journeePremier, journeeSecond)));
+        BiConstraintStream<ContrainteAdHoc, PairGap> seuls = paires.join(
+                        QualiteConstraints.journees(constraintFactory),
+                        Joiners.equal((contrainte, paire) -> paire.first(), AdHocConstraints::journeeAnimateurId))
+                .filter((contrainte, paire, journee) -> journee.reproachable())
+                .ifNotExists(
+                        QualiteConstraints.journees(constraintFactory),
+                        Joiners.equal(
+                                (contrainte, paire, journee) -> paire.second(), AdHocConstraints::journeeAnimateurId),
+                        Joiners.equal((contrainte, paire, journee) -> journee.jour(), QualiteConstraints.Journee::jour))
+                .map(
+                        (contrainte, paire, journee) -> contrainte,
+                        (contrainte, paire, journee) -> new PairGap(
+                                paire.first(), paire.second(), journee.date(), FORFAIT_JOUR_SANS_COEQUIPIER_MINUTES));
+        return decales.concat(seuls)
+                .penalize(HardMediumSoftScore.ONE_SOFT, (contrainte, ecart) -> ecart.minutes())
+                .asConstraint("arriveeGroupee");
+    }
+
+    /** Two members of a group, by id, and the tolerance their day is read with. */
+    record MemberPair(String first, String second, int tolerance) {}
+
+    /**
+     * What one pair of a group costs on one day, kept beside the exception in
+     * the match so the diagnostic reads both.
+     */
+    record PairGap(String firstId, String secondId, LocalDate date, int minutes) {}
+
+    /** An ARRIVEE_GROUPEE naming at least two distinct, identifiable animateurs. */
+    private static boolean isGroupedArrival(ContrainteAdHoc contrainte) {
+        return contrainte.getType() == TypeContrainteAdHoc.ARRIVEE_GROUPEE
+                && memberIds(contrainte).size() >= 2;
+    }
+
+    /** Every ordered pair of distinct members, each carrying the edition's tolerance. */
+    private static List<MemberPair> orderedPairs(ContrainteAdHoc contrainte, ParametresQualite parametres) {
+        // Read once, outside the loops: the settings scan slices bodies by
+        // braces, and a read inside a loop would be charged to every « for ».
+        int tolerance = parametres.toleranceArriveeGroupeeMinutes();
+        List<String> membres = memberIds(contrainte);
+        List<MemberPair> paires = new ArrayList<>();
+        for (String premier : membres) {
+            for (String second : membres) {
+                if (!premier.equals(second)) {
+                    paires.add(new MemberPair(premier, second, tolerance));
+                }
+            }
+        }
+        return paires;
+    }
+
+    private static List<String> memberIds(ContrainteAdHoc contrainte) {
+        if (contrainte.getAnimateursConcernes() == null) {
+            return List.of();
+        }
+        return contrainte.getAnimateursConcernes().stream()
+                .filter(Objects::nonNull)
+                .map(Animateur::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+    }
+
+    private static String journeeAnimateurId(QualiteConstraints.Journee journee) {
+        return journee.animateur().getId();
+    }
+
+    /** Minutes the two days' starts, then their ends, differ beyond the tolerance. */
+    private static int misalignment(
+            MemberPair paire, QualiteConstraints.Journee premier, QualiteConstraints.Journee second) {
+        long arrivee =
+                Math.abs(Duration.between(premier.debut(), second.debut()).toMinutes());
+        long depart = Math.abs(Duration.between(premier.fin(), second.fin()).toMinutes());
+        return (int) (Math.max(0, arrivee - paire.tolerance()) + Math.max(0, depart - paire.tolerance()));
     }
 
     /**

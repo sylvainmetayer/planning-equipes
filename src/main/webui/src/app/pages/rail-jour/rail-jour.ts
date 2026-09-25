@@ -9,8 +9,10 @@ import {
   Animateur,
   ContrainteAdHoc,
   WalkView,
+  GroupView,
   PauseDueView,
   PosteAffectation,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportPauses,
 } from '../../core/models';
@@ -81,6 +83,8 @@ export interface RailLigne {
   pauses: SegmentPause[];
   /** Tight walks between two consecutive vacations, drawn as a chevron in the gap. */
   trajets: WalkSegment[];
+  /** The animateur rides in a grouped arrival (covoiturage); `null` otherwise. */
+  covoiturage: RailCovoiturage | null;
   /** What a screen reader reads for the whole line — the rail itself is decorative. */
   resume: string;
 }
@@ -94,6 +98,14 @@ export interface RailBlocage {
   heureFin: string;
   offsetPercent: number;
   widthPercent: number;
+  label: string;
+}
+
+/** A member of a grouped arrival, on one day: who they ride with, and whether the car holds. */
+export interface RailCovoiturage {
+  /** True when a member works this day without the others, or too far from their hours. */
+  desaligne: boolean;
+  /** « Covoiturage avec Ines, Oscar — horaires alignés ». */
   label: string;
 }
 
@@ -273,9 +285,16 @@ export function buildRailJours(
   contraintes: ContrainteAdHoc[] = [],
   pauses: RapportPauses | null = null,
   walks: WalkSequenceReport | null = null,
+  groupedArrivals: GroupedArrivalReport | null = null,
 ): RailJour[] {
   const indexPauses = indexerPauses(pauses);
   const walksIndex = indexWalks(walks);
+  const groupsByMember = new Map<string, GroupView[]>();
+  (groupedArrivals?.groups ?? []).forEach((groupe) =>
+    groupe.animateurIds.forEach((id) =>
+      groupsByMember.set(id, [...(groupsByMember.get(id) ?? []), groupe]),
+    ),
+  );
   const jours = new Map<number, ContenuJour>();
   postes.forEach((poste) => {
     const creneau = poste.creneau;
@@ -317,7 +336,16 @@ export function buildRailJours(
   return Array.from(jours.entries())
     .sort((left, right) => left[0] - right[0])
     .map(([jour, contenu]) =>
-      buildRailJour(jour, contenu, indexPauses, walksIndex, contraintes, effectif, noms),
+      buildRailJour(
+        jour,
+        contenu,
+        indexPauses,
+        walksIndex,
+        groupsByMember,
+        contraintes,
+        effectif,
+        noms,
+      ),
     );
 }
 
@@ -326,6 +354,7 @@ function buildRailJour(
   contenu: ContenuJour,
   indexPauses: IndexPauses,
   walksIndex: WalksIndex,
+  groupsByMember: Map<string, GroupView[]>,
   contraintes: ContrainteAdHoc[],
   animateurs: Animateur[],
   noms: Map<string, string>,
@@ -373,6 +402,7 @@ function buildRailJour(
         echelle,
         pausesDe(indexPauses, date, animateur.id),
         walksOf(walksIndex, date, animateur.id),
+        carpoolOn(groupsByMember.get(animateur.id) ?? [], animateur.id, date, noms),
       ),
     )
     .sort((left, right) => left.nom.localeCompare(right.nom));
@@ -399,6 +429,7 @@ function buildRailLigne(
   echelle: Echelle,
   pausesDuJour: PauseDueView[] = [],
   walks: WalkView[] = [],
+  covoiturage: RailCovoiturage | null = null,
 ): RailLigne {
   const { debutMinutes, amplitude } = echelle;
   const pauses = segmentsPause(pausesDuJour, debutMinutes, amplitude);
@@ -467,6 +498,7 @@ function buildRailLigne(
       chevauchement: false,
       pauses: [],
       trajets: [],
+      covoiturage,
       resume: statut === 'indisponible' ? base : mentionnerBlocages(base, plages),
     };
   }
@@ -500,11 +532,52 @@ function buildRailLigne(
     // loud must say the one anomaly this view exists to make visible.
     pauses,
     trajets: walkSegments(walks, echelle.debutMinutes, echelle.amplitude),
-    resume: mentionWalks(
-      mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
-      walks,
+    covoiturage,
+    resume: mentionCarpool(
+      mentionWalks(
+        mentionnerPauses(mentionOverlap(mentionnerBlocages(base, plages), overlap), pauses),
+        walks,
+      ),
+      covoiturage,
     ),
   };
+}
+
+/**
+ * The covoiturage of one member on one day, read from the server's report:
+ * misaligned when that day of one of their groups is.
+ */
+function carpoolOn(
+  groupes: GroupView[],
+  animateurId: string,
+  date: string | null,
+  noms: Map<string, string>,
+): RailCovoiturage | null {
+  if (groupes.length === 0) {
+    return null;
+  }
+  const coequipiers = [
+    ...new Set(groupes.flatMap((groupe) => groupe.animateurIds).filter((id) => id !== animateurId)),
+  ]
+    .map((id) => noms.get(id) ?? id)
+    .join(', ');
+  const desaligne = groupes.some((groupe) =>
+    groupe.days.some((jour) => jour.date === date && !jour.aligned),
+  );
+  return {
+    desaligne,
+    label: desaligne
+      ? $localize`:@@railJour.covoiturage.desaligne:Covoiturage avec ${coequipiers}:coequipiers: — désaligné ce jour`
+      : $localize`:@@railJour.covoiturage.aligne:Covoiturage avec ${coequipiers}:coequipiers:`,
+  };
+}
+
+/** Same, for a car that does not hold this day. */
+function mentionCarpool(base: string, covoiturage: RailCovoiturage | null): string {
+  if (!covoiturage?.desaligne) {
+    return base;
+  }
+  return $localize`:@@railJour.resume.covoiturage:${base}:ligne: — ${covoiturage.label}:covoiturage:`;
 }
 
 /** Same, for the tight walks the chevron alone would only show. */

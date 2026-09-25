@@ -154,6 +154,12 @@ pas :
 | `ESPACE_DECLARATION_MAX_ENVOIS` | `20` | Déclarations tolérées par animateur et par fenêtre |
 | `ESPACE_DECLARATION_FENETRE` | `PT10M` | Durée de la fenêtre |
 
+La demande de covoiturage (`POST /api/espace-animateur/{jeton}/covoiturage`)
+est la seconde écriture de la collecte : même plafond, même fenêtre de temps,
+mais un **compteur à part** — se corriger d'un côté n'épuise pas l'autre. Son
+volume est borné de la même façon, par une seule demande en attente par
+animateur.
+
 Au-delà, `429` avec un `Retry-After`, comme pour les codes. Le compte est tenu
 **par animateur** et non par adresse IP : la session nomme déjà l'animateur, et
 une IP est ce qu'un téléphone change entre deux cellules. Les deux compteurs

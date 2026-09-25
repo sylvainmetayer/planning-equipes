@@ -55,7 +55,10 @@ public class ContrainteAdHocRepository {
             try (PreparedStatement ps = scope.prepareScoped(connection, """
                     SELECT a.id, a.type, c.id AS creneau_id, a.creneau_date,
                            a.creneau_heure_debut, a.creneau_heure_fin,
-                           a.stand_id, a.raison, a.cree_par, a.cree_le, a.modifie_le
+                           a.stand_id, a.raison, a.cree_par, a.cree_le, a.modifie_le,
+                           EXISTS (SELECT 1 FROM declaration_coequipier d
+                                   WHERE d.edition_id = a.edition_id AND d.contrainte_id = a.id
+                                     AND d.statut = 'VALIDEE') AS issue_de_covoiturage
                     FROM contrainte_ad_hoc a
                     LEFT JOIN creneau c
                       ON c.edition_id = a.edition_id
@@ -92,6 +95,7 @@ public class ContrainteAdHocRepository {
                     contrainte.setCreeLe(creeLe != null ? creeLe.toInstant() : null);
                     contrainte.setModifieLe(
                             rs.getObject("modifie_le", OffsetDateTime.class).toInstant());
+                    contrainte.setIssueDeCovoiturage(rs.getBoolean("issue_de_covoiturage"));
                     byId.put(contrainte.getId(), contrainte);
                 }
             }
@@ -132,6 +136,25 @@ public class ContrainteAdHocRepository {
     public boolean contrainteExists(String id) {
         return scope.exists("contrainte_ad_hoc", id);
     }
+
+    /**
+     * True when a validated covoiturage demand of the edition points at this
+     * exception: the grouped arrival belongs to the Covoiturage tab, which
+     * alone may cancel it and tell the group.
+     */
+    public boolean isCarpoolBacked(String id) {
+        return scope.read("Failed to read the covoiturage behind the ajustement " + id, connection -> {
+            try (PreparedStatement ps = scope.prepareScoped(connection, CARPOOL_BACKED_SQL)) {
+                ps.setString(2, id);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next();
+                }
+            }
+        });
+    }
+
+    private static final String CARPOOL_BACKED_SQL = "SELECT 1 FROM declaration_coequipier "
+            + "WHERE edition_id = ? AND contrainte_id = ? AND statut = 'VALIDEE' LIMIT 1";
 
     public void deleteContrainte(String id) {
         scope.delete("DELETE FROM contrainte_ad_hoc WHERE edition_id = ? AND id = ?", id);

@@ -95,7 +95,7 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, **demandes de covoiturage (coéquipiers nommés, et le motif libre que l'organisation peut joindre en les écartant)**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
 | Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
@@ -298,6 +298,19 @@ complètes. Quatre points sont connus et se consignent :
   `LEGAL_CONSERVATION`). C'est le geste naturel avant la purge annuelle d'une
   édition terminée ; le registre le mentionne comme une **sortie de données**,
   journalisée comme les autres ;
+- **une demande de covoiturage survit aussi à sa décision**, dans
+  `declaration_coequipier` : les identifiants des coéquipiers nommés, le statut
+  et, quand l'organisation l'écarte ou annule l'arrivée groupée validée, un
+  **motif en champ libre écrit par l'administrateur à l'intention de
+  l'animateur** — relu dans son espace et repris dans l'e-mail qui lui annonce
+  la décision (à chaque membre du groupe, pour une annulation). C'est un texte sur une personne,
+  tapé par une autre : la consigne est de s'en tenir à la raison
+  organisationnelle (« Bob ne vient que le samedi ») et de ne jamais y écrire
+  une donnée de santé ou de famille. Il n'entre **pas** au journal des actions
+  (qui ne garde que l'identifiant de la demande), ni dans ce que rendent les
+  outils MCP ; il part dans le dump nocturne et l'export SQL comme le reste de
+  la table, et disparaît avec l'édition. La table porte une clé étrangère sur
+  le demandeur : sa fiche supprimée emporte ses demandes ;
 - **une déclaration de disponibilités traitée survit à sa décision** : appliquée
   ou refusée, elle reste en base pour que l'organisation puisse dire *pourquoi*
   la fiche de quelqu'un affirme ce qu'elle affirme, et pour que l'animateur

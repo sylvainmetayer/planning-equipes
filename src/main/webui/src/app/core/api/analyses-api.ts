@@ -14,6 +14,7 @@ import {
   KpiHistoriqueEntry,
   ModeMarge,
   PlanFormation,
+  GroupedArrivalReport,
   WalkSequenceReport,
   RapportFragilite,
   RapportMarge,
@@ -35,6 +36,11 @@ export class AnalysesApi {
   /** The tight walks between two consecutive seats of the persisted plan. */
   walks(): Promise<WalkSequenceReport> {
     return this.api.get<WalkSequenceReport>('/api/planning/enchainements');
+  }
+
+  /** The grouped arrivals (covoiturages) of the persisted plan, day by day. */
+  groupedArrivals(): Promise<GroupedArrivalReport> {
+    return this.api.get<GroupedArrivalReport>('/api/planning/arrivees-groupees');
   }
 
   /**

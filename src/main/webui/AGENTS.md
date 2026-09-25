@@ -62,13 +62,15 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   changes nothing about what a URL, the palette or a help link can reach. The
   standalone routes `/login` and `/animateur/:jeton` (espace animateur, issue
   #165) render outside it — no admin navigation, no polling. The espace has
-  four child routes of its own: `/animateur/:jeton` (« Mon planning » — three
+  five child routes of its own: `/animateur/:jeton` (« Mon planning » — three
   tabs chosen by `?onglet=jour|apercu|coequipiers`, the day on screen carried by
   `?jour=`: the day with its strip, its state band and its seat cards; the
   whole planning as four figures and a frieze coloured by typologie; and « suis-je
   avec quelqu'un ? », the teammates ranked by shared shifts and searched by
-  name), `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites` and
-  `/animateur/:jeton/aide`.
+  name), `/animateur/:jeton/echanges`, `/animateur/:jeton/disponibilites`,
+  `/animateur/:jeton/covoiturage` (« Covoiturage » — « Je viens avec… », asked
+  for apart from the declaration on the same collection window, read-only
+  outside it) and `/animateur/:jeton/aide`.
 - **One route = one page = one block.** Admin routes (children of the shell):
   `/` (default, « État de l'édition » — the checklist of the cycle, one line
   per step with its state and a link to the screen that moves it, read in one

@@ -31,6 +31,13 @@ export interface PromptDialogData {
   message?: string;
   /** Colours the confirm button as a destructive action, like `confirm-dialog`. */
   danger?: boolean;
+  /**
+   * The field may be left empty: confirming then resolves to `''`, which a
+   * caller tells from a cancel (`null`). For a reason offered, not demanded.
+   */
+  optional?: boolean;
+  /** Longest value accepted, mirrored from the server's own bound. */
+  maxLength?: number;
 }
 
 @Component({
@@ -44,7 +51,13 @@ export interface PromptDialogData {
       }
       <mat-form-field appearance="outline" class="prompt-dialog-field">
         <mat-label>{{ data.label }}</mat-label>
-        <input matInput name="valeur" [ngModel]="valeur()" (ngModelChange)="valeur.set($event)" />
+        <input
+          matInput
+          name="valeur"
+          [attr.maxlength]="data.maxLength ?? null"
+          [ngModel]="valeur()"
+          (ngModelChange)="valeur.set($event)"
+        />
       </mat-form-field>
     </mat-dialog-content>
     <mat-dialog-actions align="end">
@@ -52,7 +65,7 @@ export interface PromptDialogData {
       <button
         matButton="filled"
         [color]="data.danger ? 'warn' : 'primary'"
-        [disabled]="valeur().trim().length === 0"
+        [disabled]="!data.optional && valeur().trim().length === 0"
         (click)="dialogRef.close(valeur().trim())"
       >
         {{ data.confirmLabel ?? defaultConfirmLabel }}

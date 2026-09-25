@@ -107,6 +107,7 @@ class ConstraintFloorRulesTest {
                 "eviterRoulementStandsPremium",
                 "limiterEmplacementsParJour",
                 "trajetInsuffisantEntrePostes",
+                "arriveeGroupee",
                 "limiterTypologiesDistinctesParAnimateur",
                 "maxJoursConsecutifsTravailles",
                 "coupureRepasPlacementPrefere",

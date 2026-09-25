@@ -162,6 +162,12 @@ public final class ConstraintParameters {
                             ONGLET_EDITION,
                             contexte -> duree(contexte.qualite().toleranceTrajetMinutes()))),
             Map.entry(
+                    "toleranceArriveeGroupeeMinutes",
+                    new Reference(
+                            "Tolérance d'une arrivée groupée",
+                            ONGLET_EDITION,
+                            contexte -> duree(contexte.qualite().toleranceArriveeGroupeeMinutes()))),
+            Map.entry(
                     "heureServiceTardif",
                     new Reference(
                             "Heure d'un service tardif",
@@ -207,6 +213,7 @@ public final class ConstraintParameters {
                     "coupureRepasPlacementPrefere",
                     List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
             Map.entry("limiterEmplacementsParJour", List.of("maxEmplacementsDistinctsParJour")),
+            Map.entry("arriveeGroupee", List.of("toleranceArriveeGroupeeMinutes")),
             Map.entry(
                     "trajetInsuffisantEntrePostes",
                     List.of("vitesseMarcheKmH", "facteurDetour", "toleranceTrajetMinutes")),

@@ -152,7 +152,7 @@ public class ParametresMcpTools {
                     + "moyennes dosables : emplacements distincts par jour, typologies distinctes par animateur, "
                     + "jours travaillés d'affilée, heures d'un service tardif et d'un service matinal avec le repos "
                     + "souhaité entre les deux, et le temps de trajet entre emplacements (vitesse de marche en km/h, "
-                    + "facteur de détour, tolérance en minutes).",
+                    + "facteur de détour, tolérance en minutes), et la tolérance d'une arrivée groupée.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = true,
@@ -193,6 +193,11 @@ public class ParametresMcpTools {
             @ToolArg(description = "Facteur de détour, entre 1 et 5", required = false) Double facteurDetour,
             @ToolArg(description = "Tolérance de trajet, en minutes (0 à 120)", required = false)
                     Integer toleranceTrajetMinutes,
+            @ToolArg(
+                            description = "Tolérance d'une arrivée groupée, en minutes (0 à 240) : l'écart "
+                                    + "d'arrivée ou de départ toléré entre les membres d'un covoiturage",
+                            required = false)
+                    Integer toleranceArriveeGroupeeMinutes,
             @ToolArg(description = EditionArg.DESCRIPTION, required = false) @EditionArg String edition) {
         ParametresQualite actuels = referenceDataService.getParametresQualite();
         ParametresQualite nouveaux = new ParametresQualite(
@@ -212,7 +217,10 @@ public class ParametresMcpTools {
                 joursConsecutifsMax == null ? actuels.joursConsecutifsMax() : joursConsecutifsMax,
                 vitesseMarcheKmH == null ? actuels.vitesseMarcheKmH() : vitesseMarcheKmH,
                 facteurDetour == null ? actuels.facteurDetour() : facteurDetour,
-                toleranceTrajetMinutes == null ? actuels.toleranceTrajetMinutes() : toleranceTrajetMinutes);
+                toleranceTrajetMinutes == null ? actuels.toleranceTrajetMinutes() : toleranceTrajetMinutes,
+                toleranceArriveeGroupeeMinutes == null
+                        ? actuels.toleranceArriveeGroupeeMinutes()
+                        : toleranceArriveeGroupeeMinutes);
         return ParametresQualiteView.of(referenceDataService.updateParametresQualite(nouveaux));
     }
 
@@ -227,6 +235,7 @@ public class ParametresMcpTools {
             double vitesseMarcheKmH,
             double facteurDetour,
             int toleranceTrajetMinutes,
+            int toleranceArriveeGroupeeMinutes,
             @JsonInclude(JsonInclude.Include.NON_EMPTY) List<String> avertissements)
             implements WarningCarrier<ParametresQualiteView> {
 
@@ -241,6 +250,7 @@ public class ParametresMcpTools {
                     parametres.vitesseMarcheKmH(),
                     parametres.facteurDetour(),
                     parametres.toleranceTrajetMinutes(),
+                    parametres.toleranceArriveeGroupeeMinutes(),
                     List.of());
         }
 
@@ -256,6 +266,7 @@ public class ParametresMcpTools {
                     vitesseMarcheKmH,
                     facteurDetour,
                     toleranceTrajetMinutes,
+                    toleranceArriveeGroupeeMinutes,
                     WarningCodes.with(avertissements, code));
         }
     }
@@ -375,7 +386,8 @@ public class ParametresMcpTools {
     @Tool(
             name = "lister_contraintes_ad_hoc",
             description = "Liste les contraintes ad hoc saisies au cas par cas (indisponibilité forcée, "
-                    + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs) : des règles posées "
+                    + "incompatibilité entre animateurs, affectation forcée, affinité entre animateurs, arrivée groupée) : "
+                    + "des règles posées "
                     + "avant le calcul pour placer ou écarter quelqu'un, à distinguer des verrouillages qui figent après coup. "
                     + "Les animateurs y sont désignés par id seul.",
             annotations =
@@ -400,6 +412,8 @@ public class ParametresMcpTools {
                     + "sur le même créneau. AFFECTATION_FORCEE : l'animateur doit être affecté à ce stand sur ce créneau. "
                     + "AFFINITE : privilégier, sans l'imposer, les créneaux où les deux animateurs listés tiennent le "
                     + "même stand ; refusée si la même paire est déjà déclarée incompatible (et réciproquement). "
+                    + "ARRIVEE_GROUPEE (SOFT) : 2 à 4 animateurs qui arrivent et repartent ensemble (covoiturage), "
+                    + "sans créneau ni stand ; refusée si deux de ses membres sont déclarés incompatibles. "
                     + "Son id (C suivi d'un nombre) est attribué par l'application et figure dans la réponse.",
             annotations =
                     @Tool.Annotations(
@@ -409,7 +423,9 @@ public class ParametresMcpTools {
                             openWorldHint = false))
     @WarnsWhileSolving
     WrittenContrainteAdHocView createContrainteAdHoc(
-            @ToolArg(description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE ou AFFINITE")
+            @ToolArg(
+                            description = "Type : INDISPONIBILITE_FORCEE, INCOMPATIBILITE, AFFECTATION_FORCEE, "
+                                    + "AFFINITE ou ARRIVEE_GROUPEE")
                     String type,
             @ToolArg(description = "Ids des animateurs concernés") List<String> animateurIds,
             @ToolArg(description = "Id du créneau concerné", required = false) Long creneauId,
@@ -450,7 +466,9 @@ public class ParametresMcpTools {
 
     @Tool(
             name = "supprimer_contrainte_ad_hoc",
-            description = "Supprime une contrainte ad hoc.",
+            description = "Supprime une contrainte ad hoc. Refusé pour une ARRIVEE_GROUPEE issue d'une "
+                    + "demande de covoiturage validée : elle s'annule depuis l'onglet Covoiturage de l'écran "
+                    + "Disponibilités, qui prévient le groupe.",
             annotations =
                     @Tool.Annotations(
                             readOnlyHint = false,

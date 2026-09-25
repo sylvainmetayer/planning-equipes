@@ -397,6 +397,39 @@ sans que la règle de pause change. Le Rail et la timeline y posent un chevron,
 la page Problèmes une ligne d'avertissement avec le lien vers le Rail du jour,
 et la fiche d'un emplacement donne le temps de marche vers chacun des autres.
 
+## L'arrivée groupée (covoiturage)
+
+Des bénévoles viennent à plusieurs dans une même voiture et repartent
+ensemble. `affiniteAdHoc` ne sait pas le dire : elle récompense deux personnes
+**sur le même stand au même créneau**, ce qui est trop strict pour une voiture
+(qui n'a pas besoin du même stand) et trop faible (rien n'y aligne les heures).
+
+`arriveeGroupee` lit, pour chaque ajustement `ARRIVEE_GROUPEE` (2 à 4 membres),
+chaque paire du groupe et chaque jour :
+
+- un membre travaille, l'autre non : **forfait de 120** (deux heures) — « les
+  mêmes jours » pèse autant que « les mêmes heures » ;
+- tous deux travaillent : les minutes d'écart entre leurs **premiers débuts**
+  au-delà de la tolérance (30 min par défaut, réglable sur la page Paramètres),
+  plus celles entre leurs **dernières fins** — les fenêtres effectives, lues sur
+  le même pliage (animateur, jour) que `eviterFermeturePuisOuverture`, si bien
+  qu'une pause ou une coupure repas au milieu de la journée ne change rien.
+
+Un membre qui arrive 45 min après l'autre coûte 15. Par paire et par jour, en
+minutes : une pente, pas un mur. **SOFT et non MEDIUM**, parce que c'est un
+confort qui doit céder devant `equilibrerCharge`, les souhaits et toutes les
+règles légales — un mineur qui doit partir avant 22 h désaligne le groupe, pas
+l'inverse. Un jour entièrement passé n'est plus facturé. La règle se dose et
+s'éteint depuis l'écran Contraintes comme les autres.
+
+Des indisponibilités déclarées différentes rendent certains jours
+inévitablement désalignés : l'onglet Covoiturage de l'écran Disponibilités les
+compte avant la validation, l'écriture de l'ajustement avertit (sans nommer les
+personnes autrement que par leur id), et la liste de cohérence du référentiel le rappelle tant que
+l'ajustement existe. La page Problèmes liste les jours désalignés par groupe, le
+Rail marque les membres, et l'espace dit à chacun, jour par jour, si son
+covoiturage tient — sans jamais détailler les postes des autres.
+
 ## Les seuils de qualité
 
 Les règles de « Qualité d'organisation » lisent leurs seuils dans
@@ -413,6 +446,7 @@ Les règles de « Qualité d'organisation » lisent leurs seuils dans
 | Vitesse de marche | 4 km/h | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
 | Facteur de détour | 1,3 | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
 | Tolérance de trajet | 5 min | `trajetInsuffisantEntrePostes`, et la vérification des enchaînements |
+| Tolérance d'une arrivée groupée | 30 min | `arriveeGroupee`, et la lecture des arrivées groupées |
 
 Ils sont **persistés par édition** depuis l'issue #591 et se règlent sur la
 page Paramètres, carte « Qualité d'organisation » ; le bloc
@@ -803,7 +837,7 @@ peuvent pas être satisfaites ensemble — et le seul symptôme serait un score 
 négatif au solve suivant, sans que rien ne désigne la cause.
 
 `ContrainteAdHocContradictions` refuse ces combinaisons à l'écriture, avec un
-message qui **nomme les exceptions en cause**. Quatre familles sont détectées :
+message qui **nomme les exceptions en cause**. Cinq familles sont détectées :
 
 | Combinaison | Pourquoi elle est impossible |
 | --- | --- |
@@ -811,10 +845,24 @@ message qui **nomme les exceptions en cause**. Quatre familles sont détectées 
 | `AFFECTATION_FORCEE` dont tout le périmètre est couvert par une `INDISPONIBILITE_FORCEE` visant chacun des animateurs qu'elle nomme | Tout poste qui satisferait la première est pénalisé par la seconde |
 | Deux `AFFECTATION_FORCEE` fixant **le même animateur** sur des périmètres qui se chevauchent dans le temps | `pasDeChevauchementHoraire` interdit de tenir les deux postes, et aucun poste unique ne satisfait les deux |
 | Deux `AFFECTATION_FORCEE` plaçant une paire `INCOMPATIBILITE` sur **le même créneau** | `incompatibiliteAdHoc` joint sur le créneau seul : deux postes sur deux stands de ce créneau sont tout aussi infaisables |
+| Une `ARRIVEE_GROUPEE` dont **deux membres** forment une paire `INCOMPATIBILITE` **sans stand ni créneau** | Aligner leurs journées — mêmes jours, mêmes heures d'arrivée et de départ — rend l'incompatibilité quasi intenable : la règle dure l'emporterait, et le covoiturage serait pénalisé chaque jour sans que personne sache pourquoi |
 
 La quatrième ligne se lit **au créneau, pas au stand** : c'est ce que la règle
 applique réellement. Restreindre la détection au même stand laisserait passer
 des combinaisons que le solveur déclarerait pourtant infaisables.
+
+La cinquième est la seule qui ne soit pas *certainement* insatisfiable : une
+arrivée groupée est douce, et deux membres incompatibles pourraient en principe
+arriver ensemble et ne jamais tenir le même créneau. Elle est refusée quand
+même, dans les deux sens (l'arrivée groupée après l'incompatibilité, ou
+l'inverse), parce que la combinaison ne décrit rien qu'un organisateur veuille :
+on ne met pas dans la même voiture deux personnes qu'on refuse de faire
+travailler ensemble. Seule l'incompatibilité **générale** est en cause : une
+incompatibilité limitée à un stand ou à un créneau laisse la paire libre de
+tenir les mêmes horaires ailleurs, ce qui suffit à la voiture — elle passe.
+Une arrivée groupée compte en outre **2 à 4 membres**
+distincts, sans créneau ni stand — une forme mal remplie est refusée à la
+saisie comme à l'import.
 
 ### Ce qui passe délibérément
 
@@ -1467,6 +1515,7 @@ ci-dessus ; ceci est la liste, complète par construction.
 | `incompatibiliteAdHoc` | HARD | Contraintes ad hoc | Deux animateurs déclarés incompatibles ne doivent jamais travailler sur le même créneau. |
 | `affectationForcee` | HARD | Contraintes ad hoc | Affectation imposée par l'administrateur : l'animateur doit être présent sur le créneau ou le stand visé. |
 | `affiniteAdHoc` | SOFT | Contraintes ad hoc | Paire d'animateurs à privilégier : chaque créneau où les deux sont affectés au même stand est récompensé. Contrainte souple : elle favorise la co-affectation quand c'est possible, sans jamais la forcer. |
+| `arriveeGroupee` | SOFT | Contraintes ad hoc | Groupe d'arrivée (covoiturage, 2 à 4 animateurs) : les membres travaillent les mêmes jours, arrivent et repartent ensemble, à la tolérance près (30 min par défaut, réglable sur la page Paramètres). Chaque jour et chaque paire du groupe coûtent les minutes d'écart au-delà de la tolérance, à l'arrivée comme au départ, et un forfait de deux heures quand l'un travaille et l'autre non. Aucune contrainte de stand : les membres peuvent tenir des stands différents. Contrainte souple : elle cède devant les règles légales et l'équilibre de charge. |
 | `animateurVerrouilleFige` | HARD | Verrouillage du planning | Le planning d'un animateur verrouillé ne bouge plus : ses postes validés sont figés et le solveur ne peut plus lui en attribuer de nouveaux. |
 | `animateurVerrouilleCreneauFige` | HARD | Verrouillage du planning | Un échange validé est figé sur son créneau : ce que chacun des deux animateurs y tient après l'échange ne bouge plus, sans geler le reste de leur planning. |
 | `standComplexeAvecReferent` | MEDIUM | Qualité d'organisation | Chaque stand devrait compter au moins un référent sur chaque créneau. |

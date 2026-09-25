@@ -137,7 +137,8 @@ final class SolverConfiguration {
                         defauts.joursConsecutifsMax(),
                         defauts.vitesseMarcheKmH(),
                         defauts.facteurDetour(),
-                        defauts.toleranceTrajetMinutes());
+                        defauts.toleranceTrajetMinutes(),
+                        defauts.toleranceArriveeGroupeeMinutes());
     }
 
     /**

@@ -123,4 +123,39 @@ class NotificationDispatcherTest {
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
         assertThat(envoyes).isEmpty();
     }
+
+    /**
+     * A covoiturage decided while the SMTP relay is down: the decision stands,
+     * the admin's call returns, and the lost mail is counted under its template.
+     */
+    @Test
+    void aCarpoolDecisionSurvivesAFailedMail() {
+        expediteur = new NotificationDispatcher(
+                mails -> {
+                    throw new IllegalStateException("SMTP down");
+                },
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry));
+
+        assertThatCode(() -> {
+                    expediteur.surNotification(
+                            new Notification.CarpoolValidated("bob@example.org", "Bob", List.of("Alice"), null));
+                    expediteur.surNotification(
+                            new Notification.CarpoolSetAside("alice@example.org", "Alice", "complet", null));
+                    expediteur.surNotification(new Notification.CarpoolCancelled(
+                            "alice@example.org", "Alice", List.of("Bob"), "panne", true, null));
+                })
+                .doesNotThrowAnyException();
+        assertThat(registry.get("planning.mail.failures")
+                        .tag("template", "covoiturage-valide")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
+        assertThat(registry.get("planning.mail.failures")
+                        .tag("template", "covoiturage-annule")
+                        .counter()
+                        .count())
+                .isEqualTo(1.0);
+    }
 }

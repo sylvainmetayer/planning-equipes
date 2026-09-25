@@ -133,6 +133,10 @@ public final class CatalogueActions {
     private static final String COLLECTE_CONFIGUREE = "COLLECTE_CONFIGUREE";
     private static final String DECLARATION_APPLIQUEE = "DECLARATION_APPLIQUEE";
     private static final String DECLARATION_REFUSEE = "DECLARATION_REFUSEE";
+    private static final String COVOITURAGE_VALIDE = "COVOITURAGE_VALIDE";
+    private static final String COVOITURAGE_ECARTE = "COVOITURAGE_ECARTE";
+    private static final String COVOITURAGE_ANNULE = "COVOITURAGE_ANNULE";
+    private static final String COVOITURAGE_DEMANDE = "COVOITURAGE_DEMANDE";
     private static final String DECLARATION_SOUMISE = "DECLARATION_SOUMISE";
     private static final String FOIRE_CONFIGUREE = "FOIRE_CONFIGUREE";
     private static final String ECHANGE_ACCEPTE = "ECHANGE_ACCEPTE";
@@ -330,6 +334,10 @@ public final class CatalogueActions {
         action(COLLECTE_CONFIGUREE, "Fenêtre de collecte des disponibilités configurée", Entite.DISPONIBILITE);
         changesData(DECLARATION_APPLIQUEE, "Déclaration de disponibilités appliquée", Entite.DISPONIBILITE);
         action(DECLARATION_REFUSEE, "Déclaration de disponibilités refusée", Entite.DISPONIBILITE);
+        changesData(COVOITURAGE_VALIDE, "Arrivée groupée validée", Entite.DISPONIBILITE);
+        action(COVOITURAGE_ECARTE, "Covoiturage écarté", Entite.DISPONIBILITE);
+        changesData(COVOITURAGE_ANNULE, "Arrivée groupée annulée", Entite.DISPONIBILITE);
+        action(COVOITURAGE_DEMANDE, "Covoiturage demandé depuis l'espace", Entite.DISPONIBILITE);
         action(DECLARATION_SOUMISE, "Disponibilités déclarées depuis l'espace", Entite.DISPONIBILITE);
         action(FOIRE_CONFIGUREE, "Foire au planning configurée", Entite.ECHANGE);
         action(ECHANGE_ACCEPTE, "Demande d'échange acceptée", Entite.ECHANGE);
@@ -494,6 +502,9 @@ public final class CatalogueActions {
         route("DeclarationDisponibiliteResource#configure", COLLECTE_CONFIGUREE);
         route("DeclarationDisponibiliteResource#apply", DECLARATION_APPLIQUEE);
         route("DeclarationDisponibiliteResource#refuse", DECLARATION_REFUSEE);
+        route("DeclarationDisponibiliteResource#validateCarpool", COVOITURAGE_VALIDE);
+        route("DeclarationDisponibiliteResource#setCarpoolAside", COVOITURAGE_ECARTE);
+        route("DeclarationDisponibiliteResource#cancelCarpool", COVOITURAGE_ANNULE);
         route("DemandeEchangeResource#configure", FOIRE_CONFIGUREE);
         route("DemandeEchangeResource#accept", ECHANGE_ACCEPTE);
         route("DemandeEchangeResource#refuse", ECHANGE_REFUSE);
@@ -503,6 +514,7 @@ public final class CatalogueActions {
         route("EspaceAnimateurResource#grantReceivedDemande", ECHANGE_ACCORDE);
         route("EspaceAnimateurResource#declineReceivedDemande", ECHANGE_DECLINE);
         route("EspaceAnimateurResource#declarer", DECLARATION_SOUMISE);
+        route("EspaceAnimateurResource#requestCarpool", COVOITURAGE_DEMANDE);
         route("EspaceAnimateurResource#regenerateAbonnementToken", ABONNEMENT_CREE);
         route("EspaceAnimateurResource#cancel", ABONNEMENT_ANNULE);
         route("EspaceAnimateurResource#requestCode", CODE_ESPACE_DEMANDE);

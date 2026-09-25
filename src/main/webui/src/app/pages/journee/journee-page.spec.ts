@@ -94,6 +94,7 @@ describe('JourneePage', () => {
     breaks: vi.fn(async () => null),
     emplacements: vi.fn(async () => []),
     walks: vi.fn(async () => null),
+    groupedArrivals: vi.fn(async () => null),
   };
   const journeesApi = {
     changements: vi.fn(
