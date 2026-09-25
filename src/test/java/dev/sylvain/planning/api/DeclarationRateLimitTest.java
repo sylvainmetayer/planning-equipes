@@ -48,7 +48,9 @@ class DeclarationRateLimitTest {
         }
     }
 
-    private static final String ANIMATEUR = "DEBIT-DECL";
+    /** Drawn by the application at creation (ADR 0050). */
+    private static String animateurId;
+
     private static final String EMAIL = "debit-decl@example.org";
 
     @Inject
@@ -61,9 +63,9 @@ class DeclarationRateLimitTest {
     void seed() {
         RestAssured.requestSpecification = null;
         removeFixture();
-        Animateur animateur = new Animateur(ANIMATEUR, "Carla", "Roux", LocalDate.of(1991, 3, 3), false);
+        Animateur animateur = new Animateur(null, "Carla", "Roux", LocalDate.of(1991, 3, 3), false);
         animateur.setEmail(EMAIL);
-        referenceData.createAnimateur(animateur);
+        animateurId = referenceData.createAnimateur(animateur).getId();
         mailbox.clear();
         String session = EspaceSessions.open(mailbox, token(), EMAIL);
         RestAssured.requestSpecification =
@@ -114,13 +116,13 @@ class DeclarationRateLimitTest {
                 .statusCode(200)
                 .extract()
                 .jsonPath()
-                .getList("findAll { it.animateurId == '" + ANIMATEUR + "' }.statut", String.class);
+                .getList("findAll { it.animateurId == '" + animateurId + "' }.statut", String.class);
         return statuts.stream().filter("EN_ATTENTE"::equals).count();
     }
 
     private String token() {
         return referenceData.listAnimateurs().stream()
-                .filter(candidat -> candidat.getId().equals(ANIMATEUR))
+                .filter(candidat -> candidat.getId().equals(animateurId))
                 .findFirst()
                 .orElseThrow()
                 .getAccessToken();
@@ -129,8 +131,8 @@ class DeclarationRateLimitTest {
     /** Leaves the shared database as it was found. */
     private void removeFixture() {
         referenceData.listAnimateurs().stream()
+                .filter(animateur -> EMAIL.equals(animateur.getEmail()))
                 .map(Animateur::getId)
-                .filter(ANIMATEUR::equals)
                 .forEach(referenceData::deleteAnimateur);
     }
 }

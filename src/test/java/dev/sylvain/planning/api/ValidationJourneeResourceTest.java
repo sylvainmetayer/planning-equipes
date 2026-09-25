@@ -236,7 +236,7 @@ class ValidationJourneeResourceTest {
     private static void markUnavailable(String animateurId) {
         given().contentType("application/json")
                 .body("""
-                        {"id":"VALIDATION-TEST-INDISPO","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))
                 .when()
                 .post("/api/contraintes-ad-hoc")
