@@ -176,7 +176,7 @@ export function buildOperationsSections(): HelpSection[] {
             },
             {
               term: $localize`:@@aide.views.term.carteJour:Carte de la journée`,
-              text: $localize`:@@aide.views.def.carteJour:La même journée sur la carte des emplacements : un curseur temporel, et chaque emplacement coloré selon ce qui s'y passe à cet instant — ouvert et pourvu, ouvert avec des places vides, ou ouvert sans personne. Les stands sans emplacement géolocalisé sont listés à côté de la carte.`,
+              text: $localize`:@@aide.views.def.carteJour:La même journée sur la carte des emplacements : un curseur temporel, et chaque emplacement coloré selon ce qui s'y passe à cet instant — ouvert et pourvu, ouvert avec des places vides, ou ouvert sans personne. Les stands sans emplacement géolocalisé sont listés à côté de la carte. Chaque pastille porte le nombre de personnes présentes, suivi des places prévues, et grandit avec l'effectif ; le survol détaille la répartition par stand. Sous la carte, la grille « Charge par emplacement » croise chaque lieu avec les tranches de la journée — une tranche commence ou finit dès qu'une place s'ouvre ou se ferme — et donne dans chaque case présents / places, la dernière ligne faisant le total sur le site ; les stands sans emplacement y ont leur ligne. Un clic ou Entrée sur une case place le curseur sur cette tranche. « Tout l'événement » passe à une colonne par jour, chaque case donnant le pic de la journée. Une personne en pause relayée reste comptée sur son stand ; une place vide, ou libérée par une absence du jour J, ne compte personne.`,
             },
             {
               term: $localize`:@@aide.views.term.comparaisonJours:Comparer deux journées`,

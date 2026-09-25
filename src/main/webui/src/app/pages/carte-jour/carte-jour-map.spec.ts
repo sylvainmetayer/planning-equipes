@@ -20,11 +20,16 @@ import { CarteJourMap } from './carte-jour-map';
 @Component({
   selector: 'app-carte-jour-map-host',
   imports: [CarteJourMap],
-  template: `<app-carte-jour-map [marqueurs]="marqueurs()" [cadrage]="'1'" />`,
+  template: `<app-carte-jour-map
+    [marqueurs]="marqueurs()"
+    [presentsMax]="presentsMax()"
+    [cadrage]="'1'"
+  />`,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 class Host {
   readonly marqueurs = signal<MarqueurJour[]>([]);
+  readonly presentsMax = signal(0);
 }
 
 function stand(): StandInstant {
@@ -70,17 +75,45 @@ describe('CarteJourMap', () => {
     TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
   });
 
-  it('writes the number of open stands on the badge, zero included', () => {
+  it('writes the people present on the badge, zero included, and the seats beside it', () => {
     // Three stands attached, none open: the badge must read « 0 », not « 3 ».
     const fixture = mount([
       marqueur({ etat: 'ferme', ouverts: 0, stands: [stand(), stand(), stand()] }),
-      marqueur({ emplacementId: 'MAIRIE', nom: 'Mairie', etat: 'partiel', ouverts: 2 }),
+      marqueur({
+        emplacementId: 'MAIRIE',
+        nom: 'Mairie',
+        etat: 'partiel',
+        ouverts: 2,
+        pourvus: 5,
+        sieges: 7,
+      }),
     ]);
 
-    const pastilles = Array.from(
+    const texte = (selecteur: string) =>
+      Array.from(fixture.nativeElement.querySelectorAll(selecteur) as NodeListOf<HTMLElement>).map(
+        (element) => element.textContent,
+      );
+    expect(texte('.carte-jour-pastille')).toEqual(expect.arrayContaining(['0', '5']));
+    expect(texte('.carte-jour-pastille-sieges')).toEqual(['/7']);
+
+    fixture.destroy();
+  });
+
+  it('grows the badge with the people present, against the fullest place of the day', () => {
+    const fixture = TestBed.createComponent(Host);
+    fixture.componentInstance.marqueurs.set([
+      marqueur({ etat: 'pourvu', pourvus: 20, sieges: 20 }),
+      marqueur({ emplacementId: 'MAIRIE', nom: 'Mairie', etat: 'pourvu', pourvus: 1, sieges: 1 }),
+    ]);
+    fixture.componentInstance.presentsMax.set(20);
+    fixture.detectChanges();
+    fixture.detectChanges();
+
+    const tailles = Array.from(
       fixture.nativeElement.querySelectorAll('.carte-jour-pastille') as NodeListOf<HTMLElement>,
-    ).map((pastille) => pastille.textContent);
-    expect(pastilles).toEqual(expect.arrayContaining(['0', '2']));
+    ).map((pastille) => parseInt(pastille.style.width, 10));
+    expect(Math.max(...tailles)).toBe(56);
+    expect(Math.min(...tailles)).toBeLessThan(56);
 
     fixture.destroy();
   });

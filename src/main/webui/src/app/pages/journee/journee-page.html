@@ -200,6 +200,8 @@
           [jour]="jourCourant()?.jour ?? null"
           [stand]="stand()"
           [(t)]="instantCarte"
+          [(charge)]="chargeCarte"
+          (jourDemande)="selectJourNumero($event)"
         />
       } @placeholder {
         <mat-progress-bar mode="indeterminate" />

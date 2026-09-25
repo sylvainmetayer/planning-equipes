@@ -22,7 +22,8 @@ import {
 } from '@angular/core';
 import * as L from 'leaflet';
 import { ajouterTuilesOsm } from '../../shared/leaflet-base';
-import { MarqueurJour, comptePastille } from './carte-jour';
+import { MarqueurJour, comptePastille, siegesPastille } from './carte-jour';
+import { taillePastille } from './charge-emplacement';
 
 /** France, when the day holds no located emplacement at all. */
 const CENTRE_DEFAUT: L.LatLngTuple = [46.6, 2.5];
@@ -50,6 +51,12 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
    */
   readonly cadrage = input<string>('');
   readonly ariaLabel = input<string>('');
+  /**
+   * The most people any place holds during the day: the scale a marker's size
+   * is read against. The day's, not the instant's, so a marker keeps its size
+   * when its neighbours empty.
+   */
+  readonly presentsMax = input<number>(0);
   readonly marqueurChoisi = output<string>();
 
   private readonly hote = viewChild.required<ElementRef<HTMLDivElement>>('hote');
@@ -72,10 +79,11 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
       const marqueurs = this.marqueurs();
       const selection = this.selection();
       const cadrage = this.cadrage();
+      const presentsMax = this.presentsMax();
       if (!this.pret() || !this.map) {
         return;
       }
-      this.synchroniser(marqueurs, selection);
+      this.synchroniser(marqueurs, selection, presentsMax);
       if (cadrage !== this.dernierCadrage) {
         this.dernierCadrage = cadrage;
         this.cadrer(marqueurs);
@@ -111,12 +119,16 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
   }
 
   /** Creates, updates and removes markers in place: a full redraw would flicker on every cursor step. */
-  private synchroniser(marqueurs: MarqueurJour[], selection: string | null): void {
+  private synchroniser(
+    marqueurs: MarqueurJour[],
+    selection: string | null,
+    presentsMax: number,
+  ): void {
     const vus = new Set<string>();
     marqueurs.forEach((marqueur) => {
       vus.add(marqueur.emplacementId);
       const existant = this.couche.get(marqueur.emplacementId);
-      const icone = this.icone(marqueur, selection === marqueur.emplacementId);
+      const icone = this.icone(marqueur, selection === marqueur.emplacementId, presentsMax);
       if (existant) {
         existant.setIcon(icone);
         existant.setLatLng([marqueur.latitude, marqueur.longitude]);
@@ -155,12 +167,26 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
   }
 
   /**
-   * The tooltip, built as a text node rather than as HTML: an emplacement name
-   * is user input, and Leaflet's string form goes through `innerHTML`.
+   * The tooltip — the place's summary, then how its people split between its
+   * open stands — built from text nodes rather than HTML: an emplacement or a
+   * stand name is user input, and Leaflet's string form goes through `innerHTML`.
    */
   private legender(marqueur: L.Marker, data: MarqueurJour): void {
     const contenu = document.createElement('span');
-    contenu.textContent = data.resume;
+    const resume = document.createElement('span');
+    resume.textContent = data.resume;
+    contenu.appendChild(resume);
+    const ouverts = data.stands.filter((stand) => stand.sieges > 0);
+    if (ouverts.length > 0) {
+      const liste = document.createElement('ul');
+      liste.className = 'carte-jour-infobulle-stands';
+      ouverts.forEach((stand) => {
+        const ligne = document.createElement('li');
+        ligne.textContent = $localize`:@@carteJour.tooltip.stand:${stand.nom}:stand: : ${stand.pourvus}:presents: / ${stand.sieges}:sieges:`;
+        liste.appendChild(ligne);
+      });
+      contenu.appendChild(liste);
+    }
     if (marqueur.getTooltip()) {
       marqueur.setTooltipContent(contenu);
     } else {
@@ -178,16 +204,24 @@ export class CarteJourMap implements AfterViewInit, OnDestroy {
   /**
    * A `divIcon` rather than a coloured image: the colours then live in the
    * stylesheet, which is what lets them be `--mat-sys-*` tokens and follow the
-   * dark theme. Only a number is injected as markup — never a name.
+   * dark theme. Only numbers are injected as markup — never a name. The badge
+   * holds the people present and grows with them; the seats planned sit
+   * beside it.
    */
-  private icone(marqueur: MarqueurJour, selectionne: boolean): L.DivIcon {
+  private icone(marqueur: MarqueurJour, selectionne: boolean, presentsMax: number): L.DivIcon {
     const compte = comptePastille(marqueur);
+    const sieges = siegesPastille(marqueur);
+    const taille = taillePastille(marqueur.pourvus, presentsMax);
+    const demi = Math.round(taille / 2);
     return L.divIcon({
-      className: '',
-      html: `<span class="carte-jour-pastille etat-${marqueur.etat}${selectionne ? ' selection' : ''}">${compte}</span>`,
-      iconSize: [28, 28],
-      iconAnchor: [14, 14],
-      tooltipAnchor: [0, -14],
+      className: 'carte-jour-marqueur',
+      html:
+        `<span class="carte-jour-pastille etat-${marqueur.etat}${selectionne ? ' selection' : ''}"` +
+        ` style="width:${taille}px;height:${taille}px">${compte}</span>` +
+        (sieges ? `<span class="carte-jour-pastille-sieges">${sieges}</span>` : ''),
+      iconSize: [taille, taille],
+      iconAnchor: [demi, demi],
+      tooltipAnchor: [0, -demi],
     });
   }
 

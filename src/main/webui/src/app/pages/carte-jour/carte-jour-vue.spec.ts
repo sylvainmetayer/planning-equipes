@@ -37,6 +37,7 @@ class CarteJourMapStub {
   readonly selection = input<string | null>(null);
   readonly cadrage = input<string>('');
   readonly ariaLabel = input<string>('');
+  readonly presentsMax = input<number>(0);
   readonly marqueurChoisi = output<string>();
 }
 
@@ -125,7 +126,7 @@ describe('CarteJourView', () => {
   /** Renders the view as the Journée page feeds it: the plan, the day and the emplacements as inputs. */
   async function rendre(
     evenement: PlanningEvenement,
-    entrees: { jour?: number; t?: number | null; stand?: string } = {},
+    entrees: { jour?: number; t?: number | null; stand?: string; charge?: string } = {},
     emplacements: Emplacement[] = [PLACE],
   ): Promise<void> {
     TestBed.resetTestingModule();
@@ -261,6 +262,81 @@ describe('CarteJourView', () => {
     const nonSitues = racine().querySelector('[data-test="carte-jour-non-situes"]')!;
     expect(nonSitues.textContent).toContain('Dixit');
     expect(nonSitues.textContent).toContain('rattaché à aucun emplacement');
+  });
+
+  function grille(): HTMLTableElement {
+    return racine().querySelector('[data-test="charge-grille"]') as HTMLTableElement;
+  }
+
+  function cellule(ligne: string, colonne: number): HTMLElement {
+    const rangee = Array.from(grille().querySelectorAll('tbody tr')).find((tr) =>
+      tr.querySelector('th')!.textContent!.includes(ligne),
+    )!;
+    return rangee.querySelectorAll('td')[colonne] as HTMLElement;
+  }
+
+  it('lays the day out as places by spans, the stands tied to nothing in a row of their own', async () => {
+    await rendre(planningDeuxJours());
+
+    const entetes = Array.from(grille().querySelectorAll('thead th')).map((th) =>
+      th.textContent!.trim(),
+    );
+    expect(entetes).toEqual(['Emplacement', '10:00 – 12:00', '14:00 – 16:00']);
+    expect(grille().querySelector('caption')!.textContent).toContain('Charge par emplacement');
+    expect(cellule('Place du Drapeau', 0).textContent!.trim()).toBe('1/1');
+    expect(cellule('Sans emplacement', 1).textContent!.trim()).toBe('0/1');
+    expect(cellule('Total sur le site', 1).getAttribute('aria-label')).toContain(
+      '0 personne(s) présente(s) sur 1 place(s)',
+    );
+  });
+
+  it('moves the map cursor to the span of a cell, by click or by Enter', async () => {
+    await rendre(planningDeuxJours());
+
+    cellule('Sans emplacement', 1).click();
+    await fixture.whenStable();
+    expect(heure()).toBe('14:00');
+    expect(fixture.componentInstance.minutesSelectionnees()).toBe(14 * 60);
+
+    cellule('Place du Drapeau', 0).dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    await fixture.whenStable();
+    expect(heure()).toBe('10:00');
+  });
+
+  it('walks the grid with the arrows, one Tab stop for the whole table', async () => {
+    await rendre(planningDeuxJours());
+
+    const focusables = grille().querySelectorAll('td[tabindex="0"]');
+    expect(focusables.length).toBe(1);
+    const premiere = focusables[0] as HTMLElement;
+    premiere.focus();
+    premiere.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
+    await fixture.whenStable();
+    expect(document.activeElement?.getAttribute('data-colonne')).toBe('1');
+  });
+
+  it('reads the whole event one column per day, and opens a day at its peak', async () => {
+    const demandes: number[] = [];
+    await rendre(planningDeuxJours(), { charge: 'evenement' });
+    fixture.componentInstance.jourDemande.subscribe((jour) => demandes.push(jour));
+
+    const entetes = Array.from(grille().querySelectorAll('thead th')).map((th) =>
+      th.textContent!.trim(),
+    );
+    expect(entetes).toEqual(['Emplacement', 'Jour 1 — 2026-08-01', 'Jour 2 — 2026-08-02']);
+    expect(cellule('Place du Drapeau', 1).textContent!.trim()).toBe('1/1');
+
+    cellule('Place du Drapeau', 1).click();
+    await fixture.whenStable();
+    expect(demandes).toEqual([2]);
+
+    // The page answers by switching day: the cursor lands on the peak, not the opening.
+    fixture.componentRef.setInput('jour', 2);
+    await fixture.whenStable();
+    expect(heure()).toBe('14:00');
+    expect(fixture.componentInstance.minutesSelectionnees()).toBe(14 * 60);
   });
 
   it('says what to do rather than showing an empty map when no plan is persisted', async () => {

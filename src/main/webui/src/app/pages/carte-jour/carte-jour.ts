@@ -253,15 +253,19 @@ export function etatStandInstant(stand: StandJour, minutes: number): StandInstan
 }
 
 /**
- * What a marker's badge shows: the number of *open* stands, which is what the
- * page's hint promises and what the marker's own tooltip says. Zero is written
- * as zero — falling back on the number of attached stands would put a « 3 » on
- * a grey badge whose tooltip reads "no stand open at that hour". A place
- * holding no stand at all that day carries no number: its colour and its
- * tooltip already say so, and « 0 » there would read as a closure.
+ * What a marker's badge shows: the number of people on the place at that
+ * instant — the filled seats covering it, summed over its stands. Zero is
+ * written as zero: a place whose stands are all closed holds nobody, and says
+ * so. A place holding no stand at all that day carries no number: its colour
+ * and its tooltip already say so, and « 0 » there would read as a closure.
  */
-export function comptePastille(marqueur: Pick<MarqueurJour, 'etat' | 'ouverts'>): string {
-  return marqueur.etat === 'sansStand' ? '' : String(marqueur.ouverts);
+export function comptePastille(marqueur: Pick<MarqueurJour, 'etat' | 'pourvus'>): string {
+  return marqueur.etat === 'sansStand' ? '' : String(marqueur.pourvus);
+}
+
+/** The seats planned there at that instant, written beside the badge; nothing when there are none. */
+export function siegesPastille(marqueur: Pick<MarqueurJour, 'sieges'>): string {
+  return marqueur.sieges > 0 ? `/${marqueur.sieges}` : '';
 }
 
 /** `09:00 – 12:00`, or several such ranges when two créneaux of the stand overlap on the instant. */

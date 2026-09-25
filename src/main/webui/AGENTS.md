@@ -105,7 +105,9 @@ as Quarkus static resources by the **Quinoa** extension (`quarkus.quinoa.*` in
   `/calendar`, `/journee` (« Journée » — one day under five
   renderings chosen by `?vue=calendrier|rail|carte|pauses|changements`: the
   calendar stand by stand, the rail animateur by animateur, the day replayed on
-  the emplacement map with one time cursor, the breaks, and what changed since
+  the emplacement map with one time cursor — and under it the load per
+  emplacement, place × span or `?charge=evenement` place × day, over the pure
+  `carte-jour/charge-emplacement.ts` —, the breaks, and what changed since
   the last publication or the last solve (`?reference=publication|resolution`,
   absent = the publication when one exists; `?lecture=animateurs` for the
   per-person reading); `?comparer=<day>` puts a second day beside the first
