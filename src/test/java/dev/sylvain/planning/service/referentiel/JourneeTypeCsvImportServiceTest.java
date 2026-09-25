@@ -25,16 +25,19 @@ import org.junit.jupiter.api.Test;
 class JourneeTypeCsvImportServiceTest {
 
     private static final String HEADER = "X-Edition-Id";
-    private static final String EDITION = "IMPORT-CSV-JT";
+    /** Drawn by the application when the edition is created (ADR 0050). */
+    private static String EDITION;
 
     @BeforeEach
     void createTheEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Import CSV journées types\"}")
+        EDITION = given().contentType("application/json")
+                .body("{\"nom\":\"Import CSV journées types\"}")
                 .when()
                 .post("/api/editions")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("id");
     }
 
     @AfterEach
