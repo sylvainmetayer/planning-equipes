@@ -67,8 +67,6 @@ public class EspaceAnimateurService {
 
     private final PlanPublieService planPublieService;
 
-    private final PlanningExportService exportService;
-
     private final ConsigneService consigneService;
 
     private final EtiquetteEditionService etiquetteService;
@@ -95,7 +93,6 @@ public class EspaceAnimateurService {
     public EspaceAnimateurService(
             ReferenceDataService referenceDataService,
             PlanPublieService planPublieService,
-            PlanningExportService exportService,
             ConsigneService consigneService,
             EtiquetteEditionService etiquetteService,
             DemandeEchangeService demandeEchangeService,
@@ -109,7 +106,6 @@ public class EspaceAnimateurService {
             JourJClock clock) {
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
-        this.exportService = exportService;
         this.consigneService = consigneService;
         this.etiquetteService = etiquetteService;
         this.demandeEchangeService = demandeEchangeService;
