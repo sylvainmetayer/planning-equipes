@@ -117,6 +117,11 @@ public class DatabaseDumpService {
             "animateur_souhait",
             "declaration_disponibilite",
             "confirmation_planning",
+            // What became of each mail to an animateur. Beside the
+            // confirmations it qualifies: without it a restore turns every
+            // person nobody could reach back into a silent one, and the night
+            // writes again to an address the relay refused.
+            "envoi_mail",
             // The ledger of what the scheduled jobs have already sent. Read
             // JournalNotificationsRepository's javadoc for why this one is not
             // optional: it is "the only thing standing between them and a
@@ -190,7 +195,9 @@ public class DatabaseDumpService {
             "kpi_historique",
             // BIGSERIAL too, V40 and V54, for the same reason.
             "plan_snapshot",
-            "publication_destinataire");
+            "publication_destinataire",
+            // BIGSERIAL too, V101.
+            "envoi_mail");
 
     /**
      * Advances each identity/serial sequence past the highest id now in its

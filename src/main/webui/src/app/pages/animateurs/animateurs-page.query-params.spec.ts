@@ -61,6 +61,7 @@ const CONFIRMATIONS = [
     affecte: true,
     confirmeLe: null,
     relanceLe: null,
+    dernierEnvoi: null,
   },
   {
     animateurId: 'bob',
@@ -69,6 +70,7 @@ const CONFIRMATIONS = [
     affecte: true,
     confirmeLe: '2026-07-02T10:00:00Z',
     relanceLe: null,
+    dernierEnvoi: null,
   },
 ];
 
@@ -96,6 +98,7 @@ async function setUpRoute(url: string) {
             confirmes: 1,
             relances: 0,
             silencieux: 1,
+            echecsEnvoi: 0,
             dernierePublicationLe: '2020-01-01T10:00:00Z',
             jamaisPublie: false,
           })),
@@ -129,6 +132,7 @@ const CAROLE_RELANCEE = {
   affecte: true,
   confirmeLe: null,
   relanceLe: '2020-01-02T10:00:00Z',
+  dernierEnvoi: null,
 };
 
 function setUp(
@@ -153,6 +157,7 @@ function setUp(
             confirmes: 1,
             relances: 0,
             silencieux: 1,
+            echecsEnvoi: 0,
             dernierePublicationLe: '2020-01-01T10:00:00Z',
             jamaisPublie: false,
           })),
@@ -295,7 +300,10 @@ describe('AnimateursPage query-param sync', () => {
 
       expect(dialog.open).toHaveBeenCalledOnce();
       const [, config] = dialog.open.mock.calls[0] as unknown as [unknown, { data: unknown }];
-      expect(config.data).toEqual({ animateur: expect.objectContaining({ id: 'bob' }) });
+      expect(config.data).toEqual({
+        animateur: expect.objectContaining({ id: 'bob' }),
+        dernierEnvoiEchec: null,
+      });
       expect(location.path()).not.toContain('edit=');
     });
 

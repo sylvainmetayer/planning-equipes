@@ -515,7 +515,8 @@ qui dit qui a été manqué. C'est cette trace que relit
 
 **Qui n'a pas répondu, et les relancer.** `synthese_confirmations` compte, parmi
 les animateurs qui ont un poste sur le planning publié, les confirmés, les
-relancés et les silencieux, et date la publication à laquelle ils répondent —
+relancés, les silencieux et les échecs d'envoi (le dernier courriel n'est pas
+parti : à appeler, ou une adresse à corriger), et date la publication à laquelle ils répondent —
 `jamaisPublie` vrai veut dire que la question n'a encore été posée à personne.
 `relancer_animateurs` envoie aux ids désignés le rappel « confirmez-vous votre
 planning ? », le même que la relance automatique de nuit, sans l'attendre. La
@@ -526,7 +527,9 @@ une seconde fois la nuit suivante, et quelqu'un que la nuit a déjà écrit
 revient dans `dejaRelancesPourCettePublication` au lieu de recevoir un second
 message. Le compte rendu ne porte que des ids : `envoyes`, `dejaConfirmes`,
 `sansEmail`, `dejaRelancesPourCettePublication`, `echecs` (un envoi qui a
-échoué est compté, pas avalé) et `sansPoste`. Refusé si rien n'a jamais été
+échoué est compté, pas avalé), `sansPoste` et `adresseRefusee` (le relais a
+refusé l'adresse au dernier envoi et la fiche n'a pas changé depuis : rien
+n'est renvoyé). Refusé si rien n'a jamais été
 publié ou si un id est inconnu — rien ne part alors, pas même aux ids valides.
 
 ## Décider ce que les animateurs ont demandé

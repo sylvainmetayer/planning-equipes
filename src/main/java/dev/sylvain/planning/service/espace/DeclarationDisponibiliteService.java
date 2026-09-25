@@ -6,6 +6,8 @@ import dev.sylvain.planning.domain.StatutDeclaration;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.RateLimitVerdict;
 import dev.sylvain.planning.service.espace.DeclarationDisponibiliteRepository.FenetreCollecte;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.notification.Notification;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.Avertissement;
@@ -86,6 +88,8 @@ public class DeclarationDisponibiliteService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final ApplicationLinks liens;
 
     /**
@@ -102,6 +106,7 @@ public class DeclarationDisponibiliteService {
             ReferenceDataService referenceDataService,
             TypologieService typologieService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             ApplicationLinks liens,
             Event<Notification> notifications) {
         this.repository = repository;
@@ -109,6 +114,7 @@ public class DeclarationDisponibiliteService {
         this.referenceDataService = referenceDataService;
         this.typologieService = typologieService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.liens = liens;
         this.notifications = notifications;
     }
@@ -223,6 +229,7 @@ public class DeclarationDisponibiliteService {
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
             if (animateur.getEmail() == null || animateur.getEmail().isBlank()) {
                 sansEmail.add(animateur.nomAffiche());
+                deliveries.recordNoAddress(animateur.getId(), MailKind.INVITATION_DECLARATION);
             } else if (inviteOne(animateur, fenetre, echecs)) {
                 envoyes++;
             }
@@ -242,8 +249,11 @@ public class DeclarationDisponibiliteService {
             return false;
         }
         try {
-            mailService.sendInvitationDeclaration(
-                    animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin());
+            deliveries.send(
+                    animateur.getId(),
+                    MailKind.INVITATION_DECLARATION,
+                    () -> mailService.sendInvitationDeclaration(
+                            animateur.getEmail(), animateur.getPrenom(), lien.get(), fenetre.debut(), fenetre.fin()));
             return true;
         } catch (RuntimeException e) {
             // The address is what the operator needs to act; the name is

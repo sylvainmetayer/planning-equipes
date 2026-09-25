@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
 import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.logging.Log;
@@ -44,13 +45,21 @@ public class NotificationDispatcher {
 
     private final MailMetrics metrics;
 
+    /** Swallows its own failures, so it cannot move the one {@code catch} below. */
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public NotificationDispatcher(
-            Mailer mailer, NotificationWriter redacteur, MailTemplates templates, MailMetrics metrics) {
+            Mailer mailer,
+            NotificationWriter redacteur,
+            MailTemplates templates,
+            MailMetrics metrics,
+            MailDeliveryLog deliveries) {
         this.mailer = mailer;
         this.redacteur = redacteur;
         this.templates = templates;
         this.metrics = metrics;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -61,18 +70,36 @@ public class NotificationDispatcher {
      */
     void surNotification(@Observes Notification notification) {
         try {
-            redacteur
-                    .rediger(notification)
-                    .ifPresent(courrier -> metrics.send(
-                            mailer,
-                            courrier.template(),
-                            templates.toMail(
-                                    courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html())));
+            redacteur.rediger(notification).ifPresent(courrier -> send(notification, courrier));
         } catch (RuntimeException e) {
             Log.errorf(
                     e,
                     "Notification %s could not be delivered; the operation it describes stands",
                     notification.getClass().getSimpleName());
+        }
+    }
+
+    /**
+     * The send, counted by {@link MailMetrics} and with its outcome written
+     * to the {@code envoi_mail} journal when the recipient is an animateur. Recorded beside the send, not
+     * instead of anything: a failure is rethrown to the {@code catch} above,
+     * which stays the one place the best-effort policy lives.
+     */
+    private void send(Notification notification, MailDraft courrier) {
+        Notification.ToAnimateur envoi = notification instanceof Notification.ToAnimateur animateur ? animateur : null;
+        try {
+            metrics.send(
+                    mailer,
+                    courrier.template(),
+                    templates.toMail(courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html()));
+        } catch (RuntimeException e) {
+            if (envoi != null) {
+                deliveries.recordFailure(envoi.animateurId(), envoi.kind(), e);
+            }
+            throw e;
+        }
+        if (envoi != null) {
+            deliveries.recordSent(envoi.animateurId(), envoi.kind());
         }
     }
 }

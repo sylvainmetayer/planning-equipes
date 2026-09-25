@@ -156,6 +156,10 @@ export function buildAnimateurSideSections(): HelpSection[] {
               text: $localize`:@@aide.rappels.def.relanceManuelle:La veille de l'événement, une nuit de plus est une nuit de trop. Sur la page Animateurs, le filtre « Accusés » isole les personnes jamais confirmées ou silencieuses depuis N jours ; sélectionnez-les et « Relancer maintenant » leur envoie le même rappel que la nuit. La règle ne change pas : une seule relance par personne et par publication, et le compte rendu nomme ceux qu'elle a laissés de côté.`,
             },
             {
+              term: $localize`:@@aide.rappels.term.echecEnvoi:Échec d'envoi`,
+              text: $localize`:@@aide.rappels.def.echecEnvoi:Le dernier courriel envoyé à cette personne n'est pas parti : elle n'est pas silencieuse, personne n'a pu la joindre. La date et la cause s'affichent au survol, et le filtre « Accusés » les isole. Quand le serveur d'envoi a refusé l'adresse, ni la relance de nuit ni « Relancer maintenant » n'y réécrivent tant que la fiche n'a pas été modifiée : corrigez l'adresse, ou appelez. Un échec temporaire, lui, n'empêche pas la relance suivante. « Parti » veut dire accepté par le serveur d'envoi, jamais lu : une boîte pleine signalée plus tard n'arrive pas jusqu'ici.`,
+            },
+            {
               term: $localize`:@@aide.rappels.term.echanges:Les demandes d'échange qui dorment`,
               text: $localize`:@@aide.rappels.def.echanges:Une demande qui attend votre décision depuis plus longtemps que le délai fixé remonte sur la page Notifications, une seule fois. L'ancienneté se compte à partir de l'accord du collègue : une demande qui attend encore sa réponse n'attend pas après vous.`,
             },

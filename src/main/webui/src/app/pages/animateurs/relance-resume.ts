@@ -59,6 +59,11 @@ export function resumeRelance(
       $localize`:@@animateurs.relancer.sansPoste:Sans poste au planning publié : ${noms(rapport.sansPoste)}:noms:`,
     );
   }
+  if (rapport.adresseRefusee.length > 0) {
+    details.push(
+      $localize`:@@animateurs.relancer.adresseRefusee:Adresse refusée au dernier envoi, fiche à corriger : ${noms(rapport.adresseRefusee)}:noms:`,
+    );
+  }
   if (rapport.echecs.length > 0) {
     details.push(
       $localize`:@@animateurs.relancer.echecs:Échec de l'envoi : ${noms(rapport.echecs)}:noms:`,
@@ -68,11 +73,11 @@ export function resumeRelance(
     titre,
     details: details.length > 0 ? details.join(' — ') : undefined,
     detailsJournal: details.length > 0 ? comptes(rapport) : undefined,
-    variant: rapport.echecs.length > 0 ? 'warning' : 'success',
+    variant: rapport.echecs.length > 0 || rapport.adresseRefusee.length > 0 ? 'warning' : 'success',
   };
 }
 
 /** The same report without a single name: counts only, for the persisted journal. */
 function comptes(rapport: RapportRelance): string {
-  return $localize`:@@animateurs.relancer.journal:${rapport.dejaConfirmes.length}:confirmes: déjà confirmé(s), ${rapport.dejaRelancesPourCettePublication.length}:relances: déjà relancé(s), ${rapport.sansEmail.length}:sansEmail: sans adresse, ${rapport.sansPoste.length}:sansPoste: sans poste, ${rapport.echecs.length}:echecs: en échec`;
+  return $localize`:@@animateurs.relancer.journal:${rapport.dejaConfirmes.length}:confirmes: déjà confirmé(s), ${rapport.dejaRelancesPourCettePublication.length}:relances: déjà relancé(s), ${rapport.sansEmail.length}:sansEmail: sans adresse, ${rapport.sansPoste.length}:sansPoste: sans poste, ${rapport.echecs.length}:echecs: en échec, ${rapport.adresseRefusee.length}:adresseRefusee: adresse(s) refusée(s)`;
 }

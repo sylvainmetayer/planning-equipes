@@ -3,6 +3,9 @@ package dev.sylvain.planning.service.notification;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.LastDelivery;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.ConfirmationPlanningService;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -56,6 +59,8 @@ public class RelanceConfirmationJob {
 
     private final Event<Notification> notifications;
 
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public RelanceConfirmationJob(
             ConfirmationPlanningService confirmationService,
@@ -63,13 +68,15 @@ public class RelanceConfirmationJob {
             ReferenceDataService referenceDataService,
             ApplicationLinks liens,
             JournalNotificationsRepository journal,
-            Event<Notification> notifications) {
+            Event<Notification> notifications,
+            MailDeliveryLog deliveries) {
         this.confirmationService = confirmationService;
         this.planPublieService = planPublieService;
         this.referenceDataService = referenceDataService;
         this.liens = liens;
         this.journal = journal;
         this.notifications = notifications;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -98,29 +105,46 @@ public class RelanceConfirmationJob {
             fiches.put(animateur.getId(), animateur);
         }
 
+        Map<String, LastDelivery> derniersEnvois = deliveries.latestByAnimateur();
         int envoyes = 0;
         for (String animateurId : silencieux) {
             Animateur fiche = fiches.get(animateurId);
             if (fiche == null) {
                 continue;
             }
-            envoyes += remind(fiche, publication.publieLe(), maintenant) ? 1 : 0;
+            envoyes += remind(fiche, derniersEnvois.get(animateurId), publication.publieLe(), maintenant) ? 1 : 0;
         }
         LOG.debugf("Confirmation reminders: %d sent", envoyes);
         return envoyes;
     }
 
-    private boolean remind(Animateur fiche, Instant publieLe, Instant maintenant) {
+    private boolean remind(Animateur fiche, LastDelivery dernierEnvoi, Instant publieLe, Instant maintenant) {
         // Keyed on the publication, so a later one — which only resets the
         // people whose planning really moved — may legitimately remind again.
         String cle = fiche.getId() + "|" + publieLe;
         if (fiche.getEmail() == null || fiche.getEmail().isBlank()) {
-            journal.claim(
+            if (journal.claim(
                     JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
                     cle,
                     fiche.getId(),
                     "Relance de confirmation impossible : aucune adresse e-mail sur la fiche."
                             + " Cette personne n'a pas accusé réception de son planning.",
+                    JournalNotificationsRepository.Severite.WARNING)) {
+                deliveries.recordNoAddress(fiche.getId(), MailKind.RELANCE_NUIT);
+            }
+            return false;
+        }
+        // The relay refused this address for good on the last send, and the
+        // fiche has not changed since: the same mail would earn the same
+        // refusal. Nothing is claimed, so the reminder leaves on the first
+        // night after somebody corrects the fiche; the alert is left once.
+        if (dernierEnvoi != null && dernierEnvoi.blocksReminder()) {
+            journal.claim(
+                    JournalNotificationsRepository.Type.RELANCE_INJOIGNABLE,
+                    cle,
+                    fiche.getId(),
+                    "Relance de confirmation non envoyée : le relais a refusé l'adresse de la fiche au dernier"
+                            + " envoi. Corrigez la fiche pour rétablir la relance.",
                     JournalNotificationsRepository.Severite.WARNING);
             return false;
         }
@@ -134,6 +158,7 @@ public class RelanceConfirmationJob {
         // write to the same person again.
         confirmationService.recordReminder(fiche.getId(), maintenant);
         notifications.fire(new Notification.RelanceConfirmation(
+                fiche.getId(),
                 fiche.getEmail(),
                 fiche.getPrenom(),
                 liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));

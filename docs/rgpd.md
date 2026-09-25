@@ -95,8 +95,8 @@ crochet.
 | Rubrique | Contenu |
 | --- | --- |
 | Catégories de personnes | Animateurs, **dont des mineurs** ; encadrants et managers |
-| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)** |
-| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**), sauvegarde, **journalisation des actions d'administration**, purge |
+| Catégories de données | Nom, prénom, **date de naissance**, adresse électronique (facultative), compétences, souhaits d'affectation, jours d'indisponibilité, **deux jetons d'accès** — celui de l'espace animateur et celui de l'abonnement au calendrier —, affectations et échanges, **déclarations de disponibilités en libre-service — dont un commentaire en champ libre**, instantanés de planning, sessions et journaux d'accès, **historique des actions (identifiants et noms de champs, sans valeurs)**, **résultat de chaque courriel envoyé à un animateur (identifiant, type, statut, catégorie d'échec, date — ni adresse ni contenu)** |
+| Traitements réalisés | Hébergement, planification et résolution, **import d'un fichier tabulaire d'animateurs fourni par l'organisation (traité en mémoire, jamais conservé)**, envoi d'e-mails (codes d'accès, plannings individuels, notifications d'échange, **rappels et relances automatiques de nuit**) **et conservation de leur résultat**, sauvegarde, **journalisation des actions d'administration**, purge |
 | Destinataires | L'organisateur via l'interface d'administration ; l'animateur via son espace **et via l'application d'agenda à laquelle il communique son adresse d'abonnement** ; les autres animateurs pour la part visible du planning (voir `securite.md`) ; le relais SMTP |
 | Mesures de sécurité | TLS et HSTS ; en-têtes CSP et `Referrer-Policy` — **les deux jetons voyagent dans l'URL** ; chiffrement des sessions ; limitation de débit sur les codes d'espace et verrouillage du formulaire de connexion ; origine injoignable autrement que par le reverse proxy ; sauvegarde nocturne automatique par `pg_dump`, en rotation dans un volume dédié, dont l'**externalisation chiffrée hors machine reste à la charge de l'exploitant** (`exploitation.md` §5) |
 
@@ -226,7 +226,7 @@ une obligation qu'on ne tiendra pas.
 ## 7. Les limites à consigner telles quelles
 
 Le registre demande de **décrire** les mesures, pas de prétendre qu'elles sont
-complètes. Quatre points sont connus et se consignent :
+complètes. Les points suivants sont connus et se consignent :
 
 - **aucune purge automatique n'existe** : la durée annoncée est tenue à la main,
   à date fixe (`exploitation.md` §6). C'est l'écart le plus exposant, parce
@@ -345,7 +345,25 @@ complètes. Quatre points sont connus et se consignent :
   `JOURNAL_RETENTION`, quatre-vingt-dix jours par défaut, appliquée chaque nuit
   — parce qu'un journal que personne ne relit deviendrait sinon un stockage de
   plus, conservé sans limite et repris dans chaque sauvegarde. Il cascade en
-  outre avec son édition, donc disparaît au plus tard à la purge annuelle.
+  outre avec son édition, donc disparaît au plus tard à la purge annuelle ;
+- **le résultat de chaque courriel envoyé à un animateur est conservé**
+  (`envoi_mail`) : planning publié ou individuel, code d'accès, invitation à
+  déclarer, relance manuelle, rappel de la veille, relance de nuit. C'est une
+  donnée nouvelle par personne, et elle se consigne comme telle. Elle est
+  minimisée sur le modèle des deux journaux ci-dessus : un **identifiant
+  d'animateur**, le type d'envoi, le statut (parti, sans adresse, échec), la
+  catégorie d'un échec (serveur d'envoi injoignable, authentification, adresse
+  refusée, échec temporaire, autre) et la date — **ni adresse, ni contenu, ni
+  réponse brute du serveur**, l'adresse se relisant sur la fiche au moment
+  d'agir. Elle sert une seule finalité : distinguer une personne que personne
+  n'a pu joindre d'une personne silencieuse, et ne pas réécrire à une adresse
+  refusée tant que la fiche n'a pas changé. **Ce n'est pas un suivi de
+  lecture** : aucun pixel, aucun lien traqué, et « parti » veut dire accepté
+  par le relais, jamais reçu ni lu. Les mineurs n'y ont rien de plus que les
+  autres. Elle n'a pas de purge propre : elle disparaît avec la fiche de
+  l'animateur et avec son édition, en cascade, donc à la purge annuelle ; elle
+  voyage dans le dump nocturne et dans l'export SQL comme les confirmations
+  qu'elle qualifie.
 
   Il trace aussi **les sorties de données**, et c'est ce qui permet de répondre,
   pendant toute la rétention, à « qui a sorti la liste des animateurs, mineurs

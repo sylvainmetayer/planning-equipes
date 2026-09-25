@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.notification;
 
 import dev.sylvain.planning.domain.DemandeEchange;
+import dev.sylvain.planning.service.mail.MailKind;
 import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -19,6 +20,17 @@ import java.util.List;
  * @see NotificationDispatcher for the delivery policy (best-effort, in one place)
  */
 public sealed interface Notification {
+
+    /**
+     * A notification written to one animateur, whose outcome is recorded in
+     * the {@code envoi_mail} journal next to the send — by id, the address
+     * staying on the fiche.
+     */
+    interface ToAnimateur {
+        String animateurId();
+
+        MailKind kind();
+    }
 
     /**
      * The colleague a demande targets is waiting for THEIR agreement — the
@@ -65,14 +77,26 @@ public sealed interface Notification {
      * @param lienEspace their espace, {@code null} when no public URL is
      *                   configured or the fiche carries no token
      */
-    record RappelVeille(String email, String prenom, LocalDate date, List<String> postes, String lienEspace)
-            implements Notification {}
+    record RappelVeille(
+            String animateurId, String email, String prenom, LocalDate date, List<String> postes, String lienEspace)
+            implements Notification, ToAnimateur {
+        @Override
+        public MailKind kind() {
+            return MailKind.RAPPEL_VEILLE;
+        }
+    }
 
     /**
      * A published planning nobody acknowledged (issue #299). Sent once and
      * once only: the status moves to RELANCE, which is what stops the loop.
      */
-    record RelanceConfirmation(String email, String prenom, String lienEspace) implements Notification {}
+    record RelanceConfirmation(String animateurId, String email, String prenom, String lienEspace)
+            implements Notification, ToAnimateur {
+        @Override
+        public MailKind kind() {
+            return MailKind.RELANCE_NUIT;
+        }
+    }
 
     /**
      * Swap requests left waiting for a decision (issue #300), counted rather

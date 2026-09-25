@@ -1680,6 +1680,13 @@
           },
           "relanceLe" : {
             "$ref" : "#/components/schemas/Instant"
+          },
+          "dernierEnvoi" : {
+            "anyOf" : [ {
+              "$ref" : "#/components/schemas/LastDelivery"
+            }, {
+              "type" : "null"
+            } ]
           }
         }
       },
@@ -3170,7 +3177,7 @@
         }
       },
       "EtatConfirmations" : {
-        "required" : [ "confirmes", "relances", "silencieux", "statut" ],
+        "required" : [ "confirmes", "relances", "silencieux", "echecsEnvoi", "statut" ],
         "type" : "object",
         "properties" : {
           "confirmes" : {
@@ -3182,6 +3189,10 @@
             "format" : "int32"
           },
           "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecsEnvoi" : {
             "type" : "integer",
             "format" : "int32"
           },
@@ -4422,6 +4433,27 @@
             "$ref" : "#/components/schemas/PlanningKpi"
           },
           "creeLe" : {
+            "$ref" : "#/components/schemas/Instant"
+          }
+        }
+      },
+      "LastDelivery" : {
+        "required" : [ "type", "statut", "envoyeLe" ],
+        "type" : "object",
+        "properties" : {
+          "type" : {
+            "type" : "string",
+            "enum" : [ "PLANNING_PUBLIE", "PLANNING_INDIVIDUEL", "CODE_ACCES", "INVITATION_DECLARATION", "RELANCE_MANUELLE", "RAPPEL_VEILLE", "RELANCE_NUIT" ]
+          },
+          "statut" : {
+            "type" : "string",
+            "enum" : [ "ENVOYE", "SANS_EMAIL", "ECHEC" ]
+          },
+          "categorieEchec" : {
+            "type" : [ "string", "null" ],
+            "enum" : [ "RELAIS_INJOIGNABLE", "AUTHENTIFICATION", "ADRESSE_REFUSEE", "TEMPORAIRE", "AUTRE" ]
+          },
+          "envoyeLe" : {
             "$ref" : "#/components/schemas/Instant"
           }
         }
@@ -6311,7 +6343,7 @@
         }
       },
       "RapportRelance" : {
-        "required" : [ "envoyes", "dejaConfirmes", "sansEmail", "dejaRelancesPourCettePublication", "echecs", "sansPoste" ],
+        "required" : [ "envoyes", "dejaConfirmes", "sansEmail", "dejaRelancesPourCettePublication", "echecs", "sansPoste", "adresseRefusee" ],
         "type" : "object",
         "properties" : {
           "envoyes" : {
@@ -6345,6 +6377,12 @@
             }
           },
           "sansPoste" : {
+            "type" : "array",
+            "items" : {
+              "type" : "string"
+            }
+          },
+          "adresseRefusee" : {
             "type" : "array",
             "items" : {
               "type" : "string"
@@ -7450,7 +7488,7 @@
         }
       },
       "SyntheseConfirmations" : {
-        "required" : [ "confirmes", "relances", "silencieux", "jamaisPublie" ],
+        "required" : [ "confirmes", "relances", "silencieux", "echecsEnvoi", "jamaisPublie" ],
         "type" : "object",
         "properties" : {
           "confirmes" : {
@@ -7462,6 +7500,10 @@
             "format" : "int32"
           },
           "silencieux" : {
+            "type" : "integer",
+            "format" : "int32"
+          },
+          "echecsEnvoi" : {
             "type" : "integer",
             "format" : "int32"
           },

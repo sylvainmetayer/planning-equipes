@@ -192,7 +192,9 @@ public class PublicationMcpTools {
                     + "planning publié, sans attendre la relance automatique de nuit. ENVOIE UN COURRIEL à chacun "
                     + "d'eux. Même message que la nuit, même règle : personne ne reçoit deux fois la relance d'une "
                     + "même publication, par la nuit ou à la main — les personnes déjà relancées, déjà confirmées, "
-                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites. "
+                    + "sans adresse ou sans poste sont rendues par id dans le compte rendu au lieu d'être écrites, tout "
+                    + "comme celles dont l'adresse a été refusée par le relais au dernier envoi (adresseRefusee) "
+                    + "tant que leur fiche n'a pas été modifiée. "
                     + "Refusé si rien n'a jamais été publié ou si un id est inconnu. Consulter synthese_confirmations "
                     + "ou lister_animateurs d'abord.",
             annotations =
@@ -211,13 +213,14 @@ public class PublicationMcpTools {
                 rapport.sansEmail(),
                 rapport.dejaRelancesPourCettePublication(),
                 rapport.echecs(),
-                rapport.sansPoste());
+                rapport.sansPoste(),
+                rapport.adresseRefusee());
     }
 
     @Tool(
             name = "synthese_confirmations",
-            description = "Accusés de réception du planning publié en trois nombres — confirmés, relancés, "
-                    + "silencieux — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
+            description = "Accusés de réception du planning publié en quatre nombres — confirmés, relancés, "
+                    + "silencieux, échecs d'envoi (le dernier courriel n'est pas parti : à appeler ou à corriger) — parmi les animateurs qui ont un poste sur ce planning, avec la date de la "
                     + "dernière publication. N'envoie rien. jamaisPublie vrai veut dire que la question n'a encore "
                     + "été posée à personne.",
             annotations =
@@ -233,6 +236,7 @@ public class PublicationMcpTools {
                 synthese.confirmes(),
                 synthese.relances(),
                 synthese.silencieux(),
+                synthese.echecsEnvoi(),
                 synthese.dernierePublicationLe(),
                 synthese.jamaisPublie());
     }
@@ -331,12 +335,18 @@ public class PublicationMcpTools {
             List<String> sansEmail,
             List<String> dejaRelancesPourCettePublication,
             List<String> echecs,
-            List<String> sansPoste) {}
+            List<String> sansPoste,
+            List<String> adresseRefusee) {}
 
     /**
      * @param dernierePublicationLe the publication the answers are about;
      *                              {@code null} when nothing was ever published
      */
     public record SyntheseConfirmationsView(
-            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
+            int confirmes,
+            int relances,
+            int silencieux,
+            int echecsEnvoi,
+            Instant dernierePublicationLe,
+            boolean jamaisPublie) {}
 }

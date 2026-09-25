@@ -171,8 +171,8 @@ public record EtatEditionView(
             boolean jamaisPublie, Instant dernierePublicationLe, int personnesAPrevenir, Statut statut) {}
 
     /** The acknowledgements of the published plan, over the people it seats. */
-    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "statut"})
-    public record EtatConfirmations(int confirmes, int relances, int silencieux, Statut statut) {}
+    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "echecsEnvoi", "statut"})
+    public record EtatConfirmations(int confirmes, int relances, int silencieux, int echecsEnvoi, Statut statut) {}
 
     /**
      * @param ouverte           the switch, as the admin set it

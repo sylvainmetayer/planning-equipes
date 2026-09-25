@@ -6,6 +6,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import dev.sylvain.planning.domain.DemandeEchange;
 import dev.sylvain.planning.service.ProductName;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.publication.AdminAddress;
@@ -31,6 +33,9 @@ class NotificationDispatcherTest {
             new ApplicationLinks(Optional.of("https://planning.example.org")),
             ProductName.neutral(),
             MailTemplates.standalone(ProductName.neutral()));
+    /** Never reached: every notification sent here goes to the admin, not to an animateur. */
+    private final MailDeliveryLog deliveries = null;
+
     private NotificationDispatcher expediteur;
     private final SimpleMeterRegistry registry = new SimpleMeterRegistry();
 
@@ -40,7 +45,8 @@ class NotificationDispatcherTest {
                 mails -> envoyes.addAll(List.of(mails)),
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                deliveries);
     }
 
     private static Notification oneSubmission() {
@@ -80,7 +86,8 @@ class NotificationDispatcherTest {
                 },
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                deliveries);
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
     }
@@ -94,7 +101,8 @@ class NotificationDispatcherTest {
                 },
                 redacteur,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                deliveries);
 
         expediteur.surNotification(oneSubmission());
 
@@ -102,6 +110,44 @@ class NotificationDispatcherTest {
                         .tag("template", "demandes-soumises")
                         .counter()
                         .count())
+                .isEqualTo(1.0);
+    }
+
+    /**
+     * A failed mail to an animateur is both counted and journalled, and
+     * still swallowed: neither record moves the one {@code catch}.
+     */
+    @Test
+    void aFailedMailToAnAnimateurIsCountedAndJournalled() {
+        List<String> journal = new ArrayList<>();
+        MailDeliveryLog recording = new MailDeliveryLog(null) {
+            @Override
+            public void recordFailure(String animateurId, MailKind kind, Throwable failure) {
+                journal.add("ECHEC " + animateurId + " " + kind);
+            }
+
+            @Override
+            public void recordSent(String animateurId, MailKind kind) {
+                journal.add("ENVOYE " + animateurId + " " + kind);
+            }
+        };
+        expediteur = new NotificationDispatcher(
+                mails -> {
+                    throw new IllegalStateException("SMTP down");
+                },
+                redacteur,
+                MailTemplates.standalone(ProductName.neutral()),
+                new MailMetrics(registry),
+                recording);
+
+        assertThatCode(() -> expediteur.surNotification(new Notification.RelanceConfirmation(
+                        "A1", "a1@example.org", "Alice", "https://planning.example.org/animateur/t")))
+                .doesNotThrowAnyException();
+
+        assertThat(journal).containsExactly("ECHEC A1 RELANCE_NUIT");
+        assertThat(registry.find("planning.mail.failures").counters().stream()
+                        .mapToDouble(c -> c.count())
+                        .sum())
                 .isEqualTo(1.0);
     }
 
@@ -118,7 +164,8 @@ class NotificationDispatcherTest {
                 mails -> envoyes.addAll(List.of(mails)),
                 failing,
                 MailTemplates.standalone(ProductName.neutral()),
-                new MailMetrics(registry));
+                new MailMetrics(registry),
+                deliveries);
 
         assertThatCode(() -> expediteur.surNotification(oneSubmission())).doesNotThrowAnyException();
         assertThat(envoyes).isEmpty();

@@ -344,12 +344,15 @@ function publication(etat: EtatEdition): LigneEtat {
 }
 
 function confirmations(etat: EtatEdition): LigneEtat {
-  const { confirmes, relances, silencieux, statut } = etat.confirmations;
-  const detail =
+  const { confirmes, relances, silencieux, echecsEnvoi, statut } = etat.confirmations;
+  let detail =
     statut === 'A_FAIRE'
       ? $localize`:@@accueil.detail.confirmations.aFaire:Les accusés de réception suivent la publication`
       : $localize`:@@accueil.detail.confirmations.comptage:${confirmes}:confirmes: confirmé(s) · ${relances}:relances: relancé(s) · ${silencieux}:silencieux: silencieux`;
-  const restants = relances + silencieux > 0;
+  if (statut !== 'A_FAIRE' && echecsEnvoi > 0) {
+    detail += $localize`:@@accueil.detail.confirmations.echecs: · ${echecsEnvoi}:echecs: échec(s) d'envoi`;
+  }
+  const restants = relances + silencieux + echecsEnvoi > 0;
   return {
     id: 'confirmations',
     titre: $localize`:@@accueil.ligne.confirmations:Accusés de réception`,

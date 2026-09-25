@@ -777,9 +777,20 @@ normal sur une page rafraîchie. Confirmer avant toute publication répond `409`
 `GET /api/animateurs/confirmations` — une ligne par animateur, `NON_VU`
 compris, pour la colonne de la page Animateurs.
 
-`GET /api/animateurs/confirmations/synthese` — les mêmes réponses en trois
-nombres (confirmés, relancés, silencieux), comptés parmi les personnes qui ont
-un poste sur le plan publié, avec la date de cette publication.
+`GET /api/animateurs/confirmations/synthese` — les mêmes réponses en quatre
+nombres (confirmés, relancés, silencieux, échecs d'envoi), comptés parmi les
+personnes qui ont un poste sur le plan publié, avec la date de cette
+publication.
+
+**« A répondu » et « a pu être joint » sont deux questions**, et le statut ne
+porte que la première. `dernierEnvoi`, à côté, dit ce qu'est devenu le dernier
+courriel envoyé à la personne **depuis la dernière modification de sa fiche**
+(`statut` : `ENVOYE`, `SANS_EMAIL` ou `ECHEC`, avec `categorieEchec`) — `null`
+quand il n'y en a pas. Une personne non confirmée dont le dernier envoi est en
+échec compte dans `echecsEnvoi`, et **pas** parmi les relancés ni les
+silencieux : ce qu'elle appelle, c'est un appel ou une adresse corrigée, pas
+une relance de plus. `ENVOYE` veut dire accepté par le relais, jamais reçu :
+l'écran ne l'affiche pas comme une preuve.
 
 Trois statuts, et l'absence de ligne en base **vaut** `NON_VU` : la remise à
 zéro est une suppression, il n'y a donc jamais deux façons d'écrire « cette
@@ -816,12 +827,15 @@ qui ferme cette porte-là — une personne déjà en `RELANCE` est refusée, et 
 une republication qui bouge réellement son emploi du temps la remet à `NON_VU`,
 ce qui rouvre la relance. Le compte rendu ne
 porte que des ids, un par liste — `envoyes`, `dejaConfirmes`, `sansEmail`,
-`dejaRelancesPourCettePublication`, `echecs`, `sansPoste` — et un envoi
+`dejaRelancesPourCettePublication`, `echecs`, `sansPoste`, `adresseRefusee` — et un envoi
 échoué est **compté**, pas avalé : le geste est explicite, contrairement à
 la notification de nuit. Un échec **rend la clé** et laisse une alerte sur
 l'écran Notifications : le statut n'a pas bougé, la personne reste silencieuse,
 et réessayer est possible — de la main comme de la nuit. Une fiche sans adresse
-laisse la même trace. Refusé `400` tant que rien n'a jamais été publié, ou si
+laisse la même trace. **Une adresse que le relais a refusée pour de bon** (un
+refus 5xx au dernier envoi) revient dans `adresseRefusee`, sans rien envoyer,
+tant que la fiche n'a pas été modifiée — la nuit applique la même règle ; un
+échec temporaire (4xx) ne retient rien. Refusé `400` tant que rien n'a jamais été publié, ou si
 un id ne désigne personne — alors rien ne part, pas même aux ids valides qui le
 précédaient.
 

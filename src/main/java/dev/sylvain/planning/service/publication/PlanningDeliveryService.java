@@ -4,6 +4,8 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
@@ -35,12 +37,18 @@ public class PlanningDeliveryService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public PlanningDeliveryService(
-            PlanPublieService planPublieService, PlanningExportService planningExportService, MailService mailService) {
+            PlanPublieService planPublieService,
+            PlanningExportService planningExportService,
+            MailService mailService,
+            MailDeliveryLog deliveries) {
         this.planPublieService = planPublieService;
         this.planningExportService = planningExportService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -94,11 +102,15 @@ public class PlanningDeliveryService {
 
     private void send(PlanningEvenement planning, Animateur animateur) {
         byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, animateur.getId());
-        mailService.sendIndividualPlanning(
-                animateur.getEmail(),
-                animateur.getPrenom(),
-                planningExportService.lienEspaceAnimateur(planning, animateur.getId()),
-                pdf,
-                PlanningExportService.planningFileName(animateur.nomAffiche(), "pdf"));
+        String lienEspace = planningExportService.lienEspaceAnimateur(planning, animateur.getId());
+        deliveries.send(
+                animateur.getId(),
+                MailKind.PLANNING_INDIVIDUEL,
+                () -> mailService.sendIndividualPlanning(
+                        animateur.getEmail(),
+                        animateur.getPrenom(),
+                        lienEspace,
+                        pdf,
+                        PlanningExportService.planningFileName(animateur.nomAffiche(), "pdf")));
     }
 }

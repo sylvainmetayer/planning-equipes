@@ -5,6 +5,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.JdbcEditionScope;
 import dev.sylvain.planning.service.RateLimitVerdict;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.MailService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -60,6 +62,8 @@ public class EspaceAccesService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final CodeRequestLimiter limiteurDemandesCode;
 
     @Inject
@@ -69,12 +73,14 @@ public class EspaceAccesService {
             EditionContext editionContext,
             ReferenceDataService referenceDataService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             CodeRequestLimiter limiteurDemandesCode) {
         this.dataSource = dataSource;
         this.scope = scope;
         this.editionContext = editionContext;
         this.referenceDataService = referenceDataService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.limiteurDemandesCode = limiteurDemandesCode;
     }
 
@@ -137,7 +143,10 @@ public class EspaceAccesService {
         // valid code behind that the animateur never received? It does — but a
         // replaced code is strictly safer than the previous one, and the next
         // request will replace it again. The send failure itself propagates.
-        mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code);
+        deliveries.send(
+                animateurId,
+                MailKind.CODE_ACCES,
+                () -> mailService.sendAccessCode(animateur.getEmail(), animateur.getPrenom(), code));
         return new CodeEnvoye(mask(animateur.getEmail()));
     }
 

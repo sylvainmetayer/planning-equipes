@@ -57,7 +57,7 @@ function etat(partial: Partial<EtatEdition> = {}): EtatEdition {
       personnesAPrevenir: 0,
       statut: 'A_FAIRE',
     },
-    confirmations: { confirmes: 0, relances: 0, silencieux: 0, statut: 'A_FAIRE' },
+    confirmations: { confirmes: 0, relances: 0, silencieux: 0, echecsEnvoi: 0, statut: 'A_FAIRE' },
     foire: { ouverte: true, demandesEnAttente: 0, statut: 'A_FAIRE' },
     aTraiter: {
       aujourdhui: '2026-07-10',
@@ -201,7 +201,15 @@ describe('AccueilPage', () => {
 
   it('links every line to its screen, tab and filter included', async () => {
     editionsApi.etat.mockResolvedValue(
-      etat({ confirmations: { confirmes: 1, relances: 0, silencieux: 2, statut: 'ATTENTION' } }),
+      etat({
+        confirmations: {
+          confirmes: 1,
+          relances: 0,
+          silencieux: 2,
+          echecsEnvoi: 0,
+          statut: 'ATTENTION',
+        },
+      }),
     );
     const page = createPage();
     await vi.waitFor(() => expect(page.etatEdition()).not.toBeNull());

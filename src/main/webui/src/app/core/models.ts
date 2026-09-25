@@ -2648,6 +2648,37 @@ export interface ConfirmationView {
   affecte: boolean;
   confirmeLe: string | null;
   relanceLe: string | null;
+  /**
+   * The last mail sent to them since their fiche last changed, `null` when
+   * there is none. `ENVOYE` means accepted by the relay, never « received »:
+   * only a failure is worth showing.
+   */
+  dernierEnvoi: DernierEnvoi | null;
+}
+
+/** Which mail to an animateur a line of the delivery journal records. */
+export type TypeEnvoiMail =
+  | 'PLANNING_PUBLIE'
+  | 'PLANNING_INDIVIDUEL'
+  | 'CODE_ACCES'
+  | 'INVITATION_DECLARATION'
+  | 'RELANCE_MANUELLE'
+  | 'RAPPEL_VEILLE'
+  | 'RELANCE_NUIT';
+
+/** What became of a mail, as far as the server can know. */
+export type StatutEnvoiMail = 'ENVOYE' | 'SANS_EMAIL' | 'ECHEC';
+
+/** Why a mail did not leave; only `ADRESSE_REFUSEE` holds the reminders back. */
+export type CategorieEchecEnvoi =
+  'RELAIS_INJOIGNABLE' | 'AUTHENTIFICATION' | 'ADRESSE_REFUSEE' | 'TEMPORAIRE' | 'AUTRE';
+
+/** The last mail to one animateur (`LastDelivery` on the server). */
+export interface DernierEnvoi {
+  type: TypeEnvoiMail;
+  statut: StatutEnvoiMail;
+  categorieEchec: CategorieEchecEnvoi | null;
+  envoyeLe: string;
 }
 
 /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
@@ -2666,6 +2697,8 @@ export interface SyntheseConfirmations {
   confirmes: number;
   relances: number;
   silencieux: number;
+  /** Not confirmed, and the last mail to them failed — counted apart from the two above. */
+  echecsEnvoi: number;
   dernierePublicationLe: string | null;
   jamaisPublie: boolean;
 }
@@ -2687,6 +2720,8 @@ export interface RapportRelance {
   dejaRelancesPourCettePublication: string[];
   echecs: string[];
   sansPoste: string[];
+  /** The relay refused their address on the last send and the fiche has not changed since. */
+  adresseRefusee: string[];
 }
 
 /**
@@ -3643,6 +3678,7 @@ export interface EtatConfirmations {
   confirmes: number;
   relances: number;
   silencieux: number;
+  echecsEnvoi: number;
   statut: StatutEtat;
 }
 

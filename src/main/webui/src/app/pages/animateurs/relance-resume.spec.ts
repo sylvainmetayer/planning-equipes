@@ -13,6 +13,7 @@ function rapport(patch: Partial<RapportRelance> = {}): RapportRelance {
     dejaRelancesPourCettePublication: [],
     echecs: [],
     sansPoste: [],
+    adresseRefusee: [],
     ...patch,
   };
 }
@@ -68,5 +69,16 @@ describe('resumeRelance', () => {
     const resume = resumeRelance(rapport({ sansEmail: ['zz'] }), nameOf);
 
     expect(resume.details).toBe('Sans adresse e-mail : zz');
+  });
+
+  it('names the refused addresses apart, and counts them in the journal', () => {
+    const resume = resumeRelance(rapport({ adresseRefusee: ['a'] }), nameOf);
+
+    expect(resume.details).toContain(
+      'Adresse refusée au dernier envoi, fiche à corriger : Alice Martin',
+    );
+    expect(resume.detailsJournal).toContain('1 adresse(s) refusée(s)');
+    expect(resume.detailsJournal).not.toContain('Alice');
+    expect(resume.variant).toBe('warning');
   });
 });

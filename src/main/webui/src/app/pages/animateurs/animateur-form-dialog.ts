@@ -29,6 +29,12 @@ const NIVEAUX: NiveauCompetence[] = ['DEBUTANT', 'AUTONOME', 'REFERENT'];
 
 export interface AnimateurFormData {
   animateur: Animateur | null;
+  /**
+   * « Dernier envoi en échec » and why, when the last mail to this fiche did
+   * not leave; absent otherwise. Saving the fiche lifts it: a send older than
+   * the fiche says nothing about the address it now holds.
+   */
+  dernierEnvoiEchec?: string | null;
 }
 
 /**
@@ -74,6 +80,7 @@ export class AnimateurFormDialog {
   private readonly crud = inject(ReferenceCrudService);
 
   protected readonly editingId = signal<string | null>(this.data.animateur?.id ?? null);
+  protected readonly dernierEnvoiEchec = this.data.dernierEnvoiEchec ?? '';
   private readonly initial = toDraft(this.data.animateur);
   protected readonly draft = signal<AnimateurDraft>(this.initial);
 

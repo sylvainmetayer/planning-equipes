@@ -5,6 +5,8 @@ import dev.sylvain.planning.domain.ParametresNotifications;
 import dev.sylvain.planning.domain.PlanningEvenement;
 import dev.sylvain.planning.domain.PosteAffectation;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.PlanPublieService;
 import dev.sylvain.planning.service.publication.PublicationDiffService;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
@@ -58,6 +60,8 @@ public class RappelVeilleJob {
 
     private final Event<Notification> notifications;
 
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public RappelVeilleJob(
             PlanPublieService planPublieService,
@@ -65,13 +69,15 @@ public class RappelVeilleJob {
             PublicationDiffService diffService,
             ApplicationLinks liens,
             JournalNotificationsRepository journal,
-            Event<Notification> notifications) {
+            Event<Notification> notifications,
+            MailDeliveryLog deliveries) {
         this.planPublieService = planPublieService;
         this.referenceDataService = referenceDataService;
         this.diffService = diffService;
         this.liens = liens;
         this.journal = journal;
         this.notifications = notifications;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -134,7 +140,7 @@ public class RappelVeilleJob {
             // Not a failure to retry: a fiche without an address stays without
             // one until somebody edits it, so the claim also stops this alert
             // from reappearing every hour.
-            journal.claim(
+            boolean premiere = journal.claim(
                     JournalNotificationsRepository.Type.RAPPEL_VEILLE_INJOIGNABLE,
                     cle,
                     fiche.getId(),
@@ -142,12 +148,16 @@ public class RappelVeilleJob {
                             + " Cette personne est affectée le " + NotificationWriter.JOUR.format(demain)
                             + " et doit être prévenue à la main.",
                     JournalNotificationsRepository.Severite.WARNING);
+            if (premiere) {
+                deliveries.recordNoAddress(fiche.getId(), MailKind.RAPPEL_VEILLE);
+            }
             return false;
         }
         if (!journal.claim(JournalNotificationsRepository.Type.RAPPEL_VEILLE, cle, fiche.getId())) {
             return false;
         }
         notifications.fire(new Notification.RappelVeille(
+                fiche.getId(),
                 fiche.getEmail(),
                 fiche.getPrenom(),
                 demain,

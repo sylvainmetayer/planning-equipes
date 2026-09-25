@@ -110,6 +110,7 @@ class IsolationEditionStructurelleTest {
             "confirmation_planning",
             "parametres_notifications",
             "notification_planifiee",
+            "envoi_mail",
             "journal_action",
             "consigne_edition",
             "consigne_edition_fenetre",

@@ -75,6 +75,7 @@ const SYNTHESE_VIDE = {
   confirmes: 0,
   relances: 0,
   silencieux: 0,
+  echecsEnvoi: 0,
   dernierePublicationLe: null,
   jamaisPublie: true,
 };
@@ -262,6 +263,7 @@ describe('AnimateursPage table', () => {
         dejaRelancesPourCettePublication: [],
         echecs: [],
         sansPoste: [],
+        adresseRefusee: [],
       })),
     };
     TestBed.configureTestingModule({
@@ -377,6 +379,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'relance',
@@ -384,6 +387,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'silencieux',
@@ -391,6 +395,7 @@ describe('AnimateursPage table', () => {
         affecte: true,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
       {
         animateurId: 'sansPoste',
@@ -398,6 +403,7 @@ describe('AnimateursPage table', () => {
         affecte: false,
         confirmeLe: null,
         relanceLe: null,
+        dernierEnvoi: null,
       },
     ]);
     await rendre([
@@ -429,6 +435,7 @@ describe('AnimateursPage table', () => {
       dejaRelancesPourCettePublication: [],
       echecs: [],
       sansPoste: [],
+      adresseRefusee: [],
     });
     await rendre([
       person('alice', { prenom: 'Alice', nom: 'Martin' }),
@@ -464,6 +471,7 @@ describe('AnimateursPage table', () => {
       confirmes: 12,
       relances: 3,
       silencieux: 5,
+      echecsEnvoi: 0,
       dernierePublicationLe: '2026-07-01T10:00:00Z',
       jamaisPublie: false,
     });

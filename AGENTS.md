@@ -229,7 +229,11 @@ Single Quarkus service, no separate solver microservice. Package root:
   so a new case does not compile until its wording exists), and
   `NotificationDispatcher` observes it and owns the single `catch`. Do not add
   a `notifierXxx` to `MailService`: that would put two opposite policies behind
-  identically-shaped methods again, which is what this split removed.
+  identically-shaped methods again, which is what this split removed. What
+  became of a mail to an animateur is recorded **beside** either policy, never
+  instead of it: `service/mail/MailDeliveryLog` writes the `envoi_mail`
+  journal (an id, a kind, an outcome, a failure category — never an address),
+  rethrows exactly what the send threw, and swallows only its own failures.
 - **A mail's wording lives in a Qute template, never in Java.** One pair per
   mail under `src/main/resources/templates/mail/` — `<name>.txt` and
   `<name>.html`, the latter built on the shared `layout.html` (deployment logo,

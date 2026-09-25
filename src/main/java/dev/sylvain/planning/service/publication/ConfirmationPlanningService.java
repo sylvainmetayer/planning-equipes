@@ -3,6 +3,8 @@ package dev.sylvain.planning.service.publication;
 import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
+import dev.sylvain.planning.service.mail.LastDelivery;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import dev.sylvain.planning.service.solve.PlanSnapshotService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -37,14 +39,18 @@ public class ConfirmationPlanningService {
 
     private final PlanPublieService planPublieService;
 
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public ConfirmationPlanningService(
             ConfirmationPlanningRepository repository,
             ReferenceDataService referenceDataService,
-            PlanPublieService planPublieService) {
+            PlanPublieService planPublieService,
+            MailDeliveryLog deliveries) {
         this.repository = repository;
         this.referenceDataService = referenceDataService;
         this.planPublieService = planPublieService;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -53,6 +59,12 @@ public class ConfirmationPlanningService {
      * @param affecte holds at least one seat in the published plan — the only
      *                people the question is even asked of; the others show as
      *                "sans objet" rather than as silent
+     * @param dernierEnvoi the last mail sent to them since their fiche last
+     *                changed, {@code null} when there is none. Kept beside
+     *                {@code statut} rather than folded into it: « has
+     *                answered » and « could be reached » are two questions,
+     *                and a failed send is what tells a person nobody could
+     *                reach from a person who stays silent
      */
     @Schema(requiredProperties = {"affecte"})
     public record ConfirmationView(
@@ -61,7 +73,8 @@ public class ConfirmationPlanningService {
             String statut,
             boolean affecte,
             Instant confirmeLe,
-            Instant relanceLe) {}
+            Instant relanceLe,
+            @Schema(nullable = true) LastDelivery dernierEnvoi) {}
 
     /** What the espace reads back after the click: its own new state, and nothing about anybody else. */
     public record AccuseReception(String statut, Instant confirmeLe) {}
@@ -81,10 +94,20 @@ public class ConfirmationPlanningService {
      *                              {@code null} while nothing was ever published
      * @param jamaisPublie          true before the first publication: the three
      *                              counts are then all zero, and mean nothing
+     * @param echecsEnvoi           not confirmed, and the last mail to them
+     *                              failed: counted apart from the relaunched
+     *                              and the silent, because the gesture they
+     *                              call for is a phone call or a corrected
+     *                              address, not another reminder
      */
-    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "jamaisPublie"})
+    @Schema(requiredProperties = {"confirmes", "relances", "silencieux", "echecsEnvoi", "jamaisPublie"})
     public record SyntheseConfirmations(
-            int confirmes, int relances, int silencieux, Instant dernierePublicationLe, boolean jamaisPublie) {}
+            int confirmes,
+            int relances,
+            int silencieux,
+            int echecsEnvoi,
+            Instant dernierePublicationLe,
+            boolean jamaisPublie) {}
 
     /**
      * Records the animateur's own click. Idempotent: clicking twice keeps the
@@ -141,6 +164,7 @@ public class ConfirmationPlanningService {
     /** The whole edition's answers, one line per animateur, sorted by display name. */
     public List<ConfirmationView> byAnimateur() {
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
+        Map<String, LastDelivery> envois = deliveries.latestByAnimateur();
         Collection<String> affectes = assignedAnimateurs();
         List<ConfirmationView> vues = new ArrayList<>();
         for (Animateur animateur : referenceDataService.listAnimateurs()) {
@@ -151,7 +175,8 @@ public class ConfirmationPlanningService {
                     (stored == null ? StatutConfirmation.NON_VU : stored.statut()).name(),
                     affectes.contains(animateur.getId()),
                     stored == null ? null : stored.confirmeLe(),
-                    stored == null ? null : stored.relanceLe()));
+                    stored == null ? null : stored.relanceLe(),
+                    envois.get(animateur.getId())));
         }
         vues.sort(Comparator.comparing(ConfirmationView::nomAffiche, String.CASE_INSENSITIVE_ORDER));
         return List.copyOf(vues);
@@ -161,22 +186,29 @@ public class ConfirmationPlanningService {
     public SyntheseConfirmations synthese() {
         PlanSnapshotService.SnapshotMeta publication = planPublieService.lastPublication();
         if (publication == null) {
-            return new SyntheseConfirmations(0, 0, 0, null, true);
+            return new SyntheseConfirmations(0, 0, 0, 0, null, true);
         }
         Map<String, ConfirmationPlanningRepository.Confirmation> stockees = repository.byAnimateur();
+        Map<String, LastDelivery> envois = deliveries.latestByAnimateur();
         int confirmes = 0;
         int relances = 0;
         int silencieux = 0;
+        int echecsEnvoi = 0;
         for (String animateurId : assignedAnimateurs()) {
             ConfirmationPlanningRepository.Confirmation stored = stockees.get(animateurId);
             StatutConfirmation statut = stored == null ? StatutConfirmation.NON_VU : stored.statut();
+            LastDelivery dernier = envois.get(animateurId);
+            if (statut != StatutConfirmation.CONFIRME && dernier != null && dernier.failed()) {
+                echecsEnvoi++;
+                continue;
+            }
             switch (statut) {
                 case CONFIRME -> confirmes++;
                 case RELANCE -> relances++;
                 case NON_VU -> silencieux++;
             }
         }
-        return new SyntheseConfirmations(confirmes, relances, silencieux, publication.publieLe(), false);
+        return new SyntheseConfirmations(confirmes, relances, silencieux, echecsEnvoi, publication.publieLe(), false);
     }
 
     /**

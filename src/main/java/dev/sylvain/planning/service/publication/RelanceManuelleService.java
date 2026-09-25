@@ -4,6 +4,9 @@ import dev.sylvain.planning.domain.Animateur;
 import dev.sylvain.planning.domain.StatutConfirmation;
 import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.espace.ApplicationLinks;
+import dev.sylvain.planning.service.mail.LastDelivery;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.notification.JournalNotificationsRepository;
 import dev.sylvain.planning.service.referentiel.ReferenceDataService;
 import io.quarkus.logging.Log;
@@ -67,6 +70,8 @@ public class RelanceManuelleService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     @Inject
     public RelanceManuelleService(
             PlanPublieService planPublieService,
@@ -74,13 +79,15 @@ public class RelanceManuelleService {
             ReferenceDataService referenceDataService,
             JournalNotificationsRepository journal,
             ApplicationLinks liens,
-            MailService mailService) {
+            MailService mailService,
+            MailDeliveryLog deliveries) {
         this.planPublieService = planPublieService;
         this.confirmationService = confirmationService;
         this.referenceDataService = referenceDataService;
         this.journal = journal;
         this.liens = liens;
         this.mailService = mailService;
+        this.deliveries = deliveries;
     }
 
     /**
@@ -99,6 +106,12 @@ public class RelanceManuelleService {
      *                                         left, so a retry is possible
      * @param sansPoste                        no seat in the published plan:
      *                                         nothing was ever asked of them
+     * @param adresseRefusee                   the relay refused this address
+     *                                         for good on the last send, and
+     *                                         the fiche has not changed since:
+     *                                         writing again would earn the same
+     *                                         refusal. Correcting the fiche
+     *                                         lifts it
      */
     @Schema(
             requiredProperties = {
@@ -107,7 +120,8 @@ public class RelanceManuelleService {
                 "sansEmail",
                 "dejaRelancesPourCettePublication",
                 "echecs",
-                "sansPoste"
+                "sansPoste",
+                "adresseRefusee"
             })
     public record RapportRelance(
             List<String> envoyes,
@@ -115,7 +129,8 @@ public class RelanceManuelleService {
             List<String> sansEmail,
             List<String> dejaRelancesPourCettePublication,
             List<String> echecs,
-            List<String> sansPoste) {}
+            List<String> sansPoste,
+            List<String> adresseRefusee) {}
 
     /**
      * Reminds the given animateurs now.
@@ -151,12 +166,14 @@ public class RelanceManuelleService {
         }
 
         Tri tri = new Tri();
+        Map<String, LastDelivery> derniersEnvois = deliveries.latestByAnimateur();
         Instant maintenant = Instant.now();
         for (String animateurId : retenus) {
             remindOne(
                     animateurId,
                     fiches.get(animateurId),
                     reponses.get(animateurId),
+                    derniersEnvois.get(animateurId),
                     animateurId + "|" + publieLe,
                     maintenant,
                     tri);
@@ -164,17 +181,19 @@ public class RelanceManuelleService {
         return tri.rapport();
     }
 
-    /** The six lists the report is made of, filled one animateur at a time. */
+    /** The seven lists the report is made of, filled one animateur at a time. */
     private record Tri(
             List<String> envoyes,
             List<String> dejaConfirmes,
             List<String> sansEmail,
             List<String> dejaRelances,
             List<String> echecs,
-            List<String> sansPoste) {
+            List<String> sansPoste,
+            List<String> adresseRefusee) {
 
         Tri() {
             this(
+                    new ArrayList<>(),
                     new ArrayList<>(),
                     new ArrayList<>(),
                     new ArrayList<>(),
@@ -190,13 +209,16 @@ public class RelanceManuelleService {
                     List.copyOf(sansEmail),
                     List.copyOf(dejaRelances),
                     List.copyOf(echecs),
-                    List.copyOf(sansPoste));
+                    List.copyOf(sansPoste),
+                    List.copyOf(adresseRefusee));
         }
     }
 
     /**
      * Reminds one animateur, or says in {@code tri} why not.
      *
+     * @param dernier the last mail to this person since their fiche last
+     *                changed; {@code null} when there is none
      * @param cle the key both the manual and the nightly reminder claim for
      *            this person and this publication
      */
@@ -204,6 +226,7 @@ public class RelanceManuelleService {
             String animateurId,
             Animateur fiche,
             ConfirmationPlanningService.ConfirmationView reponse,
+            LastDelivery dernier,
             String cle,
             Instant maintenant,
             Tri tri) {
@@ -226,6 +249,13 @@ public class RelanceManuelleService {
                     animateurId,
                     "Relance impossible : aucune adresse e-mail sur la fiche.",
                     JournalNotificationsRepository.Severite.WARNING);
+            deliveries.recordNoAddress(animateurId, MailKind.RELANCE_MANUELLE);
+            return;
+        }
+        // Insisting on an address the relay refused for good would only
+        // earn the same refusal; editing the fiche is what lifts this.
+        if (dernier != null && dernier.blocksReminder()) {
+            tri.adresseRefusee().add(animateurId);
             return;
         }
         // Already reminded for this planning, whichever hand did it: the
@@ -239,10 +269,13 @@ public class RelanceManuelleService {
             return;
         }
         try {
-            mailService.sendRelanceConfirmation(
-                    fiche.getEmail(),
-                    fiche.getPrenom(),
-                    liens.espaceAnimateur(fiche.getAccessToken()).orElse(null));
+            deliveries.send(
+                    animateurId,
+                    MailKind.RELANCE_MANUELLE,
+                    () -> mailService.sendRelanceConfirmation(
+                            fiche.getEmail(),
+                            fiche.getPrenom(),
+                            liens.espaceAnimateur(fiche.getAccessToken()).orElse(null)));
             // Recorded only once the mail has left: the status is what the
             // screen, the « silent since N days » filter and the summary all
             // read, and moving it for a send that failed would count a

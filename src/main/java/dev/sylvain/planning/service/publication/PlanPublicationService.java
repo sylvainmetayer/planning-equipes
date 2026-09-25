@@ -8,6 +8,8 @@ import dev.sylvain.planning.service.BusinessError;
 import dev.sylvain.planning.service.EditionContext;
 import dev.sylvain.planning.service.espace.DemandeEchangeService;
 import dev.sylvain.planning.service.export.PlanningExportService;
+import dev.sylvain.planning.service.mail.MailDeliveryLog;
+import dev.sylvain.planning.service.mail.MailKind;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementAnimateur;
 import dev.sylvain.planning.service.publication.PublicationDiffService.ChangementVacation;
 import dev.sylvain.planning.service.publication.PublicationDiffService.Identite;
@@ -83,6 +85,8 @@ public class PlanPublicationService {
 
     private final MailService mailService;
 
+    private final MailDeliveryLog deliveries;
+
     private final SolverJobService solverJobService;
 
     private final ValidationPrerequisService prerequisService;
@@ -107,6 +111,7 @@ public class PlanPublicationService {
             ReferenceDataService referenceDataService,
             PlanningExportService planningExportService,
             MailService mailService,
+            MailDeliveryLog deliveries,
             SolverJobService solverJobService,
             ValidationPrerequisService prerequisService,
             EditionContext editionContext,
@@ -123,6 +128,7 @@ public class PlanPublicationService {
         this.referenceDataService = referenceDataService;
         this.planningExportService = planningExportService;
         this.mailService = mailService;
+        this.deliveries = deliveries;
         this.solverJobService = solverJobService;
         this.prerequisService = prerequisService;
         this.editionContext = editionContext;
@@ -544,26 +550,30 @@ public class PlanPublicationService {
             Map<String, List<Vacation>> referencesParAnimateur,
             DestinatairePublication destinataire) {
         if (destinataire.email() == null || destinataire.email().isBlank()) {
+            deliveries.recordNoAddress(destinataire.animateurId(), MailKind.PLANNING_PUBLIE);
             return StatutEnvoi.SANS_EMAIL;
         }
         try {
             byte[] pdf = planningExportService.exportAnimateurPdfPublie(planning, destinataire.animateurId());
             Animateur animateur = animateur(destinataire.animateurId());
-            mailService.sendPlanningPublie(
-                    destinataire.email(),
-                    pdf,
-                    PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
-                    new MailService.PlanningPublie(
-                            animateur == null ? null : animateur.getPrenom(),
-                            planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
-                            destinataire.premiereDiffusion(),
-                            destinataire.changements(),
-                            destinataire.demandes(),
-                            consigneService.lignesJourneesModifiees(datesConcernees(
-                                    planning,
-                                    reference,
-                                    referencesParAnimateur.get(destinataire.animateurId()),
-                                    destinataire.animateurId()))));
+            deliveries.send(
+                    destinataire.animateurId(),
+                    MailKind.PLANNING_PUBLIE,
+                    () -> mailService.sendPlanningPublie(
+                            destinataire.email(),
+                            pdf,
+                            PlanningExportService.planningFileName(destinataire.nomAffiche(), "pdf"),
+                            new MailService.PlanningPublie(
+                                    animateur == null ? null : animateur.getPrenom(),
+                                    planningExportService.lienEspaceAnimateur(planning, destinataire.animateurId()),
+                                    destinataire.premiereDiffusion(),
+                                    destinataire.changements(),
+                                    destinataire.demandes(),
+                                    consigneService.lignesJourneesModifiees(datesConcernees(
+                                            planning,
+                                            reference,
+                                            referencesParAnimateur.get(destinataire.animateurId()),
+                                            destinataire.animateurId())))));
             return StatutEnvoi.ENVOYE;
         } catch (RuntimeException e) {
             Log.errorf(e, "Failed to mail the published planning of animateur %s", destinataire.animateurId());

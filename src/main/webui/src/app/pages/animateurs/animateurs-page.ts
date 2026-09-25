@@ -28,6 +28,7 @@ import { AnimateursApi } from '../../core/api/animateurs-api';
 import { intlLocale } from '../../core/locale';
 import {
   Animateur,
+  CategorieEchecEnvoi,
   ConfirmationView,
   StatutConfirmation,
   SyntheseConfirmations,
@@ -65,6 +66,7 @@ import {
   ModeAccuses,
   SILENCE_JOURS_DEFAUT,
   readModeAccuses,
+  sendFailed,
   readNeverReminded,
   keptByAcknowledgement,
 } from './confirmation-filter';
@@ -232,6 +234,9 @@ export class AnimateursPage implements OnInit {
     if (synthese.jamaisPublie) {
       return publication;
     }
+    if (synthese.echecsEnvoi > 0) {
+      return $localize`:@@animateurs.syntheseAvecEchecs:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: · Échecs d'envoi ${synthese.echecsEnvoi}:echecs: — ${publication}:publication:`;
+    }
     return $localize`:@@animateurs.synthese:Confirmés ${synthese.confirmes}:confirmes: · Relancés ${synthese.relances}:relances: · Silencieux ${synthese.silencieux}:silencieux: — ${publication}:publication:`;
   });
 
@@ -383,7 +388,8 @@ export class AnimateursPage implements OnInit {
     keepViewInQueryParams(() => ({
       ...sortQueryParams(this.sort()),
       q: optionalParam(this.filtre()),
-      confirmation: this.accuses() === 'jamais' ? 'jamais' : null,
+      confirmation:
+        this.accuses() === 'jamais' || this.accuses() === 'echec' ? this.accuses() : null,
       silence: this.accuses() === 'silence' ? String(this.silenceJours()) : null,
       relance: this.accuses() !== 'tous' && this.neverReminded() ? 'jamais' : null,
       typologie: optionalParam(this.typologie()),
@@ -504,6 +510,9 @@ export class AnimateursPage implements OnInit {
     if (!confirmation?.affecte) {
       return '';
     }
+    if (sendFailed(confirmation)) {
+      return $localize`:@@animateurs.confirmation.echecEnvoi:Échec d'envoi`;
+    }
     return CONFIRMATION_LABELS[confirmation.statut]();
   }
 
@@ -514,6 +523,11 @@ export class AnimateursPage implements OnInit {
    */
   protected confirmationDate(animateur: Animateur): string | null {
     const confirmation = this.confirmations().get(animateur.id);
+    if (sendFailed(confirmation) && confirmation?.dernierEnvoi) {
+      const date = new Date(confirmation.dernierEnvoi.envoyeLe).toLocaleString(intlLocale());
+      const cause = echecEnvoiCause(confirmation.dernierEnvoi.categorieEchec);
+      return $localize`:@@animateurs.confirmation.echecLe:Échec d'envoi le ${date}:date: : ${cause}:cause:`;
+    }
     if (confirmation?.confirmeLe) {
       const date = new Date(confirmation.confirmeLe).toLocaleString(intlLocale());
       return $localize`:@@animateurs.confirmation.confirmeLe:Confirmé le ${date}:date:`;
@@ -597,12 +611,36 @@ export class AnimateursPage implements OnInit {
   }
 
   private openDialog(animateur: Animateur | null): void {
-    this.dialog.open<AnimateurFormDialog, AnimateurFormData, boolean>(AnimateurFormDialog, {
-      data: { animateur },
-      width: '44rem',
-      maxWidth: '95vw',
-      autoFocus: 'first-tabbable',
+    const ref = this.dialog.open<AnimateurFormDialog, AnimateurFormData, boolean>(
+      AnimateurFormDialog,
+      {
+        data: { animateur, dernierEnvoiEchec: animateur ? this.lastSendFailure(animateur) : null },
+        width: '44rem',
+        maxWidth: '95vw',
+        autoFocus: 'first-tabbable',
+      },
+    );
+    // A saved fiche lifts its send failure: the column must say so at once.
+    ref.afterClosed().subscribe((saved) => {
+      if (saved) {
+        void this.chargerConfirmations();
+      }
     });
+  }
+
+  /**
+   * « Dernier envoi en échec », with its date and cause, for the fiche — for
+   * anybody, seat or not: an access code that bounced is worth the same
+   * warning as a reminder.
+   */
+  private lastSendFailure(animateur: Animateur): string | null {
+    const envoi = this.confirmations().get(animateur.id)?.dernierEnvoi;
+    if (envoi?.statut !== 'ECHEC') {
+      return null;
+    }
+    const date = new Date(envoi.envoyeLe).toLocaleString(intlLocale());
+    const cause = echecEnvoiCause(envoi.categorieEchec);
+    return $localize`:@@animateurs.form.dernierEnvoiEchec:Dernier envoi en échec le ${date}:date: : ${cause}:cause:. Enregistrer la fiche corrigée rétablit les relances.`;
   }
 
   protected async remove(animateur: Animateur): Promise<void> {
@@ -641,6 +679,22 @@ export class AnimateursPage implements OnInit {
  * Called from a method, never at module scope: `$localize` only resolves once
  * `main.ts` has loaded the translations.
  */
+/** Why the last mail did not leave, in the organiser's words. */
+function echecEnvoiCause(categorie: CategorieEchecEnvoi | null): string {
+  switch (categorie) {
+    case 'ADRESSE_REFUSEE':
+      return $localize`:@@animateurs.echecEnvoi.adresseRefusee:adresse refusée par le relais — corriger la fiche`;
+    case 'TEMPORAIRE':
+      return $localize`:@@animateurs.echecEnvoi.temporaire:échec temporaire, la prochaine relance repartira`;
+    case 'RELAIS_INJOIGNABLE':
+      return $localize`:@@animateurs.echecEnvoi.relaisInjoignable:serveur d'envoi injoignable`;
+    case 'AUTHENTIFICATION':
+      return $localize`:@@animateurs.echecEnvoi.authentification:identifiants du serveur d'envoi refusés`;
+    default:
+      return $localize`:@@animateurs.echecEnvoi.autre:cause inconnue`;
+  }
+}
+
 const CONFIRMATION_LABELS: Record<StatutConfirmation, () => string> = {
   NON_VU: () => $localize`:@@animateurs.confirmation.nonVu:Silencieux`,
   CONFIRME: () => $localize`:@@animateurs.confirmation.confirme:Confirmé`,
@@ -719,7 +773,11 @@ function rankConfirmation(
   const confirmation = confirmations.get(animateur.id);
   if (!confirmation?.affecte) {
     // Nothing was asked of them: last, because there is nothing to chase.
-    return 3;
+    return 4;
+  }
+  if (sendFailed(confirmation)) {
+    // Nobody could reach them: first, because a reminder will not.
+    return -1;
   }
   return CONFIRMATION_RANKS[confirmation.statut];
 }
