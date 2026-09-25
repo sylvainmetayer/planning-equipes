@@ -168,7 +168,7 @@ describe('KeyboardShortcutsService', () => {
   it('puts the caret in the page filter on `/`, selecting what is already typed', () => {
     start();
     const filtre = document.createElement('input');
-    filtre.setAttribute('data-page-filter', '');
+    filtre.dataset['pageFilter'] = '';
     filtre.value = 'village';
     document.body.append(filtre);
     const event = frapper('/');
@@ -260,7 +260,7 @@ describe('KeyboardShortcutsService', () => {
       const { dialog, router } = start();
       TestBed.inject(SingleKeyShortcutsService).set(false);
       const filtre = document.createElement('input');
-      filtre.setAttribute('data-page-filter', '');
+      filtre.dataset['pageFilter'] = '';
       document.body.append(filtre);
 
       frapper('g');

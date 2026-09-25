@@ -12,6 +12,12 @@ class FakeRouter {
   navigateByUrl = vi.fn(async () => true);
 }
 
+/** Runs the interceptor on `url` with a next handler answering `status`. */
+function interceptWithError(url: string, status: number): Observable<HttpEvent<unknown>> {
+  const next = vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status, url })));
+  return TestBed.runInInjectionContext(() => authInterceptor(new HttpRequest('GET', url), next));
+}
+
 describe('authInterceptor', () => {
   let router: FakeRouter;
   let sessionDrafts: ReturnType<typeof memoryStorage>;
@@ -33,20 +39,14 @@ describe('authInterceptor', () => {
   it('keeps the session drafts on the 401 that sends to /login', async () => {
     writeDraft(sessionDrafts, draftKey('animateur', 'a1'), {}, null);
 
-    await expect(firstValueFrom(interceptEnErreur('/api/stands', 401))).rejects.toBeTruthy();
+    await expect(firstValueFrom(interceptWithError('/api/stands', 401))).rejects.toBeTruthy();
 
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
     expect(sessionDrafts.length).toBe(1);
   });
 
-  /** Runs the interceptor on `url` with a next handler answering `status`. */
-  function interceptEnErreur(url: string, status: number): Observable<HttpEvent<unknown>> {
-    const next = vi.fn().mockReturnValue(throwError(() => new HttpErrorResponse({ status, url })));
-    return TestBed.runInInjectionContext(() => authInterceptor(new HttpRequest('GET', url), next));
-  }
-
   it('renvoie vers /login sur un 401 des API admin, en repropageant l’erreur', async () => {
-    await expect(firstValueFrom(interceptEnErreur('/api/stands', 401))).rejects.toMatchObject({
+    await expect(firstValueFrom(interceptWithError('/api/stands', 401))).rejects.toMatchObject({
       status: 401,
     });
     expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
@@ -54,20 +54,20 @@ describe('authInterceptor', () => {
 
   it('laisse tranquilles les routes publiques par conception', async () => {
     await expect(
-      firstValueFrom(interceptEnErreur('/api/espace-animateur/jeton-1', 401)),
+      firstValueFrom(interceptWithError('/api/espace-animateur/jeton-1', 401)),
     ).rejects.toMatchObject({ status: 401 });
-    await expect(firstValueFrom(interceptEnErreur('/api/auth/me', 401))).rejects.toMatchObject({
+    await expect(firstValueFrom(interceptWithError('/api/auth/me', 401))).rejects.toMatchObject({
       status: 401,
     });
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });
 
   it('ne redirige ni sur un autre statut, ni hors /api', async () => {
-    await expect(firstValueFrom(interceptEnErreur('/api/stands', 500))).rejects.toMatchObject({
+    await expect(firstValueFrom(interceptWithError('/api/stands', 500))).rejects.toMatchObject({
       status: 500,
     });
     await expect(
-      firstValueFrom(interceptEnErreur('/i18n/messages.en.json', 401)),
+      firstValueFrom(interceptWithError('/i18n/messages.en.json', 401)),
     ).rejects.toMatchObject({ status: 401 });
     expect(router.navigateByUrl).not.toHaveBeenCalled();
   });

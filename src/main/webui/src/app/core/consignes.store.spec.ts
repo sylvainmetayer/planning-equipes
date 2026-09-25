@@ -67,7 +67,7 @@ describe('ConsignesStore', () => {
     expect(store.consigneOf('2026-07-11')?.motif).toBe('Canicule');
     expect(store.consigneOf('2026-07-13')).toBeNull();
     expect(store.consigneOf(null)).toBeNull();
-    expect([...store.creneauxAjoutes()].sort()).toEqual([41, 42, 43]);
+    expect([...store.creneauxAjoutes()].sort((a, b) => a - b)).toEqual([41, 42, 43]);
     expect(store.error()).toBe('');
   });
 

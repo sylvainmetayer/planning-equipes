@@ -144,6 +144,41 @@ async function fill(
   await fixture.whenStable();
 }
 
+/** The typical day of the DEPUIS_STAND tests: one rule asking for three seats, one dated opening. */
+function pavillon(): Stand {
+  return stand('PAVILLON', {
+    nom: 'Pavillon',
+    effectifMax: 4,
+    horaires: [
+      {
+        id: 7,
+        mode: 'OUVERTURE',
+        jours: 'TOUS',
+        joursSemaine: [],
+        dateDebut: null,
+        dateFin: null,
+        dates: [],
+        fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }],
+        motif: null,
+      },
+    ],
+    ouvertures: [
+      {
+        id: 11,
+        date: '2026-07-10',
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        motif: null,
+        effectif: null,
+      },
+    ],
+  });
+}
+
+function modelStandSelect(fixture: ComponentFixture<StandBulkEditDialog>): Element | null {
+  return root(fixture).querySelector('mat-select[name="standModele"]');
+}
+
 describe('StandBulkEditDialog', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -394,50 +429,15 @@ describe('StandBulkEditDialog', () => {
     expect(submit(fixture).disabled).toBe(false);
   });
 
-  /** The typical day of the DEPUIS_STAND tests: one rule asking for three seats, one dated opening. */
-  function pavillon(): Stand {
-    return stand('PAVILLON', {
-      nom: 'Pavillon',
-      effectifMax: 4,
-      horaires: [
-        {
-          id: 7,
-          mode: 'OUVERTURE',
-          jours: 'TOUS',
-          joursSemaine: [],
-          dateDebut: null,
-          dateFin: null,
-          dates: [],
-          fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }],
-          motif: null,
-        },
-      ],
-      ouvertures: [
-        {
-          id: 11,
-          date: '2026-07-10',
-          heureDebut: '10:00',
-          heureFin: '12:00',
-          motif: null,
-          effectif: null,
-        },
-      ],
-    });
-  }
-
-  function selectStandModele(fixture: ComponentFixture<StandBulkEditDialog>): Element | null {
-    return root(fixture).querySelector('mat-select[name="standModele"]');
-  }
-
   it('offers the model stand selector under DEPUIS_STAND only, and stays disabled until one is chosen', async () => {
     const { fixture } = mount([stand('s1')], { modeles: [pavillon()] });
     await fixture.whenStable();
-    expect(selectStandModele(fixture)).toBeNull();
+    expect(modelStandSelect(fixture)).toBeNull();
 
     await fill(fixture, { horaires: { mode: 'DEPUIS_STAND', horaires: [], source: null } });
 
-    expect(selectStandModele(fixture)).not.toBeNull();
-    expect(nomAccessible(root(fixture), selectStandModele(fixture)!)).toBe('Stand modèle');
+    expect(modelStandSelect(fixture)).not.toBeNull();
+    expect(nomAccessible(root(fixture), modelStandSelect(fixture)!)).toBe('Stand modèle');
     // No rule editor: the model stand is the rules.
     expect(boutonAjouterHoraire(fixture)).toBeUndefined();
     // Naming no model changes nothing, like "Définir" without an emplacement.

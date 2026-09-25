@@ -19,6 +19,11 @@ type CardInternals = {
   saveParametresLegaux: () => Promise<void>;
 };
 
+function createCard(): CardInternals {
+  return TestBed.createComponent(ParametresLegauxCard)
+    .componentInstance as unknown as CardInternals;
+}
+
 describe('ParametresLegauxCard', () => {
   const constraintsApi = {
     legalParameters: vi.fn(),
@@ -37,11 +42,6 @@ describe('ParametresLegauxCard', () => {
       ],
     });
   });
-
-  function createCard(): CardInternals {
-    return TestBed.createComponent(ParametresLegauxCard)
-      .componentInstance as unknown as CardInternals;
-  }
 
   it('loads every field and sends them all back, so a save never resets one it did not show', async () => {
     constraintsApi.legalParameters.mockResolvedValue({

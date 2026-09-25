@@ -11,6 +11,13 @@ import { ScenarioImportService } from '../../core/scenario-import.service';
 import { SolverJobService } from '../../core/solver-job.service';
 import { ImportScenarioCard } from './import-scenario-card';
 
+/** A `File` jsdom can read: its own implementation has no `text()`. */
+function file(nom: string, contenu: string): File {
+  const created = new File([contenu], nom);
+  Object.defineProperty(created, 'text', { value: async () => contenu });
+  return created;
+}
+
 describe('ImportScenarioCard', () => {
   const scenarioImport = { importer: vi.fn(), recapitulatif: vi.fn() };
   const editingLocked = signal(false);
@@ -41,13 +48,6 @@ describe('ImportScenarioCard', () => {
     fixture = TestBed.createComponent(ImportScenarioCard);
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
-  }
-
-  /** A `File` jsdom can read: its own implementation has no `text()`. */
-  function file(nom: string, contenu: string): File {
-    const created = new File([contenu], nom);
-    Object.defineProperty(created, 'text', { value: async () => contenu });
-    return created;
   }
 
   async function choisirFichier(racine: HTMLElement, nom = 'festival.yaml'): Promise<void> {

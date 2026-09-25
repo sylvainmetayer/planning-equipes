@@ -85,6 +85,11 @@ type PageInternals = {
   edit: (stand: Stand) => void;
 };
 
+/** The page reads the snapshot of the route it is created under: navigate first, create after. */
+async function arriveWith(edit: string): Promise<void> {
+  await TestBed.inject(Router).navigateByUrl(`/?edit=${edit}`);
+}
+
 describe('StandsPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = {
@@ -164,11 +169,6 @@ describe('StandsPage', () => {
    * first — the row has to exist before its form can be filled.
    */
   describe('the edit deep link', () => {
-    /** The page reads the snapshot of the route it is created under: navigate first, create after. */
-    async function arriveWith(edit: string): Promise<void> {
-      await TestBed.inject(Router).navigateByUrl(`/?edit=${edit}`);
-    }
-
     it('opens the form of the stand named in the URL once the référentiel is in', async () => {
       await arriveWith('S1');
       createPage([stand({ id: 'S1', nom: 'Escape' })]);

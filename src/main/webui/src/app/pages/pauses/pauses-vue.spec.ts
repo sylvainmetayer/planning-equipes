@@ -81,39 +81,39 @@ function rapport(overrides: Partial<RapportPauses> = {}): RapportPauses {
   };
 }
 
+/** Renders the view as the Journée page feeds it: the report, the day and the filters as inputs. */
+async function mount(
+  data: RapportPauses | null,
+  entrees: { date?: string; recherche?: string; stand?: string; animateur?: string } = {},
+): Promise<ComponentFixture<PausesView>> {
+  TestBed.resetTestingModule();
+  TestBed.configureTestingModule({
+    providers: [provideZonelessChangeDetection(), provideRouter([])],
+  });
+  const fixture = TestBed.createComponent(PausesView);
+  fixture.componentRef.setInput('rapport', data);
+  for (const [cle, valeur] of Object.entries(entrees)) {
+    fixture.componentRef.setInput(cle, valeur);
+  }
+  await fixture.whenStable();
+  return fixture;
+}
+
+function text(fixture: ComponentFixture<PausesView>): string {
+  return (fixture.nativeElement as HTMLElement).textContent ?? '';
+}
+
+function standTitles(fixture: ComponentFixture<PausesView>): string[] {
+  return Array.from(
+    (fixture.nativeElement as HTMLElement).querySelectorAll('.pauses-stand-titre'),
+  ).map((titre) => titre.textContent!.replace(/\s+/g, ' ').trim());
+}
+
 describe('PausesView', () => {
-  /** Renders the view as the Journée page feeds it: the report, the day and the filters as inputs. */
-  async function mount(
-    data: RapportPauses | null,
-    entrees: { date?: string; recherche?: string; stand?: string; animateur?: string } = {},
-  ): Promise<ComponentFixture<PausesView>> {
-    TestBed.resetTestingModule();
-    TestBed.configureTestingModule({
-      providers: [provideZonelessChangeDetection(), provideRouter([])],
-    });
-    const fixture = TestBed.createComponent(PausesView);
-    fixture.componentRef.setInput('rapport', data);
-    for (const [cle, valeur] of Object.entries(entrees)) {
-      fixture.componentRef.setInput(cle, valeur);
-    }
-    await fixture.whenStable();
-    return fixture;
-  }
-
-  function text(fixture: ComponentFixture<PausesView>): string {
-    return (fixture.nativeElement as HTMLElement).textContent ?? '';
-  }
-
-  function titresStands(fixture: ComponentFixture<PausesView>): string[] {
-    return Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll('.pauses-stand-titre'),
-    ).map((titre) => titre.textContent!.replace(/\s+/g, ' ').trim());
-  }
-
   it('shows the first day grouped by stand, with the deadline and the relay', async () => {
     const fixture = await mount(rapport());
 
-    expect(titresStands(fixture)[0]).toContain('Village des jeux');
+    expect(standTitles(fixture)[0]).toContain('Village des jeux');
     const contenu = text(fixture);
     expect(contenu).toContain('Alice Martin');
     expect(contenu).toContain('13:00–20:00');
@@ -139,7 +139,7 @@ describe('PausesView', () => {
     expect(contenu).toContain('30 min');
     expect(contenu).toContain("Personne d'autre sur le stand");
     expect(contenu).toContain("en même temps qu'une autre pause");
-    expect(titresStands(fixture)[0]).toContain('1 sans relais');
+    expect(standTitles(fixture)[0]).toContain('1 sans relais');
   });
 
   // The page's day selector lists every day of the plan, the report only the

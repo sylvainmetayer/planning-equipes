@@ -5,6 +5,10 @@ import { ValidationsApi } from './api/validations-api';
 import { ProgressionValidations, ValidationJournee } from './models';
 import { ValidationsStore } from './validations.store';
 
+function injectStore(): ValidationsStore {
+  return TestBed.inject(ValidationsStore);
+}
+
 // What the progress banner says, and what it stays silent about. The figure
 // itself is the server's; what is tested here is the wording rule — an edition
 // still being typed in must never read « 0 sur 0 ».
@@ -23,10 +27,6 @@ describe('ValidationsStore', () => {
     withdraw: ReturnType<typeof vi.fn>;
   };
 
-  function store(): ValidationsStore {
-    return TestBed.inject(ValidationsStore);
-  }
-
   beforeEach(() => {
     api = {
       progression: vi.fn().mockResolvedValue(progression({})),
@@ -40,12 +40,12 @@ describe('ValidationsStore', () => {
   });
 
   it('reste muet tant que rien n’a été lu', () => {
-    expect(store().libelle()).toBe('');
-    expect(store().pourcentage()).toBeNull();
+    expect(injectStore().libelle()).toBe('');
+    expect(injectStore().pourcentage()).toBeNull();
   });
 
   it('ne dit rien sur une édition sans créneau : « 0 sur 0 » n’est pas une information', async () => {
-    const instance = store();
+    const instance = injectStore();
 
     await instance.reload();
 
@@ -57,7 +57,7 @@ describe('ValidationsStore', () => {
     api.progression.mockResolvedValue(
       progression({ journees: 12, journeesValidees: 3, joursValides: ['2026-07-08'] }),
     );
-    const instance = store();
+    const instance = injectStore();
 
     await instance.reload();
 
@@ -76,7 +76,7 @@ describe('ValidationsStore', () => {
       commentaire: null,
     };
     api.accept.mockResolvedValue({ validation, verrouPose: false });
-    const instance = store();
+    const instance = injectStore();
 
     await instance.accept({ jour: '2026-07-08' });
 
@@ -86,7 +86,7 @@ describe('ValidationsStore', () => {
 
   it('relit après un retrait, et garde le message d’erreur quand la lecture échoue', async () => {
     api.withdraw.mockResolvedValue(undefined);
-    const instance = store();
+    const instance = injectStore();
     await instance.withdraw('V1');
     expect(api.progression).toHaveBeenCalled();
 

@@ -65,10 +65,13 @@ describe('stand-brouillon', () => {
     ).toBe(true);
   });
 
-  it('restaure le brouillon tel qu’il a été laissé, ligne tapée comprise', () => {
+  it('restores the draft as it was left, typed line included', () => {
     const draft = withRule(toDraft(STAND), { saisie: '10:0', deplie: true });
+    // What the storage hands back: the draft once serialized, not a structured clone.
+    const serialized = JSON.stringify(draft);
+    const stored: unknown = JSON.parse(serialized);
 
-    expect(readStandDraft(JSON.parse(JSON.stringify(draft)), 's1')).toEqual(draft);
+    expect(readStandDraft(stored, 's1')).toEqual(draft);
   });
 
   it('ne restaure jamais le brouillon d’un autre stand', () => {

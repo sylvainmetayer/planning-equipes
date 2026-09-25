@@ -150,8 +150,9 @@ describe('buildJourneeStands', () => {
 
     expect(fenetre.heureFin).toBe('…');
     expect(fenetre.label).toContain('07:00–…');
-    // Still placed to midnight: that is how far the grid would have had to reach.
-    expect(fenetre.widthPercent).toBeCloseTo((17 / 17) * 100);
+    // Still placed to midnight: that is how far the grid would have had to reach,
+    // so the window spans the grid's whole 17 hours.
+    expect(fenetre.widthPercent).toBeCloseTo(100);
   });
 
   it('hatches a window outside every vacation where it falls, and says so', () => {

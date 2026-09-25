@@ -17,14 +17,14 @@ class Host {
   place = 'Salle des fêtes';
 }
 
-describe('NewWindowLink', () => {
-  async function render(): Promise<HTMLElement> {
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
-    const fixture = TestBed.createComponent(Host);
-    await fixture.whenStable();
-    return fixture.nativeElement as HTMLElement;
-  }
+async function render(): Promise<HTMLElement> {
+  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  const fixture = TestBed.createComponent(Host);
+  await fixture.whenStable();
+  return fixture.nativeElement as HTMLElement;
+}
 
+describe('NewWindowLink', () => {
   it('appends the notice to a link opening a new window, after its own content', async () => {
     const root = await render();
 

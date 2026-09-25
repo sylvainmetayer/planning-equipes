@@ -116,7 +116,7 @@ describe('libelleJourSemaine', () => {
       'SATURDAY',
       'SUNDAY',
     ];
-    expect(jours.map(libelleJourSemaine)).toEqual([
+    expect(jours.map((day) => libelleJourSemaine(day))).toEqual([
       'Lundi',
       'Mardi',
       'Mercredi',
@@ -152,23 +152,25 @@ describe('libelleJour', () => {
   });
 });
 
-describe('decrireJour', () => {
-  function jour(overrides: Partial<JourResolu> = {}): JourResolu {
-    return { date: '2026-07-08', mode: 'OUVERTURE', fenetres: [], source: 'REGLE', ...overrides };
-  }
+function resolvedDay(overrides: Partial<JourResolu> = {}): JourResolu {
+  return { date: '2026-07-08', mode: 'OUVERTURE', fenetres: [], source: 'REGLE', ...overrides };
+}
 
+describe('decrireJour', () => {
   it('says a day nothing states anything about is open all day', () => {
-    expect(decrireJour(jour({ mode: null }))).toBe('Ouvert toute la journée');
+    expect(decrireJour(resolvedDay({ mode: null }))).toBe('Ouvert toute la journée');
   });
 
   it('lists the windows a day is open on', () => {
-    const text = decrireJour(jour({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }));
+    const text = decrireJour(
+      resolvedDay({ fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
+    );
     expect(text).toBe('Ouvert 10:00 → 12:00');
   });
 
   it('joins several windows of the same day', () => {
     const text = decrireJour(
-      jour({
+      resolvedDay({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
           { heureDebut: '14:00', heureFin: null },
@@ -180,7 +182,7 @@ describe('decrireJour', () => {
 
   it('shows the seats of a window that names them, and nothing for the others', () => {
     const text = decrireJour(
-      jour({
+      resolvedDay({
         fenetres: [
           { heureDebut: '10:00', heureFin: '12:00' },
           { heureDebut: '14:00', heureFin: '20:00', effectif: 3 },
@@ -191,14 +193,14 @@ describe('decrireJour', () => {
   });
 
   it('says "fermeture" for a window running to the end of the day', () => {
-    expect(decrireJour(jour({ fenetres: [{ heureDebut: '14:00', heureFin: null }] }))).toContain(
-      'fermeture',
-    );
+    expect(
+      decrireJour(resolvedDay({ fenetres: [{ heureDebut: '14:00', heureFin: null }] })),
+    ).toContain('fermeture');
   });
 
   it('distinguishes a closing day from an opening one', () => {
     const ferme = decrireJour(
-      jour({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
+      resolvedDay({ mode: 'FERMETURE', fenetres: [{ heureDebut: '10:00', heureFin: '12:00' }] }),
     );
     expect(ferme).toContain('Fermé');
     expect(ferme).not.toContain('Ouvert');

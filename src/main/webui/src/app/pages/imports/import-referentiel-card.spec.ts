@@ -45,6 +45,15 @@ function rapport(partial: Partial<RapportImportReferentiel> = {}): RapportImport
   };
 }
 
+async function mount(): Promise<ComponentFixture<ImportReferentielCard>> {
+  const fixture = TestBed.createComponent(ImportReferentielCard);
+  fixture.componentRef.setInput('target', 'STANDS');
+  fixture.componentRef.setInput('colonnes', 'Colonnes id, nom, typologies');
+  fixture.componentRef.setInput('aide', 'Plusieurs typologies se séparent par « | ».');
+  await fixture.whenStable();
+  return fixture;
+}
+
 describe('ImportReferentielCard', () => {
   const api = { analyse: vi.fn(), importer: vi.fn(), telechargerExemple: vi.fn() };
   const confirm = { ask: vi.fn(async () => true) };
@@ -69,15 +78,6 @@ describe('ImportReferentielCard', () => {
     });
   });
 
-  async function monter(): Promise<ComponentFixture<ImportReferentielCard>> {
-    const fixture = TestBed.createComponent(ImportReferentielCard);
-    fixture.componentRef.setInput('target', 'STANDS');
-    fixture.componentRef.setInput('colonnes', 'Colonnes id, nom, typologies');
-    fixture.componentRef.setInput('aide', 'Plusieurs typologies se séparent par « | ».');
-    await fixture.whenStable();
-    return fixture;
-  }
-
   type Internals = {
     nomFichier: { set: (v: string) => void };
     analyser: () => Promise<void>;
@@ -87,7 +87,7 @@ describe('ImportReferentielCard', () => {
 
   it('renders each row with its action, its reason and the typologies about to be created', async () => {
     api.analyse.mockResolvedValue(rapport());
-    const fixture = await monter();
+    const fixture = await mount();
     const card = fixture.componentInstance as unknown as Internals;
 
     card.nomFichier.set('stands.csv');
@@ -105,7 +105,7 @@ describe('ImportReferentielCard', () => {
   it('writes only what the preview accepted, and only after a confirmation', async () => {
     api.analyse.mockResolvedValue(rapport());
     api.importer.mockResolvedValue(rapport({ applied: true, rejected: 1, created: 1 }));
-    const fixture = await monter();
+    const fixture = await mount();
     const card = fixture.componentInstance as unknown as Internals;
 
     card.nomFichier.set('stands.csv');
@@ -126,7 +126,7 @@ describe('ImportReferentielCard', () => {
   it('refuses to write when the operator says no', async () => {
     api.analyse.mockResolvedValue(rapport());
     confirm.ask.mockResolvedValue(false);
-    const fixture = await monter();
+    const fixture = await mount();
     const card = fixture.componentInstance as unknown as Internals;
 
     card.nomFichier.set('stands.csv');
@@ -138,7 +138,7 @@ describe('ImportReferentielCard', () => {
 
   it('offers nothing to write when every row is refused', async () => {
     api.analyse.mockResolvedValue(rapport({ accepted: 0, created: 0, rejected: 2 }));
-    const fixture = await monter();
+    const fixture = await mount();
     const card = fixture.componentInstance as unknown as Internals;
 
     card.nomFichier.set('stands.csv');

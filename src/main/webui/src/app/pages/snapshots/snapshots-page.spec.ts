@@ -49,6 +49,10 @@ type PageInternals = {
   message: () => string;
 };
 
+function createPage(): PageInternals {
+  return TestBed.createComponent(SnapshotsPage).componentInstance as unknown as PageInternals;
+}
+
 describe('SnapshotsPage', () => {
   let liste: PlanSnapshot[] = [];
   const store = {
@@ -84,10 +88,6 @@ describe('SnapshotsPage', () => {
       ],
     });
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(SnapshotsPage).componentInstance as unknown as PageInternals;
-  }
 
   it('restores without the override when the server raises no staleness', async () => {
     store.restaurer.mockResolvedValue({ restaure: true, affectations: 190 });

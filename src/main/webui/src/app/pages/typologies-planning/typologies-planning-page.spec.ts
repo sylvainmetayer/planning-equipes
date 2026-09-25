@@ -44,6 +44,17 @@ type PageInternals = {
   load: () => Promise<void>;
 };
 
+function mount(): {
+  fixture: ComponentFixture<TypologiesPlanningPage>;
+  page: TypologiesPlanningPage & PageInternals;
+} {
+  const fixture = TestBed.createComponent(TypologiesPlanningPage);
+  return {
+    fixture,
+    page: fixture.componentInstance as TypologiesPlanningPage & PageInternals,
+  };
+}
+
 describe('TypologiesPlanningPage', () => {
   const planningApi = { typologiesReport: vi.fn() };
 
@@ -75,21 +86,10 @@ describe('TypologiesPlanningPage', () => {
     });
   });
 
-  function monter(): {
-    fixture: ComponentFixture<TypologiesPlanningPage>;
-    page: TypologiesPlanningPage & PageInternals;
-  } {
-    const fixture = TestBed.createComponent(TypologiesPlanningPage);
-    return {
-      fixture,
-      page: fixture.componentInstance as TypologiesPlanningPage & PageInternals,
-    };
-  }
-
   // The card it replaces loaded on demand, because it sat on a referential page
   // nobody opened for the plan. This screen has no other subject.
   it('reads the plan as soon as it is opened', async () => {
-    const { page } = monter();
+    const { page } = mount();
     await page.load();
 
     expect(planningApi.typologiesReport).toHaveBeenCalled();
@@ -97,7 +97,7 @@ describe('TypologiesPlanningPage', () => {
   });
 
   it('says how many rows the filters hide, so a short table is not read as an empty plan', async () => {
-    const { page } = monter();
+    const { page } = mount();
     await page.load();
 
     page.search.set('ambiance');
@@ -108,7 +108,7 @@ describe('TypologiesPlanningPage', () => {
   });
 
   it('puts every filter back, and takes an empty minimum for « no minimum »', async () => {
-    const { page } = monter();
+    const { page } = mount();
     await page.load();
 
     page.setCapMinimum('3');
@@ -132,7 +132,7 @@ describe('TypologiesPlanningPage', () => {
    * Every name is a link to that person's timeline, on every rendering.
    */
   it('links every animateur to their own timeline', async () => {
-    const { fixture, page } = monter();
+    const { fixture, page } = mount();
     await page.load();
     await fixture.whenStable();
 
@@ -150,7 +150,7 @@ describe('TypologiesPlanningPage', () => {
   });
 
   it('draws each of the four renderings without failing', async () => {
-    const { fixture, page } = monter();
+    const { fixture, page } = mount();
     await page.load();
 
     for (const onglet of ['table', 'barres', 'heatmap', 'cartes'] as const) {
@@ -162,7 +162,7 @@ describe('TypologiesPlanningPage', () => {
 
   it('reports a failed read instead of leaving the screen silent', async () => {
     planningApi.typologiesReport.mockRejectedValue(new Error('boom'));
-    const { page } = monter();
+    const { page } = mount();
 
     await page.load();
 
@@ -176,7 +176,7 @@ describe('TypologiesPlanningPage', () => {
       typologies: [ligne({ postes: 0, heures: 0, animateursAffectes: [], heuresParJour: {} })],
       jours: [],
     });
-    const { page } = monter();
+    const { page } = mount();
 
     await page.load();
 

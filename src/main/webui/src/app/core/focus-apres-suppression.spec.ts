@@ -10,6 +10,13 @@ import { focusApresSuppression } from './focus-apres-suppression';
 @Component({ selector: 'app-fake-form', template: '' })
 class FakeForm {}
 
+function hostWith(html: string): HTMLElement {
+  const host = document.createElement('div');
+  host.innerHTML = html;
+  document.body.appendChild(host);
+  return host;
+}
+
 describe('focusApresSuppression', () => {
   let injector: Injector;
   let appRef: ApplicationRef;
@@ -25,13 +32,6 @@ describe('focusApresSuppression', () => {
   async function render(): Promise<void> {
     appRef.tick();
     await Promise.resolve();
-  }
-
-  function hostWith(html: string): HTMLElement {
-    const host = document.createElement('div');
-    host.innerHTML = html;
-    document.body.appendChild(host);
-    return host;
   }
 
   it('moves the focus to the requested element once the row is gone', async () => {

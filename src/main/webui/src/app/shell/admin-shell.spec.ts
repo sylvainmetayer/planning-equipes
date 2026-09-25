@@ -70,6 +70,59 @@ type ShellInternals = {
   logout: () => Promise<void>;
 };
 
+// A router navigation swaps the content but leaves the focus on the link
+// that was clicked: without this a keyboard user tabs back through the
+// whole drawer and a screen reader announces nothing at all.
+async function navigate(): Promise<void> {
+  const router = TestBed.inject(Router);
+  (router.events as Subject<unknown>).next(new NavigationEnd(1, '/stands', '/stands'));
+  // The announcement is queued in a microtask, so the router `title` is
+  // already applied when it reads `Title.getTitle()`.
+  await Promise.resolve();
+  await Promise.resolve();
+}
+
+function pushAlert(read = false): void {
+  const notifications = TestBed.inject(NotificationService);
+  notifications.push('alert', 'Résolution impossible');
+  if (read) {
+    notifications.markAllRead();
+  }
+}
+
+// `bubbles: true` matters: the listener sits on `document`, so an event
+// dispatched on a field without bubbling would never reach it — and the
+// "form fields are ignored" test below would pass without any guard.
+function press(key: string, target?: HTMLElement): void {
+  const event = new KeyboardEvent('keydown', { key, bubbles: true });
+  (target ?? document).dispatchEvent(event);
+}
+
+/** The `auto` marker: the only thing separating "dark chosen" from "dark resolved". */
+function autoMarker(fixture: ComponentFixture<AdminShell>): Element | null {
+  return fixture.nativeElement.querySelector('.theme-auto-dot');
+}
+
+/** A `matchMedia` this test drives, standing in for the machine's setting. */
+function stubMachineScheme(prefersDark: boolean) {
+  const listeners = new Set<(event: MediaQueryListEvent) => void>();
+  const media = {
+    matches: prefersDark,
+    addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
+      listeners.add(listener),
+    removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
+      listeners.delete(listener),
+    emit(matches: boolean) {
+      media.matches = matches;
+      for (const listener of listeners) {
+        listener({ matches } as MediaQueryListEvent);
+      }
+    },
+  };
+  vi.stubGlobal('matchMedia', () => media);
+  return media;
+}
+
 describe('AdminShell', () => {
   const handset = new Subject<{ matches: boolean }>();
   const breakpoints = { observe: vi.fn(() => handset.asObservable()) };
@@ -158,7 +211,9 @@ describe('AdminShell', () => {
     const bus: SessionEndBus = {
       channel: () =>
         Object.assign(busTarget, {
-          postMessage: (data: unknown) => void announced.push(data),
+          postMessage: (data: unknown) => {
+            announced.push(data);
+          },
           close: () => undefined,
         }),
       storage: null,
@@ -277,18 +332,6 @@ describe('AdminShell', () => {
   });
 
   describe('announcing a navigation', () => {
-    // A router navigation swaps the content but leaves the focus on the link
-    // that was clicked: without this a keyboard user tabs back through the
-    // whole drawer and a screen reader announces nothing at all.
-    async function navigate(): Promise<void> {
-      const router = TestBed.inject(Router);
-      (router.events as Subject<unknown>).next(new NavigationEnd(1, '/stands', '/stands'));
-      // The announcement is queued in a microtask, so the router `title` is
-      // already applied when it reads `Title.getTitle()`.
-      await Promise.resolve();
-      await Promise.resolve();
-    }
-
     it('announces the page name, stripped of the application suffix', async () => {
       TestBed.inject(Title).setTitle('Stands — Planning Équipes');
       createShell();
@@ -491,7 +534,7 @@ describe('AdminShell', () => {
       // The exact set, not a sample: what the simple menu hides is the whole
       // point of the mode, so adding a screen has to be a deliberate edit here
       // rather than something a loose assertion waves through.
-      expect([...hidden].sort()).toEqual([
+      expect([...hidden].sort((a, b) => a.localeCompare(b))).toEqual([
         '/comparateur',
         '/constraints',
         '/debug',
@@ -567,14 +610,6 @@ describe('AdminShell', () => {
   });
 
   describe('the notification badge', () => {
-    function pushAlert(read = false): void {
-      const notifications = TestBed.inject(NotificationService);
-      notifications.push('alert', 'Résolution impossible');
-      if (read) {
-        notifications.markAllRead();
-      }
-    }
-
     it('shows the unread count when nothing is an alert', () => {
       const shell = createShell();
       TestBed.inject(NotificationService).push('info', 'Résolution terminée');
@@ -617,14 +652,6 @@ describe('AdminShell', () => {
       'b',
       'a',
     ];
-
-    // `bubbles: true` matters: the listener sits on `document`, so an event
-    // dispatched on a field without bubbling would never reach it — and the
-    // "form fields are ignored" test below would pass without any guard.
-    function press(key: string, target?: HTMLElement): void {
-      const event = new KeyboardEvent('keydown', { key, bubbles: true });
-      (target ?? document).dispatchEvent(event);
-    }
 
     it('summons the mascot on the full sequence', () => {
       createShell();
@@ -755,31 +782,6 @@ describe('AdminShell', () => {
   // what is pinned here is the toolbar button on top of them — a control with
   // three states, whose whole accessibility rests on saying which one it is in.
   describe('the colour-scheme button', () => {
-    /** The `auto` marker: the only thing separating "dark chosen" from "dark resolved". */
-    function marqueurAuto(): Element | null {
-      return fixture.nativeElement.querySelector('.theme-auto-dot');
-    }
-
-    /** A `matchMedia` this test drives, standing in for the machine's setting. */
-    function machine(prefereSombre: boolean) {
-      const listeners = new Set<(event: MediaQueryListEvent) => void>();
-      const media = {
-        matches: prefereSombre,
-        addEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
-          listeners.add(listener),
-        removeEventListener: (_type: string, listener: (event: MediaQueryListEvent) => void) =>
-          listeners.delete(listener),
-        emit(matches: boolean) {
-          media.matches = matches;
-          for (const listener of listeners) {
-            listener({ matches } as MediaQueryListEvent);
-          }
-        },
-      };
-      vi.stubGlobal('matchMedia', () => media);
-      return media;
-    }
-
     // The icon names the scheme actually painted, in all three states: jsdom
     // asks for no dark, so `système` resolves to light and shows the same moon
     // as an explicit light — the marker below is what separates them.
@@ -788,25 +790,25 @@ describe('AdminShell', () => {
 
       expect(shell.themeIcon()).toBe('light_mode');
       expect(shell.themeLabel()).toContain('automatique');
-      expect(marqueurAuto()).not.toBeNull();
+      expect(autoMarker(fixture)).not.toBeNull();
 
       shell.toggleTheme();
       TestBed.tick();
       expect(shell.themeIcon()).toBe('light_mode');
       expect(shell.themeLabel()).toContain('clair');
-      expect(marqueurAuto()).toBeNull();
+      expect(autoMarker(fixture)).toBeNull();
 
       shell.toggleTheme();
       TestBed.tick();
       expect(shell.themeIcon()).toBe('dark_mode');
       expect(shell.themeLabel()).toContain('sombre');
       expect(localStorage.getItem(THEME_STORAGE_KEY)).toBe('dark');
-      expect(marqueurAuto()).toBeNull();
+      expect(autoMarker(fixture)).toBeNull();
 
       shell.toggleTheme();
       TestBed.tick();
       expect(shell.themeIcon()).toBe('light_mode');
-      expect(marqueurAuto()).not.toBeNull();
+      expect(autoMarker(fixture)).not.toBeNull();
     });
 
     // Why `ThemeService` listens to the media query at all: under `système`,
@@ -814,7 +816,7 @@ describe('AdminShell', () => {
     // own. An icon frozen on the scheme of an hour ago would then show a sun
     // over a dark screen.
     it('follows the machine turning dark while staying on système', () => {
-      const media = machine(false);
+      const media = stubMachineScheme(false);
       const shell = createShell();
 
       expect(shell.themeIcon()).toBe('light_mode');
@@ -824,12 +826,12 @@ describe('AdminShell', () => {
 
       expect(shell.themeIcon()).toBe('dark_mode');
       expect(shell.themeLabel()).toContain('automatique');
-      expect(marqueurAuto()).not.toBeNull();
+      expect(autoMarker(fixture)).not.toBeNull();
     });
 
     // An explicit choice outranks the machine, so the icon must not move.
     it('ignores the machine once a scheme has been chosen', () => {
-      const media = machine(false);
+      const media = stubMachineScheme(false);
       const shell = createShell();
       shell.toggleTheme();
       TestBed.tick();
@@ -838,7 +840,7 @@ describe('AdminShell', () => {
       TestBed.tick();
 
       expect(shell.themeIcon()).toBe('light_mode');
-      expect(marqueurAuto()).toBeNull();
+      expect(autoMarker(fixture)).toBeNull();
     });
 
     // The button's own accessible name changes under the focus, and a name
@@ -882,11 +884,11 @@ describe('AdminShell', () => {
       vi.restoreAllMocks();
     });
   });
-  describe('the drafts of the long forms', () => {
-    function storages() {
-      return { local: draftLocal, session: draftSession };
-    }
+  function storages() {
+    return { local: draftLocal, session: draftSession };
+  }
 
+  describe('the drafts of the long forms', () => {
     it('drops the expired ones when the shell starts, and keeps the others', () => {
       const { local, session } = storages();
       const old = new Date(Date.now() - DRAFT_LIFETIME_MS - 60_000);
@@ -896,7 +898,7 @@ describe('AdminShell', () => {
 
       createShell();
 
-      expect([...local.entries.keys()].sort()).toEqual([
+      expect([...local.entries.keys()].sort((a, b) => a.localeCompare(b))).toEqual([
         'planning-equipes.brouillon.stand.ed-1#s2',
         'planning-equipes.editionId',
       ]);

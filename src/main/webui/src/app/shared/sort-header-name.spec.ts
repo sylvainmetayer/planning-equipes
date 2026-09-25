@@ -59,32 +59,32 @@ class HoteTest {
   readonly aide = AIDE;
 }
 
+function renderHost(): HTMLElement {
+  TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
+  const fixture = TestBed.createComponent(HoteTest);
+  fixture.detectChanges();
+  return fixture.nativeElement as HTMLElement;
+}
+
+function sortButton(root: HTMLElement, headerId: string): Element {
+  const button = root.querySelector(`#${headerId} .mat-sort-header-container`);
+  // Material names this class; if an upgrade renames it, the directive does
+  // nothing any more and the defect comes back silently.
+  expect(button, 'conteneur de tri de Material').not.toBeNull();
+  return button as Element;
+}
+
 describe('SortHeaderName', () => {
-  function rendre(): HTMLElement {
-    TestBed.configureTestingModule({ providers: [provideZonelessChangeDetection()] });
-    const fixture = TestBed.createComponent(HoteTest);
-    fixture.detectChanges();
-    return fixture.nativeElement as HTMLElement;
-  }
-
-  function boutonDeTri(racine: HTMLElement, entete: string): Element {
-    const bouton = racine.querySelector(`#${entete} .mat-sort-header-container`);
-    // Material nomme cette classe ; si une montée de version la renomme, la
-    // directive ne fait plus rien et le défaut revient en silence.
-    expect(bouton, 'conteneur de tri de Material').not.toBeNull();
-    return bouton as Element;
-  }
-
   it("nomme l'en-tête par son titre, sans l'aide qu'il contient", () => {
-    const racine = rendre();
-    const nom = nomAccessible(boutonDeTri(racine, 'avec'));
+    const racine = renderHost();
+    const nom = nomAccessible(sortButton(racine, 'avec'));
 
     expect(nom).toBe('Accusé de réception');
     expect(nom).not.toContain("Ce que l'animateur a répondu");
   });
 
   it('laisse au bouton d’aide son nom entier, celui qui explique la colonne', () => {
-    const racine = rendre();
+    const racine = renderHost();
     const aide = racine.querySelector('#avec .column-help') as HTMLElement;
 
     expect(nomAccessible(aide)).toBe(AIDE);
@@ -94,14 +94,14 @@ describe('SortHeaderName', () => {
     // Le témoin. Il fige le comportement de Material qui a causé la
     // régression : le jour où ce nom cesserait d'absorber l'aide, la
     // directive serait devenue inutile — et ce test le dirait.
-    const racine = rendre();
+    const racine = renderHost();
 
-    expect(nomAccessible(boutonDeTri(racine, 'sans'))).toContain("Ce que l'animateur a répondu");
+    expect(nomAccessible(sortButton(racine, 'sans'))).toContain("Ce que l'animateur a répondu");
   });
 
   it('donne un identifiant au titre qui n’en a pas', () => {
-    const racine = rendre();
-    const reference = boutonDeTri(racine, 'avec').getAttribute('aria-labelledby');
+    const racine = renderHost();
+    const reference = sortButton(racine, 'avec').getAttribute('aria-labelledby');
 
     expect(reference).toBeTruthy();
     expect(racine.querySelector(`#${reference}`)?.textContent?.trim()).toBe('Accusé de réception');

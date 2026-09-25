@@ -3,6 +3,10 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { LegalText } from './legal-text';
 
+function links(host: HTMLElement): HTMLAnchorElement[] {
+  return Array.from(host.querySelectorAll('a'));
+}
+
 describe('LegalText', () => {
   let fixture: ComponentFixture<LegalText>;
 
@@ -15,10 +19,6 @@ describe('LegalText', () => {
     fixture.componentRef.setInput('text', text);
     await fixture.whenStable();
     return fixture.nativeElement as HTMLElement;
-  }
-
-  function links(host: HTMLElement): HTMLAnchorElement[] {
-    return Array.from(host.querySelectorAll('a'));
   }
 
   it('renders the sentence unchanged, spacing included', async () => {

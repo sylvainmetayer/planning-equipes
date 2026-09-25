@@ -458,6 +458,49 @@ describe('buildStandsSummary', () => {
   });
 });
 
+function heatwaveConsigne(date: string): ConsigneEdition {
+  return {
+    date,
+    fermetureDebut: '12:00',
+    fermetureFin: '18:00',
+    motif: 'Plan canicule',
+    prereglage: null,
+    fenetres: [],
+    ouvertures: [],
+    repas: null,
+    creneauxAjoutes: [],
+    creeLe: null,
+    modifieLe: null,
+  };
+}
+
+function twoAnimateurPlanning(): PlanningEvenement {
+  const morning = creneau({ id: 1, jour: 1 });
+  const afternoon = creneau({ id: 2, jour: 1, heureDebut: '14:00', heureFin: '18:00' });
+  return {
+    postes: [
+      poste({
+        id: 'p1',
+        creneau: morning,
+        stand: stand('Tir'),
+        animateur: animateur('a1', 'Alice', 'Martin'),
+      }),
+      poste({
+        id: 'p2',
+        creneau: morning,
+        stand: stand('Tir'),
+        animateur: animateur('a2', 'Bob', 'Durand'),
+      }),
+      poste({
+        id: 'p3',
+        creneau: afternoon,
+        stand: stand('Dixit'),
+        animateur: animateur('a1', 'Alice', 'Martin'),
+      }),
+    ],
+  } as unknown as PlanningEvenement;
+}
+
 describe('AnimateurTimelinePage', () => {
   let fixture: ComponentFixture<AnimateurTimelinePage>;
   let analysesApi: { typologies: ReturnType<typeof vi.fn>; breaks: ReturnType<typeof vi.fn> };
@@ -475,49 +518,6 @@ describe('AnimateurTimelinePage', () => {
     reload: ReturnType<typeof vi.fn>;
     consigneOf: (date: string | null) => ConsigneEdition | null;
   };
-
-  function consigneCanicule(date: string): ConsigneEdition {
-    return {
-      date,
-      fermetureDebut: '12:00',
-      fermetureFin: '18:00',
-      motif: 'Plan canicule',
-      prereglage: null,
-      fenetres: [],
-      ouvertures: [],
-      repas: null,
-      creneauxAjoutes: [],
-      creeLe: null,
-      modifieLe: null,
-    };
-  }
-
-  function planningDeDeux(): PlanningEvenement {
-    const matin = creneau({ id: 1, jour: 1 });
-    const apresMidi = creneau({ id: 2, jour: 1, heureDebut: '14:00', heureFin: '18:00' });
-    return {
-      postes: [
-        poste({
-          id: 'p1',
-          creneau: matin,
-          stand: stand('Tir'),
-          animateur: animateur('a1', 'Alice', 'Martin'),
-        }),
-        poste({
-          id: 'p2',
-          creneau: matin,
-          stand: stand('Tir'),
-          animateur: animateur('a2', 'Bob', 'Durand'),
-        }),
-        poste({
-          id: 'p3',
-          creneau: apresMidi,
-          stand: stand('Dixit'),
-          animateur: animateur('a1', 'Alice', 'Martin'),
-        }),
-      ],
-    } as unknown as PlanningEvenement;
-  }
 
   async function rendre(
     evenement: PlanningEvenement | null,
@@ -584,7 +584,7 @@ describe('AnimateurTimelinePage', () => {
   }
 
   it('lands on the first animateur when the URL names none', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     expect(racine().querySelector('.timeline-animateur-select input')).not.toBeNull();
     expect(racine().querySelectorAll('.timeline-day-card')).toHaveLength(1);
@@ -592,14 +592,14 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('opens on the animateur the URL names, so a shared link points at the right person', async () => {
-    await rendre(planningDeDeux(), { animateurEnParametre: 'a2' });
+    await rendre(twoAnimateurPlanning(), { animateurEnParametre: 'a2' });
 
     // Bob holds one seat only, Alice two: the day list is what tells them apart.
     expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
   });
 
   it('keeps the selection in the URL without piling up history entries', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     // Written straight to the address bar, never through a router navigation:
     // this page had its own copy of that effect until it joined the shared
@@ -611,7 +611,7 @@ describe('AnimateurTimelinePage', () => {
     // Le lien qu'on partage sur cet écran, c'est « regarde le planning
     // d'Untel » : changer de personne doit donc se voir dans la barre
     // d'adresse, et cette adresse doit rouvrir la même personne.
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
     expect(replaceState).toHaveBeenLastCalledWith('/timeline?animateur=a1');
 
     select('a2');
@@ -621,12 +621,12 @@ describe('AnimateurTimelinePage', () => {
 
     // Et le retour : cette URL-là, rechargée, rouvre bien Bob — une seule
     // vacation, là où Alice en a deux.
-    await rendre(planningDeDeux(), { animateurEnParametre: 'a2' });
+    await rendre(twoAnimateurPlanning(), { animateurEnParametre: 'a2' });
     expect(racine().querySelectorAll('.timeline-block-list li')).toHaveLength(1);
   });
 
   it('tells the animateur when their day is under consigne, as the Journée tab and the PDF do', async () => {
-    await rendre(planningDeDeux(), { consignes: [consigneCanicule('2026-08-01')] });
+    await rendre(twoAnimateurPlanning(), { consignes: [heatwaveConsigne('2026-08-01')] });
 
     const note = racine().querySelector('.timeline-consigne-note')!.textContent!;
     expect(note).toContain('sous consigne');
@@ -635,13 +635,13 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('says nothing about consignes on an ordinary day', async () => {
-    await rendre(planningDeDeux(), { consignes: [consigneCanicule('2026-08-02')] });
+    await rendre(twoAnimateurPlanning(), { consignes: [heatwaveConsigne('2026-08-02')] });
 
     expect(racine().querySelector('.timeline-consigne-note')).toBeNull();
   });
 
   it('names the teammates of each seat, and says so when there are none', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     const lignes = Array.from(racine().querySelectorAll('.timeline-block-list li')).map((each) =>
       each.textContent!.replace(/\s+/g, ' ').trim(),
@@ -651,7 +651,7 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('recaps the stands to cover above the days', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     expect(
       Array.from(racine().querySelectorAll('.timeline-stand-chip')).map((each) =>
@@ -684,7 +684,7 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('exports the displayed animateur, and only them', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     bouton('Exporter le PDF').click();
     await fixture.whenStable();
@@ -703,7 +703,7 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('reports an export failure instead of failing silently', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
     planningApi.exportForAnimateur.mockRejectedValue(new Error('serveur indisponible'));
 
     bouton("Exporter l'ICS").click();
@@ -715,7 +715,7 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('mails the planning of the displayed animateur', async () => {
-    await rendre(planningDeDeux());
+    await rendre(twoAnimateurPlanning());
 
     bouton('Envoyer par e-mail').click();
     await fixture.whenStable();
@@ -724,7 +724,7 @@ describe('AnimateurTimelinePage', () => {
   });
 
   it('draws the breaks of the shown days on their track and lists them, the relay-less one flagged', async () => {
-    const evenement = planningDeDeux();
+    const evenement = twoAnimateurPlanning();
     const rapport = {
       journeesAnalysees: 1,
       pausesDues: 1,
@@ -775,7 +775,7 @@ describe('AnimateurTimelinePage', () => {
 
   it('still draws the tracks when the breaks cannot be read, and draws none without a selected animateur', async () => {
     await rendre(
-      planningDeDeux(),
+      twoAnimateurPlanning(),
       {},
       {
         breaks: () => {

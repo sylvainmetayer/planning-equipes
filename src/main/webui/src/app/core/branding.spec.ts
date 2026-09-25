@@ -12,6 +12,32 @@ import { DARK_SURFACE, LIGHT_SURFACE, hexToOklch, oklchContrast } from './testin
 const PAIR_8B1E3F =
   'light-dark(oklch(from #8b1e3f min(l, 0.53) c h), oklch(from #8b1e3f max(l, 0.78) min(c, 0.14) h))';
 
+// jsdom exposes no `CSS` object: the test decides what the browser can parse,
+// and therefore which branch is taken.
+function stubCssSupports(supported: boolean): void {
+  vi.stubGlobal('CSS', { supports: () => supported });
+}
+
+function stubFetchResponse(body: unknown, ok = true): void {
+  vi.stubGlobal(
+    'fetch',
+    vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body }),
+  );
+}
+
+/**
+ * The two clamps the pair declares, read back out of the string the code
+ * produces rather than copied here: what is measured below is the policy
+ * actually served to the browser, not a twin constant somebody would one
+ * day forget to keep in step.
+ */
+function clamps(pair: string): { light: number; dark: number; chroma: number } {
+  const light = /min\(l, ([\d.]+)\)/.exec(pair);
+  const dark = /max\(l, ([\d.]+)\) min\(c, ([\d.]+)\)/.exec(pair);
+  if (!light || !dark) throw new Error(`pair cannot be read: ${pair}`);
+  return { light: +light[1], dark: +dark[1], chroma: +dark[2] };
+}
+
 /**
  * La marque est lue avant le bootstrap : ce qui est vérifié ici, c'est qu'un
  * serveur muet ou une configuration vide ne laissent jamais l'application sans
@@ -31,22 +57,9 @@ describe('branding', () => {
     document.documentElement.style.removeProperty('--app-accent');
   });
 
-  // jsdom n'expose aucun objet `CSS` : c'est le test qui décide ce que le
-  // navigateur sait parser, et donc quelle branche est empruntée.
-  function navigateurSachantDeriver(sait: boolean): void {
-    vi.stubGlobal('CSS', { supports: () => sait });
-  }
-
   describe('loadBranding', () => {
-    function repond(body: unknown, ok = true): void {
-      vi.stubGlobal(
-        'fetch',
-        vi.fn().mockResolvedValue({ ok, status: ok ? 200 : 500, json: async () => body }),
-      );
-    }
-
     it('lit la marque servie par /api/branding', async () => {
-      repond({
+      stubFetchResponse({
         productName: 'Planning des animateurs',
         organisation: 'Ville hôte',
         logoUrl: 'logo.png',
@@ -67,7 +80,7 @@ describe('branding', () => {
     // Un nom vide produirait des titres commençant par un tiret ; un logo
     // absent doit rester absent, jamais être remplacé par un défaut.
     it('retombe sur un nom neutre mais laisse le logo vide', async () => {
-      repond({ productName: '   ', organisation: '', logoUrl: '', accentColor: '' });
+      stubFetchResponse({ productName: '   ', organisation: '', logoUrl: '', accentColor: '' });
 
       const marque = await loadBranding();
 
@@ -94,7 +107,7 @@ describe('branding', () => {
     // sur fond blanc doit désormais être posée en paire, sinon elle sert de
     // couleur de texte illisible sur la surface sombre.
     it("pose la couleur d'accent en paire claire/sombre", () => {
-      navigateurSachantDeriver(true);
+      stubCssSupports(true);
 
       appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
 
@@ -102,7 +115,7 @@ describe('branding', () => {
     });
 
     it('pose la couleur brute quand le navigateur ne sait pas la dériver', () => {
-      navigateurSachantDeriver(false);
+      stubCssSupports(false);
 
       appliquerBranding({ ...BRANDING_NEUTRE, accentColor: '#8b1e3f' });
 
@@ -119,27 +132,14 @@ describe('branding', () => {
   });
 
   describe('accentForBothSchemes', () => {
-    /**
-     * The two clamps the pair declares, read back out of the string the code
-     * produces rather than copied here: what is measured below is the policy
-     * actually served to the browser, not a twin constant somebody would one
-     * day forget to keep in step.
-     */
-    function clamps(pair: string): { light: number; dark: number; chroma: number } {
-      const light = /min\(l, ([\d.]+)\)/.exec(pair);
-      const dark = /max\(l, ([\d.]+)\) min\(c, ([\d.]+)\)/.exec(pair);
-      if (!light || !dark) throw new Error(`pair cannot be read: ${pair}`);
-      return { light: +light[1], dark: +dark[1], chroma: +dark[2] };
-    }
-
     it('borne la couleur configurée dans chaque schéma', () => {
-      navigateurSachantDeriver(true);
+      stubCssSupports(true);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe(PAIR_8B1E3F);
     });
 
     it("accepte n'importe quelle notation de couleur CSS", () => {
-      navigateurSachantDeriver(true);
+      stubCssSupports(true);
 
       expect(accentForBothSchemes('rebeccapurple')).toBe(
         'light-dark(oklch(from rebeccapurple min(l, 0.53) c h), oklch(from rebeccapurple max(l, 0.78) min(c, 0.14) h))',
@@ -156,7 +156,7 @@ describe('branding', () => {
       const PASTELS = ['#ffe066', '#f8b3c5', '#b8e986', '#9ad5ff', '#fff2a8'];
 
       it.each(PASTELS)('tient 4,5:1 sur la surface claire pour %s', (accent) => {
-        navigateurSachantDeriver(true);
+        stubCssSupports(true);
         const { light } = clamps(accentForBothSchemes(accent));
         const configured = hexToOklch(accent);
 
@@ -169,7 +169,7 @@ describe('branding', () => {
       });
 
       it.each(PASTELS)('tient 4,5:1 sur la surface sombre pour %s', (accent) => {
-        navigateurSachantDeriver(true);
+        stubCssSupports(true);
         const { dark, chroma } = clamps(accentForBothSchemes(accent));
         const configured = hexToOklch(accent);
 
@@ -189,7 +189,7 @@ describe('branding', () => {
       // every saturation, otherwise the next brand falls back into the hole.
       // The worst case measured is a saturated green around h=143.
       it('tient 4,5:1 sur la surface claire pour toute teinte', () => {
-        navigateurSachantDeriver(true);
+        stubCssSupports(true);
         const { light } = clamps(accentForBothSchemes('#8b1e3f'));
 
         let worst = Infinity;
@@ -206,7 +206,7 @@ describe('branding', () => {
     // Firefox 120 à 127 connaît `light-dark()` mais pas la syntaxe relative :
     // la paire y serait invalide et emporterait aussi la moitié claire.
     it("retombe sur la couleur brute quand la paire n'est pas parsable", () => {
-      navigateurSachantDeriver(false);
+      stubCssSupports(false);
 
       expect(accentForBothSchemes('#8b1e3f')).toBe('#8b1e3f');
     });

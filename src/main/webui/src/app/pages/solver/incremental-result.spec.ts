@@ -33,6 +33,12 @@ function changement(overrides: Partial<ChangementAffectation> = {}): ChangementA
   };
 }
 
+function rows(root: HTMLElement): string[] {
+  return Array.from(root.querySelectorAll('tr[mat-row]')).map((row) =>
+    row.textContent!.replace(/\s+/g, ' ').trim(),
+  );
+}
+
 describe('IncrementalResult', () => {
   let fixture: ComponentFixture<IncrementalResult>;
 
@@ -49,12 +55,6 @@ describe('IncrementalResult', () => {
     fixture.componentRef.setInput('changements', changements);
     fixture.detectChanges();
     return fixture.nativeElement as HTMLElement;
-  }
-
-  function rows(root: HTMLElement): string[] {
-    return Array.from(root.querySelectorAll('tr[mat-row]')).map((row) =>
-      row.textContent!.replace(/\s+/g, ' ').trim(),
-    );
   }
 
   it('frames the diff with four counts, the past seats only once the event is under way', () => {

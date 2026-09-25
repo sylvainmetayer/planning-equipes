@@ -488,20 +488,20 @@ describe('VerrouillagesPage impact and list', () => {
   });
 });
 
+function lock(id: string, animateurId: string | null): VerrouillagePlanning {
+  return {
+    id,
+    type: animateurId ? 'ANIMATEUR' : 'JOUR',
+    animateurId,
+    standId: null,
+    creneauId: null,
+    jour: animateurId ? null : '2026-07-10',
+    raison: null,
+  };
+}
+
 /** `?animateur=a,b`: the locks standing in the way of a forced assignment, until « Tout afficher ». */
 describe('VerrouillagesPage narrowed to some animateurs', () => {
-  function lock(id: string, animateurId: string | null): VerrouillagePlanning {
-    return {
-      id,
-      type: animateurId ? 'ANIMATEUR' : 'JOUR',
-      animateurId,
-      standId: null,
-      creneauId: null,
-      jour: animateurId ? null : '2026-07-10',
-      raison: null,
-    };
-  }
-
   it('lists only the locks of the animateurs the URL names, and all of them once asked', async () => {
     const fixture = mount();
     const store = TestBed.inject(VerrouillageStore) as unknown as {

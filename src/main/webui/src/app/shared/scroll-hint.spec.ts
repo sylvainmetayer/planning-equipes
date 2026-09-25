@@ -1,5 +1,4 @@
-import { Component, viewChild } from '@angular/core';
-import { provideZonelessChangeDetection } from '@angular/core';
+import { Component, provideZonelessChangeDetection, viewChild } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ScrollHint, resteDuContenuPlusBas } from './scroll-hint';

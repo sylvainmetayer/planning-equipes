@@ -24,6 +24,34 @@ function contrainte(id: string): ContrainteAdHoc {
   };
 }
 
+function pair(id: string, type: 'AFFINITE' | 'INCOMPATIBILITE', ids: string[]): ContrainteAdHoc {
+  return {
+    id,
+    type,
+    animateursConcernes: ids.map((each) => ({ id: each })),
+    creneau: null,
+    stand: null,
+    raison: 'secret',
+  };
+}
+
+async function mountNetwork(
+  contraintes: ContrainteAdHoc[],
+  url = '/?vue=reseau',
+): Promise<HTMLElement> {
+  await TestBed.inject(Router).navigateByUrl(url);
+  const referenceData = TestBed.inject(ReferenceDataStore);
+  seedStore(referenceData, 'contraintes', contraintes);
+  seedStore(
+    referenceData,
+    'animateurs',
+    ['A', 'B', 'C', 'D'].map((id) => ({ id, prenom: id, nom: 'Test' }) as Animateur),
+  );
+  const fixture = TestBed.createComponent(AdHocConstraintsPage);
+  await fixture.whenStable();
+  return fixture.nativeElement as HTMLElement;
+}
+
 describe('AdHocConstraintsPage', () => {
   let referenceData: ReferenceDataStore;
   const crud = { reload: vi.fn(async () => undefined), remove: vi.fn(async () => true) };
@@ -123,37 +151,6 @@ describe('AdHocConstraintsPage', () => {
   });
 
   describe('the network reading', () => {
-    function pair(
-      id: string,
-      type: 'AFFINITE' | 'INCOMPATIBILITE',
-      ids: string[],
-    ): ContrainteAdHoc {
-      return {
-        id,
-        type,
-        animateursConcernes: ids.map((each) => ({ id: each })),
-        creneau: null,
-        stand: null,
-        raison: 'secret',
-      };
-    }
-
-    async function mountNetwork(
-      contraintes: ContrainteAdHoc[],
-      url = '/?vue=reseau',
-    ): Promise<HTMLElement> {
-      await TestBed.inject(Router).navigateByUrl(url);
-      seedStore(referenceData, 'contraintes', contraintes);
-      seedStore(
-        referenceData,
-        'animateurs',
-        ['A', 'B', 'C', 'D'].map((id) => ({ id, prenom: id, nom: 'Test' }) as Animateur),
-      );
-      const fixture = TestBed.createComponent(AdHocConstraintsPage);
-      await fixture.whenStable();
-      return fixture.nativeElement as HTMLElement;
-    }
-
     it('opens on the network the URL names, and keeps it there', async () => {
       const root = await mountNetwork([
         pair('X1', 'AFFINITE', ['A', 'B']),

@@ -176,6 +176,18 @@ type PageInternals = {
   decliner: (demande: { id: string }) => Promise<void>;
 };
 
+function createPage(): PageInternals {
+  return TestBed.createComponent(EspaceEchangesPage).componentInstance as unknown as PageInternals;
+}
+
+function withOneDraft(): PageInternals {
+  const page = createPage();
+  page.posteChoisi.set(poste());
+  page.cibleId.set('bob');
+  page.ajouter();
+  return page;
+}
+
 describe('EspaceEchangesPage', () => {
   const espaceView = signal<EspaceAnimateurView | null>(view());
   const espaceDemandes = signal<DemandeEchangeView[]>([]);
@@ -222,11 +234,6 @@ describe('EspaceEchangesPage', () => {
       ],
     });
   });
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(EspaceEchangesPage)
-      .componentInstance as unknown as PageInternals;
-  }
 
   // « Qui peut me remplacer ? » — the animateur who does not want a créneau and
   // has nobody in mind. The search only proposes names: it creates no demande,
@@ -543,14 +550,6 @@ describe('EspaceEchangesPage', () => {
   });
 
   describe('submitting the batch', () => {
-    function withOneDraft(): PageInternals {
-      const page = createPage();
-      page.posteChoisi.set(poste());
-      page.cibleId.set('bob');
-      page.ajouter();
-      return page;
-    }
-
     it('sends nothing when the batch is empty', async () => {
       const page = createPage();
 

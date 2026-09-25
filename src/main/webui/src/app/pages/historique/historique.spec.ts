@@ -117,13 +117,12 @@ describe('parJournee', () => {
    * à Paris et appartient au 8. La regrouper sous le 7 mettrait minuit avant
    * le soir de la veille — et c'est le travail de nuit qu'on vient relire.
    */
-  it('range une action du soir sous la journée du lecteur, pas sous celle d’UTC', () => {
+  it('files an evening action under the reader’s day, not under UTC’s', () => {
     const veille = journeeLocale('2026-09-07T22:30:00Z');
     const attendu = new Date('2026-09-07T22:30:00Z');
     const mois = `${attendu.getMonth() + 1}`.padStart(2, '0');
-    expect(veille).toBe(
-      `${attendu.getFullYear()}-${mois}-${`${attendu.getDate()}`.padStart(2, '0')}`,
-    );
+    const day = `${attendu.getDate()}`.padStart(2, '0');
+    expect(veille).toBe(`${attendu.getFullYear()}-${mois}-${day}`);
 
     const journees = parJournee([
       entree({ id: 1, survenuLe: '2026-09-07T22:30:00Z' }),
@@ -181,7 +180,10 @@ describe('the Exports filter', () => {
         export: false,
       },
     ]);
-    expect([...codes].sort()).toEqual(['EXPORT_REFERENTIELS', 'TELECHARGEMENT_ESPACE_PDF']);
+    expect([...codes].sort((a, b) => a.localeCompare(b))).toEqual([
+      'EXPORT_REFERENTIELS',
+      'TELECHARGEMENT_ESPACE_PDF',
+    ]);
   });
 
   it('leaves the other filters to combine over what the server sent', () => {

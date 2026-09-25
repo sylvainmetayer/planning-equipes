@@ -28,7 +28,7 @@ function rapport(): RapportOuvertures {
     date,
     jour: numero,
     heureDebut: '10:00',
-    heureFin: creneaux[creneaux.length - 1].heureFin,
+    heureFin: creneaux.at(-1)!.heureFin,
     minutes: 600,
     nombreCreneaux: creneaux.length,
     creneaux,

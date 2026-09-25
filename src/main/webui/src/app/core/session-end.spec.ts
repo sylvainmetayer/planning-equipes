@@ -34,7 +34,9 @@ describe('session-end', () => {
     const bus: SessionEndBus = {
       channel: null,
       storage: {
-        setItem: (key) => void written.push(key),
+        setItem: (key) => {
+          written.push(key);
+        },
         removeItem: () => undefined,
       },
       window: target,

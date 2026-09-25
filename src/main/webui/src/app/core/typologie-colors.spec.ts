@@ -22,7 +22,9 @@ describe('typologieColorIndex', () => {
 
   it('gives the same typologie the same colour every time, and different ids different buckets', () => {
     expect(typologieColorIndex('STRATEGIE')).toBe(typologieColorIndex('STRATEGIE'));
-    const buckets = new Set(['STRATEGIE', 'AMBIANCE', 'ENFANT', 'EXPERT'].map(typologieColorIndex));
+    const buckets = new Set(
+      ['STRATEGIE', 'AMBIANCE', 'ENFANT', 'EXPERT'].map((id) => typologieColorIndex(id)),
+    );
     expect(buckets.size).toBeGreaterThan(1);
   });
 });

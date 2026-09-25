@@ -177,6 +177,18 @@ function deferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
   return { promise, resolve };
 }
 
+/** Clicks the button whose label contains `label`, and lets the handler settle. */
+async function clickButton(
+  fixture: ComponentFixture<AffectationExplanationDialog>,
+  label: string,
+): Promise<void> {
+  const button = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
+    each.textContent?.includes(label),
+  )!;
+  button.click();
+  await fixture.whenStable();
+}
+
 describe('AffectationExplanationDialog', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
@@ -304,18 +316,6 @@ describe('AffectationExplanationDialog', () => {
   });
 
   describe('assistant de réparation (issue #71)', () => {
-    /** Clicks the button whose label contains `libelle`, and lets the handler settle. */
-    async function cliquer(
-      fixture: ComponentFixture<AffectationExplanationDialog>,
-      libelle: string,
-    ): Promise<void> {
-      const bouton = Array.from(root(fixture).querySelectorAll('button')).find((each) =>
-        each.textContent?.includes(libelle),
-      )!;
-      bouton.click();
-      await fixture.whenStable();
-    }
-
     it('searches nothing until asked: the endpoint costs one analysis per candidate', async () => {
       const suggererReparations = vi.fn(async () => suggestions());
       const { fixture } = mount({ suggererReparations });
@@ -340,7 +340,7 @@ describe('AffectationExplanationDialog', () => {
         ),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
 
       expect(text(fixture)).toContain('Alex Martin');
       expect(text(fixture)).toContain('Pas de chevauchement');
@@ -351,7 +351,7 @@ describe('AffectationExplanationDialog', () => {
         suggererReparations: vi.fn(async () => suggestions({ suggestions: [] })),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
 
       expect(text(fixture)).toContain('Aucun remplacement possible');
     });
@@ -372,7 +372,7 @@ describe('AffectationExplanationDialog', () => {
         ),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
 
       expect(text(fixture)).toContain('pas une réponse exhaustive');
     });
@@ -388,7 +388,7 @@ describe('AffectationExplanationDialog', () => {
         ),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
 
       expect(text(fixture)).not.toContain('pas une réponse exhaustive');
     });
@@ -400,8 +400,8 @@ describe('AffectationExplanationDialog', () => {
         appliquerReparation,
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
-      await cliquer(fixture, 'Appliquer');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Appliquer');
 
       expect(appliquerReparation).toHaveBeenCalledWith('p1', 'a2');
       expect(close).toHaveBeenCalledWith({ posteId: 'p1', animateurId: 'a2' });
@@ -415,8 +415,8 @@ describe('AffectationExplanationDialog', () => {
         }),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
-      await cliquer(fixture, 'Appliquer');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Appliquer');
 
       expect(close).not.toHaveBeenCalled();
       expect(text(fixture)).toContain('Ce poste est verrouillé');
@@ -429,7 +429,7 @@ describe('AffectationExplanationDialog', () => {
         }),
       });
       await fixture.whenStable();
-      await cliquer(fixture, 'Chercher des remplaçants viables');
+      await clickButton(fixture, 'Chercher des remplaçants viables');
 
       expect(text(fixture)).toContain('recherche impossible');
       expect(text(fixture)).toContain('Score global');

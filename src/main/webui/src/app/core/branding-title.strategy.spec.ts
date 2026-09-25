@@ -7,6 +7,29 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { BRANDING } from './branding';
 import { BrandingTitleStrategy } from './branding-title.strategy';
 
+function buildStrategy(productName: string): BrandingTitleStrategy {
+  TestBed.configureTestingModule({
+    providers: [
+      provideZonelessChangeDetection(),
+      {
+        provide: BRANDING,
+        useValue: { productName, organisation: '', logoUrl: '', accentColor: '' },
+      },
+    ],
+  });
+  return TestBed.inject(BrandingTitleStrategy);
+}
+
+/**
+ * `buildTitle` is the framework's part — it walks the route tree to find the
+ * deepest title. What is tested here is the composition that comes after, so
+ * it is handed its answer directly.
+ */
+function setPageTitle(strategy: BrandingTitleStrategy, page: string | undefined): void {
+  vi.spyOn(strategy, 'buildTitle').mockReturnValue(page);
+  strategy.updateTitle({} as RouterStateSnapshot);
+}
+
 /**
  * Le suffixe du titre était recopié dans trente-cinq routes : le renommer
  * demandait trente-cinq lignes de diff, et une marque blanche était
@@ -15,29 +38,6 @@ import { BrandingTitleStrategy } from './branding-title.strategy';
  * shell découpe pour annoncer la page aux lecteurs d'écran.
  */
 describe('BrandingTitleStrategy', () => {
-  function buildStrategy(productName: string): BrandingTitleStrategy {
-    TestBed.configureTestingModule({
-      providers: [
-        provideZonelessChangeDetection(),
-        {
-          provide: BRANDING,
-          useValue: { productName, organisation: '', logoUrl: '', accentColor: '' },
-        },
-      ],
-    });
-    return TestBed.inject(BrandingTitleStrategy);
-  }
-
-  /**
-   * `buildTitle` est la part du framework — il déplie l'arbre de routes pour
-   * trouver le titre le plus profond. Ce qui est testé ici est la composition
-   * qui vient après, donc on lui donne directement sa réponse.
-   */
-  function titreDePage(strategy: BrandingTitleStrategy, page: string | undefined): void {
-    vi.spyOn(strategy, 'buildTitle').mockReturnValue(page);
-    strategy.updateTitle({} as RouterStateSnapshot);
-  }
-
   beforeEach(() => {
     TestBed.resetTestingModule();
   });
@@ -45,7 +45,7 @@ describe('BrandingTitleStrategy', () => {
   it('accole le nom du produit au titre de la page', () => {
     const strategy = buildStrategy('Planning des animateurs');
 
-    titreDePage(strategy, 'Stands');
+    setPageTitle(strategy, 'Stands');
 
     expect(TestBed.inject(Title).getTitle()).toBe('Stands — Planning des animateurs');
   });
@@ -55,7 +55,7 @@ describe('BrandingTitleStrategy', () => {
   it("affiche le seul nom du produit quand la route n'a pas de titre", () => {
     const strategy = buildStrategy('Planning des animateurs');
 
-    titreDePage(strategy, undefined);
+    setPageTitle(strategy, undefined);
 
     expect(TestBed.inject(Title).getTitle()).toBe('Planning des animateurs');
   });

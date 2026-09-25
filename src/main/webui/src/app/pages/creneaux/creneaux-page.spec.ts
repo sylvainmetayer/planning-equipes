@@ -76,10 +76,10 @@ function reponseApi(
   surcharges: { diagnostic?: object; controle?: object } = {},
 ): unknown {
   if (url.includes('/creneaux/diagnostic')) {
-    return { ...DIAGNOSTIC, ...(surcharges.diagnostic ?? {}) };
+    return { ...DIAGNOSTIC, ...surcharges.diagnostic };
   }
   if (url.includes('/creneaux/controle')) {
-    return { ...CONTROLE, ...(surcharges.controle ?? {}) };
+    return { ...CONTROLE, ...surcharges.controle };
   }
   return autres;
 }
@@ -385,6 +385,11 @@ describe('CreneauxPage', () => {
   });
 });
 
+/** The whitespace-normalised text of the element `selector` names under `root`. */
+function text(root: HTMLElement, selector: string): string {
+  return root.querySelector(selector)!.textContent!.replace(/\s+/g, ' ').trim();
+}
+
 describe('CreneauxPage rendering', () => {
   let referenceData: ReferenceDataStore;
   let fixture: ComponentFixture<CreneauxPage>;
@@ -514,18 +519,14 @@ describe('CreneauxPage rendering', () => {
     expect(bouton('Dériver des horaires des stands').disabled).toBe(true);
   });
 
+  /** The page's own reads are plain promises the zoneless fixture does not track: let them settle. */
+  async function renderAndRead(creneaux: Creneau[]): Promise<void> {
+    await rendre(creneaux);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    await fixture.whenStable();
+  }
+
   describe('the grid as a whole', () => {
-    /** The page's own reads are plain promises the zoneless fixture does not track: let them settle. */
-    async function rendreEtLire(creneaux: Creneau[]): Promise<void> {
-      await rendre(creneaux);
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      await fixture.whenStable();
-    }
-
-    function text(selecteur: string): string {
-      return racine().querySelector(selecteur)!.textContent!.replace(/\s+/g, ' ').trim();
-    }
-
     it('shows the verdict on the page, errors first, and the stand openings apart', async () => {
       brancher(creneauxApi, [], {
         controle: {
@@ -563,7 +564,7 @@ describe('CreneauxPage rendering', () => {
           },
         },
       });
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      await renderAndRead([creneau({ id: 1, jour: 1 })]);
 
       const messages = Array.from(racine().querySelectorAll('.controle-anomalies li')).map((each) =>
         each.textContent!.replace(/\s+/g, ' ').trim(),
@@ -571,17 +572,17 @@ describe('CreneauxPage rendering', () => {
       expect(messages[0]).toContain('Doublon');
       expect(messages[1]).toContain('Trou');
       expect(messages[2]).toContain('Stand un');
-      expect(text('.controle-bilan')).toContain('1 erreur(s)');
-      expect(text('.controle-bilan')).toContain('Il manque 2 animateurs.');
+      expect(text(racine(), '.controle-bilan')).toContain('1 erreur(s)');
+      expect(text(racine(), '.controle-bilan')).toContain('Il manque 2 animateurs.');
     });
 
     it('says so when there is nothing to report', async () => {
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      await renderAndRead([creneau({ id: 1, jour: 1 })]);
       expect(racine().textContent).toContain('Rien à signaler');
     });
 
     it('opens the série dialog with the current verdict, locked with the rest', async () => {
-      await rendreEtLire([creneau({ id: 1, jour: 1 })]);
+      await renderAndRead([creneau({ id: 1, jour: 1 })]);
       const dialog = TestBed.inject(MatDialog) as unknown as { open: ReturnType<typeof vi.fn> };
 
       bouton('Créer une série').click();
@@ -598,7 +599,7 @@ describe('CreneauxPage rendering', () => {
     });
 
     it('opens the derivation dialog prefilled with the span of the grid', async () => {
-      await rendreEtLire([
+      await renderAndRead([
         creneau({ id: 2, jour: 2, date: '2026-08-03' }),
         creneau({ id: 1, jour: 1, date: '2026-08-01' }),
       ]);

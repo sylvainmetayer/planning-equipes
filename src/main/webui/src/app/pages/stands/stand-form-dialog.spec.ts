@@ -163,6 +163,42 @@ function cliquer(fixture: ComponentFixture<StandFormDialog>, libelle: string): v
   bouton!.click();
 }
 
+function submit(fixture: ComponentFixture<StandFormDialog>): HTMLButtonElement {
+  return root(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
+}
+
+/** The stand whose typical day the tests below copy: one rule with a named effectif, one dated opening. */
+function pavillon(): Stand {
+  return stand({
+    id: 'PAVILLON',
+    nom: 'Pavillon',
+    effectifMax: 4,
+    horaires: [regle({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] })],
+    ouvertures: [
+      {
+        id: 11,
+        date: '2026-07-15',
+        heureDebut: '10:00',
+        heureFin: '12:00',
+        motif: null,
+        effectif: null,
+      },
+    ],
+  });
+}
+
+function copyFrom(fixture: ComponentFixture<StandFormDialog>, standId: string): void {
+  (
+    fixture.componentInstance as unknown as { copyHorairesFrom(id: string | null): void }
+  ).copyHorairesFrom(standId);
+}
+
+function previewCells(fixture: ComponentFixture<StandFormDialog>): string[] {
+  return Array.from(root(fixture).querySelectorAll('.apercu-jour .apercu-detail')).map((cell) =>
+    cell.textContent!.trim(),
+  );
+}
+
 describe('StandFormDialog', () => {
   beforeEach(() => {
     TestBed.resetTestingModule();
@@ -269,10 +305,6 @@ describe('StandFormDialog', () => {
     expect(root(fixture).querySelector('#stand-effectif-erreur')).toBeNull();
     expect(submit(fixture).disabled).toBe(false);
   });
-
-  function submit(fixture: ComponentFixture<StandFormDialog>): HTMLButtonElement {
-    return root(fixture).querySelector('button[type="submit"]') as HTMLButtonElement;
-  }
 
   it('previews one cell per event day, deduplicated across créneaux', async () => {
     const { fixture } = mount(stand());
@@ -706,40 +738,6 @@ describe('StandFormDialog', () => {
     expect(submit(fixture).disabled).toBe(true);
   });
 
-  /** The stand whose typical day the tests below copy: one rule with a named effectif, one dated opening. */
-  function pavillon(): Stand {
-    return stand({
-      id: 'PAVILLON',
-      nom: 'Pavillon',
-      effectifMax: 4,
-      horaires: [
-        regle({ id: 7, fenetres: [{ heureDebut: '14:00', heureFin: null, effectif: 3 }] }),
-      ],
-      ouvertures: [
-        {
-          id: 11,
-          date: '2026-07-15',
-          heureDebut: '10:00',
-          heureFin: '12:00',
-          motif: null,
-          effectif: null,
-        },
-      ],
-    });
-  }
-
-  function copyFrom(fixture: ComponentFixture<StandFormDialog>, standId: string): void {
-    (
-      fixture.componentInstance as unknown as { copyHorairesFrom(id: string | null): void }
-    ).copyHorairesFrom(standId);
-  }
-
-  function apercu(fixture: ComponentFixture<StandFormDialog>): string[] {
-    return Array.from(root(fixture).querySelectorAll('.apercu-jour .apercu-detail')).map((cell) =>
-      cell.textContent!.trim(),
-    );
-  }
-
   it('offers to copy the schedule of every other stand, never of the one being edited', async () => {
     const { fixture } = mount(stand({ id: 's1' }), { stands: [stand({ id: 's1' }), pavillon()] });
     await fixture.whenStable();
@@ -770,13 +768,13 @@ describe('StandFormDialog', () => {
       { stands: [pavillon()] },
     );
     await fixture.whenStable();
-    expect(apercu(fixture)).toEqual(['Ouvert 09:00 → 11:00', 'Ouvert 09:00 → 11:00']);
+    expect(previewCells(fixture)).toEqual(['Ouvert 09:00 → 11:00', 'Ouvert 09:00 → 11:00']);
 
     copyFrom(fixture, 'PAVILLON');
     await fixture.whenStable();
 
     // The rule replaced the stand's own; the dated opening wins on its day.
-    expect(apercu(fixture)).toEqual(['Ouvert 14:00 → fermeture ×3', 'Ouvert 10:00 → 12:00']);
+    expect(previewCells(fixture)).toEqual(['Ouvert 14:00 → fermeture ×3', 'Ouvert 10:00 → 12:00']);
     expect(ligne(fixture).value).toBe('14:00-@3');
     expect(root(fixture).querySelector('.stand-copie-statut')!.textContent).toContain(
       'Horaires de « Pavillon » copiés : 1 règle(s), 1 exception(s) datée(s)',

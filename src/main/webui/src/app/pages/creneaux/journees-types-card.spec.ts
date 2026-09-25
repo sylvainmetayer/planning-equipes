@@ -47,6 +47,20 @@ type CardInternals = {
   appliquer: () => Promise<void>;
 };
 
+async function mount(): Promise<{
+  fixture: ComponentFixture<JourneesTypesCard>;
+  card: CardInternals;
+  racine: HTMLElement;
+}> {
+  const fixture = TestBed.createComponent(JourneesTypesCard);
+  await fixture.whenStable();
+  return {
+    fixture,
+    card: fixture.componentInstance as unknown as CardInternals,
+    racine: fixture.nativeElement as HTMLElement,
+  };
+}
+
 describe('JourneesTypesCard', () => {
   const api = {
     etat: vi.fn(),
@@ -87,22 +101,8 @@ describe('JourneesTypesCard', () => {
     });
   });
 
-  async function monter(): Promise<{
-    fixture: ComponentFixture<JourneesTypesCard>;
-    card: CardInternals;
-    racine: HTMLElement;
-  }> {
-    const fixture = TestBed.createComponent(JourneesTypesCard);
-    await fixture.whenStable();
-    return {
-      fixture,
-      card: fixture.componentInstance as unknown as CardInternals,
-      racine: fixture.nativeElement as HTMLElement,
-    };
-  }
-
   it('shows the templates as chips, the calendar with its drift, and the bounds', async () => {
-    const { racine } = await monter();
+    const { racine } = await mount();
 
     expect(racine.querySelectorAll('.journee-type-item')).toHaveLength(2);
     expect(racine.querySelectorAll('.vacation-chip-relais')).toHaveLength(1);
@@ -113,7 +113,7 @@ describe('JourneesTypesCard', () => {
   });
 
   it('adds a range of dates to the chosen template and writes the calendar as a whole', async () => {
-    const { fixture, card } = await monter();
+    const { fixture, card } = await mount();
 
     card.du.set('2027-07-14');
     card.au.set('2027-07-15');
@@ -131,7 +131,7 @@ describe('JourneesTypesCard', () => {
   });
 
   it('removes a date without touching the others', async () => {
-    const { card } = await monter();
+    const { card } = await mount();
 
     await card.retirer('2027-07-12');
 
@@ -147,7 +147,7 @@ describe('JourneesTypesCard', () => {
       aucunChangement: false,
     };
     api.previewApplication.mockResolvedValue(apercu);
-    const { card } = await monter();
+    const { card } = await mount();
 
     await card.appliquer();
 

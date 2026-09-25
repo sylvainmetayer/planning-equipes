@@ -106,28 +106,28 @@ describe('buildRaccourcisNavigation', () => {
   });
 });
 
+/** Every page `app.routes.ts` declares, redirects and parameterised routes aside. */
+function realRoutes(): string[] {
+  const shell = routes.find((route) => route.path === '' && route.children);
+  const all: Route[] = [...routes, ...(shell?.children ?? [])];
+  return all
+    .filter(
+      (route) =>
+        route.loadComponent !== undefined &&
+        route.path !== undefined &&
+        route.path !== 'login' &&
+        !route.path.includes(':') &&
+        !route.path.includes('*'),
+    )
+    .map((route) => (route.path === '' ? '/' : `/${route.path}`));
+}
+
 describe('buildDestinationsNavigation', () => {
   const destinations = buildDestinationsNavigation();
 
-  /** Every page `app.routes.ts` declares, redirects and parameterised routes aside. */
-  function routesReelles(): string[] {
-    const shell = routes.find((route) => route.path === '' && route.children);
-    const all: Route[] = [...routes, ...(shell?.children ?? [])];
-    return all
-      .filter(
-        (route) =>
-          route.loadComponent !== undefined &&
-          route.path !== undefined &&
-          route.path !== 'login' &&
-          !route.path.includes(':') &&
-          !route.path.includes('*'),
-      )
-      .map((route) => (route.path === '' ? '/' : `/${route.path}`));
-  }
-
   it('proposes every page of the application, so nothing is unreachable by keyboard', () => {
     expect(new Set(destinations.map((destination) => destination.route))).toEqual(
-      new Set(routesReelles()),
+      new Set(realRoutes()),
     );
   });
 
@@ -172,29 +172,29 @@ describe('chercherCommandes', () => {
   });
 
   it('finds an animateur by first name, and sends the user to their timeline', () => {
-    const [trouve] = chercherCommandes('amelie', sources).filter(
+    const found = chercherCommandes('amelie', sources).find(
       (commande) => commande.famille === 'animateur',
     );
-    expect(trouve.label).toBe('Amélie Durand');
-    expect(trouve.route).toBe('/timeline');
-    expect(trouve.queryParams).toEqual({ animateur: 'a1' });
+    expect(found?.label).toBe('Amélie Durand');
+    expect(found?.route).toBe('/timeline');
+    expect(found?.queryParams).toEqual({ animateur: 'a1' });
   });
 
   it('finds a stand ignoring accents, and opens the calendar filtered on it', () => {
-    const [trouve] = chercherCommandes('mediatheque', sources).filter(
+    const found = chercherCommandes('mediatheque', sources).find(
       (commande) => commande.famille === 'stand',
     );
-    expect(trouve.label).toBe('Médiathèque');
-    expect(trouve.route).toBe('/calendar');
-    expect(trouve.queryParams).toEqual({ stand: 's2' });
+    expect(found?.label).toBe('Médiathèque');
+    expect(found?.route).toBe('/calendar');
+    expect(found?.queryParams).toEqual({ stand: 's2' });
   });
 
   it('finds a créneau by its date, and opens the calendar on that day', () => {
-    const [trouve] = chercherCommandes('2026-07-19', sources).filter(
+    const found = chercherCommandes('2026-07-19', sources).find(
       (commande) => commande.famille === 'creneau',
     );
-    expect(trouve.route).toBe('/calendar');
-    expect(trouve.queryParams).toEqual({ month: '2026-07', date: '2026-07-19' });
+    expect(found?.route).toBe('/calendar');
+    expect(found?.queryParams).toEqual({ month: '2026-07', date: '2026-07-19' });
   });
 
   it('finds a page by its label', () => {

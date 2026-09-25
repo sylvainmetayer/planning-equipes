@@ -9,10 +9,9 @@
 
 import { provideZonelessChangeDetection } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
-import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
+import { MAT_DIALOG_DATA, MatDialog, MatDialogRef } from '@angular/material/dialog';
 import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MatDialog } from '@angular/material/dialog';
 import { ConfirmData, ConfirmDialog, ConfirmService } from './confirm-dialog';
 
 function monter(data: ConfirmData) {

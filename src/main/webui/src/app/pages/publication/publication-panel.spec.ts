@@ -33,6 +33,25 @@ type PanelInternals = {
   reloadPreview: () => Promise<void>;
 };
 
+function recipient(partiel: Record<string, unknown>): Record<string, unknown> {
+  return {
+    animateurId: 'a1',
+    nomAffiche: 'Alice Martin',
+    email: 'alice@example.org',
+    premiereDiffusion: false,
+    changements: ['samedi 11/07 : Cirque 14h-18h (nouveau)'],
+    demandes: [],
+    ajouts: 1,
+    retraits: 0,
+    deplacements: 0,
+    mineur: false,
+    reporte: false,
+    confirmation: null,
+    confirmeLe: null,
+    ...partiel,
+  };
+}
+
 describe('PublicationPanel', () => {
   const planningApi = {
     publicationPreview: vi.fn(),
@@ -251,37 +270,18 @@ describe('PublicationPanel', () => {
 
   /* -------------------------- The review table --------------------------- */
 
+  async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
+    planningApi.publicationPreview.mockResolvedValue({
+      ...apercuPret,
+      nombreConcernes: destinataires.length,
+      destinataires,
+    });
+    const panel = createPanel();
+    await vi.waitFor(() => expect(panel.rows()).toHaveLength(destinataires.length));
+    return panel;
+  }
+
   describe('review table', () => {
-    function destinataire(partiel: Record<string, unknown>): Record<string, unknown> {
-      return {
-        animateurId: 'a1',
-        nomAffiche: 'Alice Martin',
-        email: 'alice@example.org',
-        premiereDiffusion: false,
-        changements: ['samedi 11/07 : Cirque 14h-18h (nouveau)'],
-        demandes: [],
-        ajouts: 1,
-        retraits: 0,
-        deplacements: 0,
-        mineur: false,
-        reporte: false,
-        confirmation: null,
-        confirmeLe: null,
-        ...partiel,
-      };
-    }
-
-    async function panelWith(destinataires: Record<string, unknown>[]): Promise<PanelInternals> {
-      planningApi.publicationPreview.mockResolvedValue({
-        ...apercuPret,
-        nombreConcernes: destinataires.length,
-        destinataires,
-      });
-      const panel = createPanel();
-      await vi.waitFor(() => expect(panel.rows()).toHaveLength(destinataires.length));
-      return panel;
-    }
-
     it('names the deferred people to the server, and nobody else', async () => {
       confirm.ask.mockResolvedValue(true);
       planningApi.publish.mockResolvedValue({
@@ -291,8 +291,8 @@ describe('PublicationPanel', () => {
         differes: ['Bruno Petit'],
       });
       const panel = await panelWith([
-        destinataire({}),
-        destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
+        recipient({}),
+        recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
 
       panel.toggleExclusion('a2', false);
@@ -310,7 +310,7 @@ describe('PublicationPanel', () => {
      * be inert before the click, not refused by the server after it.
      */
     it('goes inert when every single person has been unticked', async () => {
-      const panel = await panelWith([destinataire({})]);
+      const panel = await panelWith([recipient({})]);
 
       panel.toggleExclusion('a1', false);
 
@@ -320,8 +320,8 @@ describe('PublicationPanel', () => {
 
     it('folds the minor changes away without excluding them', async () => {
       const panel = await panelWith([
-        destinataire({}),
-        destinataire({ animateurId: 'a2', mineur: true, ajouts: 0, deplacements: 1 }),
+        recipient({}),
+        recipient({ animateurId: 'a2', mineur: true, ajouts: 0, deplacements: 1 }),
       ]);
 
       expect(panel.minorCount()).toBe(1);
@@ -334,8 +334,8 @@ describe('PublicationPanel', () => {
 
     it('puts the biggest change first when asked to', async () => {
       const panel = await panelWith([
-        destinataire({}),
-        destinataire({ animateurId: 'a2', ajouts: 3, retraits: 1 }),
+        recipient({}),
+        recipient({ animateurId: 'a2', ajouts: 3, retraits: 1 }),
       ]);
 
       panel.chooseSort('ampleur');
@@ -350,15 +350,15 @@ describe('PublicationPanel', () => {
      */
     it('drops an exclusion once its person leaves the list', async () => {
       const panel = await panelWith([
-        destinataire({}),
-        destinataire({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
+        recipient({}),
+        recipient({ animateurId: 'a2', nomAffiche: 'Bruno Petit' }),
       ]);
       panel.toggleExclusion('a2', false);
 
       planningApi.publicationPreview.mockResolvedValue({
         ...apercuPret,
         nombreConcernes: 1,
-        destinataires: [destinataire({})],
+        destinataires: [recipient({})],
       });
       await panel.reloadPreview();
 
@@ -368,7 +368,7 @@ describe('PublicationPanel', () => {
 
     it('downloads the review table without sending anything', async () => {
       planningApi.exportPublicationDiff.mockResolvedValue('Téléchargement démarré.');
-      const panel = await panelWith([destinataire({})]);
+      const panel = await panelWith([recipient({})]);
 
       await panel.exportDiff();
 

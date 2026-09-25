@@ -29,6 +29,10 @@ describe('recopieValide', () => {
   });
 });
 
+function injectService(): ConfirmationRecopie {
+  return TestBed.inject(ConfirmationRecopie);
+}
+
 describe('ConfirmationRecopie', () => {
   const notifications = { notify: vi.fn() };
   const dialog = { open: vi.fn() };
@@ -50,10 +54,6 @@ describe('ConfirmationRecopie', () => {
     });
   });
 
-  function service(): ConfirmationRecopie {
-    return TestBed.inject(ConfirmationRecopie);
-  }
-
   const demande = {
     title: 'Vider la base de données ?',
     message: "Tout est supprimé pour l'édition Année 2026.",
@@ -63,14 +63,14 @@ describe('ConfirmationRecopie', () => {
   it('confirms when the expected text was typed back, and says nothing more', async () => {
     repond('Année 2026');
 
-    await expect(service().demander(demande)).resolves.toBe(true);
+    await expect(injectService().demander(demande)).resolves.toBe(true);
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('refuses a wrong entry and tells the user nothing happened', async () => {
     repond('Année 2025');
 
-    await expect(service().demander(demande)).resolves.toBe(false);
+    await expect(injectService().demander(demande)).resolves.toBe(false);
     expect(notifications.notify).toHaveBeenCalledExactlyOnceWith(
       expect.objectContaining({ variant: 'error' }),
     );
@@ -82,14 +82,14 @@ describe('ConfirmationRecopie', () => {
   it('refuses a cancellation without turning it into an error', async () => {
     repond(null);
 
-    await expect(service().demander(demande)).resolves.toBe(false);
+    await expect(injectService().demander(demande)).resolves.toBe(false);
     expect(notifications.notify).not.toHaveBeenCalled();
   });
 
   it('asks through the shared prompt dialog, naming the text to type and flagging the danger', async () => {
     repond('Année 2026');
 
-    await service().demander(demande);
+    await injectService().demander(demande);
 
     const [composant, config] = dialog.open.mock.calls[0];
     expect(composant).toBe(PromptDialog);

@@ -8,6 +8,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { AdminApi } from './api/admin-api';
 import { latestReleaseEndpoint, UpdateCheckService } from './update-check.service';
 
+/** Lets the promise chain behind `check()` settle. */
+async function settle(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 describe('UpdateCheckService', () => {
   let service: UpdateCheckService;
   const session = vi.fn();
@@ -18,11 +23,6 @@ describe('UpdateCheckService', () => {
       .mockResolvedValue({ ok, status: ok ? 200 : 403, json: async () => body });
     vi.stubGlobal('fetch', fetchMock);
     return fetchMock;
-  }
-
-  /** Lets the promise chain behind `check()` settle. */
-  async function attendre(): Promise<void> {
-    await new Promise((resolve) => setTimeout(resolve, 0));
   }
 
   /** A fresh service over a session probe that answers « logged in ». */
@@ -49,7 +49,7 @@ describe('UpdateCheckService', () => {
     });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(fetchMock.mock.calls[0][0]).toMatch(
@@ -61,7 +61,7 @@ describe('UpdateCheckService', () => {
     repond({ tag_name: 'v1.1.0', html_url: 'https://github.com/x/y/releases/tag/v1.1.0' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(service.available()).toEqual({
       version: 'v1.1.0',
@@ -73,14 +73,14 @@ describe('UpdateCheckService', () => {
     repond({ tag_name: 'v1.0.0', html_url: 'https://github.com/x/y/releases/tag/v1.0.0' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
     expect(service.available()).toBeNull();
 
     // A maintenance line deployed ahead of GitHub's « latest » (versioning.md § 5).
     reconstruire();
     repond({ tag_name: 'v1.0.0', html_url: '' });
     service.check('v1.0.1');
-    await attendre();
+    await settle();
     expect(service.available()).toBeNull();
   });
 
@@ -88,7 +88,7 @@ describe('UpdateCheckService', () => {
     const fetchMock = repond({ tag_name: 'v9.9.9' });
 
     service.check('2f7a1c3');
-    await attendre();
+    await settle();
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(session).not.toHaveBeenCalled();
@@ -105,7 +105,7 @@ describe('UpdateCheckService', () => {
     const fetchMock = repond({ tag_name: 'v9.9.9' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(session).toHaveBeenCalledOnce();
     expect(fetchMock).not.toHaveBeenCalled();
@@ -121,12 +121,12 @@ describe('UpdateCheckService', () => {
     const fetchMock = repond({ tag_name: 'v1.1.0' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
     expect(fetchMock).not.toHaveBeenCalled();
 
     session.mockResolvedValue({ authentifie: true, nom: 'admin' });
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(fetchMock).toHaveBeenCalledOnce();
     expect(service.available()?.version).toBe('v1.1.0');
@@ -138,7 +138,7 @@ describe('UpdateCheckService', () => {
     const fetchMock = repond({ tag_name: 'v9.9.9' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(fetchMock).not.toHaveBeenCalled();
     expect(service.available()).toBeNull();
@@ -149,7 +149,7 @@ describe('UpdateCheckService', () => {
 
     service.check('v1.0.0');
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(session).toHaveBeenCalledOnce();
     expect(fetchMock).toHaveBeenCalledOnce();
@@ -158,19 +158,19 @@ describe('UpdateCheckService', () => {
   it('reste muet quand GitHub refuse, répond n’importe quoi, ou est injoignable', async () => {
     repond({ message: 'API rate limit exceeded' }, false);
     service.check('v1.0.0');
-    await attendre();
+    await settle();
     expect(service.available()).toBeNull();
 
     reconstruire();
     repond({ tag_name: 'nightly' });
     service.check('v1.0.0');
-    await attendre();
+    await settle();
     expect(service.available()).toBeNull();
 
     reconstruire();
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('offline')));
     service.check('v1.0.0');
-    await attendre();
+    await settle();
     expect(service.available()).toBeNull();
   });
 
@@ -178,7 +178,7 @@ describe('UpdateCheckService', () => {
     repond({ tag_name: 'v1.1.0', html_url: 'javascript:alert(1)' });
 
     service.check('v1.0.0');
-    await attendre();
+    await settle();
 
     expect(service.available()?.url).toMatch(
       /^https:\/\/github\.com\/.+\/releases\/tag\/v1\.1\.0$/,
