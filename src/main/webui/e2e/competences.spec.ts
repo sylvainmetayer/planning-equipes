@@ -8,15 +8,20 @@
 // import-csv-animateurs.spec.ts for the file drop and the report rows.
 
 import { APIRequestContext, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, pageAdmin, seedReferentielSolveur } from './support';
+import { contexteAdmin, pageAdmin, seedReferentielSolveur, typologieId } from './support';
 import { repartirDeLaReference } from './reference';
 
 const IDS = { alice: 'E2E-CP1', bruno: 'E2E-CP2' } as const;
 
 /** Seeded by the reference database (V3): every stand of the seeds carries it. */
-const TYPOLOGIE = 'STRATEGIE';
+const TYPOLOGIE_CODE = 'STRATEGIE';
 
 let admin: APIRequestContext;
+/**
+ * Its id, which the application drew (`T8`…) and which the grid and the fiches
+ * key on; the code is what the exported file's header says.
+ */
+let TYPOLOGIE: string;
 /** A second typologie of the edition, read from the API so the spec does not pin the seed list. */
 let autreTypologie: string;
 
@@ -30,6 +35,7 @@ interface AnimateurApi {
 test.beforeAll(async ({ playwright }, testInfo) => {
   admin = await contexteAdmin(playwright, testInfo.project.use.baseURL as string);
   await repartirDeLaReference(admin);
+  TYPOLOGIE = await typologieId(admin, TYPOLOGIE_CODE);
   const typologies = (await (await admin.get('/api/typologies')).json()) as { id: string }[];
   const autre = typologies.find((typologie) => typologie.id !== TYPOLOGIE);
   expect(autre, 'the reference database seeds more than one typologie').toBeDefined();
@@ -138,7 +144,8 @@ test("l'export CSV rend la grille en identifiants et niveaux, avec sa marque d'o
     }
     const contenu = Buffer.concat(morceaux).toString('utf-8');
     expect(contenu.startsWith('\uFEFFanimateur;')).toBe(true);
-    expect(contenu.split('\n')[0]).toContain(TYPOLOGIE);
+    // Headed by the code, which a reader recognises, not by the id.
+    expect(contenu.split('\n')[0]).toContain(TYPOLOGIE_CODE);
     expect(contenu).toContain(`${IDS.alice};`);
     expect(contenu).toContain('AUTONOME');
     // Ids only: the file names nobody.

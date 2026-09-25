@@ -412,9 +412,9 @@ describe('EmplacementsPage table', () => {
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Emplacements (2)');
     expect(lignes()[0][1]).toBe('hall');
-    expect(lignes()[0][3]).toContain('47.2');
+    expect(lignes()[0][4]).toContain('47.2');
     // 0.001° of latitude is ~111 m: under the solver's 300 m threshold.
-    expect(lignes()[0][4]).toBe('111 m de Salle B');
+    expect(lignes()[0][5]).toBe('111 m de Salle B');
   });
 
   it('warns in the neighbour cell when the closest place is past the threshold', async () => {
@@ -423,13 +423,13 @@ describe('EmplacementsPage table', () => {
       emplacement('loin', { nom: 'Chapiteau', latitude: 47.21, longitude: -1.55 }),
     ]);
 
-    expect(lignes()[0][4]).toContain("au-delà du seuil d'éloignement");
+    expect(lignes()[0][5]).toContain("au-delà du seuil d'éloignement");
   });
 
   it('writes an em dash rather than an empty cell for a place with no coordinates', async () => {
     await rendre([emplacement('hall', { nom: 'Hall A' })]);
 
-    expect(lignes()[0][4]).toBe('—');
+    expect(lignes()[0][5]).toBe('—');
   });
 
   it('distinguishes an empty referential from a filter that matched nothing', async () => {

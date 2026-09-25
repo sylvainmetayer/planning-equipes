@@ -77,32 +77,26 @@ export class ReferenceCrudService {
    * true when the form can close: the entity was persisted — or, after a
    * concurrent-edit conflict, the user chose to reload instead, and the store
    * now holds the other session's version (see {@link resoudreConflit}).
-   * `requireId` defaults to true (every entity but créneaux is keyed by a
-   * user-typed natural id); créneaux pass `false` since their id is generated
-   * by the server and never entered by the user.
+   * No entity is keyed by an id the user types: on a creation the server
+   * draws it, so an empty `id` is dropped from the payload rather than sent.
    */
   async save<T extends { id?: RecordId | null }>(
     resource: string,
     payload: T,
     editingId: RecordId | null,
     label: string,
-    options: { requireId?: boolean } = {},
   ): Promise<boolean> {
-    const requireId = options.requireId ?? true;
-    if (requireId && !payload.id) {
-      this.notifications.notify({
-        title: $localize`:@@crud.idRequired:Un identifiant est requis.`,
-        variant: 'error',
-      });
-      return false;
-    }
     try {
-      const { id, avertissements } = await this.persist(resource, payload, editingId);
+      const { id, avertissements } = await this.persist(
+        resource,
+        withoutBlankId(payload),
+        editingId,
+      );
       if (id === RECHARGE) {
         return true;
       }
       this.refreshResolution();
-      // The id the server wrote, not the one that was sent: a créneau is
+      // The id the server wrote, not the one that was sent: every entity is
       // created without one, and echoing the payload printed "Créneau
       // undefined" in a snack bar that stays until it is dismissed.
       const identifiant = id ?? payload.id ?? editingId ?? '';
@@ -405,6 +399,15 @@ export class ReferenceCrudService {
       variant: 'error',
     });
   }
+}
+
+/** The payload without its `id` when it carries none worth sending. */
+function withoutBlankId<T extends { id?: string | number | null }>(payload: T): T {
+  if (payload.id !== '' && payload.id !== null) {
+    return payload;
+  }
+  const { id: _blank, ...rest } = payload;
+  return rest as T;
 }
 
 /**

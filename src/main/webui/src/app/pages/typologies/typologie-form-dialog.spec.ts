@@ -87,8 +87,8 @@ describe('TypologieFormDialog', () => {
     await fixture.whenStable();
 
     expect(nomsEnregistres(fixture).sort((a, b) => a.localeCompare(b))).toEqual([
+      'code',
       'description',
-      'id',
       'label',
       'maxCreneauxParAnimateur',
     ]);
@@ -117,14 +117,41 @@ describe('TypologieFormDialog', () => {
     );
   });
 
-  it('locks the identifier of an existing typologie but not of a new one', async () => {
-    const { fixture } = monter({ id: 'ambiance', label: 'Ambiance', ninja: false });
+  it('shows the drawn identifier read-only on an edit, and asks none on a creation', async () => {
+    const { fixture } = monter({ id: 'T3', label: 'Ambiance', ninja: false });
     await fixture.whenStable();
     expect((champ(fixture, 'id') as HTMLInputElement).readOnly).toBe(true);
+    expect(champ(fixture, 'id').value).toBe('T3');
 
     const { fixture: nouveau } = monter(null);
     await nouveau.whenStable();
-    expect((champ(nouveau, 'id') as HTMLInputElement).readOnly).toBe(false);
+    expect(champ(nouveau, 'id')).toBeNull();
+  });
+
+  it('creates without an id, and sends the code trimmed or null when left blank', async () => {
+    const { fixture, save } = monter(null);
+    await fixture.whenStable();
+
+    saisir(fixture, 'label', 'Ambiance');
+    saisir(fixture, 'code', '  AMBIANCE  ');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+    const [, payload, editingId] = save.mock.calls[0] as unknown as [
+      string,
+      TypologieItem,
+      string | null,
+    ];
+    expect(payload.id).toBe('');
+    expect(payload.code).toBe('AMBIANCE');
+    expect(editingId).toBeNull();
+
+    save.mockClear();
+    saisir(fixture, 'code', '   ');
+    await fixture.whenStable();
+    submit(fixture);
+    await fixture.whenStable();
+    expect((save.mock.calls[0] as unknown as [string, TypologieItem])[1].code).toBeNull();
   });
 
   it('fills the form from the typologie and saves the edited values, trimmed', async () => {
@@ -146,6 +173,7 @@ describe('TypologieFormDialog', () => {
     expect(resource).toBe('typologies');
     expect(payload).toEqual({
       id: 'ambiance',
+      code: null,
       label: 'Ambiance festive',
       ninja: false,
       maxCreneauxParAnimateur: null,

@@ -151,14 +151,15 @@ describe('TypologiesPage table', () => {
 
   it('renders one row per typologie and counts them in the title', async () => {
     await rendre([
-      { id: 'ambiance', label: 'Ambiance' },
-      { id: 'expert', label: 'Expert' },
+      { id: 'T1', code: 'AMBIANCE', label: 'Ambiance' },
+      { id: 'T2', label: 'Expert' },
     ]);
 
     expect(racine().querySelector('h1')!.textContent!).toContain('Typologies (2)');
-    expect(lignes().map((row) => [row[1], row[2]])).toEqual([
-      ['ambiance', 'Ambiance'],
-      ['expert', 'Expert'],
+    // The drawn id, then the code the import files cite — empty when none was given.
+    expect(lignes().map((row) => [row[1], row[2], row[3]])).toEqual([
+      ['T1', 'AMBIANCE', 'Ambiance'],
+      ['T2', '', 'Expert'],
     ]);
   });
 
@@ -169,7 +170,7 @@ describe('TypologiesPage table', () => {
     ]);
 
     const cellules = Array.from(racine().querySelectorAll('tbody tr')).map((row) =>
-      row.querySelectorAll('td')[3].querySelector('mat-icon'),
+      row.querySelectorAll('td')[4].querySelector('mat-icon'),
     );
     expect(cellules[0]).toBeNull();
     // Announced, not just drawn: the icon carries the whole meaning of the cell.
@@ -268,6 +269,19 @@ describe('TypologiesPage table', () => {
     expect(racine().querySelector('.empty-hint')!.textContent!.trim()).toBe(
       'Aucune ligne ne correspond au filtre.',
     );
+  });
+
+  it('finds a row by its code in the quick filter', async () => {
+    await rendre([
+      { id: 'T1', code: 'AMBIANCE', label: 'Jeux festifs' },
+      { id: 'T2', label: 'Expert' },
+    ]);
+    const input = racine().querySelector('app-table-filter input') as HTMLInputElement;
+    input.value = 'ambiance';
+    input.dispatchEvent(new Event('input'));
+    await fixture.whenStable();
+
+    expect(lignes().map((row) => row[1])).toEqual(['T1']);
   });
 
   it('points at the Paramètres page for the ninja choice instead of editing it here', async () => {

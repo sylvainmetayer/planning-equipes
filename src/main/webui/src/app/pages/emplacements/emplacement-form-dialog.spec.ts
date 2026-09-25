@@ -94,7 +94,7 @@ describe('EmplacementFormDialog', () => {
 
     const ngForm = fixture.debugElement.query(By.directive(NgForm)).injector.get(NgForm);
     expect(Object.keys(ngForm.controls).sort((a, b) => a.localeCompare(b))).toEqual([
-      'id',
+      'code',
       'latitude',
       'longitude',
       'nom',
@@ -115,14 +115,14 @@ describe('EmplacementFormDialog', () => {
     );
   });
 
-  it('locks the identifier of an existing emplacement but not of a new one', async () => {
+  it('shows the drawn identifier read-only on an edit, and asks none on a creation', async () => {
     const { fixture } = monter(HALL);
     await fixture.whenStable();
     expect(champ(fixture, 'id').readOnly).toBe(true);
 
     const { fixture: nouveau } = monter(null);
     await nouveau.whenStable();
-    expect(champ(nouveau, 'id').readOnly).toBe(false);
+    expect(champ(nouveau, 'id')).toBeNull();
   });
 
   it('writes a map click into the two coordinate fields and says so out loud', async () => {
@@ -142,20 +142,22 @@ describe('EmplacementFormDialog', () => {
     );
   });
 
-  it('saves the coordinates as numbers, trimming the identity fields', async () => {
+  it('saves the coordinates as numbers, trimming the name and the code', async () => {
     const { fixture, save, close } = monter(null);
     await fixture.whenStable();
 
-    saisir(fixture, 'id', '  hall  ');
     saisir(fixture, 'nom', '  Hall A  ');
+    saisir(fixture, 'code', '  HALL  ');
     await fixture.whenStable();
     cliquerSurLaCarte(fixture, 47.2, -1.55);
     await fixture.whenStable();
     submit(fixture);
     await fixture.whenStable();
 
+    // No id on a creation: the server draws it.
     expect(payload(save)).toEqual({
-      id: 'hall',
+      id: '',
+      code: 'HALL',
       nom: 'Hall A',
       latitude: 47.2,
       longitude: -1.55,

@@ -153,12 +153,12 @@ describe('AnimateurFormDialog', () => {
     expect(champ(fixture, 'id').readOnly).toBe(true);
   });
 
-  it('starts blank on a creation, with an editable identifier', async () => {
+  it('starts blank on a creation, asking no identifier: the server draws it', async () => {
     const { fixture } = monter(null);
     await fixture.whenStable();
 
-    expect(champ(fixture, 'id').value).toBe('');
-    expect(champ(fixture, 'id').readOnly).toBe(false);
+    expect(champ(fixture, 'id')).toBeNull();
+    expect(champ(fixture, 'prenom').value).toBe('');
     expect(racine(fixture).querySelector('h2')!.textContent!.trim()).toBe('Nouvel animateur');
   });
 
@@ -282,7 +282,6 @@ describe('AnimateurFormDialog', () => {
     const { fixture, save, close } = monter(null);
     await fixture.whenStable();
 
-    saisir(fixture, 'id', '  a42  ');
     saisir(fixture, 'prenom', '  Marcel  ');
     saisir(fixture, 'nom', '  Proust  ');
     saisir(fixture, 'dateNaissance', '1871-07-10');
@@ -291,7 +290,8 @@ describe('AnimateurFormDialog', () => {
     await fixture.whenStable();
 
     expect(payload(save)).toEqual({
-      id: 'a42',
+      // Empty on a creation: the shared CRUD drops it, the server draws one.
+      id: '',
       prenom: 'Marcel',
       nom: 'Proust',
       dateNaissance: '1871-07-10',
@@ -320,7 +320,6 @@ describe('AnimateurFormDialog', () => {
     }
     expect(bouton().disabled).toBe(true);
 
-    saisir(fixture, 'id', 'a42');
     saisir(fixture, 'prenom', '   ');
     saisir(fixture, 'nom', 'Proust');
     saisir(fixture, 'dateNaissance', '1871-07-10');

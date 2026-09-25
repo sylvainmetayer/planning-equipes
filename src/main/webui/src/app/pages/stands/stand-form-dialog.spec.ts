@@ -251,7 +251,7 @@ describe('StandFormDialog', () => {
     expect(valeur('effectifMax')).toBe('4');
   });
 
-  it('locks the identifier of an existing stand but not of a new one', async () => {
+  it('shows the drawn identifier read-only on an edit, and asks none on a creation', async () => {
     const { fixture: existant } = mount(stand());
     await existant.whenStable();
     expect((root(existant).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(
@@ -261,9 +261,11 @@ describe('StandFormDialog', () => {
     TestBed.resetTestingModule();
     const { fixture: nouveau } = mount(null);
     await nouveau.whenStable();
-    expect((root(nouveau).querySelector('input[name="id"]') as HTMLInputElement).readOnly).toBe(
-      false,
-    );
+    expect(root(nouveau).querySelector('input[name="id"]')).toBeNull();
+    // The code is what the user may give instead: optional, never required.
+    const code = root(nouveau).querySelector('input[name="code"]') as HTMLInputElement;
+    expect(code).not.toBeNull();
+    expect(code.required).toBe(false);
   });
 
   it('shows the staffing error and blocks the submit when the maximum is below the minimum', async () => {

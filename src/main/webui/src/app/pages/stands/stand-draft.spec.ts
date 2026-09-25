@@ -356,11 +356,19 @@ describe('versStand', () => {
 
   const emplacements = [{ id: 'salle-1', nom: 'Salle 1' }] as Emplacement[];
 
-  it('trims the identifier and the name', () => {
-    const stand = versStand(draft({ id: '  S1  ', nom: '  Stand 1  ' }), emplacements);
+  it('keeps the drawn id as is, and trims the name and the code', () => {
+    const stand = versStand(
+      draft({ id: 'S1', nom: '  Stand 1  ', code: '  JEU-LIBRE  ' }),
+      emplacements,
+    );
 
     expect(stand.id).toBe('S1');
     expect(stand.nom).toBe('Stand 1');
+    expect(stand.code).toBe('JEU-LIBRE');
+  });
+
+  it('sends a blank code as null, never as an empty string', () => {
+    expect(versStand(draft({ code: '   ' }), emplacements).code).toBeNull();
   });
 
   it('resolves the emplacement against the store, and stays null when none is picked', () => {

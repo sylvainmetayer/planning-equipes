@@ -49,7 +49,8 @@ describe('buildTypologieDetail', () => {
 
   it('shows an explicit "aucun" on both sides, which is exactly what this view is opened to spot', () => {
     const sections = buildTypologieDetail(
-      enfance,
+      // Given a code, so that its own « Aucun » is not counted below.
+      { ...enfance, code: 'ENFANCE' },
       [stand('S1', ['DIV'])],
       [animateur('A1', { DIV: 'AUTONOME' })],
     );
@@ -60,6 +61,17 @@ describe('buildTypologieDetail', () => {
       .flatMap((section) => section.rows)
       .filter((row) => row.muted && row.value === 'Aucun');
     expect(rows).toHaveLength(2);
+  });
+
+  it('shows the code next to the drawn id, and says so when there is none', () => {
+    const avecCode = buildTypologieDetail({ ...enfance, code: 'ENFANCE' }, [], []);
+    expect(avecCode[0].rows.find((row) => row.label === 'Code')?.value).toBe('ENFANCE');
+
+    const sansCode = buildTypologieDetail(enfance, [], [])[0].rows.find(
+      (row) => row.label === 'Code',
+    );
+    expect(sansCode?.value).toBe('Aucun');
+    expect(sansCode?.muted).toBe(true);
   });
 
   /**

@@ -34,7 +34,10 @@ export interface HoraireDraft extends HoraireStand {
 
 /** The form's own state: flat where the entity is nested, strings where the inputs are. */
 export interface StandDraft {
+  /** Drawn by the server on creation: empty until then, read-only after. */
   id: string;
+  /** The readable key import files cite; blank = none. */
+  code: string;
   nom: string;
   effectifMin: number;
   effectifMax: number;
@@ -247,6 +250,7 @@ export function toDraft(stand: Stand | null): StandDraft {
   if (!stand) {
     return {
       id: '',
+      code: '',
       nom: '',
       effectifMin: 1,
       effectifMax: 1,
@@ -263,6 +267,7 @@ export function toDraft(stand: Stand | null): StandDraft {
   }
   return {
     id: stand.id,
+    code: stand.code ?? '',
     modifieLe: stand.modifieLe ?? null,
     nom: stand.nom ?? '',
     effectifMin: stand.effectifMin,
@@ -288,7 +293,9 @@ export function toDraft(stand: Stand | null): StandDraft {
 /** The entity to send, resolved against the emplacements the store knows. */
 export function versStand(draft: StandDraft, emplacements: readonly Emplacement[]): Stand {
   return {
-    id: draft.id.trim(),
+    id: draft.id,
+    // A blank code is no code: the server keeps the column empty.
+    code: draft.code.trim() || null,
     nom: draft.nom.trim(),
     typologiesProposees: draft.typologiesProposees,
     effectifMin: Number(draft.effectifMin) || 0,

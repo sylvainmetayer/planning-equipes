@@ -113,10 +113,9 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
   await reseed();
 
   // Three constraints, one of each type, created through the same API the
-  // frontend uses.
+  // frontend uses — without an id, which the application draws.
   const creations = [
     {
-      id: 'SOLV-ADHOC-INDISPO',
       type: 'INDISPONIBILITE_FORCEE',
       animateursConcernes: [{ id: 'SOLV-P' }],
       creneau: { id: C1 },
@@ -124,7 +123,6 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
       raison: 'E2E : Paula indisponible le matin',
     },
     {
-      id: 'SOLV-ADHOC-FORCEE',
       type: 'AFFECTATION_FORCEE',
       animateursConcernes: [{ id: 'SOLV-Q' }],
       creneau: { id: C2 },
@@ -132,7 +130,6 @@ test('les contraintes ad hoc sont respectées par le solve et visibles dans le f
       raison: 'E2E : Quentin imposé sur Stand Solve un',
     },
     {
-      id: 'SOLV-ADHOC-INCOMPAT',
       type: 'INCOMPATIBILITE',
       animateursConcernes: [{ id: 'SOLV-R' }, { id: 'SOLV-T' }],
       creneau: null,

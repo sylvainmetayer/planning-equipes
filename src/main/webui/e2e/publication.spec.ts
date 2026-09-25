@@ -15,6 +15,7 @@ import {
   ouvrirSessionEspace,
   pageAdmin,
   seedPlanning,
+  EDITION_REFERENCE,
 } from './support';
 import { repartirDeLaReference } from './reference';
 
@@ -42,7 +43,7 @@ async function deplacerUnSiege(admin: APIRequestContext): Promise<void> {
     data:
       `delete from poste_affectation where id = 'E2E-P2';\n` +
       `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) ` +
-      `values ('DEFAUT', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.demandeur}');`,
+      `values ('${EDITION_REFERENCE}', 'E2E-P2', '${SEED.standCible}', ${SEED.creneauId}, '${SEED.demandeur}');`,
   });
   expect(reponse.ok(), await reponse.text()).toBe(true);
 }

@@ -7,7 +7,14 @@
 // per-gesture rules are covered by DeplacementResourceTest, far more cheaply.
 
 import { APIRequestContext, Locator, Page, expect, test } from '@playwright/test';
-import { contexteAdmin, shiftDate, pageAdmin, planningPersiste } from './support';
+import {
+  contexteAdmin,
+  shiftDate,
+  pageAdmin,
+  planningPersiste,
+  EDITION_REFERENCE,
+  typologieSql,
+} from './support';
 import { repartirDeLaReference } from './reference';
 
 const C1 = 987401;
@@ -49,21 +56,21 @@ async function seedPlan(options: SeedOptions = {}): Promise<void> {
     `delete from stand where id like 'SOLV-DD-%';`,
     ...STANDS.map(
       (stand, index) =>
-        `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('DEFAUT', '${stand.id}', '${stand.nom}', 1, 1, ${index === 0 && options.premierStandReserveMajeurs ? 'true' : 'false'});`,
+        `insert into stand (edition_id, id, nom, effectif_min, effectif_max, reserve_majeurs) values ('${EDITION_REFERENCE}', '${stand.id}', '${stand.nom}', 1, 1, ${index === 0 && options.premierStandReserveMajeurs ? 'true' : 'false'});`,
     ),
     ...STANDS.map(
       (stand) =>
-        `insert into stand_typologie (edition_id, stand_id, typologie) values ('DEFAUT', '${stand.id}', 'STRATEGIE');`,
+        `insert into stand_typologie (edition_id, stand_id, typologie) values ('${EDITION_REFERENCE}', '${stand.id}', ${typologieSql('STRATEGIE')});`,
     ),
     ...ANIMATEURS.map(
       (animateur) =>
-        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('DEFAUT', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? shiftDate('2012-01-01') : animateur.dateNaissance}', false);`,
+        `insert into animateur (edition_id, id, prenom, nom, date_naissance, manager) values ('${EDITION_REFERENCE}', '${animateur.id}', '${animateur.prenom}', '${animateur.nom}', '${animateur.id === 'SOLV-DD-C' && options.cleoMineureEtLibre ? shiftDate('2012-01-01') : animateur.dateNaissance}', false);`,
     ),
-    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('DEFAUT', ${C1}, '${JOUR}', '10:00', '12:00');`,
+    `insert into creneau (edition_id, id, date_creneau, heure_debut, heure_fin) values ('${EDITION_REFERENCE}', ${C1}, '${JOUR}', '10:00', '12:00');`,
     ...STANDS.map((stand, index) =>
       index === 2 && options.cleoMineureEtLibre
-        ? `insert into poste_affectation (edition_id, id, stand_id, creneau_id) values ('DEFAUT', 'SOLV-DD-P3', '${stand.id}', ${C1});`
-        : `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('DEFAUT', 'SOLV-DD-P${index + 1}', '${stand.id}', ${C1}, '${ANIMATEURS[index].id}');`,
+        ? `insert into poste_affectation (edition_id, id, stand_id, creneau_id) values ('${EDITION_REFERENCE}', 'SOLV-DD-P3', '${stand.id}', ${C1});`
+        : `insert into poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) values ('${EDITION_REFERENCE}', 'SOLV-DD-P${index + 1}', '${stand.id}', ${C1}, '${ANIMATEURS[index].id}');`,
     ),
   ].join('\n');
   const reponse = await admin.post('/api/database/import', {

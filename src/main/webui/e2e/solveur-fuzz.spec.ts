@@ -212,7 +212,6 @@ for (const iteration of [0, 1]) {
 
     for (const contrainte of [
       {
-        id: `FUZZ-ADHOC-INDISPO-${iteration}`,
         type: 'INDISPONIBILITE_FORCEE',
         animateursConcernes: [{ id: probleme.indispoForcee.animateurId }],
         creneau: { id: probleme.indispoForcee.creneauId },
@@ -220,7 +219,6 @@ for (const iteration of [0, 1]) {
         raison: `Fuzz ${graine}/${iteration} : indisponibilité forcée`,
       },
       {
-        id: `FUZZ-ADHOC-FORCEE-${iteration}`,
         type: 'AFFECTATION_FORCEE',
         animateursConcernes: [{ id: probleme.affectationForcee.animateurId }],
         creneau: { id: probleme.affectationForcee.creneauId },
@@ -228,7 +226,6 @@ for (const iteration of [0, 1]) {
         raison: `Fuzz ${graine}/${iteration} : affectation forcée`,
       },
       {
-        id: `FUZZ-ADHOC-INCOMPAT-${iteration}`,
         type: 'INCOMPATIBILITE',
         animateursConcernes: probleme.incompatibles.map((id) => ({ id })),
         creneau: null,

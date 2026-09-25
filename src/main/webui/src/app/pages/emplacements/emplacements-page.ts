@@ -44,7 +44,7 @@ const SEUIL_ELOIGNEMENT_METRES = 300;
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
-  protected readonly columns = ['select', 'id', 'nom', 'coordonnees', 'voisin', 'actions'];
+  protected readonly columns = ['select', 'id', 'code', 'nom', 'coordonnees', 'voisin', 'actions'];
 
   /** The template names the rows after the entity, as the other pages do. */
   protected readonly emplacementsFiltres = this.lignesFiltrees;
@@ -55,6 +55,7 @@ export class EmplacementsPage extends ReferenceTablePage<Emplacement> {
       id: (emplacement) => emplacement.id,
       champsFiltre: (emplacement) => [
         emplacement.id,
+        emplacement.code,
         emplacement.nom,
         emplacement.latitude,
         emplacement.longitude,

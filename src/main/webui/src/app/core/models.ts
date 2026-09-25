@@ -10,6 +10,12 @@ export type NiveauContrainte = 'HARD' | 'MEDIUM' | 'SOFT';
 /** `/api/typologies` items: the enum id plus a display label. */
 export interface TypologieItem {
   id: string;
+  /**
+   * The readable key an import file cites for this row (« STRATEGIE »),
+   * unique within the edition and chosen by the user; the id itself is drawn
+   * by the server. Absent or `null` when none was given.
+   */
+  code?: string | null;
   label: string;
   /**
    * The single "ninja" typologie of the referential: animateurs who hold it are
@@ -70,6 +76,12 @@ export interface Animateur {
 
 export interface Stand {
   id: string;
+  /**
+   * The readable key an import file cites for this row (« STRATEGIE »),
+   * unique within the edition and chosen by the user; the id itself is drawn
+   * by the server. Absent or `null` when none was given.
+   */
+  code?: string | null;
   nom: string;
   /**
    * When the row was last written server-side (issue #362). Sent back as is on
@@ -602,6 +614,12 @@ export interface RapportTension {
 /** Editable GPS-located place a stand can be tied to (`/api/emplacements`). */
 export interface Emplacement {
   id: string;
+  /**
+   * The readable key an import file cites for this row (« STRATEGIE »),
+   * unique within the edition and chosen by the user; the id itself is drawn
+   * by the server. Absent or `null` when none was given.
+   */
+  code?: string | null;
   nom: string;
   /**
    * When the row was last written server-side (issue #362). Sent back as is on
@@ -3454,7 +3472,7 @@ export interface RapportImportReferentiel {
   rejected: number;
   created: number;
   updated: number;
-  /** Typologie ids a stand named without them existing: created, and listed so nothing is silent. */
+  /** Typologie codes a stand named without them existing: created, and listed so nothing is silent. */
   typologiesCreees: string[];
   rows: LigneImportReferentiel[];
 }

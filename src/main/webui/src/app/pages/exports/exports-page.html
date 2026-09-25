@@ -9,7 +9,7 @@
   </mat-card-header>
   <mat-card-content>
     <p class="empty-hint" i18n="@@exportCsv.aide">
-      Chaque fichier se réimporte tel quel, ou après correction dans un tableur : un identifiant déjà connu est mis à jour, et une colonne retirée du fichier n'efface rien.
+      Chaque fichier se réimporte tel quel, ou après correction dans un tableur : une ligne déjà connue, par son identifiant ou son code, est mise à jour, et une colonne retirée du fichier n'efface rien.
     </p>
     @if (chargement()) {
       <mat-progress-bar mode="indeterminate" />
@@ -67,7 +67,7 @@
   </mat-card-header>
   <mat-card-content>
     <p class="empty-hint" i18n="@@exports.scenario.aide">
-      L'aller-retour n'est pas l'identité : les identifiants générés sont réécrits, et l'export ne porte pas de section « edition ». Pour recopier un référentiel fidèlement, prenez l'archive CSV.
+      L'aller-retour n'est pas l'identité : l'import attribue de nouveaux identifiants, et l'export ne porte pas de section « edition ». Pour recopier un référentiel fidèlement, prenez l'archive CSV.
     </p>
     <div class="card-actions">
       <button matButton="filled" [disabled]="exportScenarioEnCours()" (click)="exporterScenario()">

@@ -20,11 +20,13 @@ import { MatTooltipModule } from '@angular/material/tooltip';
 import { EditionsApi } from '../../core/api/editions-api';
 import { EditionStore } from '../../core/edition.store';
 import { NotificationService } from '../../core/notification.service';
-import { slugify } from '../../core/slug';
 import { Edition } from '../../core/models';
 import { ConfirmService } from '../../shared/confirm-dialog';
 import { PromptDialog } from '../../shared/prompt-dialog';
 import { errorMessage } from '../../core/error-message';
+
+/** The shape of an edition id (`E1`, `E2`…), which the server refuses as a name. */
+const NOM_FORME_ID = /^[Ee][1-9][0-9]*$/;
 
 /**
  * Manages the editions the whole referential is partitioned into: create an
@@ -58,7 +60,7 @@ export class EditionsPage implements OnInit {
   protected readonly columns = ['nom', 'id', 'etat', 'actions'];
   protected readonly store = inject(EditionStore);
 
-  /** Name typed in the creation form; its id is slugified from it, as on the découpage screen. */
+  /** Name typed in the creation form; the server draws the id. */
   protected readonly nouveauNom = signal('');
   /** Id of the edition the new one should be a copy of, or `null` for an empty edition. */
   protected readonly sourceDuplication = signal<string | null>(null);
@@ -84,20 +86,16 @@ export class EditionsPage implements OnInit {
 
   protected async creer(): Promise<void> {
     const nom = this.nouveauNom().trim();
-    if (!nom || this.enCours()) {
+    if (!nom || this.enCours() || this.refuseIdShapedName(nom)) {
       return;
     }
-    const target: Pick<Edition, 'id' | 'nom'> = {
-      id: slugify(
-        nom,
-        this.store.editions().map((edition) => edition.id),
-      ),
-      nom,
-    };
-    const source = this.sourceDuplication();
+    const sourceId = this.sourceDuplication();
+    // Named by what the user picked in the list, not by its id.
+    const source =
+      this.store.editions().find((edition) => edition.id === sourceId)?.nom ?? sourceId;
     await this.executer(async () => {
       const keepAnimateurs = this.keepAnimateurs();
-      await this.editionsApi.create(target, source, keepAnimateurs);
+      await this.editionsApi.create(nom, sourceId, keepAnimateurs);
       this.nouveauNom.set('');
       this.sourceDuplication.set(null);
       this.keepAnimateurs.set(true);
@@ -117,7 +115,7 @@ export class EditionsPage implements OnInit {
 
   protected async renommer(edition: Edition, nom: string): Promise<void> {
     const nouveau = nom.trim();
-    if (!nouveau || nouveau === edition.nom) {
+    if (!nouveau || nouveau === edition.nom || this.refuseIdShapedName(nouveau)) {
       return;
     }
     await this.executer(() => this.editionsApi.rename(edition.id, nouveau));
@@ -157,6 +155,21 @@ export class EditionsPage implements OnInit {
       return;
     }
     await this.executer(() => this.editionsApi.delete(edition.id));
+  }
+
+  /**
+   * « E2 » reads as an edition id, and the server refuses it as a name: said
+   * here first, before a round trip ends in a generic refusal.
+   */
+  private refuseIdShapedName(nom: string): boolean {
+    if (!NOM_FORME_ID.test(nom)) {
+      return false;
+    }
+    this.notifications.notify({
+      title: $localize`:@@editions.nomFormeId:« ${nom}:nom: » a la forme d'un identifiant d'édition : choisissez un autre nom.`,
+      variant: 'error',
+    });
+    return true;
   }
 
   private async executer(action: () => Promise<unknown>): Promise<void> {

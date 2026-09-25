@@ -78,6 +78,13 @@ describe('stand-brouillon', () => {
     expect(readStandDraft(toDraft(STAND), 's2')).toBeNull();
   });
 
+  it('restores a draft saved before stands carried a code, with an empty one', () => {
+    const { code: _code, ...ancien } = toDraft({ ...STAND, code: 'BUVETTE' });
+
+    expect(readStandDraft(JSON.parse(JSON.stringify(ancien)), 's1')?.code).toBe('');
+    expect(readStandDraft({ ...ancien, code: 42 }, 's1')).toBeNull();
+  });
+
   it('refuse ce qu’un formulaire ne saurait tenir', () => {
     expect(readStandDraft('texte', null)).toBeNull();
     expect(readStandDraft({ ...toDraft(STAND), niveauEffort: 'EXTREME' }, 's1')).toBeNull();
