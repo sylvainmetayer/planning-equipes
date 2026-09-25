@@ -10,5 +10,8 @@ package dev.sylvain.planning.service.notification;
  * {@link NotificationWriter} be tested without a {@code Mailer}, an SMTP
  * server or a Quarkus context: every wording assertion runs against this
  * record.</p>
+ *
+ * <p>{@code template} is the id of the template pair it was rendered from
+ * ({@code mail/rappel-veille}): the label the send is counted under.</p>
  */
-public record MailDraft(String destinataire, String sujet, String corps, String html) {}
+public record MailDraft(String destinataire, String sujet, String corps, String html, String template) {}

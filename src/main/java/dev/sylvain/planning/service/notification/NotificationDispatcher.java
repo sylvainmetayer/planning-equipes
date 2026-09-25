@@ -1,5 +1,6 @@
 package dev.sylvain.planning.service.notification;
 
+import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import io.quarkus.logging.Log;
 import io.quarkus.mailer.Mailer;
@@ -41,11 +42,15 @@ public class NotificationDispatcher {
 
     private final MailTemplates templates;
 
+    private final MailMetrics metrics;
+
     @Inject
-    public NotificationDispatcher(Mailer mailer, NotificationWriter redacteur, MailTemplates templates) {
+    public NotificationDispatcher(
+            Mailer mailer, NotificationWriter redacteur, MailTemplates templates, MailMetrics metrics) {
         this.mailer = mailer;
         this.redacteur = redacteur;
         this.templates = templates;
+        this.metrics = metrics;
     }
 
     /**
@@ -58,8 +63,11 @@ public class NotificationDispatcher {
         try {
             redacteur
                     .rediger(notification)
-                    .ifPresent(courrier -> mailer.send(templates.toMail(
-                            courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html())));
+                    .ifPresent(courrier -> metrics.send(
+                            mailer,
+                            courrier.template(),
+                            templates.toMail(
+                                    courrier.destinataire(), courrier.sujet(), courrier.corps(), courrier.html())));
         } catch (RuntimeException e) {
             Log.errorf(
                     e,

@@ -11,7 +11,9 @@ import jakarta.enterprise.event.Event;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -83,6 +85,9 @@ public class BackupService {
         this.notifications = notifications;
     }
 
+    @Inject
+    BackupMetrics metrics;
+
     /**
      * Failed attempts the database refused to record — the outage the alert
      * is most likely about. Kept here until the next write that goes through
@@ -102,6 +107,47 @@ public class BackupService {
         if (configuration.configured() && adminAddress.resolue().isEmpty()) {
             LOG.warn("Automatic backup is configured but MAIL_ADMIN is empty: a failed backup will alert nobody,"
                     + " it will only show on the Paramètres screen");
+        }
+    }
+
+    /**
+     * Gives the metrics the last good backup the process did not see: without
+     * it, a restart would leave "when did the backup last succeed" empty until
+     * the next night. Read from the database, sized from the dump still on
+     * disk; a failure only costs the metric, never the start.
+     */
+    void seedMetrics(@Observes StartupEvent startup) {
+        if (!configuration.configured()) {
+            return;
+        }
+        try {
+            Instant lastSuccess = repository.lastSuccessAt();
+            if (lastSuccess != null) {
+                metrics.succeeded(lastSuccess, newestDumpSize());
+            }
+        } catch (RuntimeException e) {
+            LOG.warn("Could not read the last successful backup for the metrics", e);
+        }
+    }
+
+    /** A dump's size for the metrics — which must never turn a written dump into a failed run. */
+    private static long sizeOf(Path dump) {
+        try {
+            return Files.size(dump);
+        } catch (IOException e) {
+            LOG.warn("Could not size the dump just written", e);
+            return 0L;
+        }
+    }
+
+    /** Size of the most recent dump on disk, zero when there is none or it cannot be read. */
+    private long newestDumpSize() {
+        try {
+            return new BackupStore(configuration.targetDirectory().orElseThrow())
+                    .list().stream().findFirst().map(BackupFile::sizeBytes).orElse(0L);
+        } catch (IOException | RuntimeException e) {
+            LOG.warn("Could not list the backup directory to size the last backup", e);
+            return 0L;
         }
     }
 
@@ -170,6 +216,7 @@ public class BackupService {
                 .targetDirectory()
                 .orElseThrow(() -> new IllegalStateException("No backup directory is configured (BACKUP_DIR)"));
         BackupStore store = new BackupStore(directory);
+        long started = System.nanoTime();
         BackupRun outcome;
         try {
             store.prepare();
@@ -181,10 +228,13 @@ public class BackupService {
             // and a sentence written here would be a French one shipped from a
             // backend whose UI is translated at runtime.
             outcome = new BackupRun(attemptedAt, true, name, null);
+            metrics.attempted(true, Duration.ofNanos(System.nanoTime() - started));
+            metrics.succeeded(attemptedAt, sizeOf(dump));
         } catch (IOException | RuntimeException e) {
             LOG.error("Database backup failed", e);
             reportToErrorTracker(e);
             outcome = new BackupRun(attemptedAt, false, null, reason(e));
+            metrics.attempted(false, Duration.ofNanos(System.nanoTime() - started));
         }
         return new Attempt(outcome, recordOutcome(outcome));
     }

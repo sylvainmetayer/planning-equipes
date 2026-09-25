@@ -1,6 +1,7 @@
 package dev.sylvain.planning.service.publication;
 
 import dev.sylvain.planning.service.ProductName;
+import dev.sylvain.planning.service.mail.MailMetrics;
 import dev.sylvain.planning.service.mail.MailTemplates;
 import dev.sylvain.planning.service.mail.MailTemplates.MailContent;
 import io.quarkus.mailer.Mailer;
@@ -43,6 +44,12 @@ public class MailService {
     /** Template value: the animateur's first name, which every mail to one of them opens with. */
     private static final String KEY_PRENOM = "prenom";
 
+    private static final String INDIVIDUAL_PLANNING = "mail/planning-individuel";
+    private static final String PUBLISHED_PLANNING = "mail/planning-publie";
+    private static final String ACCESS_CODE = "mail/code-acces";
+    private static final String AVAILABILITY_INVITATION = "mail/invitation-declaration";
+    private static final String TEST_MAIL = "mail/test";
+
     private final Mailer mailer;
 
     private final AdminAddress adminAddress;
@@ -56,12 +63,21 @@ public class MailService {
 
     private final MailTemplates templates;
 
+    /** Every send goes through it, so every send is counted by its template. */
+    private final MailMetrics metrics;
+
     @Inject
-    public MailService(Mailer mailer, AdminAddress adminAddress, ProductName productName, MailTemplates templates) {
+    public MailService(
+            Mailer mailer,
+            AdminAddress adminAddress,
+            ProductName productName,
+            MailTemplates templates,
+            MailMetrics metrics) {
         this.mailer = mailer;
         this.adminAddress = adminAddress;
         this.productName = productName;
         this.templates = templates;
+        this.metrics = metrics;
     }
 
     /**
@@ -71,10 +87,13 @@ public class MailService {
     public void sendIndividualPlanning(
             String emailAnimateur, String prenom, String lienEspace, byte[] pdf, String fileName) {
         MailContent content = templates.render(
-                "mail/planning-individuel",
+                INDIVIDUAL_PLANNING,
                 productName.subject("votre planning individuel"),
                 MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "lienEspace", blankToNull(lienEspace)));
-        mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
+        metrics.send(
+                mailer,
+                INDIVIDUAL_PLANNING,
+                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /**
@@ -116,7 +135,7 @@ public class MailService {
      */
     public void sendPlanningPublie(String emailAnimateur, byte[] pdf, String fileName, PlanningPublie message) {
         MailContent content = templates.render(
-                "mail/planning-publie",
+                PUBLISHED_PLANNING,
                 productName.subject(
                         message.premiereDiffusion() ? "votre planning individuel" : "votre planning a changé"),
                 MailTemplates.values(
@@ -132,16 +151,19 @@ public class MailService {
                         orEmpty(message.demandes()),
                         "journeesModifiees",
                         orEmpty(message.journeesModifiees())));
-        mailer.send(templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
+        metrics.send(
+                mailer,
+                PUBLISHED_PLANNING,
+                templates.toMail(emailAnimateur, content).addAttachment(fileName, pdf, "application/pdf"));
     }
 
     /** Sends the espace access code — the second factor of the espace animateur. */
     public void sendAccessCode(String emailAnimateur, String prenom, String code) {
         MailContent content = templates.render(
-                "mail/code-acces",
+                ACCESS_CODE,
                 productName.subject("votre code d'accès"),
                 MailTemplates.values(KEY_PRENOM, blankToNull(prenom), "code", code));
-        mailer.send(templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, ACCESS_CODE, templates.toMail(emailAnimateur, content));
     }
 
     /**
@@ -162,7 +184,7 @@ public class MailService {
     public void sendInvitationDeclaration(
             String emailAnimateur, String prenom, String lienDeclaration, LocalDate debut, LocalDate fin) {
         MailContent content = templates.render(
-                "mail/invitation-declaration",
+                AVAILABILITY_INVITATION,
                 productName.subject("vos disponibilités sont attendues"),
                 MailTemplates.values(
                         KEY_PRENOM,
@@ -171,7 +193,7 @@ public class MailService {
                         lienDeclaration,
                         "fenetre",
                         describeFenetre(debut, fin)));
-        mailer.send(templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, AVAILABILITY_INVITATION, templates.toMail(emailAnimateur, content));
     }
 
     /** The window in one sentence, {@code null} when the admin bounded neither end. */
@@ -202,7 +224,7 @@ public class MailService {
      */
     public void sendRelanceConfirmation(String emailAnimateur, String prenom, String lienEspace) {
         MailContent content = RelanceConfirmationMail.render(templates, productName, prenom, lienEspace);
-        mailer.send(templates.toMail(emailAnimateur, content));
+        metrics.send(mailer, RelanceConfirmationMail.TEMPLATE, templates.toMail(emailAnimateur, content));
     }
 
     /**
@@ -216,11 +238,11 @@ public class MailService {
                 .orElseThrow(() ->
                         new IllegalStateException("Aucune adresse e-mail administrateur configurée (MAIL_ADMIN)."));
         MailContent content = templates.render(
-                "mail/test",
+                TEST_MAIL,
                 productName.subject("mail de test"),
                 MailTemplates.values(
                         "horodatage", ZonedDateTime.now(ZoneId.systemDefault()).toString()));
-        mailer.send(templates.toMail(destinataire, content));
+        metrics.send(mailer, TEST_MAIL, templates.toMail(destinataire, content));
         return destinataire;
     }
 

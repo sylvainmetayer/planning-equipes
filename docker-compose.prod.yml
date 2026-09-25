@@ -24,6 +24,12 @@ services:
     # Sur la boucle locale seulement : le reverse proxy est le seul chemin
     # d'entrée, et l'origine ne doit pas être joignable sans passer par lui —
     # c'est ce qui rend dignes de confiance les en-têtes X-Forwarded-*.
+    #
+    # Le port 9000 (interface de management : les métriques Prometheus,
+    # /q/metrics) n'est volontairement PAS publié : il n'a pas
+    # d'authentification, sa seule protection est de n'être joignable que du
+    # réseau interne de la pile. Un Prometheus ajouté à cette pile le lit sur
+    # http://app:9000/q/metrics. Voir docs/observabilite.md § Métriques.
     ports:
       - "127.0.0.1:8080:8080"
     # Tout le fichier d'environnement est transmis tel quel, comme sur le

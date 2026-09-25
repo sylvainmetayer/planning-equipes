@@ -111,6 +111,7 @@ dev/sylvain/planning/mcp/ReparationMcpToolsTest.java
 dev/sylvain/planning/mcp/ScenarioMcpToolsTest.java
 dev/sylvain/planning/mcp/SolveurMcpToolsQueueTest.java
 dev/sylvain/planning/observability/HealthProbesTest.java
+dev/sylvain/planning/observability/MetricsEndpointTest.java
 dev/sylvain/planning/service/ConcurrentModificationGuardTest.java
 dev/sylvain/planning/service/EditionContextFailClosedTest.java
 dev/sylvain/planning/service/backup/BackupServiceTest.java
@@ -136,4 +137,5 @@ dev/sylvain/planning/service/solve/PlanningPersistenceServiceTest.java
 dev/sylvain/planning/service/solve/SolverJobArretTest.java
 dev/sylvain/planning/service/solve/SolverJobReamorcageTest.java
 dev/sylvain/planning/service/solve/SolverJobRepriseTest.java
+dev/sylvain/planning/service/solve/SolverMetricsTest.java
 dev/sylvain/planning/service/validation/ValidationJourneeServiceTest.java
