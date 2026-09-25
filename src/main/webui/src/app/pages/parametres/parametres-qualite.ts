@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
@@ -40,7 +40,7 @@ import { StatusMessage } from '../../shared/status-message';
   templateUrl: './parametres-qualite.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ParametresQualiteCard {
+export class ParametresQualiteCard implements OnInit {
   protected readonly loading = signal(false);
   protected readonly error = signal('');
   protected readonly saved = signal(false);
@@ -54,7 +54,7 @@ export class ParametresQualiteCard {
 
   private readonly constraintsApi = inject(ConstraintsApi);
 
-  constructor() {
+  ngOnInit(): void {
     void this.load();
   }
 

@@ -57,6 +57,12 @@ type PageInternals = {
   isExport: (entree: EntreeHistorique) => boolean;
 };
 
+function createPage(): PageInternals {
+  const fixture = TestBed.createComponent(HistoriquePage);
+  fixture.detectChanges();
+  return fixture.componentInstance as unknown as PageInternals;
+}
+
 describe('HistoriquePage', () => {
   const analysesApi = { actionHistory: vi.fn(), actionInventory: vi.fn() };
 
@@ -73,10 +79,6 @@ describe('HistoriquePage', () => {
         },
       ],
     });
-  }
-
-  function createPage(): PageInternals {
-    return TestBed.createComponent(HistoriquePage).componentInstance as unknown as PageInternals;
   }
 
   beforeEach(() => {

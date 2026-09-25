@@ -55,7 +55,7 @@ describe('declarations-filter', () => {
   });
 });
 
-function setUp(queryParams: Record<string, string>) {
+async function setUp(queryParams: Record<string, string>) {
   const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
@@ -77,6 +77,9 @@ function setUp(queryParams: Record<string, string>) {
     ],
   });
   const fixture = TestBed.createComponent(DisponibilitesPage);
+  // The first render runs ngOnInit, which starts the load.
+  fixture.detectChanges();
+  await fixture.whenStable();
   return { fixture, replaceState };
 }
 
@@ -90,7 +93,7 @@ describe('DisponibilitesPage « en attente »', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('opens on the pending declarations only, the oldest first', async () => {
-    const { fixture } = setUp({ statut: 'en-attente' });
+    const { fixture } = await setUp({ statut: 'en-attente' });
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -99,7 +102,7 @@ describe('DisponibilitesPage « en attente »', () => {
   });
 
   it('shows the decided ones too without the param, and writes the filter back when ticked', async () => {
-    const { fixture, replaceState } = setUp({});
+    const { fixture, replaceState } = await setUp({});
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -130,6 +133,12 @@ const DECLARATION = {
   decideLe: null,
 } as unknown as DeclarationAdminView;
 
+function button(fixture: ComponentFixture<DisponibilitesPage>, label: string): HTMLButtonElement {
+  return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find((candidate) =>
+    candidate.textContent?.includes(label),
+  ) as HTMLButtonElement;
+}
+
 describe('DisponibilitesPage during a solve', () => {
   const api = {
     declarations: vi.fn(async () => [DECLARATION]),
@@ -141,7 +150,7 @@ describe('DisponibilitesPage during a solve', () => {
   let locked: ReturnType<typeof signal<boolean>>;
   let ask: ReturnType<typeof vi.fn>;
 
-  function mount(): ComponentFixture<DisponibilitesPage> {
+  async function mount(): Promise<ComponentFixture<DisponibilitesPage>> {
     TestBed.resetTestingModule();
     TestBed.configureTestingModule({
       providers: [
@@ -158,13 +167,11 @@ describe('DisponibilitesPage during a solve', () => {
         },
       ],
     });
-    return TestBed.createComponent(DisponibilitesPage);
-  }
-
-  function button(fixture: ComponentFixture<DisponibilitesPage>, label: string): HTMLButtonElement {
-    return [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')].find(
-      (candidate) => candidate.textContent?.includes(label),
-    ) as HTMLButtonElement;
+    const fixture = TestBed.createComponent(DisponibilitesPage);
+    // The first render runs ngOnInit, which starts the load.
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture;
   }
 
   beforeEach(() => {
@@ -175,7 +182,7 @@ describe('DisponibilitesPage during a solve', () => {
 
   it('disables « Appliquer » and « Refuser » while a solve holds the edition, and says why', async () => {
     locked.set(true);
-    const fixture = mount();
+    const fixture = await mount();
     await fixture.whenStable();
 
     expect(button(fixture, 'Appliquer').disabled).toBe(true);
@@ -184,7 +191,7 @@ describe('DisponibilitesPage during a solve', () => {
   });
 
   it('leaves them enabled without a solve', async () => {
-    const fixture = mount();
+    const fixture = await mount();
     await fixture.whenStable();
 
     expect(button(fixture, 'Appliquer').disabled).toBe(false);
@@ -196,7 +203,7 @@ describe('DisponibilitesPage during a solve', () => {
       locked.set(true);
       return true;
     });
-    const fixture = mount();
+    const fixture = await mount();
     await fixture.whenStable();
 
     button(fixture, 'Appliquer').click();
@@ -207,7 +214,7 @@ describe('DisponibilitesPage during a solve', () => {
   });
 
   it('applies as usual once confirmed, no solve running', async () => {
-    const fixture = mount();
+    const fixture = await mount();
     await fixture.whenStable();
 
     button(fixture, 'Appliquer').click();

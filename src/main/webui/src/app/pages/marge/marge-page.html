@@ -49,7 +49,7 @@
     }
     <app-status-message [text]="error()" tone="error" />
     @if (!error() && !loading() && rapport()) {
-      <p class="marge-message" role="status" data-testid="marge-message">{{ rapport()!.message }}</p>
+      <output class="marge-message status-paragraph" data-testid="marge-message">{{ rapport()!.message }}</output>
     }
   </mat-card-content>
 </mat-card>

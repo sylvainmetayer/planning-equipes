@@ -62,7 +62,7 @@ describe('echanges-filter', () => {
   });
 });
 
-function setUp(queryParams: Record<string, string>) {
+async function setUp(queryParams: Record<string, string>) {
   const replaceState = vi.fn();
   TestBed.configureTestingModule({
     providers: [
@@ -88,6 +88,9 @@ function setUp(queryParams: Record<string, string>) {
     ],
   });
   const fixture = TestBed.createComponent(EchangesPage);
+  // The first render runs ngOnInit, which starts the load.
+  fixture.detectChanges();
+  await fixture.whenStable();
   return { fixture, replaceState };
 }
 
@@ -101,7 +104,7 @@ describe('EchangesPage « à arbitrer »', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
   it('opens on the requests to arbitrate only, the longest waiting first', async () => {
-    const { fixture } = setUp({ statut: 'a-arbitrer' });
+    const { fixture } = await setUp({ statut: 'a-arbitrer' });
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;
@@ -111,7 +114,7 @@ describe('EchangesPage « à arbitrer »', () => {
   });
 
   it('shows every section without the param, and writes the filter back to the URL when ticked', async () => {
-    const { fixture, replaceState } = setUp({});
+    const { fixture, replaceState } = await setUp({});
     await fixture.whenStable();
 
     const root = fixture.nativeElement as HTMLElement;

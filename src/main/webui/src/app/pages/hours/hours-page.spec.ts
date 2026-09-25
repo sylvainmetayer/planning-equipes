@@ -70,6 +70,12 @@ type PageInternals = {
   onExportCsv: () => Promise<void>;
 };
 
+function createPage(): PageInternals {
+  const fixture = TestBed.createComponent(HoursPage);
+  fixture.detectChanges();
+  return fixture.componentInstance as unknown as PageInternals;
+}
+
 describe('HoursPage', () => {
   const planningApi = { hoursReport: vi.fn(), exportHours: vi.fn() };
   const planningState = { require: vi.fn() };
@@ -95,10 +101,6 @@ describe('HoursPage', () => {
     });
   });
 
-  function createPage(): PageInternals {
-    return TestBed.createComponent(HoursPage).componentInstance as unknown as PageInternals;
-  }
-
   describe('loading state', () => {
     it('is busy while the report is in flight and idle once it lands', async () => {
       const pending = deferred<HeuresRapport>();
@@ -123,7 +125,7 @@ describe('HoursPage', () => {
       expect(page.output()).toBe('');
     });
 
-    it('loads the report on creation, without waiting for a manual refresh', async () => {
+    it('loads the report on init, without waiting for a manual refresh', async () => {
       const page = createPage();
       await vi.waitFor(() => expect(page.busy()).toBe(false));
 

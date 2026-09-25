@@ -4,6 +4,7 @@ import {
   Component,
   computed,
   inject,
+  OnInit,
   signal,
   ViewEncapsulation,
 } from '@angular/core';
@@ -58,7 +59,7 @@ import { PENDING, oldestFirst, readPendingOnly } from './declarations-filter';
   encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DisponibilitesPage {
+export class DisponibilitesPage implements OnInit {
   private readonly disponibilitesApi = inject(DisponibilitesApi);
   private readonly notifications = inject(NotificationService);
   private readonly confirm = inject(ConfirmService);
@@ -110,6 +111,9 @@ export class DisponibilitesPage {
       readPendingOnly(inject(ActivatedRoute).snapshot.queryParamMap.get('statut')),
     );
     keepViewInQueryParams(() => ({ statut: this.pendingOnly() ? PENDING : null }));
+  }
+
+  ngOnInit(): void {
     void this.reload();
   }
 
