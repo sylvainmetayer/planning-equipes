@@ -7,8 +7,9 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
+import dev.sylvain.planning.domain.Edition;
 import dev.sylvain.planning.service.EditionContext;
-import dev.sylvain.planning.service.edition.EditionRepository;
+import dev.sylvain.planning.service.edition.EditionService;
 import dev.sylvain.planning.service.solve.SolvePipeline;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.path.json.JsonPath;
@@ -45,6 +46,9 @@ class ChangementsJourneeResourceTest {
 
     @Inject
     EditionContext editionContext;
+
+    @Inject
+    EditionService editionService;
 
     /**
      * Snapshots survive the reset — that is what they are for — so a published
@@ -165,8 +169,14 @@ class ChangementsJourneeResourceTest {
         assertThat(avantEchec.getBoolean("referenceDisponible")).isTrue();
         assertThat(avantEchec.getList("parVacation.avant.animateurId")).contains(absent);
 
+        // The default edition's id is generated (ADR 0050): resolved, never assumed.
+        String defaultEdition = editionService.listEditions().stream()
+                .filter(Edition::isDefaut)
+                .map(Edition::getId)
+                .findFirst()
+                .orElseThrow();
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> editionContext.executeIn(
-                        EditionRepository.EDITION_DEFAUT_ID,
+                        defaultEdition,
                         () -> pipeline.execute(
                                 "Édition de test",
                                 () -> {
@@ -238,7 +248,7 @@ class ChangementsJourneeResourceTest {
     private static void markUnavailable(String animateurId) {
         given().contentType("application/json")
                 .body("""
-                        {"id":"CHANGEMENTS-TEST-INDISPO","type":"INDISPONIBILITE_FORCEE",
+                        {"type":"INDISPONIBILITE_FORCEE",
                          "animateursConcernes":[{"id":"%s"}],"jour":"%s"}""".formatted(animateurId, JOUR))
                 .when()
                 .post("/api/contraintes-ad-hoc")

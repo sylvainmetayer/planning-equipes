@@ -57,10 +57,10 @@ class FeasibilityResourceTest {
     void aTimeslotWithNobodyInTheRosterIsCriticalAndTheReportNamesTheEmptyRoster() {
         given().when().post("/api/planning/reset").then().statusCode(200);
 
-        given().contentType("application/json")
+        // The stand's id is drawn by the application (ADR 0050): read it back.
+        String standId = given().contentType("application/json")
                 .body("""
                         {
-                          "id":"STAND-FEASIBILITY",
                           "nom":"Stand sans animateur",
                           "typologiesProposees":["STRATEGIE"],
                           "effectifMin":2,
@@ -71,7 +71,9 @@ class FeasibilityResourceTest {
                 .when()
                 .post("/api/stands")
                 .then()
-                .statusCode(200);
+                .statusCode(200)
+                .extract()
+                .path("stand.id");
 
         given().contentType("application/json")
                 .body("""
@@ -94,7 +96,7 @@ class FeasibilityResourceTest {
                 .body("feasible", equalTo(false))
                 .body("causes[0].type", equalTo("CRENEAU_SOUS_EFFECTIF"))
                 .body("causes[0].severite", equalTo("CRITIQUE"))
-                .body("causes[0].standIds[0]", equalTo("STAND-FEASIBILITY"))
+                .body("causes[0].standIds[0]", equalTo(standId))
                 .body("causes[0].creneauId", notNullValue())
                 .body("causes[0].demande", equalTo(2))
                 .body("causes[0].capacite", equalTo(0))

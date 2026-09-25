@@ -34,16 +34,43 @@ class ImpactPublicationTest {
 
     private static final Duration POLL_TIMEOUT = Duration.ofSeconds(60);
     private static final Duration POLL_INTERVAL = Duration.ofMillis(250);
-    private static final String EDITION = "IMPACT-EDITION";
+    private static final String EDITION_NOM = "Édition de l'impact";
+
+    /** The generated id of this class's edition (ADR 0050), resolved by name before each test. */
+    private static String edition;
 
     @BeforeEach
     void createEdition() {
-        given().contentType("application/json")
-                .body("{\"id\":\"" + EDITION + "\",\"nom\":\"Édition de l'impact\"}")
-                .when()
-                .post("/api/editions");
+        edition = findOrCreateEdition();
         edition().when().post("/api/planning/reset").then().statusCode(200);
         forgetPublications();
+    }
+
+    /**
+     * The edition is designated by its name: its id is drawn by the
+     * application, and a previous test (or run) may already have created it —
+     * reusing it keeps the suite from piling up one edition per test.
+     */
+    private static String findOrCreateEdition() {
+        List<Map<String, Object>> editions = given().when()
+                .get("/api/editions")
+                .then()
+                .statusCode(200)
+                .extract()
+                .jsonPath()
+                .getList("$");
+        return editions.stream()
+                .filter(candidate -> EDITION_NOM.equals(candidate.get("nom")))
+                .map(candidate -> (String) candidate.get("id"))
+                .findFirst()
+                .orElseGet(() -> given().contentType("application/json")
+                        .body(Map.of("nom", EDITION_NOM))
+                        .when()
+                        .post("/api/editions")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .path("id"));
     }
 
     @AfterEach
@@ -61,7 +88,7 @@ class ImpactPublicationTest {
     private void forgetPublications() {
         edition()
                 .contentType("text/plain")
-                .body("DELETE FROM plan_snapshot WHERE edition_id = '" + EDITION + "';")
+                .body("DELETE FROM plan_snapshot WHERE edition_id = '" + edition + "';")
                 .when()
                 .post("/api/database/import")
                 .then()
@@ -69,7 +96,7 @@ class ImpactPublicationTest {
     }
 
     private static RequestSpecification edition() {
-        return given().header("X-Edition-Id", EDITION);
+        return given().header("X-Edition-Id", edition);
     }
 
     @Test
@@ -184,12 +211,12 @@ class ImpactPublicationTest {
     }
 
     private static String deleteSeat(Map<String, Object> poste) {
-        return "DELETE FROM poste_affectation WHERE edition_id = '" + EDITION + "' AND id = '" + poste.get("id") + "';";
+        return "DELETE FROM poste_affectation WHERE edition_id = '" + edition + "' AND id = '" + poste.get("id") + "';";
     }
 
     private static String insertSeat(Map<String, Object> poste, String animateurId) {
         return "INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id) VALUES ('"
-                + EDITION + "', '" + poste.get("id") + "', '" + standId(poste) + "', " + creneauId(poste)
+                + edition + "', '" + poste.get("id") + "', '" + standId(poste) + "', " + creneauId(poste)
                 + ", '" + animateurId + "');";
     }
 
@@ -227,7 +254,7 @@ class ImpactPublicationTest {
         edition()
                 .contentType("text/plain")
                 .body("INSERT INTO poste_affectation (edition_id, id, stand_id, creneau_id, animateur_id, "
-                        + "heure_debut_effective, heure_fin_effective) VALUES ('" + EDITION + "', 'DOUBLON', '"
+                        + "heure_debut_effective, heure_fin_effective) VALUES ('" + edition + "', 'DOUBLON', '"
                         + standId + "', " + creneauId + ", '" + tenant + "', '14:00', '16:00');")
                 .when()
                 .post("/api/database/import")
