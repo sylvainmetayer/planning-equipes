@@ -49,6 +49,14 @@ public final class ConstraintParameters {
     /** Tab holding « Qualité d'organisation », the organiser's own thresholds. */
     private static final String ONGLET_EDITION = "edition";
 
+    // Setting keys named both by a reference and by the rules that read them.
+    private static final String DUREE_HEBDOMADAIRE_MAX_MINUTES = "dureeHebdomadaireMaxMinutes";
+    private static final String DUREE_PAUSE_MINUTES = "dureePauseMinutes";
+    private static final String COUPURE_REPAS_MINUTES = "coupureRepasMinutes";
+    private static final String COUPURE_REPAS_MIDI = "coupureRepasMidi";
+    private static final String COUPURE_REPAS_SOIR = "coupureRepasSoir";
+    private static final String JOURS_CONSECUTIFS_MAX = "joursConsecutifsMax";
+
     private ConstraintParameters() {}
 
     /**
@@ -77,7 +85,7 @@ public final class ConstraintParameters {
 
     private static final Map<String, Reference> REFERENCES = Map.ofEntries(
             Map.entry(
-                    "dureeHebdomadaireMaxMinutes",
+                    DUREE_HEBDOMADAIRE_MAX_MINUTES,
                     new Reference(
                             "Durée hebdomadaire maximale, majeurs",
                             ONGLET_LEGAUX,
@@ -89,19 +97,19 @@ public final class ConstraintParameters {
                             ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureeHebdomadaireMaxMineurMinutes()))),
             Map.entry(
-                    "dureePauseMinutes",
+                    DUREE_PAUSE_MINUTES,
                     new Reference(
                             "Durée de la pause légale",
                             ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getDureePauseMinutes()))),
             Map.entry(
-                    "coupureRepasMinutes",
+                    COUPURE_REPAS_MINUTES,
                     new Reference(
                             "Durée de la coupure repas",
                             ONGLET_LEGAUX,
                             contexte -> duree(contexte.legaux().getCoupureRepasMinutes()))),
             Map.entry(
-                    "coupureRepasMidi",
+                    COUPURE_REPAS_MIDI,
                     new Reference(
                             "Fenêtre du midi",
                             ONGLET_LEGAUX,
@@ -109,7 +117,7 @@ public final class ConstraintParameters {
                                     contexte.legaux().getCoupureRepasMidiDebut(),
                                     contexte.legaux().getCoupureRepasMidiFin()))),
             Map.entry(
-                    "coupureRepasSoir",
+                    COUPURE_REPAS_SOIR,
                     new Reference(
                             "Fenêtre du soir",
                             ONGLET_LEGAUX,
@@ -129,7 +137,7 @@ public final class ConstraintParameters {
                             ONGLET_EDITION,
                             contexte -> count(contexte.qualite().typologiesDistinctesMax()))),
             Map.entry(
-                    "joursConsecutifsMax",
+                    JOURS_CONSECUTIFS_MAX,
                     new Reference(
                             "Jours travaillés d'affilée",
                             ONGLET_EDITION,
@@ -167,22 +175,22 @@ public final class ConstraintParameters {
             // The daily caps themselves are the Code du travail's (10 h, and the
             // minors' own), never a field — what an organiser sets is how much
             // of the day is not work.
-            Map.entry("dureeQuotidienneMaxMajeur", List.of("dureePauseMinutes")),
-            Map.entry("dureeQuotidienneMaxMineur", List.of("dureePauseMinutes")),
-            Map.entry("dureeHebdomadaireMax", List.of("dureeHebdomadaireMaxMinutes", "dureePauseMinutes")),
-            Map.entry("dureeHebdomadaireMaxDeuxSemaines", List.of("dureeHebdomadaireMaxMinutes", "dureePauseMinutes")),
-            Map.entry("dureeHebdomadaireMaxMineur", List.of("dureeHebdomadaireMaxMineurMinutes", "dureePauseMinutes")),
-            Map.entry("travailContinuMaxMajeur", List.of("dureePauseMinutes")),
-            Map.entry("travailContinuMaxMineur", List.of("dureePauseMinutes")),
+            Map.entry("dureeQuotidienneMaxMajeur", List.of(DUREE_PAUSE_MINUTES)),
+            Map.entry("dureeQuotidienneMaxMineur", List.of(DUREE_PAUSE_MINUTES)),
+            Map.entry("dureeHebdomadaireMax", List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, DUREE_PAUSE_MINUTES)),
+            Map.entry("dureeHebdomadaireMaxDeuxSemaines", List.of(DUREE_HEBDOMADAIRE_MAX_MINUTES, DUREE_PAUSE_MINUTES)),
+            Map.entry("dureeHebdomadaireMaxMineur", List.of("dureeHebdomadaireMaxMineurMinutes", DUREE_PAUSE_MINUTES)),
+            Map.entry("travailContinuMaxMajeur", List.of(DUREE_PAUSE_MINUTES)),
+            Map.entry("travailContinuMaxMineur", List.of(DUREE_PAUSE_MINUTES)),
             Map.entry(
-                    "coupureRepasObligatoire", List.of("coupureRepasMinutes", "coupureRepasMidi", "coupureRepasSoir")),
+                    "coupureRepasObligatoire", List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
             Map.entry(
                     "coupureRepasPlacementPrefere",
-                    List.of("coupureRepasMinutes", "coupureRepasMidi", "coupureRepasSoir")),
+                    List.of(COUPURE_REPAS_MINUTES, COUPURE_REPAS_MIDI, COUPURE_REPAS_SOIR)),
             Map.entry("limiterEmplacementsParJour", List.of("maxEmplacementsDistinctsParJour")),
             Map.entry("limiterTypologiesDistinctesParAnimateur", List.of("typologiesDistinctesMax")),
-            Map.entry("maxJoursConsecutifsTravailles", List.of("joursConsecutifsMax")),
-            Map.entry("maxJoursConsecutifsTravaillesDur", List.of("joursConsecutifsMax")),
+            Map.entry("maxJoursConsecutifsTravailles", List.of(JOURS_CONSECUTIFS_MAX)),
+            Map.entry("maxJoursConsecutifsTravaillesDur", List.of(JOURS_CONSECUTIFS_MAX)),
             Map.entry(
                     "eviterFermeturePuisOuverture",
                     List.of("heureServiceTardif", "heureServiceMatinal", "reposSouhaiteApresServiceTardifMinutes")));

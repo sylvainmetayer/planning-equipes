@@ -23,6 +23,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.random.RandomGenerator;
 
@@ -134,6 +135,9 @@ public final class WeekRelocationMoveIteratorFactory
 
             @Override
             public Move<PlanningEvenement> next() {
+                if (!hasNext()) {
+                    throw new NoSuchElementException();
+                }
                 return index.nextMove(random);
             }
         };
@@ -184,56 +188,54 @@ public final class WeekRelocationMoveIteratorFactory
             this.parametresLegaux = solution.parametresLegaux();
             this.runCap = hardRunCap(solution);
             for (PosteAffectation poste : solution.getPostes()) {
-                if (poste.getCreneau() == null) {
-                    continue;
-                }
-                Animateur animateur = poste.getAnimateur();
-                LocalDate date = poste.getCreneau().getDate();
-                if (animateur != null) {
-                    List<PosteAffectation> day = held.computeIfAbsent(animateur, a -> new HashMap<>())
-                            .computeIfAbsent(date, d -> {
-                                workingOn
-                                        .computeIfAbsent(d, x -> new ArrayList<>())
-                                        .add(animateur);
-                                return new ArrayList<>();
-                            });
-                    day.add(poste);
-                }
-                if (poste.isVerrouille()) {
-                    if (animateur != null) {
-                        pinnedDays
-                                .computeIfAbsent(animateur, a -> new HashSet<>())
-                                .add(date);
-                    }
-                    continue;
-                }
-                movable.add(poste);
-                if (animateur == null) {
-                    holes.add(poste);
-                } else {
-                    seats.computeIfAbsent(animateur, a -> new HashMap<>())
-                            .computeIfAbsent(date, d -> new ArrayList<>())
-                            .add(poste);
+                if (poste.getCreneau() != null) {
+                    index(poste);
                 }
             }
             if (runCap > 0) {
-                held.forEach((animateur, days) -> {
-                    if (seats.containsKey(animateur) && longestRun(sorted(days.keySet()), null, null) > runCap) {
-                        overlongRuns.add(animateur);
-                    }
-                });
+                collectOverlongRuns();
             }
+        }
+
+        /** One seat of the plan filed under every map it belongs to. */
+        private void index(PosteAffectation poste) {
+            Animateur animateur = poste.getAnimateur();
+            LocalDate date = poste.getCreneau().getDate();
+            if (animateur != null) {
+                List<PosteAffectation> day = held.computeIfAbsent(animateur, a -> new HashMap<>())
+                        .computeIfAbsent(date, d -> {
+                            workingOn.computeIfAbsent(d, x -> new ArrayList<>()).add(animateur);
+                            return new ArrayList<>();
+                        });
+                day.add(poste);
+            }
+            if (poste.isVerrouille()) {
+                if (animateur != null) {
+                    pinnedDays.computeIfAbsent(animateur, a -> new HashSet<>()).add(date);
+                }
+                return;
+            }
+            movable.add(poste);
+            if (animateur == null) {
+                holes.add(poste);
+            } else {
+                seats.computeIfAbsent(animateur, a -> new HashMap<>())
+                        .computeIfAbsent(date, d -> new ArrayList<>())
+                        .add(poste);
+            }
+        }
+
+        private void collectOverlongRuns() {
+            held.forEach((animateur, days) -> {
+                if (seats.containsKey(animateur) && longestRun(sorted(days.keySet()), null, null) > runCap) {
+                    overlongRuns.add(animateur);
+                }
+            });
         }
 
         Move<PlanningEvenement> nextMove(RandomGenerator random) {
             if (runCap > 0) {
-                int draw = random.nextInt(3);
-                Move<PlanningEvenement> day = null;
-                if (draw == 0 && !overlongRuns.isEmpty()) {
-                    day = releaseFromRun(random);
-                } else if (draw == 1 || holes.isEmpty()) {
-                    day = consolidate(random);
-                }
+                Move<PlanningEvenement> day = runMove(random);
                 if (day != null) {
                     return day;
                 }
@@ -242,13 +244,7 @@ public final class WeekRelocationMoveIteratorFactory
                 return plainChange(random);
             }
             PosteAffectation hole = holes.get(random.nextInt(holes.size()));
-            List<Animateur> candidates = new ArrayList<>();
-            for (Animateur animateur : solution.getAnimateurs()) {
-                if (EligibleAnimateurMoveFilter.isEligible(hole, animateur, parametresLegaux)
-                        && free(animateur, hole)) {
-                    candidates.add(animateur);
-                }
-            }
+            List<Animateur> candidates = candidates(hole);
             if (candidates.isEmpty()) {
                 return plainChange(random);
             }
@@ -270,6 +266,34 @@ public final class WeekRelocationMoveIteratorFactory
         }
 
         /**
+         * Under the run rule, one draw in three releases a day from an
+         * over-long run and one consolidates a day; {@code null} when the draw
+         * falls on neither or the move found nothing.
+         */
+        private Move<PlanningEvenement> runMove(RandomGenerator random) {
+            int draw = random.nextInt(3);
+            if (draw == 0 && !overlongRuns.isEmpty()) {
+                return releaseFromRun(random);
+            }
+            if (draw == 1 || holes.isEmpty()) {
+                return consolidate(random);
+            }
+            return null;
+        }
+
+        /** The animateurs eligible for the hole and free at its hour. */
+        private List<Animateur> candidates(PosteAffectation hole) {
+            List<Animateur> candidates = new ArrayList<>();
+            for (Animateur animateur : solution.getAnimateurs()) {
+                if (EligibleAnimateurMoveFilter.isEligible(hole, animateur, parametresLegaux)
+                        && free(animateur, hole)) {
+                    candidates.add(animateur);
+                }
+            }
+            return candidates;
+        }
+
+        /**
          * The seat to the candidate, and one of the candidate's other days of
          * the same week — or, under the run rule, of the run the seat would
          * lengthen — to colleagues; {@code null} when no day can be handed over.
@@ -279,11 +303,16 @@ public final class WeekRelocationMoveIteratorFactory
             Map<LocalDate, List<PosteAffectation>> days = seats.getOrDefault(candidate, Map.of());
             List<LocalDate> released;
             if (runCap > 0) {
-                released = releasedUnderRunCap(candidate, date);
-                if (released == null) {
+                List<LocalDate> worked =
+                        sorted(held.getOrDefault(candidate, Map.of()).keySet());
+                if (!takingBreaksACap(candidate, worked, date)) {
                     // Neither the week nor the run goes over: the plain fill is the whole chain.
                     return Moves.change(ANIMATEUR, hole, candidate);
                 }
+                // Empty when no single day repairs what taking the date breaks:
+                // the chain is then not proposed at all, rather than a release
+                // that leaves the run as long as it was.
+                released = releasable(candidate, worked, date, freeable(candidate));
             } else {
                 released = new ArrayList<>();
                 for (LocalDate other : days.keySet()) {
@@ -308,25 +337,16 @@ public final class WeekRelocationMoveIteratorFactory
         }
 
         /**
-         * Under the run rule, the days the candidate could give up so that
-         * taking {@code date} keeps both the week and the run under their caps;
-         * {@code null} when taking it breaks neither, an empty list when no single
-         * day repairs what it breaks — the chain is then not proposed at all,
-         * rather than a release that leaves the run as long as it was.
+         * Under the run rule, whether taking {@code date} puts the candidate's
+         * week or run over its cap; {@code worked} is every day they work,
+         * pinned ones included, sorted.
          */
-        private List<LocalDate> releasedUnderRunCap(Animateur candidate, LocalDate date) {
-            List<LocalDate> worked =
-                    sorted(held.getOrDefault(candidate, Map.of()).keySet());
+        private boolean takingBreaksACap(Animateur candidate, List<LocalDate> worked, LocalDate date) {
             if (worked.contains(date)) {
-                return null;
+                return false;
             }
             long week = worked.stream().filter(day -> sameWeek(day, date)).count() + 1;
-            boolean weekOver = week > weekCap(candidate, date);
-            boolean runOver = longestRun(worked, null, date) > runCap;
-            if (!weekOver && !runOver) {
-                return null;
-            }
-            return releasable(candidate, worked, date, freeable(candidate));
+            return week > weekCap(candidate, date) || longestRun(worked, null, date) > runCap;
         }
 
         /**
@@ -338,21 +358,30 @@ public final class WeekRelocationMoveIteratorFactory
                 Animateur animateur, List<LocalDate> worked, LocalDate added, List<LocalDate> choices) {
             List<LocalDate> fits = new ArrayList<>();
             for (LocalDate day : choices) {
-                if (day.equals(added) || longestRun(worked, day, added) > runCap) {
-                    continue;
+                if (releaseFits(animateur, worked, day, added)) {
+                    fits.add(day);
                 }
-                if (added != null) {
-                    long week = worked.stream()
-                                    .filter(d -> !d.equals(day) && sameWeek(d, added))
-                                    .count()
-                            + 1;
-                    if (week > weekCap(animateur, added)) {
-                        continue;
-                    }
-                }
-                fits.add(day);
             }
             return fits;
+        }
+
+        /**
+         * Whether releasing {@code day} — and taking {@code added} on, when
+         * not {@code null} — leaves the run under the cap and the week of
+         * {@code added} under the weekly cap.
+         */
+        private boolean releaseFits(Animateur animateur, List<LocalDate> worked, LocalDate day, LocalDate added) {
+            if (day.equals(added) || longestRun(worked, day, added) > runCap) {
+                return false;
+            }
+            if (added == null) {
+                return true;
+            }
+            long week = worked.stream()
+                            .filter(d -> !d.equals(day) && sameWeek(d, added))
+                            .count()
+                    + 1;
+            return week <= weekCap(animateur, added);
         }
 
         /** The days an animateur holds only movable seats on: the ones that can be freed entirely. */
@@ -481,25 +510,35 @@ public final class WeekRelocationMoveIteratorFactory
             Animateur fallback = null;
             for (int i = 0; i < animateurs.size(); i++) {
                 Animateur animateur = animateurs.get((start + i) % animateurs.size());
-                if (animateur.equals(leaving)) {
-                    continue;
-                }
-                List<PosteAffectation> already = given.get(animateur);
-                if (already != null && (runCap == 0 || overlapsAny(seat, already))) {
-                    continue;
-                }
-                if (!EligibleAnimateurMoveFilter.isEligible(seat, animateur, parametresLegaux)
-                        || !free(animateur, seat)) {
-                    continue;
-                }
-                if (held.getOrDefault(animateur, Map.of()).containsKey(date)) {
-                    return animateur;
-                }
-                if (fallback == null && runCap == 0) {
-                    fallback = animateur;
+                if (canTake(animateur, seat, leaving, given)) {
+                    if (held.getOrDefault(animateur, Map.of()).containsKey(date)) {
+                        return animateur;
+                    }
+                    if (fallback == null && runCap == 0) {
+                        fallback = animateur;
+                    }
                 }
             }
             return fallback;
+        }
+
+        /**
+         * Not the one leaving, not already given a seat of this day — an
+         * overlapping one, under the run rule — eligible, and free at its hour.
+         */
+        private boolean canTake(
+                Animateur animateur,
+                PosteAffectation seat,
+                Animateur leaving,
+                Map<Animateur, List<PosteAffectation>> given) {
+            if (animateur.equals(leaving)) {
+                return false;
+            }
+            List<PosteAffectation> already = given.get(animateur);
+            if (already != null && (runCap == 0 || overlapsAny(seat, already))) {
+                return false;
+            }
+            return EligibleAnimateurMoveFilter.isEligible(seat, animateur, parametresLegaux) && free(animateur, seat);
         }
 
         /** Not holding a seat — pinned or not — that overlaps this one in time, on its day. */

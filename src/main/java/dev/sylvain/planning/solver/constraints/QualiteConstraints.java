@@ -244,7 +244,7 @@ public final class QualiteConstraints {
                         PastSeats.withAhead(ConstraintCollectors.countDistinct(PosteAffectation::getAnimateur)))
                 .filter((stand, visages) -> visages.ahead() > 0)
                 .map((stand, visages) -> stand, (stand, visages) -> visages.value())
-                .join(crewByStand(constraintFactory), Joiners.equal((stand, têtes) -> stand, Equipage::stand))
+                .join(crewByStand(constraintFactory), Joiners.equal((stand, distincts) -> stand, Equipage::stand))
                 .filter((stand, animateursDistincts, equipage) -> animateursDistincts > equipage.sieges())
                 .penalize(
                         HardMediumSoftScore.ONE_MEDIUM,
@@ -604,7 +604,10 @@ public final class QualiteConstraints {
     }
 
     /**
-     * Above this many consecutive worked days, at least one rest day is due —
+     * No animateur works more than {@code ParametresQualite.joursConsecutifsMax}
+     * calendar days in a row.
+     *
+     * <p>Above this many consecutive worked days, at least one rest day is due —
      * fewer is fine, more is not. Not a Code du travail article: the six-day
      * ISO-week ceiling ({@code maxJoursTravaillesParSemaine}) already lets a
      * run straddle a week boundary (e.g. Thu-Fri-Sat-Sun-Mon-Tue-Wed = 6 days
@@ -612,11 +615,7 @@ public final class QualiteConstraints {
      * catches that straddling run directly, uncoupled from the week grid, but
      * is kept as an organisational-quality medium rather than a legal hard
      * rule since the underlying legal basis for a rolling (non-weekly) count
-     * is not established.
-     */
-    /**
-     * No animateur works more than {@code ParametresQualite.joursConsecutifsMax}
-     * calendar days in a row.
+     * is not established.</p>
      *
      * <p>Grouped on {@code getJour()} rather than the calendar date: adjacent
      * calendar days always get adjacent {@code jour} numbers (see
